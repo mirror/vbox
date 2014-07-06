@@ -575,7 +575,7 @@ public:
      */
     HRESULT assignEx(Utf8Str const &a_rSrcStr)
     {
-        return copyFromExNComRC(a_rSrcStr.m_psz, a_rSrcStr.m_cch);
+        return copyFromExNComRC(a_rSrcStr.m_psz, 0, a_rSrcStr.m_cch);
     }
 
     /**
@@ -593,7 +593,7 @@ public:
         if (   a_offSrc + a_cchSrc > a_rSrcStr.m_cch
             || a_offSrc > a_rSrcStr.m_cch)
             return E_INVALIDARG;
-        return copyFromExNComRC(a_rSrcStr.m_psz, a_rSrcStr.m_cch);
+        return copyFromExNComRC(a_rSrcStr.m_psz, a_offSrc, a_cchSrc);
     }
 
     /**
@@ -605,7 +605,7 @@ public:
      */
     HRESULT assignEx(const char *a_pcszSrc)
     {
-        return copyFromExNComRC(a_pcszSrc, a_pcszSrc ? strlen(a_pcszSrc) : 0);
+        return copyFromExNComRC(a_pcszSrc, 0, a_pcszSrc ? strlen(a_pcszSrc) : 0);
     }
 
     /**
@@ -619,7 +619,7 @@ public:
      */
     HRESULT assignEx(const char *a_pcszSrc, size_t a_cchSrc)
     {
-        return copyFromExNComRC(a_pcszSrc, a_cchSrc);
+        return copyFromExNComRC(a_pcszSrc, 0, a_cchSrc);
     }
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
@@ -718,7 +718,7 @@ protected:
 
     void copyFrom(CBSTR a_pbstr);
     HRESULT copyFromEx(CBSTR a_pbstr);
-    HRESULT copyFromExNComRC(const char *a_pcszSrc, size_t a_cchSrc);
+    HRESULT copyFromExNComRC(const char *a_pcszSrc, size_t a_offSrc, size_t a_cchSrc);
 
     friend class Bstr; /* to access our raw_copy() */
 };

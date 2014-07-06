@@ -246,13 +246,14 @@ HRESULT Utf8Str::copyFromEx(CBSTR a_pbstr)
  * returns E_OUTOFMEMORY instead.
  *
  * @param   a_pcszSrc   The source string.
+ * @param   a_offSrc    Start offset to copy from.
  * @param   a_cchSrc    The source string.
  * @returns S_OK or E_OUTOFMEMORY.
  *
  * @remarks This calls cleanup() first, so the caller doesn't have to. (Saves
  *          code space.)
  */
-HRESULT Utf8Str::copyFromExNComRC(const char *a_pcszSrc, size_t a_cchSrc)
+HRESULT Utf8Str::copyFromExNComRC(const char *a_pcszSrc, size_t a_offSrc, size_t a_cchSrc)
 {
     cleanup();
     if (a_cchSrc)
@@ -262,7 +263,7 @@ HRESULT Utf8Str::copyFromExNComRC(const char *a_pcszSrc, size_t a_cchSrc)
         {
             m_cch = a_cchSrc;
             m_cbAllocated = a_cchSrc + 1;
-            memcpy(m_psz, a_pcszSrc, a_cchSrc);
+            memcpy(m_psz, a_pcszSrc + a_offSrc, a_cchSrc);
             m_psz[a_cchSrc] = '\0';
         }
         else
