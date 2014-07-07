@@ -4210,12 +4210,32 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     {
                         if (values[ii] && *values[ii])
                         {
+                            /* Put properties of filters in a separate config node. */
                             Utf8Str name = names[ii];
                             Utf8Str value = values[ii];
-                            InsertConfigString(pVDC, name.c_str(), value);
-                            if (    name.compare("HostIPStack") == 0
-                                &&  value.compare("0") == 0)
-                                fHostIP = false;
+                            size_t offSlash = name.find("/", 0);
+                            if (   offSlash != name.npos
+                                && !name.startsWith("Special/"))
+                            {
+                                com::Utf8Str strFilter;
+                                com::Utf8Str strKey;
+
+                                hrc = strFilter.assignEx(name, 0, offSlash); H();
+                                hrc = strKey.assignEx(name, offSlash + 1, name.length() - offSlash - 1); /* Skip slash */ H();
+
+                                PCFGMNODE pCfgFilterConfig = CFGMR3GetChild(pVDC, strFilter.c_str());
+                                if (!pCfgFilterConfig)
+                                    InsertConfigNode(pVDC, strFilter.c_str(), &pCfgFilterConfig);
+
+                                InsertConfigString(pCfgFilterConfig, strKey.c_str(), value);
+                            }
+                            else
+                            {
+                                InsertConfigString(pVDC, name.c_str(), value);
+                                if (    name.compare("HostIPStack") == 0
+                                    &&  value.compare("0") == 0)
+                                    fHostIP = false;
+                            }
                         }
                     }
                 }
