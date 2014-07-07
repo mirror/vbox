@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Windows resource file for VirtualBox.exe.
+ * Windows resource file for the Hardened VirtualBox.exe.
  */
 
 /*
@@ -18,6 +18,7 @@
 #include <windows.h>
 #include <VBox/version.h>
 
+#if 0 /* Causes more DLLs to be loaded, don't enable it! */
 VS_VERSION_INFO    VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
@@ -27,12 +28,8 @@ VS_VERSION_INFO    VERSIONINFO
 #else
   FILEFLAGS        0 // final version
 #endif
-  FILEOS           VOS_NT_WINDOWS32
-#ifdef VBOXR3_HARDENED_DLL
+  FILEOS           0 //VOS_NT_WINDOWS32
   FILETYPE         VFT_APP
-#else
-  FILETYPE         VFT_DLL
-#endif
   FILESUBTYPE      0   // not used
 BEGIN
   BLOCK "StringFileInfo"
@@ -42,17 +39,9 @@ BEGIN
     VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
     VALUE "FileDescription", VBOX_PRODUCT " Manager\0"
     VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-#ifdef VBOXR3_HARDENED_DLL
-    VALUE "InternalName",    "VirtualBox\0"
-#else
     VALUE "InternalName",    "VirtualBox.exe\0"
-#endif
     VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
-#ifdef VBOXR3_HARDENED_DLL
-    VALUE "OriginalFilename","VirtualBox.dll\0"
-#else
     VALUE "OriginalFilename","VirtualBox.exe\0"
-#endif
     VALUE "ProductName",     VBOX_PRODUCT "\0"
     VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     END
@@ -62,6 +51,7 @@ BEGIN
     VALUE "Translation", 0x409, 1252
   END
 END
+#endif
 
 /* Creates the application icon. */
 #include "VirtualBox-icon.rc"

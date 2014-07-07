@@ -54,7 +54,7 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 #
 VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
-VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBox.rc
+VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
 VirtualBoxHardened_NAME = VirtualBox
 VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 VirtualBoxHardened_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
