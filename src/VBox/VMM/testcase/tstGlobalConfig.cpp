@@ -38,7 +38,10 @@ static int Usage(void)
 }
 
 
-int main(int argc, char **argv)
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     RTR3InitExe(argc, &argv, 0);
 
@@ -120,3 +123,15 @@ int main(int argc, char **argv)
 
     return RT_FAILURE(rc) ? 1 : 0;
 }
+
+
+#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv, char **envp)
+{
+    return TrustedMain(argc, argv, envp);
+}
+#endif
+

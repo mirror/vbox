@@ -135,7 +135,11 @@ static void doStandaloneTests(void)
     CFGMR3DestroyTree(pRoot);
 }
 
-int main()
+
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     /*
      * Init runtime.
@@ -151,4 +155,15 @@ int main()
 
     return RTTestSummaryAndDestroy(hTest);
 }
+
+
+#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv, char **envp)
+{
+    return TrustedMain(argc, argv, envp);
+}
+#endif
 

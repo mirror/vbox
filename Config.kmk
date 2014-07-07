@@ -4018,6 +4018,14 @@ TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
 
 
 #
+# Template for building hardened Ring-3 executables.
+# These shall have no extra runpaths, esp. not origin ones.
+#
+TEMPLATE_VBoxR3HardenedTstExe = VBox Ring-3 Hardened Testcase Exe (currently windows only!)
+TEMPLATE_VBoxR3HardenedTstExe_EXTENDS = VBOXR3HARDENEDEXE
+TEMPLATE_VBoxR3HardenedTstExe_INST = $(INST_TESTCASE)
+
+#
 # Template for building set-uid-to-root helper programs.
 # In hardened builds, these may only contain absolute runpaths!
 #
@@ -4122,6 +4130,19 @@ ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3TSTNPEXE_TOOL             = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3TSTNPEXE_CXXFLAGS         = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3TSTEXE_CXXFLAGS)) -Wno-sign-compare
  TEMPLATE_VBOXR3TSTNPEXE_CFLAGS           = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3TSTEXE_CFLAGS)) -Wno-sign-compare
+endif
+
+
+#
+# Ring-3 testcase DLL.
+#
+TEMPLATE_VBoxR3TstDll = VBox Ring-3 Testcase Dll
+TEMPLATE_VBoxR3TstDll_EXTENDS = VBOXR3TSTEXE
+ifn1of ($(KBUILD_TARGET), darwin win os2)
+ TEMPLATE_VBoxR3TstDll_DEFS     = $(TEMPLATE_VBOXR3TSTEXE_DEFS) PIC
+ TEMPLATE_VBoxR3TstDll_CFLAGS   = $(TEMPLATE_VBOXR3TSTEXE_CFLAGS) -fPIC
+ TEMPLATE_VBoxR3TstDll_CXXFLAGS = $(TEMPLATE_VBOXR3TSTEXE_CXXFLAGS) -fPIC
+ TEMPLATE_VBoxR3TstDll_LDFLAGS  = $(TEMPLATE_VBOXR3TSTEXE_LDFLAGS) -fPIC
 endif
 
 
