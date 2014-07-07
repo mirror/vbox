@@ -30,12 +30,14 @@
 *******************************************************************************/
 #include "internal/iprt.h"
 
-#include <openssl/md2.h>
+#include <openssl/opensslconf.h>
+#ifndef OPENSSL_NO_MD2
+# include <openssl/md2.h>
 
-#define RT_MD2_PRIVATE_CONTEXT
-#include <iprt/md2.h>
+# define RT_MD2_PRIVATE_CONTEXT
+# include <iprt/md2.h>
 
-#include <iprt/assert.h>
+# include <iprt/assert.h>
 
 AssertCompile(RT_SIZEOFMEMB(RTMD2CONTEXT, abPadding) >= RT_SIZEOFMEMB(RTMD2CONTEXT, Private));
 
@@ -69,4 +71,12 @@ RTDECL(void) RTMd2Final(PRTMD2CONTEXT pCtx, uint8_t pabDigest[RTMD2_HASH_SIZE])
     MD2_Final((unsigned char *)&pabDigest[0], &pCtx->Private);
 }
 RT_EXPORT_SYMBOL(RTMd2Final);
+
+
+#else /* OPENSSL_NO_MD2 */
+/*
+ * If the OpenSSL build doesn't have MD2, use the IPRT implementation.
+ */
+# include "alt-md2.cpp"
+#endif /* OPENSSL_NO_MD2 */
 
