@@ -558,6 +558,9 @@ static int supHardNtVpVerifyImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, H
 
     OBJECT_ATTRIBUTES   ObjAttr;
     InitializeObjectAttributes(&ObjAttr, &pImage->Name.UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+#ifdef IN_RING0
+    ObjAttr.Attributes |= OBJ_KERNEL_HANDLE;
+#endif
 
     NTSTATUS rcNt = NtCreateFile(&hFile,
                                  GENERIC_READ,
