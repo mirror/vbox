@@ -32,7 +32,7 @@ endif
 
 ifdef VBOX_WITH_HARDENING
  VBoxNetLwipNATHardened_SOURCES += VBoxNetNATHardened.cpp
- VBoxNetLwipNATHardened_SOURCES.win = $(VBoxNetDHCP_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
+ VBoxNetLwipNATHardened_SOURCES.win = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
  VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=\"VBoxNetNAT\"
  VBoxNetLwipNATHardened_TEMPLATE=VBOXR3HARDENEDEXE
  VBoxNetLwipNATHardened_NAME = VBoxNetNAT
