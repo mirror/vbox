@@ -987,7 +987,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDev
                                  const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
 {
     LogFlow(("PDMR3DriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
-             pszDevice, pszDevice, iDevIns, iLun, pszDriver, iOccurance, fFlags));
+             pszDevice, pszDevice, iDevIns, iLun, pszDriver, pszDriver, iOccurance, fFlags));
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
