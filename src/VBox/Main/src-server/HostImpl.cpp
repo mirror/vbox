@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2013 Oracle Corporation
+ * Copyright (C) 2004-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2971,8 +2971,8 @@ HRESULT Host::i_checkUSBProxyService()
 HRESULT Host::i_updateNetIfList()
 {
 #ifdef VBOX_WITH_HOSTNETIF_API
-    AssertReturn(AutoCaller(this).state() == InInit ||
-                 isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(   getObjectState().getState() == ObjectState::InInit
+                 || isWriteLockOnCurrentThread(), E_FAIL);
 
     HostNetworkInterfaceList list, listCopy;
     int rc = NetIfList(list);

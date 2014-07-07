@@ -474,7 +474,7 @@ STDMETHODIMP Session::UpdateMachineState(MachineState_T aMachineState)
 {
     AutoCaller autoCaller(this);
 
-    if (autoCaller.state() != Ready)
+    if (getObjectState().getState() != ObjectState::Ready)
     {
         /*
          *  We might have already entered Session::uninit() at this point, so
@@ -513,7 +513,7 @@ STDMETHODIMP Session::Uninitialize()
 
     HRESULT rc = S_OK;
 
-    if (autoCaller.state() == Ready)
+    if (getObjectState().getState() == ObjectState::Ready)
     {
         /* close() needs write lock */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -535,7 +535,7 @@ STDMETHODIMP Session::Uninitialize()
         /* close ourselves */
         rc = unlockMachine(false /* aFinalRelease */, true /* aFromServer */);
     }
-    else if (autoCaller.state() == InUninit)
+    else if (getObjectState().getState() == ObjectState::InUninit)
     {
         /*
          *  We might have already entered Session::uninit() at this point,

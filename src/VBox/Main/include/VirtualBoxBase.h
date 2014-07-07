@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,15 @@
 #include <list>
 #include <map>
 
+#include "ObjectState.h"
+
 #include "VBox/com/AutoLock.h"
 #include "VBox/com/string.h"
 #include "VBox/com/Guid.h"
 
 #include "VBox/com/VirtualBox.h"
 
-// avoid including VBox/settings.h and VBox/xml.h;
-// only declare the classes
+// avoid including VBox/settings.h and VBox/xml.h; only declare the classes
 namespace xml
 {
 class File;
@@ -43,9 +44,6 @@ class ErrorInfo;
 
 using namespace com;
 using namespace util;
-
-class AutoInitSpan;
-class AutoUninitSpan;
 
 class VirtualBox;
 class Machine;
@@ -664,53 +662,7 @@ public:
  *
  * Declares functionality that should be available in all components.
  *
- * Among the basic functionality implemented by this class is the primary object
- * state that indicates if the object is ready to serve the calls, and if not,
- * what stage it is currently at. Here is the primary state diagram:
- *
- *              +-------------------------------------------------------+
- *              |                                                       |
- *              |         (InitFailed) -----------------------+         |
- *              |              ^                              |         |
- *              v              |                              v         |
- *  [*] ---> NotReady ----> (InInit) -----> Ready -----> (InUninit) ----+
- *                     ^       |
- *                     |       v
- *                     |    Limited
- *                     |       |
- *                     +-------+
- *
- * The object is fully operational only when its state is Ready. The Limited
- * state means that only some vital part of the object is operational, and it
- * requires some sort of reinitialization to become fully operational. The
- * NotReady state means the object is basically dead: it either was not yet
- * initialized after creation at all, or was uninitialized and is waiting to be
- * destroyed when the last reference to it is released. All other states are
- * transitional.
- *
- * The NotReady->InInit->Ready, NotReady->InInit->Limited and
- * NotReady->InInit->InitFailed transition is done by the AutoInitSpan smart
- * class.
- *
- * The Limited->InInit->Ready, Limited->InInit->Limited and
- * Limited->InInit->InitFailed transition is done by the AutoReinitSpan smart
- * class.
- *
- * The Ready->InUninit->NotReady and InitFailed->InUninit->NotReady
- * transitions are done by the AutoUninitSpan smart class.
- *
- * In order to maintain the primary state integrity and declared functionality
- * all subclasses must:
- *
- * 1) Use the above Auto*Span classes to perform state transitions. See the
- *    individual class descriptions for details.
- *
- * 2) All public methods of subclasses (i.e. all methods that can be called
- *    directly, not only from within other methods of the subclass) must have a
- *    standard prolog as described in the AutoCaller and AutoLimitedCaller
- *    documentation. Alternatively, they must use addCaller()/releaseCaller()
- *    directly (and therefore have both the prolog and the epilog), but this is
- *    not recommended.
+ * The object state logic is documented in ObjectState.h.
  */
 class ATL_NO_VTABLE VirtualBoxBase
     : public VirtualBoxTranslatable,
@@ -743,8 +695,6 @@ protected:
 
 
 public:
-    enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
-
     VirtualBoxBase();
     virtual ~VirtualBoxBase();
 
@@ -755,24 +705,18 @@ public:
      * last reference to the object is released, before calling the destructor.
      *
      * @note Never call this method the AutoCaller scope or after the
-     *       #addCaller() call not paired by #releaseCaller() because it is a
-     *       guaranteed deadlock. See AutoUninitSpan for details.
+     *       ObjectState::addCaller() call not paired by
+     *       ObjectState::releaseCaller() because it is a guaranteed deadlock.
+     *       See AutoUninitSpan and AutoCaller.h/ObjectState.h for details.
      */
     virtual void uninit()
     { }
 
-    virtual HRESULT addCaller(State *aState = NULL,
-                              bool aLimited = false);
-    virtual void releaseCaller();
-
     /**
-     * Adds a limited caller. This method is equivalent to doing
-     * <tt>addCaller(aState, true)</tt>, but it is preferred because provides
-     * better self-descriptiveness. See #addCaller() for more info.
      */
-    HRESULT addLimitedCaller(State *aState = NULL)
+    ObjectState &getObjectState()
     {
-        return addCaller(aState, true /* aLimited */);
+        return mState;
     }
 
     /**
@@ -804,14 +748,6 @@ public:
     }
 
     virtual RWLockHandle *lockHandle() const;
-
-    /**
-     * Returns a lock handle used to protect the primary state fields (used by
-     * #addCaller(), AutoInitSpan, AutoUninitSpan, etc.). Only intended to be
-     * used for similar purposes in subclasses. WARNING: NO any other locks may
-     * be requested while holding this lock!
-     */
-    WriteLockHandle *stateLockHandle() { return &mStateLock; }
 
     static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
 
@@ -850,36 +786,11 @@ public:
 
 
 private:
-
-    void setState(State aState)
-    {
-        Assert(mState != aState);
-        mState = aState;
-        mStateChangeThread = RTThreadSelf();
-    }
-
-    /** Primary state of this object */
-    State mState;
-    /** Thread that caused the last state change */
-    RTTHREAD mStateChangeThread;
-    /** Total number of active calls to this object */
-    unsigned mCallers;
-    /** Posted when the number of callers drops to zero */
-    RTSEMEVENT mZeroCallersSem;
-    /** Posted when the object goes from InInit/InUninit to some other state */
-    RTSEMEVENTMULTI mInitUninitSem;
-    /** Number of threads waiting for mInitUninitDoneSem */
-    unsigned mInitUninitWaiters;
-
-    /** Protects access to state related data members */
-    WriteLockHandle mStateLock;
+    /** Object for representing object state */
+    ObjectState mState;
 
     /** User-level object lock for subclasses */
     mutable RWLockHandle *mObjectLock;
-
-    friend class AutoInitSpan;
-    friend class AutoReinitSpan;
-    friend class AutoUninitSpan;
 };
 
 /**

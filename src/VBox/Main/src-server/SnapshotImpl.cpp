@@ -1796,7 +1796,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
     AutoCaller autoCaller(this);
 
-    LogFlowThisFunc(("state=%d\n", autoCaller.state()));
+    LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
     if (!autoCaller.isOk())
     {
         /* we might have been uninitialized because the session was accidentally
@@ -2337,7 +2337,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
     AutoCaller autoCaller(this);
 
-    LogFlowThisFunc(("state=%d\n", autoCaller.state()));
+    LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
     if (!autoCaller.isOk())
     {
         /* we might have been uninitialized because the session was accidentally
