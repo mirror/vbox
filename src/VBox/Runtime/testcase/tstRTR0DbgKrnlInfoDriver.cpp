@@ -41,7 +41,10 @@
 #endif
 
 
-int main (int argc, char **argv)
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
 #ifndef VBOX
     RTPrintf("tstSup: SKIPPED\n");
@@ -149,4 +152,15 @@ int main (int argc, char **argv)
     return RTTestSummaryAndDestroy(hTest);
 #endif
 }
+
+
+#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv, char **envp)
+{
+    return TrustedMain(argc, argv, envp);
+}
+#endif
 

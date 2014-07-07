@@ -32,6 +32,7 @@ PROGRAMS += \
 	SUPUninstall \
 	SUPLoggerCtl
 ifdef VBOX_WITH_TESTCASES
+ if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "win"
 PROGRAMS += \
 	tstPage \
 	tstContiguous \
@@ -44,6 +45,7 @@ PROGRAMS += \
 	tstSupLoadModule \
 	tstSupSem \
 	tstSupSem-Zombie
+ endif
 PROGRAMS.win += \
 	tstNtQueryStuff
 endif # VBOX_WITH_TESTCASES

@@ -618,7 +618,10 @@ static void syntax(void)
 }
 
 
-int main(int argc, char **argv)
+/**
+ *  Entry point.
+ */
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     int rcRet = 1;
     int rc;
@@ -935,4 +938,15 @@ int main(int argc, char **argv)
 
     return rcRet;
 }
+
+
+#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv, char **envp)
+{
+    return TrustedMain(argc, argv, envp);
+}
+#endif
 
