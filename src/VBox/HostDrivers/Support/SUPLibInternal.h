@@ -158,6 +158,8 @@ typedef enum SUPINSTFILETYPE
     kSupIFT_Sys,
     kSupIFT_Script,
     kSupIFT_Data,
+    kSupIFT_TestExe,
+    kSupIFT_TestDll,
     kSupIFT_End
 } SUPINSTFILETYPE;
 
@@ -173,6 +175,7 @@ typedef enum SUPINSTDIR
     kSupID_AppPrivArch,
     kSupID_AppPrivArchComp,
     kSupID_AppPrivNoArch,
+    kSupID_Testcase,
     kSupID_End
 } SUPINSTDIR;
 
