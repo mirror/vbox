@@ -57,6 +57,10 @@
 # define SUP_CTL_CODE_FAST(Function)            CTL_CODE(FILE_DEVICE_UNKNOWN, (Function) | SUP_IOCTL_FLAG, METHOD_NEITHER,  FILE_WRITE_ACCESS)
 # define SUP_CTL_CODE_NO_SIZE(uIOCtl)           (uIOCtl)
 
+# define SUP_NT_STATUS_BASE                     UINT32_C(0xe9860000) /**< STATUS_SEVERITY_ERROR + C-bit + facility 0x986. */
+# define SUP_NT_STATUS_IS_VBOX(a_rcNt)          ( ((uint32_t)(a_rcNt) & 0xffff0000) == SUP_NT_STATUS_BASE )
+# define SUP_NT_STATUS_TO_VBOX(a_rcNt)          ( (int)((uint32_t)(a_rcNt) | UINT32_C(0xffff0000)) )
+
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes. */
 # include <sys/ioccom.h>
