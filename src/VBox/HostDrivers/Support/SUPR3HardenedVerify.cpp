@@ -215,6 +215,27 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxNetNAT" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxNetNAT" SUPLIB_DLL_SUFF },
 //#endif
+#if defined(VBOX_WITH_HARDENING) && defined(RT_OS_WINDOWS)
+# define HARDENED_TESTCASE_BIN_ENTRY(a_szName) \
+        {   kSupIFT_TestExe, kSupID_AppBin, true, a_szName SUPLIB_EXE_SUFF }, \
+        {   kSupIFT_TestDll, kSupID_AppBin, true, a_szName SUPLIB_DLL_SUFF }
+    HARDENED_TESTCASE_BIN_ENTRY("tstMicro"),
+    HARDENED_TESTCASE_BIN_ENTRY("tstPDMAsyncCompletion"),
+    HARDENED_TESTCASE_BIN_ENTRY("tstPDMAsyncCompletionStress"),
+    HARDENED_TESTCASE_BIN_ENTRY("tstVMM"),
+    HARDENED_TESTCASE_BIN_ENTRY("tstVMREQ"),
+# define HARDENED_TESTCASE_ENTRY(a_szName) \
+        {   kSupIFT_TestExe, kSupID_Testcase, true, a_szName SUPLIB_EXE_SUFF }, \
+        {   kSupIFT_TestDll, kSupID_Testcase, true, a_szName SUPLIB_DLL_SUFF }
+    HARDENED_TESTCASE_ENTRY("tstCFGM"),
+    HARDENED_TESTCASE_ENTRY("tstIntNet-1"),
+    HARDENED_TESTCASE_ENTRY("tstMMHyperHeap"),
+    HARDENED_TESTCASE_ENTRY("tstR0ThreadPreemptionDriver"),
+    HARDENED_TESTCASE_ENTRY("tstRTR0MemUserKernelDriver"),
+    HARDENED_TESTCASE_ENTRY("tstRTR0SemMutexDriver"),
+    HARDENED_TESTCASE_ENTRY("tstRTR0TimerDriver"),
+    HARDENED_TESTCASE_ENTRY("tstSSM"),
+#endif
 };
 
 
@@ -264,6 +285,17 @@ static int supR3HardenedMakePath(SUPINSTDIR enmDir, char *pszDst, size_t cchDst,
             break;
         case kSupID_AppPrivNoArch:
             rc = supR3HardenedPathAppPrivateNoArch(pszDst, cchDst);
+            break;
+        case kSupID_Testcase:
+            rc = supR3HardenedPathExecDir(pszDst, cchDst);
+            if (RT_SUCCESS(rc))
+            {
+                size_t off = suplibHardenedStrLen(pszDst);
+                if (cchDst - off >= sizeof("/testcase"))
+                    suplibHardenedMemCopy(&pszDst[off], "/testcase", sizeof("/testcase"));
+                else
+                    rc = VERR_BUFFER_OVERFLOW;
+            }
             break;
         default:
             return supR3HardenedError(VERR_INTERNAL_ERROR, fFatal,
@@ -352,7 +384,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
     int rc = supR3HardenedMakePath(enmDir, szPath, sizeof(szPath), fFatal);
     if (RT_SUCCESS(rc))
     {
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) /** @todo use CreateFileW */
         HANDLE hDir = CreateFile(szPath,
                                  GENERIC_READ,
                                  FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
@@ -366,6 +398,11 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
             /* That's all on windows, for now at least... */
             g_aSupVerifiedDirs[enmDir].hDir = (intptr_t)hDir;
             g_aSupVerifiedDirs[enmDir].fValidated = true;
+        }
+        else if (enmDir == kSupID_Testcase)
+        {
+            g_aSupVerifiedDirs[enmDir].fValidated = true;
+            rc = VINF_SUCCESS; /* Optional directory, ignore if missing. */
         }
         else
         {
@@ -418,6 +455,11 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
                                         szPath, strerror(err), err);
                 close(fd);
             }
+        }
+        else if (enmDir == kSupID_Testcase)
+        {
+            g_aSupVerifiedDirs[enmDir].fValidated = true;
+            rc = VINF_SUCCESS; /* Optional directory, ignore if missing. */
         }
         else
         {
@@ -521,7 +563,9 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                 else
                 {
                     int err = GetLastError();
-                    if (!pFile->fOptional || err != ERROR_FILE_NOT_FOUND)
+                    if (   !pFile->fOptional
+                        || (    err != ERROR_FILE_NOT_FOUND
+                            &&  (err != ERROR_PATH_NOT_FOUND || pFile->enmDir != kSupID_Testcase) ) )
                         rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
                                                 "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
                 }
@@ -708,7 +752,8 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
         if (!suplibHardenedStrNCmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgName))
         {
-            if (    g_aSupInstallFiles[iFile].enmType == kSupIFT_Dll
+            if (    (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Dll
+                     || g_aSupInstallFiles[iFile].enmType == kSupIFT_TestDll)
                 &&  !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_DLL_SUFF))
             {
                 /* This only has to be found (once). */
@@ -717,7 +762,8 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                                             "supR3HardenedVerifyProgram: duplicate DLL entry for \"%s\"\n", pszProgName);
                 fDll = true;
             }
-            else if (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Exe
+            else if (   (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Exe
+                         || g_aSupInstallFiles[iFile].enmType == kSupIFT_TestExe)
                      && !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_EXE_SUFF))
             {
                 /* Here we'll have to check that the specific program is the same as the entry. */
@@ -1527,7 +1573,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
      * The files shall be signed on windows, verify that.
      */
     HANDLE hVerify;
-    if (hNativeFile == RTHCUINTPTR_MAX)
+    if (hNativeFile == RTHCUINTPTR_MAX) /** @todo Need to use WCHAR on windows! */
         hVerify = CreateFile(pszFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     else if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hNativeFile, GetCurrentProcess(), &hVerify,
                               GENERIC_READ, false /*bInheritHandle*/, 0 /*dwOptions*/))
