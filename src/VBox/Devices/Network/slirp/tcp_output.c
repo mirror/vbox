@@ -233,9 +233,9 @@ again:
          * taking into account that we are limited by
          * TCP_MAXWIN << tp->rcv_scale.
          */
-        long adv = min(win,
-                       (long)TCP_MAXWIN << tp->rcv_scale) -
-                       (tp->rcv_adv - tp->rcv_nxt);
+        long adv = min(win, (long)TCP_MAXWIN << tp->rcv_scale);
+        if (SEQ_GT(tp->rcv_adv, tp->rcv_nxt))
+            adv -= tp->rcv_adv - tp->rcv_nxt;
 
         if (adv >= (long) (2 * tp->t_maxseg))
             goto send;
@@ -554,8 +554,8 @@ send:
         win = 0;
     if (win > (long)TCP_MAXWIN << tp->rcv_scale)
         win = (long)TCP_MAXWIN << tp->rcv_scale;
-    if (win < (long)(tp->rcv_adv - tp->rcv_nxt))
-        win = (long)(tp->rcv_adv - tp->rcv_nxt);
+    if (win < (long)(int32_t)(tp->rcv_adv - tp->rcv_nxt))
+        win = (long)(int32_t)(tp->rcv_adv - tp->rcv_nxt);
     ti->ti_win = RT_H2N_U16((u_int16_t) (win>>tp->rcv_scale));
 
 #if 0
