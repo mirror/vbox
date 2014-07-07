@@ -159,6 +159,20 @@ static const char *g_apszSupNtVpAllowedVmExes[] =
     "VBoxSDL.exe",
     "VBoxNetDHCP.exe",
     "VBoxNetNAT.exe",
+
+    "tstMicro.exe",
+    "tstPDMAsyncCompletion.exe",
+    "tstPDMAsyncCompletionStress.exe",
+    "tstVMM.exe",
+    "tstVMREQ.exe",
+    "tstCFGM.exe",
+    "tstIntNet-1.exe",
+    "tstMMHyperHeap.exe",
+    "tstR0ThreadPreemptionDriver.exe",
+    "tstRTR0MemUserKernelDriver.exe",
+    "tstRTR0SemMutexDriver.exe",
+    "tstRTR0TimerDriver.exe",
+    "tstSSM.exe",
 };
 
 /** Pointer to NtQueryVirtualMemory.  Initialized by SUPDrv-win.cpp in
