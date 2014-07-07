@@ -241,6 +241,7 @@ tstMouseImpl_SOURCES  = \
 	tstMouseImpl.cpp \
 	../src-client/MouseImpl.cpp \
 	../src-all/EventImpl.cpp \
+	../src-all/AutoCaller.cpp \
 	../src-all/VirtualBoxBase.cpp \
 	../src-all/VirtualBoxErrorInfoImpl.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \

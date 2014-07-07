@@ -7176,7 +7176,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
               , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
     LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%s, InUninit=%d)\n",
-            Global::stringifyMachineState(mMachineState), autoCaller.state() == InUninit));
+            Global::stringifyMachineState(mMachineState), getObjectState().getState() == ObjectState::InUninit));
 
     /* Check if we need to power off the VM. In case of mVMPoweredOff=true, the
      * VM has already powered itself off in vmstateChangeCallback() and is just
@@ -7319,7 +7319,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
 
     /* If we are called from Console::uninit(), then try to destroy the VM even
      * on failure (this will most likely fail too, but what to do?..) */
-    if (RT_SUCCESS(vrc) || autoCaller.state() == InUninit)
+    if (RT_SUCCESS(vrc) || getObjectState().getState() == ObjectState::InUninit)
     {
         /* If the machine has a USB controller, release all USB devices
          * (symmetric to the code in captureUSBDevices()) */
@@ -7517,8 +7517,8 @@ HRESULT Console::i_findSharedFolder(const Utf8Str &strName,
 HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
 {
     /* sanity check */
-    AssertReturn(AutoCaller(this).state() == InInit ||
-                 isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(   getObjectState().getState() == ObjectState::InInit
+                 || isWriteLockOnCurrentThread(), E_FAIL);
 
     LogFlowThisFunc(("Entering\n"));
 
@@ -7862,7 +7862,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
      * 1) powerDown() called from uninit() itself, or
      * 2) VM-(guest-)initiated power off. */
     AssertReturnVoid(   autoCaller.isOk()
-                     || autoCaller.state() == InUninit);
+                     || that->getObjectState().getState() == ObjectState::InUninit);
 
     switch (enmState)
     {

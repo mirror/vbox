@@ -1,10 +1,10 @@
 /** @file
  *
- * VirtualBox COM base classes definition
+ * VirtualBox object caller handling definitions
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,69 +18,91 @@
 #ifndef ____H_AUTOCALLER
 #define ____H_AUTOCALLER
 
+#include "ObjectState.h"
+
+#include "VBox/com/AutoLock.h"
+
+// Forward declaration needed, but nothing more.
+class VirtualBoxBase;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // AutoCaller* classes
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+
 /**
- * Smart class that automatically increases the number of callers of the
- * given VirtualBoxBase object when an instance is constructed and decreases
- * it back when the created instance goes out of scope (i.e. gets destroyed).
+ * Smart class that automatically increases the number of normal (non-limited)
+ * callers of the given VirtualBoxBase object when an instance is constructed
+ * and decreases it back when the created instance goes out of scope (i.e. gets
+ * destroyed).
  *
  * If #rc() returns a failure after the instance creation, it means that
  * the managed VirtualBoxBase object is not Ready, or in any other invalid
  * state, so that the caller must not use the object and can return this
  * failed result code to the upper level.
  *
- * See VirtualBoxBase::addCaller(), VirtualBoxBase::addLimitedCaller() and
- * VirtualBoxBase::releaseCaller() for more details about object callers.
+ * See ObjectState::addCaller() and ObjectState::releaseCaller() for more
+ * details about object callers.
  *
- * @param aLimited  |false| if this template should use
- *                  VirtualBoxBase::addCaller() calls to add callers, or
- *                  |true| if VirtualBoxBase::addLimitedCaller() should be
- *                  used.
- *
- * @note It is preferable to use the AutoCaller and AutoLimitedCaller
- *       classes than specify the @a aLimited argument, for better
- *       self-descriptiveness.
+ * A typical usage pattern to declare a normal method of some object (i.e. a
+ * method that is valid only when the object provides its full
+ * functionality) is:
+ * <code>
+ * STDMETHODIMP Component::Foo()
+ * {
+ *     AutoCaller autoCaller(this);
+ *     HRESULT hrc = autoCaller.rc();
+ *     if (SUCCEEDED(hrc))
+ *     {
+ *         ...
+ *     }
+ *     return hrc;
+ * }
+ * </code>
  */
-template<bool aLimited>
-class AutoCallerBase
+class AutoCaller
 {
 public:
+    /**
+     * Default constructor. Not terribly useful, but it's valid to create
+     * an instance without associating it with an object. It's a no-op,
+     * like the more useful constructor below when NULL is passed to it.
+     */
+    AutoCaller()
+    {
+        init(NULL, false);
+    }
 
     /**
      * Increases the number of callers of the given object by calling
-     * VirtualBoxBase::addCaller().
+     * ObjectState::addCaller() for the corresponding member instance.
      *
-     * @param aObj      Object to add a caller to. If NULL, this
+     * @param aObj      Object to add a normal caller to. If NULL, this
      *                  instance is effectively turned to no-op (where
-     *                  rc() will return S_OK and state() will be
-     *                  NotReady).
+     *                  rc() will return S_OK).
      */
-    AutoCallerBase(VirtualBoxBase *aObj)
-        : mObj(aObj), mRC(S_OK), mState(VirtualBoxBase::NotReady)
+    AutoCaller(VirtualBoxBase *aObj)
     {
-        if (mObj)
-            mRC = mObj->addCaller(&mState, aLimited);
+        init(aObj, false);
     }
 
     /**
      * If the number of callers was successfully increased, decreases it
-     * using VirtualBoxBase::releaseCaller(), otherwise does nothing.
+     * using ObjectState::releaseCaller(), otherwise does nothing.
      */
-    ~AutoCallerBase()
+    ~AutoCaller()
     {
         if (mObj && SUCCEEDED(mRC))
-            mObj->releaseCaller();
+            mObj->getObjectState().releaseCaller();
     }
 
     /**
-     * Stores the result code returned by VirtualBoxBase::addCaller() after
-     * instance creation or after the last #add() call. A successful result
-     * code means the number of callers was successfully increased.
+     * Returns the stored result code returned by ObjectState::addCaller()
+     * after instance creation or after the last #add() call. A successful
+     * result code means the number of callers was successfully increased.
      */
     HRESULT rc() const { return mRC; }
 
@@ -89,12 +111,6 @@ public:
      * |true| means the number of callers was successfully increased.
      */
     bool isOk() const { return SUCCEEDED(mRC); }
-
-    /**
-     * Stores the object state returned by VirtualBoxBase::addCaller() after
-     * instance creation or after the last #add() call.
-     */
-    VirtualBoxBase::State state() const { return mState; }
 
     /**
      * Temporarily decreases the number of callers of the managed object.
@@ -107,7 +123,7 @@ public:
         if (SUCCEEDED(mRC))
         {
             if (mObj)
-                mObj->releaseCaller();
+                mObj->getObjectState().releaseCaller();
             mRC = E_FAIL;
         }
     }
@@ -120,7 +136,7 @@ public:
     {
         Assert(!SUCCEEDED(mRC));
         if (mObj && !SUCCEEDED(mRC))
-            mRC = mObj->addCaller(&mState, aLimited);
+            mRC = mObj->getObjectState().addCaller(mLimited);
     }
 
     /**
@@ -147,48 +163,38 @@ public:
         }
     }
 
-    /** Verbose equivalent to <tt>attach (NULL)</tt>. */
+    /** Verbose equivalent to <tt>attach(NULL)</tt>. */
     void detach() { attach(NULL); }
 
-private:
+protected:
+    /**
+     * Internal constructor: Increases the number of callers of the given
+     * object (either normal or limited variant) by calling
+     * ObjectState::addCaller() for the corresponding member instance.
+     *
+     * @param aObj      Object to add a caller to. If NULL, this
+     *                  instance is effectively turned to no-op (where
+     *                  rc() will return S_OK).
+     * @param aLimited  If |false|, then it's a regular caller, otherwise a
+     *                  limited caller.
+     */
+    void init(VirtualBoxBase *aObj, bool aLimited)
+    {
+        mObj = aObj;
+	mRC = S_OK;
+	mLimited = aLimited;
+        if (mObj)
+            mRC = mObj->getObjectState().addCaller(mLimited);
+    }
 
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCallerBase)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoCallerBase)
+private:
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCaller)
+    DECLARE_CLS_NEW_DELETE_NOOP(AutoCaller)
 
     VirtualBoxBase *mObj;
     HRESULT mRC;
-    VirtualBoxBase::State mState;
+    bool mLimited;
 };
-
-/**
- * Smart class that automatically increases the number of normal
- * (non-limited) callers of the given VirtualBoxBase object when an instance
- * is constructed and decreases it back when the created instance goes out
- * of scope (i.e. gets destroyed).
- *
- * A typical usage pattern to declare a normal method of some object (i.e. a
- * method that is valid only when the object provides its full
- * functionality) is:
- * <code>
- * STDMETHODIMP Component::Foo()
- * {
- *     AutoCaller autoCaller(this);
- *     HRESULT hrc = autoCaller.rc();
- *     if (SUCCEEDED(hrc))
- *     {
- *         ...
- *     }
- *     return hrc;
- * }
- * </code>
- *
- * Using this class is equivalent to using the AutoCallerBase template with
- * the @a aLimited argument set to |false|, but this class is preferred
- * because provides better self-descriptiveness.
- *
- * See AutoCallerBase for more information about auto caller functionality.
- */
-typedef AutoCallerBase<false> AutoCaller;
 
 /**
  * Smart class that automatically increases the number of limited callers of
@@ -211,13 +217,35 @@ typedef AutoCallerBase<false> AutoCaller;
  *     return hrc;
  * </code>
  *
- * Using this class is equivalent to using the AutoCallerBase template with
- * the @a aLimited argument set to |true|, but this class is preferred
- * because provides better self-descriptiveness.
- *
- * See AutoCallerBase for more information about auto caller functionality.
+ * See AutoCaller for more information about auto caller functionality.
  */
-typedef AutoCallerBase<true> AutoLimitedCaller;
+class AutoLimitedCaller : public AutoCaller
+{
+public:
+    /**
+     * Default constructor. Not terribly useful, but it's valid to create
+     * an instance without associating it with an object. It's a no-op,
+     * like the more useful constructor below when NULL is passed to it.
+     */
+    AutoLimitedCaller()
+    {
+        AutoCaller::init(NULL, true);
+    }
+
+    /**
+     * Increases the number of callers of the given object by calling
+     * ObjectState::addCaller() for the corresponding member instance.
+     *
+     * @param aObj      Object to add a limited caller to. If NULL, this
+     *                  instance is effectively turned to no-op (where
+     *                  rc() will return S_OK).
+     */
+    AutoLimitedCaller(VirtualBoxBase *aObj)
+    {
+        AutoCaller::init(aObj, true);
+    }
+
+};
 
 /**
  * Smart class to enclose the state transition NotReady->InInit->Ready.
@@ -348,8 +376,8 @@ private:
  * <code>
  * HRESULT Component::reinit()
  * {
- *     AutoReinitSpan autoReinitSpan (this);
- *     AssertReturn (autoReinitSpan.isOk(), E_FAIL);
+ *     AutoReinitSpan autoReinitSpan(this);
+ *     AssertReturn(autoReinitSpan.isOk(), E_FAIL);
  *     ...
  *     if (FAILED(rc))
  *         return rc;
@@ -415,7 +443,7 @@ private:
  * <code>
  * void Component::uninit()
  * {
- *     AutoUninitSpan autoUninitSpan (this);
+ *     AutoUninitSpan autoUninitSpan(this);
  *     if (autoUninitSpan.uninitDone())
  *         return;
  *     ...
@@ -423,11 +451,11 @@ private:
  * </code>
  *
  * @note The constructor of this class blocks the current thread execution
- *       until the number of callers added to the object using #addCaller()
- *       or AutoCaller drops to zero. For this reason, it is forbidden to
- *       create instances of this class (or call uninit()) within the
- *       AutoCaller or #addCaller() scope because it is a guaranteed
- *       deadlock.
+ *       until the number of callers added to the object using
+ *       ObjectState::addCaller() or AutoCaller drops to zero. For this reason,
+ *       it is forbidden to create instances of this class (or call uninit())
+ *       within the AutoCaller or ObjectState::addCaller() scope because it is
+ *       a guaranteed deadlock.
  *
  * @note Never create instances of this class outside uninit() methods and
  *       never pass anything other than |this| as the argument to the

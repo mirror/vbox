@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,14 @@
 
 #include <typeinfo>
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 #include <windows.h>
 #include <dbghelp.h>
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
 /// @todo remove when VirtualBoxErrorInfo goes away from here
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 #include "VirtualBoxBase.h"
 #include "AutoCaller.h"
@@ -46,15 +46,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-VirtualBoxBase::VirtualBoxBase()
-    : mStateLock(LOCKCLASS_OBJECTSTATE)
+VirtualBoxBase::VirtualBoxBase() : mState(this)
 {
-    mState = NotReady;
-    mStateChangeThread = NIL_RTTHREAD;
-    mCallers = 0;
-    mZeroCallersSem = NIL_RTSEMEVENT;
-    mInitUninitSem = NIL_RTSEMEVENTMULTI;
-    mInitUninitWaiters = 0;
     mObjectLock = NULL;
 }
 
@@ -62,13 +55,6 @@ VirtualBoxBase::~VirtualBoxBase()
 {
     if (mObjectLock)
         delete mObjectLock;
-    Assert(mInitUninitWaiters == 0);
-    Assert(mInitUninitSem == NIL_RTSEMEVENTMULTI);
-    if (mZeroCallersSem != NIL_RTSEMEVENT)
-        RTSemEventDestroy (mZeroCallersSem);
-    mCallers = 0;
-    mStateChangeThread = NIL_RTTHREAD;
-    mState = NotReady;
 }
 
 /**
@@ -89,7 +75,7 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
     /* lazy initialization */
     if (RT_UNLIKELY(!mObjectLock))
     {
-        AssertCompile (sizeof (RWLockHandle *) == sizeof (void *));
+        AssertCompile(sizeof(RWLockHandle *) == sizeof(void *));
 
         // getLockingClass() is overridden by many subclasses to return
         // one of the locking classes listed at the top of AutoLock.h
@@ -102,198 +88,6 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
         return objLock;
     }
     return mObjectLock;
-}
-
-/**
- * Increments the number of calls to this object by one.
- *
- * After this method succeeds, it is guaranteed that the object will remain
- * in the Ready (or in the Limited) state at least until #releaseCaller() is
- * called.
- *
- * This method is intended to mark the beginning of sections of code within
- * methods of COM objects that depend on the readiness (Ready) state. The
- * Ready state is a primary "ready to serve" state. Usually all code that
- * works with component's data depends on it. On practice, this means that
- * almost every public method, setter or getter of the object should add
- * itself as an object's caller at the very beginning, to protect from an
- * unexpected uninitialization that may happen on a different thread.
- *
- * Besides the Ready state denoting that the object is fully functional,
- * there is a special Limited state. The Limited state means that the object
- * is still functional, but its functionality is limited to some degree, so
- * not all operations are possible. The @a aLimited argument to this method
- * determines whether the caller represents this limited functionality or
- * not.
- *
- * This method succeeds (and increments the number of callers) only if the
- * current object's state is Ready. Otherwise, it will return E_ACCESSDENIED
- * to indicate that the object is not operational. There are two exceptions
- * from this rule:
- * <ol>
- *   <li>If the @a aLimited argument is |true|, then this method will also
- *       succeed if the object's state is Limited (or Ready, of course).
- *   </li>
- *   <li>If this method is called from the same thread that placed
- *       the object to InInit or InUninit state (i.e. either from within the
- *       AutoInitSpan or AutoUninitSpan scope), it will succeed as well (but
- *       will not increase the number of callers).
- *   </li>
- * </ol>
- *
- * Normally, calling addCaller() never blocks. However, if this method is
- * called by a thread created from within the AutoInitSpan scope and this
- * scope is still active (i.e. the object state is InInit), it will block
- * until the AutoInitSpan destructor signals that it has finished
- * initialization.
- *
- * When this method returns a failure, the caller must not use the object
- * and should return the failed result code to its own caller.
- *
- * @param aState        Where to store the current object's state (can be
- *                      used in overridden methods to determine the cause of
- *                      the failure).
- * @param aLimited      |true| to add a limited caller.
- *
- * @return              S_OK on success or E_ACCESSDENIED on failure.
- *
- * @note It is preferable to use the #addLimitedCaller() rather than
- *       calling this method with @a aLimited = |true|, for better
- *       self-descriptiveness.
- *
- * @sa #addLimitedCaller()
- * @sa #releaseCaller()
- */
-HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
-                                  bool aLimited /* = false */)
-{
-    AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = E_ACCESSDENIED;
-
-    if (mState == Ready || (aLimited && mState == Limited))
-    {
-        /* if Ready or allows Limited, increase the number of callers */
-        ++ mCallers;
-        rc = S_OK;
-    }
-    else
-    if (mState == InInit || mState == InUninit)
-    {
-        if (mStateChangeThread == RTThreadSelf())
-        {
-            /* Called from the same thread that is doing AutoInitSpan or
-             * AutoUninitSpan, just succeed */
-            rc = S_OK;
-        }
-        else if (mState == InInit)
-        {
-            /* addCaller() is called by a "child" thread while the "parent"
-             * thread is still doing AutoInitSpan/AutoReinitSpan, so wait for
-             * the state to become either Ready/Limited or InitFailed (in
-             * case of init failure).
-             *
-             * Note that we increase the number of callers anyway -- to
-             * prevent AutoUninitSpan from early completion if we are
-             * still not scheduled to pick up the posted semaphore when
-             * uninit() is called.
-             */
-            ++ mCallers;
-
-            /* lazy semaphore creation */
-            if (mInitUninitSem == NIL_RTSEMEVENTMULTI)
-            {
-                RTSemEventMultiCreate (&mInitUninitSem);
-                Assert(mInitUninitWaiters == 0);
-            }
-
-            ++ mInitUninitWaiters;
-
-            LogFlowThisFunc(("Waiting for AutoInitSpan/AutoReinitSpan to finish...\n"));
-
-            stateLock.release();
-            RTSemEventMultiWait (mInitUninitSem, RT_INDEFINITE_WAIT);
-            stateLock.acquire();
-
-            if (-- mInitUninitWaiters == 0)
-            {
-                /* destroy the semaphore since no more necessary */
-                RTSemEventMultiDestroy (mInitUninitSem);
-                mInitUninitSem = NIL_RTSEMEVENTMULTI;
-            }
-
-            if (mState == Ready || (aLimited && mState == Limited))
-                rc = S_OK;
-            else
-            {
-                Assert(mCallers != 0);
-                -- mCallers;
-                if (mCallers == 0 && mState == InUninit)
-                {
-                    /* inform AutoUninitSpan ctor there are no more callers */
-                    RTSemEventSignal(mZeroCallersSem);
-                }
-            }
-        }
-    }
-
-    if (aState)
-        *aState = mState;
-
-    if (FAILED(rc))
-    {
-        if (mState == VirtualBoxBase::Limited)
-            rc = setError(rc, "The object functionality is limited");
-        else
-            rc = setError(rc, "The object is not ready");
-    }
-
-    return rc;
-}
-
-/**
- * Decreases the number of calls to this object by one.
- *
- * Must be called after every #addCaller() or #addLimitedCaller() when
- * protecting the object from uninitialization is no more necessary.
- */
-void VirtualBoxBase::releaseCaller()
-{
-    AutoWriteLock stateLock(mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    if (mState == Ready || mState == Limited)
-    {
-        /* if Ready or Limited, decrease the number of callers */
-        AssertMsgReturn(mCallers != 0, ("mCallers is ZERO!"), (void) 0);
-        --mCallers;
-
-        return;
-    }
-
-    if (mState == InInit || mState == InUninit)
-    {
-        if (mStateChangeThread == RTThreadSelf())
-        {
-            /* Called from the same thread that is doing AutoInitSpan or
-             * AutoUninitSpan: just succeed */
-            return;
-        }
-
-        if (mState == InUninit)
-        {
-            /* the caller is being released after AutoUninitSpan has begun */
-            AssertMsgReturn(mCallers != 0, ("mCallers is ZERO!"), (void) 0);
-            --mCallers;
-
-            if (mCallers == 0)
-                /* inform the Auto*UninitSpan ctor there are no more callers */
-                RTSemEventSignal(mZeroCallersSem);
-
-            return;
-        }
-    }
-
-    AssertMsgFailed (("mState = %d!", mState));
 }
 
 /**
@@ -436,14 +230,14 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
         rc = info.createObject();
         if (FAILED(rc)) break;
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
         ComPtr<IVirtualBoxErrorInfo> curInfo;
         if (preserve)
         {
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
-            rc = ::GetErrorInfo (0, err.asOutParam());
+            rc = ::GetErrorInfo(0, err.asOutParam());
             if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
             if (FAILED(rc))
@@ -454,7 +248,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
                 rc = wrapper.createObject();
                 if (SUCCEEDED(rc))
                 {
-                    rc = wrapper->init (err);
+                    rc = wrapper->init(err);
                     if (SUCCEEDED(rc))
                         curInfo = wrapper;
                 }
@@ -470,16 +264,16 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
         ComPtr<IErrorInfo> err;
         rc = info.queryInterfaceTo(err.asOutParam());
         if (SUCCEEDED(rc))
-            rc = ::SetErrorInfo (0, err);
+            rc = ::SetErrorInfo(0, err);
 
-#else // !defined (VBOX_WITH_XPCOM)
+#else // !defined(VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
         if (NS_SUCCEEDED(rc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
             if (FAILED(rc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
@@ -487,7 +281,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             {
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException (ex.asOutParam());
+                rc = em->GetCurrentException(ex.asOutParam());
                 if (FAILED(rc)) break;
                 rc = ex.queryInterfaceTo(curInfo.asOutParam());
                 if (FAILED(rc))
@@ -498,7 +292,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
                     rc = wrapper.createObject();
                     if (SUCCEEDED(rc))
                     {
-                        rc = wrapper->init (ex);
+                        rc = wrapper->init(ex);
                         if (SUCCEEDED(rc))
                             curInfo = wrapper;
                     }
@@ -514,7 +308,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             ComPtr<nsIException> ex;
             rc = info.queryInterfaceTo(ex.asOutParam());
             if (SUCCEEDED(rc))
-                rc = em->SetCurrentException (ex);
+                rc = em->SetCurrentException(ex);
         }
         else if (rc == NS_ERROR_UNEXPECTED)
         {
@@ -532,11 +326,11 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             rc = NS_OK;
         }
 
-#endif // !defined (VBOX_WITH_XPCOM)
+#endif // !defined(VBOX_WITH_XPCOM)
     }
     while (0);
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
     return SUCCEEDED(rc) ? aResultCode : rc;
 }
@@ -603,14 +397,14 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
         rc = info.createObject();
         if (FAILED(rc)) break;
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
         ComPtr<IVirtualBoxErrorInfo> curInfo;
         if (preserve)
         {
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
-            rc = ::GetErrorInfo (0, err.asOutParam());
+            rc = ::GetErrorInfo(0, err.asOutParam());
             if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
             if (FAILED(rc))
@@ -621,7 +415,7 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
                 rc = wrapper.createObject();
                 if (SUCCEEDED(rc))
                 {
-                    rc = wrapper->init (err);
+                    rc = wrapper->init(err);
                     if (SUCCEEDED(rc))
                         curInfo = wrapper;
                 }
@@ -637,16 +431,16 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
         ComPtr<IErrorInfo> err;
         rc = info.queryInterfaceTo(err.asOutParam());
         if (SUCCEEDED(rc))
-            rc = ::SetErrorInfo (0, err);
+            rc = ::SetErrorInfo(0, err);
 
-#else // !defined (VBOX_WITH_XPCOM)
+#else // !defined(VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
         if (NS_SUCCEEDED(rc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
             if (FAILED(rc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
@@ -654,7 +448,7 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
             {
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException (ex.asOutParam());
+                rc = em->GetCurrentException(ex.asOutParam());
                 if (FAILED(rc)) break;
                 rc = ex.queryInterfaceTo(curInfo.asOutParam());
                 if (FAILED(rc))
@@ -665,7 +459,7 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
                     rc = wrapper.createObject();
                     if (SUCCEEDED(rc))
                     {
-                        rc = wrapper->init (ex);
+                        rc = wrapper->init(ex);
                         if (SUCCEEDED(rc))
                             curInfo = wrapper;
                     }
@@ -681,7 +475,7 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
             ComPtr<nsIException> ex;
             rc = info.queryInterfaceTo(ex.asOutParam());
             if (SUCCEEDED(rc))
-                rc = em->SetCurrentException (ex);
+                rc = em->SetCurrentException(ex);
         }
         else if (rc == NS_ERROR_UNEXPECTED)
         {
@@ -699,11 +493,11 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
             rc = NS_OK;
         }
 
-#endif // !defined (VBOX_WITH_XPCOM)
+#endif // !defined(VBOX_WITH_XPCOM)
     }
     while (0);
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
     return SUCCEEDED(rc) ? ei.getResultCode() : rc;
 }
@@ -755,7 +549,7 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
 void VirtualBoxBase::clearError(void)
 {
 #if !defined(VBOX_WITH_XPCOM)
-    ::SetErrorInfo (0, NULL);
+    ::SetErrorInfo(0, NULL);
 #else
     HRESULT rc = S_OK;
     nsCOMPtr <nsIExceptionService> es;
@@ -763,263 +557,13 @@ void VirtualBoxBase::clearError(void)
     if (NS_SUCCEEDED(rc))
     {
         nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
         if (SUCCEEDED(rc))
             em->SetCurrentException(NULL);
     }
 #endif
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// AutoInitSpan methods
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Creates a smart initialization span object that places the object to
- * InInit state.
- *
- * Please see the AutoInitSpan class description for more info.
- *
- * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
- *                  init() method is being called.
- * @param aResult   Default initialization result.
- */
-AutoInitSpan::AutoInitSpan(VirtualBoxBase *aObj,
-                           Result aResult /* = Failed */)
-    : mObj(aObj),
-      mResult(aResult),
-      mOk(false)
-{
-    Assert(aObj);
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    mOk = mObj->mState == VirtualBoxBase::NotReady;
-    AssertReturnVoid (mOk);
-
-    mObj->setState(VirtualBoxBase::InInit);
-}
-
-/**
- * Places the managed VirtualBoxBase object to Ready/Limited state if the
- * initialization succeeded or partly succeeded, or places it to InitFailed
- * state and calls the object's uninit() method.
- *
- * Please see the AutoInitSpan class description for more info.
- */
-AutoInitSpan::~AutoInitSpan()
-{
-    /* if the state was other than NotReady, do nothing */
-    if (!mOk)
-        return;
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    Assert(mObj->mState == VirtualBoxBase::InInit);
-
-    if (mObj->mCallers > 0)
-    {
-        Assert(mObj->mInitUninitWaiters > 0);
-
-        /* We have some pending addCaller() calls on other threads (created
-         * during InInit), signal that InInit is finished and they may go on. */
-        RTSemEventMultiSignal(mObj->mInitUninitSem);
-    }
-
-    if (mResult == Succeeded)
-    {
-        mObj->setState(VirtualBoxBase::Ready);
-    }
-    else
-    if (mResult == Limited)
-    {
-        mObj->setState(VirtualBoxBase::Limited);
-    }
-    else
-    {
-        mObj->setState(VirtualBoxBase::InitFailed);
-        /* release the lock to prevent nesting when uninit() is called */
-        stateLock.release();
-        /* call uninit() to let the object uninit itself after failed init() */
-        mObj->uninit();
-        /* Note: the object may no longer exist here (for example, it can call
-         * the destructor in uninit()) */
-    }
-}
-
-// AutoReinitSpan methods
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Creates a smart re-initialization span object and places the object to
- * InInit state.
- *
- * Please see the AutoInitSpan class description for more info.
- *
- * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
- *                  re-initialization method is being called.
- */
-AutoReinitSpan::AutoReinitSpan(VirtualBoxBase *aObj)
-    : mObj(aObj),
-      mSucceeded(false),
-      mOk(false)
-{
-    Assert(aObj);
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    mOk = mObj->mState == VirtualBoxBase::Limited;
-    AssertReturnVoid (mOk);
-
-    mObj->setState(VirtualBoxBase::InInit);
-}
-
-/**
- * Places the managed VirtualBoxBase object to Ready state if the
- * re-initialization succeeded (i.e. #setSucceeded() has been called) or back to
- * Limited state otherwise.
- *
- * Please see the AutoInitSpan class description for more info.
- */
-AutoReinitSpan::~AutoReinitSpan()
-{
-    /* if the state was other than Limited, do nothing */
-    if (!mOk)
-        return;
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    Assert(mObj->mState == VirtualBoxBase::InInit);
-
-    if (mObj->mCallers > 0 && mObj->mInitUninitWaiters > 0)
-    {
-        /* We have some pending addCaller() calls on other threads (created
-         * during InInit), signal that InInit is finished and they may go on. */
-        RTSemEventMultiSignal(mObj->mInitUninitSem);
-    }
-
-    if (mSucceeded)
-    {
-        mObj->setState(VirtualBoxBase::Ready);
-    }
-    else
-    {
-        mObj->setState(VirtualBoxBase::Limited);
-    }
-}
-
-// AutoUninitSpan methods
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Creates a smart uninitialization span object and places this object to
- * InUninit state.
- *
- * Please see the AutoInitSpan class description for more info.
- *
- * @note This method blocks the current thread execution until the number of
- *       callers of the managed VirtualBoxBase object drops to zero!
- *
- * @param aObj  |this| pointer of the VirtualBoxBase object whose uninit()
- *              method is being called.
- */
-AutoUninitSpan::AutoUninitSpan(VirtualBoxBase *aObj)
-    : mObj(aObj),
-      mInitFailed(false),
-      mUninitDone(false)
-{
-    Assert(aObj);
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    Assert(mObj->mState != VirtualBoxBase::InInit);
-
-    /* Set mUninitDone to |true| if this object is already uninitialized
-     * (NotReady) or if another AutoUninitSpan is currently active on some
-     *  other thread (InUninit). */
-    mUninitDone =    mObj->mState == VirtualBoxBase::NotReady
-                  || mObj->mState == VirtualBoxBase::InUninit;
-
-    if (mObj->mState == VirtualBoxBase::InitFailed)
-    {
-        /* we've been called by init() on failure */
-        mInitFailed = true;
-    }
-    else
-    {
-        if (mUninitDone)
-        {
-            /* do nothing if already uninitialized */
-            if (mObj->mState == VirtualBoxBase::NotReady)
-                return;
-
-            /* otherwise, wait until another thread finishes uninitialization.
-             * This is necessary to make sure that when this method returns, the
-             * object is NotReady and therefore can be deleted (for example). */
-
-            /* lazy semaphore creation */
-            if (mObj->mInitUninitSem == NIL_RTSEMEVENTMULTI)
-            {
-                RTSemEventMultiCreate(&mObj->mInitUninitSem);
-                Assert(mObj->mInitUninitWaiters == 0);
-            }
-            ++mObj->mInitUninitWaiters;
-
-            LogFlowFunc(("{%p}: Waiting for AutoUninitSpan to finish...\n",
-                         mObj));
-
-            stateLock.release();
-            RTSemEventMultiWait(mObj->mInitUninitSem, RT_INDEFINITE_WAIT);
-            stateLock.acquire();
-
-            if (--mObj->mInitUninitWaiters == 0)
-            {
-                /* destroy the semaphore since no more necessary */
-                RTSemEventMultiDestroy(mObj->mInitUninitSem);
-                mObj->mInitUninitSem = NIL_RTSEMEVENTMULTI;
-            }
-
-            return;
-        }
-    }
-
-    /* go to InUninit to prevent from adding new callers */
-    mObj->setState(VirtualBoxBase::InUninit);
-
-    /* wait for already existing callers to drop to zero */
-    if (mObj->mCallers > 0)
-    {
-        /* lazy creation */
-        Assert(mObj->mZeroCallersSem == NIL_RTSEMEVENT);
-        RTSemEventCreate(&mObj->mZeroCallersSem);
-
-        /* wait until remaining callers release the object */
-        LogFlowFunc(("{%p}: Waiting for callers (%d) to drop to zero...\n",
-                     mObj, mObj->mCallers));
-
-        stateLock.release();
-        RTSemEventWait(mObj->mZeroCallersSem, RT_INDEFINITE_WAIT);
-    }
-}
-
-/**
- *  Places the managed VirtualBoxBase object to the NotReady state.
- */
-AutoUninitSpan::~AutoUninitSpan()
-{
-    /* do nothing if already uninitialized */
-    if (mUninitDone)
-        return;
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    Assert(mObj->mState == VirtualBoxBase::InUninit);
-
-    mObj->setState(VirtualBoxBase::NotReady);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 //

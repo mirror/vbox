@@ -7435,7 +7435,7 @@ bool Machine::i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
     AssertComRCReturn(autoCaller.rc(), false);
 
     /* just return false for inaccessible machines */
-    if (autoCaller.state() != Ready)
+    if (getObjectState().getState() != ObjectState::Ready)
         return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -7468,7 +7468,7 @@ bool Machine::i_isSessionSpawning()
     AssertComRCReturn(autoCaller.rc(), false);
 
     /* just return false for inaccessible machines */
-    if (autoCaller.state() != Ready)
+    if (getObjectState().getState() != ObjectState::Ready)
         return false;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -7598,7 +7598,7 @@ HRESULT Machine::i_prepareRegister()
                         mUserData->s.strName.c_str(),
                         mData->mUuid.toString().c_str());
 
-    AssertReturn(autoCaller.state() == Ready, E_FAIL);
+    AssertReturn(getObjectState().getState() == ObjectState::Ready, E_FAIL);
 
     if (mData->mRegistered)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -7852,8 +7852,8 @@ HRESULT Machine::initDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
-    AssertComRCReturn(autoCaller.state() == InInit ||
-                      autoCaller.state() == Limited, E_FAIL);
+    AssertComRCReturn(   getObjectState().getState() == ObjectState::InInit
+		      || getObjectState().getState() == ObjectState::Limited, E_FAIL);
 
     AssertReturn(!mData->mAccessible, E_FAIL);
 
@@ -7926,8 +7926,8 @@ void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-    AssertComRCReturnVoid(    autoCaller.state() == InUninit
-                           || autoCaller.state() == Limited);
+    AssertComRCReturnVoid(   getObjectState().getState() == ObjectState::InUninit
+                          || getObjectState().getState() == ObjectState::Limited);
 
     /* tell all our other child objects we've been uninitialized */
     if (mBandwidthControl)
@@ -12715,7 +12715,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 
     AutoCaller autoCaller(this);
 
-    LogFlowThisFunc(("callerstate=%d\n", autoCaller.state()));
+    LogFlowThisFunc(("callerstate=%d\n", getObjectState().getState()));
     /*
      *  We don't assert below because it might happen that a non-direct session
      *  informs us it is closed right after we've been uninitialized -- it's ok.

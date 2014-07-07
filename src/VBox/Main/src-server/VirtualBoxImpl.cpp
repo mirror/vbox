@@ -2271,9 +2271,9 @@ HRESULT VirtualBox::i_postEvent(Event *event)
     AutoCaller autoCaller(this);
     if (SUCCEEDED((rc = autoCaller.rc())))
     {
-        if (autoCaller.state() != Ready)
+        if (getObjectState().getState() != ObjectState::Ready)
             LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
-                            autoCaller.state()));
+                            getObjectState().getState()));
             // return S_OK
         else if (    (m->pAsyncEventQ)
                   && (m->pAsyncEventQ->postEvent(event))
@@ -4127,7 +4127,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
         rc = S_OK;
     }
 
-    if (autoCaller.state() != InInit)
+    if (getObjectState().getState() != ObjectState::InInit)
     {
         rc = aMachine->i_prepareRegister();
         if (FAILED(rc)) return rc;
@@ -4136,7 +4136,7 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
     /* add to the collection of registered machines */
     m->allMachines.addChild(aMachine);
 
-    if (autoCaller.state() != InInit)
+    if (getObjectState().getState() != ObjectState::InInit)
         rc = i_saveSettings();
 
     return rc;
@@ -4518,7 +4518,7 @@ void VirtualBox::i_saveModifiedRegistries()
                 if (FAILED(autoCaller.rc()))
                     continue;
                 /* object is already dead, no point in saving settings */
-                if (autoCaller.state() != Ready)
+                if (getObjectState().getState() != ObjectState::Ready)
                     continue;
                 AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
                 rc = pMachine->i_saveSettings(&fNeedsGlobalSettings,
@@ -4698,7 +4698,7 @@ void *VirtualBox::CallbackEvent::handler()
     if (!autoCaller.isOk())
     {
         LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the callback event is discarded!\n",
-                        autoCaller.state()));
+                        mVirtualBox->getObjectState().getState()));
         /* We don't need mVirtualBox any more, so release it */
         mVirtualBox = NULL;
         return NULL;
