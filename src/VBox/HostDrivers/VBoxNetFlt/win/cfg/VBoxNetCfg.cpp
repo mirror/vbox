@@ -592,10 +592,10 @@ static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, 
 }
 
 typedef BOOL (*VBOXNETCFGWIN_NETENUM_CALLBACK) (HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPId,
                                                         VBOXNETCFGWIN_NETENUM_CALLBACK callback, PVOID pContext)
 {
-    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Searching for: %S\n", pwszPnPID));
+    NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Searching for: %S\n", pwszPnPId));
 
     HRESULT hr;
     HDEVINFO hDevInfo = SetupDiGetClassDevsExW(&GUID_DEVCLASS_NET,
@@ -609,8 +609,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
     {
         DWORD winEr;
 
-        DWORD dwDevID = 0;
-        size_t cPnPId = wcslen(pwszPnPID);
+        DWORD dwDevId = 0;
+        size_t cPnPId = wcslen(pwszPnPId);
 
         PBYTE pBuffer = NULL;
 
@@ -620,7 +620,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
             memset(&Dev, 0, sizeof(SP_DEVINFO_DATA));
             Dev.cbSize = sizeof(SP_DEVINFO_DATA);
 
-            if (!SetupDiEnumDeviceInfo(hDevInfo, dwDevID, &Dev))
+            if (!SetupDiEnumDeviceInfo(hDevInfo, dwDevId, &Dev))
             {
                 winEr = GetLastError();
                 if (winEr == ERROR_NO_MORE_ITEMS)
@@ -628,8 +628,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
                 break;
             }
 
-            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Enumerating device %ld ... \n", dwDevID));
-            dwDevID++;
+            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Enumerating device %ld ... \n", dwDevId));
+            dwDevId++;
 
             if (pBuffer)
                 free(pBuffer);
@@ -676,15 +676,15 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
                 }
             }
 
-            PWSTR pCurID = (PWSTR)pBuffer;
-            size_t cCurId = wcslen(pCurID);
+            PWSTR pCurId = (PWSTR)pBuffer;
+            size_t cCurId = wcslen(pCurId);
 
-            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Device %ld: %S\n", dwDevID, pCurID));
+            NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Device %ld: %S\n", dwDevId, pCurId));
 
             if (cCurId >= cPnPId)
             {
-                pCurID += cCurId - cPnPId;
-                if (!wcsnicmp(pCurID, pwszPnPID, cPnPId))
+                pCurId += cCurId - cPnPId;
+                if (!wcsnicmp(pCurId, pwszPnPId, cPnPId))
                 {
                     if (!callback(hDevInfo, &Dev, pContext))
                         break;
@@ -692,7 +692,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPID,
             }
         }
 
-        NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Found %ld devices total\n", dwDevID));
+        NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices: Found %ld devices total\n", dwDevId));
 
         if (pBuffer)
             free(pBuffer);
@@ -2548,12 +2548,12 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
                     if (!_tcsicmp (DRIVERHWID, t))
                     {
                           /* get the device instance ID */
-                          TCHAR devID [MAX_DEVICE_ID_LEN];
+                          TCHAR devId[MAX_DEVICE_ID_LEN];
                           if (CM_Get_Device_ID(DeviceInfoData.DevInst,
-                                               devID, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS)
+                                               devId, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS)
                           {
                               /* compare to what we determined before */
-                              if (wcscmp(devID, lszPnPInstanceId) == 0)
+                              if (wcscmp(devId, lszPnPInstanceId) == 0)
                               {
                                   found = TRUE;
                                   break;
