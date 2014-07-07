@@ -47,7 +47,7 @@ static int VBoxNetFltUninstall()
             if(hr == S_OK)
             {
                 hr = VBoxNetCfgWinNetFltUninstall(pnc);
-                if(hr != S_OK)
+                if(hr != S_OK && hr != S_FALSE)
                 {
                     wprintf(L"error uninstalling VBoxNetFlt (0x%x)\n", hr);
                     r = 1;
