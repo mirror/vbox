@@ -180,8 +180,8 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
                 case STATUS_TOO_LATE:
                     return VERR_SUPDRV_HARDENING_EVIL_HANDLE;
                 default:
-
-                    return rcNt;
+                    if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
+                        return SUP_NT_STATUS_TO_VBOX(rcNt);
                     return VERR_VM_DRIVER_OPEN_ERROR;
             }
         }
@@ -695,8 +695,8 @@ static int suplibConvertNtStatus(NTSTATUS rcNt)
     }
 
     /* See VBoxDrvNtErr2NtStatus. */
-    if (((uint32_t)rcNt & 0xffff0000) == UINT32_C(0xe9860000)) /** @todo defines for these? */
-        return (int)((uint32_t)rcNt | UINT32_C(0xffff0000));
+    if (SUP_NT_STATUS_IS_VBOX(rcNt))
+        return SUP_NT_STATUS_TO_VBOX(rcNt);
 
     /* Fall back on IPRT for the rest. */
     return RTErrConvertFromNtStatus(rcNt);

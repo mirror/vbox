@@ -2005,8 +2005,7 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
     if (rc < 0)
     {
         if (((uint32_t)rc & UINT32_C(0xffff0000)) == UINT32_C(0xffff0000))
-            return (NTSTATUS)( ((uint32_t)rc & UINT32_C(0xffff))
-                              | UINT32_C(0xe9860000) ); /* STATUS_SEVERITY_ERROR + C-bit + facility 0x986 */
+            return (NTSTATUS)( ((uint32_t)rc & UINT32_C(0xffff)) | SUP_NT_STATUS_BASE );
     }
     return STATUS_UNSUCCESSFUL;
 }
