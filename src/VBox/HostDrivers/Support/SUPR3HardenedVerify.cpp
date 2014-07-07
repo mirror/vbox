@@ -384,33 +384,43 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
     int rc = supR3HardenedMakePath(enmDir, szPath, sizeof(szPath), fFatal);
     if (RT_SUCCESS(rc))
     {
-#if defined(RT_OS_WINDOWS) /** @todo use CreateFileW */
-        HANDLE hDir = CreateFile(szPath,
-                                 GENERIC_READ,
-                                 FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-                                 NULL,
-                                 OPEN_EXISTING,
-                                 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
-                                 NULL);
-        if (hDir != INVALID_HANDLE_VALUE)
+#if defined(RT_OS_WINDOWS)
+        PRTUTF16 pwszPath;
+        rc = RTStrToUtf16(szPath, &pwszPath);
+        if (RT_SUCCESS(rc))
         {
-            /** @todo check the type */
-            /* That's all on windows, for now at least... */
-            g_aSupVerifiedDirs[enmDir].hDir = (intptr_t)hDir;
-            g_aSupVerifiedDirs[enmDir].fValidated = true;
-        }
-        else if (enmDir == kSupID_Testcase)
-        {
-            g_aSupVerifiedDirs[enmDir].fValidated = true;
-            rc = VINF_SUCCESS; /* Optional directory, ignore if missing. */
+            HANDLE hDir = CreateFileW(pwszPath,
+                                      GENERIC_READ,
+                                      FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+                                      NULL,
+                                      OPEN_EXISTING,
+                                      FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+                                      NULL);
+            if (hDir != INVALID_HANDLE_VALUE)
+            {
+                /** @todo check the type */
+                /* That's all on windows, for now at least... */
+                g_aSupVerifiedDirs[enmDir].hDir = (intptr_t)hDir;
+                g_aSupVerifiedDirs[enmDir].fValidated = true;
+            }
+            else if (enmDir == kSupID_Testcase)
+            {
+                g_aSupVerifiedDirs[enmDir].fValidated = true;
+                rc = VINF_SUCCESS; /* Optional directory, ignore if missing. */
+            }
+            else
+            {
+                int err = GetLastError();
+                rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
+                                        "supR3HardenedVerifyDir: Failed to open \"%s\": err=%d\n",
+                                        szPath, err);
+            }
+            RTUtf16Free(pwszPath);
         }
         else
-        {
-            int err = GetLastError();
-            rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
-                                    "supR3HardenedVerifyDir: Failed to open \"%s\": err=%d\n",
-                                    szPath, err);
-        }
+            rc = supR3HardenedError(rc, fFatal,
+                                    "supR3HardenedVerifyDir: Failed to convert \"%s\" to UTF-16: err=%d\n", szPath, rc);
+
 #else /* UNIXY */
         int fd = open(szPath, O_RDONLY, 0);
         if (fd >= 0)
@@ -518,7 +528,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
         rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true /*fWithFilename*/, fFatal);
         if (RT_SUCCESS(rc))
         {
-#if defined(RT_OS_WINDOWS) /** @todo Need to use WCHAR on windows! */
+#if defined(RT_OS_WINDOWS)
             PRTUTF16 pwszPath;
             rc = RTStrToUtf16(szPath, &pwszPath);
             if (RT_SUCCESS(rc))
@@ -1572,9 +1582,20 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
     /*
      * The files shall be signed on windows, verify that.
      */
+    rc = VINF_SUCCESS;
     HANDLE hVerify;
-    if (hNativeFile == RTHCUINTPTR_MAX) /** @todo Need to use WCHAR on windows! */
-        hVerify = CreateFile(pszFilename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hNativeFile == RTHCUINTPTR_MAX)
+    {
+        PRTUTF16 pwszPath;
+        rc = RTStrToUtf16(pszFilename, &pwszPath);
+        if (RT_SUCCESS(rc))
+        {
+            hVerify = CreateFileW(pwszPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            RTUtf16Free(pwszPath);
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, rc, "Error converting '%s' to UTF-16: %Rrc", pszFilename, rc);
+    }
     else if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hNativeFile, GetCurrentProcess(), &hVerify,
                               GENERIC_READ, false /*bInheritHandle*/, 0 /*dwOptions*/))
         hVerify = INVALID_HANDLE_VALUE;
@@ -1598,7 +1619,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
 # endif
         CloseHandle(hVerify);
     }
-    else
+    else if (RT_SUCCESS(rc))
         rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
                            "Error %u trying to open (or duplicate handle for) '%s'", GetLastError(), pszFilename);
     if (RT_FAILURE(rc))
