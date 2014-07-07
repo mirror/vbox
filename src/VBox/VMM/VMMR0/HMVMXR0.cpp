@@ -5585,9 +5585,10 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
 
-#if 0
+#if 1
     if (fParavirtTsc)
     {
+#if 0
         uint64_t const u64CurTsc   = ASMReadTSC();
         uint64_t const u64LastTick = TMCpuTickGetLastSeen(pVCpu);
         if (u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset < u64LastTick)
@@ -5597,6 +5598,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         }
 
         Assert(u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset >= u64LastTick);
+#endif
         rc = GIMR0UpdateParavirtTsc(pVM, pVCpu->hm.s.vmx.u64TSCOffset);
         AssertRC(rc);
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
@@ -5607,10 +5609,10 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
     else
-#endif
-
+#else
     if (fParavirtTsc)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
+#endif
     if (fOffsettedTsc)
     {
         uint64_t u64CurTSC = ASMReadTSC();
@@ -7302,7 +7304,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             uint32_t u32IntInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
             u32IntInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-            hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddres */);
+            hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
         else
