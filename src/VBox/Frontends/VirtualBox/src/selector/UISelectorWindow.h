@@ -71,6 +71,9 @@ private slots:
     void sltShowMediumManager();
     void sltShowImportApplianceWizard(const QString &strFileName = QString());
     void sltShowExportApplianceWizard();
+#ifdef DEBUG
+    void sltOpenExtraDataManagerWindow();
+#endif /* DEBUG */
     void sltShowPreferencesDialog();
     void sltPerformExit();
 
@@ -181,6 +184,9 @@ private:
     UIAction *m_pImportApplianceWizardAction;
     UIAction *m_pExportApplianceWizardAction;
     UIAction *m_pPreferencesDialogAction;
+#ifdef DEBUG
+    UIAction *m_pExtraDataManagerWindowAction;
+#endif /* DEBUG */
     UIAction *m_pExitAction;
 
     /* Common Group/Machine actions: */

@@ -237,7 +237,7 @@ namespace UIExtraDataDefs
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /** @name Virtual Machine Debug UI
+    /** @name Virtual Machine: Debug UI
       * @{ */
         /** Holds whether debugger UI enabled. */
         extern const char* GUI_Dbg_Enabled;
@@ -245,6 +245,16 @@ namespace UIExtraDataDefs
         extern const char* GUI_Dbg_AutoShow;
     /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#ifdef DEBUG
+    /** @name VirtualBox: Extra-data Manager window
+      * @{ */
+        /** Holds extra-data manager geometry. */
+        extern const char* GUI_ExtraDataManager_Geometry;
+        /** Holds extra-data manager splitter hints. */
+        extern const char* GUI_ExtraDataManager_SplitterHints;
+    /** @} */
+#endif /* DEBUG */
 }
 
 

@@ -18,6 +18,22 @@
 /* Qt includes: */
 #include <QMutex>
 #include <QDesktopWidget>
+#ifdef DEBUG
+# include <QMainWindow>
+# include <QMenuBar>
+# include <QListView>
+# include <QTableView>
+# include <QHeaderView>
+# include <QStandardItemModel>
+# include <QSortFilterProxyModel>
+# include <QStyledItemDelegate>
+# include <QPainter>
+# include <QLabel>
+# include <QLineEdit>
+# include <QPushButton>
+# include <QXmlStreamWriter>
+# include <QXmlStreamReader>
+#endif /* DEBUG */
 
 /* GUI includes: */
 #include "UIExtraDataManager.h"
@@ -26,6 +42,18 @@
 #include "VBoxGlobal.h"
 #include "UIActionPool.h"
 #include "UIConverter.h"
+#ifdef DEBUG
+# include "VBoxUtils.h"
+# include "UIMessageCenter.h"
+# include "UIVirtualBoxEventHandler.h"
+# include "UIIconPool.h"
+# include "UIToolBar.h"
+# include "QIWidgetValidator.h"
+# include "QIDialogButtonBox.h"
+# include "QIFileDialog.h"
+# include "QISplitter.h"
+# include "QIDialog.h"
+#endif /* DEBUG */
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -116,6 +144,1576 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
 }
 
 
+#ifdef DEBUG
+/** Data fields. */
+enum Field
+{
+    Field_ID = Qt::UserRole + 1,
+    Field_Name,
+    Field_OsTypeID,
+    Field_Known
+};
+
+
+/** QStyledItemDelegate extension
+  * reflecting items of Extra Data Manager window: Chooser pane. */
+class UIChooserPaneDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    UIChooserPaneDelegate(QObject *pParent);
+
+private:
+
+    /** Size-hint calculation routine. */
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+    /** Paint routine. */
+    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+    /** Fetch pixmap info for passed QModelIndex. */
+    static void fetchPixmapInfo(const QModelIndex &index, QPixmap &pixmap, QSize &pixmapSize);
+
+    /** Margin. */
+    int m_iMargin;
+    /** Spacing. */
+    int m_iSpacing;
+};
+
+UIChooserPaneDelegate::UIChooserPaneDelegate(QObject *pParent)
+    : QStyledItemDelegate(pParent)
+    , m_iMargin(3)
+    , m_iSpacing(3)
+{
+}
+
+QSize UIChooserPaneDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    /* Font metrics: */
+    const QFontMetrics &fm = option.fontMetrics;
+    /* Pixmap: */
+    QPixmap pixmap;
+    QSize pixmapSize;
+    fetchPixmapInfo(index, pixmap, pixmapSize);
+
+    /* Calculate width: */
+    const int iWidth = m_iMargin +
+                       pixmapSize.width() +
+                       2 * m_iSpacing +
+                       qMax(fm.width(index.data(Field_Name).toString()),
+                            fm.width(index.data(Field_ID).toString())) +
+                       m_iMargin;
+    /* Calculate height: */
+    const int iHeight = m_iMargin +
+                        qMax(pixmapSize.height(),
+                             fm.height() + m_iSpacing + fm.height()) +
+                        m_iMargin;
+
+    /* Return result: */
+    return QSize(iWidth, iHeight);
+}
+
+void UIChooserPaneDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    /* Item rect: */
+    const QRect &optionRect = option.rect;
+    /* Palette: */
+    const QPalette &palette = option.palette;
+    /* Font metrics: */
+    const QFontMetrics &fm = option.fontMetrics;
+    /* Pixmap: */
+    QPixmap pixmap;
+    QSize pixmapSize;
+    fetchPixmapInfo(index, pixmap, pixmapSize);
+
+    /* If item selected: */
+    if (option.state & QStyle::State_Selected)
+    {
+        /* Fill background with selection color: */
+        QColor highlight = palette.color(option.state & QStyle::State_Active ?
+                                         QPalette::Active : QPalette::Inactive,
+                                         QPalette::Highlight);
+        QLinearGradient bgGrad(optionRect.topLeft(), optionRect.bottomLeft());
+        bgGrad.setColorAt(0, highlight.lighter(120));
+        bgGrad.setColorAt(1, highlight);
+        pPainter->fillRect(optionRect, bgGrad);
+        /* Draw focus frame: */
+        QStyleOptionFocusRect focusOption;
+        focusOption.rect = optionRect;
+        QApplication::style()->drawPrimitive(QStyle::PE_FrameFocusRect, &focusOption, pPainter);
+    }
+
+    /* Draw pixmap: */
+    const QPoint pixmapOrigin = optionRect.topLeft() +
+                                QPoint(m_iMargin, m_iMargin);
+    pPainter->drawPixmap(pixmapOrigin, pixmap);
+
+    /* Is that known item? */
+    bool fKnown = index.data(Field_Known).toBool();
+    if (fKnown)
+    {
+        pPainter->save();
+        QFont font = pPainter->font();
+        font.setBold(true);
+        pPainter->setFont(font);
+    }
+
+    /* Draw item name: */
+    const QPoint nameOrigin = pixmapOrigin +
+                              QPoint(pixmapSize.width(), 0) +
+                              QPoint(2 * m_iSpacing, 0) +
+                              QPoint(0, fm.ascent());
+    pPainter->drawText(nameOrigin, index.data(Field_Name).toString());
+
+    /* Was that known item? */
+    if (fKnown)
+        pPainter->restore();
+
+    /* Draw item ID: */
+    const QPoint idOrigin = nameOrigin +
+                            QPoint(0, m_iSpacing) +
+                            QPoint(0, fm.height());
+    pPainter->drawText(idOrigin, index.data(Field_ID).toString());
+}
+
+/* static */
+void UIChooserPaneDelegate::fetchPixmapInfo(const QModelIndex &index, QPixmap &pixmap, QSize &pixmapSize)
+{
+    /* If proper machine ID passed => return corresponding pixmap/size: */
+    if (index.data(Field_ID).toString() != UIExtraDataManager::GlobalID)
+        pixmap = vboxGlobal().vmGuestOSTypeIcon(index.data(Field_OsTypeID).toString(), &pixmapSize);
+    else
+    {
+        /* For global ID we return static pixmap/size: */
+        const QIcon icon = UIIconPool::iconSet(":/edataglobal_32px.png");
+        pixmapSize = icon.availableSizes().first();
+        pixmap = icon.pixmap(pixmapSize);
+    }
+}
+
+
+/** QSortFilterProxyModel extension
+  * used by the chooser-pane of the UIExtraDataManagerWindow. */
+class UIChooserPaneSortingModel : public QSortFilterProxyModel
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor, passes @a pParent to the QIRichToolButton constructor. */
+    UIChooserPaneSortingModel(QObject *pParent) : QSortFilterProxyModel(pParent) {}
+
+protected:
+
+    /** Returns true if the value of the item referred to by the given index left
+      * is less than the value of the item referred to by the given index right,
+      * otherwise returns false. */
+    bool lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const
+    {
+        /* Compare by ID first: */
+        const QString strID1 = leftIdx.data(Field_ID).toString();
+        const QString strID2 = rightIdx.data(Field_ID).toString();
+        if (strID1 == UIExtraDataManager::GlobalID)
+            return true;
+        else if (strID2 == UIExtraDataManager::GlobalID)
+            return false;
+        /* Compare role finally: */
+        return QSortFilterProxyModel::lessThan(leftIdx, rightIdx);
+    }
+};
+
+
+/** QMainWindow extension
+  * providing Extra Data Manager with UI features. */
+class UIExtraDataManagerWindow : public QMainWindow
+{
+    Q_OBJECT;
+
+public:
+
+    /** @name Constructor/Destructor
+      * @{ */
+        /** Extra-data Manager Window constructor. */
+        UIExtraDataManagerWindow();
+        /** Extra-data Manager Window destructor. */
+        ~UIExtraDataManagerWindow();
+    /** @} */
+
+    /** @name Management
+      * @{ */
+        /** Show and raise. */
+        void showAndRaise(QWidget *pCenterWidget);
+    /** @} */
+
+private slots:
+
+    /** @name General
+      * @{ */
+        /** Handles machine (un)registration. */
+        void sltMachineRegistered(QString strID, bool fAdded);
+        /** Handles extra-data change. */
+        void sltExtraDataChange(QString strID, QString strKey, QString strValue);
+    /** @} */
+
+    /** @name Chooser-pane
+      * @{ */
+        /** Handles filter-apply signal for the chooser-pane. */
+        void sltChooserApplyFilter(const QString &strFilter);
+        /** Handles current-changed signal for the chooser-pane: */
+        void sltChooserHandleCurrentChanged(const QModelIndex &index);
+        /** Handles item-selection-changed signal for the chooser-pane: */
+        void sltChooserHandleSelectionChanged(const QItemSelection &selected,
+                                              const QItemSelection &deselected);
+    /** @} */
+
+    /** @name Data-pane
+      * @{ */
+        /** Handles filter-apply signal for the data-pane. */
+        void sltDataApplyFilter(const QString &strFilter);
+        /** Handles item-selection-changed signal for the data-pane: */
+        void sltDataHandleSelectionChanged(const QItemSelection &selected,
+                                           const QItemSelection &deselected);
+        /** Handles item-changed signal for the data-pane: */
+        void sltDataHandleItemChanged(QStandardItem *pItem);
+        /** Handles context-menu-requested signal for the data-pane: */
+        void sltDataHandleCustomContextMenuRequested(const QPoint &pos);
+    /** @} */
+
+    /** @name Actions
+      * @{ */
+        /** Add handler. */
+        void sltAdd();
+        /** Remove handler. */
+        void sltDel();
+        /** Save handler. */
+        void sltSave();
+        /** Load handler. */
+        void sltLoad();
+    /** @} */
+
+private:
+
+    /** @name Prepare/Cleanup
+      * @{ */
+        /** Prepare instance. */
+        void prepare();
+        /** Prepare this. */
+        void prepareThis();
+        /** Prepare connections. */
+        void prepareConnections();
+        /** Prepare menu. */
+        void prepareMenu();
+        /** Prepare central widget. */
+        void prepareCentralWidget();
+        /** Prepare tool-bar. */
+        void prepareToolBar();
+        /** Prepare splitter. */
+        void prepareSplitter();
+        /** Prepare panes: */
+        void preparePanes();
+        /** Prepare chooser pane. */
+        void preparePaneChooser();
+        /** Prepare data pane. */
+        void preparePaneData();
+        /** Prepare button-box. */
+        void prepareButtonBox();
+        /** Load window settings. */
+        void loadSettings();
+
+        /** Save window settings. */
+        void saveSettings();
+        /** Cleanup instance. */
+        void cleanup();
+    /** @} */
+
+    /** @name Event Processing
+      * @{ */
+        /** Common event-handler. */
+        bool event(QEvent *pEvent);
+    /** @} */
+
+    /** @name Actions
+      * @{ */
+        /** */
+        void updateActionsAvailability();
+    /** @} */
+
+    /** @name Chooser-pane
+      * @{ */
+        /** Returns chooser index for @a iRow. */
+        QModelIndex chooserIndex(int iRow) const;
+        /** Returns current chooser index. */
+        QModelIndex currentChooserIndex() const;
+
+        /** Returns chooser ID for @a iRow. */
+        QString chooserID(int iRow) const;
+        /** Returns current chooser ID. */
+        QString currentChooserID() const;
+
+        /** Returns chooser Name for @a iRow. */
+        QString chooserName(int iRow) const;
+        /** Returns current Name. */
+        QString currentChooserName() const;
+
+        /** Adds chooser item. */
+        void addChooserItem(const QString &strID,
+                            const QString &strName,
+                            const QString &strOsTypeID,
+                            const int iPosition = -1);
+        /** Adds chooser item by machine. */
+        void addChooserItemByMachine(const CMachine &machine,
+                                     const int iPosition = -1);
+        /** Adds chooser item by ID. */
+        void addChooserItemByID(const QString &strID,
+                                const int iPosition = -1);
+
+        /** Make sure chooser have current-index if possible. */
+        void makeSureChooserHaveCurrentIndexIfPossible();
+    /** @} */
+
+    /** @name Data-pane
+      * @{ */
+        /** Returns data index for @a iRow and @a iColumn. */
+        QModelIndex dataIndex(int iRow, int iColumn) const;
+
+        /** Returns data-key index for @a iRow. */
+        QModelIndex dataKeyIndex(int iRow) const;
+
+        /** Returns data-value index for @a iRow. */
+        QModelIndex dataValueIndex(int iRow) const;
+
+        /** Returns current data-key. */
+        QString dataKey(int iRow) const;
+
+        /** Returns current data-value. */
+        QString dataValue(int iRow) const;
+
+        /** Adds data item. */
+        void addDataItem(const QString &strKey,
+                         const QString &strValue,
+                         const int iPosition = -1);
+
+        /** Sorts data items. */
+        void sortData();
+    /** @} */
+
+
+    /** @name General
+      * @{ */
+        /** Current geometry. */
+        QRect m_geometry;
+        QVBoxLayout *m_pMainLayout;
+        /** Data pane: Tool-bar. */
+        UIToolBar *m_pToolBar;
+        /** Splitter. */
+        QISplitter *m_pSplitter;
+    /** @} */
+
+    /** @name Chooser-pane
+      * @{ */
+        /** Chooser pane. */
+        QWidget *m_pPaneOfChooser;
+        /** Chooser filter. */
+        QLineEdit *m_pFilterOfChooser;
+        /** Chooser pane: List-view. */
+        QListView *m_pViewOfChooser;
+        /** Chooser pane: Source-model. */
+        QStandardItemModel *m_pModelSourceOfChooser;
+        /** Chooser pane: Proxy-model. */
+        UIChooserPaneSortingModel *m_pModelProxyOfChooser;
+    /** @} */
+
+    /** @name Data-pane
+      * @{ */
+        /** Data pane. */
+        QWidget *m_pPaneOfData;
+        /** Dta filter. */
+        QLineEdit *m_pFilterOfData;
+        /** Data pane: Table-view. */
+        QTableView *m_pViewOfData;
+        /** Data pane: Item-model. */
+        QStandardItemModel *m_pModelSourceOfData;
+        /** Data pane: Proxy-model. */
+        QSortFilterProxyModel *m_pModelProxyOfData;
+    /** @} */
+
+    /** @name Button Box
+      * @{ */
+        /** Dialog button-box. */
+        QIDialogButtonBox *m_pButtonBox;
+    /** @} */
+
+    /** @name Actions
+      * @{ */
+        /** Add action. */
+        QAction *m_pActionAdd;
+        /** Del action. */
+        QAction *m_pActionDel;
+        /** Load action. */
+        QAction *m_pActionLoad;
+        /** Save action. */
+        QAction *m_pActionSave;
+    /** @} */
+};
+
+UIExtraDataManagerWindow::UIExtraDataManagerWindow()
+    : m_pMainLayout(0), m_pToolBar(0), m_pSplitter(0)
+    , m_pPaneOfChooser(0), m_pFilterOfChooser(0), m_pViewOfChooser(0)
+    , m_pModelSourceOfChooser(0), m_pModelProxyOfChooser(0)
+    , m_pPaneOfData(0), m_pFilterOfData(0), m_pViewOfData(0),
+      m_pModelSourceOfData(0), m_pModelProxyOfData(0)
+    , m_pButtonBox(0)
+    , m_pActionAdd(0), m_pActionDel(0)
+    , m_pActionLoad(0), m_pActionSave(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+UIExtraDataManagerWindow::~UIExtraDataManagerWindow()
+{
+    /* Cleanup: */
+    cleanup();
+}
+
+void UIExtraDataManagerWindow::showAndRaise(QWidget *pCenterWidget)
+{
+    /* Show: */
+    show();
+    /* Restore from minimized state: */
+    setWindowState(windowState() & ~Qt::WindowMinimized);
+    /* Raise: */
+    activateWindow();
+//    /* Center according passed widget: */
+//    VBoxGlobal::centerWidget(this, pCenterWidget, false);
+}
+
+void UIExtraDataManagerWindow::sltMachineRegistered(QString strID, bool fRegistered)
+{
+    /* Machine registered: */
+    if (fRegistered)
+    {
+        /* Gather list of 'known IDs': */
+        QStringList knownIDs;
+        for (int iRow = 0; iRow < m_pModelSourceOfChooser->rowCount(); ++iRow)
+            knownIDs << chooserID(iRow);
+
+        /* Get machine items: */
+        const CMachineVector machines = vboxGlobal().virtualBox().GetMachines();
+        /* Look for the proper place to insert new machine item: */
+        QString strPositionID = UIExtraDataManager::GlobalID;
+        foreach (const CMachine &machine, machines)
+        {
+            /* Get iterated machine ID: */
+            const QString strIteratedID = machine.GetId();
+            /* If 'iterated ID' equal to 'added ID' => break now: */
+            if (strIteratedID == strID)
+                break;
+            /* If 'iterated ID' is 'known ID' => remember it: */
+            if (knownIDs.contains(strIteratedID))
+                strPositionID = strIteratedID;
+        }
+
+        /* Add new chooser item into source-model: */
+        addChooserItemByID(strID, knownIDs.indexOf(strPositionID) + 1);
+        /* And sort proxy-model: */
+        m_pModelProxyOfChooser->sort(0, Qt::AscendingOrder);
+        /* Make sure chooser have current-index if possible: */
+        makeSureChooserHaveCurrentIndexIfPossible();
+    }
+    /* Machine unregistered: */
+    else
+    {
+        /* Remove chooser item with 'removed ID' if it is among 'known IDs': */
+        for (int iRow = 0; iRow < m_pModelSourceOfChooser->rowCount(); ++iRow)
+            if (chooserID(iRow) == strID)
+                m_pModelSourceOfChooser->removeRow(iRow);
+    }
+}
+
+void UIExtraDataManagerWindow::sltExtraDataChange(QString strID, QString strKey, QString strValue)
+{
+    /* Skip unrelated IDs: */
+    if (currentChooserID() != strID)
+        return;
+
+    /* List of 'known keys': */
+    QStringList knownKeys;
+    for (int iRow = 0; iRow < m_pModelSourceOfData->rowCount(); ++iRow)
+        knownKeys << dataKey(iRow);
+
+    /* Check if 'changed key' is 'known key': */
+    int iPosition = knownKeys.indexOf(strKey);
+    /* If that is 'known key': */
+    if (iPosition != -1)
+    {
+        /* If 'changed value' is empty => REMOVE item: */
+        if (strValue.isEmpty())
+            m_pModelSourceOfData->removeRow(iPosition);
+        /* If 'changed value' is NOT empty => UPDATE item: */
+        else
+            m_pModelSourceOfData->itemFromIndex(dataValueIndex(iPosition))->setText(strValue);
+    }
+    /* Else if 'changed value' is NOT empty: */
+    else if (!strValue.isEmpty())
+    {
+        /* Look for the proper place for 'changed key': */
+        QString strPositionKey;
+        foreach (const QString &strIteratedKey, gEDataManager->map(strID).keys())
+        {
+            /* If 'iterated key' equal to 'changed key' => break now: */
+            if (strIteratedKey == strKey)
+                break;
+            /* If 'iterated key' is 'known key' => remember it: */
+            if (knownKeys.contains(strIteratedKey))
+                strPositionKey = strIteratedKey;
+        }
+        /* Calculate resulting position: */
+        iPosition = knownKeys.indexOf(strPositionKey) + 1;
+        /* INSERT item to the required position: */
+        addDataItem(strKey, strValue, iPosition);
+        /* And sort proxy-model: */
+        sortData();
+    }
+}
+
+void UIExtraDataManagerWindow::sltChooserApplyFilter(const QString &strFilter)
+{
+    /* Apply filtering rule: */
+    m_pModelProxyOfChooser->setFilterWildcard(strFilter);
+    /* Make sure chooser have current-index if possible: */
+    makeSureChooserHaveCurrentIndexIfPossible();
+}
+
+void UIExtraDataManagerWindow::sltChooserHandleCurrentChanged(const QModelIndex &index)
+{
+    /* Remove all the old items first: */
+    while (m_pModelSourceOfData->rowCount())
+        m_pModelSourceOfData->removeRow(0);
+
+    /* Ignore invalid indexes: */
+    if (!index.isValid())
+        return;
+
+    /* Add all the new items finally: */
+    const QString strID = index.data(Field_ID).toString();
+    AssertReturnVoid(gEDataManager->contains(strID));
+    const ExtraDataMap data = gEDataManager->map(strID);
+    foreach (const QString &strKey, data.keys())
+        addDataItem(strKey, data.value(strKey));
+    /* And sort proxy-model: */
+    sortData();
+}
+
+void UIExtraDataManagerWindow::sltChooserHandleSelectionChanged(const QItemSelection &selected,
+                                                                const QItemSelection &deselected)
+{
+    /* Update actions availability: */
+    updateActionsAvailability();
+}
+
+void UIExtraDataManagerWindow::sltDataApplyFilter(const QString &strFilter)
+{
+    /* Apply filtering rule: */
+    m_pModelProxyOfData->setFilterWildcard(strFilter);
+}
+
+void UIExtraDataManagerWindow::sltDataHandleSelectionChanged(const QItemSelection &selected,
+                                                             const QItemSelection &deselected)
+{
+    /* Update actions availability: */
+    updateActionsAvailability();
+}
+
+void UIExtraDataManagerWindow::sltDataHandleItemChanged(QStandardItem *pItem)
+{
+    /* Value-data index: */
+    const QModelIndex valueIndex = m_pModelSourceOfData->indexFromItem(pItem);
+    const int iRow = valueIndex.row();
+    const int iColumn = valueIndex.column();
+    AssertMsgReturnVoid(iColumn == 1, ("Only 2nd column can be changed!\n"));
+
+    /* Key-data index: */
+    const QModelIndex keyIndex = dataKeyIndex(iRow);
+
+    /* Update extra-data: */
+    gEDataManager->setExtraDataString(keyIndex.data().toString(),
+                                      valueIndex.data().toString(),
+                                      currentChooserID());
+}
+
+void UIExtraDataManagerWindow::sltDataHandleCustomContextMenuRequested(const QPoint &pos)
+{
+    /* Prepare menu: */
+    QMenu menu;
+    menu.addAction(m_pActionDel);
+    menu.addAction(m_pActionSave);
+    /* Execute menu: */
+    m_pActionSave->setProperty("CalledFromContextMenu", true);
+    menu.exec(m_pViewOfData->viewport()->mapToGlobal(pos));
+    m_pActionSave->setProperty("CalledFromContextMenu", QVariant());
+}
+
+void UIExtraDataManagerWindow::sltAdd()
+{
+    /* Make sure this slot called by corresponding action only: */
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pSenderAction && m_pActionAdd);
+
+    /* Create input-dialog: */
+    QPointer<QIDialog> pInputDialog = new QIDialog(this);
+    AssertPtrReturnVoid(pInputDialog.data());
+    {
+        /* Configure input-dialog: */
+        pInputDialog->setWindowTitle("Add extra-data record..");
+        pInputDialog->setMinimumWidth(400);
+        /* Create main-layout: */
+        QVBoxLayout *pMainLayout = new QVBoxLayout(pInputDialog);
+        AssertPtrReturnVoid(pMainLayout);
+        {
+            /* Create dialog validator group: */
+            QObjectValidatorGroup *pValidatorGroup = new QObjectValidatorGroup(pInputDialog);
+            AssertReturnVoid(pValidatorGroup);
+            /* Create input-layout: */
+            QGridLayout *pInputLayout = new QGridLayout;
+            AssertPtrReturnVoid(pInputLayout);
+            {
+                /* Create key-label: */
+                QLabel *pLabelKey = new QLabel("&Name:");
+                {
+                    /* Configure key-label: */
+                    pLabelKey->setAlignment(Qt::AlignRight);
+                    /* Add key-label into input-layout: */
+                    pInputLayout->addWidget(pLabelKey, 0, 0);
+                }
+                /* Create key-editor: */
+                QLineEdit *pEditorKey = new QLineEdit;
+                {
+                    /* Configure key-editor: */
+                    pLabelKey->setBuddy(pEditorKey);
+                    /* Create key-editor property setter: */
+                    QObjectPropertySetter *pKeyPropertySetter = new QObjectPropertySetter(pInputDialog, "Key");
+                    AssertPtrReturnVoid(pKeyPropertySetter);
+                    {
+                        /* Configure key-editor property setter: */
+                        connect(pEditorKey, SIGNAL(textEdited(const QString&)),
+                                pKeyPropertySetter, SLOT(sltAssignProperty(const QString&)));
+                    }
+                    /* Create key-editor validator: */
+                    QObjectValidator *pKeyValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+")));
+                    AssertPtrReturnVoid(pKeyValidator);
+                    {
+                        /* Configure key-editor validator: */
+                        connect(pEditorKey, SIGNAL(textEdited(const QString&)),
+                                pKeyValidator, SLOT(sltValidate(QString)));
+                        /* Add key-editor validator into dialog validator group: */
+                        pValidatorGroup->addObjectValidator(pKeyValidator);
+                    }
+                    /* Add key-editor into input-layout: */
+                    pInputLayout->addWidget(pEditorKey, 0, 1);
+                }
+                /* Create value-label: */
+                QLabel *pLabelValue = new QLabel("&Value:");
+                {
+                    /* Configure value-label: */
+                    pLabelValue->setAlignment(Qt::AlignRight);
+                    /* Add value-label into input-layout: */
+                    pInputLayout->addWidget(pLabelValue, 1, 0);
+                }
+                /* Create value-editor: */
+                QLineEdit *pEditorValue = new QLineEdit;
+                {
+                    /* Configure value-editor: */
+                    pLabelValue->setBuddy(pEditorValue);
+                    /* Create value-editor property setter: */
+                    QObjectPropertySetter *pValuePropertySetter = new QObjectPropertySetter(pInputDialog, "Value");
+                    AssertPtrReturnVoid(pValuePropertySetter);
+                    {
+                        /* Configure value-editor property setter: */
+                        connect(pEditorValue, SIGNAL(textEdited(const QString&)),
+                                pValuePropertySetter, SLOT(sltAssignProperty(const QString&)));
+                    }
+                    /* Create value-editor validator: */
+                    QObjectValidator *pValueValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+")));
+                    AssertPtrReturnVoid(pValueValidator);
+                    {
+                        /* Configure value-editor validator: */
+                        connect(pEditorValue, SIGNAL(textEdited(const QString&)),
+                                pValueValidator, SLOT(sltValidate(QString)));
+                        /* Add value-editor validator into dialog validator group: */
+                        pValidatorGroup->addObjectValidator(pValueValidator);
+                    }
+                    /* Add value-editor into input-layout: */
+                    pInputLayout->addWidget(pEditorValue, 1, 1);
+                }
+                /* Add input-layout into main-layout: */
+                pMainLayout->addLayout(pInputLayout);
+            }
+            /* Create stretch: */
+            pMainLayout->addStretch();
+            /* Create dialog button-box: */
+            QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+            AssertPtrReturnVoid(pButtonBox);
+            {
+                /* Configure button-box: */
+                pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+                pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+                pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(pValidatorGroup->result());
+                pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+                connect(pValidatorGroup, SIGNAL(sigValidityChange(bool)),
+                        pButtonBox->button(QDialogButtonBox::Ok), SLOT(setEnabled(bool)));
+                connect(pButtonBox, SIGNAL(accepted()), pInputDialog, SLOT(accept()));
+                connect(pButtonBox, SIGNAL(rejected()), pInputDialog, SLOT(reject()));
+                /* Add button-box into main-layout: */
+                pMainLayout->addWidget(pButtonBox);
+            }
+        }
+    }
+
+    /* Execute input-dialog: */
+    if (pInputDialog->exec() == QDialog::Accepted)
+    {
+        gEDataManager->setExtraDataString(pInputDialog->property("Key").toString(),
+                                          pInputDialog->property("Value").toString(),
+                                          currentChooserID());
+    }
+
+    /* Destroy input-dialog: */
+    if (pInputDialog)
+        delete pInputDialog;
+}
+
+void UIExtraDataManagerWindow::sltDel()
+{
+    /* Make sure this slot called by corresponding action only: */
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pSenderAction && m_pActionDel);
+
+    /* Gather the map of chosen items: */
+    QMap<QString, QString> items;
+    foreach (const QModelIndex &keyIndex, m_pViewOfData->selectionModel()->selectedRows(0))
+        items.insert(keyIndex.data().toString(), dataValueIndex(keyIndex.row()).data().toString());
+
+    /* Prepare details: */
+    const QString strTableTemplate("<!--EOM--><table border=0 cellspacing=10 cellpadding=0 width=500>%1</table>");
+    const QString strRowTemplate("<tr><td><tt>%1</tt></td><td align=right><tt>%2</tt></td></tr>");
+    QString strDetails;
+    foreach (const QString &strKey, items.keys())
+        strDetails += strRowTemplate.arg(strKey, items.value(strKey));
+    strDetails = strTableTemplate.arg(strDetails);
+
+    /* Ask for user' confirmation: */
+    if (!msgCenter().errorWithQuestion(this, MessageType_Question,
+                                       QString("<p>Do you really wish to "
+                                               "remove chosen records?</p>"),
+                                       strDetails))
+        return;
+
+    /* Erase all the chosen extra-data records: */
+    foreach (const QString &strKey, items.keys())
+        gEDataManager->setExtraDataString(strKey, QString(), currentChooserID());
+}
+
+void UIExtraDataManagerWindow::sltSave()
+{
+    /* Make sure this slot called by corresponding action only: */
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pSenderAction && m_pActionSave);
+
+    /* Compose initial file-name: */
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const QString strInitialFileName = QDir(vbox.GetHomeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    /* Open file-save dialog to choose file to save extra-data into: */
+    const QString strFileName = QIFileDialog::getSaveFileName(strInitialFileName, "XML files (*.xml)", this,
+                                                              "Choose file to save extra-data into..", 0, true, true);
+    /* Make sure file-name was chosen: */
+    if (strFileName.isEmpty())
+        return;
+
+    /* Create file: */
+    QFile output(strFileName);
+    /* Open file for writing: */
+    bool fOpened = output.open(QIODevice::WriteOnly);
+    AssertReturnVoid(fOpened);
+    {
+        /* Create XML stream writer: */
+        QXmlStreamWriter stream(&output);
+        /* Configure XML stream writer: */
+        stream.setAutoFormatting(true);
+        stream.setAutoFormattingIndent(2);
+        /* Write document: */
+        stream.writeStartDocument();
+        {
+            stream.writeStartElement("VirtualBox");
+            {
+                const QString strID = currentChooserID();
+                bool fIsMachine = strID != UIExtraDataManager::GlobalID;
+                const QString strType = fIsMachine ? "Machine" : "Global";
+                stream.writeStartElement(strType);
+                {
+                    if (fIsMachine)
+                        stream.writeAttribute("uuid", QString("{%1}").arg(strID));
+                    stream.writeStartElement("ExtraData");
+                    {
+                        /* Called from context-menu: */
+                        if (pSenderAction->property("CalledFromContextMenu").toBool() &&
+                            !m_pViewOfData->selectionModel()->selection().isEmpty())
+                        {
+                            foreach (const QModelIndex &keyIndex, m_pViewOfData->selectionModel()->selectedRows())
+                            {
+                                /* Get data-value index: */
+                                const QModelIndex valueIndex = dataValueIndex(keyIndex.row());
+                                /* Write corresponding extra-data item into stream: */
+                                stream.writeStartElement("ExtraDataItem");
+                                {
+                                    stream.writeAttribute("name", keyIndex.data().toString());
+                                    stream.writeAttribute("value", valueIndex.data().toString());
+                                }
+                                stream.writeEndElement(); /* ExtraDataItem */
+                            }
+                        }
+                        /* Called from menu-bar/tool-bar: */
+                        else
+                        {
+                            for (int iRow = 0; iRow < m_pModelProxyOfData->rowCount(); ++iRow)
+                            {
+                                /* Get indexes: */
+                                const QModelIndex keyIndex = m_pModelProxyOfData->index(iRow, 0);
+                                const QModelIndex valueIndex = m_pModelProxyOfData->index(iRow, 1);
+                                /* Write corresponding extra-data item into stream: */
+                                stream.writeStartElement("ExtraDataItem");
+                                {
+                                    stream.writeAttribute("name", keyIndex.data().toString());
+                                    stream.writeAttribute("value", valueIndex.data().toString());
+                                }
+                                stream.writeEndElement(); /* ExtraDataItem */
+                            }
+                        }
+                    }
+                    stream.writeEndElement(); /* ExtraData */
+                }
+                stream.writeEndElement(); /* strType */
+            }
+            stream.writeEndElement(); /* VirtualBox */
+        }
+        stream.writeEndDocument();
+        /* Close file: */
+        output.close();
+    }
+}
+
+void UIExtraDataManagerWindow::sltLoad()
+{
+    /* Make sure this slot called by corresponding action only: */
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pSenderAction && m_pActionLoad);
+
+    /* Compose initial file-name: */
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const QString strInitialFileName = QDir(vbox.GetHomeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    /* Open file-open dialog to choose file to open extra-data into: */
+    const QString strFileName = QIFileDialog::getOpenFileName(strInitialFileName, "XML files (*.xml)", this,
+                                                              "Choose file to load extra-data from..");
+    /* Make sure file-name was chosen: */
+    if (strFileName.isEmpty())
+        return;
+
+    /* Create file: */
+    QFile input(strFileName);
+    /* Open file for writing: */
+    bool fOpened = input.open(QIODevice::ReadOnly);
+    AssertReturnVoid(fOpened);
+    {
+        /* Create XML stream reader: */
+        QXmlStreamReader stream(&input);
+        /* Read XML stream: */
+        while (!stream.atEnd())
+        {
+            /* Read subsequent token: */
+            const QXmlStreamReader::TokenType tokenType = stream.readNext();
+            /* Skip non-interesting tokens: */
+            if (tokenType != QXmlStreamReader::StartElement)
+                continue;
+
+            /* Get the name of the current element: */
+            const QStringRef strElementName = stream.name();
+
+            /* Search for the scope ID: */
+            QString strLoadingID;
+            if (strElementName == "Global")
+                strLoadingID = UIExtraDataManager::GlobalID;
+            else if (strElementName == "Machine")
+            {
+                const QXmlStreamAttributes attributes = stream.attributes();
+                if (attributes.hasAttribute("uuid"))
+                {
+                    const QString strUuid = attributes.value("uuid").toString();
+                    const QUuid uuid = strUuid;
+                    if (!uuid.isNull())
+                        strLoadingID = uuid.toString().remove(QRegExp("[{}]"));
+                    else
+                        msgCenter().alert(this, MessageType_Warning,
+                                          QString("<p>Invalid extra-data ID:</p>"
+                                                  "<p>%1</p>").arg(strUuid));
+                }
+            }
+            /* Look particular extra-data entries: */
+            else if (strElementName == "ExtraDataItem")
+            {
+                const QXmlStreamAttributes attributes = stream.attributes();
+                if (attributes.hasAttribute("name") && attributes.hasAttribute("value"))
+                {
+                    const QString strName = attributes.value("name").toString();
+                    const QString strValue = attributes.value("value").toString();
+                    gEDataManager->setExtraDataString(strName, strValue, currentChooserID());
+                }
+            }
+
+            /* Check extra-data ID: */
+            if (!strLoadingID.isNull() && strLoadingID != currentChooserID() &&
+                !msgCenter().questionBinary(this, MessageType_Question,
+                                            QString("<p>Inconsistent extra-data ID:</p>"
+                                                    "<p>Current: {%1}</p>"
+                                                    "<p>Loading: {%2}</p>"
+                                                    "<p>Continue with loading?</p>")
+                                                    .arg(currentChooserID(), strLoadingID)))
+                break;
+        }
+        /* Handle XML stream error: */
+        if (stream.hasError())
+            msgCenter().alert(this, MessageType_Warning,
+                              QString("<p>Error reading XML file:</p>"
+                                      "<p>%1</p>").arg(stream.error()));
+        /* Close file: */
+        input.close();
+    }
+}
+
+void UIExtraDataManagerWindow::prepare()
+{
+    /* Prepare this: */
+    prepareThis();
+    /* Prepare connections: */
+    prepareConnections();
+    /* Prepare menu: */
+    prepareMenu();
+    /* Prepare central-widget: */
+    prepareCentralWidget();
+    /* Load settings: */
+    loadSettings();
+}
+
+void UIExtraDataManagerWindow::prepareThis()
+{
+#ifndef Q_WS_MAC
+    /* Apply window icons: */
+    setWindowIcon(UIIconPool::iconSetFull(":/edataman_32px.png",
+                                          ":/edataman_16px.png"));
+#endif /* !Q_WS_MAC */
+
+    /* Apply window title: */
+    setWindowTitle("Extra-data Manager");
+
+    /* Do not count that window as important for application,
+     * it will NOT be taken into account when other top-level windows will be closed: */
+    setAttribute(Qt::WA_QuitOnClose, false);
+
+    /* Delete window when closed: */
+    setAttribute(Qt::WA_DeleteOnClose);
+}
+
+void UIExtraDataManagerWindow::prepareConnections()
+{
+    /* Prepare connections: */
+    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
+            this, SLOT(sltMachineRegistered(QString, bool)));
+}
+
+void UIExtraDataManagerWindow::prepareMenu()
+{
+    /* Create 'Actions' menu: */
+    QMenu *pActionsMenu = menuBar()->addMenu("Actions");
+    AssertReturnVoid(pActionsMenu);
+    {
+        /* Create 'Add' action: */
+        m_pActionAdd = pActionsMenu->addAction("Add");
+        AssertReturnVoid(m_pActionAdd);
+        {
+            /* Configure 'Add' action: */
+            m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/edata_add_22px.png", ":/edata_add_16px.png",
+                                                          ":/edata_add_disabled_22px.png", ":/edata_add_disabled_16px.png"));
+            m_pActionAdd->setShortcut(Qt::Key_Insert);
+            connect(m_pActionAdd, SIGNAL(triggered(bool)), this, SLOT(sltAdd()));
+        }
+        /* Create 'Del' action: */
+        m_pActionDel = pActionsMenu->addAction("Remove");
+        AssertReturnVoid(m_pActionDel);
+        {
+            /* Configure 'Del' action: */
+            m_pActionDel->setIcon(UIIconPool::iconSetFull(":/edata_remove_22px.png", ":/edata_remove_16px.png",
+                                                          ":/edata_remove_disabled_22px.png", ":/edata_remove_disabled_16px.png"));
+            m_pActionDel->setShortcut(Qt::Key_Delete);
+            connect(m_pActionDel, SIGNAL(triggered(bool)), this, SLOT(sltDel()));
+        }
+
+        /* Add separator: */
+        pActionsMenu->addSeparator();
+
+        /* Create 'Load' action: */
+        m_pActionLoad = pActionsMenu->addAction("Load");
+        AssertReturnVoid(m_pActionLoad);
+        {
+            /* Configure 'Load' action: */
+            m_pActionLoad->setIcon(UIIconPool::iconSetFull(":/edata_load_22px.png", ":/edata_load_16px.png",
+                                                           ":/edata_load_disabled_22px.png", ":/edata_load_disabled_16px.png"));
+            m_pActionLoad->setShortcut(QKeySequence("Ctrl+L"));
+            connect(m_pActionLoad, SIGNAL(triggered(bool)), this, SLOT(sltLoad()));
+        }
+        /* Create 'Save' action: */
+        m_pActionSave = pActionsMenu->addAction("Save");
+        AssertReturnVoid(m_pActionSave);
+        {
+            /* Configure 'Save' action: */
+            m_pActionSave->setIcon(UIIconPool::iconSetFull(":/edata_save_22px.png", ":/edata_save_16px.png",
+                                                           ":/edata_save_disabled_22px.png", ":/edata_save_disabled_16px.png"));
+            m_pActionSave->setShortcut(QKeySequence("Ctrl+S"));
+            connect(m_pActionSave, SIGNAL(triggered(bool)), this, SLOT(sltSave()));
+        }
+    }
+}
+
+void UIExtraDataManagerWindow::prepareCentralWidget()
+{
+    /* Prepare central-widget: */
+    setCentralWidget(new QWidget);
+    AssertPtrReturnVoid(centralWidget());
+    {
+        /* Prepare layout: */
+        m_pMainLayout = new QVBoxLayout(centralWidget());
+        AssertReturnVoid(m_pMainLayout && centralWidget()->layout() &&
+                         m_pMainLayout == centralWidget()->layout());
+        {
+#if MAC_LEOPARD_STYLE
+            /* No spacing/margins on the Mac: */
+            m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+            m_pMainLayout->insertSpacing(0, 10);
+#else /* !MAC_LEOPARD_STYLE */
+            /* Set spacing/margin like in the selector window: */
+            m_pMainLayout->setSpacing(5);
+            m_pMainLayout->setContentsMargins(5, 5, 5, 5);
+#endif /* !MAC_LEOPARD_STYLE */
+            /* Prepare tool-bar: */
+            prepareToolBar();
+            /* Prepare splitter: */
+            prepareSplitter();
+            /* Prepare button-box: */
+            prepareButtonBox();
+        }
+        /* Initial focus: */
+        m_pViewOfChooser->setFocus();
+    }
+}
+
+void UIExtraDataManagerWindow::prepareToolBar()
+{
+    /* Create tool-bar: */
+    m_pToolBar = new UIToolBar;
+    AssertPtrReturnVoid(m_pToolBar);
+    {
+        /* Configure tool-bar: */
+        m_pToolBar->setIconSize(QSize(22, 22));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        /* Add actions: */
+        m_pToolBar->addAction(m_pActionAdd);
+        m_pToolBar->addAction(m_pActionDel);
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionLoad);
+        m_pToolBar->addAction(m_pActionSave);
+        /* Integrate tool-bar into dialog: */
+#if MAC_LEOPARD_STYLE
+        /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
+        addToolBar(m_pToolBar);
+        m_pToolBar->setMacToolbar();
+#else /* !MAC_LEOPARD_STYLE */
+        /* Add tool-bar into main-layout: */
+        m_pMainLayout->addWidget(m_pToolBar);
+#endif /* !MAC_LEOPARD_STYLE */
+    }
+}
+
+void UIExtraDataManagerWindow::prepareSplitter()
+{
+    /* Create splitter: */
+    m_pSplitter = new QISplitter;
+    AssertPtrReturnVoid(m_pSplitter);
+    {
+        /* Prepare panes: */
+        preparePanes();
+        /* Configure splitter: */
+        m_pSplitter->setChildrenCollapsible(false);
+        m_pSplitter->setStretchFactor(0, 0);
+        m_pSplitter->setStretchFactor(1, 1);
+        /* Add splitter into main layout: */
+        m_pMainLayout->addWidget(m_pSplitter);
+    }
+}
+
+void UIExtraDataManagerWindow::preparePanes()
+{
+    /* Prepare chooser-pane: */
+    preparePaneChooser();
+    /* Prepare data-pane: */
+    preparePaneData();
+    /* Link chooser and data panes: */
+    connect(m_pViewOfChooser->selectionModel(),
+            SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)),
+            this, SLOT(sltChooserHandleCurrentChanged(const QModelIndex&)));
+    connect(m_pViewOfChooser->selectionModel(),
+            SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+            this, SLOT(sltChooserHandleSelectionChanged(const QItemSelection&, const QItemSelection&)));
+    connect(m_pViewOfData->selectionModel(),
+            SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+            this, SLOT(sltDataHandleSelectionChanged(const QItemSelection&, const QItemSelection&)));
+    connect(m_pModelSourceOfData, SIGNAL(itemChanged(QStandardItem*)),
+            this, SLOT(sltDataHandleItemChanged(QStandardItem*)));
+    /* Make sure chooser have current-index if possible: */
+    makeSureChooserHaveCurrentIndexIfPossible();
+}
+
+void UIExtraDataManagerWindow::preparePaneChooser()
+{
+    /* Create chooser-pane: */
+    m_pPaneOfChooser = new QWidget;
+    AssertPtrReturnVoid(m_pPaneOfChooser);
+    {
+        /* Create layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(m_pPaneOfChooser);
+        AssertReturnVoid(pLayout && m_pPaneOfChooser->layout() &&
+                         pLayout == m_pPaneOfChooser->layout());
+        {
+            /* Configure layout: */
+            pLayout->setContentsMargins(0, 0, 3, 0);
+            /* Create chooser-filter: */
+            m_pFilterOfChooser = new QLineEdit;
+            {
+                /* Configure chooser-filter: */
+                m_pFilterOfChooser->setPlaceholderText("Search..");
+                connect(m_pFilterOfChooser, SIGNAL(textChanged(const QString&)),
+                        this, SLOT(sltChooserApplyFilter(const QString&)));
+                /* Add chooser-filter into layout: */
+                pLayout->addWidget(m_pFilterOfChooser);
+            }
+            /* Create chooser-view: */
+            m_pViewOfChooser = new QListView;
+            AssertPtrReturnVoid(m_pViewOfChooser);
+            {
+                /* Configure chooser-view: */
+                delete m_pViewOfChooser->itemDelegate();
+                m_pViewOfChooser->setItemDelegate(new UIChooserPaneDelegate(m_pViewOfChooser));
+                m_pViewOfChooser->setSelectionMode(QAbstractItemView::SingleSelection);
+                /* Create source-model: */
+                m_pModelSourceOfChooser = new QStandardItemModel(m_pViewOfChooser);
+                AssertPtrReturnVoid(m_pModelSourceOfChooser);
+                {
+                    /* Create proxy-model: */
+                    m_pModelProxyOfChooser = new UIChooserPaneSortingModel(m_pViewOfChooser);
+                    AssertPtrReturnVoid(m_pModelProxyOfChooser);
+                    {
+                        /* Configure proxy-model: */
+                        m_pModelProxyOfChooser->setSortRole(Field_Name);
+                        m_pModelProxyOfChooser->setFilterRole(Field_Name);
+                        m_pModelProxyOfChooser->setSortCaseSensitivity(Qt::CaseInsensitive);
+                        m_pModelProxyOfChooser->setFilterCaseSensitivity(Qt::CaseInsensitive);
+                        m_pModelProxyOfChooser->setSourceModel(m_pModelSourceOfChooser);
+                        m_pViewOfChooser->setModel(m_pModelProxyOfChooser);
+                    }
+                    /* Add global chooser item into source-model: */
+                    addChooserItemByID(UIExtraDataManager::GlobalID);
+                    /* Add machine chooser items into source-model: */
+                    CMachineVector machines = vboxGlobal().virtualBox().GetMachines();
+                    foreach (const CMachine &machine, machines)
+                        addChooserItemByMachine(machine);
+                    /* And sort proxy-model: */
+                    m_pModelProxyOfChooser->sort(0, Qt::AscendingOrder);
+                }
+                /* Add chooser-view into layout: */
+                pLayout->addWidget(m_pViewOfChooser);
+            }
+        }
+        /* Add chooser-pane into splitter: */
+        m_pSplitter->addWidget(m_pPaneOfChooser);
+    }
+}
+
+void UIExtraDataManagerWindow::preparePaneData()
+{
+    /* Create data-pane: */
+    m_pPaneOfData = new QWidget;
+    AssertPtrReturnVoid(m_pPaneOfData);
+    {
+        /* Create layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(m_pPaneOfData);
+        AssertReturnVoid(pLayout && m_pPaneOfData->layout() &&
+                         pLayout == m_pPaneOfData->layout());
+        {
+            /* Configure layout: */
+            pLayout->setContentsMargins(3, 0, 0, 0);
+            /* Create data-filter: */
+            m_pFilterOfData = new QLineEdit;
+            {
+                /* Configure data-filter: */
+                m_pFilterOfData->setPlaceholderText("Search..");
+                connect(m_pFilterOfData, SIGNAL(textChanged(const QString&)),
+                        this, SLOT(sltDataApplyFilter(const QString&)));
+                /* Add data-filter into layout: */
+                pLayout->addWidget(m_pFilterOfData);
+            }
+            /* Create data-view: */
+            m_pViewOfData = new QTableView;
+            AssertPtrReturnVoid(m_pViewOfData);
+            {
+                /* Create item-model: */
+                m_pModelSourceOfData = new QStandardItemModel(0, 2, m_pViewOfData);
+                AssertPtrReturnVoid(m_pModelSourceOfData);
+                {
+                    /* Create proxy-model: */
+                    m_pModelProxyOfData = new QSortFilterProxyModel(m_pViewOfChooser);
+                    AssertPtrReturnVoid(m_pModelProxyOfData);
+                    {
+                        /* Configure proxy-model: */
+                        m_pModelProxyOfData->setSortCaseSensitivity(Qt::CaseInsensitive);
+                        m_pModelProxyOfData->setFilterCaseSensitivity(Qt::CaseInsensitive);
+                        m_pModelProxyOfData->setSourceModel(m_pModelSourceOfData);
+                        m_pViewOfData->setModel(m_pModelProxyOfData);
+                    }
+                    /* Configure item-model: */
+                    m_pModelSourceOfData->setHorizontalHeaderLabels(QStringList() << "Key" << "Value");
+                }
+                /* Configure data-view: */
+                m_pViewOfData->setSortingEnabled(true);
+                m_pViewOfData->setAlternatingRowColors(true);
+                m_pViewOfData->setContextMenuPolicy(Qt::CustomContextMenu);
+                m_pViewOfData->setSelectionMode(QAbstractItemView::ExtendedSelection);
+                m_pViewOfData->setSelectionBehavior(QAbstractItemView::SelectRows);
+                connect(m_pViewOfData, SIGNAL(customContextMenuRequested(const QPoint&)),
+                        this, SLOT(sltDataHandleCustomContextMenuRequested(const QPoint&)));
+                QHeaderView *pVHeader = m_pViewOfData->verticalHeader();
+                QHeaderView *pHHeader = m_pViewOfData->horizontalHeader();
+                pVHeader->hide();
+                pHHeader->setSortIndicator(0, Qt::AscendingOrder);
+                pHHeader->resizeSection(0, qMin(300, pHHeader->width() / 3));
+                pHHeader->setStretchLastSection(true);
+                /* Add data-view into layout: */
+                pLayout->addWidget(m_pViewOfData);
+            }
+        }
+        /* Add data-pane into splitter: */
+        m_pSplitter->addWidget(m_pPaneOfData);
+    }
+}
+
+void UIExtraDataManagerWindow::prepareButtonBox()
+{
+    /* Create button-box: */
+    m_pButtonBox = new QIDialogButtonBox;
+    AssertPtrReturnVoid(m_pButtonBox);
+    {
+        /* Configure button-box: */
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
+        m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
+        connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+        /* Add button-box into main layout: */
+        m_pMainLayout->addWidget(m_pButtonBox);
+    }
+}
+
+void UIExtraDataManagerWindow::loadSettings()
+{
+    /* Load window geometry: */
+    {
+        /* Load geometry: */
+        m_geometry = gEDataManager->extraDataManagerGeometry(this);
+#ifdef Q_WS_MAC
+        move(m_geometry.topLeft());
+        resize(m_geometry.size());
+#else /* Q_WS_MAC */
+        setGeometry(m_geometry);
+#endif /* !Q_WS_MAC */
+        LogRel(("UIExtraDataManagerWindow: Geometry loaded to: %dx%d @ %dx%d.\n",
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+
+        /* Maximize (if necessary): */
+        if (gEDataManager->extraDataManagerShouldBeMaximized())
+            showMaximized();
+    }
+
+    /* Load splitter hints: */
+    {
+        m_pSplitter->setSizes(gEDataManager->extraDataManagerSplitterHints(this));
+    }
+}
+
+void UIExtraDataManagerWindow::saveSettings()
+{
+    /* Save splitter hints: */
+    {
+        gEDataManager->setExtraDataManagerSplitterHints(m_pSplitter->sizes());
+    }
+
+    /* Save window geometry: */
+    {
+        /* Save geometry: */
+#ifdef Q_WS_MAC
+        gEDataManager->setExtraDataManagerGeometry(m_geometry, ::darwinIsWindowMaximized(this));
+#else /* Q_WS_MAC */
+        gEDataManager->setExtraDataManagerGeometry(m_geometry, isMaximized());
+#endif /* !Q_WS_MAC */
+        LogRel(("UIExtraDataManagerWindow: Geometry saved as: %dx%d @ %dx%d.\n",
+                m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+    }
+}
+
+void UIExtraDataManagerWindow::cleanup()
+{
+    /* Save settings: */
+    saveSettings();
+}
+
+bool UIExtraDataManagerWindow::event(QEvent *pEvent)
+{
+    /* Pre-process through base-class: */
+    bool fResult = QMainWindow::event(pEvent);
+
+    /* Process required events: */
+    switch (pEvent->type())
+    {
+        /* Handle every Resize and Move we keep track of the geometry. */
+        case QEvent::Resize:
+        {
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                m_geometry.setSize(pResizeEvent->size());
+            }
+            break;
+        }
+        case QEvent::Move:
+        {
+            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+#ifdef Q_WS_MAC
+                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
+                m_geometry.moveTo(pMoveEvent->pos());
+#else /* !Q_WS_MAC */
+                m_geometry.moveTo(geometry().x(), geometry().y());
+#endif /* !Q_WS_MAC */
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
+void UIExtraDataManagerWindow::updateActionsAvailability()
+{
+    /* Is there something selected in chooser-view? */
+    bool fChooserHasSelection = !m_pViewOfChooser->selectionModel()->selection().isEmpty();
+    /* Is there something selected in data-view? */
+    bool fDataHasSelection = !m_pViewOfData->selectionModel()->selection().isEmpty();
+
+    /* Enable/disable corresponding actions: */
+    m_pActionAdd->setEnabled(fChooserHasSelection);
+    m_pActionDel->setEnabled(fChooserHasSelection && fDataHasSelection);
+    m_pActionLoad->setEnabled(fChooserHasSelection);
+    m_pActionSave->setEnabled(fChooserHasSelection);
+}
+
+QModelIndex UIExtraDataManagerWindow::chooserIndex(int iRow) const
+{
+    return m_pModelSourceOfChooser->index(iRow, 0);
+}
+
+QModelIndex UIExtraDataManagerWindow::currentChooserIndex() const
+{
+    return m_pViewOfChooser->currentIndex();
+}
+
+QString UIExtraDataManagerWindow::chooserID(int iRow) const
+{
+    return chooserIndex(iRow).data(Field_ID).toString();
+}
+
+QString UIExtraDataManagerWindow::currentChooserID() const
+{
+    return currentChooserIndex().data(Field_ID).toString();
+}
+
+QString UIExtraDataManagerWindow::chooserName(int iRow) const
+{
+    return chooserIndex(iRow).data(Field_Name).toString();
+}
+
+QString UIExtraDataManagerWindow::currentChooserName() const
+{
+    return currentChooserIndex().data(Field_Name).toString();
+}
+
+void UIExtraDataManagerWindow::addChooserItem(const QString &strID,
+                                              const QString &strName,
+                                              const QString &strOsTypeID,
+                                              const int iPosition /* = -1 */)
+{
+    /* Create item: */
+    QStandardItem *pItem = new QStandardItem;
+    AssertPtrReturnVoid(pItem);
+    {
+        /* Which is NOT editable: */
+        pItem->setEditable(false);
+        /* Contains passed ID: */
+        pItem->setData(strID, Field_ID);
+        /* Contains passed name: */
+        pItem->setData(strName, Field_Name);
+        /* Contains passed OS Type ID: */
+        pItem->setData(strOsTypeID, Field_OsTypeID);
+        /* And designated as known/unknown depending on extra-data manager status: */
+        pItem->setData(gEDataManager->contains(strID), Field_Known);
+        /* If insert position defined: */
+        if (iPosition != -1)
+        {
+            /* Insert this item at specified position: */
+            m_pModelSourceOfChooser->insertRow(iPosition, pItem);
+        }
+        /* If insert position undefined: */
+        else
+        {
+            /* Add this item as the last one: */
+            m_pModelSourceOfChooser->appendRow(pItem);
+        }
+    }
+}
+
+void UIExtraDataManagerWindow::addChooserItemByMachine(const CMachine &machine,
+                                                       const int iPosition /* = -1 */)
+{
+    /* Call to wrapper above: */
+    addChooserItem(machine.GetId(), machine.GetName(), machine.GetOSTypeId(), iPosition);
+}
+
+void UIExtraDataManagerWindow::addChooserItemByID(const QString &strID,
+                                                  const int iPosition /* = -1 */)
+{
+    /* Prepare arguments: */
+    QString strName;
+    QString strOsTypeID;
+    /* Global ID? */
+    if (strID == UIExtraDataManager::GlobalID)
+        strName = "Global";
+    /* Machine ID? */
+    else
+    {
+        /* Search for the corresponding machine by ID: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        const CMachine machine = vbox.FindMachine(strID);
+        /* Acquire actual arguments if possible: */
+        if (vbox.isOk() && !machine.isNull())
+        {
+            strName = machine.GetName();
+            strOsTypeID = machine.GetOSTypeId();
+        }
+        /* Or use default: */
+        else
+        {
+            strName = "Unknown VM";
+            strOsTypeID = "Other";
+        }
+    }
+    /* Call to wrapper above: */
+    addChooserItem(strID, strName, strOsTypeID, iPosition);
+}
+
+void UIExtraDataManagerWindow::makeSureChooserHaveCurrentIndexIfPossible()
+{
+    /* Make sure chooser have current-index if possible: */
+    if (!m_pViewOfChooser->currentIndex().isValid())
+    {
+        /* Do we still have anything to select? */
+        const QModelIndex firstIndex = m_pModelProxyOfChooser->index(0, 0);
+        if (firstIndex.isValid())
+            m_pViewOfChooser->setCurrentIndex(firstIndex);
+    }
+}
+
+QModelIndex UIExtraDataManagerWindow::dataIndex(int iRow, int iColumn) const
+{
+    return m_pModelSourceOfData->index(iRow, iColumn);
+}
+
+QModelIndex UIExtraDataManagerWindow::dataKeyIndex(int iRow) const
+{
+    return dataIndex(iRow, 0);
+}
+
+QModelIndex UIExtraDataManagerWindow::dataValueIndex(int iRow) const
+{
+    return dataIndex(iRow, 1);
+}
+
+QString UIExtraDataManagerWindow::dataKey(int iRow) const
+{
+    return dataKeyIndex(iRow).data().toString();
+}
+
+QString UIExtraDataManagerWindow::dataValue(int iRow) const
+{
+    return dataValueIndex(iRow).data().toString();
+}
+
+void UIExtraDataManagerWindow::addDataItem(const QString &strKey,
+                                           const QString &strValue,
+                                           const int iPosition /* = -1 */)
+{
+    /* Prepare items: */
+    QList<QStandardItem*> items;
+    /* Create key item: */
+    items << new QStandardItem(strKey);
+    items.last()->setEditable(false);
+    AssertPtrReturnVoid(items.last());
+    /* Create value item: */
+    items << new QStandardItem(strValue);
+    AssertPtrReturnVoid(items.last());
+    /* If insert position defined: */
+    if (iPosition != -1)
+    {
+        /* Insert these items as the row at the required position: */
+        m_pModelSourceOfData->insertRow(iPosition, items);
+    }
+    /* If insert position undefined: */
+    else
+    {
+        /* Add these items as the last one row: */
+        m_pModelSourceOfData->appendRow(items);
+    }
+}
+
+void UIExtraDataManagerWindow::sortData()
+{
+    /* Sort using current rules: */
+    const QHeaderView *pHHeader = m_pViewOfData->horizontalHeader();
+    const int iSortSection = pHHeader->sortIndicatorSection();
+    const Qt::SortOrder sortOrder = pHHeader->sortIndicatorOrder();
+    m_pModelProxyOfData->sort(iSortSection, sortOrder);
+}
+#endif /* DEBUG */
+
+
 /* static */
 UIExtraDataManager *UIExtraDataManager::m_spInstance = 0;
 const QString UIExtraDataManager::GlobalID = QUuid().toString().remove(QRegExp("[{}]"));
@@ -143,6 +1741,15 @@ void UIExtraDataManager::destroy()
         delete m_spInstance;
     }
 }
+
+#ifdef DEBUG
+/* static */
+void UIExtraDataManager::openWindow(QWidget *pCenterWidget)
+{
+    /* Pass to instance: */
+    instance()->open(pCenterWidget);
+}
+#endif /* DEBUG */
 
 QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */)
 {
@@ -1254,6 +2861,120 @@ QString UIExtraDataManager::debugFlagValue(const QString &strDebugFlagKey)
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef DEBUG
+QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_ExtraDataManager_Geometry);
+
+    /* Parse loaded data: */
+    int iX = 0, iY = 0, iW = 0, iH = 0;
+    bool fOk = data.size() >= 4;
+    do
+    {
+        if (!fOk) break;
+        iX = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iY = data[1].toInt(&fOk);
+        if (!fOk) break;
+        iW = data[2].toInt(&fOk);
+        if (!fOk) break;
+        iH = data[3].toInt(&fOk);
+    }
+    while (0);
+
+    /* Use geometry (loaded or default): */
+    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(0, 0, 800, 600);
+
+    /* Take hint-widget into account: */
+    if (pWidget)
+        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
+
+    /* Get screen-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect screenGeometry = fOk ? QApplication::desktop()->availableGeometry(QPoint(iX, iY)) :
+                                       QApplication::desktop()->availableGeometry();
+
+    /* Make sure resulting geometry is within current bounds: */
+    geometry = geometry.intersected(screenGeometry);
+
+    /* Move default-geometry to current screen center: */
+    if (!fOk)
+        geometry.moveCenter(screenGeometry.center());
+
+    /* Return result: */
+    return geometry;
+}
+
+bool UIExtraDataManager::extraDataManagerShouldBeMaximized()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_ExtraDataManager_Geometry);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+}
+
+void UIExtraDataManager::setExtraDataManagerGeometry(const QRect &geometry, bool fMaximized)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_ExtraDataManager_Geometry, data);
+}
+
+QList<int> UIExtraDataManager::extraDataManagerSplitterHints(QWidget *pWidget)
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_ExtraDataManager_SplitterHints);
+
+    /* Parse loaded data: */
+    int iLeft = 0, iRight = 0;
+    bool fOk = data.size() == 2;
+    do
+    {
+        if (!fOk) break;
+        iLeft = data[0].toInt(&fOk);
+        if (!fOk) break;
+        iRight = data[1].toInt(&fOk);
+    }
+    while (0);
+
+    /* Prepare hints (loaded or adviced): */
+    QList<int> hints;
+    if (fOk)
+    {
+        hints << iLeft;
+        hints << iRight;
+    }
+    else
+    {
+        hints << pWidget->width() * .9 * (1.0 / 3);
+        hints << pWidget->width() * .9 * (2.0 / 3);
+    }
+
+    /* Return hints: */
+    return hints;
+}
+
+void UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hints)
+{
+    /* Parse passed hints: */
+    QStringList data;
+    data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
+    data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_ExtraDataManager_SplitterHints, data);
+}
+#endif /* DEBUG */
+
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)
 {
     /* Re-cache value only if strMachineID known already: */
@@ -1368,6 +3089,13 @@ void UIExtraDataManager::prepareMainEventListener()
             Qt::DirectConnection);
 }
 
+#ifdef DEBUG
+void UIExtraDataManager::cleanupWindow()
+{
+    delete m_pWindow;
+}
+#endif /* DEBUG */
+
 void UIExtraDataManager::cleanupMainEventListener()
 {
     /* Unregister Main event-listener:  */
@@ -1377,9 +3105,30 @@ void UIExtraDataManager::cleanupMainEventListener()
 
 void UIExtraDataManager::cleanup()
 {
+#ifdef DEBUG
+    /* Cleanup window: */
+    cleanupWindow();
+#endif /* DEBUG */
     /* Cleanup Main event-listener: */
     cleanupMainEventListener();
 }
+
+#ifdef DEBUG
+void UIExtraDataManager::open(QWidget *pCenterWidget)
+{
+    /* If necessary: */
+    if (!m_pWindow)
+    {
+        /* Create window: */
+        m_pWindow = new UIExtraDataManagerWindow;
+        /* Configure window connections: */
+        connect(this, SIGNAL(sigExtraDataChange(QString, QString, QString)),
+                m_pWindow, SLOT(sltExtraDataChange(QString, QString, QString)));
+    }
+    /* Show and raise window: */
+    m_pWindow->showAndRaise(pCenterWidget);
+}
+#endif /* DEBUG */
 
 void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
 {

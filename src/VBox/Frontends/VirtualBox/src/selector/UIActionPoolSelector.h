@@ -30,6 +30,9 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_File_MediumManagerDialog,
     UIActionIndexSelector_Simple_File_ImportApplianceWizard,
     UIActionIndexSelector_Simple_File_ExportApplianceWizard,
+#ifdef DEBUG
+    UIActionIndexSelector_Simple_File_ExtraDataManagerWindow,
+#endif /* DEBUG */
     UIActionIndexSelector_Simple_File_Exit,
 
     /* 'Group' menu actions: */
