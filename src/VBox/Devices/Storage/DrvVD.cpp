@@ -1692,6 +1692,8 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
             /* Unload the crypto filter first to make sure it doesn't access the keys anymore. */
             rc = VDFilterRemove(pThis->pDisk);
             AssertRC(rc);
+
+            pThis->pIfSecKey = NULL;
         }
 
         if (   pIfSecKey
@@ -1702,7 +1704,7 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
             rc = VDInterfaceAdd(&pThis->VDIfCfg.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
                                 pThis->pCfgCrypto, sizeof(VDINTERFACECONFIG), &pVDIfFilter);
             AssertRC(rc);
-    
+
             rc = VDInterfaceAdd(&pThis->VDIfCrypto.Core, "DrvVD_Crypto", VDINTERFACETYPE_CRYPTO,
                                 pThis, sizeof(VDINTERFACECRYPTO), &pVDIfFilter);
             AssertRC(rc);
