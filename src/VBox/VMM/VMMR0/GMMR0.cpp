@@ -164,6 +164,7 @@
 #ifdef VBOX_STRICT
 # include <iprt/crc.h>
 #endif
+#include <iprt/critsect.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
@@ -171,6 +172,19 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def VBOX_USE_CRIT_SECT_FOR_GIANT
+ * Use a critical section instead of a fast mutex for the giant GMM lock.
+ *
+ * @remarks This is primarily a way of avoiding the deadlock checks in the
+ *          windows driver verifier. */
+#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+# define VBOX_USE_CRIT_SECT_FOR_GIANT
+#endif
 
 
 /*******************************************************************************
@@ -475,9 +489,15 @@ typedef struct GMM
     uint32_t            u32Magic;
     /** The number of threads waiting on the mutex. */
     uint32_t            cMtxContenders;
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    /** The critical section protecting the GMM.
+     * More fine grained locking can be implemented later if necessary. */
+    RTCRITSECT          GiantCritSect;
+#else
     /** The fast mutex protecting the GMM.
      * More fine grained locking can be implemented later if necessary. */
     RTSEMFASTMUTEX      hMtx;
+#endif
 #ifdef VBOX_STRICT
     /** The current mutex owner. */
     RTNATIVETHREAD      hMtxOwner;
@@ -757,7 +777,11 @@ GMMR0DECL(int) GMMR0Init(void)
     RTListInit(&pGMM->ChunkList);
     ASMBitSet(&pGMM->bmChunkId[0], NIL_GMM_CHUNKID);
 
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    int rc = RTCritSectInit(&pGMM->GiantCritSect);
+#else
     int rc = RTSemFastMutexCreate(&pGMM->hMtx);
+#endif
     if (RT_SUCCESS(rc))
     {
         unsigned iMtx;
@@ -815,7 +839,11 @@ GMMR0DECL(int) GMMR0Init(void)
          */
         while (iMtx-- > 0)
             RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+        RTCritSectDelete(&pGMM->GiantCritSect);
+#else
         RTSemFastMutexDestroy(pGMM->hMtx);
+#endif
     }
 
     pGMM->u32Magic = 0;
@@ -850,8 +878,12 @@ GMMR0DECL(void) GMMR0Term(void)
     /* Destroy the fundamentals. */
     g_pGMM = NULL;
     pGMM->u32Magic    = ~GMM_MAGIC;
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    RTCritSectDelete(&pGMM->GiantCritSect);
+#else
     RTSemFastMutexDestroy(pGMM->hMtx);
     pGMM->hMtx        = NIL_RTSEMFASTMUTEX;
+#endif
 
     /* Free any chunks still hanging around. */
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
@@ -932,7 +964,11 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
 static int gmmR0MutexAcquire(PGMM pGMM)
 {
     ASMAtomicIncU32(&pGMM->cMtxContenders);
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    int rc = RTCritSectEnter(&pGMM->GiantCritSect);
+#else
     int rc = RTSemFastMutexRequest(pGMM->hMtx);
+#endif
     ASMAtomicDecU32(&pGMM->cMtxContenders);
     AssertRC(rc);
 #ifdef VBOX_STRICT
@@ -953,8 +989,12 @@ static int gmmR0MutexRelease(PGMM pGMM)
 #ifdef VBOX_STRICT
     pGMM->hMtxOwner = NIL_RTNATIVETHREAD;
 #endif
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    int rc = RTCritSectLeave(&pGMM->GiantCritSect);
+#else
     int rc = RTSemFastMutexRelease(pGMM->hMtx);
     AssertRC(rc);
+#endif
     return rc;
 }
 
@@ -990,11 +1030,19 @@ static bool gmmR0MutexYield(PGMM pGMM, uint64_t *puLockNanoTS)
     pGMM->hMtxOwner = NIL_RTNATIVETHREAD;
 #endif
     ASMAtomicIncU32(&pGMM->cMtxContenders);
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    int rc1 = RTCritSectLeave(&pGMM->GiantCritSect); AssertRC(rc1);
+#else
     int rc1 = RTSemFastMutexRelease(pGMM->hMtx); AssertRC(rc1);
+#endif
 
     RTThreadYield();
 
+#ifdef VBOX_USE_CRIT_SECT_FOR_GIANT
+    int rc2 = RTCritSectEnter(&pGMM->GiantCritSect); AssertRC(rc2);
+#else
     int rc2 = RTSemFastMutexRequest(pGMM->hMtx); AssertRC(rc2);
+#endif
     *puLockNanoTS = RTTimeSystemNanoTS();
     ASMAtomicDecU32(&pGMM->cMtxContenders);
 #ifdef VBOX_STRICT
