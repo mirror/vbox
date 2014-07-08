@@ -1510,6 +1510,9 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
     if (RT_SUCCESS(rc))
     {
+        /* Assign service environment to our context. */
+        pCtx->pEnv = pEnv;
+
         /* Create the proxy window. At the moment we
          * only support one window at a time. */
         VBoxDnDWnd *pWnd = NULL;
@@ -1530,12 +1533,6 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
     if (RT_SUCCESS(rc))
         rc = RTSemEventCreate(&pCtx->hEvtQueueSem);
-    if (RT_SUCCESS(rc))
-    {
-        /* Assign service environment to our context. */
-        gCtx.pEnv = pEnv;
-    }
-
     if (RT_SUCCESS(rc))
     {
         *ppInstance = pCtx;
