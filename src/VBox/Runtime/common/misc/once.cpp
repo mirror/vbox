@@ -33,7 +33,15 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/critsect.h>
+#ifdef IN_RING3
+# include <iprt/critsect.h>
+# define RTONCE_USE_CRITSECT_FOR_TERM
+#elif defined(IN_RING0)
+# include <iprt/spinlock.h>
+# define RTONCE_USE_SPINLOCK_FOR_TERM
+#else
+# define RTONCE_NO_TERM
+#endif
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/semaphore.h>
@@ -43,21 +51,39 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef IN_RING3
-
+#ifndef RTONCE_NO_TERM
 /** For initializing the clean-up list code. */
 static RTONCE           g_OnceCleanUp = RTONCE_INITIALIZER;
-/** Critical section protecting the clean-up list. */
+/** Lock protecting the clean-up list. */
+#ifdef RTONCE_USE_CRITSECT_FOR_TERM
 static RTCRITSECT       g_CleanUpCritSect;
+#else
+static RTSEMFASTMUTEX   g_hCleanUpLock;
+#endif
 /** The clean-up list. */
 static RTLISTANCHOR     g_CleanUpList;
+
+/** Locks the clean-up list. */
+#ifdef RTONCE_USE_CRITSECT_FOR_TERM
+# define RTONCE_CLEANUP_LOCK()      RTCritSectEnter(&g_CleanUpCritSect)
+#else
+# define RTONCE_CLEANUP_LOCK()      RTSemFastMutexRequest(g_hCleanUpLock);
+#endif
+
+/** Unlocks the clean-up list. */
+#ifdef RTONCE_USE_CRITSECT_FOR_TERM
+# define RTONCE_CLEANUP_UNLOCK()    RTCritSectLeave(&g_CleanUpCritSect);
+#else
+# define RTONCE_CLEANUP_UNLOCK()    RTSemFastMutexRelease(g_hCleanUpLock);
+#endif
+
 
 
 /** @callback_method_impl{FNRTTERMCALLBACK} */
 static DECLCALLBACK(void) rtOnceTermCallback(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
 {
     bool const fLazyCleanUpOk = RTTERMREASON_IS_LAZY_CLEANUP_OK(enmReason);
-    RTCritSectEnter(&g_CleanUpCritSect); /* Potentially dangerous. */
+    RTONCE_CLEANUP_LOCK();      /* Potentially dangerous. */
 
     PRTONCE pCur, pPrev;
     RTListForEachReverseSafe(&g_CleanUpList, pCur, pPrev, RTONCE, CleanUpNode)
@@ -86,8 +112,25 @@ static DECLCALLBACK(void) rtOnceTermCallback(RTTERMREASON enmReason, int32_t iSt
         }
     }
 
-    RTCritSectLeave(&g_CleanUpCritSect);
-    NOREF(pvUser); NOREF(enmReason); NOREF(iStatus);
+    RTONCE_CLEANUP_UNLOCK();
+
+    /*
+     * Reset our own structure and the critsect / mutex.
+     */
+    if (!fLazyCleanUpOk)
+    {
+# ifdef RTONCE_USE_CRITSECT_FOR_TERM
+        RTCritSectDelete(&g_CleanUpCritSect);
+# else
+        RTSemFastMutexDestroy(g_hCleanUpLock);
+        g_hCleanUpLock = NIL_RTSEMFASTMUTEX;
+# endif
+
+        ASMAtomicWriteS32(&g_OnceCleanUp.rc, VERR_INTERNAL_ERROR);
+        ASMAtomicWriteS32(&g_OnceCleanUp.iState, RTONCESTATE_UNINITIALIZED);
+    }
+
+    NOREF(pvUser); NOREF(iStatus);
 }
 
 
@@ -102,21 +145,28 @@ static DECLCALLBACK(int32_t) rtOnceInitCleanUp(void *pvUser)
 {
     NOREF(pvUser);
     RTListInit(&g_CleanUpList);
+# ifdef RTONCE_USE_CRITSECT_FOR_TERM
     int rc = RTCritSectInit(&g_CleanUpCritSect);
+# else
+    int rc = RTSemFastMutexCreate(&g_hCleanUpLock);
+# endif
     if (RT_SUCCESS(rc))
     {
         rc = RTTermRegisterCallback(rtOnceTermCallback, NULL);
         if (RT_SUCCESS(rc))
             return rc;
 
+# ifdef RTONCE_USE_CRITSECT_FOR_TERM
         RTCritSectDelete(&g_CleanUpCritSect);
+# else
+        RTSemFastMutexDestroy(g_hCleanUpLock);
+        g_hCleanUpLock = NIL_RTSEMFASTMUTEX;
+# endif
     }
     return rc;
 }
 
-#endif /* IN_RING3 */
-
-
+#endif /* !RTONCE_NO_TERM */
 
 /**
  * The state loop of the other threads.
@@ -261,9 +311,9 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCle
                  || iState == RTONCESTATE_BUSY_HAVE_SEM
                  , VERR_INTERNAL_ERROR);
 
-#ifndef IN_RING3
+#ifdef RTONCE_NO_TERM
     AssertReturn(!pfnCleanUp, VERR_NOT_SUPPORTED);
-#else /* IN_RING3 */
+#else /* !RTONCE_NO_TERM */
 
     /*
      * Make sure our clean-up bits are working if needed later.
@@ -274,7 +324,7 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCle
         if (RT_FAILURE(rc))
             return rc;
     }
-#endif /* IN_RING3 */
+#endif /* !RTONCE_NO_TERM */
 
     /*
      * Do we initialize it?
@@ -289,19 +339,21 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCle
         rcOnce = pfnOnce(pvUser);
         ASMAtomicWriteS32(&pOnce->rc, rcOnce);
 
-#ifdef IN_RING3
+#ifndef RTONCE_NO_TERM
         /*
          * Register clean-up if requested and we were successful.
          */
         if (pfnCleanUp && RT_SUCCESS(rcOnce))
         {
-            RTCritSectEnter(&g_CleanUpCritSect);
+            RTONCE_CLEANUP_LOCK();
+
             pOnce->pfnCleanUp = pfnCleanUp;
             pOnce->pvUser     = pvUser;
             RTListAppend(&g_CleanUpList, &pOnce->CleanUpNode);
-            RTCritSectLeave(&g_CleanUpCritSect);
+
+            RTONCE_CLEANUP_UNLOCK();
         }
-#endif
+#endif /* !RTONCE_NO_TERM */
 
         /*
          * If there is a sempahore to signal, we're in for some extra work here.
@@ -366,17 +418,19 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce)
               ("%d\n", iState));
     NOREF(iState);
 
-#ifdef IN_RING3
+#ifndef RTONCE_NO_TERM
     /* Unregister clean-up. */
     if (pOnce->pfnCleanUp)
     {
-        RTCritSectEnter(&g_CleanUpCritSect);
+        RTONCE_CLEANUP_LOCK();
+
         RTListNodeRemove(&pOnce->CleanUpNode);
         pOnce->pfnCleanUp = NULL;
         pOnce->pvUser     = NULL;
-        RTCritSectLeave(&g_CleanUpCritSect);
+
+        RTONCE_CLEANUP_UNLOCK();
     }
-#endif /* IN_RING3 */
+#endif /* !RTONCE_NO_TERM */
 
     /* Do the same as RTONCE_INITIALIZER does. */
     ASMAtomicWriteS32(&pOnce->rc, VERR_INTERNAL_ERROR);

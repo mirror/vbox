@@ -80,9 +80,32 @@ static DECLCALLBACK(int) rtRandInitOnce(void *pvUser)
 }
 
 
+/**
+ * Termination counterpart to rtRandInitOnce.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser          Ignored.
+ * @param   fLazyCleanUpOk  Set if we're terminating the process.
+ */
+static DECLCALLBACK(void) rtRandTermOnce(void *pvUser, bool fLazyCleanUpOk)
+{
+    if (!fLazyCleanUpOk)
+    {
+        RTRAND hRand = g_hRand;
+        g_hRand = NIL_RTRAND;
+        if (hRand != NIL_RTRAND)
+        {
+            int rc = RTRandAdvDestroy(hRand);
+            AssertRC(rc);
+        }
+    }
+    NOREF(pvUser);
+}
+
+
 RTDECL(void) RTRandBytes(void *pv, size_t cb) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     RTRandAdvBytes(g_hRand, pv, cb);
 }
 RT_EXPORT_SYMBOL(RTRandBytes);
@@ -90,7 +113,7 @@ RT_EXPORT_SYMBOL(RTRandBytes);
 
 RTDECL(uint32_t) RTRandU32Ex(uint32_t u32First, uint32_t u32Last) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvU32Ex(g_hRand, u32First, u32Last);
 }
 RT_EXPORT_SYMBOL(RTRandU32Ex);
@@ -98,7 +121,7 @@ RT_EXPORT_SYMBOL(RTRandU32Ex);
 
 RTDECL(uint32_t) RTRandU32(void) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvU32(g_hRand);
 }
 RT_EXPORT_SYMBOL(RTRandU32);
@@ -106,7 +129,7 @@ RT_EXPORT_SYMBOL(RTRandU32);
 
 RTDECL(int32_t) RTRandS32Ex(int32_t i32First, int32_t i32Last) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvS32Ex(g_hRand, i32First, i32Last);
 }
 RT_EXPORT_SYMBOL(RTRandS32Ex);
@@ -114,7 +137,7 @@ RT_EXPORT_SYMBOL(RTRandS32Ex);
 
 RTDECL(int32_t) RTRandS32(void) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvS32(g_hRand);
 }
 RT_EXPORT_SYMBOL(RTRandS32);
@@ -122,7 +145,7 @@ RT_EXPORT_SYMBOL(RTRandS32);
 
 RTDECL(uint64_t) RTRandU64Ex(uint64_t u64First, uint64_t u64Last) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvU64Ex(g_hRand, u64First, u64Last);
 }
 RT_EXPORT_SYMBOL(RTRandU64Ex);
@@ -130,7 +153,7 @@ RT_EXPORT_SYMBOL(RTRandU64Ex);
 
 RTDECL(uint64_t) RTRandU64(void) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvU64(g_hRand);
 }
 RT_EXPORT_SYMBOL(RTRandU64);
@@ -138,7 +161,7 @@ RT_EXPORT_SYMBOL(RTRandU64);
 
 RTDECL(int64_t) RTRandS64Ex(int64_t i64First, int64_t i64Last) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvS64Ex(g_hRand, i64First, i64Last);
 }
 RT_EXPORT_SYMBOL(RTRandS64Ex);
@@ -146,7 +169,7 @@ RT_EXPORT_SYMBOL(RTRandS64Ex);
 
 RTDECL(int64_t) RTRandS64(void) RT_NO_THROW
 {
-    RTOnce(&g_rtRandOnce, rtRandInitOnce, NULL);
+    RTOnceEx(&g_rtRandOnce, rtRandInitOnce, rtRandTermOnce, NULL);
     return RTRandAdvS32(g_hRand);
 }
 RT_EXPORT_SYMBOL(RTRandS64);
