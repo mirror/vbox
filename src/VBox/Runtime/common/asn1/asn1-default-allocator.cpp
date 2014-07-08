@@ -27,9 +27,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#if defined(DEBUG_bird) && !defined(IPRT_NO_CRT)
-# define RTMEM_WRAP_TO_EF_APIS
-#endif
 #include "internal/iprt.h"
 #include <iprt/asn1.h>
 
