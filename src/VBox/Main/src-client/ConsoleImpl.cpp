@@ -4379,6 +4379,90 @@ int Console::i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
 }
 
 /**
+ * Removes the key interfaces from all disk attachments, useful when
+ * changing the key store or dropping it.
+ */
+HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
+{
+    HRESULT hrc = S_OK;
+    SafeIfaceArray<IMediumAttachment> sfaAttachments;
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* Get the VM - must be done before the read-locking. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    hrc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+    AssertComRCReturnRC(hrc);
+
+    /* Find the correct attachment. */
+    for (unsigned i = 0; i < sfaAttachments.size(); i++)
+    {
+        const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
+
+        /*
+         * Query storage controller, port and device
+         * to identify the correct driver.
+         */
+        ComPtr<IStorageController> pStorageCtrl;
+        Bstr storageCtrlName;
+        LONG lPort, lDev;
+        ULONG ulStorageCtrlInst;
+
+        hrc = pAtt->COMGETTER(Controller)(storageCtrlName.asOutParam());
+        AssertComRC(hrc);
+
+        hrc = pAtt->COMGETTER(Port)(&lPort);
+        AssertComRC(hrc);
+
+        hrc = pAtt->COMGETTER(Device)(&lDev);
+        AssertComRC(hrc);
+
+        hrc = mMachine->GetStorageControllerByName(storageCtrlName.raw(), pStorageCtrl.asOutParam());
+        AssertComRC(hrc);
+
+        hrc = pStorageCtrl->COMGETTER(Instance)(&ulStorageCtrlInst);
+        AssertComRC(hrc);
+
+        StorageControllerType_T enmCtrlType;
+        hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
+        AssertComRC(hrc);
+        const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+
+        StorageBus_T enmBus;
+        hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
+        AssertComRC(hrc);
+
+        unsigned uLUN;
+        hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+        AssertComRC(hrc);
+
+        PPDMIBASE pIBase = NULL;
+        PPDMIMEDIA pIMedium = NULL;
+        int rc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, ulStorageCtrlInst, uLUN, "VD", &pIBase);
+        if (RT_SUCCESS(rc))
+        {
+            if (pIBase)
+            {
+                pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+                if (pIMedium)
+                {
+                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+                }
+            }
+        }
+    }
+
+    return hrc;
+}
+
+/**
  * Configures the encryption support for the disk identified by the gien UUID with
  * the given key.
  *
@@ -4483,14 +4567,16 @@ HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
                     pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
                     if (!pIMedium)
                         return setError(E_FAIL, tr("could not query medium interface of controller"));
+                    else
+                    {
+                        rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey);
+                        if (RT_FAILURE(rc))
+                            return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
+                    }
                 }
                 else
                     return setError(E_FAIL, tr("could not query base interface of controller"));
             }
-
-            rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey);
-            if (RT_FAILURE(rc))
-                return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
         }
     }
 
@@ -5964,6 +6050,18 @@ HRESULT Console::i_pause(Reason_T aReason)
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
         hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
+    else
+    {
+        /* Unconfigure disk encryption from all attachments. */
+        i_clearDiskEncryptionKeysOnAllAttachments();
+
+        /* Clear any keys we have stored. */
+        for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+            it != m_mapSecretKeys.end();
+            it++)
+            delete it->second;
+        m_mapSecretKeys.clear();
+    }
 
     LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
     LogFlowThisFuncLeave();
