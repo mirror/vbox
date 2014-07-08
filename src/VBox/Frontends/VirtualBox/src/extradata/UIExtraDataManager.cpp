@@ -1220,7 +1220,7 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
 void UIExtraDataManagerWindow::prepareToolBar()
 {
     /* Create tool-bar: */
-    m_pToolBar = new UIToolBar;
+    m_pToolBar = new UIToolBar(this);
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure tool-bar: */
