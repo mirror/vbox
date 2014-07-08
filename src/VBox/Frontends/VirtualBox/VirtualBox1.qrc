@@ -76,6 +76,9 @@
         <file alias="edata_save_22px.png">images/edata_save_22px.png</file>
         <file alias="edata_save_disabled_16px.png">images/edata_save_disabled_16px.png</file>
         <file alias="edata_save_disabled_22px.png">images/edata_save_disabled_22px.png</file>
+        <file alias="edataglobal_32px.png">images/edataglobal_32px.png</file>
+        <file alias="edataman_16px.png">images/edataman_16px.png</file>
+        <file alias="edataman_32px.png">images/edataman_32px.png</file>
         <file alias="eraser_16px.png">images/eraser_16px.png</file>
         <file alias="exit_16px.png">images/exit_16px.png</file>
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
@@ -262,6 +265,5 @@
         <file alias="os_turbolinux.png">images/os_turbolinux.png</file>
         <file alias="os_turbolinux_64.png">images/os_turbolinux_64.png</file>
         <file alias="os_type_16px.png">images/os_type_16px.png</file>
-        <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
     </qresource>
 </RCC>

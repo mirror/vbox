@@ -60,6 +60,25 @@
         <file alias="diskimage_32px_hidpi.png">images/hidpi/diskimage_32px_hidpi.png</file>
         <file alias="drag_drop_16px_hidpi.png">images/hidpi/drag_drop_16px_hidpi.png</file>
         <file alias="drag_drop_disabled_16px_hidpi.png">images/hidpi/drag_drop_disabled_16px_hidpi.png</file>
+        <file alias="edata_add_16px_hidpi.png">images/hidpi/edata_add_16px_hidpi.png</file>
+        <file alias="edata_add_22px_hidpi.png">images/hidpi/edata_add_22px_hidpi.png</file>
+        <file alias="edata_add_disabled_16px_hidpi.png">images/hidpi/edata_add_disabled_16px_hidpi.png</file>
+        <file alias="edata_add_disabled_22px_hidpi.png">images/hidpi/edata_add_disabled_22px_hidpi.png</file>
+        <file alias="edata_load_16px_hidpi.png">images/hidpi/edata_load_16px_hidpi.png</file>
+        <file alias="edata_load_22px_hidpi.png">images/hidpi/edata_load_22px_hidpi.png</file>
+        <file alias="edata_load_disabled_16px_hidpi.png">images/hidpi/edata_load_disabled_16px_hidpi.png</file>
+        <file alias="edata_load_disabled_22px_hidpi.png">images/hidpi/edata_load_disabled_22px_hidpi.png</file>
+        <file alias="edata_remove_16px_hidpi.png">images/hidpi/edata_remove_16px_hidpi.png</file>
+        <file alias="edata_remove_22px_hidpi.png">images/hidpi/edata_remove_22px_hidpi.png</file>
+        <file alias="edata_remove_disabled_16px_hidpi.png">images/hidpi/edata_remove_disabled_16px_hidpi.png</file>
+        <file alias="edata_remove_disabled_22px_hidpi.png">images/hidpi/edata_remove_disabled_22px_hidpi.png</file>
+        <file alias="edata_save_16px_hidpi.png">images/hidpi/edata_save_16px_hidpi.png</file>
+        <file alias="edata_save_22px_hidpi.png">images/hidpi/edata_save_22px_hidpi.png</file>
+        <file alias="edata_save_disabled_16px_hidpi.png">images/hidpi/edata_save_disabled_16px_hidpi.png</file>
+        <file alias="edata_save_disabled_22px_hidpi.png">images/hidpi/edata_save_disabled_22px_hidpi.png</file>
+        <file alias="edataglobal_32px_hidpi.png">images/hidpi/edataglobal_32px_hidpi.png</file>
+        <file alias="edataman_16px_hidpi.png">images/hidpi/edataman_16px_hidpi.png</file>
+        <file alias="edataman_32px_hidpi.png">images/hidpi/edataman_32px_hidpi.png</file>
         <file alias="eraser_16px_hidpi.png">images/hidpi/eraser_16px_hidpi.png</file>
         <file alias="exit_16px_hidpi.png">images/hidpi/exit_16px_hidpi.png</file>
         <file alias="expanding_collapsing_16px_hidpi.png">images/hidpi/expanding_collapsing_16px_hidpi.png</file>
@@ -227,15 +246,5 @@
         <file alias="os_openbsd_64_hidpi.png">images/hidpi/os_openbsd_64_hidpi.png</file>
         <file alias="os_openbsd_hidpi.png">images/hidpi/os_openbsd_hidpi.png</file>
         <file alias="os_opensuse_64_hidpi.png">images/hidpi/os_opensuse_64_hidpi.png</file>
-        <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
-        <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
-        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
-        <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
-        <file alias="os_oraclesolaris_hidpi.png">images/hidpi/os_oraclesolaris_hidpi.png</file>
-        <file alias="os_os2_other_hidpi.png">images/hidpi/os_os2_other_hidpi.png</file>
-        <file alias="os_os2ecs_hidpi.png">images/hidpi/os_os2ecs_hidpi.png</file>
-        <file alias="os_os2warp3_hidpi.png">images/hidpi/os_os2warp3_hidpi.png</file>
-        <file alias="os_os2warp45_hidpi.png">images/hidpi/os_os2warp45_hidpi.png</file>
-        <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
     </qresource>
 </RCC>
