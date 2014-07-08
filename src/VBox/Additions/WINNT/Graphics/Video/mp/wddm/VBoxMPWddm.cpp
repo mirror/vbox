@@ -48,7 +48,8 @@ PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
 PVOID vboxWddmMemAllocZero(IN SIZE_T cbSize)
 {
     PVOID pvMem = vboxWddmMemAlloc(cbSize);
-    memset(pvMem, 0, cbSize);
+    if (pvMem)
+        memset(pvMem, 0, cbSize);
     return pvMem;
 }
 
@@ -2321,6 +2322,11 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     vboxVDbgBreakFv();
 
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)vboxWddmMemAllocZero(sizeof (VBOXWDDM_DEVICE));
+    if (!pDevice)
+    {
+        WARN(("vboxWddmMemAllocZero failed for WDDM device structure"));
+        return STATUS_NO_MEMORY;
+    }
     pCreateDevice->hDevice = pDevice;
     if (pCreateDevice->Flags.SystemDevice)
         pDevice->enmType = VBOXWDDM_DEVICE_TYPE_SYSTEM;
