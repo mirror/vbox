@@ -2226,13 +2226,15 @@ static int supdrvNtProtectFindAssociatedCsrss(PSUPDRVNTPROTECT pNtProtect)
      * Query the processes in the system so we can locate CSRSS.EXE candidates.
      * Note! Attempts at using SystemSessionProcessInformation failed with
      *       STATUS_ACCESS_VIOLATION.
+     * Note! The 32 bytes on the size of to counteract the allocation header
+     *       that rtR0MemAllocEx slaps on everything.
      */
-    ULONG       cbNeeded = _64K;
+    ULONG       cbNeeded = _64K - 32;
     uint32_t    cbBuf;
     uint8_t    *pbBuf = NULL;
     do
     {
-        cbBuf = RT_ALIGN(cbNeeded + _4K, _64K);
+        cbBuf = RT_ALIGN(cbNeeded + _4K, _64K) - 32;
         pbBuf = (uint8_t *)RTMemAlloc(cbBuf);
         if (!pbBuf)
             break;
@@ -3295,8 +3297,10 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
 
     /*
      * Take a snapshot of all the handles in the system.
+     * Note! The 32 bytes on the size of to counteract the allocation header
+     *       that rtR0MemAllocEx slaps on everything.
      */
-    uint32_t    cbBuf    = _256K;
+    uint32_t    cbBuf    = _256K - 32;
     uint8_t    *pbBuf    = (uint8_t *)RTMemAlloc(cbBuf);
     ULONG       cbNeeded = cbBuf;
     NTSTATUS rcNt = NtQuerySystemInformation(SystemExtendedHandleInformation, pbBuf, cbBuf, &cbNeeded);
@@ -3306,7 +3310,7 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
                && cbNeeded > cbBuf
                && cbBuf <= 32U*_1M)
         {
-            cbBuf = RT_ALIGN_32(cbNeeded + _4K, _64K);
+            cbBuf = RT_ALIGN_32(cbNeeded + _4K, _64K) - 32;
             RTMemFree(pbBuf);
             pbBuf = (uint8_t *)RTMemAlloc(cbBuf);
             if (!pbBuf)
@@ -3413,6 +3417,7 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
         }
     }
 
+    RTMemFree(pbBuf);
     return rc;
 }
 
