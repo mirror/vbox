@@ -1073,7 +1073,11 @@ RTASN1TMPL_DECL(void) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(RT_CONCAT(P,RTASN1T
     { \
         default: break
 # define RTASN1TMPL_MEMBER_DYN_COMMON(a_UnionNm, a_PtrName, a_Type, a_Api, a_Allocation, a_enmMembNm, a_enmValue, a_IfStmt) \
-        case a_enmValue: RT_CONCAT(a_Api,_Delete)(pThis->a_UnionNm.a_PtrName); break
+        case a_enmValue: \
+            RT_CONCAT(a_Api,_Delete)(pThis->a_UnionNm.a_PtrName); \
+            RTAsn1MemFree(&pThis->Allocation, pThis->a_UnionNm.a_PtrName); \
+            pThis->a_UnionNm.a_PtrName = NULL; \
+            break
 # define RTASN1TMPL_MEMBER_DYN_END(a_enmType, a_enmMembNm, a_Allocation) \
     }
 # define RTASN1TMPL_END_SEQCORE()                                   RTASN1TMPL_END_COMMON()
