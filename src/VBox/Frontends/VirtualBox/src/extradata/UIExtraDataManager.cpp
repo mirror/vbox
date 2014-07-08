@@ -1258,7 +1258,12 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
 {
     /* Re-cache value only if strMachineID known already: */
     if (m_data.contains(strMachineID))
-        m_data[strMachineID][strKey] = strValue;
+    {
+        if (!strValue.isEmpty())
+            m_data[strMachineID][strKey] = strValue;
+        else
+            m_data[strMachineID].remove(strKey);
+    }
 
     /* Global extra-data 'change' event: */
     if (strMachineID == GlobalID)
@@ -1295,6 +1300,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
 #endif /* Q_WS_MAC */
     }
+
+    /* Notify listeners: */
+    emit sigExtraDataChange(strMachineID, strKey, strValue);
 }
 
 void UIExtraDataManager::prepare()

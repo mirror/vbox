@@ -47,6 +47,9 @@ class UIExtraDataManager : public QObject
 
 signals:
 
+    /** Notifies about extra-data change. */
+    void sigExtraDataChange(QString strID, QString strKey, QString strValue);
+
     /** Notifies about GUI language change. */
     void sigLanguageChange(QString strLanguage);
 
