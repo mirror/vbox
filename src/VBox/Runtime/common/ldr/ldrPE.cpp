@@ -2399,12 +2399,12 @@ static int rtldrPE_VerifySignatureValidateHash(PRTLDRMODPE pModPe, PRTLDRPESIGNA
                 if (pAttrib)
                     rc = rtldrPE_VerifyAllPageHashes(pModPe, pAttrib, RTDIGESTTYPE_SHA1, pvScratch, cbScratch, pErrInfo);
             }
-            return rc;
         }
-        rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_IMAGE_HASH_MISMATCH,
-                           "Full image signature mismatch: %.*Rhxs, expected %.*Rhxs",
-                           cbHash, &pSignature->HashRes,
-                           cbHash, pSignature->pIndData->DigestInfo.Digest.Asn1Core.uData.pv);
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_IMAGE_HASH_MISMATCH,
+                               "Full image signature mismatch: %.*Rhxs, expected %.*Rhxs",
+                               cbHash, &pSignature->HashRes,
+                               cbHash, pSignature->pIndData->DigestInfo.Digest.Asn1Core.uData.pv);
     }
 
     RTMemTmpFree(pvScratch);
