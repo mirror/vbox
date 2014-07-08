@@ -2223,7 +2223,7 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, CONST D3DKMDT_VIDPN_SO
 #ifdef VBOX_WDDM_WIN8
         if (g_VBoxDisplayOnly)
         {
-            vboxWddmDmAdjustDefaultVramLocations(pDevExt, VidPnSourceId, paSources);
+            vboxWddmDmSetupDefaultVramLocation(pDevExt, VidPnSourceId, paSources);
         }
 #endif
     }
@@ -2234,7 +2234,12 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, CONST D3DKMDT_VIDPN_SO
         fChanges |= VBOXWDDM_HGSYNC_F_SYNCED_ALL;
     }
 
-    vboxWddmAssignPrimary(pSource, pAllocation, VidPnSourceId);
+#ifdef VBOX_WDDM_WIN8
+    if (!g_VBoxDisplayOnly)
+        vboxWddmAssignPrimary(pSource, pAllocation, VidPnSourceId);
+    else
+        Assert(!pAllocation);
+#endif
 
     Assert(pSource->AllocData.SurfDesc.VidPnSourceId == VidPnSourceId);
     pSource->u8SyncState &= ~fChanges;
