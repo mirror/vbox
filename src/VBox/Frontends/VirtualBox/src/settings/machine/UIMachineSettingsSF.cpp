@@ -187,7 +187,6 @@ UIMachineSettingsSF::UIMachineSettingsSF()
                                             ":/sf_remove_disabled_16px.png"));
 
     /* Prepare tool-bar: */
-    m_pFoldersToolBar->setUsesTextLabel(false);
     m_pFoldersToolBar->setIconSize(QSize(16, 16));
     m_pFoldersToolBar->setOrientation(Qt::Vertical);
     m_pFoldersToolBar->addAction(mNewAction);

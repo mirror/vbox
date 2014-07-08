@@ -175,7 +175,6 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
                                             ":/usb_movedown_disabled_16px.png"));
 
     /* Prepare tool-bar: */
-    m_pFiltersToolBar->setUsesTextLabel(false);
     m_pFiltersToolBar->setIconSize(QSize(16, 16));
     m_pFiltersToolBar->setOrientation(Qt::Vertical);
     m_pFiltersToolBar->addAction(mNewAction);

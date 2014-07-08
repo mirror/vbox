@@ -120,7 +120,7 @@ UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3.
      * We do this after setting the window pos/size, cause Qt sometimes
      * includes the toolbar height in the content height. */
-    mVMToolBar->setMacToolbar();
+    mVMToolBar->enableMacToolbar();
 # endif /* MAC_LEOPARD_STYLE */
 
     UIWindowMenuManager::instance()->addWindow(this);

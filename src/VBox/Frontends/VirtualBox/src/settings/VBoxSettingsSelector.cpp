@@ -378,7 +378,7 @@ VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = 
 {
     /* Init the toolbar */
     mTbSelector = new UIToolBar (aParent);
-    mTbSelector->setUsesTextLabel (true);
+    mTbSelector->setUseTextLabels (true);
     mTbSelector->setIconSize (QSize (32, 32));
 #ifdef Q_WS_MAC
     mTbSelector->setShowToolBarButton (false);

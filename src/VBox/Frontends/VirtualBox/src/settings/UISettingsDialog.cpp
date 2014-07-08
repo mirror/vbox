@@ -84,7 +84,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     m_pLbTitle->hide();
     /* Create modern tool-bar selector: */
     m_pSelector = new VBoxSettingsToolBarSelector(this);
-    static_cast<UIToolBar*>(m_pSelector->widget())->setMacToolbar();
+    static_cast<UIToolBar*>(m_pSelector->widget())->enableMacToolbar();
     addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
     /* No title in this mode, we change the title of the window: */
     pMainLayout->setColumnMinimumWidth(0, 0);

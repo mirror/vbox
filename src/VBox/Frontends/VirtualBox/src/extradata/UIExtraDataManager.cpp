@@ -1213,7 +1213,8 @@ void UIExtraDataManagerWindow::prepareCentralWidget()
             prepareButtonBox();
         }
         /* Initial focus: */
-        m_pViewOfChooser->setFocus();
+        if (m_pViewOfChooser)
+            m_pViewOfChooser->setFocus();
     }
 }
 
@@ -1236,7 +1237,7 @@ void UIExtraDataManagerWindow::prepareToolBar()
 #if MAC_LEOPARD_STYLE
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
-        m_pToolBar->setMacToolbar();
+        m_pToolBar->enableMacToolbar();
 #else /* !MAC_LEOPARD_STYLE */
         /* Add tool-bar into main-layout: */
         m_pMainLayout->addWidget(m_pToolBar);
