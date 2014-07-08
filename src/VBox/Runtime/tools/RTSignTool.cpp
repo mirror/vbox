@@ -259,6 +259,7 @@ typedef struct VERIFYEXESTATE
     int         cVerbose;
     enum { kSignType_Windows, kSignType_OSX } enmSignType;
     uint64_t    uTimestamp;
+    RTLDRARCH   enmLdrArch;
 } VERIFYEXESTATE;
 
 #ifdef VBOX
@@ -403,6 +404,40 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
     return VINF_SUCCESS;
 }
 
+/** Worker for HandleVerifyExe. */
+static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszFilename, PRTERRINFOSTATIC pStaticErrInfo)
+{
+    /*
+     * Open the executable image and verify it.
+     */
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrOpen(pszFilename, RTLDR_O_FOR_VALIDATION, pState->enmLdrArch, &hLdrMod);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening executable image '%s': %Rrc", pszFilename, rc);
+
+
+    rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pState->uTimestamp, sizeof(pState->uTimestamp));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
+        if (RT_SUCCESS(rc))
+            RTMsgInfo("'%s' is valid.\n", pszFilename);
+        else
+            RTMsgError("RTLdrVerifySignature failed on '%s': %Rrc - %s\n", pszFilename, rc, pStaticErrInfo->szMsg);
+    }
+    else
+        RTMsgError("RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on '%s': %Rrc\n", pszFilename, rc);
+
+    int rc2 = RTLdrClose(hLdrMod);
+    if (RT_FAILURE(rc2))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTLdrClose failed: %Rrc\n", rc2);
+    if (RT_FAILURE(rc))
+        return rc != VERR_LDRVI_NOT_SIGNED ? RTEXITCODE_FAILURE : RTEXITCODE_SKIPPED;
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
 static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
 {
     RTERRINFOSTATIC StaticErrInfo;
@@ -426,8 +461,11 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
         { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
     };
 
-    RTLDRARCH       enmLdrArch = RTLDRARCH_WHATEVER;
-    VERIFYEXESTATE  State = { NIL_RTCRSTORE, NIL_RTCRSTORE, NIL_RTCRSTORE, false, false, VERIFYEXESTATE::kSignType_Windows };
+    VERIFYEXESTATE State =
+    {
+        NIL_RTCRSTORE, NIL_RTCRSTORE, NIL_RTCRSTORE, false, false,
+        VERIFYEXESTATE::kSignType_Windows, 0, RTLDRARCH_WHATEVER
+    };
     int rc = RTCrStoreCreateInMem(&State.hRootStore, 0);
     if (RT_SUCCESS(rc))
         rc = RTCrStoreCreateInMem(&State.hKernelRootStore, 0);
@@ -523,44 +561,35 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
     /*
      * Do it.
      */
+    RTEXITCODE rcExit;
     for (;;)
     {
-        /*
-         * Open the executable image and verify it.
-         */
-        RTLDRMOD hLdrMod;
-        rc = RTLdrOpen(ValueUnion.psz, RTLDR_O_FOR_VALIDATION, enmLdrArch, &hLdrMod);
-        if (RT_FAILURE(rc))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening executable image '%s': %Rrc", ValueUnion.psz, rc);
-
-
-        rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &State.uTimestamp, sizeof(State.uTimestamp));
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, &State, RTErrInfoInitStatic(&StaticErrInfo));
-            if (RT_SUCCESS(rc))
-                RTMsgInfo("'%s' is valid.\n", ValueUnion.psz);
-            else
-                RTMsgError("RTLdrVerifySignature failed on '%s': %Rrc - %s\n", ValueUnion.psz, rc, StaticErrInfo.szMsg);
-        }
-        else
-            RTMsgError("RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on '%s': %Rrc\n", ValueUnion.psz, rc);
-
-        int rc2 = RTLdrClose(hLdrMod);
-        if (RT_FAILURE(rc2))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTLdrClose failed: %Rrc\n", rc2);
-        if (RT_FAILURE(rc))
-            return rc != VERR_LDRVI_NOT_SIGNED ? RTEXITCODE_FAILURE : RTEXITCODE_SKIPPED;
+        rcExit = HandleVerifyExeWorker(&State, ValueUnion.psz, &StaticErrInfo);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            break;
 
         /*
          * Next file
          */
         ch = RTGetOpt(&GetState, &ValueUnion);
         if (ch == 0)
-            return RTEXITCODE_SUCCESS;
+            break;
         if (ch != VINF_GETOPT_NOT_OPTION)
-            return RTGetOptPrintError(ch, &ValueUnion);
+        {
+            rcExit = RTGetOptPrintError(ch, &ValueUnion);
+            break;
+        }
     }
+
+    /*
+     * Clean up.
+     */
+    uint32_t cRefs;
+    cRefs = RTCrStoreRelease(State.hRootStore);       Assert(cRefs == 0);
+    cRefs = RTCrStoreRelease(State.hKernelRootStore); Assert(cRefs == 0);
+    cRefs = RTCrStoreRelease(State.hAdditionalStore); Assert(cRefs == 0);
+
+    return rcExit;
 }
 
 #endif /* !IPRT_IN_BUILD_TOOL */
