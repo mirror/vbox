@@ -576,6 +576,7 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
             supdrvNtProtectTerm();
 #endif
         }
+        RTTermRunCallbacks(RTTERMREASON_UNLOAD, 0);
         RTR0Term();
     }
     else
@@ -613,6 +614,7 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
 #ifdef VBOX_WITH_HARDENING
     supdrvNtProtectTerm();
 #endif
+    RTTermRunCallbacks(RTTERMREASON_UNLOAD, 0);
     RTR0Term();
     vboxdrvNtDestroyDevices();
 
