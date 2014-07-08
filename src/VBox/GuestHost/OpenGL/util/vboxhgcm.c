@@ -2625,7 +2625,6 @@ int crVBoxHGCMRecv(
 
 #ifdef IN_GUEST
 # if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    CRASSERT(!g_crvboxhgcm.bHgsmiOn == !conn);
     if (conn && g_crvboxhgcm.bHgsmiOn)
     {
         _crVBoxHGCMPerformPollHost(conn);
