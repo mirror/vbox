@@ -117,30 +117,30 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
 
 
 /* static */
-UIExtraDataManager *UIExtraDataManager::m_pInstance = 0;
-QString UIExtraDataManager::m_sstrGlobalID = QUuid().toString().remove(QRegExp("[{}]"));
+UIExtraDataManager *UIExtraDataManager::m_spInstance = 0;
+const QString UIExtraDataManager::GlobalID = QUuid().toString().remove(QRegExp("[{}]"));
 
 /* static */
 UIExtraDataManager* UIExtraDataManager::instance()
 {
     /* Create/prepare instance if not yet exists: */
-    if (!m_pInstance)
+    if (!m_spInstance)
     {
         new UIExtraDataManager;
-        m_pInstance->prepare();
+        m_spInstance->prepare();
     }
     /* Return instance: */
-    return m_pInstance;
+    return m_spInstance;
 }
 
 /* static */
 void UIExtraDataManager::destroy()
 {
     /* Destroy/cleanup instance if still exists: */
-    if (m_pInstance)
+    if (m_spInstance)
     {
-        m_pInstance->cleanup();
-        delete m_pInstance;
+        m_spInstance->cleanup();
+        delete m_spInstance;
     }
 }
 
@@ -148,13 +148,13 @@ UIExtraDataManager::UIExtraDataManager()
     : m_pHandler(0)
 {
     /* Connect to static instance: */
-    m_pInstance = this;
+    m_spInstance = this;
 }
 
 UIExtraDataManager::~UIExtraDataManager()
 {
     /* Disconnect from static instance: */
-    m_pInstance = 0;
+    m_spInstance = 0;
 }
 
 QStringList UIExtraDataManager::suppressedMessages() const
@@ -436,7 +436,7 @@ void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
 void UIExtraDataManager::clearSelectorWindowGroupsDefinitions()
 {
     /* Read-only access global extra-data map: */
-    const ExtraDataMap &data = m_data[m_sstrGlobalID];
+    const ExtraDataMap &data = m_data[GlobalID];
     /* Wipe-out each the group definition record: */
     foreach (const QString &strKey, data.keys())
         if (strKey.startsWith(GUI_GroupDefinitions))
@@ -1164,7 +1164,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         m_data[strMachineID][strKey] = strValue;
 
     /* Global extra-data 'change' event: */
-    if (strMachineID == m_sstrGlobalID)
+    if (strMachineID == GlobalID)
     {
         if (strKey.startsWith("GUI/"))
         {
@@ -1214,11 +1214,11 @@ void UIExtraDataManager::prepareGlobalExtraDataMap()
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Make sure at least empty map is created: */
-    m_data[m_sstrGlobalID] = ExtraDataMap();
+    m_data[GlobalID] = ExtraDataMap();
 
     /* Load global extra-data map: */
     foreach (const QString &strKey, vbox.GetExtraDataKeys())
-        m_data[m_sstrGlobalID][strKey] = vbox.GetExtraData(strKey);
+        m_data[GlobalID][strKey] = vbox.GetExtraData(strKey);
 }
 
 void UIExtraDataManager::prepareExtraDataEventHandler()
@@ -1279,7 +1279,7 @@ void UIExtraDataManager::cleanupMainEventListener()
 void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID) const
 {
     /* Make sure it is valid ID: */
-    AssertMsgReturnVoid(!strID.isNull() && strID != m_sstrGlobalID,
+    AssertMsgReturnVoid(!strID.isNull() && strID != GlobalID,
                         ("Invalid VM ID = {%s}\n", strID.toAscii().constData()));
     /* Which is not loaded yet: */
     AssertReturnVoid(!m_data.contains(strID));
@@ -1301,10 +1301,10 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID) const
         m_data[strID][strKey] = machine.GetExtraData(strKey);
 }
 
-bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = m_sstrGlobalID */) const
+bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = GlobalID */) const
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1322,10 +1322,10 @@ bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &
            || strValue == "1";
 }
 
-bool UIExtraDataManager::isFeatureRestricted(const QString &strKey, const QString &strID /* = m_sstrGlobalID */) const
+bool UIExtraDataManager::isFeatureRestricted(const QString &strKey, const QString &strID /* = GlobalID */) const
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1353,10 +1353,10 @@ QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
     return fRestricted ? QString("false") : QString();
 }
 
-QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = m_sstrGlobalID */) const
+QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */) const
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1370,10 +1370,10 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
     return data[strKey];
 }
 
-void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = m_sstrGlobalID */)
+void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1383,7 +1383,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     data[strKey] = strValue;
 
     /* Global extra-data: */
-    if (strID == m_sstrGlobalID)
+    if (strID == GlobalID)
     {
         /* Get global object: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1402,10 +1402,10 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     }
 }
 
-QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = m_sstrGlobalID */) const
+QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = GlobalID */) const
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1420,10 +1420,10 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
 }
 
-void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = m_sstrGlobalID */)
+void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = GlobalID */)
 {
     /* Hot-load machine extra-data map if necessary: */
-    if (strID != m_sstrGlobalID && !m_data.contains(strID))
+    if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
 
     /* Access corresponding map: */
@@ -1433,7 +1433,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     data[strKey] = strValue.join(",");
 
     /* Global extra-data: */
-    if (strID == m_sstrGlobalID)
+    if (strID == GlobalID)
     {
         /* Get global object: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
