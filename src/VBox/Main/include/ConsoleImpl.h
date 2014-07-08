@@ -843,6 +843,7 @@ private:
      * @{ */
     HRESULT i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
     HRESULT i_configureEncryptionForDisk(const char *pszUuid);
+    HRESULT i_clearDiskEncryptionKeysOnAllAttachments(void);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
                                char **ppszKey, char **ppszVal);
     /** @} */
