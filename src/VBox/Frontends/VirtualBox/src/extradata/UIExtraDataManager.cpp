@@ -579,7 +579,7 @@ UIExtraDataManagerWindow::~UIExtraDataManagerWindow()
     cleanup();
 }
 
-void UIExtraDataManagerWindow::showAndRaise(QWidget *pCenterWidget)
+void UIExtraDataManagerWindow::showAndRaise(QWidget*)
 {
     /* Show: */
     show();
@@ -708,8 +708,8 @@ void UIExtraDataManagerWindow::sltChooserHandleCurrentChanged(const QModelIndex 
     sortData();
 }
 
-void UIExtraDataManagerWindow::sltChooserHandleSelectionChanged(const QItemSelection &selected,
-                                                                const QItemSelection &deselected)
+void UIExtraDataManagerWindow::sltChooserHandleSelectionChanged(const QItemSelection&,
+                                                                const QItemSelection&)
 {
     /* Update actions availability: */
     updateActionsAvailability();
@@ -721,8 +721,8 @@ void UIExtraDataManagerWindow::sltDataApplyFilter(const QString &strFilter)
     m_pModelProxyOfData->setFilterWildcard(strFilter);
 }
 
-void UIExtraDataManagerWindow::sltDataHandleSelectionChanged(const QItemSelection &selected,
-                                                             const QItemSelection &deselected)
+void UIExtraDataManagerWindow::sltDataHandleSelectionChanged(const QItemSelection&,
+                                                             const QItemSelection&)
 {
     /* Update actions availability: */
     updateActionsAvailability();
@@ -803,7 +803,7 @@ void UIExtraDataManagerWindow::sltAdd()
                                 pKeyPropertySetter, SLOT(sltAssignProperty(const QString&)));
                     }
                     /* Create key-editor validator: */
-                    QObjectValidator *pKeyValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+")));
+                    QObjectValidator *pKeyValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pKeyValidator);
                     {
                         /* Configure key-editor validator: */
@@ -837,7 +837,7 @@ void UIExtraDataManagerWindow::sltAdd()
                                 pValuePropertySetter, SLOT(sltAssignProperty(const QString&)));
                     }
                     /* Create value-editor validator: */
-                    QObjectValidator *pValueValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+")));
+                    QObjectValidator *pValueValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pValueValidator);
                     {
                         /* Configure value-editor validator: */
