@@ -5094,20 +5094,20 @@ TEMPLATE_VBoxAdvBldProg_LIBS    = \
 	,) \
 	$(TEMPLATE_VBoxBldProg_LIBS)
 TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
-	$(TEMPLATE_VBoxBldProg_LIBS) \
+	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
 	iconv \
 	$(TEMPLATE_VBoxBldProg_LIBS.darwin)
 TEMPLATE_VBoxAdvBldProg_LIBS.freebsd = \
-	$(TEMPLATE_VBoxBldProg_LIBS) \
+	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
 	iconv \
 	rt \
 	$(TEMPLATE_VBoxBldProg_LIBS.freebsd)
 TEMPLATE_VBoxAdvBldProg_LIBS.linux = \
-	$(TEMPLATE_VBoxBldProg_LIBS) \
+	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
 	crypt \
 	$(TEMPLATE_VBoxBldProg_LIBS.linux)
 TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
-	$(TEMPLATE_VBoxBldProg_LIBS) \
+	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
 	contract \
 	kstat \
 	rt \
