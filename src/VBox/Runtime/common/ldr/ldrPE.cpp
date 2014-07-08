@@ -2351,9 +2351,12 @@ static int rtldrPE_VerifySignatureValidateHash(PRTLDRMODPE pModPe, PRTLDRPESIGNA
 
     /*
      * Allocate a temporary memory buffer.
+     * Note! The _4K that gets subtracted is to avoid that the 16-byte heap
+     *       block header in ring-0 (iprt) caused any unnecessary internal
+     *       heap fragmentation.
      */
 #ifdef IN_RING0
-    uint32_t    cbScratch = _256K;
+    uint32_t    cbScratch = _256K - _4K;
 #else
     uint32_t    cbScratch = _1M;
 #endif
