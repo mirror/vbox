@@ -1430,10 +1430,11 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(void)
             const char *pszDefine;
             switch (rcNt)
             {
-                case STATUS_NO_SUCH_DEVICE:     pszDefine = " STATUS_NO_SUCH_DEVICE"; break;
-                case STATUS_ACCESS_DENIED:      pszDefine = " STATUS_ACCESS_DENIED"; break;
-                case STATUS_TRUST_FAILURE:      pszDefine = " STATUS_TRUST_FAILURE"; break;
-                default:                        pszDefine = ""; break;
+                case STATUS_NO_SUCH_DEVICE:         pszDefine = " STATUS_NO_SUCH_DEVICE"; break;
+                case STATUS_OBJECT_NAME_NOT_FOUND:  pszDefine = " STATUS_OBJECT_NAME_NOT_FOUND"; break;
+                case STATUS_ACCESS_DENIED:          pszDefine = " STATUS_ACCESS_DENIED"; break;
+                case STATUS_TRUST_FAILURE:          pszDefine = " STATUS_TRUST_FAILURE"; break;
+                default:                            pszDefine = ""; break;
             }
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
                                   "NtCreateFile(%ls) failed: %#x%s\n", s_wszName, rcNt, pszDefine);
