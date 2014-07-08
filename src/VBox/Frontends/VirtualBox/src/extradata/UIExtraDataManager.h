@@ -75,6 +75,28 @@ public:
     /** Static Extra-data Manager destructor. */
     static void destroy();
 
+    /** @name General
+      * @{ */
+        /** Returns whether Extra-data Manager cached the map with passed @a strID. */
+        bool contains(const QString &strID) const { return m_data.contains(strID); }
+        /** Returns read-only extra-data map for passed @a strID. */
+        const ExtraDataMap map(const QString &strID) const { return m_data.value(strID); }
+
+        /** Returns extra-data value corresponding to passed @a strKey as QString.
+          * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+        QString extraDataString(const QString &strKey, const QString &strID = GlobalID);
+        /** Defines extra-data value corresponding to passed @a strKey as strValue.
+          * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+        void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = GlobalID);
+
+        /** Returns extra-data value corresponding to passed @a strKey as QStringList.
+          * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+        QStringList extraDataStringList(const QString &strKey, const QString &strID = GlobalID);
+        /** Defines extra-data value corresponding to passed @a strKey as strValue.
+          * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
+        void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = GlobalID);
+    /** @} */
+
     /** @name Messaging
       * @{ */
         /** Returns the list of supressed messages for the Message/Popup center frameworks. */
@@ -396,14 +418,14 @@ private:
     /** Prepare Main event-listener. */
     void prepareMainEventListener();
 
-    /** Cleanup Extra-data Manager. */
-    void cleanup();
     /** Cleanup Main event-listener. */
     void cleanupMainEventListener();
     // /** Cleanup extra-data event-handler. */
     // void cleanupExtraDataEventHandler();
     // /** Cleanup extra-data map. */
     // void cleanupExtraDataMap();
+    /** Cleanup Extra-data Manager. */
+    void cleanup();
 
     /** Hot-load machine extra-data map. */
     void hotloadMachineExtraDataMap(const QString &strID);
@@ -419,20 +441,6 @@ private:
     QString toFeatureAllowed(bool fAllowed);
     /** Translates bool flag into 'restricted' value. */
     QString toFeatureRestricted(bool fRestricted);
-
-    /** Returns extra-data value corresponding to passed @a strKey as QString.
-      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QString extraDataString(const QString &strKey, const QString &strID = GlobalID);
-    /** Defines extra-data value corresponding to passed @a strKey as strValue.
-      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = GlobalID);
-
-    /** Returns extra-data value corresponding to passed @a strKey as QStringList.
-      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QStringList extraDataStringList(const QString &strKey, const QString &strID = GlobalID);
-    /** Defines extra-data value corresponding to passed @a strKey as strValue.
-      * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = GlobalID);
 
     /** Returns string consisting of @a strBase appended with @a uScreenIndex for the *non-primary* screen-index.
       * If @a fSameRuleForPrimary is 'true' same rule will be used for *primary* screen-index. Used for storing per-screen extra-data. */

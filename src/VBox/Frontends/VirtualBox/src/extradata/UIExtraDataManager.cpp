@@ -22,8 +22,8 @@
 /* GUI includes: */
 #include "UIExtraDataManager.h"
 #include "UIMainEventListener.h"
-#include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
+#include "VBoxGlobal.h"
 #include "UIActionPool.h"
 #include "UIConverter.h"
 
@@ -141,6 +141,105 @@ void UIExtraDataManager::destroy()
     {
         m_spInstance->cleanup();
         delete m_spInstance;
+    }
+}
+
+QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */)
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (strID != GlobalID && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Read-only access corresponding map: */
+    const ExtraDataMap data = m_data.value(strID);
+
+    /* QString() if value was not set: */
+    if (!data.contains(strKey))
+        return QString();
+
+    /* Returns corresponding value: */
+    return data[strKey];
+}
+
+void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (strID != GlobalID && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Access corresponding map: */
+    ExtraDataMap &data = m_data[strID];
+
+    /* [Re]cache passed value: */
+    data[strKey] = strValue;
+
+    /* Global extra-data: */
+    if (strID == GlobalID)
+    {
+        /* Get global object: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        /* Update global extra-data: */
+        vbox.SetExtraData(strKey, strValue);
+    }
+    /* Machine extra-data: */
+    else
+    {
+        /* Search for corresponding machine: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        CMachine machine = vbox.FindMachine(strID);
+        AssertReturnVoid(vbox.isOk() && !machine.isNull());
+        /* Update machine extra-data: */
+        machine.SetExtraData(strKey, strValue);
+    }
+}
+
+QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = GlobalID */)
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (strID != GlobalID && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Read-only access corresponding map: */
+    const ExtraDataMap data = m_data.value(strID);
+
+    /* QStringList() if machine value was not set: */
+    if (!data.contains(strKey))
+        return QStringList();
+
+    /* Few old extra-data string-lists were separated with 'semicolon' symbol.
+     * All new separated by 'comma'. We have to take that into account. */
+    return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
+}
+
+void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = GlobalID */)
+{
+    /* Hot-load machine extra-data map if necessary: */
+    if (strID != GlobalID && !m_data.contains(strID))
+        hotloadMachineExtraDataMap(strID);
+
+    /* Access corresponding map: */
+    ExtraDataMap &data = m_data[strID];
+
+    /* [Re]cache passed value: */
+    data[strKey] = strValue.join(",");
+
+    /* Global extra-data: */
+    if (strID == GlobalID)
+    {
+        /* Get global object: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        /* Update global extra-data: */
+        vbox.SetExtraDataStringList(strKey, strValue);
+    }
+    /* Machine extra-data: */
+    else
+    {
+        /* Search for corresponding machine: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        CMachine machine = vbox.FindMachine(strID);
+        AssertReturnVoid(vbox.isOk() && !machine.isNull());
+        /* Update machine extra-data: */
+        machine.SetExtraDataStringList(strKey, strValue);
     }
 }
 
@@ -1261,17 +1360,17 @@ void UIExtraDataManager::prepareMainEventListener()
             Qt::DirectConnection);
 }
 
-void UIExtraDataManager::cleanup()
-{
-    /* Cleanup Main event-listener: */
-    cleanupMainEventListener();
-}
-
 void UIExtraDataManager::cleanupMainEventListener()
 {
     /* Unregister Main event-listener:  */
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
     vbox.GetEventSource().UnregisterListener(m_listener);
+}
+
+void UIExtraDataManager::cleanup()
+{
+    /* Cleanup Main event-listener: */
+    cleanupMainEventListener();
 }
 
 void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
@@ -1349,105 +1448,6 @@ QString UIExtraDataManager::toFeatureAllowed(bool fAllowed)
 QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
 {
     return fRestricted ? QString("false") : QString();
-}
-
-QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */)
-{
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Access corresponding map: */
-    ExtraDataMap &data = m_data[strID];
-
-    /* QString() if value was not set: */
-    if (!data.contains(strKey))
-        return QString();
-
-    /* Returns corresponding value: */
-    return data[strKey];
-}
-
-void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
-{
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Access corresponding map: */
-    ExtraDataMap &data = m_data[strID];
-
-    /* [Re]cache passed value: */
-    data[strKey] = strValue;
-
-    /* Global extra-data: */
-    if (strID == GlobalID)
-    {
-        /* Get global object: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        /* Update global extra-data: */
-        vbox.SetExtraData(strKey, strValue);
-    }
-    /* Machine extra-data: */
-    else
-    {
-        /* Search for corresponding machine: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine machine = vbox.FindMachine(strID);
-        AssertReturnVoid(vbox.isOk() && !machine.isNull());
-        /* Update machine extra-data: */
-        machine.SetExtraData(strKey, strValue);
-    }
-}
-
-QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QString &strID /* = GlobalID */)
-{
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Access corresponding map: */
-    ExtraDataMap &data = m_data[strID];
-
-    /* QStringList() if machine value was not set: */
-    if (!data.contains(strKey))
-        return QStringList();
-
-    /* Few old extra-data string-lists were separated with 'semicolon' symbol.
-     * All new separated by 'comma'. We have to take that into account. */
-    return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
-}
-
-void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = GlobalID */)
-{
-    /* Hot-load machine extra-data map if necessary: */
-    if (strID != GlobalID && !m_data.contains(strID))
-        hotloadMachineExtraDataMap(strID);
-
-    /* Access corresponding map: */
-    ExtraDataMap &data = m_data[strID];
-
-    /* [Re]cache passed value: */
-    data[strKey] = strValue.join(",");
-
-    /* Global extra-data: */
-    if (strID == GlobalID)
-    {
-        /* Get global object: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        /* Update global extra-data: */
-        vbox.SetExtraDataStringList(strKey, strValue);
-    }
-    /* Machine extra-data: */
-    else
-    {
-        /* Search for corresponding machine: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine machine = vbox.FindMachine(strID);
-        AssertReturnVoid(vbox.isOk() && !machine.isNull());
-        /* Update machine extra-data: */
-        machine.SetExtraDataStringList(strKey, strValue);
-    }
 }
 
 /* static */
