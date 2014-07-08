@@ -1426,8 +1426,18 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(void)
         if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
             rc = SUP_NT_STATUS_TO_VBOX(rcNt);
         else
+        {
+            const char *pszDefine;
+            switch (rcNt)
+            {
+                case STATUS_NO_SUCH_DEVICE:     pszDefine = " STATUS_NO_SUCH_DEVICE"; break;
+                case STATUS_ACCESS_DENIED:      pszDefine = " STATUS_ACCESS_DENIED"; break;
+                case STATUS_TRUST_FAILURE:      pszDefine = " STATUS_TRUST_FAILURE"; break;
+                default:                        pszDefine = ""; break;
+            }
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
-                                  "NtCreateFile(%ls) failed: %#x\n", s_wszName, rcNt);
+                                  "NtCreateFile(%ls) failed: %#x%s\n", s_wszName, rcNt, pszDefine);
+        }
         supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, rc,
                               "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)\n", s_wszName, rc, rcNt);
     }
