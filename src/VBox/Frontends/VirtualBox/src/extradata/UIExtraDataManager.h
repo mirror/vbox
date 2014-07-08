@@ -67,6 +67,9 @@ signals:
 
 public:
 
+    /** Global extra-data ID. */
+    static const QString GlobalID;
+
     /** Static Extra-data Manager instance/constructor. */
     static UIExtraDataManager* instance();
     /** Static Extra-data Manager destructor. */
@@ -407,10 +410,10 @@ private:
 
     /** Determines whether feature corresponding to passed @a strKey is allowed.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    bool isFeatureAllowed(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
+    bool isFeatureAllowed(const QString &strKey, const QString &strID = GlobalID) const;
     /** Determines whether feature corresponding to passed @a strKey is restricted.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    bool isFeatureRestricted(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
+    bool isFeatureRestricted(const QString &strKey, const QString &strID = GlobalID) const;
 
     /** Translates bool flag into 'allowed' value. */
     QString toFeatureAllowed(bool fAllowed);
@@ -419,34 +422,31 @@ private:
 
     /** Returns extra-data value corresponding to passed @a strKey as QString.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QString extraDataString(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
+    QString extraDataString(const QString &strKey, const QString &strID = GlobalID) const;
     /** Defines extra-data value corresponding to passed @a strKey as strValue.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = m_sstrGlobalID);
+    void setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID = GlobalID);
 
     /** Returns extra-data value corresponding to passed @a strKey as QStringList.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    QStringList extraDataStringList(const QString &strKey, const QString &strID = m_sstrGlobalID) const;
+    QStringList extraDataStringList(const QString &strKey, const QString &strID = GlobalID) const;
     /** Defines extra-data value corresponding to passed @a strKey as strValue.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = m_sstrGlobalID);
+    void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = GlobalID);
 
     /** Returns string consisting of @a strBase appended with @a uScreenIndex for the *non-primary* screen-index.
       * If @a fSameRuleForPrimary is 'true' same rule will be used for *primary* screen-index. Used for storing per-screen extra-data. */
     static QString extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary = false);
 
     /** Singleton Extra-data Manager instance. */
-    static UIExtraDataManager *m_pInstance;
+    static UIExtraDataManager *m_spInstance;
 
-    /** Global extra-data ID. */
-    static QString m_sstrGlobalID;
-
-    /** Main event-listener instance. */
+    /** Holds main event-listener instance. */
     CEventListener m_listener;
-    /** Extra-data event-handler instance. */
+    /** Holds extra-data event-handler instance. */
     UIExtraDataEventHandler *m_pHandler;
 
-    /** Extra-data map. */
+    /** Holds extra-data map instance. */
     mutable QMap<QString, ExtraDataMap> m_data;
 };
 
