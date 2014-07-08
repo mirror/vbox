@@ -309,6 +309,13 @@ void UISelectorWindow::sltShowExportApplianceWizard()
         delete pWizard;
 }
 
+#ifdef DEBUG
+void UISelectorWindow::sltOpenExtraDataManagerWindow()
+{
+    gEDataManager->openWindow(this);
+}
+#endif /* DEBUG */
+
 void UISelectorWindow::sltShowPreferencesDialog()
 {
     /* Check that we do NOT handling that already: */
@@ -1146,6 +1153,10 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* Q_WS_MAC */
+#ifdef DEBUG
+    m_pExtraDataManagerWindowAction = gActionPool->action(UIActionIndexSelector_Simple_File_ExtraDataManagerWindow);
+    pMenu->addAction(m_pExtraDataManagerWindowAction);
+#endif /* DEBUG */
     m_pPreferencesDialogAction = gActionPool->action(UIActionIndex_Simple_Preferences);
     pMenu->addAction(m_pPreferencesDialogAction);
 #ifndef Q_WS_MAC
@@ -1421,6 +1432,9 @@ void UISelectorWindow::prepareConnections()
     connect(m_pMediumManagerDialogAction, SIGNAL(triggered()), this, SLOT(sltShowMediumManager()));
     connect(m_pImportApplianceWizardAction, SIGNAL(triggered()), this, SLOT(sltShowImportApplianceWizard()));
     connect(m_pExportApplianceWizardAction, SIGNAL(triggered()), this, SLOT(sltShowExportApplianceWizard()));
+#ifdef DEBUG
+    connect(m_pExtraDataManagerWindowAction, SIGNAL(triggered()), this, SLOT(sltOpenExtraDataManagerWindow()));
+#endif /* DEBUG */
     connect(m_pPreferencesDialogAction, SIGNAL(triggered()), this, SLOT(sltShowPreferencesDialog()));
     connect(m_pExitAction, SIGNAL(triggered()), this, SLOT(sltPerformExit()));
 

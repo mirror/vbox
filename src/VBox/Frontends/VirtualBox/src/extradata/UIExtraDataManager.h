@@ -20,6 +20,9 @@
 /* Qt includes: */
 #include <QObject>
 #include <QMap>
+#ifdef DEBUG
+# include <QPointer>
+#endif /* DEBUG */
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -29,6 +32,9 @@
 
 /* Forward declarations: */
 class UIExtraDataEventHandler;
+#ifdef DEBUG
+class UIExtraDataManagerWindow;
+#endif /* DEBUG */
 
 /* Type definitions: */
 typedef QMap<QString, QString> ExtraDataMap;
@@ -77,6 +83,11 @@ public:
     static UIExtraDataManager* instance();
     /** Static Extra-data Manager destructor. */
     static void destroy();
+
+#ifdef DEBUG
+    /** Static show and raise API. */
+    static void openWindow(QWidget *pCenterWidget);
+#endif /* DEBUG */
 
     /** @name General
       * @{ */
@@ -405,6 +416,23 @@ public:
     /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef DEBUG
+    /** @name VirtualBox: Extra-data Manager window
+      * @{ */
+        /** Returns Extra-data Manager geometry using @a pWidget as hint. */
+        QRect extraDataManagerGeometry(QWidget *pWidget);
+        /** Returns whether Extra-data Manager should be maximized or not. */
+        bool extraDataManagerShouldBeMaximized();
+        /** Defines Extra-data Manager @a geometry and @a fMaximized state. */
+        void setExtraDataManagerGeometry(const QRect &geometry, bool fMaximized);
+
+        /** Returns Extra-data Manager splitter hints using @a pWidget as hint. */
+        QList<int> extraDataManagerSplitterHints(QWidget *pWidget);
+        /** Defines Extra-data Manager splitter @a hints. */
+        void setExtraDataManagerSplitterHints(const QList<int> &hints);
+    /** @} */
+#endif /* DEBUG */
+
 private slots:
 
     /** Handles 'extra-data change' event: */
@@ -420,7 +448,13 @@ private:
     void prepareExtraDataEventHandler();
     /** Prepare Main event-listener. */
     void prepareMainEventListener();
+#ifdef DEBUG
+    // /** Prepare window. */
+    // void prepareWindow();
 
+    /** Cleanup window. */
+    void cleanupWindow();
+#endif /* DEBUG */
     /** Cleanup Main event-listener. */
     void cleanupMainEventListener();
     // /** Cleanup extra-data event-handler. */
@@ -429,6 +463,11 @@ private:
     // void cleanupExtraDataMap();
     /** Cleanup Extra-data Manager. */
     void cleanup();
+
+#ifdef DEBUG
+    /** Open window. */
+    void open(QWidget *pCenterWidget);
+#endif /* DEBUG */
 
     /** Hot-load machine extra-data map. */
     void hotloadMachineExtraDataMap(const QString &strID);
@@ -459,6 +498,11 @@ private:
 
     /** Holds extra-data map instance. */
     QMap<QString, ExtraDataMap> m_data;
+
+#ifdef DEBUG
+    /** Holds Extra-data Manager window instance. */
+    QPointer<UIExtraDataManagerWindow> m_pWindow;
+#endif /* DEBUG */
 };
 
 /** Singleton Extra-data Manager 'official' name. */

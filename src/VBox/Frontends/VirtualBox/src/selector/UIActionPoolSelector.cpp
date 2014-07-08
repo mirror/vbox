@@ -144,6 +144,39 @@ protected:
     }
 };
 
+#ifdef DEBUG
+class UIActionSimpleExtraDataManagerWindow : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleExtraDataManagerWindow(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/edataman_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ExtraDataManager");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("Ctrl+X");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "E&xtra Data Manager..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Extra Data Manager window"));
+    }
+};
+#endif /* DEBUG */
+
 class UIActionSimpleExit : public UIActionSimple
 {
     Q_OBJECT;
@@ -978,6 +1011,9 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_File_MediumManagerDialog] = new UIActionSimpleMediumManagerDialog(this);
     m_pool[UIActionIndexSelector_Simple_File_ImportApplianceWizard] = new UIActionSimpleImportApplianceWizard(this);
     m_pool[UIActionIndexSelector_Simple_File_ExportApplianceWizard] = new UIActionSimpleExportApplianceWizard(this);
+#ifdef DEBUG
+    m_pool[UIActionIndexSelector_Simple_File_ExtraDataManagerWindow] = new UIActionSimpleExtraDataManagerWindow(this);
+#endif /* DEBUG */
     m_pool[UIActionIndexSelector_Simple_File_Exit] = new UIActionSimpleExit(this);
 
     /* 'Group' actions: */
