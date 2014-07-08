@@ -1754,6 +1754,7 @@ RuntimeR0_SOURCES      := \
 	common/table/avlou32.cpp \
 	common/time/timesup.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
+	generic/critsect-generic.cpp \
 	\
 	$(RuntimeNoCrt_SOURCES)
 
@@ -1934,6 +1935,7 @@ RuntimeR0Drv_SOURCES    = \
  	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/critsect-generic.cpp \
 	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \

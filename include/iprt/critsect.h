@@ -107,10 +107,12 @@ AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
  * The intended use is avoiding lots of conditional code where some component
  * might or might not require entering a critical section before access. */
 #define RTCRITSECT_FLAGS_NOP            UINT32_C(0x00000008)
+/** Indicates that this is a ring-0 critical section. */
+#define RTCRITSECT_FLAGS_RING0          UINT32_C(0x00000010)
 /** @} */
 
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_RING0)
 
 /**
  * Initialize a critical section.
@@ -208,6 +210,8 @@ RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect);
  */
 RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
+#ifdef IN_RING3 /* Crazy APIs: ring-3 only. */
+
 /**
  * Enter multiple critical sections.
  *
@@ -247,6 +251,8 @@ RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
  */
 RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL);
 
+#endif /* IN_RING3 */
+
 /**
  * Leave a critical section.
  *
@@ -284,7 +290,7 @@ DECLINLINE(bool) RTCritSectIsOwner(PCRTCRITSECT pCritSect)
     return pCritSect->NativeThreadOwner == RTThreadNativeSelf();
 }
 
-#endif /* IN_RING3 */
+#endif /* IN_RING3 || IN_RING0 */
 
 /**
  * Checks the section is owned by anyone.
@@ -454,7 +460,7 @@ AssertCompileSize(RTCRITSECTRW, HC_ARCH_BITS == 32 ? 48 : 64);
 /* #define RTCSRW_WAIT_CNT_WR_MASK    (RTCSRW_CNT_MASK << RTCSRW_WAIT_CNT_WR_SHIFT) */
 /** @} */
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_RING0)
 
 /**
  * Initialize a critical section.
@@ -700,7 +706,7 @@ RTDECL(uint32_t) RTCritSectRwGetWriterReadRecursion(PRTCRITSECTRW pThis);
  */
 RTDECL(uint32_t) RTCritSectRwGetReadCount(PRTCRITSECTRW pThis);
 
-#endif /* IN_RING3 */
+#endif /* IN_RING3 || IN_RING0 */
 
 /**
  * Checks if a critical section is initialized or not.

@@ -58,7 +58,11 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
      * Initialize the structure and
      */
     pCritSect->u32Magic             = RTCRITSECT_MAGIC;
-    pCritSect->fFlags               = fFlags;
+#ifdef IN_RING0
+    pCritSect->fFlags               = fFlags | RTCRITSECT_FLAGS_RING0;
+#else
+    pCritSect->fFlags               = fFlags & ~RTCRITSECT_FLAGS_RING0;
+#endif
     pCritSect->cNestings            = 0;
     pCritSect->cLockers             = -1;
     pCritSect->NativeThreadOwner    = NIL_RTNATIVETHREAD;
@@ -86,15 +90,22 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
 #endif
     if (RT_SUCCESS(rc))
     {
+#ifdef IN_RING0
+        rc = RTSemEventCreate(&pCritSect->EventSem);
+
+#else
         rc = RTSemEventCreateEx(&pCritSect->EventSem,
                                 fFlags & RTCRITSECT_FLAGS_BOOTSTRAP_HACK
                                 ? RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK
                                 : RTSEMEVENT_FLAGS_NO_LOCK_VAL,
                                 NIL_RTLOCKVALCLASS,
                                 NULL);
+#endif
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
+#ifdef RTCRITSECT_STRICT
         RTLockValidatorRecExclDestroy(&pCritSect->pValidatorRec);
+#endif
     }
 
     AssertRC(rc);
@@ -107,14 +118,14 @@ RT_EXPORT_SYMBOL(RTCritSectInitEx);
 
 RTDECL(uint32_t) RTCritSectSetSubClass(PRTCRITSECT pCritSect, uint32_t uSubClass)
 {
-#ifdef RTCRITSECT_STRICT
+# ifdef RTCRITSECT_STRICT
     AssertPtrReturn(pCritSect, RTLOCKVAL_SUB_CLASS_INVALID);
     AssertReturn(pCritSect->u32Magic == RTCRITSECT_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
     AssertReturn(!(pCritSect->fFlags & RTCRITSECT_FLAGS_NOP), RTLOCKVAL_SUB_CLASS_INVALID);
     return RTLockValidatorRecExclSetSubClass(pCritSect->pValidatorRec, uSubClass);
-#else
+# else
     return RTLOCKVAL_SUB_CLASS_INVALID;
-#endif
+# endif
 }
 
 
@@ -123,6 +134,11 @@ DECL_FORCE_INLINE(int) rtCritSectTryEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCP
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
     /*AssertReturn(pCritSect->u32Magic == RTCRITSECT_MAGIC, VERR_SEM_DESTROYED);*/
+#ifdef IN_RING0
+    Assert(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Return straight away if NOP.
@@ -195,6 +211,11 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
 {
     AssertPtr(pCritSect);
     AssertReturn(pCritSect->u32Magic == RTCRITSECT_MAGIC, VERR_SEM_DESTROYED);
+#ifdef IN_RING0
+    Assert(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Return straight away if NOP.
@@ -266,11 +287,13 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
                 ASMAtomicDecS32(&pCritSect->cLockers);
                 return rc9;
             }
-#else
+#elif defined(IN_RING3)
             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, false);
 #endif
             int rc = RTSemEventWait(pCritSect->EventSem, RT_INDEFINITE_WAIT);
+#ifdef IN_RING3
             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
+#endif
 
             if (pCritSect->u32Magic != RTCRITSECT_MAGIC)
                 return VERR_SEM_DESTROYED;
@@ -321,6 +344,11 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
      */
     Assert(pCritSect);
     Assert(pCritSect->u32Magic == RTCRITSECT_MAGIC);
+#ifdef IN_RING0
+    Assert(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
     if (pCritSect->fFlags & RTCRITSECT_FLAGS_NOP)
         return VINF_SUCCESS;
 
@@ -362,7 +390,7 @@ RT_EXPORT_SYMBOL(RTCritSectLeave);
 
 
 
-
+#ifdef IN_RING3
 
 static int rtCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -476,6 +504,9 @@ RTDECL(int) RTCritSectLeaveMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
 }
 RT_EXPORT_SYMBOL(RTCritSectLeaveMultiple);
 
+#endif /* IN_RING3 */
+
+
 
 RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
 {
@@ -487,6 +518,11 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     Assert(pCritSect->cNestings == 0);
     Assert(pCritSect->cLockers == -1);
     Assert(pCritSect->NativeThreadOwner == NIL_RTNATIVETHREAD);
+#ifdef IN_RING0
+    Assert(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0);
+#else
+    Assert(!(pCritSect->fFlags & RTCRITSECT_FLAGS_RING0));
+#endif
 
     /*
      * Invalidate the structure and free the mutex.
@@ -505,7 +541,9 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     int rc = RTSemEventDestroy(EventSem);
     AssertRC(rc);
 
+#ifdef RTCRITSECT_STRICT
     RTLockValidatorRecExclDestroy(&pCritSect->pValidatorRec);
+#endif
 
     return rc;
 }
