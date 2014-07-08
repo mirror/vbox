@@ -450,7 +450,6 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
 
     /* Prepare NAT network toolbar: */
     {
-        m_pToolbarNetworkNAT->setUsesTextLabel(false);
         m_pToolbarNetworkNAT->setIconSize(QSize(16, 16));
         m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
         m_pToolbarNetworkNAT->addAction(m_pActionAddNetworkNAT);
@@ -459,7 +458,6 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     }
     /* Prepare Host network toolbar: */
     {
-        m_pToolbarNetworkHost->setUsesTextLabel(false);
         m_pToolbarNetworkHost->setIconSize(QSize(16, 16));
         m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
         m_pToolbarNetworkHost->addAction(m_pActionAddNetworkHost);

@@ -1151,7 +1151,7 @@ void UIMediumManager::prepareToolBar()
 #if MAC_LEOPARD_STYLE
         /* Enable unified tool-bars on Mac OS X. Available on Qt >= 4.3: */
         addToolBar(m_pToolBar);
-        m_pToolBar->setMacToolbar();
+        m_pToolBar->enableMacToolbar();
         /* No spacing/margin on the Mac: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         pMainLayout->insertSpacing(0, 10);

@@ -374,7 +374,6 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     /* ToolBar creation */
     UIToolBar *toolBar = new UIToolBar (this);
-    toolBar->setUsesTextLabel (false);
     toolBar->setIconSize (QSize (22, 22));
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 

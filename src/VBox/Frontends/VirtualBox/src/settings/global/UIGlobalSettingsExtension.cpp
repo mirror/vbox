@@ -101,7 +101,6 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
             this, SLOT(sltShowContextMenu(const QPoint&)));
 
     /* Setup tool-bar: */
-    m_pPackagesToolbar->setUsesTextLabel(false);
     m_pPackagesToolbar->setIconSize(QSize(16, 16));
     m_pPackagesToolbar->setOrientation(Qt::Vertical);
     m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
