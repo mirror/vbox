@@ -28,9 +28,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#if defined(DEBUG_bird) && !defined(IN_SUP_HARDENED_R3)
-# define RTMEM_WRAP_TO_EF_APIS
-#endif
 #include "internal/iprt.h"
 #include <iprt/memsafer.h>
 
