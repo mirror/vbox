@@ -2071,25 +2071,16 @@ void vboxWddmDiToAllocData(PVBOXMP_DEVEXT pDevExt, const DXGK_DISPLAY_INFORMATIO
             vboxWddmVramAddrToOffset(pDevExt, pInfo->PhysicAddress));
 }
 
-void vboxWddmDmAdjustDefaultVramLocations(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId, VBOXWDDM_SOURCE *paSources)
+void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID ModifiedVidPnSourceId, VBOXWDDM_SOURCE *paSources)
 {
     PVBOXWDDM_SOURCE pSource = &paSources[ModifiedVidPnSourceId];
-    PHYSICAL_ADDRESS PhAddr;
-    AssertRelease(pSource->AllocData.Addr.SegmentId);
-    AssertRelease(pSource->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-    PhAddr.QuadPart = pSource->AllocData.Addr.offVram;
+    AssertRelease(g_VBoxDisplayOnly);
+    ULONG offVram = vboxWddmVramCpuVisibleSegmentSize(pDevExt);
+    offVram /= VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
+    offVram &= ~PAGE_OFFSET_MASK;
+    offVram *= ModifiedVidPnSourceId;
 
-    for (UINT i = ModifiedVidPnSourceId + 1; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-    {
-        /* increaze the phaddr based on the previous source size info */
-        PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
-        PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
-        pSource = &paSources[i];
-        if (pSource->AllocData.Addr.offVram != PhAddr.QuadPart
-                || pSource->AllocData.Addr.SegmentId != 1)
-            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
-        pSource->AllocData.Addr.SegmentId = 1;
-        pSource->AllocData.Addr.offVram = PhAddr.QuadPart;
-    }
+    if (vboxWddmAddrSetVram(&pSource->AllocData.Addr, 1, offVram))
+        pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 }
 #endif
