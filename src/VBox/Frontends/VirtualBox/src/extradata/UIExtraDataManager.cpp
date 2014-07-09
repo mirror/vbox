@@ -1301,7 +1301,9 @@ void UIExtraDataManagerWindow::preparePaneChooser()
             m_pFilterOfChooser = new QLineEdit;
             {
                 /* Configure chooser-filter: */
+#if QT_VERSION >= 0x040700
                 m_pFilterOfChooser->setPlaceholderText("Search..");
+#endif /* QT_VERSION >= 0x040700 */
                 connect(m_pFilterOfChooser, SIGNAL(textChanged(const QString&)),
                         this, SLOT(sltChooserApplyFilter(const QString&)));
                 /* Add chooser-filter into layout: */
@@ -1366,7 +1368,9 @@ void UIExtraDataManagerWindow::preparePaneData()
             m_pFilterOfData = new QLineEdit;
             {
                 /* Configure data-filter: */
+#if QT_VERSION >= 0x040700
                 m_pFilterOfData->setPlaceholderText("Search..");
+#endif /* QT_VERSION >= 0x040700 */
                 connect(m_pFilterOfData, SIGNAL(textChanged(const QString&)),
                         this, SLOT(sltDataApplyFilter(const QString&)));
                 /* Add data-filter into layout: */
