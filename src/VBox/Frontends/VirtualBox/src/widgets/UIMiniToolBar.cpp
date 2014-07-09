@@ -190,6 +190,13 @@ void UIRuntimeMiniToolBar::adjustGeometry()
     /* Recalculate auto-hide animation: */
     updateAutoHideAnimationBounds();
 
+    /* Update toolbar geometry if necessary: */
+    const QString strAnimationState = property("AnimationState").toString();
+    if (strAnimationState == "Start")
+        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
+    else if (strAnimationState == "Final")
+        m_pEmbeddedToolbar->move(m_shownToolbarPosition);
+
     /* Simulate toolbar auto-hiding: */
     simulateToolbarAutoHiding();
 }
