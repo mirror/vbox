@@ -1385,6 +1385,73 @@ static int supR3HardenedWinDoReSpawn(void)
 }
 
 
+static bool supR3HardenedWinDriverExists(const char *pszDriver)
+{
+    /*
+     * Open the driver object directory.
+     */
+    UNICODE_STRING NtDirName;
+    NtDirName.Buffer = L"\\Driver";
+    NtDirName.MaximumLength = sizeof(L"\\Driver");
+    NtDirName.Length = NtDirName.MaximumLength - sizeof(WCHAR);
+
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &NtDirName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+    HANDLE hDir;
+    NTSTATUS rcNt = NtOpenDirectoryObject(&hDir, DIRECTORY_QUERY | FILE_LIST_DIRECTORY, &ObjAttr);
+#ifdef VBOX_STRICT
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
+#endif
+    if (!NT_SUCCESS(rcNt))
+        return true;
+
+    /*
+     * Enumerate it, looking for the driver.
+     */
+    bool  fFound = true;
+    ULONG uObjDirCtx = 0;
+    do
+    {
+        uint32_t    abBuffer[_64K + _1K];
+        ULONG       cbActual;
+        rcNt = NtQueryDirectoryObject(hDir,
+                                      abBuffer,
+                                      sizeof(abBuffer) - 4, /* minus four for string terminator space. */
+                                      FALSE /*ReturnSingleEntry */,
+                                      FALSE /*RestartScan*/,
+                                      &uObjDirCtx,
+                                      &cbActual);
+        if (!NT_SUCCESS(rcNt) || cbActual < sizeof(OBJECT_DIRECTORY_INFORMATION))
+            break;
+
+        POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
+        while (pObjDir->Name.Length != 0)
+        {
+            WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
+            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = '\0';
+            if (   pObjDir->Name.Length > 1
+                && RTUtf16ICmpAscii(pObjDir->Name.Buffer, pszDriver) == 0)
+            {
+                fFound = true;
+                break;
+            }
+            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = wcSaved;
+
+            /* Next directory entry. */
+            pObjDir++;
+        }
+    } while (!fFound);
+
+    /*
+     * Clean up and return.
+     */
+    NtClose(hDir);
+
+    return fFound;
+}
+
+
 /**
  * Called by the main code if supR3HardenedWinIsReSpawnNeeded returns @c true.
  *
@@ -1393,33 +1460,64 @@ static int supR3HardenedWinDoReSpawn(void)
 DECLHIDDEN(int) supR3HardenedWinReSpawn(void)
 {
     /*
-     * Open the stub device.
+     * Open the stub device.  Retry if we think driver might still be
+     * initializing (STATUS_NO_SUCH_DEVICE + \Drivers\VBoxDrv).
      */
-    HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
-    IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-
     static const WCHAR  s_wszName[] = L"\\Device\\VBoxDrvStub";
-    UNICODE_STRING      NtName;
-    NtName.Buffer        = (PWSTR)s_wszName;
-    NtName.Length        = sizeof(s_wszName) - sizeof(WCHAR);
-    NtName.MaximumLength = sizeof(s_wszName);
+    DWORD const         uStartTick = GetTickCount();
+    NTSTATUS            rcNt;
+    uint32_t            iTry;
 
-    OBJECT_ATTRIBUTES   ObjAttr;
-    InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    for (iTry = 0;; iTry++)
+    {
+        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
 
-    NTSTATUS rcNt = NtCreateFile(&hFile,
-                                 GENERIC_READ | GENERIC_WRITE,
-                                 &ObjAttr,
-                                 &Ios,
-                                 NULL /* Allocation Size*/,
-                                 FILE_ATTRIBUTE_NORMAL,
-                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                 FILE_OPEN,
-                                 FILE_NON_DIRECTORY_FILE,
-                                 NULL /*EaBuffer*/,
-                                 0 /*EaLength*/);
-    if (NT_SUCCESS(rcNt))
-        rcNt = Ios.Status;
+        UNICODE_STRING      NtName;
+        NtName.Buffer        = (PWSTR)s_wszName;
+        NtName.Length        = sizeof(s_wszName) - sizeof(WCHAR);
+        NtName.MaximumLength = sizeof(s_wszName);
+
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+        rcNt = NtCreateFile(&hFile,
+                            GENERIC_READ | GENERIC_WRITE,
+                            &ObjAttr,
+                            &Ios,
+                            NULL /* Allocation Size*/,
+                            FILE_ATTRIBUTE_NORMAL,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            FILE_OPEN,
+                            FILE_NON_DIRECTORY_FILE,
+                            NULL /*EaBuffer*/,
+                            0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+            rcNt = Ios.Status;
+
+        /* The STATUS_NO_SUCH_DEVICE might be returned if the device is not
+           completely initialized.  Delay a little bit and try again. */
+        if (rcNt != STATUS_NO_SUCH_DEVICE)
+            break;
+        if (iTry > 0 && GetTickCount() - uStartTick > 5000)  /* 5 sec, at least two tries */
+            break;
+        if (!supR3HardenedWinDriverExists("VBoxDrv"))
+        {
+            /** @todo Consider starting the VBoxdrv.sys service. Requires 2nd process
+             *        though, rather complicated actually as CreateProcess causes all
+             *        kind of things to happen to this process which would make it hard to
+             *        pass the process verification tests... :-/ */
+            break;
+        }
+
+        LARGE_INTEGER Time;
+        if (iTry < 8)
+            Time.QuadPart = -1000000 / 100; /* 1ms in 100ns units, relative time. */
+        else
+            Time.QuadPart = -32000000 / 100; /* 32ms in 100ns units, relative time. */
+        NtDelayExecution(TRUE, &Time);
+    }
+
     if (!NT_SUCCESS(rcNt))
     {
         int rc = VERR_OPEN_FAILED;
@@ -1437,7 +1535,7 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(void)
                 default:                            pszDefine = ""; break;
             }
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
-                                  "NtCreateFile(%ls) failed: %#x%s\n", s_wszName, rcNt, pszDefine);
+                                  "NtCreateFile(%ls) failed: %#x%s (%u retries)\n", s_wszName, rcNt, pszDefine, iTry);
         }
         supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, rc,
                               "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)\n", s_wszName, rc, rcNt);
