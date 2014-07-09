@@ -1223,7 +1223,6 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
      * Load the virtual clock.
      */
     pVM->tm.s.cVirtualTicking = 0;
-    pVM->tm.s.cTSCsTicking    = 0;
     /* the virtual clock. */
     uint64_t u64Hz;
     int rc = SSMR3GetU64(pSSM, &u64Hz);
@@ -1265,12 +1264,17 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     }
 
     /* the cpu tick clock. */
+    pVM->tm.s.cTSCsTicking = 0;
+    pVM->tm.s.offTSCPause = 0;
+    pVM->tm.s.u64LastPausedTSC = 0;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
         pVCpu->tm.s.fTSCTicking = false;
         SSMR3GetU64(pSSM, &pVCpu->tm.s.u64TSC);
+        if (pVM->tm.s.u64LastPausedTSC < pVCpu->tm.s.u64TSC)
+            pVM->tm.s.u64LastPausedTSC = pVCpu->tm.s.u64TSC;
 
         if (pVM->tm.s.fTSCUseRealTSC)
             pVCpu->tm.s.offTSCRawSrc = 0; /** @todo TSC restore stuff and HWACC. */

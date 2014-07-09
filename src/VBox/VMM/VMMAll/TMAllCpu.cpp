@@ -79,6 +79,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
     return VERR_TM_TSC_ALREADY_TICKING;
 }
 
+
 /**
  * Resumes the CPU timestamp counter ticking.
  *
@@ -143,6 +144,7 @@ int tmCpuTickPause(PVMCPU pVCpu)
     return VERR_TM_TSC_ALREADY_PAUSED;
 }
 
+
 /**
  * Pauses the CPU timestamp counter ticking.
  *
@@ -171,6 +173,7 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
     AssertFailed();
     return VERR_TM_TSC_ALREADY_PAUSED;
 }
+
 
 /**
  * Record why we refused to use offsetted TSC.

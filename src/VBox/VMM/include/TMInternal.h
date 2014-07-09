@@ -353,10 +353,17 @@ typedef struct TM
     bool                        afAlignment0[2]; /**< alignment padding */
     /** The ID of the virtual CPU that normally runs the timers. */
     VMCPUID                     idTimerCpu;
+
     /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
      * The config variable implies fTSCVirtualized = true and fTSCUseRealTSC = false. */
     uint64_t                    cTSCTicksPerSecond;
+    /** The TSC difference introduced by pausing the VM. */
+    uint64_t                    offTSCPause;
+    /** The TSC value when the last TSC was paused. */
+    uint64_t                    u64LastPausedTSC;
+    /** CPU TSCs ticking indicator (one for each VCPU). */
+    uint32_t volatile           cTSCsTicking;
 
     /** Virtual time ticking enabled indicator (counter for each VCPU). (TMCLOCK_VIRTUAL) */
     uint32_t volatile           cVirtualTicking;
@@ -372,15 +379,6 @@ typedef struct TM
      * this percentage to the raw time source for the period it's been valid in,
      * i.e. since u64VirtualWarpDriveStart. */
     uint32_t                    u32VirtualWarpDrivePercentage;
-
-    /** CPU TSCs ticking indicator (one for each VCPU). */
-    uint32_t volatile           cTSCsTicking;
-
-    /** The TSC difference introduced by pausing the VM. */
-    uint64_t                    offTSCPause;
-
-    /** The TSC value when the last TSC was paused. */
-    uint64_t                    u64LastPausedTSC;
 
     /** The offset of the virtual clock relative to it's timesource.
      * Only valid if fVirtualTicking is set. */
