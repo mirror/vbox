@@ -98,7 +98,7 @@ VMM_INT_DECL(int) GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
         return VERR_GIM_PVTSC_NOT_ENABLED;
 
     PCGIMHV          pcHv     = &pVM->gim.s.u.Hv;
-    PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
+    PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
     PGIMHVREFTSC     pRefTsc  = (PGIMHVREFTSC)pcRegion->CTX_SUFF(pvPage);
     Assert(pRefTsc);
 
