@@ -301,6 +301,26 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
+/** @name Directory object access rights.
+ * @{ */
+#ifndef DIRECTORY_QUERY
+# define DIRECTORY_QUERY                    UINT32_C(0x00000001)
+#endif
+#ifndef DIRECTORY_TRAVERSE
+# define DIRECTORY_TRAVERSE                 UINT32_C(0x00000002)
+#endif
+#ifndef DIRECTORY_CREATE_OBJECT
+# define DIRECTORY_CREATE_OBJECT            UINT32_C(0x00000004)
+#endif
+#ifndef DIRECTORY_CREATE_SUBDIRECTORY
+# define DIRECTORY_CREATE_SUBDIRECTORY      UINT32_C(0x00000008)
+#endif
+#ifndef DIRECTORY_ALL_ACCESS
+# define DIRECTORY_ALL_ACCESS               ( STANDARD_RIGHTS_REQUIRED | UINT32_C(0x0000000f) )
+#endif
+/** @} */
+
+
 #ifdef IPRT_NT_USE_WINTERNL
 typedef struct _CLIENT_ID
 {
