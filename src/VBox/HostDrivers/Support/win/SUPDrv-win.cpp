@@ -60,27 +60,13 @@
 /** The Pool tag (VBox). */
 #define SUPDRV_NT_POOL_TAG  'xoBV'
 
-/** Win32 device name for system access. */
-#define DEVICE_NAME_SYS         "\\\\.\\VBoxDrv"
 /** NT device name for system access. */
 #define DEVICE_NAME_NT_SYS      L"\\Device\\VBoxDrv"
-/** Win Symlink name for system access. */
-#define DEVICE_NAME_DOS_SYS     L"\\DosDevices\\VBoxDrv"
-
-/** Win32 device name for user access. */
-#define DEVICE_NAME_USR         "\\\\.\\VBoxDrvU"
 /** NT device name for user access. */
 #define DEVICE_NAME_NT_USR      L"\\Device\\VBoxDrvU"
-/** Win Symlink name for user access. */
-#define DEVICE_NAME_DOS_USR     L"\\DosDevices\\VBoxDrvU"
-
 #ifdef VBOX_WITH_HARDENING
-/** Win32 device name for hardened stub access. */
-# define DEVICE_NAME_STUB       "\\\\.\\VBoxDrvStub"
 /** NT device name for hardened stub access. */
 # define DEVICE_NAME_NT_STUB    L"\\Device\\VBoxDrvStub"
-///** Win Symlink name for hardened stub access. */
-//# define DEVICE_NAME_DOS_STUB   L"\\DosDevices\\VBoxDrvStub"
 
 /** Macro for checking for deflecting calls to the stub device. */
 # define VBOXDRV_COMPLETE_IRP_AND_RETURN_IF_STUB_DEV(a_pDevObj, a_pIrp) \
@@ -369,61 +355,44 @@ static NTSTATUS vboxdrvNtCreateDevices(PDRIVER_OBJECT pDrvObj)
     NTSTATUS rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXT), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjSys);
     if (NT_SUCCESS(rcNt))
     {
-        UNICODE_STRING DosNameSys;
-        RtlInitUnicodeString(&DosNameSys, DEVICE_NAME_DOS_SYS);
-        rcNt = IoCreateSymbolicLink(&DosNameSys, &DevName);
+        /*
+         * User device.
+         */
+        RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_USR);
+        rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXTUSR), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjUsr);
         if (NT_SUCCESS(rcNt))
         {
+            PSUPDRVDEVEXTUSR pDevExtUsr = (PSUPDRVDEVEXTUSR)g_pDevObjUsr->DeviceExtension;
+            pDevExtUsr->pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+            pDevExtUsr->u32Cookie   = SUPDRVDEVEXTUSR_COOKIE;
+
+#ifdef VBOX_WITH_HARDENING
             /*
-             * User device.
+             * Hardened stub device.
              */
-            RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_USR);
-            rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXTUSR), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjUsr);
+            RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_STUB);
+            rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXTSTUB), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjStub);
             if (NT_SUCCESS(rcNt))
             {
-                UNICODE_STRING DosNameUsr;
-                RtlInitUnicodeString(&DosNameUsr, DEVICE_NAME_DOS_USR);
-                rcNt = IoCreateSymbolicLink(&DosNameUsr, &DevName);
                 if (NT_SUCCESS(rcNt))
                 {
-                    PSUPDRVDEVEXTUSR pDevExtUsr = (PSUPDRVDEVEXTUSR)g_pDevObjUsr->DeviceExtension;
-                    pDevExtUsr->pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
-                    pDevExtUsr->u32Cookie   = SUPDRVDEVEXTUSR_COOKIE;
-
-#ifdef VBOX_WITH_HARDENING
-                    /*
-                     * Hardened stub device.
-                     */
-                    RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_STUB);
-                    rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXTSTUB), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjStub);
-                    if (NT_SUCCESS(rcNt))
-                    {
-                        //UNICODE_STRING DosNameStub;
-                        //RtlInitUnicodeString(&DosNameStub, DEVICE_NAME_DOS_STUB);
-                        //rcNt = IoCreateSymbolicLink(&DosNameStub, &DevName);
-                        if (NT_SUCCESS(rcNt))
-                        {
-                            PSUPDRVDEVEXTSTUB pDevExtStub = (PSUPDRVDEVEXTSTUB)g_pDevObjStub->DeviceExtension;
-                            pDevExtStub->Common.pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
-                            pDevExtStub->Common.u32Cookie   = SUPDRVDEVEXTSTUB_COOKIE;
+                    PSUPDRVDEVEXTSTUB pDevExtStub = (PSUPDRVDEVEXTSTUB)g_pDevObjStub->DeviceExtension;
+                    pDevExtStub->Common.pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+                    pDevExtStub->Common.u32Cookie   = SUPDRVDEVEXTSTUB_COOKIE;
 #endif
 
-                            /* Done. */
-                            return rcNt;
+                    /* Done. */
+                    return rcNt;
 #ifdef VBOX_WITH_HARDENING
-                        }
-
-                        /* Bail out. */
-                        IoDeleteDevice(g_pDevObjStub);
-                        g_pDevObjUsr = NULL;
-                    }
-                    IoDeleteSymbolicLink(&DosNameUsr);
-#endif
                 }
-                IoDeleteDevice(g_pDevObjUsr);
+
+                /* Bail out. */
+                IoDeleteDevice(g_pDevObjStub);
                 g_pDevObjUsr = NULL;
             }
-            IoDeleteSymbolicLink(&DosNameSys);
+#endif
+            IoDeleteDevice(g_pDevObjUsr);
+            g_pDevObjUsr = NULL;
         }
         IoDeleteDevice(g_pDevObjSys);
         g_pDevObjSys = NULL;
@@ -436,18 +405,6 @@ static NTSTATUS vboxdrvNtCreateDevices(PDRIVER_OBJECT pDrvObj)
  */
 static void vboxdrvNtDestroyDevices(void)
 {
-    UNICODE_STRING DosName;
-    RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_SYS);
-    NTSTATUS rcNt = IoDeleteSymbolicLink(&DosName);
-
-    RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_USR);
-    rcNt = IoDeleteSymbolicLink(&DosName);
-
-#ifdef VBOX_WITH_HARDENING
-    //RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_STUB);
-    //rcNt = IoDeleteSymbolicLink(&DosName);
-#endif
-
     if (g_pDevObjUsr)
     {
         PSUPDRVDEVEXTUSR pDevExtUsr = (PSUPDRVDEVEXTUSR)g_pDevObjUsr->DeviceExtension;
