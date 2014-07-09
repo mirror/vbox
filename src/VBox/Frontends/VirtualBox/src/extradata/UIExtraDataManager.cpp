@@ -355,6 +355,8 @@ private slots:
       * @{ */
         /** Handles machine (un)registration. */
         void sltMachineRegistered(QString strID, bool fAdded);
+        /** Handles extra-data map acknowledging. */
+        void sltExtraDataMapAcknowledging(QString strID);
         /** Handles extra-data change. */
         void sltExtraDataChange(QString strID, QString strKey, QString strValue);
     /** @} */
@@ -638,6 +640,14 @@ void UIExtraDataManagerWindow::sltMachineRegistered(QString strID, bool fRegiste
     }
 }
 
+void UIExtraDataManagerWindow::sltExtraDataMapAcknowledging(QString strID)
+{
+    /* Update item with 'changed ID' if it is among 'known IDs': */
+    for (int iRow = 0; iRow < m_pModelSourceOfChooser->rowCount(); ++iRow)
+        if (chooserID(iRow) == strID)
+            m_pModelSourceOfChooser->itemFromIndex(chooserIndex(iRow))->setData(true, Field_Known);
+}
+
 void UIExtraDataManagerWindow::sltExtraDataChange(QString strID, QString strKey, QString strValue)
 {
     /* Skip unrelated IDs: */
@@ -704,7 +714,8 @@ void UIExtraDataManagerWindow::sltChooserHandleCurrentChanged(const QModelIndex 
 
     /* Add all the new items finally: */
     const QString strID = index.data(Field_ID).toString();
-    AssertReturnVoid(gEDataManager->contains(strID));
+    if (!gEDataManager->contains(strID))
+        gEDataManager->hotloadMachineExtraDataMap(strID);
     const ExtraDataMap data = gEDataManager->map(strID);
     foreach (const QString &strKey, data.keys())
         addDataItem(strKey, data.value(strKey));
@@ -1826,6 +1837,34 @@ void UIExtraDataManager::openWindow(QWidget *pCenterWidget)
     instance()->open(pCenterWidget);
 }
 #endif /* DEBUG */
+
+void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
+{
+    /* Make sure it is valid ID: */
+    AssertMsgReturnVoid(!strID.isNull() && strID != GlobalID,
+                        ("Invalid VM ID = {%s}\n", strID.toAscii().constData()));
+    /* Which is not loaded yet: */
+    AssertReturnVoid(!m_data.contains(strID));
+
+    /* Search for corresponding machine: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CMachine machine = vbox.FindMachine(strID);
+    AssertReturnVoid(vbox.isOk() && !machine.isNull());
+
+    /* Make sure at least empty map is created: */
+    m_data[strID] = ExtraDataMap();
+
+    /* Do not handle inaccessible machine: */
+    if (!machine.GetAccessible())
+        return;
+
+    /* Load machine extra-data map: */
+    foreach (const QString &strKey, machine.GetExtraDataKeys())
+        m_data[strID][strKey] = machine.GetExtraData(strKey);
+
+    /* Notifies about extra-data map acknowledged: */
+    emit sigExtraDataMapAcknowledging(strID);
+}
 
 QString UIExtraDataManager::extraDataString(const QString &strKey, const QString &strID /* = GlobalID */)
 {
@@ -3198,6 +3237,8 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
         /* Create window: */
         m_pWindow = new UIExtraDataManagerWindow;
         /* Configure window connections: */
+        connect(this, SIGNAL(sigExtraDataMapAcknowledging(QString)),
+                m_pWindow, SLOT(sltExtraDataMapAcknowledging(QString)));
         connect(this, SIGNAL(sigExtraDataChange(QString, QString, QString)),
                 m_pWindow, SLOT(sltExtraDataChange(QString, QString, QString)));
     }
@@ -3205,31 +3246,6 @@ void UIExtraDataManager::open(QWidget *pCenterWidget)
     m_pWindow->showAndRaise(pCenterWidget);
 }
 #endif /* DEBUG */
-
-void UIExtraDataManager::hotloadMachineExtraDataMap(const QString &strID)
-{
-    /* Make sure it is valid ID: */
-    AssertMsgReturnVoid(!strID.isNull() && strID != GlobalID,
-                        ("Invalid VM ID = {%s}\n", strID.toAscii().constData()));
-    /* Which is not loaded yet: */
-    AssertReturnVoid(!m_data.contains(strID));
-
-    /* Search for corresponding machine: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CMachine machine = vbox.FindMachine(strID);
-    AssertReturnVoid(vbox.isOk() && !machine.isNull());
-
-    /* Make sure at least empty map is created: */
-    m_data[strID] = ExtraDataMap();
-
-    /* Do not handle inaccessible machine: */
-    if (!machine.GetAccessible())
-        return;
-
-    /* Load machine extra-data map: */
-    foreach (const QString &strKey, machine.GetExtraDataKeys())
-        m_data[strID][strKey] = machine.GetExtraData(strKey);
-}
 
 bool UIExtraDataManager::isFeatureAllowed(const QString &strKey, const QString &strID /* = GlobalID */)
 {

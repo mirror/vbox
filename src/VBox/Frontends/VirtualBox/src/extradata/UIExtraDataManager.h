@@ -53,6 +53,9 @@ class UIExtraDataManager : public QObject
 
 signals:
 
+    /** Notifies about extra-data map acknowledging. */
+    void sigExtraDataMapAcknowledging(QString strID);
+
     /** Notifies about extra-data change. */
     void sigExtraDataChange(QString strID, QString strKey, QString strValue);
 
@@ -95,6 +98,9 @@ public:
         bool contains(const QString &strID) const { return m_data.contains(strID); }
         /** Returns read-only extra-data map for passed @a strID. */
         const ExtraDataMap map(const QString &strID) const { return m_data.value(strID); }
+
+        /** Hot-load machine extra-data map. */
+        void hotloadMachineExtraDataMap(const QString &strID);
 
         /** Returns extra-data value corresponding to passed @a strKey as QString.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
@@ -468,9 +474,6 @@ private:
     /** Open window. */
     void open(QWidget *pCenterWidget);
 #endif /* DEBUG */
-
-    /** Hot-load machine extra-data map. */
-    void hotloadMachineExtraDataMap(const QString &strID);
 
     /** Determines whether feature corresponding to passed @a strKey is allowed.
       * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
