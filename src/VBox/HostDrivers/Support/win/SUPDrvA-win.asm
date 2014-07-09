@@ -50,9 +50,9 @@ ENDPROC SUPR0Printf
  %ifdef RT_ARCH_X86
 ;
 ; Faking up ZwQueryVirtualMemory on XP and W2K3 where it's not exported.
-; Using ZwQueryVolumeInformationFile as a helper.
+; Using ZwReadFile as a helper as it has the name number of parameters.
 ;
-extern  IMPNAME(ZwQueryVolumeInformationFile@20)
+extern  IMPNAME(ZwReadFile@24)
 
 BEGINPROC supdrvNtQueryVirtualMemory_Xxx
   %macro NtQueryVirtualMemorySyscall 1
@@ -78,7 +78,7 @@ BEGINPROC supdrvNtQueryVirtualMemory_Xxx
     NtQueryVirtualMemorySyscall 0xBE
 
 supdrvNtQueryVirtualMemory_Jump:
-        mov     edx, IMP2(ZwQueryVolumeInformationFile@20)
+        mov     edx, IMP2(ZwReadFile@24)
         lea     edx, [edx + 5]
         jmp     edx
 ENDPROC   supdrvNtQueryVirtualMemory_Xxx
