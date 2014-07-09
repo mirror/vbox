@@ -971,7 +971,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_EXIT_ERR_MSR_LOAD                                   34
 /** 36 Guest software executed MWAIT. */
 #define VMX_EXIT_MWAIT                                          36
-/** 37 VM exit due to monitor trap flag. */
+/** 37 VM-exit due to monitor trap flag. */
 #define VMX_EXIT_MTF                                            37
 /** 39 Guest software attempted to execute MONITOR. */
 #define VMX_EXIT_MONITOR                                        39
@@ -1046,11 +1046,11 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_ERROR_VMWRITE_READONLY_COMPONENT                    13
 /** VMXON executed in VMX root operation. */
 #define VMX_ERROR_VMXON_IN_VMX_ROOT_OP                          15
-/** VM entry with invalid executive-VMCS pointer. */
+/** VM-entry with invalid executive-VMCS pointer. */
 #define VMX_ERROR_VMENTRY_INVALID_VMCS_EXEC_PTR                 16
-/** VM entry with non-launched executive VMCS. */
+/** VM-entry with non-launched executive VMCS. */
 #define VMX_ERROR_VMENTRY_NON_LAUNCHED_EXEC_VMCS                17
-/** VM entry with executive-VMCS pointer not VMXON pointer. */
+/** VM-entry with executive-VMCS pointer not VMXON pointer. */
 #define VMX_ERROR_VMENTRY_EXEC_VMCS_PTR                         18
 /** VMCALL with non-clear VMCS. */
 #define VMX_ERROR_VMCALL_NON_CLEAR_VMCS                         19
@@ -1062,9 +1062,9 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_ERROR_VMXOFF_DUAL_MONITOR                           23
 /** VMCALL with invalid SMM-monitor features. */
 #define VMX_ERROR_VMCALL_INVALID_SMM_MONITOR                    24
-/** VM entry with invalid VM-execution control fields in executive VMCS. */
+/** VM-entry with invalid VM-execution control fields in executive VMCS. */
 #define VMX_ERROR_VMENTRY_INVALID_VM_EXEC_CTRL                  25
-/** VM entry with events blocked by MOV SS. */
+/** VM-entry with events blocked by MOV SS. */
 #define VMX_ERROR_VMENTRY_MOV_SS                                26
 /** Invalid operand to INVEPT/INVVPID. */
 #define VMX_ERROR_INVEPTVPID_INVALID_OPERAND                    28
@@ -1312,9 +1312,9 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 /** @name VMX_VMCS_CTRL_PIN_EXEC
  * @{
  */
-/** External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
+/** External interrupts cause VM-exits if set; otherwise dispatched through the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT                     RT_BIT(0)
-/** Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
+/** Non-maskable interrupts cause VM-exits if set; otherwise dispatched through the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                         RT_BIT(3)
 /** Virtual NMIs. */
 #define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI                      RT_BIT(5)
@@ -1326,35 +1326,35 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 /** @name VMX_VMCS_CTRL_PROC_EXEC
  * @{
  */
-/** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
+/** VM-exit as soon as RFLAGS.IF=1 and no blocking is active. */
 #define VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT                 RT_BIT(2)
 /** Use timestamp counter offset. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING              RT_BIT(3)
-/** VM Exit when executing the HLT instruction. */
+/** VM-exit when executing the HLT instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT                        RT_BIT(7)
-/** VM Exit when executing the INVLPG instruction. */
+/** VM-exit when executing the INVLPG instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT                     RT_BIT(9)
-/** VM Exit when executing the MWAIT instruction. */
+/** VM-exit when executing the MWAIT instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT                      RT_BIT(10)
-/** VM Exit when executing the RDPMC instruction. */
+/** VM-exit when executing the RDPMC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                      RT_BIT(11)
-/** VM Exit when executing the RDTSC/RDTSCP instruction. */
+/** VM-exit when executing the RDTSC/RDTSCP instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT                      RT_BIT(12)
-/** VM Exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** VM-exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT                   RT_BIT(15)
-/** VM Exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** VM-exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT                  RT_BIT(16)
-/** VM Exit on CR8 loads. */
+/** VM-exit on CR8 loads. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT                   RT_BIT(19)
-/** VM Exit on CR8 stores. */
+/** VM-exit on CR8 stores. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT                  RT_BIT(20)
 /** Use TPR shadow. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW                  RT_BIT(21)
-/** VM Exit when virtual nmi blocking is disabled. */
+/** VM-exit when virtual nmi blocking is disabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT                 RT_BIT(22)
-/** VM Exit when executing a MOV DRx instruction. */
+/** VM-exit when executing a MOV DRx instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                     RT_BIT(23)
-/** VM Exit when executing IO instructions. */
+/** VM-exit when executing IO instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT                  RT_BIT(24)
 /** Use IO bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_IO_BITMAPS                  RT_BIT(25)
@@ -1362,9 +1362,9 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG               RT_BIT(27)
 /** Use MSR bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS                 RT_BIT(28)
-/** VM Exit when executing the MONITOR instruction. */
+/** VM-exit when executing the MONITOR instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                    RT_BIT(29)
-/** VM Exit when executing the PAUSE instruction. */
+/** VM-exit when executing the PAUSE instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT                      RT_BIT(30)
 /** Determines whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
@@ -1385,13 +1385,13 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC                    RT_BIT(4)
 /** VPID supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
-/** VM Exit when executing the WBINVD instruction. */
+/** VM-exit when executing the WBINVD instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
 /** Unrestricted guest execution. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST             RT_BIT(7)
 /** A specified nr of pause loops cause a VM-exit. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
-/** VM Exit when executing RDRAND instructions. */
+/** VM-exit when executing RDRAND instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT                    RT_BIT(11)
 /** Enables INVPCID instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_INVPCID                        RT_BIT(12)
@@ -1411,11 +1411,11 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_CTRL_ENTRY_ENTRY_SMM                           RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
 #define VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON                  RT_BIT(11)
-/** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
+/** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-entry. */
 #define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR                 RT_BIT(13)
-/** Whether the guest IA32_PAT MSR is loaded on VM entry. */
+/** Whether the guest IA32_PAT MSR is loaded on VM-entry. */
 #define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR                  RT_BIT(14)
-/** Whether the guest IA32_EFER MSR is loaded on VM entry. */
+/** Whether the guest IA32_EFER MSR is loaded on VM-entry. */
 #define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR                 RT_BIT(15)
 /** @} */
 
@@ -1427,19 +1427,19 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                           RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE                 RT_BIT(9)
-/** Whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
+/** Whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR                        RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_ACK_EXT_INT                          RT_BIT(15)
-/** Whether the guest IA32_PAT MSR is saved on VM exit. */
+/** Whether the guest IA32_PAT MSR is saved on VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR                   RT_BIT(18)
-/** Whether the host IA32_PAT MSR is loaded on VM exit. */
+/** Whether the host IA32_PAT MSR is loaded on VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR                    RT_BIT(19)
-/** Whether the guest IA32_EFER MSR is saved on VM exit. */
+/** Whether the guest IA32_EFER MSR is saved on VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR                  RT_BIT(20)
-/** Whether the host IA32_EFER MSR is loaded on VM exit. */
+/** Whether the host IA32_EFER MSR is loaded on VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR                   RT_BIT(21)
-/** Whether the value of the VMX preemption timer is saved on every VM exit. */
+/** Whether the value of the VMX preemption timer is saved on every VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER               RT_BIT(22)
 /** @} */
 
@@ -1745,7 +1745,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 /** @name VMX_EXIT_APIC_ACCESS
  * @{
  */
-/** 0-11:   If the APIC-access VM exit is due to a linear access, the offset of access within the APIC page. */
+/** 0-11:   If the APIC-access VM-exit is due to a linear access, the offset of access within the APIC page. */
 #define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
 /** 12-15:  Access type. */
 #define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)              ((a) & 0xf000)
