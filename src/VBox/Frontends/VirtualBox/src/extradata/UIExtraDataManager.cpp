@@ -30,6 +30,7 @@
 # include <QPainter>
 # include <QLabel>
 # include <QLineEdit>
+# include <QComboBox>
 # include <QPushButton>
 # include <QXmlStreamWriter>
 # include <QXmlStreamReader>
@@ -498,6 +499,9 @@ private:
 
         /** Sorts data items. */
         void sortData();
+
+        /** Returns the list of known extra-data keys. */
+        static QStringList knownExtraDataKeys();
     /** @} */
 
 
@@ -790,16 +794,18 @@ void UIExtraDataManagerWindow::sltAdd()
                     pInputLayout->addWidget(pLabelKey, 0, 0);
                 }
                 /* Create key-editor: */
-                QLineEdit *pEditorKey = new QLineEdit;
+                QComboBox *pEditorKey = new QComboBox;
                 {
                     /* Configure key-editor: */
+                    pEditorKey->setEditable(true);
+                    pEditorKey->addItems(knownExtraDataKeys());
                     pLabelKey->setBuddy(pEditorKey);
                     /* Create key-editor property setter: */
                     QObjectPropertySetter *pKeyPropertySetter = new QObjectPropertySetter(pInputDialog, "Key");
                     AssertPtrReturnVoid(pKeyPropertySetter);
                     {
                         /* Configure key-editor property setter: */
-                        connect(pEditorKey, SIGNAL(textEdited(const QString&)),
+                        connect(pEditorKey, SIGNAL(editTextChanged(const QString&)),
                                 pKeyPropertySetter, SLOT(sltAssignProperty(const QString&)));
                     }
                     /* Create key-editor validator: */
@@ -807,7 +813,7 @@ void UIExtraDataManagerWindow::sltAdd()
                     AssertPtrReturnVoid(pKeyValidator);
                     {
                         /* Configure key-editor validator: */
-                        connect(pEditorKey, SIGNAL(textEdited(const QString&)),
+                        connect(pEditorKey, SIGNAL(editTextChanged(const QString&)),
                                 pKeyValidator, SLOT(sltValidate(QString)));
                         /* Add key-editor validator into dialog validator group: */
                         pValidatorGroup->addObjectValidator(pKeyValidator);
@@ -1715,6 +1721,72 @@ void UIExtraDataManagerWindow::sortData()
     const int iSortSection = pHHeader->sortIndicatorSection();
     const Qt::SortOrder sortOrder = pHHeader->sortIndicatorOrder();
     m_pModelProxyOfData->sort(iSortSection, sortOrder);
+}
+
+/* static */
+QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
+{
+    return QStringList()
+           << QString()
+           << GUI_LanguageId
+           << GUI_SuppressMessages << GUI_InvertMessageOption
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+           << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+           << GUI_RestrictedGlobalSettingsPages << GUI_RestrictedMachineSettingsPages
+           << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
+           << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
+           << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
+           << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
+           << GUI_Toolbar << GUI_Statusbar
+           << GUI_GroupDefinitions << GUI_LastItemSelected
+           << GUI_DetailsPageBoxes << GUI_PreviewUpdate
+           << GUI_HideDescriptionForWizards
+           << GUI_HideFromManager << GUI_HideDetails
+           << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
+           << GUI_FirstRun
+#ifndef Q_WS_MAC
+           << GUI_MachineWindowIcons << GUI_MachineWindowNamePostfix
+#endif /* !Q_WS_MAC */
+           << GUI_LastNormalWindowPosition << GUI_LastScaleWindowPosition
+           << GUI_Geometry_State_Max
+           << GUI_RestrictedRuntimeMenus
+#ifdef Q_WS_MAC
+           << GUI_RestrictedRuntimeApplicationMenuActions
+#endif /* Q_WS_MAC */
+           << GUI_RestrictedRuntimeMachineMenuActions
+           << GUI_RestrictedRuntimeViewMenuActions
+           << GUI_RestrictedRuntimeDevicesMenuActions
+#ifdef VBOX_WITH_DEBUGGER_GUI
+           << GUI_RestrictedRuntimeDebuggerMenuActions
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+           << GUI_RestrictedRuntimeHelpMenuActions
+           << GUI_RestrictedVisualStates
+           << GUI_Fullscreen << GUI_Seamless << GUI_Scale
+           << GUI_AutoresizeGuest << GUI_LastGuestSizeHint << GUI_LastGuestSizeHintWasFullscreen
+           << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
+#ifdef VBOX_WITH_VIDEOHWACCEL
+           << GUI_Accelerate2D_StretchLinear
+           << GUI_Accelerate2D_PixformatYV12 << GUI_Accelerate2D_PixformatUYVY
+           << GUI_Accelerate2D_PixformatYUY2 << GUI_Accelerate2D_PixformatAYUV
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+           << GUI_HiDPI_Optimization
+           << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
+           << GUI_RestrictedStatusBarIndicators
+#ifdef Q_WS_MAC
+           << GUI_PresentationModeEnabled
+           << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor
+#endif /* Q_WS_MAC */
+           << GUI_PassCAD
+           << GUI_GuruMeditationHandler
+           << GUI_HidLedsSync
+           << GUI_InformationWindowGeometry
+           << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
+           << GUI_LastCloseAction << GUI_CloseActionHook
+#ifdef VBOX_WITH_DEBUGGER_GUI
+           << GUI_Dbg_Enabled << GUI_Dbg_AutoShow
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+           << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints;
 }
 #endif /* DEBUG */
 
