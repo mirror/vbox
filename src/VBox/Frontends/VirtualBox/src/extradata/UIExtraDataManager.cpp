@@ -860,7 +860,7 @@ void UIExtraDataManagerWindow::sltAdd()
             {
                 /* Configure button-box: */
                 pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-                pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+                pButtonBox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
                 pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(pValidatorGroup->result());
                 pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
                 connect(pValidatorGroup, SIGNAL(sigValidityChange(bool)),
@@ -1145,7 +1145,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             /* Configure 'Add' action: */
             m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/edata_add_22px.png", ":/edata_add_16px.png",
                                                           ":/edata_add_disabled_22px.png", ":/edata_add_disabled_16px.png"));
-            m_pActionAdd->setShortcut(Qt::Key_Insert);
+            m_pActionAdd->setShortcut(QKeySequence("Ctrl+T"));
             connect(m_pActionAdd, SIGNAL(triggered(bool)), this, SLOT(sltAdd()));
         }
         /* Create 'Del' action: */
@@ -1155,7 +1155,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             /* Configure 'Del' action: */
             m_pActionDel->setIcon(UIIconPool::iconSetFull(":/edata_remove_22px.png", ":/edata_remove_16px.png",
                                                           ":/edata_remove_disabled_22px.png", ":/edata_remove_disabled_16px.png"));
-            m_pActionDel->setShortcut(Qt::Key_Delete);
+            m_pActionDel->setShortcut(QKeySequence("Ctrl+R"));
             connect(m_pActionDel, SIGNAL(triggered(bool)), this, SLOT(sltDel()));
         }
 
