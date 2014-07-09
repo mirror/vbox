@@ -61,14 +61,6 @@
 *******************************************************************************/
 /** The support service name. */
 #define SERVICE_NAME    "VBoxDrv"
-/** Win32 Device name - system. */
-#define DEVICE_NAME_SYS "\\\\.\\VBoxDrv"
-/** Win32 Device name - user. */
-#define DEVICE_NAME_USR "\\\\.\\VBoxDrvU"
-/** NT Device name. */
-#define DEVICE_NAME_NT   L"\\Device\\VBoxDrv"
-/** Win32 Symlink name. */
-#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxDrv"
 
 
 /*******************************************************************************
