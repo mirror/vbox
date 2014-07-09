@@ -1749,7 +1749,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_MachineWindowIcons << GUI_MachineWindowNamePostfix
 #endif /* !Q_WS_MAC */
            << GUI_LastNormalWindowPosition << GUI_LastScaleWindowPosition
-           << GUI_Geometry_State_Max
            << GUI_RestrictedRuntimeMenus
 #ifdef Q_WS_MAC
            << GUI_RestrictedRuntimeApplicationMenuActions
