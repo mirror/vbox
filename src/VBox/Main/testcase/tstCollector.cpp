@@ -247,12 +247,12 @@ int testDisk(pm::CollectorHAL *collector)
         if (disksUsage.empty())
         {
             RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
-            return 1;
+            return 0;
         }
         if (disksLoad.empty())
         {
             RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
-            return 1;
+            return 0;
         }
 
         pm::DiskList::iterator it;
