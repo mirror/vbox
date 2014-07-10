@@ -358,7 +358,7 @@ VBoxSupLib_DEFS = \
 VBoxSupLib_SOURCES = \
 	$(KBUILD_TARGET)/VBoxSupLib-$(KBUILD_TARGET).cpp
 VBoxSupLib_LIBS.win = \
-	$(SUPR3HardenedStatic_1_INS_TARGET)
+	$(SUPR3HardenedStatic_1_TARGET)
 
 
 #
