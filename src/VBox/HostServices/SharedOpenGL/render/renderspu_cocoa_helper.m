@@ -924,6 +924,9 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     DEBUG_MSG(("OVIW(%p): setSize: new size: %dx%d\n", (void*)self, (int)size.width, (int)size.height));
     [self performSelectorOnMainThread:@selector(vboxReshapeOnResizePerform) withObject:nil waitUntilDone:NO];
+
+    /* ensure window contents is updated after that */
+    [self setNeedsDisplay:YES];
 }
 
 - (NSSize)size
@@ -1272,6 +1275,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                 [self updateViewportCS];
                 m_fNeedViewportUpdate = false;
             }
+            
+            m_fCleanupNeeded = GL_FALSE;
             
             /* Render FBO content to the dock tile when necessary. */
             [self vboxPresentToDockTileCS:pCompositor];
@@ -1945,9 +1950,11 @@ GLboolean cocoaViewNeedsEmptyPresent(NativeNSViewRef pView)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    [(OverlayView*)pView vboxNeedsEmptyPresent];
+    GLboolean fNeedsPresent = [(OverlayView*)pView vboxNeedsEmptyPresent];
 
     [pPool release];
+    
+    return fNeedsPresent;
 }
 
 void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint* paRects)

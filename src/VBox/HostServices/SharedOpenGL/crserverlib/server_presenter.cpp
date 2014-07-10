@@ -2513,7 +2513,7 @@ public:
                     CrVrScrCompositorInit(&TmpCompositor, &Rect);
                     /* this is a cleanup operation
                      * empty compositor is guarantid to be released on VBoxPresentComposition return */
-                    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+                    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, &TmpCompositor, NULL);
                 }
                 g_pLed->Asserted.s.fWriting = 1;
             }
