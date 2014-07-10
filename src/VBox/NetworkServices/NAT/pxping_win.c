@@ -302,7 +302,7 @@ pxping_icmp4_callback(struct pong4 *pong)
     int mapped;
 
     nreplies = IcmpParseReplies(pong->buf, (DWORD)pong->bufsize);
-    if (nreplies <= 0) {
+    if (nreplies == 0) {
         DWORD error = GetLastError();
         if (error == IP_REQ_TIMED_OUT) {
             DPRINTF2(("pong4: %p timed out\n", (void *)pong));
@@ -581,7 +581,7 @@ pxping_icmp6_callback(struct pong6 *pong)
     int mapped;
 
     nreplies = Icmp6ParseReplies(pong->buf, (DWORD)pong->bufsize);
-    if (nreplies <= 0) {
+    if (nreplies == 0) {
         DWORD error = GetLastError();
         if (error == IP_REQ_TIMED_OUT) {
             DPRINTF2(("pong6: %p timed out\n", (void *)pong));
