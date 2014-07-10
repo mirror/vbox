@@ -24,6 +24,7 @@
 
 #include <VBox/err.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/tm.h>
 #include <VBox/vmm/vm.h>
 
 #include <iprt/spinlock.h>
@@ -102,16 +103,31 @@ VMM_INT_DECL(int) GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
     PGIMHVREFTSC     pRefTsc  = (PGIMHVREFTSC)pcRegion->CTX_SUFF(pvPage);
     Assert(pRefTsc);
 
+    /*
+     * Hyper-V reports the reference time in 100 nanosecond units.
+     */
+    uint64_t u64Tsc100Ns = TMCpuTicksPerSecond(pVM) / UINT64_C(10000000); /* 100 ns */
+    int64_t i64TscOffset = (int64_t)u64Offset / u64Tsc100Ns;
+
+    /*
+     * The TSC page can be simulatenously read by other VCPUs in the guest. The
+     * spinlock is only for protecting simultaneous hypervisor writes from other
+     * EMTs.
+     */
     RTSpinlockAcquire(pcHv->hSpinlockR0);
-    pRefTsc->i64TscOffset = u64Offset;
-    if (pRefTsc->u32TscSequence < UINT32_C(0xfffffffe))
-        ASMAtomicIncU32(&pRefTsc->u32TscSequence);
-    else
-        ASMAtomicWriteU32(&pRefTsc->u32TscSequence, 1);
+    if (pRefTsc->i64TscOffset != i64TscOffset)
+    {
+        ASMAtomicWriteS64(&pRefTsc->i64TscOffset, i64TscOffset);
+        if (pRefTsc->u32TscSequence < UINT32_C(0xfffffffe))
+            ASMAtomicIncU32(&pRefTsc->u32TscSequence);
+        else
+            ASMAtomicWriteU32(&pRefTsc->u32TscSequence, 1);
+    }
     RTSpinlockRelease(pcHv->hSpinlockR0);
 
     Assert(pRefTsc->u32TscSequence != 0);
     Assert(pRefTsc->u32TscSequence != UINT32_C(0xffffffff));
+    AssertReturn(pRefTsc->u32TscSequence != 0xfffffffe, VERR_GIM_IPE_3);
     return VINF_SUCCESS;
 }
 
