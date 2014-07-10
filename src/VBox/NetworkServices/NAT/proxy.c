@@ -200,7 +200,7 @@ proxy_sockerr_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                                 NULL, error, LANG_NEUTRAL,
                                 (LPSTR)&msg, 0,
                                 NULL);
-        if (nchars <= 0 || msg == NULL) {
+        if (nchars == 0 || msg == NULL) {
             cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
                               "Unknown error: %d", error);
         }
@@ -527,8 +527,8 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     ssize_t nsent;
 #else
     DWORD nsent;
-    int rc;
 #endif
+    int rc;
     IOVEC fixiov[8];     /* fixed size (typical case) */
     const size_t fixiovsize = sizeof(fixiov)/sizeof(fixiov[0]);
     IOVEC *dyniov;       /* dynamically sized */
@@ -572,14 +572,12 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
     mh.msg_iovlen = clen;
 
     nsent = sendmsg(sock, &mh, 0);
+    rc = (nsent >= 0) ? 0 : SOCKET_ERROR;
 #else
     rc = WSASendTo(sock, iov, (DWORD)clen, &nsent, 0,
                    name, (int)namelen, NULL, NULL);
-    if (rc == SOCKET_ERROR) {
-        nsent = -1;
-    }
 #endif
-    if (nsent < 0) {
+    if (rc == SOCKET_ERROR) {
         error = SOCKERRNO();
         DPRINTF(("%s: socket %d: sendmsg: %R[sockerr]\n",
                  __func__, sock, error));

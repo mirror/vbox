@@ -1582,7 +1582,7 @@ pxtcp_sock_send(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     status = WSASend(pxtcp->sock, iov, (DWORD)iovlen, &nsent,
                      0, NULL, NULL);
     if (status == SOCKET_ERROR) {
-        nsent = -SOCKERRNO();
+        return -SOCKERRNO();
     }
 
     return nsent;
@@ -1866,7 +1866,7 @@ pxtcp_sock_recv(struct pxtcp *pxtcp, IOVEC *iov, size_t iovlen)
     status = WSARecv(pxtcp->sock, iov, (DWORD)iovlen, &nread,
                      &flags, NULL, NULL);
     if (status == SOCKET_ERROR) {
-        nread = -SOCKERRNO();
+        return -SOCKERRNO();
     }
 
     return (ssize_t)nread;
