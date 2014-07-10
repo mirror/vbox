@@ -90,6 +90,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
     int rc = supHardenedWinInitImageVerifier(NULL);
     if (RT_FAILURE(rc))
         return rc;
+    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation();
 #endif
 
     /*
