@@ -836,7 +836,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
 
 #ifdef IN_RING3
     /* Check that the caller has performed the necessary library initialization. */
-    if (RTCrX509Certificate_IsPresent(&g_BuildX509Cert))
+    if (!RTCrX509Certificate_IsPresent(&g_BuildX509Cert))
         return RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER,
                             "supHardenedWinVerifyImageByHandle: supHardenedWinInitImageVerifier was not called.");
 #endif
