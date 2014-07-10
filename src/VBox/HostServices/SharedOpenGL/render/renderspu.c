@@ -1016,7 +1016,7 @@ GLboolean renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SC
     /* renderspuVBoxCompositorSet can be invoked from the chromium thread only and is not reentrant,
      * no need to synch here
      * the lock is actually needed to ensure we're in synch with the redraw thread */
-    if (window->pCompositor == pCompositor && ! fEmpty)
+    if (window->pCompositor == pCompositor && !fEmpty)
         return !!pCompositor;
 
     rc = RTCritSectEnter(&window->CompositorLock);
@@ -1030,7 +1030,7 @@ GLboolean renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SC
             pCompositor = NULL;
         }
 
-        window->pCompositor = pCompositor;
+        window->pCompositor = !fEmpty ? pCompositor : NULL;
         RTCritSectLeave(&window->CompositorLock);
         return fNeedPresent;
     }
