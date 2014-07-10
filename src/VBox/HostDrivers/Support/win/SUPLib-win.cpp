@@ -83,7 +83,17 @@ static int suplibConvertWin32Err(int);
 int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
-     * Almost nothing to do if pre-inited.
+     * Make sure the image verifier is fully initialized.
+     */
+#if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_HARDENED_R3) && !defined(IN_SUP_R3_STATIC)
+    supR3HardenedWinInitVersion();
+    int rc = supHardenedWinInitImageVerifier(NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+    /*
+     * Done if of pre-inited.
      */
     if (fPreInited)
     {
@@ -91,8 +101,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 # ifdef IN_SUP_R3_STATIC
         return VERR_NOT_SUPPORTED;
 # else
-        supR3HardenedWinInitVersion();
-        return supHardenedWinInitImageVerifier(NULL);
+        return VINF_SUCCESS;
 # endif
 #else
         return VINF_SUCCESS;
