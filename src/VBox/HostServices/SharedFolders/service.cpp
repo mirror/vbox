@@ -146,7 +146,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
         {
             uint32_t len;
 
-            len = strlen(pFolderMapping->pszFolderName);
+            len = (uint32_t)strlen(pFolderMapping->pszFolderName);
             rc = SSMR3PutU32(pSSM, len);
             AssertRCReturn(rc, rc);
 
@@ -272,6 +272,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             /* 'i' is the root handle of the saved mapping. */
             rc = vbsfMappingLoaded (&mapping, i);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("SharedFolders: %Rrc loading %d [%ls] -> [%s]\n",
+                        rc, i, pMapName->String.ucs2, pszFolderName));
+            }
 
             RTMemFree(pMapName);
             RTStrFree(pszFolderName);
