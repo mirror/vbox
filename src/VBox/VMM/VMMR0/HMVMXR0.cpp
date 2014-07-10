@@ -5588,7 +5588,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 #if 1
     if (fParavirtTsc)
     {
-#if 0
+#if 1
         uint64_t const u64CurTsc   = ASMReadTSC();
         uint64_t const u64LastTick = TMCpuTickGetLastSeen(pVCpu);
         if (u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset < u64LastTick)

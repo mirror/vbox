@@ -424,7 +424,6 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 
 /**
  * MMIO2 region indices.
- * Note!! Saved-state are dependent on the index values, do -not- change!
  */
 /** The hypercall page region. */
 #define GIM_HV_HYPERCALL_PAGE_REGION_IDX          UINT8_C(0)

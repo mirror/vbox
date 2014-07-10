@@ -490,8 +490,8 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         pRefTsc->u32TscSequence  = u32TscSeq;
         pRefTsc->u64TscScale     = ((INT64_C(10000) << 32) / u64TscKHz) << 32;
 
-        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp (u64TscScale=%#RX64 u64TscKHz=%#RX64)\n", GCPhysTscPage,
-                pRefTsc->u64TscScale, u64TscKHz));
+        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp - u64TscScale=%#RX64 u64TscKHz=%#RX64 (%'RU64)\n", GCPhysTscPage,
+                pRefTsc->u64TscScale, u64TscKHz, u64TscKHz));
         return VINF_SUCCESS;
     }
     else
@@ -601,7 +601,7 @@ VMMR3_INT_DECL(int) GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
         else
         {
             /** @todo Handle raw-mode hypercall page patching. */
-            LogRelFunc(("Raw-mode not yet implemented!\n"));
+            LogRel(("GIM: HyperV: Raw-mode not yet implemented!\n"));
         }
         GIMR3Mmio2Unmap(pVM, pRegion);
     }
