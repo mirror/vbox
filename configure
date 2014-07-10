@@ -422,7 +422,7 @@ check_gcc()
              -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
              -o \( $cc_maj -eq 4 -a $cc_min -gt 9 \) \
              -o $cc_maj -gt 4 ]; then
-        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<8"
+        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<10"
         fail really
       else
         log_success "found version $cc_ver"
