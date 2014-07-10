@@ -134,8 +134,8 @@ static int vboxvfs_mount(struct mount *mp, struct thread *td)
     if (!pShFlShareName)
         return VERR_NO_MEMORY;
 
-    pShFlShareName->u16Length = cbShFlShareName;
-    pShFlShareName->u16Size   = cbShFlShareName + 1;
+    pShFlShareName->u16Length = cbShare;
+    pShFlShareName->u16Size   = cbShare + 1;
     memcpy (pShFlShareName->String.utf8, pszShare, cbShare + 1);
 
     rc = vboxCallMapFolder (&g_vboxSFClient, pShFlShareName, &pShFlGlobalInfo->map);
