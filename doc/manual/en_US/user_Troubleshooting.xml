@@ -1277,7 +1277,7 @@ VirtualBox</screen>
       between different VirtualBox processes and maintains the global
       configuration, i.e. the XML database. When starting a VirtualBox
       component, the processes <computeroutput>VBoxSVC</computeroutput> and
-      <computeroutput>VirtualBoxXPCOMIPCD</computeroutput> are started
+      <computeroutput>VBoxXPCOMIPCD</computeroutput> are started
       automatically. They are only accessible from the user account they are
       running under. <computeroutput>VBoxSVC</computeroutput> owns the
       VirtualBox configuration database which normally resides in
