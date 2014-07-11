@@ -1466,6 +1466,26 @@ SUPR3DECL(int) SUPR3LowFree(void *pv, size_t cPages)
 }
 
 
+SUPR3DECL(int) SUPR3HardenedVerifyInit(void)
+{
+#ifdef RT_OS_WINDOWS
+    if (g_cInits == 0)
+        return suplibOsHardenedVerifyInit();
+#endif
+    return VINF_SUCCESS;
+}
+
+
+SUPR3DECL(int) SUPR3HardenedVerifyTerm(void)
+{
+#ifdef RT_OS_WINDOWS
+    if (g_cInits == 0)
+        return suplibOsHardenedVerifyTerm();
+#endif
+    return VINF_SUCCESS;
+}
+
+
 SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszMsg, PRTFILE phFile)
 {
     /*

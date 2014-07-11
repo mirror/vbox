@@ -717,6 +717,13 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
     m->fMadeReadyCall               = false;
 
     /*
+     * Make sure the SUPR3Hardened API works (ignoring errors for now).
+     */
+    int rc = SUPR3HardenedVerifyInit();
+    if (RT_FAILURE(rc))
+        LogRel(("SUPR3HardenedVerifyInit failed: %Rrc\n", rc));
+
+    /*
      * Probe the extension pack (this code is shared with refresh()).
      */
     i_probeAndLoad();
