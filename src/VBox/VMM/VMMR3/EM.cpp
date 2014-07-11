@@ -2387,7 +2387,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     break;
 
                 /*
-                 * Guru mediations.
+                 * Triple fault.
                  */
                 case VINF_EM_TRIPLE_FAULT:
                     if (!pVM->em.s.fGuruOnTripleFault)
