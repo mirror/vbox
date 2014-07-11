@@ -2488,6 +2488,11 @@
 #define VERR_SUP_VP_UNEXPECTED_VALID_PATH_COUNT     (-5660)
 /** The image is required to force integrity checks. */
 #define VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED   (-5661)
+/** Process Verficiation Failure: Symantec Endpoint Protection must be
+ * disabled for the VirtualBox VM processes.
+ * http://www.symantec.com/connect/articles/creating-application-control-exclusions-symantec-endpoint-protection-121 */
+#define VERR_SUP_VP_SYSFER_DLL                      (-5662)
+
 
 /** @} */
 
