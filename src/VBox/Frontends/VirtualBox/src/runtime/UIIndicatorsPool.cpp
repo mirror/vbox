@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIIndicatorsPool class implementation
+ * VBox Qt GUI - UIIndicatorsPool class implementation.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,16 +18,21 @@
 /* Qt includes: */
 #include <QTimer>
 #include <QPainter>
+#include <QHBoxLayout>
 
 /* GUI includes: */
 #include "UIIndicatorsPool.h"
-#include "VBoxGlobal.h"
+#include "QIWithRetranslateUI.h"
 #include "UIExtraDataManager.h"
 #include "UIMachineDefs.h"
 #include "UIConverter.h"
 #include "UIAnimationFramework.h"
+#include "UISession.h"
 #include "UIMedium.h"
 #include "UIIconPool.h"
+#include "UIHostComboEditor.h"
+#include "QIStatusBarIndicator.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -49,14 +52,36 @@
 /* Other VBox includes: */
 #include <iprt/time.h>
 
-class UIIndicatorHardDisks : public QIStateIndicator
+
+/** QIStateStatusBarIndicator extension for Runtime UI. */
+class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
 {
     Q_OBJECT;
 
 public:
 
-    UIIndicatorHardDisks(CSession &session)
-      : m_session(session)
+    /** Constructor which remembers passed @a session object. */
+    UISessionStateStatusBarIndicator(CSession &session) : m_session(session) {}
+
+    /** Abstract update routine. */
+    virtual void updateAppearance() = 0;
+
+protected:
+
+    /** Holds the session reference. */
+    CSession &m_session;
+};
+
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Hard-drive indicator. */
+class UIIndicatorHardDrive : public UISessionStateStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorHardDrive(CSession &session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/hd_read_16px.png"));
@@ -66,11 +91,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -108,21 +137,18 @@ public:
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorOpticalDisks : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Optical-drive indicator. */
+class UIIndicatorOpticalDisks : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorOpticalDisks(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/cd_read_16px.png"));
@@ -132,11 +158,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -178,21 +208,18 @@ public:
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorFloppyDisks : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Floppy-drive indicator. */
+class UIIndicatorFloppyDisks : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorFloppyDisks(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/fd_read_16px.png"));
@@ -202,11 +229,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -248,22 +279,19 @@ public:
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorNetwork : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Network indicator. */
+class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorNetwork(CSession &session)
-      : m_session(session)
-      , m_pUpdateTimer(new QTimer(this))
+        : UISessionStateStatusBarIndicator(session)
+        , m_pUpdateTimer(new QTimer(this))
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/nw_read_16px.png"));
@@ -276,11 +304,23 @@ public:
         retranslateUi();
     }
 
+private slots:
+
+    /** Updates network IP addresses. */
+    void sltUpdateNetworkIPs()
+    {
+        updateAppearance();
+    }
+
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -347,28 +387,21 @@ public:
 
         setToolTip(strToolTip.arg(strFullData));
     }
-protected slots:
 
-    void sltUpdateNetworkIPs()
-    {
-        updateAppearance();
-    }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
+    /** Holds the auto-update timer instance. */
     QTimer *m_pUpdateTimer;
 };
 
-class UIIndicatorUSB : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
+class UIIndicatorUSB : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorUSB(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
@@ -378,11 +411,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -415,21 +452,18 @@ public:
 
         setToolTip(strToolTip.arg(strFullData));
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorSharedFolders : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Shared-folders indicator. */
+class UIIndicatorSharedFolders : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorSharedFolders(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/sf_read_16px.png"));
@@ -439,11 +473,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CMachine &machine = m_session.GetMachine();
@@ -490,32 +528,28 @@ public:
         setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         setToolTip(strToolTip.arg(strFullData));
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorVideoCapture : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Video-capture indicator. */
+class UIIndicatorVideoCapture : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
     Q_PROPERTY(double rotationAngleStart READ rotationAngleStart);
     Q_PROPERTY(double rotationAngleFinal READ rotationAngleFinal);
     Q_PROPERTY(double rotationAngle READ rotationAngle WRITE setRotationAngle);
 
-public:
-
-    /* State enumerator: */
+    /** Video-capture states. */
     enum UIIndicatorStateVideoCapture
     {
         UIIndicatorStateVideoCapture_Disabled = 0,
         UIIndicatorStateVideoCapture_Enabled  = 1
     };
 
-    /* Constructor: */
+public:
+
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorVideoCapture(CSession &session)
-        : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
     {
@@ -532,7 +566,59 @@ public:
         retranslateUi();
     }
 
-    /* API: Update stuff: */
+private slots:
+
+    /** Handles state change. */
+    void setState(int iState)
+    {
+        /* Update animation state: */
+        switch (iState)
+        {
+            case UIIndicatorStateVideoCapture_Disabled:
+                m_pAnimation->stop();
+                m_dRotationAngle = 0;
+                break;
+            case UIIndicatorStateVideoCapture_Enabled:
+                m_pAnimation->start();
+                break;
+            default:
+                break;
+        }
+        /* Call to base-class: */
+        QIStateStatusBarIndicator::setState(iState);
+    }
+
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        updateAppearance();
+    }
+
+    /** Paint-event handler. */
+    void paintEvent(QPaintEvent*)
+    {
+        /* Create new painter: */
+        QPainter painter(this);
+        /* Configure painter for *enabled* state: */
+        if (state() == UIIndicatorStateVideoCapture_Enabled)
+        {
+            /* Configure painter for smooth animation: */
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+            /* Shift rotation origin according pixmap center: */
+            painter.translate(height() / 2, height() / 2);
+            /* Rotate painter: */
+            painter.rotate(rotationAngle());
+            /* Unshift rotation origin according pixmap center: */
+            painter.translate(- height() / 2, - height() / 2);
+        }
+        /* Draw contents: */
+        drawContents(&painter);
+    }
+
+    /** Update routine. */
     void updateAppearance()
     {
         /* Get machine: */
@@ -562,80 +648,31 @@ public:
         setToolTip(strToolTip);
     }
 
-public slots:
-
-    /* Handler: State stuff: */
-    void setState(int iState)
-    {
-        /* Update animation state: */
-        switch (iState)
-        {
-            case UIIndicatorStateVideoCapture_Disabled:
-                m_pAnimation->stop();
-                m_dRotationAngle = 0;
-                break;
-            case UIIndicatorStateVideoCapture_Enabled:
-                m_pAnimation->start();
-                break;
-            default:
-                break;
-        }
-
-        /* Call to base-class: */
-        QIStateIndicator::setState(iState);
-    }
-
-protected:
-
-    /* Handler: Translate stuff: */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
-    /* Handler: Paint stuff: */
-    void paintEvent(QPaintEvent*)
-    {
-        /* Create new painter: */
-        QPainter painter(this);
-        /* Configure painter for *enabled* state: */
-        if (state() == UIIndicatorStateVideoCapture_Enabled)
-        {
-            /* Configure painter for smooth animation: */
-            painter.setRenderHint(QPainter::Antialiasing);
-            painter.setRenderHint(QPainter::SmoothPixmapTransform);
-            /* Shift rotation origin according pixmap center: */
-            painter.translate(height() / 2, height() / 2);
-            /* Rotate painter: */
-            painter.rotate(rotationAngle());
-            /* Unshift rotation origin according pixmap center: */
-            painter.translate(- height() / 2, - height() / 2);
-        }
-        /* Draw contents: */
-        drawContents(&painter);
-    }
-
-    /* Properties: Rotation stuff: */
+    /** Returns rotation start angle. */
     double rotationAngleStart() const { return 0; }
+    /** Returns rotation finish angle. */
     double rotationAngleFinal() const { return 360; }
+    /** Returns current rotation angle. */
     double rotationAngle() const { return m_dRotationAngle; }
+    /** Defines current rotation angle. */
     void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
 
-    /* For compatibility reason we do it here,
-     * later this should be moved to QIStateIndicator. */
-    CSession &m_session;
+    /** Holds the rotation animation instance. */
     UIAnimationLoop *m_pAnimation;
+    /** Holds current rotation angle. */
     double m_dRotationAngle;
 };
 
-class UIIndicatorFeatures : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Features indicator. */
+class UIIndicatorFeatures : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorFeatures(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
@@ -643,11 +680,15 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
         updateAppearance();
     }
 
+    /** Update routine. */
     void updateAppearance()
     {
         const CConsole &console = m_session.GetConsole();
@@ -695,21 +736,18 @@ public:
         setToolTip(tip);
         setState(bVirtEnabled);
     }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
 };
 
-class UIIndicatorMouse : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Mouse indicator. */
+class UIIndicatorMouse : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorMouse(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/mouse_16px.png"));
@@ -720,47 +758,52 @@ public:
         retranslateUi();
     }
 
-    void retranslateUi()
-    {
-        setToolTip(QApplication::translate("UIIndicatorsPool", "Indicates whether the host mouse pointer is captured by the guest OS:<br>"
-                      "<nobr><img src=:/mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
-                      "<nobr><img src=:/mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
-                      "<nobr><img src=:/mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
-                      "<nobr><img src=:/mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
-                      "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
-                      "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
-    }
+private slots:
 
-public slots:
-
+    /** Handles state change. */
     void setState(int iState)
     {
         if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
             (iState & UIMouseStateType_MouseAbsolute) &&
             !(iState & UIMouseStateType_MouseCaptured))
         {
-            QIStateIndicator::setState(4);
+            QIStateStatusBarIndicator::setState(4);
         }
         else
         {
-            QIStateIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
+            QIStateStatusBarIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
         }
     }
 
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        setToolTip(QApplication::translate("UIIndicatorsPool",
+                   "Indicates whether the host mouse pointer is captured by the guest OS:<br>"
+                   "<nobr><img src=:/mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
+                   "<nobr><img src=:/mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
+                   "<nobr><img src=:/mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
+                   "<nobr><img src=:/mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
+                   "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
+                   "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
+    }
+
+    /** Update routine. */
+    void updateAppearance() {}
 };
 
-class UIIndicatorKeyboard : public QIStateIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Keyboard indicator. */
+class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorKeyboard(CSession &session)
-      : m_session(session)
+        : UISessionStateStatusBarIndicator(session)
     {
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/hostkey_captured_16px.png"));
@@ -770,22 +813,65 @@ public:
         retranslateUi();
     }
 
+private:
+
+    /** Retranslation routine. */
     void retranslateUi()
     {
-        setToolTip(QApplication::translate("UIIndicatorsPool", "Indicates whether the keyboard is captured by the guest OS "
-                      "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
+        setToolTip(QApplication::translate("UIIndicatorsPool",
+                   "Indicates whether the keyboard is captured by the guest OS "
+                   "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
     }
 
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
-    CSession &m_session;
+    /** Update routine. */
+    void updateAppearance() {}
 };
 
-UIIndicatorsPool::UIIndicatorsPool(CSession &session, QObject *pParent)
-    : QObject(pParent)
-    , m_session(session)
-    , m_pool(IndicatorType_Max)
+/** QITextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
+class UIIndicatorKeyboardExtension : public QIWithRetranslateUI<QITextStatusBarIndicator>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    UIIndicatorKeyboardExtension()
+    {
+        /* Make sure host-combination label will be updated: */
+        connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
+                this, SLOT(sltUpdateAppearance()));
+        /* Translate finally: */
+        retranslateUi();
+    }
+
+public slots:
+
+    /** Update routine. */
+    void sltUpdateAppearance()
+    {
+        setText(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
+    }
+
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        sltUpdateAppearance();
+        setToolTip(QApplication::translate("UIMachineWindowNormal",
+                                           "Shows the currently assigned Host key.<br>"
+                                           "This key, when pressed alone, toggles the keyboard and mouse "
+                                           "capture state. It can also be used in combination with other keys "
+                                           "to quickly perform actions from the main menu."));
+    }
+};
+
+
+UIIndicatorsPool::UIIndicatorsPool(UISession *pSession, QWidget *pParent /* = 0 */)
+    : QWidget(pParent)
+    , m_pSession(pSession)
+    , m_session(m_pSession->session())
+    , m_pTimerAutoUpdate(0)
 {
     /* Prepare: */
     prepare();
@@ -797,52 +883,223 @@ UIIndicatorsPool::~UIIndicatorsPool()
     cleanup();
 }
 
-QIStateIndicator* UIIndicatorsPool::indicator(IndicatorType index)
+void UIIndicatorsPool::updateAppearance(IndicatorType indicatorType)
 {
-    /* Just return what already exists: */
-    return m_pool[index];
+    /* Skip missed indicators: */
+    if (!m_pool.contains(indicatorType))
+        return;
+
+    /* Get indicator: */
+    QIStatusBarIndicator *pIndicator = m_pool.value(indicatorType);
+
+    /* Assert indicators with NO appearance: */
+    UISessionStateStatusBarIndicator *pSessionStateIndicator =
+        qobject_cast<UISessionStateStatusBarIndicator*>(pIndicator);
+    AssertPtrReturnVoid(pSessionStateIndicator);
+
+    /* Update indicator appearance: */
+    pSessionStateIndicator->updateAppearance();
+}
+
+void UIIndicatorsPool::setAutoUpdateIndicatorStates(bool fEnabled)
+{
+    /* Make sure auto-update timer exists: */
+    AssertPtrReturnVoid(m_pTimerAutoUpdate);
+
+    /* Start/stop timer: */
+    if (fEnabled)
+        m_pTimerAutoUpdate->start(100);
+    else
+        m_pTimerAutoUpdate->stop();
+}
+
+void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
+{
+    /* Update states for following indicators: */
+    if (m_pool.contains(IndicatorType_HardDisks))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_HardDisks),     KDeviceType_HardDisk);
+    if (m_pool.contains(IndicatorType_OpticalDisks))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_OpticalDisks),  KDeviceType_DVD);
+    if (m_pool.contains(IndicatorType_FloppyDisks))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_FloppyDisks),   KDeviceType_Floppy);
+    if (m_pool.contains(IndicatorType_USB))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_USB),           KDeviceType_USB);
+    if (m_pool.contains(IndicatorType_Network))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_Network),       KDeviceType_Network);
+    if (m_pool.contains(IndicatorType_SharedFolders))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_SharedFolders), KDeviceType_SharedFolder);
+}
+
+void UIIndicatorsPool::sltContextMenuRequest(QIStatusBarIndicator *pIndicator, QContextMenuEvent *pEvent)
+{
+    /* If that is one of pool indicators: */
+    foreach (IndicatorType indicatorType, m_pool.keys())
+        if (m_pool[indicatorType] == pIndicator)
+        {
+            /* Notify listener: */
+            emit sigContextMenuRequest(indicatorType, pEvent->globalPos());
+            return;
+        }
 }
 
 void UIIndicatorsPool::prepare()
 {
-    /* Get the list of restricted indicators: */
-    QList<IndicatorType> restrictedIndicators = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+    /* Prepare connections: */
+    prepareConnections();
+    /* Prepare contents: */
+    prepareContents();
+    /* Prepare auto-update timer: */
+    prepareUpdateTimer();
+}
 
-    /* Populate indicator-pool: */
-    for (int iIndex = 0; iIndex < IndicatorType_Max; ++iIndex)
+void UIIndicatorsPool::prepareConnections()
+{
+    /* Listen for the status-bar configuration changes: */
+    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange()),
+            this, SLOT(sltHandleConfigurationChange()));
+}
+
+void UIIndicatorsPool::prepareContents()
+{
+    /* Create main-layout: */
+    m_pMainLayout = new QHBoxLayout(this);
+    AssertPtrReturnVoid(m_pMainLayout);
     {
-        /* Make sure indicator presence is permitted: */
-        IndicatorType index = static_cast<IndicatorType>(iIndex);
-        if (restrictedIndicators.contains(index))
-            continue;
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(5);
+        /* Update pool: */
+        updatePool();
+    }
+}
 
-        /* Prepare indicator: */
-        switch (index)
+void UIIndicatorsPool::prepareUpdateTimer()
+{
+    /* Create auto-update timer: */
+    m_pTimerAutoUpdate = new QTimer(this);
+    AssertPtrReturnVoid(m_pTimerAutoUpdate);
+    {
+        /* Configure auto-update timer: */
+        connect(m_pTimerAutoUpdate, SIGNAL(timeout()),
+                this, SLOT(sltAutoUpdateIndicatorStates()));
+        setAutoUpdateIndicatorStates(true);
+    }
+}
+
+void UIIndicatorsPool::updatePool()
+{
+    /* Recache the list of restricted indicators: */
+    m_configuration = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+
+    /* Update indicators: */
+    for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
+    {
+        /* Determine indicator presence: */
+        const IndicatorType indicatorType = static_cast<IndicatorType>(iType);
+        bool fPresenceAllowed = !m_configuration.contains(indicatorType);
+
+        /* If presence restricted: */
+        if (!fPresenceAllowed && m_pool.contains(indicatorType))
         {
-            case IndicatorType_HardDisks:     m_pool[index] = new UIIndicatorHardDisks(m_session); break;
-            case IndicatorType_OpticalDisks:  m_pool[index] = new UIIndicatorOpticalDisks(m_session); break;
-            case IndicatorType_FloppyDisks:   m_pool[index] = new UIIndicatorFloppyDisks(m_session); break;
-            case IndicatorType_Network:       m_pool[index] = new UIIndicatorNetwork(m_session); break;
-            case IndicatorType_USB:           m_pool[index] = new UIIndicatorUSB(m_session); break;
-            case IndicatorType_SharedFolders: m_pool[index] = new UIIndicatorSharedFolders(m_session); break;
-            case IndicatorType_VideoCapture:  m_pool[index] = new UIIndicatorVideoCapture(m_session); break;
-            case IndicatorType_Features:      m_pool[index] = new UIIndicatorFeatures(m_session); break;
-            case IndicatorType_Mouse:         m_pool[index] = new UIIndicatorMouse(m_session); break;
-            case IndicatorType_Keyboard:      m_pool[index] = new UIIndicatorKeyboard(m_session); break;
-            default: break;
+            /* Cleanup indicator: */
+            delete m_pool.value(indicatorType);
+            m_pool.remove(indicatorType);
         }
+        /* If presence allowed: */
+        else if (fPresenceAllowed && !m_pool.contains(indicatorType))
+        {
+            /* Create indicator: */
+            switch (indicatorType)
+            {
+                case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_session);     break;
+                case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_session);  break;
+                case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_session);   break;
+                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
+                case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_session);       break;
+                case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
+                case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_session);  break;
+                case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_session);      break;
+                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_session);         break;
+                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_session);      break;
+                case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;        break;
+                default: break;
+            }
+            /* Configure indicator: */
+            connect(m_pool.value(indicatorType), SIGNAL(sigContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)),
+                    this, SLOT(sltContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)));
+            /* Insert indicator into main-layout: */
+            m_pMainLayout->insertWidget(indicatorPosition(indicatorType), m_pool.value(indicatorType));
+        }
+    }
+}
+
+void UIIndicatorsPool::cleanupUpdateTimer()
+{
+    /* Destroy auto-update timer: */
+    AssertPtrReturnVoid(m_pTimerAutoUpdate);
+    {
+        m_pTimerAutoUpdate->stop();
+        delete m_pTimerAutoUpdate;
+        m_pTimerAutoUpdate = 0;
+    }
+}
+
+void UIIndicatorsPool::cleanupContents()
+{
+    /* Cleanup indicators: */
+    while (!m_pool.isEmpty())
+    {
+        const IndicatorType firstType = m_pool.keys().first();
+        delete m_pool.value(firstType);
+        m_pool.remove(firstType);
     }
 }
 
 void UIIndicatorsPool::cleanup()
 {
-    /* Wipe-out indicator-pool: */
-    for (int iIndex = 0; iIndex < IndicatorType_Max; ++iIndex)
+    /* Cleanup auto-update timer: */
+    cleanupUpdateTimer();
+    /* Cleanup indicators: */
+    cleanupContents();
+}
+
+int UIIndicatorsPool::indicatorPosition(IndicatorType indicatorType) const
+{
+    int iPosition = 0;
+    foreach (const IndicatorType &iteratedIndicatorType, m_pool.keys())
+        if (iteratedIndicatorType == indicatorType)
+            return iPosition;
+        else
+            ++iPosition;
+    return iPosition;
+}
+
+void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceType deviceType)
+{
+    /* Assert indicators with NO state: */
+    QIStateStatusBarIndicator *pStateIndicator = qobject_cast<QIStateStatusBarIndicator*>(pIndicator);
+    AssertPtrReturnVoid(pStateIndicator);
+
+    /* Skip indicators with NULL state: */
+    if (pStateIndicator->state() == KDeviceActivity_Null)
+        return;
+
+    /* Paused VM have all indicator states set to IDLE: */
+    if (m_pSession->isPaused())
     {
-        /* Wipe-out indicator: */
-        delete m_pool[iIndex];
-        m_pool[iIndex] = 0;
+        /* If current state differs from IDLE => set the IDLE one:  */
+        if (pStateIndicator->state() != KDeviceActivity_Idle)
+            pStateIndicator->setState(KDeviceActivity_Idle);
+    }
+    else
+    {
+        /* Get actual indicator state: */
+        const int iState = m_session.GetConsole().GetDeviceActivity(deviceType);
+        /* If curren state differs from actual => set the actual one: */
+        if (pStateIndicator->state() != iState)
+            pStateIndicator->setState(iState);
     }
 }
 
 #include "UIIndicatorsPool.moc"
+

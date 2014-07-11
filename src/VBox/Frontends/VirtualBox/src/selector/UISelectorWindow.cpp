@@ -1349,7 +1349,7 @@ void UISelectorWindow::prepareStatusBar()
     statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
 
     /* Add network-manager indicator: */
-    QIStateIndicator *pIndicator = gNetworkManager->indicator();
+    UINetworkManagerIndicator *pIndicator = gNetworkManager->indicator();
     statusBar()->addPermanentWidget(pIndicator);
     pIndicator->updateAppearance();
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
