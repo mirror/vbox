@@ -570,6 +570,8 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
             return IS_W70() ? VINF_LDRVI_NOT_SIGNED : rc;
         if (supHardViUtf16PathIsEqual(pwsz, "apphelp.dll"))
             return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
+        if (supHardViUtf16PathIsEqual(pwsz, "sfc.dll"))
+            return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
 
 #ifndef IN_RING0
 # if 0 /* Allow anything below System32 that WinVerifyTrust thinks is fine. */
