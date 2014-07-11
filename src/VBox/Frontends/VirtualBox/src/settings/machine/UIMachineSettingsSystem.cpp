@@ -128,6 +128,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     systemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
 
     /* Load acceleration data: */
+    systemData.m_paravirtProvider = m_machine.GetParavirtProvider();
     systemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
     systemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
@@ -178,6 +179,8 @@ void UIMachineSettingsSystem::getFromCache()
     m_pCheckBoxPAE->setChecked(systemData.m_fEnabledPAE);
 
     /* Load acceleration data to page: */
+    int iParavirtProviderPosition = m_pComboParavirtProvider->findData(systemData.m_paravirtProvider);
+    m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
     m_pCheckBoxVirtualization->setChecked(systemData.m_fEnabledHwVirtEx);
     m_pCheckBoxNestedPaging->setChecked(systemData.m_fEnabledNestedPaging);
 
@@ -221,6 +224,7 @@ void UIMachineSettingsSystem::putToCache()
     systemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
 
     /* Gather acceleration data: */
+    systemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
     systemData.m_fEnabledHwVirtEx = m_pCheckBoxVirtualization->checkState() == Qt::Checked || m_pSliderCPUCount->value() > 1;
     systemData.m_fEnabledNestedPaging = m_pCheckBoxNestedPaging->isChecked();
 
@@ -270,6 +274,7 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
             m_machine.SetCPUProperty(KCPUPropertyType_PAE, systemData.m_fEnabledPAE);
 
             /* Acceleration tab: */
+            m_machine.SetParavirtProvider(systemData.m_paravirtProvider);
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, systemData.m_fEnabledHwVirtEx);
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, systemData.m_fEnabledNestedPaging);
         }
@@ -416,9 +421,10 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderCPUCount, m_pEditorCPUCount);
     setTabOrder(m_pEditorCPUCount, m_pSliderCPUExecCap);
     setTabOrder(m_pSliderCPUExecCap, m_pEditorCPUExecCap);
-    setTabOrder(m_pEditorCPUExecCap, m_pCheckBoxPAE);
+    setTabOrder(m_pEditorCPUExecCap, m_pComboParavirtProvider);
 
     /* Configure navigation for 'acceleration' tab: */
+    setTabOrder(m_pComboParavirtProvider, m_pCheckBoxPAE);
     setTabOrder(m_pCheckBoxPAE, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
 }
@@ -444,8 +450,9 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pLabelCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
 
     /* Retranslate combo-boxes: */
-    retranslateComboPointingChipsetType();
+    retranslateComboChipsetType();
     retranslateComboPointingHIDType();
+    retranslateComboParavirtProvider();
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -489,6 +496,7 @@ void UIMachineSettingsSystem::polishPage()
 
     /* Acceleration tab: */
     m_pTabWidgetSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
+    m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
     m_pCheckBoxVirtualization->setEnabled(isMachineOffline());
     m_pCheckBoxNestedPaging->setEnabled(isMachineOffline() && m_pCheckBoxVirtualization->isChecked());
@@ -580,6 +588,7 @@ void UIMachineSettingsSystem::prepare()
     /* Prepare tabs: */
     prepareTabMotherboard();
     prepareTabProcessor();
+    prepareTabAcceleration();
 
     /* Prepare validation: */
     prepareValidation();
@@ -703,6 +712,16 @@ void UIMachineSettingsSystem::prepareTabProcessor()
     connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
 }
 
+void UIMachineSettingsSystem::prepareTabAcceleration()
+{
+    /* Populate 'paravirt provider' combo: */
+    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_None), QVariant(KParavirtProvider_None));
+    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Default), QVariant(KParavirtProvider_Default));
+    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Legacy), QVariant(KParavirtProvider_Legacy));
+    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_Minimal), QVariant(KParavirtProvider_Minimal));
+    m_pComboParavirtProvider->addItem(gpConverter->toString(KParavirtProvider_HyperV), QVariant(KParavirtProvider_HyperV));
+}
+
 void UIMachineSettingsSystem::prepareValidation()
 {
     /* Prepare validation: */
@@ -755,9 +774,9 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
     }
 }
 
-void UIMachineSettingsSystem::retranslateComboPointingChipsetType()
+void UIMachineSettingsSystem::retranslateComboChipsetType()
 {
-    /* For each the element in KPointingHIDType enum: */
+    /* For each the element in KChipsetType enum: */
     for (int iIndex = (int)KChipsetType_Null; iIndex < (int)KChipsetType_Max; ++iIndex)
     {
         /* Cast to the corresponding type: */
@@ -782,6 +801,21 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
             m_pComboPointingHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+    }
+}
+
+void UIMachineSettingsSystem::retranslateComboParavirtProvider()
+{
+    /* For each the element in KParavirtProvider enum: */
+    for (int iIndex = (int)KParavirtProvider_None; iIndex < (int)KParavirtProvider_Max; ++iIndex)
+    {
+        /* Cast to the corresponding type: */
+        KParavirtProvider type = (KParavirtProvider)iIndex;
+        /* Look for the corresponding item: */
+        int iCorrespondingIndex = m_pComboParavirtProvider->findData((int)type);
+        /* Re-translate if corresponding item was found: */
+        if (iCorrespondingIndex != -1)
+            m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(type));
     }
 }
 

@@ -341,6 +341,14 @@ void UIGDetailsUpdateThreadSystem::run()
             }
             if (machine().GetCPUProperty(KCPUPropertyType_PAE))
                 acceleration << QApplication::translate("UIGDetails", "PAE/NX", "details (system)");
+            switch (machine().GetParavirtProvider())
+            {
+                case KParavirtProvider_Default: acceleration << QApplication::translate("UIGDetails", "Default Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_Legacy:  acceleration << QApplication::translate("UIGDetails", "Legacy Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIGDetails", "Minimal Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIGDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+                default: break;
+            }
             if (!acceleration.isEmpty())
                 m_text << UITextTableLine(QApplication::translate("UIGDetails", "Acceleration", "details (system)"),
                                           acceleration.join(", "));
