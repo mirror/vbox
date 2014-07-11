@@ -171,7 +171,6 @@ typedef struct _SHFLSTRING
 #pragma pack()
 
 #define SHFLSTRING_HEADER_SIZE RT_UOFFSETOF(SHFLSTRING, String)
-AssertCompile(SHFLSTRING_HEADER_SIZE == 4);
 
 /** Pointer to a shared folder string buffer. */
 typedef SHFLSTRING *PSHFLSTRING;
