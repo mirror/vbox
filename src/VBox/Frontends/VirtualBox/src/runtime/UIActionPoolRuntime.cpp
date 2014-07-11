@@ -209,7 +209,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Configure &Shortcuts"));
+        setName(QApplication::translate("UIActionPool", "Configure &Shortcuts..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure shortcuts"));
     }
 };
