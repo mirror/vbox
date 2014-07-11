@@ -545,7 +545,7 @@
       </attribute>
       <layout class="QGridLayout">
        <item row="0" column="0">
-        <widget class="QLabel" name="m_pLabelParavirtType">
+        <widget class="QLabel" name="m_pLabelParavirtProvider">
          <property name="text">
           <string>&amp;Paravirtualization Interface:</string>
          </property>

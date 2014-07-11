@@ -496,6 +496,7 @@ void UIMachineSettingsSystem::polishPage()
 
     /* Acceleration tab: */
     m_pTabWidgetSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
+    m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
     m_pCheckBoxVirtualization->setEnabled(isMachineOffline());
