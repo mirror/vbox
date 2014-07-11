@@ -32,6 +32,7 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<KMachineState>() { return true; }
 template<> bool canConvert<KSessionState>() { return true; }
+template<> bool canConvert<KParavirtProvider>() { return true; }
 template<> bool canConvert<KDeviceType>() { return true; }
 template<> bool canConvert<KClipboardMode>() { return true; }
 template<> bool canConvert<KDnDMode>() { return true; }
@@ -167,6 +168,21 @@ template<> QString toString(const KSessionState &state)
         case KSessionState_Spawning:  return QApplication::translate("VBoxGlobal", "Spawning", "SessionState");
         case KSessionState_Unlocking: return QApplication::translate("VBoxGlobal", "Unlocking", "SessionState");
         default: AssertMsgFailed(("No text for %d", state)); break;
+    }
+    return QString();
+}
+
+/* QString <= KParavirtProvider: */
+template<> QString toString(const KParavirtProvider &type)
+{
+    switch (type)
+    {
+        case KParavirtProvider_None:    return QApplication::translate("VBoxGlobal", "None", "ParavirtProvider");
+        case KParavirtProvider_Default: return QApplication::translate("VBoxGlobal", "Default", "ParavirtProvider");
+        case KParavirtProvider_Legacy:  return QApplication::translate("VBoxGlobal", "Legacy", "ParavirtProvider");
+        case KParavirtProvider_Minimal: return QApplication::translate("VBoxGlobal", "Minimal", "ParavirtProvider");
+        case KParavirtProvider_HyperV:  return QApplication::translate("VBoxGlobal", "Hyper-V", "ParavirtProvider");
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }

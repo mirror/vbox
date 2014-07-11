@@ -1211,6 +1211,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (fVTxAMDVSupported)
             iRowCount += 2; /* VT-x/AMD-V items. */
 
+        /* Paravirtualization Interface: */
+        const QString strParavirtProvider = gpConverter->toString(aMachine.GetParavirtProvider());
+
+        iRowCount += 1; /* Paravirtualization Interface. */
+
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
                                                        tr ("<nobr>%1 MB</nobr>", "details report"))
                        .arg (aMachine.GetMemorySize())
@@ -1231,6 +1236,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         if (fVTxAMDVSupported)
                 item += QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
                      +  QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested);
+
+        item += QString(sSectionItemTpl2).arg(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
 
         report += sectionTpl
                   .arg (2 + iRowCount) /* rows */

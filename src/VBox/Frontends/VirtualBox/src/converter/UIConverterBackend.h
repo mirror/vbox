@@ -95,6 +95,7 @@ template<> bool canConvert<MiniToolbarAlignment>();
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
 template<> bool canConvert<KSessionState>();
+template<> bool canConvert<KParavirtProvider>();
 template<> bool canConvert<KDeviceType>();
 template<> bool canConvert<KClipboardMode>();
 template<> bool canConvert<KDnDMode>();
@@ -172,6 +173,7 @@ template<> QColor toColor(const KMachineState &state);
 template<> QIcon toIcon(const KMachineState &state);
 template<> QString toString(const KMachineState &state);
 template<> QString toString(const KSessionState &state);
+template<> QString toString(const KParavirtProvider &type);
 template<> QString toString(const KDeviceType &type);
 template<> QString toString(const KClipboardMode &mode);
 template<> QString toString(const KDnDMode &mode);
