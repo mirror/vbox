@@ -67,6 +67,9 @@ signals:
     /** Notifies about Runtime UI keyboard shortcut change. */
     void sigRuntimeUIShortcutChange();
 
+    /** Notifies about status-bar configuration change. */
+    void sigStatusBarConfigurationChange();
+
     /** Notifies about HID LEDs synchronization state change. */
     void sigHidLedsSyncStateChange(bool fEnabled);
 
