@@ -5581,7 +5581,7 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
      * Destroy event sempahores.
      */
     RTSemEventDestroy(pThis->hSemEventFrame);
-    if (RTCritSectIsInitialized(&pEhci->CritSect))
+    if (RTCritSectIsInitialized(&pThis->CritSect))
         RTCritSectDelete(&pThis->CritSect);
     PDMR3CritSectDelete(&pThis->CsIrq);
 
