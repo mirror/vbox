@@ -121,7 +121,11 @@ typedef struct SUPHNTVPSTATE
     /** Images found in the process.
      * The array is large enough to hold the executable, all allowed DLLs, and one
      * more so we can get the image name of the first unwanted DLL. */
-    SUPHNTVPIMAGE           aImages[1+6+1];
+    SUPHNTVPIMAGE           aImages[1 + 6 + 1
+#ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
+                                    + 16
+#endif
+                                   ];
     /** Memory compare scratch buffer.*/
     uint8_t                 abMemory[_4K];
     /** File compare scratch buffer.*/
@@ -149,7 +153,15 @@ static const char *g_apszSupNtVpAllowedDlls[] =
     "kernelbase.dll",
     "apphelp.dll",
     "apisetschema.dll",
-    "sfc.dll"
+    "sfc.dll",
+#ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
+    "psapi.dll",
+    "msvcrt.dll",
+    "advapi32.dll",
+    "sechost.dll",
+    "rpcrt4.dll",
+    "SamplingRuntime.dll",
+#endif
 };
 
 /**
@@ -816,6 +828,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
             pImage->pszName = g_apszSupNtVpAllowedDlls[i];
             pImage->fDll    = true;
 
+#ifndef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
             /* The directory name must match the one we've got for System32. */
             if (   cwcDirName * sizeof(WCHAR) != g_System32NtPath.UniStr.Length
                 || suplibHardenedMemComp(pImage->Name.UniStr.Buffer,
@@ -824,7 +837,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
                 return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NON_SYSTEM32_DLL,
                                            "Expected %ls to be loaded from %ls.",
                                            pImage->Name.UniStr.Buffer, g_System32NtPath.UniStr.Buffer);
-
+#endif
             break;
         }
     if (!pImage->pszName)
@@ -1037,6 +1050,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
         /*
          * Executable memory?
          */
+#ifndef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
         else if (MemInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))
         {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FOUND_EXEC_MEMORY,
@@ -1049,12 +1063,13 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                                 MemInfo.State,
                                 MemInfo.AllocationBase,
                                 MemInfo.AllocationProtect);
-#ifdef IN_RING3
+# ifdef IN_RING3
             /* Continue add more information about the problematic process. */
-#else
+# else
             return pThis->rcResult;
-#endif
+# endif
         }
+#endif
 
         /*
          * Advance.

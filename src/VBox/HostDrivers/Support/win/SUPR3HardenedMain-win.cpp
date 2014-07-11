@@ -623,6 +623,17 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                      && memcmp(uBuf.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Buffer,
                                g_offSupLibHardenedExeNtName * sizeof(WCHAR)) == 0)
                 fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+#ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
+            /* Hack to allow profiling our code with Visual Studio. */
+            else if (   uBuf.UniStr.Length > sizeof(L"\\SamplingRuntime.dll")
+                     && memcmp(uBuf.UniStr.Buffer + (uBuf.UniStr.Length - sizeof(L"\\SamplingRuntime.dll") + sizeof(WCHAR)) / sizeof(WCHAR),
+                               L"\\SamplingRuntime.dll", sizeof(L"\\SamplingRuntime.dll") - sizeof(WCHAR)) == 0 )
+            {
+                if (hMyFile != hFile)
+                    NtClose(hMyFile);
+                return g_pfnNtCreateSectionReal(phSection, fAccess, pObjAttribs, pcbSection, fProtect, fAttribs, hFile);
+            }
+#endif
             else
             {
                 supR3HardenedError(VINF_SUCCESS, false,
