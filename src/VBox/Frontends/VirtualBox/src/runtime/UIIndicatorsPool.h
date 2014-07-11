@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,6 +66,9 @@ public:
     void setAutoUpdateIndicatorStates(bool fEnabled);
 
 private slots:
+
+    /** Handles configuration change. */
+    void sltHandleConfigurationChange();
 
     /** Handles indicator-states auto-update. */
     void sltAutoUpdateIndicatorStates();
