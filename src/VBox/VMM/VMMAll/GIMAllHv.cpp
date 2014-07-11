@@ -28,6 +28,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmapi.h>
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/spinlock.h>
@@ -91,6 +92,18 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
             *puValue = pVCpu->idCpu;
             return VINF_SUCCESS;
 
+        case MSR_GIM_HV_TPR:
+            PDMApicReadMSR(pVM, pVCpu->idCpu, 0x80, puValue);
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_EOI:
+            PDMApicReadMSR(pVM, pVCpu->idCpu, 0x0B, puValue);
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_ICR:
+            PDMApicReadMSR(pVM, pVCpu->idCpu, 0x30, puValue);
+            return VINF_SUCCESS;
+
         case MSR_GIM_HV_GUEST_OS_ID:
             *puValue = pHv->u64GuestOsIdMsr;
             return VINF_SUCCESS;
@@ -117,10 +130,15 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
             return VINF_SUCCESS;
 
         default:
+#ifdef IN_RING3
+            static uint32_t s_cTimes = 0;
+            if (s_cTimes++ < 20)
+                LogRel(("GIM: HyperV: Unknown/invalid RdMsr (%#x) -> #GP(0)\n", idMsr));
+#endif
+            LogFunc(("Unknown/invalid RdMsr (%#RX32) -> #GP(0)\n", idMsr));
             break;
     }
 
-    LogRel(("GIMHvReadMsr: Unknown/invalid RdMsr %#RX32 -> #GP(0)\n", idMsr));
     return VERR_CPUM_RAISE_GP_0;
 }
 
@@ -142,6 +160,18 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
 
     switch (idMsr)
     {
+        case MSR_GIM_HV_TPR:
+            PDMApicWriteMSR(pVM, pVCpu->idCpu, 0x80, uRawValue);
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_EOI:
+            PDMApicWriteMSR(pVM, pVCpu->idCpu, 0x0B, uRawValue);
+            return VINF_SUCCESS;
+
+        case MSR_GIM_HV_ICR:
+            PDMApicWriteMSR(pVM, pVCpu->idCpu, 0x30, uRawValue);
+            return VINF_SUCCESS;
+
         case MSR_GIM_HV_GUEST_OS_ID:
         {
 #ifndef IN_RING3
@@ -232,7 +262,7 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
 #else
             if (MSR_GIM_HV_RESET_IS_SET(uRawValue))
             {
-                LogRel(("GIM: HyperV: Reset initiated by MSR.\n"));
+                LogRel(("GIM: HyperV: Reset initiated through MSR.\n"));
                 int rc = PDMDevHlpVMReset(pVM->gim.s.pDevInsR3);
                 AssertRC(rc);
             }
@@ -252,7 +282,7 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
 #ifdef IN_RING3
             static uint32_t s_cTimes = 0;
             if (s_cTimes++ < 20)
-                LogRel(("GIM: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr, uRawValue & UINT64_C(0xffffffff00000000),
+                LogRel(("GIM: HyperV: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr, uRawValue & UINT64_C(0xffffffff00000000),
                         uRawValue & UINT64_C(0xffffffff)));
 #endif
             LogFunc(("Unknown/invalid WrMsr (%#RX32,%#RX64) -> #GP(0)\n", idMsr, uRawValue));

@@ -92,7 +92,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
                        | GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR
                        //| GIM_HV_BASE_FEAT_BASIC_SYNTH_IC
                        //| GIM_HV_BASE_FEAT_SYNTH_TIMER_MSRS
-                       //| GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
+                       | GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
                        | GIM_HV_BASE_FEAT_HYPERCALL_MSRS
                        | GIM_HV_BASE_FEAT_VP_ID_MSR
                        | GIM_HV_BASE_FEAT_VIRT_SYS_RESET_MSR
@@ -104,6 +104,8 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
                        ;
 
         pHv->uMiscFeat = GIM_HV_MISC_FEAT_TIMER_FREQ;
+
+        pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET;
     }
 
     /*
@@ -189,6 +191,14 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     HyperLeaf.uEbx         = pHv->uPartFlags;
     HyperLeaf.uEcx         = pHv->uPowMgmtFeat;
     HyperLeaf.uEdx         = pHv->uMiscFeat;
+    rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+    AssertLogRelRCReturn(rc, rc);
+
+    HyperLeaf.uLeaf        = UINT32_C(0x40000004);
+    HyperLeaf.uEax         = pHv->uHyperHints;
+    HyperLeaf.uEbx         = 0xffffffff;
+    HyperLeaf.uEcx         = 0;
+    HyperLeaf.uEdx         = 0;
     rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
     AssertLogRelRCReturn(rc, rc);
 
