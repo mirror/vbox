@@ -26,11 +26,6 @@
 #ifndef ___iprt_asn1_h
 #define ___iprt_asn1_h
 
-#if defined(DEBUG_bird) && !defined(IN_SUP_HARDENED_R3) && defined(IN_RING3) /* TEMPORARY! */
-# define RTMEM_WRAP_TO_EF_APIS                                               /* TEMPORARY! */
-# include <iprt/mem.h>                                                       /* TEMPORARY! */
-#endif                                                                       /* TEMPORARY! */
-
 #include <iprt/time.h>
 #include <iprt/stdarg.h>
 #include <iprt/err.h>
