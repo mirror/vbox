@@ -3126,8 +3126,11 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
     else if (   vboxGlobal().isVMConsoleProcess()
              && strMachineID == vboxGlobal().managedVMUuid())
     {
+        /* Status-bar configuration change: */
+        if (strKey == GUI_RestrictedStatusBarIndicators)
+            emit sigStatusBarConfigurationChange();
         /* HID LEDs sync state changed (allowed if not restricted)? */
-        if (strKey == GUI_HidLedsSync)
+        else if (strKey == GUI_HidLedsSync)
             emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
 #ifdef Q_WS_MAC
         /* 'Dock icon' appearance changed (allowed if not restricted)? */
