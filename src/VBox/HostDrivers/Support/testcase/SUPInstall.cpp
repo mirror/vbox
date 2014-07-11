@@ -44,7 +44,14 @@ int main(int argc, char **argv)
     int rc = SUPR3Install();
     if (RT_SUCCESS(rc))
     {
-        RTMsgInfo("installed successfully");
+        if (rc == VINF_SUCCESS)
+            RTMsgInfo("Installed successfully!");
+        else if (rc == VINF_ALREADY_INITIALIZED)
+            RTMsgInfo("Already loaded.");
+        else if (rc == VWRN_ALREADY_EXISTS)
+            RTMsgInfo("Service already existed; started successfully.");
+        else
+            RTMsgInfo("Unexpected status: %Rrc", rc);
         return RTEXITCODE_SUCCESS;
     }
     return RTMsgErrorExit(RTEXITCODE_FAILURE, "installation failed. rc=%Rrc", rc);

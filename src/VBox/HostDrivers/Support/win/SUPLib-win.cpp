@@ -228,14 +228,21 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 
 int suplibOsInstall(void)
 {
-    return suplibOsCreateService();
+    int rc = suplibOsCreateService();
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = suplibOsStartService();
+        if (rc2 != VINF_SUCCESS)
+            rc = rc2;
+    }
+    return rc;
 }
 
 
 int suplibOsUninstall(void)
 {
     int rc = suplibOsStopService();
-    if (!rc)
+    if (RT_SUCCESS(rc))
         rc = suplibOsDeleteService();
     return rc;
 }
@@ -244,21 +251,22 @@ int suplibOsUninstall(void)
 /**
  * Creates the service.
  *
- * @returns 0 on success.
- * @returns -1 on failure.
+ * @returns VBox status code.
+ * @retval  VWRN_ALREADY_EXISTS if it already exists.
  */
 static int suplibOsCreateService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
      */
-    SC_HANDLE   hSMgrCreate = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
-    DWORD LastError = GetLastError(); NOREF(LastError);
-    AssertMsg(hSMgrCreate, ("OpenSCManager(,,create) failed rc=%d\n", LastError));
-    if (hSMgrCreate)
+    int        rc;
+    SC_HANDLE hSMgrCreate = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
+    DWORD     dwErr = GetLastError();
+    AssertMsg(hSMgrCreate, ("OpenSCManager(,,create) failed dwErr=%d\n", dwErr));
+    if (hSMgrCreate != NULL)
     {
         char szDriver[RTPATH_MAX];
-        int rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
+        rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
         if (RT_SUCCESS(rc))
         {
             strcat(szDriver, "\\VBoxDrv.sys");
@@ -271,34 +279,42 @@ static int suplibOsCreateService(void)
                                                SERVICE_ERROR_NORMAL,
                                                szDriver,
                                                NULL, NULL, NULL, NULL, NULL);
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsg(hService, ("CreateService failed! LastError=%Rwa szDriver=%s\n", LastError, szDriver));
-            CloseServiceHandle(hService);
-            CloseServiceHandle(hSMgrCreate);
-            return hService ? 0 : -1;
+            dwErr = GetLastError();
+            if (hService)
+            {
+                CloseServiceHandle(hService);
+                rc = VINF_SUCCESS;
+            }
+            else if (dwErr == ERROR_SERVICE_EXISTS)
+                rc = VWRN_ALREADY_EXISTS;
+            else
+            {
+                AssertMsgFailed(("CreateService failed! dwErr=%Rwa szDriver=%s\n", dwErr, szDriver));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
         }
         CloseServiceHandle(hSMgrCreate);
-        return rc;
     }
-    return -1;
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+    return rc;
 }
 
 
 /**
  * Stops a possibly running service.
  *
- * @returns 0 on success.
- * @returns -1 on failure.
+ * @returns VBox status code.
  */
 static int suplibOsStopService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
      */
-    int rc = -1;
+    int         rc;
     SC_HANDLE   hSMgr = OpenSCManager(NULL, NULL, SERVICE_STOP | SERVICE_QUERY_STATUS);
-    DWORD LastError = GetLastError(); NOREF(LastError);
-    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", LastError));
+    DWORD       dwErr = GetLastError();
+    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed dwErr=%d\n", dwErr));
     if (hSMgr)
     {
         SC_HANDLE hService = OpenService(hSMgr, SERVICE_NAME, SERVICE_STOP | SERVICE_QUERY_STATUS);
@@ -310,7 +326,7 @@ static int suplibOsStopService(void)
             SERVICE_STATUS  Status;
             QueryServiceStatus(hService, &Status);
             if (Status.dwCurrentState == SERVICE_STOPPED)
-                rc = 0;
+                rc = VINF_SUCCESS;
             else if (ControlService(hService, SERVICE_CONTROL_STOP, &Status))
             {
                 int iWait = 100;
@@ -320,23 +336,31 @@ static int suplibOsStopService(void)
                     QueryServiceStatus(hService, &Status);
                 }
                 if (Status.dwCurrentState == SERVICE_STOPPED)
-                    rc = 0;
+                    rc = VINF_SUCCESS;
                 else
-                   AssertMsgFailed(("Failed to stop service. status=%d\n", Status.dwCurrentState));
+                {
+                    AssertMsgFailed(("Failed to stop service. status=%d\n", Status.dwCurrentState));
+                    rc = VERR_GENERAL_FAILURE;
+                }
             }
             else
             {
-                DWORD LastError = GetLastError(); NOREF(LastError);
-                AssertMsgFailed(("ControlService failed with LastError=%Rwa. status=%d\n", LastError, Status.dwCurrentState));
+                dwErr = GetLastError();
+                AssertMsgFailed(("ControlService failed with dwErr=%Rwa. status=%d\n", dwErr, Status.dwCurrentState));
+                rc = RTErrConvertFromWin32(dwErr);
             }
             CloseServiceHandle(hService);
         }
-        else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
-            rc = 0;
         else
         {
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsgFailed(("OpenService failed LastError=%Rwa\n", LastError));
+            dwErr = GetLastError();
+            if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
+                rc = VINF_SUCCESS;
+            else
+            {
+                AssertMsgFailed(("OpenService failed dwErr=%Rwa\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
         }
         CloseServiceHandle(hSMgr);
     }
@@ -347,18 +371,17 @@ static int suplibOsStopService(void)
 /**
  * Deletes the service.
  *
- * @returns 0 on success.
- * @returns -1 on failure.
+ * @returns VBox status code.
  */
 int suplibOsDeleteService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
      */
-    int rc = -1;
+    int         rc;
     SC_HANDLE   hSMgr = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
-    DWORD LastError = GetLastError(); NOREF(LastError);
-    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", LastError));
+    DWORD       dwErr = GetLastError();
+    AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", dwErr));
     if (hSMgr)
     {
         SC_HANDLE hService = OpenService(hSMgr, SERVICE_NAME, DELETE);
@@ -368,20 +391,25 @@ int suplibOsDeleteService(void)
              * Delete the service.
              */
             if (DeleteService(hService))
-                rc = 0;
+                rc = VINF_SUCCESS;
             else
             {
-                DWORD LastError = GetLastError(); NOREF(LastError);
-                AssertMsgFailed(("DeleteService failed LastError=%Rwa\n", LastError));
+                dwErr = GetLastError();
+                AssertMsgFailed(("DeleteService failed dwErr=%Rwa\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
             }
             CloseServiceHandle(hService);
         }
-        else if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
-            rc = 0;
         else
         {
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsgFailed(("OpenService failed LastError=%Rwa\n", LastError));
+            dwErr = GetLastError();
+            if (dwErr == ERROR_SERVICE_DOES_NOT_EXIST)
+                rc = VINF_SUCCESS;
+            else
+            {
+                AssertMsgFailed(("OpenService failed dwErr=%Rwa\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
         }
         CloseServiceHandle(hSMgr);
     }
@@ -452,9 +480,7 @@ static int suplibOsUpdateService(void)
 /**
  * Attempts to start the service, creating it if necessary.
  *
- * @returns 0 on success.
- * @returns -1 on failure.
- * @param   fRetry  Indicates retry call.
+ * @returns VBox status code.
  */
 static int suplibOsStartService(void)
 {
@@ -464,8 +490,9 @@ static int suplibOsStartService(void)
     SC_HANDLE hSMgr = OpenSCManager(NULL, NULL, SERVICE_QUERY_STATUS | SERVICE_START);
     if (hSMgr == NULL)
     {
-        AssertMsgFailed(("couldn't open service manager in SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS mode!\n"));
-        return -1;
+        DWORD dwErr = GetLastError();
+        AssertMsgFailed(("couldn't open service manager in SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS mode! (dwErr=%d)\n", dwErr));
+        return RTErrConvertFromWin32(dwErr);
     }
 
     /*
@@ -478,7 +505,7 @@ static int suplibOsStartService(void)
          * Create the service.
          */
         int rc = suplibOsCreateService();
-        if (rc)
+        if (RT_FAILURE(rc))
             return rc;
 
         /*
@@ -490,50 +517,60 @@ static int suplibOsStartService(void)
     /*
      * Check if open and on demand create succeeded.
      */
-    int rc = -1;
+    int rc;
     if (hService)
     {
 
         /*
          * Query service status to see if we need to start it or not.
          */
-        SERVICE_STATUS  Status;
+        SERVICE_STATUS Status;
         BOOL fRc = QueryServiceStatus(hService, &Status);
         Assert(fRc);
-        if (    Status.dwCurrentState != SERVICE_RUNNING
-            &&  Status.dwCurrentState != SERVICE_START_PENDING)
-        {
-            /*
-             * Start it.
-             */
-            fRc = StartService(hService, 0, NULL);
-            DWORD LastError = GetLastError(); NOREF(LastError);
-#ifndef DEBUG_bird
-            AssertMsg(fRc, ("StartService failed with LastError=%Rwa\n", LastError));
-#endif
-        }
-
-        /*
-         * Wait for the service to finish starting.
-         * We'll wait for 10 seconds then we'll give up.
-         */
-        QueryServiceStatus(hService, &Status);
-        if (Status.dwCurrentState == SERVICE_START_PENDING)
-        {
-            int iWait;
-            for (iWait = 100; iWait > 0 && Status.dwCurrentState == SERVICE_START_PENDING; iWait--)
-            {
-                Sleep(100);
-                QueryServiceStatus(hService, &Status);
-            }
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsg(Status.dwCurrentState != SERVICE_RUNNING,
-                      ("Failed to start. LastError=%Rwa iWait=%d status=%d\n",
-                       LastError, iWait, Status.dwCurrentState));
-        }
-
         if (Status.dwCurrentState == SERVICE_RUNNING)
-            rc = 0;
+            rc = VINF_ALREADY_INITIALIZED;
+        else
+        {
+            if (Status.dwCurrentState == SERVICE_START_PENDING)
+                rc = VINF_SUCCESS;
+            else
+            {
+                /*
+                 * Start it.
+                 */
+                if (StartService(hService, 0, NULL))
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    DWORD dwErr = GetLastError();
+                    AssertMsg(fRc, ("StartService failed with dwErr=%Rwa\n", dwErr));
+                    rc = RTErrConvertFromWin32(dwErr);
+                }
+            }
+
+            /*
+             * Wait for the service to finish starting.
+             * We'll wait for 10 seconds then we'll give up.
+             */
+            QueryServiceStatus(hService, &Status);
+            if (Status.dwCurrentState == SERVICE_START_PENDING)
+            {
+                int iWait;
+                for (iWait = 100; iWait > 0 && Status.dwCurrentState == SERVICE_START_PENDING; iWait--)
+                {
+                    Sleep(100);
+                    QueryServiceStatus(hService, &Status);
+                }
+                DWORD dwErr = GetLastError(); NOREF(dwErr);
+                AssertMsg(Status.dwCurrentState != SERVICE_RUNNING,
+                          ("Failed to start. dwErr=%Rwa iWait=%d status=%d\n", dwErr, iWait, Status.dwCurrentState));
+            }
+
+            if (Status.dwCurrentState == SERVICE_RUNNING)
+                rc = VINF_SUCCESS;
+            else if (RT_SUCCESS_NP(rc))
+                rc = VERR_GENERAL_FAILURE;
+        }
 
         /*
          * Close open handles.
@@ -542,8 +579,9 @@ static int suplibOsStartService(void)
     }
     else
     {
-        DWORD LastError = GetLastError(); NOREF(LastError);
-        AssertMsgFailed(("OpenService failed! LastError=%Rwa\n", LastError));
+        DWORD dwErr = GetLastError();
+        AssertMsgFailed(("OpenService failed! LastError=%Rwa\n", dwErr));
+        rc = RTErrConvertFromWin32(dwErr);
     }
     if (!CloseServiceHandle(hSMgr))
         AssertFailed();
