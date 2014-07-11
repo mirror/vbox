@@ -151,10 +151,12 @@ VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
+VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
 VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                  do { } while (0)
 # define HMIsNestedPagingActive(pVM)        false
+# define HMAreMsrBitmapsAvailable(pVM)      false
 # define HMFlushTLBOnAllVCpus(pVM)          do { } while (0)
 #endif
 

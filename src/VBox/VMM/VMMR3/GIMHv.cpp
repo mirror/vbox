@@ -87,6 +87,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
      */
     if (!pVM->gim.s.u32Version)
     {
+        /* Basic features. */
         pHv->uBaseFeat = 0
                        //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
                        | GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR
@@ -103,9 +104,15 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
                        //| GIM_HV_BASE_FEAT_DEBUG_MSRS
                        ;
 
+        /* Miscellaneous features. */
         pHv->uMiscFeat = GIM_HV_MISC_FEAT_TIMER_FREQ;
 
+        /* Hypervisor recommendations to the guest. */
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET;
+
+        /* Hypervisor capabilities; features used by the hypervisor. */
+        pHv->uHyperCaps  = HMIsNestedPagingActive(pVM)   ? GIM_HV_HOST_FEAT_NESTED_PAGING : 0;
+        pHv->uHyperCaps |= HMAreMsrBitmapsAvailable(pVM) ? GIM_HV_HOST_FEAT_MSR_BITMAP : 0;
     }
 
     /*
@@ -160,7 +167,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     CPUMCPUIDLEAF HyperLeaf;
     RT_ZERO(HyperLeaf);
     HyperLeaf.uLeaf        = UINT32_C(0x40000000);
-    HyperLeaf.uEax         = UINT32_C(0x40000005); /* Minimum value for Hyper-V */
+    HyperLeaf.uEax         = UINT32_C(0x40000006); /* Minimum value for Hyper-V is 0x40000005. */
     HyperLeaf.uEbx         = 0x7263694D;           /* 'Micr' */
     HyperLeaf.uEcx         = 0x666F736F;           /* 'osof' */
     HyperLeaf.uEdx         = 0x76482074;           /* 't Hv' */
@@ -197,6 +204,14 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     HyperLeaf.uLeaf        = UINT32_C(0x40000004);
     HyperLeaf.uEax         = pHv->uHyperHints;
     HyperLeaf.uEbx         = 0xffffffff;
+    HyperLeaf.uEcx         = 0;
+    HyperLeaf.uEdx         = 0;
+    rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+    AssertLogRelRCReturn(rc, rc);
+
+    HyperLeaf.uLeaf        = UINT32_C(0x40000006);
+    HyperLeaf.uEax         = pHv->uHyperCaps;
+    HyperLeaf.uEbx         = 0;
     HyperLeaf.uEcx         = 0;
     HyperLeaf.uEdx         = 0;
     rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
@@ -320,6 +335,7 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     rc = SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pcHv->uMiscFeat);                AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);              AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pcHv->uHyperCaps);               AssertRCReturn(rc, rc);
 
     /*
      * Save the Hypercall region.
@@ -383,6 +399,7 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     rc = SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
     rc = SSMR3GetU32(pSSM, &pHv->uMiscFeat);                AssertRCReturn(rc, rc);
     rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);              AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &pHv->uHyperCaps);               AssertRCReturn(rc, rc);
 
     /*
      * Load and enable the Hypercall region.

@@ -273,15 +273,40 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 #endif /* !IN_RC */
 
 /**
- * Checks if nested paging is enabled
+ * Checks if nested paging is enabled.
  *
- * @returns boolean
+ * @returns true if nested paging is active, false otherwise.
  * @param   pVM         Pointer to the VM.
  */
 VMM_INT_DECL(bool) HMIsNestedPagingActive(PVM pVM)
 {
     return HMIsEnabled(pVM) && pVM->hm.s.fNestedPaging;
 }
+
+
+/**
+ * Checks if MSR bitmaps are available. It is assumed that when it's available
+ * it will be used as well.
+ *
+ * @returns true if MSR bitmaps are available, false otherwise.
+ * @param   pVM         Pointer to the VM.
+ */
+VMM_INT_DECL(bool) HMAreMsrBitmapsAvailable(PVM pVM)
+{
+    if (HMIsEnabled(pVM))
+    {
+        if (pVM->hm.s.svm.fSupported)
+            return true;
+
+        if (   pVM->hm.s.vmx.fSupported
+            && (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 /**
  * Return the shadow paging mode for nested paging/ept
