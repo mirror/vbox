@@ -83,11 +83,12 @@ public:
     UIIndicatorHardDrive(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/hd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/hd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/hd_disabled_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -102,39 +103,44 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the virtual hard disks:</nobr>%1</p>", "HDD tooltip");
-
         QString strFullData;
-        bool fAttachmentsPresent = false;
 
-        const CStorageControllerVector &controllers = machine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
+        /* Enumerate all the controllers: */
+        bool fAttachmentsPresent = false;
+        foreach (const CStorageController &controller, machine.GetStorageControllers())
         {
             QString strAttData;
-            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
+            /* Enumerate all the attachments: */
+            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
             {
+                /* Skip unrelated attachments: */
                 if (attachment.GetType() != KDeviceType_HardDisk)
                     continue;
+                /* Append attachment data: */
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
                     .arg(UIMedium(attachment.GetMedium(), UIMediumType_HardDisk).location());
                 fAttachmentsPresent = true;
             }
+            /* Append controller data: */
             if (!strAttData.isNull())
                 strFullData += QString("<br><nobr><b>%1</b></nobr>").arg(controller.GetName()) + strAttData;
         }
 
-        /* For now we will hide that LED at all if there are no attachments! */
+        /* Hide indicator if there are no attachments: */
         if (!fAttachmentsPresent)
-            setHidden(true);
-        //if (!fAttachmentsPresent)
-        //    strFullData += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No hard disks attached</b></nobr>", "HDD tooltip");
+            hide();
 
+        /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
@@ -150,11 +156,12 @@ public:
     UIIndicatorOpticalDisks(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/cd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/cd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/cd_disabled_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -169,24 +176,28 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the CD/DVD devices:</nobr>%1</p>", "CD/DVD tooltip");
-
         QString strFullData;
+
+        /* Enumerate all the controllers: */
         bool fAttachmentsPresent = false;
         bool fAttachmentsMounted = false;
-
-        const CStorageControllerVector &controllers = machine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
+        foreach (const CStorageController &controller, machine.GetStorageControllers())
         {
             QString strAttData;
-            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
+            /* Enumerate all the attachments: */
+            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
             {
+                /* Skip unrelated attachments: */
                 if (attachment.GetType() != KDeviceType_DVD)
                     continue;
+                /* Append attachment data: */
                 UIMedium vboxMedium(attachment.GetMedium(), UIMediumType_DVD);
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
@@ -195,17 +206,18 @@ private:
                 if (!vboxMedium.isNull())
                     fAttachmentsMounted = true;
             }
+            /* Append controller data: */
             if (!strAttData.isNull())
                 strFullData += QString("<br><nobr><b>%1</b></nobr>").arg(controller.GetName()) + strAttData;
         }
 
-        /* For now we will hide that LED at all if there are no attachments! */
+        /* Hide indicator if there are no attachments: */
         if (!fAttachmentsPresent)
-            setHidden(true);
-        //if (!fAttachmentsPresent)
-        //    strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
+            hide();
 
+        /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
@@ -221,11 +233,12 @@ public:
     UIIndicatorFloppyDisks(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/fd_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/fd_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/fd_disabled_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -240,24 +253,28 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the floppy devices:</nobr>%1</p>", "FD tooltip");
-
         QString strFullData;
+
+        /* Enumerate all the controllers: */
         bool fAttachmentsPresent = false;
         bool fAttachmentsMounted = false;
-
-        const CStorageControllerVector &controllers = machine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
+        foreach (const CStorageController &controller, machine.GetStorageControllers())
         {
             QString strAttData;
-            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
+            /* Enumerate all the attachments: */
+            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
             {
+                /* Skip unrelated attachments: */
                 if (attachment.GetType() != KDeviceType_Floppy)
                     continue;
+                /* Append attachment data: */
                 UIMedium vboxMedium(attachment.GetMedium(), UIMediumType_Floppy);
                 strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
                     .arg(gpConverter->toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
@@ -266,18 +283,85 @@ private:
                 if (!vboxMedium.isNull())
                     fAttachmentsMounted = true;
             }
+            /* Append controller data: */
             if (!strAttData.isNull())
                 strFullData += QString("<br><nobr><b>%1</b></nobr>").arg(controller.GetName()) + strAttData;
         }
 
-        /* For now we will hide that LED at all if there are no attachments! */
+        /* Hide indicator if there are no attachments: */
         if (!fAttachmentsPresent)
-            setHidden(true);
-        //if (!fAttachmentsPresent)
-        //    strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
+            hide();
 
+        /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
+    }
+};
+
+/** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
+class UIIndicatorUSB : public UISessionStateStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorUSB(CSession &session)
+        : UISessionStateStatusBarIndicator(session)
+    {
+        /* Assign state-icons: */
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
+        /* Translate finally: */
+        retranslateUi();
+    }
+
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        updateAppearance();
+    }
+
+    /** Update routine. */
+    void updateAppearance()
+    {
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
+
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity of "
+                                                     "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
+        QString strFullData;
+
+        /* Check whether there is at least one USB controller with an available proxy. */
+        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
+                           && !machine.GetUSBControllers().isEmpty()
+                           && machine.GetUSBProxyAvailable();
+        if (fUSBEnabled)
+        {
+            /* Enumerate all the USB devices: */
+            const CConsole &console = m_session.GetConsole();
+            foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
+                strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usbDevice));
+            /* Handle 'no-usb-devices' case: */
+            if (strFullData.isNull())
+                strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
+        }
+
+        /* Hide indicator if there are USB controllers: */
+        if (!fUSBEnabled)
+            hide();
+
+        /* Update tool-tip: */
+        setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
+        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
 
@@ -291,16 +375,22 @@ public:
     /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorNetwork(CSession &session)
         : UISessionStateStatusBarIndicator(session)
-        , m_pUpdateTimer(new QTimer(this))
+        , m_pTimerAutoUpdate(0)
     {
+        /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/nw_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
-
-        connect(m_pUpdateTimer, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
-        m_pUpdateTimer->start(5000);
-
+        /* Create auto-update timer: */
+        m_pTimerAutoUpdate = new QTimer(this);
+        if (m_pTimerAutoUpdate)
+        {
+            /* Configure auto-update timer: */
+            connect(m_pTimerAutoUpdate, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
+            m_pTimerAutoUpdate->start(5000);
+        }
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -323,27 +413,27 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
+
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity of the "
+                                                     "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
         QString strFullData;
 
-        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                 "<p style='white-space:pre'><nobr>Indicates the activity of the "
-                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
-
+        /* Gather adapter properties: */
         RTTIMESPEC time;
         uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
-
         QString strFlags, strCount;
         LONG64 iTimestamp;
         machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, iTimestamp, strFlags);
         bool fPropsValid = (u64Now - iTimestamp < UINT64_C(60000000000)); /* timeout beacon */
-
+        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
         QStringList ipList, macList;
         if (fPropsValid)
         {
-            int cAdapters = RT_MIN(strCount.toInt(), (int)uMaxCount);
+            const int cAdapters = RT_MIN(strCount.toInt(), (int)uMaxCount);
             for (int i = 0; i < cAdapters; ++i)
             {
                 ipList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
@@ -351,107 +441,50 @@ private:
             }
         }
 
-        ulong uEnabled = 0;
+        /* Enumerate up to uMaxCount adapters: */
+        bool fAdaptersPresent = false;
         for (ulong uSlot = 0; uSlot < uMaxCount; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
             {
+                fAdaptersPresent = true;
                 QString strGuestIp;
                 if (fPropsValid)
                 {
-                    QString strGuestMac = adapter.GetMACAddress();
+                    const QString strGuestMac = adapter.GetMACAddress();
                     int iIp = macList.indexOf(strGuestMac);
                     if (iIp >= 0)
                         strGuestIp = ipList[iIp];
                 }
+                /* Append adapter data: */
                 strFullData += QApplication::translate("UIIndicatorsPool",
-                               "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
+                    "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
                     .arg(gpConverter->toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
                     .arg(adapter.GetCableConnected() ?
                          QApplication::translate("UIIndicatorsPool", "connected", "Network adapters tooltip") :
                          QApplication::translate("UIIndicatorsPool", "disconnected", "Network adapters tooltip"));
-                ++uEnabled;
             }
         }
-
-        setState(uEnabled > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
-        if (!uEnabled)
-            setHidden(true);
-
+        /* Handle 'no-adapters' case: */
         if (strFullData.isNull())
             strFullData = QApplication::translate("UIIndicatorsPool",
                               "<br><nobr><b>All network adapters are disabled</b></nobr>", "Network adapters tooltip");
 
+        /* Hide indicator if there are no enabled adapters: */
+        if (!fAdaptersPresent)
+            hide();
+
+        /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
+        setState(fAdaptersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 
     /** Holds the auto-update timer instance. */
-    QTimer *m_pUpdateTimer;
-};
-
-/** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
-class UIIndicatorUSB : public UISessionStateStatusBarIndicator
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorUSB(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
-    {
-        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
-
-        retranslateUi();
-    }
-
-private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
-    /** Update routine. */
-    void updateAppearance()
-    {
-        const CMachine &machine = m_session.GetMachine();
-
-        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity of "
-                                "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
-        QString strFullData;
-
-        /* Check whether there is at least one USB controller with an available proxy. */
-        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
-                           && !machine.GetUSBControllers().isEmpty()
-                           && machine.GetUSBProxyAvailable();
-
-        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
-        if (fUSBEnabled)
-        {
-            const CConsole &console = m_session.GetConsole();
-
-            const CUSBDeviceVector &devsvec = console.GetUSBDevices();
-            for (int i = 0; i < devsvec.size(); ++ i)
-            {
-                CUSBDevice usb = devsvec[i];
-                strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usb));
-            }
-            if (strFullData.isNull())
-                strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
-        }
-        else
-            strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
-
-        setToolTip(strToolTip.arg(strFullData));
-    }
+    QTimer *m_pTimerAutoUpdate;
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Shared-folders indicator. */
@@ -465,11 +498,12 @@ public:
     UIIndicatorSharedFolders(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/sf_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/sf_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/sf_disabled_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -484,36 +518,27 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
-        const CConsole &console = m_session.GetConsole();
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
+        const CConsole console = m_session.GetConsole();
 
-        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity of "
-                                "the machine's shared folders:</nobr>%1</p>", "Shared folders tooltip");
-
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity of "
+                                                     "the machine's shared folders:</nobr>%1</p>", "Shared folders tooltip");
         QString strFullData;
+
+        /* Enumerate all the folders: */
         QMap<QString, QString> sfs;
-
-        /* Permanent folders */
-        const CSharedFolderVector &psfvec = machine.GetSharedFolders();
-
-        for (int i = 0; i < psfvec.size(); ++ i)
-        {
-            const CSharedFolder &sf = psfvec[i];
+        foreach (const CSharedFolder &sf, machine.GetSharedFolders())
             sfs.insert(sf.GetName(), sf.GetHostPath());
-        }
-
-        /* Transient folders */
-        const CSharedFolderVector &tsfvec = console.GetSharedFolders();
-
-        for (int i = 0; i < tsfvec.size(); ++ i)
-        {
-            const CSharedFolder &sf = tsfvec[i];
+        foreach (const CSharedFolder &sf, console.GetSharedFolders())
             sfs.insert(sf.GetName(), sf.GetHostPath());
-        }
 
-        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++ it)
+        /* Append attachment data: */
+        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++it)
         {
-            /* Select slashes depending on the OS type */
+            /* Select slashes depending on the OS type: */
             if (VBoxGlobal::isDOSType(console.GetGuest().GetOSTypeId()))
                 strFullData += QString("<br><nobr><b>\\\\vboxsvr\\%1&nbsp;</b></nobr><nobr>%2</nobr>")
                                        .arg(it.key(), it.value());
@@ -521,12 +546,14 @@ private:
                 strFullData += QString("<br><nobr><b>%1&nbsp;</b></nobr><nobr>%2</nobr>")
                                        .arg(it.key(), it.value());
         }
-
-        if (sfs.count() == 0)
+        /* Handle 'no-folders' case: */
+        if (sfs.isEmpty())
             strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
 
-        setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
+        setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 };
 
@@ -553,15 +580,13 @@ public:
         , m_pAnimation(0)
         , m_dRotationAngle(0)
     {
-        /* Assign state icons: */
+        /* Assign state-icons: */
         setStateIcon(UIIndicatorStateVideoCapture_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
         setStateIcon(UIIndicatorStateVideoCapture_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
-
-        /* Prepare *enabled* state animation: */
+        /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
                                                                    "rotationAngleStart", "rotationAngleFinal",
                                                                    1000);
-
         /* Translate finally: */
         retranslateUi();
     }
@@ -622,12 +647,9 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_session.GetMachine();
 
-        /* Update LED state: */
-        setState(machine.GetVideoCaptureEnabled());
-
-        /* Update LED tool-tip: */
+        /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool", "<nobr>Indicates video capturing activity:</nobr><br>%1");
         switch (state())
         {
@@ -645,7 +667,11 @@ private:
             default:
                 break;
         }
+
+        /* Update tool-tip: */
         setToolTip(strToolTip);
+        /* Update indicator state: */
+        setState(machine.GetVideoCaptureEnabled());
     }
 
     /** Returns rotation start angle. */
@@ -674,9 +700,10 @@ public:
     UIIndicatorFeatures(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -691,31 +718,38 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        const CConsole &console = m_session.GetConsole();
+        /* Get console: */
+        const CConsole console = m_session.GetConsole();
         if (console.isNull())
             return;
 
-        const CMachineDebugger &debugger = console.GetDebugger();
+        /* Get debugger: */
+        const CMachineDebugger debugger = console.GetDebugger();
         if (debugger.isNull())
             return;
 
+        /* VT-x/AMD-V feature: */
         bool bVirtEnabled = debugger.GetHWVirtExEnabled();
         QString virtualization = bVirtEnabled ?
             VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
 
+        /* Nested Paging feature: */
         bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
         QString nestedPaging = bNestEnabled ?
             VBoxGlobal::tr("Enabled", "details report (Nested Paging)") :
             VBoxGlobal::tr("Disabled", "details report (Nested Paging)");
 
+        /* Unrestricted Execution feature: */
         bool bUXEnabled = debugger.GetHWVirtExUXEnabled();
         QString unrestrictExec = bUXEnabled ?
             VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
             VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
 
+        /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(console.GetMachine().GetCPUExecutionCap());
 
+        /* Prepare tool-tip: */
         QString tip(QApplication::translate("UIIndicatorsPool",
                                             "Additional feature status:"
                                             "<br><nobr><b>%1:</b>&nbsp;%2</nobr>"
@@ -728,12 +762,15 @@ private:
                     .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
+        /* CPU count: */
         int cpuCount = console.GetMachine().GetCPUCount();
         if (cpuCount > 1)
             tip += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
                       .arg(VBoxGlobal::tr("Processor(s)", "details report")).arg(cpuCount);
 
+        /* Update tool-tip: */
         setToolTip(tip);
+        /* Update indicator state: */
         setState(bVirtEnabled);
     }
 };
@@ -749,12 +786,13 @@ public:
     UIIndicatorMouse(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/mouse_16px.png"));
         setStateIcon(2, UIIconPool::iconSet(":/mouse_seamless_16px.png"));
         setStateIcon(3, UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));
         setStateIcon(4, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
@@ -805,11 +843,12 @@ public:
     UIIndicatorKeyboard(CSession &session)
         : UISessionStateStatusBarIndicator(session)
     {
+        /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/hostkey_captured_16px.png"));
         setStateIcon(2, UIIconPool::iconSet(":/hostkey_pressed_16px.png"));
         setStateIcon(3, UIIconPool::iconSet(":/hostkey_captured_pressed_16px.png"));
-
+        /* Translate finally: */
         retranslateUi();
     }
 
