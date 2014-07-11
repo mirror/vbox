@@ -470,10 +470,10 @@ typedef struct GIMHV
     uint32_t                    uPowMgmtFeat;
     /** Miscellaneous features. */
     uint32_t                    uMiscFeat;
-    /** Hypervisor hints. */
+    /** Hypervisor hints to the guest. */
     uint32_t                    uHyperHints;
-    /** Alignment padding. */
-    uint32_t                    u32Alignment0;
+    /** Hypervisor capabilities. */
+    uint32_t                    uHyperCaps;
 
     /** Per-VM R0 Spinlock for protecting EMT writes to the TSC page. */
     RTSPINLOCK                  hSpinlockR0;
