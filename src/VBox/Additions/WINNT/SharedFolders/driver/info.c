@@ -112,10 +112,12 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
 
     if (Template->Length)
     {
-        ULONG ParsedPathSize, len;
+        ULONG ParsedPathSize, cch;
 
-        /* Calculate length required for parsed path. */
-        ParsedPathSize = sizeof(SHFLSTRING) + DirectoryName->Length + Template->Length + 3 * sizeof(WCHAR);
+        /* Calculate size required for parsed path: dir + \ + template + 0. */
+        ParsedPathSize = SHFLSTRING_HEADER_SIZE + Template->Length + sizeof(WCHAR);
+        if (DirectoryName->Length)
+            ParsedPathSize += DirectoryName->Length + sizeof(WCHAR);
         Log(("VBOXSF: MrxQueryDirectory: ParsedPathSize = %d\n", ParsedPathSize));
 
         ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
@@ -125,30 +127,35 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
             goto end;
         }
 
-        RtlZeroMemory(ParsedPath, ParsedPathSize);
         if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
         {
             Status = STATUS_INSUFFICIENT_RESOURCES;
             goto end;
         }
 
-        ParsedPath->u16Size = DirectoryName->Length + Template->Length + sizeof(WCHAR);
-        ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* Without terminating null. */
-
-        len = 0;
+        cch = 0;
         if (DirectoryName->Length)
         {
             /* Copy directory name into ParsedPath. */
             RtlCopyMemory(ParsedPath->String.ucs2, DirectoryName->Buffer, DirectoryName->Length);
-            len = DirectoryName->Length / sizeof(WCHAR);
+            cch += DirectoryName->Length / sizeof(WCHAR);
 
             /* Add terminating backslash. */
-            ParsedPath->String.ucs2[len] = L'\\';
-            len++;
-            ParsedPath->u16Length += sizeof(WCHAR);
-            ParsedPath->u16Size += sizeof(WCHAR);
+            ParsedPath->String.ucs2[cch] = L'\\';
+            cch++;
         }
-        RtlCopyMemory (&ParsedPath->String.ucs2[len], Template->Buffer, Template->Length);
+
+        RtlCopyMemory (&ParsedPath->String.ucs2[cch], Template->Buffer, Template->Length);
+        cch += Template->Length / sizeof(WCHAR);
+
+        /* Add terminating nul. */
+        ParsedPath->String.ucs2[cch] = 0;
+
+        /* cch is the number of chars without trailing nul. */
+        ParsedPath->u16Length = (uint16_t)(cch * sizeof(WCHAR));
+
+        AssertMsg(ParsedPath->u16Length + sizeof(WCHAR) == ParsedPath->u16Size,
+                  ("u16Length %d, u16Size %d\n", ParsedPath->u16Length, ParsedPath->u16Size));
 
         Log(("VBOXSF: MrxQueryDirectory: ParsedPath = %.*ls\n",
              ParsedPath->u16Length / sizeof(WCHAR), ParsedPath->String.ucs2));

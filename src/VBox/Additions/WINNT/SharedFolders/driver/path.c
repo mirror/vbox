@@ -247,29 +247,14 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
 
     {
         PSHFLSTRING ParsedPath;
-        ULONG ParsedPathSize;
+        Log(("VBOXSF: vbsfProcessCreate: RemainingName->Length = %d\n", RemainingName->Length));
 
-        /* Calculate length required for parsed path.
-         */
-        ParsedPathSize = sizeof(*ParsedPath) + (RemainingName->Length + sizeof(WCHAR));
-        Log(("VBOXSF: vbsfProcessCreate: ParsedPathSize = %d\n", ParsedPathSize));
-
-        ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-        if (!ParsedPath)
+        Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
+        if (Status != STATUS_SUCCESS)
         {
-            Status = STATUS_INSUFFICIENT_RESOURCES;
             goto failure;
         }
 
-        if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
-        {
-            vbsfFreeNonPagedMem(ParsedPath);
-            Status = STATUS_INSUFFICIENT_RESOURCES;
-            goto failure;
-        }
-
-        ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
-        RtlCopyMemory (ParsedPath->String.ucs2, RemainingName->Buffer, ParsedPath->u16Length);
         Log(("VBOXSF: ParsedPath: %.*ls\n",
              ParsedPath->u16Length / sizeof(WCHAR), ParsedPath->String.ucs2));
 
@@ -838,7 +823,6 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 
     int vboxRC;
     PSHFLSTRING ParsedPath = NULL;
-    ULONG ParsedPathSize;
 
     Log(("VBOXSF: vbsfRemove: Delete %.*ls. open count = %d\n",
          RemainingName->Length / sizeof(WCHAR), RemainingName->Buffer, capFcb->OpenCount));
@@ -847,23 +831,10 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
         vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
 
-    /* Calculate length required for parsed path. */
-    ParsedPathSize = sizeof(SHFLSTRING) + RemainingName->Length + sizeof(WCHAR);
-    Log(("VBOXSF: vbsfRemove: ParsedPathSize %d\n", ParsedPathSize));
-
-    ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-    if (!ParsedPath)
-        return STATUS_INSUFFICIENT_RESOURCES;
-
-    if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
-    {
-        vbsfFreeNonPagedMem(ParsedPath);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    Log(("VBOXSF: vbsfRemove: Setup ParsedPath\n"));
-    ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
-    RtlCopyMemory(ParsedPath->String.ucs2, RemainingName->Buffer, ParsedPath->u16Length);
+    Log(("VBOXSF: vbsfRemove: RemainingName->Length %d\n", RemainingName->Length));
+    Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
+    if (Status != STATUS_SUCCESS)
+        return Status;
 
     /* Call host. */
     vboxRC = vboxCallRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
@@ -904,7 +875,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
 
     int vboxRC;
     PSHFLSTRING SrcPath = 0, DestPath = 0;
-    ULONG ParsedPathSize, flags;
+    ULONG flags;
 
     Assert(FileInformationClass == FileRenameInformation);
 
@@ -918,52 +889,21 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     /* Mark it as renamed, so we do nothing during close */
     SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
 
-    /* Calculate length required for destination path. */
-    ParsedPathSize = sizeof(SHFLSTRING) + RenameInformation->FileNameLength + sizeof(WCHAR);
-    Log(("VBOXSF: vbsfRename: ParsedPathSize = %d\n", ParsedPathSize));
-
-    DestPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-    if (!DestPath)
-        return STATUS_INSUFFICIENT_RESOURCES;
-
-    RtlZeroMemory(DestPath, ParsedPathSize);
-    if (!ShflStringInitBuffer(DestPath, ParsedPathSize))
-    {
-        vbsfFreeNonPagedMem(DestPath);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    Log(("VBOXSF: vbsfRename: Setting up destination path\n"));
-    DestPath->u16Length = DestPath->u16Size - sizeof(WCHAR); /* without terminating null */
-    RtlCopyMemory(DestPath->String.ucs2, RenameInformation->FileName, DestPath->u16Length);
+    Log(("VBOXSF: vbsfRename: RenameInformation->FileNameLength = %d\n", RenameInformation->FileNameLength));
+    Status = vbsfShflStringFromUnicodeAlloc(&DestPath, RenameInformation->FileName, (uint16_t)RenameInformation->FileNameLength);
+    if (Status != STATUS_SUCCESS)
+        return Status;
 
     Log(("VBOXSF: vbsfRename: Destination path = %.*ls\n",
          DestPath->u16Length / sizeof(WCHAR), &DestPath->String.ucs2[0]));
 
-    /* Calculate length required for source path */
-    ParsedPathSize = sizeof(*DestPath) + (RemainingName->Length + sizeof(WCHAR));
-
-    Log(("VBOXSF: vbsfRename: ParsedPathSize = %d\n", ParsedPathSize));
-
-    SrcPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-    if (!SrcPath)
+    Log(("VBOXSF: vbsfRename: RemainingName->Length = %d\n", RemainingName->Length));
+    Status = vbsfShflStringFromUnicodeAlloc(&SrcPath, RemainingName->Buffer, RemainingName->Length);
+    if (Status != STATUS_SUCCESS)
     {
         vbsfFreeNonPagedMem(DestPath);
-        return STATUS_INSUFFICIENT_RESOURCES;
+        return Status;
     }
-
-    RtlZeroMemory(SrcPath, ParsedPathSize);
-    if (!ShflStringInitBuffer(SrcPath, ParsedPathSize))
-    {
-        vbsfFreeNonPagedMem(DestPath);
-        vbsfFreeNonPagedMem(SrcPath);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    Log(("VBOXSF: vbsfRename: Setting up source path\n"));
-
-    SrcPath->u16Length = SrcPath->u16Size - sizeof(WCHAR); /* without terminating null */
-    RtlCopyMemory(SrcPath->String.ucs2, RemainingName->Buffer, SrcPath->u16Length);
 
     Log(("VBOXSF: vbsfRename: Source path = %.*ls\n",
          SrcPath->u16Length / sizeof(WCHAR), &SrcPath->String.ucs2[0]));

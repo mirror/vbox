@@ -433,3 +433,58 @@ PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction)
     }
 }
 #endif
+
+/** Allocate and initialize a SHFLSTRING from a UNICODE string.
+ *
+ *  @param ppShflString Where to store the pointer to the allocated SHFLSTRING structure.
+ *                      The structure must be deallocated with vbsfFreeNonPagedMem.
+ *  @param pwc          The UNICODE string. If NULL then SHFL is only allocated.
+ *  @param cb           Size of the UNICODE string in bytes without the trailing nul.
+ *
+ *  @return Status code.
+ */
+NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    PSHFLSTRING pShflString;
+    ULONG ulShflStringSize;
+
+    /* Calculate length required for the SHFL structure: header + chars + nul. */
+    ulShflStringSize = SHFLSTRING_HEADER_SIZE + cb + sizeof(WCHAR);
+    pShflString = (PSHFLSTRING)vbsfAllocNonPagedMem(ulShflStringSize);
+    if (pShflString)
+    {
+        if (ShflStringInitBuffer(pShflString, ulShflStringSize))
+        {
+            if (pwc)
+            {
+                RtlCopyMemory(pShflString->String.ucs2, pwc, cb);
+                pShflString->String.ucs2[cb / sizeof(WCHAR)] = 0;
+                pShflString->u16Length = cb; /* without terminating null */
+                AssertMsg(pShflString->u16Length + sizeof(WCHAR) == pShflString->u16Size,
+                          ("u16Length %d, u16Size %d\n", pShflString->u16Length, pShflString->u16Size));
+            }
+            else
+            {
+                RtlZeroMemory(pShflString->String.ucs2, cb + sizeof(WCHAR));
+                pShflString->u16Length = 0; /* without terminating null */
+                AssertMsg(pShflString->u16Size >= sizeof(WCHAR),
+                          ("u16Size %d\n", pShflString->u16Size));
+            }
+
+            *ppShflString = pShflString;
+        }
+        else
+        {
+            vbsfFreeNonPagedMem(pShflString);
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+}
