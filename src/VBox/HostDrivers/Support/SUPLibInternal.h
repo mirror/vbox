@@ -333,6 +333,8 @@ int     suplibOsInstall(void);
 int     suplibOsUninstall(void);
 int     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted);
 int     suplibOsTerm(PSUPLIBDATA pThis);
+int     suplibOsHardenedVerifyInit(void);
+int     suplibOsHardenedVerifyTerm(void);
 int     suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq);
 int     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu);
 int     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages);

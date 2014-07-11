@@ -1133,6 +1133,28 @@ SUPR3DECL(int) SUPR3UnloadVMM(void);
 SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys);
 
 /**
+ * Initializes only the bits relevant for the SUPR3HardenedVerify* APIs.
+ *
+ * This is for users that don't necessarily need to initialize the whole of
+ * SUPLib.  There is no harm in calling this one more time.
+ *
+ * @returns VBox status code.
+ * @remarks Currently not counted, so only call once.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyInit(void);
+
+/**
+ * Reverses the effect of SUPR3HardenedVerifyInit if SUPR3InitEx hasn't been
+ * called.
+ *
+ * Ignored if the support library was initialized using SUPR3Init or
+ * SUPR3InitEx.
+ *
+ * @returns VBox status code.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyTerm(void);
+
+/**
  * Verifies the integrity of a file, and optionally opens it.
  *
  * The integrity check is for whether the file is suitable for loading into

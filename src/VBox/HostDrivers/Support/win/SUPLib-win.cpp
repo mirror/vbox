@@ -79,19 +79,44 @@ static int suplibConvertNtStatus(NTSTATUS rcNt);
 static int suplibConvertWin32Err(int);
 #endif
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static bool g_fHardenedVerifyInited = false;
+
+
+int suplibOsHardenedVerifyInit(void)
+{
+    if (!g_fHardenedVerifyInited)
+    {
+#if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_HARDENED_R3) && !defined(IN_SUP_R3_STATIC)
+        supR3HardenedWinInitVersion();
+        int rc = supHardenedWinInitImageVerifier(NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation();
+#endif
+        g_fHardenedVerifyInited = true;
+    }
+    return VINF_SUCCESS;
+}
+
+
+int suplibOsHardenedVerifyTerm(void)
+{
+    /** @todo free resources...  */
+    return VINF_SUCCESS;
+}
+
 
 int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Make sure the image verifier is fully initialized.
      */
-#if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_HARDENED_R3) && !defined(IN_SUP_R3_STATIC)
-    supR3HardenedWinInitVersion();
-    int rc = supHardenedWinInitImageVerifier(NULL);
+    int rc = suplibOsHardenedVerifyInit();
     if (RT_FAILURE(rc))
         return rc;
-    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation();
-#endif
 
     /*
      * Done if of pre-inited.
@@ -197,6 +222,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
     pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
+
 
 #ifndef IN_SUP_HARDENED_R3
 

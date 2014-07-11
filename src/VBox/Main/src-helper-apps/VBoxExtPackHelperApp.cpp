@@ -1786,9 +1786,7 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-#ifdef RT_OS_WINDOWS
-    SUPR3InitEx(false /*fUnrestricted*/, NULL); /* Ignore return code, we only need the image verifier bits to work. */
-#endif
+    SUPR3HardenedVerifyInit();
     RTERRINFOSTATIC ErrInfo;
     RTErrInfoInitStatic(&ErrInfo);
     rc = SUPR3HardenedVerifySelf(argv[0], true /*fInternal*/, &ErrInfo.Core);
