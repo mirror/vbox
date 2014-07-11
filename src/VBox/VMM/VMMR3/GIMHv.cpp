@@ -392,7 +392,7 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
 
     /*
-     * Save Hyper-V features / capabilities.
+     * Load Hyper-V features / capabilities.
      */
     rc = SSMR3GetU32(pSSM, &pHv->uBaseFeat);                AssertRCReturn(rc, rc);
     rc = SSMR3GetU32(pSSM, &pHv->uPartFlags);               AssertRCReturn(rc, rc);
