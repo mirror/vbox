@@ -168,7 +168,6 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
         ULONG RootNameLength;
         int vboxRC;
         PSHFLSTRING ParsedPath = 0;
-        ULONG ParsedPathSize;
 
         Log(("VBOXSF: MRxCreateVNetRoot: initialize NET_ROOT\n"));
 
@@ -199,23 +198,11 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
             Log(("VBOXSF: MRxCreateVNetRoot: Initialize netroot length = %d, name = %.*ls\n",
                  RootNameLength, RootNameLength / sizeof(WCHAR), pRootName));
 
-            /* Calculate the length required for parsed path. */
-            ParsedPathSize = sizeof(SHFLSTRING) + RootNameLength + sizeof(WCHAR);
-            ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
-            if (!ParsedPath)
+            Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, pRootName, (uint16_t)RootNameLength);
+            if (Status != STATUS_SUCCESS)
             {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
                 goto l_Exit;
             }
-            memset(ParsedPath, 0, ParsedPathSize);
-            if (!ShflStringInitBuffer(ParsedPath, ParsedPathSize))
-            {
-                vbsfFreeNonPagedMem(ParsedPath);
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-                goto l_Exit;
-            }
-            ParsedPath->u16Length = ParsedPath->u16Size - sizeof(WCHAR); /* without terminating null */
-            RtlCopyMemory(ParsedPath->String.ucs2, pRootName, ParsedPath->u16Length);
 
             vboxRC = vboxCallMapFolder(&pDeviceExtension->hgcmClient, ParsedPath, &pNetRootExtension->map);
             vbsfFreeNonPagedMem(ParsedPath);

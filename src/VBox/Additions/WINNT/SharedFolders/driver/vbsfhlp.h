@@ -62,4 +62,6 @@ void vbsfFreeNonPagedMem (PVOID lpMem);
 PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
 #endif
 
+NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
+
 #endif /* __VBSFHLP__H */

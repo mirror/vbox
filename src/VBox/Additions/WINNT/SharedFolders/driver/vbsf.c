@@ -662,7 +662,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         break;
                     }
 
-                    if (cbOut >= _MRX_MAX_DRIVE_LETTERS && !pu8Out)
+                    if (cbOut >= _MRX_MAX_DRIVE_LETTERS && pu8Out)
                     {
                         BOOLEAN fLocked = FALSE;
 
@@ -705,7 +705,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     if (!pDeviceExtension)
                         break;
 
-                    if (cbOut >= _MRX_MAX_DRIVE_LETTERS && !pu8Out)
+                    if (cbOut >= _MRX_MAX_DRIVE_LETTERS && pu8Out)
                     {
                         SHFLMAPPING mappings[_MRX_MAX_DRIVE_LETTERS];
                         uint32_t cMappings = RT_ELEMENTS(mappings);
@@ -761,7 +761,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
 
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETCONN: Looking up connection name and connections\n"));
 
-                    if (cbConnectName > sizeof(WCHAR) && !pwcConnectName)
+                    if (cbConnectName > sizeof(WCHAR) && pwcConnectName)
                     {
                         ULONG cbLocalConnectionName;
 
@@ -828,29 +828,18 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
 
                     int vboxRC;
                     PSHFLSTRING pString;
-                    uint32_t cbString;
 
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALCONN: Connection ID = %d, RemoteName = 0x%x, Len = %d\n",
                          *pConnectId, pwcRemoteName, cbRemoteName));
 
-                    cbString = sizeof(SHFLSTRING) + cbRemoteName;
-                    pString = (PSHFLSTRING)vbsfAllocNonPagedMem(cbString);
-                    if (!pString)
-                    {
-                        Status = STATUS_INSUFFICIENT_RESOURCES;
+                    /* Allocate empty string where the host can store cbRemoteName bytes. */
+                    Status = vbsfShflStringFromUnicodeAlloc(&pString, NULL, (uint16_t)cbRemoteName);
+                    if (Status != STATUS_SUCCESS)
                         break;
-                    }
-                    memset(pString, 0, cbString);
-                    if (!ShflStringInitBuffer(pString, cbString))
-                    {
-                        vbsfFreeNonPagedMem(pString);
-                        Status = STATUS_BAD_NETWORK_NAME;
-                        break;
-                    }
 
                     vboxRC = vboxCallQueryMapName(&pDeviceExtension->hgcmClient,
                                                   (*pConnectId) & ~0x80 /** @todo fix properly */,
-                                                  pString, cbString);
+                                                  pString, ShflStringSizeOfBuffer(pString));
                     if (   vboxRC == VINF_SUCCESS
                         && pString->u16Length < cbRemoteName)
                     {
