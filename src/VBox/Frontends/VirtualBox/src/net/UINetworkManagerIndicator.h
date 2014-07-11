@@ -24,7 +24,7 @@
 #include <QUuid>
 
 /* Local includes: */
-#include "QIStateIndicator.h"
+#include "QIStatusBarIndicator.h"
 
 /* Forward declarations: */
 class UINetworkRequest;
@@ -38,9 +38,14 @@ enum UINetworkManagerIndicatorState
 };
 
 /* Network-manager status-bar indicator: */
-class UINetworkManagerIndicator : public QIStateIndicator
+class UINetworkManagerIndicator : public QIStateStatusBarIndicator
 {
     Q_OBJECT;
+
+public:
+
+    /** Update routine. */
+    void updateAppearance();
 
 protected:
 
@@ -88,7 +93,6 @@ private:
 
     /* Update stuff: */
     void recalculateIndicatorState();
-    void updateAppearance();
 
     /* Variables: */
     QVector<QUuid> m_ids;

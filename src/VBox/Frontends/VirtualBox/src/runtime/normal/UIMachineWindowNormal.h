@@ -19,16 +19,12 @@
 #ifndef __UIMachineWindowNormal_h__
 #define __UIMachineWindowNormal_h__
 
-/* Global includes: */
-#include <QLabel>
-
 /* Local includes: */
 #include "UIMachineWindow.h"
 
 /* Forward declarations: */
 class CMediumAttachment;
 class UIIndicatorsPool;
-class QIStateIndicator;
 
 /* Normal machine-window implementation: */
 class UIMachineWindowNormal : public UIMachineWindow
@@ -57,10 +53,8 @@ private slots:
     void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
 
-    /* LED connections: */
-    void sltUpdateIndicators();
-    void sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent);
-    void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
+    /** Handles indicator context-menu-request: */
+    void sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position);
 
 private:
 
@@ -76,12 +70,9 @@ private:
     void saveSettings();
     //void cleanupHandlers() {}
     //coid cleanupVisualState() {}
-    void cleanupStatusBar();
+    //void cleanupStatusBar() {}
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
-
-    /* Translate stuff: */
-    void retranslateUi();
 
     /* Show stuff: */
     void showInNecessaryMode();
@@ -96,16 +87,12 @@ private:
     bool event(QEvent *pEvent);
 
     /* Helpers: */
-    UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }
     bool isMaximizedChecked();
-    void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
 
-    /* Widgets: */
+    /** Holds the indicator-pool instance. */
     UIIndicatorsPool *m_pIndicatorsPool;
-    QLabel *m_pNameHostkey;
 
-    /* Variables: */
-    QTimer *m_pIdleTimer;
+    /** Holds current window geometry. */
     QRect m_normalGeometry;
 
     /* Factory support: */

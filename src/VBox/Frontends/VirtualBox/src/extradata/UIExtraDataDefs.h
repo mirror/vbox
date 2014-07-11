@@ -481,13 +481,14 @@ enum IndicatorType
     IndicatorType_HardDisks,
     IndicatorType_OpticalDisks,
     IndicatorType_FloppyDisks,
-    IndicatorType_Network,
     IndicatorType_USB,
+    IndicatorType_Network,
     IndicatorType_SharedFolders,
     IndicatorType_VideoCapture,
     IndicatorType_Features,
     IndicatorType_Mouse,
     IndicatorType_Keyboard,
+    IndicatorType_KeyboardExtension,
     IndicatorType_Max
 };
 Q_DECLARE_METATYPE(IndicatorType);
