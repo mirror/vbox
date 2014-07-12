@@ -1840,7 +1840,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
      * issued. (The other CPU(s) might not yet have switched to protected
      * mode, nor have the correct memory context.)
      */
-    VMCPUID         idCpu  = (VMCPUID)(uintptr_t)pvUser;
+    VMCPUID idCpu = (VMCPUID)(uintptr_t)pvUser;
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
@@ -1848,14 +1848,14 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
      * We're racing other VCPUs here, so don't try patch the instruction twice
      * and make sure there is still room for our patch record.
      */
-    PCPUMCTX        pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX    pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
         Log(("hmR3ReplaceTprInstr: already patched %RGv\n", pCtx->rip));
         return VINF_SUCCESS;
     }
-    uint32_t const  idx = pVM->hm.s.cPatches;
+    uint32_t const idx = pVM->hm.s.cPatches;
     if (idx >= RT_ELEMENTS(pVM->hm.s.aPatches))
     {
         Log(("hmR3ReplaceTprInstr: no available patch slots (%RGv)\n", pCtx->rip));
