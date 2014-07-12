@@ -199,7 +199,8 @@ VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 
 VMMDECL(bool)               GIMIsEnabled(PVM pVM);
 VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
-VMMDECL(bool)               GIMIsParavirtTscEnabled(PVM pVM);
+VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVM pVM);
+VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(int)           GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(int)           GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(int)           GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);

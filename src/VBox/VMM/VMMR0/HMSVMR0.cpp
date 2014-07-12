@@ -3830,6 +3830,10 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
  * TPR). See hmR3ReplaceTprInstr() for the details.
  *
  * @returns VBox status code.
+ * @retval VINF_SUCCESS if the access was handled successfully.
+ * @retval VERR_NOT_FOUND if no patch record for this eip could be found.
+ * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
+ *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
@@ -3837,6 +3841,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
 static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
+    bool fPatchFound = false;
     for (;;)
     {
         bool    fPending;
@@ -3846,6 +3851,7 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!pPatch)
             break;
 
+        fPatchFound = true;
         switch (pPatch->enmType)
         {
             case HMTPRINSTR_READ:
@@ -3887,7 +3893,9 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
-    return VINF_SUCCESS;
+    if (fPatchFound)
+        return VINF_SUCCESS;
+    return VERR_NOT_FOUND;
 }
 
 
@@ -4895,10 +4903,19 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
+    /* First check if this is a patched VMMCALL for mov TPR */
     int rc = hmR0SvmEmulateMovTpr(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (rc == VINF_SUCCESS)
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-    else
+    else if (rc == VERR_NOT_FOUND)
+    {
+        /* Handle GIM provider hypercalls. */
+        rc = VERR_NOT_SUPPORTED;
+        if (GIMAreHypercallsEnabled(pVCpu))
+            rc = GIMHypercall(pVCpu, pCtx);
+    }
+
+    if (rc != VINF_SUCCESS)
         hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
 }
