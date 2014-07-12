@@ -66,6 +66,7 @@
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
+#include <VBox/vmm/gim.h>    /* For GIMOSID. */
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
@@ -1169,9 +1170,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     pcszParavirtProvider = "Minimal";
                     fGimDeviceNeeded = false;
                 }
+#if 0           /* Activate this soon. */
+                else if (  osTypeId == "Windows7"
+                        || osTypeId == "Windows7_64"
+                        || osTypeId == "Windows8"
+                        || osTypeId == "Windows8_64"
+                        || osTypeId == "Windows81"
+                        || osTypeId == "Windows81_64")
+                {
+                    pcszParavirtProvider = "HyperV";
+                }
+#endif
                 else
                 {
-                    /** @todo Choose a provider based on guest OS type. There is no "Default" provider. */
                     pcszParavirtProvider = "None";
                     fGimDeviceNeeded = false;
                 }
@@ -1202,6 +1213,29 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                     paravirtProvider);
         }
         InsertConfigString(pParavirtNode, "Provider", pcszParavirtProvider);
+
+        if (   !RTStrCmp(pcszParavirtProvider, "Minimal")
+            && fOsXGuest)
+        {
+            GIMOSID enmOsId = GIMOSID_OSX;
+            if (osTypeId == "MacOS_64")
+                enmOsId = GIMOSID_OSX_64;
+            else if (osTypeId == "MacOS106")
+                enmOsId = GIMOSID_OSX_106;
+            else if (osTypeId == "MacOS106_64")
+                enmOsId = GIMOSID_OSX_106_64;
+            else if (osTypeId == "MacOS107")
+                enmOsId = GIMOSID_OSX_107;
+            else if (osTypeId == "MacOS107_64")
+                enmOsId = GIMOSID_OSX_107_64;
+            else if (osTypeId == "MacOS108")
+                enmOsId = GIMOSID_OSX_108;
+            else if (osTypeId == "MacOS108_64")
+                enmOsId = GIMOSID_OSX_108_64;
+
+            InsertConfigInteger(pParavirtNode, "GuestOsId", enmOsId);
+        }
+
 
         /*
          * MM values.
