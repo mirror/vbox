@@ -641,6 +641,7 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
     char szMsgBuf[1024];
     RTStrPrintfV(szMsgBuf, sizeof(szMsgBuf), pszMsgFmt, va);
     QString strText = QApplication::tr("<html><b>%1 (rc=%2)</b><br/><br/>").arg(szMsgBuf).arg(rc);
+    strText.replace(QString("\n"), QString("<br>"));
 
     switch (enmWhat)
     {
