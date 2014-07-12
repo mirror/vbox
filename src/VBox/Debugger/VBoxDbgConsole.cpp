@@ -29,6 +29,7 @@
 #include <QHBoxLayout>
 #include <QAction>
 #include <QContextMenuEvent>
+#include <QMenu>
 
 #include <VBox/dbg.h>
 #include <VBox/vmm/cfgm.h>
@@ -67,6 +68,109 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     setTabChangesFocus(true);
     setAcceptRichText(false);
 
+    /*
+     * Font.
+     * Create actions for font menu items.
+     */
+    m_pCourierFontAction = new QAction(tr("Courier"), this);
+    m_pCourierFontAction->setCheckable(true);
+    m_pCourierFontAction->setShortcut(Qt::ControlModifier + Qt::Key_D);
+    connect(m_pCourierFontAction, SIGNAL(triggered()), this, SLOT(setFontCourier()));
+
+    m_pMonospaceFontAction = new QAction(tr("Monospace"), this);
+    m_pMonospaceFontAction->setCheckable(true);
+    m_pMonospaceFontAction->setShortcut(Qt::ControlModifier + Qt::Key_M);
+    connect(m_pMonospaceFontAction, SIGNAL(triggered()), this, SLOT(setFontMonospace()));
+
+    /* Create action group for grouping of exclusive font menu items. */
+    QActionGroup *pActionFontGroup = new QActionGroup(this);
+    pActionFontGroup->addAction(m_pCourierFontAction);
+    pActionFontGroup->addAction(m_pMonospaceFontAction);
+    pActionFontGroup->setExclusive(true);
+
+    /*
+     * Color scheme.
+     * Create actions for color-scheme menu items.
+     */
+    m_pGreenOnBlackAction = new QAction(tr("Green On Black"), this);
+    m_pGreenOnBlackAction->setCheckable(true);
+    m_pGreenOnBlackAction->setShortcut(Qt::ControlModifier + Qt::Key_1);
+    connect(m_pGreenOnBlackAction, SIGNAL(triggered()), this, SLOT(setColorGreenOnBlack()));
+
+    m_pBlackOnWhiteAction = new QAction(tr("Black On White"), this);
+    m_pBlackOnWhiteAction->setCheckable(true);
+    m_pBlackOnWhiteAction->setShortcut(Qt::ControlModifier + Qt::Key_2);
+    connect(m_pBlackOnWhiteAction, SIGNAL(triggered()), this, SLOT(setColorBlackOnWhite()));
+
+    /* Create action group for grouping of exclusive color-scheme menu items. */
+    QActionGroup *pActionColorGroup = new QActionGroup(this);
+    pActionColorGroup->addAction(m_pGreenOnBlackAction);
+    pActionColorGroup->addAction(m_pBlackOnWhiteAction);
+    pActionColorGroup->setExclusive(true);
+
+    /*
+     * Set the defaults (which syncs with the menu item checked state).
+     */
+    setFontCourier();
+    setColorGreenOnBlack();
+
+    NOREF(pszName);
+}
+
+
+VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
+{
+    Assert(m_hGUIThread == RTThreadNativeSelf());
+}
+
+
+void
+VBoxDbgConsoleOutput::contextMenuEvent(QContextMenuEvent *pEvent)
+{
+    /*
+     * Create the context menu and add the menu items.
+     */
+    QMenu *pMenu = createStandardContextMenu();
+    QMenu *pColorMenu = pMenu->addMenu(tr("Co&lor Scheme"));
+    pColorMenu->addAction(m_pGreenOnBlackAction);
+    pColorMenu->addAction(m_pBlackOnWhiteAction);
+
+    QMenu *pFontMenu = pMenu->addMenu(tr("&Font Family"));
+    pFontMenu->addAction(m_pCourierFontAction);
+    pFontMenu->addAction(m_pMonospaceFontAction);
+
+    pMenu->exec(pEvent->globalPos());
+    delete pMenu;
+}
+
+
+void
+VBoxDbgConsoleOutput::setColorGreenOnBlack()
+{
+    setStyleSheet("QTextEdit { background-color: black; color: rgb(0, 224, 0) }");
+    m_enmColorScheme = kGreenOnBlack;
+
+    /* This is used both as a trigger as well as called independently from code.
+       When used as a trigger, the checked is done automatically by Qt. */
+    if (!m_pGreenOnBlackAction->isChecked())
+        m_pGreenOnBlackAction->setChecked(true);
+}
+
+
+void
+VBoxDbgConsoleOutput::setColorBlackOnWhite()
+{
+    setStyleSheet("QTextEdit { background-color: white; color: black }");
+    m_enmColorScheme = kBlackOnWhite;
+
+    if (!m_pBlackOnWhiteAction->isChecked())
+        m_pBlackOnWhiteAction->setChecked(true);
+}
+
+
+void
+VBoxDbgConsoleOutput::setFontCourier()
+{
 #ifdef Q_WS_MAC
     QFont Font("Monaco", 10, QFont::Normal, FALSE);
     Font.setStyleStrategy(QFont::NoAntialias);
@@ -77,30 +181,22 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
 #endif
     setFont(Font);
 
-    /* green on black */
-    QPalette Pal(palette());
-    Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::black));
-    setPalette(Pal);
-    setTextColor(QColor(qRgb(0, 0xe0, 0)));
-
-#ifdef DEBUG_ramshankar
-    /* Solaris host (esp. S10) has illegible Courier font (bad aliasing). */
-    Font.setFamily("Monospace [Monotype]");
-    setFont(Font);
-
-    /* White on black while I'm at it. */
-    Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::white));
-    setPalette(Pal);
-    setTextColor(QColor(qRgb(0, 0, 0)));
-#endif
-
-    NOREF(pszName);
+    if (!m_pCourierFontAction->isChecked())
+        m_pCourierFontAction->setChecked(true);
 }
 
 
-VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
+void
+VBoxDbgConsoleOutput::setFontMonospace()
 {
-    Assert(m_hGUIThread == RTThreadNativeSelf());
+    QFont Font = font();
+    Font.setStyleHint(QFont::TypeWriter);
+    Font.setStyleStrategy(QFont::PreferAntialias);
+    Font.setFamily("Monospace [Monotype]");
+    setFont(Font);
+
+    if (!m_pMonospaceFontAction->isChecked())
+        m_pMonospaceFontAction->setChecked(true);
 }
 
 
@@ -365,6 +461,11 @@ VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NUL
     m_pFocusToOutput->setShortcut(QKeySequence("Ctrl+O"));
     addAction(m_pFocusToOutput);
     connect(m_pFocusToOutput, SIGNAL(triggered(bool)), this, SLOT(actFocusToOutput()));
+
+    addAction(m_pOutput->m_pBlackOnWhiteAction);
+    addAction(m_pOutput->m_pGreenOnBlackAction);
+    addAction(m_pOutput->m_pCourierFontAction);
+    addAction(m_pOutput->m_pMonospaceFontAction);
 }
 
 
