@@ -56,6 +56,29 @@ VMMDECL(GIMPROVIDERID) GIMGetProvider(PVM pVM)
 
 
 /**
+ * Returns whether the guest has configured and enabled calls to the hypervisor.
+ *
+ * @returns true if hypercalls are enabled and usable, false otherwise.
+ * @param   pVCpu           Pointer to the VMCPU.
+ */
+VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (!GIMIsEnabled(pVM))
+        return false;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return GIMHvAreHypercallsEnabled(pVCpu);
+
+        default:
+            return false;
+    }
+}
+
+
+/**
  * Implements a GIM hypercall with the provider configured for the VM.
  *
  * @returns VBox status code.
@@ -65,8 +88,10 @@ VMMDECL(GIMPROVIDERID) GIMGetProvider(PVM pVM)
 VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    Assert(GIMIsEnabled(pVM));
     VMCPU_ASSERT_EMT(pVCpu);
+
+    if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
+        return VERR_GIM_NOT_ENABLED;
 
     switch (pVM->gim.s.enmProviderId)
     {
@@ -79,7 +104,16 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 }
 
-VMMDECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
+
+/**
+ * Returns whether the guest has configured and setup the use of paravirtualized
+ * TSC. Paravirtualized TSCs are per-VM and the rest of the execution engine
+ * logic relies on that.
+ *
+ * @returns true if enabled and usable, false otherwise.
+ * @param   pVM         Pointer to the VM.
+ */
+VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
 {
     if (!pVM->gim.s.fEnabled)
         return false;

@@ -370,6 +370,7 @@ static FNVMXEXITHANDLER hmR0VmxExitHlt;
 static FNVMXEXITHANDLER hmR0VmxExitInvd;
 static FNVMXEXITHANDLER hmR0VmxExitInvlpg;
 static FNVMXEXITHANDLER hmR0VmxExitRdpmc;
+static FNVMXEXITHANDLER hmR0VmxExitVmcall;
 static FNVMXEXITHANDLER hmR0VmxExitRdtsc;
 static FNVMXEXITHANDLER hmR0VmxExitRsm;
 static FNVMXEXITHANDLER hmR0VmxExitSetPendingXcptUD;
@@ -439,7 +440,7 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 15  VMX_EXIT_RDPMC                   */  hmR0VmxExitRdpmc,
  /* 16  VMX_EXIT_RDTSC                   */  hmR0VmxExitRdtsc,
  /* 17  VMX_EXIT_RSM                     */  hmR0VmxExitRsm,
- /* 18  VMX_EXIT_VMCALL                  */  hmR0VmxExitSetPendingXcptUD,
+ /* 18  VMX_EXIT_VMCALL                  */  hmR0VmxExitVmcall,
  /* 19  VMX_EXIT_VMCLEAR                 */  hmR0VmxExitSetPendingXcptUD,
  /* 20  VMX_EXIT_VMLAUNCH                */  hmR0VmxExitSetPendingXcptUD,
  /* 21  VMX_EXIT_VMPTRLD                 */  hmR0VmxExitSetPendingXcptUD,
@@ -8923,6 +8924,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         case VMX_EXIT_INVPCID:                 /* SVVMCS(); */ rc = hmR0VmxExitInvpcid(pVCpu, pMixedCtx, pVmxTransient);           /* LDVMCS(); */ break;
         case VMX_EXIT_GETSEC:                  /* SVVMCS(); */ rc = hmR0VmxExitGetsec(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
         case VMX_EXIT_RDPMC:                   /* SVVMCS(); */ rc = hmR0VmxExitRdpmc(pVCpu, pMixedCtx, pVmxTransient);             /* LDVMCS(); */ break;
+        case VMX_EXIT_VMCALL:                  /* SVVMCS(); */ rc = hmR0VmxExitVmcall(pVCpu, pMixedCtx, pVmxTransient);            /* LDVMCS(); */ break;
 
         case VMX_EXIT_TRIPLE_FAULT:            rc = hmR0VmxExitTripleFault(pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_NMI_WINDOW:              rc = hmR0VmxExitNmiWindow(pVCpu, pMixedCtx, pVmxTransient); break;
@@ -8934,7 +8936,6 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         case VMX_EXIT_ERR_INVALID_GUEST_STATE: rc = hmR0VmxExitErrInvalidGuestState(pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_ERR_MACHINE_CHECK:       rc = hmR0VmxExitErrMachineCheck(pVCpu, pMixedCtx, pVmxTransient); break;
 
-        case VMX_EXIT_VMCALL:
         case VMX_EXIT_VMCLEAR:
         case VMX_EXIT_VMLAUNCH:
         case VMX_EXIT_VMPTRLD:
@@ -9971,6 +9972,32 @@ HMVMX_EXIT_DECL hmR0VmxExitRdpmc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rc = VERR_EM_INTERPRETER;
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdpmc);
+    return rc;
+}
+
+
+/**
+ * VM-exit handler for VMCALL (VMX_EXIT_VMCALL). Unconditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    int rc = VERR_NOT_SUPPORTED;
+    if (GIMAreHypercallsEnabled(pVCpu))
+    {
+        rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+        AssertRCReturn(rc, rc);
+
+        rc = GIMHypercall(pVCpu, pMixedCtx);
+    }
+    if (rc != VINF_SUCCESS)
+    {
+        hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
+        rc = VINF_SUCCESS;
+    }
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
     return rc;
 }
 
