@@ -1762,7 +1762,7 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
     if (lim == 0) {
         lim = sz - 1;           /* empty slot at the end */
     }
-    else if (lim == 1) {
+    else if (lim == 1 && beg != 0) {
         lim = sz;               /* empty slot at the beginning */
     }
     else {
