@@ -159,6 +159,7 @@ template<> QString toInternalString(const WizardType &wizardType);
 template<> WizardType fromInternalString<WizardType>(const QString &strWizardType);
 template<> QString toInternalString(const IndicatorType &indicatorType);
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType);
+template<> QIcon toIcon(const IndicatorType &indicatorType);
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction);
 template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction);
 template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditationHandlerType);
