@@ -782,9 +782,9 @@ class UIIndicatorMouse : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorMouse(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, using @a pSession for state-update routine. */
+    UIIndicatorMouse(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession->session())
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
@@ -792,6 +792,9 @@ public:
         setStateIcon(2, UIIconPool::iconSet(":/mouse_seamless_16px.png"));
         setStateIcon(3, UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));
         setStateIcon(4, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png"));
+        /* Configure connection: */
+        connect(pSession, SIGNAL(sigMouseStateChange(int)), this, SLOT(setState(int)));
+        setState(pSession->mouseState());
         /* Translate finally: */
         retranslateUi();
     }
@@ -839,15 +842,18 @@ class UIIndicatorKeyboard : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorKeyboard(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, using @a pSession for state-update routine. */
+    UIIndicatorKeyboard(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession->session())
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
         setStateIcon(1, UIIconPool::iconSet(":/hostkey_captured_16px.png"));
         setStateIcon(2, UIIconPool::iconSet(":/hostkey_pressed_16px.png"));
         setStateIcon(3, UIIconPool::iconSet(":/hostkey_captured_pressed_16px.png"));
+        /* Configure connection: */
+        connect(pSession, SIGNAL(sigKeyboardStateChange(int)), this, SLOT(setState(int)));
+        setState(pSession->keyboardState());
         /* Translate finally: */
         retranslateUi();
     }
@@ -1064,8 +1070,8 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
                 case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_session);  break;
                 case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_session);      break;
-                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_session);         break;
-                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_session);      break;
+                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pSession);        break;
+                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pSession);     break;
                 case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;        break;
                 default: break;
             }

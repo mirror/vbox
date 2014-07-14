@@ -50,6 +50,11 @@ class UIKeyboardHandler : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about state-change. */
+    void sigStateChange(int iState);
+
 public:
 
     /* Factory functions to create/destroy keyboard-handler: */
@@ -66,7 +71,7 @@ public:
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
 
     /* Current keyboard state: */
-    int keyboardState() const;
+    int state() const;
 
     /* Some getters required by side-code: */
     bool isHostKeyPressed() const { return m_bIsHostComboPressed; }
@@ -87,11 +92,6 @@ public:
 #elif defined(Q_WS_X11)
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 #endif
-
-signals:
-
-    /* Notifies listeners about keyboard state-change: */
-    void keyboardStateChanged(int iNewState);
 
 protected slots:
 
