@@ -5131,7 +5131,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
-
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
     PSVMVMCB    pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;

@@ -1217,6 +1217,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         if (   !RTStrCmp(pcszParavirtProvider, "Minimal")
             && fOsXGuest)
         {
+            /* When adding new OS X types, please add corresponding types to GIMOSID and
+               update GIMR3IsOSXGuest().  */
             GIMOSID enmOsId = GIMOSID_OSX;
             if (osTypeId == "MacOS_64")
                 enmOsId = GIMOSID_OSX_64;
