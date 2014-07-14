@@ -135,7 +135,8 @@ static int rtMemSaferSupR3Alloc(void **ppvNew, size_t cb)
         rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, PAGE_SIZE + cbUser, PAGE_SIZE, RTMEM_PROT_NONE);
+            Assert(cb == (size_t)((uint32_t)(PAGE_SIZE + cbUser)));
+            rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, PAGE_SIZE + (uint32_t)cbUser, PAGE_SIZE, RTMEM_PROT_NONE);
             if (RT_SUCCESS(rc))
             {
                 *ppvNew = (uint8_t *)pvNew + PAGE_SIZE;
