@@ -1135,6 +1135,30 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     return values.at(keys.indexOf(QRegExp(strIndicatorType, Qt::CaseInsensitive)));
 }
 
+/* QIcon <= IndicatorType: */
+template<> QIcon toIcon(const IndicatorType &indicatorType)
+{
+    switch (indicatorType)
+    {
+        case IndicatorType_HardDisks:     return UIIconPool::iconSet(":/hd_16px.png");
+        case IndicatorType_OpticalDisks:  return UIIconPool::iconSet(":/cd_16px.png");
+        case IndicatorType_FloppyDisks:   return UIIconPool::iconSet(":/fd_16px.png");
+        case IndicatorType_Network:       return UIIconPool::iconSet(":/nw_16px.png");
+        case IndicatorType_USB:           return UIIconPool::iconSet(":/usb_16px.png");
+        case IndicatorType_SharedFolders: return UIIconPool::iconSet(":/sf_16px.png");
+        case IndicatorType_VideoCapture:  return UIIconPool::iconSet(":/video_capture_16px.png");
+        case IndicatorType_Features:      return UIIconPool::iconSet(":/vtx_amdv_16px.png");
+        case IndicatorType_Mouse:         return UIIconPool::iconSet(":/mouse_16px.png");
+        case IndicatorType_Keyboard:      return UIIconPool::iconSet(":/hostkey_16px.png");
+        default:
+        {
+            AssertMsgFailed(("No icon for indicator type=%d", indicatorType));
+            break;
+        }
+    }
+    return QIcon();
+}
+
 /* QString <= MachineCloseAction: */
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction)
 {
