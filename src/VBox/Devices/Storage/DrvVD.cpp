@@ -36,6 +36,7 @@
 #include <iprt/poll.h>
 #include <iprt/pipe.h>
 #include <iprt/system.h>
+#include <iprt/memsafer.h>
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
@@ -1856,6 +1857,52 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
     return rc;
 }
 
+/** @copydoc PDMIMEDIA::pfnIoBufAlloc */
+static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    void *pvNew = NULL;
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    /* Configured encryption requires locked down memory. */
+    if (pThis->pCfgCrypto)
+        pvNew = RTMemSaferAllocZ(cb);
+    else
+    {
+        cb = RT_ALIGN_Z(cb, _4K);
+        pvNew = RTMemPageAlloc(cb);
+    }
+
+    if (RT_LIKELY(pvNew))
+        *ppvNew = pvNew;
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc PDMIMEDIA::pfnIoBufFree */
+static DECLCALLBACK(int) drvvdIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    if (pThis->pCfgCrypto)
+        RTMemSaferFree(pv, cb);
+    else
+    {
+        cb = RT_ALIGN_Z(cb, _4K);
+        RTMemPageFree(pv, cb);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
 /*******************************************************************************
 *   Async Media interface methods                                              *
 *******************************************************************************/
@@ -2386,6 +2433,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMedia.pfnBiosSetLCHSGeometry = drvvdBiosSetLCHSGeometry;
     pThis->IMedia.pfnGetUuid             = drvvdGetUuid;
     pThis->IMedia.pfnDiscard             = drvvdDiscard;
+    pThis->IMedia.pfnIoBufAlloc          = drvvdIoBufAlloc;
+    pThis->IMedia.pfnIoBufFree           = drvvdIoBufFree;
 
     /* IMediaAsync */
     pThis->IMediaAsync.pfnStartRead       = drvvdStartRead;
