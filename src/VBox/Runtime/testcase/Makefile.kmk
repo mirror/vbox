@@ -89,6 +89,7 @@ PROGRAMS += \
 	tstRTMemCache \
 	tstRTMemPool \
 	tstRTMemWipe \
+	tstRTMemSafer \
 	tstMove \
 	tstRTMp-1 \
 	tstRTNetIPv4 \
@@ -454,6 +455,9 @@ tstRTMemPool_SOURCES = tstRTMemPool.cpp
 
 tstRTMemWipe_TEMPLATE = VBOXR3TSTEXE
 tstRTMemWipe_SOURCES = tstRTMemWipe.cpp
+
+tstRTMemSafer_TEMPLATE = VBOXR3TSTEXE
+tstRTMemSafer_SOURCES = tstRTMemSafer.cpp
 
 tstMove_TEMPLATE = VBOXR3TSTEXE
 tstMove_SOURCES = tstMove.cpp
