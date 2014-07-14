@@ -684,12 +684,20 @@ void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
 
 void UIMachineLogic::setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler)
 {
+    /* Set new handler: */
     m_pKeyboardHandler = pKeyboardHandler;
+    /* Connect to session: */
+    connect(m_pKeyboardHandler, SIGNAL(sigStateChange(int)),
+            uisession(), SLOT(setKeyboardState(int)));
 }
 
 void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
 {
+    /* Set new handler: */
     m_pMouseHandler = pMouseHandler;
+    /* Connect to session: */
+    connect(m_pMouseHandler, SIGNAL(sigStateChange(int)),
+            uisession(), SLOT(setMouseState(int)));
 }
 
 void UIMachineLogic::retranslateUi()
@@ -954,11 +962,13 @@ void UIMachineLogic::prepareActionConnections()
 
 void UIMachineLogic::prepareHandlers()
 {
-    /* Create keyboard-handler: */
+    /* Create handlers: */
     setKeyboardHandler(UIKeyboardHandler::create(this, visualStateType()));
-
-    /* Create mouse-handler: */
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
+
+    /* Update UI session values with current: */
+    uisession()->setKeyboardState(keyboardHandler()->state());
+    uisession()->setMouseState(mouseHandler()->state());
 }
 
 void UIMachineLogic::prepareMenu()

@@ -219,7 +219,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 #endif
 
         /* Notify all the listeners: */
-        emit keyboardStateChanged(keyboardState());
+        emit sigStateChange(state());
     }
 }
 
@@ -274,7 +274,7 @@ void UIKeyboardHandler::releaseKeyboard()
         m_iKeyboardCaptureViewIndex = -1;
 
         /* Notify all the listeners: */
-        emit keyboardStateChanged(keyboardState());
+        emit sigStateChange(state());
     }
 }
 
@@ -331,11 +331,12 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
         (aReleaseHostKey ? 0 : hostComboModifierMask);
 #endif
 
-    emit keyboardStateChanged(keyboardState());
+    /* Notify all the listeners: */
+    emit sigStateChange(state());
 }
 
 /* Current keyboard state: */
-int UIKeyboardHandler::keyboardState() const
+int UIKeyboardHandler::state() const
 {
     return (m_fIsKeyboardCaptured ? UIViewStateType_KeyboardCaptured : 0) |
            (m_bIsHostComboPressed ? UIViewStateType_HostKeyPressed : 0);
@@ -1521,8 +1522,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         }
     }
 
-    /* Notify all listeners: */
-    emit keyboardStateChanged(keyboardState());
+    /* Notify all the listeners: */
+    emit sigStateChange(state());
 
     /* If the VM is NOT paused: */
     if (!uisession()->isPaused())

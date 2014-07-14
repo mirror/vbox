@@ -189,6 +189,8 @@ public:
     bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
 
     /* Keyboard getters: */
+    /** Returns keyboard-state. */
+    int keyboardState() const { return m_iKeyboardState; }
     bool isNumLock() const { return m_fNumLock; }
     bool isCapsLock() const { return m_fCapsLock; }
     bool isScrollLock() const { return m_fScrollLock; }
@@ -196,6 +198,8 @@ public:
     uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
 
     /* Mouse getters: */
+    /** Returns mouse-state. */
+    int mouseState() const { return m_iMouseState; }
     bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
     bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
     bool isMouseSupportsMultiTouch() const { return m_fIsMouseSupportsMultiTouch; }
@@ -242,6 +246,10 @@ signals:
     void sigCloseRuntimeUI();
 
     /* Console callback signals: */
+    /** Notifies listeners about keyboard state-change. */
+    void sigKeyboardStateChange(int iState);
+    /** Notifies listeners about mouse state-change. */
+    void sigMouseStateChange(int iState);
     void sigMousePointerShapeChange();
     void sigMouseCapabilityChange();
     void sigKeyboardLedsChange();
@@ -271,6 +279,12 @@ signals:
 public slots:
 
     void sltInstallGuestAdditionsFrom(const QString &strSource);
+
+    /** Defines @a iKeyboardState. */
+    void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }
+
+    /** Defines @a iMouseState. */
+    void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
 
 private slots:
 
@@ -444,6 +458,8 @@ private:
     bool  m_fIsGuestSupportsSeamless : 1;
 
     /* Keyboard flags: */
+    /** Holds the keyboard-state. */
+    int m_iKeyboardState;
     bool m_fNumLock : 1;
     bool m_fCapsLock : 1;
     bool m_fScrollLock : 1;
@@ -451,6 +467,8 @@ private:
     uint m_uCapsLockAdaptionCnt;
 
     /* Mouse flags: */
+    /** Holds the mouse-state. */
+    int m_iMouseState;
     bool m_fIsMouseSupportsAbsolute : 1;
     bool m_fIsMouseSupportsRelative : 1;
     bool m_fIsMouseSupportsMultiTouch: 1;

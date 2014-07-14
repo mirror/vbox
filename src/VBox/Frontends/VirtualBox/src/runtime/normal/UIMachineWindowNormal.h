@@ -63,12 +63,10 @@ private:
     void prepareMenu();
     void prepareStatusBar();
     void prepareVisualState();
-    void prepareHandlers();
     void loadSettings();
 
     /* Cleanup helpers: */
     void saveSettings();
-    //void cleanupHandlers() {}
     //coid cleanupVisualState() {}
     //void cleanupStatusBar() {}
     //void cleanupMenu() {}

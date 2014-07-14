@@ -200,8 +200,8 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
         CMouse mouse = session().GetConsole().GetMouse();
         mouse.PutMouseEvent(0, 0, 0, 0, 0);
 
-        /* Emit signal if required: */
-        emit mouseStateChanged(mouseState());
+        /* Notify all the listeners: */
+        emit sigStateChange(state());
     }
 }
 
@@ -232,8 +232,8 @@ void UIMouseHandler::releaseMouse()
         /* Reset mouse-capture index: */
         m_iMouseCaptureViewIndex = -1;
 
-        /* Emit signal if required: */
-        emit mouseStateChanged(mouseState());
+        /* Notify all the listeners: */
+        emit sigStateChange(state());
     }
 }
 
@@ -252,7 +252,7 @@ void UIMouseHandler::setMouseIntegrationEnabled(bool fEnabled)
 }
 
 /* Current mouse state: */
-int UIMouseHandler::mouseState() const
+int UIMouseHandler::state() const
 {
     return (uisession()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
            (uisession()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
@@ -293,9 +293,9 @@ bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
 void UIMouseHandler::sltMachineStateChanged()
 {
     /* Get machine state: */
-    KMachineState state = uisession()->machineState();
+    KMachineState machineState = uisession()->machineState();
     /* Handle particular machine states: */
-    switch (state)
+    switch (machineState)
     {
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
@@ -312,13 +312,12 @@ void UIMouseHandler::sltMachineStateChanged()
     /* Recall reminder about paused VM input
      * if we are not in paused VM state already: */
     if (machineLogic()->activeMachineWindow() &&
-        state != KMachineState_Paused &&
-        state != KMachineState_TeleportingPausedVM)
+        machineState != KMachineState_Paused &&
+        machineState != KMachineState_TeleportingPausedVM)
         popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
 
-    // TODO: Is it really required?
-    /* Notify all listeners: */
-    emit mouseStateChanged(mouseState());
+    /* Notify all the listeners: */
+    emit sigStateChange(state());
 }
 
 /* Mouse capability-change handler: */
@@ -375,8 +374,8 @@ void UIMouseHandler::sltMouseCapabilityChanged()
                                                       uisession()->isMouseSupportsAbsolute());
     }
 
-    /* Notify all listeners: */
-    emit mouseStateChanged(mouseState());
+    /* Notify all the listeners: */
+    emit sigStateChange(state());
 }
 
 /* Mouse pointer-shape-change handler: */
@@ -455,7 +454,7 @@ UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
 
     /* Mouse pointer shape state-change updaters: */
     connect(uisession(), SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
-    connect(this, SIGNAL(mouseStateChanged(int)), this, SLOT(sltMousePointerShapeChanged()));
+    connect(this, SIGNAL(sigStateChange(int)), this, SLOT(sltMousePointerShapeChanged()));
 
     /* Initialize: */
     sltMachineStateChanged();

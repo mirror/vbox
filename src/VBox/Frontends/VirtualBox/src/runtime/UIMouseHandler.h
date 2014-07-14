@@ -46,6 +46,11 @@ class UIMouseHandler : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about state-change. */
+    void sigStateChange(int iState);
+
 public:
 
     /* Factory functions to create/destroy mouse-handler: */
@@ -64,16 +69,11 @@ public:
     void setMouseIntegrationEnabled(bool fEnabled);
 
     /* Current mouse state: */
-    int mouseState() const;
+    int state() const;
 
 #ifdef Q_WS_X11
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 #endif /* Q_WS_X11 */
-
-signals:
-
-    /* Notifies listeners about mouse state-change: */
-    void mouseStateChanged(int iNewState);
 
 protected slots:
 
