@@ -92,6 +92,7 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/base64.h>
+#include <iprt/memsafer.h>
 
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/vmm.h>
@@ -4644,7 +4645,7 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
         cbKey = RTBase64DecodedSize(pszKeyEnc, NULL);
         if (cbKey != -1)
         {
-            uint8_t *pbKey = (uint8_t *)RTMemLockedAlloc(cbKey);
+            uint8_t *pbKey = (uint8_t *)RTMemSaferAllocZ(cbKey);
             if (pbKey)
             {
                 rc = RTBase64Decode(pszKeyEnc, pbKey, cbKey, NULL, NULL);

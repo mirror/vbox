@@ -55,7 +55,7 @@ class VMMDevMouseInterface;
 class DisplayMouseInterface;
 
 #include <iprt/uuid.h>
-#include <iprt/mem.h>
+#include <iprt/memsafer.h>
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vmm/pdmdrv.h>
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -584,8 +584,7 @@ public:
 
             ~SecretKey()
             {
-                RTMemWipeThoroughly(m_pbKey, m_cbKey, 3 /* cPasses */);
-                RTMemLockedFree(m_pbKey);
+                RTMemSaferFree(m_pbKey, m_cbKey);
                 m_cRefs = 0;
                 m_pbKey = NULL;
                 m_cbKey = 0;
