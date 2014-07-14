@@ -332,12 +332,17 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
 {
     PCGIMHV pcHv = &pVM->gim.s.u.Hv;
 
+    /*
+     * Save the Hyper-V SSM version.
+     */
+    int rc = SSMR3PutU32(pSSM, GIM_HV_SSM_VERSION);         AssertRCReturn(rc, rc);
+
     /** @todo Save per-VCPU data. */
 
     /*
      * Save per-VM MSRs.
      */
-    int rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);      AssertRCReturn(rc, rc);
+    rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
     rc = SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
     rc = SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
 
@@ -390,18 +395,24 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
  * @param   pSSM            Pointer to the SSM handle.
- * @param   uSSMVersion     The saved-state version.
+ * @param   uSSMVersion     The GIM saved-state version.
  */
 VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    /*
+     * Load the Hyper-V SSM version first.
+     */
+    uint32_t uHvSSMVersion;
+    int rc = SSMR3GetU32(pSSM, &uHvSSMVersion);             AssertRCReturn(rc, rc);
 
     /** @todo Load per-VCPU data. */
 
     /*
      * Load per-VM MSRs.
      */
-    int rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);      AssertRCReturn(rc, rc);
+    rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
     rc = SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
     rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
 
