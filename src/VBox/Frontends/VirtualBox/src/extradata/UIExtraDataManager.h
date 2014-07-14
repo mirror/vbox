@@ -363,8 +363,10 @@ public:
         /** Returns mini-toolbar @a alignment. */
         void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
 
-        /** Returns restricted Runtime UI status-bar indicators. */
+        /** Returns restricted Runtime UI status-bar indicator list. */
         QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID);
+        /** Defines restricted Runtime UI status-bar indicator @a list. */
+        void setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QString &strID);
 
 #ifdef Q_WS_MAC
         /** Mac OS X: Returns whether 'presentation mode' enabled. */

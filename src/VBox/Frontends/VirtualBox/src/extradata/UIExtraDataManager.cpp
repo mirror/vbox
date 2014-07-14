@@ -2820,6 +2820,17 @@ QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QSt
     return result;
 }
 
+void UIExtraDataManager::setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QString &strID)
+{
+    /* Parse passed list: */
+    QStringList data;
+    foreach (const IndicatorType &indicatorType, list)
+        data << gpConverter->toInternalString(indicatorType);
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_RestrictedStatusBarIndicators, data, strID);
+}
+
 #ifdef Q_WS_MAC
 bool UIExtraDataManager::presentationModeEnabled(const QString &strID)
 {
