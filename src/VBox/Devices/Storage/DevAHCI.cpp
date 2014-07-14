@@ -5430,10 +5430,11 @@ DECLINLINE(uint8_t) ahciGetTagQueued(uint8_t *pCmdFis)
  * Allocates memory for the given request using already allocated memory if possible.
  *
  * @returns Pointer to the memory or NULL on failure
+ * @param   pAhciPort   The AHCI port.
  * @param   pAhciReq    The request to allocate memory for.
  * @param   cb          The amount of memory to allocate.
  */
-static void *ahciReqMemAlloc(PAHCIREQ pAhciReq, size_t cb)
+static void *ahciReqMemAlloc(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cb)
 {
     if (pAhciReq->cbAlloc > cb)
     {
@@ -5442,10 +5443,14 @@ static void *ahciReqMemAlloc(PAHCIREQ pAhciReq, size_t cb)
     else if (pAhciReq->cbAlloc < cb)
     {
         if (pAhciReq->cbAlloc)
-            RTMemPageFree(pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+            pAhciPort->pDrvBlock->pfnIoBufFree(pAhciPort->pDrvBlock, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
 
+        pAhciReq->pvAlloc = NULL;
         pAhciReq->cbAlloc = RT_ALIGN_Z(cb, _4K);
-        pAhciReq->pvAlloc = RTMemPageAlloc(pAhciReq->cbAlloc);
+        int rc = pAhciPort->pDrvBlock->pfnIoBufAlloc(pAhciPort->pDrvBlock, pAhciReq->cbAlloc, &pAhciReq->pvAlloc);
+        if (RT_FAILURE(rc))
+            pAhciReq->pvAlloc = NULL;
+
         pAhciReq->cAllocTooMuch = 0;
         if (RT_UNLIKELY(!pAhciReq->pvAlloc))
             pAhciReq->cbAlloc = 0;
@@ -5458,15 +5463,21 @@ static void *ahciReqMemAlloc(PAHCIREQ pAhciReq, size_t cb)
  * Frees memory allocated for the given request.
  *
  * @returns nothing.
+ * @param   pAhciPort   The AHCI port.
  * @param   pAhciReq    The request.
+ * @param   fForceFree  Flag whether to force a free
  */
-static void ahciReqMemFree(PAHCIREQ pAhciReq)
+static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFree)
 {
-    if (pAhciReq->cAllocTooMuch >= AHCI_MAX_ALLOC_TOO_MUCH)
+    if (   pAhciReq->cAllocTooMuch >= AHCI_MAX_ALLOC_TOO_MUCH
+        || fForceFree)
     {
-        RTMemPageFree(pAhciReq->pvAlloc, pAhciReq->cbAlloc);
-        pAhciReq->cbAlloc = 0;
-        pAhciReq->cAllocTooMuch = 0;
+        if (pAhciReq->cbAlloc)
+        {
+            pAhciPort->pDrvBlock->pfnIoBufFree(pAhciPort->pDrvBlock, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+            pAhciReq->cbAlloc = 0;
+            pAhciReq->cAllocTooMuch = 0;
+        }
     }
 }
 
@@ -5580,24 +5591,24 @@ static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
  * Allocate I/O memory and copies the guest buffer for writes.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pAhciPort   The AHCI port.
  * @param   pAhciReq    The request state.
  * @param   cbTransfer  Amount of bytes to allocate.
  */
-static int ahciIoBufAllocate(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, size_t cbTransfer)
+static int ahciIoBufAllocate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbTransfer)
 {
     AssertMsg(   pAhciReq->enmTxDir == AHCITXDIR_READ
               || pAhciReq->enmTxDir == AHCITXDIR_WRITE,
               ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
-    pAhciReq->u.Io.DataSeg.pvSeg = ahciReqMemAlloc(pAhciReq, cbTransfer);
+    pAhciReq->u.Io.DataSeg.pvSeg = ahciReqMemAlloc(pAhciPort, pAhciReq, cbTransfer);
     if (!pAhciReq->u.Io.DataSeg.pvSeg)
         return VERR_NO_MEMORY;
 
     pAhciReq->u.Io.DataSeg.cbSeg = cbTransfer;
     if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
     {
-        ahciCopyFromPrdtl(pDevIns, pAhciReq,
+        ahciCopyFromPrdtl(pAhciPort->pDevInsR3, pAhciReq,
                           pAhciReq->u.Io.DataSeg.pvSeg,
                           cbTransfer);
     }
@@ -5608,12 +5619,12 @@ static int ahciIoBufAllocate(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, size_t cbTra
  * Frees the I/O memory of the given request and updates the guest buffer if necessary.
  *
  * @returns nothing.
- * @param   pDevIns      The device instance.
+ * @param   pAhciPort    The AHCI port.
  * @param   pAhciReq     The request state.
  * @param   fCopyToGuest Flag whether to update the guest buffer if necessary.
  *                       Nothing is copied if false even if the request was a read.
  */
-static void ahciIoBufFree(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
+static void ahciIoBufFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq,
                           bool fCopyToGuest)
 {
     AssertMsg(   pAhciReq->enmTxDir == AHCITXDIR_READ
@@ -5631,17 +5642,17 @@ static void ahciIoBufFree(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
 
             if (RT_SUCCESS(rc))
             {
-                pAhciReq->cbTransfer = ahciCopyToPrdtl(pDevIns, pAhciReq, pv, cb);
+                pAhciReq->cbTransfer = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, pv, cb);
                 RTMemFree(pv);
             }
         }
         else
-            ahciCopyToPrdtl(pDevIns, pAhciReq,
+            ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq,
                             pAhciReq->u.Io.DataSeg.pvSeg,
                             pAhciReq->u.Io.DataSeg.cbSeg);
     }
 
-    ahciReqMemFree(pAhciReq);
+    ahciReqMemFree(pAhciPort, pAhciReq, false /* fForceFree */);
     pAhciReq->u.Io.DataSeg.pvSeg = NULL;
     pAhciReq->u.Io.DataSeg.cbSeg = 0;
 }
@@ -5955,13 +5966,13 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     {
         if (pAhciReq->enmTxDir == AHCITXDIR_READ)
         {
-            ahciIoBufFree(pAhciPort->pDevInsR3, pAhciReq, true /* fCopyToGuest */);
+            ahciIoBufFree(pAhciPort, pAhciReq, true /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fReading = 0;
         }
         else if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
         {
-            ahciIoBufFree(pAhciPort->pDevInsR3, pAhciReq, false /* fCopyToGuest */);
+            ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fWriting = 0;
         }
@@ -6076,7 +6087,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
         if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
             ahciTrimRangesDestroy(pAhciReq);
         else if (pAhciReq->enmTxDir != AHCITXDIR_FLUSH)
-            ahciIoBufFree(pAhciPort->pDevInsR3, pAhciReq, false /* fCopyToGuest */);
+            ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
 
         /* Leave a log message about the canceled request. */
         if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
@@ -6367,7 +6378,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                             if (pTaskErr->enmTxDir == AHCITXDIR_TRIM)
                                 ahciTrimRangesDestroy(pTaskErr);
                             else if (pTaskErr->enmTxDir != AHCITXDIR_FLUSH)
-                                ahciIoBufFree(pAhciPort->pDevInsR3, pTaskErr, false /* fCopyToGuest */);
+                                ahciIoBufFree(pAhciPort, pTaskErr, false /* fCopyToGuest */);
 
                             /* Finally free the error task state structure because it is completely unused now. */
                             RTMemFree(pTaskErr);
@@ -6698,7 +6709,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     {
                         STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
 
-                        rc = ahciIoBufAllocate(pAhciPort->pDevInsR3, pAhciReq, pAhciReq->cbTransfer);
+                        rc = ahciIoBufAllocate(pAhciPort, pAhciReq, pAhciReq->cbTransfer);
                         if (RT_FAILURE(rc))
                             AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
                     }
@@ -8048,6 +8059,7 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
             for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
                 if (pAhciPort->aCachedTasks[i])
                 {
+                    ahciReqMemFree(pAhciPort, pAhciPort->aCachedTasks[i], true /* fForceFree */);
                     RTMemFree(pAhciPort->aCachedTasks[i]);
                     pAhciPort->aCachedTasks[i] = NULL;
                 }
