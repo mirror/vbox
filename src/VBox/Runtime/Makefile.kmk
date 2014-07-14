@@ -733,7 +733,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/semmutex-win.cpp \
 	r3/win/symlink-win.cpp \
 	r3/win/rtFileNativeSetAttributes-win.cpp \
-	r3/win/rtmemlocked-win.cpp \
 	r3/win/thread-win.cpp \
 	r3/win/thread2-win.cpp \
 	r3/win/time-win.cpp \
@@ -785,7 +784,6 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtmemlocked-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/errvars-posix.cpp \
@@ -956,7 +954,6 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtmemlocked-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pipe-posix.cpp \
@@ -1022,7 +1019,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtmemlocked-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -1081,7 +1077,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtmemlocked-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -1160,7 +1155,6 @@ RuntimeR3_SOURCES.haiku = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtmemlocked-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
