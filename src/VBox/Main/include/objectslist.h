@@ -124,15 +124,23 @@ public:
      */
     void uninitAll()
     {
+        /* The implementation differs from the high level description, because
+         * it isn't safe to hold any locks when invoking uninit() methods. It
+         * leads to incorrect lock order (first lock, then the Caller related
+         * event semaphore) and thus deadlocks. Dropping the lock is vital,
+         * and means we can't rely on iterators while not holding the lock. */
         AutoWriteLock al(m_lock COMMA_LOCKVAL_SRC_POS);
-        for (iterator it = m_ll.begin();
-             it != m_ll.end();
-             ++it)
+        while (!m_ll.empty())
         {
-            MyType &q = *it;
+            /* Need a copy of the element, have to delete the entry before
+             * dropping the lock, otherwise someone else might mess with the
+             * list in the mean time, leading to erratic behavior. */
+            MyType q = m_ll.front();
+            m_ll.pop_front();
+            al.release();
             q->uninit();
+            al.acquire();
         }
-        m_ll.clear();
     }
 
     /**
