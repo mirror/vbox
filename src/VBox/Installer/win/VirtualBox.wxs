@@ -444,7 +444,7 @@
         <LaunchConditions After="AppSearch" />
 
         <!-- First install the new version and then remove the old version. This is more efficient -->
-        <RemoveExistingProducts After="InstallValidate">PREVIOUSVERSIONSINSTALLED</RemoveExistingProducts>
+        <RemoveExistingProducts Before="InstallValidate" />
 
         <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
         <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
