@@ -24,7 +24,7 @@
 /**
  * GIM Hyper-V saved-state version.
  */
-#define GIM_HV_SSM_VERSION                 0x1
+#define GIM_HV_SSM_VERSION                 UINT32_C(1)
 
 /** @name Hyper-V base feature identification.
  * Features based on current partition privileges (per-VM).
