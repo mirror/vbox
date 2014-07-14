@@ -43,7 +43,7 @@ typedef struct GIM
     bool                             fEnabled;
     /** The provider that is active for this VM. */
     GIMPROVIDERID                    enmProviderId;
-    /** The interface version. */
+    /** The interface implementation version. */
     uint32_t                         u32Version;
 
     /** Pointer to the GIM device - ring-3 context. */

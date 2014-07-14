@@ -63,20 +63,24 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
                 case GIMOSID_OSX_64:
                     uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482. */
                     break;
+
                 case GIMOSID_OSX_106:
                 case GIMOSID_OSX_106_64:
                     uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
                     break;
+
                 case GIMOSID_OSX_107:
                 case GIMOSID_OSX_107_64:
                     /** @todo Figure out what is required here. */
                     uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
                     break;
+
                 case GIMOSID_OSX_108:
                 case GIMOSID_OSX_108_64:
                     /** @todo Figure out what is required here. */
                     uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
                     break;
+
                 case GIMOSID_OSX_109:
                 case GIMOSID_OSX_109_64:
                     /** @todo Figure out what is required here. */
@@ -90,7 +94,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
             if (uMaxIntelFamilyModelStep != UINT32_MAX)
             {
                 CPUMCPUIDLEAF Leaf;
-                int rc = CPUMR3CpuIdGetLeaf(pVM, &Leaf, 1, 0);
+                int rc = CPUMR3CpuIdGetLeaf(pVM, &Leaf, 1, 0 /* uSubLeaf */);
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t uCurIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(ASMGetCpuStepping(Leaf.uEax),
@@ -100,10 +104,10 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
                     if (uMaxIntelFamilyModelStep < uCurIntelFamilyModelStep)
                     {
                         uint32_t uNew = Leaf.uEax & UINT32_C(0xf0003000);
-                        uNew |=  RT_BYTE1(uMaxIntelFamilyModelStep) & 0xf;       /* stepping */
-                        uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) & 0xf) << 4; /* 4 low model bits */
-                        uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) >> 4) << 16; /* 4 high model bits */
-                        uNew |= (RT_BYTE3(uMaxIntelFamilyModelStep) & 0xf) << 8; /* 4 low family bits */
+                        uNew |=  RT_BYTE1(uMaxIntelFamilyModelStep) & 0xf;          /* stepping */
+                        uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) & 0xf) << 4;    /* 4 low model bits */
+                        uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) >> 4) << 16;    /* 4 high model bits */
+                        uNew |= (RT_BYTE3(uMaxIntelFamilyModelStep) & 0xf) << 8;    /* 4 low family bits */
                         /* 8 high family bits, Intel's suggested calculation. */
                         if (RT_BYTE3(uMaxIntelFamilyModelStep) > 0xf)
                         {
@@ -132,8 +136,6 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
         }
     }
 
-    /** @todo Register CPUID leaves, MSR ranges with CPUM. */
-    /** -XXX_ CPUMGetGuestCpuId CPUMGetGuestCpuVendor CPUMR3CpuIdInsert  */
     return VINF_SUCCESS;
 }
 

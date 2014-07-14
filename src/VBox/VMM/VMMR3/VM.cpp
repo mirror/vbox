@@ -985,8 +985,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                 rc = DBGFR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    /* GIM must be init'd before PDM, DevGIM construction may
-                                                                       require GIM provider to be setup. */
+                                                                    /* GIM must be init'd before PDM, gimdevR3Construct()
+                                                                       requires GIM provider to be setup. */
                                                                     rc = GIMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
