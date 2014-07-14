@@ -35,8 +35,10 @@
 
 /**
  * The Dll main entry point.
+ * @remarks The dllexport is for forcing the linker to generate an import
+ *          library, so the the build system doesn't get confused.
  */
-extern "C"
+extern "C" __declspec(dllexport)
 BOOL __stdcall DllMainEntrypoint(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
     switch (dwReason)
