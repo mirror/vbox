@@ -109,8 +109,7 @@ static void rtBase64Sanity(void)
                    || (     u8 == BASE64_PAD
                        &&   i  == '=')
                    || (     u8 == BASE64_SPACE
-                       &&   (   RT_C_IS_SPACE(i)
-                             || (i == '\r'))) /* Carriage return is handled as a space character as well. */
+                       &&   RT_C_IS_SPACE(i))
                    || (     u8 < 64
                        &&   (unsigned)g_szValToChar[u8] == i));
         }
