@@ -164,6 +164,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                            "%s modifyvm %s        <uuid|vmname>\n"
                      "                            [--name <name>]\n"
                      "                            [--groups <group>, ...]\n"
+                     "                            [--description <desc>]\n"
                      "                            [--ostype <ostype>]\n"
                      "                            [--iconfile <filename>]\n"
                      "                            [--memory <memorysize in MB>]\n"
