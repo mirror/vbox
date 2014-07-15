@@ -6,7 +6,7 @@
     <sect1 id="ExperimentalFeatures">
         <title>Fonctions expérimentales</title>
         <para>Certaines fonctions de VirtualBox sont étiquetées comme étant
-        expérimentales. De telles fonctions sont offertes sur une base "as-is"
+        expérimentales. De telles fonctions sont offertes sur une base "tel quel"
         et elles ne sont pas formellement supportées. Cependant, des retours
         et les suggestions sur ces fonctions sont bienvenus. Voici une liste complète
         des fonctions expérimentales&#xA0;:</para>
@@ -25,7 +25,7 @@
                 PCI pass-through (hôtes Linux uniquement)
             </listitem>
             <listitem>
-                Invités Mac OS X (hôtes hosts uniquement)
+                Invités Mac OS X (hôtes Mac uniquement)
             </listitem>
             <listitem>
                 Émulation du chipset ICH9
@@ -69,7 +69,7 @@
                 qui n'incluent pas le support de l'optimisation matérielle APIC
                 virtuel. Cela concerne surtout les invités Windows et Solaris,
                 mais probablement également certaines révisions du noyau Linux.
-                Corrigé partiellement dans la 3.0.12 pours les invités Windows NT,
+                Corrigé partiellement dans la 3.0.12 pour les invités Windows NT,
                 2000, XP et 2003 32 bits. Exige l'installation des suppléments
                 invité 3.0.12 ou supérieur.</para>
           </listitem>
@@ -77,7 +77,7 @@
         </listitem>
     
         <listitem>
-          <para><emphasis role="bold">NX (empêche l'exécution et l'exécution de
+          <para><emphasis role="bold">NX (ne s'éxécute pas ou empêche le traitement de
           données)</emphasis> ne fonctionne que sur les invités en fonction
           sur des hôtes 64 bits ou sur des hôtes 32 bits ayant activé PAE et la
           virtualisation matérielle doit être activée.</para>
@@ -117,7 +117,7 @@
         <listitem>
           <para><emphasis role="bold">La compression d'images de disques virtuels
           est limitée aux fichiers VDI.</emphasis> La commande <code>VBoxManage modifyhd --compact</code>
-          n'est actuellement implémentée que les fichiers VDi. Pour l'instant,
+          n'est actuellement implémentée que pour les fichiers VDi. Pour l'instant,
           la seule façon d'optimiser la taille des images de disques virtuels
           dans d'autres formats (VMDK, VHD) est de cloner l'image puis d'utiliser
           l'image clonée dans la configuration de la VM.</para>
@@ -126,8 +126,8 @@
         <listitem>
           <para><emphasis role="bold">import/export d'OVF&#xA0;:</emphasis><itemizedlist>
               <listitem>
-                <para>La localisation des OVF (plusieurs langues dans un fichier
-                OVF) n'est pas encoresupportée.</para>
+                <para>La particularisation des OVF (plusieurs langues dans un fichier
+                OVF) n'est pas encore supportée.</para>
               </listitem>
     
               <listitem>
@@ -136,7 +136,7 @@
               </listitem>
     
               <listitem>
-                <para>Les documents de venvironnement OVF, y compris leurs
+                <para>Les documents d'environnement OVF, y compris leurs
                 sections de propriétés et la configuration d'applicatifs avec des
                 images ISO, ne sont pas encore supportés.</para>
               </listitem>
@@ -152,7 +152,7 @@
           <para>Ni le <emphasis role="bold">mode échelonné</emphasis> ni <emphasis
           role="bold">le mode transparent</emphasis> ne fonctionnent bien avec les
           invités qui utilisent les fonctions 3D d'OpenGL (telles que celles 
-          avec les gets:nnnaires de fenêtres ayant activé compiz).</para>
+          avec les gestionnaires de fenêtres ayant activé compiz).</para>
         </listitem>
     
         <listitem>
@@ -253,7 +253,7 @@
     
               <listitem>
                 <para>Le passthrough de la webcam hôte se limite aux résolutions
-                640x480 avec 20 images par secondes à cause de ;imites de l'API
+                640x480 avec 20 images par secondes à cause de limites de l'API
                 V4L2 de Solaris. Il se peut que cela change dans une future
                 version de Solaris.</para>
               </listitem>
@@ -267,7 +267,7 @@
               </listitem>
     
               <listitem>
-                <para>Le rùseau bridgé basé sur Crossbow sur les hôtes Solaris
+                <para>Le réseau bridgé basé sur Crossbow sur les hôtes Solaris
                 ne fonctionne pas directement avec les liens agrégés. Cependant,
                 vous pouvez créer à la main un VNIC (en utilisant
                 <computeroutput>dladm</computeroutput>) via le lien agrégé et
@@ -279,8 +279,8 @@
         
         <listitem>
           <para><emphasis role="bold">Suppléments invité de la version 4.1, 4.1.2 et 4.1.4 pour Windows</emphasis>
-          Il se peut que le pilote graphique WDDM de VirtualBox peut être 
-          installé et gardé dans le sysstème invité après la désinstallation des
+          Il se peut que le pilote graphique WDDM de VirtualBox ait été 
+          installé et soit gardé dans le système invité après la désinstallation des
           suppléments invité. Cela vient d'un bogue du désinstalleur des suppléments
           invité. 
           
@@ -308,7 +308,7 @@
           <para>Ni le pilote <emphasis>virtio</emphasis> ni <emphasis>Intel PRO/1000
             </emphasis> des <emphasis role="bold">invités Windows XP</emphasis> 
             ne supportent la segmentation hors charge (offloading). Donc,
-            les invités Windows XP unt des vitesses de transmission plus lentes
+            les invités Windows XP ont des vitesses de transmission plus lentes
             que d'autres types d'invités. Reportez-vous à l'article 842264
             du MS Knowledge base pour des informations supplémentaires.</para>
         </listitem>

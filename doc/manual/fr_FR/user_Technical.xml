@@ -7,14 +7,14 @@
   <para>Le contenu de ce chapitre n'est pas indispensable pour utiliser
   VirtualBox avec succès. Nous indiquons ce qui suit à titre informatif pour
   ceux qui sont plus familiers de la technologie et de l'architecture informatique
-  et qui veulent en savoir davantage sur la manière fonctionne VirtualBox "sous
-  le capeau".</para>
+  et qui veulent en savoir davantage sur la manière dont fonctionne VirtualBox "sous
+  le capot".</para>
 
   <sect1 id="vboxconfigdata">
     <title>Où VirtualBox stocke ses fichiers</title>
 
     <para>Dans VirtualBox, une machine virtuelle et ses paramètres sont
-    déscrits dans un fichier de paramètres de la machine virtuelle, au format
+    décrits dans un fichier de paramètres de la machine virtuelle, au format
         XML. De plus, la plupart des machines virtuelles ont un ou plusieurs
         disques durs qui leur sont en général présentés par des images de disque
         (comme au format VDI). L'endroit où sont stockés tous ces fichiers
@@ -79,7 +79,7 @@
       vous commencez à travailler avec la VM, des fichiers supplémentaires
       apparaîtront&#xA0;: vous trouverez des fichiers journaux dans un
       sous-dossier qui s'appelle 
-      <computeroutput>Logs</computeroutput>, and une fois que vous aurez pris
+      <computeroutput>Logs</computeroutput>, et une fois que vous aurez pris
       des instantanés, ils apparaîtront dans un sous-dossier
       <computeroutput>Snapshots</computeroutput>. Pour chaque VM, vous pouvez
       modifier l'emplacement de son dossier d'instantanés dans les paramètres
@@ -98,11 +98,11 @@
 
       <para>Si vous avez mis à jour vers VirtualBox 4.0 en partant d'une ancienne
       version de VirtualBox, vous aurez probablement vos fichiers de paramètres
-      et les disques selon l'organisation du szstème de fichiers d'alors.</para>
+      et les disques selon l'organisation du système de fichiers d'alors.</para>
       
-      <para>Avant la version 4.0, VirtualBox séparait les fichiers des
-      paramètres de la machine des images de disque virtuel. Les fichiers de
-      paramétrages de la machine avaient une extension
+      <para>Avant la version 4.0, VirtualBox séparait les fichiers de
+      paramètrage de la machine des images de disque virtuel. Les fichiers de
+      paramétrage de la machine avaient une extension
       <computeroutput>.xml</computeroutput> et se trouvaient dans un dossier
       appelé "Machines" dans le répertoire de configuration global de VirtualBox
       (voir la prochaine section). Donc, par exemple, sur Linux, il s'agissait
@@ -128,7 +128,7 @@
             de disque (qui se trouvaient à des endroits différents), mais
             il fallait en plus copier méticuleusement les entrées du disque
             dur à partir du XML du registre de médias global, ce qui était
-            presqu'impossible si la machine avait des instantanés et, donc, des
+            presque impossible si la machine avait des instantanés et, donc, des
             images de différenciation.</para>
           </listitem>
 
@@ -142,7 +142,7 @@
         </orderedlist></para>
 
       <para>Si les nouvelles VMs créées avec VirtualBox 4.0 ou supérieur 
-      respecteront la nouvelle organisation, pour une compatibilité maximum, les
+      respectent la nouvelle organisation, pour une compatibilité maximum, les
       anciennes VMs <emphasis>ne sont pas</emphasis> converties en nouvelle
       organisation. Sans cela, les paramètres de la machine seraient immanquablement
       cassés si l'utilisateur rétrogradait de la 4.0 à une version plus ancienne
@@ -153,7 +153,7 @@
       <title>Données globales de configuration</title>
 
       <para>Outre les fichiers des machines virtuelles, VirtualBox gère des
-      données globales de configuration. Sur Linux et Solaris, depuis as of VirtualBox 4.3
+      données globales de configuration. Sur Linux et Solaris, depuis VirtualBox 4.3
       elles se trouvent dans le répertoire caché <computeroutput>$HOME/.config/VirtualBox</computeroutput>
       même si  <computeroutput>$HOME/.VirtualBox</computeroutput> sera utilisé
       s'il existe pour rester compatible avec les anciennes versions&#xA0;; sur
@@ -171,11 +171,11 @@
       de naviguer entre plusieurs configurations de VirtualBox.</para>
       
       <para>VirtualBox stocke essentiellement dans ce répertoire son fichier
-      de paramètres globaux, un autre fichier XMK appelé 
+      de paramètres globaux, un autre fichier XML appelé 
       <computeroutput>VirtualBox.xml</computeroutput>. Cela comprend des
        options de configuration globales et la liste des machines virtuelles
        enregistrées avec des pointeurs vers leurs fichiers de paramètres XML.
-       Ni l'emplacement du fichier ni son répertoire n'ont changé avec
+       (Ni l'emplacement du fichier ni son répertoire n'ont changé avec
       VirtualBox 4.0.)</para>
 
       <para>Avant VirtualBox 4.0, tous les médias virtuels (fichiers images
@@ -183,8 +183,8 @@
       fichier de paramètres. Par compatibilité, ce registre de médias existe
       toujours si vous mettez à jour VirtualBox et s'il y a des médias
       issus de machines créées avec une version inférieure à 4.0. Si vous
-      n'avez pas de telles machines, ce ne sera pas des retistres de médias 
-     globaux&#xA0;; avec VirtualBox 4.0, chaque fichier XML d'une machine a
+      n'avez pas de telles machines, il n'y aura pas de registre de médias 
+     global&#xA0;; avec VirtualBox 4.0, chaque fichier XML d'une machine a
      son propre registre de médias.</para>
 
       <para>De même, avant VirtualBox 4.0, le dossier "Machines" par défaut
@@ -196,10 +196,13 @@
     </sect2>
 
     <sect2>
-      <title>Résumé des des modifications de la configuration de 4.0</title>
+      <title>Résumé des modifications de la configuration de 4.0</title>
 
       <table>
-        <title>ignoreme</title>
+        <title>Changements de configuration en 4.0 et ultérieure</title>
+
+      <para>La table suivante donne un bref apperçu des changements de configuration
+      entre les versions anciennes et la 4.0 ou ultérieure&#xA0;:</para>
 
         <tgroup cols="3">
           <tbody>
@@ -225,7 +228,7 @@
 
               <entry><computeroutput>$HOME/.VirtualBox/HardDisks</computeroutput></entry>
 
-              <entry>In each machine's folder</entry>
+              <entry>Dans chaque dossier de machine</entry>
             </row>
 
             <row>
@@ -276,8 +279,8 @@
       que si les paramètres actuels ne peuvent pas être exprimés dans l'ancien
       format, par exemple parce que vous avez activé une fonction qui n'était
       pas présente dans l'ancienne version de VirtualBox.<footnote>
-          <para>Par exemple, avant VirtualBox 3.1, il n'était possible que d'activer
-          ou de désactiver un seul lecteur DVD dans une machine virtuelle.
+          <para>Par exemple, avant VirtualBox 3.1, il était possible d'activer
+          /désactiver qu'un seul lecteur DVD dans une machine virtuelle.
           S'il a été activé, cela serait toujours possible sur le deuxième
           maître du contrôleur IDE. Avec VirtualBox 3.1, on peut connecter
           des lecteurs DVD à un slot de son choix sur un contrôleur de son choix,
@@ -316,9 +319,9 @@
           est lancé automatiquement par le processus du premier client
           VirtualBox (la GUI, <computeroutput>VBoxManage</computeroutput>,
           <computeroutput>VBoxHeadless</computeroutput>, le service web ou
-          autres) et il s'arrête peu de temps après que le dernier client a
+          autre) et il s'arrête peu de temps après que le dernier client a
           quitté. Le service est responsable d'archiver, maintenir l'état de
-          toutes les VMS et de la communication entre les composants de VirtualBox.
+          toutes les VMs et de la communication entre les composants de VirtualBox.
           Cette communication est implémentée via COM/XPCOM.<note>
               <para>Quand nous parlons de "clients" ici, nous voulons dire
               les clients locaux d'un processus serveur
@@ -361,7 +364,7 @@
     disponibles. La liste complète comprise dans VirtualBox est&#xA0;:<orderedlist>
         <listitem>
           <para><computeroutput>VirtualBox</computeroutput>, l'interface Qt
-          implémentant le gestionnaire et les VMS en fonction&#xA0;;</para>
+          implémentant le gestionnaire et les VMs en fonction&#xA0;;</para>
         </listitem>
 
         <listitem>
@@ -378,7 +381,7 @@
 
         <listitem>
           <para><computeroutput>VBoxHeadless</computeroutput>, une interface de
-          VM qui ne fournit pas directement de sortie graphiqke et d'entrée
+          VM qui ne fournit pas directement de sortie graphique et d'entrée
           clavier/souris, 
           mais qui permet une redirection par VirtualBox Remote Desktop Extension;
           voir <xref linkend="vboxheadless" />.</para>
@@ -398,7 +401,7 @@
         </listitem>
       </orderedlist></para>
 
-    <para>En interne, VirtualBox consiste beaucoup plus d'interfaces
+    <para>En interne, VirtualBox comprend beaucoup plus d'interfaces
     séparées. Vous pourriez les rencontrer en analysant les messages d'erreur
     internes ou les fichiers journaux. Parmi elles, on compte&#xA0;:</para>
 
@@ -436,7 +439,7 @@
 
       <listitem>
         <para>PDM (Pluggable Device Manager), une interface abstraite entre le
-        VMM et les périphériques émulés qui sépare lese implémentations du
+        VMM et les périphériques émulés qui sépare les implémentations du
         périphérique de l'intérieur du VMM et qui facilite l'ajout de nouveaux
         périphériques émulés. Par PDM, des développeurs tiers peuvent ajouter
         de nouveaux périphériques virtuels à VirtualBox, sans devoir modifier
@@ -496,7 +499,7 @@
       </listitem>
 
       <listitem>
-        <para>Le composant "Main" est spécial&#xA0;: il croise tous les bits
+        <para>Le composant "Main" est spécial&#xA0;: il lie tous les modules
         ci-dessus et c'est la seule API publique fournie par VirtualBox. Tous
         les processus clients listés ci-dessus n'utilisent que cettte API et
         n'accèdent jamais directement aux composants de l'hyperviseur. Il s'en
@@ -524,7 +527,7 @@
     requêtes vers ce que vous avez configuré comme étant le disque dur virtuel
     de la machine virtuelle -- en principe, un fichier image sur votre hôte.</para>
 
-    <para>Malheureusement, la plateforme x86 n'a jamais été conçue pour pour
+    <para>Malheureusement, la plateforme x86 n'a jamais été conçue pour
     être virtualisée. La détection des
     situations où VirtualBox doit contrôler le code invité qui s'exécute, comme
     décrit ci-dessus, est difficile. Il existe deux façons de faire cela&#xA0;:<itemizedlist>
@@ -542,7 +545,7 @@
           role="bold">AMD-V</emphasis>. Le support d'Intel et d'AMD de la
           virtualisation est très différent dans le détail, mais pas si différent
           dans le principe.<note>
-              <para>Sur de nombreux szstèmes, les fonctions de virtualisation
+              <para>Sur de nombreux systèmes, les fonctions de virtualisation
               matérielle doivent être préalablement activées dans le BIOS avant
               de pouvoir être utilisées par VirtualBox.</para>
             </note></para>
@@ -595,7 +598,7 @@
       une petite perte de performances sera inévitable si vous mélangez des
       VMs avec virtualisation VT-x et logicielle. Nous recommandons de ne pas
       mélanger les modes de virtualisation si la performance maximum et
-      une faible overhead sont essentiels. Cela <emphasis>ne s'applique pas</emphasis>
+      une faible surcharge (overhead) sont essentiels. Cela <emphasis>ne s'applique pas</emphasis>
       à AMD-V.</para>
     </warning>
   </sect1>
@@ -608,7 +611,7 @@
     complexe car l'architecture du processeur n'a pas été conçue pour être
      virtualisée. On peut résoudre en général les problèmes, mais au prix de
     performances réduites. Ainsi, il existe un conflit constant entre les
-    performances de virtualisation et et son soin.</para>
+    performances de virtualisation et la précision.</para>
 
     <para>Le jeu d'instructions x86 a été conçu au départ dans les années 1970 et
     subi des modifications significatives avec l'ajout d'un mode protégé dans
@@ -616,7 +619,7 @@
     l'Intel 386 et l'architecture 32 bits. Alors que le 386 avait un
     support de virtualisation vraiment limité pour les opérations en mode réel,
     (le mode V86, utilisé par la "DOS Box" de Windows 3.x et d'OS/2 2.x), aucun
-    pport n'existait pour virtualiser toute l'architecture.</para>
+    port n'existait pour virtualiser toute l'architecture.</para>
 
     <para>En théorie, la virtualisation logicielle n'est pas complexe en soi. 
     Outre les quatre niveaux de privilèges ("rings") fournis par le matériel
@@ -654,7 +657,7 @@
     x86 standards, mais cela ne peut marcher que si l'OS invité peut être
     modifié, ce qui n'est évidemment pas toujours le cas.</para>
 
-    <para>VirtualBox choisit une approche différente. Quand uo démarre une
+    <para>VirtualBox choisit une approche différente. Quand on démarre une
     machine virtuelle par son pilote noyau du support ring-0, VirtualBox a
     réglé le système hôte pour qu'il puisse lancer nativement la plupart du
     code invité, mais il s'insère lui-même "en bas" de l'image. Il peut alors
@@ -669,7 +672,7 @@
     <para><itemizedlist>
         <listitem>
           <para>Le code invité ring 3 s'exécute sans modifications, à pleine
-          vitesse, autant que possible. Le nombre de fautes sera généralement
+          vitesse, autant que possible. Le nombre d'erreurs sera généralement
           faible (sauf si l'invité autorise l'E/S du port depuis ring 3, 
           chose que nous ne pouvons pas faire car nous ne voulons pas que
           l'invité puisse accéder aux ports réels). On parle aussi de "mode brut",
@@ -677,7 +680,7 @@
         </listitem>
 
         <listitem>
-          <para>Mour le code invité en ring 0, VirtualBox utilise une astuce
+          <para>Pour le code invité en ring 0, VirtualBox utilise une astuce
           savoureuse&#xA0;: il reconfigure l'invité pour que son code ring-0
           se lance plutôt en ring 1 (ce qui n'est en principe pas utilisé sur les
           systèmes d'exploitation x86). Il s'en suit que lorsque le code ring-0
@@ -723,7 +726,7 @@
           l'architecture x86 qui n'ont jamais été corrigés. Certaines instructions
           qui <emphasis>planteraient</emphasis> même en ring 1 ne le font pas.
           Cela concerne par exemple les paires d'instructions LGDT/SGDT, LIDT/SIDT,
-          ou POPF/PUSHF. Alors que l'opçration "load" est privilégiée et peut
+          ou POPF/PUSHF. Alors que l'opération "load" est privilégiée et peut
           donc planter, l'instruction "store" réussit toujours. Si l'invité est
           autorisé à les exécuter, il verra l'état réel du PC et pas celui
           virtualisé. L'instruction CPUID a également le même problème.</para>
@@ -754,9 +757,9 @@
         <listitem>
           <para>Certaines ressources doivent (et peuvent) être neutralisées par
           l'hyperviseur, mais l'accès est si fréquent que cela crée une perte
-          significative de performances. Un exemple réside dans le registre
+          significative de performance. Un exemple réside dans le registre
           TPR (Task Priority) en mode 32 bits. Les accès à ce registre doivent
-          être bloqués par l'hyperviseur, mais certains szstèmes d'exploitation
+          être bloqués par l'hyperviseur, mais certains systèmes d'exploitation
           invités (en particulier Windows et  Solaris) écrivent très souvent
           dans ce registre, ce qui porte une atteinte certaine aux performances
           de virtualisation.</para>
@@ -775,12 +778,12 @@
     mémoire de l'hyperviseur, où un générateur intégré a mis une implémentation
     plus convenable. En réalité, c'est une tâche très complexe car il existe
     de nombreuses situations compliquées à trouver et à gérer correctement. Donc,
-    vu son actuelle complexité, vous pourriez trouver que PATM est un recompilateur
-    avancé <emphasis>in-situ</emphasis> recompiler.</para>
+    vu son actuelle complexité, on pourrait dire que PATM est un recompilateur
+    avancé <emphasis>in-situ</emphasis>.</para>
 
     <para>De plus, à chaque fois qu'une erreur survient, VirtualBox analyse
     le code problématique pour déterminer s'il est possible de le corriger afin
-    de  l'empêcher de provoquer davantage futures d'erreurs. Cette approche
+    de  l'empêcher de provoquer davantage de futures erreurs. Cette approche
     fonctionne bien en pratique et améliore de façon drastique les performances
     de la virtualisation logicielle.</para>
   </sect1>
@@ -811,8 +814,8 @@
         </listitem>
       </itemizedlist></para>
 
-    <para>Le passage du mode racine au mode non racine s'appelle "l'entré1 VM",
-    celui en sens invers s'appelle "Quitter VM". Le VMCS inclut une zone d'état
+    <para>Le passage du mode racine au mode non racine s'appelle "l'entrée VM",
+    celui en sens inverse s'appelle "Quitter VM". Le VMCS inclut une zone d'état
     invité et hôte sauvegardée/restaurée à chaque entrée et sortie en VM.
     Surtout, les VMMS contrôlent les opérations de l'invité qui feront quitter
     la VM.</para>
@@ -830,8 +833,8 @@
     le VMCS contient des informations sur les raisons de la sortie, ainsi que,
     souvent, des détails environnants. Par exemple, si une écriture dans le
     registre CR0 fait quitter, l'instruction en cause est enregistrée, ainsi
-    que le fait qu'un accès en écriture sur le registre de contrôle a prurnqué
-    la sortie, et des informations sur la le registre source et destination.
+    que le fait qu'un accès en écriture sur le registre de contrôle a provoqué
+    la sortie, ainsi que les informations sur le registre source et destination.
     L'hyperviseur peut ainsi gérer efficacement la  condition sans avoir besoin
     de techniques avancées telles que CSAM et PATM décrits ci-dessus.</para>
 
@@ -847,7 +850,7 @@
     de périphérique.</para>
 
     <para>La plus grosse différence entre VT-x et AMD-V est qu'AMD-V fournit
-    en environnement de virtualisation plus complet. VT-x exige que le code
+    un environnement de virtualisation plus complet. VT-x exige que le code
     non-racine VMX s'exécute en mode pagination activée, ce qui rejette la
     virtualisation matérielle de logiciels dont le code est en mode réel et en
     mode protégé non paginé. Cela n'inclut en général que les firmwares et les
@@ -855,52 +858,52 @@
     avec VT-x. AMD-V n'a pas cette restriction.</para>
 
     <para>Bien entendu, la virtualisation matérielle n'est pas parfaite. Par
-    rapport à la virtualisation logicielle, la charge des fins des VMs est
+    rapport à la virtualisation logicielle, la surcharge (overherad) des sorties des VMs est
     relativement élevée. Cela pose des problèmes aux périphériques dont l'émulation
-    requiet un grand nombre de blocages (trass). Par exemple, avec le périphérique
+    requiet un grand nombre de captures (traps). Par exemple, avec le périphérique
     VGA en mode 16 couleurs, mon seulement tous les accès au port en E/S, mais
     aussi tous les accès à la mémoire tampon (framebuffer) doivent être 
-    bloqués.</para>
+    capturés.</para>
   </sect1>
 
-  <sect1 id="nestedpaging">
-    <title>Vagination nestée et VPIDs</title>
+  <sect1 id="imbriquéepaging">
+    <title>Pagination imbriquée (imbriquée) et VPIDs</title>
 
     <para>En plus de la virtualisation matérielle "brute", votre processeur peut
     supporter aussi des techniques sophistiquées supplémentaires&#xA0;:<footnote>
-        <para>VirtualBox 2.0 a ajouté le support de la pagination nestée d'AMD&#xA0;;
+        <para>VirtualBox 2.0 a ajouté le support de la pagination imbriquée d'AMD&#xA0;;
         le support de l'EPT et des  VPIDs d'Intel a été ajouté à la version 2.1.</para>
       </footnote><itemizedlist>
         <listitem>
           <para>Une fonctionnalité récente, qui s'appelle la
-          <emphasis role="bold">"pagination nestée"</emphasis> implémente la
-          gestion de la mémoire dans le matériel, ae qui peut beaucoup accélérer
+          <emphasis role="bold">"pagination imbriquée"</emphasis> implémente la
+          gestion de la mémoire dans le matériel, ce qui peut beaucoup accélérer
           la virtualisation matérielle puisque ces tâches n'ont plus besoin d'être
           accomplies par le logiciel de virtualisation.</para>
 
-          <para>Avec la pagination nested, le matériel fournit un autre niveau
+          <para>Avec la pagination imbriquée, le matériel fournit un autre niveau
           d'indirection en passant du linéaire aux adresses physiques. Les
           tables de page fonctionnent comme avant mais les adresses linéaires 
           sont désormais d'abord traduites en adresses physiques de "l'invité"
           et pas directement en adresses physiques. Il existe maintenant un
-          nouveau jeu de registres de pagination sous le mécanisme depagination 
+          nouveau jeu de registres de pagination sous le mécanisme de pagination 
           traditionnel et qui traduit les adresses physiques invitées en adresses
           physiques de l'hôte, qui sont utilisées pour accéder à la mémoire.</para>
 
-          <para>La pagination nested élimine la charge causée par les fins de
+          <para>La pagination imbriquée élimine la charge causée par les sorties de
           VM et les accès aux tables de pages. Par définition, avec les tables
-          de pages nested, l'invité peut gérer la pagination sans que l'hyperviseur
-          n'intervienne. La pagination nestée améliore ainsi substantiellement
+          de pages imbriquées, l'invité peut gérer la pagination sans que l'hyperviseur
+          n'intervienne. La pagination imbriquée améliore ainsi substantiellement
           les performances de virtualisation.</para>
 
-          <para>Sur les processeurs AMD, la pagination nested est disponible 
+          <para>Sur les processeurs AMD, la pagination imbriquée est disponible 
           depuis l'architecture Barcelona (K10) -- on l'appelle maintenant la
           "rapid virtualization indexing" (RVI). Intel a ajouté le support de
-          la pagination nested, qu'ils appellent la "extended page tables" (EPT),
+          la pagination imbriquée, qu'ils appellent la "extended page tables" (EPT),
           à leurs processeurs Core i7 (Nehalem).</para>
 
-          <para>Si la pagination nested est activée, l'hyperviseur de VirtualBox
-          peut également utiliser <emphasis role="bold">large pages</emphasis>,
+          <para>Si la pagination imbriquée est activée, l'hyperviseur de VirtualBox
+          peut également utiliser <emphasis role="bold">grandes pages</emphasis>,
           pour réduire l'utilisation du TLB et la charge. Cela peut provoquer
           une amélioration jusqu'à 5% des performances. Pour activer cette
           fonctionnalité pour une VM, vous avez besoin d'utiliser la commande
@@ -913,11 +916,11 @@
           <para>Sur les processeurs Intel, une autre fonction matérielle, qui
           s'appelle <emphasis role="bold">"Virtual Processor Identifiers" (VPIDs)</emphasis>,
           peut beaucoup accélérer le changement de contexte en réduisant le
-          besoin de flasher beaucoup les Translation Lookaside Buffers
+          besoin coûteux de mémoriser les Translation Lookaside Buffers
           (TLBs) du processeur.</para>
 
           <para>Pour activer ces fonctions pour une VM, vous devez utiliser
-          les commandes <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput> and
+          les commandes <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput> et
           <computeroutput>--largepages</computeroutput>&#xA0;; voir <xref
           linkend="vboxmanage-modifyvm" />.</para>
         </listitem>

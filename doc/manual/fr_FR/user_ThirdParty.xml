@@ -2,24 +2,24 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <appendix id="ThirdParty">
-  <title>Matériaux tiers et licences</title>
+  <title>Briques tiers et licences</title>
 
-  <para>VirtualBox englobe des matériaux de plusieurs logiciels Open Source.
-  Donc, l'utilisation de ces matériaux par VirtualBox est soumise à des licences
-  Open Source. Ce document reproduit ces licences et fournit une liste des matériaux
-  utilisés avec leurs conditions de licences respectives. La section 1 contient
-  une liste des matériaux utilisés. La section 2 reproduit les licences Open Source
-  applicables. Pour chaque matériaux, nous fournissons une référence à sa
+  <para>VirtualBox englobe des briques de plusieurs logiciels Open Source.
+  Donc, l'utilisation de ces briques par VirtualBox est soumise à des licences
+  Open Source. Ce document reproduit ces licences et fournit une liste des briques
+  utilisées avec leurs conditions de licences respectives. La section 1 contient
+  une liste des briques utilisées. La section 2 reproduit les licences Open Source
+  applicables. Pour chaque brique, nous fournissons une référence à sa
   licence.</para>
 
-  <para>Le code source des matériaux listés ci-dessous ainsi que le reste du
+  <para>Le code source des briques listées ci-dessous ainsi que le reste du
   code de VirtualBox publiés sous licence open source sont disponibles sur
   <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>, sous
   forme d'archives tar pour des versions en particulier et d'un dépôt SVN en
   direct.</para>
 
   <sect1>
-    <title>Matériaux</title>
+    <title>briques</title>
 
     <itemizedlist>
       <listitem>

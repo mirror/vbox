@@ -4,7 +4,7 @@
 <chapter id="VirtualBoxAPI">
   <title>Interfaces de programmation de VirtualBox</title>
 
-  <para>VirtualBox est fournie avec un support complet pour les développeurs
+  <para>VirtualBox est fourni avec un support complet pour les développeurs
   tiers. Ce qu'on appelle "l'API principale" de VirtualBox implémente toutes
   les fonctionnalités du moteur de virtualisation. Elle est complètement documentée
   et disponible pour n'importe qui souhaitant contrôler VirtualBox en programmant.
@@ -19,7 +19,7 @@
   ont été mises dans un <emphasis role="bold">Software Development Kit (SDK),</emphasis>
   distinct disponible en téléchargement sur <ulink type=""
   url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>. En
-  particulier, le SDK est fourni avec un "PGuide de pogrammation et de Référence"
+  particulier, le SDK est fourni avec un "Guide de pogrammation et de Référence"
   au format PDF contenant entre autres des informations qui se trouvaient jadis
   dans ce chapitre du manuel de l'utilisateur.</para>
 </chapter>

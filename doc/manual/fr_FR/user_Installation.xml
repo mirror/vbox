@@ -43,9 +43,9 @@
           </listitem>
         </itemizedlist></para>
 
-      <para>Dans tous les cas, ceci affichera la boîte de dialrgue de bienvenue
+      <para>Dans tous les cas, ceci affichera la boîte de dialogue de bienvenue
       dans l'installation et vous permet de choisir où installer VirtualBox et
-      les composants à installer. Outre l' application  VirtualBox, les composants
+      les composants à installer. Outre l'application  VirtualBox, les composants
       suivants sont disponibles&#xA0;:<glosslist>
           <glossentry>
             <glossterm>Support USB</glossterm>
@@ -62,8 +62,8 @@
 
             <glossdef>
               <para>Ce paquet contient les pilotes réseaux supplémentaires pour
-              votre hôte Windows, dont a besoin VirtualBox p*ur supporter le
-              réseau bridgç (pour que les cartes réseaux de votre VM soient
+              votre hôte Windows, dont a besoin VirtualBox pour supporter le
+              réseau bridge (pour que les cartes réseaux de votre VM soient
               accessibles depuis d'autres machines de votre réseau physique).</para>
             </glossdef>
           </glossentry>
@@ -216,12 +216,12 @@
     </sect2>
 
     <sect2>
-      <title>Installation sans efforts</title>
+      <title>Installation non interactive</title>
 
       <para>Pour effectuer une installation non interactive de VirtualBox, vous
-      pouvez la version en ligne de commande de l'installeur.</para>
+      pouvez utiliser la version en ligne de commande de l'installeur.</para>
 
-      <para>Montez le fichier image du disque (dmg" comme décrit dans
+      <para>Montez le fichier image du disque (dmg) comme décrit dans
       l'installation normale. Ouvrez ensuite une session de terminal et exécutez&#xA0;:</para>
 
       <screen>sudo installer -pkg /Volumes/VirtualBox/VirtualBox.mpkg \
@@ -274,7 +274,7 @@
       mémoire physique et contrôler le processeur pour exécuter les systèmes
       invités. Sans ce module du noyau, vous pouvez utiliser le gestionnaire
       de VirtualBox pour configurer des machines virtuelles mais elles ne démarreront
-      pas. En outre, existe des modules noyau
+      pas. En outre, il existe des modules noyau
       <computeroutput>vboxnetflt</computeroutput> et
       <computeroutput>vboxnetadp</computeroutput> requis pour les fonctionnalités
       réseau plus avancées de VirtualBox.</para>
@@ -362,7 +362,7 @@
                 Les détails sur la manière de faire cela dépendent de la façon
                 dont vous avez construit votre noyau et si vous n'êtes pas sûr,
                 vous devriez consulter la documentation que vous avez suivie pour
-                construire.</para>
+                le construire.</para>
               </listitem>
             </itemizedlist>
           </listitem>
@@ -393,7 +393,7 @@
         Ubuntu Raring 32 bits. Utilisez <computeroutput>dpkg</computeroutput>
         pour installer le paquet Debian&#xA0;:</para>
 
-        <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
+        <screen>sudo dpkg -i VirtualBox-4.3_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
 
         <para>On vous demandera d'accepter la licence d'utilisation Personelle
         et d'évaluation de VirtualBox. Sauf si vous répondez "oui" l'installation
@@ -498,10 +498,10 @@
 
         <para><note>
             <para>La commande <computeroutput>usermod</computeroutput> de
-            certaines distributions Linux anciennes ne supporte pas l'option
+            certaines anciennes distributions Linux ne supporte pas l'option
             <computeroutput>-a</computeroutput> (qui ajoute l'utilisateur au groupe
-            donné sans le rendre membre d'autres groupes). Dans ce cas, cherchez
-            les membres actuels du groupe avec la commande
+            donné sans affecter l'appartenance aux autres groupes). Dans ce cas, cherchez
+            les groupes actuels du user avec la commande
             <computeroutput>groups</computeroutput> et ajoutez tous ces
             groupes dans une liste séparée par des virgules à la ligne de
             commande dans l'option
@@ -549,7 +549,7 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen></para>
         <para>Le module de noyau VirtualBox a besoin d'un n&#x153;ud de périphérique
         pour fonctionner. La commande make ci-dessus vous dira comment créer 
         le n&#x153;ud de périphérique selon votre système Linux. La procédure
-        est lélèrement différente pour une installation Linux classique avec le
+        est légèrement différente pour une installation Linux classique avec le
         répertoire <computeroutput>/dev</computeroutput>, un système avec 
         <computeroutput>devfs</computeroutput>, maintenant obsolète, et un
         système Linux moderne avec <computeroutput>udev</computeroutput>.</para>
@@ -622,7 +622,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
         <title>Installation automatique des paquets .rpm</title>
 
         <para>Le format .rpm n'offre pas de système de configuration comparable
-        au système debconf. SVoir <xref
+        au système debconf. Voir <xref
         linkend="linux_install_opts" /> pour savoir comment définir cartaines
         options d'installation classiques fournies par VirtualBox.</para>
       </sect3>
@@ -675,8 +675,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
       le noyau Linux. VirtualBox consiste en un démon de service (<computeroutput>VBoxSVC</computeroutput>)
       et plusieurs applications. Le démon est démarré automatiquement si nécessaire.
       Toutes les applications VirtualBox communiqueront avec le démon par les
-      sockets du démon local d'Unix. Il peu] y avoir plusieurs 
-      instances de démon sous différents comptes utilisateurs at les applications
+      sockets du démon local d'Unix. Il peut y avoir plusieurs 
+      instances de démon sous différents comptes utilisateurs et les applications
       peuvent ne communiquer qu'avec le démon en fonction sous le compte utilisateur
       en tant qu'application. La socket de domaine locale réside dans un
       sous-répertoire du répertoire des fichiers temporaires de votre ystème, 
@@ -796,7 +796,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
 
       <para>La désinstallation de VirtualBox sur Solaris qécessite les droits
       d'administrateur. Pour effectuer la désinstallation, démarrez une session
-      administrateur en terminal et exeécutez&#xA0;:</para>
+      administrateur en terminal et exécutez&#xA0;:</para>
 
       <screen>pkgrm SUNWvbox</screen>
 
@@ -813,7 +813,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
 
       <para>Pour effectuer une installation non interactive de VirtualBox,
       nous avons créé un fichier de réponses appelé
-      <computeroutput>autoresponse</computeroutput> qu'nsilisera l'installeur pour
+      <computeroutput>autoresponse</computeroutput> qu'utilisera l'installeur pour
       répondre à ses questions plutôt que de vous les poser.</para>
 
       <para>Extrayez le paquet tar.gz comme décrit dans l'installation normale.

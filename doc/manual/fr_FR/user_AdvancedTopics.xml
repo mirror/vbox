@@ -15,7 +15,7 @@
       VBoxSDL est utilisé actuellement d'abord pour déboguer VirtualBox, donc
       il n'est pas officiellement supporté. Vous pouvez quand même le trouver
       utile pour des environnements où les machines virtuelles ne sont pas
-      nécessairement contrôlées par la même personne qui utilise la machine virtuelle.<note>
+      nécessairement contrôlées par la personne qui utilise la machine virtuelle.<note>
           <para>VBoxSDL n'est pas disponible sur la plateforme hôte Mac OS X.</para>
         </note></para>
 
@@ -33,7 +33,7 @@
 
       <para>Pour démarrer une machine virtuelle avec VBoxSDL au lieu de l'interface
       graphique de VirtualBox, tapez ce qui suit sur une ligne de 
-      commanees&#xA0;:<screen>VBoxSDL --startvm &lt;vm&gt;</screen></para>
+      commandes&#xA0;:<screen>VBoxSDL --startvm &lt;vm&gt;</screen></para>
 
       <para>où <computeroutput>&lt;vm&gt;</computeroutput> est, comme d'habitude
       dans les paramètres en ligne de commande de VirtualBox, le nom ou l'UUID
@@ -70,7 +70,7 @@
       utilisez le paramètre <computeroutput>--seclabelsiz</computeroutput>.</para>
 
       <para>Vous pouvez définir le texte de l'étiquette avec <screen>VBoxManage setextradata "nom VM" "VBoxSDL/SecureLabel" "L étiquette"</screen>
-      Une modification ce cette étiquette prendra effet immédiatement.</para>
+      Une modification de cette étiquette prendra effet immédiatement.</para>
 
       <para>En général, les résolutions du plein écran sont limitées à 
       certaines géométries "standards" telles que 1024 x 768. Une augmentation
@@ -81,7 +81,7 @@
       dessinée en haut de la zone de l'écran de l'invité. Pour surmonter le 
       problème selon lequel le bas de l'écran de l'invité est caché, VBoxSDL 
       peut fournir des modes graphiques personnalisés à l'invité, réduits par
-      la hauteur de l'étiquette. Pour les invités Windows et ceux
+      la hauteur de l'étiquette. Pour les invités Windows et les
       Solaris et Linux récents, les suppléments invité de VirtualBox fournissent
       automatiquement les modes graphiques réduits. De plus, le BIOS VESA a été
       ajusté pour dupliquer sa table en mode standard avec des résolutions
@@ -121,7 +121,7 @@ vga = 839</screen>
       entrée de la liste <computeroutput>ps</computeroutput>). Par exemple, quand
       vous basculez vers un autre VT et quand vous enregistrez la machine virtuelle
       à partir de ce terminal, la séquence suivante peut être utilisée pour
-      s'assurer que la VM sauvegardée avec des modificateurs bloqué&#xA0;:</para>
+      s'assurer que la VM n'est pas sauvegardée avec des modificateurs bloqué&#xA0;:</para>
 
       <para><screen>kill -usr1 &lt;pid&gt;
 VBoxManage controlvm "Windows 2000" savestate</screen></para>
@@ -138,7 +138,7 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
     il pourrait être souhaitable d'effectuer des identifications automatiques et
     coordonnées en utilisant des autorisations issues d'un système d'identification
     maître. (Avec les "autorisations", on se réfère aux informations d'identification
-    qui consistent dans le nom d'utilisateur, le mot de passe et le nom de domaine,
+    qui consistent en nom d'utilisateur, mot de passe et nom de domaine,
     où chaque valeur pourrait être vide.)</para>
 
     <sect2 id="autologon_win">
@@ -185,7 +185,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}
 
 HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</screen></para>
 
-      <para>avec pour valeurs celles par défault (la clé nommçe 
+      <para>avec pour valeurs celles par défault (la clé nommée 
       <computeroutput>(Default)</computeroutput> dans chaque clé) définies sur
       <computeroutput>VBoxCredProv</computeroutput>. Après quoi, il faut créer
       une nouvelle chaîne nommée <screen>HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32\ThreadingModel</screen>
@@ -196,11 +196,11 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
 
       <screen>VBoxManage controlvm "Windows XP" setcredentials "John Doe" "secretpassword" "DOMTEST"</screen>
 
-      <para>Pendant que la VM est en fonction, vous pouvez hercher les autorisations
+      <para>Pendant que la VM est en fonction, vous pouvez interroger les autorisations
       accordées par les modules d'identification de VirtualBox (GINA ou
-      fournisseur d'autorisation) en utilipnt le pérphérique des suppléments
+      fournisseur d'autorisation) en utilisant le pérphérique des suppléments
       invité de VirtualBox. Quand Windows est en mode "déconnecté", les modules
-      d'identification chercheront constament les autorisations et si elles
+      d'identification interrogeront constament les autorisations et si elles
       existent, il tentera une identification. Après avoir récupéré les autorisations,
       les modules d'identification les écraseront pour que la commande ci-dessus
       doive se répéter pour les identifications consécutives.</para>
@@ -217,7 +217,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
             <para>Pour les <emphasis role="bold">invités Windows XP,</emphasis> 
             le sous-système d'identification doit être configuré pour utiliser 
             la boîte de dialogue classique d'identification car le module GINA
-            de VirtualBoxu ne supporte pas la boîte de dialogz de bienvenue à
+            de VirtualBox ne supporte pas la boîte de dialogue de bienvenue à
             la XP.</para>
           </listitem>
 
@@ -248,7 +248,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <para>La commande suivante oblige VirtualBox à garder les autorisations
       après leur lecture par l'invité et au redémarrage de la VM&#xA0;:
       <screen>VBoxManage setextradata "Windows XP" VBoxInternal/Devices/VMMDev/0/Config/KeepCredentials 1</screen>Remarquez
-      que c'est un risque de sécurité potentiel car une application mavrc,llante
+      que c'est un risque de sécurité potentiel car une application malveillante
       en fonction sur l'invité pourrait solliciter ces informations en utilisant
       la bonne interface.</para>
     </sect2>
@@ -281,11 +281,11 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       du service PAM.</para>
 
       <note>
-        <para><computeroutput>pam_vbox.so</computeroutput> ne supporte que le
-        <computeroutput>auth</computeroutput> primitif. D'autres primates tels
+        <para><computeroutput>pam_vbox.so</computeroutput> ne supporte que la primitive
+        <computeroutput>auth</computeroutput>. D'autres primitives telles
         que <computeroutput>account</computeroutput>,
         <computeroutput>session</computeroutput> ou
-        <computeroutput>password</computeroutput> ne sont pas supportés.</para>
+        <computeroutput>password</computeroutput> ne sont pas supportées.</para>
       </note>
 
       <para>Le module <computeroutput>pam_vbox.so</computeroutput> est inclu
@@ -296,10 +296,10 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <computeroutput>/lib/security/</computeroutput> sur les invités Linux 32
       bit ou <computeroutput>/lib64/security/</computeroutput> sur ceux 64 bits.
       Merci de vous reporter à la documentation de votre OS invité pour le bon
-      répertuire du module PAM.</para>
+      répertoire du module PAM.</para>
 
       <para>Par exemple, pour utiliser <computeroutput>pam_vbox.so</computeroutput>
-      avec un OS invité Linux Ubuntu et GDM (le GNOME Desktop Manager) pour identifier
+      avec un OS invité Linux Ubuntu et GDM (GNOME Desktop Manager) pour identifier
       les utilisateurs automatiquement avec les droits passés par l'hôte, l'OS
       invité doit être configuré comme ce qui suit&#xA0;:</para>
 
@@ -311,18 +311,18 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
         </listitem>
 
         <listitem>
-          <para>Éditz le fichier de configuration de PAM avec GDM qui se trouve
+          <para>Éditez le fichier de configuration de PAM avec GDM qui se trouve
           dans <computeroutput>/etc/pam.d/gdm</computeroutput>, en ajoutant la
           ligne <computeroutput>auth requisite pam_vbox.so</computeroutput> au
           début. En outre, dans la plupart des distributions Linux, il existe
           un fichier appelé <computeroutput>/etc/pam.d/common-auth</computeroutput>. 
-          Ce fichier est inclut dans de nombreux services (comme le fichier GDM
+          Ce fichier est inclu dans de nombreux services (comme le fichier GDM
           indiqué ci-dessus). Vous devez y ajouter la ligne <computeroutput>auth
           requisite pam_vbox.so</computeroutput>.</para>
         </listitem>
 
         <listitem>
-          <para>Si vous voulez une authentification contre la base de données
+          <para>Si vous voulez une authentification via la base de données
           shadow en utilisant <computeroutput>pam_unix.so</computeroutput> ou
           <computeroutput>pam_unix2.so</computeroutput>, l'argument
           <computeroutput>try_first_pass</computeroutput> de
@@ -354,25 +354,25 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           l'hôte, en d'autres termes&#xA0;: quand une invite de connexion s'affiche
           (ppar exemple via GDM/KDM ou la console texte) et quand pam_vbox n'a
           pas encore les autorisations, il n'attend pas qu'elles viennent. Le module
-          suivant de la pile PAM (selon la configuration de PAM) aura une chance
-          d'authentification.</para>
+          suivant de la pile PAM (selon la configuration de PAM) aura l'opportunité
+          d'authentifier.</para>
         </note></para>
 
       <para>À partir de VirtualBox 4.1.4 pam_vbox supporte plusieurs paramètres
       de propriétés d'invité résidant tous dans
       <computeroutput>/VirtualBox/GuestAdd/PAM/</computeroutput>. Ces paramètres
-      permettent à pam_vbox d'attendre que les autorisations soient fournies dans
+      permettent à pam_vbox d'attendre que les autorisations soient fournies par
       l'hôte et, éventuellement, il peut afficher un message tout en les attendant.
       Les propriétés d'invité suivantes peuvent être définies&#xA0;:</para>
 
       <orderedlist>
         <listitem>
-          <para><computeroutput>CredsWait</computeroutput>&#xA0;: Définissez sur
+          <para><computeroutput>CredsWait</computeroutput>&#xA0;: Indiquez
           "1" si pam_vbox devrait commencer à attendre jusqu'à ce que les autorisations
           viennent de l'hôte. En attendant, aucune autre méthode d'authentification
           comme la connexion à la main ne sera disponible. Si cette propriété est
           vide ou effacée, les autorisations ne seront pas attendues et pam_vbox
-          comme avant (voir le paragraphe ci-dessus). Cette propriété doit être
+          agira comme avant (voir paragraphe ci-dessus). Cette propriété doit être
           définie en lecture seule pour l'invité
           (<computeroutput>RDONLYGUEST</computeroutput>).</para>
         </listitem>
@@ -395,7 +395,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
         </listitem>
       </orderedlist>
 
-      <para>Pour personnaliser davantage pam_vbox, il existe les propriçtés 
+      <para>Pour personnaliser davantage pam_vbox, il existe les propriétés 
       invité suivantes&#xA0;:</para>
 
       <orderedlist>
@@ -473,7 +473,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
 
         <note><para>vbox-greeter est indépendant de la session graphique choisie
         par l'utilisateur (comme Gnome, KDE, Unity etc). Néanmoins, il exige
-        FLTK 1.3pour afficher sa propre interface utilisateur.</para></note>
+        FLTK 1.3 pour afficher sa propre interface utilisateur.</para></note>
 
         <para>De noubreuses propriétés invité peuvent être utilisées pour
         personnaliser davantage l'identification de l'utilisateur. Pour identifier
@@ -487,14 +487,14 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
 
         <orderedlist>
           <listitem>
-            <para><computeroutput>HideRestart</computeroutput> : Réglez-le sur
+            <para><computeroutput>HideRestart</computeroutput> : Indiquez
             "1" si vbox-greeter doit masquer le bouton de redémarrage de l'invité.
             Vous devez définir cette propriété en lecture seule pour l'invité
             (<computeroutput>RDONLYGUEST</computeroutput>).</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>HideShutdown</computeroutput> : Réglez-la
+            <para><computeroutput>HideShutdown</computeroutput> : Indiquez
             à "1" si vbox-greeter doit masquer le bouton d'extinction de
             l'invité. Vous devez définir cette propriété en lecture seule pour l'invité
             (<computeroutput>RDONLYGUEST</computeroutput>).</para>
@@ -503,14 +503,14 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           <listitem>
             <para><computeroutput>BannerPath</computeroutput> : Chemin vers
             un fichier .PNG à utiliser comme bannière en haut. La taille de
-            l'image doit être de 460 x 90 pixels, quelle rue soit la profondeur
+            l'image doit être de 460 x 90 pixels, quelle que soit la profondeur
             de bit. Vous devez définir cette propriété en lecture seule pour l'invité
             (<computeroutput>RDONLYGUEST</computeroutput>).</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>UseTheming</computeroutput> : Définissez-la
-            à "1" pour activer les options de thème suivantes.
+            <para><computeroutput>UseTheming</computeroutput> : Indiquez
+            "1" pour activer les options de thème suivantes.
             Vous devez définir cette propriété en lecture seule pour l'invité
             (<computeroutput>RDONLYGUEST</computeroutput>).</para>
           </listitem>
@@ -636,7 +636,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <title>Paramétrage approfondi des pilotes graphique et souris de l'invité</title>
 
       <para>Cette section suppose que vous êtes familier de la configuration de
-      votre serveur X.Org en utilisant xorg.conf et éventuellement les méhanismes
+      votre serveur X.Org en utilisant xorg.conf et éventuellement des mécanismes
       récents en utilisant hal ou udev et xorg.conf.d. Sinon, vous pouvez apprendre
       à les utiliser en étudiant la documentation fournie avec X.Org.</para>
 
@@ -669,11 +669,11 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <para>Pour que l'intégration graphique fonctionne correctement, le serveur
       X doit charger le pilote vboxvideo (beaucoup de versions récentes du serveur
       X le cherchent automatiquement si elles voient qu'elles sont sur VirtualBox) 
-      et pour uneexpérience utilisateur optimale,  les pilotes du noyau invité
-      doivent être chargés et l'outil des supplçments invité VBoxClient doit être
-       en fonction en tant que client dans la session X. Pour que l'intégration de
-       la souris fonctionne correctement, les pilotes du noyau invité doivent
-       être chargés et, au surplus, dans les serveurs X de X.Org X11R6.8
+      et pour une expérience utilisateur optimale,  les pilotes du noyau invité
+      doivent être chargés et l'outil des suppléments invité VBoxClient doit être
+      en fonction en tant que client dans la session X. Pour que l'intégration de
+      la souris fonctionne correctement, les pilotes du noyau invité doivent
+      être chargés et, au surplus, dans les serveurs X de X.Org X11R6.8
       à X11R7.1 et dans XFree86 version 4.3, le bon pilote vboxmouse doit être 
       chargé et associé à /dev/mouse ou /dev/psaux&#xA0;; dans le serveur X.Org
       1.3 ou supérieur, un pilote de souris PS/2 doit être chargé et le bon
@@ -715,7 +715,7 @@ EndSection</screen>
   <sect1 id="cpuhotplug">
     <title>Montage de processeur à chaud</title>
 
-    <para>Quand des machines virtuelles fonctionnent sur des szstèmes
+    <para>Quand des machines virtuelles fonctionnent sur des systèmes
     d'exploitation serveurs modernes, VirtualBox supporte le montage à chaud de
     processeur.<footnote>
         <para>Le support du montage de processeur à chaud a été introduit avec VirtualBox
@@ -723,12 +723,12 @@ EndSection</screen>
       </footnote> Alors que, sur un ordinateur physique, cela voudrait dire qu'un
     processeur peut être ajouté ou supprimé pendant que la machine fonctionne,
     VirtualBox supporte l'ajout et le retrait de processeurs virtuels pendant que la
-    machine is virtuelle est en fonction.</para>
+    machine virtuelle est en fonction.</para>
 
     <para>Le montage à chaud de processeur ne fonctionne qu'avec les systèmes
     d'exploitation invités qui le supportent. Jusque-là, il ne s'applique qu'à
     Linux et Windows Server 2008 x64 édition Data Center. Windows ne supporte que
-    l'ajout à chaud alors que Linux supporte l'ajout et le retrait à chaud., mais
+    l'ajout à chaud alors que Linux supporte l'ajout et le retrait à chaud. Mais
     pour utiliser cette fonction avec plus de 8 processeurs, il faut un invité
     Linux 64 bits.</para>
 
@@ -751,11 +751,11 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <para>Voir <xref linkend="vboxmanage-modifyvm" /> et <xref
     linkend="vboxmanage-controlvm" /> pour des détails.</para>
 
-    <para>Avec des invités Linux, ce qui suit s'applique&#xA0;: Pkur empêcher
+    <para>Avec des invités Linux, ce qui suit s'applique&#xA0;: Pour empêcher
     d'éjecter alors que le processeur est utilisé, il doit être éjecté de l'invité
     au préalable. Les suppléments invité pour Linux contiennent un service qui
     reçoit les événements de retrait à chaud et ils éjectent le processeur.
-    De plus, après qu'un processeur a été ajoutà à la VM, il n'est pas utilisç
+    De plus, après qu'un processeur ait été ajouté à la VM, il n'est pas utilisé
     automatiquement par Linux. Le service des suppléments invité pour Linux s'en
     chargera s'il est installé. Sinon, vous pouvez démarrer un processeur avec
     la commande suivante&#xA0;:<screen>echo 1 &gt; /sys/devices/system/cpu/cpu&lt;id&gt;/online</screen></para>
@@ -773,7 +773,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
 
     <note>
       <para>Le module PCI passthrough est inclu comme un paquet d'extension de
-      VirtualBox, qui doit être installé séparémeq. Voir <xref
+      VirtualBox, qui doit être installé séparément. Voir <xref
       linkend="intro-installing" /> pour plus d'informations.</para>
     </note>
 
@@ -782,7 +782,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     de pilote pour ce périphérique particulier. Tant les cartes PCI normales que
     certaines cartes PCI express sont supportées. L'AGP et certaines cartes PCI
     Express ne sont pas supportées pour l'instant si elles s'appuient sur la
-    de programmation unitaire GART (Graphics Address Remapping Table) pour la gestion 
+    programmation d'unités GART (Graphics Address Remapping Table) pour la gestion 
     des textures vu qu'il fait plutôt des opérations non triviales avec l'association
     de pages qui s'interfacent avec IOMMU. Il se peut que cette limite soit
     surmontée dans les prochaines versions.</para>
@@ -792,12 +792,12 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     largement disponible. Si le périphérique utilise le bus mastering (à savoir
     qu'il fait sa propre DMA sur la mémoire de l'OS), une IOMMU est requise,
     sinon de telles transactions DMA peuvent écrire sur la mauvaise adresse physique
-    de la mémoire car le moteur DMA du pçriphérique est est programmé pour utiliser
+    de la mémoire car le moteur DMA du périphérique est programmé pour utiliser
     un protocole spécifique au périphérique pour faire des transactions avec la
-    mémoire. Les fonctions IOMMU comme traduction des unités correspondant à la
+    mémoire. Les fonctions IOMMU telle que la translation des unités de correspondance de
     mémoire physique accèdent aux requêtes du périphérique en utilisant la connaissance
     de l'adresse physique de la mémoire de l'invité via les règles de traduction
-    d'adresse shysique de l'hôte.</para>
+    d'adresse physique de l'hôte.</para>
 
     <para>La solution d'Intel pour IOMMU est vendue sous le nom "Intel Virtualization
     Technology for Directed I/O" (VT-d), et celle d'AMD s'appelle AMD-Vi. Merci
@@ -805,7 +805,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     adaptée. Même si votre matériel n'a pas d'IOMMU, certaines cartes PCI peuvent
     fonctionner (comme des adaptateurs série PCI), mais l'invité affichera un
     avertissement au démarrage et l'exécution de la VM s'achèvera si le pilote
-    invité essaie d'activer le bus mastering.</para>
+    invité essaie d'activer le bus mastering de la carte.</para>
 
     <para>Très couramment, le BIOS ou 
     l'OS hôte désactive par défaut l'IOMMU. Donc avant d'essayer de l'utiliser,
@@ -824,7 +824,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
         </listitem>
 
         <listitem>
-          <para>La VM doit fonctionner avec VT-x/AMD-V et la pagination nested
+          <para>La VM doit fonctionner avec VT-x/AMD-V et la pagination imbriquée
           doit être activée.</para>
         </listitem>
 
@@ -860,7 +860,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <computeroutput>bus:device.function</computeroutput>). Cette adresse pourrait
     être utilisée pour identifier les périphériques pour aller plus loin. Par
     exemple, pour attacher un contrôleur réseau PCI du système listé ci-dessus,
-    au second bus PCI de l'invité, en périphériqz 5, la fonction 0, utilisez
+    au second bus PCI de l'invité, en périphérique 5, la fonction 0, utilisez
     la commande suivante&#xA0;:
     <screen>VBoxManage modifyvm "nom VM" --pciattach 02:00.0@01:05.0</screen>
     Pour détacher ce même périphérique, utilisez <screen>VBoxManage modifyvm "nom VM" --pcidetach 02:00.0</screen>
@@ -869,7 +869,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     s'appliquent qu'à l'adresse de la carte au moment d'être attaché (hôte), et
     lors de l'initialisation du PCI de BIOS (invité).</para>
 
-    <para>Si la machine (irtuelle a un périphérique PCI attaché, certaines
+    <para>Si la machine virtuelle a un périphérique PCI attaché, certaines
     limitations s'appliquent&#xA0;: <orderedlist>
         <listitem>
            Seules les cartes PCI aux interruptions non partagées (telles que 
@@ -901,7 +901,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
       <title>Utilisation d'une webcam hôte dans l'invité</title>
 
       <para>VirtualBox 4.3 inclut une fonction expérimentale permettant à un 
-      invité d'utiliser une webcam hôte. Ceci complète le support génçral du
+      invité d'utiliser une webcam hôte. Ceci complète le support général du
       passthrough USB qui était la façon dont on utilisait généralement les webcams
       dans les anciennes versions. Le support de webcam passthrough peut gérer
       théoriquement des sources graphiques non USB, mais cela n'a pas été testé du
@@ -939,7 +939,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
             <screen>VBoxManage controlvm "nom VM" webcam attach [chemin_hôte_|alias [paramètres]]</screen>
             Ceci connectera une webcam à l'invité. Le paramètre
             <computeroutput>settings</computeroutput> est une chaîne 
-            <computeroutput>Paramètre1=Valer1;Paramètre2=Valeur2</computeroutput>, qui
+            <computeroutput>Paramètre1=Valeur1;Paramètre2=Valeur2</computeroutput>, qui
             permet de configurer la webcam émulée. Les paramètres suivants
             sont supportés :
             <itemizedlist>
@@ -995,7 +995,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
       <title>Hôtes Linux et Solaris</title>
 
       <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée n'est automatiquement
-      déconnectée de de l'invité que si la webcam est en train de transmettre
+      déconnectée de l'invité que si la webcam est en train de transmettre
       de l'image. Si la webcam est inactive, vous devrez la déconnecter à la
       main en utilisant la commande
       <computeroutput>VBoxManage controlvm "nom VM" webcam detach ...</computeroutput>.</para>
@@ -1084,7 +1084,7 @@ vga = 864</screen>
       VirtualBox peut aussi présenter aux machines virtuelles soit des disques 
       durs entiers, soit des partitions sélectionnées, comme des disques virtuels.</para>
 
-      <para>Avec VirtualBox, ce typed'accès s'appelle "l'accès au disque dur brut"&#xA0;;
+      <para>Avec VirtualBox, ce type d'accès s'appelle "l'accès au disque dur brut"&#xA0;;
       il permet à un système d'exploitation invité d'accéder à son disque dur
       virtuel sans passer par le système de fichiers de l'OS hôte. La 
       différence de performance finale entre les fichiers images et les disques
@@ -1133,9 +1133,9 @@ vga = 864</screen>
         <code>/chemin/vers/fichier.vmdk</code> (il doit être absolu), et toutes
         les données seront lues et écrites à partir de <code>/dev/sda</code>.</para>
 
-        <para>Sur un hôte Windows, plutît que de spécifier le périphérique comme
+        <para>Sur un hôte Windows, plutôt que de spécifier le périphérique comme
         ci-dessus, utilisez par exemple <code>\\.\PhysicalDrive0</code>. Sur un
-        hôte Mac OS X, utilisez plutît, par exemple, <code>/dev/disk1</code>.
+        hôte Mac OS X, utilisez plutôt, par exemple, <code>/dev/disk1</code>.
         Remarquez que sur OS X, vous ne pouvez avoir d'accès à tout un disque
         que si aucun volume n'est monté à partir de là.</para>
 
@@ -1162,7 +1162,7 @@ vga = 864</screen>
         informations de partitionnement seront stockées dans l'image VMDK, donc
         vous pouvez par exemple installer un autre chargeur d'amorçage dans le
         disque dur virtuel sans toucher les informations de partitionnement de
-        l'hôte. Si l'invité pourra <emphasis>svoir</emphasis> toutes
+        l'hôte. Alors que l'invité pourra <emphasis>voir</emphasis> toutes
         les partitions existantes sur le disque physique, l'accès sera filtré de
         sorte que la lecture des partitions pour lesquelles aucun accès n'est
         autorisé ne contiendra que des zéros et que toutes les écritures dessus
@@ -1180,8 +1180,8 @@ vga = 864</screen>
         doit être absolu), et les partitions 1 et 5 de <code>/dev/sda</code> deviendraient
         accessibles à l'invité.</para>
 
-        <para>VirtualBox la même numçrotation de partitions que votre hôte Linux.
-        Il s'en suit que les numçros donnés dans l'exemple ci-dessus se référeraient
+        <para>VirtualBox utilise la même numérotation de partitions que l'hôte Linux.
+        Il s'en suit que les numéros donnés dans l'exemple ci-dessus se référeraient
         respectivement à la première partition primaire et au premier lecteur 
         logique de la partition étendue.</para>
 
@@ -1214,7 +1214,7 @@ vga = 864</screen>
       machine virtuelle, l'image ne se réfèrera pas à tout le disque mais seulement
       aux partitions individuelles (dans l'exemple 
         <code>/dev/sda1</code> et <code>/dev/sda5</code>). Par conséquent, l'accès
-        en lecture/écriture n'est requis que pou! les partitions concernées, pas
+        en lecture/écriture n'est requis que pour les partitions concernées, pas
         pour tout le disque. Mais lors de la création, un accès en lecture seule
         à tout le disque est nécessaire pour avoir les informations de
         partitionnement.</para>
@@ -1240,7 +1240,7 @@ vga = 864</screen>
     <sect2 id="changevpd">
       <title>Configuration des vendor product data (VPD) du disque dur</title>
 
-      <para>VirtualBox signale les données liçes au fabricant du produit de
+      <para>VirtualBox signale les données liées au fabricant du produit de
       ses disques durs virtuels, consistant dans le numéro de série du disque dur,
       le numro de révision du firmware et du modèle. Vous pouvez modifier ces
       données en utilisant les commandes suivantes&#xA0;:</para>
@@ -1335,7 +1335,7 @@ VBoxManage setextradata "nom VM" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Is
   <sect1>
     <title>Commandes de base pour utiliser les ports série</title>
 
-    <para>À partir de la version 1.4, VirtualBox fournissait le support les
+    <para>À partir de la version 1.4, VirtualBox fournissait le support des
     ports série virtuels qui, pour l'instant, était plutôt compliqué à paramétrer
     avec la séquence des commandes
     <computeroutput>VBoxManage setextradata</computeroutput>. Depuis la version 1.5,
@@ -1384,7 +1384,7 @@ VBoxManage setextradata "nom VM"
   </sect1>
 
   <sect1 id="changenat">
-    <title>Peaufiner le moteur NAT de VirtualBox</title>
+    <title>Régler le moteur NAT de VirtualBox</title>
 
     <sect2>
       <title>Configurer l'adresse d'une interface réseau NAT</title>
@@ -1425,7 +1425,7 @@ VBoxManage modifyvm "nom VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen
     </sect2>
 
     <sect2 id="nat-adv-settings">
-      <title>Peaufiner les tampons TCP/IP pour NAT</title>
+      <title>Réglage des tampons TCP/IP pour NAT</title>
 
       <para>La performance de la pile NAT de VirtualBox est souvent déterminée
       par son interaction avec la pile TCP/IP de l'hôte et la taille de plusieurs
@@ -1435,9 +1435,9 @@ VBoxManage modifyvm "nom VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen
       meilleure performance. Vous pouvez faire cela en utilisant les commandes
       suivantes (les valeurs s'expriment en kilo-octets peuvent varier de
       8 à 1024)&#xA0;: <screen>VBoxManage modifyvm "nom VM" --natsettings1 16000,128,128,0,0</screen>
-      Cet exemple illustre le peaufinage des paramètres NAT. Le premier paramètre
-      est le MTU, puis la taille du tampon d'envoi de la socket et la taille du
-      tampon de réception de la socket, la taille initiale de la fenêtre d'envoi
+      Cet exemple illustre le réglage des paramètres NAT. Le premier paramètre
+      est le MTU, puis la taille du tampon d'envoi du socket et la taille du
+      tampon de réception du socket, la taille initiale de la fenêtre d'envoi
       TCP, et enfin, la taille initiale de la fenêtre de réception TCP. Remarquez
       que la spécification de zéro revient à se rabattre sur la valeur par défaut.</para>
 
@@ -1467,7 +1467,7 @@ VBoxManage modifyvm "nom VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen
       <para>Le moteur NAT offre par défaut les mêmes serveurs DNS à l'invité
       que ceux configurés sur l'hôte. Dans certains scenari, il peut être souhaitable
       de cacher les IPs du serveur DNS à l'invité, par exemple quand ces informations
-      peuvent changer sur l'hôte après l'expiration des baux DHCP. Dans ce cas,
+      peuvent changer sur l'hôte après l'expiration de l'allocation DHCP. Dans ce cas,
       vous pouvez dire au moteur NAT d'agir comme un proxy DNS en utilisant la
       commande suivante&#xA0;: <screen>VBoxManage modifyvm "nom VM" --natdnsproxy1 on</screen></para>
     </sect2>
@@ -1499,20 +1499,20 @@ VBoxManage modifyvm "nom VM" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</screen
               d'une IP spécifiée&#xA0;:</para>
             <screen>VBoxManage setextradata "nom VM" \
       "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;nom uniq de la règle d'interception&gt;/HostIP" &lt;IPv4&gt;
+      &lt;nom unique de la règle d'interception&gt;/HostIP" &lt;IPv4&gt;
 VBoxManage setextradata "nom VM" \
       "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;nom uniq de la règle d'interception&gt;/HostName" &lt;nom de vhôte&gt;</screen>
+      &lt;nom unique de la règle d'interception&gt;/HostName" &lt;nom de hôte&gt;</screen>
     <para>La commande suivante définit une règle pour associer un échantillon de
      nom à une IP spécifiée&#xA0;:</para>
             <screen>VBoxManage setextradata "nom VM" \
       "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;nom uniq de la règle d'interception&gt;/HostIP" &lt;IPv4&gt;
+      &lt;nom unique de la règle d'interception&gt;/HostIP" &lt;IPv4&gt;
 VBoxManage setextradata "nom VM" \
       "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/Config/HostResolverMappings/ \
-      &lt;uniq name of interception rule&gt;/HostNamePattern" &lt;échantillonhôte&gt;</screen>
+      &lt;nom unique de la règle d'interception&gt;/HostNamePattern" &lt;échantillonhôte&gt;</screen>
     <para>L'échantillon hôte peut inclure <computeroutput>"|", "?" et "*"</computeroutput>.</para>
-    <para>Cette exmple démontre la façon de demander au mécanisme du résolveur
+    <para>Cette exmeple montre la façon de demander au mécanisme du résolveur
     de l'hôte de résoudre tout le domaine et probablement des mirroirs du site
     www.blocked-site.info avec l'IP 127.0.0.1:</para>
             <screen>VBoxManage setextradata "nom VM" \
@@ -1538,7 +1538,7 @@ VBoxManage setextradata "nom VM" \
       ou dépendre du vrai numéro de port pour envoyer un paquet. Il est possible
       de modifier le mode NAT avec l'interface VBoxManage avec les commandes
       suivantes&#xA0;: <screen>VBoxManage modifyvm "nom VM" --nataliasmode1 proxyonly</screen>
-      and <screen>VBoxManage modifyvm "Linux Guest" --nataliasmode1 sameports</screen>
+      et <screen>VBoxManage modifyvm "Linux Guest" --nataliasmode1 sameports</screen>
       Le premier exemple désactive les alias et passe NAT en mode transparent,
       le deuxième exemple renforce la préservation des numéros des ports. Ces
       modes peuvent se combiner si nécessaire.</para>
@@ -1646,11 +1646,11 @@ VBoxManage setextradata "nom VM"
     <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemSerial"      "string:1234"</screen></para>
 
-    <para>La modification de ces information cans peut \avérer nécessaire pour
+    <para>La modification de ces informations peut s'avérer nécessaire pour
     donner les informations DMI de l'hôte à l'invité afin d'empêcher Windows de
     demander une nouvelle clé du produit. Sur les hôtes Linux, vous pouvez obtenir
     les informations de BIOS DMI avec
-    with <screen>dmidecode -t0</screen>et les informations du système DMI avec
+    <screen>dmidecode -t0</screen>et les informations du système DMI avec
     <screen>dmidecode -t1</screen></para>
   </sect1>
 
@@ -1670,15 +1670,15 @@ VBoxManage setextradata "nom VM"
   </sect1>
 
   <sect1>
-    <title>Peaufiner les horloges et la synchronisation du temps</title>
+    <title>Régler les horloges et la synchronisation du temps</title>
 
     <sect2 id="changetscmode">
       <title>Configurer le time stamp counter (TSC) (horodateur) de l'invité pour refléter l'heure de l'exécution</title>
 
       <para>Par défaut, VirtualBox synchronise toutes les sources de l'heure dans
-      une source d'heure unique, l'heure de l'hôte monotonic. Cela reflète les
+      une source d'heure unique, l'heure monotonic de l'hôte. Cela reflète les
       suppositions de nombreux systèmes d'exploitation invités qui s'attendent
-      à ce que toutes les sources d'heure reflètent l'heure "la pendule". Dans
+      à ce que toutes les sources d'heure reflètent l'heure de "la pendule". Dans
       des circonstances spéciales, il peut être cependant utile de faire en
       sorte que le TSC (time stamp counter) de l'invité reflète le temps effectif
       passé à exécuter l'invité.</para>
@@ -1731,7 +1731,7 @@ VBoxManage setextradata "nom VM"
     </sect2>
 
     <sect2 id="changetimesync">
-      <title>Peaufiner les paramètres de synchronisation du temps des suppléments
+      <title>Régler les paramètres de synchronisation du temps des suppléments
       invité</title>
 
       <para>Les suppléments invité de VirtualBox garantissent que l'heure du
@@ -1800,7 +1800,7 @@ VBoxManage setextradata "nom VM"
             <glossterm><computeroutput>--timesync-set-start</computeroutput></glossterm>
 
             <glossdef>
-              <para>Définit l'heure à laquelle démarrer le service de syncchro
+              <para>Définit l'heure à laquelle démarrer le service de synchro
               du temps.</para>
             </glossdef>
           </glossentry>
@@ -1905,7 +1905,7 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
     VMs sur des VLANs car les détails du VLAN ne sont pas stockés dans la
     configuration de chaque VM mais récupérés dans le modèle VNIC qve vous pouvez
     modifier n'importe quand en utilisant 
-    <computeroutput>dladm</computeroutput>. Outre l'ID du VLAN, des traductions
+    <computeroutput>dladm</computeroutput>. Outre l'ID du VLAN, des patrons de
     VNIC peuvent être créées avec des propriétés supplémentaires telles que les
     limites de bande passante, le fanout du processeur, etc. Reportez-vous à
     la documentation du réseau de votre Solaris pour savoir comment faire cela.
@@ -1922,7 +1922,7 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
     exige une configuration manuelle. Voici comment ajouter deux interfaces
     réseaux host-only supplémentaires.</para>
 
-    <para>Vous eevez d'abord arrêter toutes les VMs en fonction et désactiver
+    <para>Vous devez d'abord arrêter toutes les VMs en fonction et désactiver
     toutes les interfaces "vboxnet". Exécutez les commandes suivantes en tant
     qu'administrateur&#xA0;:</para>
 
@@ -1976,7 +1976,7 @@ de façon unique. Ensuite, rechargez le pilote vboxnet en utilisant&#xA0;:</para
     ne spécifiez aucun répertoire où mettre les fichiers c&#x153;ur, le répertoire
     actuel de l'exécutable de VirtualBox sera utilisé (ce qui échouerait
     vraisemblablement au moment de l'écriture des c&#x153;urs car ils sont
-    protégés par des droits administrateur). Il est recommandé que voks définissiez
+    protégés par des droits administrateur). Il est recommandé que vous définissiez
     explicitement un répertoire d'envoi des fichiers c&#x153;ur.</para>
 
     <para>Vous devez spécifier le moment où les CoreDumper de VirtualBox devraient
@@ -1988,14 +1988,14 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
 
     <para>Le réglage de <computeroutput>CoreDumpReplaceSystemDump</computeroutput>
     prévoit que la VM outrepasse le mécanisme c&#x153;ur de l'hôte et en cas
-    de de plantage, seul le  de VirtualBox produirait le fichier
+    de plantage, seul le vidage VirtualBox produirait le fichier
     c&#x153;ur.</para>
 
     <para>Le réglage de <computeroutput>CoreDumpLive</computeroutput> demande
     à la VM de produire des c&#x153;urs à chaque fois que le processus de la
     VM reçoit un signal <computeroutput>SIGUSR2</computeroutput>. Après avoir
-    produit le fichier c&#x153;ur, la VM ne sera pas interrompu et continuera
-    de fonctionner. Vous pouvez ainsi récupérer des c&#x153;urs du processus de
+    produit le fichier c&#x153;ur, la VM ne sera pas interrompu et continuerà
+    fonctionner. Vous pouvez ainsi récupérer des c&#x153;urs du processus de
     la VM en utilisant&#xA0;:</para>
 
     <para><screen>kill -s SIGUSR2 &lt;VM-process-id&gt;</screen></para>
@@ -2009,7 +2009,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
     <title>Déverrouiller l'interface graphique du gestionnaire de VirtualBox</title>
 
     <sect2>
-      <title>Personnalisation du gestiOnnaire de VM</title>
+      <title>Personnalisation du gestionnaire de VM</title>
 
       <para>Il existe plusieurs paramètres de personnalisation avancés pour
       déverrouiller le gestionnaire de VirtualBox, c'est-à-dire pour supprimer
@@ -2100,8 +2100,8 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
   <sect2>
     <title>Configurer les entrées du menu de sélection de VM</title>
 
-    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certaines entrées
-    de l'onglet des paramèt!es globaux dans le sélecteur de VM :</para>
+    <para>Vous pouvez désactiver (c'est-à-dire inhiber) certaines entrées
+    de l'onglet des paramètres globaux dans le sélecteur de VM :</para>
        <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages OPTION[,OPTION...]</screen>
        <para>où <computeroutput>OPTION</computeroutput> est un des mots-clés
        suivants :</para><glosslist>
@@ -2165,8 +2165,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
      </glossentry>
    </glosslist>
    <para>C'est un paramètre global. Toutes les combinaisons de ce qui précède
-   est possible . Pour restaurer le comportement
-   par défaut, utilisez</para>
+   est possible. Pour restaurer le comportement par défaut, utilisez</para>
    <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</screen>
 
   </sect2>
@@ -2176,7 +2175,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
   <sect2>
     <title>Configurer les entrées du menu de la fenêtre d'une VM</title>
 
-    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certaines actions
+    <para>Vous pouvez désactiver (c'est-à-dire inhiber) certaines actions
     du menu dans la fenêtre de la VM :</para>
     <screen>VBoxManage setextradata "nom VM" GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
     
@@ -2240,7 +2239,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
   <sect2>
     <title>Configurer les entrées de la barre d'état de la fenêtre de la VM</title>
 
-    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certains éléments
+    <para>Vous pouvez désactiver (c'est-à-dire inhiber) certains éléments
     de la barre d'état :</para>
       <screen>VBoxManage setextradata "nom VM" GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
 
@@ -2333,7 +2332,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
     <sect2>
       <title>Configurer les modes visuels de la fenêtre</title>
 
-      <para>Vous pouvez désactiver (c'est-à-dire blacklister) certains modes visuels de la VM :</para>
+      <para>Vous pouvez désactiver (c'est-à-dire inhiber) certains modes visuels de la VM :</para>
       <screen>VBoxManage setextradata "nom VM" GUI/RestrictedVisualStates OPTION[,OPTION...]</screen>
 
       <para>où <computeroutput>OPTION</computeroutput> est un des mots-clés
@@ -2376,7 +2375,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
         <para>Pour désactiver toutes les combinaisons de touches de l'hôte, 
         ouvrez les préférences et modifiez la touche hôte sur <emphasis>Aucune</emphasis>. 
         Cela pourrait être utile lors de l'utilisation de VirtualBox en mode
-        kiosk.</para>
+        kiosque.</para>
 
         <para>Pour redéfinir ou désactiver certaines actions de la touche hôte,
         utilisez la commande suivante&#xA0;:</para>
@@ -2474,7 +2473,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
               <row>
                 <entry><computeroutput>WindowAdjust</computeroutput></entry>
                 <entry>A</entry>
-                <entry>redimension automatique de la fenêtre invité</entry>
+                <entry>redimensionne immédiatement la fenêtre invité</entry>
               </row>
               <row>
                 <entry><computeroutput>PopupMenu</computeroutput></entry>
@@ -2518,9 +2517,9 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
 
       </sect2>
       <sect2>
-        <title>Action puand la VM s'arrête</title>
+        <title>Action quand la VM s'arrête</title>
 
-        <para>Vous pouvez interdire (c'est-à-dire blacklister) certaines ctions
+        <para>Vous pouvez interdire (c'est-à-dire inhiber) certaines actions
         quand la VM s'arrête. Pour interdire des actions spécifiques,
         tapez&#xA0;:</para>
 
@@ -2542,7 +2541,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
 
             <glossdef>
               <para>N'autorise pas l'utilisateur à éteindre la VM en envoyant
-              l'événement ACPI couper à l'invité.</para>
+              l'événement ACPI d'extinction à l'invité.</para>
             </glossdef>
           </glossentry>
 
@@ -2644,27 +2643,27 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
             </row>
             <row>
               <entry><computeroutput>SSL_RANDFILE</computeroutput></entry>
-              <entry>Fichier contenant seed en générateur de nombre aléatoire</entry>
+              <entry>Fichier contenant l'amorce du générateur de nombre aléatoire</entry>
               <entry></entry>
             </row>
             <row>
               <entry><computeroutput>TIMEOUT</computeroutput></entry>
-              <entry>Timous de la session en secondes&#xA0;; 0 désactive le timeouts</entry>
+              <entry>Timout de la session en secondes&#xA0;; 0 désactive le timeout</entry>
               <entry>300</entry>
             </row>
             <row>
               <entry><computeroutput>CHECK_INTERVAL</computeroutput></entry>
-              <entry>Fréquence des vérifications des timeout en secondes</entry>
+              <entry>Fréquence des vérifications des timeouts en secondes</entry>
               <entry>5</entry>
             </row>
             <row>
               <entry><computeroutput>THREADS</computeroutput></entry>
-              <entry>Nombre maximum de session simultanées possibles</entry>
+              <entry>Nombre maximum de sessions simultanées possibles</entry>
               <entry>100</entry>
             </row>
             <row>
               <entry><computeroutput>KEEPALIVE</computeroutput></entry>
-              <entry>Nombre maximum de requêtes avant de fermer une socket</entry>
+              <entry>Nombre maximum de requêtes avant de fermer un socket</entry>
               <entry>100</entry>
             </row>
             <row>
@@ -2714,7 +2713,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
 
       <para>Si vous oubliez la commande ci-dessus, les paramètres ci-dessus
       seront utilisés au moment de l'activation du service. Vérifiez les
-      réglages actuelles des propriétés avec&#xA0;:<screen>svcprop -p config svc:/application/virtualbox/webservice:default</screen></para>
+      réglages actuels des propriétés avec&#xA0;:<screen>svcprop -p config svc:/application/virtualbox/webservice:default</screen></para>
 
       <para>Lorsque tout est bien configuré, vous pouvez démarrer le service
       web de VirtualBox avec la commande suivante&#xA0;:<screen>svcadm enable svc:/application/virtualbox/webservice:default</screen></para>
@@ -2741,7 +2740,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
   </sect1>
 
   <sect1 id="vboxwatchdog">
-    <title>VirtualBox Watchdog</title>
+    <title>Surveillance VirtualBox (Watchdog)</title>
     <para>À partir de VirtualBox 4.2, le service de ballon de mémoire, connu
     jadis comme le <computeroutput>VBoxBalloonCtrl</computeroutput>, a été
     renommé en VBoxWatchdog, ce qui intègre à présent plusieurs services de
@@ -2750,17 +2749,17 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <para>Il s'agit des services&#xA0;: <itemizedlist>
         <listitem>
             <para>Contrôle du ballon de mémoire, qui prend en charge automatiquement
-            d'un ballon de mémoire configuré pour une VM (voir <xref linkend="guestadd-balloon" />
-            pour une présentation du jeu de ballon avec la méom:re). Cela
+            un ballon de mémoire configuré pour une VM (voir <xref linkend="guestadd-balloon" />
+            pour une présentation du jeu de ballon avec la méomire). Cela
             est surtout utile pour les environnements serveurs où les VMs peuvent
             solliciter de manière dynamique plus ou moins de mémoire pendant
             leur fonctionnement.</para>
 
-            <para>Le service vérifie régulièrement que le ballon actuel d'une
+            <para>Le service vérifie régulièrement le ballon d'une
             VM et sa RAM invitée disponible et il ajuste automatiquement
-            le ballon de mémoire actuel en l'augmentant ou le réduisant selon
+            le ballon de mémoire en l'augmentant ou le réduisant selon
             le cas. Cette gestion ne s'applique qu'aux VMs en fonction ayant
-            installé des suppléments invité éecents.</para>
+            installé des suppléments invité récents.</para>
         </listitem>
         <listitem>
             <para>La détection d'un isolement de l'hôte, qui offre un moyen de
@@ -2775,7 +2774,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     Vous pouvez spécifier toutes les valeurs de configuration soit en ligne
     de commande, soit par des données supplémentaires globales, tandis que 
     les valeurs en ligne de commandes ont toujours une priorité élevée si on
-    las définit. Certaines des valeurs de configuration peuvent être également
+    les définit. Certaines des valeurs de configuration peuvent être également
     spécifiées sur une base individuelle par VM. Donc, l'ordre pour regarder
     les paramètres est&#xA0;: ligne de comande, données supplémentaires pour
     chaque VM (s'il y en a), données supplémentaires globales. 
@@ -3077,14 +3076,14 @@ svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon
 # choix étant "allow".
 default_policy = deny
 
-# Bob est autorisé à démarrer des machines virtuelles, mais chacun à intervalle
+# Bob est autorisé à démarrer des machines virtuelles, mais chacune à intervalle
 # de 10 secondes
 bob = {
     allow = true
     startup_delay = 10
 }
 
-# Alice n'est pas autorisé à démarrer des machines virtuelles, utile pour
+# Alice n'est pas autorisée à démarrer des machines virtuelles, utile pour
 # exclure certains utilisateurs si la politique par défaut est allow.
 alice = {
     allow = false
@@ -3146,7 +3145,7 @@ alice = {
     ou nouvellement connectés.</para>
 
     <para>Vous pouvez activer le mode de gestion experte du stockage pour chaque
-    VM en exécuting :</para>
+    VM en exécution :</para>
 
     <screen>VBoxManage setextradata "nom VM" "VBoxInternal2/SilentReconfigureWhilePaused" 1</screen>
 
@@ -3167,7 +3166,7 @@ alice = {
           <glossterm>Mise en veille prolongée de l'hôte</glossterm>
            <glossdef>
              <para>
-               Cet événement est généré quand l'hîte va se mettre en veille prolongée,
+               Cet événement est généré quand l'hôte va se mettre en veille prolongée,
                c'est-à-dire quand l'hôte sauvegarde son état sur un support
                de stockage non volatile puis s'éteint.
              </para>

@@ -19,11 +19,11 @@
             <glossterm>Maintenir à jour le logiciel</glossterm>
             <glossdef>
               <para>
-                Une des bonnes pratirues de sécurité est d'avoir des versioos du
+                Une des bonnes pratiques de sécurité est d'avoir des versions de
                 logiciel et des correctifs à jour. Activez la notification de
                 mise à jour de VirtualBox pour être averti quand une nouvelle
                 version de VirtualBox est disponible. Quand vous mettez à jour
-                VirtualBox, n'oubliez pas de mett!e à jour aussi les suppléments
+                VirtualBox, n'oubliez pas de mettre à jour aussi les suppléments
                 invité. Maintenez à jour le système d'exploitation hôte ainsi
                 que l'invité.
               </para>
@@ -31,12 +31,12 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Restriindre l'accès réseau des services critiques</glossterm>
+            <glossterm>Restreindre l'accès réseau des services critiques</glossterm>
             <glossdef>
               <para>
                 Utilisez les moyens, tels qu'un pare-feu, pour protéger votre
                 ordinateur et vo(s) invité(s) de l'extérieur. Choisir le bon mode
-                de réseau pour des VMs permet de distinguer le réseau de l'hôte
+                de réseau pour les VMs permet de distinguer le réseau de l'hôte
                 de l'invité et vice versa.
               </para>
             </glossdef>
@@ -63,12 +63,12 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Surveiller l'activité du szstème</glossterm>
+            <glossterm>Surveiller l'activité du système</glossterm>
             <glossdef>
               <para>
                 La sécurité du système repose sur trois piliers&#xA0;: de bons
                 protocoles de sécurité, une bonne configuration du système et
-                la surveillance du szstème. L'évaluation et la lecture des
+                la surveillance du système. L'évaluation et la lecture des
                 fruits de l'évaluation constituent la troisième exigence. Chaque
                 composant d'un système a un certain degré de capacité à être
                 surveillé. Suivez les conseils d'évaluation de ce document et
@@ -82,7 +82,7 @@
             <glossdef>
               <para>
                 Oracle améliore en permanence ses logiciels et sa documentation.
-                Vérifiez ce passage chaque année pour truurer les révisions.
+                Vérifiez ce passage chaque année pour trouver les révisions.
               </para>
             </glossdef>
           </glossentry>
@@ -169,7 +169,7 @@
         d'un utilisateur du système d'exploitation hôte. L'invité ne peut pas
         communiquer directement avec le matériel hôte ou avec d'autres ordinateurs,
         mais uniquement via le VMM. Le VMM offre des ressources physiques et des
-        périphériques émulés à l'invité, auxquelles on accède par le système d'exploitation hôte pour effectuer les
+        périphériques émulés à l'invité, auxquels on accède par le système d'exploitation hôte pour effectuer les
         tâches nécessaires. Les paramètres de la VM contrôlent les ressources 
         fournies à l'invité, par exemple la quantité de mémoire de l'invité ou
         le nombre de processeurs invités (voir <xref linkend="generalsettings"/>) 
@@ -179,7 +179,7 @@
     </sect2>
     
     <sect2>
-      <title>Configuration pécurisée des machines virtuelles</title>
+      <title>Configuration sécurisée des machines virtuelles</title>
       <para>
         Plusieurs aspects de la configuration d'une machine virtuelle sont sujets
         à des considérations de sécurité.</para>
@@ -195,13 +195,13 @@
           et il suffit pour la plupart des besoins. 
         </para>
         <para>
-          Si vous utilisé le réseau bridgé, la VM se comporte comme un ordinateur
+          Si vous utilisez le réseau bridgé, la VM se comporte comme un ordinateur
           dans le même réseau que l'hôte, voir <xref linkend="network_bridged"/>.
           Dans ce cas, l'invité a un accès réseau identique à l'hôte et un
           pare-feu pourrait être nécessaire pour protéger d'autres ordinateurs
           du sous-réseau contre des invités malveillants potentiels et pour
           protéger l'invité contre un accès direct par les autres ordinateurs.
-          Dans certains cas, il est intçressant de songer à utiliser une règle
+          Dans certains cas, il est intéressant de songer à utiliser une règle
           de redirection pour un port spécifique en mode NAT, plutôt que d'utiliser
           le réseau bridgé.
         </para>
@@ -273,7 +273,7 @@
         <para>
           La présentation de périphériques USB à l'invité offre à l'invité un
           accès complet à ces périphériques, voir <xref linkend="settings-usb"/>.
-          Par exemple, outre la lecture et l'écriture du contenu des partitionpartitions
+          Par exemple, outre la lecture et l'écriture du contenu des partitions
           d'un disque USB externe, l'invité pourra également lire et écrire la
           table de partitions et des données matérielles sur ce disque.
         </para>
@@ -326,7 +326,7 @@
     -->
 
     <sect2>
-    <title>Opçrations potentiellement non sécurisées</title>
+    <title>Opérations potentiellement non sécurisées</title>
 
       <para>Les fonctions suivantes de VirtualBox peuvent présenter des problèmes
       de sécurité&#xA0;:<itemizedlist>
@@ -338,7 +338,7 @@
 
         <listitem>
           <para>En téléportant une machine, le flux de données par lequel passe
-          le contenu de la mémoire de la machine est transféré d'un hô!e à l'autre
+          le contenu de la mémoire de la machine est transféré d'un hôte à l'autre
           sans chiffrement. Un tiers ayant un accès au réseau par lequel les
           données sont transférées pourrait donc intercepter ces données. On
           pourrait utiliser un tunnel SSH pour sécuriser la connexion entre les
@@ -367,7 +367,7 @@
           <para>Le trafic envoyé par une connexion réseau en tunnel UDP n'est
           pas chiffré. Vous pouvez soit le chiffrer au niveau du réseau hôte 
           (avec IPsec), soit utiliser des protocoles chiffrés dans le réseau 
-          invité (tel que SSH). The security properties are similar to bridged Ethernet.</para>
+          invité (tel que SSH). Les propriétés de sécurité sont similaires à un Ethernet bridgé.</para>
         </listitem>
       </itemizedlist></para>
     </sect2>
@@ -376,7 +376,7 @@
       <title>Chiffrement</title>
 
       <para>Les composants suivants de VirtualBox utilisent le chiffrement pour
-      protéger ces données sensibles&#xA0;:<itemizedlist>
+      protéger les données sensibles&#xA0;:<itemizedlist>
         <listitem>
           <para>Quand on utilise le pack d'extension de VirtualBox fourni par
           Oracle pour le support du bureau distant (VRDP), les données peuvent
