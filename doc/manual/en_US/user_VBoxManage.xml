@@ -469,6 +469,21 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <listitem>
+            <para><computeroutput>--groups &lt;group&gt;, ...</computeroutput>:
+            This changes the group membership of a VM. Groups always start with
+            a <computeroutput>/</computeroutput> and can be nested. By default
+            VMs are in group <computeroutput>/</computeroutput>.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--description &lt;desc&gt;</computeroutput>:
+            This changes the VM's description, which is a way to record details
+            about the VM in a way which is meaningful for the user. The GUI
+            interprets HTML formatting, the command line allows arbitrary
+            strings potentially containing multiple lines.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--ostype &lt;ostype&gt;</computeroutput>:
             This specifies what guest operating system is supposed to run in
             the VM. To learn about the various identifiers that can be used

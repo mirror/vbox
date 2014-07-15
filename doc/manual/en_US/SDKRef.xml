@@ -4670,6 +4670,16 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
+                <para><computeroutput>IMachine::deleteSettings</computeroutput>
+                has been replaced by IMachine::delete, which allows specifying
+                which disk images are to be deleted as part of the deletion,
+                and because it can take a while it also returns a
+                <computeroutput>IProgress</computeroutput> object reference,
+                so that the completion of the asynchronous activities can be
+                monitored.</para>
+              </listitem>
+
+              <listitem>
                 <para><computeroutput>IConsole::forgetSavedState</computeroutput>
                 has been renamed to <xref
                 linkend="IConsole__discardSavedState"
