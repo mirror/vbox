@@ -37,7 +37,7 @@ ObjectState::ObjectState() : mStateLock(LOCKCLASS_OBJECTSTATE)
 }
 
 ObjectState::ObjectState(VirtualBoxBase *aObj) :
-    mStateLock(LOCKCLASS_OBJECTSTATE), mObj(aObj)
+    mObj(aObj), mStateLock(LOCKCLASS_OBJECTSTATE)
 {
     Assert(mObj);
     mState = NotReady;
