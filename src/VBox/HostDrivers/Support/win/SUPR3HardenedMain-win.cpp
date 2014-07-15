@@ -623,6 +623,10 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                      && memcmp(uBuf.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Buffer,
                                g_offSupLibHardenedExeNtName * sizeof(WCHAR)) == 0)
                 fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+#ifdef VBOX_PERMIT_MORE
+            else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
+#endif
 #ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
             /* Hack to allow profiling our code with Visual Studio. */
             else if (   uBuf.UniStr.Length > sizeof(L"\\SamplingRuntime.dll")

@@ -510,6 +510,34 @@ static uint32_t supHardViUtf16PathCountSlashes(PCRTUTF16 pwsz)
 }
 
 
+#ifdef VBOX_PERMIT_MORE
+/**
+ * Checks if the path goes into %windir%\apppatch\.
+ *
+ * @returns true if apppatch, false if not.
+ * @param   pwszPath        The path to examine.
+ */
+DECLHIDDEN(bool) supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName)
+{
+    uint32_t cwcWinDir = (g_System32NtPath.UniStr.Length - sizeof(L"System32")) / sizeof(WCHAR);
+
+    if (cwcName <= cwcWinDir + sizeof("AppPatch"))
+        return false;
+
+    if (memcmp(pwszPath, g_System32NtPath.UniStr.Buffer, cwcWinDir * sizeof(WCHAR)))
+        return false;
+
+    if (!supHardViUtf16PathStartsWith(&pwszPath[cwcWinDir], "\\AppPatch\\"))
+        return false;
+
+    return g_uNtVerCombined >= SUP_NT_VER_VISTA;
+}
+#else
+# error should not get here..
+#endif
+
+
+
 /**
  * Checks if the unsigned DLL is fine or not.
  *
@@ -570,8 +598,17 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
             return IS_W70() ? VINF_LDRVI_NOT_SIGNED : rc;
         if (supHardViUtf16PathIsEqual(pwsz, "apphelp.dll"))
             return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
-        if (supHardViUtf16PathIsEqual(pwsz, "sfc.dll"))
-            return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
+#ifdef VBOX_PERMIT_MORE
+        if (uNtVer >= SUP_NT_VER_W70) /* hard limit: user32.dll is unwanted prior to w7. */
+        {
+            if (supHardViUtf16PathIsEqual(pwsz, "sfc.dll"))
+                return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
+            if (supHardViUtf16PathIsEqual(pwsz, "sfc_os.dll"))
+                return uNtVer < SUP_MAKE_NT_VER_SIMPLE(6, 4) ? VINF_LDRVI_NOT_SIGNED : rc;
+            if (supHardViUtf16PathIsEqual(pwsz, "user32.dll"))
+                return uNtVer < SUP_NT_VER_W81 ? VINF_LDRVI_NOT_SIGNED : rc;
+        }
+#endif
 
 #ifndef IN_RING0
 # if 0 /* Allow anything below System32 that WinVerifyTrust thinks is fine. */
@@ -652,6 +689,32 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 
         return rc;
     }
+#endif
+
+#ifdef VBOX_PERMIT_MORE
+    /*
+     * AppPatch whitelist.
+     */
+    if (supHardViIsAppPatchDir(pwszName, cwcName))
+    {
+        cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR); /* ASSUMES System32 is called System32. */
+        pwsz = pwszName + cwcOther + 1;
+
+        if (supHardViUtf16PathIsEqual(pwsz, "acres.dll"))
+            return VINF_LDRVI_NOT_SIGNED;
+
+# ifdef RT_ARCH_AMD64
+        if (supHardViUtf16PathIsEqual(pwsz, "AppPatch64\\AcGenral.dll"))
+            return VINF_LDRVI_NOT_SIGNED;
+# elif defined(RT_ARCH_X86)
+        if (supHardViUtf16PathIsEqual(pwsz, "AcGenral.dll"))
+            return VINF_LDRVI_NOT_SIGNED;
+# endif
+
+        return rc;
+    }
+#else
+# error should not be here...
 #endif
 
     return rc;
@@ -854,9 +917,10 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
          * Open the image.
          */
         RTLDRMOD hLdrMod;
-        rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION,
-                                 fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST,
-                                 &hLdrMod, pErrInfo);
+        RTLDRARCH enmArch = fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST;
+        if (fFlags & SUPHNTVI_F_RESOURCE_IMAGE)
+            enmArch = RTLDRARCH_WHATEVER;
+        rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pErrInfo);
         if (RT_SUCCESS(rc))
         {
             /*
