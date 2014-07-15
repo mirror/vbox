@@ -1039,25 +1039,55 @@ void UIIndicatorsPool::prepareUpdateTimer()
 
 void UIIndicatorsPool::updatePool()
 {
-    /* Recache the list of restricted indicators: */
-    m_configuration = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+    /* Recache status-bar configuration: */
+    m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+    m_order = gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
 
-    /* Update indicators: */
+    /* Make sure the order is complete taking restrictions into account: */
     for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
     {
-        /* Determine indicator presence: */
-        const IndicatorType indicatorType = static_cast<IndicatorType>(iType);
-        bool fPresenceAllowed = !m_configuration.contains(indicatorType);
+        /* Get iterated type: */
+        IndicatorType type = (IndicatorType)iType;
+        /* Skip invalid type: */
+        if (type == IndicatorType_Invalid)
+            continue;
+        /* Take restriction/presence into account: */
+        bool fRestricted = m_restrictions.contains(type);
+        bool fPresent = m_order.contains(type);
+        if (fRestricted && fPresent)
+            m_order.removeAll(type);
+        else if (!fRestricted && !fPresent)
+            m_order << type;
+    }
 
-        /* If presence restricted: */
-        if (!fPresenceAllowed && m_pool.contains(indicatorType))
+    /* Remove restricted indicators: */
+    foreach (const IndicatorType &indicatorType, m_restrictions)
+        if (m_pool.contains(indicatorType))
         {
-            /* Cleanup indicator: */
             delete m_pool.value(indicatorType);
             m_pool.remove(indicatorType);
         }
-        /* If presence allowed: */
-        else if (fPresenceAllowed && !m_pool.contains(indicatorType))
+
+    /* Add/Update allowed indicators: */
+    foreach (const IndicatorType &indicatorType, m_order)
+    {
+        /* Indicator exists: */
+        if (m_pool.contains(indicatorType))
+        {
+            /* Get indicator: */
+            QIStatusBarIndicator *pIndicator = m_pool.value(indicatorType);
+            /* Make sure it have valid position: */
+            const int iWantedIndex = indicatorPosition(indicatorType);
+            const int iActualIndex = m_pMainLayout->indexOf(pIndicator);
+            if (iActualIndex != iWantedIndex)
+            {
+                /* Re-inject indicator into main-layout at proper position: */
+                m_pMainLayout->removeWidget(pIndicator);
+                m_pMainLayout->insertWidget(iWantedIndex, pIndicator);
+            }
+        }
+        /* Indicator missed: */
+        else
         {
             /* Create indicator: */
             switch (indicatorType)
@@ -1078,7 +1108,7 @@ void UIIndicatorsPool::updatePool()
             /* Configure indicator: */
             connect(m_pool.value(indicatorType), SIGNAL(sigContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)),
                     this, SLOT(sltContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)));
-            /* Insert indicator into main-layout: */
+            /* Insert indicator into main-layout at proper position: */
             m_pMainLayout->insertWidget(indicatorPosition(indicatorType), m_pool.value(indicatorType));
         }
     }
@@ -1117,7 +1147,7 @@ void UIIndicatorsPool::cleanup()
 int UIIndicatorsPool::indicatorPosition(IndicatorType indicatorType) const
 {
     int iPosition = 0;
-    foreach (const IndicatorType &iteratedIndicatorType, m_pool.keys())
+    foreach (const IndicatorType &iteratedIndicatorType, m_order)
         if (iteratedIndicatorType == indicatorType)
             return iPosition;
         else

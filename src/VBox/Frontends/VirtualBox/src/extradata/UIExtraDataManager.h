@@ -368,6 +368,11 @@ public:
         /** Defines restricted Runtime UI status-bar indicator @a list. */
         void setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QString &strID);
 
+        /** Returns Runtime UI status-bar indicator order list. */
+        QList<IndicatorType> statusBarIndicatorOrder(const QString &strID);
+        /** Defines Runtime UI status-bar indicator order @a list. */
+        void setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QString &strID);
+
 #ifdef Q_WS_MAC
         /** Mac OS X: Returns whether 'presentation mode' enabled. */
         bool presentationModeEnabled(const QString &strID);
