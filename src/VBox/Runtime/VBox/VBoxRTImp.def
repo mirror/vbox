@@ -728,6 +728,13 @@ EXPORTS
     RTMemPoolRetain
     RTMemProtect
     RTMemReallocTag
+    RTMemSaferAllocZExTag
+    RTMemSaferAllocZTag
+    RTMemSaferFree
+    RTMemSaferReallocZExTag
+    RTMemSaferReallocZTag
+    RTMemSaferScramble
+    RTMemSaferUnscramble
     RTMemTmpAllocTag
     RTMemTmpAllocZTag
     RTMemTmpFree
