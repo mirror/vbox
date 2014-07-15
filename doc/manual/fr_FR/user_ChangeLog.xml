@@ -55,7 +55,7 @@
 
       <listitem>
         <para>API : correction des informations de certains événements générées
-        automatiquement (seulement avec XPCOM, l'hîte Windows n'était pas concerné),
+        automatiquement (seulement avec XPCOM, l'hôte Windows n'était pas concerné),
         ce qui provoquait des erreurs de récupération d'attributs par le service
            Web (bogue #12379)</para>
       </listitem>
@@ -862,7 +862,7 @@
        </listitem>
        <listitem>
          <para>VMM : introduction d'un petit interpréteur d'instructions pour les
-         situations que ne gère pas la  virtualisation matérielle</para>
+         situations que ne gère pas la virtualisation matérielle</para>
        </listitem>
        <listitem>
         <para>GUI : mécanisme de messages étendus (utilisation des nouvelles
@@ -922,7 +922,7 @@
       <listitem>
         <para>VMM : amélioration significative des performances des invités
         NetWare 5.x/6.x sur des systèmes hôte ne supportant pas la pagination
-        nestée</para>
+        imbriquée</para>
       </listitem>
 
       <listitem>
@@ -947,7 +947,7 @@
 
       <listitem>
         <para>GUI : synchronisation des LEDs HID pendant le changement
-        de fenêtre hôte-invité (hîtes (Mac OS X seulement)</para>
+        de fenêtre hôte-invité (hôtes (Mac OS X seulement)</para>
       </listitem>
       <listitem>
         <para>GUI, VBoxManage : lorsqu'on désenregistre une VM, désenregistrement
@@ -1010,7 +1010,7 @@
         environ plus de 100 VMs</para>
       </listitem>
       <listitem>
-        <para>Principal : utilisatiod du dossier de configuration standard
+        <para>Principal : utilisation du dossier de configuration standard
         de XDG au lieu de .VirtualBox sur des systèmes où c'est nécessaire (bogue
         #5099)</para>
       </listitem>
@@ -1055,14 +1055,14 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage : ajout du support de lsupervision des sessions de l'invité via
+        <para>VBoxManage : ajout du support de supervision des sessions de l'invité via
           <computeroutput>guestcontrol watch</computeroutput>
         </para>
       </listitem>
       <listitem>
         <para>VBoxManage : ajout de  <computeroutput>modifyvm --triplefaultreset</computeroutput>
         pour que la VM redémarre après trois erreurs au lieu de tomber en
-        Guru Meditation.</para>
+        Meditation Gourou.</para>
       </listitem>
 
       <listitem>
@@ -1078,7 +1078,7 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage : ajout du support 'de la fin des processus actifs de
+        <para>VBoxManage : ajout du support de la fin des processus actifs de
         l'invité via <computeroutput>guestcontrol process kill|close|terminate --session-id &lt;ID&gt;|
         --session-name &lt;nom ou modèle&gt; &lt;PID&gt; ... &lt;PID n&gt;</computeroutput>
         ou
@@ -1133,8 +1133,7 @@
          (bogue #12072)</para>
        </listitem>
        <listitem>
-         <para>Invités Windows : possibilité de repérer les moments
-d'inactivité 
+         <para>Invités Windows : possibilité de repérer les moments d'inactivité 
          de l'utilisateur dans l'invité grâce à l'événement
          IGuestUserStateChangedEvent, introduit récemment.</para>
        </listitem>
@@ -1539,7 +1538,7 @@ d'inactivité
 
       <listitem>
         <para>GUI : ne restaure pas l'instantané actuel si on coupe après une
-          Guru Mediation</para>
+          Mediation Gourou</para>
       </listitem>
 
       <listitem>
@@ -1806,7 +1805,7 @@ d'inactivité
 
       <listitem>
         <para>VMM : correction d'une Guru Meditation quand on branche un
-        processeur dans un invité Linux si la pagination nested est désactivée</para>
+        processeur dans un invité Linux si la pagination imbriquée est désactivée</para>
       </listitem>
 
       <listitem>
@@ -5644,7 +5643,7 @@ on quitte le mode plein écran avec des
             </listitem>
 
             <listitem>
-              <para>Intel HD Audio, pour un meilleur support des szstèmes
+              <para>Intel HD Audio, pour un meilleur support des systèmes
               d'exploitation modernes (comme Windows 64 bits ; bogue #2785)</para>
             </listitem>
           </itemizedlist>
@@ -5712,7 +5711,7 @@ on quitte le mode plein écran avec des
       <listitem>
         <para>VMM : Activation par défaut du support des grandes pages sur les
         hôtes 64 bits (cela s'applique seulement à la pagination 
-        nested)</para>
+        imbriquée)</para>
       </listitem>
 
       <listitem>
@@ -5924,7 +5923,7 @@ on quitte le mode plein écran avec des
 
       <listitem>
         <para>GUI : application des vérifications de dépassement de la taille
-        limite du szstème de fichiers hôte et d'E/S asynchrones cassés sur les
+        limite du système de fichiers hôte et d'E/S asynchrones cassés sur les
         anciens noyaux Linux ayant les systèmes de fichiers ext4 / xfs, non
         seulement au démarrage à partir de 0 d'une VM, mais aussi au démarrage
         à partir d'un état sauvegardé</para>
@@ -6087,7 +6086,7 @@ on quitte le mode plein écran avec des
 
       <listitem>
         <para>VMM : correction d'une Guru meditation pour les grosses mémoires
-        des invités 64 bits sur les hôtes 32 bits ayant la pagination nested
+        des invités 64 bits sur les hôtes 32 bits ayant la pagination imbriquée
           (bogue #7544)</para>
       </listitem>
 
@@ -6879,7 +6878,7 @@ on quitte le mode plein écran avec des
       </listitem>
 
       <listitem>
-        <para>VMM : correction d'une faible performance avec la pagination nested
+        <para>VMM : correction d'une faible performance avec la pagination imbriquée
         et l'exécution de ;'invité sans restriction (VT-x seulement ; bogue #6716)</para>
       </listitem>
 
@@ -7100,9 +7099,9 @@ on quitte le mode plein écran avec des
       <listitem>
         <para>Nouvelles fonctions de l'Hyperviseur : avec VT-x/AMD-V sur les
         hôtes 64 bits, l'utilisation de grandes pages peut améliorer les
-        performances (voir <xref linkend="nestedpaging"/>) ; en outre, sur
+        performances (voir <xref linkend="imbriquéepaging"/>) ; en outre, sur
           VT-x, l'exécution sans restriction de l'invité est maintenant supportée
-          (si la pagination nested est activée avec VT-x, le mode réel et le mode 
+          (si la pagination imbriquée est activée avec VT-x, le mode réel et le mode 
           protégé sans code de pagination fonctionnent plus vite, ce qui accélère
           considérablement le démarrage de l'OS invité)</para>
       </listitem>
@@ -7319,12 +7318,12 @@ on quitte le mode plein écran avec des
 
       <listitem>
         <para>VMM : correction d'un plantage de l'invité OS/2 quand la pagination
-        nested activée</para>
+        imbriquée activée</para>
       </listitem>
 
       <listitem>
         <para>VMM : correction d'une grosse perte des performances d'affichage
-        (AMD-V avec la pagination nested seulement) </para>
+        (AMD-V avec la pagination imbriquée seulement) </para>
       </listitem>
 
       <listitem>
@@ -7381,7 +7380,7 @@ on quitte le mode plein écran avec des
       </listitem>
 
       <listitem>
-        <para>NAT : correction d'une latence ICMP (hîtes non Windows seulement ;
+        <para>NAT : correction d'une latence ICMP (hôtes non Windows seulement ;
         bogue #6427)</para>
       </listitem>
 
@@ -7743,7 +7742,7 @@ on quitte le mode plein écran avec des
       </listitem>
 
       <listitem>
-        <para>VMM : activation de la pagination nested par défaut sur les
+        <para>VMM : activation de la pagination imbriquée par défaut sur les
         nouvelles VMs (s'il est disponible ; VT-x et AMD-V seulement)</para>
       </listitem>
 
@@ -8549,7 +8548,7 @@ on quitte le mode plein écran avec des
       </listitem>
 
       <listitem>
-        <para>VMM : correction d'une guru meditation en pagination nested et
+        <para>VMM : correction d'une guru meditation en pagination imbriquée et
         avec les invités SMP (bogue #5222) </para>
       </listitem>
 
@@ -8574,7 +8573,7 @@ on quitte le mode plein écran avec des
       </listitem>
 
       <listitem>
-        <para>VMM : correction de la pagination nested cassée pour les invités
+        <para>VMM : correction de la pagination imbriquée cassée pour les invités
         64 bits sur les hôtes 32 bits (AMD-V seulement ; bogue #5285)</para>
       </listitem>
 
@@ -10208,7 +10207,7 @@ on quitte le mode plein écran avec des
 
       <listitem>
         <para>VMM : correction d'un accroc au démarrage de Windows XP (invité
-        PAE + pagination nested seulement) </para>
+        PAE + pagination imbriquée seulement) </para>
       </listitem>
 
       <listitem>
@@ -11261,7 +11260,7 @@ on quitte le mode plein écran avec des
 
       <listitem>
         <para>API : ajout de méthodes pour renvoyer les informations sur la
-        configuration réseau du szstème hôte</para>
+        configuration réseau du système hôte</para>
       </listitem>
 
       <listitem>
@@ -11832,11 +11831,11 @@ on quitte le mode plein écran avec des
     majeures suivantes ont été ajoutées :<itemizedlist>
 
         <listitem>
-          <para>Support des invités 64 bits (!ôtes 64 bits seulement) </para>
+          <para>Support des invités 64 bits (hôtes 64 bits seulement) </para>
         </listitem>
 
         <listitem>
-          <para>Nouvel interface utilisateur natifLeopard sur les hôtes Mac OS X</para>
+          <para>Nouvel interface utilisateur natif Leopard sur les hôtes Mac OS X</para>
         </listitem>
 
         <listitem>
@@ -11862,7 +11861,7 @@ on quitte le mode plein écran avec des
         </listitem>
 
         <listitem>
-          <para>Support de la pagination Nested sur les processeurs AMD modernes
+          <para>Support de la pagination imbriquée sur les processeurs AMD modernes
           (amélioration majeure des performance)</para>
         </listitem>
 

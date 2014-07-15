@@ -62,7 +62,7 @@
     PRO/1000 ont été choisis pour certains types de systèmes d'exploitation invités
     qui n'incluent plus de pilotes pour la carte PCNet, tel que Windows Vista.</para>
 
-    <para>Le type Intel PRO/1000 MT Desktop fonctionne avec Windows Vista aet
+    <para>Le type Intel PRO/1000 MT Desktop fonctionne avec Windows Vista et
     les versions supérieures. La variante T Server de la carte Intel PRO/1000 
     est reconnue par les invités Windows XP sans installer de pilotes supplémentaires.
     La variante MT Server facilite les imports d'OVF à partir d'autres plateformes.</para>
@@ -82,9 +82,9 @@
 
     <para><itemizedlist>
         <listitem>
-          <para>Les noyaux Linux version 2.6.25 ou supçrieur peuvent être configurés
+          <para>Les noyaux Linux version 2.6.25 ou supérieur peuvent être configurés
           pour fournir le support virtio&#xA0;; certaines distributions ont
-          back-porté aussi virtio dans d'anciens noyaux.</para>
+          adpaté aussi virtio dans d'anciens noyaux.</para>
         </listitem>
 
         <listitem>
@@ -99,12 +99,12 @@
     <para>VirtualBox contient aussi un support limité pour ce qu'on appelle
     <emphasis role="bold">jumbo frames</emphasis>, c'est-à-dire les paquets
     réseaux de plus de 1500 octets de données, si vous utilisez le réseau Intel
-    de virtualisation bridgé. En d'autres termes, jumbo frames ne sont pas
-    supportés avec les périphériques réseaux AMD&#xA0;; dans ce cas, jumbo
-    packets will seront rejetés en silence côté récepteur et transmetteur.
+    de virtualisation bridgé. En d'autres termes, jumbo frames n'est pas
+    supporté avec les périphériques réseaux AMD&#xA0;; dans ce cas, les paquets jumbo
+     seront rejetés en silence tant côté récepteur que transmetteur.
     Les systèmes d'exploitation invités qui essaient d'utiliser cette fonctionnalité
     verront cela comme une perte de paquets, ce qui peut provoquer un comportement
-    inattendu de l'application dans l'invité. Cela ne pose pas problème avec les
+    inattendu de l'application dans l'invité. Cela ne pose pas de problème avec les
     systèmes d'exploitation invités dans leur configuration par défaut, vu que
     jumbo frames doit être explicitement activé.</para>
   </sect1>
@@ -123,7 +123,7 @@
             Ethernet n'était branché dans la carte. De cette façon, il est possible
             de "retirer" le câble réseau virtuel Ethernet et de couper la
             connexion, ce qui peut être utile pour informer un système d'exploitation 
-            invité qu'aucune connexion réseau n'est disponible, et ceci renforce une
+            invité qu'aucune connexion réseau n'est disponible et forcer une
             reconfiguration.</para>
           </glossdef>
         </glossentry>
@@ -193,7 +193,7 @@
           <glossdef>
             <para>Mode rarement utilisé, il partage la même interface réseau 
             générique en permettant à l'utilisateur de sélectionner un pilote qui
-            seut être inclu dans VirtualBox ou distribué dans un pack d'extension.</para>
+            peut être inclu dans VirtualBox ou distribué dans un pack d'extension.</para>
 
             <para>Pour l'instant, il existe potentiellement deux sous-modes
             disponibles&#xA0;:</para>
@@ -238,8 +238,8 @@
     n'exige aucune configuration sur le réseau hôte ou le système invité. C'est
     pourquoi c'est le mode réseau par défaut de VirtualBox.</para>
 
-    <para>Une machine virtuelle dont NAT est activé agit exactement comme un vrai
-    ordinateur qui se connect5 à Internet par un routeur. Le "routeur", dans
+    <para>Une machine virtuelle où NAT est activé agit exactement comme un vrai
+    ordinateur qui se connecte à Internet par un routeur. Le "routeur", dans
     ce cas, est le moteur réseau de VirtualBox, qui dirige le trafic depuis et
     vers la machine virtuelle de façon transparente. Dans VirtualBox, ce routeur
     se place entre chaque machine virtuelle et l'hôte. Cette séparation maximise
@@ -251,20 +251,20 @@
     depuis le réseau extérieur&#xA0;; vous ne pouvez pas lancer de serveur de 
     cette façon, sauf si vous réglez une redirection de ports (décrite ci-dessous).</para>
 
-    <para>Les blocs réseaux envoyés par le système d'exploitation invité sont reçus
+    <para>Les trames réseaux envoyés par le système d'exploitation invité sont reçus
     par le moteur NAT de VirtualBox qui extrait les données TCP/IP et les envoie
     en utilisant le système d'exploitation hôte. Pour une application de l'hôte
     ou un autre ordinateur du même réseau comme l'hôte, cela fonctionne comme
     si des données étaient envoyées par l'application VirtualBox de l'hôte,
     en utilisant une adresse IP appartenant à l'hôte. VirtualBox écoute les
-    réponses aux paquets envoyés et les les réempaquète et les renvoie à la machine invitée
+    réponses aux paquets envoyés et les réempaquète et les renvoie à la machine invitée
     sur son réseau privé.</para>
 
     <para>La machine virtuelle reçoit son adresse et sa configuration réseau
     sur le réseau privé à partir d'un serveur DHCP intégré à VirtualBox. L'adresse
     IP ainsi affectée à la machine virtuelle se trouve en général sur un réseau
     complètement différent de l'hôte. On peut paramétrer l'utilisation de NAT
-    pour autant de cartes qu'a une machine virtuelle, la première carte est
+    pour autant de cartes dont dispose la machine virtuelle, la première carte est
     connectée au réseau privé sur 10.0.2.0, la deuxième carte sur 10.0.3.0 et
     ainsi de suite. Si vous avez besoin de modifier la plage d'adresses affectées
     à l'invité pour une raison quelconque, merci de vous reporter à la
@@ -288,7 +288,7 @@
       que vous ne pouvez pas lancer le même service sur les mêmes ports de
       l'hôte. Néanmoins, vous pouvez toujours tirer parti de lancer un service
       dans une machine virtuelle -- par exemple, les services de la machine hôte
-      ou d'autres machines virtuelles ne peuvent pas -être atteintes ou plantées
+      ou d'autres machines virtuelles ne peuvent pas être atteints ou plantés
       par une faille ou un bogue du service, et le service peut fonctionner dans
       un autre système d'exploitation que le système hôte.</para>
 
@@ -303,7 +303,7 @@
       <computeroutput>VBoxManage</computeroutput>&#xA0;; pour les détails, merci
       de vous reporter au <xref linkend="vboxmanage-modifyvm" />.</para>
 
-      <para>Vous devrez savoir les ports de l'invité utilisés par les services
+      <para>Vous devrez connaître les ports de l'invité utilisés par les services
       de l'invité et décider des ports à utiliser sur l'hôte (souvent, mais pas
       toujours, vous voudrez utiliser les mêmes ports sur l'invité et sur l'hôte).
       Vous pouvez utiliser n'importe quel port de l'hôte qui ne sont pas déjà
@@ -313,7 +313,7 @@
       l'exemple ci-dessus, tout le trafic TCP arrivant sur le port 2222 de
       n'importe quelle interface de l'hôte sera redirigé sur le port 22 de
       l'invité. Le nom du protocole <computeroutput>tcp</computeroutput> est un
-      attribut obligatoire définissant le protocole qu'il faudrait utiliser pour
+      attribut obligatoire définissant le protocole à utiliser pour
       la redirection (on pourrait utiliser <computeroutput>udp</computeroutput>).
       Le nom <computeroutput>guestssh</computeroutput> est purement descriptif
       et il sera auto-généré si vous n'en mettez pas. Le numéro après
@@ -342,13 +342,13 @@
     </sect2>
 
     <sect2 id="nat-tftp">
-      <title>Démarrer avec PXE avec NAT</title>
+      <title>Démarrer avec PXE et NAT</title>
 
       <para>Le démarrage avec PXE est désormais supporté en mode NAT. Le serveur
       DHCP de NAT fournit un fichier d'amorçage dont le nom ressemble à
       <computeroutput>nomvm.pxe</computeroutput> si le répertoire 
       <computeroutput>TFTP</computeroutput> existe dans le répertoire où se trouve
-      le bichier <computeroutput>VirtualBox.xml</computeroutput> de l'utilisateur.
+      le fichier <computeroutput>VirtualBox.xml</computeroutput> de l'utilisateur.
       L'utilisateur est chargé de fournir 
       <computeroutput>nomvm.pxe</computeroutput>.</para>
     </sect2>
@@ -356,8 +356,8 @@
     <sect2 id="nat-limitations">
       <title>Limites du NAT</title>
 
-      <para>Il y a quatre <emphasis role="bold">limites</emphasis> du yrolig;ud
-      NAT que les utilisateurs devraient savoir&#xA0;:</para>
+      <para>Il y a quatre <emphasis role="bold">limites</emphasis> du mode
+      NAT que les utilisateurs devraient connaître&#xA0;:</para>
 
       <glosslist>
         <glossentry>
@@ -415,7 +415,7 @@
       du réseau. Mais la présence de NAT a également des effets subtils qui
       peuvent interférer avec des protocoles qui, en principe, fonctionnent. Un
       exemple est NFS, où le serveur est souvent configuré pour refuser les
-       connexions depuis des ports non privlégiés (donc les ports qui ne sont pas
+       connexions depuis des ports non privilégiés (donc les ports qui ne sont pas
        inférieurs à 1024).</para>
     </sect2>
   </sect1>
@@ -425,7 +425,7 @@
     
     <para>Le service Network Address Translation (NAT) fonctionne comme un
     routeur domestique en regroupant les systèmes qui l'utilisent dans un réseau 
-    et en écartant les systèmes extérieurs d'accéder aux systèmes en son sein
+    et en évitant que les systèmes extérieurs accèdent au sein du réseau
     tout en permettant aux systèmes qu'il contient de communiquer entre eux et
     avec l'extérieur via TCP et UDP en IPv4 et IPv6.</para>
 
@@ -438,7 +438,7 @@
     <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e</screen></para>
     <para>
     Ici, "nat-int-network" est le nom du réseau interne à utiliser et
-    "192.168.15.0/24" est l'adresse du réseau et l'interface due masque du service NAT.
+    "192.168.15.0/24" est l'adresse du réseau et l'interface du masque du service NAT.
     Dans cette configuration statique, par défaut, l'adresse affectée à la passerelle sera
     192.168.15.1 (adresse suivant celle de l'interface), bien que cela soit sujet
     à changement. Pour connecter un serveur DHCP au réseau interne, nous
@@ -449,7 +449,7 @@
     <para>Pour le désactiver à nouveau, utilisez :</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -h off</screen></para>
     <para>Le serveur DHCP fournit la liste des noms de serveurs enregistrés 
-    mais elle n'identifie pas les serveurs du réseau 127/8.</para>
+    mais n'identifie pas les serveurs du réseau 127/8.</para>
 
     <para>Pour démarrer le service NAT, utilisez la commande suivante :</para>
     <para><screen>VBoxManage natnetwork start -t nat-int-network</screen></para>
@@ -484,7 +484,7 @@
     Il permet à VirtualBox d'intercepter les données du réseau physique et
     d'y envoyer des données, ce qui crée de fait une nouvelle interface réseau
     logicielle. Quand un invité utilise une telle interface, cela se passe,
-    le sur le système hôte, comme si l'invité était connecté physiquement à
+    sur le système hôte, comme si l'invité était connecté physiquement à
     l'interface réseau en utilisant un câble réseau&#xA0;: l'hôte peut envoyer
     des données à l'invité via cette interface et en reçoit des données. Cela
     veut dire que vous pouvez régler du routage ou des ponts entre l'invité et le
@@ -509,7 +509,7 @@
       </footnote></para>
 
     <para><note>
-        <para>Même si TAP n'est plus  nécessaire sur Linux avec le réseau bridgé,
+        <para>Même si TAP n'est plus nécessaire sur Linux avec le réseau bridgé,
         vous <emphasis>pouvez</emphasis> toujours utiliser les interfaces TAP
         pour certains paramétrages avancés puisque vous pouvez connecter une VM
         à n'importe quel interface de l'hôte -- qui pourrait être également une
@@ -555,13 +555,13 @@
           choisir une interface filaire.</para>
 
           <para>De plus, le paramétrage du MTU sur moins de 1500 octets sur
-          ules interfaces filaires fournies par le pilote sky2 sur les Marvell Yukon II EC
+          les interfaces filaires fournies par le pilote sky2 sur les Marvell Yukon II EC
           Ultra Ethernet NIC est connu pour provoquer une perte de paquets dans
           certaines conditions.</para>
 
           <para>Certains adaptateurs nettoient les tags VLAN matériellement. Cela
           ne permet pas d'utiliser le troncage de VLAN entre une VM et le réseau
-          extern¨e avec les noyaux Linux pre-2.6.27, ni avec les szstèmes d'exploitation
+          externe avec les noyaux Linux pre-2.6.27, ni avec les systèmes d'exploitation
           hôtes autres que Linux.</para>
         </listitem>
 
@@ -591,7 +591,7 @@
 
             <listitem>
               <para>Il faut affecter au VNIC et à l'interface réseau invitée qui utilise
-              VNIC des adresses MAC identiquep.</para>
+              VNIC des adresses MAC identiques.</para>
             </listitem>
           </itemizedlist>
 
@@ -612,29 +612,29 @@
     réseau interne.</para>
 
     <para>Même si, techniquement, on peut faire tout ce qu'on fait avec un réseau interne
-    avec un le réseau bridgé, il présente des avantages de sécurité. En mode réseau
+    sur un réseau bridgé, il présente des avantages de sécurité. En mode réseau
     bridgé, tout le trafic passe par l'interface physique du système hôte. Il est
     donc possible d'attacher un snifeur de paquets (tel que Wireshark) à
     l'interface hôte et d'enregistrer tout le trafic qui y transite. Si, pour
     une raison quelconque, vous préférez que deux ou plusieurs VMs sur une même
-    machine communiquent en privé, en cachant leurs données au szstème et à
+    machine communiquent en privé, en cachant leurs données au système et à
     l'utilisateur hôtes, le réseau bridgé n'est donc pas envisageable.</para>
 
-    <para>Les réseaux internes sont créés automatiquement en tant que de besoin
+    <para>Les réseaux internes sont créés automatiquement au besoin
     c'est-à-dire qu'il n'y a pas de configuration centrale. Chaque réseau interne
     est identifié simplement par son nom. Une fois qu'il y a plus d'une carte
-    réseau virtuelle active avec le même ID réseau interne, le pilote support
+    réseau virtuelle active avec le même ID réseau interne, le pilote 
     de VirtualBox "branchera" automatiquement les cartes et agira comme un switch.
-    Les pilotes suppoqt de VirtualBox implémentent un switch Ethernet complet
+    Les pilotes de VirtualBox implémentent un switch Ethernet complet
     et supportent les frames broadcast/multicast et le mode promiscuous.</para>
 
     <para>Afin d'attacher la carte réseau d'une VM à un réseau interne, réglez
-    son mode réseau sur "réseau interne". Il existe de manières de
+    son mode réseau sur "réseau interne". Il existe 2 manières de
     faire cela&#xA0;:</para>
 
     <para><itemizedlist>
         <listitem>
-          <para>Vous pouvez utiliser une boîte de dialogue "Paramètres" de laVM
+          <para>Vous pouvez utiliser une boîte de dialogue "Paramètres" de la VM
           dans l'interface graphique de VirtualBox. Dans la catégorie "Réseau"
           de la boîte de dialogue des paramètres, sélectionnez "réseau interne"
           dans la liste déroulante des modes réseaux. Maintenant, sélectionnez
@@ -676,17 +676,17 @@
     connectées à une interface réseau physique.</para>
 
     <para>Quand on utilise le mode réseau host-only, VirtualBox crée une nouvelle
-    interface logicielle sur vhôte qui apparaît alors à côté vos interfaces
+    interface logicielle sur l'hôte qui apparaît alors à côté de vos interfaces
     réseaux existantes. En d'autres termes, alors que le réseau bridgé et que
-    l'interface physique existante est utilisée pour y attacher des machines virtuelles,
-    avec le réseau host-only, une nouvelle interface "loopback" est crééesur l'hôte.
+    l'interface physique existante sont utilisés pour y attacher des machines virtuelles,
+    avec le réseau host-only, une nouvelle interface "loopback" est créée sur l'hôte.
     Et alors qu'avec le réseau interne, le trafic entre les machines virtuelles
     n'est pas visible, le trafic sur l'interface "loopback" de l'hôte peut être
     intercepté.</para>
 
     <para>Le réseau Host-only est particulièrement utile pour les applicatifs
     virtuels préconfigués où plusieurs machines virtuelles sont groupées et conçues
-    pour collaborer. Par exemple, une machine e virtuelle peut contenir un
+    pour collaborer. Par exemple, une machine virtuelle peut contenir un
     serveur web et une deuxième une base de données, et comme elles sont faites
     pour se parler, l'applicatif peut demander à VirtualBox de définir un réseau
     host-only pour les deux. Un deuxième réseau (bridgé) connecterait alors le
@@ -709,8 +709,8 @@
       </itemizedlist></para>
 
     <para>Pour le réseau host-only, comme avec le réseau interne, vous pouvez
-    trouver utile le serveur DHCP construit dans VirtualBox. Il peut être activé
-    puis gérer les adresses IP dans le réseau host-only, puisque sans cela,
+    trouver utile que le serveur DHCP soit construit dans VirtualBox. Il peut être activé
+    et donc gérer les adresses IP dans le réseau host-only, puisque sans cela,
     vous devriez configurer toutes les adresses IP de manière statique.<itemizedlist>
         <listitem>
           <para>Dans l'interface graphique de VirtualBox, vous pouvez configurer
@@ -738,8 +738,8 @@
     <para>Ce mode réseau permet d'interconnecter des machines virtuelles qui
     fonctionnent sur des hôtes différents.</para>
 
-    <para>Techniquement, cela se fait en encapsulant des frames Ethernet envoyés
-    ou reçus par la carte réseau de l'invité dans des datadrams UDP/IP, et
+    <para>Techniquement, cela se fait en encapsulant des trames Ethernet envoyées
+    ou reçues par la carte réseau de l'invité dans des datagrammes UDP/IP, et
     en les envoyant via n'importe quel réseau disponible sur l'hôte.</para>
 
     <para>Le mode Tunnel UDP a trois paramètres&#xA0;:<glosslist>
@@ -747,7 +747,7 @@
           <glossterm>Port source UDP</glossterm>
 
           <glossdef>
-            <para>Le port sur lequel écoute l'hôte. Les datagrams arrivant
+            <para>Le port sur lequel écoute l'hôte. Les datagrammess arrivant
             sur ce port depuis n'importe quelle adresse source seront redirigés
             vers la partie réceptrice de la carte réseau invitée.</para>
           </glossdef>
@@ -771,7 +771,7 @@
       </glosslist></para>
 
     <para>Quand on interconnecte deux machines virtuelles sur deux hôtes différents,
-    leurs adresses IP doivent être échangées. Sur un seulhôte, les ports UDP
+    leurs adresses IP doivent être échangées. Sur un seul hôte, les ports UDP
     source et de destination doivent être échangés.</para>
 
     <para>Dans l'exemple suivant, l'hôte 1 utilise l'adresse IP 10.0.0.1 et l'hôte
@@ -794,7 +794,7 @@
 
     <para><note>
          Sur les hôtes basés sur Unix (comme Linux, Solaris, Mac OS X), il
-         n'est pas possible de sonder les portss inférieurs à 1024 pour des
+         n'est pas possible de sonder les ports inférieurs à 1024 pour des
          applications non lancées par
 
         <computeroutput>root</computeroutput>
@@ -819,13 +819,13 @@
     <para>Les blocs à construire de base de l'infrastructure sont les switches
     VDE, les prises VDE et les fils VDE qui inter-connectent les switches.</para>
 
-    <para>Le pilote VDe de VirtualBox prend un paramètre&#xA0;:<glosslist>
+    <para>Le pilote VDE de VirtualBox prend un paramètre&#xA0;:<glosslist>
         <glossentry>
           <glossterm>Réseau VDE</glossterm>
 
           <glossdef>
-            <para>Le nom de la socket du switch du réseau VDE à laquelle la VM
-            sera connectée.</para>
+            <para>Le nom du socket du switch du réseau VDE auquel la VM
+            sera connecté.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>
@@ -879,16 +879,16 @@
     </note>
 
     <para>On configure les limites avec <computeroutput>VBoxManage</computeroutput>. L'exemple
-    ci-dessous crée ÚJ groupe de bande passante appelé "Limit", paramètre la
+    ci-dessous crée un groupe de bande passante appelé "Limit", paramètre la
     limite à 20 Mo/s et affecte le groupe au premier et au deuxième adaptateurs
     de la VM&#xA0;:<screen>VBoxManage bandwidthctl "nom VM" add Limit --type network --limit 20m
 VBoxManage modifyvm "nom VM" --nicbandwidthgroup1 Limit
 VBoxManage modifyvm "nom VM" --nicbandwidthgroup2 Limit</screen></para>
 
     <para>Tous les adaptateurs d'un groupe partagent la limite de la bande
-    passange, ce qui veut dire que dans l'exemple ci-dessus, la bande passante
+    passante, ce qui veut dire que dans l'exemple ci-dessus, la bande passante
     des deux adaptateurs associés ne peut jamais dépasser 20
-    Mo/s. Par contre, si un adaptateur n'a pas besoin de bande sassante, l'autre
+    Mo/s. Par contre, si un adaptateur n'a pas besoin de bande passante, l'autre
     peut utiliser le reste de bande passante de son groupe.</para>
 
     <para>On peut modifier les limites de chaque groupe pendant que la VM 
@@ -909,28 +909,27 @@ VBoxManage modifyvm "nom VM" --nicbandwidthgroup2 Limit</screen></para>
   <sect1 id="network_performance">
     <title>Améliorer les performances réseaux</title>
 
-    <para>VirtualBox offre une variété d'adaptateurs réseaux virtuels qu'on peut be
-      "attacher" au réseau de l'hôte d'un certain nombre de manières. Selon les
-      types d'adaptateurs et d'attachements utilisés, les erformances réseaux
+    <para>VirtualBox offre une variété d'adaptateurs réseaux virtuels qu'on peut 
+      "attacher" au réseau de l'hôte de diverses manières. Selon les
+      types d'adaptateurs et d'attachements utilisés, les performances réseaux
       seront différentes. Dans une logique de performances, l'adaptateur réseau
       <emphasis>virtio</emphasis> est préférable aux adaptateurs
       <emphasis>Intel PRO/1000</emphasis> émulés, préférables eux-mêmes à
       la famille d'adaptateurs <emphasis>PCNet</emphasis>. Tant les adaptateurs
       <emphasis>virtio</emphasis> que <emphasis>Intel PRO/1000
-      </emphasis> profitent de la segmentation et de l'offloading de de
+      </emphasis> profitent de la segmentation et de l'offloading de la
       vérification de somme. La segmentation offloading est essentielle pour de
       hautes performances car elle permet moins de changements de contextes, 
-      augmentant drastiquement les tailles des paquets croisés entre VM/boddary
-      hôte.</para>
+      augmentant drastiquement les tailles des paquets croisés entre VM et hôte.</para>
     <note><para>Ni les pilotes <emphasis>virtio</emphasis>, ni ceux
     <emphasis>Intel PRO/1000</emphasis> de Windows XP supportent la segmentation
         offloading. Donc, les invités Windows XP n'atteignent jamais les mêmes
         vitesses de transmission que les autres types d'invités. Reportez-vous
-        à la base MS Knowledge article 842264 pour des information s supplémentaires.</para>
+        à la base MS Knowledge article 842264 pour des informations supplémentaires.</para>
     </note>
     <para>Trois types d'attachements&#xA0;: <emphasis>interne</emphasis>,
       <emphasis>bridgé</emphasis> et <emphasis>host-only</emphasis>, ont des
-      performances presqu'identiques, le type <emphasis>internal</emphasis> 
+      performances presque identiques, le type <emphasis>internal</emphasis> 
       étant légèrement plus rapide et utilisant moins de cycles processeur puisque
       les paquets ne vont jamais dans la pile réseau de l'hôte. L'attachement
       <emphasis>NAT</emphasis> est le plus lent (et le plus sûr) de tous les

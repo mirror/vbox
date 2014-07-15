@@ -8,7 +8,7 @@
     <title>Affichage distant (VRDP support)</title>
 
     <para>VirtualBox peut afficher les machines virtuelles à distance, ce qui
-    signifie qu'une machine virtuelle peut s'exécuter sur un ordinateur même si
+    signifie qu'une machine virtuelle peut s'exécuter sur un ordinateur alors que
     la machine sera affichée sur un deuxième ordinateur, et la machine sera
     contrôlée également à partir de là, comme si la machine virtuelle fonctionnait
     sur ce deuxième ordinateur.</para>
@@ -23,7 +23,7 @@
 
     <para>Oracle fournit un support pour le <emphasis role="bold">VirtualBox
     Remote Display Protocol (VRDP)</emphasis> dans ce paquet d'extension de
-    VirtualBox. Tuand on installe ce paquet, les versions de VirtualBox et
+    VirtualBox. Quand on installe ce paquet, les versions de VirtualBox et
     4.0 et supérieur supportent VRDP de la même façon que les versions binaires
     (non libre)) de VirtualBox avant 4.0.</para>
 
@@ -50,38 +50,7 @@
     intégré à Windows lui-même. Les ports 5000 à 5050 sont le plus souvent
     inusités et pourraient être un bon choix.</para>
 
-    <para>Vous pouvez modifier le port soit dans les paramètres "Affichage" d5
-    l'interface graphique, soit via l'option <computeroutput>--vrdeport</computeroutput>
-    de la commande <computeroutput>VBoxManage modifyvm</computeroutput>. Vous
-    pouvez indiquer une liste séparée par des virgules de ports ou de plages de
-    ports. Utilisez un tiret entre deux numéros de ports pour indiquer une plage.
-    Le serveur VRDP s'appuiera sur <emphasis role="bold">un</emphasis> des
-    ports disponibles au sein de la liste spécifiée. Par exemple, <computeroutput>VBoxManage modifyvm "nom
-    VM" --vrdeport 5000,5010-5012</computeroutput> configurera le
-    serveur pour s'appuyer sur un des ports parmi le 5000, 5010, 5011 ou 5012.
-    Voir <xref
-    linkend="vboxmanage-modifyvm-vrde" /> pour des détails.</para>
-
-    <para>Vous pouvez savoir le port utilisé au final par une VM en fonction
-    avec la commande <computeroutput>VBoxManage showvminfo</computeroutput>,
-    vous pouvez aussi le voir dans l'interface graphique sous l'onglet "En cours
-    d'exécution" de la "Boîte de dialogue d'informations sur la session", accessible
-    depuis le menu "Machine" de la fenêtre de la VM.</para>
-
-    <para>Le support d'IPv6 a été implémenté dans VirtualBox 4.3. Si l'OS hôte
-    supporte l'IPv6, le serveur VRDP écoutera automatiquement les connexions IPv6
-    en plus de celles IPv4.</para>
-
-    <para>Par défaut, le serveur VRDP utilise  le port TCP
-    <computeroutput>3389</computeroutput>. Vous devrez modifier le port par
-    défaut si vous exécutez plus d'un serveur VRDP, vu que le port ne peut être
-    utilisé que par un serveur à la fois. Il se pourrait aussi que vous deviez
-    le modifier sur les hôtes Windows car le port par défaut pourrait être
-    déjà utilisé par le serveur RDP
-    intégré à Windows lui-même. Les ports 5000 à 5050 sont le plus souvent
-    inusités et pourraient être un bon choix.</para>
-
-    <para>Vous pouvez modifier le port soit dans les paramètres "Affichage" d5
+    <para>Vous pouvez modifier le port soit dans les paramètres "Affichage" de
     l'interface graphique, soit via l'option <computeroutput>--vrdeport</computeroutput>
     de la commande <computeroutput>VBoxManage modifyvm</computeroutput>. Vous
     pouvez indiquer une liste séparée par des virgules de ports ou de plages de
@@ -106,9 +75,9 @@
     <sect2 id="rdp-viewers">
       <title>Visualiseurs RDP tiers classiques</title>
 
-      <para>Comme VRDP est rétro-compatiblavec RDP, vous pouvez utiliser n'importe
+      <para>Comme VRDP est rétro-compatible avec RDP, vous pouvez utiliser n'importe
       quel visualiseur RDP standard pour vous connecter à une machine virtuelle
-      distante (des exemples arrivent ci-dessous). Pour que cela fonctionne, vous
+      distante (des exemples figurent ci-dessous). Pour que cela fonctionne, vous
       devez spécifier <emphasis role="bold">l'adresse IP</emphasis> de votre
       système <emphasis>hôte</emphasis> (pas celle de la machine virtuelle&#xA0;!)
       l'adresse du serveur auquel se connecter, ainsi que le 
@@ -138,8 +107,8 @@
               adresses <computeroutput>localhost</computeroutput> et
               <computeroutput>127.0.0.1</computeroutput> pourraient ne pas
               fonctionner en utilisant 
-              <computeroutput>mstsc.exe</computeroutput>. Par contre, l'adresse
-              <computeroutput>127.0.0.2[:3389]</computeroutput> doit être utilisée.</para>
+              <computeroutput>mstsc.exe</computeroutput>. L'adresse
+              <computeroutput>127.0.0.2[:3389]</computeroutput> doit être utilisée à la place.</para>
             </note>
           </listitem>
 
@@ -259,7 +228,7 @@
     <sect2>
       <title>Pas à pas&#xA0;: créer une machine virtuelle sur un serveur headless</title>
 
-      <para>Les instructions suivantes peuvent vous donner une idçe de la façon
+      <para>Les instructions suivantes peuvent vous donner une idée de la façon
       de créer une machine virtuelle sur un serveur headless via une connexion
       réseau. Nous allons créer une machine virtuelle, établir une connexion RDP
       et installer un système d'exploitation invité -- tout ceci sans devoir
@@ -308,14 +277,14 @@
             <computeroutput>--ostype</computeroutput>, mais en le faisant, cela
             sélectionne des valeurs par défaut apropriées pour certains paramètres
             de la VM, par exemple la taille de la RAM et le type de périphérique
-            réseau virtuel. Pour avoir la liste complète des szstèmes d'exploitation
+            réseau virtuel. Pour avoir la liste complète des systèmes d'exploitation
             supportés, vous pouvez utiliser</para>
 
             <screen>VBoxManage list ostypes</screen>
           </listitem>
 
           <listitem>
-            <para>Assurez-vous que les paramètres de la VM sont adaptés au szstème
+            <para>Assurez-vous que les paramètres de la VM sont adaptés au système
             d'exploitation invité que nous allons installer. Par exemple&#xA0;:<screen>VBoxManage modifyvm "Windows XP" --memory 256 --acpi on --boot1 dvd --nic1 nat</screen></para>
           </listitem>
 
@@ -353,7 +322,7 @@
           <listitem>
             <para>Sur la machine client, ouvrez le visualiseur RDP et essayez
             de vous connecter au serveur (voir <xref linkend="rdp-viewers" /> 
-            ci-d:ssus pour voir comment utiliser les divers visualiseurs RDP
+            ci-dessus pour voir comment utiliser les divers visualiseurs RDP
             classiques).</para>
 
             <para>Vous devriez voir maintenant le processus d'installation 
@@ -366,10 +335,10 @@
       <title>USB distant</title>
 
       <para>Une fonction très spéciale du support VRDP de VirtualBox est qu'il
-      supporte les périphériques USB distantségalement via le réseau. C'est-à-dire que 
+      supporte les périphériques USB distants également via le réseau. C'est-à-dire que 
       l'invité de VirtualBox en fonction sur l'ordinateur peut accéder à des
       périphériques USB de l'ordinateur distant sur lequel sont affichées les données
-      VRDP de la même manière que des périphériques USB connectàs à l'hôte actuel.
+      VRDP de la même manière que des périphériques USB connectés à l'hôte actuel.
       Cela permet d'exécuter des machines virtuelles sur un hôte VirtualBox qui
       agit comme serveur, où un client peut se connecter de n'importe où avec 
       simplement un adaptateur réseau et un dispositif d'affichage capable de
@@ -378,11 +347,11 @@
 
       <para>Pour ces périphériques USB distants, les mêmes règles de filtres
       s'appliquent, comme pour d'autres périphériques USB, comme décrit au
-      <xref linkend="settings-usb" />. Tout ce que vous dev5z faire est de spécifier
+      <xref linkend="settings-usb" />. Tout ce que vous devez faire est de spécifier
       "Remote" (ou "Any") en définissant ces règles.</para>
 
       <para>L'accès à des périphériques USB n'est possible que si le client RDP
-      supporte cette extension. Sur les hîtes Linux et Solaris, l'installation
+      supporte cette extension. Sur les hôtes Linux et Solaris, l'installation
       de VirtualBox fournit un client VRDP convenable appelé 
       <computeroutput>rdesktop-vrdp</computeroutput>. Les versions récentes de
       <computeroutput>uttsc</computeroutput>, un client taillé pour être utilisé
@@ -392,13 +361,11 @@
 
       <para>Pour rendre disponible un périphérique USB distant pour une VM, vous
       devriez démarrer <computeroutput>rdesktop-vrdp</computeroutput> comme
-      suit&#xA0;:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>Remarquez
-      que <computeroutput>rdesktop-vrdp</computeroutput> ne peut accéder à des
-      pçriphériques USB que par <computeroutput>/proc/bus/usb</computeroutput>.
+      suit :<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>
       Merci de vous reporter au <xref linkend="ts_usb-linux" /> pour des
-      détails supplémentaires sur la manière de régler correctement les droits.
-      De plus, il est conseillé de désactiver le chargement automatique d'un pilote
-      ce l'hôte, sur l'hôte distant, qui pourrait fonctionner sur des périphériques
+      détails supplémentaires sur la manière de régler correctement les droits
+      des périphériques USB. De plus, il est conseillé de désactiver le chargement automatique d'un pilote
+      de l'hôte, depuis l'hôte distant qui serait lu sur des périphériques
       USB, pour vous assurer que les périphériques seront accessibles au client
       RDP. Si vous avez bien fait le paramétrage sur l'hôte distant, les
       événements de branchement/débranchement sont visibles dans le fichier
@@ -470,8 +437,8 @@
                   <computeroutput>VBoxAuthSimple</computeroutput> réalise
                   l'authentification à partir des autorisations configurées
                   dans la section "extradata" du fichier XML des paramètres d'une machine
-                  virtuelle. C'est probablement la méthode la plus simple de
-                  s'authentifier, qui ne dépend pas de l'invité en fonction et
+                  virtuelle. C'est probablement la méthode la plus simple pour
+                  s'authentifier, qui ne dépend pas d'un invité en fonction et
                   supporté (voir ci-dessous). Les étapes suivantes sont
                   nécessaires&#xA0;:<orderedlist>
                       <listitem>
@@ -569,7 +536,7 @@
             <para>L'authentification RDP5.1 utilise un certificat serveur pour
             lequel le client possède la clé publique. De cette façon, vous avez la
             garantie que le serveur possède la clé privée correspondante. Cependant,
-            comme cette clé privée codée en dur a çté publiçe il y a quelques
+            comme cette clé privée codée en dur a été publiée il y a quelques
             années, l'authentification RDP5.1 n'est pas sécurisée.</para>
           </listitem>
 
@@ -649,7 +616,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
 
       <para>Comme le client qui se connecte au serveur détermine le type de chiffrement
       qui sera utilisé, avec rdesktop, le visualiseur RDP de Linux, utilisez
-      lq options <computeroutput>-4</computeroutput> ou
+      les options <computeroutput>-4</computeroutput> ou
       <computeroutput>-5</computeroutput>.</para>
     </sect2>
 
@@ -685,7 +652,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
       <computeroutput>domaine\nom_utilisateur</computeroutput> dans le champ
       <computeroutput>Nom d'utilisateur :</computeroutput> -- par exemple, 
       <computeroutput>@2\name</computeroutput>.
-      <computeroutput>nom</computeroutput> doit être remteigné et il doit être
+      <computeroutput>nom</computeroutput> doit être renseigné et il doit être
       le nom utilisé pour vous identifier si le serveur VRDP est configuré pour
       demander une autorisation. Sinon, vous pouvez utiliser n'importe quel texte 
       comme nom d'utilisateur.</para>
@@ -712,11 +679,11 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
       client ne supporte pas la redirection graphique, le serveur VRDP se rabat
       sur le rafraîchissement régulier des bitmap.</para>
 
-      <para>La commande suivnte active la redirection graphique&#xA0;: <screen>VBoxManage modifyvm "nom VM" --vrdevideochannel on</screen></para>
+      <para>La commande suivante active la redirection graphique&#xA0;: <screen>VBoxManage modifyvm "nom VM" --vrdevideochannel on</screen></para>
 
       <para>La qualité de l'image se définit par une valeur entre 10 et 100
       pour cent, ce qui représente un niveau de compression JPEG (où les nombres
-      les plus bas signifient des qualité plus faibles mais une compression plus
+      les plus bas signifient une qualité plus faibles mais une compression plus
       forte). Vous pouvez modifier la qualité en utilisant la commande suivante&#xA0;:
       <screen>VBoxManage modifyvm "nom VM" --vrdevideochannelquality 75</screen></para>
     </sect2>
@@ -769,7 +736,7 @@ VBoxManage setextradata "nom VM" "VRDP/Feature/Client/DisableClipboard" 1</scree
     hôte, qu'on appelle alors la <emphasis role="bold">"source"</emphasis>.
     L'hôte sur lequel la machine virtuelle sera téléportée s'appellera alors la
     <emphasis role="bold">"cible"</emphasis>&#xA0;; la machine sur la cible est
-    alors configurée pour attendre la source afin de contacter la cible.
+    alors configurée pour attendre que la source la contacte.
     L'état en fonction de la machine sera transféré de la source à la cible en
     un temps nimimum.</para>
 
@@ -803,9 +770,9 @@ VBoxManage setextradata "nom VM" "VRDP/Feature/Client/DisableClipboard" 1</scree
 
     <para>Puis, suivez les étapes suivantes&#xA0;:<orderedlist>
         <listitem>
-          <para>Sur l'hôte <emphasis>cible</emphasis>, configurez lamachine 
-          virtuelle pour attendre qu'une demande de téléportation n'arrive quand
-          elle sera démarrée, plutôt que pour essayer de démarrer la machine.
+          <para>Sur l'hôte <emphasis>cible</emphasis>, configurez la machine 
+          virtuelle pour attendre qu'une demande de téléportation arrive quand
+          elle sera démarrée, plutôt que d'essayer de démarrer réellement la machine.
           Cela se fait avec la commande VBoxManage suivante&#xA0;:<screen>VBoxManage modifyvm &lt;nomvmcible&gt; --teleporter on --teleporterport &lt;port&gt;</screen></para>
 
           <para>où <computeroutput>&lt;nomvmcible&gt;</computeroutput> est le
@@ -830,22 +797,22 @@ VBoxManage setextradata "nom VM" "VRDP/Feature/Client/DisableClipboard" 1</scree
           <para>où <computeroutput>&lt;nomvmsource&gt;</computeroutput> est le
           nom de la machine (irtuelle sur l'hôte source (la machine actuellement en
           fonction) et <computeroutput>&lt;hôtecible&gt;</computeroutput> est
-          le nom ou l'IP de l'hôte cible où une demande de télémrrtation par la
+          le nom ou l'IP de l'hôte cible où une demande de téléportation par la
           machine est attendue, et <computeroutput>&lt;port&gt;</computeroutput>
-          doit être le même numéro que celui spécifié dans lacommande sur l'hôte
+          doit être le même numéro que celui spécifié dans la commande sur l'hôte
           cible. Pour les détails, voir <xref
           linkend="vboxmanage-controlvm" />.</para>
         </listitem>
       </orderedlist></para>
 
     <para>Pour tester, vous pouvez aussi téléporter des machines sur le même hôte&#xA0;;
-    dans ce cas, utilisez "localhost" comme nom d'hôte sur l'hôte sourd et
+    dans ce cas, utilisez "localhost" comme nom d'hôte sur l'hôte source et
     cible.<note>
         <para>Dans de rares cas, si les processeurs de la source et de la cible
         sont très différents, la téléportation peut échouer avec un message d'erreur
         ou la cible peut planter. Cela peut arriver surtout si la VM exécute des
         logiciels très optimisés pour fonctionner sur un processeur particulier 
-        sans vérifier correctement que les certaines fonctions du processeur sont
+        sans vérifier correctement que certaines fonctions du processeur sont
         bien présentes. VirtualBox filtre les capacités du processeur présenté 
         au système d'exploitation invité. Les utilisateurs avancés peuvent essayer de
         restreindre les possibilités de ces processeurs virtuels avec la commande
