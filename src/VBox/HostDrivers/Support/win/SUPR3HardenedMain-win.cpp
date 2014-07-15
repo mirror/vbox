@@ -463,6 +463,151 @@ static PVERIFIERCACHEENTRY supR3HardenedWinVerifyCacheLookup(PCUNICODE_STRING pU
 
 
 /**
+ * Checks whether the path could be containing alternative 8.3 names generated
+ * by NTFS, FAT, or other similar file systems.
+ *
+ * @returns Pointer to the first component that might be an 8.3 name, NULL if
+ *          not 8.3 path.
+ * @param   pwszPath        The path to check.
+ */
+static PRTUTF16 supR3HardenedWinIsPossible8dot3Path(PCRTUTF16 pwszPath)
+{
+    PCRTUTF16 pwszName = pwszPath;
+    for (;;)
+    {
+        RTUTF16 wc = *pwszPath++;
+        if (wc == '~')
+        {
+            /* Could check more here before jumping to conclusions... */
+            if (pwszPath - pwszName <= 8+1+3)
+                return (PRTUTF16)pwszName;
+        }
+        else if (wc == '\\' || wc == '/' || wc == ':')
+            pwszName = pwszPath;
+        else if (wc == 0)
+            break;
+    }
+    return NULL;
+}
+
+
+/**
+ * Fixes up a path possibly containing one or more alternative 8-dot-3 style
+ * components.
+ *
+ * The path is fixed up in place.  Errors are ignored.
+ *
+ * @param   hFile       The handle to the file which path we're fixing up.
+ * @param   pUniStr     The path to fix up. MaximumLength is the max buffer
+ *                      length.
+ */
+static void supR3HardenedWinFix8dot3Path(HANDLE hFile, PUNICODE_STRING pUniStr)
+{
+    /*
+     * We could use FileNormalizedNameInformation here and slap the volume device
+     * path in front of the result, but it's only supported since windows 8.0
+     * according to some docs... So we expand all supicious names.
+     */
+    PRTUTF16 pwszFix = pUniStr->Buffer;
+    while (*pwszFix)
+    {
+        pwszFix = supR3HardenedWinIsPossible8dot3Path(pwszFix);
+        if (pwszFix == NULL)
+            break;
+
+        RTUTF16 wc;
+        PRTUTF16 pwszFixEnd = pwszFix;
+        while ((wc = *pwszFixEnd) != '\0' && wc != '\\' && wc != '//')
+            pwszFixEnd++;
+        if (wc == '\0')
+            break;
+
+        RTUTF16 const wcSaved = *pwszFix;
+        *pwszFix = '\0';                     /* paranoia. */
+
+        UNICODE_STRING      NtDir;
+        NtDir.Buffer = pUniStr->Buffer;
+        NtDir.Length = NtDir.MaximumLength = (USHORT)((pwszFix - pUniStr->Buffer) * sizeof(WCHAR));
+
+        HANDLE              hDir  = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtDir, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+        NTSTATUS rcNt = NtCreateFile(&hDir,
+                                     FILE_READ_DATA | SYNCHRONIZE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /* Allocation Size*/,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                     FILE_OPEN,
+                                     FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        *pwszFix = wcSaved;
+        if (NT_SUCCESS(rcNt))
+        {
+            union
+            {
+                FILE_BOTH_DIR_INFORMATION Info;
+                uint8_t abBuffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 2048 * sizeof(WCHAR)];
+            } uBuf;
+            RT_ZERO(uBuf);
+
+            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            UNICODE_STRING  NtFilterStr;
+            NtFilterStr.Buffer = pwszFix;
+            NtFilterStr.Length = (USHORT)((uintptr_t)pwszFixEnd - (uintptr_t)pwszFix);
+            NtFilterStr.MaximumLength = NtFilterStr.Length;
+            rcNt = NtQueryDirectoryFile(hDir,
+                                        NULL /* Event */,
+                                        NULL /* ApcRoutine */,
+                                        NULL /* ApcContext */,
+                                        &Ios,
+                                        &uBuf,
+                                        sizeof(uBuf) - sizeof(WCHAR),
+                                        FileBothDirectoryInformation,
+                                        FALSE /*ReturnSingleEntry*/,
+                                        &NtFilterStr,
+                                        FALSE /*RestartScan */);
+            if (NT_SUCCESS(rcNt) && uBuf.Info.NextEntryOffset == 0) /* There shall only be one entry matching... */
+            {
+                uint32_t offName = uBuf.Info.FileNameLength / sizeof(WCHAR);
+                while (offName > 0  && uBuf.Info.FileName[offName - 1] != '\\' && uBuf.Info.FileName[offName - 1] != '/')
+                    offName--;
+                uint32_t cwcNameNew = (uBuf.Info.FileNameLength / sizeof(WCHAR)) - offName;
+                uint32_t cwcNameOld = pwszFixEnd - pwszFix;
+
+                if (cwcNameOld == cwcNameNew)
+                    memcpy(pwszFix, &uBuf.Info.FileName[offName], cwcNameNew * sizeof(WCHAR));
+                else if (   pUniStr->Length + cwcNameNew * sizeof(WCHAR) - cwcNameOld * sizeof(WCHAR) + sizeof(WCHAR)
+                         <= pUniStr->MaximumLength)
+                {
+                    size_t cwcLeft = pUniStr->Length - (pwszFixEnd - pUniStr->Buffer) * sizeof(WCHAR) + sizeof(WCHAR);
+                    memmove(&pwszFix[cwcNameNew], pwszFixEnd, cwcLeft * sizeof(WCHAR));
+                    pUniStr->Length -= (USHORT)(cwcNameOld * sizeof(WCHAR));
+                    pUniStr->Length += (USHORT)(cwcNameNew * sizeof(WCHAR));
+                    pwszFixEnd      -= cwcNameOld;
+                    pwszFixEnd      -= cwcNameNew;
+                    memcpy(pwszFix, &uBuf.Info.FileName[offName], cwcNameNew * sizeof(WCHAR));
+                }
+                /* else: ignore overflow. */
+            }
+            /* else: ignore failure. */
+
+            NtClose(hDir);
+        }
+
+        /* Advance */
+        pwszFix = pwszFixEnd;
+    }
+}
+
+
+
+/**
  * Hook that monitors NtCreateSection calls.
  *
  * @returns NT status code.
@@ -505,6 +650,12 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                                    "supR3HardenedMonitor_NtCreateSection: NtQueryObject -> %#x (fImage=%d fExecMap=%d fExecProt=%d)\n",
                                    fImage, fExecMap, fExecProt);
                 return rcNt;
+            }
+
+            if (supR3HardenedWinIsPossible8dot3Path(uBuf.UniStr.Buffer))
+            {
+                uBuf.UniStr.MaximumLength = sizeof(uBuf) - 128;
+                supR3HardenedWinFix8dot3Path(hFile, &uBuf.UniStr);
             }
 
             /*
@@ -863,6 +1014,8 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
         && pbNtCreateSection[ 8] == 0x0f /* syscall */
         && pbNtCreateSection[ 9] == 0x05
         && pbNtCreateSection[10] == 0xc3 /* ret */
+
+/* b8 22 35 ed 0 48 63 c0 ff e0 c3 f 1f 44 0 0 - necros2 - agnitum firewall? */
        )
     {
         offJmpBack = 8; /* the 3rd instruction (syscall). */
