@@ -115,8 +115,8 @@ static uintptr_t g_uScramblerXor = UINT64_C(0xed95ecc99416d312);
  * @param  cb        Amount of bytes to allocate.
  *
  * @note: The allocation will have an extra page allocated before and after the
- *        user area with all access rights removed to prevent heartbleed like
- *        attacks.
+ *        user area with all access rights removed if the host supports that to
+ *        prevent heartbleed like attacks.
  */
 static int rtMemSaferSupR3Alloc(void **ppvNew, size_t cb)
 {
@@ -131,12 +131,20 @@ static int rtMemSaferSupR3Alloc(void **ppvNew, size_t cb)
     int rc = SUPR3PageAllocEx(cPages, 0 /* fFlags */, &pvNew, NULL /* pR0Ptr */, NULL /* paPages */);
     if (RT_SUCCESS(rc))
     {
-        /* Change the memory protection of the pages guarding the allocation. */
+        /*
+         * Change the memory protection of the pages guarding the allocation.
+         * Some hosts don't support changing the page protection, ignore these
+         * errors.
+         */
         rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_NONE);
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED)
         {
-            Assert(cb == (size_t)((uint32_t)(PAGE_SIZE + cbUser)));
-            rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, PAGE_SIZE + (uint32_t)cbUser, PAGE_SIZE, RTMEM_PROT_NONE);
+            Assert(PAGE_SIZE + cbUser == (size_t)((uint32_t)(PAGE_SIZE + cbUser)));
+            if (rc == VERR_NOT_SUPPORTED)
+                rc = VINF_SUCCESS;
+            else
+                rc = SUPR3PageProtect(pvNew, NIL_RTR0PTR, PAGE_SIZE + (uint32_t)cbUser, PAGE_SIZE, RTMEM_PROT_NONE);
+
             if (RT_SUCCESS(rc))
             {
                 *ppvNew = (uint8_t *)pvNew + PAGE_SIZE;
