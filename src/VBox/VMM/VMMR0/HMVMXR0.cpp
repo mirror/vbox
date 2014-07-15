@@ -2322,8 +2322,10 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
     uint32_t zap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;            /* Bits cleared here must always be cleared. */
 
     val |=   VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT           /* External interrupts causes a VM-exits. */
-           | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;              /* Non-maskable interrupts causes a VM-exit. */
-    Assert(!(val & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI));
+           | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;              /* Non-maskable interrupts (NMIs) causes a VM-exit. */
+
+    if (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
+        val |= VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI;         /* Use virtual NMIs and virtual-NMI blocking features. */
 
     /* Enable the VMX preemption timer. */
     if (pVM->hm.s.vmx.fUsePreemptTimer)
@@ -2450,6 +2452,13 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
             hmR0VmxSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         }
 #endif
+    }
+
+    /* If we're using virtual NMIs, we need the NMI-window exiting feature. */
+    if (   (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
+        && (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT))
+    {
+        val |= VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT;
     }
 
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
@@ -3512,6 +3521,21 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS;
     }
+
+    /*
+     * NMIs to the guest are inhibited until the guest executes an IRET. We only
+     * bother with virtual-NMI blocking when we have support for virtual NMIs in the
+     * CPU, otherwise setting this would block host-NMIs and IRET will not clear the
+     * blocking.
+     *
+     * See Intel spec. 26.6.1 "Interruptibility state". See @bugref{7445}.
+     */
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS)
+        && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
+    {
+        uIntrState |= VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI;
+    }
+
     return uIntrState;
 }
 
@@ -6068,18 +6092,30 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertRC(rc);
 
     if (!uIntrState)
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    {
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+    }
     else
     {
-        Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
-               || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-        rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-        AssertRC(rc);
-        rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
-        AssertRC(rc);
+        if (   (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS)
+            || (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI))
+        {
+            rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+            AssertRC(rc);
+            rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
+            AssertRC(rc);
 
-        EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
-        Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+            EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
+            Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        }
+
+        if (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
     }
 }
 
@@ -7276,6 +7312,42 @@ DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMCPU pVCpu)
 
 
 /**
+ * Sets the NMI-window exiting control in the VMCS which instructs VT-x to
+ * cause a VM-exit as soon as the guest is in a state to receive NMIs.
+ *
+ * @param pVCpu         Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0VmxSetNmiWindowExitVmcs(PVMCPU pVCpu)
+{
+    if (RT_LIKELY(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT))
+    {
+        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT))
+        {
+            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            AssertRC(rc);
+            Log4(("Setup NMI-window exiting\n"));
+        }
+    } /* else we will deliver NMIs whenever we VM-exit next, even possibly nesting NMIs. Can't be helped on ancient CPUs. */
+}
+
+
+/**
+ * Clears the NMI-window exiting control in the VMCS.
+ *
+ * @param pVCpu             Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0VmxClearNmiWindowExitVmcs(PVMCPU pVCpu)
+{
+    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT);
+    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT;
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+    AssertRC(rc);
+    Log4(("Cleared NMI-window exiting\n"));
+}
+
+
+/**
  * Evaluates the event to be delivered to the guest and sets it as the pending
  * event.
  *
@@ -7292,21 +7364,25 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
     bool fBlockMovSS    = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
     bool fBlockSti      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    bool fBlockNmi      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI);
 
     Assert(!fBlockSti || HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS));
-    Assert(   !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)      /* We don't support block-by-NMI and SMI yet.*/
-           && !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));
+    Assert(!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
                                                                /** @todo SMI. SMIs take priority over NMIs. */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts . */
     {
-        /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-        if (   !fBlockMovSS
-            && !fBlockSti)
+        if (   fBlockNmi
+            || fBlockSti
+            || fBlockMovSS)
         {
             /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
+            hmR0VmxSetNmiWindowExitVmcs(pVCpu);
+        }
+        else
+        {
             Log4(("Pending NMI vcpu[%RU32]\n", pVCpu->idCpu));
             uint32_t u32IntInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
             u32IntInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -7314,8 +7390,6 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
-        else
-            hmR0VmxSetIntWindowExitVmcs(pVCpu);
     }
     /*
      * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
@@ -7395,8 +7469,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     bool fBlockSti      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
     Assert(!fBlockSti || HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS));
-    Assert(   !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)      /* We don't support block-by-NMI and SMI yet.*/
-           && !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));
+    Assert(!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));     /* We don't support block-by-SMI yet.*/
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);       /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
@@ -7410,13 +7483,13 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
          */
         uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
-            && (   uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT
-                || uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI))
+            && uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT);
             hmR0VmxClearIntWindowExitVmcs(pVCpu);
         }
-#if 1 /* defined(VBOX_STRICT) */  /* Temporarily for debugging. */
+
+#ifdef VBOX_STRICT
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
@@ -7424,13 +7497,13 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 return VERR_VMX_IPE_4;
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
-            Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
         }
         else if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         {
+            bool fBlockNmi = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI);
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
-            Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT));
+            Assert(!fBlockNmi);
         }
 #endif
         Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#x\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
@@ -7837,9 +7910,9 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     }
 
     /* Validate. */
-    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntInfo));        /* Bit 31 (Valid bit) must be set by caller. */
-    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntInfo));    /* Bit 12 MBZ. */
-    Assert(!(u32IntInfo & 0x7ffff000));                             /* Bits 30:12 MBZ. */
+    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntInfo));             /* Bit 31 (Valid bit) must be set by caller. */
+    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(u32IntInfo));    /* Bit 12 MBZ. */
+    Assert(!(u32IntInfo & 0x7ffff000));                                  /* Bits 30:12 MBZ. */
 
     /* Inject. */
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
@@ -9811,7 +9884,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
     hmR0VmxClearIntWindowExitVmcs(pVCpu);
 
-    /* Deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectEvent() and resume guest execution. */
+    /* Deliver the pending interrupts via hmR0VmxEvaluatePendingEvent() and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
     return VINF_SUCCESS;
 }
@@ -9823,8 +9896,27 @@ HMVMX_EXIT_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    AssertMsgFailed(("Unexpected NMI-window exit.\n"));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)))
+    {
+        AssertMsgFailed(("Unexpected NMI-window exit.\n"));
+        HMVMX_RETURN_UNEXPECTED_EXIT();
+    }
+
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
+
+    /*
+     * Clear block-by-STI if it's active. The force-flag couldn't have been set by block-by-Mov SS in
+     * hmR0VmxSaveGuestIntrState() when this VM-exit happens as Intel CPUs are consistent with
+     * block-by-Mov SS and NMIs. See @bugref{7445}.
+     */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+
+    /* Indicate that we no longer need to VM-exit when the guest is ready to receive NMIs, it is now ready */
+    hmR0VmxClearNmiWindowExitVmcs(pVCpu);
+
+    /* Deliver the pending NMI via hmR0VmxEvaluatePendingEvent() and resume guest execution. */
+    return VINF_SUCCESS;
 }
 
 

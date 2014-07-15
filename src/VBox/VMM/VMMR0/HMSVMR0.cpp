@@ -228,9 +228,9 @@ AssertCompileMemberAlignment(SVMTRANSIENT, fWasGuestFPUStateActive, sizeof(uint6
  */
 typedef enum SVMMSREXITREAD
 {
-    /** Reading this MSR causes a VM-exit. */
+    /** Reading this MSR causes a #VMEXIT. */
     SVMMSREXIT_INTERCEPT_READ = 0xb,
-    /** Reading this MSR does not cause a VM-exit. */
+    /** Reading this MSR does not cause a #VMEXIT. */
     SVMMSREXIT_PASSTHRU_READ
 } SVMMSREXITREAD;
 
@@ -239,14 +239,14 @@ typedef enum SVMMSREXITREAD
  */
 typedef enum SVMMSREXITWRITE
 {
-    /** Writing to this MSR causes a VM-exit. */
+    /** Writing to this MSR causes a #VMEXIT. */
     SVMMSREXIT_INTERCEPT_WRITE = 0xd,
-    /** Writing to this MSR does not cause a VM-exit. */
+    /** Writing to this MSR does not cause a #VMEXIT. */
     SVMMSREXIT_PASSTHRU_WRITE
 } SVMMSREXITWRITE;
 
 /**
- * SVM VM-exit handler.
+ * SVM #VMEXIT handler.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
@@ -262,7 +262,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
-/** @name VM-exit handlers.
+/** @name #VMEXIT handlers.
  * @{
  */
 static FNSVMEXITHANDLER hmR0SvmExitIntr;
@@ -288,6 +288,7 @@ static FNSVMEXITHANDLER hmR0SvmExitNestedPF;
 static FNSVMEXITHANDLER hmR0SvmExitVIntr;
 static FNSVMEXITHANDLER hmR0SvmExitTaskSwitch;
 static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
+static FNSVMEXITHANDLER hmR0SvmExitIret;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptNM;
 static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
@@ -691,29 +692,29 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #endif
 
         /* Set up unconditional intercepts and conditions. */
-        pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_NMI           /* Non-Maskable Interrupts causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_RDPMC         /* RDPMC causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_CPUID         /* CPUID causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_RSM           /* RSM causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_HLT           /* HLT causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_INOUT_BITMAP  /* Use the IOPM to cause IOIO VM-exits. */
-                                        | SVM_CTRL1_INTERCEPT_MSR_SHADOW    /* MSR access not covered by MSRPM causes a VM-exit.*/
-                                        | SVM_CTRL1_INTERCEPT_INVLPGA       /* INVLPGA causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* Shutdown events causes a VM-exit. */
+        pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_NMI           /* Non-maskable interrupts causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_RDPMC         /* RDPMC causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_CPUID         /* CPUID causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_RSM           /* RSM causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_HLT           /* HLT causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_INOUT_BITMAP  /* Use the IOPM to cause IOIO #VMEXITs. */
+                                        | SVM_CTRL1_INTERCEPT_MSR_SHADOW    /* MSR access not covered by MSRPM causes a #VMEXIT.*/
+                                        | SVM_CTRL1_INTERCEPT_INVLPGA       /* INVLPGA causes a #VMEXIT. */
+                                        | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* Shutdown events causes a #VMEXIT. */
                                         | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Intercept "freezing" during legacy FPU handling. */
 
-        pVmcb->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* VMRUN causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_VMMCALL       /* VMMCALL causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_VMLOAD        /* VMLOAD causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_VMSAVE        /* VMSAVE causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_STGI          /* STGI causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_CLGI          /* CLGI causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_MWAIT;        /* MWAIT causes a VM-exit. */
+        pVmcb->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* VMRUN causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_VMMCALL       /* VMMCALL causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_VMLOAD        /* VMLOAD causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_VMSAVE        /* VMSAVE causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_STGI          /* STGI causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_CLGI          /* CLGI causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_MWAIT;        /* MWAIT causes a #VMEXIT. */
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -1132,7 +1133,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         if (!pVM->hm.s.fNestedPaging)
         {
             u64GuestCR0 |= X86_CR0_PG;     /* When Nested Paging is not available, use shadow page tables. */
-            u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
+            u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
         }
 
         /*
@@ -1152,7 +1153,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         }
         else
         {
-            fInterceptNM = true;           /* Guest FPU inactive, VM-exit on #NM for lazy FPU loading. */
+            fInterceptNM = true;           /* Guest FPU inactive, #VMEXIT on #NM for lazy FPU loading. */
             u64GuestCR0 |=  X86_CR0_TS     /* Guest can task switch quickly and do lazy FPU syncing. */
                           | X86_CR0_MP;    /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
         }
@@ -1885,7 +1886,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (pVmcb->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
-    else
+    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     /*
@@ -2524,6 +2525,42 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 
 
 /**
+ * Sets the IRET intercept control in the VMCB which instructs AMD-V to cause a
+ * #VMEXIT as soon as a guest starts executing an IRET. This is used to unblock
+ * virtual NMIs.
+ *
+ * @param pVmcb         Pointer to the VM control block.
+ */
+DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
+{
+    if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_IRET))
+    {
+        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_IRET;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
+
+        Log4(("Setting IRET intercept\n"));
+    }
+}
+
+
+/**
+ * Clears the IRET intercept control in the VMCB.
+ *
+ * @param pVmcb         Pointer to the VM control block.
+ */
+DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
+{
+    if (pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_IRET)
+    {
+        pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_IRET;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
+
+        Log4(("Clearing IRET intercept\n"));
+    }
+}
+
+
+/**
  * Evaluates the event to be delivered to the guest and sets it as the pending
  * event.
  *
@@ -2537,6 +2574,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     const bool fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
     const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+    const bool fBlockNmi  = RT_BOOL(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     SVMEVENT Event;
@@ -2544,7 +2582,11 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
                                                               /** @todo SMI. SMIs take priority over NMIs. */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
     {
-        if (!fIntShadow)
+        if (fBlockNmi)
+            hmR0SvmSetIretIntercept(pVmcb);
+        else if (fIntShadow)
+            hmR0SvmSetVirtIntrIntercept(pVmcb);
+        else
         {
             Log4(("Pending NMI\n"));
 
@@ -2555,8 +2597,6 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
-        else
-            hmR0SvmSetVirtIntrIntercept(pVmcb);
     }
     else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
     {
@@ -2959,6 +2999,26 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
+    }
+
+    /*
+     * If we are injecting an NMI, we must set VMCPU_FF_INHIBIT_NMIS only when we are going to execute
+     * guest code for certain (no exits to ring-3). Otherwise, we could re-read the flag on re-entry into
+     * AMD-V and conclude that NMI inhibition is active when we have not even delivered the NMI.
+     *
+     * With VT-x, this is handled by the Guest interruptibility information VMCS field which will set the
+     * VMCS field after actually delivering the NMI which we read on VM-exit to determine the state.
+     */
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        SVMEVENT Event;
+        Event.u = pVCpu->hm.s.Event.u64IntInfo;
+        if (   Event.n.u1Valid
+            && Event.n.u3Type == SVM_EVENT_NMI
+            && Event.n.u8Vector == X86_XCPT_NMI)
+        {
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        }
     }
 
     return VINF_SUCCESS;
@@ -3389,7 +3449,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
     /*
-     * The ordering of the case labels is based on most-frequently-occurring VM-exits for most guests under
+     * The ordering of the case labels is based on most-frequently-occurring #VMEXITs for most guests under
      * normal workloads (for some definition of "normal").
      */
     uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
@@ -3486,6 +3546,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                 case SVM_EXIT_VMMCALL:
                     return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_IRET:
+                    return hmR0SvmExitIret(pVCpu, pCtx, pSvmTransient);
 
                 case SVM_EXIT_SHUTDOWN:
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
@@ -3929,7 +3992,7 @@ DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
  * IDT.
  *
  * @returns VBox status code (informational error codes included).
- * @retval VINF_SUCCESS if we should continue handling the VM-exit.
+ * @retval VINF_SUCCESS if we should continue handling the #VMEXIT.
  * @retval VINF_HM_DOUBLE_FAULT if a #DF condition was detected and we ought to
  *         continue execution of the guest which will delivery the #DF.
  * @retval VINF_EM_RESET if we detected a triple-fault condition.
@@ -4001,7 +4064,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             {
                 /*
                  * If event delivery caused an #VMEXIT that is not an exception (e.g. #NPF) then reflect the original
-                 * exception to the guest after handling the VM-exit.
+                 * exception to the guest after handling the #VMEXIT.
                  */
                 enmReflect = SVMREFLECTXCPT_XCPT;
             }
@@ -4076,7 +4139,7 @@ DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- #VMEXIT handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-/** @name VM-exit handlers.
+/** @name #VMEXIT handlers.
  * @{
  */
 
@@ -4514,7 +4577,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 
-    /* We should -not- get this VM-exit if the guest's debug registers were active. */
+    /* We should -not- get this #VMEXIT if the guest's debug registers were active. */
     if (pSvmTransient->fWasGuestDebugStateActive)
     {
         AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
@@ -4854,11 +4917,18 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 0;  /* No virtual interrupts pending, we'll inject the current one before reentry. */
     pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;
 
-    /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
+    /* Clear NMI inhibition, if it's active. */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+    {
+        hmR0SvmClearIretIntercept(pVmcb);
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+    }
+
+    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive interrupts/NMIs, it is now ready. */
     pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_VINTR;
     pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
-    /* Deliver the pending interrupt via hmR0SvmPreRunGuest()->hmR0SvmInjectEventVmcb() and resume guest execution. */
+    /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
     return VINF_SUCCESS;
 }
@@ -4917,6 +4987,25 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
     if (rc != VINF_SUCCESS)
         hmR0SvmSetPendingXcptUD(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for IRET (SVM_EXIT_IRET). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* Clear NMI inhibition. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+
+    /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    hmR0SvmClearIretIntercept(pVmcb);
+
+    /* Deliver the pending NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
     return VINF_SUCCESS;
 }
 
