@@ -110,7 +110,7 @@
 
         <!-- Upgrade is flagged if current-install is newer than or equal to package - TODO: should make a dialog appear asking user to confirm downgrade -->
         <!-- Setting "OnlyDetect" to "no" makes the installer uninstall an already newer installed version -->
-        <UpgradeVersion Property="NEWERVERSIONDETECTED" Minimum="$(var.Property_Version)" OnlyDetect="no" />
+        <UpgradeVersion Property="NEWERVERSIONDETECTED" Minimum="$(var.Property_Version)" IncludeMinimum="no" OnlyDetect="no" />
 
         <!-- Flag is set if the install will trigger an upgrade of an existing install -->
         <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" Minimum="1.0.0.0" Maximum="$(var.Property_Version)" IncludeMaximum="yes" />
@@ -444,7 +444,7 @@
         <LaunchConditions After="AppSearch" />
 
         <!-- First install the new version and then remove the old version. This is more efficient -->
-        <RemoveExistingProducts Before="InstallValidate" />
+        <RemoveExistingProducts After="InstallValidate"><![CDATA[PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED]]></RemoveExistingProducts>
 
         <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
         <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
