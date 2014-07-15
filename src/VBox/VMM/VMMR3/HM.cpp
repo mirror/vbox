@@ -69,7 +69,7 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_IO_SMI_IRQ         ,  5, "I/O system-management interrupt (SMI)."),
     EXIT_REASON(VMX_EXIT_SMI_IRQ            ,  6, "Other SMI."),
     EXIT_REASON(VMX_EXIT_INT_WINDOW         ,  7, "Interrupt window."),
-    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_NMI_WINDOW         ,  8, "NMI window."),
     EXIT_REASON(VMX_EXIT_TASK_SWITCH        ,  9, "Task switch."),
     EXIT_REASON(VMX_EXIT_CPUID              , 10, "Guest attempted to execute CPUID."),
     EXIT_REASON_NIL(),

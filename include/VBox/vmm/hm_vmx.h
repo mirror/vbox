@@ -1350,7 +1350,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT                  RT_BIT(20)
 /** Use TPR shadow. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW                  RT_BIT(21)
-/** VM-exit when virtual nmi blocking is disabled. */
+/** VM-exit when virtual NMI blocking is disabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT                 RT_BIT(22)
 /** VM-exit when executing a MOV DRx instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                     RT_BIT(23)
@@ -1488,7 +1488,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID               RT_BIT(11)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)                 ((a) & RT_BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(a)            ((a) & RT_BIT(12))
 #define VMX_EXIT_INTERRUPTION_INFO_VALID                          RT_BIT(31)
 #define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    RT_BOOL((a) & RT_BIT(31))
 /** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
