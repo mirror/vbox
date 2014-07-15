@@ -24,15 +24,8 @@ include $(KBUILD_PATH)/subheader.kmk
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/
 
-DLLS.win += \
-    VBoxOGL \
-    VBoxOGLarrayspu \
-    VBoxOGLpassthroughspu \
-    VBoxOGLpackspu \
-    VBoxOGLfeedbackspu
-
-if1of ($(KBUILD_TARGET), linux solaris freebsd)
-DLLS += \
+if1of ($(KBUILD_TARGET), win linux solaris freebsd)
+ DLLS += \
     VBoxOGL \
     VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
