@@ -202,6 +202,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_MiniToolBarAlignment;
         /** Holds restricted Runtime UI status-bar indicators. */
         extern const char* GUI_RestrictedStatusBarIndicators;
+        /** Holds Runtime UI status-bar indicator order. */
+        extern const char* GUI_StatusBar_IndicatorOrder;
 #ifdef Q_WS_MAC
         /** Mac OS X: Holds whether 'presentation mode' enabled. */
         extern const char* GUI_PresentationModeEnabled;

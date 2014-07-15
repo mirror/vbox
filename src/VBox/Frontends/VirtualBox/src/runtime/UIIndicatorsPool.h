@@ -56,9 +56,6 @@ public:
     /** Destructor. */
     ~UIIndicatorsPool();
 
-    /** Returns indicator corresponding to passed @a indicatorType. */
-    QIStatusBarIndicator* indicator(IndicatorType indicatorType) const { return m_pool.value(indicatorType); }
-
     /** Updates appearance for passed @a indicatorType. */
     void updateAppearance(IndicatorType indicatorType);
 
@@ -107,8 +104,10 @@ private:
     UISession *m_pSession;
     /** Holds the session reference. */
     CSession &m_session;
-    /** Holds the cached configuration. */
-    QList<IndicatorType> m_configuration;
+    /** Holds the cached restrictions. */
+    QList<IndicatorType> m_restrictions;
+    /** Holds the cached order. */
+    QList<IndicatorType> m_order;
     /** Holds cached indicator instances. */
     QMap<IndicatorType, QIStatusBarIndicator*> m_pool;
     /** Holds the main-layout instance. */

@@ -1782,7 +1782,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
            << GUI_HiDPI_Optimization
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
-           << GUI_RestrictedStatusBarIndicators
+           << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef Q_WS_MAC
            << GUI_PresentationModeEnabled
            << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor
@@ -2809,11 +2809,11 @@ QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QSt
 {
     /* Prepare result: */
     QList<IndicatorType> result;
-    /* Get restricted status-bar-indicators: */
+    /* Get restricted status-bar indicators: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedStatusBarIndicators, strID))
     {
-        IndicatorType value = gpConverter->fromInternalString<IndicatorType>(strValue);
-        if (value != IndicatorType_Invalid)
+        const IndicatorType value = gpConverter->fromInternalString<IndicatorType>(strValue);
+        if (value != IndicatorType_Invalid && !result.contains(value))
             result << value;
     }
     /* Return result: */
@@ -2829,6 +2829,32 @@ void UIExtraDataManager::setRestrictedStatusBarIndicators(const QList<IndicatorT
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_RestrictedStatusBarIndicators, data, strID);
+}
+
+QList<IndicatorType> UIExtraDataManager::statusBarIndicatorOrder(const QString &strID)
+{
+    /* Prepare result: */
+    QList<IndicatorType> result;
+    /* Get status-bar indicator order: */
+    foreach (const QString &strValue, extraDataStringList(GUI_StatusBar_IndicatorOrder, strID))
+    {
+        const IndicatorType value = gpConverter->fromInternalString<IndicatorType>(strValue);
+        if (value != IndicatorType_Invalid && !result.contains(value))
+            result << value;
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QString &strID)
+{
+    /* Parse passed list: */
+    QStringList data;
+    foreach (const IndicatorType &indicatorType, list)
+        data << gpConverter->toInternalString(indicatorType);
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_StatusBar_IndicatorOrder, data, strID);
 }
 
 #ifdef Q_WS_MAC
@@ -3138,7 +3164,8 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
              && strMachineID == vboxGlobal().managedVMUuid())
     {
         /* Status-bar configuration change: */
-        if (strKey == GUI_RestrictedStatusBarIndicators)
+        if (strKey == GUI_RestrictedStatusBarIndicators ||
+            strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange();
         /* HID LEDs sync state changed (allowed if not restricted)? */
         else if (strKey == GUI_HidLedsSync)
