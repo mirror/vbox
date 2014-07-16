@@ -342,6 +342,8 @@ static int rtMemSaferMemAllocPages(PRTMEMSAFERNODE pThis)
         /* failed. */
         RTMemPageFree(pvPages, (size_t)pThis->cPages * PAGE_SIZE);
     }
+    else
+        rc = VERR_NO_PAGE_MEMORY;
 
     return rc;
 }
