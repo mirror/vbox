@@ -298,10 +298,8 @@ private slots:
     /** Handles drag object destroy. */
     void sltHandleDragObjectDestroy();
 
-#ifdef RT_OS_DARWIN
     /** Performs window activation. */
     void sltActivateWindow() { activateWindow(); }
-#endif /* RT_OS_DARWIN */
 
 private:
 
@@ -468,9 +466,11 @@ void UIStatusBarEditorWindow::prepare()
     setAttribute(Qt::WA_QuitOnClose, false);
     /* Delete window when closed: */
     setAttribute(Qt::WA_DeleteOnClose);
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
+#endif /* Q_WS_MAC || Q_WS_WIN */
 #if defined(Q_WS_MAC)
     /* Using native API to enable translucent background for the Mac host.
      * - We also want to disable window-shadows which is possible
@@ -493,17 +493,17 @@ void UIStatusBarEditorWindow::prepare()
     AssertPtrReturnVoid(m_pMainLayout);
     {
         /* Configure main-layout: */
-#if defined(Q_WS_WIN)
-        /* Standard margins on Windows: */
+#ifdef Q_WS_MAC
+        /* Standard margins on Mac OS X are too big: */
+        m_pMainLayout->setContentsMargins(10, 10, 10, 5);
+#else /* !Q_WS_MAC */
+        /* Standard margins on Windows/X11: */
         int iLeft, iTop, iRight, iBottom;
         m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
         if (iBottom >= 5)
             iBottom -= 5;
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
-#elif defined(Q_WS_MAC)
-        /* Standard margins on Mac OS X are too big: */
-        m_pMainLayout->setContentsMargins(10, 10, 10, 5);
-#endif /* Q_WS_MAC */
+#endif /* !Q_WS_MAC */
         m_pMainLayout->setSpacing(0);
         /* Create close-button: */
         m_pButtonClose = new QIToolButton;
@@ -598,6 +598,7 @@ void UIStatusBarEditorWindow::prepareAnimation()
 void UIStatusBarEditorWindow::prepareGeometry()
 {
     /* Prepare geometry based on minimum size-hint: */
+    connect(this, SIGNAL(sigShown()), this, SLOT(sltActivateWindow()), Qt::QueuedConnection);
     const QSize msh = minimumSizeHint();
     setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - msh.height(),
                 qMax(m_rect.width(), msh.width()), msh.height());
@@ -708,9 +709,9 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     QColor color3 = pal.color(QPalette::Window).darker(120);
-#endif /* Q_WS_WIN */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Left corner: */
     QRadialGradient grad1(QPointF(5, 5), 5);
@@ -750,7 +751,7 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     painter.fillRect(QRect(5, 0, width() - 5 * 2, 5), grad3);
     painter.fillRect(QRect(0, 5, 5, height() - 5), grad4);
     painter.fillRect(QRect(width() - 5, 5, 5, height() - 5), grad5);
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN) || defined(Q_WS_X11)
     painter.save();
     painter.setPen(color3);
     painter.drawLine(QLine(QPoint(5 + 1, 5 + 1),                      QPoint(width() - 1 - 5 - 1, 5 + 1)));
@@ -758,7 +759,7 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, height() - 1), QPoint(5 + 1, height() - 1)));
     painter.drawLine(QLine(QPoint(5 + 1, height() - 1),               QPoint(5 + 1, 5 + 1)));
     painter.restore();
-#endif /* Q_WS_WIN */
+#endif /* Q_WS_WIN || Q_WS_X11 */
 
     /* Paint drop token: */
     if (m_pButtonDropToken)
@@ -1074,12 +1075,10 @@ void UIMachineWindowNormal::prepareStatusBar()
     setStatusBar(new QIStatusBar);
     AssertPtrReturnVoid(statusBar());
     {
-#if defined(Q_WS_WIN) || defined (Q_WS_MAC)
         /* Configure status-bar: */
         statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltShowStatusBarContextMenu(const QPoint&)));
-#endif /* Q_WS_WIN || Q_WS_MAC */
         /* Create indicator-pool: */
         m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uisession());
         AssertPtrReturnVoid(m_pIndicatorsPool);
