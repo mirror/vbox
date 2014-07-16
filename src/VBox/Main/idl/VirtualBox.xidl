@@ -15553,6 +15553,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IDisplay" extends="$unknown"
     uuid="0d85a960-bfa7-4f26-9637-fdd521b7f3c1"
     wsmap="managed"
+    wrap-hint-server-addinterfaces="IEventListener"
     >
     <desc>
       The IDisplay interface represents the virtual machine's display.
@@ -18323,7 +18324,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ISession" extends="$unknown"
     uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
     wsmap="managed"
-    wrap-hint-server="addinterface=IInternalSessionControl"
+    wrap-hint-server-addinterfaces="IInternalSessionControl"
     >
     <desc>
       The ISession interface represents a client process and allows for locking

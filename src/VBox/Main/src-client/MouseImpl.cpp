@@ -553,9 +553,11 @@ HRESULT Mouse::i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAd
     if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_NEW_PROTOCOL))
     {
         ULONG displayWidth, displayHeight;
+        ULONG ulDummy;
+        LONG lDummy;
         /* Takes the display lock */
-        HRESULT rc = pDisplay->getScreenResolution(0, &displayWidth,
-                                                   &displayHeight, NULL, NULL, NULL);
+        HRESULT rc = pDisplay->i_getScreenResolution(0, &displayWidth,
+                                                     &displayHeight, &ulDummy, &lDummy, &lDummy);
         if (FAILED(rc))
             return rc;
 
@@ -568,7 +570,7 @@ HRESULT Mouse::i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAd
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
-        pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
+        pDisplay->i_getFramebufferDimensions(&x1, &y1, &x2, &y2);
         *pxAdj = x1 < x2 ?   ((x - x1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
                            / (x2 - x1) : 0;
         *pyAdj = y1 < y2 ?   ((y - y1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
@@ -709,9 +711,11 @@ HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
 
     ULONG cWidth  = 0;
     ULONG cHeight = 0;
+    ULONG cBPP    = 0;
     LONG  xOrigin = 0;
     LONG  yOrigin = 0;
-    HRESULT rc = pDisplay->getScreenResolution(uScreenId, &cWidth, &cHeight, NULL, &xOrigin, &yOrigin);
+    HRESULT rc = pDisplay->i_getScreenResolution(uScreenId, &cWidth, &cHeight, &cBPP, &xOrigin, &yOrigin);
+    NOREF(cBPP);
     ComAssertComRCRetRC(rc);
 
     uint64_t* pau64Contacts = NULL;
