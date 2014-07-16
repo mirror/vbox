@@ -298,10 +298,10 @@ private slots:
     /** Handles drag object destroy. */
     void sltHandleDragObjectDestroy();
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
     /** Performs window activation. */
     void sltActivateWindow() { activateWindow(); }
-#endif /* Q_WS_MAC */
+#endif /* RT_OS_DARWIN */
 
 private:
 
