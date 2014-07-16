@@ -348,8 +348,14 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
                     PCRTCRCERTCTX pCertCtx;
                     while ((pCertCtx = RTCrStoreCertSearchNext(pState->hKernelRootStore, &Search)) != NULL)
                     {
-                        if (RTCrX509SubjectPublicKeyInfo_Compare(&pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo,
-                                                                 pPublicKeyInfo) == 0)
+                        PCRTCRX509SUBJECTPUBLICKEYINFO pPubKeyInfo;
+                        if (pCertCtx->pCert)
+                            pPubKeyInfo = &pCertCtx->pCert->TbsCertificate.SubjectPublicKeyInfo;
+                        else if (pCertCtx->pTaInfo)
+                            pPubKeyInfo = &pCertCtx->pTaInfo->PubKey;
+                        else
+                            pPubKeyInfo = NULL;
+                        if (RTCrX509SubjectPublicKeyInfo_Compare(pPubKeyInfo, pPublicKeyInfo) == 0)
                             cFound++;
                         RTCrCertCtxRelease(pCertCtx);
                     }
