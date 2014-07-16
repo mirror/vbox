@@ -2321,8 +2321,8 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
     uint32_t val = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0;         /* Bits set here must always be set. */
     uint32_t zap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;            /* Bits cleared here must always be cleared. */
 
-    val |=   VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT           /* External interrupts causes a VM-exits. */
-           | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;              /* Non-maskable interrupts (NMIs) causes a VM-exit. */
+    val |=   VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT           /* External interrupts cause a VM-exit. */
+           | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;              /* Non-maskable interrupts (NMIs) cause a VM-exit. */
 
     if (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
         val |= VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI;         /* Use virtual NMIs and virtual-NMI blocking features. */
