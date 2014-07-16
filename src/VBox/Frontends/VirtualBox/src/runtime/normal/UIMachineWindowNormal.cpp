@@ -541,9 +541,6 @@ void UIStatusBarEditorWindow::prepare()
     prepareAnimation();
     /* Prepare geometry: */
     prepareGeometry();
-
-    /* Activate window: */
-    activateWindow();
 }
 
 void UIStatusBarEditorWindow::prepareStatusButtons()
