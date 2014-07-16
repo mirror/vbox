@@ -7379,14 +7379,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                                                /** @todo SMI. SMIs take priority over NMIs. */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts . */
     {
-        if (   fBlockNmi
-            || fBlockSti
-            || fBlockMovSS)
-        {
-            /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-            hmR0VmxSetNmiWindowExitVmcs(pVCpu);
-        }
-        else
+        /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
+        if (   !fBlockNmi
+            && !fBlockSti
+            && !fBlockMovSS)
         {
             Log4(("Pending NMI vcpu[%RU32]\n", pVCpu->idCpu));
             uint32_t u32IntInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
@@ -7395,6 +7391,8 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
+        else
+            hmR0VmxSetNmiWindowExitVmcs(pVCpu);
     }
     /*
      * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
