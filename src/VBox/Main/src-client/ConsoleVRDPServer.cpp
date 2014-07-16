@@ -1106,7 +1106,8 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
 
         if (SUCCEEDED(hr))
         {
-            hr = server->mConsole->i_getDisplay()->GetScreenResolution(uScreenId, NULL, NULL, NULL,
+            ULONG dummy;
+            hr = server->mConsole->i_getDisplay()->GetScreenResolution(uScreenId, &dummy, &dummy, &dummy,
                                                                      &xOrigin, &yOrigin);
 
             if (SUCCEEDED(hr))
@@ -2137,7 +2138,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
     data.aParms[0].u.pointer.addr = &outputRedirect;
     data.aParms[0].u.pointer.size = sizeof(outputRedirect);
 
-    int rc = mConsole->i_getDisplay()->crCtlSubmitSync(&data.Hdr, sizeof (data));
+    int rc = mConsole->i_getDisplay()->i_crCtlSubmitSync(&data.Hdr, sizeof (data));
     if (!RT_SUCCESS(rc))
     {
         Log(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));

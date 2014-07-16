@@ -1122,7 +1122,8 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
                             CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
-                            CHECK_ERROR_RET(pDisplay, GetScreenResolution(i, NULL, NULL, NULL, &xo, &yo), rc);
+                            ULONG dummy;
+                            CHECK_ERROR_RET(pDisplay, GetScreenResolution(i, &dummy, &dummy, &dummy, &xo, &yo), rc);
 
                             rc = crVBoxServerMapScreen(i, xo, yo, w, h, winId);
                             AssertRCReturn(rc, rc);
@@ -1247,7 +1248,8 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
                         {
                             CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Width)(&w));
                             CHECK_ERROR_BREAK(pFramebuffer, COMGETTER(Height)(&h));
-                            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(screenId, NULL, NULL, NULL, &xo, &yo));
+                            ULONG dummy;
+                            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(screenId, &dummy, &dummy, &dummy, &xo, &yo));
 
                             rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
                             AssertRCReturn(rc, rc);

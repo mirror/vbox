@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,10 +39,10 @@ class TestVMMDev : public VMMDevMouseInterface
 
 class TestDisplay : public DisplayMouseInterface
 {
-    void getFramebufferDimensions(int32_t *px1, int32_t *py1,
-                                  int32_t *px2, int32_t *py2);
-    int getScreenResolution(uint32_t cScreen, ULONG *pcx, ULONG *pcy,
-                            ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin);
+    virtual HRESULT i_getScreenResolution(ULONG cScreen, ULONG *pcx, ULONG *pcy,
+                                          ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin);
+    virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
+                                            int32_t *px2, int32_t *py2);
 };
 
 class TestConsole : public ConsoleMouseInterface
@@ -232,8 +232,8 @@ static int updateMouseCapabilities(PPDMIVMMDEVPORT, uint32_t, uint32_t)
     return VINF_SUCCESS;
 }
 
-void TestDisplay::getFramebufferDimensions(int32_t *px1, int32_t *py1,
-                                           int32_t *px2, int32_t *py2)
+void TestDisplay::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
+                                             int32_t *px2, int32_t *py2)
 {
     if (px1)
         *px1 = -320;
@@ -245,8 +245,8 @@ void TestDisplay::getFramebufferDimensions(int32_t *px1, int32_t *py1,
         *py2 = 240;
 }
 
-int TestDisplay::getScreenResolution(uint32_t cScreen, ULONG *pcx,
-                                     ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin)
+HRESULT TestDisplay::i_getScreenResolution(ULONG cScreen, ULONG *pcx,
+                                           ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin)
 {
     NOREF(cScreen);
     if (pcx)

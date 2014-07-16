@@ -368,7 +368,7 @@ DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool f
     if (display)
     {
         LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelEnable: %d, %p\n", fEnable, pVbvaMemory));
-        return display->VideoAccelEnable(fEnable, pVbvaMemory);
+        return display->i_VideoAccelEnable(fEnable, pVbvaMemory);
     }
 
     return VERR_NOT_SUPPORTED;
@@ -383,7 +383,7 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
     if (display)
     {
         LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelFlush\n"));
-        display->VideoAccelFlush ();
+        display->i_VideoAccelFlush();
     }
 }
 
@@ -450,7 +450,7 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Forward to Display, which calls corresponding framebuffers. */
-    pConsole->i_getDisplay()->handleSetVisibleRegion(cRect, pRect);
+    pConsole->i_getDisplay()->i_handleSetVisibleRegion(cRect, pRect);
 
     return VINF_SUCCESS;
 }
@@ -461,7 +461,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Forward to Display, which calls corresponding framebuffers. */
-    pConsole->i_getDisplay()->handleQueryVisibleRegion(pcRect, pRect);
+    pConsole->i_getDisplay()->i_handleQueryVisibleRegion(pcRect, pRect);
 
     return VINF_SUCCESS;
 }

@@ -1378,7 +1378,7 @@ void Console::i_VRDPClientConnect(uint32_t u32ClientId)
     }
 
     NOREF(u32ClientId);
-    mDisplay->VideoAccelVRDP(true);
+    mDisplay->i_VideoAccelVRDP(true);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     i_guestPropertiesVRDPUpdateActiveClient(u32ClientId);
@@ -1412,7 +1412,7 @@ void Console::i_VRDPClientDisconnect(uint32_t u32ClientId,
                              0);
     }
 
-    mDisplay->VideoAccelVRDP(false);
+    mDisplay->i_VideoAccelVRDP(false);
 
     if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_USB)
     {
@@ -5182,17 +5182,17 @@ HRESULT Console::i_onVideoCaptureChange()
         {
             int vrc = VINF_SUCCESS;
             if (SUCCEEDED(rc))
-                vrc = mDisplay->VideoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
+                vrc = mDisplay->i_VideoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
             if (RT_SUCCESS(vrc))
             {
                 if (fEnabled)
                 {
-                    vrc = mDisplay->VideoCaptureStart();
+                    vrc = mDisplay->i_VideoCaptureStart();
                     if (RT_FAILURE(vrc))
                         rc = setError(E_FAIL, tr("Unable to start video capturing (%Rrc)"), vrc);
                 }
                 else
-                    mDisplay->VideoCaptureStop();
+                    mDisplay->i_VideoCaptureStop();
             }
             else
                 rc = setError(E_FAIL, tr("Unable to set screens for capturing (%Rrc)"), vrc);
@@ -7323,7 +7323,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     {
         alock.release();
 
-        mDisplay->notifyPowerDown();
+        mDisplay->i_notifyPowerDown();
 
         alock.acquire();
     }
@@ -9369,7 +9369,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
                                             static_cast<Console *>(pConsole));
                 AssertRCBreak(vrc);
 
-                vrc = static_cast<Console *>(pConsole)->i_getDisplay()->registerSSM(pConsole->mpUVM);
+                vrc = static_cast<Console *>(pConsole)->i_getDisplay()->i_registerSSM(pConsole->mpUVM);
                 AssertRC(vrc);
                 if (RT_FAILURE(vrc))
                     break;
