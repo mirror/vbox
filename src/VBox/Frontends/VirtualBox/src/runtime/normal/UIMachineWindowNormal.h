@@ -31,6 +31,11 @@ class UIMachineWindowNormal : public UIMachineWindow
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about geometry change. */
+    void sigGeometryChange(const QRect &rect);
+
 protected:
 
     /* Constructor: */
@@ -52,6 +57,13 @@ private slots:
     void sltSharedFolderChange();
     void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
+
+    /** Handles status-bar context-menu-request: */
+    void sltShowStatusBarContextMenu(const QPoint &position);
+    /** Handles status-bar editor opening. */
+    void sltOpenStatusBarEditorWindow();
+    /** Handles status-bar editor closing. */
+    void sltStatusBarEditorWindowClosed();
 
     /** Handles indicator context-menu-request: */
     void sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position);
