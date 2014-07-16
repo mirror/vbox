@@ -370,6 +370,9 @@ void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
         popupCenter().setPopupStackType(activeMachineWindow(), fVisible ? UIPopupStackType_Separate : UIPopupStackType_Embedded);
         popupCenter().showPopupStack(activeMachineWindow());
     }
+
+    /* Notify other listeners: */
+    emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()

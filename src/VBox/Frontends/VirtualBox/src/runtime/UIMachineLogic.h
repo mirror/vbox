@@ -50,6 +50,11 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about 3D overlay visibility change. */
+    void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
+
 public:
 
     /* Factory functions to create/destroy required logic sub-child: */
