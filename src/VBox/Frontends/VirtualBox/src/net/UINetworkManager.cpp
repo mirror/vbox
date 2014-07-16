@@ -114,7 +114,7 @@ void UINetworkManager::prepare()
     if (!vboxGlobal().isVMConsoleProcess())
     {
         m_pNetworkManagerIndicator = new UINetworkManagerIndicator;
-        connect(m_pNetworkManagerIndicator, SIGNAL(sigMouseDoubleClick(QIStateStatusBarIndicator*, QMouseEvent *)), this, SLOT(show()));
+        connect(m_pNetworkManagerIndicator, SIGNAL(sigMouseDoubleClick(QIStatusBarIndicator*, QMouseEvent*)), this, SLOT(show()));
     }
 }
 
