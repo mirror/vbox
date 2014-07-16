@@ -1861,19 +1861,21 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
 static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
 {
     LogFlowFunc(("\n"));
-    int rc = VINF_SUCCESS;
-    void *pvNew = NULL;
+    int rc;
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
 
     /* Configured encryption requires locked down memory. */
     if (pThis->pCfgCrypto)
-        rc = RTMemSaferAllocZEx(&pvNew, cb, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
+        rc = RTMemSaferAllocZEx(ppvNew, cb, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
     else
     {
         cb = RT_ALIGN_Z(cb, _4K);
-        pvNew = RTMemPageAlloc(cb);
+        void *pvNew = RTMemPageAlloc(cb);
         if (RT_LIKELY(pvNew))
+        {
             *ppvNew = pvNew;
+            rc = VINF_SUCCESS;
+        }
         else
             rc = VERR_NO_MEMORY;
     }
