@@ -238,6 +238,11 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
         QApplication::startDragDistance())
         return QWidget::mouseMoveEvent(pEvent);
 
+    /* Revoke hovered state: */
+    m_fHovered = false;
+    /* Update: */
+    update();
+
     /* Initialize dragging: */
     m_mousePressPosition = QPoint();
     QDrag *pDrag = new QDrag(this);
@@ -284,6 +289,9 @@ private slots:
     /** Handles parent geometry change. */
     void sltParentGeometryChanged(const QRect &rect);
 
+    /** Handles 3D overlay visibility change. */
+    void sltHandle3DOverlayVisibilityChange();
+
     /** Handles configuration change. */
     void sltHandleConfigurationChange();
 
@@ -303,6 +311,8 @@ private:
     void prepareStatusButton(IndicatorType type);
     /** Prepare animation routine. */
     void prepareAnimation();
+    /** Prepare geometry. */
+    void prepareGeometry();
 
     /** Updates status buttons. */
     void updateStatusButtons();
@@ -411,6 +421,12 @@ void UIStatusBarEditorWindow::sltParentGeometryChanged(const QRect &rect)
     adjustGeometry();
 }
 
+void UIStatusBarEditorWindow::sltHandle3DOverlayVisibilityChange()
+{
+    /* Reactivate window when 3D overlay covered us: */
+    activateWindow();
+}
+
 void UIStatusBarEditorWindow::sltHandleConfigurationChange()
 {
     /* Update status buttons: */
@@ -456,8 +472,23 @@ void UIStatusBarEditorWindow::prepare()
     setAttribute(Qt::WA_QuitOnClose, false);
     /* Delete window when closed: */
     setAttribute(Qt::WA_DeleteOnClose);
-    /* Make window background translucent: */
+    /* Make sure we have no background
+     * until the first one paint-event: */
+    setAttribute(Qt::WA_NoSystemBackground);
+#if defined(Q_WS_MAC)
+    /* Using native API to enable translucent background for the Mac host.
+     * - We also want to disable window-shadows which is possible
+     *   using Qt::WA_MacNoShadow only since Qt 4.8,
+     *   while minimum supported version is 4.7.1 for now: */
+    ::darwinSetShowsWindowTransparent(this, true);
+#elif defined(Q_WS_WIN)
+    /* Using Qt API to enable translucent background:
+     * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1 for now.
+     * - Under x11 host Qt has it broken with KDE 4.9 (black background): */
     setAttribute(Qt::WA_TranslucentBackground);
+#endif /* Q_WS_WIN */
     /* Track D&D events: */
     setAcceptDrops(true);
 
@@ -466,17 +497,24 @@ void UIStatusBarEditorWindow::prepare()
     AssertPtrReturnVoid(m_pMainLayout);
     {
         /* Configure main-layout: */
+#if defined(Q_WS_WIN)
+        /* Standard margins on Windows: */
         int iLeft, iTop, iRight, iBottom;
         m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
         if (iBottom >= 5)
             iBottom -= 5;
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
+#elif defined(Q_WS_MAC)
+        /* Standard margins on Mac OS X are too big: */
+        m_pMainLayout->setContentsMargins(10, 10, 10, 5);
+#endif /* Q_WS_MAC */
         m_pMainLayout->setSpacing(0);
         /* Create close-button: */
         m_pButtonClose = new QIToolButton;
         AssertPtrReturnVoid(m_pButtonClose);
         {
             /* Configure close-button: */
+            m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
             m_pButtonClose->setMinimumSize(QSize(1, 1));
             m_pButtonClose->setShortcut(Qt::Key_Escape);
             m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
@@ -505,6 +543,8 @@ void UIStatusBarEditorWindow::prepare()
 
     /* Prepare animation: */
     prepareAnimation();
+    /* Prepare geometry: */
+    prepareGeometry();
 
     /* Activate window: */
     activateWindow();
@@ -559,6 +599,17 @@ void UIStatusBarEditorWindow::prepareAnimation()
     updateAnimation();
 }
 
+void UIStatusBarEditorWindow::prepareGeometry()
+{
+    /* Prepare geometry based on minimum size-hint: */
+    const QSize msh = minimumSizeHint();
+    setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - msh.height(),
+                qMax(m_rect.width(), msh.width()), msh.height());
+#ifdef Q_WS_WIN
+    raise();
+#endif /* Q_WS_WIN */
+}
+
 void UIStatusBarEditorWindow::updateStatusButtons()
 {
     /* Recache status-bar configuration: */
@@ -607,7 +658,9 @@ void UIStatusBarEditorWindow::adjustGeometry()
     const QSize sh = sizeHint();
     setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - sh.height(),
                 qMax(m_rect.width(), sh.width()), sh.height());
+#ifdef Q_WS_WIN
     raise();
+#endif /* Q_WS_WIN */
 }
 
 void UIStatusBarEditorWindow::retranslateUi()
@@ -659,7 +712,9 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     QColor color1 = pal.color(QPalette::Window).lighter(110);
     color1.setAlpha(0);
     QColor color2 = pal.color(QPalette::Window).darker(200);
+#ifdef Q_WS_WIN
     QColor color3 = pal.color(QPalette::Window).darker(120);
+#endif /* Q_WS_WIN */
 
     /* Left corner: */
     QRadialGradient grad1(QPointF(5, 5), 5);
@@ -699,6 +754,7 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     painter.fillRect(QRect(5, 0, width() - 5 * 2, 5), grad3);
     painter.fillRect(QRect(0, 5, 5, height() - 5), grad4);
     painter.fillRect(QRect(width() - 5, 5, 5, height() - 5), grad5);
+#ifdef Q_WS_WIN
     painter.save();
     painter.setPen(color3);
     painter.drawLine(QLine(QPoint(5 + 1, 5 + 1),                      QPoint(width() - 1 - 5 - 1, 5 + 1)));
@@ -706,6 +762,7 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, height() - 1), QPoint(5 + 1, height() - 1)));
     painter.drawLine(QLine(QPoint(5 + 1, height() - 1),               QPoint(5 + 1, 5 + 1)));
     painter.restore();
+#endif /* Q_WS_WIN */
 
     /* Paint drop token: */
     if (m_pButtonDropToken)
@@ -926,6 +983,8 @@ void UIMachineWindowNormal::sltOpenStatusBarEditorWindow()
         /* Configure status-bar editor: */
         connect(this, SIGNAL(sigGeometryChange(const QRect&)),
                 pStatusBarEditor, SLOT(sltParentGeometryChanged(const QRect&)));
+        connect(machineLogic(), SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+                pStatusBarEditor, SLOT(sltHandle3DOverlayVisibilityChange()));
         connect(pStatusBarEditor, SIGNAL(destroyed(QObject*)),
                 this, SLOT(sltStatusBarEditorWindowClosed()));
         /* Show window: */
@@ -1017,12 +1076,12 @@ void UIMachineWindowNormal::prepareStatusBar()
     setStatusBar(new QIStatusBar);
     AssertPtrReturnVoid(statusBar());
     {
-#ifdef Q_WS_WIN
+#if defined(Q_WS_WIN) || defined (Q_WS_MAC)
         /* Configure status-bar: */
         statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltShowStatusBarContextMenu(const QPoint&)));
-#endif /* Q_WS_WIN */
+#endif /* Q_WS_WIN || Q_WS_MAC */
         /* Create indicator-pool: */
         m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uisession());
         AssertPtrReturnVoid(m_pIndicatorsPool);
