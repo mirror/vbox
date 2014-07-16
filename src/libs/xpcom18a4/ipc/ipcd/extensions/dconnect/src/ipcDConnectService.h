@@ -313,8 +313,12 @@ private:
   // this is true after IPC_Shutdown() has been called
   PRBool mDisconnected;
 
+// member is never initialized or used, no point in wasting memory or making
+// someone believe it contains anything relevant
+#ifndef VBOX
   // our IPC client ID
   PRUint32 mSelfID;
+#endif
 
   // global lock to protect access to protect DConnectStub::QueryInterface()
   // (we cannot use mStubLock because it isn't supposed to be held long,
