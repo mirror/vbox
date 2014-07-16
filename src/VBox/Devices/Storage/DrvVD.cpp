@@ -1867,17 +1867,16 @@ static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void 
 
     /* Configured encryption requires locked down memory. */
     if (pThis->pCfgCrypto)
-        pvNew = RTMemSaferAllocZ(cb);
+        rc = RTMemSaferAllocZEx(&pvNew, cb, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
     else
     {
         cb = RT_ALIGN_Z(cb, _4K);
         pvNew = RTMemPageAlloc(cb);
+        if (RT_LIKELY(pvNew))
+            *ppvNew = pvNew;
+        else
+            rc = VERR_NO_MEMORY;
     }
-
-    if (RT_LIKELY(pvNew))
-        *ppvNew = pvNew;
-    else
-        rc = VERR_NO_MEMORY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
