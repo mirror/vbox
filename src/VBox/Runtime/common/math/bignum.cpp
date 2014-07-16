@@ -117,12 +117,9 @@ static int rtBigNumGrow(PRTBIGNUM pBigNum, uint32_t cNewUsed)
     uint32_t const cbNew = cNew * RTBIGNUM_ELEMENT_SIZE;
     Assert(cbNew > cbOld);
 
-    void *pvNew = NULL;
+    void *pvNew;
     if (pBigNum->fSensitive)
-    {
-        int rc = RTMemSaferReallocZEx(cbOld, pBigNum->pauElements, cbNew, &pvNew, RTMEMSAFER_ALLOC_EX_ALLOW_PAGEABLE_BACKING);
-        Assert(VALID_PTR(pvNew) || RT_FAILURE(rc));
-    }
+        pvNew = RTMemSaferReallocZ(cbOld, pBigNum->pauElements, cbNew);
     else
         pvNew = RTMemRealloc(pBigNum->pauElements, cbNew);
     if (RT_LIKELY(pvNew))
@@ -325,11 +322,7 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
     {
         pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, 4);
         if (pBigNum->fSensitive)
-        {
-            int rc = RTMemSaferAllocZEx((void **)&pBigNum->pauElements, pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE,
-                                        RTMEMSAFER_ALLOC_EX_ALLOW_PAGEABLE_BACKING);
-            Assert(VALID_PTR(pBigNum->pauElements) || RT_FAILURE(rc));
-        }
+            pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemSaferAllocZ(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         else
             pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemAlloc(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         if (RT_UNLIKELY(!pBigNum->pauElements))
@@ -463,11 +456,7 @@ static int rtBigNumCloneInternal(PRTBIGNUM pBigNum, PCRTBIGNUM pSrc)
         /* Duplicate the element array. */
         pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, 4);
         if (pBigNum->fSensitive)
-        {
-            rc = RTMemSaferAllocZEx((void **)&pBigNum->pauElements, pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE,
-                                    RTMEMSAFER_ALLOC_EX_ALLOW_PAGEABLE_BACKING);
-            Assert(VALID_PTR(pBigNum->pauElements) || RT_FAILURE(rc));
-        }
+            pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemSaferAllocZ(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         else
             pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemAlloc(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         if (RT_LIKELY(pBigNum->pauElements))

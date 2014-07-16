@@ -56,12 +56,15 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** Default memory allocation, non-pageable memory backing, return error
- * if not possible to allocate such memor. */
-#define RTMEMSAFER_ALLOC_EX_FLAGS_DEFAULT                   (0)
-/** Allow pageable memory backing for cases where the content is not that sensitive
- * and allocating non-pageable memory failes. Use with care! */
-#define RTMEMSAFER_ALLOC_EX_ALLOW_PAGEABLE_BACKING RT_BIT_32(1)
+/** @name RTMEMSAFER_F_XXX
+ * @{ */
+/** Require the memory to not hit the page file.
+ * @remarks Makes not guarantees with regards to hibernation /
+ *          suspend-to-disk. */
+#define RTMEMSAFER_F_REQUIRE_NOT_PAGABLE    RT_BIT_32(0)
+/** Mask of valid bits.  */
+#define RTMEMSAFER_F_VALID_MASK             UINT32_C(0x00000001)
+/** @} */
 
 /**
  * Scrambles memory allocated by RTMemSaferAllocZEx and associates after use.
@@ -91,7 +94,6 @@ RTDECL(int) RTMemSaferScramble(void *pv, size_t cb);
  */
 RTDECL(int) RTMemSaferUnscramble(void *pv, size_t cb);
 
-
 /**
  * Allocates memory for sensitive data.
  *
@@ -101,7 +103,8 @@ RTDECL(int) RTMemSaferUnscramble(void *pv, size_t cb);
  * @returns IPRT status code.
  * @param   ppvNew      Where to return the pointer to the memory.
  * @param   cb          Number of bytes to allocate.
- * @param   fFlags      Flags for controlling the allocation. See RTMEMSAFER_ALLOC_EX_FLAGS_* defines.
+ * @param   fFlags      Flags for controlling the allocation, see
+ *                      RTMEMSAFER_F_XXX.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
 RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
@@ -115,7 +118,8 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
  * @returns IPRT status code.
  * @param   a_ppvNew    Where to return the pointer to the memory.
  * @param   a_cb        Number of bytes to allocate.
- * @param   a_fFlags    Flags for controlling the allocation. See RTMEMSAFER_ALLOC_EX_FLAGS_* defines.
+ * @param   a_fFlags    Flags for controlling the allocation, see
+ *                      RTMEMSAFER_F_XXX.
  */
 #define RTMemSaferAllocZEx(a_ppvNew, a_cb, a_fFlags) RTMemSaferAllocZExTag(a_ppvNew, a_cb, a_fFlags, RTMEM_TAG)
 
@@ -158,9 +162,9 @@ RTDECL(void *) RTMemSaferAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW;
  * @param   pvOld       The current allocation.
  * @param   cbNew       The size of the new allocation.
  * @param   ppvNew      Where to return the pointer to the new memory.
- * @param   fFlags      Flags for controlling the allocation. See RTMEMSAFER_ALLOC_EX_FLAGS_* defines,
- *                      this takes only effect when allocating completely new memory, for extending or
- *                      shrinking existing allocations the flags of the allocation take precedence.
+ * @param   a_fFlags    Flags for controlling the allocation, see
+ *                      RTMEMSAFER_F_XXX.  It is not permitted to drop saftely
+ *                      requirments after the initial allocation.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
 RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, void **ppvNew, uint32_t fFlags, const char *pszTag) RT_NO_THROW;
