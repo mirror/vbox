@@ -28,33 +28,32 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/path.h>
+#include <iprt/memsafer.h>
+
+#include <iprt/asm.h>
+#include <iprt/param.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
-#include <iprt/stream.h>
-#include <iprt/initterm.h>
-#include <iprt/param.h>
-#include <iprt/memsafer.h>
 #include <iprt/test.h>
+#ifdef VBOX
+# include <VBox/sup.h>
+#endif
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
 
 static void doMemSaferScramble(RTTEST hTest, void *pvBuf, size_t cbAlloc)
 {
-    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Testing scrambling (%u bytes) ...\n", cbAlloc);
-
+    /*
+     * Fill it with random bytes and make a reference copy of these.
+     */
     RTRandBytes(pvBuf, cbAlloc);
 
     void *pvRef = RTMemDup(pvBuf, cbAlloc);
-    if (!pvRef)
-    {
-        RTTestIFailed("No memory for reference buffer (%z bytes)\n", cbAlloc);
-        return;
-    }
+    RTTESTI_CHECK_RETV(pvRef);
 
+    /*
+     * Scramble the allocation and check that it no longer matches the refernece bytes.
+     */
     int rc = RTMemSaferScramble(pvBuf, cbAlloc);
     if (RT_SUCCESS(rc))
     {
@@ -63,7 +62,9 @@ static void doMemSaferScramble(RTTEST hTest, void *pvBuf, size_t cbAlloc)
                           cbAlloc, pvRef, pvBuf);
         else
         {
-            /* Test unscrambling. */
+            /*
+             * Check that unscrambling returns the original content.
+             */
             rc = RTMemSaferUnscramble(pvBuf, cbAlloc);
             if (RT_SUCCESS(rc))
             {
@@ -81,41 +82,82 @@ static void doMemSaferScramble(RTTEST hTest, void *pvBuf, size_t cbAlloc)
     RTMemFree(pvRef);
 }
 
+
 static void doMemSaferAllocation(RTTEST hTest)
 {
     size_t cbAlloc = RTRandS32Ex(1, _1M) * sizeof(uint8_t);
 
-    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Testing allocation of secure memory (%u bytes) ...\n", cbAlloc);
     void *pvBuf = NULL;
-    int rc = RTMemSaferAllocZEx(&pvBuf, cbAlloc, RTMEMSAFER_ALLOC_EX_FLAGS_DEFAULT);
+    int rc = RTMemSaferAllocZEx(&pvBuf, cbAlloc, 0);
     if (RT_SUCCESS(rc))
     {
-        /* Try to access memory. */
+        /* Fill it with random bytes. */
         RTRandBytes(pvBuf, cbAlloc);
 
         /* Scrambling test */
         doMemSaferScramble(hTest, pvBuf, cbAlloc);
 
-#if 0
-        /* Try to access memory after the allocation, should crash. */
-        size_t cbAllocAligned = RT_ALIGN_Z(cbAlloc, PAGE_SIZE);
-        *((uint8_t *)pvBuf + cbAllocAligned) = 0xcc;
-#endif
         RTMemSaferFree(pvBuf, cbAlloc);
     }
     else
         RTTestIFailed("Allocating %z bytes of secure memory failed with %Rrc\n", cbAlloc, rc);
 }
 
+
+static void doMemRealloc(RTTEST hTest)
+{
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%u reallocation, grow by 1 bytes\n", PAGE_SIZE * 2);
+    size_t cbAlloc = RTRandS32Ex(1, _16K);
+    void  *pvBuf   = NULL;
+    RTTESTI_CHECK_RC_OK_RETV(RTMemSaferAllocZEx(&pvBuf, cbAlloc, 0));
+    for (uint32_t i = 0; i <= PAGE_SIZE * 2; i++)
+    {
+        cbAlloc += 1;
+        RTTESTI_CHECK_RC_OK_RETV(RTMemSaferReallocZEx(cbAlloc - 1, pvBuf, cbAlloc, &pvBuf, 0));
+        memset(pvBuf, i & 0x7f, cbAlloc);
+    }
+    RTMemSaferFree(pvBuf, cbAlloc);
+
+
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "100 random reallocations\n");
+    uint8_t chFiller = 0x42;
+    cbAlloc = 0;
+    pvBuf   = NULL;
+    for (uint32_t i = 1; i <= 100; i++)
+    {
+        uint32_t cbNew = RTRandS32Ex(1, _16K + (i / 4) * _16K);
+        RTTESTI_CHECK_RC_OK_RETV(RTMemSaferReallocZEx(cbAlloc, pvBuf, cbNew, &pvBuf, 0));
+
+        RTTESTI_CHECK(ASMMemIsAll8(pvBuf, RT_MIN(cbAlloc, cbNew), chFiller) == NULL);
+
+        chFiller += 0x31;
+        memset(pvBuf, chFiller, cbNew);
+        cbAlloc = cbNew;
+    }
+    RTTESTI_CHECK_RC_OK_RETV(RTMemSaferReallocZEx(cbAlloc, pvBuf, 0, &pvBuf, 0));
+    RTTESTI_CHECK(pvBuf == NULL);
+}
+
+
 int main()
 {
     RTTEST hTest;
-    RTEXITCODE rcExit = RTTestInitAndCreate("memsafer", &hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTMemSafer", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
+#ifdef VBOX
+    SUPR3Init(NULL);
+#endif
 
-    doMemSaferAllocation(hTest);
+    /*
+     * Not using sub-tests here, just printing progress.
+     */
+    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "20 random allocations\n");
+    for (uint32_t i = 0; i < 20; i++)
+        doMemSaferAllocation(hTest);
+
+    doMemRealloc(hTest);
 
     return RTTestSummaryAndDestroy(hTest);
 }
