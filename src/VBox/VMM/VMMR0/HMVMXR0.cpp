@@ -4898,7 +4898,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * using SSE instructions. Some XMM registers (XMM6-XMM15) are callee-saved and thus the need for this XMM wrapper.
      * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
      */
-    const bool fResumeVM = RT_BOOL(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED);
+    bool const fResumeVM = RT_BOOL(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED);
     /** @todo Add stats for resume vs launch. */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     return HMR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
@@ -7366,10 +7366,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
 
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
-    uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
-    bool fBlockMovSS    = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-    bool fBlockSti      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
-    bool fBlockNmi      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI);
+    uint32_t const uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
+    bool const fBlockMovSS    = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    bool const fBlockSti      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    bool const fBlockNmi      = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI);
 
     Assert(!fBlockSti || HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS));
     Assert(!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
@@ -7377,7 +7377,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!TRPMHasTrap(pVCpu));
 
                                                                /** @todo SMI. SMIs take priority over NMIs. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts . */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts. */
     {
         /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
         if (   !fBlockNmi
@@ -7403,7 +7403,7 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
         AssertRC(rc);
-        const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
+        bool const fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
         if (   !fBlockInt
             && !fBlockSti
             && !fBlockMovSS)
@@ -7495,7 +7495,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #ifdef VBOX_STRICT
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
-            const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
+            bool const fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
             if (fBlockInt)
                 return VERR_VMX_IPE_4;
             Assert(!fBlockSti);
@@ -7768,8 +7768,8 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     Assert(puIntrState);
     uint32_t u32IntInfo = (uint32_t)u64IntInfo;
 
-    const uint32_t uVector  = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntInfo);
-    const uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntInfo);
+    uint32_t const uVector  = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntInfo);
+    uint32_t const uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntInfo);
 
 #ifdef VBOX_STRICT
     /* Validate the error-code-valid bit for hardware exceptions. */
@@ -7825,7 +7825,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RIP));
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
-            const size_t cbIdtEntry = sizeof(X86IDTR16);
+            size_t const cbIdtEntry = sizeof(X86IDTR16);
             if (uVector * cbIdtEntry + (cbIdtEntry - 1) > pMixedCtx->idtr.cbIdt)
             {
                 /* If we are trying to inject a #DF with no valid IDT entry, return a triple-fault. */
@@ -10707,8 +10707,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    const RTGCUINTPTR uExitQualification = pVmxTransient->uExitQualification;
-    const uint32_t uAccessType           = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
+    RTGCUINTPTR const uExitQualification = pVmxTransient->uExitQualification;
+    uint32_t const uAccessType           = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
     PVM pVM                              = pVCpu->CTX_SUFF(pVM);
     switch (uAccessType)
     {
@@ -10857,12 +10857,12 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_VMX_IPE_1);
 
     /* I/O operation lookup arrays. */
-    static const uint32_t s_aIOSizes[4] = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
-    static const uint32_t s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };  /* AND masks for saving the result (in AL/AX/EAX). */
+    static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
+    static uint32_t const s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };  /* AND masks for saving the result (in AL/AX/EAX). */
 
     VBOXSTRICTRC   rcStrict;
-    const uint32_t cbValue  = s_aIOSizes[uIOWidth];
-    const uint32_t cbInstr  = pVmxTransient->cbInstr;
+    uint32_t const cbValue  = s_aIOSizes[uIOWidth];
+    uint32_t const cbInstr  = pVmxTransient->cbInstr;
     bool fUpdateRipAlready  = false; /* ugly hack, should be temporary. */
     PVM pVM                 = pVCpu->CTX_SUFF(pVM);
     if (fIOString)
@@ -10943,7 +10943,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * IN/OUT - I/O instruction.
          */
         Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
-        const uint32_t uAndVal = s_aIOOpAnd[uIOWidth];
+        uint32_t const uAndVal = s_aIOOpAnd[uIOWidth];
         Assert(!VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification));
         if (fIOWrite)
         {

@@ -2572,9 +2572,9 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!pVCpu->hm.s.Event.fPending);
     Log4Func(("\n"));
 
-    const bool fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
-    const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    const bool fBlockNmi  = RT_BOOL(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
+    bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
+    bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+    bool const fBlockNmi  = RT_BOOL(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     SVMEVENT Event;
@@ -2646,8 +2646,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Log4Func(("\n"));
 
-    const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
-    const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+    bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
+    bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
