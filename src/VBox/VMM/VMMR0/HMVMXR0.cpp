@@ -3298,7 +3298,7 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (CPUMIsGuestInLongModeEx(pMixedCtx))
         {
             val |= VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST;
-            Log4(("Load: VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST\n"));
+            Log4(("Load[%RU32]: VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST\n", pVCpu->idCpu));
         }
         else
             Assert(!(val & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST));
@@ -3308,7 +3308,7 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
         {
             val |= VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR;
-            Log4(("Load: VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR\n"));
+            Log4(("Load[%RU32]: VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR\n", pVCpu->idCpu));
         }
 
         /*
@@ -3373,7 +3373,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
-            Log4(("Load: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n"));
+            Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n", pVCpu->idCpu));
         }
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
@@ -3382,7 +3382,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             /* The switcher returns to long mode, EFER is managed by the switcher. */
             val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
-            Log4(("Load: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n"));
+            Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE\n", pVCpu->idCpu));
         }
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
@@ -3394,7 +3394,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             val |=   VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR
                    | VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR;
-            Log4(("Load: VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR, VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR\n"));
+            Log4(("Load[%RU32]: VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR, VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR\n", pVCpu->idCpu));
         }
 
         /* Don't acknowledge external interrupts on VM-exit. We want to let the host do that. */
@@ -3579,7 +3579,8 @@ static int hmR0VmxLoadGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_RIP);
-        Log4(("Load: VMX_VMCS_GUEST_RIP=%#RX64 fContextUseFlags=%#RX32\n", pMixedCtx->rip, HMCPU_CF_VALUE(pVCpu)));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_RIP=%#RX64 fContextUseFlags=%#RX32\n", pVCpu->idCpu, pMixedCtx->rip,
+              HMCPU_CF_VALUE(pVCpu)));
     }
     return rc;
 }
@@ -3605,7 +3606,7 @@ static int hmR0VmxLoadGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_RSP);
-        Log4(("Load: VMX_VMCS_GUEST_RSP=%#RX64\n", pMixedCtx->rsp));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_RSP=%#RX64\n", pVCpu->idCpu, pMixedCtx->rsp));
     }
     return rc;
 }
@@ -3651,7 +3652,7 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_RFLAGS);
-        Log4(("Load: VMX_VMCS_GUEST_RFLAGS=%#RX32\n", Eflags.u32));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_RFLAGS=%#RX32\n", pVCpu->idCpu, Eflags.u32));
     }
     return rc;
 }
@@ -3709,7 +3710,7 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* The guest's view (read access) of its CR0 is unblemished. */
         rc  = VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, u32GuestCR0);
         AssertRCReturn(rc, rc);
-        Log4(("Load: VMX_VMCS_CTRL_CR0_READ_SHADOW=%#RX32\n", u32GuestCR0));
+        Log4(("Load[%RU32]: VMX_VMCS_CTRL_CR0_READ_SHADOW=%#RX32\n", pVCpu->idCpu, u32GuestCR0));
 
         /* Setup VT-x's view of the guest CR0. */
         /* Minimize VM-exits due to CR3 changes when we have NestedPaging. */
@@ -3823,7 +3824,8 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
         AssertRCReturn(rc, rc);
-        Log4(("Load: VMX_VMCS_GUEST_CR0=%#RX32 (uSetCR0=%#RX32 uZapCR0=%#RX32)\n", u32GuestCR0, uSetCR0, uZapCR0));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR0=%#RX32 (uSetCR0=%#RX32 uZapCR0=%#RX32)\n", pVCpu->idCpu, u32GuestCR0, uSetCR0,
+              uZapCR0));
 
         /*
          * CR0 is shared between host and guest along with a CR0 read shadow. Therefore, certain bits must not be changed
@@ -3860,7 +3862,7 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.u32CR0Mask = u32CR0Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32CR0Mask);
         AssertRCReturn(rc, rc);
-        Log4(("Load: VMX_VMCS_CTRL_CR0_MASK=%#RX32\n", u32CR0Mask));
+        Log4(("Load[%RU32]: VMX_VMCS_CTRL_CR0_MASK=%#RX32\n", pVCpu->idCpu, u32CR0Mask));
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR0);
     }
@@ -3917,7 +3919,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.HCPhysEPTP);
             AssertRCReturn(rc, rc);
-            Log4(("Load: VMX_VMCS64_CTRL_EPTP_FULL=%#RX64\n", pVCpu->hm.s.vmx.HCPhysEPTP));
+            Log4(("Load[%RU32]: VMX_VMCS64_CTRL_EPTP_FULL=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.vmx.HCPhysEPTP));
 
             if (   pVM->hm.s.vmx.fUnrestrictedGuest
                 || CPUMIsGuestPagingEnabledEx(pMixedCtx))
@@ -3954,7 +3956,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 GCPhysGuestCR3 = GCPhys;
             }
 
-            Log4(("Load: VMX_VMCS_GUEST_CR3=%#RGv (GstN)\n", GCPhysGuestCR3));
+            Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR3=%#RGv (GstN)\n", pVCpu->idCpu, GCPhysGuestCR3));
             rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
         }
         else
@@ -3962,7 +3964,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             /* Non-nested paging case, just use the hypervisor's CR3. */
             RTHCPHYS HCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
 
-            Log4(("Load: VMX_VMCS_GUEST_CR3=%#RHv (HstN)\n", HCPhysGuestCR3));
+            Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR3=%#RHv (HstN)\n", pVCpu->idCpu, HCPhysGuestCR3));
             rc = VMXWriteVmcsHstN(VMX_VMCS_GUEST_CR3, HCPhysGuestCR3);
         }
         AssertRCReturn(rc, rc);
@@ -3981,7 +3983,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* The guest's view of its CR4 is unblemished. */
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32GuestCR4);
         AssertRCReturn(rc, rc);
-        Log4(("Load: VMX_VMCS_CTRL_CR4_READ_SHADOW=%#RX32\n", u32GuestCR4));
+        Log4(("Load[%RU32]: VMX_VMCS_CTRL_CR4_READ_SHADOW=%#RX32\n", pVCpu->idCpu, u32GuestCR4));
 
         /* Setup VT-x's view of the guest CR4. */
         /*
@@ -4049,7 +4051,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         u32GuestCR4 &= uZapCR4;
 
         /* Write VT-x's view of the guest CR4 into the VMCS. */
-        Log4(("Load: VMX_VMCS_GUEST_CR4=%#RX32 (Set=%#RX32 Zap=%#RX32)\n", u32GuestCR4, uSetCR4, uZapCR4));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR4=%#RX32 (Set=%#RX32 Zap=%#RX32)\n", pVCpu->idCpu, u32GuestCR4, uSetCR4, uZapCR4));
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCR4);
         AssertRCReturn(rc, rc);
 
@@ -4513,7 +4515,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 /* Signal that the recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
                    in real-mode (e.g. OpenBSD 4.0) */
                 REMFlushTBs(pVM);
-                Log4(("Load: Switch to protected mode detected!\n"));
+                Log4(("Load[%RU32]: Switch to protected mode detected!\n", pVCpu->idCpu));
                 pVCpu->hm.s.vmx.fWasInRealMode = false;
             }
         }
@@ -4543,8 +4545,8 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #endif
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);
-        Log4(("Load: CS=%#RX16 Base=%#RX64 Limit=%#RX32 Attr=%#RX32\n", pMixedCtx->cs.Sel, pMixedCtx->cs.u64Base,
-             pMixedCtx->cs.u32Limit, pMixedCtx->cs.Attr.u));
+        Log4(("Load[%RU32]: CS=%#RX16 Base=%#RX64 Limit=%#RX32 Attr=%#RX32\n", pVCpu->idCpu, pMixedCtx->cs.Sel,
+              pMixedCtx->cs.u64Base, pMixedCtx->cs.u32Limit, pMixedCtx->cs.Attr.u));
     }
 
     /*
@@ -4610,7 +4612,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);       AssertRCReturn(rc, rc);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_TR);
-        Log4(("Load: VMX_VMCS_GUEST_TR_BASE=%#RX64\n", u64Base));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_TR_BASE=%#RX64\n", pVCpu->idCpu, u64Base));
     }
 
     /*
@@ -4625,7 +4627,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(!(pMixedCtx->gdtr.cbGdt & 0xffff0000));          /* Bits 31:16 MBZ. */
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_GDTR);
-        Log4(("Load: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pMixedCtx->gdtr.pGdt));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pVCpu->idCpu, pMixedCtx->gdtr.pGdt));
     }
 
     /*
@@ -4661,7 +4663,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LDTR);
-        Log4(("Load: VMX_VMCS_GUEST_LDTR_BASE=%#RX64\n", pMixedCtx->ldtr.u64Base));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_LDTR_BASE=%#RX64\n", pVCpu->idCpu, pMixedCtx->ldtr.u64Base));
     }
 
     /*
@@ -4676,7 +4678,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(!(pMixedCtx->idtr.cbIdt & 0xffff0000));          /* Bits 31:16 MBZ. */
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_IDTR);
-        Log4(("Load: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pMixedCtx->idtr.pIdt));
+        Log4(("Load[%RU32]: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pVCpu->idCpu, pMixedCtx->idtr.pIdt));
     }
 
     return VINF_SUCCESS;
@@ -4724,7 +4726,10 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 # ifdef DEBUG
             PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
-                Log4(("Load: MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", i, pMsr->u32Msr, pMsr->u64Value));
+            {
+                Log4(("Load[%RU32]: MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", pVCpu->idCpu, i, pMsr->u32Msr,
+                      pMsr->u64Value));
+            }
 # endif
         }
 #endif
@@ -4766,15 +4771,15 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, pMixedCtx->msrEFER);
                 AssertRCReturn(rc,rc);
-                Log4(("Load: VMX_VMCS64_GUEST_EFER_FULL=%#RX64\n", pMixedCtx->msrEFER));
+                Log4(("Load[%RU32]: VMX_VMCS64_GUEST_EFER_FULL=%#RX64\n", pVCpu->idCpu, pMixedCtx->msrEFER));
             }
             else
             {
                 hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_EFER, pMixedCtx->msrEFER, false /* fUpdateHostMsr */);
                 /* We need to intercept reads too, see @bugref{7386} comment #16. */
                 hmR0VmxSetMsrPermission(pVCpu, MSR_K6_EFER, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
-                Log4(("Load: MSR[--]: u32Msr=%#RX32 u64Value=%#RX64 cMsrs=%u\n", MSR_K6_EFER, pMixedCtx->msrEFER,
-                      pVCpu->hm.s.vmx.cMsrs));
+                Log4(("Load[%RU32]: MSR[--]: u32Msr=%#RX32 u64Value=%#RX64 cMsrs=%u\n", pVCpu->idCpu, MSR_K6_EFER,
+                      pMixedCtx->msrEFER, pVCpu->hm.s.vmx.cMsrs));
             }
         }
         else if (!pVM->hm.s.vmx.fSupportsVmcsEfer)
