@@ -289,9 +289,6 @@ private slots:
     /** Handles parent geometry change. */
     void sltParentGeometryChanged(const QRect &rect);
 
-    /** Handles 3D overlay visibility change. */
-    void sltHandle3DOverlayVisibilityChange();
-
     /** Handles configuration change. */
     void sltHandleConfigurationChange();
 
@@ -300,6 +297,11 @@ private slots:
 
     /** Handles drag object destroy. */
     void sltHandleDragObjectDestroy();
+
+#ifdef Q_WS_MAC
+    /** Performs window activation. */
+    void sltActivateWindow() { activateWindow(); }
+#endif /* Q_WS_MAC */
 
 private:
 
@@ -419,12 +421,6 @@ void UIStatusBarEditorWindow::sltParentGeometryChanged(const QRect &rect)
     updateAnimation();
     /* Adjust geometry: */
     adjustGeometry();
-}
-
-void UIStatusBarEditorWindow::sltHandle3DOverlayVisibilityChange()
-{
-    /* Reactivate window when 3D overlay covered us: */
-    activateWindow();
 }
 
 void UIStatusBarEditorWindow::sltHandleConfigurationChange()
@@ -983,10 +979,12 @@ void UIMachineWindowNormal::sltOpenStatusBarEditorWindow()
         /* Configure status-bar editor: */
         connect(this, SIGNAL(sigGeometryChange(const QRect&)),
                 pStatusBarEditor, SLOT(sltParentGeometryChanged(const QRect&)));
-        connect(machineLogic(), SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-                pStatusBarEditor, SLOT(sltHandle3DOverlayVisibilityChange()));
         connect(pStatusBarEditor, SIGNAL(destroyed(QObject*)),
                 this, SLOT(sltStatusBarEditorWindowClosed()));
+#ifdef Q_WS_MAC
+        connect(machineLogic(), SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+                pStatusBarEditor, SLOT(sltActivateWindow()));
+#endif /* Q_WS_MAC */
         /* Show window: */
         pStatusBarEditor->show();
     }
