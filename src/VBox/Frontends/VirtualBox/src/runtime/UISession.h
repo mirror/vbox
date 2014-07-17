@@ -358,7 +358,7 @@ private:
     QVector<bool> m_monitorVisibilityVector;
 
     /* Frame-buffers vector: */
-    QVector<ComObjPtr<UIFrameBuffer>> m_frameBufferVector;
+    QVector<ComObjPtr<UIFrameBuffer> > m_frameBufferVector;
 
     /* Common variables: */
     KMachineState m_machineStatePrevious;
