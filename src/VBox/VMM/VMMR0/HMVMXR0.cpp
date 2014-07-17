@@ -6847,6 +6847,10 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     {
         switch (uVector)
         {
+            case X86_XCPT_NMI:
+                u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                break;
+
             case X86_XCPT_BP:
             case X86_XCPT_OF:
                 u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -6868,15 +6872,16 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
     {
-        if (uVector == X86_XCPT_NMI)
-            u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-        else
+        /** @todo r=ramshankar: Make this a strict-build assert after this bug is
+         *        fixed. See @bugref{7317}. */
+        uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
+        if (!(uEFlags & X86_EFL_IF))
         {
-            uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
-            if (!(uEFlags & X86_EFL_IF))
-                return VERR_VMX_IPE_5;
-            u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            Log4(("hmR0VmxTrpmTrapToPendingEvent: TRPM injecting an external interrupt when interrupts are disabled!?!"));
+            return VERR_VMX_IPE_5;
         }
+
+        u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -6916,7 +6921,6 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
     switch (uVectorType)
     {
         case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:
-        case VMX_IDT_VECTORING_INFO_TYPE_NMI:
            enmTrapType = TRPM_HARDWARE_INT;
            break;
 
@@ -6924,6 +6928,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
+        case VMX_IDT_VECTORING_INFO_TYPE_NMI:
         case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:
         case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:      /* #BP and #OF */
         case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
