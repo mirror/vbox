@@ -10916,6 +10916,10 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
                 case X86_XCPT_AC:
                     fFlags |= IEM_XCPT_FLAGS_ERR;
                     break;
+
+                case X86_XCPT_NMI:
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                    break;
             }
             break;
 
