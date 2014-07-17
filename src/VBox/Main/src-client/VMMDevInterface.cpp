@@ -162,7 +162,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
     Guest* guest = pConsole->i_getGuest();
     AssertPtrReturnVoid(guest);
 
-    guest->setAdditionsStatus((VBoxGuestFacilityType)uFacility, (VBoxGuestFacilityStatus)uStatus, fFlags, pTimeSpecTS);
+    guest->i_setAdditionsStatus((VBoxGuestFacilityType)uFacility, (VBoxGuestFacilityStatus)uStatus, fFlags, pTimeSpecTS);
     pConsole->i_onAdditionsStateChange();
 }
 
@@ -184,8 +184,8 @@ DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
     Guest* pGuest = pConsole->i_getGuest();
     AssertPtrReturnVoid(pGuest);
 
-    pGuest->onUserStateChange(Bstr(pszUser), Bstr(pszDomain), (VBoxGuestUserState)uState,
-                              puDetails, cbDetails);
+    pGuest->i_onUserStateChange(Bstr(pszUser), Bstr(pszDomain), (VBoxGuestUserState)uState,
+                                puDetails, cbDetails);
 }
 
 
@@ -214,7 +214,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
     {
         char version[16];
         RTStrPrintf(version, sizeof(version), "%d", guestInfo->interfaceVersion);
-        guest->setAdditionsInfo(Bstr(version), guestInfo->osType);
+        guest->i_setAdditionsInfo(Bstr(version), guestInfo->osType);
 
         /*
          * Tell the console interface about the event
@@ -231,13 +231,13 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * The guest additions was disabled because of a reset
          * or driver unload.
          */
-        guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
+        guest->i_setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
         /** @todo Would be better if GuestImpl.cpp did all this in the above method call
          *        while holding down the. */
-        guest->setAdditionsInfo2(0, "", 0,  0); /* Clear Guest Additions version. */
+        guest->i_setAdditionsInfo2(0, "", 0,  0); /* Clear Guest Additions version. */
         RTTIMESPEC TimeSpecTS;
         RTTimeNow(&TimeSpecTS);
-        guest->setAdditionsStatus(VBoxGuestFacilityType_All, VBoxGuestFacilityStatus_Inactive, 0 /*fFlags*/, &TimeSpecTS);
+        guest->i_setAdditionsStatus(VBoxGuestFacilityType_All, VBoxGuestFacilityStatus_Inactive, 0 /*fFlags*/, &TimeSpecTS);
         pConsole->i_onAdditionsStateChange();
     }
 }
@@ -257,7 +257,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint3
     AssertPtrReturnVoid(pGuest);
 
     /* Just pass it on... */
-    pGuest->setAdditionsInfo2(uFullVersion, pszName, uRevision, fFeatures);
+    pGuest->i_setAdditionsInfo2(uFullVersion, pszName, uRevision, fFeatures);
 
     /*
      * No need to tell the console interface about the update;
@@ -288,7 +288,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
     /*
      * Report our current capabilities (and assume none is active yet).
      */
-    pGuest->setSupportedFeatures(newCapabilities);
+    pGuest->i_setSupportedFeatures(newCapabilities);
 
     /*
      * Tell the console interface about the event
@@ -539,7 +539,7 @@ DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, boo
     Guest* guest = pConsole->i_getGuest();
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
-    *pfPageFusionEnabled = !!guest->isPageFusionEnabled();
+    *pfPageFusionEnabled = !!guest->i_isPageFusionEnabled();
     return VINF_SUCCESS;
 }
 
@@ -563,32 +563,32 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     AssertPtrReturn(guest, VERR_GENERAL_FAILURE);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUIDLE, pGuestStats->u32CpuLoad_Idle);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUIDLE, pGuestStats->u32CpuLoad_Idle);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_KERNEL)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUKERNEL, pGuestStats->u32CpuLoad_Kernel);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUKERNEL, pGuestStats->u32CpuLoad_Kernel);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_USER)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUUSER, pGuestStats->u32CpuLoad_User);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUUSER, pGuestStats->u32CpuLoad_User);
 
 
     /** @todo r=bird: Convert from 4KB to 1KB units?
      *        CollectorGuestHAL::i_getGuestMemLoad says it returns KB units to
      *        preCollect().  I might be wrong ofc, this is convoluted code... */
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_AVAIL)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMFREE, pGuestStats->u32PhysMemAvail);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMFREE, pGuestStats->u32PhysMemAvail);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_BALLOON)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMBALLOON, pGuestStats->u32PhysMemBalloon);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMBALLOON, pGuestStats->u32PhysMemBalloon);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_MEM_SYSTEM_CACHE)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMCACHE, pGuestStats->u32MemSystemCache);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMCACHE, pGuestStats->u32MemSystemCache);
 
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PAGE_FILE_SIZE)
-        guest->setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_PAGETOTAL, pGuestStats->u32PageFileSize);
+        guest->i_setStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_PAGETOTAL, pGuestStats->u32PageFileSize);
 
     return VINF_SUCCESS;
 }

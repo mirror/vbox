@@ -469,7 +469,7 @@ int GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) c
 
     /* For multi-monitor support we need to add shift values to the coordinates
      * (depending on the screen number). */
-    ComObjPtr<Console> pConsole = m_pGuest->getConsole();
+    ComObjPtr<Console> pConsole = m_pGuest->i_getConsole();
     ComPtr<IDisplay> pDisplay;
     HRESULT hr = pConsole->COMGETTER(Display)(pDisplay.asOutParam());
     if (FAILED(hr))
@@ -497,7 +497,7 @@ int GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) c
 int GuestDnD::hostCall(uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms) const
 {
     Assert(!m_pGuest.isNull());
-    ComObjPtr<Console> pConsole = m_pGuest->getConsole();
+    ComObjPtr<Console> pConsole = m_pGuest->i_getConsole();
 
     /* Forward the information to the VMM device. */
     Assert(!pConsole.isNull());

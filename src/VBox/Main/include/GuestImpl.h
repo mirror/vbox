@@ -17,6 +17,7 @@
 #ifndef ____H_GUESTIMPL
 #define ____H_GUESTIMPL
 
+#include "GuestWrap.h"
 #include "VirtualBoxBase.h"
 #include <iprt/list.h>
 #include <iprt/time.h>
@@ -49,101 +50,121 @@ typedef enum
 class Console;
 
 class ATL_NO_VTABLE Guest :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IGuest)
+    public GuestWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Guest, IGuest)
-
-    DECLARE_NOT_AGGREGATABLE(Guest)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(Guest)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IGuest)
-    END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (Guest)
 
-    HRESULT FinalConstruct(void);
-    void FinalRelease(void);
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     // Public initializer/uninitializer for internal purposes only.
-    HRESULT init (Console *aParent);
+    HRESULT init(Console *aParent);
     void uninit();
 
-    // IGuest properties.
-    STDMETHOD(COMGETTER(OSTypeId))(BSTR *aOSTypeId);
-    STDMETHOD(COMGETTER(AdditionsRunLevel))(AdditionsRunLevelType_T *aRunLevel);
-    STDMETHOD(COMGETTER(AdditionsVersion))(BSTR *a_pbstrAdditionsVersion);
-    STDMETHOD(COMGETTER(AdditionsRevision))(ULONG *a_puAdditionsRevision);
-    STDMETHOD(COMGETTER(DnDSource))(IGuestDnDSource ** aSource);
-    STDMETHOD(COMGETTER(DnDTarget))(IGuestDnDTarget ** aTarget);
-    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(Facilities))(ComSafeArrayOut(IAdditionsFacility *, aFacilities));
-    STDMETHOD(COMGETTER(Sessions))(ComSafeArrayOut(IGuestSession *, aSessions));
-    STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
-    STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
-    STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
-    STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
-    // IGuest methods.
-    STDMETHOD(GetFacilityStatus)(AdditionsFacilityType_T aType, LONG64 *aTimestamp, AdditionsFacilityStatus_T *aStatus);
-    STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
-    STDMETHOD(SetCredentials)(IN_BSTR aUsername, IN_BSTR aPassword,
-                              IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
-    // Guest control.
-    STDMETHOD(CreateSession)(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession);
-    STDMETHOD(FindSession)(IN_BSTR aSessionName, ComSafeArrayOut(IGuestSession *, aSessions));
-    // Misc stuff
-    STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                     ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
-                                     ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
-    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress);
 
 public:
     /** @name Static internal methods.
      * @{ */
 #ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest control notifications. */
-    static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvData, uint32_t cbData);
-    static DECLCALLBACK(void) staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+    static DECLCALLBACK(int) i_notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvData, uint32_t cbData);
+    static DECLCALLBACK(void) i_staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
 #endif
     /** @}  */
 
 public:
     /** @name Public internal methods.
      * @{ */
-    void enableVMMStatistics(BOOL aEnable) { mCollectVMMStats = aEnable; };
-    void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
-    void setAdditionsInfo2(uint32_t a_uFullVersion, const char *a_pszName, uint32_t a_uRevision, uint32_t a_fFeatures);
-    bool facilityIsActive(VBoxGuestFacilityType enmFacility);
-    void facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
-    ComObjPtr<Console> getConsole(void) { return mParent; }
-    void setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
-    void onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState, const uint8_t *puDetails, uint32_t cbDetails);
-    void setSupportedFeatures(uint32_t aCaps);
-    HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
-    BOOL isPageFusionEnabled();
-    static HRESULT setErrorStatic(HRESULT aResultCode,
-                                  const Utf8Str &aText)
+    void i_enableVMMStatistics(BOOL aEnable) { mCollectVMMStats = aEnable; };
+    void i_setAdditionsInfo(com::Utf8Str aInterfaceVersion, VBOXOSTYPE aOsType);
+    void i_setAdditionsInfo2(uint32_t a_uFullVersion, const char *a_pszName, uint32_t a_uRevision, uint32_t a_fFeatures);
+    bool i_facilityIsActive(VBoxGuestFacilityType enmFacility);
+    void i_facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus,
+                          uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    ComObjPtr<Console> i_getConsole(void) { return mParent; }
+    void i_setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus,
+                              uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    void i_onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState, const uint8_t *puDetails, uint32_t cbDetails);
+    void i_setSupportedFeatures(uint32_t aCaps);
+    HRESULT i_setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
+    BOOL i_isPageFusionEnabled();
+    static HRESULT i_setErrorStatic(HRESULT aResultCode, const Utf8Str &aText)
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
 #ifdef VBOX_WITH_GUEST_CONTROL
-    int         dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
-    int         sessionRemove(GuestSession *pSession);
-    int         sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession);
-    inline bool sessionExists(uint32_t uSessionID);
+    int         i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    uint32_t    i_getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
+    int         i_sessionRemove(GuestSession *pSession);
+    int         i_sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds,
+                                ComObjPtr<GuestSession> &pGuestSession);
+    inline bool i_sessionExists(uint32_t uSessionID);
+
 #endif
     /** @}  */
 
 private:
+
+     // wrapped IGuest properties
+     HRESULT getOSTypeId(com::Utf8Str &aOSTypeId);
+     HRESULT getAdditionsRunLevel(AdditionsRunLevelType_T *aAdditionsRunLevel);
+     HRESULT getAdditionsVersion(com::Utf8Str &aAdditionsVersion);
+     HRESULT getAdditionsRevision(ULONG *aAdditionsRevision);
+     HRESULT getDnDSource(ComPtr<IGuestDnDSource> &aDnDSource);
+     HRESULT getDnDTarget(ComPtr<IGuestDnDTarget> &aDnDTarget);
+     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+     HRESULT getFacilities(std::vector<ComPtr<IAdditionsFacility> > &aFacilities);
+     HRESULT getSessions(std::vector<ComPtr<IGuestSession> > &aSessions);
+     HRESULT getMemoryBalloonSize(ULONG *aMemoryBalloonSize);
+     HRESULT setMemoryBalloonSize(ULONG aMemoryBalloonSize);
+     HRESULT getStatisticsUpdateInterval(ULONG *aStatisticsUpdateInterval);
+     HRESULT setStatisticsUpdateInterval(ULONG aStatisticsUpdateInterval);
+     HRESULT internalGetStatistics(ULONG *aCpuUser,
+                                   ULONG *aCpuKernel,
+                                   ULONG *aCpuIdle,
+                                   ULONG *aMemTotal,
+                                   ULONG *aMemFree,
+                                   ULONG *aMemBalloon,
+                                   ULONG *aMemShared,
+                                   ULONG *aMemCache,
+                                   ULONG *aPagedTotal,
+                                   ULONG *aMemAllocTotal,
+                                   ULONG *aMemFreeTotal,
+                                   ULONG *aMemBalloonTotal,
+                                   ULONG *aMemSharedTotal);
+     HRESULT getFacilityStatus(AdditionsFacilityType_T aFacility,
+                               LONG64 *aTimestamp,
+                               AdditionsFacilityStatus_T *aStatus);
+     HRESULT getAdditionsStatus(AdditionsRunLevelType_T aLevel,
+                                BOOL *aActive);
+     HRESULT setCredentials(const com::Utf8Str &aUserName,
+                            const com::Utf8Str &aPassword,
+                            const com::Utf8Str &aDomain,
+                            BOOL aAllowInteractiveLogon);
+
+     // wrapped IGuest methods
+     HRESULT createSession(const com::Utf8Str &aUser,
+                           const com::Utf8Str &aPassword,
+                           const com::Utf8Str &aDomain,
+                           const com::Utf8Str &aSessionName,
+                           ComPtr<IGuestSession> &aGuestSession);
+
+     HRESULT findSession(const com::Utf8Str &aSessionName,
+                         std::vector<ComPtr<IGuestSession> > &aSessions);
+     HRESULT updateGuestAdditions(const com::Utf8Str &aSource,
+                                  const std::vector<com::Utf8Str> &aArguments,
+                                  const std::vector<AdditionsUpdateFlag_T> &aFlags,
+                                  ComPtr<IProgress> &aProgress);
+
+
     /** @name Private internal methods.
      * @{ */
-    void updateStats(uint64_t iTick);
-    static int staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                       STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser);
+    void i_updateStats(uint64_t iTick);
+    static int i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
+                                         STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser);
+
     /** @}  */
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;
@@ -159,14 +180,14 @@ private:
             , mAdditionsVersionFull(0), mAdditionsRevision(0), mAdditionsFeatures(0)
         { }
 
-        Bstr                        mOSTypeId;
+        Utf8Str                     mOSTypeId;
         FacilityMap                 mFacilityMap;
         AdditionsRunLevelType_T     mAdditionsRunLevel;
         uint32_t                    mAdditionsVersionFull;
-        Bstr                        mAdditionsVersionNew;
+        Utf8Str                     mAdditionsVersionNew;
         uint32_t                    mAdditionsRevision;
         uint32_t                    mAdditionsFeatures;
-        Bstr                        mInterfaceVersion;
+        Utf8Str                     mInterfaceVersion;
         GuestSessions               mGuestSessions;
         uint32_t                    mNextSessionID;
     } mData;

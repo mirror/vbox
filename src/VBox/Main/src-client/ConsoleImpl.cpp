@@ -3259,7 +3259,8 @@ HRESULT Console::deleteSnapshot(const com::Guid &aId, ComPtr<IProgress> &aProgre
                         Global::stringifyMachineState(mMachineState));
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(),
+                                          FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -3279,7 +3280,8 @@ HRESULT Console::deleteSnapshotAndAllChildren(const com::Guid &aId, ComPtr<IProg
 
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(), TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(),
+                                          TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -3298,7 +3300,8 @@ HRESULT Console::deleteSnapshotRange(const com::Guid &aStartId, const com::Guid 
 
     ComObjPtr<IProgress> iProgress;
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aStartId.toString()).raw(), Bstr(aEndId.toString()).raw(), FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
+    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aStartId.toString()).raw(), Bstr(aEndId.toString()).raw(),
+                                          FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
     if (FAILED(rc)) return rc;
     iProgress.queryInterfaceTo(aProgress.asOutParam());
 
@@ -5996,7 +5999,7 @@ int Console::i_hgcmLoadService(const char *pszServiceLibrary, const char *pszSer
 void Console::i_enableVMMStatistics(BOOL aEnable)
 {
     if (mGuest)
-        mGuest->enableVMMStatistics(aEnable);
+        mGuest->i_enableVMMStatistics(aEnable);
 }
 
 /**
