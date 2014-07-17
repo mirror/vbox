@@ -378,27 +378,31 @@ void UIMachineView::prepareFrameBuffer()
         /* Mark framebuffer as used again: */
         LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
         pFrameBuffer->setMarkAsUnused(false);
-        uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+        m_pFrameBuffer = pFrameBuffer;
     }
     else
     {
 # ifdef VBOX_WITH_VIDEOHWACCEL
         if (m_fAccelerate2DVideo)
         {
-            /** these two additional template args is a workaround to
-             * this [VBox|UI] duplication
-             * @todo: they are to be removed once VBox stuff is gone */
-            pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBuffer, UIMachineView>(this, &session(), (uint32_t)screenId());
+            ComObjPtr<VBoxOverlayFrameBuffer> pOFB;
+            pOFB.createObject();
+            pOFB->init(this, &session(), (uint32_t)screenId());
+            m_pFrameBuffer = pOFB;
         }
         else
-            pFrameBuffer = new UIFrameBuffer(this);
+        {
+            m_pFrameBuffer.createObject();
+            m_pFrameBuffer->init(this);
+        }
 # else /* VBOX_WITH_VIDEOHWACCEL */
-        pFrameBuffer = new UIFrameBuffer(this);
+        m_pFrameBuffer.createObject();
+        m_pFrameBuffer->init(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
-        pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
-        uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+        m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
+
+        uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
-    m_pFrameBuffer = pFrameBuffer;
 
     /* If frame-buffer was prepared: */
     if (m_pFrameBuffer)
@@ -406,14 +410,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Prepare display: */
         CDisplay display = session().GetConsole().GetDisplay();
         Assert(!display.isNull());
-        CFramebuffer fb(NULL);
-        /* Check if the framebuffer is already assigned;
-         * in this case we do not need to re-assign it neither do we need to AddRef. */
-        fb = display.QueryFramebuffer(m_uScreenId);
-        if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff no framebuffer is yet assigned */
-        {
-            m_pFrameBuffer->AddRef();
-        }
+        CFramebuffer fb = display.QueryFramebuffer(m_uScreenId);
         /* Always perform AttachFramebuffer to ensure 3D gets notified: */
         if (!fb.isNull())
             display.DetachFramebuffer(m_uScreenId);

@@ -31,6 +31,8 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "VBoxFBOverlayCommon.h"
+#include "runtime/UIFrameBuffer.h"
+#include "runtime/UIMachineView.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -83,7 +85,8 @@ private:
 class VBoxVHWASettings
 {
 public:
-    VBoxVHWASettings (CSession &session);
+    VBoxVHWASettings ();
+    void init(CSession &session);
 
     int fourccEnabledCount() const { return mFourccEnabledCount; }
     const uint32_t * fourccEnabledList() const { return mFourccEnabledList; }
@@ -1310,7 +1313,8 @@ class VBoxVHWAEntriesCache;
 class VBoxVHWACommandElementProcessor
 {
 public:
-    VBoxVHWACommandElementProcessor(QObject *pNotifyObject);
+    VBoxVHWACommandElementProcessor();
+    void init(QObject *pNotifyObject);
     ~VBoxVHWACommandElementProcessor();
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
     VBoxVHWACommandElement *getCmd();
@@ -1672,7 +1676,8 @@ private:
 class VBoxQGLOverlay
 {
 public:
-    VBoxQGLOverlay(QWidget *pViewport, QObject *pPostEventObject, CSession * aSession, uint32_t id);
+    VBoxQGLOverlay();
+    void init(QWidget *pViewport, QObject *pPostEventObject, CSession * aSession, uint32_t id);
     ~VBoxQGLOverlay()
     {
         if (mpShareWgt)
@@ -1818,36 +1823,38 @@ private:
     uint32_t m_id;
 };
 
-/* this additional class V is to workaround the [VBox|UI] duplication,
- * @todo: remove it once VBox stuff is removed */
-template <class T, class V>
-class VBoxOverlayFrameBuffer : public T
+class VBoxOverlayFrameBuffer : public UIFrameBuffer
 {
 public:
-    VBoxOverlayFrameBuffer (V *pView, CSession * aSession, uint32_t id)
-        : T (pView),
-          mOverlay(pView->viewport(), pView, aSession, id),
-          mpView (pView)
+    VBoxOverlayFrameBuffer()
     {
+    }
+
+    HRESULT init(UIMachineView *pView, CSession * aSession, uint32_t id)
+    {
+        mpView = pView;
+        UIFrameBuffer::init(mpView);
+        mOverlay.init(mpView->viewport(), mpView, aSession, id),
         /* sync with framebuffer */
         mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
+        return S_OK;
     }
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
         int rc;
-        T::lock();
+        UIFrameBuffer::lock();
         /* Make sure frame-buffer is used: */
-        if (T::m_fUnused)
+        if (UIFrameBuffer::m_fUnused)
         {
             LogRel2(("ProcessVHWACommand: Postponed!\n"));
             /* Unlock access to frame-buffer: */
-            T::unlock();
+            UIFrameBuffer::unlock();
             /* tell client to pend ProcessVHWACommand */
             return E_ACCESSDENIED;
         }
         rc = mOverlay.onVHWACommand ((struct VBOXVHWACMD*)pCommand);
-        T::unlock();
+        UIFrameBuffer::unlock();
         if (rc == VINF_CALLBACK_RETURN)
             return S_OK;
         else if (RT_SUCCESS(rc))
@@ -1866,28 +1873,28 @@ public:
                              ULONG aW, ULONG aH)
     {
         HRESULT hr = S_OK;
-        T::lock();
+        UIFrameBuffer::lock();
         /* Make sure frame-buffer is used: */
-        if (T::m_fUnused)
+        if (UIFrameBuffer::m_fUnused)
         {
             LogRel2(("NotifyUpdate: Ignored!\n"));
             mOverlay.onNotifyUpdateIgnore (aX, aY, aW, aH);
             /* Unlock access to frame-buffer: */
-            T::unlock();
+            UIFrameBuffer::unlock();
             /*can we actually ignore the notify update?*/
             /* Ignore NotifyUpdate: */
             return E_FAIL;
         }
 
         if (!mOverlay.onNotifyUpdate (aX, aY, aW, aH))
-            hr = T::NotifyUpdate (aX, aY, aW, aH);
-        T::unlock();
+            hr = UIFrameBuffer::NotifyUpdate (aX, aY, aW, aH);
+        UIFrameBuffer::unlock();
         return hr;
     }
 
     void resizeEvent(int iWidth, int iHeight)
     {
-        T::resizeEvent(iWidth, iHeight);
+        UIFrameBuffer::resizeEvent(iWidth, iHeight);
         mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
@@ -1895,28 +1902,28 @@ public:
     void viewportResized (QResizeEvent * re)
     {
         mOverlay.onViewportResized (re);
-        T::viewportResized (re);
+        UIFrameBuffer::viewportResized (re);
     }
 
     void viewportScrolled (int dx, int dy)
     {
         mOverlay.onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
-        T::viewportScrolled (dx, dy);
+        UIFrameBuffer::viewportScrolled (dx, dy);
     }
 
-    void setView(V * pView)
+    void setView(UIMachineView * pView)
     {
         /* lock to ensure we do not collide with the EMT thread passing commands to us */
-        T::lock();
-        T::setView(pView);
+        UIFrameBuffer::lock();
+        UIFrameBuffer::setView(pView);
         mpView = pView;
         mOverlay.updateAttachment(pView ? pView->viewport() : NULL, pView);
-        T::unlock();
+        UIFrameBuffer::unlock();
     }
 
 private:
     VBoxQGLOverlay mOverlay;
-    V *mpView;
+    UIMachineView *mpView;
 };
 
 #endif

@@ -37,7 +37,10 @@ class QPaintEvent;
 class UIMachineView;
 
 /** Common IFramebuffer implementation used to maintain VM display video memory. */
-class UIFrameBuffer : public QObject, VBOX_SCRIPTABLE_IMPL(IFramebuffer)
+class ATL_NO_VTABLE UIFrameBuffer :
+    public QObject,
+    public CComObjectRootEx<CComMultiThreadModel>,
+    VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
     Q_OBJECT;
 
@@ -54,11 +57,14 @@ signals:
 
 public:
 
-    /** Frame-buffer constructor.
-      * @param pMachineView defines machine-view this frame-buffer is bounded to. */
-    UIFrameBuffer(UIMachineView *pMachineView);
+    /** Frame-buffer constructor. */
+    UIFrameBuffer();
     /** Frame-buffer destructor. */
     ~UIFrameBuffer();
+
+    /** Frame-buffer initialization.
+      * @param pMachineView defines machine-view this frame-buffer is bounded to. */
+    HRESULT init(UIMachineView *pMachineView);
 
     /** Assigns machine-view frame-buffer will be bounded to.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
@@ -76,26 +82,18 @@ public:
       * @note Refer to m_fAutoEnabled for more information. */
     void setAutoEnabled(bool fAutoEnabled) { m_fAutoEnabled = fAutoEnabled; }
 
-    NS_DECL_ISUPPORTS
+    DECLARE_NOT_AGGREGATABLE(UIFrameBuffer)
 
-#ifdef Q_OS_WIN
-    /** Windows: Increments reference-counter. */
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement(&m_iRefCnt);
-    }
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    /** Windows: Decrements reference-counter. */
-    STDMETHOD_(ULONG, Release)()
-    {
-        long iCounter = ::InterlockedDecrement(&m_iRefCnt);
-        if (iCounter == 0)
-            delete this;
-        return iCounter;
-    }
-#endif /* Q_OS_WIN */
+    BEGIN_COM_MAP(UIFrameBuffer)
+        COM_INTERFACE_ENTRY(IFramebuffer)
+        COM_INTERFACE_ENTRY2(IDispatch,IFramebuffer)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    END_COM_MAP()
 
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     /* IFramebuffer COM methods: */
     STDMETHOD(COMGETTER(Width))(ULONG *puWidth);
@@ -269,11 +267,6 @@ protected:
     /** RTCRITSECT object to protect frame-buffer access. */
     mutable RTCRITSECT m_critSect;
 
-#ifdef Q_OS_WIN
-    /** Windows: Holds the reference counter. */
-    long m_iRefCnt;
-#endif /* Q_OS_WIN */
-
     /** @name Scaled mode related variables.
      * @{ */
     /** Holds frame-buffer scaled size. */
@@ -305,6 +298,12 @@ protected:
     /** Holds backing scale factor used by HiDPI frame-buffer. */
     double m_dBackingScaleFactor;
     /** @} */
+
+private:
+
+#ifdef Q_OS_WIN
+     CComPtr <IUnknown> m_pUnkMarshaler;
+#endif /* Q_OS_WIN */
 };
 
 #endif /* !___UIFrameBuffer_h___ */

@@ -4146,9 +4146,9 @@ void VBoxVHWAColorFormat::pixel2Normalized (uint32_t pix, float *r, float *g, fl
     *b = mB.colorValNorm (pix);
 }
 
-VBoxQGLOverlay::VBoxQGLOverlay (QWidget *pViewport,QObject *pPostEventObject,  CSession * aSession, uint32_t id)
+VBoxQGLOverlay::VBoxQGLOverlay ()
     : mpOverlayWgt (NULL),
-      mpViewport (pViewport),
+      mpViewport (NULL),
       mGlOn (false),
       mOverlayWidgetVisible (false),
       mOverlayVisible (false),
@@ -4156,13 +4156,22 @@ VBoxQGLOverlay::VBoxQGLOverlay (QWidget *pViewport,QObject *pPostEventObject,  C
       mProcessingCommands (false),
       mNeedOverlayRepaint (false),
       mNeedSetVisible (false),
-      mCmdPipe (pPostEventObject),
-      mSettings (*aSession),
-      mpSession(aSession),
+      mCmdPipe (),
+      mSettings (),
+      mpSession(),
       mpShareWgt (NULL),
-      m_id(id)
+      m_id(0)
 {
     /* postpone the gl widget initialization to avoid conflict with 3D on Mac */
+}
+
+void VBoxQGLOverlay::init(QWidget *pViewport, QObject *pPostEventObject,  CSession * aSession, uint32_t id)
+{
+    mpViewport = pViewport;
+    mpSession = aSession;
+    m_id = id;
+    mSettings.init(*aSession);
+    mCmdPipe.init(pPostEventObject);
 }
 
 class VBoxGLShareWgt : public QGLWidget
@@ -4947,8 +4956,8 @@ void VBoxQGLOverlay::processCmd(VBoxVHWACommandElement * pCmd)
     }
 }
 
-VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotifyObject) :
-    m_pNotifyObject(pNotifyObject),
+VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor() :
+    m_pNotifyObject(NULL),
     mpCurCmd(NULL),
     mbResetting(false),
     mcDisabled(0)
@@ -4959,6 +4968,11 @@ VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotif
     RTListInit(&mCommandList);
 
     m_pCmdEntryCache = new VBoxVHWAEntriesCache;
+}
+
+void VBoxVHWACommandElementProcessor::init(QObject *pNotifyObject)
+{
+    m_pNotifyObject = pNotifyObject;
 }
 
 VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
@@ -5774,7 +5788,11 @@ int VBoxVHWATextureImage::setCKey (VBoxVHWAGlProgramVHWA * pProgram, const VBoxV
     return RT_SUCCESS(rcL) /*&& RT_SUCCESS(rcU)*/ ? VINF_SUCCESS: VERR_GENERAL_FAILURE;
 }
 
-VBoxVHWASettings::VBoxVHWASettings (CSession &session)
+VBoxVHWASettings::VBoxVHWASettings ()
+{
+}
+
+void VBoxVHWASettings::init(CSession &session)
 {
     const QString strMachineID = session.GetMachine().GetId();
 
