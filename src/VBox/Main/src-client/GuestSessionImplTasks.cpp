@@ -75,7 +75,7 @@ GuestSessionTask::~GuestSessionTask(void)
 int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
 {
-    ComObjPtr<Console> pConsole = pGuest->getConsole();
+    ComObjPtr<Console> pConsole = pGuest->i_getConsole();
     const ComPtr<IMachine> pMachine = pConsole->i_machine();
 
     Assert(!pMachine.isNull());

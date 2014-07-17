@@ -912,7 +912,7 @@ int GuestSession::i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    Console *pConsole = mParent->getConsole();
+    Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
     int vrc = pDirectory->init(pConsole, this /* Parent */,
@@ -1288,7 +1288,7 @@ int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    Console *pConsole = mParent->getConsole();
+    Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
     rc = pFile->init(pConsole, this /* GuestSession */,
@@ -1928,7 +1928,7 @@ int GuestSession::i_processCreateExInteral(GuestProcessStartupInfo &procInfo, Co
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    rc = pProcess->init(mParent->getConsole() /* Console */, this /* Session */,
+    rc = pProcess->init(mParent->i_getConsole() /* Console */, this /* Session */,
                         uNewProcessID, procInfo);
     if (RT_FAILURE(rc))
         return rc;
@@ -2002,7 +2002,7 @@ int GuestSession::i_sendCommand(uint32_t uFunction,
     LogFlowThisFuncEnter();
 
 #ifndef VBOX_GUESTCTRL_TEST_CASE
-    ComObjPtr<Console> pConsole = mParent->getConsole();
+    ComObjPtr<Console> pConsole = mParent->i_getConsole();
     Assert(!pConsole.isNull());
 
     /* Forward the information to the VMM device. */
@@ -2130,7 +2130,7 @@ int GuestSession::i_queryInfo(void)
     ComObjPtr<Guest> pGuest = mParent;
     Assert(!pGuest.isNull());
 
-    uint32_t uVerAdditions = pGuest->getAdditionsVersion();
+    uint32_t uVerAdditions = pGuest->i_getAdditionsVersion();
     uint32_t uVBoxMajor    = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
     uint32_t uVBoxMinor    = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
 
@@ -2390,7 +2390,7 @@ HRESULT GuestSession::close()
      * work first and then return an error. */
 
     /* Remove ourselves from the session list. */
-    int rc2 = mParent->sessionRemove(this);
+    int rc2 = mParent->i_sessionRemove(this);
     if (rc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
         rc2 = VINF_SUCCESS;
 
