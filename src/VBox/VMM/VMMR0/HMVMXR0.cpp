@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2403,7 +2403,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         AssertRCReturn(rc, rc);
 
         val |= VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW;         /* CR8 reads from the Virtual-APIC page. */
-                                                               /* CR8 writes causes a VM-exit based on TPR threshold. */
+                                                               /* CR8 writes cause a VM-exit based on TPR threshold. */
         Assert(!(val & VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT));
         Assert(!(val & VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT));
     }
@@ -2415,8 +2415,8 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
          */
         if (pVM->hm.s.fAllow64BitGuests)
         {
-            val |=   VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT    /* CR8 reads causes a VM-exit. */
-                   | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;    /* CR8 writes causes a VM-exit. */
+            val |=   VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT    /* CR8 reads cause a VM-exit. */
+                   | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;    /* CR8 writes cause a VM-exit. */
         }
     }
 
@@ -2432,7 +2432,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         /*
          * The guest can access the following MSRs (read, write) without causing VM-exits; they are loaded/stored
-         * automatically as dedicated fields in the VMCS.
+         * automatically using dedicated fields in the VMCS.
          */
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS,  VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_ESP, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
@@ -5772,6 +5772,8 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
+    uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
+
     int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
@@ -5780,7 +5782,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         AssertRCReturn(rc, rc);
 
         uint32_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
         uint32_t uIdtVector  = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 
         typedef enum
@@ -5820,6 +5821,18 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 }
                 else if (uIdtVector == X86_XCPT_DF)
                     enmReflect = VMXREFLECTXCPT_TF;
+            }
+            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
+                     && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
+            {
+                /*
+                 * If this exception occurred while delivering the NMI, we need to clear the block-by-NMI field in the
+                 * guest interruptibility-state before re-delivering the NMI, otherwise the subsequent VM-entry would fail.
+                 * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
+                 */
+                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+                enmReflect = VMXREFLECTXCPT_XCPT;
             }
             else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
                      || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
@@ -5896,6 +5909,19 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 break;
         }
     }
+    else if (    VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
+             &&  uExitVector != X86_XCPT_DF
+             && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
+    {
+        /*
+         * Execution of IRET caused this fault when NMI blocking was in effect. We need to reset the block-by-NMI field so
+         * that NMIs remain blocked until the IRET execution is completed.
+         * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
+         */
+        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+    }
+
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET);
     return rc;
 }
