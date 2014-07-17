@@ -19,26 +19,22 @@
 
 /* Qt includes: */
 #include <QWidget>
-#include <QList>
-#include <QMap>
-
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
+class QMdiArea;
+class QMdiSubWindow;
 class UIAnimation;
 class QHBoxLayout;
-class QIToolButton;
-class UIStatusBarEditorButton;
+class UIStatusBarEditorWidget;
 
 /** QWidget reimplementation
   * providing user with possibility to edit status-bar layout. */
-class UIStatusBarEditorWindow : public QIWithRetranslateUI2<QWidget>
+class UIStatusBarEditorWindow : public QWidget
 {
     Q_OBJECT;
-    Q_PROPERTY(QRect startGeometry READ startGeometry);
-    Q_PROPERTY(QRect finalGeometry READ finalGeometry);
+    Q_PROPERTY(QRect widgetGeometry READ widgetGeometry WRITE setWidgetGeometry);
+    Q_PROPERTY(QRect startWidgetGeometry READ startWidgetGeometry);
+    Q_PROPERTY(QRect finalWidgetGeometry READ finalWidgetGeometry);
 
 signals:
 
@@ -51,80 +47,53 @@ signals:
 
 public:
 
-    /** Constructor, passes @a pParent to the QIRichToolButton constructor.
+    /** Constructor, passes @a pParent to the QWidget constructor.
       * @param rect is used to define initial cached parent geometry.
       * @param statusBarRect is used to define initial cached status-bar geometry. */
     UIStatusBarEditorWindow(QWidget *pParent, const QRect &rect, const QRect &statusBarRect);
 
 private slots:
 
-    /** Mark window as expanded. */
+    /** Performs window activation. */
+    void sltActivateWindow() { activateWindow(); }
+
+    /** Marks window as expanded. */
     void sltMarkAsExpanded() { m_fExpanded = true; }
-    /** Mark window as collapsed. */
+    /** Marks window as collapsed. */
     void sltMarkAsCollapsed() { close(); m_fExpanded = false; }
 
     /** Handles parent geometry change. */
     void sltParentGeometryChanged(const QRect &rect);
 
-    /** Handles configuration change. */
-    void sltHandleConfigurationChange();
-
-    /** Handles button click. */
-    void sltHandleButtonClick();
-
-    /** Handles drag object destroy. */
-    void sltHandleDragObjectDestroy();
-
-    /** Performs window activation. */
-    void sltActivateWindow() { activateWindow(); }
-
 private:
 
     /** Prepare routine. */
     void prepare();
-    /** Prepare status buttons routine. */
-    void prepareStatusButtons();
-    /** Prepare status button routine. */
-    void prepareStatusButton(IndicatorType type);
+    /** Prepare contents routine. */
+    void prepareContents();
+    /** Prepare geometry routine. */
+    void prepareGeometry();
     /** Prepare animation routine. */
     void prepareAnimation();
-    /** Prepare geometry. */
-    void prepareGeometry();
 
-    /** Updates status buttons. */
-    void updateStatusButtons();
-    /** Updates animation. */
-    void updateAnimation();
     /** Update geometry. */
     void adjustGeometry();
-
-    /** Retranslation routine. */
-    virtual void retranslateUi();
+    /** Updates animation. */
+    void updateAnimation();
 
     /** Show event handler. */
     virtual void showEvent(QShowEvent *pEvent);
     /** Close event handler. */
     virtual void closeEvent(QCloseEvent *pEvent);
 
-    /** Paint event handler. */
-    virtual void paintEvent(QPaintEvent *pEvent);
-
-    /** Drag-enter event handler. */
-    virtual void dragEnterEvent(QDragEnterEvent *pEvent);
-    /** Drag-move event handler. */
-    virtual void dragMoveEvent(QDragMoveEvent *pEvent);
-    /** Drag-leave event handler. */
-    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent);
-    /** Drop event handler. */
-    virtual void dropEvent(QDropEvent *pEvent);
-
-    /** Returns position for passed @a type. */
-    int position(IndicatorType type) const;
-
-    /** Returns cached start-geometry. */
-    QRect startGeometry() const { return m_startGeometry; }
-    /** Returns cached final-geometry. */
-    QRect finalGeometry() const { return m_finalGeometry; }
+    /** Defines mdi-sub-window geometry. */
+    void setWidgetGeometry(const QRect &rect);
+    /** Returns mdi-sub-window geometry. */
+    QRect widgetGeometry() const;
+    /** Returns mdi-sub-window start-geometry. */
+    QRect startWidgetGeometry() const { return m_startWidgetGeometry; }
+    /** Returns mdi-sub-window final-geometry. */
+    QRect finalWidgetGeometry() const { return m_finalWidgetGeometry; }
 
     /** @name Geometry
       * @{ */
@@ -140,38 +109,22 @@ private:
         UIAnimation *m_pAnimation;
         /** Holds whether window is expanded. */
         bool m_fExpanded;
-        /** Holds the cached start-geometry. */
-        QRect m_startGeometry;
-        /** Holds the cached final-geometry. */
-        QRect m_finalGeometry;
+        /** Holds mdi-sub-window start-geometry. */
+        QRect m_startWidgetGeometry;
+        /** Holds mdi-sub-window final-geometry. */
+        QRect m_finalWidgetGeometry;
     /** @} */
 
     /** @name Contents
       * @{ */
         /** Holds the main-layout instance. */
         QHBoxLayout *m_pMainLayout;
-        /** Holds the button-layout instance. */
-        QHBoxLayout *m_pButtonLayout;
-        /** Holds the close-button instance. */
-        QIToolButton *m_pButtonClose;
-        /** Holds status-bar buttons. */
-        QMap<IndicatorType, UIStatusBarEditorButton*> m_buttons;
-    /** @} */
-
-    /** @name Contents: Restrictions
-      * @{ */
-        /** Holds the cached status-bar button restrictions. */
-        QList<IndicatorType> m_restrictions;
-    /** @} */
-
-    /** @name Contents: Order
-      * @{ */
-        /** Holds the cached status-bar button order. */
-        QList<IndicatorType> m_order;
-        /** Holds the token-button to drop dragged-button nearby. */
-        UIStatusBarEditorButton *m_pButtonDropToken;
-        /** Holds whether dragged-button should be dropped <b>after</b> the token-button. */
-        bool m_fDropAfterTokenButton;
+        /** */
+        QMdiArea *m_pMdiArea;
+        /** */
+        UIStatusBarEditorWidget *m_pWidget;
+        /** */
+        QMdiSubWindow *m_pEmbeddedWidget;
     /** @} */
 };
 
