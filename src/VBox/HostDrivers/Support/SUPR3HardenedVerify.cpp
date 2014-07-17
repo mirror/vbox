@@ -653,7 +653,9 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                            (void *)pVerified->hFile, pFile->pszFile);
     pVerified->hFile = -1;
     pVerified->fValidated = false;
+#ifdef RT_OS_WINDOWS
     pVerified->fCheckedSignature = false;
+#endif
 
     /*
      * Verify the directory then proceed to open it.
