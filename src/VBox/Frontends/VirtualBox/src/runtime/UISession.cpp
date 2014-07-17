@@ -1206,7 +1206,7 @@ void UISession::cleanupFramebuffers()
             CDisplay display = session().GetConsole().GetDisplay();
             display.DetachFramebuffer(i);
             /* Release framebuffer reference: */
-            pFb->Release();
+            m_frameBufferVector[i].setNull();
         }
     }
     m_frameBufferVector.clear();

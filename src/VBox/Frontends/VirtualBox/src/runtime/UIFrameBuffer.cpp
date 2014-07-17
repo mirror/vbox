@@ -46,21 +46,24 @@ NS_DECL_CLASSINFO(UIFrameBuffer)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
 #endif /* !Q_WS_WIN */
 
-UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
+UIFrameBuffer::UIFrameBuffer()
     : m_iWidth(0), m_iHeight(0)
-    , m_pMachineView(pMachineView)
+    , m_pMachineView(NULL)
     , m_iWinId(0)
     , m_fUpdatesAllowed(true)
     , m_fUnused(false)
     , m_fAutoEnabled(false)
-#ifdef Q_OS_WIN
-    , m_iRefCnt(0)
-#endif /* Q_OS_WIN */
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
 {
+}
+
+HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
+{
+    LogRel2(("UIFrameBuffer::init %p\n", this));
+
     /* Assign mahine-view: */
-    AssertMsg(m_pMachineView, ("UIMachineView must not be NULL\n"));
+    m_pMachineView = pMachineView;
     /* Cache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
@@ -74,16 +77,33 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
 
     /* Resize frame-buffer to default size: */
     resizeEvent(640, 480);
+
+#ifdef Q_OS_WIN
+    CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
+#endif /* Q_OS_WIN */
+    return S_OK;
 }
 
 UIFrameBuffer::~UIFrameBuffer()
 {
+    LogRel2(("UIFrameBuffer::~UIFrameBuffer %p\n", this));
+
     /* Disconnect handlers: */
     if (m_pMachineView)
         cleanupConnections();
 
     /* Deinitialize critical-section: */
     RTCritSectDelete(&m_critSect);
+}
+
+HRESULT UIFrameBuffer::FinalConstruct()
+{
+    return 0;
+}
+
+void UIFrameBuffer::FinalRelease()
+{
+    return;
 }
 
 void UIFrameBuffer::setView(UIMachineView *pMachineView)
