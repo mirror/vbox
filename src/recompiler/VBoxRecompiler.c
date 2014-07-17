@@ -2238,7 +2238,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
     /* Update the inhibit NMI mask. */
     pVM->rem.s.Env.hflags2 &= ~HF2_NMI_MASK;
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         pVM->rem.s.Env.hflags2 |= HF2_NMI_MASK;
 
     /*
@@ -2732,13 +2732,13 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     /* Inhibit NMI flag. */
     if (pVM->rem.s.Env.hflags2 & HF2_NMI_MASK)
     {
-        Log(("Settings VMCPU_FF_INHIBIT_NMIS at %RGv (REM)\n", (RTGCPTR)pCtx->rip));
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        Log(("Settings VMCPU_FF_BLOCK_NMIS at %RGv (REM)\n", (RTGCPTR)pCtx->rip));
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
     }
-    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS))
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
     {
-        Log(("Clearing VMCPU_FF_INHIBIT_NMIS at %RGv (REM)\n", (RTGCPTR)pCtx->rip));
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        Log(("Clearing VMCPU_FF_BLOCK_NMIS at %RGv (REM)\n", (RTGCPTR)pCtx->rip));
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
     }
 
     remR3TrapClear(pVM);

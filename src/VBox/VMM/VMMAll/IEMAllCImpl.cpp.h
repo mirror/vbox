@@ -2989,10 +2989,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 {
     /*
-     * First, clear NMI inhibition before causing any exceptions.
+     * First, clear NMI blocking, if any, before causing any exceptions.
      */
     PVMCPU pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
      * Call a mode specific worker.
