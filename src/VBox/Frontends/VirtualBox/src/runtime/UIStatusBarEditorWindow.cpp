@@ -33,7 +33,9 @@
 #include "UIIconPool.h"
 #include "QIToolButton.h"
 #include "VBoxGlobal.h"
-
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 /** QWidget extension
   * used as status-bar editor button. */
