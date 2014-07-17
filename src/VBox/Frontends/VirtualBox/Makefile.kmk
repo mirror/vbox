@@ -302,6 +302,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMultiScreenLayout.h \
 	src/runtime/UISession.h \
+	src/runtime/UIStatusBarEditorWindow.h \
 	src/runtime/UIVMCloseDialog.h \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
@@ -481,7 +482,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
-	src/runtime/normal/UIMachineWindowNormal.cpp \
+	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
@@ -578,6 +579,7 @@ VirtualBox_SOURCES = \
 	src/runtime/UIMouseHandler.cpp \
 	src/runtime/UIMultiScreenLayout.cpp \
 	src/runtime/UISession.cpp \
+	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/runtime/UIVMCloseDialog.cpp \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
