@@ -895,7 +895,7 @@ void UIStatusBarEditorWindow::setWidgetGeometry(const QRect &rect)
      * because there is a Qt composition works properly,
      * Mac host has native translucency support,
      * Win host allows to enable it through Qt::WA_TranslucentBackground: */
-    setMask(m_pEmbeddedToolbar->geometry());
+    setMask(m_pEmbeddedWidget->geometry());
 #endif /* Q_WS_X11 */
 }
 
