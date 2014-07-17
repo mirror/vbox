@@ -5821,18 +5821,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 else if (uIdtVector == X86_XCPT_DF)
                     enmReflect = VMXREFLECTXCPT_TF;
             }
-            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
-                     && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
-            {
-                /*
-                 * If this exception occurred while delivering the NMI, we need to clear the block-by-NMI field in the
-                 * guest interruptibility-state before re-delivering the NMI, otherwise the subsequent VM-entry would fail.
-                 * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
-                 */
-                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-                enmReflect = VMXREFLECTXCPT_XCPT;
-            }
             else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
                      || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
                      || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
@@ -5851,9 +5839,21 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
              * interruption-information will not be valid and we end up here. In such cases, it is sufficient to reflect the
              * original exception to the guest after handling the VM-exit.
              */
-            if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
-                || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
+            if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
+                && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
+            {
+                /*
+                 * If this exception occurred while delivering the NMI, we need to clear the block-by-NMI field in the
+                 * guest interruptibility-state before re-delivering the NMI, otherwise the subsequent VM-entry would fail.
+                 * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
+                 */
+                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                enmReflect = VMXREFLECTXCPT_XCPT;
+            }
+            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
