@@ -75,7 +75,7 @@
  * context. */
 //#define IEM_VERIFICATION_MODE_MINIMAL
 //#define IEM_LOG_MEMORY_WRITES
-//#define IEM_IMPLEMENTS_TASKSWITCH
+#define IEM_IMPLEMENTS_TASKSWITCH
 
 /*******************************************************************************
 *   Header Files                                                               *
