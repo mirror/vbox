@@ -3523,14 +3523,13 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /*
-     * NMIs to the guest are inhibited until the guest executes an IRET. We only
-     * bother with virtual-NMI blocking when we have support for virtual NMIs in the
-     * CPU, otherwise setting this would block host-NMIs and IRET will not clear the
-     * blocking.
+     * NMIs to the guest are blocked after an NMI is injected until the guest executes an IRET. We only
+     * bother with virtual-NMI blocking when we have support for virtual NMIs in the CPU, otherwise
+     * setting this would block host-NMIs and IRET will not clear the blocking.
      *
      * See Intel spec. 26.6.1 "Interruptibility state". See @bugref{7445}.
      */
-    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS)
+    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS)
         && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
     {
         uIntrState |= VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI;
@@ -5830,8 +5829,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                  * guest interruptibility-state before re-delivering the NMI, otherwise the subsequent VM-entry would fail.
                  * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
                  */
-                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
             else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
@@ -5914,12 +5913,12 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
              && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
     {
         /*
-         * Execution of IRET caused this fault when NMI blocking was in effect. We need to reset the block-by-NMI field so
-         * that NMIs remain blocked until the IRET execution is completed.
+         * Execution of IRET caused this fault when NMI blocking was in effect (i.e we're in the guest NMI handler).
+         * We need to reset the block-by-NMI field so that NMIs remain blocked until the IRET execution is completed.
          * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
          */
-        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
     }
 
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET);
@@ -6126,8 +6125,9 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
     }
     else
     {
@@ -6144,9 +6144,12 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
 
         if (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
-        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+        {
+            if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
     }
 }
 
@@ -9931,7 +9934,7 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
         HMVMX_RETURN_UNEXPECTED_EXIT();
     }
 
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
 
     /*
      * Clear block-by-STI if it's active. The force-flag couldn't have been set by block-by-Mov SS in

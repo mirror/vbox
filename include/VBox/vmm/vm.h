@@ -404,8 +404,8 @@ typedef struct VMCPU
 #endif /* VBOX_WITH_RAW_MODE */
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
 #define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_32(24)
-/** Inhibit non-maskable interrupts. */
-#define VMCPU_FF_INHIBIT_NMIS               RT_BIT_32(25)
+/** Block injection of non-maskable interrupts to the guest. */
+#define VMCPU_FF_BLOCK_NMIS                 RT_BIT_32(25)
 #ifdef VBOX_WITH_RAW_MODE
 /** CSAM needs to scan the page that's being executed */
 # define VMCPU_FF_CSAM_SCAN_PAGE            RT_BIT_32(26)

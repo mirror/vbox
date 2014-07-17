@@ -2574,7 +2574,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    bool const fBlockNmi  = RT_BOOL(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS));
+    bool const fBlockNmi  = RT_BOOL(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     SVMEVENT Event;
@@ -3002,7 +3002,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     }
 
     /*
-     * If we are injecting an NMI, we must set VMCPU_FF_INHIBIT_NMIS only when we are going to execute
+     * If we are injecting an NMI, we must set VMCPU_FF_BLOCK_NMIS only when we are going to execute
      * guest code for certain (no exits to ring-3). Otherwise, we could re-read the flag on re-entry into
      * AMD-V and conclude that NMI inhibition is active when we have not even delivered the NMI.
      *
@@ -3013,11 +3013,12 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     {
         SVMEVENT Event;
         Event.u = pVCpu->hm.s.Event.u64IntInfo;
-        if (   Event.n.u1Valid
-            && Event.n.u3Type == SVM_EVENT_NMI
-            && Event.n.u8Vector == X86_XCPT_NMI)
+        if (    Event.n.u1Valid
+            &&  Event.n.u3Type == SVM_EVENT_NMI
+            &&  Event.n.u8Vector == X86_XCPT_NMI
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
         {
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
     }
 
@@ -4914,15 +4915,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 0;  /* No virtual interrupts pending, we'll inject the current one before reentry. */
+    pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 0;  /* No virtual interrupts pending, we'll inject the current one/NMI before reentry. */
     pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;
-
-    /* Clear NMI inhibition, if it's active. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_NMIS))
-    {
-        hmR0SvmClearIretIntercept(pVmcb);
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
-    }
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive interrupts/NMIs, it is now ready. */
     pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_VINTR;
@@ -4998,8 +4992,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* Clear NMI inhibition. */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_NMIS);
+    /* Clear NMI blocking. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive NMIs, it is now ready. */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
