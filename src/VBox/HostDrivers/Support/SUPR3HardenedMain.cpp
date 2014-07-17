@@ -921,7 +921,8 @@ DECLHIDDEN(int) supR3HardenedPathExecDir(char *pszPath, size_t cchPath)
  */
 static void suplibHardenedPrintPrefix(void)
 {
-    suplibHardenedPrintStr(g_pszSupLibHardenedProgName);
+    if (!g_pszSupLibHardenedProgName)
+        suplibHardenedPrintStr(g_pszSupLibHardenedProgName);
     suplibHardenedPrintStr(": ");
 }
 
@@ -1548,10 +1549,10 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * install loader hooks and check the process integrity.
      */
 #ifndef RT_OS_WINDOWS
-    supR3HardenedVerifyAll(true /* fFatal */, false /* fLeaveFilesOpen */, pszProgName);
+    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
 #else
     supR3HardenedWinInit(fFlags);
-    supR3HardenedVerifyAll(true /* fFatal */, true /* fLeaveFilesOpen */, pszProgName);
+    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
     supR3HardenedWinVerifyProcess();
 #endif
 
