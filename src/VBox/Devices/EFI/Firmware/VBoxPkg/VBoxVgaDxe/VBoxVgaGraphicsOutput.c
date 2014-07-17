@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * LegacyBiosMpTable.h
+ * VBoxVgaGraphicsOutput.c
  */
 
 /*

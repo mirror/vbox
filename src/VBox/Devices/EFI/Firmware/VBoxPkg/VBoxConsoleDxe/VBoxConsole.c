@@ -79,7 +79,7 @@ ConsoleSwitchMode (
     {
         UINT32 H = 1027;
         UINT32 V = 768;
-        GetVmVariable(EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION, (CHAR8 *)&H, sizeof(UINT32));
+        GetVmVariable(EFI_INFO_INDEX_UGA_HORIZONTAL_RESOLUTION, (CHAR8 *)&H, sizeof(UINT32));
         GetVmVariable(EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION, (CHAR8 *)&V, sizeof(UINT32));
         r = Uga->SetMode(Uga, H, V, 32, 60);
     }
