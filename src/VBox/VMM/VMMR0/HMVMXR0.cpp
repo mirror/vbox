@@ -5843,8 +5843,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
             {
                 /*
-                 * If this exception occurred while delivering the NMI, we need to clear the block-by-NMI field in the
-                 * guest interruptibility-state before re-delivering the NMI, otherwise the subsequent VM-entry would fail.
+                 * On CPUs that support Virtual NMIs, if this exception occurred while delivering the NMI, we need to clear
+                 * the block-by-NMI field in the guest interruptibility-state before re-delivering the NMI, otherwise the
+                 * subsequent VM-entry would fail.
                  * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
                  */
                 Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
