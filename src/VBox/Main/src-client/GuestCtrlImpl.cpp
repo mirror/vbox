@@ -126,13 +126,8 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
         for (size_t i = 0; i < aFlags.size(); ++i)
             fFlags |= aFlags[i];
 
-    com::SafeArray<AdditionsUpdateFlag_T> aaFlags;
-    aaFlags.resize(aFlags.size());
-    for (size_t i = 0; i < aFlags.size(); ++i)
-        aaFlags[i] = aFlags[i];
-
     if (fFlags && !(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aaFlags);
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
 
     int rc = VINF_SUCCESS;
 
@@ -561,9 +556,9 @@ HRESULT Guest::findSession(const com::Utf8Str &aSessionName, std::vector<ComPtr<
     LogFlowFunc(("Sessions with \"%s\" = %RU32\n",
                  aSessionName.c_str(), listSessions.size()));
 
+    aSessions.resize(listSessions.size());
     if (listSessions.size())
     {
-        aSessions.resize(listSessions.size());
         size_t i = 0;
         for (std::list < ComObjPtr<GuestSession> >::const_iterator it = listSessions.begin(); it != listSessions.end(); ++it, ++i)
             (*it).queryInterfaceTo(aSessions[i].asOutParam());
