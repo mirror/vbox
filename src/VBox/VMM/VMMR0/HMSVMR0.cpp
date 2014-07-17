@@ -2371,6 +2371,12 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
         Event.n.u3Type = SVM_EVENT_EXCEPTION;
         switch (uVector)
         {
+            case X86_XCPT_NMI:
+            {
+                Event.n.u3Type = SVM_EVENT_NMI;
+                break;
+            }
+
             case X86_XCPT_PF:
             case X86_XCPT_DF:
             case X86_XCPT_TS:
@@ -2386,12 +2392,7 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
         }
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
-    {
-        if (uVector == X86_XCPT_NMI)
-            Event.n.u3Type = SVM_EVENT_NMI;
-        else
-            Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
-    }
+        Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         Event.n.u3Type = SVM_EVENT_SOFTWARE_INT;
     else
@@ -2429,13 +2430,13 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
     switch (uVectorType)
     {
         case SVM_EVENT_EXTERNAL_IRQ:
-        case SVM_EVENT_NMI:
            enmTrapType = TRPM_HARDWARE_INT;
            break;
         case SVM_EVENT_SOFTWARE_INT:
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
         case SVM_EVENT_EXCEPTION:
+        case SVM_EVENT_NMI:
             enmTrapType = TRPM_TRAP;
             break;
         default:
