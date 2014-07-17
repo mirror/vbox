@@ -279,7 +279,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = VBOXSTRICTRC_VAL(IEMInjectTrpmEvent(pVCpu));
             /* The following condition should be removed when IEM_IMPLEMENTS_TASKSWITCH becomes true. */
             if (rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
-                rc = emR3ExecuteInstruction(pVM, pVCpu, "EVENT: ");
+                rc = VINF_EM_RESCHEDULE_REM;
 #else
             /* Do the same thing as VINF_EM_RAW_EMULATE_INSTR. */
             rc = emR3ExecuteInstruction(pVM, pVCpu, "EVENT: ");
