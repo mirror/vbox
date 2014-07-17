@@ -823,6 +823,7 @@ HRESULT Medium::FinalConstruct()
     m->vdIfConfig.pfnAreKeysValid = i_vdConfigAreKeysValid;
     m->vdIfConfig.pfnQuerySize = i_vdConfigQuerySize;
     m->vdIfConfig.pfnQuery = i_vdConfigQuery;
+    m->vdIfConfig.pfnQueryBytes = NULL;
 
     /* Initialize the callbacks of the VD TCP interface (we always use the host
      * IP stack for now) */
