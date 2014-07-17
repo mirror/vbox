@@ -485,6 +485,135 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
 }
 
 
+#ifdef RT_OS_WINDOWS
+/**
+ * Opens the file for verification.
+ *
+ * @returns VINF_SUCCESS on success. On failure, an error code is returned if
+ *          fFatal is clear and if it's set the function wont return.
+ * @param   pFile               The file entry.
+ * @param   fFatal              Whether validation failures should be treated as
+ *                              kl  fatal (true) or not (false).
+ * @param   phFile              The file handle, set to -1 if we failed to open
+ *                              the file.  The function may return VINF_SUCCESS
+ *                              and a -1 handle if the file is optional.
+ */
+static int supR3HardenedVerifyFileOpen(PCSUPINSTFILE pFile, bool fFatal, intptr_t *phFile)
+{
+    *phFile = -1;
+
+    char szPath[RTPATH_MAX];
+    int rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true /*fWithFilename*/, fFatal);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszPath;
+        rc = RTStrToUtf16(szPath, &pwszPath);
+        if (RT_SUCCESS(rc))
+        {
+            HANDLE hFile = CreateFileW(pwszPath,
+                                       GENERIC_READ,
+                                       FILE_SHARE_READ,
+                                       NULL,
+                                       OPEN_EXISTING,
+                                       FILE_ATTRIBUTE_NORMAL,
+                                       NULL);
+            if (hFile)
+            {
+                *phFile = (intptr_t)hFile;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                int err = GetLastError();
+                if (   !pFile->fOptional
+                    || (    err != ERROR_FILE_NOT_FOUND
+                        &&  (err != ERROR_PATH_NOT_FOUND || pFile->enmDir != kSupID_Testcase) ) )
+                    rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
+                                            "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
+            }
+            RTUtf16Free(pwszPath);
+        }
+        else
+            rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: Failed to convert '%s' to UTF-16: %Rrc\n",
+                                    szPath, rc);
+    }
+    return rc;
+}
+
+
+/**
+ * Worker for supR3HardenedVerifyFileInternal.
+ *
+ * @returns VINF_SUCCESS on success. On failure, an error code is returned if
+ *          fFatal is clear and if it's set the function wont return.
+ * @param   pFile               The file entry.
+ * @param   pVerified           The verification record.
+ * @param   fFatal              Whether validation failures should be treated as
+ *                              fatal (true) or not (false).
+ * @param   fLeaveFileOpen      Whether the file should be left open.
+ */
+static int supR3HardenedVerifyFileSignature(PCSUPINSTFILE pFile, PSUPVERIFIEDFILE pVerified, bool fFatal, bool fLeaveFileOpen)
+{
+# if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_R3_STATIC) /* Latter: Not in VBoxCpuReport and friends. */
+
+    /*
+     * Open the file if we have to.
+     */
+    int rc;
+    intptr_t hFileOpened;
+    intptr_t hFile = pVerified->hFile;
+    if (hFile != -1)
+        hFileOpened = -1;
+    else
+    {
+        rc = supR3HardenedVerifyFileOpen(pFile, fFatal, &hFileOpened);
+        if (RT_FAILURE(rc))
+            return rc;
+        hFile = hFileOpened;
+    }
+
+    /*
+     * Verify the signature.
+     */
+    char szErr[1024];
+    RTERRINFO ErrInfo;
+    RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
+
+    uint32_t fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
+    if (pFile->enmType == kSupIFT_Rc)
+        fFlags |= SUPHNTVI_F_RC_IMAGE;
+
+    rc = supHardenedWinVerifyImageByHandleNoName((HANDLE)hFile, fFlags, &ErrInfo);
+    if (RT_SUCCESS(rc))
+        pVerified->fCheckedSignature = true;
+    else
+    {
+        pVerified->fCheckedSignature = false;
+        rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: '%s': Image verify error rc=%Rrc: %s\n",
+                                pFile->pszFile, rc, szErr);
+
+    }
+
+    /*
+     * Close the handle if we opened the file and we should close it.
+     */
+    if (hFileOpened != -1)
+    {
+        if (fLeaveFileOpen && RT_SUCCESS(rc))
+            pVerified->hFile = hFileOpened;
+        else
+            CloseHandle((HANDLE)hFileOpened);
+    }
+
+    return rc;
+
+# else  /* Not checking signatures. */
+    return VINF_SUCCESS;
+# endif /* Not checking signatures. */
+}
+#endif
+
+
 /**
  * Verifies a file entry.
  *
@@ -495,17 +624,26 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
  * @param   fFatal              Whether validation failures should be treated as
  *                              fatal (true) or not (false).
  * @param   fLeaveFileOpen      Whether the file should be left open.
+ * @param   fVerifyAll          Set if this is an verify all call and we will
+ *                              postpone signature checking.
  */
-static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFileOpen)
+static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFileOpen, bool fVerifyAll)
 {
     PCSUPINSTFILE pFile = &g_aSupInstallFiles[iFile];
     PSUPVERIFIEDFILE pVerified = &g_aSupVerifiedFiles[iFile];
 
     /*
-     * Already done?
+     * Already done validation?  Do signature validation if we haven't yet.
      */
     if (pVerified->fValidated)
-        return VINF_SUCCESS; /** @todo revalidate? */
+    {
+        /** @todo revalidate? Check that the file hasn't been replace or similar. */
+#ifdef RT_OS_WINDOWS
+        if (!pVerified->fCheckedSignature && !fVerifyAll)
+            return supR3HardenedVerifyFileSignature(pFile, pVerified, fFatal, fLeaveFileOpen);
+#endif
+        return VINF_SUCCESS;
+    }
 
 
     /* initialize the entry. */
@@ -515,6 +653,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                            (void *)pVerified->hFile, pFile->pszFile);
     pVerified->hFile = -1;
     pVerified->fValidated = false;
+    pVerified->fCheckedSignature = false;
 
     /*
      * Verify the directory then proceed to open it.
@@ -524,72 +663,32 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
     int rc = supR3HardenedVerifyFixedDir(pFile->enmDir, fFatal);
     if (RT_SUCCESS(rc))
     {
+#if defined(RT_OS_WINDOWS)
+        rc = supR3HardenedVerifyFileOpen(pFile, fFatal, &pVerified->hFile);
+        if (RT_SUCCESS(rc))
+        {
+            if (!fVerifyAll)
+                rc = supR3HardenedVerifyFileSignature(pFile, pVerified, fFatal, fLeaveFileOpen);
+            if (RT_SUCCESS(rc))
+            {
+                pVerified->fValidated = true;
+                if (!fLeaveFileOpen)
+                {
+                    CloseHandle((HANDLE)pVerified->hFile);
+                    pVerified->hFile = -1;
+                }
+            }
+        }
+#else /* !RT_OS_WINDOWS */
         char szPath[RTPATH_MAX];
         rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true /*fWithFilename*/, fFatal);
         if (RT_SUCCESS(rc))
         {
-#if defined(RT_OS_WINDOWS)
-            PRTUTF16 pwszPath;
-            rc = RTStrToUtf16(szPath, &pwszPath);
-            if (RT_SUCCESS(rc))
-            {
-                HANDLE hFile = CreateFileW(pwszPath,
-                                           GENERIC_READ,
-                                           FILE_SHARE_READ,
-                                           NULL,
-                                           OPEN_EXISTING,
-                                           FILE_ATTRIBUTE_NORMAL,
-                                           NULL);
-                if (hFile != INVALID_HANDLE_VALUE)
-                {
-# if defined(VBOX_WITH_HARDENING) && !defined(IN_SUP_R3_STATIC) /* Latter: Not in VBoxCpuReport and friends. */
-
-                    char szErr[1024];
-                    RTERRINFO ErrInfo;
-                    RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
-
-                    uint32_t fFlags = SUPHNTVI_F_REQUIRE_BUILD_CERT;
-                    if (pFile->enmType == kSupIFT_Rc)
-                        fFlags |= SUPHNTVI_F_RC_IMAGE;
-
-                    rc = supHardenedWinVerifyImageByHandleNoName(hFile, fFlags, &ErrInfo);
-                    if (RT_FAILURE(rc))
-                    {
-                        rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: '%s': Image verify error rc=%Rrc: %s\n",
-                                                szPath, rc, szErr);
-                        CloseHandle(hFile);
-                    }
-                    else
-# endif
-                    {
-                        /* it's valid. */
-                        if (fLeaveFileOpen)
-                            pVerified->hFile = (intptr_t)hFile;
-                        else
-                            CloseHandle(hFile);
-                        pVerified->fValidated = true;
-                    }
-                }
-                else
-                {
-                    int err = GetLastError();
-                    if (   !pFile->fOptional
-                        || (    err != ERROR_FILE_NOT_FOUND
-                            &&  (err != ERROR_PATH_NOT_FOUND || pFile->enmDir != kSupID_Testcase) ) )
-                        rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
-                                                "supR3HardenedVerifyFileInternal: Failed to open '%s': err=%d\n", szPath, err);
-                }
-                RTUtf16Free(pwszPath);
-            }
-            else
-                rc = supR3HardenedError(rc, fFatal, "supR3HardenedVerifyFileInternal: Failed to convert '%s' to UTF-16: %Rrc\n",
-                                        szPath, rc);
-#else /* UNIXY */
             int fd = open(szPath, O_RDONLY, 0);
             if (fd >= 0)
             {
                 /*
-                 * On unixy systems we'll make sure the directory is owned by root
+                 * On unixy systems we'll make sure the file is owned by root
                  * and not writable by the group and user.
                  */
                 struct stat st;
@@ -640,8 +739,8 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                                             "supR3HardenedVerifyFileInternal: Failed to open \"%s\": %s (%d)\n",
                                             szPath, strerror(err), err);
             }
-#endif /* UNIXY */
         }
+#endif /* !RT_OS_WINDOWS */
     }
 
     return rc;
@@ -735,7 +834,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
         {
             int rc = supR3HardenedVerifySameFile(iFile, pszFilename, fFatal);
             if (RT_SUCCESS(rc))
-                rc = supR3HardenedVerifyFileInternal(iFile, fFatal, false /* fLeaveFileOpen */);
+                rc = supR3HardenedVerifyFileInternal(iFile, fFatal, false /* fLeaveFileOpen */, false /* fVerifyAll */);
             return rc;
         }
 
@@ -749,8 +848,10 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
  * @returns See supR3HardenedVerifyAll.
  * @param   pszProgName         See supR3HardenedVerifyAll.
  * @param   fFatal              See supR3HardenedVerifyAll.
+ * @param   fLeaveOpen          The leave open setting used by
+ *                              supR3HardenedVerifyAll.
  */
-static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
+static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal, bool fLeaveOpen)
 {
     /*
      * Search the table looking for the executable and the DLL/DYLIB/SO.
@@ -770,6 +871,8 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                 if (fDll)
                     rc = supR3HardenedError(VERR_INTERNAL_ERROR, fFatal,
                                             "supR3HardenedVerifyProgram: duplicate DLL entry for \"%s\"\n", pszProgName);
+                else
+                    rc = supR3HardenedVerifyFileInternal(iFile, fFatal, fLeaveOpen, false /* fVerifyAll */);
                 fDll = true;
             }
             else if (   (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Exe
@@ -780,6 +883,8 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                 if (fExe)
                     rc = supR3HardenedError(VERR_INTERNAL_ERROR, fFatal,
                                             "supR3HardenedVerifyProgram: duplicate EXE entry for \"%s\"\n", pszProgName);
+                else
+                    rc = supR3HardenedVerifyFileInternal(iFile, fFatal, fLeaveOpen, false /* fVerifyAll */);
                 fExe = true;
 
                 char szFilename[RTPATH_MAX];
@@ -799,21 +904,24 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
     /*
      * Check the findings.
      */
-    if (!fDll && !fExe)
-        rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
-                                "supR3HardenedVerifyProgram: Couldn't find the program \"%s\"\n", pszProgName);
-    else if (!fExe)
-        rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
-                                "supR3HardenedVerifyProgram: Couldn't find the EXE entry for \"%s\"\n", pszProgName);
-    else if (!fDll)
-        rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
-                                "supR3HardenedVerifyProgram: Couldn't find the DLL entry for \"%s\"\n", pszProgName);
+    if (RT_SUCCESS(rc))
+    {
+        if (!fDll && !fExe)
+            rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
+                                    "supR3HardenedVerifyProgram: Couldn't find the program \"%s\"\n", pszProgName);
+        else if (!fExe)
+            rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
+                                    "supR3HardenedVerifyProgram: Couldn't find the EXE entry for \"%s\"\n", pszProgName);
+        else if (!fDll)
+            rc = supR3HardenedError(VERR_NOT_FOUND, fFatal,
+                                    "supR3HardenedVerifyProgram: Couldn't find the DLL entry for \"%s\"\n", pszProgName);
+    }
     return rc;
 }
 
 
 /**
- * Verifies all the known files.
+ * Verifies all the known files (called from SUPR3HardenedMain).
  *
  * @returns VINF_SUCCESS on success.
  *          On verification failure, an error code will be returned when fFatal is clear,
@@ -821,34 +929,40 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
  *
  * @param   fFatal              Whether validation failures should be treated as
  *                              fatal (true) or not (false).
- * @param   fLeaveFilesOpen     If set, all the verified files are left open.
- * @param   pszProgName         Optional program name. This is used by SUPR3HardenedMain
- *                              to verify that both the executable and corresponding
+ * @param   pszProgName         The program name. This is used to verify that
+ *                              both the executable and corresponding
  *                              DLL/DYLIB/SO are valid.
  */
-DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const char *pszProgName)
+DECLHIDDEN(int) supR3HardenedVerifyAll(bool fFatal, const char *pszProgName)
 {
+    /*
+     * On windows
+     */
+#if defined(RT_OS_WINDOWS)
+    bool fLeaveOpen = true;
+#else
+    bool fLeaveOpen = false;
+#endif
+
     /*
      * The verify all the files.
      */
     int rc = VINF_SUCCESS;
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
     {
-        int rc2 = supR3HardenedVerifyFileInternal(iFile, fFatal, fLeaveFilesOpen);
+        int rc2 = supR3HardenedVerifyFileInternal(iFile, fFatal, fLeaveOpen, true /* fVerifyAll */);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
     }
 
     /*
-     * Verify the program name if specified, that is to say, just check that
-     * it's in the table (=> we've already verified it).
+     * Verify the program name, that is to say, check that it's in the table
+     * (thus verified above) and verify the signature on platforms where we
+     * sign things.
      */
-    if (pszProgName)
-    {
-        int rc2 = supR3HardenedVerifyProgram(pszProgName, fFatal);
-        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-            rc2 = rc;
-    }
+    int rc2 = supR3HardenedVerifyProgram(pszProgName, fFatal, fLeaveOpen);
+    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+        rc2 = rc;
 
     return rc;
 }

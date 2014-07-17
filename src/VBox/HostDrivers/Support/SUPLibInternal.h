@@ -205,6 +205,10 @@ typedef struct SUPVERIFIEDFILE
     intptr_t    hFile;
     /** Whether the file has been validated. */
     bool        fValidated;
+#ifdef RT_OS_WINDOWS
+    /** Whether we've checked the signature of the file. */
+    bool        fCheckedSignature;
+#endif
 } SUPVERIFIEDFILE;
 typedef SUPVERIFIEDFILE *PSUPVERIFIEDFILE;
 typedef SUPVERIFIEDFILE const *PCSUPVERIFIEDFILE;
@@ -398,7 +402,7 @@ DECLHIDDEN(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszForma
  */
 DECLHIDDEN(int)     supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
 
-DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const char *pszProgName);
+DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, const char *pszProgName);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
 DECLHIDDEN(int)     supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, PRTERRINFO pErrInfo);
