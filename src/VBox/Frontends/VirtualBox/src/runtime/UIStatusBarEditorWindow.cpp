@@ -16,26 +16,33 @@
  */
 
 /* Qt includes: */
+#include <QMdiSubWindow>
 #include <QStylePainter>
 #include <QStyleOption>
 #include <QHBoxLayout>
 #include <QPaintEvent>
 #include <QMouseEvent>
+#include <QMdiArea>
 #include <QPainter>
 #include <QPixmap>
 #include <QDrag>
+#include <QList>
+#include <QMap>
 
 /* GUI includes: */
 #include "UIStatusBarEditorWindow.h"
 #include "UIAnimationFramework.h"
 #include "UIExtraDataManager.h"
+#include "UIExtraDataDefs.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
+#include "QIWithRetranslateUI.h"
 #include "QIToolButton.h"
 #include "VBoxGlobal.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
+
 
 /** QWidget extension
   * used as status-bar editor button. */
@@ -99,6 +106,95 @@ private:
     bool m_fHovered;
     /** Holds the last mouse-press position. */
     QPoint m_mousePressPosition;
+};
+
+
+/** QWidget reimplementation
+  * used as status-bar editor widget. */
+class UIStatusBarEditorWidget : public QIWithRetranslateUI2<QWidget>
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies about Cancel button click. */
+    void sigCancelClicked();
+
+public:
+
+    /** Constructor, passes @a pParent to the QWidget constructor.
+      * @param rect is used to define initial cached parent geometry.
+      * @param statusBarRect is used to define initial cached status-bar geometry. */
+    UIStatusBarEditorWidget(QWidget *pParent = 0);
+
+private slots:
+
+    /** Handles configuration change. */
+    void sltHandleConfigurationChange();
+
+    /** Handles button click. */
+    void sltHandleButtonClick();
+
+    /** Handles drag object destroy. */
+    void sltHandleDragObjectDestroy();
+
+private:
+
+    /** Prepare routine. */
+    void prepare();
+    /** Prepare status buttons routine. */
+    void prepareStatusButtons();
+    /** Prepare status button routine. */
+    void prepareStatusButton(IndicatorType type);
+
+    /** Updates status buttons. */
+    void updateStatusButtons();
+
+    /** Retranslation routine. */
+    virtual void retranslateUi();
+
+    /** Paint event handler. */
+    virtual void paintEvent(QPaintEvent *pEvent);
+
+    /** Drag-enter event handler. */
+    virtual void dragEnterEvent(QDragEnterEvent *pEvent);
+    /** Drag-move event handler. */
+    virtual void dragMoveEvent(QDragMoveEvent *pEvent);
+    /** Drag-leave event handler. */
+    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent);
+    /** Drop event handler. */
+    virtual void dropEvent(QDropEvent *pEvent);
+
+    /** Returns position for passed @a type. */
+    int position(IndicatorType type) const;
+
+    /** @name Contents
+      * @{ */
+        /** Holds the main-layout instance. */
+        QHBoxLayout *m_pMainLayout;
+        /** Holds the button-layout instance. */
+        QHBoxLayout *m_pButtonLayout;
+        /** Holds the close-button instance. */
+        QIToolButton *m_pButtonClose;
+        /** Holds status-bar buttons. */
+        QMap<IndicatorType, UIStatusBarEditorButton*> m_buttons;
+    /** @} */
+
+    /** @name Contents: Restrictions
+      * @{ */
+        /** Holds the cached status-bar button restrictions. */
+        QList<IndicatorType> m_restrictions;
+    /** @} */
+
+    /** @name Contents: Order
+      * @{ */
+        /** Holds the cached status-bar button order. */
+        QList<IndicatorType> m_order;
+        /** Holds the token-button to drop dragged-button nearby. */
+        UIStatusBarEditorButton *m_pButtonDropToken;
+        /** Holds whether dragged-button should be dropped <b>after</b> the token-button. */
+        bool m_fDropAfterTokenButton;
+    /** @} */
 };
 
 
@@ -232,10 +328,8 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
 }
 
 
-UIStatusBarEditorWindow::UIStatusBarEditorWindow(QWidget *pParent, const QRect &rect, const QRect &statusBarRect)
-    : QIWithRetranslateUI2<QWidget>(pParent, Qt::Tool | Qt::FramelessWindowHint)
-    , m_rect(rect), m_statusBarRect(statusBarRect)
-    , m_pAnimation(0), m_fExpanded(false)
+UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI2<QWidget>(pParent)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
     , m_pButtonDropToken(0)
@@ -245,23 +339,13 @@ UIStatusBarEditorWindow::UIStatusBarEditorWindow(QWidget *pParent, const QRect &
     prepare();
 }
 
-void UIStatusBarEditorWindow::sltParentGeometryChanged(const QRect &rect)
-{
-    /* Update rectangle: */
-    m_rect = rect;
-    /* Update animation: */
-    updateAnimation();
-    /* Adjust geometry: */
-    adjustGeometry();
-}
-
-void UIStatusBarEditorWindow::sltHandleConfigurationChange()
+void UIStatusBarEditorWidget::sltHandleConfigurationChange()
 {
     /* Update status buttons: */
     updateStatusButtons();
 }
 
-void UIStatusBarEditorWindow::sltHandleButtonClick()
+void UIStatusBarEditorWidget::sltHandleButtonClick()
 {
     /* Make sure sender is valid: */
     UIStatusBarEditorButton *pButton = qobject_cast<UIStatusBarEditorButton*>(sender());
@@ -284,7 +368,7 @@ void UIStatusBarEditorWindow::sltHandleButtonClick()
     gEDataManager->setRestrictedStatusBarIndicators(restrictions, vboxGlobal().managedVMUuid());
 }
 
-void UIStatusBarEditorWindow::sltHandleDragObjectDestroy()
+void UIStatusBarEditorWidget::sltHandleDragObjectDestroy()
 {
     /* Reset token: */
     m_pButtonDropToken = 0;
@@ -293,32 +377,8 @@ void UIStatusBarEditorWindow::sltHandleDragObjectDestroy()
     update();
 }
 
-void UIStatusBarEditorWindow::prepare()
+void UIStatusBarEditorWidget::prepare()
 {
-    /* Do not count that window as important for application,
-     * it will NOT be taken into account when other top-level windows will be closed: */
-    setAttribute(Qt::WA_QuitOnClose, false);
-    /* Delete window when closed: */
-    setAttribute(Qt::WA_DeleteOnClose);
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
-    /* Make sure we have no background
-     * until the first one paint-event: */
-    setAttribute(Qt::WA_NoSystemBackground);
-#endif /* Q_WS_MAC || Q_WS_WIN */
-#if defined(Q_WS_MAC)
-    /* Using native API to enable translucent background for the Mac host.
-     * - We also want to disable window-shadows which is possible
-     *   using Qt::WA_MacNoShadow only since Qt 4.8,
-     *   while minimum supported version is 4.7.1 for now: */
-    ::darwinSetShowsWindowTransparent(this, true);
-#elif defined(Q_WS_WIN)
-    /* Using Qt API to enable translucent background:
-     * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1 for now.
-     * - Under x11 host Qt has it broken with KDE 4.9 (black background): */
-    setAttribute(Qt::WA_TranslucentBackground);
-#endif /* Q_WS_WIN */
     /* Track D&D events: */
     setAcceptDrops(true);
 
@@ -348,7 +408,7 @@ void UIStatusBarEditorWindow::prepare()
             m_pButtonClose->setMinimumSize(QSize(1, 1));
             m_pButtonClose->setShortcut(Qt::Key_Escape);
             m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
-            connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SLOT(close()));
+            connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
             /* Add close-button into main-layout: */
             m_pMainLayout->addWidget(m_pButtonClose);
         }
@@ -370,14 +430,9 @@ void UIStatusBarEditorWindow::prepare()
 
     /* Translate contents: */
     retranslateUi();
-
-    /* Prepare animation: */
-    prepareAnimation();
-    /* Prepare geometry: */
-    prepareGeometry();
 }
 
-void UIStatusBarEditorWindow::prepareStatusButtons()
+void UIStatusBarEditorWidget::prepareStatusButtons()
 {
     /* Create status buttons: */
     for (int i = IndicatorType_Invalid; i < IndicatorType_Max; ++i)
@@ -398,7 +453,7 @@ void UIStatusBarEditorWindow::prepareStatusButtons()
     updateStatusButtons();
 }
 
-void UIStatusBarEditorWindow::prepareStatusButton(IndicatorType type)
+void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
 {
     /* Create status button: */
     UIStatusBarEditorButton *pButton = new UIStatusBarEditorButton(type);
@@ -414,31 +469,7 @@ void UIStatusBarEditorWindow::prepareStatusButton(IndicatorType type)
     }
 }
 
-void UIStatusBarEditorWindow::prepareAnimation()
-{
-    /* Prepare geometry animation itself: */
-    connect(this, SIGNAL(sigShown()), this, SIGNAL(sigExpand()), Qt::QueuedConnection);
-    m_pAnimation = UIAnimation::installPropertyAnimation(this, "geometry", "startGeometry", "finalGeometry",
-                                                         SIGNAL(sigExpand()), SIGNAL(sigCollapse()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredStart()), this, SLOT(sltMarkAsCollapsed()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsExpanded()));
-    /* Update animation: */
-    updateAnimation();
-}
-
-void UIStatusBarEditorWindow::prepareGeometry()
-{
-    /* Prepare geometry based on minimum size-hint: */
-    connect(this, SIGNAL(sigShown()), this, SLOT(sltActivateWindow()), Qt::QueuedConnection);
-    const QSize msh = minimumSizeHint();
-    setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - msh.height(),
-                qMax(m_rect.width(), msh.width()), msh.height());
-#ifdef Q_WS_WIN
-    raise();
-#endif /* Q_WS_WIN */
-}
-
-void UIStatusBarEditorWindow::updateStatusButtons()
+void UIStatusBarEditorWidget::updateStatusButtons()
 {
     /* Recache status-bar configuration: */
     m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
@@ -467,69 +498,13 @@ void UIStatusBarEditorWindow::updateStatusButtons()
     }
 }
 
-void UIStatusBarEditorWindow::updateAnimation()
-{
-    /* Calculate geometry animation boundaries
-     * based on size-hint and minimum size-hint: */
-    const QSize sh = sizeHint();
-    const QSize msh = minimumSizeHint();
-    m_startGeometry = QRect(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - msh.height(),
-                            qMax(m_rect.width(), msh.width()), msh.height());
-    m_finalGeometry = QRect(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - sh.height(),
-                            qMax(m_rect.width(), sh.width()), sh.height());
-    m_pAnimation->update();
-}
-
-void UIStatusBarEditorWindow::adjustGeometry()
-{
-    /* Adjust geometry based on size-hint: */
-    const QSize sh = sizeHint();
-    setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - sh.height(),
-                qMax(m_rect.width(), sh.width()), sh.height());
-#ifdef Q_WS_WIN
-    raise();
-#endif /* Q_WS_WIN */
-}
-
-void UIStatusBarEditorWindow::retranslateUi()
+void UIStatusBarEditorWidget::retranslateUi()
 {
     /* Translate close-button: */
     m_pButtonClose->setToolTip(tr("Close"));
 }
 
-void UIStatusBarEditorWindow::showEvent(QShowEvent*)
-{
-    /* If window isn't expanded: */
-    if (!m_fExpanded)
-    {
-        /* Start expand animation: */
-        emit sigShown();
-    }
-}
-
-void UIStatusBarEditorWindow::closeEvent(QCloseEvent *pEvent)
-{
-    /* If window isn't expanded: */
-    if (!m_fExpanded)
-    {
-        /* Ignore close-event: */
-        pEvent->ignore();
-        return;
-    }
-
-    /* If animation state is Final: */
-    const QString strAnimationState = property("AnimationState").toString();
-    bool fAnimationComplete = strAnimationState == "Final";
-    if (fAnimationComplete)
-    {
-        /* Ignore close-event: */
-        pEvent->ignore();
-        /* And start collapse animation: */
-        emit sigCollapse();
-    }
-}
-
-void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
+void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
 {
     /* Prepare painter: */
     QPainter painter(this);
@@ -608,7 +583,7 @@ void UIStatusBarEditorWindow::paintEvent(QPaintEvent*)
     }
 }
 
-void UIStatusBarEditorWindow::dragEnterEvent(QDragEnterEvent *pEvent)
+void UIStatusBarEditorWidget::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
@@ -623,7 +598,7 @@ void UIStatusBarEditorWindow::dragEnterEvent(QDragEnterEvent *pEvent)
     pEvent->acceptProposedAction();
 }
 
-void UIStatusBarEditorWindow::dragMoveEvent(QDragMoveEvent *pEvent)
+void UIStatusBarEditorWidget::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
@@ -655,7 +630,7 @@ void UIStatusBarEditorWindow::dragMoveEvent(QDragMoveEvent *pEvent)
     update();
 }
 
-void UIStatusBarEditorWindow::dragLeaveEvent(QDragLeaveEvent*)
+void UIStatusBarEditorWidget::dragLeaveEvent(QDragLeaveEvent*)
 {
     /* Reset token: */
     m_pButtonDropToken = 0;
@@ -664,7 +639,7 @@ void UIStatusBarEditorWindow::dragLeaveEvent(QDragLeaveEvent*)
     update();
 }
 
-void UIStatusBarEditorWindow::dropEvent(QDropEvent *pEvent)
+void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
@@ -711,7 +686,7 @@ void UIStatusBarEditorWindow::dropEvent(QDropEvent *pEvent)
     gEDataManager->setStatusBarIndicatorOrder(order, vboxGlobal().managedVMUuid());
 }
 
-int UIStatusBarEditorWindow::position(IndicatorType type) const
+int UIStatusBarEditorWidget::position(IndicatorType type) const
 {
     int iPosition = 0;
     foreach (const IndicatorType &iteratedType, m_order)
@@ -720,6 +695,214 @@ int UIStatusBarEditorWindow::position(IndicatorType type) const
         else
             ++iPosition;
     return iPosition;
+}
+
+
+UIStatusBarEditorWindow::UIStatusBarEditorWindow(QWidget *pParent, const QRect &rect, const QRect &statusBarRect)
+    : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint)
+    , m_rect(rect), m_statusBarRect(statusBarRect)
+    , m_pAnimation(0), m_fExpanded(false)
+    , m_pMainLayout(0), m_pMdiArea(0)
+    , m_pWidget(0), m_pEmbeddedWidget(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void UIStatusBarEditorWindow::sltParentGeometryChanged(const QRect &rect)
+{
+    /* Update rectangle: */
+    m_rect = rect;
+    /* Adjust geometry: */
+    adjustGeometry();
+    /* Update animation: */
+    updateAnimation();
+}
+
+void UIStatusBarEditorWindow::prepare()
+{
+    /* Do not count that window as important for application,
+     * it will NOT be taken into account when other top-level windows will be closed: */
+    setAttribute(Qt::WA_QuitOnClose, false);
+    /* Delete window when closed: */
+    setAttribute(Qt::WA_DeleteOnClose);
+
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+    /* Make sure we have no background
+     * until the first one paint-event: */
+    setAttribute(Qt::WA_NoSystemBackground);
+# if defined(Q_WS_MAC)
+    /* Using native API to enable translucent background for the Mac host.
+     * - We also want to disable window-shadows which is possible
+     *   using Qt::WA_MacNoShadow only since Qt 4.8,
+     *   while minimum supported version is 4.7.1 for now: */
+    ::darwinSetShowsWindowTransparent(this, true);
+# elif defined(Q_WS_WIN)
+    /* Using Qt API to enable translucent background:
+     * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1 for now.
+     * - Under x11 host Qt has it broken with KDE 4.9 (black background): */
+    setAttribute(Qt::WA_TranslucentBackground);
+# endif /* Q_WS_WIN */
+#endif /* Q_WS_MAC || Q_WS_WIN */
+
+    /* Prepare contents: */
+    prepareContents();
+    /* Prepare geometry: */
+    prepareGeometry();
+    /* Prepare animation: */
+    prepareAnimation();
+}
+
+void UIStatusBarEditorWindow::prepareContents()
+{
+    /* Create main-layout: */
+    m_pMainLayout = new QHBoxLayout(this);
+    AssertPtrReturnVoid(m_pMainLayout);
+    {
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(0);
+        /* Create mdi-area: */
+        m_pMdiArea = new QMdiArea;
+        AssertPtrReturnVoid(m_pMdiArea);
+        {
+            /* Configure mdi-area: */
+            m_pMdiArea->setAcceptDrops(true);
+            m_pMdiArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            QPalette pal1 = m_pMdiArea->palette();
+            pal1.setColor(QPalette::Window, QColor(Qt::transparent));
+            m_pMdiArea->setPalette(pal1);
+            m_pMdiArea->setBackground(QColor(Qt::transparent));
+            /* Create widget: */
+            m_pWidget = new UIStatusBarEditorWidget;
+            AssertPtrReturnVoid(m_pWidget);
+            {
+                /* Configure widget: */
+                QPalette pal2 = m_pWidget->palette();
+                pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
+                m_pWidget->setPalette(pal2);
+                connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
+                /* Add widget into mdi-area: */
+                m_pEmbeddedWidget = m_pMdiArea->addSubWindow(m_pWidget, Qt::Window | Qt::FramelessWindowHint);
+                AssertPtrReturnVoid(m_pEmbeddedWidget);
+            }
+            /* Add mdi-area into main-layout: */
+            m_pMainLayout->addWidget(m_pMdiArea);
+        }
+    }
+}
+
+void UIStatusBarEditorWindow::prepareGeometry()
+{
+    /* Prepare geometry based on parent and mdi-sub-window size-hints: */
+    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - sh.height(),
+                qMax(m_rect.width(), sh.width()), sh.height());
+    /* But move mdi-sub-window to initial position: */
+    m_pEmbeddedWidget->setGeometry(0, sh.height(), qMax(width(), sh.width()), sh.height());
+
+#ifdef Q_WS_WIN
+    /* Raise tool-window for proper z-order. */
+    raise();
+#endif /* Q_WS_WIN */
+
+    /* Request to activate window after it was shown: */
+    connect(this, SIGNAL(sigShown()), this, SLOT(sltActivateWindow()), Qt::QueuedConnection);
+}
+
+void UIStatusBarEditorWindow::prepareAnimation()
+{
+    /* Prepare mdi-sub-window geometry animation itself: */
+    connect(this, SIGNAL(sigShown()), this, SIGNAL(sigExpand()), Qt::QueuedConnection);
+    m_pAnimation = UIAnimation::installPropertyAnimation(this, "widgetGeometry",
+                                                         "startWidgetGeometry", "finalWidgetGeometry",
+                                                         SIGNAL(sigExpand()), SIGNAL(sigCollapse()));
+    connect(m_pAnimation, SIGNAL(sigStateEnteredStart()), this, SLOT(sltMarkAsCollapsed()));
+    connect(m_pAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsExpanded()));
+    /* Update geometry animation: */
+    updateAnimation();
+}
+
+void UIStatusBarEditorWindow::adjustGeometry()
+{
+    /* Adjust geometry based on parent and mdi-sub-window size-hints: */
+    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    setGeometry(m_rect.x(), m_rect.y() + m_rect.height() - m_statusBarRect.height() - sh.height(),
+                qMax(m_rect.width(), sh.width()), sh.height());
+    /* And move mdi-sub-window to corresponding position: */
+    m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
+
+#ifdef Q_WS_WIN
+    /* Raise tool-window for proper z-order. */
+    raise();
+#endif /* Q_WS_WIN */
+}
+
+void UIStatusBarEditorWindow::updateAnimation()
+{
+    /* Skip if no animation created: */
+    if (!m_pAnimation)
+        return;
+
+    /* Recalculate mdi-sub-window geometry animation boundaries based on size-hint: */
+    const QSize sh = m_pEmbeddedWidget->sizeHint();
+    m_startWidgetGeometry = QRect(0, sh.height(), qMax(width(), sh.width()), sh.height());
+    m_finalWidgetGeometry = QRect(0,           0, qMax(width(), sh.width()), sh.height());
+    m_pAnimation->update();
+}
+
+void UIStatusBarEditorWindow::showEvent(QShowEvent*)
+{
+    /* If window isn't expanded: */
+    if (!m_fExpanded)
+    {
+        /* Start expand animation: */
+        emit sigShown();
+    }
+}
+
+void UIStatusBarEditorWindow::closeEvent(QCloseEvent *pEvent)
+{
+    /* If window isn't expanded: */
+    if (!m_fExpanded)
+    {
+        /* Ignore close-event: */
+        pEvent->ignore();
+        return;
+    }
+
+    /* If animation state is Final: */
+    const QString strAnimationState = property("AnimationState").toString();
+    bool fAnimationComplete = strAnimationState == "Final";
+    if (fAnimationComplete)
+    {
+        /* Ignore close-event: */
+        pEvent->ignore();
+        /* And start collapse animation: */
+        emit sigCollapse();
+    }
+}
+
+void UIStatusBarEditorWindow::setWidgetGeometry(const QRect &rect)
+{
+    /* Apply mdi-sub-window geometry: */
+    m_pEmbeddedWidget->setGeometry(rect);
+
+#ifdef Q_WS_X11
+    /* The setMask functionality is excessive under Win/Mac hosts
+     * because there is a Qt composition works properly,
+     * Mac host has native translucency support,
+     * Win host allows to enable it through Qt::WA_TranslucentBackground: */
+    setMask(m_pEmbeddedToolbar->geometry());
+#endif /* Q_WS_X11 */
+}
+
+QRect UIStatusBarEditorWindow::widgetGeometry() const
+{
+    /* Return mdi-sub-window geometry: */
+    return m_pEmbeddedWidget->geometry();
 }
 
 #include "UIStatusBarEditorWindow.moc"
