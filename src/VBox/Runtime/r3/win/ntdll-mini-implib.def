@@ -50,10 +50,15 @@ EXPORTS
     NtQueryVolumeInformationFile          ;;= _NtQueryVolumeInformationFile@20
     NtReadFile                            ;;= _NtReadFile@36
     NtReadVirtualMemory                   ;;= _NtReadVirtualMemory@20
+    NtResumeProcess                       ;;= _NtResumeProcess@4
+    NtResumeThread                        ;;= _NtResumeThread@8
     NtSetInformationFile                  ;;= _NtSetInformationFile@20
     NtSetInformationObject                ;;= _NtSetInformationObject@16
+    NtSetInformationProcess               ;;= _NtSetInformationProcess@16
     NtSetInformationThread                ;;= _NtSetInformationThread@16
     NtSetTimerResolution                  ;;= _NtSetTimerResolution@12
+    NtSuspendProcess                      ;;= _NtSuspendProcess@4
+    NtSuspendThread                       ;;= _NtSuspendThread@8
     NtWriteFile                           ;;= _NtWriteFile@36
     NtWriteVirtualMemory                  ;;= _NtWriteVirtualMemory@20
     NtYieldExecution                      ;;= _NtYieldExecution@0
@@ -62,7 +67,10 @@ EXPORTS
     RtlAddAccessDeniedAce                 ;;= _RtlAddAccessDeniedAce@16
     RtlCopySid                            ;;= _RtlCopySid@12
     RtlCreateAcl                          ;;= _RtlCreateAcl@12
+    RtlCreateProcessParameters            ;;= _RtlCreateProcessParameters@40
     RtlCreateSecurityDescriptor           ;;= _RtlCreateSecurityDescriptor@8
+    RtlCreateUserProcess                  ;;= _RtlCreateUserProcess@40
+    RtlDestroyProcessParameters           ;;= _RtlDestroyProcessParameters@4
     RtlGetVersion                         ;;= _RtlGetVersion@4
     RtlInitializeSid                      ;;= _RtlInitializeSid@12
     RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
