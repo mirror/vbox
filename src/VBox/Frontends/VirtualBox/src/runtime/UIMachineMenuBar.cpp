@@ -412,11 +412,13 @@ void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
     {
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Menu_StatusBar));
         gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->menu()->addAction(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings));
+        gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->menu()->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar));
     }
     else
     {
         gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setEnabled(false);
         gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(false);
+        gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->setEnabled(false);
     }
 }
 

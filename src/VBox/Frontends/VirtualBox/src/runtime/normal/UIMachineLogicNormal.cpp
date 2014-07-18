@@ -74,8 +74,13 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
     /* Do not process if window(s) missed! */
     AssertReturnVoid(isMachineWindowsCreated());
 
-    /* Prevent user from opening another one editor: */
+    /* Make sure status-bar is enabled: */
+    const bool fEnabled = gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->isChecked();
+    AssertReturnVoid(fEnabled);
+
+    /* Prevent user from opening another one editor or toggle status-bar: */
     gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(false);
+    gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->setEnabled(false);
     /* Create status-bar editor: */
     UIStatusBarEditorWindow *pStatusBarEditor = new UIStatusBarEditorWindow(activeMachineWindow());
     AssertPtrReturnVoid(pStatusBarEditor);
@@ -94,8 +99,23 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
 
 void UIMachineLogicNormal::sltStatusBarSettingsClosed()
 {
-    /* Allow user to open editor again: */
+    /* Make sure status-bar is enabled: */
+    const bool fEnabled = gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->isChecked();
+    AssertReturnVoid(fEnabled);
+
+    /* Allow user to open editor and toggle status-bar again: */
     gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(true);
+    gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->setEnabled(true);
+}
+
+void UIMachineLogicNormal::sltToggleStatusBar()
+{
+    /* Do not process if window(s) missed! */
+    AssertReturnVoid(isMachineWindowsCreated());
+
+    /* Invert status-bar availability option: */
+    const bool fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+    gEDataManager->setStatusBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
 }
 
 void UIMachineLogicNormal::sltPrepareHardDisksMenu()
@@ -153,6 +173,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToScale()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenStatusBarSettings()));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar), SIGNAL(triggered(bool)),
+            this, SLOT(sltToggleStatusBar()));
 
     /* "Device" actions connections: */
     connect(gActionPool->action(UIActionIndexRuntime_Menu_HardDisks)->menu(), SIGNAL(aboutToShow()),
@@ -217,6 +239,8 @@ void UIMachineLogicNormal::cleanupActionConnections()
                this, SLOT(sltChangeVisualStateToScale()));
     disconnect(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenStatusBarSettings()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar), SIGNAL(triggered(bool)),
+               this, SLOT(sltToggleStatusBar()));
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();

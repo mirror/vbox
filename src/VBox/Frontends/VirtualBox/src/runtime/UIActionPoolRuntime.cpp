@@ -740,6 +740,32 @@ protected:
     }
 };
 
+class UIActionToggleStatusBar : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleStatusBar(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToggleStatusBar");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Show Status &Bar"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle status-bar visibility for this machine"));
+    }
+};
+
 class UIActionMenuDevices : public UIActionMenu
 {
     Q_OBJECT;
@@ -1387,6 +1413,7 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Toggle_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
     m_pool[UIActionIndexRuntime_Simple_StatusBarSettings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
+    m_pool[UIActionIndexRuntime_Toggle_StatusBar] = new UIActionToggleStatusBar(this);
 
     /* 'Devices' actions: */
     m_pool[UIActionIndexRuntime_Simple_StorageSettings] = new UIActionSimpleShowStorageSettingsDialog(this);

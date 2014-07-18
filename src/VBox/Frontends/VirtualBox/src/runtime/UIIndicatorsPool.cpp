@@ -916,6 +916,7 @@ UIIndicatorsPool::UIIndicatorsPool(UISession *pSession, QWidget *pParent /* = 0 
     : QWidget(pParent)
     , m_pSession(pSession)
     , m_session(m_pSession->session())
+    , m_fEnabled(false)
     , m_pTimerAutoUpdate(0)
 {
     /* Prepare: */
@@ -1039,10 +1040,36 @@ void UIIndicatorsPool::prepareUpdateTimer()
 
 void UIIndicatorsPool::updatePool()
 {
-    /* Recache status-bar configuration: */
-    m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
-    m_order = gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
+    /* Acquire status-bar availability: */
+    m_fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+    /* If status-bar is not enabled: */
+    if (!m_fEnabled)
+    {
+        /* Remove all indicators: */
+        while (!m_pool.isEmpty())
+        {
+            const IndicatorType firstType = m_pool.keys().first();
+            delete m_pool.value(firstType);
+            m_pool.remove(firstType);
+        }
+        /* And return: */
+        return;
+    }
 
+    /* Acquire status-bar restrictions: */
+    m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+    /* Remove restricted indicators: */
+    foreach (const IndicatorType &indicatorType, m_restrictions)
+    {
+        if (m_pool.contains(indicatorType))
+        {
+            delete m_pool.value(indicatorType);
+            m_pool.remove(indicatorType);
+        }
+    }
+
+    /* Acquire status-bar order: */
+    m_order = gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
     /* Make sure the order is complete taking restrictions into account: */
     for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
     {
@@ -1059,14 +1086,6 @@ void UIIndicatorsPool::updatePool()
         else if (!fRestricted && !fPresent)
             m_order << type;
     }
-
-    /* Remove restricted indicators: */
-    foreach (const IndicatorType &indicatorType, m_restrictions)
-        if (m_pool.contains(indicatorType))
-        {
-            delete m_pool.value(indicatorType);
-            m_pool.remove(indicatorType);
-        }
 
     /* Add/Update allowed indicators: */
     foreach (const IndicatorType &indicatorType, m_order)

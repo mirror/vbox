@@ -1072,9 +1072,6 @@ void UISession::prepareMenuPool()
 
 void UISession::loadSessionSettings()
 {
-   /* Get uisession machine: */
-    CMachine machine = session().GetConsole().GetMachine();
-
     /* Load extra-data settings: */
     {
         /* Extension pack stuff: */
@@ -1104,9 +1101,6 @@ void UISession::loadSessionSettings()
         m_allowedActionsMenuHelp        = (RuntimeMenuHelpActionType)
                                           (gEDataManager->restrictedRuntimeMenuHelpActionTypes(vboxGlobal().managedVMUuid()) ^
                                            RuntimeMenuHelpActionType_All);
-
-        /* Temporary: */
-        QString strSettings;
 
 #ifndef Q_WS_MAC
         /* Load/prepare user's machine-window icon: */
@@ -1138,6 +1132,17 @@ void UISession::loadSessionSettings()
         m_fReconfigurable = gEDataManager->machineReconfigurationEnabled(vboxGlobal().managedVMUuid());
         /* Should we allow snapshot operations? */
         m_fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(vboxGlobal().managedVMUuid());
+
+        /* Status-bar options: */
+        const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
+        const bool fEnabledForMachine = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+        const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+        QAction *pActionStatusBarSettings = gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings);
+        pActionStatusBarSettings->setEnabled(fEnabled);
+        QAction *pActionStatusBarSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar);
+        pActionStatusBarSwitch->blockSignals(true);
+        pActionStatusBarSwitch->setChecked(fEnabled);
+        pActionStatusBarSwitch->blockSignals(false);
 
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(vboxGlobal().managedVMUuid());

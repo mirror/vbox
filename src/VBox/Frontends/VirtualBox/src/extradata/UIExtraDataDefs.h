@@ -200,6 +200,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_MiniToolBarAutoHide;
         /** Holds mini-toolbar alignment. */
         extern const char* GUI_MiniToolBarAlignment;
+        /** Holds Runtime UI status-bar availability status. */
+        extern const char* GUI_StatusBar_Enabled;
         /** Holds restricted Runtime UI status-bar indicators. */
         extern const char* GUI_RestrictedStatusBarIndicators;
         /** Holds Runtime UI status-bar indicator order. */

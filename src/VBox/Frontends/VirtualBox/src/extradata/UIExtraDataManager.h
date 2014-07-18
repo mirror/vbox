@@ -363,6 +363,11 @@ public:
         /** Returns mini-toolbar @a alignment. */
         void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
 
+        /** Returns whether Runtime UI status-bar is enabled. */
+        bool statusBarEnabled(const QString &strID);
+        /** Defines whether Runtime UI status-bar is @a fEnabled. */
+        void setStatusBarEnabled(bool fEnabled, const QString &strID);
+
         /** Returns restricted Runtime UI status-bar indicator list. */
         QList<IndicatorType> restrictedStatusBarIndicators(const QString &strID);
         /** Defines restricted Runtime UI status-bar indicator @a list. */

@@ -104,6 +104,8 @@ private:
     UISession *m_pSession;
     /** Holds the session reference. */
     CSession &m_session;
+    /** Holds whether status-bar is enabled. */
+    bool m_fEnabled;
     /** Holds the cached restrictions. */
     QList<IndicatorType> m_restrictions;
     /** Holds the cached order. */

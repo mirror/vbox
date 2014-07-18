@@ -58,6 +58,8 @@ private slots:
     void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
 
+    /** Handles status-bar configuration-change: */
+    void sltHandleStatusBarConfigurationChange();
     /** Handles status-bar context-menu-request: */
     void sltHandleStatusBarContextMenuRequest(const QPoint &position);
     /** Handles status-bar indicator context-menu-request: */
