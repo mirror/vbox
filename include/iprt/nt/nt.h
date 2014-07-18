@@ -82,6 +82,10 @@
 # define ProcessImageFileName                   IncompleteWinternl_ProcessImageFileName
 # define ProcessBreakOnTermination              IncompleteWinternl_ProcessBreakOnTermination
 
+# define RTL_USER_PROCESS_PARAMETERS            IncompleteWinternl_RTL_USER_PROCESS_PARAMETERS
+# define PRTL_USER_PROCESS_PARAMETERS           IncompleteWinternl_PRTL_USER_PROCESS_PARAMETERS
+# define _RTL_USER_PROCESS_PARAMETERS           IncompleteWinternl__RTL_USER_PROCESS_PARAMETERS
+
 # define NtQueryInformationThread               IncompleteWinternl_NtQueryInformationThread
 # define NtSetInformationThread                 IncompleteWinternl_NtSetInformationThread
 # define THREADINFOCLASS                        IncompleteWinternl_THREADINFOCLASS
@@ -128,6 +132,10 @@
 # undef ProcessWow64Information
 # undef ProcessImageFileName
 # undef ProcessBreakOnTermination
+
+# undef RTL_USER_PROCESS_PARAMETERS
+# undef PRTL_USER_PROCESS_PARAMETERS
+# undef _RTL_USER_PROCESS_PARAMETERS
 
 # undef NtQueryInformationThread
 # undef NtSetInformationThread
@@ -628,6 +636,17 @@ typedef struct _OBJECT_DIRECTORY_INFORMATION
 typedef OBJECT_DIRECTORY_INFORMATION *POBJECT_DIRECTORY_INFORMATION;
 NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryObject(HANDLE, PVOID, ULONG, BOOLEAN, BOOLEAN, PULONG, PULONG);
 
+NTSYSAPI NTSTATUS NTAPI NtSuspendProcess(HANDLE);
+NTSYSAPI NTSTATUS NTAPI NtResumeProcess(HANDLE);
+/** @name ProcessDefaultHardErrorMode bit definitions.
+ * @{ */
+#define PROCESS_HARDERR_CRITICAL_ERROR              UINT32_C(0x00000001) /**< Inverted from the win32 define. */
+#define PROCESS_HARDERR_NO_GP_FAULT_ERROR           UINT32_C(0x00000002)
+#define PROCESS_HARDERR_NO_ALIGNMENT_FAULT_ERROR    UINT32_C(0x00000004)
+#define PROCESS_HARDERR_NO_OPEN_FILE_ERROR          UINT32_C(0x00008000)
+/** @} */
+NTSYSAPI NTSTATUS NTAPI NtSetInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG);
+
 /** Retured by ProcessImageInformation as well as NtQuerySection. */
 typedef struct _SECTION_IMAGE_INFORMATION
 {
@@ -677,6 +696,8 @@ typedef enum _SECTION_INFORMATION_CLASS
 NTSYSAPI NTSTATUS NTAPI NtQuerySection(HANDLE, SECTION_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
 
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationThread(HANDLE, THREADINFOCLASS, PVOID, ULONG, PULONG);
+NTSYSAPI NTSTATUS NTAPI NtResumeThread(HANDLE, PULONG);
+NTSYSAPI NTSTATUS NTAPI NtSuspendThread(HANDLE, PULONG);
 
 #ifndef SEC_FILE
 # define SEC_FILE               UINT32_C(0x00800000)
@@ -905,6 +926,81 @@ NTSYSAPI NTSTATUS NTAPI NtDelayExecution(BOOLEAN, PLARGE_INTEGER);
 NTSYSAPI NTSTATUS NTAPI NtYieldExecution(void);
 
 NTSYSAPI NTSTATUS NTAPI RtlAddAccessDeniedAce(PACL, ULONG, ULONG, PSID);
+
+
+typedef struct _CURDIR
+{
+    UNICODE_STRING  DosPath;
+    HANDLE          Handle;
+} CURDIR;
+typedef CURDIR *PCURDIR;
+
+typedef struct _RTL_DRIVE_LETTER_CURDIR
+{
+    USHORT          Flags;
+    USHORT          Length;
+    ULONG           TimeStamp;
+    STRING          DosPath; /**< Yeah, it's STRING according to dt ntdll!_RTL_DRIVE_LETTER_CURDIR. */
+} RTL_DRIVE_LETTER_CURDIR;
+typedef RTL_DRIVE_LETTER_CURDIR *PRTL_DRIVE_LETTER_CURDIR;
+
+typedef struct _RTL_USER_PROCESS_PARAMETERS
+{
+    ULONG           MaximumLength;
+    ULONG           Length;
+    ULONG           Flags;
+    ULONG           DebugFlags;
+    HANDLE          ConsoleHandle;
+    ULONG           ConsoleFlags;
+    HANDLE          StandardInput;
+    HANDLE          StandardOutput;
+    HANDLE          StandardError;
+    CURDIR          CurrentDirectory;
+    UNICODE_STRING  DllPath;
+    UNICODE_STRING  ImagePathName;
+    UNICODE_STRING  CommandLine;
+    PWSTR           Environment;
+    ULONG           StartingX;
+    ULONG           StartingY;
+    ULONG           CountX;
+    ULONG           CountY;
+    ULONG           CountCharsX;
+    ULONG           CountCharsY;
+    ULONG           FillAttribute;
+    ULONG           WindowFlags;
+    ULONG           ShowWindowFlags;
+    UNICODE_STRING  WindowTitle;
+    UNICODE_STRING  DesktopInfo;
+    UNICODE_STRING  ShellInfo;
+    UNICODE_STRING  RuntimeInfo;
+    RTL_DRIVE_LETTER_CURDIR  CurrentDirectories[0x20];
+    SIZE_T          EnvironmentSize;        /**< Added in Vista */
+    SIZE_T          EnvironmentVersion;     /**< Added in Windows 7. */
+    PVOID           PackageDependencyData;  /**< Added Windows 8? */
+    ULONG           ProcessGroupId;         /**< Added Windows 8? */
+} RTL_USER_PROCESS_PARAMETERS;
+typedef RTL_USER_PROCESS_PARAMETERS *PRTL_USER_PROCESS_PARAMETERS;
+#define RTL_USER_PROCESS_PARAMS_FLAG_NORMALIZED     1
+
+typedef struct _RTL_USER_PROCESS_INFORMATION
+{
+    ULONG           Size;
+    HANDLE          ProcessHandle;
+    HANDLE          ThreadHandle;
+    CLIENT_ID       ClientId;
+    SECTION_IMAGE_INFORMATION  ImageInformation;
+} RTL_USER_PROCESS_INFORMATION;
+typedef RTL_USER_PROCESS_INFORMATION *PRTL_USER_PROCESS_INFORMATION;
+
+
+NTSYSAPI NTSTATUS NTAPI RtlCreateUserProcess(PUNICODE_STRING, ULONG, PRTL_USER_PROCESS_PARAMETERS, PSECURITY_DESCRIPTOR,
+                                             PSECURITY_DESCRIPTOR, HANDLE, BOOLEAN, HANDLE, HANDLE, PRTL_USER_PROCESS_INFORMATION);
+NTSYSAPI NTSTATUS NTAPI RtlCreateProcessParameters(PRTL_USER_PROCESS_PARAMETERS *, PUNICODE_STRING ImagePathName,
+                                                   PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory,
+                                                   PUNICODE_STRING CommandLine, PUNICODE_STRING Environment,
+                                                   PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo,
+                                                   PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeInfo);
+NTSYSAPI VOID     NTAPI RtlDestroyProcessParameters(PRTL_USER_PROCESS_PARAMETERS);
 
 RT_C_DECLS_END
 /** @} */
