@@ -674,7 +674,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pHardDisk, &pHardDisk, DeviceType_HardDisk);
+        rc = i_registerMedium(pHardDisk, &pHardDisk, DeviceType_HardDisk, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -694,7 +694,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, DeviceType_DVD);
+        rc = i_registerMedium(pImage, &pImage, DeviceType_DVD, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -714,7 +714,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, DeviceType_Floppy);
+        rc = i_registerMedium(pImage, &pImage, DeviceType_Floppy, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -1830,7 +1830,7 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
 
         if (SUCCEEDED(rc))
         {
-            rc = i_registerMedium(pMedium, &pMedium, aDeviceType);
+            rc = i_registerMedium(pMedium, &pMedium, aDeviceType, treeLock);
 
             treeLock.release();
 
@@ -2947,13 +2947,11 @@ int VirtualBox::i_natNetworkRefDec(IN_BSTR aNetworkName)
 
 
 /**
- *  @note Locks this object for reading.
+ *  @note Locks the list of other objects for reading.
  */
 ComObjPtr<GuestOSType> VirtualBox::i_getUnknownOSType()
 {
     ComObjPtr<GuestOSType> type;
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), type);
 
     /* unknown type must always be the first */
     ComAssertRet(m->allGuestOSTypes.size() > 0, type);
@@ -4154,14 +4152,20 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
  *                  to an unavoidable race there was a duplicate Medium object
  *                  created.
  * @param argType   Either DeviceType_HardDisk, DeviceType_DVD or DeviceType_Floppy.
+ * @param mediaTreeLock Reference to the AutoWriteLock holding the media tree
+ *                  lock, necessary to release it in the right spot.
  * @return
  */
 HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
                                      ComObjPtr<Medium> *ppMedium,
-                                     DeviceType_T argType)
+                                     DeviceType_T argType,
+                                     AutoWriteLock &mediaTreeLock)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
     AssertReturn(ppMedium != NULL, E_INVALIDARG);
+
+    // caller must hold the media tree write lock
+    Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -4188,9 +4192,6 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         default:
             AssertMsgFailedReturn(("invalid device type %d", argType), E_INVALIDARG);
     }
-
-    // caller must hold the media tree write lock
-    Assert(i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     Guid id;
     Utf8Str strLocationFull;
@@ -4231,6 +4232,8 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         if (argType == DeviceType_HardDisk)
             m->mapHardDisks[id] = pMedium;
 
+        mediumCaller.release();
+        mediaTreeLock.release();
         *ppMedium = pMedium;
     }
     else
@@ -4240,6 +4243,10 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         // In this case the assignment will uninit the object, and we must not
         // have a caller pending.
         mediumCaller.release();
+        // release media tree lock, must not be held at uninit time.
+        mediaTreeLock.release();
+        // must not hold the media tree write lock any more
+        Assert(!i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
         *ppMedium = pDupMedium;
     }
 
@@ -4798,6 +4805,11 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    // need it below, in findDHCPServerByNetworkName (reading) and in
+    // m->allDHCPServers.addChild, so need to get it here to avoid lock
+    // order trouble with dhcpServerCaller
+    AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller dhcpServerCaller(aDHCPServer);
     AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());

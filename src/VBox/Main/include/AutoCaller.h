@@ -474,6 +474,8 @@ public:
     /** |true| when uninit() has already been called (so the object is NotReady) */
     bool uninitDone() { return mUninitDone; }
 
+    void setSucceeded();
+
 private:
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoUninitSpan)

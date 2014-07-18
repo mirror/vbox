@@ -13657,7 +13657,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="parent" type="IMedium" readonly="yes">
+    <attribute name="parent" type="IMedium" readonly="yes" wrap-hint-server="passcaller">
       <desc>
         Parent of this medium (the medium this medium is directly based
         on).
@@ -13667,7 +13667,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="children" type="IMedium" safearray="yes" readonly="yes">
+    <attribute name="children" type="IMedium" safearray="yes" readonly="yes" wrap-hint-server="passcaller">
       <desc>
         Children of this medium (all differencing media directly based
         on this medium). A @c null array is returned if this medium
@@ -13675,7 +13675,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="base" type="IMedium" readonly="yes">
+    <attribute name="base" type="IMedium" readonly="yes" wrap-hint-server="passcaller">
       <desc>
         Base medium of this medium.
 
