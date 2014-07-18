@@ -41,6 +41,7 @@ private slots:
     /* View menu functionality: */
     void sltOpenStatusBarSettings();
     void sltStatusBarSettingsClosed();
+    void sltToggleStatusBar();
 
     /* Devices menu functionality: */
     void sltPrepareHardDisksMenu();

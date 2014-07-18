@@ -1782,7 +1782,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
            << GUI_HiDPI_Optimization
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
-           << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
+           << GUI_StatusBar_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef Q_WS_MAC
            << GUI_PresentationModeEnabled
            << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor
@@ -2805,6 +2805,18 @@ void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, co
     setExtraDataString(GUI_MiniToolBarAlignment, QString(), strID);
 }
 
+bool UIExtraDataManager::statusBarEnabled(const QString &strID)
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_StatusBar_Enabled, strID);
+}
+
+void UIExtraDataManager::setStatusBarEnabled(bool fEnabled, const QString &strID)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_StatusBar_Enabled, toFeatureRestricted(!fEnabled), strID);
+}
+
 QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QString &strID)
 {
     /* Prepare result: */
@@ -3164,7 +3176,8 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
              && strMachineID == vboxGlobal().managedVMUuid())
     {
         /* Status-bar configuration change: */
-        if (strKey == GUI_RestrictedStatusBarIndicators ||
+        if (strKey == GUI_StatusBar_Enabled ||
+            strKey == GUI_RestrictedStatusBarIndicators ||
             strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange();
         /* HID LEDs sync state changed (allowed if not restricted)? */

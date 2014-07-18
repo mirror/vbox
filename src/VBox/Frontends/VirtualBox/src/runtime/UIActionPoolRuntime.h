@@ -55,6 +55,7 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Simple_AdjustWindow,
     UIActionIndexRuntime_Menu_StatusBar,
     UIActionIndexRuntime_Simple_StatusBarSettings,
+    UIActionIndexRuntime_Toggle_StatusBar,
 
     /* 'Devices' menu actions: */
     UIActionIndexRuntime_Menu_Devices,

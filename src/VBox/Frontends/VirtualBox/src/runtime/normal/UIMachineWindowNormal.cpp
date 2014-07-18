@@ -112,6 +112,27 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
+void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
+{
+    /* Check whether status-bar is enabled: */
+    const bool fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+    /* Update settings action 'enable' state: */
+    QAction *pActionStatusBarSettings = gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings);
+    pActionStatusBarSettings->setEnabled(fEnabled);
+    /* Update switch action 'checked' state: */
+    QAction *pActionStatusBarSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar);
+    pActionStatusBarSwitch->blockSignals(true);
+    pActionStatusBarSwitch->setChecked(fEnabled);
+    pActionStatusBarSwitch->blockSignals(false);
+
+    /* Update status-bar visibility: */
+    statusBar()->setVisible(pActionStatusBarSwitch->isChecked());
+    m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
+
+    /* Normalize geometry without moving: */
+    normalizeGeometry(false);
+}
+
 void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
 {
     /* Raise action's context-menu: */
@@ -210,6 +231,9 @@ void UIMachineWindowNormal::prepareStatusBar()
             /* Add indicator-pool into status-bar: */
             statusBar()->addPermanentWidget(m_pIndicatorsPool, 0);
         }
+        /* Post-configure status-bar: */
+        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange()),
+                this, SLOT(sltHandleStatusBarConfigurationChange()));
     }
 
 #ifdef Q_WS_MAC
@@ -252,13 +276,13 @@ void UIMachineWindowNormal::loadSettings()
 
     /* Load GUI customizations: */
     {
-        VBoxGlobalSettings settings = vboxGlobal().settings();
 #ifndef Q_WS_MAC
-        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
+        /* Update menu-bar visibility: */
+        menuBar()->setHidden(vboxGlobal().settings().isFeatureActive("noMenuBar"));
 #endif /* !Q_WS_MAC */
-        statusBar()->setHidden(settings.isFeatureActive("noStatusBar"));
-        if (statusBar()->isHidden())
-            m_pIndicatorsPool->setAutoUpdateIndicatorStates(false);
+        /* Update status-bar visibility: */
+        statusBar()->setVisible(gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->isChecked());
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
     }
 
     /* Load window geometry: */
@@ -448,7 +472,7 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
             if (uisession()->isPaused())
                 m_pIndicatorsPool->setAutoUpdateIndicatorStates(false);
             else if (uisession()->isRunning())
-                m_pIndicatorsPool->setAutoUpdateIndicatorStates(true);
+                m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
         }
     }
     if (iElement & UIVisualElement_HDStuff)
