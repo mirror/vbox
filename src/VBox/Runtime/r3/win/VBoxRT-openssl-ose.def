@@ -807,7 +807,6 @@
     EVP_aes_128_cbc
     EVP_aes_128_xts
     EVP_aes_192_cbc
-    EVP_aes_192_xts
     EVP_aes_256_cbc
     EVP_aes_256_xts
     EVP_BytesToKey
