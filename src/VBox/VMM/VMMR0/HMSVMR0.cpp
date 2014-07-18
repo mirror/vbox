@@ -2596,6 +2596,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             Event.n.u3Type   = SVM_EVENT_NMI;
 
             hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+            hmR0SvmSetIretIntercept(pVmcb);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
     }
@@ -4025,6 +4026,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         } SVMREFLECTXCPT;
 
         SVMREFLECTXCPT enmReflect = SVMREFLECTXCPT_NONE;
+        bool fReflectingNmi = false;
         if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
         {
             if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
@@ -4075,12 +4077,17 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         {
             /* Ignore software interrupts (INT n) as they reoccur when restarting the instruction. */
             enmReflect = SVMREFLECTXCPT_XCPT;
+            fReflectingNmi = RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI);
         }
 
         switch (enmReflect)
         {
             case SVMREFLECTXCPT_XCPT:
             {
+                /* If we are re-injecting the NMI, clear NMI blocking. */
+                if (fReflectingNmi)
+                    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
                 Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
                 hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
 
