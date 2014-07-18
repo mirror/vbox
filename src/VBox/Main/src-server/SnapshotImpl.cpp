@@ -3468,8 +3468,9 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
             pDeleteRec->mpSource->i_deparent();
 
         // then, register again
-        rc = mParent->i_registerMedium(pDeleteRec->mpTarget, &pDeleteRec->mpTarget, DeviceType_HardDisk);
+        rc = mParent->i_registerMedium(pDeleteRec->mpTarget, &pDeleteRec->mpTarget, DeviceType_HardDisk, treeLock);
         AssertComRC(rc);
+        treeLock.acquire();
     }
     else
     {

@@ -213,7 +213,7 @@ public:
     const Utf8Str& i_homeDir() const;
     int i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void i_copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
-    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType);
+    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType, AutoWriteLock &mediaTreeLock);
     HRESULT i_unregisterMedium(Medium *pMedium);
     void i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
     HRESULT i_unregisterMachineMedia(const Guid &id);
