@@ -694,6 +694,52 @@ protected:
     }
 };
 
+class UIActionMenuStatusBar : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuStatusBar(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Status Bar"));
+    }
+};
+
+class UIActionSimpleShowStatusBarSettingsWindow : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowStatusBarSettingsWindow(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("StatusBarSettings");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Status Bar Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Opens window to configure status-bar"));
+    }
+};
+
 class UIActionMenuDevices : public UIActionMenu
 {
     Q_OBJECT;
@@ -1340,6 +1386,7 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Toggle_Scale] = new UIActionToggleScaleMode(this);
     m_pool[UIActionIndexRuntime_Toggle_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
+    m_pool[UIActionIndexRuntime_Simple_StatusBarSettings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
 
     /* 'Devices' actions: */
     m_pool[UIActionIndexRuntime_Simple_StorageSettings] = new UIActionSimpleShowStorageSettingsDialog(this);
@@ -1394,6 +1441,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_View])
         delete m_pool[UIActionIndexRuntime_Menu_View];
     m_pool[UIActionIndexRuntime_Menu_View] = new UIActionMenuView(this);
+    if (m_pool[UIActionIndexRuntime_Menu_StatusBar])
+        delete m_pool[UIActionIndexRuntime_Menu_StatusBar];
+    m_pool[UIActionIndexRuntime_Menu_StatusBar] = new UIActionMenuStatusBar(this);
 
     /* 'Devices' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_Devices])

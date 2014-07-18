@@ -188,6 +188,8 @@ void UIMachineLogicSeamless::prepareActionGroups()
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
     /* Disable mouse-integration isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
+    /* Status-bar menu isn't allowed in seamless: */
+    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(false);
 
     /* Take care of view-action toggle state: */
     UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
@@ -291,6 +293,8 @@ void UIMachineLogicSeamless::cleanupActionGroups()
         pActionSeamless->update();
     }
 
+    /* Reenable status-bar menu: */
+    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(true);
     /* Reenable guest-autoresize action: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(true);
     /* Reenable adjust-window action: */

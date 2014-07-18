@@ -412,7 +412,8 @@ enum RuntimeMenuViewActionType
     RuntimeMenuViewActionType_Scale           = RT_BIT(2),
     RuntimeMenuViewActionType_GuestAutoresize = RT_BIT(3),
     RuntimeMenuViewActionType_AdjustWindow    = RT_BIT(4),
-    RuntimeMenuViewActionType_Multiscreen     = RT_BIT(5),
+    RuntimeMenuViewActionType_StatusBar       = RT_BIT(5),
+    RuntimeMenuViewActionType_Multiscreen     = RT_BIT(6),
     RuntimeMenuViewActionType_All             = 0xFFFF
 };
 

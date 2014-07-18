@@ -22,6 +22,7 @@
 #include <QHBoxLayout>
 #include <QPaintEvent>
 #include <QMouseEvent>
+#include <QStatusBar>
 #include <QMdiArea>
 #include <QPainter>
 #include <QPixmap>
@@ -34,6 +35,7 @@
 #include "UIAnimationFramework.h"
 #include "UIExtraDataManager.h"
 #include "UIExtraDataDefs.h"
+#include "UIMachineWindow.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "QIWithRetranslateUI.h"
@@ -698,9 +700,10 @@ int UIStatusBarEditorWidget::position(IndicatorType type) const
 }
 
 
-UIStatusBarEditorWindow::UIStatusBarEditorWindow(QWidget *pParent, const QRect &rect, const QRect &statusBarRect)
+UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
     : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint)
-    , m_rect(rect), m_statusBarRect(statusBarRect)
+    , m_rect(pParent->geometry())
+    , m_statusBarRect(pParent->statusBar()->geometry())
     , m_pAnimation(0), m_fExpanded(false)
     , m_pMainLayout(0), m_pMdiArea(0)
     , m_pWidget(0), m_pEmbeddedWidget(0)
@@ -808,8 +811,12 @@ void UIStatusBarEditorWindow::prepareGeometry()
     raise();
 #endif /* Q_WS_WIN */
 
-    /* Request to activate window after it was shown: */
-    connect(this, SIGNAL(sigShown()), this, SLOT(sltActivateWindow()), Qt::QueuedConnection);
+    /* Activate window after it was shown: */
+    connect(this, SIGNAL(sigShown()), this,
+            SLOT(sltActivateWindow()), Qt::QueuedConnection);
+    /* Update window geometry after parent geometry changed: */
+    connect(parent(), SIGNAL(sigGeometryChange(const QRect&)),
+            this, SLOT(sltParentGeometryChanged(const QRect&)));
 }
 
 void UIStatusBarEditorWindow::prepareAnimation()

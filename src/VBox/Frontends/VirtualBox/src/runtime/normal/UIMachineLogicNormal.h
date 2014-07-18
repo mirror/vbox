@@ -38,7 +38,11 @@ private slots:
     /** Checks if some visual-state type was requested. */
     void sltCheckForRequestedVisualStateType();
 
-    /* Windowed mode functionality: */
+    /* View menu functionality: */
+    void sltOpenStatusBarSettings();
+    void sltStatusBarSettingsClosed();
+
+    /* Devices menu functionality: */
     void sltPrepareHardDisksMenu();
     void sltPrepareSharedFoldersMenu();
     void sltPrepareVideoCaptureMenu();

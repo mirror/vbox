@@ -381,17 +381,43 @@ void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
         pMenu->addSeparator();
 
 
+    /* Separator #2? */
+    bool fSeparator2 = false;
+
     /* Guest Autoresize action: */
     if (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_GuestAutoresize)
+    {
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize));
+        fSeparator2 = true;
+    }
     else
         gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setEnabled(false);
 
     /* Adjust Window action: */
     if (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_AdjustWindow)
+    {
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow));
+        fSeparator2 = true;
+    }
     else
         gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setEnabled(false);
+
+    /* Separator #2: */
+    if (fSeparator2)
+        pMenu->addSeparator();
+
+
+    /* Status-bar submenu: */
+    if (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBar)
+    {
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Menu_StatusBar));
+        gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->menu()->addAction(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings));
+    }
+    else
+    {
+        gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setEnabled(false);
+        gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(false);
+    }
 }
 
 void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu)

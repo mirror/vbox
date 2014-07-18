@@ -433,6 +433,8 @@ void UIMachineLogicFullscreen::prepareActionGroups()
 
     /* Adjust-window action isn't allowed in fullscreen: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
+    /* Status-bar menu isn't allowed in fullscreen: */
+    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(false);
 
     /* Take care of view-action toggle state: */
     UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
@@ -605,6 +607,8 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
         pActionFullscreen->update();
     }
 
+    /* Reenable status-bar menu: */
+    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(true);
     /* Reenable adjust-window action: */
     gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
 
