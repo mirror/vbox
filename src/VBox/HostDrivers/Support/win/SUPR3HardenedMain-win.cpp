@@ -1750,7 +1750,9 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, rc,
                               "supHardenedWinInitImageVerifier failed: %s", g_ErrInfoStatic.szMsg);
-    supR3HardenedWinInstallHooks();
+
+    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
+        supR3HardenedWinInstallHooks();
 
 #ifndef VBOX_WITH_VISTA_NO_SP
     /*
