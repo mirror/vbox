@@ -873,7 +873,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     uint32_t cbMcfgLength  = 0;
 
     ParavirtProvider_T paravirtProvider;
-    hrc = pMachine->COMGETTER(ParavirtProvider)(&paravirtProvider);                         H();
+    hrc = pMachine->GetEffectiveParavirtProvider(&paravirtProvider);                        H();
 
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
@@ -1162,42 +1162,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 pcszParavirtProvider = "None";
                 fGimDeviceNeeded = false;
                 break;
-
-            case ParavirtProvider_Default:
-            {
-                if (fOsXGuest)
-                {
-                    pcszParavirtProvider = "Minimal";
-                    fGimDeviceNeeded = false;
-                }
-#if 0           /* Activate this soon. */
-                else if (  osTypeId == "Windows7"
-                        || osTypeId == "Windows7_64"
-                        || osTypeId == "Windows8"
-                        || osTypeId == "Windows8_64"
-                        || osTypeId == "Windows81"
-                        || osTypeId == "Windows81_64")
-                {
-                    pcszParavirtProvider = "HyperV";
-                }
-#endif
-                else
-                {
-                    pcszParavirtProvider = "None";
-                    fGimDeviceNeeded = false;
-                }
-                break;
-            }
-
-            case ParavirtProvider_Legacy:
-            {
-                if (fOsXGuest)
-                    pcszParavirtProvider = "Minimal";
-                else
-                    pcszParavirtProvider = "None";
-                fGimDeviceNeeded = false;
-                break;
-            }
 
             case ParavirtProvider_Minimal:
                 pcszParavirtProvider = "Minimal";
