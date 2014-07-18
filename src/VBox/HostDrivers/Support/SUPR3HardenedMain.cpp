@@ -1553,7 +1553,8 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 #else
     supR3HardenedWinInit(fFlags);
     supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
-    supR3HardenedWinVerifyProcess();
+    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
+        supR3HardenedWinVerifyProcess();
 #endif
 
 #ifdef RT_OS_WINDOWS
