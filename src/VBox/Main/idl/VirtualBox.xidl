@@ -4205,7 +4205,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="45b0357d-28f4-4f90-b02c-13f2940efdda"
+    uuid="5cabbce0-6565-4713-a7fd-1f8c70e51797"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7199,6 +7199,17 @@
       <param name="attached" type="boolean" dir="return">
         <desc>
           Status of the CPU.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getEffectiveParavirtProvider"  const="yes">
+      <desc>
+        Returns the effective paravirtualization provider for this VM.
+      </desc>
+      <param name="paravirtProvider" type="ParavirtProvider" dir="return">
+        <desc>
+          The effective paravirtualization provider for this VM.
         </desc>
       </param>
     </method>

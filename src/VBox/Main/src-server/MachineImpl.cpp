@@ -1239,6 +1239,77 @@ HRESULT Machine::setParavirtProvider(ParavirtProvider_T aParavirtProvider)
     return S_OK;
 }
 
+HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvider)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aParavirtProvider = mHWData->mParavirtProvider;
+    switch (mHWData->mParavirtProvider)
+    {
+        case ParavirtProvider_None:
+        case ParavirtProvider_HyperV:
+        case ParavirtProvider_Minimal:
+            break;
+
+        /* Resolve dynamic provider types to the effective types. */
+        default:
+        {
+            ComPtr<IGuestOSType> ptrGuestOSType;
+            HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), ptrGuestOSType.asOutParam());
+            AssertMsgReturn(SUCCEEDED(hrc2), ("Failed to get guest OS type. hrc2=%Rhrc\n", hrc2), hrc2);
+
+            Bstr guestTypeFamilyId;
+            hrc2 = ptrGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());
+            AssertMsgReturn(SUCCEEDED(hrc2), ("Failed to get guest family. hrc2=%Rhrc\n", hrc2), hrc2);
+            BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
+
+            switch (mHWData->mParavirtProvider)
+            {
+                case ParavirtProvider_Legacy:
+                {
+                    if (fOsXGuest)
+                        *aParavirtProvider = ParavirtProvider_Minimal;
+                    else
+                        *aParavirtProvider = ParavirtProvider_None;
+                    break;
+                }
+
+                case ParavirtProvider_Default:
+                {
+                    if (fOsXGuest)
+                        *aParavirtProvider = ParavirtProvider_Minimal;
+#if 0           /* Activate this soon. */
+                    else if (   mUserData->s.strOsType == "Windows81"
+                             || mUserData->s.strOsType == "Windows81_64"
+                             || mUserData->s.strOsType == "Windows8"
+                             || mUserData->s.strOsType == "Windows8_64"
+                             || mUserData->s.strOsType == "Windows7"
+                             || mUserData->s.strOsType == "Windows7_64"
+                             || mUserData->s.strOsType == "WindowsVista"
+                             || mUserData->s.strOsType == "WindowsVista_64"
+                             || mUserData->s.strOsType == "Windows2012"
+                             || mUserData->s.strOsType == "Windows2012_64"
+                             || mUserData->s.strOsType == "Windows2008"
+                             || mUserData->s.strOsType == "Windows2008_64")
+                    {
+                        *aParavirtProvider = ParavirtProvider_HyperV;
+                    }
+#endif
+                    else
+                        *aParavirtProvider = ParavirtProvider_None;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    Assert(   *aParavirtProvider == ParavirtProvider_None
+           || *aParavirtProvider == ParavirtProvider_Minimal
+           || *aParavirtProvider == ParavirtProvider_HyperV);
+    return S_OK;
+}
+
 HRESULT Machine::getHardwareVersion(com::Utf8Str &aHardwareVersion)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

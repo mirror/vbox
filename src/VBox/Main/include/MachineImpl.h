@@ -1113,6 +1113,7 @@ private:
     HRESULT hotUnplugCPU(ULONG aCpu);
     HRESULT getCPUStatus(ULONG aCpu,
                          BOOL *aAttached);
+    HRESULT getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvider);
     HRESULT queryLogFilename(ULONG aIdx,
                              com::Utf8Str &aFilename);
     HRESULT readLog(ULONG aIdx,
