@@ -873,11 +873,7 @@ static bool slirpConnectOrWrite(PNATState pData, struct socket *so, bool fConnec
                 tp->t_flags |= TF_DELACK;
         }
     }
-    /*
-     * XXX If we wrote something (a lot), there could be the need
-     * for a window update. In the worst case, the remote will send
-     * a window probe to get things going again.
-     */
+
     LogFlowFunc(("LEAVE: true\n"));
     return true;
 }
