@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -218,9 +218,9 @@ private:
     HRESULT getType(MediumType_T *aType);
     HRESULT setType(MediumType_T aType);
     HRESULT getAllowedTypes(std::vector<MediumType_T> &aAllowedTypes);
-    HRESULT getParent(ComPtr<IMedium> &aParent);
-    HRESULT getChildren(std::vector<ComPtr<IMedium> > &aChildren);
-    HRESULT getBase(ComPtr<IMedium> &aBase);
+    HRESULT getParent(AutoCaller &autoCaller, ComPtr<IMedium> &aParent);
+    HRESULT getChildren(AutoCaller &autoCaller, std::vector<ComPtr<IMedium> > &aChildren);
+    HRESULT getBase(AutoCaller &autoCaller, ComPtr<IMedium> &aBase);
     HRESULT getReadOnly(BOOL *aReadOnly);
     HRESULT getLogicalSize(LONG64 *aLogicalSize);
     HRESULT getAutoReset(BOOL *aAutoReset);
