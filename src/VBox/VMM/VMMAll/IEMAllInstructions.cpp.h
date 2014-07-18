@@ -14566,10 +14566,10 @@ FNIEMOP_DEF(iemOp_EscF3)
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
-            case 0: FNIEMOP_CALL_1(iemOp_fcmovnb_stN,  bRm);
-            case 1: FNIEMOP_CALL_1(iemOp_fcmovne_stN,  bRm);
-            case 2: FNIEMOP_CALL_1(iemOp_fcmovnbe_stN, bRm);
-            case 3: FNIEMOP_CALL_1(iemOp_fcmovnnu_stN, bRm);
+            case 0: return FNIEMOP_CALL_1(iemOp_fcmovnb_stN,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fcmovne_stN,  bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fcmovnbe_stN, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fcmovnnu_stN, bRm);
             case 4:
                 switch (bRm)
                 {
