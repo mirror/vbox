@@ -23,8 +23,9 @@
 /* Forward declarations: */
 class QMdiArea;
 class QMdiSubWindow;
-class UIAnimation;
 class QHBoxLayout;
+class UIAnimation;
+class UIMachineWindow;
 class UIStatusBarEditorWidget;
 
 /** QWidget reimplementation
@@ -47,10 +48,8 @@ signals:
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor.
-      * @param rect is used to define initial cached parent geometry.
-      * @param statusBarRect is used to define initial cached status-bar geometry. */
-    UIStatusBarEditorWindow(QWidget *pParent, const QRect &rect, const QRect &statusBarRect);
+    /** Constructor, passes @a pParent to the QWidget constructor. */
+    UIStatusBarEditorWindow(UIMachineWindow *pParent);
 
 private slots:
 

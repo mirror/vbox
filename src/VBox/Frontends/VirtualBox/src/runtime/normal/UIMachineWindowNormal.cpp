@@ -27,7 +27,6 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMachineWindowNormal.h"
-#include "UIStatusBarEditorWindow.h"
 #include "UIActionPoolRuntime.h"
 #include "UIExtraDataManager.h"
 #include "UIIndicatorsPool.h"
@@ -113,46 +112,10 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
-void UIMachineWindowNormal::sltShowStatusBarContextMenu(const QPoint &position)
+void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
 {
-    /* Prepare context-menu: */
-    QMenu menu;
-    /* Having just one action to configure status-bar: */
-    QAction *pAction = menu.addAction(UIIconPool::iconSet(":/vm_settings_16px.png"),
-                                      tr("Configure status-bar..."),
-                                      this, SLOT(sltOpenStatusBarEditorWindow()));
-    pAction->setEnabled(!uisession()->property("StatusBarEditorOpened").toBool());
-    /* Execute context-menu: */
-    menu.exec(statusBar()->mapToGlobal(position));
-}
-
-void UIMachineWindowNormal::sltOpenStatusBarEditorWindow()
-{
-    /* Prevent user from opening another one editor: */
-    uisession()->setProperty("StatusBarEditorOpened", true);
-    /* Create status-bar editor: */
-    UIStatusBarEditorWindow *pStatusBarEditor =
-        new UIStatusBarEditorWindow(this, m_normalGeometry, statusBar()->geometry());
-    AssertPtrReturnVoid(pStatusBarEditor);
-    {
-        /* Configure status-bar editor: */
-        connect(this, SIGNAL(sigGeometryChange(const QRect&)),
-                pStatusBarEditor, SLOT(sltParentGeometryChanged(const QRect&)));
-        connect(pStatusBarEditor, SIGNAL(destroyed(QObject*)),
-                this, SLOT(sltStatusBarEditorWindowClosed()));
-#ifdef Q_WS_MAC
-        connect(machineLogic(), SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-                pStatusBarEditor, SLOT(sltActivateWindow()));
-#endif /* Q_WS_MAC */
-        /* Show window: */
-        pStatusBarEditor->show();
-    }
-}
-
-void UIMachineWindowNormal::sltStatusBarEditorWindowClosed()
-{
-    /* Allow user to open editor again: */
-    uisession()->setProperty("StatusBarEditorOpened", QVariant());
+    /* Raise action's context-menu: */
+    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
 }
 
 void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position)
@@ -236,7 +199,7 @@ void UIMachineWindowNormal::prepareStatusBar()
         /* Configure status-bar: */
         statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltShowStatusBarContextMenu(const QPoint&)));
+                this, SLOT(sltHandleStatusBarContextMenuRequest(const QPoint&)));
         /* Create indicator-pool: */
         m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uisession());
         AssertPtrReturnVoid(m_pIndicatorsPool);

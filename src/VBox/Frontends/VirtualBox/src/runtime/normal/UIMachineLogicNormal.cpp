@@ -25,6 +25,8 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
+#include "UIStatusBarEditorWindow.h"
+#include "UIExtraDataManager.h"
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
@@ -65,6 +67,35 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
         default:
             break;
     }
+}
+
+void UIMachineLogicNormal::sltOpenStatusBarSettings()
+{
+    /* Do not process if window(s) missed! */
+    AssertReturnVoid(isMachineWindowsCreated());
+
+    /* Prevent user from opening another one editor: */
+    gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(false);
+    /* Create status-bar editor: */
+    UIStatusBarEditorWindow *pStatusBarEditor = new UIStatusBarEditorWindow(activeMachineWindow());
+    AssertPtrReturnVoid(pStatusBarEditor);
+    {
+        /* Configure status-bar editor: */
+        connect(pStatusBarEditor, SIGNAL(destroyed(QObject*)),
+                this, SLOT(sltStatusBarSettingsClosed()));
+#ifdef Q_WS_MAC
+        connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+                pStatusBarEditor, SLOT(sltActivateWindow()));
+#endif /* Q_WS_MAC */
+        /* Show window: */
+        pStatusBarEditor->show();
+    }
+}
+
+void UIMachineLogicNormal::sltStatusBarSettingsClosed()
+{
+    /* Allow user to open editor again: */
+    gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(true);
 }
 
 void UIMachineLogicNormal::sltPrepareHardDisksMenu()
@@ -120,6 +151,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToSeamless()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings), SIGNAL(triggered(bool)),
+            this, SLOT(sltOpenStatusBarSettings()));
 
     /* "Device" actions connections: */
     connect(gActionPool->action(UIActionIndexRuntime_Menu_HardDisks)->menu(), SIGNAL(aboutToShow()),
@@ -182,6 +215,8 @@ void UIMachineLogicNormal::cleanupActionConnections()
                this, SLOT(sltChangeVisualStateToSeamless()));
     disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
+    disconnect(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings), SIGNAL(triggered(bool)),
+               this, SLOT(sltOpenStatusBarSettings()));
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();

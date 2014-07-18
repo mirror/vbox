@@ -53,6 +53,8 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Toggle_Scale,
     UIActionIndexRuntime_Toggle_GuestAutoresize,
     UIActionIndexRuntime_Simple_AdjustWindow,
+    UIActionIndexRuntime_Menu_StatusBar,
+    UIActionIndexRuntime_Simple_StatusBarSettings,
 
     /* 'Devices' menu actions: */
     UIActionIndexRuntime_Menu_Devices,

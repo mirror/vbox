@@ -59,13 +59,8 @@ private slots:
     void sltCPUExecutionCapChange();
 
     /** Handles status-bar context-menu-request: */
-    void sltShowStatusBarContextMenu(const QPoint &position);
-    /** Handles status-bar editor opening. */
-    void sltOpenStatusBarEditorWindow();
-    /** Handles status-bar editor closing. */
-    void sltStatusBarEditorWindowClosed();
-
-    /** Handles indicator context-menu-request: */
+    void sltHandleStatusBarContextMenuRequest(const QPoint &position);
+    /** Handles status-bar indicator context-menu-request: */
     void sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position);
 
 private:
