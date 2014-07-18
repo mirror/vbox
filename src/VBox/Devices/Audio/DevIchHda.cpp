@@ -3014,6 +3014,20 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
     HDA_REG(pThis, RIRBWP)   = 0x0;
 
     Log(("hda: inter HDA reset.\n"));
+
+    /* Stop any audio currently playing. */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    for (uint32_t lun = 0; lun < 1; lun++)
+    {
+        pThis->pDrv[lun]->pfnEnableIn(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceIn, false);
+        pThis->pDrv[lun]->pfnEnableOut(pThis->pDrv[lun], pThis->pCodec[lun]->SwVoiceOut, false);
+    }
+#else
+    AUD_set_active_in(pThis->pCodec->SwVoiceIn, false);
+    AUD_set_active_out(pThis->pCodec->SwVoiceOut, false);
+#endif
+
+
     pThis->cbCorbBuf = 256 * sizeof(uint32_t);
 
     if (pThis->pu32CorbBuf)
