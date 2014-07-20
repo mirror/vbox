@@ -59,6 +59,12 @@
 #define OBJECT_INFORMATION_CLASS   Incomplete_OBJECT_INFORMATION_CLASS
 #define ObjectBasicInformation     Incomplete_ObjectBasicInformation
 #define ObjectTypeInformation      Incomplete_ObjectTypeInformation
+#define _PEB                       Incomplete__PEB
+#define PEB                        Incomplete_PEB
+#define PPEB                       Incomplete_PPEB
+#define _TEB                       Incomplete__TEB
+#define TEB                        Incomplete_TEB
+#define PTEB                       Incomplete_PTEB
 
 
 #ifdef IPRT_NT_USE_WINTERNL
@@ -185,8 +191,16 @@
 #undef OBJECT_INFORMATION_CLASS
 #undef ObjectBasicInformation
 #undef ObjectTypeInformation
+#undef _PEB
+#undef PEB
+#undef PPEB
+#undef _TEB
+#undef TEB
+#undef PTEB
+
 
 #include <iprt/types.h>
+#include <iprt/assert.h>
 
 
 /** @name Useful macros
@@ -329,6 +343,7 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
+
 #ifdef IPRT_NT_USE_WINTERNL
 typedef struct _CLIENT_ID
 {
@@ -336,7 +351,1504 @@ typedef struct _CLIENT_ID
     HANDLE UniqueThread;
 } CLIENT_ID;
 typedef CLIENT_ID *PCLIENT_ID;
+#endif
 
+/** @name Process And Thread Environment Blocks
+ * @{ */
+
+#if 0
+/* Windows 8.1 PEB: */
+typedef struct _PEB_W81
+{
+    BOOLEAN InheritedAddressSpace;                                          /**< 0x000 / 0x000 */
+    BOOLEAN ReadImageFileExecOptions;                                       /**< 0x001 / 0x001 */
+    BOOLEAN BeingDebugged;                                                  /**< 0x002 / 0x002 */
+    union
+    {
+        uint8_t BitField;                                                   /**< 0x003 / 0x003 */
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W80 */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W80 */
+            uint8_t IsPackagedProcess : 1;                                  /**< 0x003 / 0x003 : Pos 4, 1 Bit - Differs from W80 */
+            uint8_t IsAppContainer : 1;                                     /**< 0x003 / 0x003 : Pos 5, 1 Bit - Differs from W80 */
+            uint8_t IsProtectedProcessLight : 1;                            /**< 0x003 / 0x003 : Pos 6, 1 Bit - Differs from W80 */
+            uint8_t SpareBits : 1;                                          /**< 0x003 / 0x003 : Pos 7, 1 Bit */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x004 / NA */
+#endif
+    HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
+    PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
+    struct _PEB_LDR_DATA *Ldr;                                              /**< 0x018 / 0x00c */
+    struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
+    PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
+    HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
+    struct _RTL_CRITICAL_SECTION *FastPebLock;                              /**< 0x038 / 0x01c */
+    PVOID AtlThunkSListPtr;                                                 /**< 0x040 / 0x020 */
+    PVOID IFEOKey;                                                          /**< 0x048 / 0x024 */
+    union
+    {
+        ULONG CrossProcessFlags;                                            /**< 0x050 / 0x028 */
+        struct
+        {
+            uint32_t ProcessInJob : 1;                                      /**< 0x050 / 0x028: Pos 0, 1 Bit */
+            uint32_t ProcessInitializing : 1;                               /**< 0x050 / 0x028: Pos 1, 1 Bit */
+            uint32_t ProcessUsingVEH : 1;                                   /**< 0x050 / 0x028: Pos 2, 1 Bit */
+            uint32_t ProcessUsingVCH : 1;                                   /**< 0x050 / 0x028: Pos 3, 1 Bit */
+            uint32_t ProcessUsingFTH : 1;                                   /**< 0x050 / 0x028: Pos 4, 1 Bit */
+            uint32_t ReservedBits0 : 27;                                    /**< 0x050 / 0x028: Pos 5, 27 Bits */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x054 / */
+#endif
+    union
+    {
+        PVOID KernelCallbackTable;                                          /**< 0x058 / 0x02c */
+        PVOID UserSharedInfoPtr;                                            /**< 0x058 / 0x02c */
+    };
+    uint32_t SystemReserved;                                                /**< 0x060 / 0x030 */
+    uint32_t AtlThunkSListPtr32;                                            /**< 0x064 / 0x034 */
+    PVOID ApiSetMap;                                                        /**< 0x068 / 0x038 */
+    uint32_t TlsExpansionCounter;                                           /**< 0x070 / 0x03c */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x074 / NA */
+#endif
+    struct _RTL_BITMAP *TlsBitmap;                                          /**< 0x078 / 0x040 */
+    uint32_t TlsBitmapBits[2];                                              /**< 0x080 / 0x044 */
+    PVOID ReadOnlySharedMemoryBase;                                         /**< 0x088 / 0x04c */
+    PVOID SparePvoid0;                                                      /**< 0x090 / 0x050 - HotpatchInformation in W80. */
+    PVOID *ReadOnlyStaticServerData;                                        /**< 0x098 / 0x054 */
+    PVOID AnsiCodePageData;                                                 /**< 0x0a0 / 0x058 */
+    PVOID OemCodePageData;                                                  /**< 0x0a8 / 0x05c */
+    PVOID UnicodeCaseTableData;                                             /**< 0x0b0 / 0x060 */
+    uint32_t NumberOfProcessors;                                            /**< 0x0b8 / 0x064 */
+    uint32_t NtGlobalFlag;                                                  /**< 0x0bc / 0x068 */
+    LARGE_INTEGER CriticalSectionTimeout;                                   /**< 0x0c0 / 0x070 */
+    SIZE_T HeapSegmentReserve;                                              /**< 0x0c8 / 0x078 */
+    SIZE_T HeapSegmentCommit;                                               /**< 0x0d0 / 0x07c */
+    SIZE_T HeapDeCommitTotalFreeThreshold;                                  /**< 0x0d8 / 0x080 */
+    SIZE_T HeapDeCommitFreeBlockThreshold;                                  /**< 0x0e0 / 0x084 */
+    uint32_t NumberOfHeaps;                                                 /**< 0x0e8 / 0x088 */
+    uint32_t MaximumNumberOfHeaps;                                          /**< 0x0ec / 0x08c */
+    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 */
+    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094 */
+    PVOID ProcessStarterHelper;                                             /**< 0x100 / 0x098 */
+    uint32_t GdiDCAttributeList;                                            /**< 0x108 / 0x09c */
+#if ARCH_BITS == 64
+    uint32_t Padding3;                                                      /**< 0x10c / NA */
+#endif
+    struct _RTL_CRITICAL_SECTION *LoaderLock;                               /**< 0x110 / 0x0a0 */
+    uint32_t OSMajorVersion;                                                /**< 0x118 / 0x0a4 */
+    uint32_t OSMinorVersion;                                                /**< 0x11c / 0x0a8 */
+    uint16_t OSBuildNumber;                                                 /**< 0x120 / 0x0ac */
+    uint16_t OSCSDVersion;                                                  /**< 0x122 / 0x0ae */
+    uint32_t OSPlatformId;                                                  /**< 0x124 / 0x0b0 */
+    uint32_t ImageSubsystem;                                                /**< 0x128 / 0x0b4 */
+    uint32_t ImageSubsystemMajorVersion;                                    /**< 0x12c / 0x0b8 */
+    uint32_t ImageSubsystemMinorVersion;                                    /**< 0x130 / 0x0bc */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x134 / NA */
+#endif
+    SIZE_T ActiveProcessAffinityMask;                                       /**< 0x138 / 0x0c0 */
+    uint32_t GdiHandleBuffer[ARCH_BITS == 64 ? 60 : 34];                    /**< 0x140 / 0x0c4 */
+    PVOID PostProcessInitRoutine;                                           /**< 0x230 / 0x14c */
+    PVOID TlsExpansionBitmap;                                               /**< 0x238 / 0x150 */
+    uint32_t TlsExpansionBitmapBits[32];                                    /**< 0x240 / 0x154 */
+    uint32_t SessionId;                                                     /**< 0x2c0 / 0x1d4 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x2c4 / NA */
+#endif
+    ULARGE_INTEGER AppCompatFlags;                                          /**< 0x2c8 / 0x1d8 */
+    ULARGE_INTEGER AppCompatFlagsUser;                                      /**< 0x2d0 / 0x1e0 */
+    PVOID pShimData;                                                        /**< 0x2d8 / 0x1e8 */
+    PVOID AppCompatInfo;                                                    /**< 0x2e0 / 0x1ec */
+    UNICODE_STRING CSDVersion;                                              /**< 0x2e8 / 0x1f0 */
+    struct _ACTIVATION_CONTEXT_DATA *ActivationContextData;                 /**< 0x2f8 / 0x1f8 */
+    struct _ASSEMBLY_STORAGE_MAP *ProcessAssemblyStorageMap;                /**< 0x300 / 0x1fc */
+    struct _ACTIVATION_CONTEXT_DATA *SystemDefaultActivationContextData;    /**< 0x308 / 0x200 */
+    struct _ASSEMBLY_STORAGE_MAP *SystemAssemblyStorageMap;                 /**< 0x310 / 0x204 */
+    SIZE_T MinimumStackCommit;                                              /**< 0x318 / 0x208 */
+    struct _FLS_CALLBACK_INFO *FlsCallback;                                 /**< 0x320 / 0x20c */
+    LIST_ENTRY FlsListHead;                                                 /**< 0x328 / 0x210 */
+    PVOID FlsBitmap;                                                        /**< 0x338 / 0x218 */
+    uint32_t FlsBitmapBits[4];                                              /**< 0x340 / 0x21c */
+    uint32_t FlsHighIndex;                                                  /**< 0x350 / 0x22c */
+    PVOID WerRegistrationData;                                              /**< 0x358 / 0x230 */
+    PVOID WerShipAssertPtr;                                                 /**< 0x360 / 0x234 */
+    PVOID pUnused;                                                          /**< 0x368 / 0x238 - Was pContextData in W7. */
+    PVOID pImageHeaderHash;                                                 /**< 0x370 / 0x23c */
+    union
+    {
+        uint32_t TracingFlags;                                              /**< 0x378 / 0x240 */
+        uint32_t HeapTracingEnabled : 1;                                    /**< 0x378 / 0x240 : Pos 0, 1 Bit */
+        uint32_t CritSecTracingEnabled : 1;                                 /**< 0x378 / 0x240 : Pos 1, 1 Bit */
+        uint32_t LibLoaderTracingEnabled : 1;                               /**< 0x378 / 0x240 : Pos 2, 1 Bit */
+        uint32_t SpareTracingBits : 29;                                     /**< 0x378 / 0x240 : Pos 3, 29 Bits */
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x37c / NA */
+#endif
+    uint64_t CsrServerReadOnlySharedMemoryBase;                             /**< 0x380 / 0x248 */
+} PEB_W81;
+typedef PEB_W81 *PPEB_W81;
+AssertCompileMemberOffset(PEB_W81, NtGlobalFlag,   ARCH_BITS == 64 ?  0xbc :  0x68);
+AssertCompileMemberOffset(PEB_W81, LoaderLock,     ARCH_BITS == 64 ? 0x110 :  0xa0);
+AssertCompileMemberOffset(PEB_W81, ActiveProcessAffinityMask, ARCH_BITS == 64 ? 0x138 :  0xc0);
+AssertCompileMemberOffset(PEB_W81, PostProcessInitRoutine,    ARCH_BITS == 64 ? 0x230 : 0x14c);
+AssertCompileMemberOffset(PEB_W81, AppCompatFlags, ARCH_BITS == 64 ? 0x2c8 : 0x1d8);
+AssertCompileSize(PEB_W81, ARCH_BITS == 64 ? 0x388 : 0x250);
+
+/* Windows 8.0 PEB: */
+typedef struct _PEB_W80
+{
+    BOOLEAN InheritedAddressSpace;                                          /**< 0x000 / 0x000 */
+    BOOLEAN ReadImageFileExecOptions;                                       /**< 0x001 / 0x001 */
+    BOOLEAN BeingDebugged;                                                  /**< 0x002 / 0x002 */
+    union
+    {
+        uint8_t BitField;                                                   /**< 0x003 / 0x003 */
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsLegacyProcess : 1;                                    /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W81 */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W81 */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 4, 1 Bit - Differs from W81 */
+            uint8_t IsPackagedProcess : 1;                                  /**< 0x003 / 0x003 : Pos 5, 1 Bit - Differs from W81 */
+            uint8_t IsAppContainer : 1;                                     /**< 0x003 / 0x003 : Pos 6, 1 Bit - Differs from W81 */
+            uint8_t SpareBits : 1;                                          /**< 0x003 / 0x003 : Pos 7, 1 Bit */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x004 / NA */
+#endif
+    HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
+    PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
+    struct _PEB_LDR_DATA *Ldr;                                              /**< 0x018 / 0x00c */
+    struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
+    PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
+    HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
+    struct _RTL_CRITICAL_SECTION *FastPebLock;                              /**< 0x038 / 0x01c */
+    PVOID AtlThunkSListPtr;                                                 /**< 0x040 / 0x020 */
+    PVOID IFEOKey;                                                          /**< 0x048 / 0x024 */
+    union
+    {
+        ULONG CrossProcessFlags;                                            /**< 0x050 / 0x028 */
+        struct
+        {
+            uint32_t ProcessInJob : 1;                                      /**< 0x050 / 0x028: Pos 0, 1 Bit */
+            uint32_t ProcessInitializing : 1;                               /**< 0x050 / 0x028: Pos 1, 1 Bit */
+            uint32_t ProcessUsingVEH : 1;                                   /**< 0x050 / 0x028: Pos 2, 1 Bit */
+            uint32_t ProcessUsingVCH : 1;                                   /**< 0x050 / 0x028: Pos 3, 1 Bit */
+            uint32_t ProcessUsingFTH : 1;                                   /**< 0x050 / 0x028: Pos 4, 1 Bit */
+            uint32_t ReservedBits0 : 27;                                    /**< 0x050 / 0x028: Pos 5, 27 Bits */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x054 / */
+#endif
+    union
+    {
+        PVOID KernelCallbackTable;                                          /**< 0x058 / 0x02c */
+        PVOID UserSharedInfoPtr;                                            /**< 0x058 / 0x02c */
+    };
+    uint32_t SystemReserved;                                                /**< 0x060 / 0x030 */
+    uint32_t AtlThunkSListPtr32;                                            /**< 0x064 / 0x034 */
+    PVOID ApiSetMap;                                                        /**< 0x068 / 0x038 */
+    uint32_t TlsExpansionCounter;                                           /**< 0x070 / 0x03c */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x074 / NA */
+#endif
+    struct _RTL_BITMAP *TlsBitmap;                                          /**< 0x078 / 0x040 */
+    uint32_t TlsBitmapBits[2];                                              /**< 0x080 / 0x044 */
+    PVOID ReadOnlySharedMemoryBase;                                         /**< 0x088 / 0x04c */
+    PVOID HotpatchInformation;                                              /**< 0x090 / 0x050 - Retired in W81. */
+    PVOID *ReadOnlyStaticServerData;                                        /**< 0x098 / 0x054 */
+    PVOID AnsiCodePageData;                                                 /**< 0x0a0 / 0x058 */
+    PVOID OemCodePageData;                                                  /**< 0x0a8 / 0x05c */
+    PVOID UnicodeCaseTableData;                                             /**< 0x0b0 / 0x060 */
+    uint32_t NumberOfProcessors;                                            /**< 0x0b8 / 0x064 */
+    uint32_t NtGlobalFlag;                                                  /**< 0x0bc / 0x068 */
+    LARGE_INTEGER CriticalSectionTimeout;                                   /**< 0x0c0 / 0x070 */
+    SIZE_T HeapSegmentReserve;                                              /**< 0x0c8 / 0x078 */
+    SIZE_T HeapSegmentCommit;                                               /**< 0x0d0 / 0x07c */
+    SIZE_T HeapDeCommitTotalFreeThreshold;                                  /**< 0x0d8 / 0x080 */
+    SIZE_T HeapDeCommitFreeBlockThreshold;                                  /**< 0x0e0 / 0x084 */
+    uint32_t NumberOfHeaps;                                                 /**< 0x0e8 / 0x088 */
+    uint32_t MaximumNumberOfHeaps;                                          /**< 0x0ec / 0x08c */
+    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 */
+    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094 */
+    PVOID ProcessStarterHelper;                                             /**< 0x100 / 0x098 */
+    uint32_t GdiDCAttributeList;                                            /**< 0x108 / 0x09c */
+#if ARCH_BITS == 64
+    uint32_t Padding3;                                                      /**< 0x10c / NA */
+#endif
+    struct _RTL_CRITICAL_SECTION *LoaderLock;                               /**< 0x110 / 0x0a0 */
+    uint32_t OSMajorVersion;                                                /**< 0x118 / 0x0a4 */
+    uint32_t OSMinorVersion;                                                /**< 0x11c / 0x0a8 */
+    uint16_t OSBuildNumber;                                                 /**< 0x120 / 0x0ac */
+    uint16_t OSCSDVersion;                                                  /**< 0x122 / 0x0ae */
+    uint32_t OSPlatformId;                                                  /**< 0x124 / 0x0b0 */
+    uint32_t ImageSubsystem;                                                /**< 0x128 / 0x0b4 */
+    uint32_t ImageSubsystemMajorVersion;                                    /**< 0x12c / 0x0b8 */
+    uint32_t ImageSubsystemMinorVersion;                                    /**< 0x130 / 0x0bc */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x134 / NA */
+#endif
+    SIZE_T ActiveProcessAffinityMask;                                       /**< 0x138 / 0x0c0 */
+    uint32_t GdiHandleBuffer[ARCH_BITS == 64 ? 60 : 34];                    /**< 0x140 / 0x0c4 */
+    PVOID PostProcessInitRoutine;                                           /**< 0x230 / 0x14c */
+    PVOID TlsExpansionBitmap;                                               /**< 0x238 / 0x150 */
+    uint32_t TlsExpansionBitmapBits[32];                                    /**< 0x240 / 0x154 */
+    uint32_t SessionId;                                                     /**< 0x2c0 / 0x1d4 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x2c4 / NA */
+#endif
+    ULARGE_INTEGER AppCompatFlags;                                          /**< 0x2c8 / 0x1d8 */
+    ULARGE_INTEGER AppCompatFlagsUser;                                      /**< 0x2d0 / 0x1e0 */
+    PVOID pShimData;                                                        /**< 0x2d8 / 0x1e8 */
+    PVOID AppCompatInfo;                                                    /**< 0x2e0 / 0x1ec */
+    UNICODE_STRING CSDVersion;                                              /**< 0x2e8 / 0x1f0 */
+    struct _ACTIVATION_CONTEXT_DATA *ActivationContextData;                 /**< 0x2f8 / 0x1f8 */
+    struct _ASSEMBLY_STORAGE_MAP *ProcessAssemblyStorageMap;                /**< 0x300 / 0x1fc */
+    struct _ACTIVATION_CONTEXT_DATA *SystemDefaultActivationContextData;    /**< 0x308 / 0x200 */
+    struct _ASSEMBLY_STORAGE_MAP *SystemAssemblyStorageMap;                 /**< 0x310 / 0x204 */
+    SIZE_T MinimumStackCommit;                                              /**< 0x318 / 0x208 */
+    struct _FLS_CALLBACK_INFO *FlsCallback;                                 /**< 0x320 / 0x20c */
+    LIST_ENTRY FlsListHead;                                                 /**< 0x328 / 0x210 */
+    PVOID FlsBitmap;                                                        /**< 0x338 / 0x218 */
+    uint32_t FlsBitmapBits[4];                                              /**< 0x340 / 0x21c */
+    uint32_t FlsHighIndex;                                                  /**< 0x350 / 0x22c */
+    PVOID WerRegistrationData;                                              /**< 0x358 / 0x230 */
+    PVOID WerShipAssertPtr;                                                 /**< 0x360 / 0x234 */
+    PVOID pUnused;                                                          /**< 0x368 / 0x238 - Was pContextData in W7. */
+    PVOID pImageHeaderHash;                                                 /**< 0x370 / 0x23c */
+    union
+    {
+        uint32_t TracingFlags;                                              /**< 0x378 / 0x240 */
+        uint32_t HeapTracingEnabled : 1;                                    /**< 0x378 / 0x240 : Pos 0, 1 Bit */
+        uint32_t CritSecTracingEnabled : 1;                                 /**< 0x378 / 0x240 : Pos 1, 1 Bit */
+        uint32_t LibLoaderTracingEnabled : 1;                               /**< 0x378 / 0x240 : Pos 2, 1 Bit */
+        uint32_t SpareTracingBits : 29;                                     /**< 0x378 / 0x240 : Pos 3, 29 Bits */
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x37c / NA */
+#endif
+    uint64_t CsrServerReadOnlySharedMemoryBase;                             /**< 0x380 / 0x248 */
+} PEB_W80;
+typedef PEB_W80 *PPEB_W80;
+AssertCompileMemberOffset(PEB_W80, NtGlobalFlag,   ARCH_BITS == 64 ?  0xbc :  0x68);
+AssertCompileMemberOffset(PEB_W80, LoaderLock,     ARCH_BITS == 64 ? 0x110 :  0xa0);
+AssertCompileMemberOffset(PEB_W80, ActiveProcessAffinityMask, ARCH_BITS == 64 ? 0x138 :  0xc0);
+AssertCompileMemberOffset(PEB_W80, PostProcessInitRoutine,    ARCH_BITS == 64 ? 0x230 : 0x14c);
+AssertCompileMemberOffset(PEB_W80, AppCompatFlags, ARCH_BITS == 64 ? 0x2c8 : 0x1d8);
+AssertCompileSize(PEB_W80, ARCH_BITS == 64 ? 0x388 : 0x250);
+
+
+/* Windows 7 PEB: */
+typedef struct _PEB_W7
+{
+    BOOLEAN InheritedAddressSpace;                                          /**< 0x000 / 0x000 */
+    BOOLEAN ReadImageFileExecOptions;                                       /**< 0x001 / 0x001 */
+    BOOLEAN BeingDebugged;                                                  /**< 0x002 / 0x002 */
+    union
+    {
+        uint8_t BitField;                                                   /**< 0x003 / 0x003 */
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsLegacyProcess : 1;                                    /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W81, same as W80. */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W81, same as W80. */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 4, 1 Bit - Differs from W81, same as W80. */
+            uint8_t SpareBits : 3;                                          /**< 0x003 / 0x003 : Pos 7, 3 Bit - Differs from W81 & W80, more spare bits. */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x004 / NA */
+#endif
+    HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
+    PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
+    struct _PEB_LDR_DATA *Ldr;                                              /**< 0x018 / 0x00c */
+    struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
+    PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
+    HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
+    struct _RTL_CRITICAL_SECTION *FastPebLock;                              /**< 0x038 / 0x01c */
+    PVOID AtlThunkSListPtr;                                                 /**< 0x040 / 0x020 */
+    PVOID IFEOKey;                                                          /**< 0x048 / 0x024 */
+    union
+    {
+        ULONG CrossProcessFlags;                                            /**< 0x050 / 0x028 */
+        struct
+        {
+            uint32_t ProcessInJob : 1;                                      /**< 0x050 / 0x028: Pos 0, 1 Bit */
+            uint32_t ProcessInitializing : 1;                               /**< 0x050 / 0x028: Pos 1, 1 Bit */
+            uint32_t ProcessUsingVEH : 1;                                   /**< 0x050 / 0x028: Pos 2, 1 Bit */
+            uint32_t ProcessUsingVCH : 1;                                   /**< 0x050 / 0x028: Pos 3, 1 Bit */
+            uint32_t ProcessUsingFTH : 1;                                   /**< 0x050 / 0x028: Pos 4, 1 Bit */
+            uint32_t ReservedBits0 : 27;                                    /**< 0x050 / 0x028: Pos 5, 27 Bits */
+        };
+    };
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x054 / */
+#endif
+    union
+    {
+        PVOID KernelCallbackTable;                                          /**< 0x058 / 0x02c */
+        PVOID UserSharedInfoPtr;                                            /**< 0x058 / 0x02c */
+    };
+    uint32_t SystemReserved;                                                /**< 0x060 / 0x030 */
+    uint32_t AtlThunkSListPtr32;                                            /**< 0x064 / 0x034 */
+    PVOID ApiSetMap;                                                        /**< 0x068 / 0x038 */
+    uint32_t TlsExpansionCounter;                                           /**< 0x070 / 0x03c */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x074 / NA */
+#endif
+    struct _RTL_BITMAP *TlsBitmap;                                          /**< 0x078 / 0x040 */
+    uint32_t TlsBitmapBits[2];                                              /**< 0x080 / 0x044 */
+    PVOID ReadOnlySharedMemoryBase;                                         /**< 0x088 / 0x04c */
+    PVOID HotpatchInformation;                                              /**< 0x090 / 0x050 - Retired in W81. */
+    PVOID *ReadOnlyStaticServerData;                                        /**< 0x098 / 0x054 */
+    PVOID AnsiCodePageData;                                                 /**< 0x0a0 / 0x058 */
+    PVOID OemCodePageData;                                                  /**< 0x0a8 / 0x05c */
+    PVOID UnicodeCaseTableData;                                             /**< 0x0b0 / 0x060 */
+    uint32_t NumberOfProcessors;                                            /**< 0x0b8 / 0x064 */
+    uint32_t NtGlobalFlag;                                                  /**< 0x0bc / 0x068 */
+    LARGE_INTEGER CriticalSectionTimeout;                                   /**< 0x0c0 / 0x070 */
+    SIZE_T HeapSegmentReserve;                                              /**< 0x0c8 / 0x078 */
+    SIZE_T HeapSegmentCommit;                                               /**< 0x0d0 / 0x07c */
+    SIZE_T HeapDeCommitTotalFreeThreshold;                                  /**< 0x0d8 / 0x080 */
+    SIZE_T HeapDeCommitFreeBlockThreshold;                                  /**< 0x0e0 / 0x084 */
+    uint32_t NumberOfHeaps;                                                 /**< 0x0e8 / 0x088 */
+    uint32_t MaximumNumberOfHeaps;                                          /**< 0x0ec / 0x08c */
+    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 */
+    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094 */
+    PVOID ProcessStarterHelper;                                             /**< 0x100 / 0x098 */
+    uint32_t GdiDCAttributeList;                                            /**< 0x108 / 0x09c */
+#if ARCH_BITS == 64
+    uint32_t Padding3;                                                      /**< 0x10c / NA */
+#endif
+    struct _RTL_CRITICAL_SECTION *LoaderLock;                               /**< 0x110 / 0x0a0 */
+    uint32_t OSMajorVersion;                                                /**< 0x118 / 0x0a4 */
+    uint32_t OSMinorVersion;                                                /**< 0x11c / 0x0a8 */
+    uint16_t OSBuildNumber;                                                 /**< 0x120 / 0x0ac */
+    uint16_t OSCSDVersion;                                                  /**< 0x122 / 0x0ae */
+    uint32_t OSPlatformId;                                                  /**< 0x124 / 0x0b0 */
+    uint32_t ImageSubsystem;                                                /**< 0x128 / 0x0b4 */
+    uint32_t ImageSubsystemMajorVersion;                                    /**< 0x12c / 0x0b8 */
+    uint32_t ImageSubsystemMinorVersion;                                    /**< 0x130 / 0x0bc */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x134 / NA */
+#endif
+    SIZE_T ActiveProcessAffinityMask;                                       /**< 0x138 / 0x0c0 */
+    uint32_t GdiHandleBuffer[ARCH_BITS == 64 ? 60 : 34];                    /**< 0x140 / 0x0c4 */
+    PVOID PostProcessInitRoutine;                                           /**< 0x230 / 0x14c */
+    PVOID TlsExpansionBitmap;                                               /**< 0x238 / 0x150 */
+    uint32_t TlsExpansionBitmapBits[32];                                    /**< 0x240 / 0x154 */
+    uint32_t SessionId;                                                     /**< 0x2c0 / 0x1d4 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x2c4 / NA */
+#endif
+    ULARGE_INTEGER AppCompatFlags;                                          /**< 0x2c8 / 0x1d8 */
+    ULARGE_INTEGER AppCompatFlagsUser;                                      /**< 0x2d0 / 0x1e0 */
+    PVOID pShimData;                                                        /**< 0x2d8 / 0x1e8 */
+    PVOID AppCompatInfo;                                                    /**< 0x2e0 / 0x1ec */
+    UNICODE_STRING CSDVersion;                                              /**< 0x2e8 / 0x1f0 */
+    struct _ACTIVATION_CONTEXT_DATA *ActivationContextData;                 /**< 0x2f8 / 0x1f8 */
+    struct _ASSEMBLY_STORAGE_MAP *ProcessAssemblyStorageMap;                /**< 0x300 / 0x1fc */
+    struct _ACTIVATION_CONTEXT_DATA *SystemDefaultActivationContextData;    /**< 0x308 / 0x200 */
+    struct _ASSEMBLY_STORAGE_MAP *SystemAssemblyStorageMap;                 /**< 0x310 / 0x204 */
+    SIZE_T MinimumStackCommit;                                              /**< 0x318 / 0x208 */
+    struct _FLS_CALLBACK_INFO *FlsCallback;                                 /**< 0x320 / 0x20c */
+    LIST_ENTRY FlsListHead;                                                 /**< 0x328 / 0x210 */
+    PVOID FlsBitmap;                                                        /**< 0x338 / 0x218 */
+    uint32_t FlsBitmapBits[4];                                              /**< 0x340 / 0x21c */
+    uint32_t FlsHighIndex;                                                  /**< 0x350 / 0x22c */
+    PVOID WerRegistrationData;                                              /**< 0x358 / 0x230 */
+    PVOID WerShipAssertPtr;                                                 /**< 0x360 / 0x234 */
+    PVOID pContextData;                                                     /**< 0x368 / 0x238 - Retired in W80. */
+    PVOID pImageHeaderHash;                                                 /**< 0x370 / 0x23c */
+    union
+    {
+        uint32_t TracingFlags;                                              /**< 0x378 / 0x240 */
+        uint32_t HeapTracingEnabled : 1;                                    /**< 0x378 / 0x240 : Pos 0, 1 Bit */
+        uint32_t CritSecTracingEnabled : 1;                                 /**< 0x378 / 0x240 : Pos 1, 1 Bit */
+        uint32_t SpareTracingBits : 30;                                     /**< 0x378 / 0x240 : Pos 3, 30 Bits - One bit more than W80 */
+    };
+    uint32_t Padding6;                                                      /**< 0x37c / 0x244 */
+} PEB_W7;
+typedef PEB_W7 *PPEB_W7;
+AssertCompileMemberOffset(PEB_W7, NtGlobalFlag,   ARCH_BITS == 64 ?  0xbc :  0x68);
+AssertCompileMemberOffset(PEB_W7, LoaderLock,     ARCH_BITS == 64 ? 0x110 :  0xa0);
+AssertCompileMemberOffset(PEB_W7, ActiveProcessAffinityMask, ARCH_BITS == 64 ? 0x138 :  0xc0);
+AssertCompileMemberOffset(PEB_W7, PostProcessInitRoutine,    ARCH_BITS == 64 ? 0x230 : 0x14c);
+AssertCompileMemberOffset(PEB_W7, AppCompatFlags, ARCH_BITS == 64 ? 0x2c8 : 0x1d8);
+AssertCompileSize(PEB_W7, ARCH_BITS == 64 ? 0x380 : 0x248);
+#endif /* Just use PEB_COMMON for now. */
+
+typedef struct _PEB_COMMON
+{
+    BOOLEAN InheritedAddressSpace;                                          /**< 0x000 / 0x000 */
+    BOOLEAN ReadImageFileExecOptions;                                       /**< 0x001 / 0x001 */
+    BOOLEAN BeingDebugged;                                                  /**< 0x002 / 0x002 */
+    union
+    {
+        uint8_t BitField;                                                   /**< 0x003 / 0x003 */
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+        } Common;
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W80 */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W80 */
+            uint8_t IsPackagedProcess : 1;                                  /**< 0x003 / 0x003 : Pos 4, 1 Bit - Differs from W80 */
+            uint8_t IsAppContainer : 1;                                     /**< 0x003 / 0x003 : Pos 5, 1 Bit - Differs from W80 */
+            uint8_t IsProtectedProcessLight : 1;                            /**< 0x003 / 0x003 : Pos 6, 1 Bit - Differs from W80 */
+            uint8_t SpareBits : 1;                                          /**< 0x003 / 0x003 : Pos 7, 1 Bit */
+        } W81;
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsLegacyProcess : 1;                                    /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W81 */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W81 */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 4, 1 Bit - Differs from W81 */
+            uint8_t IsPackagedProcess : 1;                                  /**< 0x003 / 0x003 : Pos 5, 1 Bit - Differs from W81 */
+            uint8_t IsAppContainer : 1;                                     /**< 0x003 / 0x003 : Pos 6, 1 Bit - Differs from W81 */
+            uint8_t SpareBits : 1;                                          /**< 0x003 / 0x003 : Pos 7, 1 Bit */
+        } W80;
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsLegacyProcess : 1;                                    /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W81, same as W80 & W6. */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W81, same as W80 & W6. */
+            uint8_t SkipPatchingUser32Forwarders : 1;                       /**< 0x003 / 0x003 : Pos 4, 1 Bit - Added in W7; Differs from W81, same as W80. */
+            uint8_t SpareBits : 3;                                          /**< 0x003 / 0x003 : Pos 5, 3 Bit - Differs from W81 & W80, more spare bits. */
+        } W7;
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t IsProtectedProcess : 1;                                 /**< 0x003 / 0x003 : Pos 1, 1 Bit */
+            uint8_t IsLegacyProcess : 1;                                    /**< 0x003 / 0x003 : Pos 2, 1 Bit - Differs from W81, same as W80 & W7. */
+            uint8_t IsImageDynamicallyRelocated : 1;                        /**< 0x003 / 0x003 : Pos 3, 1 Bit - Differs from W81, same as W80 & W7. */
+            uint8_t SpareBits : 4;                                          /**< 0x003 / 0x003 : Pos 4, 4 Bit - Differs from W81, W80, & W7, more spare bits. */
+        } W6;
+        struct
+        {
+            uint8_t ImageUsesLargePages : 1;                                /**< 0x003 / 0x003 : Pos 0, 1 Bit */
+            uint8_t SpareBits : 7;                                          /**< 0x003 / 0x003 : Pos 1, 7 Bit - Differs from W81, W80, & W7, more spare bits. */
+        } W52;
+        struct
+        {
+            BOOLEAN SpareBool;
+        } W51;
+    } Diff0;
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x004 / NA */
+#endif
+    HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
+    PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
+    struct _PEB_LDR_DATA *Ldr;                                              /**< 0x018 / 0x00c */
+    struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
+    PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
+    HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
+    struct _RTL_CRITICAL_SECTION *FastPebLock;                              /**< 0x038 / 0x01c */
+    union
+    {
+        struct
+        {
+            PVOID AtlThunkSListPtr;                                         /**< 0x040 / 0x020 */
+            PVOID IFEOKey;                                                  /**< 0x048 / 0x024 */
+            union
+            {
+                ULONG CrossProcessFlags;                                    /**< 0x050 / 0x028 */
+                struct
+                {
+                    uint32_t ProcessInJob : 1;                              /**< 0x050 / 0x028: Pos 0, 1 Bit */
+                    uint32_t ProcessInitializing : 1;                       /**< 0x050 / 0x028: Pos 1, 1 Bit */
+                    uint32_t ProcessUsingVEH : 1;                           /**< 0x050 / 0x028: Pos 2, 1 Bit */
+                    uint32_t ProcessUsingVCH : 1;                           /**< 0x050 / 0x028: Pos 3, 1 Bit */
+                    uint32_t ProcessUsingFTH : 1;                           /**< 0x050 / 0x028: Pos 4, 1 Bit */
+                    uint32_t ReservedBits0 : 1;                             /**< 0x050 / 0x028: Pos 5, 27 Bits */
+                } W7, W8, W80, W81;
+                struct
+                {
+                    uint32_t ProcessInJob : 1;                              /**< 0x050 / 0x028: Pos 0, 1 Bit */
+                    uint32_t ProcessInitializing : 1;                       /**< 0x050 / 0x028: Pos 1, 1 Bit */
+                    uint32_t ReservedBits0 : 30;                            /**< 0x050 / 0x028: Pos 2, 30 Bits */
+                } W6;
+            };
+#if ARCH_BITS == 64
+            uint32_t Padding1;                                              /**< 0x054 / */
+#endif
+        } W6, W7, W8, W80, W81;
+        struct
+        {
+            PVOID AtlThunkSListPtr;                                         /**< 0x040 / 0x020 */
+            PVOID SparePtr2;                                                /**< 0x048 / 0x024 */
+            uint32_t EnvironmentUpdateCount;                                /**< 0x050 / 0x028 */
+#if ARCH_BITS == 64
+            uint32_t Padding1;                                              /**< 0x054 / */
+#endif
+        } W52;
+        struct
+        {
+            PVOID FastPebLockRoutine;                                       /**< NA / 0x020 */
+            PVOID FastPebUnlockRoutine;                                     /**< NA / 0x024 */
+            uint32_t EnvironmentUpdateCount;                                /**< NA / 0x028 */
+        } W51;
+    } Diff1;
+    union
+    {
+        PVOID KernelCallbackTable;                                          /**< 0x058 / 0x02c */
+        PVOID UserSharedInfoPtr;                                            /**< 0x058 / 0x02c - Alternative use in W6.*/
+    };
+    uint32_t SystemReserved;                                                /**< 0x060 / 0x030 */
+    union
+    {
+        struct
+        {
+            uint32_t AtlThunkSListPtr32;                                    /**< 0x064 / 0x034 */
+        } W7, W8, W80, W81;
+        struct
+        {
+            uint32_t SpareUlong;                                            /**< 0x064 / 0x034 */
+        } W52, W6;
+        struct
+        {
+            uint32_t ExecuteOptions : 2;                                    /**< NA / 0x034: Pos 0, 2 Bits */
+            uint32_t SpareBits : 30;                                        /**< NA / 0x034: Pos 2, 30 Bits */
+        } W51;
+    } Diff2;
+    union
+    {
+        struct
+        {
+            PVOID ApiSetMap;                                                /**< 0x068 / 0x038 */
+        } W7, W8, W80, W81;
+        struct
+        {
+            struct _PEB_FREE_BLOCK *FreeList;                               /**< 0x068 / 0x038 */
+        } W52, W6;
+        struct
+        {
+            struct _PEB_FREE_BLOCK *FreeList;                               /**< NA / 0x038 */
+        } W51;
+    } Diff3;
+    uint32_t TlsExpansionCounter;                                           /**< 0x070 / 0x03c */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x074 / NA */
+#endif
+    struct _RTL_BITMAP *TlsBitmap;                                          /**< 0x078 / 0x040 */
+    uint32_t TlsBitmapBits[2];                                              /**< 0x080 / 0x044 */
+    PVOID ReadOnlySharedMemoryBase;                                         /**< 0x088 / 0x04c */
+    union
+    {
+        struct
+        {
+            PVOID SparePvoid0;                                              /**< 0x090 / 0x050 - HotpatchInformation before W81. */
+        } W81;
+        struct
+        {
+            PVOID HotpatchInformation;                                      /**< 0x090 / 0x050 - Retired in W81. */
+        } W6, W7, W80;
+        struct
+        {
+            PVOID ReadOnlySharedMemoryHeap;
+        } W52;
+    } Diff4;
+    PVOID *ReadOnlyStaticServerData;                                        /**< 0x098 / 0x054 */
+    PVOID AnsiCodePageData;                                                 /**< 0x0a0 / 0x058 */
+    PVOID OemCodePageData;                                                  /**< 0x0a8 / 0x05c */
+    PVOID UnicodeCaseTableData;                                             /**< 0x0b0 / 0x060 */
+    uint32_t NumberOfProcessors;                                            /**< 0x0b8 / 0x064 */
+    uint32_t NtGlobalFlag;                                                  /**< 0x0bc / 0x068 */
+    LARGE_INTEGER CriticalSectionTimeout;                                   /**< 0x0c0 / 0x070 */
+    SIZE_T HeapSegmentReserve;                                              /**< 0x0c8 / 0x078 */
+    SIZE_T HeapSegmentCommit;                                               /**< 0x0d0 / 0x07c */
+    SIZE_T HeapDeCommitTotalFreeThreshold;                                  /**< 0x0d8 / 0x080 */
+    SIZE_T HeapDeCommitFreeBlockThreshold;                                  /**< 0x0e0 / 0x084 */
+    uint32_t NumberOfHeaps;                                                 /**< 0x0e8 / 0x088 */
+    uint32_t MaximumNumberOfHeaps;                                          /**< 0x0ec / 0x08c */
+    PVOID *ProcessHeaps;                                                    /**< 0x0f0 / 0x090 */
+    PVOID GdiSharedHandleTable;                                             /**< 0x0f8 / 0x094 */
+    PVOID ProcessStarterHelper;                                             /**< 0x100 / 0x098 */
+    uint32_t GdiDCAttributeList;                                            /**< 0x108 / 0x09c */
+#if ARCH_BITS == 64
+    uint32_t Padding3;                                                      /**< 0x10c / NA */
+#endif
+    struct _RTL_CRITICAL_SECTION *LoaderLock;                               /**< 0x110 / 0x0a0 */
+    uint32_t OSMajorVersion;                                                /**< 0x118 / 0x0a4 */
+    uint32_t OSMinorVersion;                                                /**< 0x11c / 0x0a8 */
+    uint16_t OSBuildNumber;                                                 /**< 0x120 / 0x0ac */
+    uint16_t OSCSDVersion;                                                  /**< 0x122 / 0x0ae */
+    uint32_t OSPlatformId;                                                  /**< 0x124 / 0x0b0 */
+    uint32_t ImageSubsystem;                                                /**< 0x128 / 0x0b4 */
+    uint32_t ImageSubsystemMajorVersion;                                    /**< 0x12c / 0x0b8 */
+    uint32_t ImageSubsystemMinorVersion;                                    /**< 0x130 / 0x0bc */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x134 / NA */
+#endif
+    union
+    {
+        struct
+        {
+            SIZE_T ActiveProcessAffinityMask;                               /**< 0x138 / 0x0c0 */
+        } W7, W8, W80, W81;
+        struct
+        {
+            SIZE_T ImageProcessAffinityMask;                                /**< 0x138 / 0x0c0 */
+        } W52, W6;
+    } Diff5;
+    uint32_t GdiHandleBuffer[ARCH_BITS == 64 ? 60 : 34];                    /**< 0x140 / 0x0c4 */
+    PVOID PostProcessInitRoutine;                                           /**< 0x230 / 0x14c */
+    PVOID TlsExpansionBitmap;                                               /**< 0x238 / 0x150 */
+    uint32_t TlsExpansionBitmapBits[32];                                    /**< 0x240 / 0x154 */
+    uint32_t SessionId;                                                     /**< 0x2c0 / 0x1d4 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x2c4 / NA */
+#endif
+    ULARGE_INTEGER AppCompatFlags;                                          /**< 0x2c8 / 0x1d8 */
+    ULARGE_INTEGER AppCompatFlagsUser;                                      /**< 0x2d0 / 0x1e0 */
+    PVOID pShimData;                                                        /**< 0x2d8 / 0x1e8 */
+    PVOID AppCompatInfo;                                                    /**< 0x2e0 / 0x1ec */
+    UNICODE_STRING CSDVersion;                                              /**< 0x2e8 / 0x1f0 */
+    struct _ACTIVATION_CONTEXT_DATA *ActivationContextData;                 /**< 0x2f8 / 0x1f8 */
+    struct _ASSEMBLY_STORAGE_MAP *ProcessAssemblyStorageMap;                /**< 0x300 / 0x1fc */
+    struct _ACTIVATION_CONTEXT_DATA *SystemDefaultActivationContextData;    /**< 0x308 / 0x200 */
+    struct _ASSEMBLY_STORAGE_MAP *SystemAssemblyStorageMap;                 /**< 0x310 / 0x204 */
+    SIZE_T MinimumStackCommit;                                              /**< 0x318 / 0x208 */
+    /* End of PEB in W52 (Windows XP (RTM))! */
+    struct _FLS_CALLBACK_INFO *FlsCallback;                                 /**< 0x320 / 0x20c */
+    LIST_ENTRY FlsListHead;                                                 /**< 0x328 / 0x210 */
+    PVOID FlsBitmap;                                                        /**< 0x338 / 0x218 */
+    uint32_t FlsBitmapBits[4];                                              /**< 0x340 / 0x21c */
+    uint32_t FlsHighIndex;                                                  /**< 0x350 / 0x22c */
+    /* End of PEB in W52 (Windows Server 2003)! */
+    PVOID WerRegistrationData;                                              /**< 0x358 / 0x230 */
+    PVOID WerShipAssertPtr;                                                 /**< 0x360 / 0x234 */
+    /* End of PEB in W6 (windows Vista)! */
+    union
+    {
+        struct
+        {
+            PVOID pUnused;                                                  /**< 0x368 / 0x238 - Was pContextData in W7. */
+        } W8, W80, W81;
+        struct
+        {
+            PVOID pContextData;                                             /**< 0x368 / 0x238 - Retired in W80. */
+        } W7;
+    } Diff6;
+    PVOID pImageHeaderHash;                                                 /**< 0x370 / 0x23c */
+    union
+    {
+        uint32_t TracingFlags;                                              /**< 0x378 / 0x240 */
+        struct
+        {
+            uint32_t HeapTracingEnabled : 1;                                /**< 0x378 / 0x240 : Pos 0, 1 Bit */
+            uint32_t CritSecTracingEnabled : 1;                             /**< 0x378 / 0x240 : Pos 1, 1 Bit */
+            uint32_t LibLoaderTracingEnabled : 1;                           /**< 0x378 / 0x240 : Pos 2, 1 Bit */
+            uint32_t SpareTracingBits : 29;                                 /**< 0x378 / 0x240 : Pos 3, 29 Bits */
+        } W8, W80, W81;
+        struct
+        {
+            uint32_t HeapTracingEnabled : 1;                                /**< 0x378 / 0x240 : Pos 0, 1 Bit */
+            uint32_t CritSecTracingEnabled : 1;                             /**< 0x378 / 0x240 : Pos 1, 1 Bit */
+            uint32_t SpareTracingBits : 30;                                 /**< 0x378 / 0x240 : Pos 3, 30 Bits - One bit more than W80 */
+        } W7;
+    } Diff7;
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x37c / NA */
+#endif
+    uint64_t CsrServerReadOnlySharedMemoryBase;                             /**< 0x380 / 0x248 */
+} PEB_COMMON;
+typedef PEB_COMMON *PPEB_COMMON;
+
+AssertCompileMemberOffset(PEB_COMMON, ProcessHeap,    ARCH_BITS == 64 ?  0x30 :  0x18);
+AssertCompileMemberOffset(PEB_COMMON, SystemReserved, ARCH_BITS == 64 ?  0x60 :  0x30);
+AssertCompileMemberOffset(PEB_COMMON, TlsExpansionCounter,   ARCH_BITS == 64 ?  0x70 :  0x3c);
+AssertCompileMemberOffset(PEB_COMMON, NtGlobalFlag,   ARCH_BITS == 64 ?  0xbc :  0x68);
+AssertCompileMemberOffset(PEB_COMMON, LoaderLock,     ARCH_BITS == 64 ? 0x110 :  0xa0);
+AssertCompileMemberOffset(PEB_COMMON, Diff5.W52.ImageProcessAffinityMask, ARCH_BITS == 64 ? 0x138 :  0xc0);
+AssertCompileMemberOffset(PEB_COMMON, PostProcessInitRoutine,    ARCH_BITS == 64 ? 0x230 : 0x14c);
+AssertCompileMemberOffset(PEB_COMMON, AppCompatFlags, ARCH_BITS == 64 ? 0x2c8 : 0x1d8);
+AssertCompileSize(PEB_COMMON, ARCH_BITS == 64 ? 0x388 : 0x250);
+
+/** The size of the windows 8.1 PEB structure.  */
+#define PEB_SIZE_W81    sizeof(PEB_COMMON)
+/** The size of the windows 8.0 PEB structure.  */
+#define PEB_SIZE_W80    sizeof(PEB_COMMON)
+/** The size of the windows 7 PEB structure.  */
+#define PEB_SIZE_W7     RT_UOFFSETOF(PEB_COMMON, CsrServerReadOnlySharedMemoryBase)
+/** The size of the windows vista PEB structure.  */
+#define PEB_SIZE_W6     RT_UOFFSETOF(PEB_COMMON, Diff3)
+/** The size of the windows server 2003 PEB structure.  */
+#define PEB_SIZE_W52    RT_UOFFSETOF(PEB_COMMON, WerRegistrationData)
+/** The size of the windows XP PEB structure.  */
+#define PEB_SIZE_W51    RT_UOFFSETOF(PEB_COMMON, FlsCallback)
+
+#if 0
+#if 0
+typedef struct _NT_TIB
+{
+    struct _EXCEPTION_REGISTRATION_RECORD *ExceptionList;
+    PVOID StackBase;
+    PVOID StackLimit;
+    PVOID SubSystemTib;
+    union
+    {
+        PVOID FiberData;
+        ULONG Version;
+    };
+    PVOID ArbitraryUserPointer;
+    struct _NT_TIB *Self;
+} NT_TIB;
+typedef NT_TIB *PNT_TIB;
+#endif
+
+/* Windows 8.0 and Windows 8.1 TEB: */
+typedef struct _TEB_W8
+{
+    NT_TIB NtTib;                                                           /**< 0x000 / 0x000 */
+    PVOID EnvironmentPointer;                                               /**< 0x038 / 0x01c */
+    CLIENT_ID ClientId;                                                     /**< 0x040 / 0x020 */
+    PVOID ActiveRpcHandle;                                                  /**< 0x050 / 0x028 */
+    PVOID ThreadLocalStoragePointer;                                        /**< 0x058 / 0x02c */
+    PPEB_W81 ProcessEnvironmentBlock;                                       /**< 0x060 / 0x030 */
+    uint32_t LastErrorValue;                                                /**< 0x068 / 0x034 */
+    uint32_t CountOfOwnedCriticalSections;                                  /**< 0x06c / 0x038 */
+    PVOID CsrClientThread;                                                  /**< 0x070 / 0x03c */
+    PVOID Win32ThreadInfo;                                                  /**< 0x078 / 0x040 */
+    uint32_t User32Reserved[26];                                            /**< 0x080 / 0x044 */
+    uint32_t UserReserved[5];                                               /**< 0x0e8 / 0x0ac */
+    PVOID WOW32Reserved;                                                    /**< 0x100 / 0x0c0 */
+    uint32_t CurrentLocale;                                                 /**< 0x108 / 0x0c4 */
+    uint32_t FpSoftwareStatusRegister;                                      /**< 0x10c / 0x0c8 */
+    PVOID SystemReserved1[54];                                              /**< 0x110 / 0x0cc */
+    uint32_t ExceptionCode;                                                 /**< 0x2c0 / 0x1a4 */
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x2c4 / NA */
+#endif
+    struct _ACTIVATION_CONTEXT_STACK *ActivationContextStackPointer;        /**< 0x2c8 / 0x1a8 */
+    uint8_t SpareBytes[ARCH_BITS == 64 ? 24 : 36];                          /**< 0x2d0 / 0x1ac */
+    uint32_t TxFsContext;                                                   /**< 0x2e8 / 0x1d0 */
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x2ec / NA */
+#endif
+    /*_GDI_TEB_BATCH*/ uint8_t GdiTebBatch[ARCH_BITS == 64 ? 0x4e8 :0x4e0]; /**< 0x2f0 / 0x1d4 */
+    CLIENT_ID RealClientId;                                                 /**< 0x7d8 / 0x6b4 */
+    HANDLE GdiCachedProcessHandle;                                          /**< 0x7e8 / 0x6bc */
+    uint32_t GdiClientPID;                                                  /**< 0x7f0 / 0x6c0 */
+    uint32_t GdiClientTID;                                                  /**< 0x7f4 / 0x6c4 */
+    PVOID GdiThreadLocalInfo;                                               /**< 0x7f8 / 0x6c8 */
+    SIZE_T Win32ClientInfo[62];                                             /**< 0x800 / 0x6cc */
+    PVOID glDispatchTable[233];                                             /**< 0x9f0 / 0x7c4 */
+    SIZE_T glReserved1[29];                                                 /**< 0x1138 / 0xb68 */
+    PVOID glReserved2;                                                      /**< 0x1220 / 0xbdc */
+    PVOID glSectionInfo;                                                    /**< 0x1228 / 0xbe0 */
+    PVOID glSection;                                                        /**< 0x1230 / 0xbe4 */
+    PVOID glTable;                                                          /**< 0x1238 / 0xbe8 */
+    PVOID glCurrentRC;                                                      /**< 0x1240 / 0xbec */
+    PVOID glContext;                                                        /**< 0x1248 / 0xbf0 */
+    NTSTATUS LastStatusValue;                                               /**< 0x1250 / 0xbf4 */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x1254 / NA */
+#endif
+    UNICODE_STRING StaticUnicodeString;                                     /**< 0x1258 / 0xbf8 */
+    WCHAR StaticUnicodeBuffer[261];                                         /**< 0x1268 / 0xc00 */
+#if ARCH_BITS == 64
+    WCHAR Padding3[3];                                                      /**< 0x1472 / NA */
+#endif
+    PVOID DeallocationStack;                                                /**< 0x1478 / 0xe0c */
+    PVOID TlsSlots[64];                                                     /**< 0x1480 / 0xe10 */
+    LIST_ENTRY TlsLinks;                                                    /**< 0x1680 / 0xf10 */
+    PVOID Vdm;                                                              /**< 0x1690 / 0xf18 */
+    PVOID ReservedForNtRpc;                                                 /**< 0x1698 / 0xf1c */
+    PVOID DbgSsReserved[2];                                                 /**< 0x16a0 / 0xf20 */
+    uint32_t HardErrorMode;                                                 /**< 0x16b0 / 0xf28 */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x16b4 / NA */
+#endif
+    PVOID Instrumentation[ARCH_BITS == 64 ? 11 : 9];                        /**< 0x16b8 / 0xf2c */
+    GUID ActivityId;                                                        /**< 0x1710 / 0xf50 */
+    PVOID SubProcessTag;                                                    /**< 0x1720 / 0xf60 */
+    PVOID PerflibData;                                                      /**< 0x1728 / 0xf64 */
+    PVOID EtwTraceData;                                                     /**< 0x1730 / 0xf68 */
+    PVOID WinSockData;                                                      /**< 0x1738 / 0xf6c */
+    uint32_t GdiBatchCount;                                                 /**< 0x1740 / 0xf70 */
+    union
+    {
+        PROCESSOR_NUMBER CurrentIdealProcessor;                             /**< 0x1744 / 0xf74 */
+        uint32_t IdealProcessorValue;                                       /**< 0x1744 / 0xf74 */
+        struct
+        {
+            uint8_t ReservedPad1;                                           /**< 0x1744 / 0xf74 */
+            uint8_t ReservedPad2;                                           /**< 0x1745 / 0xf75 */
+            uint8_t ReservedPad3;                                           /**< 0x1746 / 0xf76 */
+            uint8_t IdealProcessor;                                         /**< 0x1747 / 0xf77 */
+        };
+    };
+    uint32_t GuaranteedStackBytes;                                          /**< 0x1748 / 0xf78 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x174c / NA */
+#endif
+    PVOID ReservedForPerf;                                                  /**< 0x1750 / 0xf7c */
+    PVOID ReservedForOle;                                                   /**< 0x1758 / 0xf80 */
+    uint32_t WaitingOnLoaderLock;                                           /**< 0x1760 / 0xf84 */
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x1764 / NA */
+#endif
+    PVOID SavedPriorityState;                                               /**< 0x1768 / 0xf88 */
+    SIZE_T ReservedForCodeCoverage;                                         /**< 0x1770 / 0xf8c */
+    PVOID ThreadPoolData;                                                   /**< 0x1778 / 0xf90 */
+    PVOID TlsExpansionSlots;                                                /**< 0x1780 / 0xf94 */
+#if ARCH_BITS == 64
+    PVOID DallocationBStore;                                                /**< 0x1788 / NA */
+    PVOID BStoreLimit;                                                      /**< 0x1790 / NA */
+#endif
+    uint32_t MuiGeneration;                                                 /**< 0x1798 / 0xf98 */
+    uint32_t IsImpersonating;                                               /**< 0x179c / 0xf9c */
+    PVOID NlsCache;                                                         /**< 0x17a0 / 0xfa0 */
+    PVOID pShimData;                                                        /**< 0x17a8 / 0xfa4 */
+    uint16_t HeapVirtualAffinity;                                           /**< 0x17b0 / 0xfa8 */
+    uint16_t LowFragHeapDataSlot;                                           /**< 0x17b2 / 0xfaa */
+#if ARCH_BITS == 64
+    uint32_t Padding7;                                                      /**< 0x17b4 / NA */
+#endif
+    HANDLE CurrentTransactionHandle;                                        /**< 0x17b8 / 0xfac */
+    struct _TEB_ACTIVE_FRAME *ActiveFrame;                                  /**< 0x17c0 / 0xfb0 */
+    PVOID FlsData;                                                          /**< 0x17c8 / 0xfb4 */
+    PVOID PreferredLanguages;                                               /**< 0x17d0 / 0xfb8 */
+    PVOID UserPrefLanguages;                                                /**< 0x17d8 / 0xfbc */
+    PVOID MergedPrefLanguages;                                              /**< 0x17e0 / 0xfc0 */
+    uint32_t MuiImpersonation;                                              /**< 0x17e8 / 0xfc4 */
+    union
+    {
+        uint16_t CrossTebFlags;                                             /**< 0x17ec / 0xfc8 */
+        struct
+        {
+            uint16_t SpareCrossTebBits : 16;                                /**< 0x17ec / 0xfc8 : Pos 0, 16 Bits */
+        };
+    };
+    union
+    {
+        uint16_t SameTebFlags;                                              /**< 0x17ee / 0xfca */
+        struct
+        {
+            uint16_t SafeThunkCall : 1;                                     /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t InDebugPrint : 1;                                      /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t HasFiberData : 1;                                      /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t SkipThreadAttach : 1;                                  /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t WerInShipAssertCode : 1;                               /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t RanProcessInit : 1;                                    /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t ClonedThread : 1;                                      /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t SuppressDebugMsg : 1;                                  /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+            uint16_t DisableUserStackWalk : 1;                              /**< 0x17ee / 0xfca : Pos 8, 1 Bit */
+            uint16_t RtlExceptionAttached : 1;                              /**< 0x17ee / 0xfca : Pos 9, 1 Bit */
+            uint16_t InitialThread : 1;                                     /**< 0x17ee / 0xfca : Pos 10, 1 Bit */
+            uint16_t SessionAware : 1;                                      /**< 0x17ee / 0xfca : Pos 11, 1 Bit - New Since W7. */
+            uint16_t SpareSameTebBits : 4;                                  /**< 0x17ee / 0xfca : Pos 12, 4 Bits */
+        };
+    };
+    PVOID TxnScopeEnterCallback;                                            /**< 0x17f0 / 0xfcc */
+    PVOID TxnScopeExitCallback;                                             /**< 0x17f8 / 0xfd0 */
+    PVOID TxnScopeContext;                                                  /**< 0x1800 / 0xfd4 */
+    uint32_t LockCount;                                                     /**< 0x1808 / 0xfd8 */
+    uint32_t SpareUlong0;                                                   /**< 0x180c / 0xfdc */
+    PVOID ResourceRetValue;                                                 /**< 0x1810 / 0xfe0 */
+    PVOID ReservedForWdf;                                                   /**< 0x1818 / 0xfe4 - New Since W7. */
+} TEB_W8;
+typedef TEB_W8 *PTEB_W8;
+AssertCompileMemberOffset(TEB_W8, ExceptionCode,        ARCH_BITS == 64 ?  0x2c0 : 0x1a4);
+AssertCompileMemberOffset(TEB_W8, LastStatusValue,      ARCH_BITS == 64 ? 0x1250 : 0xbf4);
+AssertCompileMemberOffset(TEB_W8, DeallocationStack,    ARCH_BITS == 64 ? 0x1478 : 0xe0c);
+AssertCompileMemberOffset(TEB_W8, ReservedForNtRpc,     ARCH_BITS == 64 ? 0x1698 : 0xf1c);
+AssertCompileMemberOffset(TEB_W8, Instrumentation,      ARCH_BITS == 64 ? 0x16b8 : 0xf2c);
+AssertCompileMemberOffset(TEB_W8, GuaranteedStackBytes, ARCH_BITS == 64 ? 0x1748 : 0xf78);
+AssertCompileMemberOffset(TEB_W8, MuiImpersonation,     ARCH_BITS == 64 ? 0x17e8 : 0xfc4);
+AssertCompileMemberOffset(TEB_W8, LockCount,            ARCH_BITS == 64 ? 0x1808 : 0xfd8);
+AssertCompileSize(TEB_W8, ARCH_BITS == 64 ? 0x1820 : 0xfe8);
+
+typedef TEB_W8  TEB_W81;
+typedef PTEB_W8 PTEB_W81;
+typedef TEB_W8  TEB_W80;
+typedef PTEB_W8 PTEB_W80;
+
+/* Windows 7 TEB: */
+typedef struct _TEB_W7
+{
+    NT_TIB NtTib;                                                           /**< 0x000 / 0x000 */
+    PVOID EnvironmentPointer;                                               /**< 0x038 / 0x01c */
+    CLIENT_ID ClientId;                                                     /**< 0x040 / 0x020 */
+    PVOID ActiveRpcHandle;                                                  /**< 0x050 / 0x028 */
+    PVOID ThreadLocalStoragePointer;                                        /**< 0x058 / 0x02c */
+    PPEB_W7 ProcessEnvironmentBlock;                                        /**< 0x060 / 0x030 */
+    uint32_t LastErrorValue;                                                /**< 0x068 / 0x034 */
+    uint32_t CountOfOwnedCriticalSections;                                  /**< 0x06c / 0x038 */
+    PVOID CsrClientThread;                                                  /**< 0x070 / 0x03c */
+    PVOID Win32ThreadInfo;                                                  /**< 0x078 / 0x040 */
+    uint32_t User32Reserved[26];                                            /**< 0x080 / 0x044 */
+    uint32_t UserReserved[5];                                               /**< 0x0e8 / 0x0ac */
+    PVOID WOW32Reserved;                                                    /**< 0x100 / 0x0c0 */
+    uint32_t CurrentLocale;                                                 /**< 0x108 / 0x0c4 */
+    uint32_t FpSoftwareStatusRegister;                                      /**< 0x10c / 0x0c8 */
+    PVOID SystemReserved1[54];                                              /**< 0x110 / 0x0cc */
+    uint32_t ExceptionCode;                                                 /**< 0x2c0 / 0x1a4 */
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x2c4 / NA */
+#endif
+    struct _ACTIVATION_CONTEXT_STACK *ActivationContextStackPointer;        /**< 0x2c8 / 0x1a8 */
+    uint8_t SpareBytes[ARCH_BITS == 64 ? 24 : 36];                          /**< 0x2d0 / 0x1ac */
+    uint32_t TxFsContext;                                                   /**< 0x2e8 / 0x1d0 */
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x2ec / NA */
+#endif
+    /*_GDI_TEB_BATCH*/ uint8_t GdiTebBatch[ARCH_BITS == 64 ? 0x4e8 :0x4e0]; /**< 0x2f0 / 0x1d4 */
+    CLIENT_ID RealClientId;                                                 /**< 0x7d8 / 0x6b4 */
+    HANDLE GdiCachedProcessHandle;                                          /**< 0x7e8 / 0x6bc */
+    uint32_t GdiClientPID;                                                  /**< 0x7f0 / 0x6c0 */
+    uint32_t GdiClientTID;                                                  /**< 0x7f4 / 0x6c4 */
+    PVOID GdiThreadLocalInfo;                                               /**< 0x7f8 / 0x6c8 */
+    SIZE_T Win32ClientInfo[62];                                             /**< 0x800 / 0x6cc */
+    PVOID glDispatchTable[233];                                             /**< 0x9f0 / 0x7c4 */
+    SIZE_T glReserved1[29];                                                 /**< 0x1138 / 0xb68 */
+    PVOID glReserved2;                                                      /**< 0x1220 / 0xbdc */
+    PVOID glSectionInfo;                                                    /**< 0x1228 / 0xbe0 */
+    PVOID glSection;                                                        /**< 0x1230 / 0xbe4 */
+    PVOID glTable;                                                          /**< 0x1238 / 0xbe8 */
+    PVOID glCurrentRC;                                                      /**< 0x1240 / 0xbec */
+    PVOID glContext;                                                        /**< 0x1248 / 0xbf0 */
+    NTSTATUS LastStatusValue;                                               /**< 0x1250 / 0xbf4 */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x1254 / NA */
+#endif
+    UNICODE_STRING StaticUnicodeString;                                     /**< 0x1258 / 0xbf8 */
+    WCHAR StaticUnicodeBuffer[261];                                         /**< 0x1268 / 0xc00 */
+#if ARCH_BITS == 64
+    WCHAR Padding3[3];                                                      /**< 0x1472 / NA */
+#endif
+    PVOID DeallocationStack;                                                /**< 0x1478 / 0xe0c */
+    PVOID TlsSlots[64];                                                     /**< 0x1480 / 0xe10 */
+    LIST_ENTRY TlsLinks;                                                    /**< 0x1680 / 0xf10 */
+    PVOID Vdm;                                                              /**< 0x1690 / 0xf18 */
+    PVOID ReservedForNtRpc;                                                 /**< 0x1698 / 0xf1c */
+    PVOID DbgSsReserved[2];                                                 /**< 0x16a0 / 0xf20 */
+    uint32_t HardErrorMode;                                                 /**< 0x16b0 / 0xf28 */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x16b4 / NA */
+#endif
+    PVOID Instrumentation[ARCH_BITS == 64 ? 11 : 9];                        /**< 0x16b8 / 0xf2c */
+    GUID ActivityId;                                                        /**< 0x1710 / 0xf50 */
+    PVOID SubProcessTag;                                                    /**< 0x1720 / 0xf60 */
+    PVOID EtwLocalData;                                                     /**< 0x1728 / 0xf64 */
+    PVOID EtwTraceData;                                                     /**< 0x1730 / 0xf68 */
+    PVOID WinSockData;                                                      /**< 0x1738 / 0xf6c */
+    uint32_t GdiBatchCount;                                                 /**< 0x1740 / 0xf70 */
+    union
+    {
+        PROCESSOR_NUMBER CurrentIdealProcessor;                             /**< 0x1744 / 0xf74 */
+        uint32_t IdealProcessorValue;                                       /**< 0x1744 / 0xf74 */
+        struct
+        {
+            uint8_t ReservedPad1;                                           /**< 0x1744 / 0xf74 */
+            uint8_t ReservedPad2;                                           /**< 0x1745 / 0xf75 */
+            uint8_t ReservedPad3;                                           /**< 0x1746 / 0xf76 */
+            uint8_t IdealProcessor;                                         /**< 0x1747 / 0xf77 */
+        };
+    };
+    uint32_t GuaranteedStackBytes;                                          /**< 0x1748 / 0xf78 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x174c / NA */
+#endif
+    PVOID ReservedForPerf;                                                  /**< 0x1750 / 0xf7c */
+    PVOID ReservedForOle;                                                   /**< 0x1758 / 0xf80 */
+    uint32_t WaitingOnLoaderLock;                                           /**< 0x1760 / 0xf84 */
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x1764 / NA */
+#endif
+    PVOID SavedPriorityState;                                               /**< 0x1768 / 0xf88 */
+    SIZE_T SoftPatchPtr1;                                                   /**< 0x1770 / 0xf8c */
+    PVOID ThreadPoolData;                                                   /**< 0x1778 / 0xf90 */
+    PVOID TlsExpansionSlots;                                                /**< 0x1780 / 0xf94 */
+#if ARCH_BITS == 64
+    PVOID DallocationBStore;                                                /**< 0x1788 / NA */
+    PVOID BStoreLimit;                                                      /**< 0x1790 / NA */
+#endif
+    uint32_t MuiGeneration;                                                 /**< 0x1798 / 0xf98 */
+    uint32_t IsImpersonating;                                               /**< 0x179c / 0xf9c */
+    PVOID NlsCache;                                                         /**< 0x17a0 / 0xfa0 */
+    PVOID pShimData;                                                        /**< 0x17a8 / 0xfa4 */
+    uint32_t HeapVirtualAffinity;                                           /**< 0x17b0 / 0xfa8 */
+#if ARCH_BITS == 64
+    uint32_t Padding7;                                                      /**< 0x17b4 / NA */
+#endif
+    HANDLE CurrentTransactionHandle;                                        /**< 0x17b8 / 0xfac */
+    struct _TEB_ACTIVE_FRAME *ActiveFrame;                                  /**< 0x17c0 / 0xfb0 */
+    PVOID FlsData;                                                          /**< 0x17c8 / 0xfb4 */
+    PVOID PreferredLanguages;                                               /**< 0x17d0 / 0xfb8 */
+    PVOID UserPrefLanguages;                                                /**< 0x17d8 / 0xfbc */
+    PVOID MergedPrefLanguages;                                              /**< 0x17e0 / 0xfc0 */
+    uint32_t MuiImpersonation;                                              /**< 0x17e8 / 0xfc4 */
+    union
+    {
+        uint16_t CrossTebFlags;                                             /**< 0x17ec / 0xfc8 */
+        struct
+        {
+            uint16_t SpareCrossTebBits : 16;                                /**< 0x17ec / 0xfc8 : Pos 0, 16 Bits */
+        };
+    };
+    union
+    {
+        uint16_t SameTebFlags;                                              /**< 0x17ee / 0xfca */
+        struct
+        {
+            uint16_t SafeThunkCall : 1;                                     /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t InDebugPrint : 1;                                      /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t HasFiberData : 1;                                      /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t SkipThreadAttach : 1;                                  /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t WerInShipAssertCode : 1;                               /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t RanProcessInit : 1;                                    /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t ClonedThread : 1;                                      /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t SuppressDebugMsg : 1;                                  /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+            uint16_t DisableUserStackWalk : 1;                              /**< 0x17ee / 0xfca : Pos 8, 1 Bit */
+            uint16_t RtlExceptionAttached : 1;                              /**< 0x17ee / 0xfca : Pos 9, 1 Bit */
+            uint16_t InitialThread : 1;                                     /**< 0x17ee / 0xfca : Pos 10, 1 Bit */
+            uint16_t SpareSameTebBits : 5;                                  /**< 0x17ee / 0xfca : Pos 12, 4 Bits */
+        };
+    };
+    PVOID TxnScopeEnterCallback;                                            /**< 0x17f0 / 0xfcc */
+    PVOID TxnScopeExitCallback;                                             /**< 0x17f8 / 0xfd0 */
+    PVOID TxnScopeContext;                                                  /**< 0x1800 / 0xfd4 */
+    uint32_t LockCount;                                                     /**< 0x1808 / 0xfd8 */
+    uint32_t SpareUlong0;                                                   /**< 0x180c / 0xfdc */
+    PVOID ResourceRetValue;                                                 /**< 0x1810 / 0xfe0 */
+} TEB_W7;
+typedef TEB_W7 *PTEB_W7;
+AssertCompileMemberOffset(TEB_W7, ExceptionCode,        ARCH_BITS == 64 ?  0x2c0 : 0x1a4);
+AssertCompileMemberOffset(TEB_W7, LastStatusValue,      ARCH_BITS == 64 ? 0x1250 : 0xbf4);
+AssertCompileMemberOffset(TEB_W7, DeallocationStack,    ARCH_BITS == 64 ? 0x1478 : 0xe0c);
+AssertCompileMemberOffset(TEB_W7, ReservedForNtRpc,     ARCH_BITS == 64 ? 0x1698 : 0xf1c);
+AssertCompileMemberOffset(TEB_W7, Instrumentation,      ARCH_BITS == 64 ? 0x16b8 : 0xf2c);
+AssertCompileMemberOffset(TEB_W7, GuaranteedStackBytes, ARCH_BITS == 64 ? 0x1748 : 0xf78);
+AssertCompileMemberOffset(TEB_W7, MuiImpersonation,     ARCH_BITS == 64 ? 0x17e8 : 0xfc4);
+AssertCompileMemberOffset(TEB_W7, LockCount,            ARCH_BITS == 64 ? 0x1808 : 0xfd8);
+AssertCompileSize(TEB_W7, ARCH_BITS == 64 ? 0x1818 : 0xfe4);
+#endif
+
+
+typedef struct _ACTIVATION_CONTEXT_STACK
+{
+   uint32_t Flags;
+   uint32_t NextCookieSequenceNumber;
+   PVOID ActiveFrame;
+   LIST_ENTRY FrameListCache;
+} ACTIVATION_CONTEXT_STACK;
+
+
+/* Common TEB. */
+typedef struct _TEB_COMMON
+{
+    NT_TIB NtTib;                                                           /**< 0x000 / 0x000 */
+    PVOID EnvironmentPointer;                                               /**< 0x038 / 0x01c */
+    CLIENT_ID ClientId;                                                     /**< 0x040 / 0x020 */
+    PVOID ActiveRpcHandle;                                                  /**< 0x050 / 0x028 */
+    PVOID ThreadLocalStoragePointer;                                        /**< 0x058 / 0x02c */
+    PPEB_COMMON ProcessEnvironmentBlock;                                    /**< 0x060 / 0x030 */
+    uint32_t LastErrorValue;                                                /**< 0x068 / 0x034 */
+    uint32_t CountOfOwnedCriticalSections;                                  /**< 0x06c / 0x038 */
+    PVOID CsrClientThread;                                                  /**< 0x070 / 0x03c */
+    PVOID Win32ThreadInfo;                                                  /**< 0x078 / 0x040 */
+    uint32_t User32Reserved[26];                                            /**< 0x080 / 0x044 */
+    uint32_t UserReserved[5];                                               /**< 0x0e8 / 0x0ac */
+    PVOID WOW32Reserved;                                                    /**< 0x100 / 0x0c0 */
+    uint32_t CurrentLocale;                                                 /**< 0x108 / 0x0c4 */
+    uint32_t FpSoftwareStatusRegister;                                      /**< 0x10c / 0x0c8 */
+    PVOID SystemReserved1[54];                                              /**< 0x110 / 0x0cc */
+    uint32_t ExceptionCode;                                                 /**< 0x2c0 / 0x1a4 */
+#if ARCH_BITS == 64
+    uint32_t Padding0;                                                      /**< 0x2c4 / NA */
+#endif
+    union
+    {
+        struct
+        {
+            struct _ACTIVATION_CONTEXT_STACK *ActivationContextStackPointer;/**< 0x2c8 / 0x1a8 */
+            uint8_t SpareBytes[ARCH_BITS == 64 ? 24 : 36];                  /**< 0x2d0 / 0x1ac */
+        } W52, W6, W7, W8, W80, W81;
+#if ARCH_BITS == 32
+        struct
+        {
+            ACTIVATION_CONTEXT_STACK ActivationContextStack;                /**< NA / 0x1a8 */
+            uint8_t SpareBytes[20];                                         /**< NA / 0x1bc */
+        } W51;
+#endif
+    } Diff0;
+    union
+    {
+        struct
+        {
+            uint32_t TxFsContext;                                           /**< 0x2e8 / 0x1d0 */
+        } W6, W7, W8, W80, W81;
+        struct
+        {
+            uint32_t SpareBytesContinues;                                   /**< 0x2e8 / 0x1d0 */
+        } W52;
+    } Diff1;
+#if ARCH_BITS == 64
+    uint32_t Padding1;                                                      /**< 0x2ec / NA */
+#endif
+    /*_GDI_TEB_BATCH*/ uint8_t GdiTebBatch[ARCH_BITS == 64 ? 0x4e8 :0x4e0]; /**< 0x2f0 / 0x1d4 */
+    CLIENT_ID RealClientId;                                                 /**< 0x7d8 / 0x6b4 */
+    HANDLE GdiCachedProcessHandle;                                          /**< 0x7e8 / 0x6bc */
+    uint32_t GdiClientPID;                                                  /**< 0x7f0 / 0x6c0 */
+    uint32_t GdiClientTID;                                                  /**< 0x7f4 / 0x6c4 */
+    PVOID GdiThreadLocalInfo;                                               /**< 0x7f8 / 0x6c8 */
+    SIZE_T Win32ClientInfo[62];                                             /**< 0x800 / 0x6cc */
+    PVOID glDispatchTable[233];                                             /**< 0x9f0 / 0x7c4 */
+    SIZE_T glReserved1[29];                                                 /**< 0x1138 / 0xb68 */
+    PVOID glReserved2;                                                      /**< 0x1220 / 0xbdc */
+    PVOID glSectionInfo;                                                    /**< 0x1228 / 0xbe0 */
+    PVOID glSection;                                                        /**< 0x1230 / 0xbe4 */
+    PVOID glTable;                                                          /**< 0x1238 / 0xbe8 */
+    PVOID glCurrentRC;                                                      /**< 0x1240 / 0xbec */
+    PVOID glContext;                                                        /**< 0x1248 / 0xbf0 */
+    NTSTATUS LastStatusValue;                                               /**< 0x1250 / 0xbf4 */
+#if ARCH_BITS == 64
+    uint32_t Padding2;                                                      /**< 0x1254 / NA */
+#endif
+    UNICODE_STRING StaticUnicodeString;                                     /**< 0x1258 / 0xbf8 */
+    WCHAR StaticUnicodeBuffer[261];                                         /**< 0x1268 / 0xc00 */
+#if ARCH_BITS == 64
+    WCHAR Padding3[3];                                                      /**< 0x1472 / NA */
+#endif
+    PVOID DeallocationStack;                                                /**< 0x1478 / 0xe0c */
+    PVOID TlsSlots[64];                                                     /**< 0x1480 / 0xe10 */
+    LIST_ENTRY TlsLinks;                                                    /**< 0x1680 / 0xf10 */
+    PVOID Vdm;                                                              /**< 0x1690 / 0xf18 */
+    PVOID ReservedForNtRpc;                                                 /**< 0x1698 / 0xf1c */
+    PVOID DbgSsReserved[2];                                                 /**< 0x16a0 / 0xf20 */
+    uint32_t HardErrorMode;                                                 /**< 0x16b0 / 0xf28 - Called HardErrorsAreDisabled in W51. */
+#if ARCH_BITS == 64
+    uint32_t Padding4;                                                      /**< 0x16b4 / NA */
+#endif
+    PVOID Instrumentation[ARCH_BITS == 64 ? 11 : 9];                        /**< 0x16b8 / 0xf2c */
+    union
+    {
+        struct
+        {
+            GUID ActivityId;                                                /**< 0x1710 / 0xf50 */
+            PVOID SubProcessTag;                                            /**< 0x1720 / 0xf60 */
+        } W6, W7, W8, W80, W81;
+        struct
+        {
+            PVOID InstrumentationContinues[ARCH_BITS == 64 ? 3 : 5];        /**< 0x1710 / 0xf50 */
+        } W52;
+    } Diff2;
+    union                                                                   /**< 0x1728 / 0xf64 */
+    {
+        struct
+        {
+            PVOID PerflibData;                                              /**< 0x1728 / 0xf64 */
+        } W8, W80, W81;
+        struct
+        {
+            PVOID EtwLocalData;                                             /**< 0x1728 / 0xf64 */
+        } W7, W6;
+        struct
+        {
+            PVOID SubProcessTag;                                            /**< 0x1728 / 0xf64 */
+        } W52;
+        struct
+        {
+            PVOID InstrumentationContinues[1];                              /**< 0x1728 / 0xf64 */
+        } W51;
+    } Diff3;
+    union
+    {
+        struct
+        {
+            PVOID EtwTraceData;                                             /**< 0x1730 / 0xf68 */
+        } W52, W6, W7, W8, W80, W81;
+        struct
+        {
+            PVOID InstrumentationContinues[1];                              /**< 0x1730 / 0xf68 */
+        } W51;
+    } Diff4;
+    PVOID WinSockData;                                                      /**< 0x1738 / 0xf6c */
+    uint32_t GdiBatchCount;                                                 /**< 0x1740 / 0xf70 */
+    union
+    {
+        union
+        {
+            PROCESSOR_NUMBER CurrentIdealProcessor;                         /**< 0x1744 / 0xf74 - W7+ */
+            uint32_t IdealProcessorValue;                                   /**< 0x1744 / 0xf74 - W7+ */
+            struct
+            {
+                uint8_t ReservedPad1;                                       /**< 0x1744 / 0xf74 - Called SpareBool0 in W6 */
+                uint8_t ReservedPad2;                                       /**< 0x1745 / 0xf75 - Called SpareBool0 in W6 */
+                uint8_t ReservedPad3;                                       /**< 0x1746 / 0xf76 - Called SpareBool0 in W6 */
+                uint8_t IdealProcessor;                                     /**< 0x1747 / 0xf77 */
+            };
+        } W6, W7, W8, W80, W81;
+        struct
+        {
+            BOOLEAN InDbgPrint;                                             /**< 0x1744 / 0xf74 */
+            BOOLEAN FreeStackOnTermination;                                 /**< 0x1745 / 0xf75 */
+            BOOLEAN HasFiberData;                                           /**< 0x1746 / 0xf76 */
+            uint8_t IdealProcessor;                                         /**< 0x1747 / 0xf77 */
+        } W51, W52;
+    } Diff5;
+    uint32_t GuaranteedStackBytes;                                          /**< 0x1748 / 0xf78 */
+#if ARCH_BITS == 64
+    uint32_t Padding5;                                                      /**< 0x174c / NA */
+#endif
+    PVOID ReservedForPerf;                                                  /**< 0x1750 / 0xf7c */
+    PVOID ReservedForOle;                                                   /**< 0x1758 / 0xf80 */
+    uint32_t WaitingOnLoaderLock;                                           /**< 0x1760 / 0xf84 */
+#if ARCH_BITS == 64
+    uint32_t Padding6;                                                      /**< 0x1764 / NA */
+#endif
+    union                                                                   /**< 0x1770 / 0xf8c */
+    {
+        struct
+        {
+            PVOID SavedPriorityState;                                       /**< 0x1768 / 0xf88 */
+            SIZE_T ReservedForCodeCoverage;                                 /**< 0x1770 / 0xf8c */
+            PVOID ThreadPoolData;                                           /**< 0x1778 / 0xf90 */
+        } W8, W80, W81;
+        struct
+        {
+            PVOID SavedPriorityState;                                       /**< 0x1768 / 0xf88 */
+            SIZE_T SoftPatchPtr1;                                           /**< 0x1770 / 0xf8c */
+            PVOID ThreadPoolData;                                           /**< 0x1778 / 0xf90 */
+        } W6, W7;
+        struct
+        {
+            PVOID SparePointer1;                                            /**< 0x1768 / 0xf88 */
+            SIZE_T SoftPatchPtr1;                                           /**< 0x1770 / 0xf8c */
+            PVOID SoftPatchPtr2;                                            /**< 0x1778 / 0xf90 */
+        } W52;
+#if ARCH_BITS == 32
+        struct _Wx86ThreadState
+        {
+            PVOID CallBx86Eip;                                            /**< NA / 0xf88 */
+            PVOID DeallocationCpu;                                        /**< NA / 0xf8c */
+            BOOLEAN UseKnownWx86Dll;                                      /**< NA / 0xf90 */
+            int8_t OleStubInvoked;                                        /**< NA / 0xf91 */
+        } W51;
+#endif
+    } Diff6;
+    PVOID TlsExpansionSlots;                                                /**< 0x1780 / 0xf94 */
+#if ARCH_BITS == 64
+    PVOID DallocationBStore;                                                /**< 0x1788 / NA */
+    PVOID BStoreLimit;                                                      /**< 0x1790 / NA */
+#endif
+    union
+    {
+        struct
+        {
+            uint32_t MuiGeneration;                                                 /**< 0x1798 / 0xf98 */
+        } W7, W8, W80, W81;
+        struct
+        {
+            uint32_t ImpersonationLocale;
+        } W6;
+    } Diff7;
+    uint32_t IsImpersonating;                                               /**< 0x179c / 0xf9c */
+    PVOID NlsCache;                                                         /**< 0x17a0 / 0xfa0 */
+    PVOID pShimData;                                                        /**< 0x17a8 / 0xfa4 */
+    union                                                                   /**< 0x17b0 / 0xfa8 */
+    {
+        struct
+        {
+            uint16_t HeapVirtualAffinity;                                   /**< 0x17b0 / 0xfa8 */
+            uint16_t LowFragHeapDataSlot;                                   /**< 0x17b2 / 0xfaa */
+        } W8, W80, W81;
+        struct
+        {
+            uint32_t HeapVirtualAffinity;                                   /**< 0x17b0 / 0xfa8 */
+        } W7;
+    } Diff8;
+#if ARCH_BITS == 64
+    uint32_t Padding7;                                                      /**< 0x17b4 / NA */
+#endif
+    HANDLE CurrentTransactionHandle;                                        /**< 0x17b8 / 0xfac */
+    struct _TEB_ACTIVE_FRAME *ActiveFrame;                                  /**< 0x17c0 / 0xfb0 */
+    /* End of TEB in W51 (Windows XP)! */
+    PVOID FlsData;                                                          /**< 0x17c8 / 0xfb4 */
+    union
+    {
+        struct
+        {
+            PVOID PreferredLanguages;                                       /**< 0x17d0 / 0xfb8 */
+        } W6, W7, W8, W80, W81;
+        struct
+        {
+            BOOLEAN SafeThunkCall;                                          /**< 0x17d0 / 0xfb8 */
+            uint8_t BooleanSpare[3];                                        /**< 0x17d1 / 0xfb9 */
+            /* End of TEB in W52 (Windows server 2003)! */
+        } W52;
+    } Diff9;
+    PVOID UserPrefLanguages;                                                /**< 0x17d8 / 0xfbc */
+    PVOID MergedPrefLanguages;                                              /**< 0x17e0 / 0xfc0 */
+    uint32_t MuiImpersonation;                                              /**< 0x17e8 / 0xfc4 */
+    union
+    {
+        uint16_t CrossTebFlags;                                             /**< 0x17ec / 0xfc8 */
+        struct
+        {
+            uint16_t SpareCrossTebBits : 16;                                /**< 0x17ec / 0xfc8 : Pos 0, 16 Bits */
+        };
+    };
+    union
+    {
+        uint16_t SameTebFlags;                                              /**< 0x17ee / 0xfca */
+        struct
+        {
+            uint16_t SafeThunkCall : 1;                                     /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t InDebugPrint : 1;                                      /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t HasFiberData : 1;                                      /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t SkipThreadAttach : 1;                                  /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t WerInShipAssertCode : 1;                               /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t RanProcessInit : 1;                                    /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t ClonedThread : 1;                                      /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t SuppressDebugMsg : 1;                                  /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+        } Common;
+        struct
+        {
+            uint16_t SafeThunkCall : 1;                                     /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t InDebugPrint : 1;                                      /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t HasFiberData : 1;                                      /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t SkipThreadAttach : 1;                                  /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t WerInShipAssertCode : 1;                               /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t RanProcessInit : 1;                                    /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t ClonedThread : 1;                                      /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t SuppressDebugMsg : 1;                                  /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+            uint16_t DisableUserStackWalk : 1;                              /**< 0x17ee / 0xfca : Pos 8, 1 Bit */
+            uint16_t RtlExceptionAttached : 1;                              /**< 0x17ee / 0xfca : Pos 9, 1 Bit */
+            uint16_t InitialThread : 1;                                     /**< 0x17ee / 0xfca : Pos 10, 1 Bit */
+            uint16_t SessionAware : 1;                                      /**< 0x17ee / 0xfca : Pos 11, 1 Bit - New Since W7. */
+            uint16_t SpareSameTebBits : 4;                                  /**< 0x17ee / 0xfca : Pos 12, 4 Bits */
+        } W8, W80, W81;
+        struct
+        {
+            uint16_t SafeThunkCall : 1;                                     /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t InDebugPrint : 1;                                      /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t HasFiberData : 1;                                      /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t SkipThreadAttach : 1;                                  /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t WerInShipAssertCode : 1;                               /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t RanProcessInit : 1;                                    /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t ClonedThread : 1;                                      /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t SuppressDebugMsg : 1;                                  /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+            uint16_t DisableUserStackWalk : 1;                              /**< 0x17ee / 0xfca : Pos 8, 1 Bit */
+            uint16_t RtlExceptionAttached : 1;                              /**< 0x17ee / 0xfca : Pos 9, 1 Bit */
+            uint16_t InitialThread : 1;                                     /**< 0x17ee / 0xfca : Pos 10, 1 Bit */
+            uint16_t SpareSameTebBits : 5;                                  /**< 0x17ee / 0xfca : Pos 12, 4 Bits */
+        } W7;
+        struct
+        {
+            uint16_t DbgSafeThunkCall : 1;                                  /**< 0x17ee / 0xfca : Pos 0, 1 Bit */
+            uint16_t DbgInDebugPrint : 1;                                   /**< 0x17ee / 0xfca : Pos 1, 1 Bit */
+            uint16_t DbgHasFiberData : 1;                                   /**< 0x17ee / 0xfca : Pos 2, 1 Bit */
+            uint16_t DbgSkipThreadAttach : 1;                               /**< 0x17ee / 0xfca : Pos 3, 1 Bit */
+            uint16_t DbgWerInShipAssertCode : 1;                            /**< 0x17ee / 0xfca : Pos 4, 1 Bit */
+            uint16_t DbgRanProcessInit : 1;                                 /**< 0x17ee / 0xfca : Pos 5, 1 Bit */
+            uint16_t DbgClonedThread : 1;                                   /**< 0x17ee / 0xfca : Pos 6, 1 Bit */
+            uint16_t DbgSuppressDebugMsg : 1;                               /**< 0x17ee / 0xfca : Pos 7, 1 Bit */
+            uint16_t SpareSameTebBits : 8;                                  /**< 0x17ee / 0xfca : Pos 8, 8 Bits */
+        } W6;
+    } Diff10;
+    PVOID TxnScopeEnterCallback;                                            /**< 0x17f0 / 0xfcc */
+    PVOID TxnScopeExitCallback;                                             /**< 0x17f8 / 0xfd0 */
+    PVOID TxnScopeContext;                                                  /**< 0x1800 / 0xfd4 */
+    uint32_t LockCount;                                                     /**< 0x1808 / 0xfd8 */
+    union
+    {
+        struct
+        {
+            uint32_t SpareUlong0;                                           /**< 0x180c / 0xfdc */
+        } W7, W8, W80, W81;
+        struct
+        {
+            uint32_t ProcessRundown;
+        } W6;
+    } Diff11;
+    union
+    {
+        struct
+        {
+            PVOID ResourceRetValue;                                        /**< 0x1810 / 0xfe0 */
+            /* End of TEB in W7 (windows 7)! */
+            PVOID ReservedForWdf;                                          /**< 0x1818 / 0xfe4 - New Since W7. */
+            /* End of TEB in W8 (windows 8.0 & 8.1)! */
+        } W8, W80, W81;
+        struct
+        {
+            PVOID ResourceRetValue;                                        /**< 0x1810 / 0xfe0 */
+        } W7;
+        struct
+        {
+            uint64_t LastSwitchTime;                                       /**< 0x1810 / 0xfe0 */
+            uint64_t TotalSwitchOutTime;                                   /**< 0x1818 / 0xfe8 */
+            LARGE_INTEGER WaitReasonBitMap;                                /**< 0x1820 / 0xff0 */
+            /* End of TEB in W6 (windows Vista)! */
+        } W6;
+    } Diff12;
+} TEB_COMMON;
+typedef TEB_COMMON *PTEB_COMMON;
+AssertCompileMemberOffset(TEB_COMMON, ExceptionCode,        ARCH_BITS == 64 ?  0x2c0 : 0x1a4);
+AssertCompileMemberOffset(TEB_COMMON, LastStatusValue,      ARCH_BITS == 64 ? 0x1250 : 0xbf4);
+AssertCompileMemberOffset(TEB_COMMON, DeallocationStack,    ARCH_BITS == 64 ? 0x1478 : 0xe0c);
+AssertCompileMemberOffset(TEB_COMMON, ReservedForNtRpc,     ARCH_BITS == 64 ? 0x1698 : 0xf1c);
+AssertCompileMemberOffset(TEB_COMMON, Instrumentation,      ARCH_BITS == 64 ? 0x16b8 : 0xf2c);
+AssertCompileMemberOffset(TEB_COMMON, Diff2,                ARCH_BITS == 64 ? 0x1710 : 0xf50);
+AssertCompileMemberOffset(TEB_COMMON, Diff3,                ARCH_BITS == 64 ? 0x1728 : 0xf64);
+AssertCompileMemberOffset(TEB_COMMON, Diff4,                ARCH_BITS == 64 ? 0x1730 : 0xf68);
+AssertCompileMemberOffset(TEB_COMMON, WinSockData,          ARCH_BITS == 64 ? 0x1738 : 0xf6c);
+AssertCompileMemberOffset(TEB_COMMON, GuaranteedStackBytes, ARCH_BITS == 64 ? 0x1748 : 0xf78);
+AssertCompileMemberOffset(TEB_COMMON, MuiImpersonation,     ARCH_BITS == 64 ? 0x17e8 : 0xfc4);
+AssertCompileMemberOffset(TEB_COMMON, LockCount,            ARCH_BITS == 64 ? 0x1808 : 0xfd8);
+AssertCompileSize(TEB_COMMON, ARCH_BITS == 64 ? 0x1828 : 0xff8);
+
+
+/** The size of the windows 8.1 PEB structure.  */
+#define TEB_SIZE_W81    ( RT_UOFFSETOF(TEB_COMMON, Diff12.W8.ReservedForWdf) + sizeof(PVOID) )
+/** The size of the windows 8.0 PEB structure.  */
+#define TEB_SIZE_W80    ( RT_UOFFSETOF(TEB_COMMON, Diff12.W8.ReservedForWdf) + sizeof(PVOID) )
+/** The size of the windows 7 PEB structure.  */
+#define TEB_SIZE_W7     RT_UOFFSETOF(TEB_COMMON, Diff12.W8.ReservedForWdf)
+/** The size of the windows vista PEB structure.  */
+#define TEB_SIZE_W6     ( RT_UOFFSETOF(TEB_COMMON, Diff12.W6.WaitReasonBitMap) + sizeof(LARGE_INTEGER) )
+/** The size of the windows server 2003 PEB structure.  */
+#define TEB_SIZE_W52    RT_ALIGN_Z(RT_UOFFSETOF(TEB_COMMON, Diff9.W52.BooleanSpare), sizeof(PVOID))
+/** The size of the windows XP PEB structure.  */
+#define TEB_SIZE_W51    RT_UOFFSETOF(TEB_COMMON, FlsData)
+
+
+
+#define _PEB        _PEB_COMMON
+typedef PEB_COMMON  PEB;
+typedef PPEB_COMMON *PPEB;
+
+#define _TEB        _TEB_COMMON
+typedef TEB_COMMON  TEB;
+typedef PTEB_COMMON PTEB;
+
+#define NtCurrentPeb()  (((PTEB)NtCurrentTeb())->ProcessEnvironmentBlock)
+
+/** @} */
+
+
+#ifdef IPRT_NT_USE_WINTERNL
 NTSYSAPI NTSTATUS NTAPI NtCreateSection(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PLARGE_INTEGER, ULONG, ULONG, HANDLE);
 
 typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
