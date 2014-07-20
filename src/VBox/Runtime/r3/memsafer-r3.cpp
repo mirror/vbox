@@ -321,7 +321,7 @@ static int rtMemSaferMemAllocPages(PRTMEMSAFERNODE pThis)
     /*
      * Try allocate the memory.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
     void *pvPages = RTMemPageAlloc((size_t)pThis->cPages * PAGE_SIZE);
     if (pvPages)
     {
