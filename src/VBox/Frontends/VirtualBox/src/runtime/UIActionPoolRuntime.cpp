@@ -531,6 +531,23 @@ protected:
     }
 };
 
+class UIActionMenuViewPopup : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuViewPopup(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi() {}
+};
+
 class UIActionToggleFullscreenMode : public UIActionToggle
 {
     Q_OBJECT;
@@ -1468,6 +1485,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_View])
         delete m_pool[UIActionIndexRuntime_Menu_View];
     m_pool[UIActionIndexRuntime_Menu_View] = new UIActionMenuView(this);
+    if (m_pool[UIActionIndexRuntime_Menu_ViewPopup])
+        delete m_pool[UIActionIndexRuntime_Menu_ViewPopup];
+    m_pool[UIActionIndexRuntime_Menu_ViewPopup] = new UIActionMenuViewPopup(this);
     if (m_pool[UIActionIndexRuntime_Menu_StatusBar])
         delete m_pool[UIActionIndexRuntime_Menu_StatusBar];
     m_pool[UIActionIndexRuntime_Menu_StatusBar] = new UIActionMenuStatusBar(this);

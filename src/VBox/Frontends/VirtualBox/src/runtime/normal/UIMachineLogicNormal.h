@@ -42,6 +42,9 @@ private slots:
     void sltOpenStatusBarSettings();
     void sltStatusBarSettingsClosed();
     void sltToggleStatusBar();
+    void sltPrepareMenuViewPopup();
+    void sltPrepareMenuViewVirtualScreen();
+    void sltHandleActionTriggerViewVirtualScreen(QAction *pAction);
 
     /* Devices menu functionality: */
     void sltPrepareHardDisksMenu();

@@ -157,15 +157,15 @@ public:
     /** Returns frame-buffer data address. */
     uchar *address() { return m_image.bits(); }
     /** Returns frame-buffer width. */
-    ulong width() { return m_iWidth; }
+    ulong width() const { return m_iWidth; }
     /** Returns frame-buffer height. */
-    ulong height() { return m_iHeight; }
+    ulong height() const { return m_iHeight; }
     /** Returns frame-buffer bits-per-pixel value. */
-    ulong bitsPerPixel() { return m_image.depth(); }
+    ulong bitsPerPixel() const { return m_image.depth(); }
     /** Returns frame-buffer bytes-per-line value. */
-    ulong bytesPerLine() { return m_image.bytesPerLine(); }
+    ulong bytesPerLine() const { return m_image.bytesPerLine(); }
     /** Returns default frame-buffer pixel-format. */
-    ulong pixelFormat() { return FramebufferPixelFormat_FOURCC_RGB; }
+    ulong pixelFormat() const { return FramebufferPixelFormat_FOURCC_RGB; }
 
     /** Locks frame-buffer access. */
     void lock() const { RTCritSectEnter(&m_critSect); }

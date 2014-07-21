@@ -48,6 +48,7 @@ enum UIActionIndexRuntime
 
     /* 'View' menu actions: */
     UIActionIndexRuntime_Menu_View,
+    UIActionIndexRuntime_Menu_ViewPopup,
     UIActionIndexRuntime_Toggle_Fullscreen,
     UIActionIndexRuntime_Toggle_Seamless,
     UIActionIndexRuntime_Toggle_Scale,

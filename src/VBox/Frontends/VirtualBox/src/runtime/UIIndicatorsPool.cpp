@@ -557,6 +557,78 @@ private:
     }
 };
 
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Display indicator. */
+class UIIndicatorDisplay : public UISessionStateStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorDisplay(CSession &session)
+        : UISessionStateStatusBarIndicator(session)
+    {
+        /* Assign state-icons: */
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/display_software_16px.png"));
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/display_hardware_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/display_hardware_write_16px.png"));
+        /* Translate finally: */
+        retranslateUi();
+    }
+
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        updateAppearance();
+    }
+
+    /** Update routine. */
+    void updateAppearance()
+    {
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
+
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'>"
+                                                     "<nobr>Indicates the activity of the display:</nobr>%1</p>");
+        QString strFullData;
+
+        /* Video Memory: */
+        const ULONG uVRAMSize = machine.GetVRAMSize();
+        const QString strVRAMSize = VBoxGlobal::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
+        strFullData += QString("<br><nobr><b>%1:</b>&nbsp;%2</nobr>")
+                               .arg(VBoxGlobal::tr("Video Memory", "details report"), strVRAMSize);
+
+        /* Monitor Count: */
+        const ULONG uMonitorCount = machine.GetMonitorCount();
+        if (uMonitorCount > 1)
+        {
+            const QString strMonitorCount = QString::number(uMonitorCount);
+            strFullData += QString("<br><nobr><b>%1:</b>&nbsp;%2</nobr>")
+                                   .arg(VBoxGlobal::tr("Screens", "details report"), strMonitorCount);
+        }
+
+        /* 3D acceleration: */
+        const bool fAcceleration3D = machine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable();
+        if (fAcceleration3D)
+        {
+            const QString strAcceleration3D = fAcceleration3D
+                ? VBoxGlobal::tr("Enabled", "details report (3D Acceleration)")
+                : VBoxGlobal::tr("Disabled", "details report (3D Acceleration)");
+            strFullData += QString("<br><nobr><b>%1:</b>&nbsp;%2</nobr>")
+                                   .arg(VBoxGlobal::tr("3D Acceleration", "details report"), strAcceleration3D);
+        }
+
+        /* Update tool-tip: */
+        setToolTip(strToolTip.arg(strFullData));
+        /* Set initial indicator state: */
+        setState(fAcceleration3D ? KDeviceActivity_Idle : KDeviceActivity_Null);
+    }
+};
+
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Video-capture indicator. */
 class UIIndicatorVideoCapture : public UISessionStateStatusBarIndicator
 {
@@ -980,6 +1052,8 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
         updateIndicatorStateForDevice(m_pool.value(IndicatorType_Network),       KDeviceType_Network);
     if (m_pool.contains(IndicatorType_SharedFolders))
         updateIndicatorStateForDevice(m_pool.value(IndicatorType_SharedFolders), KDeviceType_SharedFolder);
+    if (m_pool.contains(IndicatorType_Display))
+        updateIndicatorStateForDevice(m_pool.value(IndicatorType_Display),       KDeviceType_Graphics3D);
 }
 
 void UIIndicatorsPool::sltContextMenuRequest(QIStatusBarIndicator *pIndicator, QContextMenuEvent *pEvent)
@@ -1117,6 +1191,7 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
                 case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_session);       break;
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
+                case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_session);       break;
                 case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_session);  break;
                 case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_session);      break;
                 case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pSession);        break;

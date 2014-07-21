@@ -1101,6 +1101,7 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
         case IndicatorType_Network:       strResult = "Network"; break;
         case IndicatorType_USB:           strResult = "USB"; break;
         case IndicatorType_SharedFolders: strResult = "SharedFolders"; break;
+        case IndicatorType_Display:       strResult = "Display"; break;
         case IndicatorType_VideoCapture:  strResult = "VideoCapture"; break;
         case IndicatorType_Features:      strResult = "Features"; break;
         case IndicatorType_Mouse:         strResult = "Mouse"; break;
@@ -1126,6 +1127,7 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     keys << "Network";       values << IndicatorType_Network;
     keys << "USB";           values << IndicatorType_USB;
     keys << "SharedFolders"; values << IndicatorType_SharedFolders;
+    keys << "Display";       values << IndicatorType_Display;
     keys << "VideoCapture";  values << IndicatorType_VideoCapture;
     keys << "Features";      values << IndicatorType_Features;
     keys << "Mouse";         values << IndicatorType_Mouse;
@@ -1148,6 +1150,7 @@ template<> QIcon toIcon(const IndicatorType &indicatorType)
         case IndicatorType_Network:       return UIIconPool::iconSet(":/nw_16px.png");
         case IndicatorType_USB:           return UIIconPool::iconSet(":/usb_16px.png");
         case IndicatorType_SharedFolders: return UIIconPool::iconSet(":/sf_16px.png");
+        case IndicatorType_Display:       return UIIconPool::iconSet(":/display_software_16px.png");
         case IndicatorType_VideoCapture:  return UIIconPool::iconSet(":/video_capture_16px.png");
         case IndicatorType_Features:      return UIIconPool::iconSet(":/vtx_amdv_16px.png");
         case IndicatorType_Mouse:         return UIIconPool::iconSet(":/mouse_16px.png");
