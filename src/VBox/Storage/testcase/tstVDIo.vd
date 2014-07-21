@@ -36,6 +36,16 @@ void tstIo(string strMessage, string strBackend)
     destroydisk("test");
 }
 
+void tstIoUnaligned(string strMessage, string strBackend)
+{
+    print(strMessage);
+    createdisk("test", true);
+    create("test", "base", "tst.disk", "dynamic", strBackend, 2G, false);
+    io("test", false, 1, "seq", 512, 3584, 4096, 512, 100, "none");
+    io("test", false, 1, "seq", 512, 3584, 4096, 512,   0, "none");
+    destroydisk("test");
+}
+
 void main()
 {
     /* Init I/O RNG for generating random data for writes */

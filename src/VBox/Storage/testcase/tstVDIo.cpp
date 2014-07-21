@@ -38,6 +38,7 @@
 #include "VDIoRnd.h"
 
 #include "VDScript.h"
+#include "BuiltinTests.h"
 
 /**
  * A virtual file backed by memory.
@@ -2647,18 +2648,15 @@ static int tstVDIoPatternGetBuffer(PVDPATTERN pPattern, void **ppv, size_t cb)
 }
 
 /**
- * Executes the given I/O script using the new scripting engine.
+ * Executes the given script.
  *
  * @returns nothing.
- *
- * @param pcszFilename    The script to execute.
+ * @param   pszScript    The script to execute.
  */
-static void tstVDIoScriptRun(const char *pcszFilename)
+static void tstVDIoScriptExec(const char *pszScript)
 {
     int rc = VINF_SUCCESS;
     VDTESTGLOB GlobTest;   /**< Global test data. */
-    void *pvFile = NULL;
-    size_t cbFile = 0;
 
     memset(&GlobTest, 0, sizeof(VDTESTGLOB));
     RTListInit(&GlobTest.ListFiles);
@@ -2671,6 +2669,74 @@ static void tstVDIoScriptRun(const char *pcszFilename)
         return;
     }
 
+    /* Init global test data. */
+    GlobTest.VDIfError.pfnError     = tstVDError;
+    GlobTest.VDIfError.pfnMessage   = tstVDMessage;
+
+    rc = VDInterfaceAdd(&GlobTest.VDIfError.Core, "tstVDIo_VDIError", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &GlobTest.pInterfacesDisk);
+    AssertRC(rc);
+
+    GlobTest.VDIfIo.pfnOpen                = tstVDIoFileOpen;
+    GlobTest.VDIfIo.pfnClose               = tstVDIoFileClose;
+    GlobTest.VDIfIo.pfnDelete              = tstVDIoFileDelete;
+    GlobTest.VDIfIo.pfnMove                = tstVDIoFileMove;
+    GlobTest.VDIfIo.pfnGetFreeSpace        = tstVDIoFileGetFreeSpace;
+    GlobTest.VDIfIo.pfnGetModificationTime = tstVDIoFileGetModificationTime;
+    GlobTest.VDIfIo.pfnGetSize             = tstVDIoFileGetSize;
+    GlobTest.VDIfIo.pfnSetSize             = tstVDIoFileSetSize;
+    GlobTest.VDIfIo.pfnWriteSync           = tstVDIoFileWriteSync;
+    GlobTest.VDIfIo.pfnReadSync            = tstVDIoFileReadSync;
+    GlobTest.VDIfIo.pfnFlushSync           = tstVDIoFileFlushSync;
+    GlobTest.VDIfIo.pfnReadAsync           = tstVDIoFileReadAsync;
+    GlobTest.VDIfIo.pfnWriteAsync          = tstVDIoFileWriteAsync;
+    GlobTest.VDIfIo.pfnFlushAsync          = tstVDIoFileFlushAsync;
+
+    rc = VDInterfaceAdd(&GlobTest.VDIfIo.Core, "tstVDIo_VDIIo", VDINTERFACETYPE_IO,
+                        &GlobTest, sizeof(VDINTERFACEIO), &GlobTest.pInterfacesImages);
+    AssertRC(rc);
+
+    /* Init I/O backend. */
+    rc = VDIoBackendCreate(&GlobTest.pIoBackend);
+    if (RT_SUCCESS(rc))
+    {
+        VDSCRIPTCTX hScriptCtx = NULL;
+        rc = VDScriptCtxCreate(&hScriptCtx);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VDScriptCtxCallbacksRegister(hScriptCtx, g_aScriptActions, g_cScriptActions, &GlobTest);
+            AssertRC(rc);
+
+            rc = VDScriptCtxLoadScript(hScriptCtx, pszScript);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("Loading the script failed rc=%Rrc\n", rc);
+            }
+            else
+                rc = VDScriptCtxCallFn(hScriptCtx, "main", NULL, 0);
+            VDScriptCtxDestroy(hScriptCtx);
+        }
+        VDIoBackendDestroy(GlobTest.pIoBackend);
+    }
+    else
+        RTPrintf("Creating the I/O backend failed rc=%Rrc\n");
+
+    RTStrFree(GlobTest.pszIoBackend);
+}
+
+/**
+ * Executes the given I/O script using the new scripting engine.
+ *
+ * @returns nothing.
+ *
+ * @param pcszFilename    The script to execute.
+ */
+static void tstVDIoScriptRun(const char *pcszFilename)
+{
+    int rc = VINF_SUCCESS;
+    void *pvFile = NULL;
+    size_t cbFile = 0;
+
     rc = RTFileReadAll(pcszFilename, &pvFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
@@ -2678,62 +2744,27 @@ static void tstVDIoScriptRun(const char *pcszFilename)
         RTFileReadAllFree(pvFile, cbFile);
 
         AssertPtr(pszScript);
-        /* Init global test data. */
-        GlobTest.VDIfError.pfnError     = tstVDError;
-        GlobTest.VDIfError.pfnMessage   = tstVDMessage;
-
-        rc = VDInterfaceAdd(&GlobTest.VDIfError.Core, "tstVDIo_VDIError", VDINTERFACETYPE_ERROR,
-                            NULL, sizeof(VDINTERFACEERROR), &GlobTest.pInterfacesDisk);
-        AssertRC(rc);
-
-        GlobTest.VDIfIo.pfnOpen                = tstVDIoFileOpen;
-        GlobTest.VDIfIo.pfnClose               = tstVDIoFileClose;
-        GlobTest.VDIfIo.pfnDelete              = tstVDIoFileDelete;
-        GlobTest.VDIfIo.pfnMove                = tstVDIoFileMove;
-        GlobTest.VDIfIo.pfnGetFreeSpace        = tstVDIoFileGetFreeSpace;
-        GlobTest.VDIfIo.pfnGetModificationTime = tstVDIoFileGetModificationTime;
-        GlobTest.VDIfIo.pfnGetSize             = tstVDIoFileGetSize;
-        GlobTest.VDIfIo.pfnSetSize             = tstVDIoFileSetSize;
-        GlobTest.VDIfIo.pfnWriteSync           = tstVDIoFileWriteSync;
-        GlobTest.VDIfIo.pfnReadSync            = tstVDIoFileReadSync;
-        GlobTest.VDIfIo.pfnFlushSync           = tstVDIoFileFlushSync;
-        GlobTest.VDIfIo.pfnReadAsync           = tstVDIoFileReadAsync;
-        GlobTest.VDIfIo.pfnWriteAsync          = tstVDIoFileWriteAsync;
-        GlobTest.VDIfIo.pfnFlushAsync          = tstVDIoFileFlushAsync;
-
-        rc = VDInterfaceAdd(&GlobTest.VDIfIo.Core, "tstVDIo_VDIIo", VDINTERFACETYPE_IO,
-                            &GlobTest, sizeof(VDINTERFACEIO), &GlobTest.pInterfacesImages);
-        AssertRC(rc);
-
-        /* Init I/O backend. */
-        rc = VDIoBackendCreate(&GlobTest.pIoBackend);
-        if (RT_SUCCESS(rc))
-        {
-            VDSCRIPTCTX hScriptCtx = NULL;
-            rc = VDScriptCtxCreate(&hScriptCtx);
-            if (RT_SUCCESS(rc))
-            {
-                rc = VDScriptCtxCallbacksRegister(hScriptCtx, g_aScriptActions, g_cScriptActions, &GlobTest);
-                AssertRC(rc);
-
-                rc = VDScriptCtxLoadScript(hScriptCtx, pszScript);
-                if (RT_FAILURE(rc))
-                {
-                    RTPrintf("Loading the script failed rc=%Rrc\n", rc);
-                }
-                else
-                    rc = VDScriptCtxCallFn(hScriptCtx, "main", NULL, 0);
-                VDScriptCtxDestroy(hScriptCtx);
-            }
-            VDIoBackendDestroy(GlobTest.pIoBackend);
-        }
-        else
-            RTPrintf("Creating the I/O backend failed rc=%Rrc\n");
+        tstVDIoScriptExec(pszScript);
     }
     else
-        RTPrintf("Opening script failed rc=%Rrc\n", rc);
+        RTPrintf("Opening the script failed: %Rrc\n", rc);
 
-    RTStrFree(GlobTest.pszIoBackend);
+}
+
+/**
+ * Run builtin tests.
+ *
+ * @returns nothing.
+ */
+static void tstVDIoRunBuiltinTests(void)
+{
+    for (unsigned i = 0; i < g_cVDIoTests; i++)
+    {
+        char *pszScript = RTStrDupN((const char *)g_aVDIoTests[i].pch, g_aVDIoTests[i].cb);
+
+        AssertPtr(pszScript);
+        tstVDIoScriptExec(pszScript);
+    }
 }
 
 /**
@@ -2747,7 +2778,8 @@ static void printUsage(void)
 
 static const RTGETOPTDEF g_aOptions[] =
 {
-    { "--script",   's', RTGETOPT_REQ_STRING }
+    { "--script",   's', RTGETOPT_REQ_STRING },
+    { "--help",     'h', RTGETOPT_REQ_NOTHING }
 };
 
 int main(int argc, char *argv[])
@@ -2758,15 +2790,15 @@ int main(int argc, char *argv[])
     RTGETOPTSTATE GetState;
     char c;
 
-    if (argc != 3)
-    {
-        printUsage();
-        return RTEXITCODE_FAILURE;
-    }
-
     rc = VDInit();
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
+
+    if (argc == 1)
+    {
+        tstVDIoRunBuiltinTests();
+        return RTEXITCODE_SUCCESS;
+    }
 
     RTGetOptInit(&GetState, argc, argv, g_aOptions,
                  RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -2779,8 +2811,11 @@ int main(int argc, char *argv[])
             case 's':
                 tstVDIoScriptRun(ValueUnion.psz);
                 break;
-            default:
+            case 'h':
                 printUsage();
+                break;
+            default: /* Default is to run built in tests if no arguments are given (automated testing). */
+                tstVDIoRunBuiltinTests();
         }
     }
 
