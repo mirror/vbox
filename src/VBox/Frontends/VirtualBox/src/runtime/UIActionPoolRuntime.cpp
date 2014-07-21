@@ -718,7 +718,7 @@ class UIActionMenuStatusBar : public UIActionMenu
 public:
 
     UIActionMenuStatusBar(UIActionPool *pParent)
-        : UIActionMenu(pParent)
+        : UIActionMenu(pParent, ":/statusbar_16px.png", ":/statusbar_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -738,7 +738,7 @@ class UIActionSimpleShowStatusBarSettingsWindow : public UIActionSimple
 public:
 
     UIActionSimpleShowStatusBarSettingsWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -764,7 +764,8 @@ class UIActionToggleStatusBar : public UIActionToggle
 public:
 
     UIActionToggleStatusBar(UIActionPool *pParent)
-        : UIActionToggle(pParent)
+        : UIActionToggle(pParent, ":/statusbar_on_16px.png", ":/statusbar_16px.png",
+                                  ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
     {
         retranslateUi();
     }

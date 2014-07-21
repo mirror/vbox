@@ -161,6 +161,12 @@
         <file alias="state_stuck_16px.png">images/state_stuck_16px.png</file>
         <file alias="status_check_16px.png">images/status_check_16px.png</file>
         <file alias="status_error_16px.png">images/status_error_16px.png</file>
+        <file alias="statusbar_16px.png">images/statusbar_16px.png</file>
+        <file alias="statusbar_disabled_16px.png">images/statusbar_disabled_16px.png</file>
+        <file alias="statusbar_on_16px.png">images/statusbar_on_16px.png</file>
+        <file alias="statusbar_on_disabled_16px.png">images/statusbar_on_disabled_16px.png</file>
+        <file alias="statusbar_settings_16px.png">images/statusbar_settings_16px.png</file>
+        <file alias="statusbar_settings_disabled_16px.png">images/statusbar_settings_disabled_16px.png</file>
         <file alias="tpixel.png">images/tpixel.png</file>
         <file alias="usb_16px.png">images/usb_16px.png</file>
         <file alias="usb_24px.png">images/usb_24px.png</file>
