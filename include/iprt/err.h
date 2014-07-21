@@ -925,7 +925,7 @@ RT_C_DECLS_END
 /** Not able satisfy all the requirements of the request. */
 #define VWRN_UNABLE_TO_SATISFY_REQUIREMENTS 22406
 /** The requested allocation is too big. */
-#define VERR_ALLOCATION_TOO_BIG             (-22405)
+#define VERR_ALLOCATION_TOO_BIG             (-22407)
 /** @} */
 
 
