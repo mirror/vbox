@@ -121,7 +121,10 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     rc = CFGMR3QueryU32Def(pCfgNode, "GuestOsId", &uGuestOsId, GIMOSID_UNKNOWN);
     AssertLogRelRCReturn(rc, rc);
     if (uGuestOsId < GIMOSID_END)
+    {
         GuestOsId = (GIMOSID)uGuestOsId;
+        pVM->gim.s.enmGuestOsId = GuestOsId;
+    }
     else
     {
         LogRel(("GIM: GuestOsId %u invalid.", uGuestOsId));
@@ -144,7 +147,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         if (!RTStrCmp(szProvider, "Minimal"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_MINIMAL;
-            rc = GIMR3MinimalInit(pVM, GuestOsId);
+            rc = GIMR3MinimalInit(pVM);
         }
         else if (!RTStrCmp(szProvider, "HyperV"))
         {
@@ -266,6 +269,8 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pVM->gim.s.u32Version);
     AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pVM->gim.s.enmGuestOsId);
+    AssertRCReturn(rc, rc);
 
     /*
      * Save provider-specific data.
@@ -319,6 +324,8 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     rc = SSMR3GetU32(pSSM, (uint32_t *)&pVM->gim.s.enmProviderId);
     AssertRCReturn(rc, rc);
     rc = SSMR3GetU32(pSSM, &pVM->gim.s.u32Version);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, (uint32_t *)&pVM->gim.s.enmGuestOsId);
     AssertRCReturn(rc, rc);
 
     /*
@@ -602,14 +609,15 @@ VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalDeregister(PVM pVM, PGIMMMIO2REGION
 
 
 /**
- * Checks if the given Guest OS identifier implies an OS X family of guests.
+ * Checks if the GIM Guest OS identifier for this VM implies an OS X family of
+ * guests.
  *
  * @returns true if it's an OS X guest, false otherwise.
- * @param   enmGuestOs      The Guest OS Id.
+ * @param   pVM         Pointer to the VM.
  */
-VMMR3_INT_DECL(bool) GIMR3IsOSXGuest(GIMOSID enmGuestOs)
+VMMR3_INT_DECL(bool) GIMR3IsOSXGuest(PVM pVM)
 {
-    switch (enmGuestOs)
+    switch (pVM->gim.s.enmGuestOsId)
     {
         case GIMOSID_OSX:
         case GIMOSID_OSX_64:

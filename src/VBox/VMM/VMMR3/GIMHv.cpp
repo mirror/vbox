@@ -658,7 +658,7 @@ VMMR3_INT_DECL(int) GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
         else
         {
             /** @todo Handle raw-mode hypercall page patching. */
-            LogRel(("GIM: HyperV: Raw-mode not yet implemented!\n"));
+            LogRel(("GIM: HyperV: Raw-mode hypercalls not yet implemented!\n"));
         }
         GIMR3Mmio2Unmap(pVM, pRegion);
     }
