@@ -3339,6 +3339,27 @@ HRESULT Display::invalidateAndUpdate()
     return rc;
 }
 
+HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
+{
+    LogRelFlowFunc(("\n"));
+
+    HRESULT rc = S_OK;
+
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    /* pdm.h says that this has to be called from the EMT thread */
+    int rcVBox = VMR3ReqCallVoidWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
+                                      3, this, aScreenId, false);
+    if (RT_FAILURE(rcVBox))
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not invalidate and update the screen %d (%Rrc)"), aScreenId, rcVBox);
+
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
+    return rc;
+}
+
 HRESULT Display::completeVHWACommand(BYTE *aCommand)
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
