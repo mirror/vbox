@@ -224,6 +224,7 @@ private:
                                  ULONG aWidth,
                                  ULONG aHeight);
     virtual HRESULT invalidateAndUpdate();
+    virtual HRESULT invalidateAndUpdateScreen(ULONG aScreenId);
     virtual HRESULT completeVHWACommand(BYTE *aCommand);
     virtual HRESULT viewportChanged(ULONG aScreenId,
                                     ULONG aX,
