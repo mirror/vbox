@@ -976,9 +976,9 @@ VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
     AssertReturn(pNewLeaf, VERR_INVALID_PARAMETER);
 
     /*
-     * Disallow replacing CPU ID leaves that this API currently cannot manage.                                                                                .
+     * Disallow replacing CPU ID leaves that this API currently cannot manage.
      * These leaves have dependencies on saved-states, see PATMCpuidReplacement().
-     * If you want to modify these leaves, use CPUMSetGuestCpuIdFeature().                                                                         .
+     * If you want to modify these leaves, use CPUMSetGuestCpuIdFeature().
      */
     if (   pNewLeaf->uLeaf == UINT32_C(0x00000000)  /* Standard */
         || pNewLeaf->uLeaf == UINT32_C(0x80000000)  /* Extended */
