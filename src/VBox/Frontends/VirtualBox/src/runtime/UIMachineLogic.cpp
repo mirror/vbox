@@ -839,6 +839,7 @@ void UIMachineLogic::prepareActionGroups()
 #endif
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Reset));
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Shutdown));
+    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_ViewPopup));
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen));
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless));
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Scale));

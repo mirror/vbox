@@ -27,9 +27,14 @@
 #include "UIMachineWindow.h"
 #include "UIStatusBarEditorWindow.h"
 #include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
 #ifdef Q_WS_MAC
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
+
+/* COM includes: */
+#include "CConsole.h"
+#include "CDisplay.h"
 
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)
@@ -118,6 +123,110 @@ void UIMachineLogicNormal::sltToggleStatusBar()
     gEDataManager->setStatusBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
 }
 
+void UIMachineLogicNormal::sltPrepareMenuViewPopup()
+{
+    /* Make sure sender is valid: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    AssertMsgReturnVoid(pMenu, ("This slot should be called only on View popup-menu show!\n"));
+
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Add default contents: */
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow));
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize));
+    pMenu->addSeparator();
+
+    /* Check if guest additions are enabled: */
+    const bool fGAEnabled = uisession()->isGuestAdditionsActive() &&
+                            uisession()->isGuestSupportsGraphics();
+
+    /* For each the machine-window: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+    {
+        /* Add 'Virtual Screen %1' menu: */
+        const int iScreenID = pMachineWindow->screenId();
+        QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
+                                                                 "Virtual Screen %1").arg(iScreenID + 1));
+        pSubMenu->setProperty("Screen ID", iScreenID);
+        pSubMenu->setEnabled(fGAEnabled);
+        connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewVirtualScreen()));
+    }
+}
+
+void UIMachineLogicNormal::sltPrepareMenuViewVirtualScreen()
+{
+    /* Make sure sender is valid: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    AssertMsgReturnVoid(pMenu, ("This slot should be called only on 'Virtual Screen %1' menu show!\n"));
+
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Prepare new contents: */
+    const QList<QSize> sizes = QList<QSize>()
+                               << QSize(640, 480)
+                               << QSize(800, 600)
+                               << QSize(1024, 768)
+                               << QSize(1280, 720)
+                               << QSize(1280, 800)
+                               << QSize(1366, 768)
+                               << QSize(1440, 900)
+                               << QSize(1600, 900)
+                               << QSize(1680, 1050)
+                               << QSize(1920, 1080)
+                               << QSize(1920, 1200);
+
+    /* Get corresponding screen ID and frame-buffer: */
+    const int iScreenID = pMenu->property("Screen ID").toInt();
+    const UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(iScreenID);
+
+    /* Create exclusive action-group: */
+    QActionGroup *pActionGroup = new QActionGroup(pMenu);
+    AssertPtrReturnVoid(pActionGroup);
+    {
+        /* Configure exclusive action-group: */
+        pActionGroup->setExclusive(true);
+        /* For every available size: */
+        foreach (const QSize &size, sizes)
+        {
+            /* Create exclusive action: */
+            QAction *pAction = pActionGroup->addAction(UIActionPoolRuntime::tr("Resize to %1x%2", "Virtual Screen")
+                                                                               .arg(size.width()).arg(size.height()));
+            AssertPtrReturnVoid(pAction);
+            {
+                /* Configure exclusive action: */
+                pAction->setProperty("Screen ID", iScreenID);
+                pAction->setProperty("Requested Size", size);
+                pAction->setCheckable(true);
+                if (pFrameBuffer->width() == size.width() &&
+                    pFrameBuffer->height() == size.height())
+                {
+                    pAction->setChecked(true);
+                }
+                /* Insert group actions into menu: */
+                pMenu->addActions(pActionGroup->actions());
+            }
+        }
+        /* Install listener for exclusive action-group: */
+        connect(pActionGroup, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltHandleActionTriggerViewVirtualScreen(QAction*)));
+    }
+}
+
+void UIMachineLogicNormal::sltHandleActionTriggerViewVirtualScreen(QAction *pAction)
+{
+    /* Make sure sender is valid: */
+    AssertMsgReturnVoid(pAction, ("This slot should be called only on 'Virtual Screen %1' menu action trigger!\n"));
+
+    /* Resize guest to required size: */
+    const int iScreenID = pAction->property("Screen ID").toInt();
+    const QSize size = pAction->property("Requested Size").toSize();
+    CDisplay display = session().GetConsole().GetDisplay();
+    display.SetVideoModeHint(iScreenID, uisession()->isScreenVisible(iScreenID),
+                             false, 0, 0, size.width(), size.height(), 0);
+}
+
 void UIMachineLogicNormal::sltPrepareHardDisksMenu()
 {
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
@@ -165,6 +274,8 @@ void UIMachineLogicNormal::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_ViewPopup)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareMenuViewPopup()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
