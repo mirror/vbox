@@ -32,7 +32,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
-VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
+VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_MINIMAL, VERR_INTERNAL_ERROR_5);
@@ -42,7 +42,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
      */
     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
 
-    if (GIMR3IsOSXGuest(enmGuest))
+    if (GIMR3IsOSXGuest(pVM))
     {
         /*
          * Enable MWAIT Extensions for OS X Guests.
@@ -57,7 +57,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM, GIMOSID enmGuest)
         if (CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_INTEL)
         {
             uint32_t uMaxIntelFamilyModelStep = UINT32_MAX;
-            switch (enmGuest)
+            switch (pVM->gim.s.enmGuestOsId)
             {
                 case GIMOSID_OSX:
                 case GIMOSID_OSX_64:
