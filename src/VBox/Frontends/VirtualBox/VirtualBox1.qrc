@@ -58,9 +58,9 @@
         <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
         <file alias="diskimage_16px.png">images/diskimage_16px.png</file>
         <file alias="diskimage_32px.png">images/diskimage_32px.png</file>
-        <file alias="display_software_16px.png">images/display_software_16px.png</file>
         <file alias="display_hardware_16px.png">images/display_hardware_16px.png</file>
         <file alias="display_hardware_write_16px.png">images/display_hardware_write_16px.png</file>
+        <file alias="display_software_16px.png">images/display_software_16px.png</file>
         <file alias="drag_drop_16px.png">images/drag_drop_16px.png</file>
         <file alias="drag_drop_disabled_16px.png">images/drag_drop_disabled_16px.png</file>
         <file alias="edata_add_16px.png">images/edata_add_16px.png</file>
@@ -266,7 +266,5 @@
         <file alias="os_solaris.png">images/os_solaris.png</file>
         <file alias="os_solaris_64.png">images/os_solaris_64.png</file>
         <file alias="os_turbolinux.png">images/os_turbolinux.png</file>
-        <file alias="os_turbolinux_64.png">images/os_turbolinux_64.png</file>
-        <file alias="os_type_16px.png">images/os_type_16px.png</file>
     </qresource>
 </RCC>
