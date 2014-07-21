@@ -50,7 +50,45 @@ ifdef VBOX_WITH_TESTCASES
  ifn1of ($(KBUILD_TARGET),win)
   PROGRAMS += tstVDIo
 
+  #
+  # VD I/O test scripts to built in -> .cpp
+  #
+  TSTVDIO_BUILTIN_TESTS_FILE = $(tstVDIo_0_OUTDIR)/BuiltinTests.cpp
+  TSTVDIO_BUILTIN_TESTS := \
+         tstVDIo=tstVDIo.vd \
+         tstVDResize=tstVDResize.vd \
+         tstVDCompact=tstVDCompact.vd \
+         tstVDCopy=tstVDCopy.vd \
+         tstVDDiscard=tstVDDiscard.vd \
+         tstVDShareable=tstVDShareable.vd
+  TSTVDIO_BUILTIN_TEST_NAMES := $(foreach test,$(TSTVDIO_BUILTIN_TESTS),$(firstword $(subst =,$(SPACE) ,$(test))))
+  TSTVDIO_PATH_TESTS := $(PATH_SUB_CURRENT)
+
+  # 1=name, 2=filter
+  TSTVDIO_GEN_TEST_MACRO = 'TSTVDIOTESTENTRY const g_a$(1)[] =' '{' \
+	$(foreach testnm,$(filter $(2),$(TSTVDIO_BUILTIN_TEST_NAMES)), '    TSTVDIOTESTENTRY_GEN(g_ab$(testnm)),') \
+	'};' 'unsigned const g_c$(1) = RT_ELEMENTS(g_a$(1));' '' ''
+
+  $$(TSTVDIO_BUILTIN_TESTS_FILE): $(MAKEFILE_CURRENT) \
+		$(foreach test,$(TSTVDIO_BUILTIN_TESTS),$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SPACE) ,$(test)))) \
+		$(VBOX_BIN2C) \
+		| $$(dir $$@)
+	$(QUIET)$(RM) -f -- $@ $@.vd
+	$(QUIET)$(APPEND) -n "$@" \
+       	'' \
+       	'#include "BuiltinTests.h"' \
+               ''
+	$(foreach test,$(TSTVDIO_BUILTIN_TESTS), $(NLTAB)$(VBOX_BIN2C) -ascii --append \
+		"$(firstword $(subst =,$(SP) ,$(test)))" \
+		"$(TSTVDIO_PATH_TESTS)/$(lastword $(subst =,$(SP) ,$(test)))" \
+		"$@")
+
+# Generate certificate lists.
+	$(QUIET)$(APPEND) -n "$@" '' \
+               $(call TSTVDIO_GEN_TEST_MACRO,VDIoTests,%) \
+
   tstVDIo_TEMPLATE = VBOXR3TSTEXE
+  tstVDIo_INCS := $(PATH_SUB_CURRENT)
   tstVDIo_SOURCES  = tstVDIo.cpp \
   	VDIoBackend.cpp \
   	VDIoBackendMem.cpp \
@@ -59,7 +97,8 @@ ifdef VBOX_WITH_TESTCASES
   	VDScript.cpp \
   	VDScriptAst.cpp \
   	VDScriptChecker.cpp \
-  	VDScriptInterp.cpp
+  	VDScriptInterp.cpp \
+  	$(TSTVDIO_BUILTIN_TESTS_FILE)
   tstVDIo_LIBS = \
   	$(LIB_DDU) \
   	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)
