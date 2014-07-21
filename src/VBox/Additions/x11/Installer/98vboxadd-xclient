@@ -21,29 +21,13 @@ for i in $HOME/.vboxclient-*.pid; do
     test -w $i || rm -f $i
 done
 
-# Check whether the display we are running on running a known buggy version
-# of X.Org which might crash when we resize.
-no_display=
-xorgbin=Xorg
-found=`which Xorg | grep "no Xorg"`
-if test ! -z "$found"; then
-    if test -f "/usr/X11/bin/Xorg"; then
-        xorgbin=/usr/X11/bin/Xorg
-    else
-        exit 1
-    fi
+# This script can also be triggered by a connection over SSH, which is not what
+# we had in mind, so we do not start VBoxClient in that case.  We do not use
+# "exit" here as this script is "source"d, not executed.
+if test -z "${SSH_CONNECTION}"; then
+  /usr/bin/VBoxClient --clipboard
+  /usr/bin/VBoxClient --checkhostversion
+  /usr/bin/VBoxClient --display
+  /usr/bin/VBoxClient --seamless
+  /usr/bin/VBoxClient --draganddrop
 fi
-xout=`$xorgbin -version 2>&1`
-if echo "$xout" | grep "1\.4\.99\.90[12345]" > /dev/null
-then
-    no_display=1
-fi
-
-/usr/bin/VBoxClient --clipboard
-/usr/bin/VBoxClient --checkhostversion
-test -z "$no_display" &&
-    /usr/bin/VBoxClient --display
-test -z "$no_display" &&
-    /usr/bin/VBoxClient --seamless
-test -z "$no_display" &&
-    /usr/bin/VBoxClient --draganddrop
