@@ -22,7 +22,6 @@
 #include <iprt/x86.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
-#include <iprt/string.h>
 
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -2776,6 +2775,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         /* Log the VCPU pointers, useful for debugging SMP VMs. */
         Log4(("VMXR0SetupVM: pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
+
+       /* Initialize the VM-exit history array with end-of-array markers (UINT16_MAX). */
+        Assert(!pVCpu->hm.s.idxExitHistoryFree);
+        HMCPU_EXIT_HISTORY_RESET(pVCpu);
 
         /* Set revision dword at the beginning of the VMCS structure. */
         *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo);
@@ -6132,8 +6135,8 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
     else
     {
-        if (   (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS)
-            || (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI))
+        if (uIntrState & (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS
+                          | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI))
         {
             rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
             AssertRC(rc);
@@ -7117,6 +7120,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT_IF_NEEDED(), rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
+    Assert(HMVMXCPU_GST_VALUE(pVCpu) == HMVMX_UPDATED_GUEST_ALL);
 
     /*
      * !!! IMPORTANT !!!
@@ -8741,6 +8745,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->uExitReason    = (uint16_t)VMX_EXIT_REASON_BASIC(uExitReason);
     pVmxTransient->fVMEntryFailed = VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uEntryIntInfo);
 
+    /* Update the VM-exit history array. */
+    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
+
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
     {
@@ -9944,7 +9951,7 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 
     /*
      * Clear block-by-STI if it's active. The force-flag couldn't have been set by block-by-Mov SS in
-     * hmR0VmxSaveGuestIntrState() when this VM-exit happens as Intel CPUs are consistent with
+     * hmR0VmxSaveGuestIntrState() when this VM-exit happened, as Intel CPUs are consistent with
      * block-by-Mov SS and NMIs. See @bugref{7445}.
      */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))

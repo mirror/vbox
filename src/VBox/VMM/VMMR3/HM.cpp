@@ -47,7 +47,6 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
-#include <iprt/string.h>
 #include <iprt/env.h>
 #include <iprt/thread.h>
 
@@ -71,24 +70,24 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_INT_WINDOW         ,  7, "Interrupt window."),
     EXIT_REASON(VMX_EXIT_NMI_WINDOW         ,  8, "NMI window."),
     EXIT_REASON(VMX_EXIT_TASK_SWITCH        ,  9, "Task switch."),
-    EXIT_REASON(VMX_EXIT_CPUID              , 10, "Guest attempted to execute CPUID."),
+    EXIT_REASON(VMX_EXIT_CPUID              , 10, "CPUID instruction."),
     EXIT_REASON_NIL(),
-    EXIT_REASON(VMX_EXIT_HLT                , 12, "Guest attempted to execute HLT."),
-    EXIT_REASON(VMX_EXIT_INVD               , 13, "Guest attempted to execute INVD."),
-    EXIT_REASON(VMX_EXIT_INVLPG             , 14, "Guest attempted to execute INVLPG."),
-    EXIT_REASON(VMX_EXIT_RDPMC              , 15, "Guest attempted to execute RDPMC."),
-    EXIT_REASON(VMX_EXIT_RDTSC              , 16, "Guest attempted to execute RDTSC."),
-    EXIT_REASON(VMX_EXIT_RSM                , 17, "Guest attempted to execute RSM in SMM."),
-    EXIT_REASON(VMX_EXIT_VMCALL             , 18, "Guest attempted to execute VMCALL."),
-    EXIT_REASON(VMX_EXIT_VMCLEAR            , 19, "Guest attempted to execute VMCLEAR."),
-    EXIT_REASON(VMX_EXIT_VMLAUNCH           , 20, "Guest attempted to execute VMLAUNCH."),
-    EXIT_REASON(VMX_EXIT_VMPTRLD            , 21, "Guest attempted to execute VMPTRLD."),
-    EXIT_REASON(VMX_EXIT_VMPTRST            , 22, "Guest attempted to execute VMPTRST."),
-    EXIT_REASON(VMX_EXIT_VMREAD             , 23, "Guest attempted to execute VMREAD."),
-    EXIT_REASON(VMX_EXIT_VMRESUME           , 24, "Guest attempted to execute VMRESUME."),
-    EXIT_REASON(VMX_EXIT_VMWRITE            , 25, "Guest attempted to execute VMWRITE."),
-    EXIT_REASON(VMX_EXIT_VMXOFF             , 26, "Guest attempted to execute VMXOFF."),
-    EXIT_REASON(VMX_EXIT_VMXON              , 27, "Guest attempted to execute VMXON."),
+    EXIT_REASON(VMX_EXIT_HLT                , 12, "HLT instruction."),
+    EXIT_REASON(VMX_EXIT_INVD               , 13, "INVD instruction."),
+    EXIT_REASON(VMX_EXIT_INVLPG             , 14, "INVLPG instruction."),
+    EXIT_REASON(VMX_EXIT_RDPMC              , 15, "RDPMCinstruction."),
+    EXIT_REASON(VMX_EXIT_RDTSC              , 16, "RDTSC instruction."),
+    EXIT_REASON(VMX_EXIT_RSM                , 17, "RSM instruction in SMM."),
+    EXIT_REASON(VMX_EXIT_VMCALL             , 18, "VMCALL instruction."),
+    EXIT_REASON(VMX_EXIT_VMCLEAR            , 19, "VMCLEAR instruction."),
+    EXIT_REASON(VMX_EXIT_VMLAUNCH           , 20, "VMLAUNCH instruction."),
+    EXIT_REASON(VMX_EXIT_VMPTRLD            , 21, "VMPTRLD instruction."),
+    EXIT_REASON(VMX_EXIT_VMPTRST            , 22, "VMPTRST instruction."),
+    EXIT_REASON(VMX_EXIT_VMREAD             , 23, "VMREAD instruction."),
+    EXIT_REASON(VMX_EXIT_VMRESUME           , 24, "VMRESUME instruction."),
+    EXIT_REASON(VMX_EXIT_VMWRITE            , 25, "VMWRITE instruction."),
+    EXIT_REASON(VMX_EXIT_VMXOFF             , 26, "VMXOFF instruction."),
+    EXIT_REASON(VMX_EXIT_VMXON              , 27, "VMXON instruction."),
     EXIT_REASON(VMX_EXIT_MOV_CRX            , 28, "Control-register accesses."),
     EXIT_REASON(VMX_EXIT_MOV_DRX            , 29, "Debug-register accesses."),
     EXIT_REASON(VMX_EXIT_PORT_IO            , 30, "I/O instruction."),
@@ -97,30 +96,30 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_ERR_INVALID_GUEST_STATE,  33, "VM-entry failure due to invalid guest state."),
     EXIT_REASON(VMX_EXIT_ERR_MSR_LOAD       , 34, "VM-entry failure due to MSR loading."),
     EXIT_REASON_NIL(),
-    EXIT_REASON(VMX_EXIT_MWAIT              , 36, "Guest executed MWAIT."),
+    EXIT_REASON(VMX_EXIT_MWAIT              , 36, "MWAIT instruction."),
     EXIT_REASON(VMX_EXIT_MTF                , 37, "Monitor Trap Flag."),
     EXIT_REASON_NIL(),
-    EXIT_REASON(VMX_EXIT_MONITOR            , 39, "Guest attempted to execute MONITOR."),
-    EXIT_REASON(VMX_EXIT_PAUSE              , 40, "Guest attempted to execute PAUSE."),
+    EXIT_REASON(VMX_EXIT_MONITOR            , 39, "MONITOR instruction."),
+    EXIT_REASON(VMX_EXIT_PAUSE              , 40, "PAUSE instruction."),
     EXIT_REASON(VMX_EXIT_ERR_MACHINE_CHECK  , 41, "VM-entry failure due to machine-check."),
     EXIT_REASON_NIL(),
     EXIT_REASON(VMX_EXIT_TPR_BELOW_THRESHOLD, 43, "TPR below threshold. Guest attempted to execute MOV to CR8."),
-    EXIT_REASON(VMX_EXIT_APIC_ACCESS        , 44, "APIC access. Guest attempted to access memory at a physical address on the APIC-access page."),
+    EXIT_REASON(VMX_EXIT_APIC_ACCESS        , 44, "APIC access."),
     EXIT_REASON_NIL(),
-    EXIT_REASON(VMX_EXIT_XDTR_ACCESS        , 46, "Access to GDTR or IDTR. Guest attempted to execute LGDT, LIDT, SGDT, or SIDT."),
-    EXIT_REASON(VMX_EXIT_TR_ACCESS          , 47, "Access to LDTR or TR. Guest attempted to execute LLDT, LTR, SLDT, or STR."),
-    EXIT_REASON(VMX_EXIT_EPT_VIOLATION      , 48, "EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures."),
-    EXIT_REASON(VMX_EXIT_EPT_MISCONFIG      , 49, "EPT misconfiguration. An attempt to access memory with a guest-physical address encountered a misconfigured EPT paging-structure entry."),
-    EXIT_REASON(VMX_EXIT_INVEPT             , 50, "Guest attempted to execute INVEPT."),
-    EXIT_REASON(VMX_EXIT_RDTSCP             , 51, "Guest attempted to execute RDTSCP."),
+    EXIT_REASON(VMX_EXIT_XDTR_ACCESS        , 46, "Access to GDTR or IDTR using LGDT, LIDT, SGDT, or SIDT."),
+    EXIT_REASON(VMX_EXIT_TR_ACCESS          , 47, "Access to LDTR or TR using LLDT, LTR, SLDT, or STR."),
+    EXIT_REASON(VMX_EXIT_EPT_VIOLATION      , 48, "EPT violation."),
+    EXIT_REASON(VMX_EXIT_EPT_MISCONFIG      , 49, "EPT misconfiguration."),
+    EXIT_REASON(VMX_EXIT_INVEPT             , 50, "INVEPT instruction."),
+    EXIT_REASON(VMX_EXIT_RDTSCP             , 51, "RDTSCP instruction."),
     EXIT_REASON(VMX_EXIT_PREEMPT_TIMER      , 52, "VMX-preemption timer expired."),
-    EXIT_REASON(VMX_EXIT_INVVPID            , 53, "Guest attempted to execute INVVPID."),
-    EXIT_REASON(VMX_EXIT_WBINVD             , 54, "Guest attempted to execute WBINVD."),
-    EXIT_REASON(VMX_EXIT_XSETBV             , 55, "Guest attempted to execute XSETBV."),
+    EXIT_REASON(VMX_EXIT_INVVPID            , 53, "INVVPID instruction."),
+    EXIT_REASON(VMX_EXIT_WBINVD             , 54, "WBINVD instruction."),
+    EXIT_REASON(VMX_EXIT_XSETBV             , 55, "XSETBV instruction."),
     EXIT_REASON_NIL(),
-    EXIT_REASON(VMX_EXIT_RDRAND             , 57, "Guest attempted to execute RDRAND."),
-    EXIT_REASON(VMX_EXIT_INVPCID            , 58, "Guest attempted to execute INVPCID."),
-    EXIT_REASON(VMX_EXIT_VMFUNC             , 59, "Guest attempted to execute VMFUNC.")
+    EXIT_REASON(VMX_EXIT_RDRAND             , 57, "RDRAND instruction."),
+    EXIT_REASON(VMX_EXIT_INVPCID            , 58, "INVPCID instruction."),
+    EXIT_REASON(VMX_EXIT_VMFUNC             , 59, "VMFUNC instruction.")
 };
 /** Exit reason descriptions for AMD-V, used to describe statistics. */
 static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
@@ -2949,6 +2948,15 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE:
             {
                 LogRel(("HM: CPU[%u] HM error         %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
+                LogRel(("HM: CPU[%u] idxExitHistoryFree    %u\n", i, pVCpu->hm.s.idxExitHistoryFree));
+                unsigned const idxLast = pVCpu->hm.s.idxExitHistoryFree > 0 ?
+                                                                            pVCpu->hm.s.idxExitHistoryFree - 1 :
+                                                                            RT_ELEMENTS(pVCpu->hm.s.auExitHistory) - 1;
+                for (unsigned k = 0; k < RT_ELEMENTS(pVCpu->hm.s.auExitHistory); k++)
+                {
+                    LogRel(("HM: CPU[%u] auExitHistory[%2u]   = %#x (%u) %s\n", i, k, pVCpu->hm.s.auExitHistory[k],
+                            pVCpu->hm.s.auExitHistory[k], idxLast == k ? "<-- Last" : ""));
+                }
                 break;
             }
         }
