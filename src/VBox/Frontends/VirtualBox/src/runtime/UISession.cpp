@@ -1079,6 +1079,8 @@ void UISession::loadSessionSettings()
         m_fIsExtensionPackUsable = !extPack.isNull() && extPack.GetUsable();
 
         /* Runtime menu settings: */
+        m_allowedMenus = (RuntimeMenuType)
+                         (gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid()) ^ RuntimeMenuType_All);
 #ifdef Q_WS_MAC
         m_allowedActionsMenuApplication = (RuntimeMenuApplicationActionType)
                                           (gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid()) ^

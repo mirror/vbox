@@ -122,6 +122,8 @@ public:
 
     /** @name Runtime menus configuration stuff.
      ** @{ */
+    /** Determines allowed menus. */
+    RuntimeMenuType allowedMenus() const { return m_allowedMenus; }
 #ifdef Q_WS_MAC
     /** Determines Application menu allowed actions. */
     RuntimeMenuApplicationActionType allowedActionsMenuApplication() const { return m_allowedActionsMenuApplication; }
@@ -391,6 +393,8 @@ private:
 
     /** @name Runtime menus configuration variables.
      ** @{ */
+    /** Determines allowed menus. */
+    RuntimeMenuType m_allowedMenus;
 #ifdef Q_WS_MAC
     /** Determines Application menu allowed actions. */
     RuntimeMenuApplicationActionType m_allowedActionsMenuApplication;
