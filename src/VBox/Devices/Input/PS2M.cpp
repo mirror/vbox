@@ -218,6 +218,8 @@ typedef struct PS2M
     uint8_t             u8CurrCmd;
     /** Set if the throttle delay is active. */
     bool                fThrottleActive;
+    /** Set if the throttle delay is active. */
+    bool                fDelayReset;
     /** Operational mode. */
     PS2M_MODE           enmMode;
     /** Currently used protocol. */
@@ -402,6 +404,18 @@ static void ps2mSetDriverState(PPS2M pThis, bool fEnabled)
         pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
+/* Reset the pointing device. */
+static void ps2mReset(PPS2M pThis)
+{
+    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_BAT_OK);
+    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, 0);
+    pThis->enmMode   = AUX_MODE_STD;
+    pThis->u8CurrCmd = 0;
+
+    //@todo: move to its proper home!
+    ps2mSetDriverState(pThis, true);
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -524,6 +538,12 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
         }
     }
 
+#ifndef IN_RING3
+    /* Reset and Set Default commands must be run in R3. */
+    if (cmd == ACMD_RESET || cmd == ACMD_SET_DEFAULT)
+        return VINF_IOM_R3_IOPORT_WRITE;
+#endif
+
     switch (cmd)
     {
         case ACMD_SET_SCALE_11:
@@ -575,9 +595,10 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
         case ACMD_ENABLE:
             pThis->u8State |= AUX_STATE_ENABLED;
-            //@todo: R3 only!
 #ifdef IN_RING3
             ps2mSetDriverState(pThis, true);
+#else
+            AssertLogRelMsgFailed(("Invalid ACMD_ENABLE outside R3!\n"));
 #endif
             ps2kClearQueue((GeneriQ *)&pThis->evtQ);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
@@ -602,8 +623,15 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             pThis->u8CurrCmd = cmd;
             pThis->enmMode   = AUX_MODE_RESET;
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
-            /* Slightly delay reset completion; it might take hundreds of ms. */
-            TMTimerSetMillies(pThis->CTX_SUFF(pDelayTimer), 1);
+            if (pThis->fDelayReset)
+                /* Slightly delay reset completion; it might take hundreds of ms. */
+                TMTimerSetMillies(pThis->CTX_SUFF(pDelayTimer), 1);
+            else
+#ifdef IN_RING3
+                ps2mReset(pThis);
+#else
+                AssertLogRelMsgFailed(("Invalid ACMD_RESET outside R3!\n"));
+#endif
             break;
         /* The following commands need a parameter. */
         case ACMD_SET_RES:
@@ -776,17 +804,11 @@ static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     LogFlowFunc(("Delay timer: cmd %02X\n", pThis->u8CurrCmd));
 
     Assert(pThis->u8CurrCmd == ACMD_RESET);
-    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_BAT_OK);
-    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, 0);
-    pThis->enmMode   = AUX_MODE_STD;
-    pThis->u8CurrCmd = 0;
+    ps2mReset(pThis);
 
     ///@todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
     KBCUpdateInterrupts(pThis->pParent);
-
-    //@todo: move to its proper home!
-    ps2mSetDriverState(pThis, true);
 }
 
 
