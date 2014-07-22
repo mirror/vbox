@@ -364,7 +364,9 @@ template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType)
         case RuntimeMenuType_Machine: strResult = "Machine"; break;
         case RuntimeMenuType_View:    strResult = "View"; break;
         case RuntimeMenuType_Devices: strResult = "Devices"; break;
+#ifdef VBOX_WITH_DEBUGGER_GUI
         case RuntimeMenuType_Debug:   strResult = "Debug"; break;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
         case RuntimeMenuType_Help:    strResult = "Help"; break;
         case RuntimeMenuType_All:     strResult = "All"; break;
         default:
@@ -385,7 +387,9 @@ template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &st
     keys << "Machine"; values << RuntimeMenuType_Machine;
     keys << "View";    values << RuntimeMenuType_View;
     keys << "Devices"; values << RuntimeMenuType_Devices;
+#ifdef VBOX_WITH_DEBUGGER_GUI
     keys << "Debug";   values << RuntimeMenuType_Debug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
     keys << "Help";    values << RuntimeMenuType_Help;
     keys << "All";     values << RuntimeMenuType_All;
     /* Invalid type for unknown words: */
