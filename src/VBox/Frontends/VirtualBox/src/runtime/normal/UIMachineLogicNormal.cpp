@@ -357,3 +357,66 @@ void UIMachineLogicNormal::cleanupActionConnections()
     UIMachineLogic::cleanupActionConnections();
 }
 
+void UIMachineLogicNormal::updateMenuView()
+{
+    /* Call to base-class: */
+    UIMachineLogic::updateMenuView();
+
+    /* Get corresponding menu: */
+    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
+    AssertPtrReturnVoid(pMenu);
+
+    /* Separator #1? */
+    bool fSeparator1 = false;
+
+    /* 'Adjust Window' action: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_AdjustWindow)
+    {
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow));
+        fSeparator1 = true;
+    }
+    else
+        gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setEnabled(false);
+
+    /* 'Guest Autoresize' action: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_GuestAutoresize)
+    {
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize));
+        fSeparator1 = true;
+    }
+    else
+        gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setEnabled(false);
+
+    /* Separator #1: */
+    if (fSeparator1)
+        pMenu->addSeparator();
+
+    /* 'Status Bar' submenu: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBar)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Menu_StatusBar));
+    else
+        gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setEnabled(false);
+    updateMenuViewStatusBar();
+}
+
+void UIMachineLogicNormal::updateMenuViewStatusBar()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Status Bar Settings' action: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBarSettings)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings));
+    else
+        gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings)->setEnabled(false);
+
+    /* 'Toggle Status Bar' action: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_ToggleStatusBar)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar));
+    else
+        gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar)->setEnabled(false);
+}
+

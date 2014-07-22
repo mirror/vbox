@@ -43,7 +43,6 @@
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-    , m_pMainMenu(0)
 #ifndef Q_WS_MAC
     , m_pMiniToolBar(0)
 #endif /* !Q_WS_MAC */
@@ -61,31 +60,10 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
 }
 #endif /* !Q_WS_MAC */
 
-void UIMachineWindowSeamless::sltPopupMainMenu()
-{
-    /* Popup main-menu if present: */
-    if (m_pMainMenu && !m_pMainMenu->isEmpty())
-    {
-        m_pMainMenu->popup(geometry().center());
-        QTimer::singleShot(0, m_pMainMenu, SLOT(sltHighlightFirstAction()));
-    }
-}
-
 void UIMachineWindowSeamless::sltRevokeFocus()
 {
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
-}
-
-void UIMachineWindowSeamless::prepareMenu()
-{
-    /* Call to base-class: */
-    UIMachineWindow::prepareMenu();
-
-    /* Prepare menu: */
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    m_pMainMenu = uisession()->newMenu(allowedMenus);
 }
 
 void UIMachineWindowSeamless::prepareVisualState()
@@ -137,13 +115,7 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->show();
-    QList<QMenu*> menus;
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    QList<QAction*> actions = uisession()->newMenu(allowedMenus)->actions();
-    for (int i=0; i < actions.size(); ++i)
-        menus << actions.at(i)->menu();
-    m_pMiniToolBar->addMenus(menus);
+    m_pMiniToolBar->addMenus(m_pMachineLogic->menus());
     connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
     connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SLOT(trigger()));
@@ -177,16 +149,6 @@ void UIMachineWindowSeamless::cleanupVisualState()
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
-}
-
-void UIMachineWindowSeamless::cleanupMenu()
-{
-    /* Cleanup menu: */
-    delete m_pMainMenu;
-    m_pMainMenu = 0;
-
-    /* Call to base-class: */
-    UIMachineWindow::cleanupMenu();
 }
 
 void UIMachineWindowSeamless::placeOnScreen()

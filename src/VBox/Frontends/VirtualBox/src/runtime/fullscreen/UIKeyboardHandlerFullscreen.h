@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandlerFullscreen class declaration
+ * VBox Qt GUI - UIKeyboardHandlerFullscreen class declaration.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,27 +17,29 @@
 #ifndef ___UIKeyboardHandlerFullscreen_h___
 #define ___UIKeyboardHandlerFullscreen_h___
 
-/* Local includes */
+/* GUI includes: */
 #include "UIKeyboardHandler.h"
 
+/** UIKeyboardHandler reimplementation
+  * providing machine-logic with PopupMenu keyboard handler. */
 class UIKeyboardHandlerFullscreen : public UIKeyboardHandler
 {
     Q_OBJECT;
 
 protected:
 
-    /* Fullscreen keyboard-handler constructor/destructor: */
+    /** Fullscreen keyboard-handler constructor. */
     UIKeyboardHandlerFullscreen(UIMachineLogic *pMachineLogic);
+    /** Fullscreen keyboard-handler destructor. */
     virtual ~UIKeyboardHandlerFullscreen();
 
 private:
 
-    /* Event handlers: */
+    /** General event-filter. */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Friend classes: */
+    /* Friend class: */
     friend class UIKeyboardHandler;
 };
 
-#endif // !___UIKeyboardHandlerFullscreen_h___
-
+#endif /* !___UIKeyboardHandlerFullscreen_h___ */

@@ -61,9 +61,6 @@ private slots:
     /* Session event-handlers: */
     void sltMachineStateChanged();
 
-    /* Popup main-menu: */
-    void sltPopupMainMenu();
-
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Commands @a pMachineWindow to enter native 'fullscreen' mode if possible. */
     void sltEnterNativeFullscreen(UIMachineWindow *pMachineWindow);
@@ -77,14 +74,12 @@ private slots:
 private:
 
     /* Prepare helpers: */
-    void prepareMenu();
     void prepareVisualState();
     void prepareMiniToolbar();
 
     /* Cleanup helpers: */
     void cleanupMiniToolbar();
     void cleanupVisualState();
-    void cleanupMenu();
 
     /* Show stuff: */
     void placeOnScreen();
@@ -94,7 +89,6 @@ private:
     void updateAppearanceOf(int iElement);
 
     /* Widgets: */
-    QMenu *m_pMainMenu;
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 
 #ifdef Q_WS_MAC

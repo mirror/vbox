@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QDesktopWidget>
+#include <QTimer>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -26,6 +27,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
+#include "UIMachineMenuBar.h"
 #ifdef Q_WS_MAC
 # include "UIExtraDataManager.h"
 # include "VBoxUtils.h"
@@ -36,6 +38,7 @@
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
+    , m_pPopupMenu(0)
 #ifdef Q_WS_MAC
     , m_fadeToken(kCGDisplayFadeReservationInvalidToken)
 #endif /* Q_WS_MAC */
@@ -356,6 +359,16 @@ void UIMachineLogicFullscreen::sltMachineStateChanged()
     }
 }
 
+void UIMachineLogicFullscreen::sltInvokePopupMenu()
+{
+    /* Popup main-menu if present: */
+    if (m_pPopupMenu && !m_pPopupMenu->isEmpty())
+    {
+        m_pPopupMenu->popup(activeMachineWindow()->geometry().center());
+        QTimer::singleShot(0, m_pPopupMenu, SLOT(sltHighlightFirstAction()));
+    }
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
 {
@@ -430,11 +443,6 @@ void UIMachineLogicFullscreen::prepareActionGroups()
 {
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
-
-    /* Adjust-window action isn't allowed in fullscreen: */
-    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
-    /* Status-bar menu isn't allowed in fullscreen: */
-    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(false);
 
     /* Take care of view-action toggle state: */
     UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
@@ -548,9 +556,24 @@ void UIMachineLogicFullscreen::prepareMenu()
     /* Call to base-class: */
     UIMachineLogic::prepareMenu();
 
-    /* Finally update view-menu, if necessary: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
-        m_pScreenLayout->setViewMenu(gActionPool->action(UIActionIndexRuntime_Menu_View)->menu());
+    /* Prepare popup-menu: */
+    m_pPopupMenu = new QIMenu;
+    AssertPtrReturnVoid(m_pPopupMenu);
+    {
+        /* Prepare popup-menu: */
+        foreach (QMenu *pMenu, menus())
+            m_pPopupMenu->addMenu(pMenu);
+    }
+}
+
+void UIMachineLogicFullscreen::cleanupMenu()
+{
+    /* Cleanup popup-menu: */
+    delete m_pPopupMenu;
+    m_pPopupMenu = 0;
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupMenu();
 }
 
 void UIMachineLogicFullscreen::cleanupMachineWindows()
@@ -607,13 +630,22 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
         pActionFullscreen->update();
     }
 
-    /* Reenable status-bar menu: */
-    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(true);
-    /* Reenable adjust-window action: */
-    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
-
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
+}
+
+void UIMachineLogicFullscreen::updateMenuView()
+{
+    /* Call to base-class: */
+    UIMachineLogic::updateMenuView();
+
+    /* Get corresponding menu: */
+    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
+    AssertPtrReturnVoid(pMenu);
+
+    /* Append 'Multiscreen' submenu, if allowed: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
+        m_pScreenLayout->setViewMenu(pMenu);
 }
 
 #ifdef Q_WS_MAC

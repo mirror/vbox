@@ -59,6 +59,11 @@ private slots:
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sltHostScreenCountChanged();
 
+#ifndef RT_OS_DARWIN
+    /** Invokes popup-menu. */
+    void sltInvokePopupMenu();
+#endif /* !RT_OS_DARWIN */
+
 private:
 
     /* Prepare helpers: */
@@ -68,13 +73,21 @@ private:
     void prepareMenu();
 
     /* Cleanup helpers: */
-    //void cleanupMenu() {}
+    void cleanupMenu();
     void cleanupMachineWindows();
     void cleanupActionConnections();
     void cleanupActionGroups();
 
+    /** Updates the 'View' menu. */
+    virtual void updateMenuView();
+
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
+
+#ifndef RT_OS_DARWIN
+    /** Holds the popup-menu instance. */
+    QMenu *m_pPopupMenu;
+#endif /* !RT_OS_DARWIN */
 
     /* Friend classes: */
     friend class UIMachineLogic;

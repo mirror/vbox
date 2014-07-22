@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandlerSeamless class declaration
+ * VBox Qt GUI - UIKeyboardHandlerSeamless class declaration.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,27 +17,31 @@
 #ifndef ___UIKeyboardHandlerSeamless_h___
 #define ___UIKeyboardHandlerSeamless_h___
 
-/* Local includes */
+/* GUI includes: */
 #include "UIKeyboardHandler.h"
 
+/** UIKeyboardHandler reimplementation
+  * providing machine-logic with PopupMenu keyboard handler. */
 class UIKeyboardHandlerSeamless : public UIKeyboardHandler
 {
     Q_OBJECT;
 
 protected:
 
-    /* Fullscreen keyboard-handler constructor/destructor: */
+    /** Seamless keyboard-handler constructor. */
     UIKeyboardHandlerSeamless(UIMachineLogic *pMachineLogic);
+    /** Seamless keyboard-handler destructor. */
     virtual ~UIKeyboardHandlerSeamless();
 
 private:
 
-    /* Event handlers: */
+#ifndef Q_WS_MAC
+    /** General event-filter. */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
+#endif /* !Q_WS_MAC */
 
     /* Friend classes: */
     friend class UIKeyboardHandler;
 };
 
-#endif // !___UIKeyboardHandlerSeamless_h___
-
+#endif /* !___UIKeyboardHandlerSeamless_h___ */

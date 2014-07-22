@@ -38,7 +38,9 @@
 #include "UISession.h"
 #include "QIStatusBar.h"
 #include "QIStatusBarIndicator.h"
-#ifdef Q_WS_MAC
+#ifndef Q_WS_MAC
+# include "UIMachineMenuBar.h"
+#else /* Q_WS_MAC */
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
@@ -196,18 +198,19 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, SLOT(sltCPUExecutionCapChange()));
 }
 
+#ifndef Q_WS_MAC
 void UIMachineWindowNormal::prepareMenu()
 {
-    /* Call to base-class: */
-    UIMachineWindow::prepareMenu();
-
-#ifndef Q_WS_MAC
-    /* Prepare application menu-bar: */
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    setMenuBar(uisession()->newMenuBar(allowedMenus));
-#endif /* !Q_WS_MAC */
+    /* Create menu-bar: */
+    setMenuBar(new UIMenuBar);
+    AssertPtrReturnVoid(menuBar());
+    {
+        /* Prepare menu-bar: */
+        foreach (QMenu *pMenu, machineLogic()->menus())
+            menuBar()->addMenu(pMenu);
+    }
 }
+#endif /* !Q_WS_MAC */
 
 void UIMachineWindowNormal::prepareStatusBar()
 {
