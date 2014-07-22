@@ -171,6 +171,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsHidingHostPointer(true)
 {
+    /* Prepare actions: */
+    prepareActions();
+
     /* Prepare connections: */
     prepareConnections();
 
@@ -968,6 +971,68 @@ void UISession::prepareConsoleEventHandlers()
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
+void UISession::prepareActions()
+{
+    /* Get host/machine: */
+    const CHost host = vboxGlobal().host();
+    const CMachine machine = session().GetConsole().GetMachine();
+
+    /* Storage stuff: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices);
+        QAction *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
+
+    /* Network stuff: */
+    {
+        /* Initialize Network menu: */
+        bool fAtLeastOneAdapterActive = false;
+        const KChipsetType chipsetType = machine.GetChipsetType();
+        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
+        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
+        {
+            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
+            if (adapter.GetEnabled())
+            {
+                fAtLeastOneAdapterActive = true;
+                break;
+            }
+        }
+        gActionPool->action(UIActionIndexRuntime_Menu_Network)->setVisible(fAtLeastOneAdapterActive);
+    }
+
+    /* USB stuff: */
+    {
+        /* Check whether there is at least one USB controller with an available proxy. */
+        const bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
+                                 && !machine.GetUSBControllers().isEmpty()
+                                 && machine.GetUSBProxyAvailable();
+        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBEnabled);
+    }
+
+    /* WebCams stuff: */
+    {
+        /* Check whether there is an accessible video input devices pool: */
+        host.GetVideoInputDevices();
+        const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
+        gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->setVisible(fWebCamsEnabled);
+    }
+}
+
 void UISession::prepareConnections()
 {
     connect(this, SIGNAL(sigStarted()), this, SLOT(sltMarkStarted()));
@@ -1440,76 +1505,6 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 # warning "port me"
 
 #endif
-}
-
-void UISession::updateActionPoolVisibility()
-{
-    /* Get host: */
-    const CHost &host = vboxGlobal().host();
-
-    /* Get uisession machine: */
-    const CMachine &machine = session().GetConsole().GetMachine();
-
-    /* Storage stuff: */
-    {
-        /* Initialize CD/FD menus: */
-        int iDevicesCountCD = 0;
-        int iDevicesCountFD = 0;
-        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        for (int i = 0; i < attachments.size(); ++i)
-        {
-            const CMediumAttachment &attachment = attachments[i];
-            if (attachment.GetType() == KDeviceType_DVD)
-                ++iDevicesCountCD;
-            if (attachment.GetType() == KDeviceType_Floppy)
-                ++iDevicesCountFD;
-        }
-        QAction *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices);
-        QAction *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices);
-        pOpticalDevicesMenu->setData(iDevicesCountCD);
-        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
-        pFloppyDevicesMenu->setData(iDevicesCountFD);
-        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
-    }
-
-    /* Network stuff: */
-    {
-        bool fAtLeastOneAdapterActive = false;
-        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
-        {
-            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
-            if (adapter.GetEnabled())
-            {
-                fAtLeastOneAdapterActive = true;
-                break;
-            }
-        }
-
-        /* Show/Hide Network sub-menu depending on overall adapters activity status: */
-        gActionPool->action(UIActionIndexRuntime_Menu_Network)->setVisible(fAtLeastOneAdapterActive);
-    }
-
-    /* USB stuff: */
-    {
-        /* Check whether there is at least one USB controllers with an available proxy. */
-        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
-                           && !machine.GetUSBControllers().isEmpty()
-                           && machine.GetUSBProxyAvailable();
-
-        /* Show/Hide USB menu depending on controller availability, activity and USB-proxy presence: */
-        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBEnabled);
-    }
-
-    /* WebCams stuff: */
-    {
-        /* Check whether there is an accessible video input devices pool: */
-        const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices(); Q_UNUSED(webcams);
-        bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
-
-        /* Show/Hide WebCams menu depending on ExtPack availability: */
-        gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->setVisible(fWebCamsEnabled);
-    }
 }
 
 bool UISession::preparePowerUp()
