@@ -2759,6 +2759,7 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                    something, we'll drop these in the stub code. */
                 if (   pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fFirstProcessCreateHandle
+                    && pOpInfo->KernelHandle == 0
                     && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess()))
                 {
                     if (   !pOpInfo->KernelHandle
@@ -2786,8 +2787,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                 if (   g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 3)
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fCsrssFirstProcessCreateHandle
-                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess())
-                   )
+                    && pOpInfo->KernelHandle == 0
+                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     pNtProtect->fCsrssFirstProcessCreateHandle = false;
                     if (pOpInfo->Parameters->CreateHandleInformation.DesiredAccess == s_fCsrssStupidDesires)
@@ -2812,7 +2813,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     && g_uNtVerCombined  < SUP_MAKE_NT_VER_SIMPLE(6, 2)
                     && pOpInfo->Parameters->CreateHandleInformation.DesiredAccess == 0x1478 /* 6.1.7600.16385 (win7_rtm.090713-1255) */
                     && pNtProtect->fThemesFirstProcessCreateHandle
-                    && supdrvNtProtectIsFrigginThemesService(pNtProtect, PsGetCurrentProcess()))
+                    && pOpInfo->KernelHandle == 0
+                    && supdrvNtProtectIsFrigginThemesService(pNtProtect, PsGetCurrentProcess()) )
                 {
                     pNtProtect->fThemesFirstProcessCreateHandle = true; /* Only once! */
                     fAllowedRights |= PROCESS_DUP_HANDLE;
@@ -2853,11 +2855,11 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                 if (   g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 3)
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fCsrssFirstProcessDuplicateHandle
+                    && pOpInfo->KernelHandle == 0
                     &&    pNtProtect->hParentPid
                        == PsGetProcessId((PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess)
                     && pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess == PsGetCurrentProcess()
-                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess())
-                   )
+                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     pNtProtect->fCsrssFirstProcessDuplicateHandle = false;
                     if (pOpInfo->Parameters->DuplicateHandleInformation.DesiredAccess == s_fCsrssStupidDesires)
@@ -2991,7 +2993,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                 if (   g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 3)
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fFirstThreadCreateHandle
-                    && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess()))
+                    && pOpInfo->KernelHandle == 0
+                    && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess()) )
                 {
                     if (   !pOpInfo->KernelHandle
                         && pOpInfo->Parameters->CreateHandleInformation.DesiredAccess == s_fCsrssStupidDesires)
@@ -3012,6 +3015,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                 if (   g_uNtVerCombined >= SUP_MAKE_NT_VER_COMBINED(6, 0, 0, 0, 0)
                     && (   (enmProcessKind = pNtProtect->enmProcessKind) == kSupDrvNtProtectKind_VmProcessConfirmed
                         || enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
+                    && pOpInfo->KernelHandle == 0
                     && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     fAllowedRights |= THREAD_IMPERSONATE;
@@ -3055,6 +3059,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     && (   (enmProcessKind = pNtProtect->enmProcessKind) == kSupDrvNtProtectKind_VmProcessConfirmed
                         || enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
                     && pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess == PsGetCurrentProcess()
+                    && pOpInfo->KernelHandle == 0
                     && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     fAllowedRights |= THREAD_IMPERSONATE;
@@ -3146,8 +3151,9 @@ static int supdrvNtProtectCreate(PSUPDRVNTPROTECT *ppNtProtect, HANDLE hPid, SUP
         {
             /* Duplicate entry, fail. */
             pNtProtect->u32Magic = SUPDRVNTPROTECT_MAGIC_DEAD;
+            LogRel(("supdrvNtProtectCreate: Duplicate (%#x).\n", pNtProtect->AvlCore.Key));
             RTMemFree(pNtProtect);
-            return VERR_ACCESS_DENIED;
+            return VERR_DUPLICATE;
         }
     }
 
