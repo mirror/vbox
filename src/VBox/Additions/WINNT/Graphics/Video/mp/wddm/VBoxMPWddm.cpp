@@ -531,7 +531,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSourceEx(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM
 
 bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource)
 {
-    bool fReportTargets = !pDevExt->cContextsDispIfResize;
+    bool fReportTargets = !pDevExt->fDisableTargetUpdate;
     return vboxWddmGhDisplayCheckSetInfoFromSourceEx(pDevExt, pSource, fReportTargets);
 }
 
@@ -628,7 +628,7 @@ void vboxWddmGhDisplayCheckSetInfoForDisabledTargets(PVBOXMP_DEVEXT pDevExt)
 
 void vboxWddmGhDisplayCheckSetInfoForDisabledTargetsCheck(PVBOXMP_DEVEXT pDevExt)
 {
-    bool fReportTargets = !pDevExt->cContextsDispIfResize;
+    bool fReportTargets = !pDevExt->fDisableTargetUpdate;
 
     if (fReportTargets)
         vboxWddmGhDisplayCheckSetInfoForDisabledTargets(pDevExt);
@@ -648,7 +648,7 @@ void vboxWddmGhDisplayCheckSetInfoEx(PVBOXMP_DEVEXT pDevExt, bool fReportTargets
 
 void vboxWddmGhDisplayCheckSetInfo(PVBOXMP_DEVEXT pDevExt)
 {
-    bool fReportTargets = !pDevExt->cContextsDispIfResize;
+    bool fReportTargets = !pDevExt->fDisableTargetUpdate;
     vboxWddmGhDisplayCheckSetInfoEx(pDevExt, fReportTargets);
 }
 
@@ -1153,10 +1153,9 @@ NTSTATUS DxgkDdiStartDevice(
                     pDevExt->cContexts2D = 0;
                     pDevExt->cContextsDispIfResize = 0;
                     pDevExt->cUnlockedVBVADisabled = 0;
+                    pDevExt->fDisableTargetUpdate = 0;
                     VBOXWDDM_CTXLOCK_INIT(pDevExt);
                     KeInitializeSpinLock(&pDevExt->SynchLock);
-
-                    VBoxMPCmnInitCustomVideoModes(pDevExt);
 
                     VBoxCommonFromDeviceExt(pDevExt)->fAnyX = VBoxVideoAnyWidthAllowed();
 #if 0
@@ -1277,7 +1276,7 @@ NTSTATUS DxgkDdiStartDevice(
                     }
 #endif
 
-                    VBoxWddmInitVideoModes(pDevExt);
+                    VBoxWddmVModesInit(pDevExt);
                 }
                 else
                 {
@@ -1964,6 +1963,12 @@ NTSTATUS DxgkDdiQueryChildStatus(
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
 
+    if (ChildStatus->ChildUid >= (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
+    {
+        WARN(("Invalid child id %d", ChildStatus->ChildUid));
+        return STATUS_INVALID_PARAMETER;
+    }
+
     NTSTATUS Status = STATUS_SUCCESS;
     switch (ChildStatus->Type)
     {
@@ -1971,6 +1976,9 @@ NTSTATUS DxgkDdiQueryChildStatus(
         {
             LOGF(("StatusConnection"));
             VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[ChildStatus->ChildUid];
+            BOOLEAN Connected = !!pTarget->fConnected;
+            if (!Connected)
+                LOGREL(("Tgt[%d] DISCONNECTED!!", ChildStatus->ChildUid));
             ChildStatus->HotPlug.Connected = !!pTarget->fConnected;
             break;
         }
@@ -4585,78 +4593,6 @@ DxgkDdiEscape(
                 break;
             }
 #endif
-            case VBOXESC_REINITVIDEOMODES:
-            {
-                if (!pEscape->Flags.HardwareAccess)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODESBYMASK called without HardwareAccess flag set, failing"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
-                /* win8.1 does not allow context-based escapes for display-only mode */
-                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
-                if (!pContext)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODES no context supplied!"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                if (pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODES invalid context supplied %d!", pContext->enmType));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-#endif
-
-                WARN(("VBOXESC_REINITVIDEOMODESBYMASK should be called instead"));
-                VBoxWddmUpdateVideoModesInfoByMask(pDevExt, NULL);
-                Status = STATUS_SUCCESS;
-                break;
-            }
-            case VBOXESC_REINITVIDEOMODESBYMASK:
-            {
-                if (!pEscape->Flags.HardwareAccess)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODESBYMASK called without HardwareAccess flag set, failing"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
-                /* win8.1 does not allow context-based escapes for display-only mode */
-                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
-                if (!pContext)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODESBYMASK no context supplied!"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                if (pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE)
-                {
-                    WARN(("VBOXESC_REINITVIDEOMODESBYMASK invalid context supplied %d!", pContext->enmType));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-#endif
-
-                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK))
-                {
-                    WARN(("invalid private driver size %d", pEscape->PrivateDriverDataSize));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-                LOG(("=> VBOXESC_REINITVIDEOMODESBYMASK"));
-                PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK pData = (PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK)pEscapeHdr;
-                VBoxWddmUpdateVideoModesInfoByMask(pDevExt, pData->ScreenMask);
-                Status = STATUS_SUCCESS;
-                LOG(("<= VBOXESC_REINITVIDEOMODESBYMASK"));
-                break;
-            }
             case VBOXESC_CONFIGURETARGETS:
             {
                 LOG(("=> VBOXESC_CONFIGURETARGETS"));
@@ -4714,7 +4650,7 @@ DxgkDdiEscape(
 
                     if (!pTarget->fConnected)
                     {
-                        Status = vboxWddmChildStatusConnect(pDevExt, (uint32_t)i, TRUE);
+                        Status = VBoxWddmChildStatusConnect(pDevExt, (uint32_t)i, TRUE);
                         if (NT_SUCCESS(Status))
                             ++cAdjusted;
                         else
@@ -4752,29 +4688,6 @@ DxgkDdiEscape(
                 Status = STATUS_SUCCESS;
 
                 LOG(("<= VBOXESC_CONFIGURETARGETS"));
-                break;
-            }
-            case VBOXESC_ADJUSTVIDEOMODES:
-            {
-                if (!pEscape->Flags.HardwareAccess)
-                {
-                    WARN(("VBOXESC_ADJUSTVIDEOMODES called without HardwareAccess flag set, failing"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                uint32_t cModes = pEscapeHdr->u32CmdSpecific;
-                if (cModes > VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXDISPIFESCAPE_ADJUSTVIDEOMODES, aScreenInfos)
-                        || pEscape->PrivateDriverDataSize != RT_OFFSETOF(VBOXDISPIFESCAPE_ADJUSTVIDEOMODES, aScreenInfos[cModes]))
-                {
-                    WARN(("invalid modes count passed"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES pPodesInfo = (PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES)pEscapeHdr;
-                VBoxWddmAdjustModes(pDevExt, cModes, pPodesInfo->aScreenInfos);
-                Status = STATUS_SUCCESS;
                 break;
             }
             case VBOXESC_SETALLOCHOSTID:
@@ -4915,6 +4828,52 @@ DxgkDdiEscape(
                 PVBOXDISPIFESCAPE_ISANYX pIsAnyX = (PVBOXDISPIFESCAPE_ISANYX)pEscapeHdr;
                 pIsAnyX->u32IsAnyX = VBoxCommonFromDeviceExt(pDevExt)->fAnyX;
                 Status = STATUS_SUCCESS;
+                break;
+            }
+            case VBOXESC_UPDATEMODES:
+            {
+                LOG(("=> VBOXESC_UPDATEMODES"));
+
+                if (!pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_UPDATEMODES called without HardwareAccess flag set, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
+                /* win8.1 does not allow context-based escapes for display-only mode */
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                if (!pContext)
+                {
+                    WARN(("VBOXESC_UPDATEMODES no context supplied!"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pContext->enmType != VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE)
+                {
+                    WARN(("VBOXESC_UPDATEMODES invalid context supplied %d!", pContext->enmType));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+#endif
+
+                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_UPDATEMODES))
+                {
+                    WARN(("VBOXESC_UPDATEMODES invalid private driver size %d", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                VBOXDISPIFESCAPE_UPDATEMODES *pData = (VBOXDISPIFESCAPE_UPDATEMODES*)pEscapeHdr;
+                Status = VBoxVidPnUpdateModes(pDevExt, pData->u32TargetId, &pData->Size);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("VBoxVidPnUpdateModes failed Status(%#x)\n", Status));
+                    return Status;
+                }
+
                 break;
             }
             case VBOXESC_DBGPRINT:
@@ -5086,50 +5045,17 @@ DxgkDdiIsSupportedVidPn(
 
     vboxVDbgBreakFv();
 
-    NTSTATUS Status = STATUS_SUCCESS;
-
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    NTSTATUS Status = VBoxVidPnIsSupported(pDevExt, pIsSupportedVidPnArg->hDesiredVidPn, &pIsSupportedVidPnArg->IsVidPnSupported);
     if (!NT_SUCCESS(Status))
     {
-        WARN(("DxgkCbQueryVidPnInterface failed Status()0x%x\n", Status));
+        WARN(("VBoxVidPnIsSupported failed Status(%#x)\n", Status));
         return Status;
     }
-
-#ifdef VBOXWDDM_DEBUG_VIDPN
-    vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>", pDevExt, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<");
-#endif
-
-    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
-    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
-    Status = pVidPnInterface->pfnGetTopology(pIsSupportedVidPnArg->hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("pfnGetTopology failed Status()0x%x\n", Status));
-        return Status;
-    }
-
-    BOOLEAN fSupported = FALSE;
-    Status = VBoxVidPnCheckTopology(pDevExt, hVidPnTopology, pVidPnTopologyInterface, &fSupported);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("VBoxVidPnCheckTopology failed Status()0x%x\n", Status));
-        return Status;
-    }
-
-    if (!fSupported)
-        LOG(("found unsupported path"));
-
-    pIsSupportedVidPnArg->IsVidPnSupported = fSupported;
-
-#ifdef VBOXWDDM_DEBUG_VIDPN
-    LOGREL(("The Given VidPn is %ssupported\n", pIsSupportedVidPnArg->IsVidPnSupported ? "" : "!!NOT!! "));
-#endif
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
-    return Status;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -5146,120 +5072,27 @@ DxgkDdiRecommendFunctionalVidPn(
 
     vboxVDbgBreakFv();
 
-#ifdef DEBUG_misha
-    Assert(0);
-#endif
-
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    NTSTATUS Status;
-    PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = pRecommendFunctionalVidPnArg->PrivateDriverDataSize >= sizeof (VBOXWDDM_RECOMMENDVIDPN) ?
-            (PVBOXWDDM_RECOMMENDVIDPN)pRecommendFunctionalVidPnArg->pPrivateDriverData : NULL;
-    PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmGetAllVideoModesInfos(pDevExt);
-    int i;
 
-    for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    if (pRecommendFunctionalVidPnArg->PrivateDriverDataSize != sizeof (VBOXWDDM_RECOMMENDVIDPN))
     {
-        /* @todo: check that we actually need the current source->target */
-        PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
-        VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
-#if 0
-        D3DKMDT_2DREGION Resolution;
-        Resolution.cx = pModeInfo->VisScreenWidth;
-        Resolution.cy = pModeInfo->VisScreenHeight;
-        Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1, 0);
-#else
-        Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, pInfo->aResolutions, pInfo->cResolutions, pInfo->iPreferredResolution);
-#endif
-        if (Status != STATUS_SUCCESS)
-        {
-            WARN(("vboxVidPnCheckAddMonitorModes failed Status(0x%x)", Status));
-            break;
-        }
+        WARN(("invalid size"));
+        return STATUS_INVALID_PARAMETER;
     }
 
-    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    VBOXWDDM_RECOMMENDVIDPN *pData = (VBOXWDDM_RECOMMENDVIDPN*)pRecommendFunctionalVidPnArg->pPrivateDriverData;
+    Assert(pData);
+
+    NTSTATUS Status = VBoxVidPnRecommendFunctional(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pData);
     if (!NT_SUCCESS(Status))
     {
-        WARN(("DxgkCbQueryVidPnInterface failed Status(0x%x)", Status));
+        WARN(("VBoxVidPnRecommendFunctional failed %#x", Status));
         return Status;
     }
 
-    for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-    {
-        Status = vboxVidPnPathAdd(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface, i, i);
-        if (!NT_SUCCESS(Status))
-        {
-            WARN(("vboxVidPnPathAdd failed Status(0x%x)", Status));
-            return Status;
-        }
-    }
-
-    VIDEO_MODE_INFORMATION *pResModes = NULL;
-    uint32_t cResModes = 0;
-
-    for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-    {
-        D3DKMDT_2DREGION Resolution;
-        PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
-        VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
-        Resolution.cx = pModeInfo->VisScreenWidth;
-        Resolution.cy = pModeInfo->VisScreenHeight;
-        int32_t iPreferableResMode;
-        uint32_t cActualResModes;
-
-        Status = VBoxWddmGetModesForResolution(pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode, &Resolution,
-                pResModes, cResModes, &cActualResModes, &iPreferableResMode);
-        Assert(Status == STATUS_SUCCESS || Status == STATUS_BUFFER_TOO_SMALL);
-        if (Status == STATUS_BUFFER_TOO_SMALL)
-        {
-            Assert(cResModes < cActualResModes);
-            if (pResModes)
-            {
-                vboxWddmMemFree(pResModes);
-            }
-            pResModes = (VIDEO_MODE_INFORMATION*)vboxWddmMemAllocZero(sizeof (*pResModes) * cActualResModes);
-            Assert(pResModes);
-            if (!pResModes)
-            {
-                Status = STATUS_NO_MEMORY;
-                break;
-            }
-            cResModes = cActualResModes;
-            Status = VBoxWddmGetModesForResolution(pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode, &Resolution,
-                                pResModes, cResModes, &cActualResModes, &iPreferableResMode);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status != STATUS_SUCCESS)
-                break;
-        }
-        else if (Status != STATUS_SUCCESS)
-            break;
-
-        Assert(iPreferableResMode >= 0);
-        Assert(cActualResModes);
-
-        Status = vboxVidPnCreatePopulateVidPnPathFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
-                        pResModes, cActualResModes, iPreferableResMode,
-                        &Resolution, 1 /* cResolutions */,
-                        i, i); /* srcId, tgtId */
-        Assert(Status == STATUS_SUCCESS);
-        if (Status != STATUS_SUCCESS)
-        {
-            LOGREL(("vboxVidPnCreatePopulateVidPnFromLegacy failed Status(0x%x)", Status));
-            break;
-        }
-    }
-
-    if(pResModes)
-        vboxWddmMemFree(pResModes);
-
-#ifdef VBOXWDDM_DEBUG_VIDPN
-        vboxVidPnDumpVidPn("\n>>>>Recommended VidPN: >>>>", pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
-#endif
-
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
-    return Status;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -5277,66 +5110,17 @@ DxgkDdiEnumVidPnCofuncModality(
     vboxVDbgBreakFv();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+
+    NTSTATUS Status = VBoxVidPnCofuncModality(pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pEnumCofuncModalityArg->EnumPivotType, &pEnumCofuncModalityArg->EnumPivot);
     if (!NT_SUCCESS(Status))
     {
-        WARN(("DxgkCbQueryVidPnInterface failed Status()0x%x\n", Status));
+        WARN(("VBoxVidPnCofuncModality failed Status(%#x)\n", Status));
         return Status;
     }
-#ifdef VBOXWDDM_DEBUG_VIDPN
-    vboxVidPnDumpCofuncModalityArg(">>>>MODALITY Args: ", pEnumCofuncModalityArg, "\n");
-    vboxVidPnDumpVidPn(">>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
-#endif
-
-    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
-    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
-    Status = pVidPnInterface->pfnGetTopology(pEnumCofuncModalityArg->hConstrainingVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-    Assert(Status == STATUS_SUCCESS);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("pfnGetTopology failed Status()0x%x\n", Status));
-        return Status;
-    }
-
-#ifdef DEBUG_misha
-    {
-        BOOLEAN fSupported = FALSE;
-        Status = VBoxVidPnCheckTopology(pDevExt, hVidPnTopology, pVidPnTopologyInterface, &fSupported);
-        if (!NT_SUCCESS(Status))
-            WARN(("VBoxVidPnCheckTopology failed Status()0x%x\n", Status));
-
-        Assert(fSupported);
-    }
-#endif
-    VBOXVIDPNCOFUNCMODALITY CbContext = {0};
-    CbContext.pDevExt = pDevExt;
-    CbContext.pVidPnInterface = pVidPnInterface;
-    CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
-    CbContext.pInfos = VBoxWddmGetAllVideoModesInfos(pDevExt);
-
-    Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
-                    vboxVidPnCofuncModalityPathEnum, &CbContext);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("vboxVidPnEnumPaths failed Status()0x%x\n", Status));
-        return Status;
-    }
-
-    Status = CbContext.Status;
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("vboxVidPnCofuncModalityPathEnum failed Status()0x%x\n", Status));
-        return Status;
-    }
-
-#ifdef VBOXWDDM_DEBUG_VIDPN
-        vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (OUT) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
-#endif
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
-    return Status;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -5360,7 +5144,7 @@ DxgkDdiSetVidPnSourceAddress(
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
     POINT Pos;
     Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &Pos);
-    Assert(Status == STATUS_SUCCESS);
+    //Assert(Status == STATUS_SUCCESS);
     if (NT_SUCCESS(Status))
     {
         if (memcmp(&pSource->VScreenPos, &Pos, sizeof (Pos)))
@@ -5444,7 +5228,7 @@ DxgkDdiSetVidPnSourceVisibility(
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
     POINT Pos;
     Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId, &Pos);
-    Assert(Status == STATUS_SUCCESS);
+    //Assert(Status == STATUS_SUCCESS);
     if (NT_SUCCESS(Status))
     {
         if (memcmp(&pSource->VScreenPos, &Pos, sizeof (Pos)))
@@ -5601,45 +5385,18 @@ DxgkDdiRecommendMonitorModes(
     vboxVDbgBreakFv();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    NTSTATUS Status;
-    PVBOXWDDM_VIDEOMODES_INFO pInfo = VBoxWddmGetVideoModesInfo(pDevExt, pRecommendMonitorModesArg->VideoPresentTargetId);
-    PVIDEO_MODE_INFORMATION pPreferredMode = &pInfo->aModes[pInfo->iPreferredMode];
 
-
-    for (uint32_t i = 0; i < pInfo->cResolutions; i++)
+    NTSTATUS Status = VBoxVidPnRecommendMonitorModes(pDevExt, pRecommendMonitorModesArg->VideoPresentTargetId,
+            pRecommendMonitorModesArg->hMonitorSourceModeSet, pRecommendMonitorModesArg->pMonitorSourceModeSetInterface);
+    if (!NT_SUCCESS(Status))
     {
-        D3DKMDT_MONITOR_SOURCE_MODE * pNewMonitorSourceModeInfo;
-        Status = pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnCreateNewModeInfo(
-                    pRecommendMonitorModesArg->hMonitorSourceModeSet, &pNewMonitorSourceModeInfo);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status == STATUS_SUCCESS)
-        {
-            Status = vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(pDevExt,
-                    pNewMonitorSourceModeInfo,
-                    &pInfo->aResolutions[i],
-                    D3DKMDT_MCO_DRIVER,
-                    pPreferredMode->VisScreenWidth == pInfo->aResolutions[i].cx
-                    && pPreferredMode->VisScreenHeight == pInfo->aResolutions[i].cy);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status == STATUS_SUCCESS)
-            {
-                Status = pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnAddMode(
-                        pRecommendMonitorModesArg->hMonitorSourceModeSet, pNewMonitorSourceModeInfo);
-                Assert(Status == STATUS_SUCCESS);
-                if (Status == STATUS_SUCCESS)
-                    continue;
-            }
-
-            /* error has occurred, release & break */
-            pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnReleaseModeInfo(
-                    pRecommendMonitorModesArg->hMonitorSourceModeSet, pNewMonitorSourceModeInfo);
-            break;
-        }
+        WARN(("VBoxVidPnRecommendMonitorModes failed %#x", Status));
+        return Status;
     }
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
-    return Status;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -5669,7 +5426,7 @@ DxgkDdiGetScanLine(
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
 #ifdef DEBUG_misha
-    RT_BREAKPOINT();
+//    RT_BREAKPOINT();
 #endif
 
     NTSTATUS Status = VBoxWddmSlGetScanLine(pDevExt, pGetScanLine);
@@ -6990,7 +6747,7 @@ DxgkDdiCreateContext(
             {
                 pDevExt->aSources[i].u8SyncState = 0;
                 NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
-                Assert(tmpStatus == STATUS_SUCCESS);
+                //Assert(tmpStatus == STATUS_SUCCESS);
             }
 #ifdef VBOX_WITH_CROGL
             if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
@@ -7206,7 +6963,13 @@ DxgkDdiDestroyContext(
             uint32_t cContexts = ASMAtomicDecU32(&pDevExt->cContextsDispIfResize);
             Assert(cContexts < UINT32_MAX/2);
             if (!cContexts)
-                vboxWddmGhDisplayCheckSetInfoEx(pDevExt, true);
+            {
+                if (pDevExt->fDisableTargetUpdate)
+                {
+                    pDevExt->fDisableTargetUpdate = FALSE;
+                    vboxWddmGhDisplayCheckSetInfoEx(pDevExt, true);
+                }
+            }
             break;
         }
         case VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS:

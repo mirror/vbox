@@ -1,9 +1,9 @@
 /** @file
- * VBoxDispIf.cpp - Display Settings Interface abstraction for XPDM & WDDM.
+ * VBoxTray - Display Settings Interface abstraction for XPDM & WDDM
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -13,21 +13,20 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include "VBoxTray.h"
-#include "VBoxDisplay.h"
-
-#include <malloc.h>
 #define _WIN32_WINNT 0x0601
-
 #include <iprt/log.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
+
+#include <malloc.h>
 
 #ifdef VBOX_WITH_WDDM
 #include <iprt/asm.h>
 #endif
 
-
+#include "VBoxDisplay.h"
 
 #ifndef NT_SUCCESS
 # define NT_SUCCESS(_Status) ((_Status) >= 0)
@@ -84,21 +83,20 @@ static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags
     DWORD winEr = gCtx.pfnGetDisplayConfigBufferSizes(fFlags, &cPathInfoArray, &cModeInfoArray);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed calling GetDisplayConfigBufferSizes, dwErr=%ld\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes\n"));
         return winEr;
     }
 
-    /** @todo r=andy Why using malloc() instead of RTMemAlloc*? */
     pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(cPathInfoArray * sizeof(DISPLAYCONFIG_PATH_INFO));
     if (!pPathInfoArray)
     {
-        LogFlowFunc(("Allocating pPathInfoArray failed\n"));
+        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
         return ERROR_OUTOFMEMORY;
     }
     pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(cModeInfoArray * sizeof(DISPLAYCONFIG_MODE_INFO));
     if (!pModeInfoArray)
     {
-        LogFlowFunc(("Allocating pModeInfoArray failed\n"));
+        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
         free(pPathInfoArray);
         return ERROR_OUTOFMEMORY;
     }
@@ -106,7 +104,7 @@ static DWORD vboxDispIfWddmDcCreate(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT32 fFlags
     winEr = gCtx.pfnQueryDisplayConfig(fFlags, &cPathInfoArray, pPathInfoArray, &cModeInfoArray, pModeInfoArray, NULL);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed calling QueryDisplayConfig, dwErr=%ld\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed QueryDisplayConfig\n"));
         free(pPathInfoArray);
         free(pModeInfoArray);
         return winEr;
@@ -123,13 +121,12 @@ static DWORD vboxDispIfWddmDcClone(VBOXDISPIF_WDDM_DISPCFG *pCfg, VBOXDISPIF_WDD
 {
     memset(pCfgDst, 0, sizeof (*pCfgDst));
 
-    /** @todo r=andy Why using malloc() instead of RTMemAlloc*? */
     if (pCfg->cPathInfoArray)
     {
         pCfgDst->pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(pCfg->cPathInfoArray * sizeof (DISPLAYCONFIG_PATH_INFO));
         if (!pCfgDst->pPathInfoArray)
         {
-            LogFlowFunc(("malloc failed!\n"));
+            WARN(("VBoxTray: (WDDM) malloc failed!\n"));
             return ERROR_OUTOFMEMORY;
         }
 
@@ -143,7 +140,7 @@ static DWORD vboxDispIfWddmDcClone(VBOXDISPIF_WDDM_DISPCFG *pCfg, VBOXDISPIF_WDD
         pCfgDst->pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(pCfg->cModeInfoArray * sizeof (DISPLAYCONFIG_MODE_INFO));
         if (!pCfgDst->pModeInfoArray)
         {
-            LogFlowFunc(("malloc failed!\n"));
+            WARN(("VBoxTray: (WDDM) malloc failed!\n"));
             if (pCfgDst->pPathInfoArray)
             {
                 free(pCfgDst->pPathInfoArray);
@@ -181,7 +178,7 @@ static DWORD vboxDispIfWddmDcQueryNumDisplays(UINT32 *pcDisplays)
         DWORD winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
         if (winEr != ERROR_SUCCESS)
         {
-            LogFlowFunc(("vboxDispIfWddmDcCreate failed winEr %ld\n", winEr));
+            WARN(("VBoxTray:(WDDM) vboxDispIfWddmDcCreate Failed winEr %d\n", winEr));
             return winEr;
         }
 
@@ -257,7 +254,7 @@ static DWORD vboxDispIfWddmDcSettingsModeAdd(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT
     DISPLAYCONFIG_MODE_INFO *pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(cModeInfoArray * sizeof (DISPLAYCONFIG_MODE_INFO));
     if (!pModeInfoArray)
     {
-        LogFlowFunc(("malloc failed!\n"));
+        WARN(("VBoxTray: (WDDM) malloc failed!\n"));
         return ERROR_OUTOFMEMORY;
     }
 
@@ -282,11 +279,11 @@ static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int i
         if (iSrcMode == DISPLAYCONFIG_PATH_MODE_IDX_INVALID)
         {
 
-            LogFlowFunc(("no source mode index specified"));
+            WARN(("VBoxTray: (WDDM) no source mode index specified"));
             DWORD winEr = vboxDispIfWddmDcSettingsModeAdd(pCfg, &iSrcMode);
             if (winEr != ERROR_SUCCESS)
             {
-                LogFlowFunc(("vboxDispIfWddmDcSettingsModeAdd Failed winEr %d\n", winEr));
+                WARN(("VBoxTray:(WDDM) vboxDispIfWddmDcSettingsModeAdd Failed winEr %d\n", winEr));
                 return winEr;
             }
             pCfg->pPathInfoArray[idx].sourceInfo.modeInfoIdx = iSrcMode;
@@ -300,7 +297,7 @@ static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int i
             if (pCfg->pPathInfoArray[i].sourceInfo.modeInfoIdx == iSrcMode)
             {
                 /* this is something we're not expecting/supporting */
-                LogFlowFunc(("multiple paths have the same mode index"));
+                WARN(("VBoxTray: (WDDM) multiple paths have the same mode index"));
                 return ERROR_NOT_SUPPORTED;
             }
         }
@@ -331,7 +328,7 @@ static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int i
                     pCfg->pModeInfoArray[iSrcMode].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
                     break;
                 default:
-                    LogRel(("invalid bpp %d, using 32\n", pDeviceMode->dmBitsPerPel));
+                    LogRel(("VBoxTray: (WDDM) invalid bpp %d, using 32\n", pDeviceMode->dmBitsPerPel));
                     pCfg->pModeInfoArray[iSrcMode].sourceMode.pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
                     break;
             }
@@ -352,7 +349,7 @@ static DWORD vboxDispIfWddmDcSet(VBOXDISPIF_WDDM_DISPCFG *pCfg, UINT fFlags)
 {
     DWORD winEr = gCtx.pfnSetDisplayConfig(pCfg->cPathInfoArray, pCfg->pPathInfoArray, pCfg->cModeInfoArray, pCfg->pModeInfoArray, fFlags);
     if (winEr != ERROR_SUCCESS)
-        LogFlowFunc(("pfnSetDisplayConfig Failed for Flags 0x%x\n", fFlags));
+        Log(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed for Flags 0x%x\n", fFlags));
     return winEr;
 }
 
@@ -396,14 +393,14 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
     DWORD winEr = vboxDispIfWddmDcQueryNumDisplays(&cDisplays);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("vboxDispIfWddmDcQueryNumDisplays Failed winEr %d\n", winEr));
+        WARN(("VBoxTray:(WDDM) vboxDispIfWddmDcQueryNumDisplays Failed winEr %d\n", winEr));
         return winEr;
     }
 
     DISPLAYCONFIG_PATH_INFO *pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(cDisplays * sizeof(DISPLAYCONFIG_PATH_INFO));
     if (!pPathInfoArray)
     {
-        LogFlowFunc(("malloc failed\n"));
+        WARN(("malloc failed\n"));
         return ERROR_OUTOFMEMORY;
     }
 
@@ -415,7 +412,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
             idx = vboxDispIfWddmDcSearchPath(pCfg, -1, i);
             if (idx >= 0)
             {
-                LogFlowFunc(("different source and target paare enabled, this is something we would not expect\n"));
+                WARN(("VBoxTray:(WDDM) different source and target paare enabled, this is something we would not expect\n"));
             }
         }
 
@@ -428,7 +425,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
                 winEr = vboxDispIfWddmDcCreate(&AllCfg, QDC_ALL_PATHS);
                 if (winEr != ERROR_SUCCESS)
                 {
-                    LogFlowFunc(("vboxDispIfWddmDcCreate Failed winEr %d\n", winEr));
+                    WARN(("VBoxTray:(WDDM) vboxDispIfWddmDcCreate Failed winEr %d\n", winEr));
                     free(pPathInfoArray);
                     return winEr;
                 }
@@ -438,11 +435,11 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
             idx = vboxDispIfWddmDcSearchPath(&AllCfg, i, i);
             if (idx < 0)
             {
-                LogFlowFunc(("%d %d path not supported\n", i, i));
+                WARN(("VBoxTray:(WDDM) %d %d path not supported\n", i, i));
                 idx = vboxDispIfWddmDcSearchPath(pCfg, -1, i);
                 if (idx < 0)
                 {
-                    LogFlowFunc(("%d %d path not supported\n", -1, i));
+                    WARN(("VBoxTray:(WDDM) %d %d path not supported\n", -1, i));
                 }
             }
 
@@ -452,7 +449,7 @@ static DWORD vboxDispIfWddmDcSettingsIncludeAllTargets(VBOXDISPIF_WDDM_DISPCFG *
 
                 if (pPathInfoArray[i].flags & DISPLAYCONFIG_PATH_ACTIVE)
                 {
-                    LogFlowFunc(("disabled path %d %d is marked active\n",
+                    WARN(("VBoxTray:(WDDM) disabled path %d %d is marked active\n",
                             pPathInfoArray[i].sourceInfo.id, pPathInfoArray[i].targetInfo.id));
                     pPathInfoArray[i].flags &= ~DISPLAYCONFIG_PATH_ACTIVE;
                 }
@@ -520,12 +517,12 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
             if (SUCCEEDED(hr))
                 return ERROR_SUCCESS;
             else
-                LogFlowFunc(("vboxDispKmtCreateContext failed hr 0x%x", hr));
+                WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
             vboxDispKmtDestroyDevice(&pOp->Device);
         }
         else
-            LogFlowFunc(("vboxDispKmtCreateDevice failed hr 0x%x", hr));
+            WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pOp->Adapter);
     }
@@ -599,30 +596,30 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
 
     if (OSinfo.dwMajorVersion >= 6)
     {
-        LogFlowFunc(("this is vista and up\n"));
+        Log((__FUNCTION__": this is vista and up\n"));
         HMODULE hUser = GetModuleHandle("user32.dll");
         if (hUser)
         {
             *(uintptr_t *)&pIf->modeData.wddm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-            LogFlowFunc(("pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
+            Log((__FUNCTION__": VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
             bSupported &= !!(pIf->modeData.wddm.pfnChangeDisplaySettingsEx);
 
             *(uintptr_t *)&pIf->modeData.wddm.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
-            LogFlowFunc(("pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
+            Log((__FUNCTION__": VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
             bSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
             /* for win 7 and above */
              if (OSinfo.dwMinorVersion >= 1)
             {
                 *(uintptr_t *)&gCtx.pfnSetDisplayConfig = (uintptr_t)GetProcAddress(hUser, "SetDisplayConfig");
-                LogFlowFunc(("pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
+                Log((__FUNCTION__": VBoxDisplayInit: pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
                 bSupported &= !!(gCtx.pfnSetDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnQueryDisplayConfig = (uintptr_t)GetProcAddress(hUser, "QueryDisplayConfig");
-                LogFlowFunc(("pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
+                Log((__FUNCTION__": VBoxDisplayInit: pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
                 bSupported &= !!(gCtx.pfnQueryDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnGetDisplayConfigBufferSizes = (uintptr_t)GetProcAddress(hUser, "GetDisplayConfigBufferSizes");
-                LogFlowFunc(("pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
+                Log((__FUNCTION__": VBoxDisplayInit: pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
                 bSupported &= !!(gCtx.pfnGetDisplayConfigBufferSizes);
             }
 
@@ -630,19 +627,19 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
             HRESULT hr = vboxDispKmtCallbacksInit(&pIf->modeData.wddm.KmtCallbacks);
             if (FAILED(hr))
             {
-                LogFlowFunc(("vboxDispKmtCallbacksInit failed hr 0x%x\n", hr));
+                WARN(("VBoxTray: vboxDispKmtCallbacksInit failed hr 0x%x\n", hr));
                 err = hr;
             }
         }
         else
         {
-            LogFlowFunc(("GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
+            WARN((__FUNCTION__": GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
     else
     {
-        LogFlowFunc(("Could not switch to VBOXDISPIF_MODE_WDDM, because os is not Vista or upper\n"));
+        WARN((__FUNCTION__": can not switch to VBOXDISPIF_MODE_WDDM, because os is not Vista or upper\n"));
         err = ERROR_NOT_SUPPORTED;
     }
 
@@ -681,21 +678,21 @@ static DWORD vboxDispIfWDDMAdpHdcCreate(int iDisplay, HDC *phDc, DISPLAY_DEVICE 
                 else
                 {
                     winEr = GetLastError();
-                    LogFlowFunc(("CreateDC failed %d", winEr));
+                    WARN(("CreateDC failed %d", winEr));
                     break;
                 }
             }
-            LogFlowFunc(("display data no match display(%d): i(%d), flags(%d)", iDisplay, i, pDev->StateFlags));
+            Log(("display data no match display(%d): i(%d), flags(%d)", iDisplay, i, pDev->StateFlags));
         }
         else
         {
             winEr = GetLastError();
-            LogFlowFunc(("EnumDisplayDevices failed %d", winEr));
+            WARN(("EnumDisplayDevices failed %d", winEr));
             break;
         }
     }
 
-    LogFlowFunc(("vboxDispIfWDDMAdpHdcCreate failure branch %d", winEr));
+    WARN(("vboxDispIfWDDMAdpHdcCreate failure branch %d", winEr));
     return winEr;
 }
 
@@ -706,7 +703,7 @@ static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
     HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &Adapter);
     if (!SUCCEEDED(hr))
     {
-        LogFlowFunc(("vboxDispKmtOpenAdapter failed hr 0x%x\n", hr));
+        WARN(("VBoxTray: vboxDispKmtOpenAdapter failed hr 0x%x\n", hr));
         return hr;
     }
 
@@ -725,7 +722,7 @@ static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
         winEr = ERROR_SUCCESS;
     else
     {
-        LogFlowFunc(("pfnD3DKMTEscape failed Status 0x%x\n", Status));
+        WARN(("VBoxTray: pfnD3DKMTEscape failed Status 0x%x\n", Status));
         winEr = ERROR_GEN_FAILURE;
     }
 
@@ -748,7 +745,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
 #endif
         default:
-            LogFlowFunc(("unknown mode (%d)\n", pIf->enmMode));
+            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -766,7 +763,7 @@ DWORD VBoxDispIfEscapeInOut(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, i
             return vboxDispIfEscapeWDDM(pIf, pEscape, cbData, TRUE /* BOOL fHwAccess */);
 #endif
         default:
-            LogFlowFunc(("unknown mode (%d)\n", pIf->enmMode));
+            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -850,14 +847,13 @@ static void VBoxRrRetrySchedule(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     pMon->fEnable = fEnable;
     pMon->fExtDispSup = fExtDispSup;
 
-    /** @todo r=andy Why using malloc() instead of RTMemAlloc*? */
     if (cDevModes)
     {
         pMon->paDisplayDevices = (DISPLAY_DEVICE*)malloc(sizeof (*paDisplayDevices) * cDevModes);
         Assert(pMon->paDisplayDevices);
         if (!pMon->paDisplayDevices)
         {
-            LogFlowFunc(("malloc failed"));
+            Log(("malloc failed!"));
             vboxRrRetryStopLocked();
             LeaveCriticalSection(&pMon->CritSect);
             return;
@@ -868,7 +864,7 @@ static void VBoxRrRetrySchedule(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         Assert(pMon->paDeviceModes);
         if (!pMon->paDeviceModes)
         {
-            LogFlowFunc(("malloc failed"));
+            Log(("malloc failed!"));
             vboxRrRetryStopLocked();
             LeaveCriticalSection(&pMon->CritSect);
             return;
@@ -881,7 +877,7 @@ static void VBoxRrRetrySchedule(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     Assert(pMon->idTimer);
     if (!pMon->idTimer)
     {
-        LogFlowFunc(("SetTimer failed, err %ld\n", GetLastError()));
+        WARN(("VBoxTray: SetTimer failed!, err %d\n", GetLastError()));
         vboxRrRetryStopLocked();
     }
 
@@ -913,7 +909,7 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
     {
         case WM_DISPLAYCHANGE:
         {
-            LogFlowFunc(("WM_DISPLAYCHANGE\n"));
+            Log(("VBoxTray: WM_DISPLAYCHANGE\n"));
             VBoxRrRetryStop();
             return 0;
         }
@@ -921,20 +917,20 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
         {
             if (wParam == VBOXRR_TIMER_ID)
             {
-                LogFlowFunc(("VBOXRR_TIMER_ID\n"));
+                Log(("VBoxTray: VBOXRR_TIMER_ID\n"));
                 vboxRrRetryPerform();
                 return 0;
             }
             break;
         }
         case WM_CLOSE:
-            LogFlowFunc(("got WM_CLOSE for hwnd(0x%x)", hwnd));
+            Log((__FUNCTION__": got WM_CLOSE for hwnd(0x%x)", hwnd));
             return 0;
         case WM_DESTROY:
-            LogFlowFunc(("got WM_DESTROY for hwnd(0x%x)", hwnd));
+            Log((__FUNCTION__": got WM_DESTROY for hwnd(0x%x)", hwnd));
             return 0;
         case WM_NCHITTEST:
-            LogFlowFunc(("got WM_NCHITTEST for hwnd(0x%x)\n", hwnd));
+            Log((__FUNCTION__": got WM_NCHITTEST for hwnd(0x%x)\n", hwnd));
             return HTNOWHERE;
         default:
             break;
@@ -966,7 +962,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
         if (!RegisterClass(&wc))
         {
             DWORD winErr = GetLastError();
-            LogFlowFunc(("RegisterClass failed, winErr(%d)\n", winErr));
+            WARN((__FUNCTION__": RegisterClass failed, winErr(%d)\n", winErr));
             hr = E_FAIL;
         }
     }
@@ -990,7 +986,7 @@ static HRESULT vboxRrWndCreate(HWND *phWnd)
         else
         {
             DWORD winErr = GetLastError();
-            LogFlowFunc(("CreateWindowEx failed, winErr(%d)\n", winErr));
+            WARN((__FUNCTION__": CreateWindowEx failed, winErr(%d)\n", winErr));
             hr = E_FAIL;
         }
     }
@@ -1005,7 +1001,7 @@ static HRESULT vboxRrWndDestroy(HWND hWnd)
         return S_OK;
 
     DWORD winErr = GetLastError();
-    LogFlowFunc(("DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd));
+    WARN((__FUNCTION__": DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd));
 
     return HRESULT_FROM_WIN32(winErr);
 }
@@ -1054,7 +1050,7 @@ HRESULT vboxRrRun()
         if(!bResult) /* WM_QUIT was posted */
         {
             hr = S_FALSE;
-            LogFlowFunc(("GetMessage returned FALSE\n"));
+            Log(("VBoxTray: GetMessage returned FALSE\n"));
             VBoxRrRetryStop();
             break;
         }
@@ -1068,7 +1064,7 @@ HRESULT vboxRrRun()
             Assert(hr != S_FALSE);
             if (hr == S_OK || hr == S_FALSE)
                 hr = E_FAIL;
-            LogFlowFunc(("GetMessage returned -1, err %d\n", winEr));
+            WARN(("VBoxTray: GetMessage returned -1, err %d\n", winEr));
             VBoxRrRetryStop();
             break;
         }
@@ -1078,7 +1074,7 @@ HRESULT vboxRrRun()
             case WM_VBOXRR_INIT_QUIT:
             case WM_CLOSE:
             {
-                LogFlowFunc(("closing Rr %d\n", Msg.message));
+                Log(("VBoxTray: closing Rr %d\n", Msg.message));
                 VBoxRrRetryStop();
                 PostQuitMessage(0);
                 break;
@@ -1100,7 +1096,7 @@ static DWORD WINAPI vboxRrRunnerThread(void *pvUser)
     if (!bRc)
     {
         DWORD winErr = GetLastError();
-        LogFlowFunc(("SetEvent failed, winErr = (%d)", winErr));
+        WARN((__FUNCTION__": SetEvent failed, winErr = (%d)", winErr));
         HRESULT tmpHr = HRESULT_FROM_WIN32(winErr);
         Assert(tmpHr != S_OK);
     }
@@ -1146,14 +1142,14 @@ HRESULT VBoxRrInit()
                 return S_OK;
             else
             {
-                LogFlowFunc(("WaitForSingleObject failed"));
+                Log(("WaitForSingleObject failed!"));
                 hr = E_FAIL;
             }
         }
         else
         {
             DWORD winErr = GetLastError();
-            LogFlowFunc(("CreateThread failed, winErr = (%d)", winErr));
+            WARN((__FUNCTION__": CreateThread failed, winErr = (%d)", winErr));
             hr = HRESULT_FROM_WIN32(winErr);
             Assert(hr != S_OK);
         }
@@ -1162,7 +1158,7 @@ HRESULT VBoxRrInit()
     else
     {
         DWORD winErr = GetLastError();
-        LogFlowFunc(("CreateEvent failed, winErr = (%d)", winErr));
+        WARN((__FUNCTION__": CreateEvent failed, winErr = (%d)", winErr));
         hr = HRESULT_FROM_WIN32(winErr);
         Assert(hr != S_OK);
     }
@@ -1215,7 +1211,7 @@ static DWORD vboxDispIfWddmInit(PCVBOXDISPIF pIf)
     {
         return ERROR_SUCCESS;
     }
-    LogFlowFunc(("VBoxRrInit failed hr 0x%x\n", hr));
+    WARN(("VBoxTray: VBoxRrInit failed hr 0x%x\n", hr));
     return hr;
 }
 
@@ -1239,7 +1235,7 @@ static DWORD vboxDispIfQueryDisplayConnection(VBOXDISPIF_OP *pOp, UINT32 iDispla
     DWORD winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
         return winEr;
     }
 
@@ -1251,7 +1247,7 @@ static DWORD vboxDispIfQueryDisplayConnection(VBOXDISPIF_OP *pOp, UINT32 iDispla
     return ERROR_SUCCESS;
 }
 
-static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp, const uint8_t *pu8DisplayMask)
+static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp)
 {
     DWORD winEr = ERROR_SUCCESS;
     do
@@ -1264,7 +1260,7 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp, const uint8_t *
         NTSTATUS Status = pOp->pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTPollDisplayChildren(&PollData);
         if (Status != 0)
         {
-            LogFlowFunc(("pfnD3DKMTPollDisplayChildren failed, Status (0x%x)\n", Status));
+            Log(("VBoxTray: (WDDM) pfnD3DKMTPollDisplayChildren failed, Status (0x%x)\n", Status));
             continue;
         }
 
@@ -1279,13 +1275,13 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp, const uint8_t *
             winEr = vboxDispIfQueryDisplayConnection(pOp, i, &fConnected);
             if (winEr != ERROR_SUCCESS)
             {
-                LogFlowFunc(("Failed vboxDispIfQueryDisplayConnection winEr %d\n", winEr));
+                WARN(("VBoxTray: (WDDM) Failed vboxDispIfQueryDisplayConnection winEr %d\n", winEr));
                 return winEr;
             }
 
             if (!fConnected)
             {
-                LogFlowFunc(("Display %d not connected, not expected\n", i));
+                WARN(("VBoxTray: (WDDM) Display %d not connected, not expected\n", i));
                 fFound = TRUE;
                 break;
             }
@@ -1298,12 +1294,13 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp, const uint8_t *
     return winEr;
 }
 
-static DWORD vboxDispIfReninitModesWDDM(VBOXDISPIF_OP *pOp, const uint8_t *pScreenIdMask)
+static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId, const RTRECTSIZE *pSize)
 {
     DWORD winEr = ERROR_SUCCESS;
-    VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK EscData = {0};
-    EscData.EscapeHdr.escapeCode = VBOXESC_REINITVIDEOMODESBYMASK;
-    memcpy(EscData.ScreenMask, pScreenIdMask, sizeof (EscData.ScreenMask));
+    VBOXDISPIFESCAPE_UPDATEMODES EscData = {0};
+    EscData.EscapeHdr.escapeCode = VBOXESC_UPDATEMODES;
+    EscData.u32TargetId = u32TargetId;
+    EscData.Size = *pSize;
 
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
@@ -1322,20 +1319,20 @@ static DWORD vboxDispIfReninitModesWDDM(VBOXDISPIF_OP *pOp, const uint8_t *pScre
         winEr = ERROR_SUCCESS;
     else
     {
-        LogFlowFunc(("pfnD3DKMTEscape VBOXESC_REINITVIDEOMODESBYMASK failed Status 0x%x\n", Status));
+        WARN(("VBoxTray: pfnD3DKMTEscape VBOXESC_UPDATEMODES failed Status 0x%x\n", Status));
         winEr = ERROR_GEN_FAILURE;
     }
 
-    winEr =  vboxDispIfWaitDisplayDataInited(pOp, pScreenIdMask);
+    winEr =  vboxDispIfWaitDisplayDataInited(pOp);
     if (winEr != NO_ERROR)
-        LogFlowFunc(("Failed vboxDispIfWaitDisplayDataInited winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWaitDisplayDataInited winEr %d\n", winEr));
 
     return winEr;
 }
 
 DWORD vboxDispIfCancelPendingResizeWDDM(PCVBOXDISPIF const pIf)
 {
-    LogFlowFunc(("cancelling pending resize\n"));
+    Log(("VBoxTray: cancelling pending resize\n"));
     VBoxRrRetryStop();
     return NO_ERROR;
 }
@@ -1351,13 +1348,13 @@ static DWORD vboxDispIfWddmResizeDisplayVista(DEVMODE *paDeviceModes, DISPLAY_DE
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
         tempDevMode.dmSize = sizeof(DEVMODE);
         EnumDisplaySettings((LPSTR)paDisplayDevices[i].DeviceName, 0xffffff, &tempDevMode);
-        LogFlowFunc(("ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
+        Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
     }
 
     DWORD winEr = EnableAndResizeDispDev(paDeviceModes, paDisplayDevices, cDevModes, iChangedMode, paDeviceModes[iChangedMode].dmPelsWidth, paDeviceModes[iChangedMode].dmPelsHeight,
             paDeviceModes[iChangedMode].dmBitsPerPel, paDeviceModes[iChangedMode].dmPosition.x, paDeviceModes[iChangedMode].dmPosition.y, fEnable, fExtDispSup);
     if (winEr != NO_ERROR)
-        LogFlowFunc(("Failed EnableAndResizeDispDev winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed EnableAndResizeDispDev winEr %d\n", winEr));
 
     return winEr;
 }
@@ -1369,27 +1366,22 @@ static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, 
     {
         winEr = vboxDispIfWddmResizeDisplay(pIf, iChangedMode, fEnable, paDisplayDevices, paDeviceModes, cDevModes);
         if (winEr != NO_ERROR)
-            LogFlowFunc(("Failed vboxDispIfWddmResizeDisplay winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmResizeDisplay winEr %d\n", winEr));
     }
     else
     {
         winEr = vboxDispIfWddmResizeDisplayVista(paDeviceModes, paDisplayDevices, cDevModes, iChangedMode, fEnable, fExtDispSup);
         if (winEr != NO_ERROR)
-            LogFlowFunc(("Failed vboxDispIfWddmResizeDisplayVista winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmResizeDisplayVista winEr %d\n", winEr));
     }
     return winEr;
 }
 
 DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
-    UINT cbVidPnInfo = VBOXWDDM_RECOMMENDVIDPN_SIZE(cDevModes);
-    PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = (PVBOXWDDM_RECOMMENDVIDPN)alloca(cbVidPnInfo);
-    pVidPnInfo->cScreenInfos = cDevModes;
-    D3DKMT_HANDLE hAdapter = NULL;
     DWORD winEr = NO_ERROR;
-    UINT i = 0;
 
-    LogFlowFunc(("vboxDispIfResizeModesWDDM\n"));
+    Log(("VBoxTray: vboxDispIfResizeModesWDDM\n"));
     VBoxRrRetryStop();
 
     VBOXDISPIF_OP Op;
@@ -1397,26 +1389,63 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     winEr = vboxDispIfOpBegin(pIf, &Op);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfOpBegin failed winEr 0x%x", winEr));
+        WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x", winEr));
         return winEr;
     }
 
+    VBOXWDDM_RECOMMENDVIDPN VidPnData;
 
-//        if (fEnable)
+    memset(&VidPnData, 0, sizeof (VidPnData));
+
+    uint32_t cElements = 0;
+
+    for (uint32_t i = 0; i < cDevModes; ++i)
     {
-
-        uint8_t ScreenMask[VBOXWDDM_SCREENMASK_SIZE] = {0};
-        ASMBitSet(ScreenMask, iChangedMode);
-        vboxDispIfReninitModesWDDM(&Op, ScreenMask);
+        if ((i == iChangedMode) ? fEnable : (paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE))
+        {
+            VidPnData.aSources[cElements].Size.cx = paDeviceModes[i].dmPelsWidth;
+            VidPnData.aSources[cElements].Size.cy = paDeviceModes[i].dmPelsHeight;
+            VidPnData.aTargets[cElements].iSource = cElements;
+            ++cElements;
+        }
+        else
+            VidPnData.aTargets[cElements].iSource = -1;
     }
 
-    winEr = vboxDispIfResizePerform(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+    D3DKMT_INVALIDATEACTIVEVIDPN DdiData = {0};
 
-    if (winEr == ERROR_RETRY)
-    {
-        VBoxRrRetrySchedule(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-        /* just pretend everything is fine so far */
+    DdiData.hAdapter = Op.Adapter.hAdapter;
+    DdiData.pPrivateDriverData = &VidPnData;
+    DdiData.PrivateDriverDataSize = sizeof (VidPnData);
+
+    NTSTATUS Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
+    if (NT_SUCCESS(Status))
         winEr = NO_ERROR;
+    else
+    {
+        winEr = NO_ERROR;
+
+        if (fEnable)
+        {
+            RTRECTSIZE Size;
+            Size.cx = paDeviceModes[iChangedMode].dmPelsWidth;
+            Size.cy = paDeviceModes[iChangedMode].dmPelsHeight;
+            winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
+            if (winEr != NO_ERROR)
+                WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
+        }
+
+        if (winEr == NO_ERROR)
+        {
+            winEr = vboxDispIfResizePerform(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+
+            if (winEr == ERROR_RETRY)
+            {
+                VBoxRrRetrySchedule(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+                /* just pretend everything is fine so far */
+                winEr = NO_ERROR;
+            }
+        }
     }
 
     vboxDispIfOpEnd(&Op);
@@ -1434,7 +1463,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ONLY_ACTIVE_PATHS);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
         return winEr;
     }
 
@@ -1442,7 +1471,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     UINT *pChangeIds = (UINT*)alloca(cIds * sizeof (*pChangeIds));
     if (!pChangeIds)
     {
-        LogFlowFunc(("Failed to alloc change ids\n"));
+        WARN(("VBoxTray: (WDDM) Failed to alloc change ids\n"));
         winEr = ERROR_OUTOFMEMORY;
         goto done;
     }
@@ -1474,7 +1503,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
 
     if (cChangeIds == 0)
     {
-        LogFlowFunc(("vboxDispIfWddmEnableDisplay: settings are up to date\n"));
+        Log(("VBoxTray: (WDDM) vboxDispIfWddmEnableDisplay: settings are up to date\n"));
         winEr = ERROR_SUCCESS;
         goto done;
     }
@@ -1483,7 +1512,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     winEr = vboxDispIfWddmDcSettingsIncludeAllTargets(&DispCfg);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcSettingsIncludeAllTargets winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcSettingsIncludeAllTargets winEr %d\n", winEr));
         return winEr;
     }
 
@@ -1497,7 +1526,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
         iPath = vboxDispIfWddmDcSearchPath(&DispCfg, -1, Id);
         if (iPath < 0)
         {
-            LogFlowFunc(("path index not found while it should"));
+            WARN(("VBoxTray: (WDDM) path index not found while it should"));
             winEr = ERROR_GEN_FAILURE;
             goto done;
         }
@@ -1505,7 +1534,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
         winEr = vboxDispIfWddmDcSettingsUpdate(&DispCfg, iPath, pDeviceMode, !fEnabled || fSetTopology, fEnabled);
         if (winEr != ERROR_SUCCESS)
         {
-            LogFlowFunc(("Failed vboxDispIfWddmDcSettingsUpdate winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcSettingsUpdate winEr %d\n", winEr));
             goto done;
         }
     }
@@ -1518,7 +1547,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     iPath = vboxDispIfWddmDcSearchPath(&DispCfg, 0, 0);
     if (iPath < 0)
     {
-        LogFlowFunc(("path index not found while it should"));
+        WARN(("VBoxTray: (WDDM) path index not found while it should"));
         winEr = ERROR_GEN_FAILURE;
         goto done;
     }
@@ -1526,7 +1555,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     winEr = vboxDispIfWddmDcSettingsUpdate(&DispCfg, iPath, /* just re-use device node here*/ pDeviceMode, fSetTopology, TRUE);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcSettingsUpdate winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcSettingsUpdate winEr %d\n", winEr));
         goto done;
     }
 #endif
@@ -1537,12 +1566,12 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
     {
         if (!fSetTopology)
         {
-            LogFlowFunc(("vboxDispIfWddmDcSet validation failed winEr, trying with changes %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) vboxDispIfWddmDcSet validation failed winEr, trying with changes %d\n", winEr));
             fSetFlags |= SDC_ALLOW_CHANGES;
         }
         else
         {
-            LogFlowFunc(("vboxDispIfWddmDcSet topology validation failed winEr %d\n", winEr));
+            Log(("VBoxTray: (WDDM) vboxDispIfWddmDcSet topology validation failed winEr %d\n", winEr));
             goto done;
         }
     }
@@ -1552,7 +1581,7 @@ static DWORD vboxDispIfWddmEnableDisplays(PCVBOXDISPIF const pIf, UINT cIds, UIN
 
     winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_APPLY);
     if (winEr != ERROR_SUCCESS)
-        LogFlowFunc(("vboxDispIfWddmDcSet apply failed winEr %d\n", winEr));
+        WARN(("VBoxTray: (WDDM) vboxDispIfWddmDcSet apply failed winEr %d\n", winEr));
 
 done:
     vboxDispIfWddmDcTerm(&DispCfg);
@@ -1566,12 +1595,12 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
     if (winEr != ERROR_SUCCESS)
     {
         if (fEnable)
-            LogFlowFunc(("Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
         else
-            LogFlowFunc(("Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
+            Log(("VBoxTray: (WDDM) Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
         winEr = vboxDispIfWddmEnableDisplays(pIf, cIds, pIds, fEnable, TRUE, NULL);
         if (winEr != ERROR_SUCCESS)
-            LogFlowFunc(("Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmEnableDisplay mode winEr %d\n", winEr));
     }
 
     return winEr;
@@ -1586,7 +1615,7 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
     winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ONLY_ACTIVE_PATHS);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcCreate\n"));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcCreate\n"));
         return winEr;
     }
 
@@ -1605,21 +1634,21 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
         winEr = vboxDispIfWddmEnableDisplaysTryingTopology(pIf, 1, &Id, fEnable);
         if (winEr != ERROR_SUCCESS)
         {
-            LogFlowFunc(("Failed vboxDispIfWddmEnableDisplaysTryingTopology winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmEnableDisplaysTryingTopology winEr %d\n", winEr));
             return winEr;
         }
 
         winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ONLY_ACTIVE_PATHS);
         if (winEr != ERROR_SUCCESS)
         {
-            LogFlowFunc(("Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcCreate winEr %d\n", winEr));
             return winEr;
         }
 
         iPath = vboxDispIfWddmDcSearchPath(&DispCfg, Id, Id);
         if (iPath < 0)
         {
-            LogFlowFunc(("path (%d) is still disabled, going to retry winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) path (%d) is still disabled, going to retry winEr %d\n", winEr));
             vboxDispIfWddmDcTerm(&DispCfg);
             return ERROR_RETRY;
         }
@@ -1635,7 +1664,7 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
         winEr = vboxDispIfWddmEnableDisplaysTryingTopology(pIf, 1, &Id, fEnable);
         if (winEr != ERROR_SUCCESS)
         {
-            LogFlowFunc(("Failed vboxDispIfWddmEnableDisplaysTryingTopology winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmEnableDisplaysTryingTopology winEr %d\n", winEr));
             return winEr;
         }
 
@@ -1647,7 +1676,7 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
     winEr = vboxDispIfWddmDcSettingsUpdate(&DispCfg, iPath, &paDeviceMode[Id], FALSE, fEnable);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("Failed vboxDispIfWddmDcSettingsUpdate\n"));
+        WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcSettingsUpdate\n"));
         vboxDispIfWddmDcTerm(&DispCfg);
         return winEr;
     }
@@ -1656,14 +1685,14 @@ static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL f
     winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_VALIDATE);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
+        WARN(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
         fSetFlags |= SDC_ALLOW_CHANGES;
     }
 
     winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_SAVE_TO_DATABASE | SDC_APPLY);
     if (winEr != ERROR_SUCCESS)
     {
-        LogFlowFunc(("pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
+        WARN(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
     }
 
     vboxDispIfWddmDcTerm(&DispCfg);
@@ -1687,7 +1716,7 @@ DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEna
             return vboxDispIfResizeModesWDDM(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 #endif
         default:
-            LogFlowFunc(("unknown mode (%d)\n", pIf->enmMode));
+            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1706,7 +1735,7 @@ DWORD VBoxDispIfCancelPendingResize(PCVBOXDISPIF const pIf)
             return vboxDispIfCancelPendingResizeWDDM(pIf);
 #endif
         default:
-            LogFlowFunc(("unknown mode (%d)\n", pIf->enmMode));
+            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1736,7 +1765,7 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
             *pcConnected = EscapeHdr.u32CmdSpecific;
         return NO_ERROR;
     }
-    LogFlowFunc(("pfnD3DKMTEscape VBOXESC_CONFIGURETARGETS failed Status 0x%x\n", Status));
+    WARN(("VBoxTray: pfnD3DKMTEscape VBOXESC_CONFIGURETARGETS failed Status 0x%x\n", Status));
     return Status;
 }
 
@@ -1745,7 +1774,7 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     DWORD NumDevices = VBoxGetDisplayConfigCount();
     if (NumDevices == 0)
     {
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
         return ERROR_GEN_FAILURE;
     }
 
@@ -1757,41 +1786,41 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     DWORD winEr = VBoxGetDisplayConfig(NumDevices, &DevPrimaryNum, &DevNum, paDisplayDevices, paDeviceModes);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed, %d\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed, %d\n", winEr));
         return winEr;
     }
 
     if (NumDevices != DevNum)
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != DevNum(%d)\n", NumDevices, DevNum));
 
 
     uint32_t cConnected = 0;
     winEr = vboxDispIfConfigureTargetsWDDM(pOp, &cConnected);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfConfigureTargetsWDDM failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfConfigureTargetsWDDM failed winEr 0x%x\n", winEr));
         return winEr;
     }
 
     if (!cConnected)
     {
-        LogFlowFunc(("all targets already connected, nothing to do\n"));
+        Log(("VBoxTray: all targets already connected, nothing to do\n"));
         return NO_ERROR;
     }
 
-    winEr = vboxDispIfWaitDisplayDataInited(pOp, NULL);
+    winEr = vboxDispIfWaitDisplayDataInited(pOp);
     if (winEr != NO_ERROR)
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: vboxDispIfWaitDisplayDataInited failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: vboxDispIfWaitDisplayDataInited failed winEr 0x%x\n", winEr));
 
     DWORD NewNumDevices = VBoxGetDisplayConfigCount();
     if (NewNumDevices == 0)
     {
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: Zero devices found\n"));
         return ERROR_GEN_FAILURE;
     }
 
     if (NewNumDevices != NumDevices)
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != NewNumDevices(%d)\n", NumDevices, NewNumDevices));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NumDevices(%d) != NewNumDevices(%d)\n", NumDevices, NewNumDevices));
 
     DISPLAY_DEVICE *paNewDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NewNumDevices);
     DEVMODE *paNewDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NewNumDevices);
@@ -1801,12 +1830,12 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     winEr = VBoxGetDisplayConfig(NewNumDevices, &NewDevPrimaryNum, &NewDevNum, paNewDisplayDevices, paNewDeviceModes);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed for new devices, %d\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: VBoxGetDisplayConfig failed for new devices, %d\n", winEr));
         return winEr;
     }
 
     if (NewNumDevices != NewDevNum)
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: NewNumDevices(%d) != NewDevNum(%d)\n", NewNumDevices, NewDevNum));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: NewNumDevices(%d) != NewDevNum(%d)\n", NewNumDevices, NewDevNum));
 
     DWORD minDevNum = RT_MIN(DevNum, NewDevNum);
     UINT *pIds = (UINT*)alloca (sizeof (UINT) * minDevNum);
@@ -1824,7 +1853,7 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     if (!cIds)
     {
         /* this is something we would not regularly expect */
-        LogFlowFunc(("all targets already have proper config, nothing to do\n"));
+        WARN(("VBoxTray: all targets already have proper config, nothing to do\n"));
         return NO_ERROR;
     }
 
@@ -1832,7 +1861,7 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     {
         winEr = vboxDispIfWddmEnableDisplaysTryingTopology(pOp->pIf, cIds, pIds, FALSE);
         if (winEr != NO_ERROR)
-            LogFlowFunc(("vboxDispIfWddmEnableDisplaysTryingTopology failed to record current settings, %d, ignoring\n", winEr));
+            WARN(("VBoxTray: vboxDispIfWddmEnableDisplaysTryingTopology failed to record current settings, %d, ignoring\n", winEr));
     }
     else
     {
@@ -1840,7 +1869,7 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
         {
             winEr = vboxDispIfWddmResizeDisplayVista(paNewDeviceModes, paNewDisplayDevices, NewDevNum, i, FALSE, TRUE);
             if (winEr != NO_ERROR)
-                LogFlowFunc(("vboxDispIfResizeStartedWDDMOp: vboxDispIfWddmResizeDisplayVista failed winEr 0x%x\n", winEr));
+                WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: vboxDispIfWddmResizeDisplayVista failed winEr 0x%x\n", winEr));
         }
     }
 
@@ -1855,14 +1884,14 @@ static DWORD vboxDispIfResizeStartedWDDM(PCVBOXDISPIF const pIf)
     DWORD winEr = vboxDispIfOpBegin(pIf, &Op);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfOpBegin failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfOpBegin failed winEr 0x%x\n", winEr));
         return winEr;
     }
 
     winEr = vboxDispIfResizeStartedWDDMOp(&Op);
     if (winEr != NO_ERROR)
     {
-        LogFlowFunc(("vboxDispIfResizeStartedWDDMOp failed winEr 0x%x\n", winEr));
+        WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp failed winEr 0x%x\n", winEr));
     }
 
     vboxDispIfOpEnd(&Op);
@@ -1884,7 +1913,7 @@ DWORD VBoxDispIfResizeStarted(PCVBOXDISPIF const pIf)
             return vboxDispIfResizeStartedWDDM(pIf);
 #endif
         default:
-            LogFlowFunc(("unknown mode (%d)\n", pIf->enmMode));
+            WARN((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -1908,24 +1937,24 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
         {
             bool bSupported = true;
             *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-            LogFlowFunc(("pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
+            Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
             bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
 
             if (!bSupported)
             {
-                LogFlowFunc(("pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
+                WARN((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
                 err = ERROR_NOT_SUPPORTED;
             }
         }
         else
         {
-            LogFlowFunc(("failed to get USER32 handle, err (%d)\n", GetLastError()));
+            WARN((__FUNCTION__": failed to get USER32 handle, err (%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
     else
     {
-        LogFlowFunc(("can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
+        WARN((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
         err = ERROR_NOT_SUPPORTED;
     }
 
@@ -1955,52 +1984,52 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
     switch (enmMode)
     {
         case VBOXDISPIF_MODE_XPDM_NT4:
-            LogFlowFunc(("request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
             err = vboxDispIfSwitchToXPDM_NT4(pIf);
             if (err == NO_ERROR)
             {
-                LogFlowFunc(("successfully switched to XPDM_NT4 mode\n"));
+                Log((__FUNCTION__": successfully switched to XPDM_NT4 mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_XPDM_NT4;
             }
             else
-                LogFlowFunc(("failed to switch to XPDM_NT4 mode, err (%d)\n", err));
+                WARN((__FUNCTION__": failed to switch to XPDM_NT4 mode, err (%d)\n", err));
             break;
         case VBOXDISPIF_MODE_XPDM:
-            LogFlowFunc(("request to switch to VBOXDISPIF_MODE_XPDM\n"));
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM\n"));
             err = vboxDispIfSwitchToXPDM(pIf);
             if (err == NO_ERROR)
             {
-                LogFlowFunc(("successfully switched to XPDM mode\n"));
+                Log((__FUNCTION__": successfully switched to XPDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_XPDM;
             }
             else
-                LogFlowFunc(("failed to switch to XPDM mode, err (%d)\n", err));
+                WARN((__FUNCTION__": failed to switch to XPDM mode, err (%d)\n", err));
             break;
 #ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
         {
-            LogFlowFunc(("request to switch to VBOXDISPIF_MODE_WDDM\n"));
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));
             err = vboxDispIfSwitchToWDDM(pIf);
             if (err == NO_ERROR)
             {
-                LogFlowFunc(("successfully switched to WDDM mode\n"));
+                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_WDDM;
             }
             else
-                LogFlowFunc(("failed to switch to WDDM mode, err (%d)\n", err));
+                WARN((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
             break;
         }
         case VBOXDISPIF_MODE_WDDM_W7:
         {
-            LogFlowFunc(("request to switch to VBOXDISPIF_MODE_WDDM_W7\n"));
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM_W7\n"));
             err = vboxDispIfSwitchToWDDM_W7(pIf);
             if (err == NO_ERROR)
             {
-                LogFlowFunc(("successfully switched to WDDM mode\n"));
+                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
                 pIf->enmMode = VBOXDISPIF_MODE_WDDM_W7;
             }
             else
-                LogFlowFunc(("failed to switch to WDDM mode, err (%d)\n", err));
+                WARN((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
             break;
         }
 #endif
@@ -2027,12 +2056,12 @@ static DWORD vboxDispIfSeamlesCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAM
                 return ERROR_SUCCESS;
 #ifdef VBOX_DISPIF_WITH_OPCONTEXT
             else
-                LogFlowFunc(("vboxDispKmtCreateContext failed hr 0x%x", hr));
+                WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
             vboxDispKmtDestroyDevice(&pSeamless->modeData.wddm.Device);
         }
         else
-            LogFlowFunc(("vboxDispKmtCreateDevice failed hr 0x%x", hr));
+            WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
 #endif
@@ -2069,7 +2098,7 @@ static DWORD vboxDispIfSeamlesSubmitWDDM(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDIS
     if (NT_SUCCESS(Status))
         return ERROR_SUCCESS;
 
-    LogFlowFunc(("pfnD3DKMTEscape Seamless failed Status 0x%x\n", Status));
+    WARN(("VBoxTray: pfnD3DKMTEscape Seamless failed Status 0x%x\n", Status));
     return Status;
 }
 
@@ -2089,7 +2118,7 @@ DWORD VBoxDispIfSeamlesCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeam
             return vboxDispIfSeamlesCreateWDDM(pIf, pSeamless, hEvent);
 #endif
         default:
-            LogFlowFunc(("VBoxDispIfSeamlesCreate: invalid mode %d\n", pIf->enmMode));
+            WARN(("VBoxTray: VBoxDispIfSeamlesCreate: invalid mode %d\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }
@@ -2111,7 +2140,7 @@ DWORD VBoxDispIfSeamlesTerm(VBOXDISPIF_SEAMLESS *pSeamless)
             break;
 #endif
         default:
-            LogFlowFunc(("VBoxDispIfSeamlesTerm: invalid mode %d\n", pIf->enmMode));
+            WARN(("VBoxTray: VBoxDispIfSeamlesTerm: invalid mode %d\n", pIf->enmMode));
             winEr = ERROR_INVALID_PARAMETER;
             break;
     }
@@ -2128,7 +2157,7 @@ DWORD VBoxDispIfSeamlesSubmit(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDISPIFESCAPE *
 
     if (pData->escapeCode != VBOXESC_SETVISIBLEREGION)
     {
-        LogFlowFunc(("invalid escape code for Seamless submit %d\n", pData->escapeCode));
+        WARN(("VBoxTray: invalid escape code for Seamless submit %d\n", pData->escapeCode));
         return ERROR_INVALID_PARAMETER;
     }
 
@@ -2143,7 +2172,7 @@ DWORD VBoxDispIfSeamlesSubmit(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDISPIFESCAPE *
             return vboxDispIfSeamlesSubmitWDDM(pSeamless, pData, cbData);
 #endif
         default:
-            LogFlowFunc(("VBoxDispIfSeamlesSubmit: invalid mode %d\n", pIf->enmMode));
+            WARN(("VBoxTray: VBoxDispIfSeamlesSubmit: invalid mode %d\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
 }

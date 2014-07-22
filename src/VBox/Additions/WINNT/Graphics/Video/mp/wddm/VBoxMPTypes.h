@@ -33,10 +33,13 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPShgsmi.h"
 #include "VBoxMPVbva.h"
 #include "VBoxMPCr.h"
+#include "VBoxMPVModes.h"
 
 #ifdef VBOX_WITH_CROGL
 #include <cr_vreg.h>
 #endif
+
+#include <cr_sortarray.h>
 
 #if 0
 #include <iprt/avl.h>
@@ -335,15 +338,20 @@ typedef struct VBOXWDDM_OPENALLOCATION
     uint32_t cHostIDRefs;
 } VBOXWDDM_OPENALLOCATION, *PVBOXWDDM_OPENALLOCATION;
 
-#define VBOXWDDM_MAX_VIDEOMODES 128
-typedef struct VBOXWDDM_VIDEOMODES_INFO
+#define VBOX_VMODES_MAX_COUNT 128
+
+typedef struct VBOX_VMODES
 {
-    int32_t iPreferredMode;
-    uint32_t cModes;
-    VIDEO_MODE_INFORMATION aModes[VBOXWDDM_MAX_VIDEOMODES];
-    int32_t iPreferredResolution;
-    uint32_t cResolutions;
-    D3DKMDT_2DREGION aResolutions[VBOXWDDM_MAX_VIDEOMODES];
-} VBOXWDDM_VIDEOMODES_INFO, *PVBOXWDDM_VIDEOMODES_INFO;
+    uint32_t cTargets;
+    CR_SORTARRAY aTargets[VBOX_VIDEO_MAX_SCREENS];
+} VBOX_VMODES;
+
+typedef struct VBOXWDDM_VMODES
+{
+    VBOX_VMODES Modes;
+    /* note that we not use array indices to indentify modes, because indices may change due to element removal */
+    uint64_t aTransientResolutions[VBOX_VIDEO_MAX_SCREENS];
+    uint64_t aPendingRemoveCurResolutions[VBOX_VIDEO_MAX_SCREENS];
+} VBOXWDDM_VMODES;
 
 #endif /* #ifndef ___VBoxMPTypes_h___ */

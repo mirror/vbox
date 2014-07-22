@@ -29,28 +29,13 @@ typedef bool(*PFNVIDEOIRQSYNC)(void *);
 bool VBoxMPCmnSyncToVideoIRQ(PVBOXMP_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync, void *pvUser);
 
 /* Video modes related */
+#ifdef VBOX_XPDM_MINIPORT
 void VBoxMPCmnInitCustomVideoModes(PVBOXMP_DEVEXT pExt);
 VIDEO_MODE_INFORMATION* VBoxMPCmnGetCustomVideoModeInfo(ULONG ulIndex);
-
-#ifdef VBOX_XPDM_MINIPORT
 VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(PVBOXMP_DEVEXT pExt, ULONG ulIndex);
 VIDEO_MODE_INFORMATION* VBoxMPXpdmCurrentVideoMode(PVBOXMP_DEVEXT pExt);
 ULONG VBoxMPXpdmGetVideoModesCount(PVBOXMP_DEVEXT pExt);
 void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt);
-#endif
-
-#ifdef VBOX_WDDM_MINIPORT
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateVideoModesInfoByMask(PVBOXMP_DEVEXT pExt, uint8_t *pScreenIdMask);
-void VBoxWddmInitVideoModes(PVBOXMP_DEVEXT pExt);
-NTSTATUS VBoxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32_t cAllModes, int iSearchPreferredMode,
-                                       const D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes,
-                                       uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode);
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmGetAllVideoModesInfos(PVBOXMP_DEVEXT pExt);
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmGetVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
-bool VBoxWddmFillMode(VIDEO_MODE_INFORMATION *pInfo, D3DDDIFORMAT enmFormat, ULONG w, ULONG h);
-bool VBoxWddmFillMode(VIDEO_MODE_INFORMATION *pInfo, D3DDDIFORMAT enmFormat, ULONG w, ULONG h);
-void VBoxWddmAdjustMode(PVBOXMP_DEVEXT pExt, PVBOXWDDM_ADJUSTVIDEOMODE pMode);
-void VBoxWddmAdjustModes(PVBOXMP_DEVEXT pExt, uint32_t cModes, PVBOXWDDM_ADJUSTVIDEOMODE aModes);
 #endif
 
 /* Registry access */

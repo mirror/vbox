@@ -706,7 +706,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
         WARN(("failed to acquire the VideoID, falling back to the old impl"));
 
     Status = vboxWddmRegOpenKey(&hKey, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY, GENERIC_READ);
-    Assert(Status == STATUS_SUCCESS);
+    //Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
         struct
@@ -733,7 +733,7 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PW
             pSubBuf += Buf.Name.NameLength/2;
             memcpy(pSubBuf, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY, sizeof (VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY));
             Status = vboxWddmRegOpenKey(&hSubKey, KeyBuf, GENERIC_READ);
-            Assert(Status == STATUS_SUCCESS);
+            //Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
             {
                 struct
@@ -855,7 +855,7 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDeviceExtension, D3D
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     HANDLE hKey;
     NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDeviceExtension, VidPnSourceId, &hKey);
-    Assert(Status == STATUS_SUCCESS);
+    //Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
         int x, y;

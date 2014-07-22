@@ -143,7 +143,11 @@ typedef struct _VBOXMP_DEVEXT
 #ifdef VBOX_WITH_VIDEOHWACCEL
    VBOXVTLIST VhwaCmdList;
 #endif
-   BOOL bNotifyDxDpc;
+   BOOLEAN bNotifyDxDpc;
+
+   BOOLEAN fDisableTargetUpdate;
+
+
 
 #ifdef VBOX_VDMA_WITH_WATCHDOG
    PKTHREAD pWdThread;

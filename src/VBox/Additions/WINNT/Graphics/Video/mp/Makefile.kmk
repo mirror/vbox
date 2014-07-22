@@ -112,13 +112,16 @@ ifdef VBOX_WITH_WDDM
  	wddm/VBoxMPMisc.cpp \
  	wddm/VBoxMPWddm.rc \
  	wddm/VBoxMPRegistry.cpp \
+ 	wddm/VBoxMPVModes.cpp \
  	common/VBoxMPUtils.cpp \
  	common/VBoxMPCommon.cpp \
  	common/VBoxMPHGSMI.cpp \
- 	common/VBoxMPVidModes.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
+
+   VBoxVideoWddm_SOURCES   += \
+	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/sortarray.cpp
  	
  if defined(VBOX_WITH_CROGL)
    VBoxVideoWddm_SOURCES   += \
