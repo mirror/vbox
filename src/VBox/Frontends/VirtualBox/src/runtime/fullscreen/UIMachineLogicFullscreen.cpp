@@ -74,7 +74,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
      * Since VBoxGlobal::extractKeyFromActionText gets exactly
      * the linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen)->text()));
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
@@ -445,7 +445,7 @@ void UIMachineLogicFullscreen::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Take care of view-action toggle state: */
-    UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
+    UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen);
     if (!pActionFullscreen->isChecked())
     {
         pActionFullscreen->blockSignals(true);
@@ -461,11 +461,11 @@ void UIMachineLogicFullscreen::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToSeamless()));
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
 }
 
@@ -607,11 +607,11 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
 void UIMachineLogicFullscreen::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToSeamless()));
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
 
     /* Call to base-class: */
@@ -621,7 +621,7 @@ void UIMachineLogicFullscreen::cleanupActionConnections()
 void UIMachineLogicFullscreen::cleanupActionGroups()
 {
     /* Take care of view-action toggle state: */
-    UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
+    UIAction *pActionFullscreen = gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen);
     if (pActionFullscreen->isChecked())
     {
         pActionFullscreen->blockSignals(true);
@@ -640,7 +640,7 @@ void UIMachineLogicFullscreen::updateMenuView()
     UIMachineLogic::updateMenuView();
 
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
+    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
 
     /* Append 'Multiscreen' submenu, if allowed: */

@@ -50,7 +50,7 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
                     , bAccelerate2DVideo
 #endif
                     )
-    , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked())
+    , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
 }
 

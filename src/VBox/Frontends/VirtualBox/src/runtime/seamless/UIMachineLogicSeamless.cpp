@@ -74,7 +74,7 @@ bool UIMachineLogicSeamless::checkAvailability()
      * Since VBoxGlobal::extractKeyFromActionText gets exactly
      * the linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRT_M_View_T_Seamless)->text()));
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
@@ -203,10 +203,10 @@ void UIMachineLogicSeamless::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Disable mouse-integration isn't allowed in seamless: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
+    gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(false);
 
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
+    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRT_M_View_T_Seamless);
     if (!pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
@@ -222,11 +222,11 @@ void UIMachineLogicSeamless::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+    connect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
 }
 
@@ -303,11 +303,11 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 void UIMachineLogicSeamless::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
+    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
 
     /* Call to base-class: */
@@ -317,7 +317,7 @@ void UIMachineLogicSeamless::cleanupActionConnections()
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
+    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRT_M_View_T_Seamless);
     if (pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
@@ -327,7 +327,7 @@ void UIMachineLogicSeamless::cleanupActionGroups()
     }
 
     /* Reenable mouse-integration action: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(true);
+    gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(true);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
@@ -339,7 +339,7 @@ void UIMachineLogicSeamless::updateMenuView()
     UIMachineLogic::updateMenuView();
 
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
+    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
 
     /* Append 'Multiscreen' submenu, if allowed: */

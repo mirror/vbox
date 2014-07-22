@@ -759,10 +759,10 @@ void UISession::sltVRDEChange()
     const CVRDEServer &server = machine.GetVRDEServer();
     bool fIsVRDEServerAvailable = !server.isNull();
     /* Show/Hide VRDE action depending on VRDE server availability status: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer)->setVisible(fIsVRDEServerAvailable);
+    gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setVisible(fIsVRDEServerAvailable);
     /* Check/Uncheck VRDE action depending on VRDE server activity status: */
     if (fIsVRDEServerAvailable)
-        gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer)->setChecked(server.GetEnabled());
+        gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setChecked(server.GetEnabled());
     /* Notify listeners about VRDE change: */
     emit sigVRDEChange();
 }
@@ -772,7 +772,7 @@ void UISession::sltVideoCaptureChange()
     /* Get machine: */
     const CMachine machine = session().GetMachine();
     /* Check/Uncheck Video Capture action depending on feature status: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture)->setChecked(machine.GetVideoCaptureEnabled());
+    gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine.GetVideoCaptureEnabled());
     /* Notify listeners about Video Capture change: */
     emit sigVideoCaptureChange();
 }
@@ -989,8 +989,8 @@ void UISession::prepareActions()
             if (attachment.GetType() == KDeviceType_Floppy)
                 ++iDevicesCountFD;
         }
-        QAction *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices);
-        QAction *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices);
+        QAction *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
+        QAction *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
         pOpticalDevicesMenu->setData(iDevicesCountCD);
         pOpticalDevicesMenu->setVisible(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
@@ -1012,7 +1012,7 @@ void UISession::prepareActions()
                 break;
             }
         }
-        gActionPool->action(UIActionIndexRuntime_Menu_Network)->setVisible(fAtLeastOneAdapterActive);
+        gActionPool->action(UIActionIndexRT_M_Devices_M_Network)->setVisible(fAtLeastOneAdapterActive);
     }
 
     /* USB stuff: */
@@ -1021,7 +1021,7 @@ void UISession::prepareActions()
         const bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
                                  && !machine.GetUSBControllers().isEmpty()
                                  && machine.GetUSBProxyAvailable();
-        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBEnabled);
+        gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->setVisible(fUSBEnabled);
     }
 
     /* WebCams stuff: */
@@ -1029,7 +1029,7 @@ void UISession::prepareActions()
         /* Check whether there is an accessible video input devices pool: */
         host.GetVideoInputDevices();
         const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
-        gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->setVisible(fWebCamsEnabled);
+        gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->setVisible(fWebCamsEnabled);
     }
 }
 
@@ -1155,7 +1155,7 @@ void UISession::loadSessionSettings()
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(vboxGlobal().managedVMUuid());
 
         /* Should guest autoresize? */
-        QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
+        QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(vboxGlobal().managedVMUuid()));
 
         /* Should we allow reconfiguration? */
@@ -1167,9 +1167,9 @@ void UISession::loadSessionSettings()
         const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
         const bool fEnabledForMachine = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
         const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
-        QAction *pActionStatusBarSettings = gActionPool->action(UIActionIndexRuntime_Simple_StatusBarSettings);
+        QAction *pActionStatusBarSettings = gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
         pActionStatusBarSettings->setEnabled(fEnabled);
-        QAction *pActionStatusBarSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_StatusBar);
+        QAction *pActionStatusBarSwitch = gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
         pActionStatusBarSwitch->blockSignals(true);
         pActionStatusBarSwitch->setChecked(fEnabled);
         pActionStatusBarSwitch->blockSignals(false);
@@ -1204,7 +1204,7 @@ void UISession::saveSessionSettings()
         gEDataManager->setMachineFirstTimeStarted(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
-        gEDataManager->setGuestScreenAutoResizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
+        gEDataManager->setGuestScreenAutoResizeEnabled(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
 
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
@@ -1258,13 +1258,13 @@ void UISession::cleanupConnections()
 void UISession::updateSessionSettings()
 {
     /* Particularly enable/disable reconfigurable action: */
-    gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog)->setEnabled(m_fReconfigurable);
-    gActionPool->action(UIActionIndexRuntime_Simple_StorageSettings)->setEnabled(m_fReconfigurable);
-    gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings)->setEnabled(m_fReconfigurable);
-    gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings)->setEnabled(m_fReconfigurable);
-    gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(m_fReconfigurable);
+    gActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(m_fReconfigurable);
     /* Particularly enable/disable snapshot related action: */
-    gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot)->setEnabled(m_fSnapshotOperationsAllowed);
+    gActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(m_fSnapshotOperationsAllowed);
 }
 
 WId UISession::winId() const
