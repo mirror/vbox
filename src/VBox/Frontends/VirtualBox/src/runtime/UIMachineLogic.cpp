@@ -1008,9 +1008,6 @@ void UIMachineLogic::prepareHandlers()
 
 void UIMachineLogic::prepareMenu()
 {
-    /* Update action-pool visibility: */
-    uisession()->updateActionPoolVisibility();
-
     /* Update 'Machine' menu: */
     updateMenuMachine();
     /* Update 'View' menu: */

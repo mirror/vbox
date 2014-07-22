@@ -91,7 +91,6 @@ public:
     KMachineState machineState() const { return m_machineState; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
-    void updateActionPoolVisibility();
     QCursor cursor() const { return m_cursor; }
 
 #ifndef Q_WS_MAC
@@ -318,6 +317,7 @@ private:
     UIMachine* uimachine() const { return m_pMachine; }
 
     /* Prepare helpers: */
+    void prepareActions();
     void prepareConnections();
     void prepareConsoleEventHandlers();
     void prepareScreens();
@@ -330,6 +330,7 @@ private:
     //void cleanupScreens() {}
     void cleanupConsoleEventHandlers();
     void cleanupConnections();
+    //void cleanupActions() {}
 
     /* Update helpers: */
     void updateSessionSettings();
