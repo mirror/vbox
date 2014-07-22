@@ -31,6 +31,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 #include <iprt/avl.h>
+#include <iprt/string.h>
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined (VBOX_WITH_64_BITS_GUESTS)
 /* Enable 64 bits guest support. */
@@ -120,6 +121,19 @@ RT_C_DECLS_BEGIN
  */
 #define HMCPU_CF_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags))
 
+
+/** Resets/initializes the VM-exit/#VMEXIT history array. */
+#define HMCPU_EXIT_HISTORY_RESET(pVCpu)           (memset(&(pVCpu)->hm.s.auExitHistory, sizeof((pVCpu)->hm.s.auExitHistory), 0))
+
+/** Updates the VM-exit/#VMEXIT history array. */
+#define HMCPU_EXIT_HISTORY_ADD(pVCpu, a_ExitReason) \
+    do { \
+        AssertMsg((pVCpu)->hm.s.idxExitHistoryFree < RT_ELEMENTS((pVCpu)->hm.s.auExitHistory), ("%u\n", (pVCpu)->hm.s.idxExitHistoryFree)); \
+        (pVCpu)->hm.s.auExitHistory[(pVCpu)->hm.s.idxExitHistoryFree++] = (uint16_t)(a_ExitReason); \
+        if ((pVCpu)->hm.s.idxExitHistoryFree == RT_ELEMENTS((pVCpu)->hm.s.auExitHistory)) \
+            (pVCpu)->hm.s.idxExitHistoryFree = 0; \
+        (pVCpu)->hm.s.auExitHistory[(pVCpu)->hm.s.idxExitHistoryFree] = UINT16_MAX; \
+    } while (0)
 
 /** Maximum number of exit reason statistics counters. */
 #define MAX_EXITREASON_STAT        0x100
@@ -806,6 +820,11 @@ typedef struct HMCPU
         uint32_t            cPages;
         uint32_t            u32Alignment0; /**< Explicit alignment padding. */
     } TlbShootdown;
+
+    /** VT-x/AMD-V VM-exit/#VMXEXIT history, circular array. */
+    uint16_t                auExitHistory[31];
+    /** The index of the next free slot in the history array. */
+    uint16_t                idxExitHistoryFree;
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
