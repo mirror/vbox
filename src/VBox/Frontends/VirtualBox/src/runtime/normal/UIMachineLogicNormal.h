@@ -63,6 +63,11 @@ private:
     void cleanupMachineWindows();
     void cleanupActionConnections();
 
+    /** Updates the 'View' menu. */
+    virtual void updateMenuView();
+    /** Updates the 'View' : 'Status Bar' menu. */
+    void updateMenuViewStatusBar();
+
     /* Friend classes: */
     friend class UIMachineLogic;
 };

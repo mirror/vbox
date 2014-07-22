@@ -40,18 +40,7 @@
 
 UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-    , m_pMainMenu(0)
 {
-}
-
-void UIMachineWindowScale::sltPopupMainMenu()
-{
-    /* Popup main-menu if present: */
-    if (m_pMainMenu && !m_pMainMenu->isEmpty())
-    {
-        m_pMainMenu->popup(geometry().center());
-        QTimer::singleShot(0, m_pMainMenu, SLOT(sltHighlightFirstAction()));
-    }
 }
 
 void UIMachineWindowScale::prepareMainLayout()
@@ -64,17 +53,6 @@ void UIMachineWindowScale::prepareMainLayout()
     m_pBottomSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_pLeftSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_pRightSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-}
-
-void UIMachineWindowScale::prepareMenu()
-{
-    /* Call to base-class: */
-    UIMachineWindow::prepareMenu();
-
-    /* Prepare menu: */
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    m_pMainMenu = uisession()->newMenu(allowedMenus);
 }
 
 #ifdef Q_WS_MAC
@@ -163,16 +141,6 @@ void UIMachineWindowScale::cleanupVisualState()
     UIMachineWindow::cleanupVisualState();
 }
 #endif /* Q_WS_MAC */
-
-void UIMachineWindowScale::cleanupMenu()
-{
-    /* Cleanup menu: */
-    delete m_pMainMenu;
-    m_pMainMenu = 0;
-
-    /* Call to base-class: */
-    UIMachineWindow::cleanupMenu();
-}
 
 void UIMachineWindowScale::showInNecessaryMode()
 {

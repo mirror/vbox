@@ -127,7 +127,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMachine(pMachine)
     , m_session(sessionReference)
     /* Common variables: */
-    , m_pMenuPool(0)
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(session().GetMachine().GetState())
 #ifndef Q_WS_MAC
@@ -185,9 +184,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Prepare framebuffers: */
     prepareFramebuffers();
 
-    /* Prepare main-menu: */
-    prepareMenuPool();
-
     /* Load settings: */
     loadSessionSettings();
 
@@ -204,9 +200,6 @@ UISession::~UISession()
 {
     /* Save settings: */
     saveSessionSettings();
-
-    /* Cleanup main-menu: */
-    cleanupMenuPool();
 
     /* Cleanup framebuffers: */
     cleanupFramebuffers();
@@ -482,30 +475,6 @@ UIMachineLogic* UISession::machineLogic() const
 QWidget* UISession::mainMachineWindow() const
 {
     return machineLogic()->mainMachineWindow();
-}
-
-QMenu* UISession::newMenu(RuntimeMenuType fOptions /* = RuntimeMenuType_ALL */)
-{
-    /* Create new menu: */
-    QMenu *pMenu = m_pMenuPool->createMenu(fOptions);
-
-    /* Re-init menu pool for the case menu were recreated: */
-    reinitMenuPool();
-
-    /* Return newly created menu: */
-    return pMenu;
-}
-
-QMenuBar* UISession::newMenuBar(RuntimeMenuType fOptions /* = RuntimeMenuType_ALL */)
-{
-    /* Create new menubar: */
-    QMenuBar *pMenuBar = m_pMenuPool->createMenuBar(fOptions);
-
-    /* Re-init menu pool for the case menu were recreated: */
-    reinitMenuPool();
-
-    /* Return newly created menubar: */
-    return pMenuBar;
 }
 
 bool UISession::isVisualStateAllowed(UIVisualStateType state) const
@@ -1065,11 +1034,6 @@ void UISession::prepareFramebuffers()
     m_frameBufferVector.resize(m_session.GetMachine().GetMonitorCount());
 }
 
-void UISession::prepareMenuPool()
-{
-    m_pMenuPool = new UIMachineMenuBar(this);
-}
-
 void UISession::loadSessionSettings()
 {
     /* Load extra-data settings: */
@@ -1191,12 +1155,6 @@ void UISession::saveSessionSettings()
         m_pMachineWindowIcon = 0;
 #endif /* !Q_WS_MAC */
     }
-}
-
-void UISession::cleanupMenuPool()
-{
-    delete m_pMenuPool;
-    m_pMenuPool = 0;
 }
 
 void UISession::cleanupFramebuffers()
@@ -1485,7 +1443,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 #endif
 }
 
-void UISession::reinitMenuPool()
+void UISession::updateActionPoolVisibility()
 {
     /* Get host: */
     const CHost &host = vboxGlobal().host();

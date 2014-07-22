@@ -33,17 +33,35 @@ protected:
     /* Check if this logic is available: */
     bool checkAvailability();
 
+#ifndef RT_OS_DARWIN
+private slots:
+
+    /** Invokes popup-menu. */
+    void sltInvokePopupMenu();
+#endif /* !RT_OS_DARWIN */
+
 private:
 
     /* Prepare helpers: */
     void prepareActionGroups();
     void prepareActionConnections();
     void prepareMachineWindows();
+#ifndef RT_OS_DARWIN
+    void prepareMenu();
+#endif /* !RT_OS_DARWIN */
 
     /* Cleanup helpers: */
+#ifndef RT_OS_DARWIN
+    void cleanupMenu();
+#endif /* !RT_OS_DARWIN */
     void cleanupMachineWindows();
     void cleanupActionConnections();
     void cleanupActionGroups();
+
+#ifndef RT_OS_DARWIN
+    /** Holds the popup-menu instance. */
+    QMenu *m_pPopupMenu;
+#endif /* !RT_OS_DARWIN */
 
     /* Friend classes: */
     friend class UIMachineLogic;

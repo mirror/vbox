@@ -83,6 +83,9 @@ private slots:
     /* Handler: Console callback stuff: */
     void sltMachineStateChanged();
 
+    /** Invokes popup-menu. */
+    void sltInvokePopupMenu();
+
 #ifdef Q_WS_MAC
     void sltChangePresentationMode(bool fEnabled);
 #endif /* Q_WS_MAC */
@@ -105,13 +108,16 @@ private:
     void prepareMenu();
 
     /* Cleanup helpers: */
-    //void cleanupMenu() {}
+    void cleanupMenu();
     void cleanupMachineWindows();
 #ifdef Q_WS_MAC
     //void cleanupOtherConnections() {}
 #endif /* Q_WS_MAC */
     void cleanupActionConnections();
     void cleanupActionGroups();
+
+    /** Updates the 'View' menu. */
+    virtual void updateMenuView();
 
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
@@ -126,6 +132,9 @@ private:
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
     void revalidateNativeFullScreen();
 #endif /* Q_WS_MAC */
+
+    /** Holds the popup-menu instance. */
+    QMenu *m_pPopupMenu;
 
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;

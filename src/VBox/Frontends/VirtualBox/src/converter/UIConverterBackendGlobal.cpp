@@ -505,14 +505,16 @@ template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenu
     QString strResult;
     switch (runtimeMenuViewActionType)
     {
-        case RuntimeMenuViewActionType_Fullscreen:      strResult = "Fullscreen"; break;
-        case RuntimeMenuViewActionType_Seamless:        strResult = "Seamless"; break;
-        case RuntimeMenuViewActionType_Scale:           strResult = "Scale"; break;
-        case RuntimeMenuViewActionType_GuestAutoresize: strResult = "GuestAutoresize"; break;
-        case RuntimeMenuViewActionType_AdjustWindow:    strResult = "AdjustWindow"; break;
-        case RuntimeMenuViewActionType_StatusBar:       strResult = "StatusBar"; break;
-        case RuntimeMenuViewActionType_Multiscreen:     strResult = "Multiscreen"; break;
-        case RuntimeMenuViewActionType_All:             strResult = "All"; break;
+        case RuntimeMenuViewActionType_Fullscreen:        strResult = "Fullscreen"; break;
+        case RuntimeMenuViewActionType_Seamless:          strResult = "Seamless"; break;
+        case RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
+        case RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
+        case RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
+        case RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
+        case RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
+        case RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
+        case RuntimeMenuViewActionType_Multiscreen:       strResult = "Multiscreen"; break;
+        case RuntimeMenuViewActionType_All:               strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuViewActionType));
@@ -527,15 +529,17 @@ template<> RuntimeMenuViewActionType fromInternalString<RuntimeMenuViewActionTyp
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;          QList<RuntimeMenuViewActionType> values;
-    keys << "Fullscreen";      values << RuntimeMenuViewActionType_Fullscreen;
-    keys << "Seamless";        values << RuntimeMenuViewActionType_Seamless;
-    keys << "Scale";           values << RuntimeMenuViewActionType_Scale;
-    keys << "GuestAutoresize"; values << RuntimeMenuViewActionType_GuestAutoresize;
-    keys << "AdjustWindow";    values << RuntimeMenuViewActionType_AdjustWindow;
-    keys << "StatusBar";       values << RuntimeMenuViewActionType_StatusBar;
-    keys << "Multiscreen";     values << RuntimeMenuViewActionType_Multiscreen;
-    keys << "All";             values << RuntimeMenuViewActionType_All;
+    QStringList keys;            QList<RuntimeMenuViewActionType> values;
+    keys << "Fullscreen";        values << RuntimeMenuViewActionType_Fullscreen;
+    keys << "Seamless";          values << RuntimeMenuViewActionType_Seamless;
+    keys << "Scale";             values << RuntimeMenuViewActionType_Scale;
+    keys << "GuestAutoresize";   values << RuntimeMenuViewActionType_GuestAutoresize;
+    keys << "AdjustWindow";      values << RuntimeMenuViewActionType_AdjustWindow;
+    keys << "StatusBar";         values << RuntimeMenuViewActionType_StatusBar;
+    keys << "StatusBarSettings"; values << RuntimeMenuViewActionType_StatusBarSettings;
+    keys << "ToggleStatusBar";   values << RuntimeMenuViewActionType_ToggleStatusBar;
+    keys << "Multiscreen";       values << RuntimeMenuViewActionType_Multiscreen;
+    keys << "All";               values << RuntimeMenuViewActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
         return RuntimeMenuViewActionType_Invalid;
@@ -555,6 +559,7 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
         case RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
         case RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
         case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
+        case RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
         case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
         case RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
         case RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
@@ -582,6 +587,7 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
     keys << "WebCams";               values << RuntimeMenuDevicesActionType_WebCams;
     keys << "SharedClipboard";       values << RuntimeMenuDevicesActionType_SharedClipboard;
     keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;
+    keys << "Network";               values << RuntimeMenuDevicesActionType_Network;
     keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
     keys << "SharedFoldersSettings"; values << RuntimeMenuDevicesActionType_SharedFoldersSettings;
     keys << "VRDEServer";            values << RuntimeMenuDevicesActionType_VRDEServer;

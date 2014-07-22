@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandlerNormal class implementation
+ * VBox Qt GUI - UIKeyboardHandlerNormal class implementation.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,32 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QMainWindow>
-#include <QMenuBar>
-#include <QKeyEvent>
+#ifndef Q_WS_MAC
+/* Qt includes: */
+# include <QMainWindow>
+# include <QMenuBar>
+# include <QKeyEvent>
+#endif /* !Q_WS_MAC */
 
-/* Local includes */
+/* GUI includes: */
 #include "UIKeyboardHandlerNormal.h"
-#include "UIMachineWindow.h"
-#include "UIShortcutPool.h"
+#ifndef Q_WS_MAC
+# include "UIMachineWindow.h"
+# include "UIShortcutPool.h"
+#endif /* !Q_WS_MAC */
 
+#ifndef Q_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+#endif /* !Q_WS_MAC */
 
-
-/* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerNormal::UIKeyboardHandlerNormal(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
 {
 }
 
-/* Fullscreen keyboard-handler destructor: */
 UIKeyboardHandlerNormal::~UIKeyboardHandlerNormal()
 {
 }
 
-/* Event handler for prepared listener(s): */
+#ifndef Q_WS_MAC
 bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
     /* Check if pWatchedObject object is view: */
@@ -54,7 +55,6 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
         /* Handle view events: */
         switch (pEvent->type())
         {
-#ifndef Q_WS_MAC
             /* We don't want this on the Mac, cause there the menu-bar isn't within the
              * window and popping up a menu there looks really ugly. */
             case QEvent::KeyPress:
@@ -90,7 +90,6 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
                 }
                 break;
             }
-#endif /* !Q_WS_MAC */
             default:
                 break;
         }
@@ -99,4 +98,5 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
+#endif /* !Q_WS_MAC */
 

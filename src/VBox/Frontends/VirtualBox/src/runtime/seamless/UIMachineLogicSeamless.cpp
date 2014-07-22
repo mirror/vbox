@@ -17,6 +17,9 @@
 
 /* Qt includes: */
 #include <QDesktopWidget>
+#ifndef Q_WS_MAC
+# include <QTimer>
+#endif /* !Q_WS_MAC */
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -27,12 +30,17 @@
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"
 #include "UIMultiScreenLayout.h"
-#ifdef Q_WS_MAC
+#ifndef Q_WS_MAC
+# include "UIMachineMenuBar.h"
+#else /* Q_WS_MAC */
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
 UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Seamless)
+#ifndef Q_WS_MAC
+    , m_pPopupMenu(0)
+#endif /* !Q_WS_MAC */
 {
     /* Create multiscreen layout: */
     m_pScreenLayout = new UIMultiScreenLayout(this);
@@ -146,6 +154,18 @@ void UIMachineLogicSeamless::sltMachineStateChanged()
     }
 }
 
+#ifndef Q_WS_MAC
+void UIMachineLogicSeamless::sltInvokePopupMenu()
+{
+    /* Popup main-menu if present: */
+    if (m_pPopupMenu && !m_pPopupMenu->isEmpty())
+    {
+        m_pPopupMenu->popup(activeMachineWindow()->geometry().center());
+        QTimer::singleShot(0, m_pPopupMenu, SLOT(sltHighlightFirstAction()));
+    }
+}
+#endif /* !Q_WS_MAC */
+
 void UIMachineLogicSeamless::sltScreenLayoutChanged()
 {
     /* Make sure all machine-window(s) have proper geometry: */
@@ -182,14 +202,8 @@ void UIMachineLogicSeamless::prepareActionGroups()
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Guest auto-resize isn't allowed in seamless: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(false);
-    /* Adjust-window isn't allowed in seamless: */
-    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
     /* Disable mouse-integration isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
-    /* Status-bar menu isn't allowed in seamless: */
-    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(false);
 
     /* Take care of view-action toggle state: */
     UIAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
@@ -248,9 +262,28 @@ void UIMachineLogicSeamless::prepareMenu()
     /* Call to base-class: */
     UIMachineLogic::prepareMenu();
 
-    /* Finally update view-menu, if necessary: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
-        m_pScreenLayout->setViewMenu(gActionPool->action(UIActionIndexRuntime_Menu_View)->menu());
+#ifndef Q_WS_MAC
+    /* Prepare popup-menu: */
+    m_pPopupMenu = new QIMenu;
+    AssertPtrReturnVoid(m_pPopupMenu);
+    {
+        /* Prepare popup-menu: */
+        foreach (QMenu *pMenu, menus())
+            m_pPopupMenu->addMenu(pMenu);
+    }
+#endif /* !Q_WS_MAC */
+}
+
+void UIMachineLogicSeamless::cleanupMenu()
+{
+#ifndef Q_WS_MAC
+    /* Cleanup popup-menu: */
+    delete m_pPopupMenu;
+    m_pPopupMenu = 0;
+#endif /* !Q_WS_MAC */
+
+    /* Call to base-class: */
+    UIMachineLogic::cleanupMenu();
 }
 
 void UIMachineLogicSeamless::cleanupMachineWindows()
@@ -293,16 +326,24 @@ void UIMachineLogicSeamless::cleanupActionGroups()
         pActionSeamless->update();
     }
 
-    /* Reenable status-bar menu: */
-    gActionPool->action(UIActionIndexRuntime_Menu_StatusBar)->setVisible(true);
-    /* Reenable guest-autoresize action: */
-    gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(true);
-    /* Reenable adjust-window action: */
-    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
     /* Reenable mouse-integration action: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(true);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
+}
+
+void UIMachineLogicSeamless::updateMenuView()
+{
+    /* Call to base-class: */
+    UIMachineLogic::updateMenuView();
+
+    /* Get corresponding menu: */
+    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
+    AssertPtrReturnVoid(pMenu);
+
+    /* Append 'Multiscreen' submenu, if allowed: */
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
+        m_pScreenLayout->setViewMenu(pMenu);
 }
 

@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandlerScale class implementation
+ * VBox Qt GUI - UIKeyboardHandlerScale class implementation.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,32 +15,34 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QKeyEvent>
-#include <QTimer>
-#include <QWidget>
+#ifndef Q_WS_MAC
+/* Qt includes: */
+# include <QKeyEvent>
+# include <QTimer>
+#endif /* !Q_WS_MAC */
 
-/* Local includes */
+/* GUI includes: */
 #include "UIKeyboardHandlerScale.h"
-#include "UIMachineWindow.h"
-#include "UIShortcutPool.h"
+#ifndef Q_WS_MAC
+# include "UIMachineLogic.h"
+# include "UIShortcutPool.h"
+#endif /* !Q_WS_MAC */
 
+#ifndef Q_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+#endif /* !Q_WS_MAC */
 
-
-/* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerScale::UIKeyboardHandlerScale(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
 {
 }
 
-/* Fullscreen keyboard-handler destructor: */
 UIKeyboardHandlerScale::~UIKeyboardHandlerScale()
 {
 }
 
-/* Event handler for prepared listener(s): */
+#ifndef Q_WS_MAC
 bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
     /* Check if pWatchedObject object is view: */
@@ -54,9 +54,6 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
         /* Handle view events: */
         switch (pEvent->type())
         {
-#ifndef Q_WS_MAC
-            /* We don't want this on the Mac, cause there the menu bar isn't within the window
-             * and popping up a menu there looks really ugly. */
             case QEvent::KeyPress:
             {
                 /* Get key-event: */
@@ -65,13 +62,12 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
                 if (isHostKeyPressed() && pKeyEvent->key() == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
                 {
                     /* Post request to show popup-menu: */
-                    QTimer::singleShot(0, m_windows[uScreenId], SLOT(sltPopupMainMenu()));
+                    QTimer::singleShot(0, m_pMachineLogic, SLOT(sltInvokePopupMenu()));
                     /* Filter-out this event: */
                     return true;
                 }
                 break;
             }
-#endif /* !Q_WS_MAC */
             default:
                 break;
         }
@@ -80,4 +76,5 @@ bool UIKeyboardHandlerScale::eventFilter(QObject *pWatchedObject, QEvent *pEvent
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
+#endif /* !Q_WS_MAC */
 

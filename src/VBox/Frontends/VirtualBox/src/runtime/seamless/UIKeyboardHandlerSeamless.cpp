@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandlerSeamless class implementation
+ * VBox Qt GUI - UIKeyboardHandlerSeamless class implementation.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,32 +15,34 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QKeyEvent>
-#include <QTimer>
-#include <QWidget>
+#ifndef Q_WS_MAC
+/* Qt includes: */
+# include <QKeyEvent>
+# include <QTimer>
+#endif /* !Q_WS_MAC */
 
-/* Local includes */
+/* GUI includes: */
 #include "UIKeyboardHandlerSeamless.h"
-#include "UIMachineWindow.h"
-#include "UIShortcutPool.h"
+#ifndef Q_WS_MAC
+# include "UIMachineLogic.h"
+# include "UIShortcutPool.h"
+#endif /* !Q_WS_MAC */
 
+#ifndef Q_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+#endif /* !Q_WS_MAC */
 
-
-/* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerSeamless::UIKeyboardHandlerSeamless(UIMachineLogic* pMachineLogic)
     : UIKeyboardHandler(pMachineLogic)
 {
 }
 
-/* Fullscreen keyboard-handler destructor: */
 UIKeyboardHandlerSeamless::~UIKeyboardHandlerSeamless()
 {
 }
 
-/* Event handler for prepared listener(s): */
+#ifndef Q_WS_MAC
 bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 {
     /* Check if pWatchedObject object is view: */
@@ -62,7 +62,7 @@ bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEv
                 if (isHostKeyPressed() && pKeyEvent->key() == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
                 {
                     /* Post request to show popup-menu: */
-                    QTimer::singleShot(0, m_windows[uScreenId], SLOT(sltPopupMainMenu()));
+                    QTimer::singleShot(0, m_pMachineLogic, SLOT(sltInvokePopupMenu()));
                     /* Filter-out this event: */
                     return true;
                 }
@@ -76,4 +76,5 @@ bool UIKeyboardHandlerSeamless::eventFilter(QObject *pWatchedObject, QEvent *pEv
     /* Else just propagate to base-class: */
     return UIKeyboardHandler::eventFilter(pWatchedObject, pEvent);
 }
+#endif /* !Q_WS_MAC */
 

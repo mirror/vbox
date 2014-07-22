@@ -43,6 +43,7 @@ class CUSBDevice;
 class CVirtualBoxErrorInfo;
 #ifdef Q_WS_MAC
 class QMenuBar;
+class QMenu;
 #endif /* Q_WS_MAC */
 
 /* Machine logic interface: */
@@ -81,6 +82,9 @@ public:
     /* Maintenance getters/setters: */
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
+
+    /** Returns the list of available menus. */
+    virtual QList<QMenu*> menus() const;
 
     /* API: Guest screen size stuff: */
     virtual void maybeAdjustGuestScreenSize();
@@ -188,6 +192,20 @@ protected:
     virtual void cleanupActionGroups();
     //virtual void cleanupSessionConnections() {}
     //virtual void cleanupRequiredFeatures() {}
+
+    /** Updates the 'Machine' menu. */
+    virtual void updateMenuMachine();
+    /** Updates the 'View' menu. */
+    virtual void updateMenuView();
+    /** Updates the 'Devices' menu. */
+    virtual void updateMenuDevices();
+    /** Updates the 'Devices' : 'Network' menu. */
+    virtual void updateMenuDevicesNetwork();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    virtual void updateMenuDebug();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Updates the 'Help' menu. */
+    virtual void updateMenuHelp();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);

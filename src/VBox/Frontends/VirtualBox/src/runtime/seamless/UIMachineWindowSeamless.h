@@ -42,16 +42,12 @@ private slots:
     void sltMachineStateChanged();
 #endif /* !Q_WS_MAC */
 
-    /* Popup main menu: */
-    void sltPopupMainMenu();
-
     /** Revokes keyboard-focus. */
     void sltRevokeFocus();
 
 private:
 
     /* Prepare helpers: */
-    void prepareMenu();
     void prepareVisualState();
 #ifndef Q_WS_MAC
     void prepareMiniToolbar();
@@ -62,7 +58,6 @@ private:
     void cleanupMiniToolbar();
 #endif /* !Q_WS_MAC */
     void cleanupVisualState();
-    void cleanupMenu();
 
     /* Show stuff: */
     void placeOnScreen();
@@ -84,7 +79,6 @@ private:
 #endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Widgets: */
-    QMenu *m_pMainMenu;
 #ifndef Q_WS_MAC
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */

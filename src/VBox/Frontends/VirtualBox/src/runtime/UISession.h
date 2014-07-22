@@ -35,7 +35,6 @@ class QMenuBar;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
-class UIMachineMenuBar;
 class CSession;
 class CUSBDevice;
 class CNetworkAdapter;
@@ -92,8 +91,7 @@ public:
     KMachineState machineState() const { return m_machineState; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
-    QMenu* newMenu(RuntimeMenuType fOptions = RuntimeMenuType_All);
-    QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
+    void updateActionPoolVisibility();
     QCursor cursor() const { return m_cursor; }
 
 #ifndef Q_WS_MAC
@@ -324,12 +322,10 @@ private:
     void prepareConsoleEventHandlers();
     void prepareScreens();
     void prepareFramebuffers();
-    void prepareMenuPool();
     void loadSessionSettings();
 
     /* Cleanup helpers: */
     void saveSessionSettings();
-    void cleanupMenuPool();
     void cleanupFramebuffers();
     //void cleanupScreens() {}
     void cleanupConsoleEventHandlers();
@@ -341,7 +337,6 @@ private:
     /* Common helpers: */
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
-    void reinitMenuPool();
     bool preparePowerUp();
     int countOfVisibleWindows();
 
@@ -353,8 +348,6 @@ private:
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession &m_session;
-
-    UIMachineMenuBar *m_pMenuPool;
 
     /* Screen visibility vector: */
     QVector<bool> m_monitorVisibilityVector;

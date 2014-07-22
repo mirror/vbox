@@ -69,7 +69,9 @@ private:
 
     /* Prepare helpers: */
     void prepareSessionConnections();
+#ifndef Q_WS_MAC
     void prepareMenu();
+#endif /* !Q_WS_MAC */
     void prepareStatusBar();
     void prepareVisualState();
     void loadSettings();
@@ -78,7 +80,9 @@ private:
     void saveSettings();
     //coid cleanupVisualState() {}
     //void cleanupStatusBar() {}
+#ifndef Q_WS_MAC
     //void cleanupMenu() {}
+#endif /* !Q_WS_MAC */
     //void cleanupConsoleConnections() {}
 
     /* Show stuff: */

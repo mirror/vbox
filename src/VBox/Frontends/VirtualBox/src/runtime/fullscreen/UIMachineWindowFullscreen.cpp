@@ -42,7 +42,6 @@
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
-    , m_pMainMenu(0)
     , m_pMiniToolBar(0)
 #ifdef Q_WS_MAC
     , m_fIsInFullscreenTransition(false)
@@ -113,16 +112,6 @@ void UIMachineWindowFullscreen::sltMachineStateChanged()
     updateAppearanceOf(UIVisualElement_MiniToolBar);
 }
 
-void UIMachineWindowFullscreen::sltPopupMainMenu()
-{
-    /* Popup main-menu if present: */
-    if (m_pMainMenu && !m_pMainMenu->isEmpty())
-    {
-        m_pMainMenu->popup(geometry().center());
-        QTimer::singleShot(0, m_pMainMenu, SLOT(sltHighlightFirstAction()));
-    }
-}
-
 #ifdef Q_WS_MAC
 void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachineWindow)
 {
@@ -180,17 +169,6 @@ void UIMachineWindowFullscreen::sltRevokeFocus()
     m_pMachineView->setFocus();
 }
 
-void UIMachineWindowFullscreen::prepareMenu()
-{
-    /* Call to base-class: */
-    UIMachineWindow::prepareMenu();
-
-    /* Prepare menu: */
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    m_pMainMenu = uisession()->newMenu(allowedMenus);
-}
-
 void UIMachineWindowFullscreen::prepareVisualState()
 {
     /* Call to base-class: */
@@ -242,13 +220,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               IntegrationMode_Embedded,
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
-    QList<QMenu*> menus;
-    RuntimeMenuType restrictedMenus = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
-    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
-    QList<QAction*> actions = uisession()->newMenu(allowedMenus)->actions();
-    for (int i=0; i < actions.size(); ++i)
-        menus << actions.at(i)->menu();
-    m_pMiniToolBar->addMenus(menus);
+    m_pMiniToolBar->addMenus(m_pMachineLogic->menus());
 #ifndef RT_OS_DARWIN
     connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
 #endif /* !RT_OS_DARWIN */
@@ -292,16 +264,6 @@ void UIMachineWindowFullscreen::cleanupVisualState()
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
-}
-
-void UIMachineWindowFullscreen::cleanupMenu()
-{
-    /* Cleanup menu: */
-    delete m_pMainMenu;
-    m_pMainMenu = 0;
-
-    /* Call to base-class: */
-    UIMachineWindow::cleanupMenu();
 }
 
 void UIMachineWindowFullscreen::placeOnScreen()
