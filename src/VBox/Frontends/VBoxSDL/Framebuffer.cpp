@@ -669,8 +669,9 @@ void VBoxSDLFB::notifyChange(ULONG aScreenId)
     if (mfUpdateImage)
     {
         gpDisplay->SetFramebufferUpdateMode(aScreenId, FramebufferUpdateMode_NotifyUpdateImage);
-        gpDisplay->InvalidateAndUpdate();
     }
+
+    gpDisplay->InvalidateAndUpdateScreen(aScreenId);
 }
 
 /**
