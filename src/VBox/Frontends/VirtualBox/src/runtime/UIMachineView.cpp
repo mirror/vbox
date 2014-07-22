@@ -244,6 +244,9 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     /* Emit a signal about guest was resized: */
     emit resizeHintDone();
 
+    CDisplay dsp = session().GetConsole().GetDisplay();
+    dsp.InvalidateAndUpdateScreen(m_uScreenId);
+
     LogRelFlow(("UIMachineView::ResizeHandled: Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
 }
