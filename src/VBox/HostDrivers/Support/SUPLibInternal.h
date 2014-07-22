@@ -416,8 +416,8 @@ DECLHIDDEN(void)    supR3HardenedWinInit(uint32_t fFlags);
 DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
 DECLHIDDEN(void)    supR3HardenedWinVerifyProcess(void);
 DECLHIDDEN(void)    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(void);
-DECLHIDDEN(bool)    supR3HardenedWinIsReSpawnNeeded(int cArgs, char **papszArgs);
-DECLHIDDEN(int)     supR3HardenedWinReSpawn(void);
+DECLHIDDEN(bool)    supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **papszArgs);
+DECLHIDDEN(int)     supR3HardenedWinReSpawn(int iWhich);
 DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only);
 extern RTUTF16      g_wszSupLibHardenedExePath[1024];
 # ifdef RTPATH_MAX

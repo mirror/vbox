@@ -28,16 +28,24 @@ LIBRARY ntdll.dll
 EXPORTS
   ; Exported name                           - The name x86 name sought by the linker.
   ;                                         - This needs to be defined as a symbol, we generate assembly.
+
+    CsrClientCallServer                   ;;= _CsrClientCallServer@16
+
+    NtAllocateVirtualMemory               ;;= _NtAllocateVirtualMemory@24
     NtClose                               ;;= _NtClose@4
     NtCreateFile                          ;;= _NtCreateFile@44
     NtCreateSection                       ;;= _NtCreateSection@28
     NtDelayExecution                      ;;= _NtDelayExecution@8
     NtDeviceIoControlFile                 ;;= _NtDeviceIoControlFile@40
     NtDuplicateObject                     ;;= _NtDuplicateObject@28
+    NtFreeVirtualMemory                   ;;= _NtFreeVirtualMemory@16
+    NtGetContextThread                    ;;= _NtGetContextThread@8
+    NtMapViewOfSection                    ;;= _NtMapViewOfSection@40
     NtOpenDirectoryObject                 ;;= _NtOpenDirectoryObject@12
     NtOpenProcess                         ;;= _NtOpenProcess@16
     NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
     NtOpenThreadToken                     ;;= _NtOpenThreadToken@16
+    NtProtectVirtualMemory                ;;= _NtProtectVirtualMemory@20
     NtQueryDirectoryFile                  ;;= _NtQueryDirectoryFile@44
     NtQueryDirectoryObject                ;;= _NtQueryDirectoryObject@28
     NtQueryInformationFile                ;;= _NtQueryInformationFile@20
@@ -52,6 +60,7 @@ EXPORTS
     NtReadVirtualMemory                   ;;= _NtReadVirtualMemory@20
     NtResumeProcess                       ;;= _NtResumeProcess@4
     NtResumeThread                        ;;= _NtResumeThread@8
+    NtSetContextThread                    ;;= _NtSetContextThread@8
     NtSetInformationFile                  ;;= _NtSetInformationFile@20
     NtSetInformationObject                ;;= _NtSetInformationObject@16
     NtSetInformationProcess               ;;= _NtSetInformationProcess@16
@@ -59,10 +68,16 @@ EXPORTS
     NtSetTimerResolution                  ;;= _NtSetTimerResolution@12
     NtSuspendProcess                      ;;= _NtSuspendProcess@4
     NtSuspendThread                       ;;= _NtSuspendThread@8
+    NtTerminateProcess                    ;;= _NtTerminateProcess@8
+    NtTerminateThread                     ;;= _NtTerminateThread@8
+    NtUnmapViewOfSection                  ;;= _NtUnmapViewOfSection@8
+    NtWaitForSingleObject                 ;;= _NtWaitForSingleObject@12
     NtWriteFile                           ;;= _NtWriteFile@36
     NtWriteVirtualMemory                  ;;= _NtWriteVirtualMemory@20
     NtYieldExecution                      ;;= _NtYieldExecution@0
-                                          ;;
+
+    LdrInitializeThunk                    ;;= _LdrInitializeThunk@12
+
     RtlAddAccessAllowedAce                ;;= _RtlAddAccessAllowedAce@16
     RtlAddAccessDeniedAce                 ;;= _RtlAddAccessDeniedAce@16
     RtlCopySid                            ;;= _RtlCopySid@12
@@ -70,6 +85,7 @@ EXPORTS
     RtlCreateProcessParameters            ;;= _RtlCreateProcessParameters@40
     RtlCreateSecurityDescriptor           ;;= _RtlCreateSecurityDescriptor@8
     RtlCreateUserProcess                  ;;= _RtlCreateUserProcess@40
+    RtlCreateUserThread                   ;;= _RtlCreateUserThread@40
     RtlDestroyProcessParameters           ;;= _RtlDestroyProcessParameters@4
     RtlGetVersion                         ;;= _RtlGetVersion@4
     RtlInitializeSid                      ;;= _RtlInitializeSid@12

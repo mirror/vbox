@@ -3237,10 +3237,12 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
             LogFlowThisFunc(("session.pid=%d(0x%x)\n", pid, pid));
 
 #if defined(VBOX_WITH_HARDENING) && defined(RT_OS_WINDOWS)
-            /* Hardened windows builds have spawns two processes when a VM is
-               launched, the 2nd one is the one that will end up here.  */
+            /* Hardened windows builds spawns three processes when a VM is
+               launched, the 3rd one is the one that will end up here.  */
             RTPROCESS ppid;
             int rc = RTProcQueryParent(pid, &ppid);
+            if (RT_SUCCESS(rc))
+                rc = RTProcQueryParent(ppid, &ppid);
             if (   (RT_SUCCESS(rc) && mData->mSession.mPID == ppid)
                 || rc == VERR_ACCESS_DENIED)
             {

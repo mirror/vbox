@@ -65,6 +65,9 @@
 #define _TEB                       Incomplete__TEB
 #define TEB                        Incomplete_TEB
 #define PTEB                       Incomplete_PTEB
+#define _PEB_LDR_DATA              Incomplete__PEB_LDR_DATA
+#define PEB_LDR_DATA               Incomplete_PEB_LDR_DATA
+#define PPEB_LDR_DATA              Incomplete_PPEB_LDR_DATA
 
 
 #ifdef IPRT_NT_USE_WINTERNL
@@ -197,6 +200,9 @@
 #undef _TEB
 #undef TEB
 #undef PTEB
+#undef _PEB_LDR_DATA
+#undef PEB_LDR_DATA
+#undef PPEB_LDR_DATA
 
 
 #include <iprt/types.h>
@@ -356,6 +362,22 @@ typedef CLIENT_ID *PCLIENT_ID;
 /** @name Process And Thread Environment Blocks
  * @{ */
 
+typedef struct _PEB_LDR_DATA
+{
+    uint32_t Length;
+    BOOLEAN Initialized;
+    BOOLEAN Padding[3];
+    HANDLE SsHandle;
+    LIST_ENTRY InLoadOrderModuleList;
+    LIST_ENTRY InMemoryOrderModuleList;
+    LIST_ENTRY InInitializationOrderModuleList;
+    /* End NT4 */
+    LIST_ENTRY *EntryInProgress;
+    BOOLEAN ShutdownInProgress;
+    HANDLE ShutdownThreadId;
+} PEB_LDR_DATA;
+typedef PEB_LDR_DATA *PPEB_LDR_DATA;
+
 typedef struct _PEB_COMMON
 {
     BOOLEAN InheritedAddressSpace;                                          /**< 0x000 / 0x000 */
@@ -422,7 +444,7 @@ typedef struct _PEB_COMMON
 #endif
     HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
     PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
-    struct _PEB_LDR_DATA *Ldr;                                              /**< 0x018 / 0x00c */
+    PPEB_LDR_DATA *Ldr;                                                     /**< 0x018 / 0x00c */
     struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
     PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
     HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
@@ -1070,7 +1092,7 @@ AssertCompileSize(TEB_COMMON, ARCH_BITS == 64 ? 0x1828 : 0xff8);
 
 #define _PEB        _PEB_COMMON
 typedef PEB_COMMON  PEB;
-typedef PPEB_COMMON *PPEB;
+typedef PPEB_COMMON PPEB;
 
 #define _TEB        _TEB_COMMON
 typedef TEB_COMMON  TEB;
@@ -1083,6 +1105,7 @@ typedef PTEB_COMMON PTEB;
 
 #ifdef IPRT_NT_USE_WINTERNL
 NTSYSAPI NTSTATUS NTAPI NtCreateSection(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PLARGE_INTEGER, ULONG, ULONG, HANDLE);
+NTSYSAPI NTSTATUS NTAPI NtUnmapViewOfSection(HANDLE, PVOID);
 
 typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
 {
@@ -1391,6 +1414,7 @@ NTSYSAPI NTSTATUS NTAPI NtResumeProcess(HANDLE);
 #define PROCESS_HARDERR_NO_OPEN_FILE_ERROR          UINT32_C(0x00008000)
 /** @} */
 NTSYSAPI NTSTATUS NTAPI NtSetInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG);
+NTSYSAPI NTSTATUS NTAPI NtTerminateProcess(HANDLE, LONG);
 
 /** Retured by ProcessImageInformation as well as NtQuerySection. */
 typedef struct _SECTION_IMAGE_INFORMATION
@@ -1443,6 +1467,10 @@ NTSYSAPI NTSTATUS NTAPI NtQuerySection(HANDLE, SECTION_INFORMATION_CLASS, PVOID,
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationThread(HANDLE, THREADINFOCLASS, PVOID, ULONG, PULONG);
 NTSYSAPI NTSTATUS NTAPI NtResumeThread(HANDLE, PULONG);
 NTSYSAPI NTSTATUS NTAPI NtSuspendThread(HANDLE, PULONG);
+NTSYSAPI NTSTATUS NTAPI NtTerminateThread(HANDLE, LONG);
+NTSYSAPI NTSTATUS NTAPI NtGetContextThread(HANDLE, PCONTEXT);
+NTSYSAPI NTSTATUS NTAPI NtSetContextThread(HANDLE, PCONTEXT);
+
 
 #ifndef SEC_FILE
 # define SEC_FILE               UINT32_C(0x00800000)
@@ -1481,6 +1509,11 @@ typedef MEMORY_BASIC_INFORMATION *PMEMORY_BASIC_INFORMATION;
 # define NtQueryVirtualMemory ZwQueryVirtualMemory
 #endif
 NTSYSAPI NTSTATUS NTAPI NtQueryVirtualMemory(HANDLE, void const *, MEMORY_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
+#ifdef IPRT_NT_USE_WINTERNL
+NTSYSAPI NTSTATUS NTAPI NtAllocateVirtualMemory(HANDLE, PVOID *, ULONG, PSIZE_T, ULONG, ULONG);
+#endif
+NTSYSAPI NTSTATUS NTAPI NtFreeVirtualMemory(HANDLE, PVOID *, PSIZE_T, ULONG);
+NTSYSAPI NTSTATUS NTAPI NtProtectVirtualMemory(HANDLE, PVOID *, PSIZE_T, ULONG, PULONG);
 
 typedef enum _SYSTEM_INFORMATION_CLASS
 {
@@ -1669,6 +1702,10 @@ NTSYSAPI NTSTATUS NTAPI NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS, PVOID
 
 NTSYSAPI NTSTATUS NTAPI NtDelayExecution(BOOLEAN, PLARGE_INTEGER);
 NTSYSAPI NTSTATUS NTAPI NtYieldExecution(void);
+#ifndef IPRT_NT_USE_WINTERNL
+NTSYSAPI NTSTATUS NTAPI NtWaitForSingleObject(HANDLE, BOOLEAN PLARGE_INTERGER);
+#endif
+
 
 NTSYSAPI NTSTATUS NTAPI RtlAddAccessDeniedAce(PACL, ULONG, ULONG, PSID);
 
@@ -1746,6 +1783,9 @@ NTSYSAPI NTSTATUS NTAPI RtlCreateProcessParameters(PRTL_USER_PROCESS_PARAMETERS 
                                                    PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo,
                                                    PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeInfo);
 NTSYSAPI VOID     NTAPI RtlDestroyProcessParameters(PRTL_USER_PROCESS_PARAMETERS);
+NTSYSAPI NTSTATUS NTAPI RtlCreateUserThread(HANDLE, PSECURITY_DESCRIPTOR, BOOLEAN, ULONG, SIZE_T, SIZE_T,
+                                            PFNRT, PVOID, PHANDLE, PCLIENT_ID);
+
 
 RT_C_DECLS_END
 /** @} */
@@ -1754,6 +1794,8 @@ RT_C_DECLS_END
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 /** @name NT Kernel APIs
  * @{ */
+RT_C_DECLS_BEGIN
+
 NTSYSAPI BOOLEAN  NTAPI ObFindHandleForObject(PEPROCESS pProcess, PVOID pvObject, POBJECT_TYPE pObjectType,
                                               PVOID pvOptionalConditions, PHANDLE phFound);
 NTSYSAPI NTSTATUS NTAPI ObReferenceObjectByName(PUNICODE_STRING pObjectPath, ULONG fAttributes, PACCESS_STATE pAccessState,
@@ -1766,8 +1808,37 @@ NTSYSAPI ULONG    NTAPI PsGetProcessSessionId(PEPROCESS);
 extern DECLIMPORT(POBJECT_TYPE *) LpcPortObjectType;            /**< In vista+ this is the ALPC port object type. */
 extern DECLIMPORT(POBJECT_TYPE *) LpcWaitablePortObjectType;    /**< In vista+ this is the ALPC port object type. */
 
+RT_C_DECLS_END
 /** @ */
 #endif /* IN_RING0 */
+
+
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
+/** @name NT Userland APIs
+ * @{ */
+RT_C_DECLS_BEGIN
+
+#if 0 /** @todo figure this out some time... */
+typedef struct CSR_MSG_DATA_CREATED_PROCESS
+{
+    HANDLE hProcess;
+    HANDLE hThread;
+    CLIENT_ID
+    DWORD idProcess;
+    DWORD idThread;
+    DWORD fCreate;
+
+} CSR_MSG_DATA_CREATED_PROCESS;
+
+#define CSR_MSG_NO_CREATED_PROCESS    UINT32_C(0x10000)
+#define CSR_MSG_NO_CREATED_THREAD     UINT32_C(0x10001)
+NTSYSAPI NTSTATUS NTAPI CsrClientCallServer(PVOID, PVOID, ULONG, SIZE_T);
+#endif
+NTSYSAPI VOID NTAPI     LdrInitializeThunk(PVOID, PVOID, PVOID);
+
+RT_C_DECLS_END
+/** @} */
+#endif /* IN_RING3 */
 
 #endif
 
