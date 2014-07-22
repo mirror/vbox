@@ -449,6 +449,30 @@ g_afIntNetOpenNetworkIfFlags[] =
 };
 
 
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+/*******************************************************************************
+*   Forward Declarations                                                       *
+*******************************************************************************/
+static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork);
+
+
+/**
+ * Checks if a pointer belongs to the list of known networks without
+ * accessing memory it points to.
+ *
+ * @returns true, if such network is in the list.
+ * @param   pIntNet     The pointer to the internal network instance (global).
+ * @param   pNetwork    The pointer that must be validated.
+ */
+DECLINLINE(bool) intnetR0NetworkIsValid(PINTNET pIntNet, PINTNETNETWORK pNetwork)
+{
+    for (PINTNETNETWORK pCurr = pIntNet->pNetworks; pCurr; pCurr = pCurr->pNext)
+        if (pCurr == pNetwork)
+            return true;
+    return false;
+}
+#endif /* VBOX_WITH_INTNET_DISCONNECT */
+
 
 /**
  * Worker for intnetR0SgWritePart that deals with the case where the
@@ -715,7 +739,8 @@ DECLINLINE(void) intnetR0BusyDecIf(PINTNETIF pIf)
  */
 DECLINLINE(void) intnetR0BusyDecTrunk(PINTNETTRUNKIF pTrunk)
 {
-    intnetR0BusyDec(pTrunk->pNetwork, &pTrunk->cBusy);
+    if (pTrunk)
+        intnetR0BusyDec(pTrunk->pNetwork, &pTrunk->cBusy);
 }
 
 
@@ -743,6 +768,7 @@ DECLINLINE(void) intnetR0BusyIncIf(PINTNETIF pIf)
  */
 DECLINLINE(void) intnetR0BusyIncTrunk(PINTNETTRUNKIF pTrunk)
 {
+    if (!pTrunk) return;
     uint32_t cNewBusy = ASMAtomicIncU32(&pTrunk->cBusy);
     AssertMsg((cNewBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cNewBusy));
     NOREF(cNewBusy);
@@ -3096,8 +3122,15 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
      * The thing we're interested in here is a reply to a query made by a guest
      * since we modified the MAC in the initial request the guest made.
      */
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock);
+    RTMAC MacAddrTrunk;
+    if (pNetwork->MacTab.pTrunk)
+        MacAddrTrunk = pNetwork->MacTab.pTrunk->MacAddr;
+    else
+        memset(&MacAddrTrunk, 0, sizeof(MacAddrTrunk));
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
     if (    ar_oper == RTNET_ARPOP_REPLY
-        &&  !memcmp(&pArpIPv4->ar_tha, &pNetwork->MacTab.pTrunk->MacAddr, sizeof(RTMAC)))
+        &&  !memcmp(&pArpIPv4->ar_tha, &MacAddrTrunk, sizeof(RTMAC)))
     {
         PINTNETIF pIf = intnetR0NetworkAddrCacheLookupIf(pNetwork, (PCRTNETADDRU)&pArpIPv4->ar_tpa,
                                                          kIntNetAddrType_IPv4, sizeof(pArpIPv4->ar_tpa));
@@ -3105,7 +3138,7 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
         {
             Log6(("fw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArpIPv4->ar_tha, &pIf->MacAddr));
             pArpIPv4->ar_tha = pIf->MacAddr;
-            if (!memcmp(&pEthHdr->DstMac, &pNetwork->MacTab.pTrunk->MacAddr, sizeof(RTMAC)))
+            if (!memcmp(&pEthHdr->DstMac, &MacAddrTrunk, sizeof(RTMAC)))
             {
                 Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->MacAddr));
                 pEthHdr->DstMac = pIf->MacAddr;
@@ -3271,7 +3304,7 @@ DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PINTNETIF p
 
     /* ASSUMES: that the trunk won't change its report while we're checking. */
     PINTNETTRUNKIF  pTrunk = pDstTab->pTrunk;
-    if ((fTrunkDst & pTrunk->fNoPreemptDsts) == fTrunkDst)
+    if (pTrunk && (fTrunkDst & pTrunk->fNoPreemptDsts) == fTrunkDst)
         return true;
 
     /* ASSUMES: That a preemption test detects HM contexts. (Will work on
@@ -3516,7 +3549,8 @@ static void intnetR0NetworkReleaseDstTab(PINTNETNETWORK pNetwork, PINTNETDSTTAB 
     if (pDstTab->fTrunkDst)
     {
         PINTNETTRUNKIF pTrunk = pDstTab->pTrunk;
-        intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
+        if (pTrunk)
+            intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
         pDstTab->pTrunk    = NULL;
         pDstTab->fTrunkDst = 0;
     }
@@ -3573,9 +3607,12 @@ static void intnetR0NetworkDeliver(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTa
     if (pDstTab->fTrunkDst)
     {
         PINTNETTRUNKIF pTrunk = pDstTab->pTrunk;
-        if (pIfSender)
-            intnetR0TrunkIfSend(pTrunk, pNetwork, pIfSender, pDstTab->fTrunkDst, pSG);
-        intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
+        if (pTrunk)
+        {
+            if (pIfSender)
+                intnetR0TrunkIfSend(pTrunk, pNetwork, pIfSender, pDstTab->fTrunkDst, pSG);
+            intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
+        }
         pDstTab->pTrunk    = NULL;
         pDstTab->fTrunkDst = 0;
     }
@@ -4972,6 +5009,54 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWP
 }
 
 
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+/** @copydoc INTNETTRUNKSWPORT::pfnDisconnect */
+static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwitchPort)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    /*
+     * We intentionally do not increase the busy count of the trunk as it will cause a deadlock
+     * with a racing intnetR0NetworkDestruct. It is safe to do only due to the fact that our
+     * caller must have increased the busy count of the corresponding netflt instance thus
+     * preventing intnetR0NetworkDestruct from destroying the trunk.
+     */
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+    if (pNetwork)
+    {
+        /*
+         * We need to save pIntNet too in case pNetwork becomes invalid while we are waiting
+         * on pIntNet->hMtxCreateOpenDestroy.
+         */
+        PINTNET pIntNet = pNetwork->pIntNet;
+        Assert(pNetwork->pIntNet);
+        /*
+         * We must decrease the busy count of corresponing netflt instance here allowing
+         * intnetR0NetworkDestruct to proceed with destruction.
+         */
+        pThis->pIfPort->pfnRelease(pThis->pIfPort, true);
+        /* Take the big create/open/destroy sem. */
+        RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
+        /*
+         * At this point pNetwork may no longer exist, being destroyed by intnetR0NetworkDestruct
+         * so we need to make sure it is still valid by looking it up in pIntNet->pNetworks.
+         */
+        if (intnetR0NetworkIsValid(pIntNet, pNetwork))
+        {
+            pThis->pIfPort->pfnSetState(pThis->pIfPort, INTNETTRUNKIFSTATE_DISCONNECTING);
+
+            RTSpinlockAcquire(pNetwork->hAddrSpinlock);
+            pNetwork->MacTab.pTrunk = NULL;
+            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+
+            intnetR0TrunkIfDestroy(pThis, pNetwork);
+        }
+
+        RTSemMutexRelease(pNetwork->pIntNet->hMtxCreateOpenDestroy);
+    }
+}
+#endif /* VBOX_WITH_INTNET_DISCONNECT */
+
+
 /** @copydoc INTNETTRUNKSWPORT::pfnPreRecv */
 static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWPORT pSwitchPort,
                                                                  void const *pvSrc, size_t cbSrc, uint32_t fSrc)
@@ -5331,6 +5416,9 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         pTrunk->SwitchPort.pfnReportPromiscuousMode   = intnetR0TrunkIfPortReportPromiscuousMode;
         pTrunk->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
         pTrunk->SwitchPort.pfnReportNoPreemptDsts     = intnetR0TrunkIfPortReportNoPreemptDsts;
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+        pTrunk->SwitchPort.pfnDisconnect              = intnetR0TrunkIfPortDisconnect;
+#endif /* VBOX_WITH_INTNET_DISCONNECT */
         pTrunk->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
         //pTrunk->pIfPort                 = NULL;
         pTrunk->pNetwork                  = pNetwork;
