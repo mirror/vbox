@@ -123,7 +123,7 @@ RT_C_DECLS_BEGIN
 
 
 /** Resets/initializes the VM-exit/#VMEXIT history array. */
-#define HMCPU_EXIT_HISTORY_RESET(pVCpu)           (memset(&(pVCpu)->hm.s.auExitHistory, sizeof((pVCpu)->hm.s.auExitHistory), UINT8_MAX))
+#define HMCPU_EXIT_HISTORY_RESET(pVCpu)           (memset(&(pVCpu)->hm.s.auExitHistory, 0xff, sizeof((pVCpu)->hm.s.auExitHistory)))
 
 /** Updates the VM-exit/#VMEXIT history array. */
 #define HMCPU_EXIT_HISTORY_ADD(pVCpu, a_ExitReason) \
