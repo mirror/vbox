@@ -1002,7 +1002,7 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
         /*
          * Process the path according to it's type.
          */
-        if (!strncmp(pszDir, RT_STR_TUPLE("srv*")))
+        if (!RTStrNICmp(pszDir, RT_STR_TUPLE("srv*")))
         {
             /*
              * Symbol server.
@@ -1053,7 +1053,7 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
                     return rc2;
             }
         }
-        else if (!strncmp(pszDir, RT_STR_TUPLE("cache*")))
+        else if (!RTStrNICmp(pszDir, RT_STR_TUPLE("cache*")))
         {
             /*
              * Cache directory.
@@ -1081,13 +1081,13 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
              * flags governing recursive searching.
              */
             uint32_t fFlagsDir = fFlags;
-            if (!strncmp(pszDir, RT_STR_TUPLE("rec*")))
+            if (!RTStrNICmp(pszDir, RT_STR_TUPLE("rec*")))
             {
                 pszDir += sizeof("rec*") - 1;
                 cchDir -= sizeof("rec*") - 1;
                 fFlagsDir |= RTDBGCFG_O_RECURSIVE;
             }
-            else if (!strncmp(pszDir, RT_STR_TUPLE("norec*")))
+            else if (!RTStrNICmp(pszDir, RT_STR_TUPLE("norec*")))
             {
                 pszDir += sizeof("norec*") - 1;
                 cchDir -= sizeof("norec*") - 1;
@@ -1476,7 +1476,7 @@ static int rtDbgCfgTryOpenBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, 
          * Process the path according to it's type.
          */
         rc2 = VINF_SUCCESS;
-        if (!strncmp(pszDir, RT_STR_TUPLE("srv*")))
+        if (!RTStrNICmp(pszDir, RT_STR_TUPLE("srv*")))
         {
             /*
              * Symbol server.
@@ -1527,7 +1527,7 @@ static int rtDbgCfgTryOpenBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, 
                     return rc2;
             }
         }
-        else if (!strncmp(pszDir, RT_STR_TUPLE("cache*")))
+        else if (!RTStrNICmp(pszDir, RT_STR_TUPLE("cache*")))
         {
             /*
              * Cache directory.
@@ -1555,13 +1555,13 @@ static int rtDbgCfgTryOpenBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, 
              * flags governing recursive searching.
              */
             uint32_t fFlagsDir = fFlags;
-            if (!strncmp(pszDir, RT_STR_TUPLE("rec*")))
+            if (!RTStrNICmp(pszDir, RT_STR_TUPLE("rec*")))
             {
                 pszDir += sizeof("rec*") - 1;
                 cchDir -= sizeof("rec*") - 1;
                 fFlagsDir |= RTDBGCFG_O_RECURSIVE;
             }
-            else if (!strncmp(pszDir, RT_STR_TUPLE("norec*")))
+            else if (!RTStrNICmp(pszDir, RT_STR_TUPLE("norec*")))
             {
                 pszDir += sizeof("norec*") - 1;
                 cchDir -= sizeof("norec*") - 1;
