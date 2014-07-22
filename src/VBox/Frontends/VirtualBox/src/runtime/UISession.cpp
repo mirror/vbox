@@ -33,7 +33,6 @@
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
-#include "UIMachineMenuBar.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
 #include "UIWizardFirstRun.h"

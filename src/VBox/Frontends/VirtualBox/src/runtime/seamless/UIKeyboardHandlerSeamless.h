@@ -40,7 +40,7 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 #endif /* !Q_WS_MAC */
 
-    /* Friend classes: */
+    /* Friend class: */
     friend class UIKeyboardHandler;
 };
 

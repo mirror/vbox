@@ -42,7 +42,7 @@
 #include "UIMachineLogicNormal.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineLogicScale.h"
-#include "UIMachineMenuBar.h"
+#include "UIMenuBar.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UISession.h"
