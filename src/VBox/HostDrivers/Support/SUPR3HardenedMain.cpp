@@ -1541,47 +1541,68 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
         supR3HardenedFatalMsg("SUPR3HardenedMain", kSupInitOp_RootCheck, VERR_PERMISSION_DENIED,
                               "Effective UID is not root (euid=%d egid=%d uid=%d gid=%d)",
                               geteuid(), getegid(), g_uid, g_gid);
-#endif
-
-    /*
-     * Validate the installation.  On Windows we leave the files open so they
-     * cannot be tampered with after they've been verified.  We also check
-     * install loader hooks and check the process integrity.
-     */
-#ifndef RT_OS_WINDOWS
-    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
-#else
-    supR3HardenedWinInit(fFlags);
-    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
-    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
-        supR3HardenedWinVerifyProcess();
-#endif
+#endif /* SUP_HARDENED_SUID */
 
 #ifdef RT_OS_WINDOWS
     /*
-     * On Windows we'll respawn the process with a special vboxdrv arrangement
-     * in place to monitor access to the process for its inception.
+     * Windows: First respawn. On Windows we will respawn the process twice to establish
+     * something we can put some kind of reliable trust in.  The first respawning aims
+     * at dropping compatibility layers and process "security" solutions.
      */
     if (   !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        && supR3HardenedWinIsReSpawnNeeded(argc, argv))
-        return supR3HardenedWinReSpawn();
-#endif
+        && supR3HardenedWinIsReSpawnNeeded(1 /*iWhich*/, argc, argv))
+    {
+        supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV);
+        supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
+        return supR3HardenedWinReSpawn(1 /*iWhich*/);
+    }
 
     /*
-     * Open the vboxdrv device.
+     * Windows: Initialize the image verification global data so we can verify the
+     * signature of the process image and hook the core of the DLL loader API so we
+     * can check the signature of all DLLs mapped into the process.
+     */
+    supR3HardenedWinInit(fFlags);
+#endif /* RT_OS_WINDOWS */
+
+    /*
+     * Validate the installation.
+     */
+    supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
+
+    /*
+     * The next steps are only taken if we actually need to access the support
+     * driver.
      */
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
-        supR3HardenedMainOpenDevice();
+    {
 #ifdef RT_OS_WINDOWS
+        /*
+         * Windows: Verify the process (repeated by the kernel later.
+         */
+        supR3HardenedWinVerifyProcess();
+
+        /*
+         * Windows: The second respawn.  This time we make a special arrangement
+         * with vboxdrv to monitor access to the new process from its inception.
+         */
+        if (supR3HardenedWinIsReSpawnNeeded(2 /* iWhich*/, argc, argv))
+            return supR3HardenedWinReSpawn(2 /* iWhich*/);
+#endif /* RT_OS_WINDOWS */
+
+        /*
+         * Open the vboxdrv device.
+         */
+        supR3HardenedMainOpenDevice();
+    }
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Windows: Enable the use of windows APIs to verify images at load time.
+     */
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation();
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_VERIFY_TRUST_READY;
 #endif
-
-    /*
-     * Open the root service connection.
-     */
-    //if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_SVC))
-        //supR3HardenedMainOpenService(&g_SupPreInitData, true /* fFatal */);
 
 #ifdef SUP_HARDENED_SUID
     /*
