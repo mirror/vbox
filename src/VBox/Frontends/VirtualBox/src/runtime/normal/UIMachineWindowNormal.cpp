@@ -39,7 +39,7 @@
 #include "QIStatusBar.h"
 #include "QIStatusBarIndicator.h"
 #ifndef Q_WS_MAC
-# include "UIMachineMenuBar.h"
+# include "UIMenuBar.h"
 #else /* Q_WS_MAC */
 # include "VBoxUtils.h"
 # include "UIImageTools.h"

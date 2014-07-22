@@ -31,7 +31,7 @@
 #include "UIMachineWindowSeamless.h"
 #include "UIMultiScreenLayout.h"
 #ifndef Q_WS_MAC
-# include "UIMachineMenuBar.h"
+# include "QIMenu.h"
 #else /* Q_WS_MAC */
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */

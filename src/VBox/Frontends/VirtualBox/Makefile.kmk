@@ -262,6 +262,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QILabelSeparator.h \
 	src/extensions/QIListView.h \
 	src/extensions/QIMainDialog.h \
+	src/extensions/QIMenu.h \
 	src/extensions/QIMessageBox.h \
 	src/extensions/QIProcess.h \
 	src/extensions/QIRichTextLabel.h \
@@ -297,7 +298,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UIKeyboardHandler.h \
 	src/runtime/UIMachine.h \
 	src/runtime/UIMachineLogic.h \
-	src/runtime/UIMachineMenuBar.h \
 	src/runtime/UIMachineWindow.h \
 	src/runtime/UIMachineView.h \
 	src/runtime/UIMouseHandler.h \
@@ -378,6 +378,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UILineTextEdit.h \
+	src/widgets/UIMenuBar.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneTextPane.h \
@@ -534,6 +535,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QILineEdit.cpp \
 	src/extensions/QIListView.cpp \
 	src/extensions/QIMainDialog.cpp \
+	src/extensions/QIMenu.cpp \
 	src/extensions/QIMessageBox.cpp \
 	src/extensions/QIProcess.cpp \
 	src/extensions/QIRichTextLabel.cpp \
@@ -573,7 +575,6 @@ VirtualBox_SOURCES = \
 	src/runtime/UIKeyboardHandler.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp \
-	src/runtime/UIMachineMenuBar.cpp \
 	src/runtime/UIMachineView.cpp \
 	src/runtime/UIMachineWindow.cpp \
 	src/runtime/UIMouseHandler.cpp \
@@ -655,6 +656,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UILineTextEdit.cpp \
+	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneTextPane.cpp \

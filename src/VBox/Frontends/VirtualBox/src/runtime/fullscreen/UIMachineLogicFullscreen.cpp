@@ -27,7 +27,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
-#include "UIMachineMenuBar.h"
+#include "QIMenu.h"
 #ifdef Q_WS_MAC
 # include "UIExtraDataManager.h"
 # include "VBoxUtils.h"
