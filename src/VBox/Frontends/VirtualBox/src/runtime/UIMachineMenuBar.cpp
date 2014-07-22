@@ -16,7 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QMenuBar>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPixmapCache>
@@ -37,79 +36,47 @@
 #include "CMachine.h"
 
 
-/**
- * QMenu sub-class with extended functionality.
- * Allows to highlight first menu item for popped up menu.
- */
-class QIMenu : public QMenu
+QIMenu::QIMenu(QWidget *pParent /* = 0 */)
+    : QMenu(pParent)
 {
-    Q_OBJECT;
+}
 
-public:
-
-    /** Constructor. */
-    QIMenu() : QMenu(0) {}
-
-private slots:
-
-    /** Highlights first menu action for popped up menu. */
-    void sltHighlightFirstAction()
-    {
+void QIMenu::sltHighlightFirstAction()
+{
 #ifdef Q_WS_WIN
-        activateWindow();
+    activateWindow();
 #endif /* Q_WS_WIN */
-        QMenu::focusNextChild();
-    }
-};
+    QMenu::focusNextChild();
+}
 
 
-/**
- * QMenuBar sub-class with extended functionality.
- * Reflects BETA label when necessary.
- */
-class UIMenuBar: public QMenuBar
+UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
+    : QMenuBar(pParent)
+    , m_fShowBetaLabel(false)
 {
-    Q_OBJECT;
+    /* Check for beta versions: */
+    if (vboxGlobal().isBeta())
+        m_fShowBetaLabel = true;
+}
 
-public:
-
-    /** Constructor. */
-    UIMenuBar(QWidget *pParent = 0)
-        : QMenuBar(pParent)
-        , m_fShowBetaLabel(false)
+void UIMenuBar::paintEvent(QPaintEvent *pEvent)
+{
+    QMenuBar::paintEvent(pEvent);
+    if (m_fShowBetaLabel)
     {
-        /* Check for beta versions: */
-        if (vboxGlobal().isBeta())
-            m_fShowBetaLabel = true;
-    }
-
-protected:
-
-    /** Paint-event reimplementation. */
-    void paintEvent(QPaintEvent *pEvent)
-    {
-        QMenuBar::paintEvent(pEvent);
-        if (m_fShowBetaLabel)
+        QPixmap betaLabel;
+        const QString key("vbox:betaLabel");
+        if (!QPixmapCache::find(key, betaLabel))
         {
-            QPixmap betaLabel;
-            const QString key("vbox:betaLabel");
-            if (!QPixmapCache::find(key, betaLabel))
-            {
-                betaLabel = ::betaLabel();
-                QPixmapCache::insert(key, betaLabel);
-            }
-            QSize s = size();
-            QPainter painter(this);
-            painter.setClipRect(pEvent->rect());
-            painter.drawPixmap(s.width() - betaLabel.width() - 10, (height() - betaLabel.height()) / 2, betaLabel);
+            betaLabel = ::betaLabel();
+            QPixmapCache::insert(key, betaLabel);
         }
+        QSize s = size();
+        QPainter painter(this);
+        painter.setClipRect(pEvent->rect());
+        painter.drawPixmap(s.width() - betaLabel.width() - 10, (height() - betaLabel.height()) / 2, betaLabel);
     }
-
-private:
-
-    /** Reflects whether we should show BETA label or not. */
-    bool m_fShowBetaLabel;
-};
+}
 
 
 UIMachineMenuBar::UIMachineMenuBar(UISession *pSession)
@@ -680,6 +647,4 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
     else
         gActionPool->action(UIActionIndex_Simple_Preferences)->setEnabled(false);
 }
-
-#include "UIMachineMenuBar.moc"
 

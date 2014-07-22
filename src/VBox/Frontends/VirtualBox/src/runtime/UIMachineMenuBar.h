@@ -19,14 +19,56 @@
 
 /* Qt includes: */
 #include <QList>
+#include <QMenu>
+#include <QMenuBar>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class QMenu;
-class QMenuBar;
 class UISession;
+
+
+/** QMenu extension
+  * which allows to highlight first menu item for popped up menu. */
+class QIMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    QIMenu(QWidget *pParent = 0);
+
+private slots:
+
+    /** Highlights first menu action for popped up menu. */
+    void sltHighlightFirstAction();
+};
+
+
+/** QMenuBar extension
+  * which reflects BETA label when necessary. */
+class UIMenuBar: public QMenuBar
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    UIMenuBar(QWidget *pParent = 0);
+
+protected:
+
+    /** Paint event handler. */
+    void paintEvent(QPaintEvent *pEvent);
+
+private:
+
+    /** Reflects whether we should show BETA label or not. */
+    bool m_fShowBetaLabel;
+};
+
 
 /**
  * Menubar factory for virtual machine (Runtime UI).
