@@ -1629,21 +1629,14 @@ NTSTATUS VBoxVidPnIsSupported(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, BOO
     VBOXVIDPN_PATH_ITER PathIter;
     const D3DKMDT_VIDPN_PRESENT_PATH * pPath;
     VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aVisitedTargetMap);
-    VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aModeMap);
-    CR_SORTARRAY aModes[VBOX_VIDEO_MAX_SCREENS];
 
     memset(aVisitedTargetMap, 0, sizeof (aVisitedTargetMap));
-    memset(aModeMap, 0, sizeof (aModeMap));
-    memset(aModes, 0, sizeof (aModes));
-
-    CR_SORTARRAY TargetMode = {0};
 
     BOOLEAN fSupported = TRUE;
     /* collect info first */
     VBoxVidPnPathIterInit(&PathIter, hVidPnTopology, pVidPnTopologyInterface);
     while ((pPath = VBoxVidPnPathIterNext(&PathIter)) != NULL)
     {
-        CrSaClear(&TargetMode);
         D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId = pPath->VidPnSourceId;
         D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId = pPath->VidPnTargetId;
         /* actually vidpn topology should contain only one target info, right? */
@@ -1680,74 +1673,6 @@ NTSTATUS VBoxVidPnIsSupported(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, BOO
             fSupported = FALSE;
             break;
         }
-
-        {
-            D3DKMDT_HVIDPNTARGETMODESET hVidPnModeSet;
-            const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnModeSetInterface;
-            Status = pVidPnInterface->pfnAcquireTargetModeSet(hVidPn,
-                        VidPnTargetId,
-                        &hVidPnModeSet,
-                        &pVidPnModeSetInterface);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("pfnAcquireTargetModeSet failed %#x", Status));
-                break;
-            }
-
-            Status = vboxVidPnTargetModeSetToArray(hVidPnModeSet, pVidPnModeSetInterface, &TargetMode);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxVidPnTargetModeSetToArray failed %#x", Status));
-                break;
-            }
-
-            NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hVidPnModeSet);
-            Assert(tmpStatus == STATUS_SUCCESS);
-        }
-
-        if (!ASMBitTest(aModeMap, VidPnSourceId))
-        {
-            D3DKMDT_HVIDPNSOURCEMODESET hVidPnModeSet;
-            const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnModeSetInterface;
-            Status = pVidPnInterface->pfnAcquireSourceModeSet(hVidPn,
-                        VidPnSourceId,
-                        &hVidPnModeSet,
-                        &pVidPnModeSetInterface);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("pfnAcquireSourceModeSet failed %#x", Status));
-                break;
-            }
-
-            Status = vboxVidPnSourceModeSetToArray(hVidPnModeSet, pVidPnModeSetInterface, &aModes[VidPnSourceId]);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxVidPnSourceModeSetToArray failed %#x", Status));
-                break;
-            }
-
-            NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hVidPnModeSet);
-            Assert(tmpStatus == STATUS_SUCCESS);
-
-            ASMBitSet(aModeMap, VidPnSourceId);
-        }
-
-        if (CrSaCmp(&aModes[VidPnSourceId], &TargetMode))
-        {
-            WARN(("not expected 2?"));
-            fSupported = FALSE;
-            break;
-        }
-
-#if 0
-        const CR_SORTARRAY *pSupportedModes = VBoxWddmVModesGet(pDevExt, VidPnTargetId);
-        if (!CrSaCovers(pSupportedModes, &TargetMode))
-        {
-            WARN(("not expected 3?"));
-            fSupported = FALSE;
-            break;
-        }
-#endif
     }
 
     VBoxVidPnPathIterTerm(&PathIter);
@@ -1764,14 +1689,6 @@ NTSTATUS VBoxVidPnIsSupported(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, BOO
 
     *pfSupported = fSupported;
 done:
-
-    CrSaCleanup(&TargetMode);
-
-    for (uint32_t i = 0; i < (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-    {
-        CrSaCleanup(&aModes[i]);
-    }
-
 
     return Status;
 }
