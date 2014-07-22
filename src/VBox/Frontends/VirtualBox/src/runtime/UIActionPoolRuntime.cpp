@@ -1407,52 +1407,52 @@ void UIActionPoolRuntime::createActions()
     UIActionPool::createActions();
 
     /* 'Machine' actions: */
-    m_pool[UIActionIndexRuntime_Simple_SettingsDialog] = new UIActionSimpleShowSettingsDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
-    m_pool[UIActionIndexRuntime_Simple_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
-    m_pool[UIActionIndexRuntime_Simple_InformationDialog] = new UIActionSimpleShowInformationDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_KeyboardSettings] = new UIActionSimpleKeyboardSettings(this);
-    m_pool[UIActionIndexRuntime_Toggle_MouseIntegration] = new UIActionToggleMouseIntegration(this);
-    m_pool[UIActionIndexRuntime_Simple_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleShowSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
+    m_pool[UIActionIndexRT_M_Machine_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_M_Keyboard_S_Settings] = new UIActionSimpleKeyboardSettings(this);
+    m_pool[UIActionIndexRT_M_Machine_M_Mouse_T_Integration] = new UIActionToggleMouseIntegration(this);
+    m_pool[UIActionIndexRT_M_Machine_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
 #ifdef Q_WS_X11
-    m_pool[UIActionIndexRuntime_Simple_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
+    m_pool[UIActionIndexRT_M_Machine_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
 #endif /* Q_WS_X11 */
-    m_pool[UIActionIndexRuntime_Toggle_Pause] = new UIActionTogglePause(this);
-    m_pool[UIActionIndexRuntime_Simple_Reset] = new UIActionSimplePerformReset(this);
-    m_pool[UIActionIndexRuntime_Simple_Save] = new UIActionSimplePerformSave(this);
-    m_pool[UIActionIndexRuntime_Simple_Shutdown] = new UIActionSimplePerformShutdown(this);
-    m_pool[UIActionIndexRuntime_Simple_PowerOff] = new UIActionSimplePerformPowerOff(this);
-    m_pool[UIActionIndexRuntime_Simple_Close] = new UIActionSimplePerformClose(this);
+    m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionTogglePause(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimplePerformReset(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Save] = new UIActionSimplePerformSave(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
+    m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Close] = new UIActionSimplePerformClose(this);
 
     /* 'View' actions: */
-    m_pool[UIActionIndexRuntime_Toggle_Fullscreen] = new UIActionToggleFullscreenMode(this);
-    m_pool[UIActionIndexRuntime_Toggle_Seamless] = new UIActionToggleSeamlessMode(this);
-    m_pool[UIActionIndexRuntime_Toggle_Scale] = new UIActionToggleScaleMode(this);
-    m_pool[UIActionIndexRuntime_Toggle_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
-    m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
-    m_pool[UIActionIndexRuntime_Simple_StatusBarSettings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
-    m_pool[UIActionIndexRuntime_Toggle_StatusBar] = new UIActionToggleStatusBar(this);
+    m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleFullscreenMode(this);
+    m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleSeamlessMode(this);
+    m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
+    m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
+    m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
+    m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
+    m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
 
     /* 'Devices' actions: */
-    m_pool[UIActionIndexRuntime_Simple_StorageSettings] = new UIActionSimpleShowStorageSettingsDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_NetworkSettings] = new UIActionSimpleShowNetworkSettingsDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_SharedFoldersSettings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
-    m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new UIActionToggleVRDEServer(this);
-    m_pool[UIActionIndexRuntime_Toggle_VideoCapture] = new UIActionToggleVideoCapture(this);
-    m_pool[UIActionIndexRuntime_Simple_VideoCaptureSettings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowStorageSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleShowNetworkSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Devices_T_VRDEServer] = new UIActionToggleVRDEServer(this);
+    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture_T_Start] = new UIActionToggleVideoCapture(this);
+    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions: */
-    m_pool[UIActionIndexRuntime_Simple_Statistics] = new UIActionSimpleShowStatistics(this);
-    m_pool[UIActionIndexRuntime_Simple_CommandLine] = new UIActionSimpleShowCommandLine(this);
-    m_pool[UIActionIndexRuntime_Toggle_Logging] = new UIActionToggleLogging(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowStatistics] = new UIActionSimpleShowStatistics(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleShowCommandLine(this);
+    m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleLogging(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
     /* 'Dock' actions: */
-    m_pool[UIActionIndexRuntime_Toggle_DockPreviewMonitor] = new UIActionToggleDockPreviewMonitor(this);
-    m_pool[UIActionIndexRuntime_Toggle_DockDisableMonitor] = new UIActionToggleDockDisableMonitor(this);
+    m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor] = new UIActionToggleDockPreviewMonitor(this);
+    m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor] = new UIActionToggleDockDisableMonitor(this);
 #endif /* Q_WS_MAC */
 }
 
@@ -1467,82 +1467,82 @@ void UIActionPoolRuntime::createMenus()
 
     /* Recreate 'close' item as well.
      * This makes sure it is removed also from the Application menu: */
-    if (m_pool[UIActionIndexRuntime_Simple_Close])
-        delete m_pool[UIActionIndexRuntime_Simple_Close];
-    m_pool[UIActionIndexRuntime_Simple_Close] = new UIActionSimplePerformClose(this);
+    if (m_pool[UIActionIndexRT_M_Machine_S_Close])
+        delete m_pool[UIActionIndexRT_M_Machine_S_Close];
+    m_pool[UIActionIndexRT_M_Machine_S_Close] = new UIActionSimplePerformClose(this);
 
     /* 'Machine' menu: */
-    if (m_pool[UIActionIndexRuntime_Menu_Machine])
-        delete m_pool[UIActionIndexRuntime_Menu_Machine];
-    m_pool[UIActionIndexRuntime_Menu_Machine] = new UIActionMenuMachineRuntime(this);
-    if (m_pool[UIActionIndexRuntime_Menu_Keyboard])
-        delete m_pool[UIActionIndexRuntime_Menu_Keyboard];
-    m_pool[UIActionIndexRuntime_Menu_Keyboard] = new UIActionMenuKeyboard(this);
-    if (m_pool[UIActionIndexRuntime_Menu_MouseIntegration])
-        delete m_pool[UIActionIndexRuntime_Menu_MouseIntegration];
-    m_pool[UIActionIndexRuntime_Menu_MouseIntegration] = new UIActionMenuMouseIntegration(this);
+    if (m_pool[UIActionIndexRT_M_Machine])
+        delete m_pool[UIActionIndexRT_M_Machine];
+    m_pool[UIActionIndexRT_M_Machine] = new UIActionMenuMachineRuntime(this);
+    if (m_pool[UIActionIndexRT_M_Machine_M_Keyboard])
+        delete m_pool[UIActionIndexRT_M_Machine_M_Keyboard];
+    m_pool[UIActionIndexRT_M_Machine_M_Keyboard] = new UIActionMenuKeyboard(this);
+    if (m_pool[UIActionIndexRT_M_Machine_M_Mouse])
+        delete m_pool[UIActionIndexRT_M_Machine_M_Mouse];
+    m_pool[UIActionIndexRT_M_Machine_M_Mouse] = new UIActionMenuMouseIntegration(this);
 
     /* 'View' menu: */
-    if (m_pool[UIActionIndexRuntime_Menu_View])
-        delete m_pool[UIActionIndexRuntime_Menu_View];
-    m_pool[UIActionIndexRuntime_Menu_View] = new UIActionMenuView(this);
-    if (m_pool[UIActionIndexRuntime_Menu_ViewPopup])
-        delete m_pool[UIActionIndexRuntime_Menu_ViewPopup];
-    m_pool[UIActionIndexRuntime_Menu_ViewPopup] = new UIActionMenuViewPopup(this);
-    if (m_pool[UIActionIndexRuntime_Menu_StatusBar])
-        delete m_pool[UIActionIndexRuntime_Menu_StatusBar];
-    m_pool[UIActionIndexRuntime_Menu_StatusBar] = new UIActionMenuStatusBar(this);
+    if (m_pool[UIActionIndexRT_M_View])
+        delete m_pool[UIActionIndexRT_M_View];
+    m_pool[UIActionIndexRT_M_View] = new UIActionMenuView(this);
+    if (m_pool[UIActionIndexRT_M_ViewPopup])
+        delete m_pool[UIActionIndexRT_M_ViewPopup];
+    m_pool[UIActionIndexRT_M_ViewPopup] = new UIActionMenuViewPopup(this);
+    if (m_pool[UIActionIndexRT_M_View_M_StatusBar])
+        delete m_pool[UIActionIndexRT_M_View_M_StatusBar];
+    m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
 
     /* 'Devices' menu: */
-    if (m_pool[UIActionIndexRuntime_Menu_Devices])
-        delete m_pool[UIActionIndexRuntime_Menu_Devices];
-    m_pool[UIActionIndexRuntime_Menu_Devices] = new UIActionMenuDevices(this);
-    if (m_pool[UIActionIndexRuntime_Menu_HardDisks])
-        delete m_pool[UIActionIndexRuntime_Menu_HardDisks];
-    m_pool[UIActionIndexRuntime_Menu_HardDisks] = new UIActionMenuHardDisks(this);
-    if (m_pool[UIActionIndexRuntime_Menu_OpticalDevices])
-        delete m_pool[UIActionIndexRuntime_Menu_OpticalDevices];
-    m_pool[UIActionIndexRuntime_Menu_OpticalDevices] = new UIActionMenuOpticalDevices(this);
-    if (m_pool[UIActionIndexRuntime_Menu_FloppyDevices])
-        delete m_pool[UIActionIndexRuntime_Menu_FloppyDevices];
-    m_pool[UIActionIndexRuntime_Menu_FloppyDevices] = new UIActionMenuFloppyDevices(this);
-    if (m_pool[UIActionIndexRuntime_Menu_USBDevices])
-        delete m_pool[UIActionIndexRuntime_Menu_USBDevices];
-    m_pool[UIActionIndexRuntime_Menu_USBDevices] = new UIActionMenuUSBDevices(this);
-    if (m_pool[UIActionIndexRuntime_Menu_WebCams])
-        delete m_pool[UIActionIndexRuntime_Menu_WebCams];
-    m_pool[UIActionIndexRuntime_Menu_WebCams] = new UIActionMenuWebCams(this);
-    if (m_pool[UIActionIndexRuntime_Menu_SharedClipboard])
-        delete m_pool[UIActionIndexRuntime_Menu_SharedClipboard];
-    m_pool[UIActionIndexRuntime_Menu_SharedClipboard] = new UIActionMenuSharedClipboard(this);
-    if (m_pool[UIActionIndexRuntime_Menu_DragAndDrop])
-        delete m_pool[UIActionIndexRuntime_Menu_DragAndDrop];
-    m_pool[UIActionIndexRuntime_Menu_DragAndDrop] = new UIActionMenuDragAndDrop(this);
-    if (m_pool[UIActionIndexRuntime_Menu_Network])
-        delete m_pool[UIActionIndexRuntime_Menu_Network];
-    m_pool[UIActionIndexRuntime_Menu_Network] = new UIActionMenuNetworkAdapters(this);
-    if (m_pool[UIActionIndexRuntime_Menu_SharedFolders])
-        delete m_pool[UIActionIndexRuntime_Menu_SharedFolders];
-    m_pool[UIActionIndexRuntime_Menu_SharedFolders] = new UIActionMenuSharedFolders(this);
-    if (m_pool[UIActionIndexRuntime_Menu_VideoCapture])
-        delete m_pool[UIActionIndexRuntime_Menu_VideoCapture];
-    m_pool[UIActionIndexRuntime_Menu_VideoCapture] = new UIActionMenuVideoCapture(this);
+    if (m_pool[UIActionIndexRT_M_Devices])
+        delete m_pool[UIActionIndexRT_M_Devices];
+    m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuDevices(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_HardDrives])
+        delete m_pool[UIActionIndexRT_M_Devices_M_HardDrives];
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives] = new UIActionMenuHardDisks(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices])
+        delete m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices];
+    m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices])
+        delete m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices];
+    m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_USBDevices])
+        delete m_pool[UIActionIndexRT_M_Devices_M_USBDevices];
+    m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuUSBDevices(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_WebCams])
+        delete m_pool[UIActionIndexRT_M_Devices_M_WebCams];
+    m_pool[UIActionIndexRT_M_Devices_M_WebCams] = new UIActionMenuWebCams(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard])
+        delete m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard];
+    m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard] = new UIActionMenuSharedClipboard(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop])
+        delete m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop];
+    m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuDragAndDrop(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_Network])
+        delete m_pool[UIActionIndexRT_M_Devices_M_Network];
+    m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_SharedFolders])
+        delete m_pool[UIActionIndexRT_M_Devices_M_SharedFolders];
+    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuSharedFolders(this);
+    if (m_pool[UIActionIndexRT_M_Devices_M_VideoCapture])
+        delete m_pool[UIActionIndexRT_M_Devices_M_VideoCapture];
+    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture] = new UIActionMenuVideoCapture(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    if (m_pool[UIActionIndexRuntime_Menu_Debug])
-        delete m_pool[UIActionIndexRuntime_Menu_Debug];
-    m_pool[UIActionIndexRuntime_Menu_Debug] = new UIActionMenuDebug(this);
+    if (m_pool[UIActionIndexRT_M_Debug])
+        delete m_pool[UIActionIndexRT_M_Debug];
+    m_pool[UIActionIndexRT_M_Debug] = new UIActionMenuDebug(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
     /* 'Dock' menu: */
-    if (m_pool[UIActionIndexRuntime_Menu_Dock])
-        delete m_pool[UIActionIndexRuntime_Menu_Dock];
-    m_pool[UIActionIndexRuntime_Menu_Dock] = new UIActionMenuDock(this);
-    if (m_pool[UIActionIndexRuntime_Menu_DockSettings])
-        delete m_pool[UIActionIndexRuntime_Menu_DockSettings];
-    m_pool[UIActionIndexRuntime_Menu_DockSettings] = new UIActionMenuDockSettings(this);
+    if (m_pool[UIActionIndexRT_M_Dock])
+        delete m_pool[UIActionIndexRT_M_Dock];
+    m_pool[UIActionIndexRT_M_Dock] = new UIActionMenuDock(this);
+    if (m_pool[UIActionIndexRT_M_Dock_M_DockSettings])
+        delete m_pool[UIActionIndexRT_M_Dock_M_DockSettings];
+    m_pool[UIActionIndexRT_M_Dock_M_DockSettings] = new UIActionMenuDockSettings(this);
 #endif /* Q_WS_MAC */
 }
 

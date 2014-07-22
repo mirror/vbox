@@ -47,7 +47,7 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     )
-    , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked())
+    , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
     /* Resend the last resize hint if there was a fullscreen or
      * seamless transition previously. If we were not in graphical
