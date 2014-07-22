@@ -199,8 +199,8 @@ void UIMachineLogicNormal::sltPrepareMenuViewVirtualScreen()
                 pAction->setProperty("Screen ID", iScreenID);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
-                if (pFrameBuffer->width() == size.width() &&
-                    pFrameBuffer->height() == size.height())
+                if (pFrameBuffer->width() == (ulong)size.width() &&
+                    pFrameBuffer->height() == (ulong)size.height())
                 {
                     pAction->setChecked(true);
                 }
