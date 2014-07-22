@@ -481,7 +481,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
-	src/runtime/UIMachineMenuBar.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
