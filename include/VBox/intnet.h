@@ -560,12 +560,25 @@ typedef struct INTNETTRUNKSWPORT
      */
     DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
+#if VBOX_WITH_INTNET_DISCONNECT
+    /**
+     * Reports premature destruction of NetFlt instance by OS.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnDisconnect,(PINTNETTRUNKSWPORT pSwitchPort));
+#endif /* VBOX_WITH_INTNET_DISCONNECT */
+
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
 } INTNETTRUNKSWPORT;
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+#define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf002)
+#else /* !VBOX_WITH_INTNET_DISCONNECT */
 #define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
+#endif /* !VBOX_WITH_INTNET_DISCONNECT */
 
 
 /**
@@ -623,7 +636,11 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @remarks May own the big mutex, no spinlocks.
      */
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+    DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort, bool fBusy));
+#else /* !VBOX_WITH_INTNET_DISCONNECT */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
+#endif /* !VBOX_WITH_INTNET_DISCONNECT */
 
     /**
      * Disconnect from the switch and release the object.
@@ -745,7 +762,11 @@ typedef struct INTNETTRUNKIFPORT
 } INTNETTRUNKIFPORT;
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
+#ifdef VBOX_WITH_INTNET_DISCONNECT
+#define INTNETTRUNKIFPORT_VERSION   UINT32_C(0xA2CDe002)
+#else /* !VBOX_WITH_INTNET_DISCONNECT */
 #define INTNETTRUNKIFPORT_VERSION   UINT32_C(0xA2CDe001)
+#endif /* !VBOX_WITH_INTNET_DISCONNECT */
 
 
 /**

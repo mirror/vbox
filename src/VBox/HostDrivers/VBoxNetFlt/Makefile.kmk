@@ -289,6 +289,22 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
 
  ifndef VBOX_OSE
  #
+ # NetAdp6Install
+ #
+ PROGRAMS.win  += NetAdp6Install
+ NetAdp6Install_TEMPLATE = VBOXR3STATIC
+ NetAdp6Install_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ NetAdp6Install_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
+ NetAdp6Install_DEFS    += NDIS60=1
+ NetAdp6Install_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
+
+
+ #
  # NetLwfInstall
  #
  PROGRAMS.win  += NetLwfInstall
@@ -419,6 +435,66 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
  endif #  ifdef VBOX_SIGNING_MODE
+
+ ifdef VBOX_WITH_NDIS6
+ #
+ # VBoxNetAdp6.sys - The VirtualBox Adapter miniport driver.
+ #
+ SYSMODS.win += VBoxNetAdp6
+ VBoxNetAdp6_TEMPLATE = VBOXR0DRV
+ #VBoxNetAdp6_INST = $(INST_VBOXNETADP)
+ if defined(VBOX_SIGNING_MODE)
+  VBoxNetAdp6_INSTTYPE.win = none
+  VBoxNetAdp6_DEBUG_INSTTYPE.win = both
+ endif
+ VBoxNetAdp6_DEFS = IN_RT_R0 IN_SUP_STATIC
+ VBoxNetAdp6_INCS := $(PATH_SUB_CURRENT)
+ VBoxNetAdp6_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetAdp6_SOURCES = \
+ 	win/ndis6/VBoxNetAdp-win.cpp \
+ 	win/ndis6/VBoxNetAdp-win.rc
+ VBoxNetAdp6_DEFS += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
+ VBoxNetAdp6_DEFS += NDIS60_MINIPORT=1 NDIS60=1
+ VBoxNetAdp6_LDFLAGS.win.x86 = -Entry:DriverEntry@8
+ VBoxNetAdp6_LDFLAGS.win.amd64 = -Entry:DriverEntry
+ VBoxNetAdp6_LIBS.win = \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ndis.lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+ VBoxNetAdp6_LIBS = \
+ 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+
+
+ INSTALLS.win += VBoxNetAdp6-inf
+ VBoxNetAdp6-inf_INST = $(INST_BIN)
+ VBoxNetAdp6-inf_MODE = a+r,u+w
+ VBoxNetAdp6-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf
+ VBoxNetAdp6-inf_CLEAN = $(VBoxNetAdp6-inf_SOURCES)
+ VBoxNetAdp6-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdp6Cat.dir
+
+$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf: $(PATH_SUB_CURRENT)/win/ndis6/VBoxNetAdp6.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxNetAdp6-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+ ifdef VBOX_SIGNING_MODE
+VBoxNetAdp6-inf_SOURCES += \
+	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
+	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat
+
+$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys: $$(VBoxNetAdp6_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat: \
+		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
+		$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf
+	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+
+ endif #  ifdef VBOX_SIGNING_MODE
+
+ endif #  ifdef VBOX_WITH_NDIS6
 
 endif #ifeq ($(KBUILD_TARGET), win)
 

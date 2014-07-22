@@ -21,7 +21,11 @@
 
 #include <devguid.h>
 
+#ifdef NDIS60
+#define VBOX_NETADP_INF L"VBoxNetAdp6.inf"
+#else /* !NDIS60 */
 #define VBOX_NETADP_INF L"VBoxNetAdp.inf"
+#endif /* !NDIS60 */
 
 static VOID winNetCfgLogger(LPCSTR szString)
 {
