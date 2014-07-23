@@ -5835,32 +5835,31 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
         }
-        else
+        else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                 || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                 || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
         {
             /*
              * If event delivery caused an EPT violation/misconfig or APIC access VM-exit, then the VM-exit
-             * interruption-information will not be valid and we end up here. In such cases, it is sufficient to reflect the
-             * original exception to the guest after handling the VM-exit.
+             * interruption-information will not be valid as it's not an exception and we end up here. In such cases,
+             * it is sufficient to reflect the original exception to the guest after handling the VM-exit.
              */
-            if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
-                && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
-            {
-                /*
-                 * On CPUs that support Virtual NMIs, if this exception occurred while delivering the NMI, we need to clear
-                 * the block-by-NMI field in the guest interruptibility-state before re-delivering the NMI, otherwise the
-                 * subsequent VM-entry would fail.
-                 * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
-                 */
-                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-                enmReflect = VMXREFLECTXCPT_XCPT;
-            }
-            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
-                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
-            {
-                enmReflect = VMXREFLECTXCPT_XCPT;
-            }
+            enmReflect = VMXREFLECTXCPT_XCPT;
+        }
+
+        /*
+         * On CPUs that support Virtual NMIs, if this VM-exit (be it an exception or EPT violation/misconfig etc.) occurred
+         * while delivering the NMI, we need to clear the block-by-NMI field in the guest interruptibility-state before
+         * re-delivering the NMI after handling the VM-exit. Otherwise the subsequent VM-entry would fail.
+         *
+         * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
+         */
+        if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
+            && enmReflect == VMXREFLECTXCPT_XCPT
+            && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
+            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        {
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
 
         switch (enmReflect)
@@ -5918,7 +5917,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     {
         /*
          * Execution of IRET caused this fault when NMI blocking was in effect (i.e we're in the guest NMI handler).
-         * We need to reset the block-by-NMI field so that NMIs remain blocked until the IRET execution is completed.
+         * We need to set the block-by-NMI field so that NMIs remain blocked until the IRET execution is restarted.
          * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
          */
         if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
@@ -7994,7 +7993,17 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
 
     /* Clear interrupt-window exiting control. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
+    {
         hmR0VmxClearIntWindowExitVmcs(pVCpu);
+        Assert(!pVCpu->hm.s.Event.fPending);
+    }
+
+    /* Clear NMI-window exiting control. */
+    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)
+    {
+        hmR0VmxClearNmiWindowExitVmcs(pVCpu);
+        Assert(!pVCpu->hm.s.Event.fPending);
+    }
 
     if (!pVCpu->hm.s.Event.fPending)
         return;
@@ -9950,12 +9959,19 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
 
     /*
-     * Clear block-by-STI if it's active. The force-flag couldn't have been set by block-by-Mov SS in
-     * hmR0VmxSaveGuestIntrState() when this VM-exit happened, as Intel CPUs are consistent with
-     * block-by-Mov SS and NMIs. See @bugref{7445}.
+     * If block-by-STI is set when we get this VM-exit, it means the CPU doesn't block NMIs following STI.
+     * It is therefore safe to unblock STI and deliver the NMI ourselves. See @bugref{7445}.
      */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    uint32_t uIntrState = 0;
+    int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
+    AssertRCReturn(rc, rc);
+
+    bool const fBlockSti = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    if (   fBlockSti
+        && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive NMIs, it is now ready */
     hmR0VmxClearNmiWindowExitVmcs(pVCpu);
