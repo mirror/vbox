@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionPool class implementation
+ * VBox Qt GUI - UIActionPool class implementation.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,34 +15,40 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QHelpEvent>
 #include <QToolTip>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIActionPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
-#include "UIIconPool.h"
 #include "UIShortcutPool.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
 
-/* Action activation event: */
+
+/** QEvent extension
+  * representing action-activation event. */
 class ActivateActionEvent : public QEvent
 {
 public:
 
+    /** Constructor. */
     ActivateActionEvent(QAction *pAction)
         : QEvent((QEvent::Type)ActivateActionEventType)
         , m_pAction(pAction) {}
+
+    /** Returns the action this event corresponding to. */
     QAction* action() const { return m_pAction; }
 
 private:
 
+    /** Ho0lds the action this event corresponding to. */
     QAction *m_pAction;
 };
 
-/* UIAction stuff: */
+
 UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     : QAction(pParent)
     , m_pActionPool(pParent)
@@ -57,9 +61,9 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     setMenuRole(QAction::NoRole);
 }
 
-UIActionState* UIAction::toStateAction()
+UIActionPolymorphic* UIAction::toActionPolymorphic()
 {
-    return qobject_cast<UIActionState*>(this);
+    return qobject_cast<UIActionPolymorphic*>(this);
 }
 
 void UIAction::setName(const QString &strName)
@@ -131,9 +135,9 @@ void UIAction::updateText()
     }
 }
 
-/* UIMenu stuff: */
+
 UIMenu::UIMenu()
-    : m_fShowToolTips(false)
+    : m_fShowToolTip(false)
 {
 }
 
@@ -150,18 +154,18 @@ bool UIMenu::event(QEvent *pEvent)
             /* Get action which caused help-event: */
             QAction *pAction = actionAt(pHelpEvent->pos());
             /* If action present => show action's tool-tip if needed: */
-            if (pAction && m_fShowToolTips)
+            if (pAction && m_fShowToolTip)
                 QToolTip::showText(pHelpEvent->globalPos(), pAction->toolTip());
             break;
         }
         default:
             break;
     }
-    /* Base-class event-handler: */
+    /* Call to base-class: */
     return QMenu::event(pEvent);
 }
 
-/* UIActionSimple stuff: */
+
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Simple)
@@ -185,42 +189,42 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
     setIcon(icon);
 }
 
-/* UIActionState stuff: */
-UIActionState::UIActionState(UIActionPool *pParent,
+
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
                              const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
-    : UIAction(pParent, UIActionType_State)
+    : UIAction(pParent, UIActionType_Polymorphic)
     , m_iState(0)
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
-UIActionState::UIActionState(UIActionPool *pParent,
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
                              const QString &strIconNormal, const QString &strIconSmall,
                              const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
-    : UIAction(pParent, UIActionType_State)
+    : UIAction(pParent, UIActionType_Polymorphic)
     , m_iState(0)
 {
     setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
 }
 
-UIActionState::UIActionState(UIActionPool *pParent,
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
                              const QIcon& icon)
-    : UIAction(pParent, UIActionType_State)
+    : UIAction(pParent, UIActionType_Polymorphic)
     , m_iState(0)
 {
     if (!icon.isNull())
         setIcon(icon);
 }
 
-/* UIActionToggle stuff: */
+
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Toggle)
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
-    init();
+    prepare();
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
@@ -229,7 +233,7 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
     : UIAction(pParent, UIActionType_Toggle)
 {
     setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff, strIconOnDisabled, strIconOffDisabled));
-    init();
+    prepare();
 }
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
@@ -238,21 +242,15 @@ UIActionToggle::UIActionToggle(UIActionPool *pParent,
 {
     if (!icon.isNull())
         setIcon(icon);
-    init();
+    prepare();
 }
 
-void UIActionToggle::sltUpdate()
-{
-    retranslateUi();
-}
-
-void UIActionToggle::init()
+void UIActionToggle::prepare()
 {
     setCheckable(true);
-    connect(this, SIGNAL(toggled(bool)), this, SLOT(sltUpdate()));
 }
 
-/* UIActionMenu stuff: */
+
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
                            const QString &strIcon, const QString &strIconDis)
     : UIAction(pParent, UIActionType_Menu)
@@ -269,6 +267,11 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
     if (!icon.isNull())
         setIcon(icon);
     setMenu(new UIMenu);
+}
+
+void UIActionMenu::setShowToolTip(bool fShowToolTip)
+{
+    qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
 }
 
 void UIActionMenu::updateText()
@@ -543,7 +546,6 @@ protected:
 };
 
 
-/* UIActionPool stuff: */
 UIActionPool* UIActionPool::m_pInstance = 0;
 
 /* static */

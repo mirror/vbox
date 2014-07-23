@@ -74,7 +74,7 @@ bool UIMachineLogicSeamless::checkAvailability()
      * Since VBoxGlobal::extractKeyFromActionText gets exactly
      * the linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRT_M_View_T_Seamless)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless)->text()));
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
@@ -203,16 +203,15 @@ void UIMachineLogicSeamless::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Disable mouse-integration isn't allowed in seamless: */
-    gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(false);
+    gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(false);
 
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRT_M_View_T_Seamless);
+    UIAction *pActionSeamless = gpActionPool->action(UIActionIndexRT_M_View_T_Seamless);
     if (!pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
         pActionSeamless->setChecked(true);
         pActionSeamless->blockSignals(false);
-        pActionSeamless->update();
     }
 }
 
@@ -222,11 +221,11 @@ void UIMachineLogicSeamless::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
 }
 
@@ -303,11 +302,11 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 void UIMachineLogicSeamless::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
 
     /* Call to base-class: */
@@ -317,17 +316,16 @@ void UIMachineLogicSeamless::cleanupActionConnections()
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gActionPool->action(UIActionIndexRT_M_View_T_Seamless);
+    UIAction *pActionSeamless = gpActionPool->action(UIActionIndexRT_M_View_T_Seamless);
     if (pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
         pActionSeamless->setChecked(false);
         pActionSeamless->blockSignals(false);
-        pActionSeamless->update();
     }
 
     /* Reenable mouse-integration action: */
-    gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(true);
+    gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(true);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
@@ -339,7 +337,7 @@ void UIMachineLogicSeamless::updateMenuView()
     UIMachineLogic::updateMenuView();
 
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
 
     /* Append 'Multiscreen' submenu, if allowed: */

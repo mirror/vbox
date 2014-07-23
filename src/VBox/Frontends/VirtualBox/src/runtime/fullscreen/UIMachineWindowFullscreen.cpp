@@ -225,9 +225,9 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
 #endif /* !RT_OS_DARWIN */
     connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
-            gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
+            gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
-            gActionPool->action(UIActionIndexRT_M_Machine_S_Close), SLOT(trigger()));
+            gpActionPool->action(UIActionIndexRT_M_Machine_S_Close), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
 }
 

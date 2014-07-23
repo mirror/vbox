@@ -272,21 +272,21 @@ QList<QMenu*> UIMachineLogic::menus() const
 
     /* Append 'Machine' menu: */
     if (uisession()->allowedMenus() & RuntimeMenuType_Machine)
-        result << gActionPool->action(UIActionIndexRT_M_Machine)->menu();
+        result << gpActionPool->action(UIActionIndexRT_M_Machine)->menu();
     /* Append 'View' menu: */
     if (uisession()->allowedMenus() & RuntimeMenuType_View)
-        result << gActionPool->action(UIActionIndexRT_M_View)->menu();
+        result << gpActionPool->action(UIActionIndexRT_M_View)->menu();
     /* Append 'Devices' menu: */
     if (uisession()->allowedMenus() & RuntimeMenuType_Devices)
-        result << gActionPool->action(UIActionIndexRT_M_Devices)->menu();
+        result << gpActionPool->action(UIActionIndexRT_M_Devices)->menu();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Append 'Debug' menu: */
     if (uisession()->allowedMenus() & RuntimeMenuType_Debug)
-        result << gActionPool->action(UIActionIndexRT_M_Debug)->menu();
+        result << gpActionPool->action(UIActionIndexRT_M_Debug)->menu();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
     /* Append 'Help' menu: */
     if (uisession()->allowedMenus() & RuntimeMenuType_Help)
-        result << gActionPool->action(UIActionIndex_Menu_Help)->menu();
+        result << gpActionPool->action(UIActionIndex_Menu_Help)->menu();
 
     /* Return result: */
     return result;
@@ -473,7 +473,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
-            QAction *pPauseAction = gActionPool->action(UIActionIndexRT_M_Machine_T_Pause);
+            QAction *pPauseAction = gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause);
             if (!pPauseAction->isChecked())
             {
                 /* Was paused from CSession side: */
@@ -487,7 +487,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Teleporting:
         case KMachineState_LiveSnapshotting:
         {
-            QAction *pPauseAction = gActionPool->action(UIActionIndexRT_M_Machine_T_Pause);
+            QAction *pPauseAction = gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause);
             if (pPauseAction->isChecked())
             {
                 /* Was resumed from CSession side: */
@@ -535,8 +535,8 @@ void UIMachineLogic::sltMachineStateChanged()
 void UIMachineLogic::sltAdditionsStateChanged()
 {
     /* Update action states: */
-    gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(uisession()->isGuestSupportsGraphics());
-    gActionPool->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(uisession()->isVisualStateAllowed(UIVisualStateType_Seamless) &&
+    gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(uisession()->isGuestSupportsGraphics());
+    gpActionPool->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(uisession()->isVisualStateAllowed(UIVisualStateType_Seamless) &&
                                                                           uisession()->isGuestSupportsSeamless());
 }
 
@@ -552,7 +552,7 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     Q_UNUSED(fIsMouseSupportsMultiTouch);
 
     /* Update action state: */
-    QAction *pAction = gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration);
+    QAction *pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration);
     pAction->setEnabled(fIsMouseSupportsAbsolute && fIsMouseSupportsRelative && !fIsMouseHostCursorNeeded);
     if (fIsMouseHostCursorNeeded)
         pAction->setChecked(false);
@@ -839,7 +839,7 @@ void UIMachineLogic::prepareActionGroups()
     /* On Mac OS X, all QMenu's are consumed by Qt after they are added to
      * another QMenu or a QMenuBar. This means we have to recreate all QMenus
      * when creating a new QMenuBar. */
-    gActionPool->recreateMenus();
+    gpActionPool->recreateMenus();
 #endif /* Q_WS_MAC */
 
     /* Create group for all actions that are enabled only when the VM is running.
@@ -861,136 +861,136 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedOrStackedActions->setExclusive(false);
 
     /* Move actions into running actions group: */
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD));
 #ifdef Q_WS_X11
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS));
 #endif
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Reset));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_ViewPopup));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Seamless));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Scale));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
-    m_pRunningActions->addAction(gActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Reset));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_ViewPopup));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Scale));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
+    m_pRunningActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
 
     /* Move actions into running-n-paused actions group: */
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Save));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_T_Pause));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_Network));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Save));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
 
     /* Move actions into running-n-paused-n-stucked actions group: */
-    m_pRunningOrPausedOrStackedActions->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff));
+    m_pRunningOrPausedOrStackedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff));
 }
 
 void UIMachineLogic::prepareActionConnections()
 {
     /* "Machine" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenVMSettingsDialog()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), SIGNAL(triggered()),
             this, SLOT(sltTakeSnapshot()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot), SIGNAL(triggered()),
             this, SLOT(sltTakeScreenshot()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltShowKeyboardSettings()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleMouseIntegration(bool)));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD), SIGNAL(triggered()),
             this, SLOT(sltTypeCAD()));
 #ifdef Q_WS_X11
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS), SIGNAL(triggered()),
             this, SLOT(sltTypeCABS()));
 #endif
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
             this, SLOT(sltPause(bool)));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
             this, SLOT(sltReset()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_Save), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_Save), SIGNAL(triggered()),
             this, SLOT(sltSaveState()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown), SIGNAL(triggered()),
             this, SLOT(sltShutdown()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff), SIGNAL(triggered()),
             this, SLOT(sltPowerOff()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_S_Close), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_S_Close), SIGNAL(triggered()),
             this, SLOT(sltClose()));
 
     /* "View" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleGuestAutoresize(bool)));
-    connect(gActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
             this, SLOT(sltAdjustWindow()));
 
     /* "Devices" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenStorageSettingsDialog()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareStorageMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareStorageMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareUSBMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareWebCamMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedClipboardMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareDragAndDropMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareNetworkMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkAdaptersDialog()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersDialog()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVideoCapture(bool)));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenVideoCaptureOptions()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* "Debug" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_Debug)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Debug)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareDebugMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics), SIGNAL(triggered()),
             this, SLOT(sltShowDebugStatistics()));
-    connect(gActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine), SIGNAL(triggered()),
             this, SLOT(sltShowDebugCommandLine()));
-    connect(gActionPool->action(UIActionIndexRT_M_Debug_T_Logging), SIGNAL(toggled(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging), SIGNAL(toggled(bool)),
             this, SLOT(sltLoggingToggled(bool)));
-    connect(gActionPool->action(UIActionIndex_Simple_LogDialog), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndex_Simple_LogDialog), SIGNAL(triggered()),
             this, SLOT(sltShowLogDialog()));
 #endif
 }
@@ -1036,21 +1036,21 @@ void UIMachineLogic::prepareMenu()
 #ifdef Q_WS_MAC
 void UIMachineLogic::prepareDock()
 {
-    QMenu *pDockMenu = gActionPool->action(UIActionIndexRT_M_Dock)->menu();
+    QMenu *pDockMenu = gpActionPool->action(UIActionIndexRT_M_Dock)->menu();
 
     /* Add all VM menu entries to the dock menu. Leave out close and stuff like
      * this. */
-    QList<QAction*> actions = gActionPool->action(UIActionIndexRT_M_Machine)->menu()->actions();
+    QList<QAction*> actions = gpActionPool->action(UIActionIndexRT_M_Machine)->menu()->actions();
     for (int i=0; i < actions.size(); ++i)
         if (actions.at(i)->menuRole() == QAction::NoRole)
             pDockMenu->addAction(actions.at(i));
     pDockMenu->addSeparator();
 
-    QMenu *pDockSettingsMenu = gActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings)->menu();
+    QMenu *pDockSettingsMenu = gpActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings)->menu();
     QActionGroup *pDockPreviewModeGroup = new QActionGroup(this);
-    QAction *pDockDisablePreview = gActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
+    QAction *pDockDisablePreview = gpActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
     pDockPreviewModeGroup->addAction(pDockDisablePreview);
-    QAction *pDockEnablePreviewMonitor = gActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor);
+    QAction *pDockEnablePreviewMonitor = gpActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor);
     pDockPreviewModeGroup->addAction(pDockEnablePreviewMonitor);
     pDockSettingsMenu->addActions(pDockPreviewModeGroup->actions());
 
@@ -1181,7 +1181,7 @@ void UIMachineLogic::cleanupActionGroups()
 void UIMachineLogic::updateMenuMachine()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_Machine)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Machine)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1193,39 +1193,39 @@ void UIMachineLogic::updateMenuMachine()
     /* 'Settings Dialog' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_SettingsDialog)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Settings));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Settings));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(false);
 
     /* 'Take Snapshot' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_TakeSnapshot &&
         uisession()->isSnapshotOperationsAllowed())
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(false);
 
     /* 'Take Screenshot' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_TakeScreenshot)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeScreenshot)->setEnabled(false);
 
     /* 'Information Dialog' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_InformationDialog)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_ShowInformation)->setEnabled(false);
 
     /* Separator #1: */
     if (fSeparator1)
@@ -1238,20 +1238,20 @@ void UIMachineLogic::updateMenuMachine()
     /* 'Keyboard Settings' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_KeyboardSettings)
     {
-//        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+//        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
 //        fSeparator2 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(false);
 
     /* 'Mouse Integration' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_MouseIntegration)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
         fSeparator2 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(false);
 
     /* Separator #2: */
     if (fSeparator2)
@@ -1264,21 +1264,21 @@ void UIMachineLogic::updateMenuMachine()
     /* 'Type CAD' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_TypeCAD)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD));
         fSeparator3 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCAD)->setEnabled(false);
 
 #ifdef Q_WS_X11
     /* 'Type CABS' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_TypeCABS)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS));
         fSeparator3 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_TypeCABS)->setEnabled(false);
 #endif /* Q_WS_X11 */
 
     /* Separator #3: */
@@ -1292,47 +1292,47 @@ void UIMachineLogic::updateMenuMachine()
     /* 'Pause' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_Pause)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_T_Pause));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause));
         fSeparator4 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_T_Pause)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_T_Pause)->setEnabled(false);
 
     /* 'Reset' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_Reset)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Reset));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Reset));
         fSeparator4 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_Reset)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_Reset)->setEnabled(false);
 
     /* 'Save' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_SaveState)
     {
-//        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Save));
+//        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Save));
 //        fSeparator4 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_Save)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_Save)->setEnabled(false);
 
     /* 'Shutdown' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_Shutdown)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown));
         fSeparator4 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_Shutdown)->setEnabled(false);
 
     /* 'PowerOff' action: */
     if (uisession()->allowedActionsMenuMachine() & RuntimeMenuMachineActionType_PowerOff)
     {
-//        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff));
+//        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff));
 //        fSeparator4 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_PowerOff)->setEnabled(false);
 
 #ifndef Q_WS_MAC
     /* Separator #4: */
@@ -1342,15 +1342,15 @@ void UIMachineLogic::updateMenuMachine()
 
 
     /* Close action: */
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_S_Close));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_S_Close));
     if (uisession()->isAllCloseActionsRestricted())
-        gActionPool->action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(false);
 }
 
 void UIMachineLogic::updateMenuView()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1364,19 +1364,19 @@ void UIMachineLogic::updateMenuView()
                            (m_pSession->allowedActionsMenuView() & RuntimeMenuViewActionType_Scale);
 
     /* 'Fullscreen' action: */
-    gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen)->setEnabled(fIsAllowedFullscreen);
+    gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen)->setEnabled(fIsAllowedFullscreen);
     if (fIsAllowedFullscreen)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen));
 
     /* 'Seamless' action: */
-    gActionPool->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(fIsAllowedSeamless);
+    gpActionPool->action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(fIsAllowedSeamless);
     if (fIsAllowedSeamless)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Seamless));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless));
 
     /* 'Scale' action: */
-    gActionPool->action(UIActionIndexRT_M_View_T_Scale)->setEnabled(fIsAllowedScale);
+    gpActionPool->action(UIActionIndexRT_M_View_T_Scale)->setEnabled(fIsAllowedScale);
     if (fIsAllowedScale)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_T_Scale));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_Scale));
 
     /* Visual representation mode separator: */
     if (fIsAllowedFullscreen || fIsAllowedSeamless || fIsAllowedScale)
@@ -1386,7 +1386,7 @@ void UIMachineLogic::updateMenuView()
 void UIMachineLogic::updateMenuDevices()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_Devices)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1398,75 +1398,75 @@ void UIMachineLogic::updateMenuDevices()
     /* 'Optical Devices' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_OpticalDevices)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->setEnabled(false);
 
     /* 'Floppy Devices' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_FloppyDevices)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->setEnabled(false);
 
     /* 'USB Devices' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_USBDevices)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->setEnabled(false);
 
     /* 'Web Cams' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_WebCams)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->setEnabled(false);
 
     /* 'Shared Clipboard' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_SharedClipboard)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->setEnabled(false);
 
     /* 'Drag&Drop' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_DragAndDrop)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->setEnabled(false);
 
     /* 'Network' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_Network)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_Network));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(false);
     updateMenuDevicesNetwork();
 
     /* 'Shared Folders Settings' action: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_SharedFoldersSettings)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(false);
 
     /* Separator #1: */
     if (fSeparator1)
@@ -1479,22 +1479,22 @@ void UIMachineLogic::updateMenuDevices()
     /* 'VRDE Server' action: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_VRDEServer)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer));
         if (!uisession()->isExtensionPackUsable())
-            gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(false);
+            gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(false);
         fSeparator2 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(false);
 
     /* 'Video Capture' action: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_VideoCapture)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
         fSeparator2 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setEnabled(false);
 
     /* Separator #2: */
     if (fSeparator2)
@@ -1503,15 +1503,15 @@ void UIMachineLogic::updateMenuDevices()
 
     /* Install Guest Tools action: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_InstallGuestTools)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(false);
 }
 
 void UIMachineLogic::updateMenuDevicesNetwork()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1519,16 +1519,16 @@ void UIMachineLogic::updateMenuDevicesNetwork()
 
     /* 'Network Settings' action: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_NetworkSettings)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
     else
-        gActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(false);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineLogic::updateMenuDebug()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_Debug)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Debug)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1536,34 +1536,34 @@ void UIMachineLogic::updateMenuDebug()
 
     /* 'Statistics' action: */
     if (uisession()->allowedActionsMenuDebugger() & RuntimeMenuDebuggerActionType_Statistics)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
     else
-        gActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowStatistics)->setEnabled(false);
 
     /* 'Command Line' action: */
     if (uisession()->allowedActionsMenuDebugger() & RuntimeMenuDebuggerActionType_CommandLine)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
     else
-        gActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Debug_S_ShowCommandLine)->setEnabled(false);
 
     /* 'Logging' action: */
     if (uisession()->allowedActionsMenuDebugger() & RuntimeMenuDebuggerActionType_Logging)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Debug_T_Logging));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging));
     else
-        gActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(false);
 
     /* 'Log Dialog' action: */
     if (uisession()->allowedActionsMenuDebugger() & RuntimeMenuDebuggerActionType_LogDialog)
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_LogDialog));
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_LogDialog));
     else
-        gActionPool->action(UIActionIndex_Simple_LogDialog)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_LogDialog)->setEnabled(false);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 void UIMachineLogic::updateMenuHelp()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndex_Menu_Help)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndex_Menu_Help)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -1575,24 +1575,24 @@ void UIMachineLogic::updateMenuHelp()
     /* 'Contents' action: */
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_Contents)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Contents));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_Contents));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
                             &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndex_Simple_Contents)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_Contents)->setEnabled(false);
 
     /* 'Web Site' action: */
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_WebSite)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_WebSite));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_WebSite));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
                             &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
         fSeparator1 = true;
     }
     else
-        gActionPool->action(RuntimeMenuHelpActionType_WebSite)->setEnabled(false);
+        gpActionPool->action(RuntimeMenuHelpActionType_WebSite)->setEnabled(false);
 
     /* Separator #1: */
     if (fSeparator1)
@@ -1605,13 +1605,13 @@ void UIMachineLogic::updateMenuHelp()
     /* 'Reset Warnings' action: */
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_ResetWarnings)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_ResetWarnings));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_ResetWarnings));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
                             &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
         fSeparator2 = true;
     }
     else
-        gActionPool->action(UIActionIndex_Simple_ResetWarnings)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_ResetWarnings)->setEnabled(false);
 
     /* Separator #2: */
     if (fSeparator2)
@@ -1627,15 +1627,15 @@ void UIMachineLogic::updateMenuHelp()
     /* 'Network Manager' action: */
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_NetworkAccessManager)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_NetworkAccessManager));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
                             gNetworkManager, SLOT(show()), Qt::UniqueConnection);
 # ifndef Q_WS_MAC
         fSeparator3 = true;
 # endif /* !Q_WS_MAC */
     }
     else
-        gActionPool->action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(false);
 
 # ifndef Q_WS_MAC
     /* Separator #3: */
@@ -1652,12 +1652,12 @@ void UIMachineLogic::updateMenuHelp()
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_About)
 #endif /* Q_WS_MAC */
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_About));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_About));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
                             &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
     }
     else
-        gActionPool->action(UIActionIndex_Simple_About)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_About)->setEnabled(false);
 
     /* 'Preferences' action: */
 #ifdef Q_WS_MAC
@@ -1666,12 +1666,12 @@ void UIMachineLogic::updateMenuHelp()
     if (uisession()->allowedActionsMenuHelp() & RuntimeMenuHelpActionType_Preferences)
 #endif /* Q_WS_MAC */
     {
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Preferences));
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
+        pMenu->addAction(gpActionPool->action(UIActionIndex_Simple_Preferences));
+        VBoxGlobal::connect(gpActionPool->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
                             this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
     }
     else
-        gActionPool->action(UIActionIndex_Simple_Preferences)->setEnabled(false);
+        gpActionPool->action(UIActionIndex_Simple_Preferences)->setEnabled(false);
 }
 
 bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -2096,8 +2096,8 @@ void UIMachineLogic::sltPrepareStorageMenu()
     pMenu->clear();
 
     /* Determine device-type: */
-    const QMenu *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu();
-    const QMenu *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu();
+    const QMenu *pOpticalDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu();
+    const QMenu *pFloppyDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu();
     const KDeviceType deviceType = pMenu == pOpticalDevicesMenu ? KDeviceType_DVD :
                                    pMenu == pFloppyDevicesMenu  ? KDeviceType_Floppy :
                                                                   KDeviceType_Null;
@@ -2165,7 +2165,7 @@ void UIMachineLogic::sltPrepareUSBMenu()
 {
     /* Get and check the sender menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pUSBDevicesMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
+    QMenu *pUSBDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
     AssertMsg(pMenu == pUSBDevicesMenu, ("This slot should only be called on hovering USB menu!\n"));
     Q_UNUSED(pUSBDevicesMenu);
 
@@ -2234,7 +2234,7 @@ void UIMachineLogic::sltPrepareWebCamMenu()
 {
     /* Get and check the sender menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pWebCamMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->menu();
+    QMenu *pWebCamMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->menu();
     AssertReturnVoid(pMenu == pWebCamMenu); Q_UNUSED(pWebCamMenu);
 
     /* Clear menu initially: */
@@ -2369,7 +2369,7 @@ void UIMachineLogic::sltPrepareSharedClipboardMenu()
 {
     /* Get and check the sender menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pSharedClipboardMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu();
+    QMenu *pSharedClipboardMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu();
     AssertMsg(pMenu == pSharedClipboardMenu, ("This slot should only be called on hovering Shared Clipboard menu!\n"));
     Q_UNUSED(pSharedClipboardMenu);
 
@@ -2407,7 +2407,7 @@ void UIMachineLogic::sltPrepareDragAndDropMenu()
 {
     /* Get and check the sender menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pDragAndDropMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu();
+    QMenu *pDragAndDropMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu();
     AssertMsg(pMenu == pDragAndDropMenu, ("This slot should only be called on hovering Drag'n'drop menu!\n"));
     Q_UNUSED(pDragAndDropMenu);
 
@@ -2439,7 +2439,7 @@ void UIMachineLogic::sltPrepareNetworkMenu()
 {
     /* Get and check 'the sender' menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pNetworkMenu = gActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu();
+    QMenu *pNetworkMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu();
     AssertReturnVoid(pMenu == pNetworkMenu);
     Q_UNUSED(pNetworkMenu);
 
@@ -2673,10 +2673,10 @@ void UIMachineLogic::sltPrepareDebugMenu()
             fChecked = cdebugger.GetLogEnabled() != FALSE;
         }
     }
-    if (fEnabled != gActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->isEnabled())
-        gActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fEnabled);
-    if (fChecked != gActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->isChecked())
-        gActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fChecked);
+    if (fEnabled != gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->isEnabled())
+        gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fEnabled);
+    if (fChecked != gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->isChecked())
+        gpActionPool->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fChecked);
 }
 
 void UIMachineLogic::sltShowDebugStatistics()
@@ -2723,7 +2723,7 @@ void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
     CMachine machine = session().GetMachine();
     if (!machine.isNull())
     {
-        bool fEnabled = pAction != gActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
+        bool fEnabled = pAction != gpActionPool->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
         gEDataManager->setRealtimeDockIconUpdateEnabled(fEnabled, vboxGlobal().managedVMUuid());
         updateDockOverlay();
     }
@@ -2834,10 +2834,10 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
         return;
 
     /* Check that we do NOT handling that already: */
-    if (gActionPool->action(UIActionIndex_Simple_Preferences)->data().toBool())
+    if (gpActionPool->action(UIActionIndex_Simple_Preferences)->data().toBool())
         return;
     /* Remember that we handling that already: */
-    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(true);
+    gpActionPool->action(UIActionIndex_Simple_Preferences)->setData(true);
 
     /* Create and execute global settings window: */
     QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
@@ -2847,7 +2847,7 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
         delete pDialog;
 
     /* Remember that we do NOT handling that already: */
-    gActionPool->action(UIActionIndex_Simple_Preferences)->setData(false);
+    gpActionPool->action(UIActionIndex_Simple_Preferences)->setData(false);
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
@@ -2940,7 +2940,7 @@ bool UIMachineLogic::dbgCreated()
                 || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
                 m_pDbgGuiVT->pfnSetParent(m_pDbgGui, activeMachineWindow());
-                m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, gActionPool->action(UIActionIndexRT_M_Debug));
+                m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, gpActionPool->action(UIActionIndexRT_M_Debug));
                 dbgAdjustRelativePos();
                 return true;
             }

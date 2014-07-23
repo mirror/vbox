@@ -598,14 +598,14 @@ protected:
 };
 
 
-class UIActionStateCommonStartOrShow : public UIActionState
+class UIActionStateCommonStartOrShow : public UIActionPolymorphic
 {
     Q_OBJECT;
 
 public:
 
     UIActionStateCommonStartOrShow(UIActionPool *pParent)
-        : UIActionState(pParent,
+        : UIActionPolymorphic(pParent,
                         ":/vm_start_32px.png", ":/vm_start_16px.png",
                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
     {
@@ -621,7 +621,7 @@ protected:
 
     void retranslateUi()
     {
-        switch (m_iState)
+        switch (state())
         {
             case 0:
             {

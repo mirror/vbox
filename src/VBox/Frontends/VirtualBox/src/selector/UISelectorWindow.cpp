@@ -1095,17 +1095,17 @@ void UISelectorWindow::prepareIcon()
 void UISelectorWindow::prepareMenuBar()
 {
     /* Prepare File-menu: */
-    m_pFileMenu = gActionPool->action(UIActionIndexSelector_Menu_File)->menu();
+    m_pFileMenu = gpActionPool->action(UIActionIndexSelector_Menu_File)->menu();
     prepareMenuFile(m_pFileMenu);
     menuBar()->addMenu(m_pFileMenu);
 
     /* Prepare 'Group' / 'Close' menu: */
-    m_pGroupCloseMenuAction = gActionPool->action(UIActionIndexSelector_Menu_Group_Close);
+    m_pGroupCloseMenuAction = gpActionPool->action(UIActionIndexSelector_Menu_Group_Close);
     m_pGroupCloseMenu = m_pGroupCloseMenuAction->menu();
     prepareMenuGroupClose(m_pGroupCloseMenu);
 
     /* Prepare 'Machine' / 'Close' menu: */
-    m_pMachineCloseMenuAction = gActionPool->action(UIActionIndexSelector_Menu_Machine_Close);
+    m_pMachineCloseMenuAction = gpActionPool->action(UIActionIndexSelector_Menu_Machine_Close);
     m_pMachineCloseMenu = m_pMachineCloseMenuAction->menu();
     prepareMenuMachineClose(m_pMachineCloseMenu);
 
@@ -1115,12 +1115,12 @@ void UISelectorWindow::prepareMenuBar()
     prepareMachineActions();
 
     /* Prepare Group-menu: */
-    m_pGroupMenu = gActionPool->action(UIActionIndexSelector_Menu_Group)->menu();
+    m_pGroupMenu = gpActionPool->action(UIActionIndexSelector_Menu_Group)->menu();
     prepareMenuGroup(m_pGroupMenu);
     m_pGroupMenuAction = menuBar()->addMenu(m_pGroupMenu);
 
     /* Prepare Machine-menu: */
-    m_pMachineMenu = gActionPool->action(UIActionIndexSelector_Menu_Machine)->menu();
+    m_pMachineMenu = gpActionPool->action(UIActionIndexSelector_Menu_Machine)->menu();
     prepareMenuMachine(m_pMachineMenu);
     m_pMachineMenuAction = menuBar()->addMenu(m_pMachineMenu);
 
@@ -1129,7 +1129,7 @@ void UISelectorWindow::prepareMenuBar()
 #endif /* Q_WS_MAC */
 
     /* Prepare Help-menu: */
-    m_pHelpMenu = gActionPool->action(UIActionIndex_Menu_Help)->menu();
+    m_pHelpMenu = gpActionPool->action(UIActionIndex_Menu_Help)->menu();
     prepareMenuHelp(m_pHelpMenu);
     menuBar()->addMenu(m_pHelpMenu);
 
@@ -1144,58 +1144,58 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
         return;
 
     /* Populate File-menu: */
-    m_pMediumManagerDialogAction = gActionPool->action(UIActionIndexSelector_Simple_File_MediumManagerDialog);
+    m_pMediumManagerDialogAction = gpActionPool->action(UIActionIndexSelector_Simple_File_MediumManagerDialog);
     pMenu->addAction(m_pMediumManagerDialogAction);
-    m_pImportApplianceWizardAction = gActionPool->action(UIActionIndexSelector_Simple_File_ImportApplianceWizard);
+    m_pImportApplianceWizardAction = gpActionPool->action(UIActionIndexSelector_Simple_File_ImportApplianceWizard);
     pMenu->addAction(m_pImportApplianceWizardAction);
-    m_pExportApplianceWizardAction = gActionPool->action(UIActionIndexSelector_Simple_File_ExportApplianceWizard);
+    m_pExportApplianceWizardAction = gpActionPool->action(UIActionIndexSelector_Simple_File_ExportApplianceWizard);
     pMenu->addAction(m_pExportApplianceWizardAction);
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* Q_WS_MAC */
 #ifdef DEBUG
-    m_pExtraDataManagerWindowAction = gActionPool->action(UIActionIndexSelector_Simple_File_ExtraDataManagerWindow);
+    m_pExtraDataManagerWindowAction = gpActionPool->action(UIActionIndexSelector_Simple_File_ExtraDataManagerWindow);
     pMenu->addAction(m_pExtraDataManagerWindowAction);
 #endif /* DEBUG */
-    m_pPreferencesDialogAction = gActionPool->action(UIActionIndex_Simple_Preferences);
+    m_pPreferencesDialogAction = gpActionPool->action(UIActionIndex_Simple_Preferences);
     pMenu->addAction(m_pPreferencesDialogAction);
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* Q_WS_MAC */
-    m_pExitAction = gActionPool->action(UIActionIndexSelector_Simple_File_Exit);
+    m_pExitAction = gpActionPool->action(UIActionIndexSelector_Simple_File_Exit);
     pMenu->addAction(m_pExitAction);
 }
 
 void UISelectorWindow::prepareCommonActions()
 {
-    m_pAction_Common_StartOrShow       = gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->toStateAction();
-    m_pAction_Common_PauseAndResume    = gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume);
-    m_pAction_Common_Reset             = gActionPool->action(UIActionIndexSelector_Simple_Common_Reset);
-    m_pAction_Common_Discard           = gActionPool->action(UIActionIndexSelector_Simple_Common_Discard);
-    m_pAction_Common_Refresh           = gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh);
-    m_pAction_Common_ShowInFileManager = gActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager);
-    m_pAction_Common_CreateShortcut    = gActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut);
+    m_pAction_Common_StartOrShow       = gpActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->toActionPolymorphic();
+    m_pAction_Common_PauseAndResume    = gpActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume);
+    m_pAction_Common_Reset             = gpActionPool->action(UIActionIndexSelector_Simple_Common_Reset);
+    m_pAction_Common_Discard           = gpActionPool->action(UIActionIndexSelector_Simple_Common_Discard);
+    m_pAction_Common_Refresh           = gpActionPool->action(UIActionIndexSelector_Simple_Common_Refresh);
+    m_pAction_Common_ShowInFileManager = gpActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager);
+    m_pAction_Common_CreateShortcut    = gpActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut);
 }
 
 void UISelectorWindow::prepareGroupActions()
 {
-    m_pAction_Group_New    = gActionPool->action(UIActionIndexSelector_Simple_Group_New);
-    m_pAction_Group_Add    = gActionPool->action(UIActionIndexSelector_Simple_Group_Add);
-    m_pAction_Group_Rename = gActionPool->action(UIActionIndexSelector_Simple_Group_Rename);
-    m_pAction_Group_Remove = gActionPool->action(UIActionIndexSelector_Simple_Group_Remove);
-    m_pAction_Group_Sort   = gActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
+    m_pAction_Group_New    = gpActionPool->action(UIActionIndexSelector_Simple_Group_New);
+    m_pAction_Group_Add    = gpActionPool->action(UIActionIndexSelector_Simple_Group_Add);
+    m_pAction_Group_Rename = gpActionPool->action(UIActionIndexSelector_Simple_Group_Rename);
+    m_pAction_Group_Remove = gpActionPool->action(UIActionIndexSelector_Simple_Group_Remove);
+    m_pAction_Group_Sort   = gpActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
 }
 
 void UISelectorWindow::prepareMachineActions()
 {
-    m_pAction_Machine_New        = gActionPool->action(UIActionIndexSelector_Simple_Machine_New);
-    m_pAction_Machine_Add        = gActionPool->action(UIActionIndexSelector_Simple_Machine_Add);
-    m_pAction_Machine_Settings   = gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings);
-    m_pAction_Machine_Clone      = gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
-    m_pAction_Machine_Remove     = gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
-    m_pAction_Machine_AddGroup   = gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup);
-    m_pAction_Machine_LogDialog  = gActionPool->action(UIActionIndex_Simple_LogDialog);
-    m_pAction_Machine_SortParent = gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent);
+    m_pAction_Machine_New        = gpActionPool->action(UIActionIndexSelector_Simple_Machine_New);
+    m_pAction_Machine_Add        = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Add);
+    m_pAction_Machine_Settings   = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Settings);
+    m_pAction_Machine_Clone      = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
+    m_pAction_Machine_Remove     = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
+    m_pAction_Machine_AddGroup   = gpActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup);
+    m_pAction_Machine_LogDialog  = gpActionPool->action(UIActionIndex_Simple_LogDialog);
+    m_pAction_Machine_SortParent = gpActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent);
 }
 
 void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
@@ -1278,11 +1278,11 @@ void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
         return;
 
     /* Populate 'Group' / 'Close' menu: */
-    m_pGroupSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_Save);
+    m_pGroupSaveAction = gpActionPool->action(UIActionIndexSelector_Simple_Group_Close_Save);
     pMenu->addAction(m_pGroupSaveAction);
-    m_pGroupACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_ACPIShutdown);
+    m_pGroupACPIShutdownAction = gpActionPool->action(UIActionIndexSelector_Simple_Group_Close_ACPIShutdown);
     pMenu->addAction(m_pGroupACPIShutdownAction);
-    m_pGroupPowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_PowerOff);
+    m_pGroupPowerOffAction = gpActionPool->action(UIActionIndexSelector_Simple_Group_Close_PowerOff);
     pMenu->addAction(m_pGroupPowerOffAction);
 
     /* Remember action list: */
@@ -1298,11 +1298,11 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
         return;
 
     /* Populate 'Machine' / 'Close' menu: */
-    m_pMachineSaveAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_Save);
+    m_pMachineSaveAction = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Close_Save);
     pMenu->addAction(m_pMachineSaveAction);
-    m_pMachineACPIShutdownAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown);
+    m_pMachineACPIShutdownAction = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown);
     pMenu->addAction(m_pMachineACPIShutdownAction);
-    m_pMachinePowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
+    m_pMachinePowerOffAction = gpActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
     pMenu->addAction(m_pMachinePowerOffAction);
 
     /* Remember action list: */
@@ -1318,18 +1318,18 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
         return;
 
     /* Populate Help-menu: */
-    m_pHelpAction = gActionPool->action(UIActionIndex_Simple_Contents);
+    m_pHelpAction = gpActionPool->action(UIActionIndex_Simple_Contents);
     pMenu->addAction(m_pHelpAction);
-    m_pWebAction = gActionPool->action(UIActionIndex_Simple_WebSite);
+    m_pWebAction = gpActionPool->action(UIActionIndex_Simple_WebSite);
     pMenu->addAction(m_pWebAction);
     pMenu->addSeparator();
-    m_pResetWarningsAction = gActionPool->action(UIActionIndex_Simple_ResetWarnings);
+    m_pResetWarningsAction = gpActionPool->action(UIActionIndex_Simple_ResetWarnings);
     pMenu->addAction(m_pResetWarningsAction);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     pMenu->addSeparator();
-    m_pNetworkAccessManager = gActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
+    m_pNetworkAccessManager = gpActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
     pMenu->addAction(m_pNetworkAccessManager);
-    m_pUpdateAction = gActionPool->action(UIActionIndex_Simple_CheckForUpdates);
+    m_pUpdateAction = gpActionPool->action(UIActionIndex_Simple_CheckForUpdates);
     if (gEDataManager->applicationUpdateEnabled())
         pMenu->addAction(m_pUpdateAction);
     else
@@ -1338,7 +1338,7 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
-    m_pAboutAction = gActionPool->action(UIActionIndex_Simple_About);
+    m_pAboutAction = gpActionPool->action(UIActionIndex_Simple_About);
     pMenu->addAction(m_pAboutAction);
 }
 
@@ -1657,7 +1657,7 @@ void UISelectorWindow::updateActionsAppearance()
     /* Update the Pause/Resume action appearance: */
     m_pAction_Common_PauseAndResume->blockSignals(true);
     m_pAction_Common_PauseAndResume->setChecked(pFirstStartedAction && UIVMItem::isItemPaused(pFirstStartedAction));
-    m_pAction_Common_PauseAndResume->update();
+    m_pAction_Common_PauseAndResume->retranslateUi();
     m_pAction_Common_PauseAndResume->blockSignals(false);
 
 #ifdef QT_MAC_USE_COCOA
