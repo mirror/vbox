@@ -5783,8 +5783,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
 
-        uint32_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint32_t uIdtVector  = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+        uint32_t uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
+        uint32_t uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 
         typedef enum
         {
@@ -5798,7 +5798,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         VMXREFLECTXCPT enmReflect = VMXREFLECTXCPT_NONE;
         if (VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo))
         {
-            if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
+            if (uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
 #ifdef VBOX_STRICT
@@ -5824,9 +5824,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 else if (uIdtVector == X86_XCPT_DF)
                     enmReflect = VMXREFLECTXCPT_TF;
             }
-            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
-                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
+            else if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                     || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                     || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
             {
                 /*
                  * Ignore software interrupts (INT n), software exceptions (#BP, #OF) and
@@ -5835,9 +5835,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
         }
-        else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                 || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
-                 || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
+        else if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                 || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                 || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
         {
             /*
              * If event delivery caused an EPT violation/misconfig or APIC access VM-exit, then the VM-exit
@@ -5854,7 +5854,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
          *
          * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
          */
-        if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI
+        if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && enmReflect == VMXREFLECTXCPT_XCPT
             && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
             && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
@@ -5866,9 +5866,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         {
             case VMXREFLECTXCPT_XCPT:
             {
-                Assert(   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                       && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
-                       && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT);
+                Assert(   uIdtVectorType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                       && uIdtVectorType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
+                       && uIdtVectorType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT);
 
                 uint32_t u32ErrCode = 0;
                 if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo))
