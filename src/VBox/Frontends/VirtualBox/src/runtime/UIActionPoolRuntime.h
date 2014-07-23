@@ -24,10 +24,11 @@
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
-  * 1. Every simple-action index prepended with 'S',
-  * 2. Every toggle-action index presended with 'T',
-  * 3. Every menu index prepended with 'M',
-  * 4. Every sub-index contains full parent-index name. */
+  * 1. Every menu index prepended with 'M',
+  * 2. Every simple-action index prepended with 'S',
+  * 3. Every toggle-action index presended with 'T',
+  * 4. Every polymorphic-action index presended with 'P',
+  * 5. Every sub-index contains full parent-index name. */
 enum UIActionIndexRT
 {
     /* 'Machine' menu actions: */

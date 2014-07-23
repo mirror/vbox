@@ -1008,44 +1008,49 @@ void UIActionPoolSelector::createActions()
     UIActionPool::createActions();
 
     /* 'File' actions: */
-    m_pool[UIActionIndexSelector_Simple_File_MediumManagerDialog] = new UIActionSimpleMediumManagerDialog(this);
-    m_pool[UIActionIndexSelector_Simple_File_ImportApplianceWizard] = new UIActionSimpleImportApplianceWizard(this);
-    m_pool[UIActionIndexSelector_Simple_File_ExportApplianceWizard] = new UIActionSimpleExportApplianceWizard(this);
+    m_pool[UIActionIndexST_M_File_S_ShowMediumManager] = new UIActionSimpleMediumManagerDialog(this);
+    m_pool[UIActionIndexST_M_File_S_ImportAppliance] = new UIActionSimpleImportApplianceWizard(this);
+    m_pool[UIActionIndexST_M_File_S_ExportAppliance] = new UIActionSimpleExportApplianceWizard(this);
 #ifdef DEBUG
-    m_pool[UIActionIndexSelector_Simple_File_ExtraDataManagerWindow] = new UIActionSimpleExtraDataManagerWindow(this);
+    m_pool[UIActionIndexST_M_File_S_ShowExtraDataManager] = new UIActionSimpleExtraDataManagerWindow(this);
 #endif /* DEBUG */
-    m_pool[UIActionIndexSelector_Simple_File_Exit] = new UIActionSimpleExit(this);
+    m_pool[UIActionIndexST_M_File_S_Close] = new UIActionSimpleExit(this);
 
     /* 'Group' actions: */
-    m_pool[UIActionIndexSelector_Simple_Group_New] = new UIActionSimpleGroupNew(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Add] = new UIActionSimpleGroupAdd(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Rename] = new UIActionSimpleGroupRename(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Remove] = new UIActionSimpleGroupRemove(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Sort] = new UIActionSimpleGroupSort(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Close_Save] = new UIActionSimpleSave(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
-    m_pool[UIActionIndexSelector_Simple_Group_Close_PowerOff] = new UIActionSimplePowerOff(this);
+    m_pool[UIActionIndexST_M_Group_S_New] = new UIActionSimpleGroupNew(this);
+    m_pool[UIActionIndexST_M_Group_S_Add] = new UIActionSimpleGroupAdd(this);
+    m_pool[UIActionIndexST_M_Group_S_Rename] = new UIActionSimpleGroupRename(this);
+    m_pool[UIActionIndexST_M_Group_S_Remove] = new UIActionSimpleGroupRemove(this);
+    m_pool[UIActionIndexST_M_Group_P_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Group_T_Pause] = new UIActionToggleCommonPauseAndResume(this);
+    m_pool[UIActionIndexST_M_Group_S_Reset] = new UIActionSimpleCommonReset(this);
+    m_pool[UIActionIndexST_M_Group_M_Close_S_SaveState] = new UIActionSimpleSave(this);
+    m_pool[UIActionIndexST_M_Group_M_Close_S_Shutdown] = new UIActionSimpleACPIShutdown(this);
+    m_pool[UIActionIndexST_M_Group_M_Close_S_PowerOff] = new UIActionSimplePowerOff(this);
+    m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleCommonDiscard(this);
+    m_pool[UIActionIndexST_M_Group_S_Refresh] = new UIActionSimpleCommonRefresh(this);
+    m_pool[UIActionIndexST_M_Group_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
+    m_pool[UIActionIndexST_M_Group_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
+    m_pool[UIActionIndexST_M_Group_S_Sort] = new UIActionSimpleGroupSort(this);
 
     /* 'Machine' actions: */
-    m_pool[UIActionIndexSelector_Simple_Machine_New] = new UIActionSimpleMachineNew(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Add] = new UIActionSimpleMachineAdd(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Settings] = new UIActionSimpleMachineSettings(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Clone] = new UIActionSimpleMachineClone(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Remove] = new UIActionSimpleMachineRemove(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_AddGroup] = new UIActionSimpleMachineAddGroup(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_SortParent] = new UIActionSimpleMachineSortParent(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_Save] = new UIActionSimpleSave(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
-    m_pool[UIActionIndexSelector_Simple_Machine_Close_PowerOff] = new UIActionSimplePowerOff(this);
-
-    /* Common actions: */
-    m_pool[UIActionIndexSelector_State_Common_StartOrShow] = new UIActionStateCommonStartOrShow(this);
-    m_pool[UIActionIndexSelector_Toggle_Common_PauseAndResume] = new UIActionToggleCommonPauseAndResume(this);
-    m_pool[UIActionIndexSelector_Simple_Common_Reset] = new UIActionSimpleCommonReset(this);
-    m_pool[UIActionIndexSelector_Simple_Common_Discard] = new UIActionSimpleCommonDiscard(this);
-    m_pool[UIActionIndexSelector_Simple_Common_Refresh] = new UIActionSimpleCommonRefresh(this);
-    m_pool[UIActionIndexSelector_Simple_Common_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
-    m_pool[UIActionIndexSelector_Simple_Common_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
+    m_pool[UIActionIndexST_M_Machine_S_New] = new UIActionSimpleMachineNew(this);
+    m_pool[UIActionIndexST_M_Machine_S_Add] = new UIActionSimpleMachineAdd(this);
+    m_pool[UIActionIndexST_M_Machine_S_Settings] = new UIActionSimpleMachineSettings(this);
+    m_pool[UIActionIndexST_M_Machine_S_Clone] = new UIActionSimpleMachineClone(this);
+    m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleMachineRemove(this);
+    m_pool[UIActionIndexST_M_Machine_S_AddGroup] = new UIActionSimpleMachineAddGroup(this);
+    m_pool[UIActionIndexST_M_Machine_P_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Machine_T_Pause] = new UIActionToggleCommonPauseAndResume(this);
+    m_pool[UIActionIndexST_M_Machine_S_Reset] = new UIActionSimpleCommonReset(this);
+    m_pool[UIActionIndexST_M_Machine_M_Close_S_SaveState] = new UIActionSimpleSave(this);
+    m_pool[UIActionIndexST_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleACPIShutdown(this);
+    m_pool[UIActionIndexST_M_Machine_M_Close_S_PowerOff] = new UIActionSimplePowerOff(this);
+    m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleCommonDiscard(this);
+    m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleCommonRefresh(this);
+    m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
+    m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
+    m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleMachineSortParent(this);
 }
 
 void UIActionPoolSelector::createMenus()
@@ -1054,15 +1059,15 @@ void UIActionPoolSelector::createMenus()
     UIActionPool::createMenus();
 
     /* 'File' menu: */
-    m_pool[UIActionIndexSelector_Menu_File] = new UIActionMenuFile(this);
+    m_pool[UIActionIndexST_M_File] = new UIActionMenuFile(this);
 
     /* 'Group' menu: */
-    m_pool[UIActionIndexSelector_Menu_Group] = new UIActionMenuGroup(this);
-    m_pool[UIActionIndexSelector_Menu_Group_Close] = new UIActionMenuClose(this);
+    m_pool[UIActionIndexST_M_Group] = new UIActionMenuGroup(this);
+    m_pool[UIActionIndexST_M_Group_M_Close] = new UIActionMenuClose(this);
 
     /* 'Machine' menu: */
-    m_pool[UIActionIndexSelector_Menu_Machine] = new UIActionMenuMachineSelector(this);
-    m_pool[UIActionIndexSelector_Menu_Machine_Close] = new UIActionMenuClose(this);
+    m_pool[UIActionIndexST_M_Machine] = new UIActionMenuMachineSelector(this);
+    m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuClose(this);
 }
 
 #include "UIActionPoolSelector.moc"
