@@ -70,9 +70,7 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)i2d_X509,
     (PFNRT)RSA_generate_key,
     (PFNRT)RSA_generate_key_ex,
-    /** @todo r=klaus DH_generate_parameters is deprecated, but gsoap 2.8 will
-     * need it. Not urgent, will uncomment later. */
-    /*(PFNRT)DH_generate_parameters, */
+    (PFNRT)DH_generate_parameters,
     (PFNRT)DH_generate_parameters_ex,
     (PFNRT)RAND_load_file,
     (PFNRT)CRYPTO_set_dynlock_create_callback,
