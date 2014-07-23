@@ -49,6 +49,36 @@ private:
 };
 
 
+UIMenu::UIMenu()
+    : m_fShowToolTip(false)
+{
+}
+
+bool UIMenu::event(QEvent *pEvent)
+{
+    /* Handle particular event-types: */
+    switch (pEvent->type())
+    {
+        /* Tool-tip request handler: */
+        case QEvent::ToolTip:
+        {
+            /* Get current help-event: */
+            QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
+            /* Get action which caused help-event: */
+            QAction *pAction = actionAt(pHelpEvent->pos());
+            /* If action present => show action's tool-tip if needed: */
+            if (pAction && m_fShowToolTip)
+                QToolTip::showText(pHelpEvent->globalPos(), pAction->toolTip());
+            break;
+        }
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    return QMenu::event(pEvent);
+}
+
+
 UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     : QAction(pParent)
     , m_pActionPool(pParent)
@@ -136,33 +166,32 @@ void UIAction::updateText()
 }
 
 
-UIMenu::UIMenu()
-    : m_fShowToolTip(false)
+UIActionMenu::UIActionMenu(UIActionPool *pParent,
+                           const QString &strIcon, const QString &strIconDis)
+    : UIAction(pParent, UIActionType_Menu)
 {
+    if (!strIcon.isNull())
+        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+    setMenu(new UIMenu);
 }
 
-bool UIMenu::event(QEvent *pEvent)
+UIActionMenu::UIActionMenu(UIActionPool *pParent,
+                           const QIcon &icon)
+    : UIAction(pParent, UIActionType_Menu)
 {
-    /* Handle particular event-types: */
-    switch (pEvent->type())
-    {
-        /* Tool-tip request handler: */
-        case QEvent::ToolTip:
-        {
-            /* Get current help-event: */
-            QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
-            /* Get action which caused help-event: */
-            QAction *pAction = actionAt(pHelpEvent->pos());
-            /* If action present => show action's tool-tip if needed: */
-            if (pAction && m_fShowToolTip)
-                QToolTip::showText(pHelpEvent->globalPos(), pAction->toolTip());
-            break;
-        }
-        default:
-            break;
-    }
-    /* Call to base-class: */
-    return QMenu::event(pEvent);
+    if (!icon.isNull())
+        setIcon(icon);
+    setMenu(new UIMenu);
+}
+
+void UIActionMenu::setShowToolTip(bool fShowToolTip)
+{
+    qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
+}
+
+void UIActionMenu::updateText()
+{
+    setText(nameInMenu());
 }
 
 
@@ -187,34 +216,6 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
     : UIAction(pParent, UIActionType_Simple)
 {
     setIcon(icon);
-}
-
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                             const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
-}
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                             const QString &strIconNormal, const QString &strIconSmall,
-                             const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
-}
-
-UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
-                             const QIcon& icon)
-    : UIAction(pParent, UIActionType_Polymorphic)
-    , m_iState(0)
-{
-    if (!icon.isNull())
-        setIcon(icon);
 }
 
 
@@ -251,32 +252,31 @@ void UIActionToggle::prepare()
 }
 
 
-UIActionMenu::UIActionMenu(UIActionPool *pParent,
-                           const QString &strIcon, const QString &strIconDis)
-    : UIAction(pParent, UIActionType_Menu)
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
+                                         const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
+    : UIAction(pParent, UIActionType_Polymorphic)
+    , m_iState(0)
 {
     if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
-    setMenu(new UIMenu);
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
 }
 
-UIActionMenu::UIActionMenu(UIActionPool *pParent,
-                           const QIcon &icon)
-    : UIAction(pParent, UIActionType_Menu)
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
+                                         const QString &strIconNormal, const QString &strIconSmall,
+                                         const QString &strIconNormalDisabled, const QString &strIconSmallDisabled)
+    : UIAction(pParent, UIActionType_Polymorphic)
+    , m_iState(0)
+{
+    setIcon(UIIconPool::iconSetFull(strIconNormal, strIconSmall, strIconNormalDisabled, strIconSmallDisabled));
+}
+
+UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
+                                         const QIcon& icon)
+    : UIAction(pParent, UIActionType_Polymorphic)
+    , m_iState(0)
 {
     if (!icon.isNull())
         setIcon(icon);
-    setMenu(new UIMenu);
-}
-
-void UIActionMenu::setShowToolTip(bool fShowToolTip)
-{
-    qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
-}
-
-void UIActionMenu::updateText()
-{
-    setText(nameInMenu());
 }
 
 
