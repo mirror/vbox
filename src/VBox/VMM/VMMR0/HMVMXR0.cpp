@@ -93,7 +93,8 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(15)
 #define HMVMX_UPDATED_GUEST_LAZY_MSRS             RT_BIT(16)
 #define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(17)
-#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(18)
+#define HMVMX_UPDATED_GUEST_INTR_STATE            RT_BIT(18)
+#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(19)
 #define HMVMX_UPDATED_GUEST_ALL                   (  HMVMX_UPDATED_GUEST_RIP                   \
                                                    | HMVMX_UPDATED_GUEST_RSP                   \
                                                    | HMVMX_UPDATED_GUEST_RFLAGS                \
@@ -112,6 +113,7 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
                                                    | HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  \
                                                    | HMVMX_UPDATED_GUEST_LAZY_MSRS             \
                                                    | HMVMX_UPDATED_GUEST_ACTIVITY_STATE        \
+                                                   | HMVMX_UPDATED_GUEST_INTR_STATE            \
                                                    | HMVMX_UPDATED_GUEST_APIC_STATE)
 /** @} */
 
@@ -6120,39 +6122,44 @@ DECLINLINE(int) hmR0VmxSaveGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t uIntrState = 0;
-    int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
-    AssertRC(rc);
-
-    if (!uIntrState)
+    if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_INTR_STATE))
     {
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        uint32_t uIntrState = 0;
+        int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
+        AssertRC(rc);
 
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-    }
-    else
-    {
-        if (uIntrState & (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS
-                          | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI))
+        if (!uIntrState)
         {
-            rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-            AssertRC(rc);
-            rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
-            AssertRC(rc);
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
-            EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
-            Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+        else
+        {
+            if (uIntrState & (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS
+                              | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI))
+            {
+                rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+                AssertRC(rc);
+                rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
+                AssertRC(rc);
+
+                EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
+                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+            }
+
+            if (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)
+            {
+                if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+            }
+            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
 
-        if (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)
-        {
-            if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
-        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_INTR_STATE);
     }
 }
 
@@ -6682,6 +6689,10 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else
         Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Log4Func(("vcpu[%RU32]\n", pVCpu->idCpu));
+
+    /* In case we get preempted before saving the interruptibility-state, do it here
+       otherwise we lose the info. in the VMCS if we get rescheduled on a different host CPU. */
+    hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
 
     int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestRipRspRflags failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -8767,6 +8778,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 
     if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
     {
+        /** @todo We can optimize this by only syncing with our force-flags when
+         *        really needed and keeping the VMCS state as it is for most
+         *        VM-exits. */
         /* Update the guest interruptibility-state from the VMCS. */
         hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
 
