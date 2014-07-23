@@ -1474,6 +1474,10 @@ typedef struct SUPR3HARDNTPUCH
     HANDLE                      hThread;
     /** Error buffer. */
     PRTERRINFO                  pErrInfo;
+    /** The address of NTDLL in the child. */
+    uintptr_t                   uNtDllAddr;
+    /** The address of NTDLL in this process. */
+    uintptr_t                   uNtDllParentAddr;
     /** The basic process info. */
     PROCESS_BASIC_INFORMATION   BasicInfo;
     /** The probable size of the PEB. */
@@ -1526,9 +1530,8 @@ static int supR3HardNtPuChScrewUpPebForInitialImageEvents(PSUPR3HARDNTPUCH pThis
  */
 static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
 {
-    /** @todo stop assuming NTDLL doesn't move.  */
-    PVOID pvLdrInitThunk      = (PVOID)(uintptr_t)LdrInitializeThunk;
-    PVOID pvNtTerminateThread = (PVOID)(uintptr_t)NtTerminateThread;
+    PVOID pvLdrInitThunk      = (PVOID)((uintptr_t)LdrInitializeThunk + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
+    PVOID pvNtTerminateThread = (PVOID)((uintptr_t)NtTerminateThread  + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
 
     /*
      * Back up the thunk code.
@@ -1971,6 +1974,86 @@ static int supR3HardNtPuChSanitizeMemory(PSUPR3HARDNTPUCH pThis)
 }
 
 
+static void supR3HardNtPuChFindNtdll(PSUPR3HARDNTPUCH pThis)
+{
+    /*
+     * Find NTDLL in this process first and take that as a starting point.
+     */
+    pThis->uNtDllParentAddr = (uintptr_t)GetModuleHandleW(L"ntdll.dll");
+    SUPR3HARDENED_ASSERT(pThis->uNtDllParentAddr != 0 && !(pThis->uNtDllParentAddr & PAGE_OFFSET_MASK));
+    pThis->uNtDllAddr = pThis->uNtDllParentAddr;
+
+    /*
+     * Scan the virtual memory of the child.
+     */
+    uintptr_t   cbAdvance = 0;
+    uintptr_t   uPtrWhere = 0;
+    for (uint32_t i = 0; i < 1024; i++)
+    {
+        /* Query information. */
+        SIZE_T                      cbActual = 0;
+        MEMORY_BASIC_INFORMATION    MemInfo  = { 0, 0, 0, 0, 0, 0, 0 };
+        NTSTATUS rcNt = NtQueryVirtualMemory(pThis->hProcess,
+                                             (void const *)uPtrWhere,
+                                             MemoryBasicInformation,
+                                             &MemInfo,
+                                             sizeof(MemInfo),
+                                             &cbActual);
+        if (!NT_SUCCESS(rcNt))
+            break;
+
+        if (   MemInfo.Type == SEC_IMAGE
+            || MemInfo.Type == SEC_PROTECTED_IMAGE
+            || MemInfo.Type == (SEC_IMAGE | SEC_PROTECTED_IMAGE))
+        {
+            if (MemInfo.BaseAddress == MemInfo.AllocationBase)
+            {
+                /* Get the image name. */
+                union
+                {
+                    UNICODE_STRING UniStr;
+                    uint8_t abPadding[4096];
+                } uBuf;
+                NTSTATUS rcNt = NtQueryVirtualMemory(pThis->hProcess,
+                                                     MemInfo.BaseAddress,
+                                                     MemorySectionName,
+                                                     &uBuf,
+                                                     sizeof(uBuf) - sizeof(WCHAR),
+                                                     &cbActual);
+                if (NT_SUCCESS(rcNt))
+                {
+                    uBuf.UniStr.Buffer[uBuf.UniStr.Length / sizeof(WCHAR)] = '\0';
+                    if (   uBuf.UniStr.Length > g_System32NtPath.UniStr.Length
+                        && memcmp(uBuf.UniStr.Buffer, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length) == 0
+                        && uBuf.UniStr.Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR)] == '\\')
+                    {
+                        if (RTUtf16ICmpAscii(&uBuf.UniStr.Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR) + 1],
+                                             "ntdll.dll") == 0)
+                        {
+                            pThis->uNtDllAddr = (uintptr_t)MemInfo.AllocationBase;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+         * Advance.
+         */
+        cbAdvance = MemInfo.RegionSize;
+        if (uPtrWhere + cbAdvance <= uPtrWhere)
+            break;
+        uPtrWhere += MemInfo.RegionSize;
+    }
+
+#ifdef DEBUG
+    supR3HardenedFatal("%s: ntdll.dll not found in child.", __FUNCTION__);
+#endif
+}
+
+
+
 static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo)
 {
     /*
@@ -2006,6 +2089,8 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     rcNt = NtReadVirtualMemory(hProcess, This.BasicInfo.PebBaseAddress, &This.Peb, sizeof(This.Peb), &cbActualMem);
     if (!NT_SUCCESS(rcNt))
         return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, "NtReadVirtualMemory/Peb failed: %#x", rcNt);
+
+    supR3HardNtPuChFindNtdll(&This);
 
     /*
      * Do the work.
