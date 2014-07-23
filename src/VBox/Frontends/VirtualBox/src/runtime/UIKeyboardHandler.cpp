@@ -1002,7 +1002,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                         keyboard.PutScancodes(combo);
                     }
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
-                    gActionPool->processHotKey(QKeySequence(pKeyEvent->key()));
+                    gpActionPool->processHotKey(QKeySequence(pKeyEvent->key()));
                 }
                 else if (!m_bIsHostComboPressed && pEvent->type() == QEvent::KeyRelease)
                 {
@@ -1577,7 +1577,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
         if (!ToUnicodeEx(iHotKey, 0, keys, &symbol, 1, 0, pList[i]) == 1)
             symbol = 0;
         if (symbol)
-            fWasProcessed = gActionPool->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(symbol).toUpper().unicode())));
+            fWasProcessed = gpActionPool->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(symbol).toUpper().unicode())));
     }
     delete[] pList;
 #endif /* Q_WS_WIN */
@@ -1595,7 +1595,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
         if (symbol)
         {
             QChar qtSymbol = QString::fromLocal8Bit(&symbol, 1)[0];
-            fWasProcessed = gActionPool->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + qtSymbol.toUpper().unicode())));
+            fWasProcessed = gpActionPool->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + qtSymbol.toUpper().unicode())));
         }
     }
 #endif /* Q_WS_X11 */
@@ -1603,7 +1603,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
 #ifdef Q_WS_MAC
     Q_UNUSED(iHotKey);
     if (pHotKey && pHotKey[0] && !pHotKey[1])
-        fWasProcessed = gActionPool->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
+        fWasProcessed = gpActionPool->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
 #endif /* Q_WS_MAC */
 
     /* Grab the key from the Qt if it was processed, or pass it to the Qt otherwise

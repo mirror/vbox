@@ -1140,16 +1140,16 @@ void UIGChooserItemMachine::prepare()
     m_pToolBar->insertItem(m_pCloseButton, 1, 1);
 
     connect(m_pSettingsButton, SIGNAL(sigButtonClicked()),
-            gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings), SLOT(trigger()),
+            gpActionPool->action(UIActionIndexSelector_Simple_Machine_Settings), SLOT(trigger()),
             Qt::QueuedConnection);
     connect(m_pStartButton, SIGNAL(sigButtonClicked()),
-            gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow), SLOT(trigger()),
+            gpActionPool->action(UIActionIndexSelector_State_Common_StartOrShow), SLOT(trigger()),
             Qt::QueuedConnection);
     connect(m_pPauseButton, SIGNAL(sigButtonClicked()),
-            gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume), SLOT(trigger()),
+            gpActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume), SLOT(trigger()),
             Qt::QueuedConnection);
     connect(m_pCloseButton, SIGNAL(sigButtonClicked()),
-            gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff), SLOT(trigger()),
+            gpActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff), SLOT(trigger()),
             Qt::QueuedConnection);
 }
 

@@ -813,7 +813,7 @@ public:
     UIActionMenuHardDisks(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/hd_16px.png", ":/hd_disabled_16px.png")
     {
-        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        setShowToolTip(true);
         retranslateUi();
     }
 
@@ -857,7 +857,7 @@ public:
     UIActionMenuOpticalDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
-        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        setShowToolTip(true);
         retranslateUi();
     }
 
@@ -878,7 +878,7 @@ public:
     UIActionMenuFloppyDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
-        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        setShowToolTip(true);
         retranslateUi();
     }
 
@@ -899,7 +899,7 @@ public:
     UIActionMenuUSBDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
-        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        setShowToolTip(true);
         retranslateUi();
     }
 
@@ -920,7 +920,7 @@ public:
     UIActionMenuWebCams(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/web_camera_16px.png", ":/web_camera_disabled_16px.png")
     {
-        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        setShowToolTip(true);
         retranslateUi();
     }
 

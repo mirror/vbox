@@ -30,7 +30,7 @@
 class QISplitter;
 class QMenu;
 class UIAction;
-class UIActionState;
+class UIActionPolymorphic;
 class UIMainBar;
 class UIToolBar;
 class UIVMDesktop;
@@ -190,7 +190,7 @@ private:
     UIAction *m_pExitAction;
 
     /* Common Group/Machine actions: */
-    UIActionState *m_pAction_Common_StartOrShow;
+    UIActionPolymorphic *m_pAction_Common_StartOrShow;
     UIAction *m_pAction_Common_PauseAndResume;
     UIAction *m_pAction_Common_Reset;
     UIAction *m_pAction_Common_Discard;

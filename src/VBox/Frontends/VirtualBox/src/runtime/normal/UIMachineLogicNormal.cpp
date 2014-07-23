@@ -80,12 +80,12 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
     AssertReturnVoid(isMachineWindowsCreated());
 
     /* Make sure status-bar is enabled: */
-    const bool fEnabled = gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked();
+    const bool fEnabled = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked();
     AssertReturnVoid(fEnabled);
 
     /* Prevent user from opening another one editor or toggle status-bar: */
-    gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(false);
-    gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(false);
+    gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(false);
+    gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(false);
     /* Create status-bar editor: */
     UIStatusBarEditorWindow *pStatusBarEditor = new UIStatusBarEditorWindow(activeMachineWindow());
     AssertPtrReturnVoid(pStatusBarEditor);
@@ -105,12 +105,12 @@ void UIMachineLogicNormal::sltOpenStatusBarSettings()
 void UIMachineLogicNormal::sltStatusBarSettingsClosed()
 {
     /* Make sure status-bar is enabled: */
-    const bool fEnabled = gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked();
+    const bool fEnabled = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked();
     AssertReturnVoid(fEnabled);
 
     /* Allow user to open editor and toggle status-bar again: */
-    gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(true);
-    gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(true);
+    gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(true);
+    gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(true);
 }
 
 void UIMachineLogicNormal::sltToggleStatusBar()
@@ -133,8 +133,8 @@ void UIMachineLogicNormal::sltPrepareMenuViewPopup()
     pMenu->clear();
 
     /* Add default contents: */
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
     pMenu->addSeparator();
 
     /* Check if guest additions are enabled: */
@@ -232,7 +232,7 @@ void UIMachineLogicNormal::sltPrepareHardDisksMenu()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertMsg(pMenu, ("This slot should be called only on Hard Disks menu show!\n"));
     pMenu->clear();
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
 }
 
 void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
@@ -240,7 +240,7 @@ void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
     menu->clear();
-    menu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+    menu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
 }
 
 void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
@@ -248,8 +248,8 @@ void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertMsg(pMenu, ("This slot should be called only on Video Capture menu show!\n"));
     pMenu->clear();
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
 }
 
 void UIMachineLogicNormal::sltPrepareKeyboardMenu()
@@ -257,7 +257,7 @@ void UIMachineLogicNormal::sltPrepareKeyboardMenu()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertMsg(pMenu, ("This slot should be called only on Keyboard menu show!\n"));
     pMenu->clear();
-    pMenu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
 }
 
 void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
@@ -265,7 +265,7 @@ void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Mouse Integration Menu show!\n"));
     menu->clear();
-    menu->addAction(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
+    menu->addAction(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
 }
 
 void UIMachineLogicNormal::prepareActionConnections()
@@ -274,29 +274,29 @@ void UIMachineLogicNormal::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_ViewPopup)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_ViewPopup)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareMenuViewPopup()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToSeamless()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenStatusBarSettings()));
-    connect(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
+    connect(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
             this, SLOT(sltToggleStatusBar()));
 
     /* "Device" actions connections: */
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareHardDisksMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedFoldersMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareVideoCaptureMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareKeyboardMenu()));
-    connect(gActionPool->action(UIActionIndexRT_M_Machine_M_Mouse)->menu(), SIGNAL(aboutToShow()),
+    connect(gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareMouseIntegrationMenu()));
 }
 
@@ -342,15 +342,15 @@ void UIMachineLogicNormal::cleanupMachineWindows()
 void UIMachineLogicNormal::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToSeamless()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenStatusBarSettings()));
-    disconnect(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
+    disconnect(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
                this, SLOT(sltToggleStatusBar()));
 
     /* Call to base-class: */
@@ -363,7 +363,7 @@ void UIMachineLogicNormal::updateMenuView()
     UIMachineLogic::updateMenuView();
 
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
 
     /* Separator #1? */
@@ -372,20 +372,20 @@ void UIMachineLogicNormal::updateMenuView()
     /* 'Adjust Window' action: */
     if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_AdjustWindow)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(false);
 
     /* 'Guest Autoresize' action: */
     if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_GuestAutoresize)
     {
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
         fSeparator1 = true;
     }
     else
-        gActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(false);
 
     /* Separator #1: */
     if (fSeparator1)
@@ -393,30 +393,30 @@ void UIMachineLogicNormal::updateMenuView()
 
     /* 'Status Bar' submenu: */
     if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBar)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar));
     else
-        gActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(false);
     updateMenuViewStatusBar();
 }
 
 void UIMachineLogicNormal::updateMenuViewStatusBar()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->menu();
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Status Bar Settings' action: */
     if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBarSettings)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
     else
-        gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(false);
 
     /* 'Toggle Status Bar' action: */
     if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_ToggleStatusBar)
-        pMenu->addAction(gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
     else
-        gActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(false);
 }
 
