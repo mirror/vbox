@@ -529,7 +529,7 @@ QString UIGChooserModel::uniqueGroupName(UIGChooserItem *pRoot)
 
 void UIGChooserModel::activateMachineItem()
 {
-    gpActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->activate(QAction::Trigger);
+    gpActionPool->action(UIActionIndexST_M_Machine_P_StartOrShow)->activate(QAction::Trigger);
 }
 
 void UIGChooserModel::setCurrentDragObject(QDrag *pDragObject)
@@ -698,7 +698,7 @@ void UIGChooserModel::sltSlidingComplete()
 void UIGChooserModel::sltEditGroupName()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Group_Rename)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Group_S_Rename)->isEnabled())
         return;
 
     /* Only for single selected group: */
@@ -712,7 +712,7 @@ void UIGChooserModel::sltEditGroupName()
 void UIGChooserModel::sltSortGroup()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Group_Sort)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Group_S_Sort)->isEnabled())
         return;
 
     /* Only for single selected group: */
@@ -726,7 +726,7 @@ void UIGChooserModel::sltSortGroup()
 void UIGChooserModel::sltUngroupSelectedGroup()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Group_Remove)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Group_S_Remove)->isEnabled())
         return;
 
     /* Make sure focus item is of group type! */
@@ -802,7 +802,7 @@ void UIGChooserModel::sltUngroupSelectedGroup()
 void UIGChooserModel::sltCreateNewMachine()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Machine_New)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Machine_S_New)->isEnabled())
         return;
 
     /* Choose the parent: */
@@ -826,7 +826,7 @@ void UIGChooserModel::sltCreateNewMachine()
 void UIGChooserModel::sltGroupSelectedMachines()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Machine_S_AddGroup)->isEnabled())
         return;
 
     /* Create new group in the current root: */
@@ -901,7 +901,7 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 void UIGChooserModel::sltSortParentGroup()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Machine_S_SortParent)->isEnabled())
         return;
 
     /* Only if some item selected: */
@@ -915,7 +915,7 @@ void UIGChooserModel::sltSortParentGroup()
 void UIGChooserModel::sltPerformRefreshAction()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Common_Refresh)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Group_S_Refresh)->isEnabled())
         return;
 
     /* Gather list of current unique inaccessible machine-items: */
@@ -956,7 +956,7 @@ void UIGChooserModel::sltPerformRefreshAction()
 void UIGChooserModel::sltRemoveSelectedMachine()
 {
     /* Check if action is enabled: */
-    if (!gpActionPool->action(UIActionIndexSelector_Simple_Machine_Remove)->isEnabled())
+    if (!gpActionPool->action(UIActionIndexST_M_Machine_S_Remove)->isEnabled())
         return;
 
     /* Enumerate all the selected machine-items: */
@@ -1125,66 +1125,68 @@ void UIGChooserModel::prepareContextMenu()
 {
     /* Context menu for group(s): */
     m_pContextMenuGroup = new QMenu;
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Group_New));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Group_Add));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_New));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Add));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Group_Rename));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Group_Remove));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Rename));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Remove));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_State_Common_StartOrShow));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Reset));
-    m_pContextMenuGroup->addMenu(gpActionPool->action(UIActionIndexSelector_Menu_Group_Close)->menu());
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_P_StartOrShow));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_T_Pause));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Reset));
+    m_pContextMenuGroup->addMenu(gpActionPool->action(UIActionIndexST_M_Group_M_Close)->menu());
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Discard));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Refresh));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Discard));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Refresh));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager));
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_ShowInFileManager));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_CreateShortcut));
     m_pContextMenuGroup->addSeparator();
-    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Group_Sort));
+    m_pContextMenuGroup->addAction(gpActionPool->action(UIActionIndexST_M_Group_S_Sort));
 
     /* Context menu for machine(s): */
     m_pContextMenuMachine = new QMenu;
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Machine_Settings));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Machine_Clone));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Machine_Remove));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Settings));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Clone));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Remove));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_AddGroup));
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_State_Common_StartOrShow));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Reset));
-    m_pContextMenuMachine->addMenu(gpActionPool->action(UIActionIndexSelector_Menu_Machine_Close)->menu());
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_P_StartOrShow));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_T_Pause));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Reset));
+    m_pContextMenuMachine->addMenu(gpActionPool->action(UIActionIndexST_M_Machine_M_Close)->menu());
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Discard));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Discard));
     m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndex_Simple_LogDialog));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_Refresh));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_Refresh));
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager));
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_CreateShortcut));
     m_pContextMenuMachine->addSeparator();
-    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent));
+    m_pContextMenuMachine->addAction(gpActionPool->action(UIActionIndexST_M_Machine_S_SortParent));
 
     connect(m_pContextMenuGroup, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuMachine, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
 
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Group_New), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Group_S_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Machine_New), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Machine_S_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Group_Rename), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Group_S_Rename), SIGNAL(triggered()),
             this, SLOT(sltEditGroupName()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Group_Remove), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Group_S_Remove), SIGNAL(triggered()),
             this, SLOT(sltUngroupSelectedGroup()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Machine_Remove), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Machine_S_Remove), SIGNAL(triggered()),
             this, SLOT(sltRemoveSelectedMachine()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Machine_S_AddGroup), SIGNAL(triggered()),
             this, SLOT(sltGroupSelectedMachines()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Common_Refresh), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Group_S_Refresh), SIGNAL(triggered()),
             this, SLOT(sltPerformRefreshAction()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Machine_S_Refresh), SIGNAL(triggered()),
+            this, SLOT(sltPerformRefreshAction()));
+    connect(gpActionPool->action(UIActionIndexST_M_Machine_S_SortParent), SIGNAL(triggered()),
             this, SLOT(sltSortParentGroup()));
-    connect(gpActionPool->action(UIActionIndexSelector_Simple_Group_Sort), SIGNAL(triggered()),
+    connect(gpActionPool->action(UIActionIndexST_M_Group_S_Sort), SIGNAL(triggered()),
             this, SLOT(sltSortGroup()));
 
     connect(this, SIGNAL(sigStartGroupSaving()), this, SLOT(sltGroupSavingStart()), Qt::QueuedConnection);

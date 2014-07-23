@@ -120,9 +120,6 @@ private:
     void prepareIcon();
     void prepareMenuBar();
     void prepareMenuFile(QMenu *pMenu);
-    void prepareCommonActions();
-    void prepareGroupActions();
-    void prepareMachineActions();
     void prepareMenuGroup(QMenu *pMenu);
     void prepareMenuMachine(QMenu *pMenu);
     void prepareMenuGroupClose(QMenu *pMenu);
@@ -178,69 +175,13 @@ private:
     /* VM details widget: */
     UIVMDesktop *m_pVMDesktop;
 
-    /* 'File' menu action pointers: */
-    QMenu *m_pFileMenu;
-    UIAction *m_pMediumManagerDialogAction;
-    UIAction *m_pImportApplianceWizardAction;
-    UIAction *m_pExportApplianceWizardAction;
-    UIAction *m_pPreferencesDialogAction;
-#ifdef DEBUG
-    UIAction *m_pExtraDataManagerWindowAction;
-#endif /* DEBUG */
-    UIAction *m_pExitAction;
-
-    /* Common Group/Machine actions: */
-    UIActionPolymorphic *m_pAction_Common_StartOrShow;
-    UIAction *m_pAction_Common_PauseAndResume;
-    UIAction *m_pAction_Common_Reset;
-    UIAction *m_pAction_Common_Discard;
-    UIAction *m_pAction_Common_Refresh;
-    UIAction *m_pAction_Common_ShowInFileManager;
-    UIAction *m_pAction_Common_CreateShortcut;
-
     /* 'Group' menu action pointers: */
     QList<UIAction*> m_groupActions;
     QAction *m_pGroupMenuAction;
-    QMenu *m_pGroupMenu;
-    UIAction *m_pAction_Group_New;
-    UIAction *m_pAction_Group_Add;
-    UIAction *m_pAction_Group_Rename;
-    UIAction *m_pAction_Group_Remove;
-    UIAction *m_pAction_Group_Sort;
-    /* 'Group / Close' menu action pointers: */
-    UIAction *m_pGroupCloseMenuAction;
-    QMenu *m_pGroupCloseMenu;
-    UIAction *m_pGroupSaveAction;
-    UIAction *m_pGroupACPIShutdownAction;
-    UIAction *m_pGroupPowerOffAction;
 
     /* 'Machine' menu action pointers: */
     QList<UIAction*> m_machineActions;
     QAction *m_pMachineMenuAction;
-    QMenu *m_pMachineMenu;
-    UIAction *m_pAction_Machine_New;
-    UIAction *m_pAction_Machine_Add;
-    UIAction *m_pAction_Machine_Settings;
-    UIAction *m_pAction_Machine_Clone;
-    UIAction *m_pAction_Machine_Remove;
-    UIAction *m_pAction_Machine_AddGroup;
-    UIAction *m_pAction_Machine_LogDialog;
-    UIAction *m_pAction_Machine_SortParent;
-    /* 'Machine / Close' menu action pointers: */
-    UIAction *m_pMachineCloseMenuAction;
-    QMenu *m_pMachineCloseMenu;
-    UIAction *m_pMachineSaveAction;
-    UIAction *m_pMachineACPIShutdownAction;
-    UIAction *m_pMachinePowerOffAction;
-
-    /* 'Help' menu action pointers: */
-    QMenu *m_pHelpMenu;
-    UIAction *m_pHelpAction;
-    UIAction *m_pWebAction;
-    UIAction *m_pResetWarningsAction;
-    UIAction *m_pNetworkAccessManager;
-    UIAction *m_pUpdateAction;
-    UIAction *m_pAboutAction;
 
     /* Other variables: */
     QRect m_geometry;

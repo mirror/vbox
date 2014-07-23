@@ -22,56 +22,67 @@
 /* Local includes: */
 #include "UIActionPool.h"
 
-/* Action keys: */
-enum UIActionIndexSelector
+/** Runtime action-pool index enum.
+  * Naming convention is following:
+  * 1. Every menu index prepended with 'M',
+  * 2. Every simple-action index prepended with 'S',
+  * 3. Every toggle-action index presended with 'T',
+  * 4. Every polymorphic-action index presended with 'P',
+  * 5. Every sub-index contains full parent-index name. */
+enum UIActionIndexST
 {
     /* 'File' menu actions: */
-    UIActionIndexSelector_Menu_File = UIActionIndex_Max + 1,
-    UIActionIndexSelector_Simple_File_MediumManagerDialog,
-    UIActionIndexSelector_Simple_File_ImportApplianceWizard,
-    UIActionIndexSelector_Simple_File_ExportApplianceWizard,
+    UIActionIndexST_M_File = UIActionIndex_Max + 1,
+    UIActionIndexST_M_File_S_ShowMediumManager,
+    UIActionIndexST_M_File_S_ImportAppliance,
+    UIActionIndexST_M_File_S_ExportAppliance,
 #ifdef DEBUG
-    UIActionIndexSelector_Simple_File_ExtraDataManagerWindow,
+    UIActionIndexST_M_File_S_ShowExtraDataManager,
 #endif /* DEBUG */
-    UIActionIndexSelector_Simple_File_Exit,
+    UIActionIndexST_M_File_S_Close,
 
     /* 'Group' menu actions: */
-    UIActionIndexSelector_Menu_Group,
-    UIActionIndexSelector_Simple_Group_New,
-    UIActionIndexSelector_Simple_Group_Add,
-    UIActionIndexSelector_Simple_Group_Rename,
-    UIActionIndexSelector_Simple_Group_Remove,
-    UIActionIndexSelector_Simple_Group_Sort,
-    UIActionIndexSelector_Menu_Group_Close,
-    UIActionIndexSelector_Simple_Group_Close_Save,
-    UIActionIndexSelector_Simple_Group_Close_ACPIShutdown,
-    UIActionIndexSelector_Simple_Group_Close_PowerOff,
+    UIActionIndexST_M_Group,
+    UIActionIndexST_M_Group_S_New,
+    UIActionIndexST_M_Group_S_Add,
+    UIActionIndexST_M_Group_S_Rename,
+    UIActionIndexST_M_Group_S_Remove,
+    UIActionIndexST_M_Group_P_StartOrShow, //
+    UIActionIndexST_M_Group_T_Pause, //
+    UIActionIndexST_M_Group_S_Reset, //
+    UIActionIndexST_M_Group_M_Close,
+    UIActionIndexST_M_Group_M_Close_S_SaveState,
+    UIActionIndexST_M_Group_M_Close_S_Shutdown,
+    UIActionIndexST_M_Group_M_Close_S_PowerOff,
+    UIActionIndexST_M_Group_S_Discard, //
+    UIActionIndexST_M_Group_S_Refresh, //
+    UIActionIndexST_M_Group_S_ShowInFileManager, //
+    UIActionIndexST_M_Group_S_CreateShortcut, //
+    UIActionIndexST_M_Group_S_Sort,
 
     /* 'Machine' menu actions: */
-    UIActionIndexSelector_Menu_Machine,
-    UIActionIndexSelector_Simple_Machine_New,
-    UIActionIndexSelector_Simple_Machine_Add,
-    UIActionIndexSelector_Simple_Machine_Settings,
-    UIActionIndexSelector_Simple_Machine_Clone,
-    UIActionIndexSelector_Simple_Machine_Remove,
-    UIActionIndexSelector_Simple_Machine_AddGroup,
-    UIActionIndexSelector_Simple_Machine_SortParent,
-    UIActionIndexSelector_Menu_Machine_Close,
-    UIActionIndexSelector_Simple_Machine_Close_Save,
-    UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
-    UIActionIndexSelector_Simple_Machine_Close_PowerOff,
-
-    /* Common 'Group' / 'Machine' menu actions: */
-    UIActionIndexSelector_State_Common_StartOrShow,
-    UIActionIndexSelector_Toggle_Common_PauseAndResume,
-    UIActionIndexSelector_Simple_Common_Reset,
-    UIActionIndexSelector_Simple_Common_Discard,
-    UIActionIndexSelector_Simple_Common_Refresh,
-    UIActionIndexSelector_Simple_Common_ShowInFileManager,
-    UIActionIndexSelector_Simple_Common_CreateShortcut,
+    UIActionIndexST_M_Machine,
+    UIActionIndexST_M_Machine_S_New,
+    UIActionIndexST_M_Machine_S_Add,
+    UIActionIndexST_M_Machine_S_Settings,
+    UIActionIndexST_M_Machine_S_Clone,
+    UIActionIndexST_M_Machine_S_Remove,
+    UIActionIndexST_M_Machine_S_AddGroup,
+    UIActionIndexST_M_Machine_P_StartOrShow, //
+    UIActionIndexST_M_Machine_T_Pause, //
+    UIActionIndexST_M_Machine_S_Reset, //
+    UIActionIndexST_M_Machine_M_Close,
+    UIActionIndexST_M_Machine_M_Close_S_SaveState,
+    UIActionIndexST_M_Machine_M_Close_S_Shutdown,
+    UIActionIndexST_M_Machine_M_Close_S_PowerOff,
+    UIActionIndexST_M_Machine_S_Discard, //
+    UIActionIndexST_M_Machine_S_Refresh, //
+    UIActionIndexST_M_Machine_S_ShowInFileManager, //
+    UIActionIndexST_M_Machine_S_CreateShortcut, //
+    UIActionIndexST_M_Machine_S_SortParent,
 
     /* Maximum index: */
-    UIActionIndexSelector_Max
+    UIActionIndexST_Max
 };
 
 /* Singleton runtime action pool: */
