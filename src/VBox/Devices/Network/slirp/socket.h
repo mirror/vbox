@@ -157,11 +157,20 @@ void slirpDeleteLinkSocket(void *pvLnk);
 extern struct socket tcb;
 
 #if defined(DECLARE_IOVEC) && !defined(HAVE_READV)
+# if !defined(RT_OS_WINDOWS)
 struct iovec
 {
     char *iov_base;
     size_t iov_len;
 };
+# else
+/* make it congruent with WSABUF */
+struct iovec
+{
+    ULONG iov_len;
+    char *iov_base;
+};
+# endif
 #endif
 
 void so_init (void);
