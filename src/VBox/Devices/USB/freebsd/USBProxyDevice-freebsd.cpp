@@ -672,9 +672,8 @@ static DECLCALLBACK(int) usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, un
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
  */
-static DECLCALLBACK(int) usbProxyFreeBSDUrbQueue(PVUSBURB pUrb)
+static DECLCALLBACK(int) usbProxyFreeBSDUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB pUrb)
 {
-    PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
     PUSBPROXYDEVFBSD pDevFBSD = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVFBSD);
     PUSBENDPOINTFBSD pEndpointFBSD;
     struct usb_fs_endpoint *pXferEndpoint;

@@ -1129,6 +1129,10 @@ static DECLCALLBACK(int) vusbDevUrbIoThread(RTTHREAD hThread, void *pvUser)
         if (pDev->enmState != VUSB_DEVICE_STATE_RESET)
             vusbUrbDoReapAsyncDev(pDev, RT_INDEFINITE_WAIT);
 
+        /* Process any URBs waiting to be cancelled first. */
+        int rc = RTReqQueueProcess(pDev->hReqQueueCancel, 0); /* Don't wait if there is nothing to do. */
+        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+
         /* Woken up or there is an URB to queue. */
         PRTQUEUEATOMICITEM pHead = RTQueueAtomicRemoveAll(&pDev->QueueUrb);
         while (pHead)
@@ -1138,7 +1142,7 @@ static DECLCALLBACK(int) vusbDevUrbIoThread(RTTHREAD hThread, void *pvUser)
             pHead = pHead->pNext;
 
             LogFlow(("%s: Queuing URB\n", pUrb->pszDesc));
-            int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
+            rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
             if (RT_FAILURE(rc))
             {
                 LogFlow(("%s: Queuing URB failed with %Rrc\n", pUrb->pszDesc, rc));
@@ -1218,6 +1222,8 @@ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev)
     if (RT_SUCCESS(rc))
         rc = rcThread;
 
+    pDev->hUrbIoThread = NIL_RTTHREAD;
+
     return rc;
 }
 
@@ -1291,6 +1297,10 @@ void vusbDevDestroy(PVUSBDEV pDev)
 
     /* Destroy I/O thread. */
     vusbDevUrbIoThreadDestroy(pDev);
+
+    /* Destroy request queue. */
+    int rc = RTReqQueueDestroy(pDev->hReqQueueCancel);
+    AssertRC(rc);
 
     /*
      * Detach and free resources.
@@ -1728,6 +1738,10 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     size_t cbIface = vusbDevMaxInterfaces(pDev) * sizeof(*pDev->paIfStates);
     pDev->paIfStates = (PVUSBINTERFACESTATE)RTMemAllocZ(cbIface);
     AssertMsgReturn(pDev->paIfStates, ("RTMemAllocZ(%d) failed\n", cbIface), VERR_NO_MEMORY);
+
+    /* Setup request queue for cancelling URBs synchronously. */
+    rc = RTReqQueueCreate(&pDev->hReqQueueCancel);
+    AssertRCReturn(rc, rc);
 
     rc = vusbDevUrbIoThreadCreate(pDev);
     AssertRCReturn(rc, rc);

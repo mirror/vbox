@@ -2036,32 +2036,14 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
         vusbUrbCompletionRh(pUrb);
 }
 
-
 /**
- * Cancels an URB with CRC failure.
+ * The worker for vusbUrbCancel() which is executed on the I/O thread.
  *
- * Cancelling an URB is a tricky thing. The USBProxy backend can not
- * all cancel it and we must keep the URB around until it's ripe and
- * can be reaped the normal way. However, we must complete the URB
- * now, before leaving this function. This is not nice. sigh.
- *
- * This function will cancel the URB if it's in-flight and complete
- * it. The device will in its pfnCancel method be given the chance to
- * say that the URB doesn't need reaping and should be unlinked.
- *
- * An URB which is in the cancel state after pfnCancel will remain in that
- * state and in the async list until its reaped. When it's finally reaped
- * it will be unlinked and freed without doing any completion.
- *
- * There are different modes of canceling an URB. When devices are being
- * disconnected etc., they will be completed with an error (CRC). However,
- * when the HC needs to temporarily halt communication with a device, the
- * URB/TD must be left alone if possible.
- *
+ * @returns nothing.
  * @param   pUrb        The URB to cancel.
- * @param   mode        The way the URB should be canceled.
+ * @param   enmMode     The way the URB should be canceled.
  */
-void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
+static void vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
 {
     vusbUrbAssert(pUrb);
 #ifdef VBOX_WITH_STATISTICS
@@ -2101,7 +2083,7 @@ void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
     else
     {
         AssertMsg(pUrb->enmState == VUSBURBSTATE_CANCELLED, ("Invalid state %d, pUrb=%p\n", pUrb->enmState, pUrb));
-        switch (mode)
+        switch (enmMode)
         {
             default:
                 AssertMsgFailed(("Invalid cancel mode\n"));
@@ -2114,6 +2096,47 @@ void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
 
         }
     }
+}
+
+/**
+ * Cancels an URB with CRC failure.
+ *
+ * Cancelling an URB is a tricky thing. The USBProxy backend can not
+ * all cancel it and we must keep the URB around until it's ripe and
+ * can be reaped the normal way. However, we must complete the URB
+ * now, before leaving this function. This is not nice. sigh.
+ *
+ * This function will cancel the URB if it's in-flight and complete
+ * it. The device will in its pfnCancel method be given the chance to
+ * say that the URB doesn't need reaping and should be unlinked.
+ *
+ * An URB which is in the cancel state after pfnCancel will remain in that
+ * state and in the async list until its reaped. When it's finally reaped
+ * it will be unlinked and freed without doing any completion.
+ *
+ * There are different modes of canceling an URB. When devices are being
+ * disconnected etc., they will be completed with an error (CRC). However,
+ * when the HC needs to temporarily halt communication with a device, the
+ * URB/TD must be left alone if possible.
+ *
+ * @param   pUrb        The URB to cancel.
+ * @param   mode        The way the URB should be canceled.
+ */
+void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
+{
+    PRTREQ hReq = NULL;
+
+    if (pUrb->VUsb.pDev->hUrbIoThread != NIL_RTTHREAD)
+    {
+        int rc = RTReqQueueCallVoid(pUrb->VUsb.pDev->hReqQueueCancel, &hReq, 0,
+                                    (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
+        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
+        vusbDevUrbIoThreadWakeup(pUrb->VUsb.pDev);
+        rc = RTReqWait(hReq, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    else /* Call the worker directly. */
+        vusbUrbCancelWorker(pUrb, mode);
 }
 
 
