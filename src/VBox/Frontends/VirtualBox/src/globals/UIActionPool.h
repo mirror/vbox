@@ -39,10 +39,10 @@ enum UIActionPoolType
 /** Action types. */
 enum UIActionType
 {
+    UIActionType_Menu,
     UIActionType_Simple,
-    UIActionType_Polymorphic,
     UIActionType_Toggle,
-    UIActionType_Menu
+    UIActionType_Polymorphic
 };
 
 /** Action indexes. */
@@ -65,6 +65,32 @@ enum UIActionIndex
 
     /* Maximum index: */
     UIActionIndex_Max
+};
+
+
+/** QMenu extension
+  * allowing to show tool-tips. */
+class UIMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor. */
+    UIMenu();
+
+    /** Defines whether tool-tip should be shown. */
+    void setShowToolTip(bool fShowToolTips) { m_fShowToolTip = fShowToolTips; }
+
+protected:
+
+    /** General event handler. */
+    virtual bool event(QEvent *pEvent);
+
+private:
+
+    /** Holds whether tool-tip should be shown. */
+    bool m_fShowToolTip;
 };
 
 
@@ -134,29 +160,27 @@ private:
 };
 
 
-/** QMenu extension
-  * allowing to show tool-tips. */
-class UIMenu : public QMenu
+/** Abstract UIAction extension for 'Menu' action type. */
+class UIActionMenu : public UIAction
 {
     Q_OBJECT;
 
-public:
-
-    /** Constructor. */
-    UIMenu();
-
-    /** Defines whether tool-tip should be shown. */
-    void setShowToolTip(bool fShowToolTips) { m_fShowToolTip = fShowToolTips; }
-
 protected:
 
-    /** General event handler. */
-    virtual bool event(QEvent *pEvent);
+    /** Constructor, taking normal icon name and name for disabled analog. */
+    UIActionMenu(UIActionPool *pParent,
+                 const QString &strIcon = QString(), const QString &strIconDis = QString());
+    /** Constructor, taking copy of existing icon. */
+    UIActionMenu(UIActionPool *pParent,
+                 const QIcon &icon);
+
+    /** Defines whether tool-tip should be shown. */
+    void setShowToolTip(bool fShowToolTip);
 
 private:
 
-    /** Holds whether tool-tip should be shown. */
-    bool m_fShowToolTip;
+    /** Updates action text accordingly. */
+    virtual void updateText();
 };
 
 
@@ -177,6 +201,31 @@ protected:
     /** Constructor, taking copy of existing icon. */
     UIActionSimple(UIActionPool *pParent,
                    const QIcon& icon);
+};
+
+
+/** Abstract UIAction extension for 'Toggle' action type. */
+class UIActionToggle : public UIAction
+{
+    Q_OBJECT;
+
+protected:
+
+    /** Constructor, taking normal icon name and name for disabled analog. */
+    UIActionToggle(UIActionPool *pParent,
+                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
+    /** Constructor, taking normal on/off icon names and names for disabled analogs. */
+    UIActionToggle(UIActionPool *pParent,
+                   const QString &strIconOn, const QString &strIconOff,
+                   const QString &strIconOnDisabled, const QString &strIconOffDisabled);
+    /** Constructor, taking copy of existing icon. */
+    UIActionToggle(UIActionPool *pParent,
+                   const QIcon &icon);
+
+private:
+
+    /** Prepare routine. */
+    void prepare();
 };
 
 
@@ -209,55 +258,6 @@ private:
 
     /** Holds current action state. */
     int m_iState;
-};
-
-
-/** Abstract UIAction extension for 'Toggle' action type. */
-class UIActionToggle : public UIAction
-{
-    Q_OBJECT;
-
-protected:
-
-    /** Constructor, taking normal icon name and name for disabled analog. */
-    UIActionToggle(UIActionPool *pParent,
-                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructor, taking normal on/off icon names and names for disabled analogs. */
-    UIActionToggle(UIActionPool *pParent,
-                   const QString &strIconOn, const QString &strIconOff,
-                   const QString &strIconOnDisabled, const QString &strIconOffDisabled);
-    /** Constructor, taking copy of existing icon. */
-    UIActionToggle(UIActionPool *pParent,
-                   const QIcon &icon);
-
-private:
-
-    /** Prepare routine. */
-    void prepare();
-};
-
-
-/** Abstract UIAction extension for 'Menu' action type. */
-class UIActionMenu : public UIAction
-{
-    Q_OBJECT;
-
-protected:
-
-    /** Constructor, taking normal icon name and name for disabled analog. */
-    UIActionMenu(UIActionPool *pParent,
-                 const QString &strIcon = QString(), const QString &strIconDis = QString());
-    /** Constructor, taking copy of existing icon. */
-    UIActionMenu(UIActionPool *pParent,
-                 const QIcon &icon);
-
-    /** Defines whether tool-tip should be shown. */
-    void setShowToolTip(bool fShowToolTip);
-
-private:
-
-    /** Updates action text accordingly. */
-    virtual void updateText();
 };
 
 
