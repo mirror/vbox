@@ -2895,6 +2895,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
         PVMCPU pVCpu = &pVM->aCpus[i];
         switch (iStatusCode)
         {
+            /** @todo r=ramshankar: Are all EMTs out of ring-0 at this point!? If not, we
+             *  might be getting inaccurate values for non-guru'ing EMTs. */
             case VERR_VMX_INVALID_VMCS_FIELD:
                 break;
 
