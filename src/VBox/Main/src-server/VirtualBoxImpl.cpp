@@ -4250,6 +4250,10 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         *ppMedium = pDupMedium;
     }
 
+    // Restore the initial lock state, so that no unexpected lock changes are
+    // done by this method, which would need adjustments everywhere.
+    mediaTreeLock.acquire();
+
     return rc;
 }
 
