@@ -7132,7 +7132,7 @@ void Machine::i_getLogFolder(Utf8Str &aLogFolder)
 /**
  *  Returns the full path to the machine's log file for an given index.
  */
-Utf8Str Machine::i_queryLogFilename(ULONG idx)
+Utf8Str Machine::i_queryLogFilename(ULONG idx) /** @todo r=bird: Misnamed. Should be i_getLogFilename as it cannot fail. See VBox-CodingGuidelines.cpp, Compulsory seciont, line 79. */
 {
     Utf8Str logFolder;
     getLogFolder(logFolder);
@@ -7146,6 +7146,19 @@ Utf8Str Machine::i_queryLogFilename(ULONG idx)
                          logFolder.c_str(), RTPATH_DELIMITER, idx);
     return log;
 }
+
+/**
+ * Returns the full path to the machine's (hardened) startup log file.
+ */
+Utf8Str Machine::i_getStartupLogFilename(void)
+{
+    Utf8Str strFilename;
+    getLogFolder(strFilename);
+    Assert(strFilename.length());
+    strFilename.append(RTPATH_SLASH_STR "VBoxStartup.log");
+    return strFilename;
+}
+
 
 /**
  * Composes a unique saved state filename based on the current system time. The filename is
@@ -7254,11 +7267,11 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     /* get the path to the executable */
     char szPath[RTPATH_MAX];
     RTPathAppPrivateArch(szPath, sizeof(szPath) - 1);
-    size_t sz = strlen(szPath);
-    szPath[sz++] = RTPATH_DELIMITER;
-    szPath[sz] = 0;
-    char *cmd = szPath + sz;
-    sz = sizeof(szPath) - sz;
+    size_t cchBufLeft = strlen(szPath);
+    szPath[cchBufLeft++] = RTPATH_DELIMITER;
+    szPath[cchBufLeft] = 0;
+    char *pszNamePart = szPath + cchBufLeft;
+    cchBufLeft = sizeof(szPath) - cchBufLeft;
 
     int vrc = VINF_SUCCESS;
     RTPROCESS pid = NIL_RTPROCESS;
@@ -7314,6 +7327,20 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
             RTStrFree(newEnvStr);
     }
 
+    /* Hardened startup logging */
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
+    Utf8Str strSupStartLogArg("--sup-startup-log=");
+    {
+        Utf8Str strStartupLogFile = i_getStartupLogFilename();
+        RTFileDelete(strStartupLogFile.c_str());
+        strSupStartLogArg.append(strStartupLogFile);
+    }
+    const char *pszSupStartupLogArg = strSupStartLogArg.c_str();
+#else
+    const char *pszSupStartupLogArg = NULL;
+#endif
+
+
 #ifdef VBOX_WITH_QTGUI
     if (strFrontend == "gui" || strFrontend == "GUI/Qt")
     {
@@ -7321,12 +7348,12 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         /* Modify the base path so that we don't need to use ".." below. */
         RTPathStripTrailingSlash(szPath);
         RTPathStripFilename(szPath);
-        sz = strlen(szPath);
-        cmd = szPath + sz;
-        sz = sizeof(szPath) - sz;
+        cchBufLeft = strlen(szPath);
+        pszNamePart = szPath + cchBufLeft;
+        cchBufLeft = sizeof(szPath) - cchBufLeft;
 
-#define OSX_APP_NAME "VirtualBoxVM"
-#define OSX_APP_PATH_FMT "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
+#  define OSX_APP_NAME "VirtualBoxVM"
+#  define OSX_APP_PATH_FMT "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
 
         Utf8Str strAppOverride = i_getExtraData(Utf8Str("VBoxInternal2/VirtualBoxVMAppOverride"));
         if (   strAppOverride.contains(".")
@@ -7346,18 +7373,25 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         }
         if (strAppOverride.isEmpty())
             strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, OSX_APP_NAME);
-        const char *VirtualBox_exe = strAppPath.c_str();
-        AssertReturn(sz >= strlen(VirtualBox_exe), E_UNEXPECTED);
+        AssertReturn(cchBufLeft > strAppPath.length(), E_UNEXPECTED);
+        strcpy(pszNamePart, strAppPath.c_str());
 # else
-        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-        Assert(sz >= sizeof(VirtualBox_exe));
+        static const char s_szVirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+        Assert(cchBufLeft >= sizeof(s_szVirtualBox_exe));
+        strcpy(pszNamePart, s_szVirtualBox_exe);
 # endif
-        strcpy(cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(),
-                               "--startvm", idStr.c_str(), "--no-startvm-errormsgbox", 0 };
-        vrc = RTProcCreate(szPath, args, env, 0, &pid);
+        const char *apszArgs[] =
+        {
+            szPath,
+            "--comment", mUserData->s.strName.c_str(),
+            "--startvm", idStr.c_str(),
+            "--no-startvm-errormsgbox",
+            pszSupStartupLogArg,
+            NULL
+        };
+        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
     }
 #else /* !VBOX_WITH_QTGUI */
     if (0)
@@ -7369,13 +7403,20 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
 #ifdef VBOX_WITH_VBOXSDL
     if (strFrontend == "sdl" || strFrontend == "GUI/SDL")
     {
-        const char VBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
-        Assert(sz >= sizeof(VBoxSDL_exe));
-        strcpy(cmd, VBoxSDL_exe);
+        static const char s_szVBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
+        Assert(cchBufLeft >= sizeof(s_szVBoxSDL_exe));
+        strcpy(pszNamePart, s_szVBoxSDL_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0 };
-        vrc = RTProcCreate(szPath, args, env, 0, &pid);
+        const char *apszArgs[] =
+        {
+            szPath,
+            "--comment", mUserData->s.strName.c_str(),
+            "--startvm", idStr.c_str(),
+            pszSupStartupLogArg,
+            NULL
+        };
+        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
     }
 #else /* !VBOX_WITH_VBOXSDL */
     if (0)
@@ -7397,29 +7438,31 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
          * Only if a VRDE has been installed and the VM enables it, the "headless" will work
          * differently in 4.0 and 3.x.
          */
-        const char VBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
-        Assert(sz >= sizeof(VBoxHeadless_exe));
-        strcpy(cmd, VBoxHeadless_exe);
+        static const char s_szVBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
+        Assert(cchBufLeft >= sizeof(s_szVBoxHeadless_exe));
+        strcpy(pszNamePart, s_szVBoxHeadless_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        /* Leave space for "--capture" arg. */
-        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(),
-                                       "--startvm", idStr.c_str(),
-                                       "--vrde", "config",
-                                       0, /* For "--capture". */
-                                       0 };
-        if (strFrontend == "capture")
+        const char *apszArgs[] =
         {
-            unsigned pos = RT_ELEMENTS(args) - 2;
-            args[pos] = "--capture";
-        }
-        vrc = RTProcCreate(szPath, args, env,
-#ifdef RT_OS_WINDOWS
-                RTPROC_FLAGS_NO_WINDOW
-#else
-                0
-#endif
-                , &pid);
+            szPath,
+            "--comment", mUserData->s.strName.c_str(),
+            "--startvm", idStr.c_str(),
+            "--vrde", "config",
+            0, /* For "--capture". */
+            0, /* For "--sup-startup-log". */
+            0
+        };
+        unsigned iArg = 7;
+        if (strFrontend == "capture")
+            apszArgs[iArg++] = "--capture";
+        apszArgs[iArg++] = pszSupStartupLogArg;
+
+# ifdef RT_OS_WINDOWS
+        vrc = RTProcCreate(szPath, apszArgs, env, RTPROC_FLAGS_NO_WINDOW, &pid);
+# else
+        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
+# endif
     }
 #else /* !VBOX_WITH_HEADLESS */
     if (0)
@@ -7596,22 +7639,35 @@ bool Machine::i_checkForSpawnFailure()
 
     if (vrc != VERR_PROCESS_RUNNING)
     {
+        Utf8Str strExtraInfo;
+
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
+        /* If the startup logfile exists and is of non-zero length, tell the
+           user to look there for more details to encourage them to attach it
+           when reporting startup issues. */
+        Utf8Str strStartupLogFile = i_getStartupLogFilename();
+        uint64_t cbStartupLogFile = 0;
+        int vrc2 = RTFileQuerySize(strStartupLogFile.c_str(), &cbStartupLogFile);
+        if (RT_SUCCESS(vrc2) && cbStartupLogFile > 0)
+            strExtraInfo.append(Utf8StrFmt(tr(".  More details may be available in '%s'"), strStartupLogFile.c_str()));
+#endif
+
         if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_NORMAL)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated unexpectedly during startup with exit code %d"),
-                          i_getName().c_str(), status.iStatus);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup with exit code %d%s"),
+                          i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_SIGNAL)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated unexpectedly during startup because of signal %d"),
-                          i_getName().c_str(), status.iStatus);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup because of signal %d%s"),
+                          i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_ABEND)
             rc = setError(E_FAIL,
                           tr("The virtual machine '%s' has terminated abnormally"),
-                          i_getName().c_str(), status.iStatus);
+                          i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)"),
-                          i_getName().c_str(), vrc);
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)%s"),
+                          i_getName().c_str(), vrc, strExtraInfo.c_str());
     }
 
     if (FAILED(rc))
