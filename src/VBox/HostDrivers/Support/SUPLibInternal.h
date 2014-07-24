@@ -112,7 +112,6 @@ DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz);
 DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
 DECLHIDDEN(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
 DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
-DECLHIDDEN(int)    suplibHardenedStrICmp(const char *psz1, const char *psz2);
 #else
 # undef SUP_HARDENED_NEED_CRT_FUNCTIONS
 # define suplibHardenedMemComp memcmp
@@ -123,7 +122,6 @@ DECLHIDDEN(int)    suplibHardenedStrICmp(const char *psz1, const char *psz2);
 # define suplibHardenedStrCat  strcat
 # define suplibHardenedStrCmp  strcmp
 # define suplibHardenedStrNCmp strncmp
-# define suplibHardenedStrICmp stricmp
 #endif
 DECLNORETURN(void)  suplibHardenedExit(RTEXITCODE rcExit);
 DECLHIDDEN(void)    suplibHardenedPrintF(const char *pszFormat, ...);

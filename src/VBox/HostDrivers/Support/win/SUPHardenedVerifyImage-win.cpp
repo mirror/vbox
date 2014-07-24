@@ -1955,25 +1955,17 @@ DECLHIDDEN(void) supR3HardenedWinInitVersion(void)
      */
     OSVERSIONINFOEXW NtVerInfo;
 
-    suplibHardenedMemSet(&NtVerInfo, 0, sizeof(NtVerInfo));
+    RT_ZERO(NtVerInfo);
     NtVerInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
     if (!NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&NtVerInfo)))
     {
-        suplibHardenedMemSet(&NtVerInfo, 0, sizeof(NtVerInfo));
-        NtVerInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
-        if (!NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&NtVerInfo)))
-        {
-            NtVerInfo.dwOSVersionInfoSize = sizeof(NtVerInfo);
-            if (!GetVersionExW((OSVERSIONINFOW *)&NtVerInfo))
-            {
-                suplibHardenedMemSet(&NtVerInfo, 0, sizeof(NtVerInfo));
-                DWORD dwVer = GetVersion();
-                NtVerInfo.dwMajorVersion = RT_BYTE1(dwVer);
-                NtVerInfo.dwMinorVersion = RT_BYTE2(dwVer);
-                NtVerInfo.dwBuildNumber  = RT_BIT_32(31) & dwVer ? 0 : RT_HI_U16(dwVer);
-            }
-        }
+        RT_ZERO(NtVerInfo);
+        PPEB pPeb = NtCurrentPeb();
+        NtVerInfo.dwMajorVersion = pPeb->OSMajorVersion;
+        NtVerInfo.dwMinorVersion = pPeb->OSMinorVersion;
+        NtVerInfo.dwBuildNumber  = pPeb->OSPlatformId;
     }
+
     g_uNtVerCombined = SUP_MAKE_NT_VER_COMBINED(NtVerInfo.dwMajorVersion, NtVerInfo.dwMinorVersion, NtVerInfo.dwBuildNumber,
                                                 NtVerInfo.wServicePackMajor, NtVerInfo.wServicePackMinor);
 }

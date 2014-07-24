@@ -853,12 +853,10 @@ static void supR3HardenedGetFullExePath(void)
     suplibHardenedMemCopy(g_szSupLibHardenedExePath, pszImageName, cchImageName + 1);
 
 #elif defined(RT_OS_WINDOWS)
-    int cbRet = WideCharToMultiByte(CP_UTF8, 0 /*dwFlags*/,
-                                    g_wszSupLibHardenedExePath, -1,
-                                    g_szSupLibHardenedExePath, sizeof(g_szSupLibHardenedExePath),
-                                    NULL /*pchDefChar*/, NULL /* pfUsedDefChar */);
-    if (!cbRet)
-        supR3HardenedFatal("supR3HardenedExecDir: WideCharToMultiByte failed, rc=%d\n", GetLastError());
+    char *pszDst = g_szSupLibHardenedExePath;
+    int rc = RTUtf16ToUtf8Ex(g_wszSupLibHardenedExePath, RTSTR_MAX, &pszDst, sizeof(g_szSupLibHardenedExePath), NULL);
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("supR3HardenedExecDir: RTUtf16ToUtf8Ex failed, rc=%Rrc\n", rc);
 #else
 # error needs porting.
 #endif

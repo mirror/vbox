@@ -36,7 +36,7 @@
 #include "SUPLibInternal.h"
 
 
-#ifdef SUP_HARDENED_NEED_CRT_FUNCTIONS
+#ifdef SUP_HARDENED_NEED_CRT_FUNCTIONS /** @todo this crap is obsolete. */
 
 /** memcmp */
 DECLHIDDEN(int) suplibHardenedMemComp(void const *pvDst, const void *pvSrc, size_t cbToComp)
@@ -142,33 +142,6 @@ DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc)
     suplibHardenedStrCopy(pszDst, pszSrc);
     return pszRet;
 }
-
-
-# ifdef RT_OS_WINDOWS
-/** stricmp */
-DECLHIDDEN(int) suplibHardenedStrICmp(const char *psz1, const char *psz2)
-{
-    const char *pszOrg1 = psz1;
-    const char *pszOrg2 = psz2;
-
-    for (;;)
-    {
-        char ch1 = *psz1++;
-        char ch2 = *psz2++;
-        if (ch1 != ch2)
-        {
-            int rc = CompareStringA(LOCALE_USER_DEFAULT, NORM_IGNORECASE, pszOrg1, -1, pszOrg2, -1);
-#  ifdef VBOX_STRICT
-            if (rc == 0)
-                __debugbreak();
-#  endif
-            return rc - 2;
-        }
-        if (ch1 == 0)
-            return 0;
-    }
-}
-# endif
 
 
 /** strcmp */
