@@ -963,7 +963,7 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
      * Install a anti debugging hack before we continue.  This prevents most
      * notifications from ending up in the debugger.
      */
-    rcNt = NtSetInformationThread(GetCurrentThread(), ThreadHideFromDebugger, NULL, 0);
+    rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
     if (!NT_SUCCESS(rcNt))
         supR3HardenedFatalMsg("supR3HardenedWinInstallHooks", kSupInitOp_Misc, VERR_GENERAL_FAILURE,
                               "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
@@ -1063,13 +1063,13 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
         *puJmpTab                           = (uintptr_t)supR3HardenedMonitor_NtCreateSection;
 
         DWORD dwOldProt;
-        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(GetCurrentProcess(), pbNtCreateSection, 16,
+        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(NtCurrentProcess(), pbNtCreateSection, 16,
                                                             PAGE_EXECUTE_READWRITE, &dwOldProt));
         pbNtCreateSection[0] = 0xff;
         pbNtCreateSection[1] = 0x25;
         *(uint32_t *)&pbNtCreateSection[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbNtCreateSection[2+4]);
 
-        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(GetCurrentProcess(), pbNtCreateSection, 16,
+        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(NtCurrentProcess(), pbNtCreateSection, 16,
                                                             PAGE_EXECUTE_READ, &dwOldProt));
         return;
     }
@@ -1141,13 +1141,13 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
         *(PFNRT *)&g_pfnNtCreateSectionReal = pfnCallReal;
 
         DWORD dwOldProt;
-        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(GetCurrentProcess(), pbNtCreateSection, 16,
+        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(NtCurrentProcess(), pbNtCreateSection, 16,
                                                             PAGE_EXECUTE_READWRITE, &dwOldProt));
         pbNtCreateSection[0] = 0xe9;
         *(uint32_t *)&pbNtCreateSection[1] = (uintptr_t)supR3HardenedMonitor_NtCreateSection
                                            - (uintptr_t)&pbNtCreateSection[1+4];
 
-        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(GetCurrentProcess(), pbNtCreateSection, 16,
+        SUPR3HARDENED_ASSERT_WIN32_SUCCESS(VirtualProtectEx(NtCurrentProcess(), pbNtCreateSection, 16,
                                                             PAGE_EXECUTE_READ, &dwOldProt));
         return;
     }
@@ -1172,7 +1172,7 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
 DECLHIDDEN(void) supR3HardenedWinVerifyProcess(void)
 {
     RTErrInfoInitStatic(&g_ErrInfoStatic);
-    int rc = supHardenedWinVerifyProcess(GetCurrentProcess(), GetCurrentThread(), &g_ErrInfoStatic.Core);
+    int rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), &g_ErrInfoStatic.Core);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedWinVerifyProcess", kSupInitOp_Integrity, rc,
                               "Failed to verify process integrity: %s", g_ErrInfoStatic.szMsg);
@@ -1191,7 +1191,7 @@ DECLHIDDEN(void) supR3HardenedWinVerifyProcess(void)
 static bool supR3HardenedGetUserAndLogSids(PSID pSidUser, ULONG cbSidUser, PSID pSidLogin, ULONG cbSidLogin)
 {
     HANDLE hToken;
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(NtOpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken));
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(NtOpenProcessToken(NtCurrentProcess(), TOKEN_QUERY, &hToken));
     union
     {
         TOKEN_USER      UserInfo;
@@ -1358,10 +1358,11 @@ DECLINLINE(bool) suplibCommandLineIsArgSeparator(int ch)
 
 
 /**
- * Construct the new command line.  Since argc/argv are both derived from
- * GetCommandLineW (see suplibHardenedWindowsMain), we skip the argument
- * by argument UTF-8 -> UTF-16 conversion and quoting by going to the
- * original source.
+ * Construct the new command line.
+ *
+ * Since argc/argv are both derived from GetCommandLineW (see
+ * suplibHardenedWindowsMain), we skip the argument by argument UTF-8 -> UTF-16
+ * conversion and quoting by going to the original source.
  *
  * The executable name, though, is replaced in case it's not a fullly
  * qualified path.
@@ -1383,44 +1384,49 @@ static PRTUTF16 supR3HardenedWinConstructCmdLine(PUNICODE_STRING pString, int iW
     /*
      * Get the command line and skip the executable name.
      */
-    PCRTUTF16 pwszArgs = GetCommandLineW();
+    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
+    PCRTUTF16 pawcArgs = pCmdLineStr->Buffer;
+    uint32_t  cwcArgs  = pCmdLineStr->Length / sizeof(WCHAR);
 
     /* Skip leading space (shouldn't be any, but whatever). */
-    while (suplibCommandLineIsArgSeparator(*pwszArgs))
-        pwszArgs++;
-    SUPR3HARDENED_ASSERT(*pwszArgs != '\0');
+    while (cwcArgs > 0 && suplibCommandLineIsArgSeparator(*pawcArgs) )
+        cwcArgs--, pawcArgs++;
+    SUPR3HARDENED_ASSERT(cwcArgs > 0 && *pawcArgs != '\0');
 
     /* Walk to the end of it. */
     int fQuoted = false;
     do
     {
-        if (*pwszArgs == '"')
+        if (*pawcArgs == '"')
         {
             fQuoted = !fQuoted;
-            pwszArgs++;
+            cwcArgs--; pawcArgs++;
         }
-        else if (*pwszArgs != '\\' || (pwszArgs[1] != '\\' && pwszArgs[1] != '"'))
-            pwszArgs++;
+        else if (*pawcArgs != '\\' || (pawcArgs[1] != '\\' && pawcArgs[1] != '"'))
+            cwcArgs--, pawcArgs++;
         else
         {
             unsigned cSlashes = 0;
             do
+            {
                 cSlashes++;
-            while (*++pwszArgs == '\\');
-            if (*pwszArgs == '"' && (cSlashes & 1))
-                pwszArgs++; /* odd number of slashes == escaped quote */
+                cwcArgs--;
+                pawcArgs++;
+            }
+            while (cwcArgs > 0 && *pawcArgs == '\\');
+            if (cwcArgs > 0 && *pawcArgs == '"' && (cSlashes & 1))
+                cwcArgs--, pawcArgs++; /* odd number of slashes == escaped quote */
         }
-    } while (*pwszArgs && (fQuoted || !suplibCommandLineIsArgSeparator(*pwszArgs)));
+    } while (cwcArgs > 0 && (fQuoted || !suplibCommandLineIsArgSeparator(*pawcArgs)));
 
     /* Skip trailing spaces. */
-    while (suplibCommandLineIsArgSeparator(*pwszArgs))
-        pwszArgs++;
+    while (cwcArgs > 0 && suplibCommandLineIsArgSeparator(*pawcArgs))
+        cwcArgs--, pawcArgs++;
 
     /*
      * Allocate a new buffer.
      */
     AssertCompile(sizeof(SUPR3_RESPAWN_1_ARG0) == sizeof(SUPR3_RESPAWN_2_ARG0));
-    size_t cwcArgs    = suplibHardenedWStrLen(pwszArgs);
     size_t cwcCmdLine = (sizeof(SUPR3_RESPAWN_1_ARG0) - 1) / sizeof(SUPR3_RESPAWN_1_ARG0[0]) /* Respawn exe name. */
                       + !!cwcArgs + cwcArgs; /* if arguments present, add space + arguments. */
     if (cwcCmdLine * sizeof(WCHAR) >= 0xfff0)
@@ -1440,7 +1446,7 @@ static PRTUTF16 supR3HardenedWinConstructCmdLine(PUNICODE_STRING pString, int iW
     if (cwcArgs)
     {
         *pwszDst++ = ' ';
-        suplibHardenedMemCopy(pwszDst, pwszArgs, cwcArgs * sizeof(RTUTF16));
+        suplibHardenedMemCopy(pwszDst, pawcArgs, cwcArgs * sizeof(RTUTF16));
         pwszDst += cwcArgs;
     }
 
@@ -2114,10 +2120,18 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
 /**
  * Does the actually respawning.
  *
- * @returns Exit code (if we get that far).
+ * @returns Never, will call exit or raise fatal error.
+ * @param   iWhich              Which respawn we're to check for, 1 being the
+ *                              first one, and 2 the second and final.
+ *
+ * @todo    Split up this function.
  */
 static int supR3HardenedWinDoReSpawn(int iWhich)
 {
+    NTSTATUS                        rcNt;
+    PPEB                            pPeb              = NtCurrentPeb();
+    PRTL_USER_PROCESS_PARAMETERS    pParentProcParams = pPeb->ProcessParameters;
+
     SUPR3HARDENED_ASSERT(g_cSuplibHardenedWindowsMainCalls == 1);
 
     /*
@@ -2149,9 +2163,9 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     }
 
     SiEx.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-    SiEx.StartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-    SiEx.StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    SiEx.StartupInfo.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
+    SiEx.StartupInfo.hStdInput  = pParentProcParams->StandardInput;
+    SiEx.StartupInfo.hStdOutput = pParentProcParams->StandardOutput;
+    SiEx.StartupInfo.hStdError  = pParentProcParams->StandardError;
 
     /*
      * Construct the command line and launch the process.
@@ -2204,8 +2218,6 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                                     );
 
     /** @todo this doesn't work. :-( */
-    PPEB                            pPeb              = NtCurrentPeb();
-    PRTL_USER_PROCESS_PARAMETERS    pParentProcParams = pPeb->ProcessParameters;
     pProcParams->ConsoleHandle  = pParentProcParams->ConsoleHandle;
     pProcParams->ConsoleFlags   = pParentProcParams->ConsoleFlags;
     pProcParams->StandardInput  = pParentProcParams->StandardInput;
@@ -2213,16 +2225,16 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     pProcParams->StandardError  = pParentProcParams->StandardError;
 
     RTL_USER_PROCESS_INFORMATION ProcessInfoNt = { sizeof(ProcessInfoNt) };
-    NTSTATUS rcNt = RtlCreateUserProcess(&g_SupLibHardenedExeNtPath.UniStr,
-                                         OBJ_INHERIT | OBJ_CASE_INSENSITIVE /*Attributes*/,
-                                         pProcParams,
-                                         NULL, //&ProcessSecAttrs,
-                                         NULL, //&ThreadSecAttrs,
-                                         NtCurrentProcess() /* ParentProcess */,
-                                         FALSE /*fInheritHandles*/,
-                                         NULL /* DebugPort */,
-                                         NULL /* ExceptionPort */,
-                                         &ProcessInfoNt);
+    rcNt = RtlCreateUserProcess(&g_SupLibHardenedExeNtPath.UniStr,
+                                OBJ_INHERIT | OBJ_CASE_INSENSITIVE /*Attributes*/,
+                                pProcParams,
+                                NULL, //&ProcessSecAttrs,
+                                NULL, //&ThreadSecAttrs,
+                                NtCurrentProcess() /* ParentProcess */,
+                                FALSE /*fInheritHandles*/,
+                                NULL /* DebugPort */,
+                                NULL /* ExceptionPort */,
+                                &ProcessInfoNt);
     if (!NT_SUCCESS(rcNt))
         supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, VERR_INVALID_NAME,
                               "Error relaunching VirtualBox VM process: %#x\n"
@@ -2258,75 +2270,129 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
      */
     SUPR3HARDENED_ASSERT_NT_SUCCESS(NtClose(hThread));
 
+    PROCESS_BASIC_INFORMATION BasicInfo;
     HANDLE hProcWait;
-    DWORD dwRights = SYNCHRONIZE;
+    ULONG fRights = SYNCHRONIZE;
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* Introduced in Vista. */
-        dwRights |= PROCESS_QUERY_LIMITED_INFORMATION;
+        fRights |= PROCESS_QUERY_LIMITED_INFORMATION;
     else
-        dwRights |= PROCESS_QUERY_INFORMATION;
-    if (!DuplicateHandle(GetCurrentProcess(),
-                         hProcess,
-                         GetCurrentProcess(),
-                         &hProcWait,
-                         SYNCHRONIZE,
-                         FALSE /*fInheritHandle*/,
-                         0))
+        fRights |= PROCESS_QUERY_INFORMATION;
+    rcNt = NtDuplicateObject(NtCurrentProcess(), hProcess,
+                             NtCurrentProcess(), &hProcWait,
+                             fRights, 0 /*HandleAttributes*/, 0);
+    if (rcNt == STATUS_ACCESS_DENIED)
+        rcNt = NtDuplicateObject(NtCurrentProcess(), hProcess,
+                                 NtCurrentProcess(), &hProcWait,
+                                 SYNCHRONIZE, 0 /*HandleAttributes*/, 0);
+    if (!NT_SUCCESS(rcNt))
     {
-        /* This is unacceptable, kill the process. */
+        /* Failure is unacceptable, kill the process. */
         DWORD dwErr = GetLastError();
         NtTerminateProcess(hProcess, RTEXITCODE_FAILURE);
-        supR3HardenedError(dwErr, false /*fFatal*/, "DuplicateHandle failed on child process handle: %u\n", dwErr);
+        supR3HardenedError(dwErr, false /*fFatal*/, "NtDuplicateObject failed on child process handle: %u\n", dwErr);
 
-        DWORD dwExit;
-        BOOL fExitOk = GetExitCodeProcess(hProcess, &dwExit)
-                    && dwExit != STILL_ACTIVE;
+        NTSTATUS rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+        bool fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
         if (!fExitOk)
         {
+            NTSTATUS rcNtWait;
             DWORD dwStartTick = GetTickCount();
-            DWORD dwWait;
             do
             {
                 NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
-                dwWait  = WaitForSingleObject(hProcess, 1000);
-                fExitOk = GetExitCodeProcess(hProcess, &dwExit)
-                       && dwExit != STILL_ACTIVE;
+
+                LARGE_INTEGER Timeout;
+                Timeout.QuadPart = -20000000; /* 2 second */
+                rcNtWait = NtWaitForSingleObject(hProcess, TRUE /*Alertable*/, &Timeout);
+
+                rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+                fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
             } while (   !fExitOk
-                     && (dwWait == WAIT_TIMEOUT || dwWait == WAIT_IO_COMPLETION)
+                     && (   rcNtWait == STATUS_TIMEOUT
+                         || rcNtWait == STATUS_USER_APC
+                         || rcNtWait == STATUS_ALERTED)
                      && GetTickCount() - dwStartTick < 60 * 1000);
             if (fExitOk)
                 supR3HardenedError(dwErr, false /*fFatal*/,
-                                   "DuplicateHandle failed and we failed to kill child: dwErr=%u dwWait=%u err=%u hProcess=%p\n",
-                                   dwErr, dwWait, GetLastError(), hProcess);
+                                   "NtDuplicateObject failed and we failed to kill child: rcNt=%u rcNtWait=%u hProcess=%p\n",
+                                   rcNt, rcNtWait, hProcess);
         }
         supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, VERR_INVALID_NAME,
-                              "DuplicateHandle failed on child process handle: %u\n", dwErr);
+                              "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
     }
 
     SUPR3HARDENED_ASSERT_NT_SUCCESS(NtClose(hProcess));
     hProcess = NULL;
 
     /*
-     * Wait for the process to terminate and proxy the termination code.
+     * If this is the middle process, wait for both parent and child to quit.
      */
-    for (;;)
+    HANDLE hParent = NULL;
+    if (iWhich > 1)
     {
-        SetLastError(NO_ERROR);
-        DWORD dwWait = WaitForSingleObject(hProcWait, INFINITE);
-        if (   dwWait == WAIT_OBJECT_0
-            || dwWait == WAIT_ABANDONED_0)
-            break;
-        if (   dwWait != WAIT_TIMEOUT
-            && dwWait != WAIT_IO_COMPLETION)
-            supR3HardenedFatal("WaitForSingleObject returned %#x (last error %#x)\n", dwWait, GetLastError());
+        rcNt = NtQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+        if (NT_SUCCESS(rcNt))
+        {
+            OBJECT_ATTRIBUTES ObjAttr;
+            InitializeObjectAttributes(&ObjAttr, NULL, 0, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+            CLIENT_ID ClientId;
+            ClientId.UniqueProcess = (HANDLE)BasicInfo.InheritedFromUniqueProcessId;
+            ClientId.UniqueThread  = NULL;
+
+            rcNt = NtOpenProcess(&hParent, SYNCHRONIZE | PROCESS_QUERY_INFORMATION, &ObjAttr, &ClientId);
+        }
+#ifdef DEBUG
+        SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
+#endif
     }
 
-    DWORD dwExit;
-    if (   !GetExitCodeProcess(hProcWait, &dwExit)
-        || dwExit == STILL_ACTIVE)
-        dwExit = RTEXITCODE_FAILURE;
+    if (hParent != NULL)
+    {
+        for (;;)
+        {
+            HANDLE ahHandles[2] = { hProcWait, hParent };
+            rcNt = NtWaitForMultipleObjects(2, &ahHandles[0], WaitAnyObject, TRUE /*Alertable*/, NULL /*pTimeout*/);
+            if (   rcNt == STATUS_WAIT_0
+                || rcNt == STATUS_WAIT_0 + 1
+                || rcNt == STATUS_ABANDONED_WAIT_0
+                || rcNt == STATUS_ABANDONED_WAIT_0 + 1)
+                break;
+            if (   rcNt != STATUS_TIMEOUT
+                && rcNt != STATUS_USER_APC
+                && rcNt != STATUS_ALERTED)
+                supR3HardenedFatal("NtWaitForMultipleObjects returned %#x\n", rcNt);
+        }
+        NtClose(hParent);
+    }
+    else
+    {
+        /*
+         * Wait for the process to terminate.
+         */
+        for (;;)
+        {
+            rcNt = NtWaitForSingleObject(hProcWait, TRUE /*Alertable*/, NULL /*pTimeout*/);
+            if (   rcNt == STATUS_WAIT_0
+                || rcNt == STATUS_ABANDONED_WAIT_0)
+                break;
+            if (   rcNt != STATUS_TIMEOUT
+                && rcNt != STATUS_USER_APC
+                && rcNt != STATUS_ALERTED)
+                supR3HardenedFatal("NtWaitForSingleObject returned %#x\n", rcNt);
+        }
+    }
+
+    /*
+     * Proxy the termination code of the child, if it exited already.
+     */
+    rcNt = NtQueryInformationProcess(hProcWait, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+    if (   !NT_SUCCESS(rcNt)
+        || BasicInfo.ExitStatus == STATUS_PENDING)
+        BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
 
     NtClose(hProcWait);
-    suplibHardenedExit((RTEXITCODE)dwExit);
+    suplibHardenedExit((RTEXITCODE)BasicInfo.ExitStatus);
 }
 
 
@@ -2586,16 +2652,17 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
  * arguments suitable for passing to main().
  *
  * @returns Pointer to the argument array.
- * @param   pwszCmdLine         The UTF-16 windows command line to parse.
+ * @param   pawcCmdLine         The UTF-16 windows command line to parse.
+ * @param   cwcCmdLine          The length of the command line.
  * @param   pcArgs              Where to return the number of arguments.
  */
-static char **suplibCommandLineToArgvWStub(PCRTUTF16 pwszCmdLine, int *pcArgs)
+static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdLine, int *pcArgs)
 {
     /*
      * Convert the command line string to UTF-8.
      */
-    char *pszCmdLine;
-    SUPR3HARDENED_ASSERT(RT_SUCCESS(RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine)));
+    char *pszCmdLine = NULL;
+    SUPR3HARDENED_ASSERT(RT_SUCCESS(RTUtf16ToUtf8Ex(pawcCmdLine, cwcCmdLine, &pszCmdLine, 0, NULL)));
 
     /*
      * Parse the command line, carving argument strings out of it.
@@ -2724,8 +2791,9 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     /*
      * Convert the arguments to UTF-8 and call the C/C++ main function.
      */
-    int    cArgs;
-    char **papszArgs = suplibCommandLineToArgvWStub(GetCommandLineW(), &cArgs);
+    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
+    int             cArgs;
+    char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
 
     rcExit = (RTEXITCODE)main(cArgs, papszArgs, NULL);
 

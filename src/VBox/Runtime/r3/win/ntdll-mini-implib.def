@@ -44,6 +44,7 @@ EXPORTS
     NtOpenDirectoryObject                 ;;= _NtOpenDirectoryObject@12
     NtOpenProcess                         ;;= _NtOpenProcess@16
     NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
+    NtOpenThread                          ;;= _NtOpenThread@16
     NtOpenThreadToken                     ;;= _NtOpenThreadToken@16
     NtProtectVirtualMemory                ;;= _NtProtectVirtualMemory@20
     NtQueryDirectoryFile                  ;;= _NtQueryDirectoryFile@44
@@ -72,6 +73,7 @@ EXPORTS
     NtTerminateThread                     ;;= _NtTerminateThread@8
     NtUnmapViewOfSection                  ;;= _NtUnmapViewOfSection@8
     NtWaitForSingleObject                 ;;= _NtWaitForSingleObject@12
+    NtWaitForMultipleObjects              ;;= _NtWaitForMultipleObjects@20
     NtWriteFile                           ;;= _NtWriteFile@36
     NtWriteVirtualMemory                  ;;= _NtWriteVirtualMemory@20
     NtYieldExecution                      ;;= _NtYieldExecution@0

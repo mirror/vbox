@@ -39,7 +39,7 @@
 # include <sys/syslimits.h>
 
 #elif defined(RT_OS_WINDOWS)
-# include <Windows.h>
+# include <iprt/nt/nt-and-windows.h>
 # ifndef IN_SUP_HARDENED_R3
 #  include <stdio.h>
 # endif
@@ -780,7 +780,7 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
         rc = VERR_NOT_SAME_DEVICE;
 #if defined(RT_OS_WINDOWS)
         LPSTR pszIgnored;
-        char szName2[RTPATH_MAX];
+        char szName2[RTPATH_MAX]; /** @todo Must use UTF-16 here! Code is mixing UTF-8 and native. */
         if (    GetFullPathName(szName, RT_ELEMENTS(szName2), &szName2[0], &pszIgnored)
             &&  GetFullPathName(pszFilename, RT_ELEMENTS(szName), &szName[0], &pszIgnored))
             if (!SUP_COMP_FILENAME(szName2, szName))
@@ -1712,9 +1712,13 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
         else
             rc = RTErrInfoSetF(pErrInfo, rc, "Error converting '%s' to UTF-16: %Rrc", pszFilename, rc);
     }
-    else if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hNativeFile, GetCurrentProcess(), &hVerify,
-                              GENERIC_READ, false /*bInheritHandle*/, 0 /*dwOptions*/))
-        hVerify = INVALID_HANDLE_VALUE;
+    else
+    {
+        NTSTATUS rcNt = NtDuplicateObject(NtCurrentProcess(), (HANDLE)hNativeFile, NtCurrentProcess(), &hVerify,
+                                          GENERIC_READ, 0 /*HandleAttributes*/, 0 /*Options*/);
+        if (!NT_SUCCESS(rcNt))
+            hVerify = INVALID_HANDLE_VALUE;
+    }
     if (hVerify != INVALID_HANDLE_VALUE)
     {
 # ifdef VBOX_WITH_HARDENING

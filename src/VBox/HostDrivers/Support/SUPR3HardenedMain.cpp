@@ -37,7 +37,7 @@
 # include <unistd.h>
 
 #elif RT_OS_WINDOWS
-# include <Windows.h>
+# include <iprt/nt/nt-and-windows.h>
 
 #else /* UNIXes */
 # include <iprt/types.h> /* stdint fun on darwin. */
@@ -229,8 +229,13 @@ DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit)
 static void suplibHardenedPrintStrN(const char *pch, size_t cch)
 {
 #ifdef RT_OS_WINDOWS
-    DWORD cbWrittenIgn;
-    WriteFile(GetStdHandle(STD_ERROR_HANDLE), pch, (DWORD)cch, &cbWrittenIgn, NULL);
+    HANDLE hStdOut = NtCurrentPeb()->ProcessParameters->StandardOutput;
+    if (hStdOut != NULL)
+    {
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NtWriteFile(hStdOut, NULL /*Event*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                    &Ios, (PVOID)pch, cch, NULL /*ByteOffset*/, NULL /*Key*/);
+    }
 #else
     (void)write(2, pch, cch);
 #endif
