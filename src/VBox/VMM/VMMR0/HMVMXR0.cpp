@@ -2455,13 +2455,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 #endif
     }
 
-    /* If we're using virtual NMIs, we need the NMI-window exiting feature. */
-    if (   (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
-        && (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT))
-    {
-        val |= VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT;
-    }
-
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
     if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
         val |= VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL;
@@ -3503,8 +3496,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /*
-     * Instructions like STI and MOV SS inhibit interrupts till the next instruction completes. Check if we should
-     * inhibit interrupts or clear any existing interrupt-inhibition.
+     * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
      */
     uint32_t uIntrState = 0;
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
@@ -6144,6 +6136,8 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
                 Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             }
+            else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
             if (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)
             {
