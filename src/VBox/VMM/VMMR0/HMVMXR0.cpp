@@ -7539,8 +7539,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             bool const fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
-            if (fBlockInt)
-                return VERR_VMX_IPE_4;
+            Assert(!fBlockInt);
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
         }
@@ -8491,7 +8490,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        //Assert(rc == VINF_EM_RESET);
+        Assert(rc == VINF_EM_RESET);
         return rc;
     }
 
