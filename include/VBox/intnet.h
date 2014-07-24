@@ -560,7 +560,7 @@ typedef struct INTNETTRUNKSWPORT
      */
     DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
-#if VBOX_WITH_INTNET_DISCONNECT
+#ifdef VBOX_WITH_INTNET_DISCONNECT
     /**
      * Reports premature destruction of NetFlt instance by OS.
      *
