@@ -1463,6 +1463,32 @@ static PRTUTF16 supR3HardenedWinConstructCmdLine(PUNICODE_STRING pString, int iW
 }
 
 
+/**
+ * Check if the zero terminated NT unicode string is the path to the given
+ * system32 DLL.
+ *
+ * @returns true if it is, false if not.
+ * @param   pUniStr             The zero terminated NT unicode string path.
+ * @param   pszName             The name of the system32 DLL.
+ */
+static bool supR3HardNtIsNamedSystem32Dll(PUNICODE_STRING pUniStr, const char *pszName)
+{
+    if (pUniStr->Length > g_System32NtPath.UniStr.Length)
+    {
+        if (memcmp(pUniStr->Buffer, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length) == 0)
+        {
+            if (pUniStr->Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR)] == '\\')
+            {
+                if (RTUtf16ICmpAscii(&pUniStr->Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR) + 1], pszName) == 0)
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 
 /*
  * Child-Process Purification - release it from dubious influences. 
@@ -1839,19 +1865,42 @@ static int supR3HardNtPuChSanitizeImage(PSUPR3HARDNTPUCH pThis, PMEMORY_BASIC_IN
             rcNt = NtReadVirtualMemory(pThis->hProcess, pMemInfo->BaseAddress, abProc, sizeof(abProc), &cbActualMem);
             if (NT_SUCCESS(rcNt))
             {
-                PIMAGE_NT_HEADERS pNtProc = (PIMAGE_NT_HEADERS)&abProc[(uint8_t *)pNtFile - &abFile[0]];
-                pNtFile->OptionalHeader.ImageBase = pNtProc->OptionalHeader.ImageBase;
+                /*
+                 * Watch out for apisetschema.dll, it only has section #1
+                 * mapped into the process.
+                 */
+                if (   g_uNtVerCombined < SUP_NT_VER_W70
+                    || pThis->Peb.Diff3.W7.ApiSetMap != pMemInfo->BaseAddress
+                    || !supR3HardNtIsNamedSystem32Dll(&uBuf.UniStr, "apisetschema.dll"))
+                {
+                    PIMAGE_NT_HEADERS pNtProc = supR3HardNtPuChFindNtHeaders(abProc, sizeof(abProc));
+                    if ((uintptr_t)pNtProc - (uintptr_t)abProc == (uintptr_t)pNtFile - (uintptr_t)abFile)
+                    {
+                        pNtFile->OptionalHeader.ImageBase = pNtProc->OptionalHeader.ImageBase;
 
-                size_t cbCompare = RT_MIN(pNtFile->OptionalHeader.SizeOfHeaders, sizeof(abProc));
-                if (cbCompare < sizeof(abFile))
-                    RT_BZERO(&abFile[cbCompare], sizeof(abFile) - cbCompare);
-                if (!memcmp(abFile, abProc, cbCompare))
-                    rc = VINF_SUCCESS;
+                        size_t cbCompare = RT_MIN(pNtFile->OptionalHeader.SizeOfHeaders, sizeof(abProc));
+                        if (cbCompare < sizeof(abFile))
+                            RT_BZERO(&abFile[cbCompare], sizeof(abFile) - cbCompare);
+                        if (!memcmp(abFile, abProc, cbCompare))
+                            rc = VINF_SUCCESS;
+                        else
+                        {
+                            SUP_DPRINTF(("supR3HardNtPuChSanitizeImage: Header diff @%#x in ('%ls')\n",
+                                         supR3HardNtPuChFindFirstDiff(abFile, abProc, sizeof(abProc)), uBuf.UniStr.Buffer));
+                            rc = supR3HardNtPuChRestoreImageBits(pThis, pMemInfo->BaseAddress, abFile, cbCompare, PAGE_READONLY);
+                        }
+                    }
+                    else
+                        rc = RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
+                                           "PE header offset differs between file and memory: offProc=%p offFile=%p '%ls'\n",
+                                           (uintptr_t)pNtProc - (uintptr_t)abProc, (uintptr_t)pNtFile - (uintptr_t)abFile,
+                                           uBuf.UniStr.Buffer);
+                }
                 else
                 {
-                    SUP_DPRINTF(("supR3HardNtPuChSanitizeImage: Header diff @%#x in ('%ls')\n",
-                                 supR3HardNtPuChFindFirstDiff(abFile, abProc, sizeof(abProc)), uBuf.UniStr.Buffer));
-                    rc = supR3HardNtPuChRestoreImageBits(pThis, pMemInfo->BaseAddress, abFile, cbCompare, PAGE_READONLY);
+                    /*
+                     * Validate the API set map.
+                     */
                 }
             }
             else
@@ -2035,18 +2084,12 @@ static void supR3HardNtPuChFindNtdll(PSUPR3HARDNTPUCH pThis)
                 if (NT_SUCCESS(rcNt))
                 {
                     uBuf.UniStr.Buffer[uBuf.UniStr.Length / sizeof(WCHAR)] = '\0';
-                    if (   uBuf.UniStr.Length > g_System32NtPath.UniStr.Length
-                        && memcmp(uBuf.UniStr.Buffer, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length) == 0
-                        && uBuf.UniStr.Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR)] == '\\')
+                    if (supR3HardNtIsNamedSystem32Dll(&uBuf.UniStr, "ntdll.dll"))
                     {
-                        if (RTUtf16ICmpAscii(&uBuf.UniStr.Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR) + 1],
-                                             "ntdll.dll") == 0)
-                        {
-                            pThis->uNtDllAddr = (uintptr_t)MemInfo.AllocationBase;
-                            SUP_DPRINTF(("supR3HardNtPuChFindNtdll: uNtDllParentAddr=%p uNtDllChildAddr=%p\n",
-                                         pThis->uNtDllParentAddr, pThis->uNtDllAddr));
-                            return;
-                        }
+                        pThis->uNtDllAddr = (uintptr_t)MemInfo.AllocationBase;
+                        SUP_DPRINTF(("supR3HardNtPuChFindNtdll: uNtDllParentAddr=%p uNtDllChildAddr=%p\n",
+                                     pThis->uNtDllParentAddr, pThis->uNtDllAddr));
+                        return;
                     }
                 }
             }
@@ -2402,7 +2445,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
         BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
 
     NtClose(hProcWait);
-    SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): Quitting: ExitCode=%#x rcNt=%#x\n", BasicInfo.ExitStatus, rcNt));
+    SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): Quitting: ExitCode=%#x rcNt=%#x\n", iWhich, BasicInfo.ExitStatus, rcNt));
     suplibHardenedExit((RTEXITCODE)BasicInfo.ExitStatus);
 }
 
