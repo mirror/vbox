@@ -6836,7 +6836,7 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @param   pVCpu           Pointer to the VMCPU.
  */
-static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
+static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 {
     Assert(TRPMHasTrap(pVCpu));
     Assert(!pVCpu->hm.s.Event.fPending);
@@ -6880,17 +6880,7 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
         }
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
-    {
-#ifdef VBOX_STRICT
-        uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
-        if (!(uEFlags & X86_EFL_IF))
-        {
-            Log4(("hmR0VmxTrpmTrapToPendingEvent: TRPM injecting an external interrupt when interrupts are disabled!?!"));
-            return VERR_VMX_IPE_5;
-        }
-#endif
         u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     else
@@ -6903,7 +6893,6 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, uErrCode, GCPtrFaultAddress);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
-    return VINF_SUCCESS;
 }
 
 
@@ -8471,15 +8460,11 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 #endif /* !IEM_VERIFICATION_MODE_FULL */
 
     /*
-     * Evaluate events as pending-for-injection into the guest. Toggling of force-flags here is safe as long as
-     * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore the force-flags.
+     * Evaluate events as pending-for-injection into the guest. Toggling of interrupt force-flags here is safe as long as
+     * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore those force-flags.
      */
     if (TRPMHasTrap(pVCpu))
-    {
-        rc = hmR0VmxTrpmTrapToPendingEvent(pVCpu);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+        hmR0VmxTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
         hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
