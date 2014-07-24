@@ -7332,7 +7332,13 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     Utf8Str strSupStartLogArg("--sup-startup-log=");
     {
         Utf8Str strStartupLogFile = i_getStartupLogFilename();
-        RTFileDelete(strStartupLogFile.c_str());
+        int vrc2 = RTFileDelete(strStartupLogFile.c_str());
+        if (vrc2 == VERR_PATH_NOT_FOUND || vrc2 == VERR_FILE_NOT_FOUND)
+        {
+            Utf8Str strStartupLogDir = strStartupLogFile;
+            strStartupLogDir.stripFilename();
+            RTDirCreateFullPath(strStartupLogDir.c_str(), 0755); /** @todo add a variant for creating the path to a file without stripping the file. */
+        }
         strSupStartLogArg.append(strStartupLogFile);
     }
     const char *pszSupStartupLogArg = strSupStartLogArg.c_str();
@@ -7654,15 +7660,15 @@ bool Machine::i_checkForSpawnFailure()
 
         if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_NORMAL)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated unexpectedly during startup with exit code %d%s"),
-                          i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
+                          tr("The virtual machine '%s' has terminated unexpectedly during startup with exit code %d (%#x)%s"),
+                          i_getName().c_str(), status.iStatus, status.iStatus, strExtraInfo.c_str());
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_SIGNAL)
             rc = setError(E_FAIL,
                           tr("The virtual machine '%s' has terminated unexpectedly during startup because of signal %d%s"),
                           i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_ABEND)
             rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated abnormally"),
+                          tr("The virtual machine '%s' has terminated abnormally (iStatus=%#x)%s"),
                           i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else
             rc = setError(E_FAIL,
