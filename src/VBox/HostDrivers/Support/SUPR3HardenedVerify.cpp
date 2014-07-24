@@ -91,7 +91,7 @@
 
 /** Compare table file names with externally supplied names. */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-# define SUP_COMP_FILENAME  suplibHardenedStrICmp
+# define SUP_COMP_FILENAME  RTStrICmp
 #else
 # define SUP_COMP_FILENAME  suplibHardenedStrCmp
 #endif

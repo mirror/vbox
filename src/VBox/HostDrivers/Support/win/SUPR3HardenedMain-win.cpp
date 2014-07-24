@@ -851,7 +851,7 @@ static void *supR3HardenedWinAllocHookMemory(uintptr_t uStart, uintptr_t uEnd, i
 {
     size_t const cbAllocGranularity    = _64K;
     size_t const uAllocGranularityMask = ~(cbAllocGranularity - 1);
-    HANDLE const hProc                 = GetCurrentProcess();
+    HANDLE const hProc                 = NtCurrentProcess();
 
     /*
      * Make uEnd the last valid return address.
@@ -888,8 +888,12 @@ static void *supR3HardenedWinAllocHookMemory(uintptr_t uStart, uintptr_t uEnd, i
             for (;;)
             {
                 SUPR3HARDENED_ASSERT((uintptr_t)MemInfo.BaseAddress <= uCur);
-                void *pvMem = VirtualAllocEx(hProc, (void *)uCur, cbAlloc, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-                if (pvMem)
+
+                PVOID    pvMem = (PVOID)uCur;
+                SIZE_T   cbMem = cbAlloc;
+                NTSTATUS rcNt = NtAllocateVirtualMemory(hProc, &pvMem, 0 /*ZeroBits*/, &cbAlloc,
+                                                        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+                if (NT_SUCCESS(rcNt))
                 {
                     if (  iDirection > 0
                         ?    (uintptr_t)pvMem >= uStart
@@ -897,7 +901,7 @@ static void *supR3HardenedWinAllocHookMemory(uintptr_t uStart, uintptr_t uEnd, i
                         :    (uintptr_t)pvMem >= uEnd
                           && (uintptr_t)pvMem <= uStart)
                         return pvMem;
-                    VirtualFreeEx(hProc, pvMem, cbAlloc, MEM_RELEASE);
+                    NtFreeVirtualMemory(hProc, &pvMem, &cbMem, MEM_RELEASE);
                 }
 
                 /* Advance within the free area and try again? */
@@ -2270,7 +2274,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     {
         /* This is unacceptable, kill the process. */
         DWORD dwErr = GetLastError();
-        TerminateProcess(hProcess, RTEXITCODE_FAILURE);
+        NtTerminateProcess(hProcess, RTEXITCODE_FAILURE);
         supR3HardenedError(dwErr, false /*fFatal*/, "DuplicateHandle failed on child process handle: %u\n", dwErr);
 
         DWORD dwExit;
@@ -2590,15 +2594,8 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pwszCmdLine, int *pcArgs)
     /*
      * Convert the command line string to UTF-8.
      */
-    int   cbNeeded = WideCharToMultiByte(CP_UTF8, 0 /*dwFlags*/, pwszCmdLine, -1, NULL /*pszDst*/, 0 /*cbDst*/,
-                                         NULL /*pchDefChar*/, NULL /* pfUsedDefChar */);
-    SUPR3HARDENED_ASSERT(cbNeeded > 0);
-    int   cbAllocated = cbNeeded + 16;
-    char *pszCmdLine = (char *)suplibHardenedAllocZ(cbAllocated);
-
-    SUPR3HARDENED_ASSERT(WideCharToMultiByte(CP_UTF8, 0 /*dwFlags*/, pwszCmdLine, -1,
-                                             pszCmdLine, cbAllocated - 1,
-                                             NULL /*pchDefChar*/, NULL /* pfUsedDefChar */) == cbNeeded);
+    char *pszCmdLine;
+    SUPR3HARDENED_ASSERT(RT_SUCCESS(RTUtf16ToUtf8(pwszCmdLine, &pszCmdLine)));
 
     /*
      * Parse the command line, carving argument strings out of it.

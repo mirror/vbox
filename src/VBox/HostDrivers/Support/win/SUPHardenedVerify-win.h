@@ -127,7 +127,6 @@ extern uint32_t         g_uNtVerCombined;
 #  define suplibHardenedStrCat       strcat
 #  define suplibHardenedStrCmp       strcmp
 #  define suplibHardenedStrNCmp      strncmp
-#  define suplibHardenedStrICmp      stricmp
 # else   /* IN_SUP_HARDENED_R3 */
 #  include <iprt/mem.h>
 #if 0
@@ -139,7 +138,6 @@ extern uint32_t         g_uNtVerCombined;
 #  define strcat                     suplibHardenedStrCat
 #  define strcmp                     suplibHardenedStrCmp
 #  define strncmp                    suplibHardenedStrNCmp
-#  define stricmp                    suplibHardenedStrICmp
 #endif
 DECLHIDDEN(void *)  suplibHardenedAllocZ(size_t cb);
 DECLHIDDEN(void *)  suplibHardenedReAlloc(void *pvOld, size_t cbNew);
