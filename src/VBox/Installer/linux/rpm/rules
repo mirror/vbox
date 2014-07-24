@@ -70,7 +70,7 @@ NOWEBSVC ?= $(ose)
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(MAKECMDGOALS),clean)
- rpmrel   := $(subst rhel,el,$(shell cat /etc/distname))
+ rpmrel   := $(subst ol,el,$(subst rhel,el,$(shell cat /etc/distname)))
  ifeq ($(rpmrel),)
  # look for fedora
   rpmrel  := $(shell cat /etc/fedora-release | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
@@ -84,7 +84,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(error Cannot detect package distribution (rpmrel=$(rpmrel)))
  endif
 
- ifeq ($(filter-out el5 el6 ol5 ol6 centos5 centos6 fedora15 fedora16 fedora17 fedora18,$(rpmrel)),)
+ ifeq ($(filter-out el5 el6 ol5 ol6 el7 centos5 centos6 fedora15 fedora16 fedora17 fedora18,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
  ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 sles10.1 sles11.0,$(rpmrel)),)
