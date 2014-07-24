@@ -362,6 +362,8 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  endif
 endif
 
+SUPR3HardenedMain.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+
 
 #
 # VBoxSupLib - Windows DLL for catching thread creation and termination.

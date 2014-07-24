@@ -997,6 +997,8 @@ static int supHardNtVpAddRegion(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PME
  */
 static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
 {
+    SUP_DPRINTF(("supHardNtVpScanVirtualMemory:\n"));
+
     uint32_t    cXpExceptions = 0;
     uintptr_t   cbAdvance = 0;
     uintptr_t   uPtrWhere = 0;
@@ -1036,6 +1038,11 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                 return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NT_QI_VIRTUAL_MEMORY_NM_ERROR,
                                            "NtQueryVirtualMemory/MemorySectionName failed for %p: %#x", uPtrWhere, rcNt);
             pThis->aImages[iImg].Name.UniStr.Buffer[pThis->aImages[iImg].Name.UniStr.Length / sizeof(WCHAR)] = '\0';
+            SUP_DPRINTF((MemInfo.AllocationBase == MemInfo.BaseAddress
+                         ? " *%p-%p %#06x/%#06x %#09x  %ls\n"
+                         : "  %p-%p %#06x/%#06x %#09x  %ls\n",
+                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1, MemInfo.Protect,
+                         MemInfo.AllocationProtect, MemInfo.Type, pThis->aImages[iImg].Name.UniStr.Buffer));
 
             /* New or existing image? */
             bool fNew = true;
@@ -1081,7 +1088,12 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                  && (uintptr_t)MemInfo.BaseAddress >= UINT32_C(0x78000000)
                  /* && MemInfo.BaseAddress == pPeb->ReadOnlySharedMemoryBase */
                  && g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 0) )
+        {
             cXpExceptions++;
+            SUP_DPRINTF(("  %p-%p %#06x/%#06x %#09x  XP CSRSS read-only region\n", MemInfo.BaseAddress,
+                         (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1, MemInfo.Protect,
+                         MemInfo.AllocationProtect, MemInfo.Type));
+        }
         /*
          * Executable memory?
          */
@@ -1105,6 +1117,12 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
 # endif
         }
 #endif
+        else
+            SUP_DPRINTF((MemInfo.AllocationBase == MemInfo.BaseAddress
+                         ? " *%p-%p %#06x/%#06x %#09x\n"
+                         : "  %p-%p %#06x/%#06x %#09x\n",
+                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1,
+                         MemInfo.Protect, MemInfo.AllocationProtect, MemInfo.Type));
 
         /*
          * Advance.
