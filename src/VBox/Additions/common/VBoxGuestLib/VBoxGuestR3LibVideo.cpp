@@ -28,15 +28,17 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "VBGLR3Internal.h"
+
+#include <VBox/log.h>
+#include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
 #include <iprt/assert.h>
 #ifndef VBOX_VBGLR3_XFREE86
 # include <iprt/mem.h>
 #endif
 #include <iprt/string.h>
-#include <VBox/log.h>
-#include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
 
-#include "VBGLR3Internal.h"
+#include <stdio.h>
 
 #ifdef VBOX_VBGLR3_XFREE86
 /* Rather than try to resolve all the header file conflicts, I will just
@@ -275,15 +277,20 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
 }
 
 /**
- * Save video mode parameters to the registry.
+ * Save video mode parameters to the guest property store.
  *
  * @returns iprt status value
- * @param   pszName the name to save the mode parameters under
- * @param   cx      mode width
- * @param   cy      mode height
- * @param   cBits   bits per pixel for the mode
+ * @param   cScreen   virtual screen number
+ * @param   cx        mode width
+ * @param   cy        mode height
+ * @param   cBits     bits per pixel for the mode
+ * @param   x         virtual screen X offset
+ * @param   y         virtual screen Y offset
+ * @param   fEnabled  is this virtual screen enabled?
  */
-VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
+VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
+                                    unsigned cBits, unsigned x, unsigned y,
+                                    bool fEnabled)
 {
 #if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
@@ -291,13 +298,26 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
     char szModeName[MAX_NAME_LEN];
     char szModeParms[MAX_VALUE_LEN];
     uint32_t u32ClientId = 0;
-    RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
-    RTStrPrintf(szModeParms, sizeof(szModeParms), "%dx%dx%d", cx, cy, cBits);
+    unsigned cx2, cy2, cBits2, x2, y2;
+    bool fEnabled2;
+
+    RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
+    RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy,
+                cBits, x, y, (unsigned) fEnabled);
     int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3RetrieveVideoMode(cScreen, &cx2, &cy2, &cBits2, &x2, &y2,
+                                     &fEnabled2);
+        if (   RT_SUCCESS(rc)
+            && (   cx != cx2 || cy != cy2 || cBits != cBits2
+                || x != x2 || y != y2 || fEnabled != fEnabled2))
+            rc = VERR_WRITE_ERROR;
+    }
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_IMPLEMENTED;
@@ -309,12 +329,19 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
  * Retrieve video mode parameters from the guest property store.
  *
  * @returns iprt status value
- * @param   pszName the name under which the mode parameters are saved
- * @param   pcx     where to store the mode width
- * @param   pcy     where to store the mode height
- * @param   pcBits  where to store the bits per pixel for the mode
+ * @param   cScreen    the virtual screen number
+ * @param   pcx        where to store the mode width
+ * @param   pcy        where to store the mode height
+ * @param   pcBits     where to store the bits per pixel for the mode
+ * @param   px         where to store the virtual screen X offset
+ * @param   py         where to store the virtual screen Y offset
+ * @param   pfEnabled  where to store whether this virtual screen is enabled
  */
-VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
+VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
+                                        unsigned *pcx, unsigned *pcy,
+                                        unsigned *pcBits,
+                                        unsigned *px, unsigned *py,
+                                        bool *pfEnabled)
 {
 #if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
@@ -325,56 +352,49 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
  */
     /* The buffer for VbglR3GuestPropReadValue.  If this is too small then
      * something is wrong with the data stored in the property. */
+    char szModeName[MAX_NAME_LEN];
     char szModeParms[1024];
     uint32_t u32ClientId = 0;
-    uint32_t cx, cy, cBits;
+    int cMatches;
+    unsigned cx, cy, cBits, x, y, fEnabled;
 
+    /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
+    RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
     int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
-    {
-        char szModeName[MAX_NAME_LEN];
-        RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
-        /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
         rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
                                       sizeof(szModeParms), NULL);
-    }
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
 
 /*
  * Now we convert the string returned to numeric values.
  */
-    char *pszNext;
-    if (RT_SUCCESS(rc))
-        /* Extract the width from the string */
-        rc = RTStrToUInt32Ex(szModeParms, &pszNext, 10, &cx);
-    if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
+    cMatches = sscanf(szModeParms, "%ux%ux%u,%ux%u,%u\n", &cx, &cy, &cBits, &x,
+                      &y, &fEnabled);
+    if (cMatches == 6)
+        rc = VINF_SUCCESS;
+    else if (cMatches < 0)
+        rc = VERR_READ_ERROR;
+    else
         rc = VERR_PARSE_ERROR;
-    if (RT_SUCCESS(rc))
-    {
-        /* Extract the height from the string */
-        ++pszNext;
-        rc = RTStrToUInt32Ex(pszNext, &pszNext, 10, &cy);
-    }
-    if ((rc != VWRN_TRAILING_CHARS) || (*pszNext != 'x'))
-        rc = VERR_PARSE_ERROR;
-    if (RT_SUCCESS(rc))
-    {
-        /* Extract the bpp from the string */
-        ++pszNext;
-        rc = RTStrToUInt32Full(pszNext, 10, &cBits);
-    }
-    if (rc != VINF_SUCCESS)
-        rc = VERR_PARSE_ERROR;
-
 /*
  * And clean up and return the values if we successfully obtained them.
  */
-    if (u32ClientId != 0)
-        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     if (RT_SUCCESS(rc))
     {
-        *pcx = cx;
-        *pcy = cy;
-        *pcBits = cBits;
+        if (pcx)
+            *pcx = cx;
+        if (pcy)
+            *pcy = cy;
+        if (pcBits)
+            *pcBits = cBits;
+        if (px)
+            *px = x;
+        if (py)
+            *py = y;
+        if (pfEnabled)
+            *pfEnabled = RT_BOOL(fEnabled);
     }
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */

@@ -108,6 +108,10 @@ DECLINLINE(void) VbglHGCMParmPtrSetString(HGCMFunctionParameter *pParm, const ch
 
 #endif /* ___iprt_string_h */
 
+#ifdef VBOX_VBGLR3_XFREE86
+# undef strlen
+#endif /* VBOX_VBGLR3_XFREE86 */
+
 RT_C_DECLS_END
 
 #endif

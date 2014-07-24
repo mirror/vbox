@@ -38,6 +38,25 @@
 
 #include "VBoxClient.h"
 
+/** State information we need for interacting with the X server. */
+struct x11State
+{
+    /** The connection to the server. */
+    Display *pDisplay;
+    /** Can we use version 1.2 or later of the RandR protocol here? */
+    bool fHaveRandR12;
+    /** The command argument to use for the xrandr binary.  Currently only
+     * used to support the non-standard location on some Solaris systems -
+     * would it make sense to use absolute paths on all systems? */
+    const char *pcszXrandr;
+    /** The size of our array of size hints. */
+    unsigned cSizeHints;
+    /** Array of size hints.  Large enough to hold the highest display
+     * number we have had a hint for so far, reallocated when a higher one
+     * comes.  Zero means no hint for that display. */
+    long *paSizeHints;
+};
+
 /** Exit with a fatal error.
  * @todo Make this application global. */
 #define FatalError(format) \
@@ -79,7 +98,7 @@ static int disableEventsAndCaps()
 
 /** Tell the VBoxGuest driver which events we want and tell the host which
  * capabilities we support. */
-static int enableEventsAndCaps(Display *pDisplay)
+static int enableEventsAndCaps()
 {
     int rc = VbglR3CtlFilterMask(  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
                                  | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
@@ -94,6 +113,102 @@ static int enableEventsAndCaps(Display *pDisplay)
     return VINF_SUCCESS;
 }
 
+static int initX11(struct x11State *pState)
+{
+    char szCommand[256];
+    int status;
+
+    pState->pDisplay = XOpenDisplay(NULL);
+    if (!pState->pDisplay)
+        return VERR_NOT_FOUND;
+    pState->fHaveRandR12 = false;
+    pState->pcszXrandr = "xrandr";
+    if (RTFileExists("/usr/X11/bin/xrandr"))
+        pState->pcszXrandr = "/usr/X11/bin/xrandr";
+    status = system(pState->pcszXrandr);
+    if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
+        FatalError(("Failed to execute the xrandr utility.\n"));
+    RTStrPrintf(szCommand, sizeof(szCommand), "%s --q12", pState->pcszXrandr);
+    status = system(szCommand);
+    if (WEXITSTATUS(status) == 0)
+        pState->fHaveRandR12 = true;
+    pState->cSizeHints = 0;
+    pState->paSizeHints = NULL;
+    return VINF_SUCCESS;
+}
+
+static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
+                       unsigned cBPP, unsigned iDisplay, unsigned x,
+                       unsigned y, bool fEnabled, bool fSetPosition)
+{
+    char szCommand[256];
+    int status;
+    uint32_t i;
+
+    if (iDisplay >= pState->cSizeHints)
+    {
+        pState->paSizeHints = (long *)RTMemRealloc(pState->paSizeHints,
+                                                  (iDisplay + 1)
+                                                * sizeof(*pState->paSizeHints));
+        if (!pState->paSizeHints)
+            FatalError(("Failed to re-allocate size hint memory.\n"));
+        for (i = pState->cSizeHints; i < iDisplay + 1; ++i)
+            pState->paSizeHints[i] = 0;
+        pState->cSizeHints = iDisplay + 1;
+    }
+    if ((!fSetPosition || fEnabled) && cx != 0 && cy != 0)
+    {
+        pState->paSizeHints[iDisplay] = (cx & 0xffff) << 16 | (cy & 0xffff);
+        XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
+                        XInternAtom(pState->pDisplay, "VBOX_SIZE_HINTS", 0),
+                        XA_INTEGER, 32, PropModeReplace,
+                        (unsigned char *)pState->paSizeHints,
+                        pState->cSizeHints);
+        XFlush(pState->pDisplay);
+    }
+    if (!pState->fHaveRandR12)
+    {
+        RTStrPrintf(szCommand, sizeof(szCommand),
+                    "%s -s %ux%u", pState->pcszXrandr, cx, cy);
+        status = system(szCommand);
+        if (WEXITSTATUS(status) != 0)
+            FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+    }
+    else
+    {
+        if (fSetPosition && fEnabled)
+        {
+            /* Extended Display support possible . Secondary monitor
+             * position supported */
+            RTStrPrintf(szCommand, sizeof(szCommand),
+                        "%s --output VGA-%u --auto --pos %ux%u",
+                        pState->pcszXrandr, iDisplay, x, y);
+            status = system(szCommand);
+            if (WEXITSTATUS(status) != 0)
+                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+        }
+        if ((!fSetPosition || fEnabled) && cx != 0 && cy != 0)
+        {
+            RTStrPrintf(szCommand, sizeof(szCommand),
+                        "%s --output VGA-%u --preferred",
+                        pState->pcszXrandr, iDisplay);
+            status = system(szCommand);
+            if (WEXITSTATUS(status) != 0)
+                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+        }
+        if (!fEnabled)
+        {
+            /* disable the virtual monitor */
+            RTStrPrintf(szCommand, sizeof(szCommand),
+                        "%s --output VGA-%u --off",
+                         pState->pcszXrandr, iDisplay);
+            status = system(szCommand);
+            if (WEXITSTATUS(status) != 0)
+                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+        }
+    }
+}
+
 /**
  * Display change request monitor thread function.
  * Before entering the loop, we re-read the last request
@@ -101,33 +216,29 @@ static int enableEventsAndCaps(Display *pDisplay)
  * loop is identical we ignore it, because it is probably
  * stale.
  */
-static void runDisplay(Display *pDisplay)
+static void runDisplay(struct x11State *pState)
 {
-    int status, rc;
+    int status, rc, i;
     char szCommand[256];
-    Cursor hClockCursor = XCreateFontCursor(pDisplay, XC_watch);
-    Cursor hArrowCursor = XCreateFontCursor(pDisplay, XC_left_ptr);
+    Cursor hClockCursor = XCreateFontCursor(pState->pDisplay, XC_watch);
+    Cursor hArrowCursor = XCreateFontCursor(pState->pDisplay, XC_left_ptr);
+
     LogRelFlowFunc(("\n"));
-    bool fExtDispReqSupport = true, fHaveRandR12 = false;
-    const char *pcszXrandr = "xrandr";
-    if (RTFileExists("/usr/X11/bin/xrandr"))
-        pcszXrandr = "/usr/X11/bin/xrandr";
-    status = system(pcszXrandr);
-    if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
-        FatalError(("Failed to execute the xrandr utility.\n"));
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s --q12", pcszXrandr);
-    status = system(szCommand);
-    if (WEXITSTATUS(status) == 0)
-        fHaveRandR12 = true;
+    /** @todo fix this not to use a hard-coded value. */
+    for (i = 0; i < 64; ++i)
+    {
+        unsigned cx = 0, cy = 0, cBPP = 0, x = 0, y = 0;
+        bool fEnabled = true;
+
+        rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
+                                     &fEnabled);
+        if (RT_SUCCESS(rc))
+            setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
+                       true);
+    }
     while (true)
     {
         uint32_t fEvents;
-        /** The size of our array of size hints. */
-        unsigned cSizeHints = 0;
-        /** Array of size hints.  Large enough to hold the highest display
-         * number we have had a hint for so far, reallocated when a higher one
-         * comes.  Zero means no hint for that display. */
-        long *paSizeHints = NULL;
         do
             rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
                                  | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
@@ -139,121 +250,72 @@ static void runDisplay(Display *pDisplay)
         {
             /* Jiggle the mouse pointer to trigger a switch to a software
              * cursor if necessary. */
-            XGrabPointer(pDisplay,
-                         DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
-                         GrabModeAsync, None, hClockCursor, CurrentTime);
-            XFlush(pDisplay);
-            XGrabPointer(pDisplay,
-                         DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
-                         GrabModeAsync, None, hArrowCursor, CurrentTime);
-            XFlush(pDisplay);
-            XUngrabPointer(pDisplay, CurrentTime);
-            XFlush(pDisplay);
+            XGrabPointer(pState->pDisplay,
+                         DefaultRootWindow(pState->pDisplay), true, 0,
+                         GrabModeAsync, GrabModeAsync, None, hClockCursor,
+                         CurrentTime);
+            XFlush(pState->pDisplay);
+            XGrabPointer(pState->pDisplay,
+                         DefaultRootWindow(pState->pDisplay), true, 0,
+                         GrabModeAsync, GrabModeAsync, None, hArrowCursor,
+                         CurrentTime);
+            XFlush(pState->pDisplay);
+            XUngrabPointer(pState->pDisplay, CurrentTime);
+            XFlush(pState->pDisplay);
         }
         /* And if it is a size hint, set the new size. */
         if (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
         {
-            uint32_t cx = 0, cy = 0, cBits = 0, iDisplay = 0, cxOrg = 0,
-                     cyOrg = 0;
-            bool fEnabled = false;
-            if (fExtDispReqSupport)
+            uint32_t cx = 0, cy = 0, cBPP = 0, iDisplay = 0, x = 0, y = 0;
+            bool fEnabled = true, fSetPosition = true;
+            VMMDevSeamlessMode Mode;
+
+            rc = VbglR3GetDisplayChangeRequestEx(&cx, &cy, &cBPP, &iDisplay,
+                                                 &x, &y, &fEnabled,
+                                                 true);
+            /* Extended display version not supported on host */
+            if (RT_FAILURE(rc))
             {
-                int rc2 = VbglR3GetDisplayChangeRequestEx(&cx, &cy, &cBits,
-                                                          &iDisplay, &cxOrg,
-                                                          &cyOrg, &fEnabled,
-                                                          true);
-                /* Extended display version not supported on host */
-                if (RT_FAILURE(rc2))
-                {
-                    if (rc2 != VERR_NOT_IMPLEMENTED)
-                        FatalError(("Failed to get display change request, rc=%Rrc\n",
-                                    rc));
-                    LogRel(("Extended display change request not supported.\n"));
-                    fExtDispReqSupport = false;
-                }
-                else
-                    LogRelFlowFunc(("Got Extended Param from Host cx=%d, cy=%d, bpp=%d, iDisp=%d, OrgX=%d, OrgY=%d Enb=%d\n",
-                                    cx, cy, cBits, iDisplay, cxOrg, cyOrg,
-                                    fEnabled));
+                if (rc != VERR_NOT_IMPLEMENTED)
+                    FatalError(("Failed to get display change request, rc=%Rrc\n",
+                                rc));
+                fSetPosition = false;
+                rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBPP,
+                                                   &iDisplay, true);
+                if (RT_SUCCESS(rc))
+                    LogRelFlowFunc(("Got size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d\n",
+                                    cx, cy, cBPP, iDisplay));
             }
-            if (!fExtDispReqSupport)
-                rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay,
-                                                   true);
+            else
+                LogRelFlowFunc(("Got extended size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d, x=%d, y=%d fEnabled=%d\n",
+                                cx, cy, cBPP, iDisplay, x, y,
+                                fEnabled));
             if (RT_FAILURE(rc))
                 FatalError(("Failed to retrieve size hint, rc=%Rrc\n", rc));
             if (iDisplay > INT32_MAX)
-                FatalError(("Received a hint for too high display number %u\n",
+                FatalError(("Received a size hint for too high display number %u\n",
                             (unsigned) iDisplay));
-            if (iDisplay >= cSizeHints)
+            rc = VbglR3SeamlessGetLastEvent(&Mode);
+            if (RT_FAILURE(rc))
+                FatalError(("Failed to save size hint, rc=%Rrc\n", rc));
+            if (Mode == VMMDev_Seamless_Disabled)
             {
-                uint32_t i;
-
-                paSizeHints = (long *)RTMemRealloc(paSizeHints,
-                                                     (iDisplay + 1)
-                                                   * sizeof(*paSizeHints));
-                if (!paSizeHints)
-                    FatalError(("Failed to re-allocate size hint memory.\n"));
-                for (i = cSizeHints; i < iDisplay + 1; ++i)
-                    paSizeHints[i] = 0;
-                cSizeHints = iDisplay + 1;
+                rc = VbglR3SaveVideoMode(iDisplay, cx, cy, cBPP, x, y,
+                                         fEnabled);
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_HGCM_SERVICE_NOT_FOUND
+                    && rc != VERR_NOT_IMPLEMENTED /* No HGCM */)
+                    FatalError(("Failed to save size hint, rc=%Rrc\n", rc));
             }
-            if ((!fExtDispReqSupport || fEnabled) && cx != 0 && cy != 0)
-            {
-                paSizeHints[iDisplay] = (cx & 0xffff) << 16 | (cy & 0xffff);
-                XChangeProperty(pDisplay, DefaultRootWindow(pDisplay),
-                                XInternAtom(pDisplay, "VBOX_SIZE_HINTS", 0),
-                                XA_INTEGER, 32, PropModeReplace,
-                                (unsigned char *)paSizeHints, cSizeHints);
-                XFlush(pDisplay);
-            }
-            if (!fHaveRandR12)
-            {
-                RTStrPrintf(szCommand, sizeof(szCommand),
-                            "%s -s %ux%u", pcszXrandr, cx, cy);
-                status = system(szCommand);
-                if (WEXITSTATUS(status) != 0)
-                    FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
-            }
-            else
-            {
-                if (fExtDispReqSupport && fEnabled)
-                {
-                    /* Extended Display support possible . Secondary monitor
-                     * position supported */
-                    RTStrPrintf(szCommand, sizeof(szCommand),
-                                "%s --output VGA-%u --auto --pos %dx%d",
-                                pcszXrandr, iDisplay, cxOrg, cyOrg);
-                    status = system(szCommand);
-                    if (WEXITSTATUS(status) != 0)
-                        FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
-                }
-                if ((!fExtDispReqSupport || fEnabled) && cx != 0 && cy != 0)
-                {
-                    RTStrPrintf(szCommand, sizeof(szCommand),
-                                "%s --output VGA-%u --preferred",
-                                pcszXrandr, iDisplay);
-                    status = system(szCommand);
-                    if (WEXITSTATUS(status) != 0)
-                        FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
-                }
-                if (fExtDispReqSupport && !fEnabled)
-                {
-                    /* disable the virtual monitor */
-                    RTStrPrintf(szCommand, sizeof(szCommand),
-                                "%s --output VGA-%u --off",
-                                 pcszXrandr, iDisplay);
-                    status = system(szCommand);
-                    if (WEXITSTATUS(status) != 0)
-                        FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
-                }
-            }
+            setModeX11(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled,
+                       fSetPosition);
         }
     }
 }
 
 class DisplayService : public VBoxClient::Service
 {
-    Display *mDisplay;
+    struct x11State mState;
     bool mfInit;
 public:
     virtual const char *getPidFilePath()
@@ -266,10 +328,10 @@ public:
         
         if (mfInit)
             return VERR_WRONG_ORDER;
-        mDisplay = XOpenDisplay(NULL);
-        if (!mDisplay)
-            return VERR_NOT_FOUND;
-        rc = enableEventsAndCaps(mDisplay);
+        rc = initX11(&mState);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = enableEventsAndCaps();
         if (RT_SUCCESS(rc))
             mfInit = true;
         return rc;
@@ -278,7 +340,7 @@ public:
     {
         if (!mfInit)
             return VERR_WRONG_ORDER;
-        runDisplay(mDisplay);
+        runDisplay(&mState);
         return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
     }
     virtual int pause()
@@ -291,7 +353,7 @@ public:
     {
         if (!mfInit)
             return VERR_WRONG_ORDER;
-        return enableEventsAndCaps(mDisplay);
+        return enableEventsAndCaps();
     }
     virtual void cleanup()
     {
