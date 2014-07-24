@@ -791,7 +791,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkUSBProxyService();
+    MultiResult rc = i_checkUSBProxyService();
     if (FAILED(rc))
         return rc;
 
@@ -807,7 +807,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
          iHu.queryInterfaceTo(aUSBDevices[i].asOutParam());
     }
 
-    return S_OK;
+    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -882,7 +882,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkUSBProxyService();
+    MultiResult rc = i_checkUSBProxyService();
     if (FAILED(rc))
         return rc;
 
@@ -891,7 +891,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
     for (USBDeviceFilterList::iterator it = m->llUSBDeviceFilters.begin(); it != m->llUSBDeviceFilters.end(); ++it, ++i)
         (*it).queryInterfaceTo(aUSBDeviceFilters[i].asOutParam());
 
-    return S_OK;
+    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
