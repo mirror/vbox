@@ -53,6 +53,9 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 
 signals:
 
+    /** Notifies about frame-buffer resize. */
+    void sigFrameBufferResize();
+
     /** Notifies listeners about 3D overlay visibility change. */
     void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
 

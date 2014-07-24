@@ -415,6 +415,9 @@ void UIMachineWindow::prepareMachineView()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                            );
 
+    /* Listen for frame-buffer resize: */
+    connect(m_pMachineView, SIGNAL(sigFrameBufferResize()), this, SIGNAL(sigFrameBufferResize()));
+
     /* Add machine-view into main-layout: */
     m_pMainLayout->addWidget(m_pMachineView, 1, 1, viewAlignment(visualStateType));
 

@@ -241,8 +241,8 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 #endif /* Q_WS_MAC */
     }
 
-    /* Emit a signal about guest was resized: */
-    emit resizeHintDone();
+    /* Notify frame-buffer resize: */
+    emit sigFrameBufferResize();
 
     CDisplay dsp = session().GetConsole().GetDisplay();
     dsp.InvalidateAndUpdateScreen(m_uScreenId);

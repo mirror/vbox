@@ -47,6 +47,11 @@ class UIMachineView : public QAbstractScrollArea
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies about frame-buffer resize. */
+    void sigFrameBufferResize();
+
 public:
 
     /** Policy for determining which guest resolutions we wish to
@@ -84,11 +89,6 @@ public:
 
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;
-
-signals:
-
-    /* Utility signals: */
-    void resizeHintDone();
 
 protected slots:
 
