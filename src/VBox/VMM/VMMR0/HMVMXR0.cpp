@@ -7408,6 +7408,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
+    /*
+     * Toggling of interrupt force-flags here is safe since we update TRPM on premature exits
+     * to ring-3 before executing guest code, see hmR0VmxExitToRing3(). We must NOT restore these force-flags.
+     */
                                                                /** @todo SMI. SMIs take priority over NMIs. */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts. */
     {
@@ -8459,10 +8463,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     }
 #endif /* !IEM_VERIFICATION_MODE_FULL */
 
-    /*
-     * Evaluate events as pending-for-injection into the guest. Toggling of interrupt force-flags here is safe as long as
-     * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore those force-flags.
-     */
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
