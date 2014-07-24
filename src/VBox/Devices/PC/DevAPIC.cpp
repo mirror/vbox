@@ -1376,7 +1376,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *pApic,
                          uint8_t polarity, uint8_t trigger_mode)
 {
     int dest_shorthand = (pApic->icr[0] >> 18) & 3;
-    LogFlow(("apic_deliver dest=%x dest_mode=%x dest_shorthand=%x delivery_mode=%x vector_num=%x polarity=%x trigger_mode=%x uTagSrc=%#x\n", dest, dest_mode, dest_shorthand, delivery_mode, vector_num, polarity, trigger_mode));
+    LogFlow(("apic_deliver dest=%x dest_mode=%x dest_shorthand=%x delivery_mode=%x vector_num=%x polarity=%x trigger_mode=%x\n", dest, dest_mode, dest_shorthand, delivery_mode, vector_num, polarity, trigger_mode));
 
     VMCPUSET DstSet;
     switch (dest_shorthand)
