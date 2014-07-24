@@ -81,8 +81,8 @@ bool UIMenu::event(QEvent *pEvent)
 
 UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     : QAction(pParent)
-    , m_pActionPool(pParent)
     , m_type(type)
+    , m_pActionPool(pParent)
     , m_actionPoolType(pParent->type())
     , m_fShortcutHidden(false)
 {

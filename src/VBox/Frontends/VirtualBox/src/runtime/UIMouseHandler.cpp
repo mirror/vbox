@@ -113,8 +113,8 @@ void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWind
         m_views.insert(uIndex, pMachineWindow->machineView());
         /* Install event-filter for machine-view: */
         m_views[uIndex]->installEventFilter(this);
-        /* Make machine-view notify mouse-handler about resizeHintDone(): */
-        connect(m_views[uIndex], SIGNAL(resizeHintDone()), this, SLOT(sltMousePointerShapeChanged()));
+        /* Make machine-view notify mouse-handler about frame-buffer resize: */
+        connect(m_views[uIndex], SIGNAL(sigFrameBufferResize()), this, SLOT(sltMousePointerShapeChanged()));
     }
 
     /* If that viewport is NOT registered yet: */
