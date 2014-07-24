@@ -88,6 +88,9 @@
 # define supR3HardenedFatalMsg             supR3HardenedStaticFatalMsg
 # define supR3HardenedErrorV               supR3HardenedStaticErrorV
 # define supR3HardenedError                supR3HardenedStaticError
+# define supR3HardenedOpenLog              supR3HardenedStaticOpenLog
+# define supR3HardenedLogV                 supR3HardenedStaticLogV
+# define supR3HardenedLog                  supR3HardenedStaticLog
 # define supR3HardenedVerifyAll            supR3HardenedStaticVerifyAll
 # define supR3HardenedVerifyFixedDir       supR3HardenedStaticVerifyFixedDir
 # define supR3HardenedVerifyFixedFile      supR3HardenedStaticVerifyFixedFile
@@ -130,14 +133,18 @@ DECLHIDDEN(void)    suplibHardenedPrintFV(const char *pszFormat, va_list va);
 /** @} */
 
 /** Debug output macro. */
-#ifdef DEBUG_bird
-# ifdef IN_SUP_HARDENED_R3
-#  define SUP_DPRINTF(a)    suplibHardenedPrintF a
+#ifdef IN_SUP_HARDENED_R3
+# if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+#  define SUP_DPRINTF(a)    do { supR3HardenedStaticLog a; suplibHardenedPrintF a; } while (0)
 # else
-#  define SUP_DPRINTF(a)    RTLogPrintf a
+#  define SUP_DPRINTF(a)    do { supR3HardenedStaticLog a; } while (0)
 # endif
 #else
-# define SUP_DPRINTF(a)     do { } while (0)
+# if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+#  define SUP_DPRINTF(a)    RTLogPrintf a
+# else
+#  define SUP_DPRINTF(a)    do { } while (0)
+# endif
 #endif
 
 
@@ -399,6 +406,22 @@ DECLHIDDEN(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszForma
  * Display an error which may or may not be fatal.
  */
 DECLHIDDEN(int)     supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
+
+/**
+ * Open any startup log file specified in the argument.
+ */
+DECLHIDDEN(void)    supR3HardenedOpenLog(int *pcArgs, char **papszArgs);
+
+/**
+ * Write to the startup log file.
+ */
+DECLHIDDEN(void)    supR3HardenedLogV(const char *pszFormat, va_list va);
+
+/**
+ * Write to the startup log file.
+ */
+DECLHIDDEN(void)    supR3HardenedLog(const char *pszFormat, ...);
+
 
 DECLHIDDEN(int)     supR3HardenedVerifyAll(bool fFatal, const char *pszProgName);
 DECLHIDDEN(int)     supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);

@@ -1542,6 +1542,8 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
 {
     PVOID pvLdrInitThunk      = (PVOID)((uintptr_t)LdrInitializeThunk + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
     PVOID pvNtTerminateThread = (PVOID)((uintptr_t)NtTerminateThread  + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
+    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: pvLdrInitThunk=%p pvNtTerminateThread=%p\n",
+                 pvLdrInitThunk, pvNtTerminateThread));
 
     /*
      * Back up the thunk code.
@@ -1786,6 +1788,8 @@ static int supR3HardNtPuChSanitizeImage(PSUPR3HARDNTPUCH pThis, PMEMORY_BASIC_IN
         return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
                              "NtQueryVirtualMemory/MemorySectionName failed for %p: %#x", pMemInfo->BaseAddress, rcNt);
     uBuf.UniStr.Buffer[uBuf.UniStr.Length / sizeof(WCHAR)] = '\0';
+    SUP_DPRINTF(("supR3HardNtPuChSanitizeImage: %p '%ls'\n", pMemInfo->BaseAddress, uBuf.UniStr.Buffer));
+
 
     /*
      * Open the file.
@@ -2041,6 +2045,8 @@ static void supR3HardNtPuChFindNtdll(PSUPR3HARDNTPUCH pThis)
                                              "ntdll.dll") == 0)
                         {
                             pThis->uNtDllAddr = (uintptr_t)MemInfo.AllocationBase;
+                            SUP_DPRINTF(("supR3HardNtPuChFindNtdll: uNtDllParentAddr=%p uNtDllChildAddr=%p\n",
+                                         pThis->uNtDllParentAddr, pThis->uNtDllAddr));
                             return;
                         }
                     }
@@ -2093,6 +2099,8 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
         This.cbPeb = PEB_SIZE_W80;
     else
         This.cbPeb = PEB_SIZE_W81;
+
+    SUP_DPRINTF(("supR3HardenedWinPurifyChild: PebBaseAddress=%p cbPeb=%#x\n", This.BasicInfo.PebBaseAddress, This.cbPeb));
 
     SIZE_T cbActualMem;
     RT_ZERO(This.Peb);
@@ -2188,6 +2196,8 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                               "Command line: '%ls'",
                               GetLastError(), pwszCmdLine);
 
+    SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): New child %x.%x [kernel32].\n",
+                 iWhich, ProcessInfoW32.dwProcessId, ProcessInfoW32.dwThreadId));
     HANDLE hProcess = ProcessInfoW32.hProcess;
     HANDLE hThread  = ProcessInfoW32.hThread;
 
@@ -2241,11 +2251,14 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                               "Command line: '%ls'",
                               rcNt, CmdLine.Buffer);
 
+    SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): New child %x.%x [ntdll].\n",
+                 iWhich, ProcessInfo.ClientId.UniqueProcess, ProcessInfo.ClientId.UniqueThread));
     RtlDestroyProcessParameters(pProcParams);
 
     HANDLE hProcess = ProcessInfoNt.ProcessHandle;
     HANDLE hThread  = ProcessInfoNt.ThreadHandle;
 #endif
+
 
     /*
      * Clean up the process.
@@ -2287,9 +2300,8 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     if (!NT_SUCCESS(rcNt))
     {
         /* Failure is unacceptable, kill the process. */
-        DWORD dwErr = GetLastError();
         NtTerminateProcess(hProcess, RTEXITCODE_FAILURE);
-        supR3HardenedError(dwErr, false /*fFatal*/, "NtDuplicateObject failed on child process handle: %u\n", dwErr);
+        supR3HardenedError(rcNt, false /*fFatal*/, "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
 
         NTSTATUS rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
         bool fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
@@ -2313,7 +2325,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                          || rcNtWait == STATUS_ALERTED)
                      && GetTickCount() - dwStartTick < 60 * 1000);
             if (fExitOk)
-                supR3HardenedError(dwErr, false /*fFatal*/,
+                supR3HardenedError(rcNt, false /*fFatal*/,
                                    "NtDuplicateObject failed and we failed to kill child: rcNt=%u rcNtWait=%u hProcess=%p\n",
                                    rcNt, rcNtWait, hProcess);
         }
@@ -2386,12 +2398,13 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     /*
      * Proxy the termination code of the child, if it exited already.
      */
-    rcNt = NtQueryInformationProcess(hProcWait, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
-    if (   !NT_SUCCESS(rcNt)
+    NTSTATUS rcNt2 = NtQueryInformationProcess(hProcWait, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+    if (   !NT_SUCCESS(rcNt2)
         || BasicInfo.ExitStatus == STATUS_PENDING)
         BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
 
     NtClose(hProcWait);
+    SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): Quitting: ExitCode=%#x rcNt=%#x\n", BasicInfo.ExitStatus, rcNt));
     suplibHardenedExit((RTEXITCODE)BasicInfo.ExitStatus);
 }
 
@@ -2748,7 +2761,7 @@ extern "C" int main(int argc, char **argv, char **envp);
  */
 extern "C" void __stdcall suplibHardenedWindowsMain(void)
 {
-    RTEXITCODE  rcExit = RTEXITCODE_FAILURE;
+    RTEXITCODE rcExit = RTEXITCODE_FAILURE;
 
     g_cSuplibHardenedWindowsMainCalls++;
 
@@ -2757,6 +2770,16 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      * SUPHardenedVerfiyImage-win.cpp.)
      */
     supR3HardenedWinInitVersion();
+
+    /*
+     * Convert the arguments to UTF-8 and open the log file if specified.
+     * This must be done as early as possible since the code below may fail.
+     */
+    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
+    int    cArgs;
+    char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
+
+    supR3HardenedOpenLog(&cArgs, papszArgs);
 
     /*
      * Get the executable name.
@@ -2789,17 +2812,15 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
         g_offSupLibHardenedExeNtName--;
 
     /*
-     * Convert the arguments to UTF-8 and call the C/C++ main function.
+     * Call the C/C++ main function.
      */
-    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
-    int             cArgs;
-    char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
-
+    SUP_DPRINTF(("Calling main()\n"));
     rcExit = (RTEXITCODE)main(cArgs, papszArgs, NULL);
 
     /*
      * Exit the process (never return).
      */
+    SUP_DPRINTF(("Terminating the normal way: rcExit=%d\n", rcExit));
     suplibHardenedExit(rcExit);
 }
 
