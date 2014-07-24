@@ -484,8 +484,13 @@ VBGLR3DECL(int)     VbglR3GetDisplayChangeRequestEx(uint32_t *pcx, uint32_t *pcy
                                                     uint32_t *piDisplay, uint32_t *pcOriginX, uint32_t *pcOriginY,
                                                     bool *pfEnabled, bool fAck);
 VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
-VBGLR3DECL(int)     VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits);
-VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
+VBGLR3DECL(int)     VbglR3SaveVideoMode(unsigned cScreen, unsigned cx,
+                                        unsigned cy, unsigned cBits, unsigned x,
+                                        unsigned y, bool fEnabled);
+VBGLR3DECL(int)     VbglR3RetrieveVideoMode(unsigned cScreen, unsigned *pcx,
+                                            unsigned *pcy, unsigned *pcBits,
+                                            unsigned *px, unsigned *py,
+                                            bool *pfEnabled);
 /** @}  */
 
 /** @name VM Statistics
@@ -749,6 +754,16 @@ VBGLR3DECL(int)  VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle, uint32_
 VBGLR3DECL(int)  VbglR3HostChannelQuery(const char *pszName, uint32_t u32HGCMClientId, uint32_t u32Code,
                                         void *pvParm, uint32_t cbParm, void *pvData, uint32_t cbData,
                                         uint32_t *pu32SizeDataReturned);
+
+/** @name Mode hint storage
+ * @{ */
+VBGLR3DECL(int) VbglR3ReadVideoMode(unsigned cDisplay, unsigned *cx,
+                                    unsigned *cy, unsigned *cBPP, unsigned *x,
+                                    unsigned *y, unsigned *fEnabled);
+VBGLR3DECL(int) VbglR3WriteVideoMode(unsigned cDisplay, unsigned cx,
+                                     unsigned cy, unsigned cBPP, unsigned x,
+                                     unsigned y, unsigned fEnabled);
+/** @} */
 
 #endif /* IN_RING3 */
 /** @} */
