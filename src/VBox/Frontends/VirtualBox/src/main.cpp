@@ -337,6 +337,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         sigaction(SIGUSR1, &sa, NULL);
 #endif
 
+#ifdef VBOX_WITH_HARDENING
+        /* Make sure the image verification code works (VBoxDbg.dll and other plugins). */
+        SUPR3HardenedVerifyInit();
+#endif
+
 #ifdef Q_WS_MAC
         /* Mavericks font fix: */
         if (VBoxGlobal::osRelease() == MacOSXRelease_Mavericks)
