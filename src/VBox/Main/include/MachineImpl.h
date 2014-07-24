@@ -532,6 +532,7 @@ public:
 
     void i_getLogFolder(Utf8Str &aLogFolder);
     Utf8Str i_queryLogFilename(ULONG idx);
+    Utf8Str i_getStartupLogFilename(void);
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
 
