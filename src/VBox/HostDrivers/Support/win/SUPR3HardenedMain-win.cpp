@@ -1732,7 +1732,6 @@ DECLINLINE(PIMAGE_NT_HEADERS) supR3HardNtPuChFindNtHeaders(uint8_t *pbBuf, size_
 }
 
 
-#ifdef DEBUG
 static uint32_t supR3HardNtPuChFindFirstDiff(void const *pvBuf1, void const *pvBuf2, size_t cbBuf)
 {
     uint8_t const *pabBuf1 = (uint8_t const *)pvBuf1;
@@ -1742,7 +1741,6 @@ static uint32_t supR3HardNtPuChFindFirstDiff(void const *pvBuf1, void const *pvB
         off++;
     return off;
 }
-#endif
 
 
 static NTSTATUS supR3HardNtPuChRestoreImageBits(PSUPR3HARDNTPUCH pThis, PVOID pvChildAddr,
