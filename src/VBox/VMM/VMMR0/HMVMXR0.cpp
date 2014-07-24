@@ -3499,7 +3499,6 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                      before using them.
  *
  * @remarks No-long-jump zone!!!
- * @remarks Has side-effects with VMCPU_FF_INHIBIT_INTERRUPTS force-flag.
  */
 DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -3513,18 +3512,14 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* If inhibition is active, RIP & RFLAGS should've been accessed (i.e. read previously from the VMCS or from ring-3). */
         AssertMsg(HMVMXCPU_GST_IS_SET(pVCpu, HMVMX_UPDATED_GUEST_RIP | HMVMX_UPDATED_GUEST_RFLAGS),
                   ("%#x\n", HMVMXCPU_GST_VALUE(pVCpu)));
-        if (pMixedCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        if (pMixedCtx->rip == EMGetInhibitInterruptsPC(pVCpu))
         {
-            /*
-             * We can clear the inhibit force flag as even if we go back to the recompiler without executing guest code in
-             * VT-x, the flag's condition to be cleared is met and thus the cleared state is correct.
-             */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+            if (pMixedCtx->eflags.Bits.u1IF)
+                uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
+            else
+                uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS;
         }
-        else if (pMixedCtx->eflags.Bits.u1IF)
-            uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
-        else
-            uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS;
+        /* else: Although we can clear the force-flag here, let's keep this side-effects free. */
     }
 
     /*
@@ -6886,15 +6881,14 @@ static int hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
     {
-        /** @todo r=ramshankar: Make this a strict-build assert after this bug is
-         *        fixed. See @bugref{7317}. */
+#ifdef VBOX_STRICT
         uint32_t uEFlags = CPUMGetGuestEFlags(pVCpu);
         if (!(uEFlags & X86_EFL_IF))
         {
             Log4(("hmR0VmxTrpmTrapToPendingEvent: TRPM injecting an external interrupt when interrupts are disabled!?!"));
             return VERR_VMX_IPE_5;
         }
-
+#endif
         u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
