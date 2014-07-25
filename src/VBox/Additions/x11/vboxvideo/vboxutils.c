@@ -214,18 +214,18 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 
     for (i = 0; i < pVBox->cScreens; ++i)
     {
-        pVBox->aPreferredSize[i].cx = 1024;
-        pVBox->aPreferredSize[i].cy = 768;
+        pVBox->pScreens[i].aPreferredSize.cx = 1024;
+        pVBox->pScreens[i].aPreferredSize.cy = 768;
     }
     /* Set up the first mode correctly to match the requested initial mode. */
-    pScrn->modes->HDisplay = pVBox->aPreferredSize[0].cx;
-    pScrn->modes->VDisplay = pVBox->aPreferredSize[0].cy;
+    pScrn->modes->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
+    pScrn->modes->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
     /* RandR 1.1 quirk: make sure that the initial resolution is always present
      * in the mode list as RandR will always advertise a mode of the initial
      * virtual resolution via GetScreenInfo. */
     pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pScrn, pMode, NULL, pVBox->aPreferredSize[0].cx,
-                        pVBox->aPreferredSize[0].cy);
+    vboxFillDisplayMode(pScrn, pMode, NULL, pVBox->pScreens[0].aPreferredSize.cx,
+                        pVBox->pScreens[0].aPreferredSize.cy);
 }
 
 # define SIZE_HINTS_PROPERTY "VBOX_SIZE_HINTS"
@@ -254,8 +254,8 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         {
             if (!((int32_t *)prop->data)[i])
                 continue;
-            pVBox->aPreferredSize[i].cx = ((int32_t *)prop->data)[i] >> 16;
-            pVBox->aPreferredSize[i].cy = ((int32_t *)prop->data)[i] & 0xffff;
+            pVBox->pScreens[i].aPreferredSize.cx = ((int32_t *)prop->data)[i] >> 16;
+            pVBox->pScreens[i].aPreferredSize.cy = ((int32_t *)prop->data)[i] & 0xffff;
         }
 }
 
@@ -287,8 +287,8 @@ static void vboxRandRDispatchCore(ClientPtr pClient)
     pMode = pScrn->modes;
     if (pScrn->currentMode == pMode)
         pMode = pMode->next;
-    pMode->HDisplay = pVBox->aPreferredSize[0].cx;
-    pMode->VDisplay = pVBox->aPreferredSize[0].cy;
+    pMode->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
+    pMode->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
 }
 
 static int vboxRandRDispatch(ClientPtr pClient)

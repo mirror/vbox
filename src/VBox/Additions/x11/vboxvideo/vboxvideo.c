@@ -287,7 +287,7 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
     unsigned cDisplay = (uintptr_t)crtc->driver_private;
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    pVBox->afDisabled[cDisplay] = (mode != DPMSModeOn);
+    pVBox->pScreens[cDisplay].afDisabled = (mode != DPMSModeOn);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!crtc->scrn->vtSema) {
@@ -295,13 +295,13 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
                    "We do not own the active VT, exiting.\n");
         return;
     }
-    if (   pVBox->aScreenLocation[cDisplay].cx
-        && pVBox->aScreenLocation[cDisplay].cy)
+    if (   pVBox->pScreens[cDisplay].aScreenLocation.cx
+        && pVBox->pScreens[cDisplay].aScreenLocation.cy)
         VBOXSetMode(crtc->scrn, cDisplay,
-                    pVBox->aScreenLocation[cDisplay].cx,
-                    pVBox->aScreenLocation[cDisplay].cy,
-                    pVBox->aScreenLocation[cDisplay].x,
-                    pVBox->aScreenLocation[cDisplay].y);
+                    pVBox->pScreens[cDisplay].aScreenLocation.cx,
+                    pVBox->pScreens[cDisplay].aScreenLocation.cy,
+                    pVBox->pScreens[cDisplay].aScreenLocation.x,
+                    pVBox->pScreens[cDisplay].aScreenLocation.y);
 }
 
 static Bool
@@ -334,11 +334,11 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
-    pVBox->afDisabled[cDisplay] = false;
-    pVBox->aScreenLocation[cDisplay].cx = adjusted_mode->HDisplay;
-    pVBox->aScreenLocation[cDisplay].cy = adjusted_mode->VDisplay;
-    pVBox->aScreenLocation[cDisplay].x = x;
-    pVBox->aScreenLocation[cDisplay].y = y;
+    pVBox->pScreens[cDisplay].afDisabled = false;
+    pVBox->pScreens[cDisplay].aScreenLocation.cx = adjusted_mode->HDisplay;
+    pVBox->pScreens[cDisplay].aScreenLocation.cy = adjusted_mode->VDisplay;
+    pVBox->pScreens[cDisplay].aScreenLocation.x = x;
+    pVBox->pScreens[cDisplay].aScreenLocation.y = y;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!crtc->scrn->vtSema)
@@ -465,8 +465,8 @@ vbox_output_get_modes (xf86OutputPtr output)
     iScreen = (uintptr_t)output->driver_private;
     VBoxUpdateSizeHints(pScrn);
     pMode = vbox_output_add_mode(pVBox, &pModes, NULL,
-                                 pVBox->aPreferredSize[iScreen].cx,
-                                 pVBox->aPreferredSize[iScreen].cy, TRUE,
+                                 pVBox->pScreens[iScreen].aPreferredSize.cx,
+                                 pVBox->pScreens[iScreen].aPreferredSize.cy, TRUE,
                                  FALSE);
     VBOXEDIDSet(output, pMode);
     /* Add standard modes supported by the host */
@@ -526,8 +526,8 @@ vbox_output_set_property(xf86OutputPtr output, Atom property,
         w = (*(uint32_t *)value->data) >> 16;
         h = (*(uint32_t *)value->data) & 0xffff;
         TRACE_LOG("screen=%u, property value=%dx%d\n", cDisplay, w, h);
-        pVBox->aPreferredSize[cDisplay].cx = w;
-        pVBox->aPreferredSize[cDisplay].cy = h;
+        pVBox->pScreens[cDisplay].aPreferredSize.cx = w;
+        pVBox->pScreens[cDisplay].aPreferredSize.cy = h;
         return TRUE;
     }
     if (property == vboxAtomEDID())
@@ -1095,23 +1095,23 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
             char szOutput[256];
 
             /* Setup our virtual CRTCs. */
-            pVBox->paCrtcs[i] = xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
-            pVBox->paCrtcs[i]->driver_private = (void *)(uintptr_t)i;
+            pVBox->pScreens[i].paCrtcs = xf86CrtcCreate(pScrn, &VBOXCrtcFuncs);
+            pVBox->pScreens[i].paCrtcs->driver_private = (void *)(uintptr_t)i;
 
             /* Set up our virtual outputs. */
             snprintf(szOutput, sizeof(szOutput), "VGA-%u", i);
-            pVBox->paOutputs[i] = xf86OutputCreate(pScrn, &VBOXOutputFuncs,
-                                                   szOutput);
+            pVBox->pScreens[i].paOutputs
+                = xf86OutputCreate(pScrn, &VBOXOutputFuncs, szOutput);
 
             /* We are not interested in the monitor section in the
              * configuration file. */
-            xf86OutputUseScreenMonitor(pVBox->paOutputs[i], FALSE);
-            pVBox->paOutputs[i]->possible_crtcs = 1 << i;
-            pVBox->paOutputs[i]->possible_clones = 0;
-            pVBox->paOutputs[i]->driver_private = (void *)(uintptr_t)i;
+            xf86OutputUseScreenMonitor(pVBox->pScreens[i].paOutputs, FALSE);
+            pVBox->pScreens[i].paOutputs->possible_crtcs = 1 << i;
+            pVBox->pScreens[i].paOutputs->possible_clones = 0;
+            pVBox->pScreens[i].paOutputs->driver_private = (void *)(uintptr_t)i;
             TRACE_LOG("Created crtc (%p) and output %s (%p)\n",
-                      (void *)pVBox->paCrtcs[i], szOutput,
-                      (void *)pVBox->paOutputs[i]);
+                      (void *)pVBox->pScreens[i].paCrtcs, szOutput,
+                      (void *)pVBox->pScreens[i].paOutputs);
         }
     }
 
@@ -1139,7 +1139,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         for (i = 0; i < pVBox->cScreens; ++i)
         {
             INT32 value = 0;
-            RRChangeOutputProperty(pVBox->paOutputs[i]->randr_output,
+            RRChangeOutputProperty(pVBox->pScreens[i].paOutputs->randr_output,
                                    vboxAtomVBoxMode(), XA_INTEGER, 32,
                                    PropModeReplace, 1, &value, TRUE,
                                    FALSE);
@@ -1160,10 +1160,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     /* Save the size in case we need to re-set it later. */
     pVBox->FBSize.cx = pScrn->currentMode->HDisplay;
     pVBox->FBSize.cy = pScrn->currentMode->VDisplay;
-    pVBox->aScreenLocation[0].cx = pScrn->currentMode->HDisplay;
-    pVBox->aScreenLocation[0].cy = pScrn->currentMode->VDisplay;
-    pVBox->aScreenLocation[0].x = pScrn->frameX0;
-    pVBox->aScreenLocation[0].y = pScrn->frameY0;
+    pVBox->pScreens[0].aScreenLocation.cx = pScrn->currentMode->HDisplay;
+    pVBox->pScreens[0].aScreenLocation.cy = pScrn->currentMode->VDisplay;
+    pVBox->pScreens[0].aScreenLocation.x = pScrn->frameX0;
+    pVBox->pScreens[0].aScreenLocation.y = pScrn->frameY0;
 #endif /* !VBOXVIDEO_13 */
 
     /* software cursor */
@@ -1326,10 +1326,10 @@ static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     /* Save the size in case we need to re-set it later. */
     pVBox->FBSize.cx = pMode->HDisplay;
     pVBox->FBSize.cy = pMode->VDisplay;
-    pVBox->aScreenLocation[0].cx = pMode->HDisplay;
-    pVBox->aScreenLocation[0].cy = pMode->VDisplay;
-    pVBox->aScreenLocation[0].x = pScrn->frameX0;
-    pVBox->aScreenLocation[0].y = pScrn->frameY0;
+    pVBox->pScreens[0].aScreenLocation.cx = pMode->HDisplay;
+    pVBox->pScreens[0].aScreenLocation.cy = pMode->VDisplay;
+    pVBox->pScreens[0].aScreenLocation.x = pScrn->frameX0;
+    pVBox->pScreens[0].aScreenLocation.y = pScrn->frameY0;
 #endif
     if (!pScrn->vtSema)
     {
@@ -1353,8 +1353,8 @@ static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    pVBox->aScreenLocation[0].x = x;
-    pVBox->aScreenLocation[0].y = y;
+    pVBox->pScreens[0].aScreenLocation.x = x;
+    pVBox->pScreens[0].aScreenLocation.y = y;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!pScrn->vtSema)
@@ -1363,8 +1363,8 @@ static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
                    "We do not own the active VT, exiting.\n");
         return;
     }
-    VBOXSetMode(pScrn, 0, pVBox->aScreenLocation[0].cx,
-                pVBox->aScreenLocation[0].cy, x, y);
+    VBOXSetMode(pScrn, 0, pVBox->pScreens[0].aScreenLocation.cx,
+                pVBox->pScreens[0].aScreenLocation.cy, x, y);
     TRACE_EXIT();
 }
 

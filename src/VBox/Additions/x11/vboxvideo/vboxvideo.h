@@ -141,7 +141,27 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 # define ROOT_WINDOW(pScrn) WindowTable[(pScrn)->scrnIndex]
 #endif
 
-/*XXX*/
+/** Structure containing all virtual monitor-specific information. */
+struct VBoxScreen
+{
+    /** Position information for each virtual screen for the purposes of
+     * sending dirty rectangle information to the right one. */
+    RTRECT2 aScreenLocation;
+    /** Has this screen been disabled by the guest? */
+    Bool afDisabled;
+#ifdef VBOXVIDEO_13
+    /** The virtual crtcs. */
+    struct _xf86Crtc *paCrtcs;
+    /** The virtual outputs, logically not distinct from crtcs. */
+    struct _xf86Output *paOutputs;
+#endif
+    /** Offsets of VBVA buffers in video RAM */
+    uint32_t aoffVBVABuffer;
+    /** Context information about the VBVA buffers for each screen */
+    struct VBVABUFFERCONTEXT aVbvaCtx;
+    /** The current preferred resolution for the screen */
+    RTRECTSIZE aPreferredSize;
+};
 
 typedef struct VBOXRec
 {
@@ -176,28 +196,15 @@ typedef struct VBOXRec
     Bool guestCanAbsolute;
     /** Number of screens attached */
     uint32_t cScreens;
-    /** Position information for each virtual screen for the purposes of
-     * sending dirty rectangle information to the right one. */
-    RTRECT2 aScreenLocation[VBOX_VIDEO_MAX_SCREENS];
+    /** Information about each virtual screen. */
+    struct VBoxScreen *pScreens;
     /** The last requested framebuffer size. */
     RTRECTSIZE FBSize;
-    /** Has this screen been disabled by the guest? */
-    Bool afDisabled[VBOX_VIDEO_MAX_SCREENS];
-#ifdef VBOXVIDEO_13
-    /** The virtual crtcs */
-    struct _xf86Crtc *paCrtcs[VBOX_VIDEO_MAX_SCREENS];
-    struct _xf86Output *paOutputs[VBOX_VIDEO_MAX_SCREENS];
-#else
+#ifndef VBOXVIDEO_13
     /** The original CreateScreenResources procedure which we wrap with our own.
      */
     CreateScreenResourcesProcPtr pfnCreateScreenResources;
 #endif
-    /** Offsets of VBVA buffers in video RAM */
-    uint32_t aoffVBVABuffer[VBOX_VIDEO_MAX_SCREENS];
-    /** Context information about the VBVA buffers for each screen */
-    struct VBVABUFFERCONTEXT aVbvaCtx[VBOX_VIDEO_MAX_SCREENS];
-    /** The current preferred resolution for the screen */
-    RTRECTSIZE aPreferredSize[VBOX_VIDEO_MAX_SCREENS];
     /** HGSMI guest heap context */
     HGSMIGUESTCOMMANDCONTEXT guestCtx;
     /** Unrestricted horizontal resolution flag. */
