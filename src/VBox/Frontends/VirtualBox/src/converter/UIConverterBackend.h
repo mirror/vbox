@@ -88,6 +88,7 @@ template<> bool canConvert<MachineSettingsPageType>();
 template<> bool canConvert<WizardType>();
 template<> bool canConvert<IndicatorType>();
 template<> bool canConvert<MachineCloseAction>();
+template<> bool canConvert<MouseCapturePolicy>();
 template<> bool canConvert<GuruMeditationHandlerType>();
 template<> bool canConvert<HiDPIOptimizationType>();
 template<> bool canConvert<MiniToolbarAlignment>();
@@ -162,6 +163,8 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
 template<> QIcon toIcon(const IndicatorType &indicatorType);
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction);
 template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction);
+template<> QString toInternalString(const MouseCapturePolicy &mouseCapturePolicy);
+template<> MouseCapturePolicy fromInternalString<MouseCapturePolicy>(const QString &strMouseCapturePolicy);
 template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditationHandlerType);
 template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType);
 template<> QString toInternalString(const HiDPIOptimizationType &optimizationType);

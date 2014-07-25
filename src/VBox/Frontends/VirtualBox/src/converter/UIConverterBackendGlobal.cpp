@@ -52,6 +52,7 @@ template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<WizardType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
+template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
@@ -1226,6 +1227,37 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
         return MachineCloseAction_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMachineCloseAction, Qt::CaseInsensitive)));
+}
+
+/* QString <= MouseCapturePolicy: */
+template<> QString toInternalString(const MouseCapturePolicy &mouseCapturePolicy)
+{
+    /* Return corresponding QString representation for passed enum value: */
+    switch (mouseCapturePolicy)
+    {
+        case MouseCapturePolicy_Default:       return "Default";
+        case MouseCapturePolicy_HostComboOnly: return "HostComboOnly";
+        case MouseCapturePolicy_Disabled:      return "Disabled";
+        default: AssertMsgFailed(("No text for '%d'", mouseCapturePolicy)); break;
+    }
+    /* Return QString() by default: */
+    return QString();
+}
+
+/* MouseCapturePolicy <= QString: */
+template<> MouseCapturePolicy fromInternalString<MouseCapturePolicy>(const QString &strMouseCapturePolicy)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;        QList<MouseCapturePolicy> values;
+    keys << "Default";       values << MouseCapturePolicy_Default;
+    keys << "HostComboOnly"; values << MouseCapturePolicy_HostComboOnly;
+    keys << "Disabled";      values << MouseCapturePolicy_Disabled;
+    /* Default type for unknown words: */
+    if (!keys.contains(strMouseCapturePolicy, Qt::CaseInsensitive))
+        return MouseCapturePolicy_Default;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strMouseCapturePolicy, Qt::CaseInsensitive)));
 }
 
 /* QString <= GuruMeditationHandlerType: */

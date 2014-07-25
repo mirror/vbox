@@ -216,6 +216,8 @@ namespace UIExtraDataDefs
 #endif /* Q_WS_MAC */
         /** Holds whether machine should pass CAD to guest. */
         extern const char* GUI_PassCAD;
+        /** Holds the mouse capture policy. */
+        extern const char* GUI_MouseCapturePolicy;
         /** Holds redefined guru-meditation handler type. */
         extern const char* GUI_GuruMeditationHandler;
         /** Holds whether machine should perform HID LEDs synchronization. */
@@ -522,6 +524,14 @@ enum MachineCloseAction
     MachineCloseAction_All                        = 0xFF
 };
 Q_DECLARE_METATYPE(MachineCloseAction);
+
+/** Runtime UI: Mouse capture policy types. */
+enum MouseCapturePolicy
+{
+    MouseCapturePolicy_Default,
+    MouseCapturePolicy_HostComboOnly,
+    MouseCapturePolicy_Disabled
+};
 
 /** Guru Meditation handler types. */
 enum GuruMeditationHandlerType
