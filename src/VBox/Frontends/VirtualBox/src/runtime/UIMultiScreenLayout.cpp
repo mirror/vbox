@@ -358,7 +358,7 @@ void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
         return;
 
     /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = gpActionPool->action(UIActionIndexRT_M_View)->menu()->actions();
+    QList<QAction*> viewMenuActions = m_pMachineLogic->actionPool()->action(UIActionIndexRT_M_View)->menu()->actions();
     /* Get the list of all view related actions: */
     QList<QAction*> viewActions;
     for (int i = 0; i < viewMenuActions.size(); ++i)

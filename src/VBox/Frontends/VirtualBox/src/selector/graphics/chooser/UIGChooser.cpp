@@ -25,10 +25,12 @@
 #include "UIGChooser.h"
 #include "UIGChooserModel.h"
 #include "UIGChooserView.h"
+#include "UISelectorWindow.h"
 #include "VBoxGlobal.h"
 
-UIGChooser::UIGChooser(QWidget *pParent)
+UIGChooser::UIGChooser(UISelectorWindow *pParent)
     : QWidget(pParent)
+    , m_pSelectorWindow(pParent)
     , m_pMainLayout(0)
     , m_pChooserModel(0)
     , m_pChooserView(0)
@@ -57,6 +59,11 @@ UIGChooser::~UIGChooser()
 {
     /* Save: */
     save();
+}
+
+UIActionPool* UIGChooser::actionPool() const
+{
+    return selector()->actionPool();
 }
 
 UIVMItem* UIGChooser::currentItem() const

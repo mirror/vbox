@@ -69,6 +69,14 @@ enum UIActionIndex
     UIActionIndex_Max
 };
 
+/** Restriction levels. */
+enum UIActionRestrictionLevel
+{
+    UIActionRestrictionLevel_Base,
+    UIActionRestrictionLevel_Session,
+    UIActionRestrictionLevel_Logic
+};
+
 
 /** QMenu extension
   * allowing to show tool-tips. */
@@ -264,28 +272,17 @@ private:
 
 
 /** Abstract QObject extension
-  * representing action-pool singleton. */
+  * representing action-pool interface and factory. */
 class UIActionPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
 public:
 
-    /** Restriction levels. */
-    enum UIActionRestrictionLevel
-    {
-        UIActionRestrictionLevel_Base,
-        UIActionRestrictionLevel_Session,
-        UIActionRestrictionLevel_Logic
-    };
-
-    /** Singleton instance access member. */
-    static UIActionPool* instance();
-
     /** Static factory constructor. */
-    static void create(UIActionPoolType type);
+    static UIActionPool* create(UIActionPoolType type);
     /** Static factory destructor. */
-    static void destroy();
+    static void destroy(UIActionPool *pActionPool);
 
     /** Static factory constructor (temporary),
       * used to initialize shortcuts-pool from action-pool of passed @a type. */
@@ -316,14 +313,12 @@ public:
 protected slots:
 
     /** Loads keyboard shortcuts of action-pool into shortcuts-pool. */
-    void sltApplyShortcuts();
+    void sltApplyShortcuts() { updateShortcuts(); }
 
 protected:
 
     /** Constructor of the action-pool of passed @a type. */
-    UIActionPool(UIActionPoolType type);
-    /** Destructor. */
-    ~UIActionPool();
+    UIActionPool(UIActionPoolType type, bool fTemporary = false);
 
     /** Prepare routine. */
     void prepare();
@@ -340,18 +335,18 @@ protected:
 
     /** Update configuration routine. */
     virtual void updateConfiguration() = 0;
+    /** Update shortcuts. */
+    virtual void updateShortcuts();
 
     /** General event handler. */
     virtual bool event(QEvent *pEvent);
 
-    /** Holds the singleton action-pool instance. */
-    static UIActionPool *m_pInstance;
     /** Holds the action-pool type. */
-    UIActionPoolType m_type;
+    const UIActionPoolType m_type;
+    /** Holds whether this action-pool is temporary. */
+    const bool m_fTemporary;
     /** Holds all the actions action-pool contains. */
     QMap<int, UIAction*> m_pool;
 };
-
-#define gpActionPool UIActionPool::instance()
 
 #endif /* !___UIActionPool_h___ */

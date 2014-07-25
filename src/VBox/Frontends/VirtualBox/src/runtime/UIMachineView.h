@@ -35,6 +35,7 @@
 
 /* Forward declarations: */
 class UISession;
+class UIActionPool;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIFrameBuffer;
@@ -144,6 +145,7 @@ protected:
 
     /* Protected getters: */
     UIMachineWindow* machineWindow() const { return m_pMachineWindow; }
+    UIActionPool* actionPool() const;
     UIMachineLogic* machineLogic() const;
     UISession* uisession() const;
     CSession& session();

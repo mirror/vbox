@@ -38,6 +38,7 @@ class CSession;
 class UISession;
 class UIMachineLogic;
 class UIMachineView;
+class UIActionPool;
 
 /* Machine-window interface: */
 class UIMachineWindow : public QIWithRetranslateUI2<QMainWindow>
@@ -63,6 +64,7 @@ public:
     ulong screenId() const { return m_uScreenId; }
     UIMachineView* machineView() const { return m_pMachineView; }
     UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
+    UIActionPool* actionPool() const;
     UISession* uisession() const;
     CSession& session() const;
     CMachine machine() const;

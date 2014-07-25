@@ -32,10 +32,7 @@ class UIActionMenuFile : public UIActionMenu
 public:
 
     UIActionMenuFile(UIActionPool *pParent)
-        : UIActionMenu(pParent)
-    {
-        retranslateUi();
-    }
+        : UIActionMenu(pParent) {}
 
 protected:
 
@@ -56,10 +53,7 @@ class UIActionSimpleMediumManagerDialog : public UIActionSimple
 public:
 
     UIActionSimpleMediumManagerDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/diskimage_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/diskimage_16px.png") {}
 
 protected:
 
@@ -87,10 +81,7 @@ class UIActionSimpleImportApplianceWizard : public UIActionSimple
 public:
 
     UIActionSimpleImportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/import_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/import_16px.png") {}
 
 protected:
 
@@ -118,10 +109,7 @@ class UIActionSimpleExportApplianceWizard : public UIActionSimple
 public:
 
     UIActionSimpleExportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/export_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/export_16px.png") {}
 
 protected:
 
@@ -150,10 +138,7 @@ class UIActionSimpleExtraDataManagerWindow : public UIActionSimple
 public:
 
     UIActionSimpleExtraDataManagerWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/edataman_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/edataman_16px.png") {}
 
 protected:
 
@@ -185,7 +170,6 @@ public:
         : UIActionSimple(pParent, ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
-        retranslateUi();
     }
 
 protected:
@@ -215,10 +199,7 @@ class UIActionMenuGroup : public UIActionMenu
 public:
 
     UIActionMenuGroup(UIActionPool *pParent)
-        : UIActionMenu(pParent)
-    {
-        retranslateUi();
-    }
+        : UIActionMenu(pParent) {}
 
 protected:
 
@@ -235,10 +216,7 @@ class UIActionSimpleGroupNew : public UIActionSimple
 public:
 
     UIActionSimpleGroupNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png") {}
 
 protected:
 
@@ -268,10 +246,7 @@ class UIActionSimpleGroupAdd : public UIActionSimple
 public:
 
     UIActionSimpleGroupAdd(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_add_16px.png") {}
 
 protected:
 
@@ -299,10 +274,7 @@ class UIActionSimpleGroupRename : public UIActionSimple
 public:
 
     UIActionSimpleGroupRename(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_group_name_16px.png", ":/vm_group_name_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_group_name_16px.png", ":/vm_group_name_disabled_16px.png") {}
 
 protected:
 
@@ -330,10 +302,7 @@ class UIActionSimpleGroupRemove : public UIActionSimple
 public:
 
     UIActionSimpleGroupRemove(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_group_remove_16px.png", ":/vm_group_remove_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_group_remove_16px.png", ":/vm_group_remove_disabled_16px.png") {}
 
 protected:
 
@@ -361,10 +330,7 @@ class UIActionSimpleGroupSort : public UIActionSimple
 public:
 
     UIActionSimpleGroupSort(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png") {}
 
 protected:
 
@@ -388,10 +354,7 @@ class UIActionMenuMachineSelector : public UIActionMenu
 public:
 
     UIActionMenuMachineSelector(UIActionPool *pParent)
-        : UIActionMenu(pParent)
-    {
-        retranslateUi();
-    }
+        : UIActionMenu(pParent) {}
 
 protected:
 
@@ -408,10 +371,7 @@ class UIActionSimpleMachineNew : public UIActionSimple
 public:
 
     UIActionSimpleMachineNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png") {}
 
 protected:
 
@@ -441,10 +401,7 @@ class UIActionSimpleMachineAdd : public UIActionSimple
 public:
 
     UIActionSimpleMachineAdd(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_add_16px.png") {}
 
 protected:
 
@@ -472,10 +429,7 @@ class UIActionSimpleMachineAddGroup : public UIActionSimple
 public:
 
     UIActionSimpleMachineAddGroup(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_group_create_16px.png", ":/vm_group_create_disabled_16px.png") {}
 
 protected:
 
@@ -505,10 +459,7 @@ public:
     UIActionSimpleMachineSettings(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_settings_32px.png", ":/vm_settings_16px.png",
-                         ":/vm_settings_disabled_32px.png", ":/vm_settings_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                         ":/vm_settings_disabled_32px.png", ":/vm_settings_disabled_16px.png") {}
 
 protected:
 
@@ -538,10 +489,7 @@ class UIActionSimpleMachineClone : public UIActionSimple
 public:
 
     UIActionSimpleMachineClone(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png") {}
 
 protected:
 
@@ -571,10 +519,7 @@ public:
     UIActionSimpleMachineRemove(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_delete_32px.png", ":/vm_delete_16px.png",
-                         ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                         ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png") {}
 
 protected:
 
@@ -605,10 +550,7 @@ public:
     UIActionStateCommonStartOrShow(UIActionPool *pParent)
         : UIActionPolymorphic(pParent,
                         ":/vm_start_32px.png", ":/vm_start_16px.png",
-                        ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                        ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
 
 protected:
 
@@ -652,10 +594,7 @@ public:
     UIActionToggleCommonPauseAndResume(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vm_pause_32px.png", ":/vm_pause_16px.png",
-                         ":/vm_pause_disabled_32px.png", ":/vm_pause_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                         ":/vm_pause_disabled_32px.png", ":/vm_pause_disabled_16px.png") {}
 
 protected:
 
@@ -683,10 +622,7 @@ class UIActionSimpleCommonReset : public UIActionSimple
 public:
 
     UIActionSimpleCommonReset(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png") {}
 
 protected:
 
@@ -716,10 +652,7 @@ public:
     UIActionSimpleCommonDiscard(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/vm_discard_32px.png", ":/vm_discard_16px.png",
-                         ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                         ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png") {}
 
 protected:
 
@@ -752,10 +685,7 @@ public:
     UIActionSimpleCommonRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
                          ":/refresh_32px.png", ":/refresh_16px.png",
-                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png") {}
 
 protected:
 
@@ -778,10 +708,7 @@ class UIActionSimpleCommonShowInFileManager : public UIActionSimple
 public:
 
     UIActionSimpleCommonShowInFileManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png") {}
 
 protected:
 
@@ -812,10 +739,7 @@ class UIActionSimpleCommonCreateShortcut : public UIActionSimple
 public:
 
     UIActionSimpleCommonCreateShortcut(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png") {}
 
 protected:
 
@@ -843,10 +767,7 @@ class UIActionSimpleMachineSortParent : public UIActionSimple
 public:
 
     UIActionSimpleMachineSortParent(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png") {}
 
 protected:
 
@@ -870,10 +791,7 @@ class UIActionMenuClose : public UIActionMenu
 public:
 
     UIActionMenuClose(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/exit_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionMenu(pParent, ":/exit_16px.png") {}
 
 protected:
 
@@ -890,10 +808,7 @@ class UIActionSimpleSave : public UIActionSimple
 public:
 
     UIActionSimpleSave(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png") {}
 
 protected:
 
@@ -921,10 +836,7 @@ class UIActionSimpleACPIShutdown : public UIActionSimple
 public:
 
     UIActionSimpleACPIShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png") {}
 
 protected:
 
@@ -952,10 +864,7 @@ class UIActionSimplePowerOff : public UIActionSimple
 public:
 
     UIActionSimplePowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
-    {
-        retranslateUi();
-    }
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png") {}
 
 protected:
 
@@ -977,8 +886,8 @@ protected:
 };
 
 
-UIActionPoolSelector::UIActionPoolSelector()
-    : UIActionPool(UIActionPoolType_Selector)
+UIActionPoolSelector::UIActionPoolSelector(bool fTemporary /* = false */)
+    : UIActionPool(UIActionPoolType_Selector, fTemporary)
 {
 }
 
@@ -1036,6 +945,9 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleMachineSortParent(this);
+
+    /* Retranslate finally: */
+    retranslateUi();
 }
 
 void UIActionPoolSelector::prepareConnections()
@@ -1054,10 +966,11 @@ void UIActionPoolSelector::retranslateUi()
     /* Translate all the actions: */
     foreach (const int iActionPoolKey, m_pool.keys())
         m_pool[iActionPoolKey]->retranslateUi();
-    /* Re-apply Selector UI shortcuts: */
-    sltApplyShortcuts();
-    /* Temporary create Runtime UI pool to do the same: */
-    UIActionPool::createTemporary(UIActionPoolType_Runtime);
+    /* Update Selector UI shortcuts: */
+    updateShortcuts();
+    /* Create temporary Runtime UI pool to do the same: */
+    if (!m_fTemporary)
+        UIActionPool::createTemporary(UIActionPoolType_Runtime);
 }
 
 QString UIActionPoolSelector::shortcutsExtraDataID() const

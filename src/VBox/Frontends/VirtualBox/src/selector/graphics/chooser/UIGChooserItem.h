@@ -30,6 +30,7 @@
 #include <iprt/cdefs.h>
 
 /* Forward declaration: */
+class UIActionPool;
 class UIGChooserModel;
 class UIGChooserItemGroup;
 class UIGChooserItemMachine;
@@ -86,6 +87,9 @@ public:
 
     /* API: Model stuff: */
     UIGChooserModel* model() const;
+
+    /** Returns the action-pool reference. */
+    UIActionPool* actionPool() const;
 
     /* API: Parent stuff: */
     UIGChooserItem* parentItem() const;

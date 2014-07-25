@@ -37,6 +37,7 @@
 class QWidget;
 class CSession;
 class UISession;
+class UIActionPool;
 class UIMachineLogic;
 class UIMachineWindow;
 class UIMachineView;
@@ -114,6 +115,7 @@ protected:
 
     /* Common getters: */
     UIMachineLogic* machineLogic() const;
+    UIActionPool* actionPool() const;
     UISession* uisession() const;
     CSession& session() const;
 

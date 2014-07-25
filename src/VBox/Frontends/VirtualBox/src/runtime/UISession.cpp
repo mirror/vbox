@@ -124,6 +124,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Base variables: */
     , m_pMachine(pMachine)
     , m_session(sessionReference)
+    , m_pActionPool(0)
 #ifdef Q_WS_MAC
     , m_pMenuBar(0)
 #endif /* Q_WS_MAC */
@@ -765,10 +766,10 @@ void UISession::sltVRDEChange()
     const CVRDEServer &server = machine.GetVRDEServer();
     bool fIsVRDEServerAvailable = !server.isNull();
     /* Show/Hide VRDE action depending on VRDE server availability status: */
-    gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setVisible(fIsVRDEServerAvailable);
+    actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setVisible(fIsVRDEServerAvailable);
     /* Check/Uncheck VRDE action depending on VRDE server activity status: */
     if (fIsVRDEServerAvailable)
-        gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setChecked(server.GetEnabled());
+        actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setChecked(server.GetEnabled());
     /* Notify listeners about VRDE change: */
     emit sigVRDEChange();
 }
@@ -778,7 +779,7 @@ void UISession::sltVideoCaptureChange()
     /* Get machine: */
     const CMachine machine = session().GetMachine();
     /* Check/Uncheck Video Capture action depending on feature status: */
-    gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine.GetVideoCaptureEnabled());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine.GetVideoCaptureEnabled());
     /* Notify listeners about Video Capture change: */
     emit sigVideoCaptureChange();
 }
@@ -979,6 +980,9 @@ void UISession::prepareConsoleEventHandlers()
 
 void UISession::prepareActions()
 {
+    /* Create action-pool: */
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+
     /* Get host/machine: */
     const CHost host = vboxGlobal().host();
     const CMachine machine = session().GetConsole().GetMachine();
@@ -996,8 +1000,8 @@ void UISession::prepareActions()
             if (attachment.GetType() == KDeviceType_Floppy)
                 ++iDevicesCountFD;
         }
-        QAction *pOpticalDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
-        QAction *pFloppyDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
+        QAction *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
+        QAction *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
         pOpticalDevicesMenu->setData(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
         if (!iDevicesCountCD)
@@ -1045,7 +1049,7 @@ void UISession::prepareActions()
     }
 
     /* Apply cumulative restriction: */
-    gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session, restriction);
+    actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restriction);
 
 #ifdef Q_WS_MAC
     /* Create Mac OS X menu-bar: */
@@ -1053,7 +1057,7 @@ void UISession::prepareActions()
     AssertPtrReturnVoid(m_pMenuBar);
     {
         /* Prepare menu-bar: */
-        foreach (QMenu *pMenu, gpActionPool->menus())
+        foreach (QMenu *pMenu, actionPool()->menus())
             m_pMenuBar->addMenu(pMenu);
     }
 #endif /* Q_WS_MAC */
@@ -1124,7 +1128,7 @@ void UISession::prepareFramebuffers()
     const ULONG uMonitorCount = m_session.GetMachine().GetMonitorCount();
     m_frameBufferVector.resize(uMonitorCount);
     QVector<QSize> sizes(uMonitorCount);
-    gpActionPool->toRuntime()->setCurrentFrameBufferSizes(sizes.toList(), true);
+    actionPool()->toRuntime()->setCurrentFrameBufferSizes(sizes.toList(), true);
 }
 
 void UISession::loadSessionSettings()
@@ -1160,16 +1164,16 @@ void UISession::loadSessionSettings()
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);
 
         /* Should guest autoresize? */
-        QAction *pGuestAutoresizeSwitch = gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize);
+        QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
 
         /* Status-bar options: */
         const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
         const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
         const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
-        QAction *pActionStatusBarSettings = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
+        QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
         pActionStatusBarSettings->setEnabled(fEnabled);
-        QAction *pActionStatusBarSwitch = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
+        QAction *pActionStatusBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
         pActionStatusBarSwitch->blockSignals(true);
         pActionStatusBarSwitch->setChecked(fEnabled);
         pActionStatusBarSwitch->blockSignals(false);
@@ -1193,7 +1197,7 @@ void UISession::saveSessionSettings()
         gEDataManager->setMachineFirstTimeStarted(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
-        gEDataManager->setGuestScreenAutoResizeEnabled(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
+        gEDataManager->setGuestScreenAutoResizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
 
 #ifndef Q_WS_MAC
         /* Cleanup user's machine-window icon: */
@@ -1243,6 +1247,9 @@ void UISession::cleanupActions()
     delete m_pMenuBar;
     m_pMenuBar = 0;
 #endif /* Q_WS_MAC */
+
+    /* Destroy action-pool: */
+    UIActionPool::destroy(m_pActionPool);
 }
 
 WId UISession::winId() const

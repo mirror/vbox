@@ -31,6 +31,7 @@
 class QAction;
 class QActionGroup;
 class UISession;
+class UIActionPool;
 class UIKeyboardHandler;
 class UIMouseHandler;
 class UIMachineWindow;
@@ -70,6 +71,7 @@ public:
 
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
+    UIActionPool* actionPool() const;
     CSession& session() const;
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }

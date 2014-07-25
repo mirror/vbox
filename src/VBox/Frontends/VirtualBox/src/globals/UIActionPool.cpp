@@ -546,78 +546,49 @@ protected:
 };
 
 
-UIActionPool* UIActionPool::m_pInstance = 0;
-
 /* static */
-UIActionPool* UIActionPool::instance()
+UIActionPool* UIActionPool::create(UIActionPoolType type)
 {
-    return m_pInstance;
-}
-
-/* static */
-void UIActionPool::create(UIActionPoolType type)
-{
-    /* Check that instance do NOT exists: */
-    if (m_pInstance)
-        return;
-
-    /* Create instance: */
+    UIActionPool *pActionPool = 0;
     switch (type)
     {
-        case UIActionPoolType_Selector: new UIActionPoolSelector; break;
-        case UIActionPoolType_Runtime: new UIActionPoolRuntime; break;
-        default: break;
+        case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector; break;
+        case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime; break;
+        default: AssertFailedReturn(0);
     }
-
-    /* Prepare instance: */
-    m_pInstance->prepare();
+    AssertPtrReturn(pActionPool, 0);
+    pActionPool->prepare();
+    return pActionPool;
 }
 
 /* static */
-void UIActionPool::destroy()
+void UIActionPool::destroy(UIActionPool *pActionPool)
 {
-    /* Check that instance exists: */
-    if (!m_pInstance)
-        return;
-
-    /* Cleanup instance: */
-    m_pInstance->cleanup();
-
-    /* Delete instance: */
-    delete m_pInstance;
+    AssertPtrReturnVoid(pActionPool);
+    pActionPool->cleanup();
+    delete pActionPool;
 }
 
 /* static */
 void UIActionPool::createTemporary(UIActionPoolType type)
 {
-    UIActionPool *pHelperPool = 0;
+    UIActionPool *pActionPool = 0;
     switch (type)
     {
-        case UIActionPoolType_Selector: pHelperPool = new UIActionPoolSelector; break;
-        case UIActionPoolType_Runtime: pHelperPool = new UIActionPoolRuntime; break;
-        default: break;
+        case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector(true); break;
+        case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime(true); break;
+        default: AssertFailedReturnVoid();
     }
-    if (pHelperPool)
-    {
-        pHelperPool->prepare();
-        pHelperPool->cleanup();
-        delete pHelperPool;
-    }
+    AssertPtrReturnVoid(pActionPool);
+    pActionPool->prepare();
+    pActionPool->cleanup();
+    delete pActionPool;
 }
 
-UIActionPool::UIActionPool(UIActionPoolType type)
+UIActionPool::UIActionPool(UIActionPoolType type, bool fTemporary /* = false */)
     : m_type(type)
+    , m_fTemporary(fTemporary)
 {
-    /* Prepare instance: */
-    if (!m_pInstance)
-        m_pInstance = this;
-}
-
-UIActionPool::~UIActionPool()
-{
-    /* Cleanup instance: */
-    if (m_pInstance == this)
-        m_pInstance = 0;
 }
 
 UIActionPoolRuntime* UIActionPool::toRuntime()
@@ -638,17 +609,17 @@ void UIActionPool::prepare()
     prepareConnections();
     /* Update configuration: */
     updateConfiguration();
-    /* Apply shortcuts: */
-    sltApplyShortcuts();
+    /* Update shortcuts: */
+    updateShortcuts();
 }
 
 void UIActionPool::preparePool()
 {
-    /* Various actions: */
+    /* Create various actions: */
     m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
     m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
 
-    /* 'Help' actions: */
+    /* Create 'Help' actions: */
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
@@ -670,6 +641,11 @@ void UIActionPool::cleanup()
 {
     /* Cleanup pool: */
     cleanupPool();
+}
+
+void UIActionPool::updateShortcuts()
+{
+    gShortcutPool->applyShortcuts(this);
 }
 
 bool UIActionPool::processHotKey(const QKeySequence &key)
@@ -703,11 +679,6 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
         }
     }
     return false;
-}
-
-void UIActionPool::sltApplyShortcuts()
-{
-    gShortcutPool->applyShortcuts(this);
 }
 
 bool UIActionPool::event(QEvent *pEvent)

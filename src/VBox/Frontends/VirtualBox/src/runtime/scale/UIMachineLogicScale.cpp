@@ -47,7 +47,7 @@ bool UIMachineLogicScale::checkAvailability()
      * Since VBoxGlobal::extractKeyFromActionText gets exactly
      * the linked key without the 'Host+' part we are adding it here. */
     QString strHotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(gpActionPool->action(UIActionIndexRT_M_View_T_Scale)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(actionPool()->action(UIActionIndexRT_M_View_T_Scale)->text()));
     Assert(!strHotKey.isEmpty());
 
     /* Show the info message. */
@@ -75,7 +75,7 @@ void UIMachineLogicScale::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          (RuntimeMenuViewActionType)
                                                          (RuntimeMenuViewActionType_AdjustWindow |
                                                           RuntimeMenuViewActionType_GuestAutoresize |
@@ -83,7 +83,7 @@ void UIMachineLogicScale::prepareActionGroups()
                                                           RuntimeMenuViewActionType_Resize));
 
     /* Take care of view-action toggle state: */
-    UIAction *pActionScale = gpActionPool->action(UIActionIndexRT_M_View_T_Scale);
+    UIAction *pActionScale = actionPool()->action(UIActionIndexRT_M_View_T_Scale);
     if (!pActionScale->isChecked())
     {
         pActionScale->blockSignals(true);
@@ -98,11 +98,11 @@ void UIMachineLogicScale::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToSeamless()));
 }
 
@@ -144,7 +144,7 @@ void UIMachineLogicScale::prepareMenu()
     AssertPtrReturnVoid(m_pPopupMenu);
     {
         /* Prepare popup-menu: */
-        foreach (QMenu *pMenu, gpActionPool->menus())
+        foreach (QMenu *pMenu, actionPool()->menus())
             m_pPopupMenu->addMenu(pMenu);
     }
 }
@@ -176,11 +176,11 @@ void UIMachineLogicScale::cleanupMachineWindows()
 void UIMachineLogicScale::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToSeamless()));
 
     /* Call to base-class: */
@@ -191,7 +191,7 @@ void UIMachineLogicScale::cleanupActionConnections()
 void UIMachineLogicScale::cleanupActionGroups()
 {
     /* Take care of view-action toggle state: */
-    UIAction *pActionScale = gpActionPool->action(UIActionIndexRT_M_View_T_Scale);
+    UIAction *pActionScale = actionPool()->action(UIActionIndexRT_M_View_T_Scale);
     if (pActionScale->isChecked())
     {
         pActionScale->blockSignals(true);
@@ -200,7 +200,7 @@ void UIMachineLogicScale::cleanupActionGroups()
     }
 
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          RuntimeMenuViewActionType_Invalid);
 
     /* Call to base-class: */

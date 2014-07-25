@@ -114,6 +114,11 @@ UIGChooserModel* UIGChooserItem::model() const
     return pModel;
 }
 
+UIActionPool* UIGChooserItem::actionPool() const
+{
+    return model()->actionPool();
+}
+
 UIGChooserItem* UIGChooserItem::parentItem() const
 {
     return m_pParent;

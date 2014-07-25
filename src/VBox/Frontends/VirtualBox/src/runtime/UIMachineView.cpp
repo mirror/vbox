@@ -545,6 +545,11 @@ void UIMachineView::cleanupFrameBuffer()
     m_pFrameBuffer->setView(NULL);
 }
 
+UIActionPool* UIMachineView::actionPool() const
+{
+    return machineWindow()->actionPool();
+}
+
 UIMachineLogic* UIMachineView::machineLogic() const
 {
     return machineWindow()->machineLogic();

@@ -35,6 +35,7 @@ class QMenuBar;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
+class UIActionPool;
 class CSession;
 class CUSBDevice;
 class CNetworkAdapter;
@@ -88,6 +89,7 @@ public:
 
     /* Common getters: */
     CSession& session() { return m_session; }
+    UIActionPool* actionPool() const { return m_pActionPool; }
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
     UIMachineLogic* machineLogic() const;
@@ -315,6 +317,9 @@ private:
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession &m_session;
+
+    /** Holds the action-pool instance. */
+    UIActionPool *m_pActionPool;
 
 #ifdef Q_WS_MAC
     /** Holds the menu-bar instance. */
