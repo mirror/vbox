@@ -1788,6 +1788,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RealtimeDockIconUpdateEnabled << GUI_RealtimeDockIconUpdateMonitor
 #endif /* Q_WS_MAC */
            << GUI_PassCAD
+           << GUI_MouseCapturePolicy
            << GUI_GuruMeditationHandler
            << GUI_HidLedsSync
            << GUI_InformationWindowGeometry
@@ -2903,6 +2904,11 @@ bool UIExtraDataManager::passCADtoGuest(const QString &strID)
 {
     /* 'False' unless feature allowed: */
     return isFeatureAllowed(GUI_PassCAD, strID);
+}
+
+MouseCapturePolicy UIExtraDataManager::mouseCapturePolicy(const QString &strID)
+{
+    return gpConverter->fromInternalString<MouseCapturePolicy>(extraDataString(GUI_MouseCapturePolicy, strID));
 }
 
 GuruMeditationHandlerType UIExtraDataManager::guruMeditationHandlerType(const QString &strID)

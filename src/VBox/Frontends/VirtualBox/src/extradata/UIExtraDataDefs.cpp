@@ -117,6 +117,7 @@ const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDo
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateMonitor = "GUI/RealtimeDockIconUpdateMonitor";
 #endif /* Q_WS_MAC */
 const char* UIExtraDataDefs::GUI_PassCAD = "GUI/PassCAD";
+const char* UIExtraDataDefs::GUI_MouseCapturePolicy = "GUI/MouseCapturePolicy";
 const char* UIExtraDataDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHandler";
 const char* UIExtraDataDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
 

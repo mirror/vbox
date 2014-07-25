@@ -396,6 +396,9 @@ public:
         /** Returns whether machine should pass CAD to guest. */
         bool passCADtoGuest(const QString &strID);
 
+        /** Returns the mouse-capture policy. */
+        MouseCapturePolicy mouseCapturePolicy(const QString &strID);
+
         /** Returns redefined guru-meditation handler type. */
         GuruMeditationHandlerType guruMeditationHandlerType(const QString &strID);
 
