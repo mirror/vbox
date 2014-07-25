@@ -202,8 +202,14 @@ protected:
     virtual void updateMenuView();
     /** Updates the 'Devices' menu. */
     virtual void updateMenuDevices();
+    /** Updates the 'Devices' : 'Hard Drives' menu. */
+    virtual void updateMenuDevicesHardDrives();
     /** Updates the 'Devices' : 'Network' menu. */
     virtual void updateMenuDevicesNetwork();
+    /** Updates the 'Devices' : 'Shared Folders' menu. */
+    virtual void updateMenuDevicesSharedFolders();
+    /** Updates the 'Devices' : 'Video Capture' menu. */
+    virtual void updateMenuDevicesVideoCapture();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */

@@ -1395,6 +1395,16 @@ void UIMachineLogic::updateMenuDevices()
     /* Separator #1? */
     bool fSeparator1 = false;
 
+    /* 'Hard Drives' submenu: */
+    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_HardDrives)
+    {
+//        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives));
+//        fSeparator1 = true;
+    }
+    else
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives)->setEnabled(false);
+    updateMenuDevicesHardDrives();
+
     /* 'Optical Devices' submenu: */
     if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_OpticalDevices)
     {
@@ -1459,14 +1469,15 @@ void UIMachineLogic::updateMenuDevices()
         gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(false);
     updateMenuDevicesNetwork();
 
-    /* 'Shared Folders Settings' action: */
-    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_SharedFoldersSettings)
+    /* 'Shared Folders' submenu: */
+    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_SharedFolders)
     {
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
-        fSeparator1 = true;
+//        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders));
+//        fSeparator1 = true;
     }
     else
-        gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(false);
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders)->setEnabled(false);
+    updateMenuDevicesSharedFolders();
 
     /* Separator #1: */
     if (fSeparator1)
@@ -1495,6 +1506,7 @@ void UIMachineLogic::updateMenuDevices()
     }
     else
         gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setEnabled(false);
+    updateMenuDevicesVideoCapture();
 
     /* Separator #2: */
     if (fSeparator2)
@@ -1506,6 +1518,22 @@ void UIMachineLogic::updateMenuDevices()
         pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
     else
         gpActionPool->action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(false);
+}
+
+void UIMachineLogic::updateMenuDevicesHardDrives()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+
+    /* 'Hard Drives Settings' submenu: */
+    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_HardDrivesSettings)
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+    else
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(false);
 }
 
 void UIMachineLogic::updateMenuDevicesNetwork()
@@ -1522,6 +1550,38 @@ void UIMachineLogic::updateMenuDevicesNetwork()
         pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
     else
         gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(false);
+}
+
+void UIMachineLogic::updateMenuDevicesSharedFolders()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+
+    /* 'Shared Folders Settings' action: */
+    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_SharedFoldersSettings)
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+    else
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(false);
+}
+
+void UIMachineLogic::updateMenuDevicesVideoCapture()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+
+    /* 'Video Capture Settings' action: */
+    if (uisession()->allowedActionsMenuDevices() & RuntimeMenuDevicesActionType_VideoCaptureSettings)
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+    else
+        gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(false);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

@@ -406,8 +406,10 @@ template<> QString toInternalString(const RuntimeMenuApplicationActionType &runt
     QString strResult;
     switch (runtimeMenuApplicationActionType)
     {
-        case RuntimeMenuApplicationActionType_About: strResult = "About"; break;
-        case RuntimeMenuApplicationActionType_All:   strResult = "All"; break;
+        case RuntimeMenuApplicationActionType_About:       strResult = "About"; break;
+        case RuntimeMenuApplicationActionType_Preferences: strResult = "Preferences"; break;
+        case RuntimeMenuApplicationActionType_Close:       strResult = "Close"; break;
+        case RuntimeMenuApplicationActionType_All:         strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
@@ -422,9 +424,11 @@ template<> RuntimeMenuApplicationActionType fromInternalString<RuntimeMenuApplic
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<RuntimeMenuApplicationActionType> values;
-    keys << "About";  values << RuntimeMenuApplicationActionType_About;
-    keys << "All";    values << RuntimeMenuApplicationActionType_All;
+    QStringList keys;      QList<RuntimeMenuApplicationActionType> values;
+    keys << "About";       values << RuntimeMenuApplicationActionType_About;
+    keys << "Preferences"; values << RuntimeMenuApplicationActionType_Preferences;
+    keys << "Close";       values << RuntimeMenuApplicationActionType_Close;
+    keys << "All";         values << RuntimeMenuApplicationActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
         return RuntimeMenuApplicationActionType_Invalid;
@@ -513,6 +517,7 @@ template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenu
         case RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
         case RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
         case RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
+        case RuntimeMenuViewActionType_Resize:            strResult = "Resize"; break;
         case RuntimeMenuViewActionType_Multiscreen:       strResult = "Multiscreen"; break;
         case RuntimeMenuViewActionType_All:               strResult = "All"; break;
         default:
@@ -538,6 +543,7 @@ template<> RuntimeMenuViewActionType fromInternalString<RuntimeMenuViewActionTyp
     keys << "StatusBar";         values << RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings"; values << RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";   values << RuntimeMenuViewActionType_ToggleStatusBar;
+    keys << "Resize";            values << RuntimeMenuViewActionType_Resize;
     keys << "Multiscreen";       values << RuntimeMenuViewActionType_Multiscreen;
     keys << "All";               values << RuntimeMenuViewActionType_All;
     /* Invalid type for unknown words: */
@@ -553,6 +559,8 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
     QString strResult;
     switch (runtimeMenuDevicesActionType)
     {
+        case RuntimeMenuDevicesActionType_HardDrives:            strResult = "HardDrives"; break;
+        case RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
         case RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
         case RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
         case RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
@@ -561,9 +569,11 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
         case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
         case RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
         case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
+        case RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
         case RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
         case RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
         case RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
+        case RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
         case RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
         case RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
         default:
@@ -581,6 +591,8 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;                QList<RuntimeMenuDevicesActionType> values;
+    keys << "HardDrives";            values << RuntimeMenuDevicesActionType_HardDrives;
+    keys << "HardDrivesSettings";    values << RuntimeMenuDevicesActionType_HardDrivesSettings;
     keys << "OpticalDevices";        values << RuntimeMenuDevicesActionType_OpticalDevices;
     keys << "FloppyDevices";         values << RuntimeMenuDevicesActionType_FloppyDevices;
     keys << "USBDevices";            values << RuntimeMenuDevicesActionType_USBDevices;
@@ -589,9 +601,11 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
     keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;
     keys << "Network";               values << RuntimeMenuDevicesActionType_Network;
     keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
+    keys << "SharedFolders";         values << RuntimeMenuDevicesActionType_SharedFolders;
     keys << "SharedFoldersSettings"; values << RuntimeMenuDevicesActionType_SharedFoldersSettings;
     keys << "VRDEServer";            values << RuntimeMenuDevicesActionType_VRDEServer;
     keys << "VideoCapture";          values << RuntimeMenuDevicesActionType_VideoCapture;
+    keys << "VideoCaptureSettings";  values << RuntimeMenuDevicesActionType_VideoCaptureSettings;
     keys << "InstallGuestTools";     values << RuntimeMenuDevicesActionType_InstallGuestTools;
     keys << "All";                   values << RuntimeMenuDevicesActionType_All;
     /* Invalid type for unknown words: */
@@ -655,6 +669,7 @@ template<> QString toInternalString(const RuntimeMenuHelpActionType &runtimeMenu
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
         case RuntimeMenuHelpActionType_About:                strResult = "About"; break;
+        case RuntimeMenuHelpActionType_Preferences:          strResult = "Preferences"; break;
 #endif /* !Q_WS_MAC */
         case RuntimeMenuHelpActionType_All:                  strResult = "All"; break;
         default:
@@ -680,6 +695,7 @@ template<> RuntimeMenuHelpActionType fromInternalString<RuntimeMenuHelpActionTyp
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
     keys << "About";                values << RuntimeMenuHelpActionType_About;
+    keys << "Preferences";          values << RuntimeMenuHelpActionType_Preferences;
 #endif /* !Q_WS_MAC */
     keys << "All";                  values << RuntimeMenuHelpActionType_All;
     /* Invalid type for unknown words: */

@@ -378,6 +378,7 @@ enum RuntimeMenuApplicationActionType
     RuntimeMenuApplicationActionType_Invalid     = 0,
     RuntimeMenuApplicationActionType_About       = RT_BIT(0),
     RuntimeMenuApplicationActionType_Preferences = RT_BIT(1),
+    RuntimeMenuApplicationActionType_Close       = RT_BIT(2),
     RuntimeMenuApplicationActionType_All         = 0xFFFF
 };
 #endif /* Q_WS_MAC */
@@ -419,7 +420,8 @@ enum RuntimeMenuViewActionType
     RuntimeMenuViewActionType_StatusBar         = RT_BIT(5),
     RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(6),
     RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(7),
-    RuntimeMenuViewActionType_Multiscreen       = RT_BIT(8),
+    RuntimeMenuViewActionType_Resize            = RT_BIT(8),
+    RuntimeMenuViewActionType_Multiscreen       = RT_BIT(9),
     RuntimeMenuViewActionType_All               = 0xFFFF
 };
 
@@ -427,18 +429,22 @@ enum RuntimeMenuViewActionType
 enum RuntimeMenuDevicesActionType
 {
     RuntimeMenuDevicesActionType_Invalid               = 0,
-    RuntimeMenuDevicesActionType_OpticalDevices        = RT_BIT(0),
-    RuntimeMenuDevicesActionType_FloppyDevices         = RT_BIT(1),
-    RuntimeMenuDevicesActionType_USBDevices            = RT_BIT(2),
-    RuntimeMenuDevicesActionType_WebCams               = RT_BIT(3),
-    RuntimeMenuDevicesActionType_SharedClipboard       = RT_BIT(4),
-    RuntimeMenuDevicesActionType_DragAndDrop           = RT_BIT(5),
-    RuntimeMenuDevicesActionType_Network               = RT_BIT(6),
-    RuntimeMenuDevicesActionType_NetworkSettings       = RT_BIT(7),
-    RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(8),
-    RuntimeMenuDevicesActionType_VRDEServer            = RT_BIT(9),
-    RuntimeMenuDevicesActionType_VideoCapture          = RT_BIT(10),
-    RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(11),
+    RuntimeMenuDevicesActionType_HardDrives            = RT_BIT(0),
+    RuntimeMenuDevicesActionType_HardDrivesSettings    = RT_BIT(1),
+    RuntimeMenuDevicesActionType_OpticalDevices        = RT_BIT(2),
+    RuntimeMenuDevicesActionType_FloppyDevices         = RT_BIT(3),
+    RuntimeMenuDevicesActionType_USBDevices            = RT_BIT(4),
+    RuntimeMenuDevicesActionType_WebCams               = RT_BIT(5),
+    RuntimeMenuDevicesActionType_SharedClipboard       = RT_BIT(6),
+    RuntimeMenuDevicesActionType_DragAndDrop           = RT_BIT(7),
+    RuntimeMenuDevicesActionType_Network               = RT_BIT(8),
+    RuntimeMenuDevicesActionType_NetworkSettings       = RT_BIT(9),
+    RuntimeMenuDevicesActionType_SharedFolders         = RT_BIT(10),
+    RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(11),
+    RuntimeMenuDevicesActionType_VRDEServer            = RT_BIT(12),
+    RuntimeMenuDevicesActionType_VideoCapture          = RT_BIT(13),
+    RuntimeMenuDevicesActionType_VideoCaptureSettings  = RT_BIT(14),
+    RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(15),
     RuntimeMenuDevicesActionType_All                   = 0xFFFF
 };
 
