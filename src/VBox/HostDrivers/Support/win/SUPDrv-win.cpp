@@ -2006,6 +2006,15 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 #endif
 
 
+/**
+ * Returns configuration flags of the host kernel.
+ */
+SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
+{
+    return 0;
+}
+
+
 #ifdef VBOX_WITH_HARDENING
 
 /** @name Identifying Special Processes: CSRSS.EXE

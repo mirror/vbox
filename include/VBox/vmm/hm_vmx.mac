@@ -158,7 +158,8 @@
 %define VMX_RESTORE_HOST_SEL_TR                                 10h   ;RT_BIT(4)
 %define VMX_RESTORE_HOST_GDTR                                   20h   ;RT_BIT(5)
 %define VMX_RESTORE_HOST_IDTR                                   40h   ;RT_BIT(6)
-%define VMX_RESTORE_HOST_REQUIRED                               80h   ;RT_BIT(7)
+%define VMX_RESTORE_HOST_GDT_READ_ONLY                          80h   ;RT_BIT(7)
+%define VMX_RESTORE_HOST_REQUIRED                              100h   ;RT_BIT(8)
 
 ;; C version hm_vmx.h.
 struc VMXRESTOREHOST
