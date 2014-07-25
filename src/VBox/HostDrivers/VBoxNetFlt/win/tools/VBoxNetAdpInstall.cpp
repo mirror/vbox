@@ -49,6 +49,10 @@ static int VBoxNetAdpInstall(void)
 
         if (dwErr == ERROR_SUCCESS)
         {
+            hr = VBoxDrvCfgInfInstall(MpInf);
+            if (FAILED(hr))
+                printf("VBoxDrvCfgInfInstall failed %#x\n", hr);
+
             GUID guid;
             BSTR name, errMsg;
 
