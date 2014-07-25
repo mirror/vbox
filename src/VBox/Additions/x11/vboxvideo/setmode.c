@@ -116,13 +116,13 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         return FALSE;
     else
         cwReal = RT_MIN((int) cWidth, pScrn->displayWidth - x);
-    TRACE_LOG("pVBox->afDisabled[%u]=%d\n",
-              cDisplay, (int)pVBox->afDisabled[cDisplay]);
+    TRACE_LOG("pVBox->pScreens[%u].afDisabled=%d\n",
+              cDisplay, (int)pVBox->pScreens[cDisplay].afDisabled);
     if (cDisplay == 0)
         VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
                                   vboxBPP(pScrn), 0, x, y);
     fFlags = VBVA_SCREEN_F_ACTIVE;
-    fFlags |= (pVBox->afDisabled[cDisplay] ? VBVA_SCREEN_F_DISABLED : 0);
+    fFlags |= (pVBox->pScreens[cDisplay].afDisabled ? VBVA_SCREEN_F_DISABLED : 0);
     VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
                                 offStart, pVBox->cbLine, cwReal, cHeight,
                                 vboxBPP(pScrn), fFlags);
@@ -174,10 +174,10 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     {
         unsigned i;
         for (i = 0; i < pVBox->cScreens; ++i)
-            VBOXSetMode(pScrn, i, pVBox->aScreenLocation[i].cx,
-                            pVBox->aScreenLocation[i].cy,
-                            pVBox->aScreenLocation[i].x,
-                            pVBox->aScreenLocation[i].y);
+            VBOXSetMode(pScrn, i, pVBox->pScreens[i].aScreenLocation.cx,
+                            pVBox->pScreens[i].aScreenLocation.cy,
+                            pVBox->pScreens[i].aScreenLocation.x,
+                            pVBox->pScreens[i].aScreenLocation.y);
     }
 #endif
 #ifdef RT_OS_SOLARIS
