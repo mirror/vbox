@@ -415,7 +415,7 @@ void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
     }
 }
 
-int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
+static int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
 {
     while (pcszScreens && *pcszScreens)
     {
@@ -436,6 +436,15 @@ int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
         (*pScreens)[iScreen] = true;
         pcszScreens = pszNext;
     }
+    return 0;
+}
+
+static int parseNum(uint32_t uIndex, unsigned cMaxIndex, const char *pszName)
+{
+    if (   uIndex >= 1
+        && uIndex <= cMaxIndex)
+        return uIndex;
+    errorArgument("Invalid %s number %u", pszName, uIndex);
     return 0;
 }
 
@@ -1216,8 +1225,11 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICTRACEFILE:
             {
-                ComPtr<INetworkAdapter> nic;
 
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1227,8 +1239,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICTRACE:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1238,8 +1252,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICPROPERTY:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1275,8 +1291,10 @@ int handleModifyVM(HandlerArg *a)
             }
             case MODIFYVM_NICTYPE:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1318,8 +1336,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICSPEED:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1329,8 +1349,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICBOOTPRIO:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1367,6 +1389,9 @@ int handleModifyVM(HandlerArg *a)
                     break;
                 }
 
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
                 ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1377,6 +1402,9 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NICBWGROUP:
             {
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
                 ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1407,8 +1435,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NIC:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1465,8 +1495,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_CABLECONNECTED:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1476,8 +1508,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_BRIDGEADAPTER:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1495,8 +1529,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_HOSTONLYADAPTER:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1514,8 +1550,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_INTNET:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1533,8 +1571,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_GENERICDRV:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1544,8 +1584,10 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NATNETWORKNAME:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1555,12 +1597,14 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NATNET:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
 
                 const char *psz = ValueUnion.psz;
@@ -1573,13 +1617,16 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NATBINDIP:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(HostIP)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
@@ -1621,6 +1668,9 @@ int handleModifyVM(HandlerArg *a)
                 ITERATE_TO_NEXT_TERM(ch);
                 strTcpRcv = RTStrStrip(ch);
 
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
@@ -1633,13 +1683,16 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NATPF:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 /* format name:proto:hostip:hostport:guestip:guestport*/
                 if (RTStrCmp(ValueUnion.psz, "delete") != 0)
                 {
@@ -1726,84 +1779,104 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_NATTFTPPREFIX:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(TFTPPrefix)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 
             case MODIFYVM_NATTFTPFILE:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(TFTPBootFile)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 
             case MODIFYVM_NATTFTPSERVER:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(TFTPNextServer)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
             case MODIFYVM_NATDNSPASSDOMAIN:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(DNSPassDomain)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_NATDNSPROXY:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(DNSProxy)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_NATDNSHOSTRESOLVER:
             {
-                ComPtr<INetworkAdapter> nic;
-                ComPtr<INATEngine> engine;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
+                ComPtr<INATEngine> engine;
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
+
                 CHECK_ERROR(engine, COMSETTER(DNSUseHostResolver)(ValueUnion.f));
                 break;
             }
             case MODIFYVM_MACADDRESS:
             {
-                ComPtr<INetworkAdapter> nic;
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
 
+                ComPtr<INetworkAdapter> nic;
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
