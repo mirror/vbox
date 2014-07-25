@@ -1,7 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
-        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
         <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
         <file alias="os_oraclesolaris_hidpi.png">images/hidpi/os_oraclesolaris_hidpi.png</file>
         <file alias="os_os2_other_hidpi.png">images/hidpi/os_os2_other_hidpi.png</file>
@@ -158,6 +156,12 @@
         <file alias="state_stuck_16px_hidpi.png">images/hidpi/state_stuck_16px_hidpi.png</file>
         <file alias="status_check_16px_hidpi.png">images/hidpi/status_check_16px_hidpi.png</file>
         <file alias="status_error_16px_hidpi.png">images/hidpi/status_error_16px_hidpi.png</file>
+        <file alias="statusbar_16px_hidpi.png">images/hidpi/statusbar_16px_hidpi.png</file>
+        <file alias="statusbar_disabled_16px_hidpi.png">images/hidpi/statusbar_disabled_16px_hidpi.png</file>
+        <file alias="statusbar_on_16px_hidpi.png">images/hidpi/statusbar_on_16px_hidpi.png</file>
+        <file alias="statusbar_on_disabled_16px_hidpi.png">images/hidpi/statusbar_on_disabled_16px_hidpi.png</file>
+        <file alias="statusbar_settings_16px_hidpi.png">images/hidpi/statusbar_settings_16px_hidpi.png</file>
+        <file alias="statusbar_settings_disabled_16px_hidpi.png">images/hidpi/statusbar_settings_disabled_16px_hidpi.png</file>
         <file alias="usb_16px_hidpi.png">images/hidpi/usb_16px_hidpi.png</file>
         <file alias="usb_24px_hidpi.png">images/hidpi/usb_24px_hidpi.png</file>
         <file alias="usb_32px_hidpi.png">images/hidpi/usb_32px_hidpi.png</file>
