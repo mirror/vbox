@@ -4300,6 +4300,14 @@ void VBoxGlobal::prepare()
     /* Create shortcut pool: */
     UIShortcutPool::create();
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* Create network manager: */
+    UINetworkManager::create();
+
+    /* Schedule update manager: */
+    UIUpdateManager::schedule();
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
     /* Create action pool: */
     if (isVMConsoleProcess())
     {
@@ -4311,14 +4319,6 @@ void VBoxGlobal::prepare()
         UIActionPool::create(UIActionPoolType_Selector);
         UIActionPool::createTemporary(UIActionPoolType_Runtime);
     }
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Create network manager: */
-    UINetworkManager::create();
-
-    /* Schedule update manager: */
-    UIUpdateManager::schedule();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 }
 
 void VBoxGlobal::cleanup()
