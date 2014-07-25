@@ -2358,7 +2358,7 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
         uMaxWidth  += width;
         uMaxHeight  = RT_MAX(uMaxHeight, height);
         QImage shot = QImage(width, height, QImage::Format_RGB32);
-        display.TakeScreenShot(i, shot.bits(), shot.width(), shot.height());
+        display.TakeScreenShot(i, shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
         images << shot;
     }
     /* Create a image which will hold all sub images vertically. */

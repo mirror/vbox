@@ -822,7 +822,7 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
 
         /* Calculate bytes per pixel */
         uint32_t bpp = 1;
-        if (uPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+        if (uPixelFormat == BitmapFormat_BGR)
         {
             switch (uBitsPerPixel)
             {

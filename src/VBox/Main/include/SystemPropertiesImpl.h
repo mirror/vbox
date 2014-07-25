@@ -98,6 +98,7 @@ private:
     HRESULT setDefaultAdditionsISO(const com::Utf8Str &aDefaultAdditionsISO);
     HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend);
     HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
+    HRESULT getScreenShotFormats(std::vector<BitmapFormat_T> &aScreenShotFormats);
 
     // wrapped ISystemProperties methods
     HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,

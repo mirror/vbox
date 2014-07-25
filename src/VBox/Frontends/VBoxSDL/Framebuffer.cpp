@@ -340,7 +340,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
-    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    *pixelFormat = BitmapFormat_BGR;
     return S_OK;
 }
 
@@ -1445,7 +1445,7 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(PixelFormat)(ULONG *pixelFormat)
     LogFlow(("VBoxSDLFBOverlay::GetPixelFormat\n"));
     if (!pixelFormat)
         return E_INVALIDARG;
-    *pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
+    *pixelFormat = BitmapFormat_BGR;
     return S_OK;
 }
 
@@ -1575,7 +1575,7 @@ STDMETHODIMP VBoxSDLFBOverlay::NotifyUpdate(ULONG x, ULONG y,
  * Change the dimensions of the overlay.
  *
  * @returns COM status code
- * @param   pixelFormat Must be FramebufferPixelFormat_PixelFormatRGB32.
+ * @param   pixelFormat Must be BitmapFormat_BGR.
  * @param   vram        Must be NULL.
  * @param   lineSize    Ignored.
  * @param   w           New overlay width.
@@ -1586,7 +1586,7 @@ STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat,
                                              ULONG bitsPerPixel, ULONG bytesPerLine,
                                              ULONG w, ULONG h, BOOL *finished)
 {
-    AssertReturn(pixelFormat == FramebufferPixelFormat_FOURCC_RGB, E_INVALIDARG);
+    AssertReturn(pixelFormat == BitmapFormat_BGR, E_INVALIDARG);
     AssertReturn(vram == 0, E_INVALIDARG);
     AssertReturn(bitsPerPixel == 32, E_INVALIDARG);
     mOverlayWidth = w;

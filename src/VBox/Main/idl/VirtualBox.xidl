@@ -1313,6 +1313,48 @@
     </const>
   </enum>
 
+  <enum
+    name="BitmapFormat"
+    uuid="2526302a-cd88-4491-8637-ae50b9804fbc"
+    >
+    <desc>
+      Format of a bitmap. Generic values for formats used by
+      the source bitmap, the screen shot or image update APIs.
+    </desc>
+
+    <const name="Opaque"          value="0">
+      <desc>
+        Unknown buffer format (the user may not assume any particular format of
+        the buffer).
+      </desc>
+    </const>
+    <const name="BGR"             value="0x20524742">
+      <desc>
+        Generic BGR format. Pixel layout depends on the number of bits per pixel.
+      </desc>
+    </const>
+    <const name="BGR0"            value="0x30524742">
+      <desc>
+        4 bytes per pixel: B, G, R, 0.
+      </desc>
+    </const>
+    <const name="BGRA"            value="0x41524742">
+      <desc>
+        4 bytes per pixel: B, G, R, A.
+      </desc>
+    </const>
+    <const name="RGBA"            value="0x41424752">
+      <desc>
+        4 bytes per pixel: R, G, B, A.
+      </desc>
+    </const>
+    <const name="PNG"             value="0x20474E50">
+      <desc>
+        PNG image.
+      </desc>
+    </const>
+  </enum>
+
   <!--
   // IVirtualBoxErrorInfo
   /////////////////////////////////////////////////////////////////////////
@@ -8948,7 +8990,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="29c295a2-346e-42cf-92c0-8db515d75397"
+    uuid="2dc77d62-27e7-4e6e-87eb-b41ae0d555da"
     wsmap="managed"
     >
     <desc>
@@ -9239,6 +9281,13 @@
         This global setting is overridden by the per-VM attribute
         <link to="IMachine::defaultFrontend" /> or a frontend type
         passed to <link to="IMachine::launchVMProcess" />.
+      </desc>
+    </attribute>
+
+    <attribute name="screenShotFormats" type="BitmapFormat" safearray="yes" readonly="yes">
+      <desc>
+        Supported bitmap formats which can be used with takeScreenShot
+        and takeScreenShotToArray methods.
       </desc>
     </attribute>
 
@@ -15219,32 +15268,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <enum
-    name="FramebufferPixelFormat"
-    uuid="7acfd5ed-29e3-45e3-8136-73c9224f3d2d"
-    >
-    <desc>
-      Format of the video memory buffer. Constants represented by this enum can
-      be used to test for particular values of <link
-      to="IFramebuffer::pixelFormat"/>.
-
-      See also www.fourcc.org for more information about FOURCC pixel formats.
-    </desc>
-
-    <const name="Opaque"                value="0">
-      <desc>
-        Unknown buffer format (the user may not assume any particular format of
-        the buffer).
-      </desc>
-    </const>
-    <const name="FOURCC_RGB"            value="0x32424752">
-      <desc>
-        Basic RGB format (<link to="IFramebuffer::bitsPerPixel"/> determines the
-        bit layout).
-      </desc>
-    </const>
-  </enum>
-
-  <enum
     name="FramebufferUpdateMode"
     uuid="1268d8ab-dd2f-443c-bc56-d93d3ced5cde"
     >
@@ -15296,27 +15319,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
       <desc>
-        Color depth, in bits per pixel. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, valid values
-        are: 8, 15, 16, 24 and 32.
+        Color depth, in bits per pixel.
       </desc>
     </attribute>
 
     <attribute name="bytesPerLine" type="unsigned long" readonly="yes">
       <desc>
-        Scan line size, in bytes. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, the
-        size of the scan line must be aligned to 32 bits.
+        Scan line size, in bytes.
       </desc>
     </attribute>
 
     <attribute name="pixelFormat" type="unsigned long" readonly="yes">
       <desc>
-        Frame buffer pixel format. It's either one of the values defined by <link
-        to="FramebufferPixelFormat"/> or a raw FOURCC code.
+        Frame buffer pixel format. It's one of the values defined by <link
+        to="BitmapFormat"/>.
         <note>
           This attribute must never (and will never) return <link
-          to="FramebufferPixelFormat_Opaque"/> -- the format of the frame
+          to="BitmapFormat_Opaque"/> -- the format of the frame
           buffer must be always known.
         </note>
       </desc>
@@ -15562,7 +15581,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="ddc8beaf-c3c8-4dd9-82af-9c98fb6f97b3"
+    uuid="1659de81-24f0-41a9-afd4-abd03dcfbcbc"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -15689,9 +15708,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="takeScreenShot">
       <desc>
-        Takes a screen shot of the requested size and copies it to the
-        32-bpp buffer allocated by the caller and pointed to by @a address.
-        A pixel consists of 4 bytes in order: B, G, R, 0.
+        Takes a screen shot of the requested size and format and copies it to the
+        buffer allocated by the caller and pointed to by @a address.
+        The buffer size must be enough for a 32 bits per pixel bitmap,
+        i.e. width * height * 4 bytes.
 
         <note>This API can be used only locally by a VM process through the
             COM/XPCOM C++ API as it requires pointer support. It is not
@@ -15699,41 +15719,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
             Unless you are writing a new VM frontend use
             <link to="#takeScreenShotToArray" />.
         </note>
-
-        <result name="E_NOTIMPL">
-          Feature not implemented.
-        </result>
-        <result name="VBOX_E_IPRT_ERROR">
-          Could not take a screenshot.
-        </result>
-
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="address" type="octet" mod="ptr" dir="in"/>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
+      <param name="bitmapFormat" type="BitmapFormat" dir="in"/>
     </method>
 
     <method name="takeScreenShotToArray">
       <desc>
-        Takes a guest screen shot of the requested size and returns it as
-        an array of bytes in uncompressed 32-bpp RGBA format.
-        A pixel consists of 4 bytes in order: R, G, B, 0xFF.
-
-        This API is slow, but could be the only option to get guest screenshot
-        for scriptable languages not allowed to manipulate with addresses
-        directly.
-
-        <result name="E_NOTIMPL">
-          Feature not implemented.
-        </result>
-        <result name="VBOX_E_IPRT_ERROR">
-          Could not take a screenshot.
-        </result>
+        Takes a guest screen shot of the requested size and format
+        and returns it as an array of bytes.
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
-          Monitor to take screenshot from.
+          The guest monitor to take screenshot from.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="in">
@@ -15746,38 +15747,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Desired image height.
         </desc>
       </param>
-      <param name="screenData" type="octet" dir="return" safearray="yes">
+      <param name="bitmapFormat" type="BitmapFormat" dir="in">
         <desc>
-          Array with resulting screen data.
-        </desc>
-      </param>
-    </method>
-
-    <method name="takeScreenShotPNGToArray">
-      <desc>
-        Takes a guest screen shot of the requested size and returns it as
-        PNG image in array.
-
-        <result name="E_NOTIMPL">
-          Feature not implemented.
-        </result>
-        <result name="VBOX_E_IPRT_ERROR">
-          Could not take a screenshot.
-        </result>
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>
-          Monitor to take the screenshot from.
-        </desc>
-      </param>
-      <param name="width" type="unsigned long" dir="in">
-        <desc>
-          Desired image width.
-        </desc>
-      </param>
-      <param name="height" type="unsigned long" dir="in">
-        <desc>
-          Desired image height.
+          The requested format.
         </desc>
       </param>
       <param name="screenData" type="octet" dir="return" safearray="yes">

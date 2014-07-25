@@ -208,15 +208,13 @@ private:
     virtual HRESULT takeScreenShot(ULONG aScreenId,
                                    BYTE *aAddress,
                                    ULONG aWidth,
-                                   ULONG aHeight);
+                                   ULONG aHeight,
+                                   BitmapFormat_T aBitmapFormat);
     virtual HRESULT takeScreenShotToArray(ULONG aScreenId,
                                           ULONG aWidth,
                                           ULONG aHeight,
+                                          BitmapFormat_T aBitmapFormat,
                                           std::vector<BYTE> &aScreenData);
-    virtual HRESULT takeScreenShotPNGToArray(ULONG aScreenId,
-                                             ULONG aWidth,
-                                             ULONG aHeight,
-                                             std::vector<BYTE> &aScreenData);
     virtual HRESULT drawToScreen(ULONG aScreenId,
                                  BYTE *aAddress,
                                  ULONG aX,
@@ -242,6 +240,13 @@ private:
     virtual HRESULT handleEvent(const ComPtr<IEvent> &aEvent);
 
     // other internal methods    
+    HRESULT takeScreenShotWorker(ULONG aScreenId,
+                                 BYTE *aAddress,
+                                 ULONG aWidth,
+                                 ULONG aHeight,
+                                 BitmapFormat_T aBitmapFormat,
+                                 ULONG *pcbOut);
+
 #ifdef VBOX_WITH_CRHGSMI
     void i_setupCrHgsmiData(void);
     void i_destructCrHgsmiData(void);

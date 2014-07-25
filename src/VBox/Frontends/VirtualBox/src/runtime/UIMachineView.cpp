@@ -658,7 +658,7 @@ void UIMachineView::takePauseShotLive()
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
     CDisplay dsp = session().GetConsole().GetDisplay();
-    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
     /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
      * after the machine execution was resumed. It's not fatal: */
     if (dsp.isOk())

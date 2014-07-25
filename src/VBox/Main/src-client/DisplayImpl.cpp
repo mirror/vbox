@@ -2712,211 +2712,156 @@ static int i_displayTakeScreenshot(PUVM pUVM, Display *pDisplay, struct DRVMAIND
     return vrc;
 }
 
-HRESULT Display::takeScreenShot(ULONG aScreenId, BYTE *aAddress, ULONG aWidth, ULONG aHeight)
+HRESULT Display::takeScreenShotWorker(ULONG aScreenId,
+                                      BYTE *aAddress,
+                                      ULONG aWidth,
+                                      ULONG aHeight,
+                                      BitmapFormat_T aBitmapFormat,
+                                      ULONG *pcbOut)
 {
-    /// @todo (r=dmik) this function may take too long to complete if the VM
-    //  is doing something like saving state right now. Which, in case if it
-    //  is called on the GUI thread, will make it unresponsive. We should
-    //  check the machine state here (by enclosing the check and VMRequCall
-    //  within the Console lock to make it atomic).
+    HRESULT rc = S_OK;
 
-    LogRelFlowFunc(("address=%p, width=%d, height=%d\n",
-                    aAddress, aWidth, aHeight));
-
-    CheckComArgExpr(aWidth, aWidth != 0);
-    CheckComArgExpr(aHeight, aHeight != 0);
-
-    /* Do not allow too large screenshots. This also filters out negative
-     * values passed as either 'width' or 'height'.
+    /* Do not allow too small and too large screenshots. This also filters out negative
+     * values passed as either 'aWidth' or 'aHeight'.
      */
-    CheckComArgExpr(aWidth, aWidth <= 32767);
-    CheckComArgExpr(aHeight, aHeight <= 32767);
+    CheckComArgExpr(aWidth, aWidth != 0 && aWidth <= 32767);
+    CheckComArgExpr(aHeight, aHeight != 0 && aHeight <= 32767);
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!mpDrv)
-        return E_FAIL;
+    if (   aBitmapFormat != BitmapFormat_BGR0
+        && aBitmapFormat != BitmapFormat_BGRA
+        && aBitmapFormat != BitmapFormat_RGBA
+        && aBitmapFormat != BitmapFormat_PNG)
+    {
+        return setError(E_NOTIMPL,
+                        tr("Unsupported screenshot format 0x%08X"), aBitmapFormat);
+    }
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    HRESULT rc = S_OK;
-
-    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
-
-    /* Release lock because other thread (EMT) is called and it may initiate a resize
-     * which also needs lock.
-     *
-     * This method does not need the lock anymore.
-     */
-    alock.release();
-
     int vrc = i_displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, aAddress, aWidth, aHeight);
 
-    if (vrc == VERR_NOT_IMPLEMENTED)
-        rc = setError(E_NOTIMPL,
-                      tr("This feature is not implemented"));
+    if (RT_SUCCESS(vrc))
+    {
+        const size_t cbData = aWidth * 4 * aHeight;
+
+        /* Most of uncompressed formats. */
+        *pcbOut = (ULONG)cbData;
+
+        if (aBitmapFormat == BitmapFormat_BGR0)
+        {
+            /* Do nothing. */
+        }
+        else if (aBitmapFormat == BitmapFormat_BGRA)
+        {
+            uint32_t *pu32 = (uint32_t *)aAddress;
+            size_t cPixels = aWidth * aHeight;
+            while (cPixels--)
+            {
+                *pu32++ |= UINT32_C(0xFF000000);
+            }
+        }
+        else if (aBitmapFormat == BitmapFormat_RGBA)
+        {
+            uint8_t *pu8 = aAddress;
+            size_t cPixels = aWidth * aHeight;
+            while (cPixels--)
+            {
+                uint8_t u8 = pu8[0];
+                pu8[0] = pu8[2];
+                pu8[2] = u8;
+                pu8[3] = 0xFF;
+
+                pu8 += 4;
+            }
+        }
+        else if (aBitmapFormat == BitmapFormat_PNG)
+        {
+            uint8_t *pu8PNG = NULL;
+            uint32_t cbPNG = 0;
+            uint32_t cxPNG = 0;
+            uint32_t cyPNG = 0;
+
+            vrc = DisplayMakePNG(aAddress, aWidth, aHeight, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+            if (RT_SUCCESS(vrc))
+            {
+                if (cbPNG <= cbData)
+                {
+                    memcpy(aAddress, pu8PNG, cbPNG);
+                    *pcbOut = cbPNG;
+                }
+                else
+                {
+                    rc = setError(E_FAIL,
+                                  tr("PNG is larger than 32bpp bitmap"));
+                }
+            }
+            else
+            {
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Could not convert screenshot to PNG (%Rrc)"), vrc);
+            }
+            RTMemFree(pu8PNG);
+        }
+    }
     else if (vrc == VERR_TRY_AGAIN)
         rc = setError(E_UNEXPECTED,
-                      tr("This feature is not available at this time"));
+                      tr("Screenshot is not available at this time"));
     else if (RT_FAILURE(vrc))
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);
 
-    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
-HRESULT Display::takeScreenShotToArray(ULONG aScreenId, ULONG aWidth, ULONG aHeight, std::vector<BYTE> &aScreenData)
-
+HRESULT Display::takeScreenShot(ULONG aScreenId,
+                                BYTE *aAddress,
+                                ULONG aWidth,
+                                ULONG aHeight,
+                                BitmapFormat_T aBitmapFormat)
 {
-    LogRelFlowFunc(("width=%d, height=%d\n", aWidth, aHeight));
-
-    CheckComArgExpr(aWidth, aWidth != 0);
-    CheckComArgExpr(raHeight, aHeight != 0);
-
-    /* Do not allow too large screenshots. This also filters out negative
-     * values passed as either 'width' or 'height'.
-     */
-    CheckComArgExpr(aWidth, aWidth <= 32767);
-    CheckComArgExpr(aHeight, aHeight <= 32767);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!mpDrv)
-        return E_FAIL;
-
-    Console::SafeVMPtr ptrVM(mParent);
-    if (!ptrVM.isOk())
-        return ptrVM.rc();
-
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc(("[%d] address=%p, width=%d, height=%d, format 0x%08X\n",
+                     aScreenId, aAddress, aWidth, aHeight, aBitmapFormat));
 
-    /* Release lock because other thread (EMT) is called and it may initiate a resize
-     * which also needs lock.
-     *
-     * This method does not need the lock anymore.
-     */
-    alock.release();
+    ULONG cbOut = 0;
+    rc = takeScreenShotWorker(aScreenId, aAddress, aWidth, aHeight, aBitmapFormat, &cbOut);
+    NOREF(cbOut);
 
-    size_t cbData = aWidth * 4 * aHeight;
-    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
-
-    if (!pu8Data)
-        return E_OUTOFMEMORY;
-
-    int vrc = i_displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, pu8Data, aWidth, aHeight);
-
-    if (RT_SUCCESS(vrc))
-    {
-        aScreenData.resize(cbData);
-
-        /* Convert pixels to format expected by the API caller: [0] R, [1] G, [2] B, [3] A
-         * and copy to the output buffer.
-         */
-        size_t i = 0;
-        uint8_t *pu8 = pu8Data;
-        unsigned cPixels = aWidth * aHeight;
-        while (cPixels)
-        {
-            aScreenData[i++] = pu8[2];
-            aScreenData[i++] = pu8[1];
-            aScreenData[i++] = pu8[0];
-            aScreenData[i++] = 0xff;
-
-            cPixels--;
-            pu8 += 4;
-        }
-    }
-    else if (vrc == VERR_NOT_IMPLEMENTED)
-        rc = setError(E_NOTIMPL,
-                      tr("This feature is not implemented"));
-    else
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not take a screenshot (%Rrc)"), vrc);
-
-    RTMemFree(pu8Data);
-
-    LogRelFlowFunc(("rc=%Rhrc\n", rc));
+    LogRelFlowFunc(("%Rhrc\n", rc));
     return rc;
 }
 
-HRESULT Display::takeScreenShotPNGToArray(ULONG aScreenId, ULONG aWidth, ULONG aHeight, std::vector<BYTE> &aScreenData)
+HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
+                                       ULONG aWidth,
+                                       ULONG aHeight,
+                                       BitmapFormat_T aBitmapFormat,
+                                       std::vector<BYTE> &aScreenData)
 {
-    LogRelFlowFunc(("width=%d, height=%d\n", aWidth, aHeight));
-
-    CheckComArgExpr(aWidth, aWidth != 0);
-    CheckComArgExpr(aHeight, aHeight != 0);
-
-    /* Do not allow too large screenshots. This also filters out negative
-     * values passed as either 'width' or 'height'.
-     */
-    CheckComArgExpr(aWidth, aWidth <= 32767);
-    CheckComArgExpr(aHeight, aHeight <= 32767);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CHECK_CONSOLE_DRV(mpDrv);
-
-    Console::SafeVMPtr ptrVM(mParent);
-    if (!ptrVM.isOk())
-        return ptrVM.rc();
-
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc(("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc(("[%d] width=%d, height=%d, format 0x%08X\n",
+                     aScreenId, aWidth, aHeight, aBitmapFormat));
 
-    /* Release lock because other thread (EMT) is called and it may initiate a resize
-     * which also needs lock.
-     *
-     * This method does not need the lock anymore.
+    /* Do not allow too small and too large screenshots. This also filters out negative
+     * values passed as either 'aWidth' or 'aHeight'.
      */
-    alock.release();
+    CheckComArgExpr(aWidth, aWidth != 0 && aWidth <= 32767);
+    CheckComArgExpr(aHeight, aHeight != 0 && aHeight <= 32767);
 
-    size_t cbData = aWidth * 4 * aHeight;
-    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
+    const size_t cbData = aWidth * 4 * aHeight;
+    aScreenData.resize(cbData);
 
-    if (!pu8Data)
-        return E_OUTOFMEMORY;
+    ULONG cbOut = 0;
+    rc = takeScreenShotWorker(aScreenId, &aScreenData.front(), aWidth, aHeight, aBitmapFormat, &cbOut);
+    if (FAILED(rc))
+        cbOut = 0;
 
-    int vrc = i_displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, pu8Data, aWidth, aHeight);
+    aScreenData.resize(cbOut);
 
-    if (RT_SUCCESS(vrc))
-    {
-        uint8_t *pu8PNG = NULL;
-        uint32_t cbPNG = 0;
-        uint32_t cxPNG = 0;
-        uint32_t cyPNG = 0;
-
-        vrc = DisplayMakePNG(pu8Data, aWidth, aHeight, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
-        if (RT_SUCCESS(vrc))
-        {
-            aScreenData.resize(cbPNG);
-            memcpy(&aScreenData.front(), pu8PNG, cbPNG);
-            if (pu8PNG)
-                RTMemFree(pu8PNG);
-        }
-        else
-        {
-            if (pu8PNG)
-                RTMemFree(pu8PNG);
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Could not convert screenshot to PNG (%Rrc)"), vrc);
-        }
-    }
-    else if (vrc == VERR_NOT_IMPLEMENTED)
-        rc = setError(E_NOTIMPL,
-                      tr("This feature is not implemented"));
-    else
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not take a screenshot (%Rrc)"), vrc);
-
-    RTMemFree(pu8Data);
-
-    LogRelFlowFunc(("rc=%Rhrc\n", rc));
+    LogRelFlowFunc(("%Rhrc\n", rc));
     return rc;
 }
 
@@ -3846,7 +3791,7 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
                         && pFBInfo->pu8FramebufferVRAM)
                     {
                         rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                                  FramebufferPixelFormat_FOURCC_RGB,
+                                                  BitmapFormat_BGR,
                                                   pFBInfo->u16BitsPerPixel,
                                                   pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
                                                   pFBInfo->pu8FramebufferVRAM, u64Now);
@@ -3854,7 +3799,7 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
                     else if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && pDrv->IConnector.pu8Data)
                     {
                         rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                                  FramebufferPixelFormat_FOURCC_RGB,
+                                                  BitmapFormat_BGR,
                                                   pDrv->IConnector.cBits,
                                                   pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
                                                   pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
@@ -4467,7 +4412,7 @@ DECLCALLBACK(void) Display::i_displayCrVRecScreenshotPerform(void *pvCtx, uint32
 {
     Display *pDisplay = (Display *)pvCtx;
     pDisplay->i_handleCrVRecScreenshotPerform(uScreen,
-                                              x, y, FramebufferPixelFormat_FOURCC_RGB, uBitsPerPixel,
+                                              x, y, BitmapFormat_BGR, uBitsPerPixel,
                                               uBytesPerLine, uGuestWidth, uGuestHeight,
                                               pu8BufferAddress, u64TimeStamp);
 }

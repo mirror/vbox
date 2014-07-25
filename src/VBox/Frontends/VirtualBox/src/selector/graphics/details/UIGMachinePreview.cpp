@@ -244,23 +244,14 @@ void UIGMachinePreview::sltRecreatePreview()
                     const QSize size = imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight));
 
                     /* Use direct VM content: */
-                    QVector<BYTE> screenData = display.TakeScreenShotToArray(0, size.width(), size.height());
+                    QVector<BYTE> screenData = display.TakeScreenShotToArray(0, size.width(), size.height(), KBitmapFormat_BGR0);
 
                     /* Make sure screen-data is OK: */
                     if (!display.isOk() || screenData.isEmpty())
                         break;
 
-                    /* Unfortunately we have to reorder the pixel data,
-                     * cause the VBox API returns RGBA data,
-                     * which is not a format QImage understand. */
-                    uint32_t *pData = (uint32_t*)screenData.data();
-                    for (int i = 0; i < screenData.size() / 4; ++i)
-                    {
-                        uint32_t e = pData[i];
-                        pData[i] = RT_MAKE_U32_FROM_U8(RT_BYTE3(e), RT_BYTE2(e), RT_BYTE1(e), RT_BYTE4(e));
-                    }
                     /* Create image based on shallow copy or reordered data: */
-                    image = QImage((uchar*)pData, size.width(), size.height(), QImage::Format_RGB32);
+                    image = QImage(screenData.data(), size.width(), size.height(), QImage::Format_RGB32);
                     /* Dim image to give it required look for PAUSED state: */
                     if (machineState == KMachineState_Paused)
                         dimImage(image);

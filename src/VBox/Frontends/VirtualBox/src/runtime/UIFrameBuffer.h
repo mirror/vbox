@@ -165,7 +165,7 @@ public:
     /** Returns frame-buffer bytes-per-line value. */
     ulong bytesPerLine() const { return m_image.bytesPerLine(); }
     /** Returns default frame-buffer pixel-format. */
-    ulong pixelFormat() const { return FramebufferPixelFormat_FOURCC_RGB; }
+    ulong pixelFormat() const { return BitmapFormat_BGR; }
 
     /** Locks frame-buffer access. */
     void lock() const { RTCritSectEnter(&m_critSect); }
