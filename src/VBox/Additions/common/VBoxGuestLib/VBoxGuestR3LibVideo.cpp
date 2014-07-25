@@ -277,6 +277,53 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
 }
 
 /**
+ * Get the highest screen number for which there is a saved video mode or "0"
+ * if there are no saved modes.
+ *
+ * @returns iprt status value
+ * @param   pcScreen   where to store the virtual screen number
+ */
+VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
+{
+#if defined(VBOX_WITH_GUEST_PROPS)
+    using namespace guestProp;
+
+    int rc, rc2 = VERR_UNRESOLVED_ERROR;
+    uint32_t u32ClientId = 0;
+    const char *pszPattern = VIDEO_PROP_PREFIX"*";
+    PVBGLR3GUESTPROPENUM pHandle = NULL;
+    const char *pszName;
+    unsigned cHighestScreen = 0;
+
+    AssertPtrReturn(pcScreen, VERR_INVALID_POINTER);
+    rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3GuestPropEnum(u32ClientId, &pszPattern, 1, &pHandle,
+                                 &pszName, NULL, NULL, NULL);
+    if (u32ClientId != 0)
+        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+    while (pszName != NULL && RT_SUCCESS(rc))
+    {
+        uint32_t cScreen;
+
+        rc = RTStrToUInt32Full(pszName + sizeof(VIDEO_PROP_PREFIX) - 1, 10,
+                               &cScreen);
+        if (RT_SUCCESS(rc))  /* There may be similar properties with text. */
+            cHighestScreen = RT_MAX(cHighestScreen, cScreen);
+        rc = VbglR3GuestPropEnumNext(pHandle, &pszName, NULL, NULL, NULL);
+    }
+    VbglR3GuestPropEnumFree(pHandle);
+    if (RT_SUCCESS(rc))
+        *pcScreen = cHighestScreen;
+    return rc;
+#else /* !VBOX_WITH_GUEST_PROPS */
+    return VERR_NOT_IMPLEMENTED;
+#endif /* !VBOX_WITH_GUEST_PROPS */
+}
+
+/**
  * Save video mode parameters to the guest property store.
  *
  * @returns iprt status value
@@ -298,17 +345,24 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
     char szModeName[MAX_NAME_LEN];
     char szModeParms[MAX_VALUE_LEN];
     uint32_t u32ClientId = 0;
-    unsigned cx2, cy2, cBits2, x2, y2;
+    unsigned cx2, cy2, cBits2, x2, y2, cHighestScreen, cHighestScreen2;
     bool fEnabled2;
+    int rc, rc2 = VERR_UNRESOLVED_ERROR;
 
+    rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen);
     RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
     RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u,%ux%u,%u", cx, cy,
                 cBits, x, y, (unsigned) fEnabled);
-    int rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
     if (u32ClientId != 0)
-        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+    /* Sanity check 1.  We do not try to make allowance for someone else
+     * changing saved settings at the same time as us. */
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3RetrieveVideoMode(cScreen, &cx2, &cy2, &cBits2, &x2, &y2,
@@ -318,6 +372,12 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
                 || x != x2 || y != y2 || fEnabled != fEnabled2))
             rc = VERR_WRITE_ERROR;
     }
+    /* Sanity check 2.  Same comment. */
+    if (RT_SUCCESS(rc))
+        rc = VbglR3VideoModeGetHighestSavedScreen(&cHighestScreen2);
+    if (RT_SUCCESS(rc))
+        if (cHighestScreen2 != RT_MAX(cHighestScreen, cScreen))
+            rc = VERR_INTERNAL_ERROR;
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_IMPLEMENTED;
@@ -357,15 +417,18 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
     uint32_t u32ClientId = 0;
     int cMatches;
     unsigned cx, cy, cBits, x, y, fEnabled;
+    int rc, rc2 = VERR_UNRESOLVED_ERROR;
 
     /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
     RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
-    int rc = VbglR3GuestPropConnect(&u32ClientId);
+    rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
                                       sizeof(szModeParms), NULL);
     if (u32ClientId != 0)
-        VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
+        rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
 /*
  * Now we convert the string returned to numeric values.
