@@ -3165,10 +3165,10 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             if (strKey == GUI_LanguageId)
                 emit sigLanguageChange(extraDataString(strKey));
             /* Selector UI shortcut changed? */
-            else if (strKey == GUI_Input_SelectorShortcuts && gpActionPool->type() == UIActionPoolType_Selector)
+            else if (strKey == GUI_Input_SelectorShortcuts)
                 emit sigSelectorUIShortcutChange();
             /* Runtime UI shortcut changed? */
-            else if (strKey == GUI_Input_MachineShortcuts && gpActionPool->type() == UIActionPoolType_Runtime)
+            else if (strKey == GUI_Input_MachineShortcuts)
                 emit sigRuntimeUIShortcutChange();
 #ifdef Q_WS_MAC
             /* 'Presentation mode' status changed (allowed if not restricted)? */

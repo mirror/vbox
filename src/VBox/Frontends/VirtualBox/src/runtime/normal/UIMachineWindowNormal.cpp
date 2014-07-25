@@ -119,10 +119,10 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
     /* Check whether status-bar is enabled: */
     const bool fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
     /* Update settings action 'enable' state: */
-    QAction *pActionStatusBarSettings = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
+    QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
     pActionStatusBarSettings->setEnabled(fEnabled);
     /* Update switch action 'checked' state: */
-    QAction *pActionStatusBarSwitch = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
+    QAction *pActionStatusBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
     pActionStatusBarSwitch->blockSignals(true);
     pActionStatusBarSwitch->setChecked(fEnabled);
     pActionStatusBarSwitch->blockSignals(false);
@@ -138,7 +138,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
 void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
 {
     /* Raise action's context-menu: */
-    gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
+    actionPool()->action(UIActionIndexRT_M_View_M_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
 }
 
 void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position)
@@ -147,16 +147,16 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
     UIAction *pAction = 0;
     switch (indicatorType)
     {
-        case IndicatorType_HardDisks:     pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives);       break;
-        case IndicatorType_OpticalDisks:  pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices);   break;
-        case IndicatorType_FloppyDisks:   pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices);    break;
-        case IndicatorType_USB:           pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices);       break;
-        case IndicatorType_Network:       pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_Network);          break;
-        case IndicatorType_SharedFolders: pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders);    break;
-        case IndicatorType_Display:       pAction = gpActionPool->action(UIActionIndexRT_M_ViewPopup);                  break;
-        case IndicatorType_VideoCapture:  pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture);     break;
-        case IndicatorType_Mouse:         pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse);            break;
-        case IndicatorType_Keyboard:      pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard);         break;
+        case IndicatorType_HardDisks:     pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives);       break;
+        case IndicatorType_OpticalDisks:  pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices);   break;
+        case IndicatorType_FloppyDisks:   pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices);    break;
+        case IndicatorType_USB:           pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices);       break;
+        case IndicatorType_Network:       pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_Network);          break;
+        case IndicatorType_SharedFolders: pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders);    break;
+        case IndicatorType_Display:       pAction = actionPool()->action(UIActionIndexRT_M_ViewPopup);                  break;
+        case IndicatorType_VideoCapture:  pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture);     break;
+        case IndicatorType_Mouse:         pAction = actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse);            break;
+        case IndicatorType_Keyboard:      pAction = actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard);         break;
         default: break;
     }
     /* Raise action's context-menu: */
@@ -206,7 +206,7 @@ void UIMachineWindowNormal::prepareMenu()
     AssertPtrReturnVoid(menuBar());
     {
         /* Prepare menu-bar: */
-        foreach (QMenu *pMenu, gpActionPool->menus())
+        foreach (QMenu *pMenu, actionPool()->menus())
             menuBar()->addMenu(pMenu);
     }
 }
@@ -285,7 +285,7 @@ void UIMachineWindowNormal::loadSettings()
         menuBar()->setHidden(vboxGlobal().settings().isFeatureActive("noMenuBar"));
 #endif /* !Q_WS_MAC */
         /* Update status-bar visibility: */
-        statusBar()->setVisible(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
+        statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
     }
 

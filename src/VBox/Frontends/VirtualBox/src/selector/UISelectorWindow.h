@@ -37,6 +37,7 @@ class UIVMDesktop;
 class UIVMItem;
 class UIGChooser;
 class UIGDetails;
+class UIActionPool;
 class QStackedWidget;
 
 /* VM selector window class: */
@@ -51,6 +52,9 @@ public:
                      QWidget* pParent = 0,
                      Qt::WindowFlags flags = Qt::Window);
     ~UISelectorWindow();
+
+    /** Returns the action-pool instance. */
+    UIActionPool* actionPool() const { return m_pActionPool; }
 
 private slots:
 
@@ -131,6 +135,7 @@ private:
     void loadSettings();
     void saveSettings();
     void cleanupConnections();
+    void cleanupMenuBar();
 
     /* Helpers: Current item stuff: */
     UIVMItem* currentItem() const;
@@ -155,6 +160,9 @@ private:
     /* Variables: */
     bool m_fPolished : 1;
     bool m_fWarningAboutInaccessibleMediumShown : 1;
+
+    /** Holds the action-pool instance. */
+    UIActionPool *m_pActionPool;
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;

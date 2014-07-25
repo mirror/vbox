@@ -74,7 +74,7 @@ bool UIMachineLogicSeamless::checkAvailability()
      * Since VBoxGlobal::extractKeyFromActionText gets exactly
      * the linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(actionPool()->action(UIActionIndexRT_M_View_T_Seamless)->text()));
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
@@ -203,10 +203,10 @@ void UIMachineLogicSeamless::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Restrict 'Disable Mouse Integration' action for 'Machine' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuMachine(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuMachine(UIActionRestrictionLevel_Logic,
                                                             RuntimeMenuMachineActionType_MouseIntegration);
     /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          (RuntimeMenuViewActionType)
                                                          (RuntimeMenuViewActionType_AdjustWindow |
                                                           RuntimeMenuViewActionType_GuestAutoresize |
@@ -214,7 +214,7 @@ void UIMachineLogicSeamless::prepareActionGroups()
                                                           RuntimeMenuViewActionType_Resize));
 
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gpActionPool->action(UIActionIndexRT_M_View_T_Seamless);
+    UIAction *pActionSeamless = actionPool()->action(UIActionIndexRT_M_View_T_Seamless);
     if (!pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
@@ -229,11 +229,11 @@ void UIMachineLogicSeamless::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
 }
 
@@ -253,7 +253,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     m_pScreenLayout->update();
 
     // TODO: Make this through action-pool.
-    m_pScreenLayout->setViewMenu(gpActionPool->action(UIActionIndexRT_M_View)->menu());
+    m_pScreenLayout->setViewMenu(actionPool()->action(UIActionIndexRT_M_View)->menu());
 
     /* Create machine-window(s): */
     for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
@@ -280,7 +280,7 @@ void UIMachineLogicSeamless::prepareMenu()
     AssertPtrReturnVoid(m_pPopupMenu);
     {
         /* Prepare popup-menu: */
-        foreach (QMenu *pMenu, gpActionPool->menus())
+        foreach (QMenu *pMenu, actionPool()->menus())
             m_pPopupMenu->addMenu(pMenu);
     }
 }
@@ -312,11 +312,11 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 void UIMachineLogicSeamless::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(gpActionPool->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
 
     /* Call to base-class: */
@@ -326,7 +326,7 @@ void UIMachineLogicSeamless::cleanupActionConnections()
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
     /* Take care of view-action toggle state: */
-    UIAction *pActionSeamless = gpActionPool->action(UIActionIndexRT_M_View_T_Seamless);
+    UIAction *pActionSeamless = actionPool()->action(UIActionIndexRT_M_View_T_Seamless);
     if (pActionSeamless->isChecked())
     {
         pActionSeamless->blockSignals(true);
@@ -335,10 +335,10 @@ void UIMachineLogicSeamless::cleanupActionGroups()
     }
 
     /* Allow 'Disable Mouse Integration' action for 'Machine' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuMachine(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuMachine(UIActionRestrictionLevel_Logic,
                                                             RuntimeMenuMachineActionType_Invalid);
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
-    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          RuntimeMenuViewActionType_Invalid);
 
     /* Call to base-class: */

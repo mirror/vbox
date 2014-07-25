@@ -91,8 +91,10 @@ class UIActionPoolSelector : public UIActionPool
 
 protected:
 
-    /** Constructor. */
-    UIActionPoolSelector();
+    /** Constructor,
+      * @param fTemporary is used to determine whether this action-pool is temporary,
+      *                   which can be created to re-initialize shortcuts-pool. */
+    UIActionPoolSelector(bool fTemporary = false);
 
     /** Prepare pool routine. */
     virtual void preparePool();

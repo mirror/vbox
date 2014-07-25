@@ -189,6 +189,11 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
 #endif /* !Q_WS_MAC */
 }
 
+UIActionPool* UIMachineWindow::actionPool() const
+{
+    return machineLogic()->actionPool();
+}
+
 UISession* UIMachineWindow::uisession() const
 {
     return machineLogic()->uisession();
