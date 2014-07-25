@@ -433,14 +433,17 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
 /*
  * Now we convert the string returned to numeric values.
  */
-    cMatches = sscanf(szModeParms, "%ux%ux%u,%ux%u,%u\n", &cx, &cy, &cBits, &x,
-                      &y, &fEnabled);
-    if (cMatches == 6)
-        rc = VINF_SUCCESS;
-    else if (cMatches < 0)
-        rc = VERR_READ_ERROR;
-    else
-        rc = VERR_PARSE_ERROR;
+    if (RT_SUCCESS(rc))
+    {
+        cMatches = sscanf(szModeParms, "%ux%ux%u,%ux%u,%u\n", &cx, &cy, &cBits,
+                          &x, &y, &fEnabled);
+        if (cMatches == 6)
+            rc = VINF_SUCCESS;
+        else if (cMatches < 0)
+            rc = VERR_READ_ERROR;
+        else
+            rc = VERR_PARSE_ERROR;
+    }
 /*
  * And clean up and return the values if we successfully obtained them.
  */
