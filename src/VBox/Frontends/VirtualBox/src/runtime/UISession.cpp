@@ -133,6 +133,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 #ifndef Q_WS_MAC
     , m_pMachineWindowIcon(0)
 #endif /* !Q_WS_MAC */
+    , m_mouseCapturePolicy(MouseCapturePolicy_Default)
     , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
@@ -1145,6 +1146,9 @@ void UISession::loadSessionSettings()
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
 #endif /* !Q_WS_MAC */
+
+        /* Determine mouse-capture policy: */
+        m_mouseCapturePolicy = gEDataManager->mouseCapturePolicy(strMachineID);
 
         /* Determine Guru Meditation handler type: */
         m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(strMachineID);
