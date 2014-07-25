@@ -6679,10 +6679,6 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Log4Func(("vcpu[%RU32]\n", pVCpu->idCpu));
 
-    /* In case we get preempted before saving the interruptibility-state in hmR0VmxPostRunGuest(), do it here.
-       Otherwise we lose the info. from the VMCS if we get rescheduled on a different host CPU. */
-    hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
-
     int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestRipRspRflags failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
