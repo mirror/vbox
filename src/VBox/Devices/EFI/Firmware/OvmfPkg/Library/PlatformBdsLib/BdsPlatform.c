@@ -107,7 +107,7 @@ VBoxConsoleInit()
     gBS->CreateEventEx(EVT_NOTIFY_SIGNAL, TPL_NOTIFY, VBoxConsoleSwitchMode, NULL, &gEfiEventReadyToBootGuid, &event);
     return EFI_SUCCESS;
 }
-#endif /* !VBOX */
+#endif /* VBOX */
 
 
 //
