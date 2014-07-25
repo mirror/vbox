@@ -27,6 +27,8 @@
 /* Forward declarations: */
 class UIActionPolymorphic;
 class UIActionPool;
+class UIActionPoolRuntime;
+class UIActionPoolSelector;
 
 
 /** Action-pool types. */
@@ -281,6 +283,11 @@ public:
       * used to initialize shortcuts-pool from action-pool of passed @a type. */
     static void createTemporary(UIActionPoolType type);
 
+    /** Cast action-pool to Runtime one. */
+    UIActionPoolRuntime* toRuntime();
+    /** Cast action-pool to Selector one. */
+    UIActionPoolSelector* toSelector();
+
     /** Returns action-pool type. */
     UIActionPoolType type() const { return m_type; }
 
@@ -289,14 +296,14 @@ public:
     /** Returns all the actions action-pool contains. */
     QList<UIAction*> actions() const { return m_pool.values(); }
 
+    /** Hot-key processing delegate. */
+    bool processHotKey(const QKeySequence &key);
+
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const = 0;
 
     /** Recreates menus. */
     void recreateMenus() { createMenus(); }
-
-    /** Hot-key processing delegate. */
-    bool processHotKey(const QKeySequence &key);
 
 protected slots:
 

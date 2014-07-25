@@ -620,6 +620,16 @@ UIActionPool::~UIActionPool()
         m_pInstance = 0;
 }
 
+UIActionPoolRuntime* UIActionPool::toRuntime()
+{
+    return qobject_cast<UIActionPoolRuntime*>(this);
+}
+
+UIActionPoolSelector* UIActionPool::toSelector()
+{
+    return qobject_cast<UIActionPoolSelector*>(this);
+}
+
 void UIActionPool::prepare()
 {
     /* Create actions: */
