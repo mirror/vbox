@@ -218,20 +218,26 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
  */
 static void runDisplay(struct x11State *pState)
 {
-    int status, rc, i;
+    int status, rc;
+    unsigned i, cScreens;
     char szCommand[256];
     Cursor hClockCursor = XCreateFontCursor(pState->pDisplay, XC_watch);
     Cursor hArrowCursor = XCreateFontCursor(pState->pDisplay, XC_left_ptr);
 
     LogRelFlowFunc(("\n"));
-    /** @todo fix this not to use a hard-coded value. */
-    for (i = 0; i < 64; ++i)
+    rc = VbglR3VideoModeGetHighestSavedScreen(&cScreens);
+    if (RT_FAILURE(rc))
+        FatalError(("Failed to get the number of saved screen modes, rc=%Rrc\n",
+                    rc));
+    for (i = 0; i < RT_MAX(cScreens + 1, 8); ++i)
     {
         unsigned cx = 0, cy = 0, cBPP = 0, x = 0, y = 0;
         bool fEnabled = true;
 
         rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
                                      &fEnabled);
+        if (RT_SUCCESS(rc) && i > cScreens) /* Sanity */
+            FatalError(("Internal error retrieving the number of saved screen modes.\n"));
         if (RT_SUCCESS(rc))
             setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
                        true);
@@ -297,7 +303,7 @@ static void runDisplay(struct x11State *pState)
                             (unsigned) iDisplay));
             rc = VbglR3SeamlessGetLastEvent(&Mode);
             if (RT_FAILURE(rc))
-                FatalError(("Failed to save size hint, rc=%Rrc\n", rc));
+                FatalError(("Failed to check seamless mode, rc=%Rrc\n", rc));
             if (Mode == VMMDev_Seamless_Disabled)
             {
                 rc = VbglR3SaveVideoMode(iDisplay, cx, cy, cBPP, x, y,

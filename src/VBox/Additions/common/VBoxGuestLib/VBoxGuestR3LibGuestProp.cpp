@@ -777,6 +777,8 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
  */
 VBGLR3DECL(void) VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle)
 {
+    if (!pHandle)
+        return;
     RTMemFree(pHandle->pchBuf);
     RTMemFree(pHandle);
 }
