@@ -27,6 +27,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
+#include "UIShortcutPool.h"
 #include "QIMenu.h"
 #ifdef Q_WS_MAC
 # include "UIExtraDataManager.h"
@@ -70,15 +71,12 @@ bool UIMachineLogicFullscreen::checkAvailability()
         }
     }
 
-    /* Take the toggle hot key from the menu item.
-     * Since VBoxGlobal::extractKeyFromActionText gets exactly
-     * the linked key without the 'Host+' part we are adding it here. */
-    QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen)->text()));
-    Assert(!hotKey.isEmpty());
-
     /* Show the info message. */
-    if (!msgCenter().confirmGoingFullscreen(hotKey))
+    const UIShortcut &shortcut =
+            gShortcutPool->shortcut(actionPool()->shortcutsExtraDataID(),
+                                    actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen)->shortcutExtraDataID());
+    const QString strHotKey = QString("Host+%1").arg(shortcut.toString());
+    if (!msgCenter().confirmGoingFullscreen(strHotKey))
         return false;
 
     return true;
@@ -466,7 +464,7 @@ void UIMachineLogicFullscreen::prepareActionConnections()
     /* Call to base-class: */
     UIMachineLogic::prepareActionConnections();
 
-    /* "View" actions connections: */
+    /* Prepare 'View' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),

@@ -131,55 +131,12 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewResize(int iIndex, const QS
                              false, 0, 0, size.width(), size.height(), 0);
 }
 
-void UIMachineLogicNormal::sltPrepareHardDisksMenu()
-{
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsg(pMenu, ("This slot should be called only on Hard Disks menu show!\n"));
-    pMenu->clear();
-    pMenu->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
-}
-
-void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
-{
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
-    menu->clear();
-    menu->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
-}
-
-void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
-{
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsg(pMenu, ("This slot should be called only on Video Capture menu show!\n"));
-    pMenu->clear();
-    pMenu->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
-    pMenu->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
-}
-
-void UIMachineLogicNormal::sltPrepareKeyboardMenu()
-{
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsg(pMenu, ("This slot should be called only on Keyboard menu show!\n"));
-    pMenu->clear();
-    pMenu->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
-}
-
-void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
-{
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Mouse Integration Menu show!\n"));
-    menu->clear();
-    menu->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
-}
-
 void UIMachineLogicNormal::prepareActionConnections()
 {
     /* Call to base-class: */
     UIMachineLogic::prepareActionConnections();
 
-    /* "View" actions connections: */
-    connect(actionPool(), SIGNAL(sigNotifyAboutTriggeringViewResize(int, const QSize&)),
-            this, SLOT(sltHandleActionTriggerViewResize(int, const QSize&)));
+    /* Prepare 'View' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
@@ -190,18 +147,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltOpenStatusBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
             this, SLOT(sltToggleStatusBar()));
-
-    /* "Device" actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareHardDisksMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareSharedFoldersMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareVideoCaptureMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareKeyboardMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareMouseIntegrationMenu()));
+    connect(actionPool(), SIGNAL(sigNotifyAboutTriggeringViewResize(int, const QSize&)),
+            this, SLOT(sltHandleActionTriggerViewResize(int, const QSize&)));
 }
 
 void UIMachineLogicNormal::prepareMachineWindows()

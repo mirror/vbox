@@ -322,7 +322,6 @@ public:
     static QString removeAccelMark (const QString &aText);
 
     static QString insertKeyToActionText (const QString &aText, const QString &aKey);
-    static QString extractKeyFromActionText (const QString &aText);
 
     static QPixmap joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2);
 

@@ -448,7 +448,9 @@ template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeM
         case RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
         case RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
         case RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
+        case RuntimeMenuMachineActionType_Keyboard:          strResult = "Keyboard"; break;
         case RuntimeMenuMachineActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
+        case RuntimeMenuMachineActionType_Mouse:             strResult = "Mouse"; break;
         case RuntimeMenuMachineActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
         case RuntimeMenuMachineActionType_TypeCAD:           strResult = "TypeCAD"; break;
 #ifdef Q_WS_X11
@@ -482,7 +484,9 @@ template<> RuntimeMenuMachineActionType fromInternalString<RuntimeMenuMachineAct
     keys << "TakeSnapshot";      values << RuntimeMenuMachineActionType_TakeSnapshot;
     keys << "TakeScreenshot";    values << RuntimeMenuMachineActionType_TakeScreenshot;
     keys << "InformationDialog"; values << RuntimeMenuMachineActionType_InformationDialog;
+    keys << "Keyboard";          values << RuntimeMenuMachineActionType_Keyboard;
     keys << "KeyboardSettings";  values << RuntimeMenuMachineActionType_KeyboardSettings;
+    keys << "Mouse";             values << RuntimeMenuMachineActionType_Mouse;
     keys << "MouseIntegration";  values << RuntimeMenuMachineActionType_MouseIntegration;
     keys << "TypeCAD";           values << RuntimeMenuMachineActionType_TypeCAD;
 #ifdef Q_WS_X11
