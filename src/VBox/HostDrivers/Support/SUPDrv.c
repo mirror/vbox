@@ -177,6 +177,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0SuspendVTxOnCpu",                   (void *)SUPR0SuspendVTxOnCpu },
     { "SUPR0ResumeVTxOnCpu",                    (void *)SUPR0ResumeVTxOnCpu },
     { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
+    { "SUPR0GetKernelFeatures",                 (void *)SUPR0GetKernelFeatures },
     { "SUPR0LockMem",                           (void *)SUPR0LockMem },
     { "SUPR0LowAlloc",                          (void *)SUPR0LowAlloc },
     { "SUPR0LowFree",                           (void *)SUPR0LowFree },

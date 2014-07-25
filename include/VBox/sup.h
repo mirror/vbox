@@ -91,6 +91,15 @@ typedef enum SUPPAGINGMODE
     SUPPAGINGMODE_AMD64_GLOBAL_NX
 } SUPPAGINGMODE;
 
+
+/** Flags returned by SUPR0GetKernelFeatures().
+ * @{
+ */
+/** GDT is read-only. */
+#define SUPKERNELFEATURES_GDT_READ_ONLY     RT_BIT(0)
+/** @} */
+
+
 /**
  * Usermode probe context information.
  */
@@ -1493,6 +1502,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
+SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
 SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void);
 SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);

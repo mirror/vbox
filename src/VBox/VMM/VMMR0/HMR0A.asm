@@ -295,8 +295,19 @@ BEGINPROC VMXRestoreHostState
     mov         ax, dx
     and         eax, X86_SEL_MASK_OFF_RPL                       ; Mask away TI and RPL bits leaving only the descriptor offset.
     add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
+    test        edi, VMX_RESTORE_HOST_GDT_READ_ONLY
+    jnz         .gdt_readonly
     and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
     ltr         dx
+    jmp short   .test_fs
+.gdt_readonly:
+    mov         rcx, cr0
+    mov         r9, rcx
+    and         rcx, ~X86_CR0_WP
+    mov         cr0, rcx
+    and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
+    ltr         dx
+    mov         cr0, r9
 
 .test_fs:
     ;

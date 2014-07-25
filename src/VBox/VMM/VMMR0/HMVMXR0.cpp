@@ -2900,7 +2900,6 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
  */
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
-    NOREF(pVM);
     int rc = VERR_INTERNAL_ERROR_5;
 
 #if HC_ARCH_BITS == 64
@@ -3095,6 +3094,9 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
             || pDesc->System.u4LimitHigh)
         {
             pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
+            /* If the host has made GDT read-only, we would need to temporarily toggle CR0.WP before writing the GDT. */
+            if (pVM->hm.s.uHostKernelFeatures & SUPKERNELFEATURES_GDT_READ_ONLY)
+                pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDT_READ_ONLY;
             pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
 
             /* Store the GDTR here as we need it while restoring TR. */

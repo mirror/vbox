@@ -1065,6 +1065,20 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     return 0;
 }
 
+
+/**
+ * Returns configuration flags of the host kernel.
+ */
+SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
+{
+    uint32_t fFlags = 0;
+#ifdef CONFIG_PAX_KERNEXEC
+    fFlags |= SUPKERNELFEATURES_GDT_READ_ONLY;
+#endif
+    return fFlags;
+}
+
+
 module_init(VBoxDrvLinuxInit);
 module_exit(VBoxDrvLinuxUnload);
 
