@@ -246,5 +246,6 @@
         <file alias="os_openbsd_64_hidpi.png">images/hidpi/os_openbsd_64_hidpi.png</file>
         <file alias="os_openbsd_hidpi.png">images/hidpi/os_openbsd_hidpi.png</file>
         <file alias="os_opensuse_64_hidpi.png">images/hidpi/os_opensuse_64_hidpi.png</file>
+        <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
     </qresource>
 </RCC>

@@ -215,7 +215,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Configure &Shortcuts..."));
+        setName(QApplication::translate("UIActionPool", "&Keyboard Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure shortcuts"));
     }
 };
@@ -917,6 +917,32 @@ protected:
     }
 };
 
+class UIActionSimpleShowUSBDevicesSettingsDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowUSBDevicesSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("USBDevicesSettingsDialog");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&USB Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of USB devices"));
+    }
+};
+
 class UIActionMenuWebCams : public UIActionMenu
 {
     Q_OBJECT;
@@ -1569,6 +1595,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuUSBDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_USBDevices_S_Settings] = new UIActionSimpleShowUSBDevicesSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_WebCams] = new UIActionMenuWebCams(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard] = new UIActionMenuSharedClipboard(this);
     m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuDragAndDrop(this);
@@ -1641,12 +1668,14 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache reconfiguration action restrictions: */
     bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(strMachineID);
-    if (fReconfigurationAllowed)
+    if (!fReconfigurationAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_SettingsDialog);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_HardDrivesSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_USBDevicesSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_NetworkSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
@@ -1657,7 +1686,7 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache snapshot related action restrictions: */
     bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(strMachineID);
-    if (fSnapshotOperationsAllowed)
+    if (!fSnapshotOperationsAllowed)
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_TakeSnapshot);
@@ -1666,7 +1695,7 @@ void UIActionPoolRuntime::updateConfiguration()
     /* Recache extension-pack related action restrictions: */
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     bool fExtensionPackOperationsAllowed = !extPack.isNull() && extPack.GetUsable();
-    if (fExtensionPackOperationsAllowed)
+    if (!fExtensionPackOperationsAllowed)
     {
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_VRDEServer);
@@ -2176,6 +2205,7 @@ void UIActionPoolRuntime::updateMenuDevices()
         pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
         fSeparator1 = true;
     }
+    updateMenuDevicesUSBDevices();
 
     /* 'Web Cams' submenu: */
     const bool fAllowToShowActionWebCams = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_WebCams);
@@ -2276,6 +2306,21 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
     gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(fAllowToShowActionHardDrivesSettings);
     if (fAllowToShowActionHardDrivesSettings)
         pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+}
+
+void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'USB Devices Settings' action: */
+    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevicesSettings);
+    gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)->setEnabled(fAllowToShowActionUSBDevicesSettings);
+    if (fAllowToShowActionUSBDevicesSettings)
+        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
 }
 
 void UIActionPoolRuntime::updateMenuDevicesNetwork()

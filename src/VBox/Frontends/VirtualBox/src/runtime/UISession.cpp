@@ -981,6 +981,7 @@ void UISession::prepareActions()
     /* Get host/machine: */
     const CHost host = vboxGlobal().host();
     const CMachine machine = session().GetConsole().GetMachine();
+    RuntimeMenuDevicesActionType restriction = RuntimeMenuDevicesActionType_Invalid;
 
     /* Storage stuff: */
     {
@@ -999,11 +1000,9 @@ void UISession::prepareActions()
         pOpticalDevicesMenu->setData(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
         if (!iDevicesCountCD)
-            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
-                                                                    RuntimeMenuDevicesActionType_OpticalDevices);
+            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_OpticalDevices);
         if (!iDevicesCountFD)
-            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
-                                                                    RuntimeMenuDevicesActionType_FloppyDevices);
+            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_FloppyDevices);
     }
 
     /* Network stuff: */
@@ -1022,8 +1021,7 @@ void UISession::prepareActions()
             }
         }
         if (!fAtLeastOneAdapterActive)
-            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
-                                                                    RuntimeMenuDevicesActionType_Network);
+            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_Network);
     }
 
     /* USB stuff: */
@@ -1033,8 +1031,7 @@ void UISession::prepareActions()
                                  && !machine.GetUSBControllers().isEmpty()
                                  && machine.GetUSBProxyAvailable();
         if (!fUSBEnabled)
-            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
-                                                                    RuntimeMenuDevicesActionType_USBDevices);
+            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_USBDevices);
     }
 
     /* WebCams stuff: */
@@ -1043,9 +1040,11 @@ void UISession::prepareActions()
         host.GetVideoInputDevices();
         const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
         if (!fWebCamsEnabled)
-            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
-                                                                    RuntimeMenuDevicesActionType_WebCams);
+            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_WebCams);
     }
+
+    /* Apply cumulative restriction: */
+    gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session, restriction);
 
 #ifdef Q_WS_MAC
     /* Create Mac OS X menu-bar: */
@@ -1562,7 +1561,7 @@ bool UISession::preparePowerUp()
     if (!failedInterfaceNames.isEmpty())
     {
         if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machine.GetName(), failedInterfaceNames.join(", ")))
-            machineLogic()->openNetworkAdaptersDialog();
+            machineLogic()->openNetworkSettingsDialog();
         else
         {
             closeRuntimeUI();
