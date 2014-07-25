@@ -27,6 +27,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicScale.h"
 #include "UIMachineWindow.h"
+#include "UIShortcutPool.h"
 #ifndef Q_WS_MAC
 # include "QIMenu.h"
 #else /* Q_WS_MAC */
@@ -43,14 +44,11 @@ UIMachineLogicScale::UIMachineLogicScale(QObject *pParent, UISession *pSession)
 
 bool UIMachineLogicScale::checkAvailability()
 {
-    /* Take the toggle hot key from the menu item.
-     * Since VBoxGlobal::extractKeyFromActionText gets exactly
-     * the linked key without the 'Host+' part we are adding it here. */
-    QString strHotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(actionPool()->action(UIActionIndexRT_M_View_T_Scale)->text()));
-    Assert(!strHotKey.isEmpty());
-
     /* Show the info message. */
+    const UIShortcut &shortcut =
+            gShortcutPool->shortcut(actionPool()->shortcutsExtraDataID(),
+                                    actionPool()->action(UIActionIndexRT_M_View_T_Scale)->shortcutExtraDataID());
+    const QString strHotKey = QString("Host+%1").arg(shortcut.toString());
     if (!msgCenter().confirmGoingScale(strHotKey))
         return false;
 
@@ -97,7 +95,7 @@ void UIMachineLogicScale::prepareActionConnections()
     /* Call to base-class: */
     UIMachineLogic::prepareActionConnections();
 
-    /* "View" actions connections: */
+    /* Prepare 'View' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToNormal()));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),

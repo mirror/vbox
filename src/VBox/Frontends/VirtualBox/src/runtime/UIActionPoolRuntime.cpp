@@ -1525,6 +1525,8 @@ void UIActionPoolRuntime::updateConfiguration()
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_SettingsDialog);
+        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
+            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_KeyboardSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_HardDrivesSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
@@ -1677,14 +1679,25 @@ void UIActionPoolRuntime::updateMenuMachine()
     /* Separator #2? */
     bool fSeparator2 = false;
 
-    /* 'Keyboard Settings' action: */
-    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(RuntimeMenuMachineActionType_KeyboardSettings);
-    action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
-    if (fAllowToShowActionKeyboardSettings)
+    /* 'Keyboard' submenu: */
+    const bool fAllowToShowActionKeyboard = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Keyboard);
+    action(UIActionIndexRT_M_Machine_M_Keyboard)->setEnabled(fAllowToShowActionKeyboard);
+    if (fAllowToShowActionKeyboard)
     {
-//        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+//        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard));
 //        fSeparator2 = true;
     }
+    updateMenuMachineKeyboard();
+
+    /* 'Mouse' submenu: */
+    const bool fAllowToShowActionMouse = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Mouse);
+    action(UIActionIndexRT_M_Machine_M_Mouse)->setEnabled(fAllowToShowActionMouse);
+    if (fAllowToShowActionMouse)
+    {
+//        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse));
+//        fSeparator2 = true;
+    }
+    updateMenuMachineMouse();
 
     /* 'Mouse Integration' action: */
     const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(RuntimeMenuMachineActionType_MouseIntegration);
@@ -1792,6 +1805,36 @@ void UIActionPoolRuntime::updateMenuMachine()
 #endif /* !Q_WS_MAC */
     pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
     action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(fAllowToShowActionClose);
+}
+
+void UIActionPoolRuntime::updateMenuMachineKeyboard()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Keyboard)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Keyboard Settings' action: */
+    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(RuntimeMenuMachineActionType_KeyboardSettings);
+    action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
+    if (fAllowToShowActionKeyboardSettings)
+        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+}
+
+void UIActionPoolRuntime::updateMenuMachineMouse()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Mouse)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Machine Integration' action: */
+    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(RuntimeMenuMachineActionType_MouseIntegration);
+    action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
+    if (fAllowToShowActionMouseIntegration)
+        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
 }
 
 void UIActionPoolRuntime::updateMenuView()

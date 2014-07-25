@@ -44,13 +44,6 @@ private slots:
     void sltToggleStatusBar();
     void sltHandleActionTriggerViewResize(int iIndex, const QSize &size);
 
-    /* Devices menu functionality: */
-    void sltPrepareHardDisksMenu();
-    void sltPrepareSharedFoldersMenu();
-    void sltPrepareVideoCaptureMenu();
-    void sltPrepareKeyboardMenu();
-    void sltPrepareMouseIntegrationMenu();
-
 private:
 
     /* Prepare helpers: */

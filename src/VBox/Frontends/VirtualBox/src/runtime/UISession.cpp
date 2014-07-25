@@ -766,6 +766,8 @@ void UISession::sltVRDEChange()
     const CVRDEServer &server = machine.GetVRDEServer();
     bool fIsVRDEServerAvailable = !server.isNull();
     /* Show/Hide VRDE action depending on VRDE server availability status: */
+    // TODO: Is this status can be changed at runtime?
+    //       Because if no => the place for that stuff is in prepareActions().
     actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer)->setVisible(fIsVRDEServerAvailable);
     /* Check/Uncheck VRDE action depending on VRDE server activity status: */
     if (fIsVRDEServerAvailable)

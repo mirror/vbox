@@ -190,6 +190,10 @@ protected:
     void updateMenus();
     /** Update 'Machine' menu routine. */
     void updateMenuMachine();
+    /** Update 'Machine' : 'Keyboard' menu routine. */
+    void updateMenuMachineKeyboard();
+    /** Update 'Machine' : 'Mouse' menu routine. */
+    void updateMenuMachineMouse();
     /** Update 'View' menu routine. */
     void updateMenuView();
     /** Update 'View' : 'Popup' menu routine. */

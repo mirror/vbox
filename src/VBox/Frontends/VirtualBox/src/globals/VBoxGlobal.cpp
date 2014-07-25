@@ -3456,20 +3456,6 @@ QString VBoxGlobal::insertKeyToActionText(const QString &strText, const QString 
         return pattern.arg(strText).arg(QKeySequence(strKey).toString(QKeySequence::NativeText));
 }
 
-/* static */
-QString VBoxGlobal::extractKeyFromActionText (const QString &aText)
-{
-    QString key;
-#ifdef Q_WS_MAC
-    QRegExp re (".* \\(Host\\+(.+)\\)");
-#else
-    QRegExp re (".* \\t\\Host\\+(.+)");
-#endif
-    if (re.exactMatch (aText))
-        key = re.cap (1);
-    return key;
-}
-
 /**
  * Joins two pixmaps horizontally with 2px space between them and returns the
  * result.
