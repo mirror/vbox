@@ -857,6 +857,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices));
+    m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams));
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
     m_pRunningOrPausedActions->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
@@ -923,6 +924,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPrepareStorageMenu()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareUSBMenu()));
+    connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltOpenUSBDevicesSettingsDialog()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareWebCamMenu()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
@@ -932,9 +935,9 @@ void UIMachineLogic::prepareActionConnections()
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareNetworkMenu()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenNetworkAdaptersDialog()));
+            this, SLOT(sltOpenNetworkSettingsDialog()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenSharedFoldersDialog()));
+            this, SLOT(sltOpenSharedFoldersSettingsDialog()));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
     connect(gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
@@ -1523,13 +1526,19 @@ void UIMachineLogic::sltOpenStorageSettingsDialog()
     sltOpenVMSettingsDialog("#storage");
 }
 
-void UIMachineLogic::sltOpenNetworkAdaptersDialog()
+void UIMachineLogic::sltOpenUSBDevicesSettingsDialog()
+{
+    /* Machine settings: Storage page: */
+    sltOpenVMSettingsDialog("#usb");
+}
+
+void UIMachineLogic::sltOpenNetworkSettingsDialog()
 {
     /* Open VM settings : Network page: */
     sltOpenVMSettingsDialog("#network");
 }
 
-void UIMachineLogic::sltOpenSharedFoldersDialog()
+void UIMachineLogic::sltOpenSharedFoldersSettingsDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
@@ -1622,6 +1631,9 @@ void UIMachineLogic::sltPrepareUSBMenu()
 
     /* Clear menu initially: */
     pMenu->clear();
+
+    /* Add settings action: */
+    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
 
     /* Get current host: */
     CHost host = vboxGlobal().host();

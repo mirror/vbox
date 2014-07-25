@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
         <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
         <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
         <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
@@ -178,6 +177,8 @@
         <file alias="usb_read_16px_hidpi.png">images/hidpi/usb_read_16px_hidpi.png</file>
         <file alias="usb_remove_16px_hidpi.png">images/hidpi/usb_remove_16px_hidpi.png</file>
         <file alias="usb_remove_disabled_16px_hidpi.png">images/hidpi/usb_remove_disabled_16px_hidpi.png</file>
+        <file alias="usb_settings_16px_hidpi.png">images/hidpi/usb_settings_16px_hidpi.png</file>
+        <file alias="usb_settings_disabled_16px_hidpi.png">images/hidpi/usb_settings_disabled_16px_hidpi.png</file>
         <file alias="usb_unavailable_16px_hidpi.png">images/hidpi/usb_unavailable_16px_hidpi.png</file>
         <file alias="usb_unavailable_disabled_16px_hidpi.png">images/hidpi/usb_unavailable_disabled_16px_hidpi.png</file>
         <file alias="usb_warning_16px_hidpi.png">images/hidpi/usb_warning_16px_hidpi.png</file>

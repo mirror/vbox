@@ -564,6 +564,7 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
         case RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
         case RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
         case RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
+        case RuntimeMenuDevicesActionType_USBDevicesSettings:    strResult = "USBDevicesSettings"; break;
         case RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
         case RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
         case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
@@ -596,6 +597,7 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
     keys << "OpticalDevices";        values << RuntimeMenuDevicesActionType_OpticalDevices;
     keys << "FloppyDevices";         values << RuntimeMenuDevicesActionType_FloppyDevices;
     keys << "USBDevices";            values << RuntimeMenuDevicesActionType_USBDevices;
+    keys << "USBDevicesSettings";    values << RuntimeMenuDevicesActionType_USBDevicesSettings;
     keys << "WebCams";               values << RuntimeMenuDevicesActionType_WebCams;
     keys << "SharedClipboard";       values << RuntimeMenuDevicesActionType_SharedClipboard;
     keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;

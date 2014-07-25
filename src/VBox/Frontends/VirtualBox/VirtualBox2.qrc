@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
         <file alias="os_win2k3.png">images/os_win2k3.png</file>
@@ -184,6 +183,8 @@
         <file alias="usb_read_16px.png">images/usb_read_16px.png</file>
         <file alias="usb_remove_16px.png">images/usb_remove_16px.png</file>
         <file alias="usb_remove_disabled_16px.png">images/usb_remove_disabled_16px.png</file>
+        <file alias="usb_settings_16px.png">images/usb_settings_16px.png</file>
+        <file alias="usb_settings_disabled_16px.png">images/usb_settings_disabled_16px.png</file>
         <file alias="usb_unavailable_16px.png">images/usb_unavailable_16px.png</file>
         <file alias="usb_unavailable_disabled_16px.png">images/usb_unavailable_disabled_16px.png</file>
         <file alias="usb_warning_16px.png">images/usb_warning_16px.png</file>

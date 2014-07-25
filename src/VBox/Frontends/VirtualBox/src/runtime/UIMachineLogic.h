@@ -86,7 +86,7 @@ public:
     virtual void maybeAdjustGuestScreenSize();
 
     /* Wrapper to open Machine settings / Network page: */
-    void openNetworkAdaptersDialog() { sltOpenNetworkAdaptersDialog(); }
+    void openNetworkSettingsDialog() { sltOpenNetworkSettingsDialog(); }
 
 #ifdef Q_WS_MAC
     void updateDockIcon();
@@ -219,8 +219,9 @@ private slots:
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenStorageSettingsDialog();
-    void sltOpenNetworkAdaptersDialog();
-    void sltOpenSharedFoldersDialog();
+    void sltOpenUSBDevicesSettingsDialog();
+    void sltOpenNetworkSettingsDialog();
+    void sltOpenSharedFoldersSettingsDialog();
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
     void sltPrepareUSBMenu();
