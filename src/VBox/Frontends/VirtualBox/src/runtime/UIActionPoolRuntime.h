@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionPoolRuntime class declaration
+ * VBox Qt GUI - UIActionPoolRuntime class declaration.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,11 +14,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIActionPoolRuntime_h__
-#define __UIActionPoolRuntime_h__
+#ifndef ___UIActionPoolRuntime_h___
+#define ___UIActionPoolRuntime_h___
 
-/* Local includes: */
+/* Qt includes: */
+#include <QMap>
+#include <QList>
+
+/* GUI includes: */
 #include "UIActionPool.h"
+#include "UIExtraDataDefs.h"
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
@@ -104,29 +107,150 @@ enum UIActionIndexRT
     UIActionIndexRT_Max
 };
 
-/* Singleton runtime action pool: */
+/** UIActionPool extension
+  * representing action-pool singleton for Runtime UI. */
 class UIActionPoolRuntime : public UIActionPool
 {
     Q_OBJECT;
 
-private:
+signals:
 
-    /* Constructor: */
+    /** Notifies about 'View' : 'Resize' menu action trigger. */
+    void sigNotifyAboutTriggeringViewResize(int iScreenIndex, const QSize &size);
+
+public:
+
+    /** Returns whether the menu with passed @a type is allowed in menu-bar. */
+    bool isAllowedInMenuBar(RuntimeMenuType type) const;
+    /** Defines menu-bar @a restriction for passed @a level. */
+    void setRestrictionForMenuBar(UIActionRestrictionLevel level, RuntimeMenuType restriction);
+
+#ifdef Q_WS_MAC
+    /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
+    bool isAllowedInMenuApplication(RuntimeMenuApplicationActionType type) const;
+    /** Defines 'Application' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, RuntimeMenuApplicationActionType restriction);
+#endif /* Q_WS_MAC */
+
+    /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
+    bool isAllowedInMenuMachine(RuntimeMenuMachineActionType type) const;
+    /** Defines 'Machine' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuMachine(UIActionRestrictionLevel level, RuntimeMenuMachineActionType restriction);
+
+    /** Returns whether the action with passed @a type is allowed in the 'View' menu. */
+    bool isAllowedInMenuView(RuntimeMenuViewActionType type) const;
+    /** Defines 'View' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuView(UIActionRestrictionLevel level, RuntimeMenuViewActionType restriction);
+
+    /** Returns whether the action with passed @a type is allowed in the 'Devices' menu. */
+    bool isAllowedInMenuDevices(RuntimeMenuDevicesActionType type) const;
+    /** Defines 'Devices' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuDevices(UIActionRestrictionLevel level, RuntimeMenuDevicesActionType restriction);
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Returns whether the action with passed @a type is allowed in the 'Debug' menu. */
+    bool isAllowedInMenuDebug(RuntimeMenuDebuggerActionType type) const;
+    /** Defines 'Debug' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+    /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
+    bool isAllowedInMenuHelp(RuntimeMenuHelpActionType type) const;
+    /** Defines 'Help' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, RuntimeMenuHelpActionType restriction);
+
+    /** Defines current frame-buffer sizes
+      * for menus which uses such arguments to build content. */
+    void setCurrentFrameBufferSizes(const QList<QSize> &sizes, bool fUpdateMenu = false);
+
+protected slots:
+
+    /** Prepare 'View' : 'Resize' menu routine. */
+    void sltPrepareMenuViewResize();
+    /** Handles 'View' : 'Resize' menu @a pAction trigger. */
+    void sltHandleActionTriggerViewResize(QAction *pAction);
+
+protected:
+
+    /** Constructor. */
     UIActionPoolRuntime();
 
+    /** Prepare pool routine. */
+    virtual void preparePool();
+    /** Prepare connections routine. */
+    virtual void prepareConnections();
+
+    /** Update configuration routine. */
+    virtual void updateConfiguration();
+
+    /** Update menus routine. */
+    void updateMenus();
+    /** Update 'Machine' menu routine. */
+    void updateMenuMachine();
+    /** Update 'View' menu routine. */
+    void updateMenuView();
+    /** Update 'View' : 'Popup' menu routine. */
+    void updateMenuViewPopup();
+    /** Update 'View' : 'Status Bar' menu routine. */
+    void updateMenuViewStatusBar();
+    /** Update 'View' : 'Resize' @a pMenu routine. */
+    void updateMenuViewResize(QMenu *pMenu);
+    /** Update 'Devices' menu routine. */
+    void updateMenuDevices();
+    /** Update 'Devices' : 'Hard Drives' menu routine. */
+    void updateMenuDevicesHardDrives();
+    /** Update 'Devices' : 'Network' menu routine. */
+    void updateMenuDevicesNetwork();
+    /** Update 'Devices' : 'Shared Folders' menu routine. */
+    void updateMenuDevicesSharedFolders();
+    /** Update 'Devices' : 'Video Capture' menu routine. */
+    void updateMenuDevicesVideoCapture();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Update 'Debug' menu routine. */
+    void updateMenuDebug();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Update 'Help' menu routine. */
+    void updateMenuHelp();
+
     /** Translation handler. */
-    void retranslateUi();
+    virtual void retranslateUi();
 
-    /* Helper: Shortcuts stuff: */
-    QString shortcutsExtraDataID() const;
+    /** Returns extra-data ID to save keyboard shortcuts under. */
+    virtual QString shortcutsExtraDataID() const;
 
-    /* Helpers: Prepare stuff: */
-    void createActions();
-    void createMenus();
+    /** Returns the list of Runtime UI main menus. */
+    virtual QList<QMenu*> menus() const { return m_mainMenus; }
 
-    /* Friend zone: */
+private:
+
+    /** Holds the list of main-menus. */
+    QList<QMenu*> m_mainMenus;
+
+    /** Holds restricted menus. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuType> m_restrictedMenus;
+#ifdef Q_WS_MAC
+    /** Holds restricted actions of the Application menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuApplicationActionType> m_restrictedActionsMenuApplication;
+#endif /* Q_WS_MAC */
+    /** Holds restricted actions of the Machine menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
+    /** Holds restricted actions of the View menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuViewActionType> m_restrictedActionsMenuView;
+    /** Holds restricted actions of the Devices menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Holds restricted actions of the Debugger menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    /** Holds restricted actions of the Help menu. */
+    QMap<UIActionRestrictionLevel, RuntimeMenuHelpActionType> m_restrictedActionsMenuHelp;
+
+    /** Defines current frame-buffer sizes
+      * for menus which uses such arguments to build content. */
+    QList<QSize> m_sizes;
+
+    /* Enable factory in base-class: */
     friend class UIActionPool;
 };
 
-#endif // __UIActionPoolRuntime_h__
-
+#endif /* !___UIActionPoolRuntime_h___ */

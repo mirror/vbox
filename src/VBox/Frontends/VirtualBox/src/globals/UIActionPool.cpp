@@ -632,18 +632,44 @@ UIActionPoolSelector* UIActionPool::toSelector()
 
 void UIActionPool::prepare()
 {
-    /* Create actions: */
-    createActions();
-    /* Create menus: */
-    createMenus();
+    /* Prepare pool: */
+    preparePool();
+    /* Prepare connections: */
+    prepareConnections();
+    /* Update configuration: */
+    updateConfiguration();
     /* Apply shortcuts: */
     sltApplyShortcuts();
 }
 
+void UIActionPool::preparePool()
+{
+    /* Various actions: */
+    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
+    m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
+
+    /* 'Help' actions: */
+    m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
+    m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
+    m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
+    m_pool[UIActionIndex_Simple_ResetWarnings] = new UIActionSimpleResetWarnings(this);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
+    m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
+}
+
+void UIActionPool::cleanupPool()
+{
+    /* Cleanup pool: */
+    qDeleteAll(m_pool);
+}
+
 void UIActionPool::cleanup()
 {
-    /* Destroy pool: */
-    destroyPool();
+    /* Cleanup pool: */
+    cleanupPool();
 }
 
 bool UIActionPool::processHotKey(const QKeySequence &key)
@@ -682,43 +708,6 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
 void UIActionPool::sltApplyShortcuts()
 {
     gShortcutPool->applyShortcuts(this);
-}
-
-void UIActionPool::createActions()
-{
-    /* Various dialog actions: */
-    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
-    m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
-    /* 'Help' actions: */
-    m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
-    m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
-    m_pool[UIActionIndex_Simple_ResetWarnings] = new UIActionSimpleResetWarnings(this);
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
-    m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
-}
-
-void UIActionPool::createMenus()
-{
-    /* On Mac OS X, all QMenu's are consumed by Qt after they are added to another QMenu or a QMenuBar.
-     * This means we have to recreate all QMenus when creating a new QMenuBar.
-     * For simplicity we doing this on all platforms right now. */
-
-    /* 'Help' menu: */
-    if (m_pool[UIActionIndex_Menu_Help])
-        delete m_pool[UIActionIndex_Menu_Help];
-    m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
-}
-
-void UIActionPool::destroyPool()
-{
-    /* Get the list of keys: */
-    QList<int> keys = m_pool.keys();
-    /* Delete all the items of the map: */
-    for (int i = 0; i < keys.size(); ++i)
-        delete m_pool[keys[i]];
 }
 
 bool UIActionPool::event(QEvent *pEvent)

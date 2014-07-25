@@ -116,9 +116,6 @@ private:
     void cleanupActionConnections();
     void cleanupActionGroups();
 
-    /** Updates the 'View' menu. */
-    virtual void updateMenuView();
-
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 

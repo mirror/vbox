@@ -43,6 +43,7 @@
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef Q_WS_MAC
+# include "UIMenuBar.h"
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
 
@@ -76,8 +77,6 @@
 #include "CHostVideoInputDevice.h"
 #include "CSnapshot.h"
 #include "CMedium.h"
-#include "CExtPack.h"
-#include "CExtPackManager.h"
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
@@ -125,6 +124,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Base variables: */
     , m_pMachine(pMachine)
     , m_session(sessionReference)
+#ifdef Q_WS_MAC
+    , m_pMenuBar(0)
+#endif /* Q_WS_MAC */
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
     , m_machineState(session().GetMachine().GetState())
@@ -133,7 +135,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 #endif /* !Q_WS_MAC */
     , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
-    , m_fIsExtensionPackUsable(false)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
     , m_alphaCursor(0)
@@ -144,13 +145,11 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_defaultCloseAction(MachineCloseAction_Invalid)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
     , m_fAllCloseActionsRestricted(false)
-    , m_fSnapshotOperationsAllowed(true)
     /* Common flags: */
     , m_fIsStarted(false)
     , m_fIsFirstTimeStarted(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
-    , m_fReconfigurable(false)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
@@ -200,6 +199,12 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 
 UISession::~UISession()
 {
+#ifdef Q_WS_WIN
+    /* Destroy alpha cursor: */
+    if (m_alphaCursor)
+        DestroyIcon(m_alphaCursor);
+#endif /* Q_WS_WIN */
+
     /* Save settings: */
     saveSessionSettings();
 
@@ -209,11 +214,11 @@ UISession::~UISession()
     /* Cleanup console event-handlers: */
     cleanupConsoleEventHandlers();
 
-#ifdef Q_WS_WIN
-    /* Destroy alpha cursor: */
-    if (m_alphaCursor)
-        DestroyIcon(m_alphaCursor);
-#endif /* Q_WS_WIN */
+    /* Cleanup connections: */
+    cleanupConnections();
+
+    /* Cleanup actions: */
+    cleanupActions();
 }
 
 void UISession::powerUp()
@@ -992,9 +997,13 @@ void UISession::prepareActions()
         QAction *pOpticalDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices);
         QAction *pFloppyDevicesMenu = gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices);
         pOpticalDevicesMenu->setData(iDevicesCountCD);
-        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
-        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+        if (!iDevicesCountCD)
+            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
+                                                                    RuntimeMenuDevicesActionType_OpticalDevices);
+        if (!iDevicesCountFD)
+            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
+                                                                    RuntimeMenuDevicesActionType_FloppyDevices);
     }
 
     /* Network stuff: */
@@ -1012,7 +1021,9 @@ void UISession::prepareActions()
                 break;
             }
         }
-        gpActionPool->action(UIActionIndexRT_M_Devices_M_Network)->setVisible(fAtLeastOneAdapterActive);
+        if (!fAtLeastOneAdapterActive)
+            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
+                                                                    RuntimeMenuDevicesActionType_Network);
     }
 
     /* USB stuff: */
@@ -1021,7 +1032,9 @@ void UISession::prepareActions()
         const bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
                                  && !machine.GetUSBControllers().isEmpty()
                                  && machine.GetUSBProxyAvailable();
-        gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices)->setVisible(fUSBEnabled);
+        if (!fUSBEnabled)
+            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
+                                                                    RuntimeMenuDevicesActionType_USBDevices);
     }
 
     /* WebCams stuff: */
@@ -1029,8 +1042,21 @@ void UISession::prepareActions()
         /* Check whether there is an accessible video input devices pool: */
         host.GetVideoInputDevices();
         const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
-        gpActionPool->action(UIActionIndexRT_M_Devices_M_WebCams)->setVisible(fWebCamsEnabled);
+        if (!fWebCamsEnabled)
+            gpActionPool->toRuntime()->setRestrictionForMenuDevices(UIActionPool::UIActionRestrictionLevel_Session,
+                                                                    RuntimeMenuDevicesActionType_WebCams);
     }
+
+#ifdef Q_WS_MAC
+    /* Create Mac OS X menu-bar: */
+    m_pMenuBar = new UIMenuBar;
+    AssertPtrReturnVoid(m_pMenuBar);
+    {
+        /* Prepare menu-bar: */
+        foreach (QMenu *pMenu, gpActionPool->menus())
+            m_pMenuBar->addMenu(pMenu);
+    }
+#endif /* Q_WS_MAC */
 }
 
 void UISession::prepareConnections()
@@ -1095,77 +1121,48 @@ void UISession::prepareScreens()
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
-    m_frameBufferVector.resize(m_session.GetMachine().GetMonitorCount());
+    const ULONG uMonitorCount = m_session.GetMachine().GetMonitorCount();
+    m_frameBufferVector.resize(uMonitorCount);
+    QVector<QSize> sizes(uMonitorCount);
+    gpActionPool->toRuntime()->setCurrentFrameBufferSizes(sizes.toList(), true);
 }
 
 void UISession::loadSessionSettings()
 {
     /* Load extra-data settings: */
     {
-        /* Extension pack stuff: */
-        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
-        m_fIsExtensionPackUsable = !extPack.isNull() && extPack.GetUsable();
-
-        /* Runtime menu settings: */
-        m_allowedMenus = (RuntimeMenuType)
-                         (gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid()) ^ RuntimeMenuType_All);
-#ifdef Q_WS_MAC
-        m_allowedActionsMenuApplication = (RuntimeMenuApplicationActionType)
-                                          (gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuApplicationActionType_All);
-#endif /* Q_WS_MAC */
-        m_allowedActionsMenuMachine     = (RuntimeMenuMachineActionType)
-                                          (gEDataManager->restrictedRuntimeMenuMachineActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuMachineActionType_All);
-        m_allowedActionsMenuView        = (RuntimeMenuViewActionType)
-                                          (gEDataManager->restrictedRuntimeMenuViewActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuViewActionType_All);
-        m_allowedActionsMenuDevices     = (RuntimeMenuDevicesActionType)
-                                          (gEDataManager->restrictedRuntimeMenuDevicesActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuDevicesActionType_All);
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        m_allowedActionsMenuDebugger    = (RuntimeMenuDebuggerActionType)
-                                          (gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuDebuggerActionType_All);
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-        m_allowedActionsMenuHelp        = (RuntimeMenuHelpActionType)
-                                          (gEDataManager->restrictedRuntimeMenuHelpActionTypes(vboxGlobal().managedVMUuid()) ^
-                                           RuntimeMenuHelpActionType_All);
+        /* Get machine ID: */
+        const QString strMachineID = vboxGlobal().managedVMUuid();
 
 #ifndef Q_WS_MAC
         /* Load/prepare user's machine-window icon: */
         QIcon icon;
-        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(vboxGlobal().managedVMUuid()))
+        foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(strMachineID))
             if (!strIconName.isEmpty())
                 icon.addFile(strIconName);
         if (!icon.isNull())
             m_pMachineWindowIcon = new QIcon(icon);
 
         /* Load user's machine-window name postfix: */
-        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(vboxGlobal().managedVMUuid());
+        m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
 #endif /* !Q_WS_MAC */
 
         /* Determine Guru Meditation handler type: */
-        m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(vboxGlobal().managedVMUuid());
+        m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(strMachineID);
 
         /* Determine HiDPI optimization type: */
-        m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid());
+        m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(strMachineID);
 
         /* Is there should be First RUN Wizard? */
-        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(vboxGlobal().managedVMUuid());
+        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize);
-        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(vboxGlobal().managedVMUuid()));
-
-        /* Should we allow reconfiguration? */
-        m_fReconfigurable = gEDataManager->machineReconfigurationEnabled(vboxGlobal().managedVMUuid());
-        /* Should we allow snapshot operations? */
-        m_fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(vboxGlobal().managedVMUuid());
+        pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
 
         /* Status-bar options: */
         const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
-        const bool fEnabledForMachine = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+        const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
         const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
         QAction *pActionStatusBarSettings = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
         pActionStatusBarSettings->setEnabled(fEnabled);
@@ -1175,25 +1172,14 @@ void UISession::loadSessionSettings()
         pActionStatusBarSwitch->blockSignals(false);
 
         /* What is the default close action and the restricted are? */
-        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(vboxGlobal().managedVMUuid());
-        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(vboxGlobal().managedVMUuid());
+        m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(strMachineID);
+        m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(strMachineID);
         m_fAllCloseActionsRestricted =  (m_restrictedCloseActions & MachineCloseAction_SaveState)
                                      && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
                                      && (m_restrictedCloseActions & MachineCloseAction_PowerOff);
                                      // Close VM Dialog hides PowerOff_RestoringSnapshot implicitly if PowerOff is hidden..
                                      // && (m_restrictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
-
-#if 0 /* Disabled for now! */
-# ifdef Q_WS_WIN
-        /* Disable host screen-saver if requested: */
-        if (vboxGlobal().settings().hostScreenSaverDisabled())
-            SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, false, 0, 0);
-# endif /* Q_WS_WIN */
-#endif
     }
-
-    /* Update session settings: */
-    updateSessionSettings();
 }
 
 void UISession::saveSessionSettings()
@@ -1205,13 +1191,6 @@ void UISession::saveSessionSettings()
 
         /* Remember if guest should autoresize: */
         gEDataManager->setGuestScreenAutoResizeEnabled(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
-
-#if 0 /* Disabled for now! */
-# ifdef Q_WS_WIN
-        /* Restore screen-saver activity to system default: */
-        SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, true, 0, 0);
-# endif /* Q_WS_WIN */
-#endif
 
 #ifndef Q_WS_MAC
         /* Cleanup user's machine-window icon: */
@@ -1255,16 +1234,12 @@ void UISession::cleanupConnections()
 #endif /* Q_WS_MAC */
 }
 
-void UISession::updateSessionSettings()
+void UISession::cleanupActions()
 {
-    /* Particularly enable/disable reconfigurable action: */
-    gpActionPool->action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(m_fReconfigurable);
-    gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(m_fReconfigurable);
-    gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(m_fReconfigurable);
-    gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(m_fReconfigurable);
-    gpActionPool->action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(m_fReconfigurable);
-    /* Particularly enable/disable snapshot related action: */
-    gpActionPool->action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(m_fSnapshotOperationsAllowed);
+#ifdef Q_WS_MAC
+    delete m_pMenuBar;
+    m_pMenuBar = 0;
+#endif /* Q_WS_MAC */
 }
 
 WId UISession::winId() const

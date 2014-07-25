@@ -70,16 +70,17 @@ private:
     void prepareActionGroups();
     void prepareActionConnections();
     void prepareMachineWindows();
+#ifndef Q_WS_MAC
     void prepareMenu();
+#endif /* !Q_WS_MAC */
 
     /* Cleanup helpers: */
+#ifndef Q_WS_MAC
     void cleanupMenu();
+#endif /* !Q_WS_MAC */
     void cleanupMachineWindows();
     void cleanupActionConnections();
     void cleanupActionGroups();
-
-    /** Updates the 'View' menu. */
-    virtual void updateMenuView();
 
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;

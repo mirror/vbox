@@ -202,8 +202,16 @@ void UIMachineLogicSeamless::prepareActionGroups()
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Disable mouse-integration isn't allowed in seamless: */
-    gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(false);
+    /* Restrict 'Disable Mouse Integration' action for 'Machine' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuMachine(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                            RuntimeMenuMachineActionType_MouseIntegration);
+    /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                         (RuntimeMenuViewActionType)
+                                                         (RuntimeMenuViewActionType_AdjustWindow |
+                                                          RuntimeMenuViewActionType_GuestAutoresize |
+                                                          RuntimeMenuViewActionType_StatusBar |
+                                                          RuntimeMenuViewActionType_Resize));
 
     /* Take care of view-action toggle state: */
     UIAction *pActionSeamless = gpActionPool->action(UIActionIndexRT_M_View_T_Seamless);
@@ -244,6 +252,9 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     /* Update the multi-screen layout: */
     m_pScreenLayout->update();
 
+    // TODO: Make this through action-pool.
+    m_pScreenLayout->setViewMenu(gpActionPool->action(UIActionIndexRT_M_View)->menu());
+
     /* Create machine-window(s): */
     for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
@@ -261,34 +272,28 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     setMachineWindowsCreated(true);
 }
 
+#ifndef Q_WS_MAC
 void UIMachineLogicSeamless::prepareMenu()
 {
-    /* Call to base-class: */
-    UIMachineLogic::prepareMenu();
-
-#ifndef Q_WS_MAC
     /* Prepare popup-menu: */
     m_pPopupMenu = new QIMenu;
     AssertPtrReturnVoid(m_pPopupMenu);
     {
         /* Prepare popup-menu: */
-        foreach (QMenu *pMenu, menus())
+        foreach (QMenu *pMenu, gpActionPool->menus())
             m_pPopupMenu->addMenu(pMenu);
     }
-#endif /* !Q_WS_MAC */
 }
+#endif /* !Q_WS_MAC */
 
+#ifndef Q_WS_MAC
 void UIMachineLogicSeamless::cleanupMenu()
 {
-#ifndef Q_WS_MAC
     /* Cleanup popup-menu: */
     delete m_pPopupMenu;
     m_pPopupMenu = 0;
-#endif /* !Q_WS_MAC */
-
-    /* Call to base-class: */
-    UIMachineLogic::cleanupMenu();
 }
+#endif /* !Q_WS_MAC */
 
 void UIMachineLogicSeamless::cleanupMachineWindows()
 {
@@ -329,24 +334,14 @@ void UIMachineLogicSeamless::cleanupActionGroups()
         pActionSeamless->blockSignals(false);
     }
 
-    /* Reenable mouse-integration action: */
-    gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setVisible(true);
+    /* Allow 'Disable Mouse Integration' action for 'Machine' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuMachine(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                            RuntimeMenuMachineActionType_Invalid);
+    /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                         RuntimeMenuViewActionType_Invalid);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
-}
-
-void UIMachineLogicSeamless::updateMenuView()
-{
-    /* Call to base-class: */
-    UIMachineLogic::updateMenuView();
-
-    /* Get corresponding menu: */
-    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View)->menu();
-    AssertPtrReturnVoid(pMenu);
-
-    /* Append 'Multiscreen' submenu, if allowed: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Multiscreen)
-        m_pScreenLayout->setViewMenu(pMenu);
 }
 

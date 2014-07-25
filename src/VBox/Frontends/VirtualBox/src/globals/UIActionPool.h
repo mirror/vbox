@@ -271,6 +271,14 @@ class UIActionPool : public QIWithRetranslateUI3<QObject>
 
 public:
 
+    /** Restriction levels. */
+    enum UIActionRestrictionLevel
+    {
+        UIActionRestrictionLevel_Base,
+        UIActionRestrictionLevel_Session,
+        UIActionRestrictionLevel_Logic
+    };
+
     /** Singleton instance access member. */
     static UIActionPool* instance();
 
@@ -302,8 +310,8 @@ public:
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const = 0;
 
-    /** Recreates menus. */
-    void recreateMenus() { createMenus(); }
+    /** Returns the list of main menus. */
+    virtual QList<QMenu*> menus() const = 0;
 
 protected slots:
 
@@ -319,15 +327,19 @@ protected:
 
     /** Prepare routine. */
     void prepare();
+    /** Prepare pool routine. */
+    virtual void preparePool();
+    /** Prepare connections routine. */
+    virtual void prepareConnections() = 0;
+    /** Cleanup connections routine. */
+    virtual void cleanupConnections() {}
+    /** Cleanup pool routine. */
+    virtual void cleanupPool();
     /** Cleanup routine. */
     void cleanup();
 
-    /** Creates actions. */
-    virtual void createActions();
-    /** Creates menus. */
-    virtual void createMenus();
-    /** Destroyes poll contents. */
-    virtual void destroyPool();
+    /** Update configuration routine. */
+    virtual void updateConfiguration() = 0;
 
     /** General event handler. */
     virtual bool event(QEvent *pEvent);

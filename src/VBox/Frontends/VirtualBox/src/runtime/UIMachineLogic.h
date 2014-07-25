@@ -41,10 +41,6 @@ class CMachine;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
-#ifdef Q_WS_MAC
-class QMenuBar;
-class QMenu;
-#endif /* Q_WS_MAC */
 
 /* Machine logic interface: */
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>
@@ -85,9 +81,6 @@ public:
     /* Maintenance getters/setters: */
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
-
-    /** Returns the list of available menus. */
-    virtual QList<QMenu*> menus() const;
 
     /* API: Guest screen size stuff: */
     virtual void maybeAdjustGuestScreenSize();
@@ -167,10 +160,10 @@ protected:
     virtual void prepareSessionConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
-    virtual void prepareOtherConnections() {}
+    virtual void prepareOtherConnections();
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
-    virtual void prepareMenu();
+    virtual void prepareMenu() {}
 #ifdef Q_WS_MAC
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
@@ -187,34 +180,14 @@ protected:
 #ifdef Q_WS_MAC
     virtual void cleanupDock();
 #endif /* Q_WS_MAC */
-    virtual void cleanupMenu();
+    virtual void cleanupMenu() {}
     virtual void cleanupMachineWindows() = 0;
     virtual void cleanupHandlers();
     //virtual void cleanupOtherConnections() {}
     virtual void cleanupActionConnections() {}
-    virtual void cleanupActionGroups();
+    virtual void cleanupActionGroups() {}
     //virtual void cleanupSessionConnections() {}
     //virtual void cleanupRequiredFeatures() {}
-
-    /** Updates the 'Machine' menu. */
-    virtual void updateMenuMachine();
-    /** Updates the 'View' menu. */
-    virtual void updateMenuView();
-    /** Updates the 'Devices' menu. */
-    virtual void updateMenuDevices();
-    /** Updates the 'Devices' : 'Hard Drives' menu. */
-    virtual void updateMenuDevicesHardDrives();
-    /** Updates the 'Devices' : 'Network' menu. */
-    virtual void updateMenuDevicesNetwork();
-    /** Updates the 'Devices' : 'Shared Folders' menu. */
-    virtual void updateMenuDevicesSharedFolders();
-    /** Updates the 'Devices' : 'Video Capture' menu. */
-    virtual void updateMenuDevicesVideoCapture();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    virtual void updateMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Updates the 'Help' menu. */
-    virtual void updateMenuHelp();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
@@ -239,6 +212,9 @@ private slots:
     void sltShutdown();
     void sltPowerOff();
     void sltClose();
+
+    /** Handles frame-buffer resize. */
+    void sltHandleFrameBufferResize();
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
@@ -322,7 +298,6 @@ private:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
-    QMenuBar *m_pMenuBar;
     bool m_fIsDockIconEnabled;
     UIDockIconPreview *m_pDockIconPreview;
     QActionGroup *m_pDockPreviewSelectMonitorGroup;

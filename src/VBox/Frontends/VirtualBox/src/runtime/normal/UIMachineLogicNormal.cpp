@@ -123,108 +123,11 @@ void UIMachineLogicNormal::sltToggleStatusBar()
     gEDataManager->setStatusBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
 }
 
-void UIMachineLogicNormal::sltPrepareMenuViewPopup()
+void UIMachineLogicNormal::sltHandleActionTriggerViewResize(int iIndex, const QSize &size)
 {
-    /* Make sure sender is valid: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsgReturnVoid(pMenu, ("This slot should be called only on View popup-menu show!\n"));
-
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* Add default contents: */
-    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
-    pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
-    pMenu->addSeparator();
-
-    /* Check if guest additions are enabled: */
-    const bool fGAEnabled = uisession()->isGuestAdditionsActive() &&
-                            uisession()->isGuestSupportsGraphics();
-
-    /* For each the machine-window: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Resize)
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        {
-            /* Add 'Virtual Screen %1' menu: */
-            const int iScreenID = pMachineWindow->screenId();
-            QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
-                                                                     "Virtual Screen %1").arg(iScreenID + 1));
-            pSubMenu->setProperty("Screen ID", iScreenID);
-            pSubMenu->setEnabled(fGAEnabled);
-            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewVirtualScreen()));
-        }
-}
-
-void UIMachineLogicNormal::sltPrepareMenuViewVirtualScreen()
-{
-    /* Make sure sender is valid: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsgReturnVoid(pMenu, ("This slot should be called only on 'Virtual Screen %1' menu show!\n"));
-
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* Prepare new contents: */
-    const QList<QSize> sizes = QList<QSize>()
-                               << QSize(640, 480)
-                               << QSize(800, 600)
-                               << QSize(1024, 768)
-                               << QSize(1280, 720)
-                               << QSize(1280, 800)
-                               << QSize(1366, 768)
-                               << QSize(1440, 900)
-                               << QSize(1600, 900)
-                               << QSize(1680, 1050)
-                               << QSize(1920, 1080)
-                               << QSize(1920, 1200);
-
-    /* Get corresponding screen ID and frame-buffer: */
-    const int iScreenID = pMenu->property("Screen ID").toInt();
-    const UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(iScreenID);
-
-    /* Create exclusive action-group: */
-    QActionGroup *pActionGroup = new QActionGroup(pMenu);
-    AssertPtrReturnVoid(pActionGroup);
-    {
-        /* Configure exclusive action-group: */
-        pActionGroup->setExclusive(true);
-        /* For every available size: */
-        foreach (const QSize &size, sizes)
-        {
-            /* Create exclusive action: */
-            QAction *pAction = pActionGroup->addAction(UIActionPoolRuntime::tr("Resize to %1x%2", "Virtual Screen")
-                                                                               .arg(size.width()).arg(size.height()));
-            AssertPtrReturnVoid(pAction);
-            {
-                /* Configure exclusive action: */
-                pAction->setProperty("Screen ID", iScreenID);
-                pAction->setProperty("Requested Size", size);
-                pAction->setCheckable(true);
-                if (pFrameBuffer->width() == (ulong)size.width() &&
-                    pFrameBuffer->height() == (ulong)size.height())
-                {
-                    pAction->setChecked(true);
-                }
-                /* Insert group actions into menu: */
-                pMenu->addActions(pActionGroup->actions());
-            }
-        }
-        /* Install listener for exclusive action-group: */
-        connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewVirtualScreen(QAction*)));
-    }
-}
-
-void UIMachineLogicNormal::sltHandleActionTriggerViewVirtualScreen(QAction *pAction)
-{
-    /* Make sure sender is valid: */
-    AssertMsgReturnVoid(pAction, ("This slot should be called only on 'Virtual Screen %1' menu action trigger!\n"));
-
     /* Resize guest to required size: */
-    const int iScreenID = pAction->property("Screen ID").toInt();
-    const QSize size = pAction->property("Requested Size").toSize();
     CDisplay display = session().GetConsole().GetDisplay();
-    display.SetVideoModeHint(iScreenID, uisession()->isScreenVisible(iScreenID),
+    display.SetVideoModeHint(iIndex, uisession()->isScreenVisible(iIndex),
                              false, 0, 0, size.width(), size.height(), 0);
 }
 
@@ -275,8 +178,8 @@ void UIMachineLogicNormal::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* "View" actions connections: */
-    connect(gpActionPool->action(UIActionIndexRT_M_ViewPopup)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareMenuViewPopup()));
+    connect(gpActionPool, SIGNAL(sigNotifyAboutTriggeringViewResize(int, const QSize&)),
+            this, SLOT(sltHandleActionTriggerViewResize(int, const QSize&)));
     connect(gpActionPool->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToFullscreen()));
     connect(gpActionPool->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
@@ -361,68 +264,5 @@ void UIMachineLogicNormal::cleanupActionConnections()
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();
-}
-
-void UIMachineLogicNormal::updateMenuView()
-{
-    /* Call to base-class: */
-    UIMachineLogic::updateMenuView();
-
-    /* Get corresponding menu: */
-    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View)->menu();
-    AssertPtrReturnVoid(pMenu);
-
-    /* Separator #1? */
-    bool fSeparator1 = false;
-
-    /* 'Adjust Window' action: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_AdjustWindow)
-    {
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow));
-        fSeparator1 = true;
-    }
-    else
-        gpActionPool->action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(false);
-
-    /* 'Guest Autoresize' action: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_GuestAutoresize)
-    {
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize));
-        fSeparator1 = true;
-    }
-    else
-        gpActionPool->action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(false);
-
-    /* Separator #1: */
-    if (fSeparator1)
-        pMenu->addSeparator();
-
-    /* 'Status Bar' submenu: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBar)
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar));
-    else
-        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(false);
-    updateMenuViewStatusBar();
-}
-
-void UIMachineLogicNormal::updateMenuViewStatusBar()
-{
-    /* Get corresponding menu: */
-    QMenu *pMenu = gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar)->menu();
-    AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* 'Status Bar Settings' action: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_StatusBarSettings)
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
-    else
-        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(false);
-
-    /* 'Toggle Status Bar' action: */
-    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_ToggleStatusBar)
-        pMenu->addAction(gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
-    else
-        gpActionPool->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(false);
 }
 

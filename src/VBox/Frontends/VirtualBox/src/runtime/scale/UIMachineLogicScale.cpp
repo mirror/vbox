@@ -74,6 +74,14 @@ void UIMachineLogicScale::prepareActionGroups()
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
+    /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                         (RuntimeMenuViewActionType)
+                                                         (RuntimeMenuViewActionType_AdjustWindow |
+                                                          RuntimeMenuViewActionType_GuestAutoresize |
+                                                          RuntimeMenuViewActionType_StatusBar |
+                                                          RuntimeMenuViewActionType_Resize));
+
     /* Take care of view-action toggle state: */
     UIAction *pActionScale = gpActionPool->action(UIActionIndexRT_M_View_T_Scale);
     if (!pActionScale->isChecked())
@@ -131,15 +139,12 @@ void UIMachineLogicScale::prepareMachineWindows()
 #ifndef Q_WS_MAC
 void UIMachineLogicScale::prepareMenu()
 {
-    /* Call to base-class: */
-    UIMachineLogic::prepareMenu();
-
     /* Prepare popup-menu: */
     m_pPopupMenu = new QIMenu;
     AssertPtrReturnVoid(m_pPopupMenu);
     {
         /* Prepare popup-menu: */
-        foreach (QMenu *pMenu, menus())
+        foreach (QMenu *pMenu, gpActionPool->menus())
             m_pPopupMenu->addMenu(pMenu);
     }
 }
@@ -151,9 +156,6 @@ void UIMachineLogicScale::cleanupMenu()
     /* Cleanup popup-menu: */
     delete m_pPopupMenu;
     m_pPopupMenu = 0;
-
-    /* Call to base-class: */
-    UIMachineLogic::cleanupMenu();
 }
 #endif /* !Q_WS_MAC */
 
@@ -196,6 +198,10 @@ void UIMachineLogicScale::cleanupActionGroups()
         pActionScale->setChecked(false);
         pActionScale->blockSignals(false);
     }
+
+    /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
+    gpActionPool->toRuntime()->setRestrictionForMenuView(UIActionPool::UIActionRestrictionLevel_Logic,
+                                                         RuntimeMenuViewActionType_Invalid);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
