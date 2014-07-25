@@ -42,9 +42,7 @@ private slots:
     void sltOpenStatusBarSettings();
     void sltStatusBarSettingsClosed();
     void sltToggleStatusBar();
-    void sltPrepareMenuViewPopup();
-    void sltPrepareMenuViewVirtualScreen();
-    void sltHandleActionTriggerViewVirtualScreen(QAction *pAction);
+    void sltHandleActionTriggerViewResize(int iIndex, const QSize &size);
 
     /* Devices menu functionality: */
     void sltPrepareHardDisksMenu();
@@ -62,11 +60,6 @@ private:
     /* Cleanup helpers: */
     void cleanupMachineWindows();
     void cleanupActionConnections();
-
-    /** Updates the 'View' menu. */
-    virtual void updateMenuView();
-    /** Updates the 'View' : 'Status Bar' menu. */
-    void updateMenuViewStatusBar();
 
     /* Friend classes: */
     friend class UIMachineLogic;

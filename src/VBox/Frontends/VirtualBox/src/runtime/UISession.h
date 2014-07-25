@@ -41,6 +41,7 @@ class CNetworkAdapter;
 class CMediumAttachment;
 #ifndef Q_WS_MAC
 class QIcon;
+class QMenuBar;
 #endif /* !Q_WS_MAC */
 
 /* CConsole callback event types: */
@@ -111,34 +112,6 @@ public:
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** @} */
 
-    /** @name Extension Pack stuff.
-     ** @{ */
-    /** Determines whether extension pack installed and usable. */
-    bool isExtensionPackUsable() const { return m_fIsExtensionPackUsable; }
-    /** @} */
-
-    /** @name Runtime menus configuration stuff.
-     ** @{ */
-    /** Determines allowed menus. */
-    RuntimeMenuType allowedMenus() const { return m_allowedMenus; }
-#ifdef Q_WS_MAC
-    /** Determines Application menu allowed actions. */
-    RuntimeMenuApplicationActionType allowedActionsMenuApplication() const { return m_allowedActionsMenuApplication; }
-#endif /* Q_WS_MAC */
-    /** Determines Machine menu allowed actions. */
-    RuntimeMenuMachineActionType allowedActionsMenuMachine() const { return m_allowedActionsMenuMachine; }
-    /** Determines View menu allowed actions. */
-    RuntimeMenuViewActionType allowedActionsMenuView() const { return m_allowedActionsMenuView; }
-    /** Determines Devices menu allowed actions. */
-    RuntimeMenuDevicesActionType allowedActionsMenuDevices() const { return m_allowedActionsMenuDevices; }
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Determines Debugger menu allowed actions. */
-    RuntimeMenuDebuggerActionType allowedActionsMenuDebugger() const { return m_allowedActionsMenuDebugger; }
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Determines Help menu allowed actions. */
-    RuntimeMenuHelpActionType allowedActionsMenuHelp() const { return m_allowedActionsMenuHelp; }
-    /** @} */
-
     /** @name Application Close configuration stuff.
      * @{ */
     /** Returns default close action. */
@@ -147,12 +120,6 @@ public:
     MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
     /** Returns whether all the close actions are restricted. */
     bool isAllCloseActionsRestricted() const { return m_fAllCloseActionsRestricted; }
-    /** @} */
-
-    /** @name Snapshot Operations configuration stuff.
-     * @{ */
-    /** Returns whether we should allow snapshot operations. */
-    bool isSnapshotOperationsAllowed() const { return m_fSnapshotOperationsAllowed; }
     /** @} */
 
     /** Returns whether visual @a state is allowed. */
@@ -330,10 +297,7 @@ private:
     //void cleanupScreens() {}
     void cleanupConsoleEventHandlers();
     void cleanupConnections();
-    //void cleanupActions() {}
-
-    /* Update helpers: */
-    void updateSessionSettings();
+    void cleanupActions();
 
     /* Common helpers: */
     WId winId() const;
@@ -349,6 +313,11 @@ private:
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession &m_session;
+
+#ifdef Q_WS_MAC
+    /** Holds the menu-bar instance. */
+    QMenuBar *m_pMenuBar;
+#endif /* Q_WS_MAC */
 
     /* Screen visibility vector: */
     QVector<bool> m_monitorVisibilityVector;
@@ -377,34 +346,6 @@ private:
     GuruMeditationHandlerType m_guruMeditationHandlerType;
     /** Holds HiDPI optimization type. */
     HiDPIOptimizationType m_hiDPIOptimizationType;
-    /** @} */
-
-    /** @name Extension Pack variables.
-     ** @{ */
-    /** Determines whether extension pack installed and usable. */
-    bool m_fIsExtensionPackUsable;
-    /** @} */
-
-    /** @name Runtime menus configuration variables.
-     ** @{ */
-    /** Determines allowed menus. */
-    RuntimeMenuType m_allowedMenus;
-#ifdef Q_WS_MAC
-    /** Determines Application menu allowed actions. */
-    RuntimeMenuApplicationActionType m_allowedActionsMenuApplication;
-#endif /* Q_WS_MAC */
-    /** Determines Machine menu allowed actions. */
-    RuntimeMenuMachineActionType m_allowedActionsMenuMachine;
-    /** Determines View menu allowed actions. */
-    RuntimeMenuViewActionType m_allowedActionsMenuView;
-    /** Determines Devices menu allowed actions. */
-    RuntimeMenuDevicesActionType m_allowedActionsMenuDevices;
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Determines Debugger menu allowed actions. */
-    RuntimeMenuDebuggerActionType m_allowedActionsMenuDebugger;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Determines Help menu allowed actions. */
-    RuntimeMenuHelpActionType m_allowedActionsMenuHelp;
     /** @} */
 
     /** @name Visual-state configuration variables.
@@ -437,18 +378,11 @@ private:
     bool m_fAllCloseActionsRestricted;
     /** @} */
 
-    /** @name Snapshot Operations configuration variables.
-     * @{ */
-    /** Determines whether we should allow snapshot operations. */
-    bool m_fSnapshotOperationsAllowed;
-    /** @} */
-
     /* Common flags: */
     bool m_fIsStarted : 1;
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
-    bool m_fReconfigurable : 1;
 
     /* Guest additions flags: */
     ULONG m_ulGuestAdditionsRunLevel;

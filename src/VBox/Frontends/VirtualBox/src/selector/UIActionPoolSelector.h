@@ -1,11 +1,9 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionPoolSelector class declaration
+ * VBox Qt GUI - UIActionPoolSelector class declaration.
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,10 +14,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIActionPoolSelector_h__
-#define __UIActionPoolSelector_h__
+#ifndef ___UIActionPoolSelector_h___
+#define ___UIActionPoolSelector_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIActionPool.h"
 
 /** Runtime action-pool index enum.
@@ -85,29 +83,38 @@ enum UIActionIndexST
     UIActionIndexST_Max
 };
 
-/* Singleton runtime action pool: */
+/** UIActionPool extension
+  * representing action-pool singleton for Selector UI. */
 class UIActionPoolSelector : public UIActionPool
 {
     Q_OBJECT;
 
-private:
+protected:
 
-    /* Constructor: */
+    /** Constructor. */
     UIActionPoolSelector();
 
+    /** Prepare pool routine. */
+    virtual void preparePool();
+    /** Prepare connections routine. */
+    virtual void prepareConnections();
+
+    /** Update configuration routine. */
+    virtual void updateConfiguration();
+
     /** Translation handler. */
-    void retranslateUi();
+    virtual void retranslateUi();
 
-    /* Helper: Shortcuts stuff: */
-    QString shortcutsExtraDataID() const;
+    /** Returns extra-data ID to save keyboard shortcuts under. */
+    virtual QString shortcutsExtraDataID() const;
 
-    /* Helpers: Prepare stuff: */
-    void createActions();
-    void createMenus();
+    /** Returns the list of Runtime UI main menus. */
+    virtual QList<QMenu*> menus() const { return QList<QMenu*>(); }
 
-    /* Friend zone: */
+private:
+
+    /* Enable factory in base-class: */
     friend class UIActionPool;
 };
 
-#endif // __UIActionPoolSelector_h__
-
+#endif /* !___UIActionPoolSelector_h___ */

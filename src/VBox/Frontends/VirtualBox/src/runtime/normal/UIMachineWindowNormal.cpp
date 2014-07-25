@@ -147,15 +147,15 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
     UIAction *pAction = 0;
     switch (indicatorType)
     {
-        case IndicatorType_HardDisks:     pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives);        break;
+        case IndicatorType_HardDisks:     pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_HardDrives);       break;
         case IndicatorType_OpticalDisks:  pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_OpticalDevices);   break;
         case IndicatorType_FloppyDisks:   pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_FloppyDevices);    break;
         case IndicatorType_USB:           pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_USBDevices);       break;
         case IndicatorType_Network:       pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_Network);          break;
         case IndicatorType_SharedFolders: pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_SharedFolders);    break;
-        case IndicatorType_Display:       pAction = gpActionPool->action(UIActionIndexRT_M_ViewPopup);        break;
+        case IndicatorType_Display:       pAction = gpActionPool->action(UIActionIndexRT_M_ViewPopup);                  break;
         case IndicatorType_VideoCapture:  pAction = gpActionPool->action(UIActionIndexRT_M_Devices_M_VideoCapture);     break;
-        case IndicatorType_Mouse:         pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse); break;
+        case IndicatorType_Mouse:         pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Mouse);            break;
         case IndicatorType_Keyboard:      pAction = gpActionPool->action(UIActionIndexRT_M_Machine_M_Keyboard);         break;
         default: break;
     }
@@ -206,7 +206,7 @@ void UIMachineWindowNormal::prepareMenu()
     AssertPtrReturnVoid(menuBar());
     {
         /* Prepare menu-bar: */
-        foreach (QMenu *pMenu, machineLogic()->menus())
+        foreach (QMenu *pMenu, gpActionPool->menus())
             menuBar()->addMenu(pMenu);
     }
 }
