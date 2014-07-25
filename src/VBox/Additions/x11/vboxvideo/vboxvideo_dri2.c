@@ -53,8 +53,7 @@ const char *devicePaths[] =
 #undef PATH
 
 /** As long as we are using our fake DRI driver inside of Mesa, we only want
- *  to implement the minimum here to make Mesa load it.  Notably we just set
- *  "DRI2Info.fd" to -1 as we do not need authentication to work. */
+ *  to implement the minimum here to make Mesa load it. */
 Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
 {
     DRI2InfoRec DRI2Info;
