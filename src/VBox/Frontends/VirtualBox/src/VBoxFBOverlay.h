@@ -272,10 +272,10 @@ public:
             switch (mFormat)
             {
                 case GL_BGRA_EXT:
-                    return FramebufferPixelFormat_FOURCC_RGB;
+                    return BitmapFormat_BGR;
             }
         }
-        return FramebufferPixelFormat_Opaque;
+        return BitmapFormat_Opaque;
     }
 
 private:

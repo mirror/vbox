@@ -3776,7 +3776,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
     bool bUsesGuestVram;
 
     /* check if we support the pixel format and can use the guest VRAM directly */
-    if (size.pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
+    if (size.pixelFormat() == BitmapFormat_BGR)
     {
 
         bitsPerPixel = size.bitsPerPixel();

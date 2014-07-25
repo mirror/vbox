@@ -128,7 +128,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
 #endif
                      "                            hostinfo|hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                      "                            usbhost|usbfilters|systemproperties|extpacks|\n"
-                     "                            groups|webcams\n"
+                     "                            groups|webcams|screenshotformats\n"
                      "\n", SEP);
 
     if (fCategory & USAGE_SHOWVMINFO)

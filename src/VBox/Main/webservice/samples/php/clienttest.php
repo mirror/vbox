@@ -59,7 +59,7 @@ foreach ($machines as $machine)
             $display = $console->display;
             list($screenWidth, $screenHeight, $screenBpp, $screenX, $screenY) = $display->getScreenResolution(0 /* First screen */);             
 
-            $imageraw = $display->takeScreenShotToArray(0 /* First screen */, $screenWidth, $screenHeight);
+            $imageraw = $display->takeScreenShotToArray(0 /* First screen */, $screenWidth, $screenHeight, "RGBA");
             echo "Screenshot size: " . sizeof($imageraw) . "\n";
             
             $filename = 'screenshot.png';

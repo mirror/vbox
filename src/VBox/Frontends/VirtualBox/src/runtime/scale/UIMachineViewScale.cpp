@@ -69,7 +69,7 @@ void UIMachineViewScale::takePauseShotLive()
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
     CDisplay dsp = session().GetConsole().GetDisplay();
-    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
     m_pPauseImage = new QImage(shot);
     scalePauseShot();
 }

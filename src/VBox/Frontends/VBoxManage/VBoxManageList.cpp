@@ -765,6 +765,35 @@ static HRESULT listVideoInputDevices(const ComPtr<IVirtualBox> pVirtualBox)
     return rc;
 }
 
+/**
+ * List supported screen shot formats.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox pointer.
+ */
+static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> pVirtualBox)
+{
+    HRESULT rc = S_OK;
+    ComPtr<ISystemProperties> systemProperties;
+    CHECK_ERROR(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()));
+    com::SafeArray<BitmapFormat_T> formats;
+    CHECK_ERROR(systemProperties, COMGETTER(ScreenShotFormats)(ComSafeArrayAsOutParam(formats)));
+
+    RTPrintf("Supported %d screen shot formats:\n", formats.size());
+    for (size_t i = 0; i < formats.size(); ++i)
+    {
+        uint32_t u32Format = (uint32_t)formats[i];
+        char szFormat[5];
+        szFormat[0] = RT_BYTE1(u32Format);
+        szFormat[1] = RT_BYTE2(u32Format);
+        szFormat[2] = RT_BYTE3(u32Format);
+        szFormat[3] = RT_BYTE4(u32Format);
+        szFormat[4] = 0;
+        RTPrintf("    BitmapFormat_%s (0x%08X)\n", szFormat, u32Format);
+    }
+    return rc;
+}
+
 
 /**
  * The type of lists we can produce.
@@ -795,7 +824,8 @@ enum enmListType
     kListExtPacks,
     kListGroups,
     kListNatNetworks,
-    kListVideoInputDevices
+    kListVideoInputDevices,
+    kListScreenShotFormats
 };
 
 
@@ -1133,6 +1163,10 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             rc = listVideoInputDevices(pVirtualBox);
             break;
 
+        case kListScreenShotFormats:
+            rc = listScreenShotFormats(pVirtualBox);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1182,6 +1216,7 @@ int handleList(HandlerArg *a)
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
         { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
         { "webcams",            kListVideoInputDevices,  RTGETOPT_REQ_NOTHING },
+        { "screenshotformats",  kListScreenShotFormats,  RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1228,6 +1263,7 @@ int handleList(HandlerArg *a)
             case kListGroups:
             case kListNatNetworks:
             case kListVideoInputDevices:
+            case kListScreenShotFormats:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {
