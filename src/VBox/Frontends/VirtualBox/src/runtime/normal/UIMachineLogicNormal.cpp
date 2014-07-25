@@ -142,16 +142,17 @@ void UIMachineLogicNormal::sltPrepareMenuViewPopup()
                             uisession()->isGuestSupportsGraphics();
 
     /* For each the machine-window: */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-    {
-        /* Add 'Virtual Screen %1' menu: */
-        const int iScreenID = pMachineWindow->screenId();
-        QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
-                                                                 "Virtual Screen %1").arg(iScreenID + 1));
-        pSubMenu->setProperty("Screen ID", iScreenID);
-        pSubMenu->setEnabled(fGAEnabled);
-        connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewVirtualScreen()));
-    }
+    if (uisession()->allowedActionsMenuView() & RuntimeMenuViewActionType_Resize)
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        {
+            /* Add 'Virtual Screen %1' menu: */
+            const int iScreenID = pMachineWindow->screenId();
+            QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
+                                                                     "Virtual Screen %1").arg(iScreenID + 1));
+            pSubMenu->setProperty("Screen ID", iScreenID);
+            pSubMenu->setEnabled(fGAEnabled);
+            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewVirtualScreen()));
+        }
 }
 
 void UIMachineLogicNormal::sltPrepareMenuViewVirtualScreen()
