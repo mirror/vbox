@@ -34,7 +34,6 @@
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIFrameBuffer.h"
-#include "UIExtraDataManager.h"
 
 #ifdef Q_WS_WIN
 # include "VBoxUtils-win.h"
@@ -991,7 +990,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                         qApp->processEvents();
 #endif /* Q_WS_X11 */
                         machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
-                        if (gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid()) == MouseCapturePolicy_Default)
+                        if (uisession()->mouseCapturePolicy() == MouseCapturePolicy_Default)
                             captureMouse(uScreenId);
                     }
                 }
