@@ -2492,7 +2492,18 @@
  * disabled for the VirtualBox VM processes.
  * http://www.symantec.com/connect/articles/creating-application-control-exclusions-symantec-endpoint-protection-121 */
 #define VERR_SUP_VP_SYSFER_DLL                      (-5662)
-
+/** Process Purification Failure: KERNE32.DLL already mapped into the initial
+ *  process (suspended). */
+#define VERR_SUP_VP_KERNEL32_ALREADY_MAPPED         (-5663)
+/** Process Purification Failure: NtFreeVirtualMemory failed on a chunk of
+ *  executable memory which shouldn't be present in the process. */
+#define VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED      (-5664)
+/** Process Purification Failure: Both NtUnmapViewOfSetion and
+ *  NtProtectVirtualMemory failed to get rid of or passify an non-image
+ *  exectuable mapping. */
+#define VERR_SUP_VP_UNMAP_AND_PROTECT_FAILED        (-5665)
+/** Process Purification Failure: Unknown memory type of executable memory.   */
+#define VERR_SUP_VP_UNKOWN_MEM_TYPE                 (-5666)
 
 /** @} */
 
