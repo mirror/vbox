@@ -1265,7 +1265,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                     SIZE_T  cbFree = MemInfo.RegionSize;
                     rcNt = NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);
                     if (!NT_SUCCESS(rcNt))
-                        supHardNtVpSetInfo2(pThis, VERR_GENERAL_FAILURE,
+                        supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
                                             "NtFreeVirtualMemory (%p LB %#zx) failed: %#x",
                                             MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
                 }
@@ -1285,13 +1285,13 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                         if (!NT_SUCCESS(rcNt2))
                             rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvCopy, &cbCopy, PAGE_READONLY, NULL);
                         if (!NT_SUCCESS(rcNt2))
-                            supHardNtVpSetInfo2(pThis, VERR_GENERAL_FAILURE,
+                            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_UNMAP_AND_PROTECT_FAILED,
                                                 "NtUnmapViewOfSection (%p/%p LB %#zx) failed: %#x (%#x)",
                                                 MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize, rcNt, rcNt2);
                     }
                 }
                 else
-                    supHardNtVpSetInfo2(pThis, VERR_GENERAL_FAILURE,
+                    supHardNtVpSetInfo2(pThis, VERR_SUP_VP_UNKOWN_MEM_TYPE,
                                         "Unknown executable memory type %#x at %p/%p LB %#zx",
                                         MemInfo.Type, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize);
             }
@@ -1558,7 +1558,7 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis, HANDLE hProcess)
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_KERNEL32_MAPPING,
                                    "The process has no KERNEL32.DLL.");
     else if (iKernel32 != UINT32_MAX && pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
-        return supHardNtVpSetInfo2(pThis, VERR_GENERAL_FAILURE,
+        return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_KERNEL32_ALREADY_MAPPED,
                                    "The process already has KERNEL32.DLL loaded.");
 
     /*
