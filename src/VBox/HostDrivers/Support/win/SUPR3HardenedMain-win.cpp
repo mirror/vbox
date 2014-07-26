@@ -44,11 +44,16 @@
 #include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/zero.h>
 
 #include "SUPLibInternal.h"
 #include "win/SUPHardenedVerify-win.h"
 #include "../SUPDrvIOC.h"
+
+#ifndef IMAGE_SCN_TYPE_NOLOAD
+# define IMAGE_SCN_TYPE_NOLOAD 0x00000002
+#endif
 
 
 /*******************************************************************************
@@ -57,12 +62,12 @@
 /** The first argument of a respawed stub when respawned for the first time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_1_ARG0  "81954AF5-4D2F-31EB-A142-B7AF187A1C41-suplib-2ndchild"
+#define SUPR3_RESPAWN_1_ARG0  "0384ad8f-4f0c-d002-e3ae-5597cd55af98-suplib-2ndchild"
 
 /** The first argument of a respawed stub when respawned for the second time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_2_ARG0  "81954AF5-4D2F-31EB-A142-B7AF187A1C41-suplib-3rdchild"
+#define SUPR3_RESPAWN_2_ARG0  "0384ad8f-4f0c-d002-e3ae-5597cd55af98-suplib-3rdchild"
 
 /** Unconditional assertion. */
 #define SUPR3HARDENED_ASSERT(a_Expr) \
@@ -961,7 +966,8 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
 #ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
     /*
      * Install a anti debugging hack before we continue.  This prevents most
-     * notifications from ending up in the debugger.
+     * notifications from ending up in the debugger. (Also applied to the
+     * child process when respawning.)
      */
     rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
     if (!NT_SUCCESS(rcNt))
@@ -1172,7 +1178,8 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
 DECLHIDDEN(void) supR3HardenedWinVerifyProcess(void)
 {
     RTErrInfoInitStatic(&g_ErrInfoStatic);
-    int rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), &g_ErrInfoStatic.Core);
+    int rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(),
+                                         SUPHARDNTVPKIND_VERIFY_ONLY, &g_ErrInfoStatic.Core);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedWinVerifyProcess", kSupInitOp_Integrity, rc,
                               "Failed to verify process integrity: %s", g_ErrInfoStatic.szMsg);
@@ -1734,307 +1741,6 @@ static int supR3HardNtPuChSanitizePeb(PSUPR3HARDNTPUCH pThis)
 }
 
 
-DECLINLINE(PIMAGE_NT_HEADERS) supR3HardNtPuChFindNtHeaders(uint8_t *pbBuf, size_t cbBuf)
-{
-    PIMAGE_DOS_HEADER pMzHdr = (PIMAGE_DOS_HEADER)pbBuf;
-    if (cbBuf >= sizeof(*pMzHdr))
-    {
-        if (pMzHdr->e_magic == IMAGE_DOS_SIGNATURE)
-        {
-            if (pMzHdr->e_lfanew >= cbBuf)
-                return NULL;
-            cbBuf -= pMzHdr->e_lfanew;
-            pbBuf += pMzHdr->e_lfanew;
-        }
-    }
-
-    PIMAGE_NT_HEADERS pNtHdrs = (PIMAGE_NT_HEADERS)pbBuf;
-    if (cbBuf >= sizeof(IMAGE_NT_HEADERS))
-    {
-        if (pNtHdrs->Signature == IMAGE_NT_SIGNATURE)
-            return pNtHdrs;
-    }
-    return NULL;
-}
-
-
-static uint32_t supR3HardNtPuChFindFirstDiff(void const *pvBuf1, void const *pvBuf2, size_t cbBuf)
-{
-    uint8_t const *pabBuf1 = (uint8_t const *)pvBuf1;
-    uint8_t const *pabBuf2 = (uint8_t const *)pvBuf2;
-    uint32_t off = 0;
-    while (off < cbBuf && pabBuf1[off] == pabBuf2[off])
-        off++;
-    return off;
-}
-
-
-static NTSTATUS supR3HardNtPuChRestoreImageBits(PSUPR3HARDNTPUCH pThis, PVOID pvChildAddr,
-                                                void const *pvFileBits, size_t cbToRestore, uint32_t fCorrectProtection)
-{
-    PVOID  pvProt   = pvChildAddr;
-    SIZE_T cbProt   = cbToRestore;
-    ULONG  fOldProt = 0;
-    NTSTATUS rcNt = NtProtectVirtualMemory(pThis->hProcess, &pvProt, &cbProt, PAGE_READWRITE, &fOldProt);
-    if (NT_SUCCESS(rcNt))
-    {
-        SIZE_T cbIgnored;
-        rcNt = NtWriteVirtualMemory(pThis->hProcess, pvChildAddr, pvFileBits, cbToRestore, &cbIgnored);
-
-        pvProt = pvChildAddr;
-        cbProt = cbToRestore;
-        NTSTATUS rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvProt, &cbProt, fCorrectProtection, &fOldProt);
-        if (NT_SUCCESS(rcNt))
-            rcNt = rcNt2;
-    }
-    return rcNt;
-}
-
-
-static int supR3HardNtPuChSanitizeImage(PSUPR3HARDNTPUCH pThis, PMEMORY_BASIC_INFORMATION pMemInfo)
-{
-    /*
-     * Get the image name.
-     */
-    union
-    {
-        UNICODE_STRING UniStr;
-        uint8_t abPadding[4096];
-    } uBuf;
-    SIZE_T cbActual;
-    NTSTATUS rcNt = NtQueryVirtualMemory(pThis->hProcess,
-                                         pMemInfo->BaseAddress,
-                                         MemorySectionName,
-                                         &uBuf,
-                                         sizeof(uBuf) - sizeof(WCHAR),
-                                         &cbActual);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtQueryVirtualMemory/MemorySectionName failed for %p: %#x", pMemInfo->BaseAddress, rcNt);
-    uBuf.UniStr.Buffer[uBuf.UniStr.Length / sizeof(WCHAR)] = '\0';
-    SUP_DPRINTF(("supR3HardNtPuChSanitizeImage: %p '%ls'\n", pMemInfo->BaseAddress, uBuf.UniStr.Buffer));
-
-
-    /*
-     * Open the file.
-     */
-    HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
-    IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-
-    OBJECT_ATTRIBUTES ObjAttr;
-    InitializeObjectAttributes(&ObjAttr, &uBuf.UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-
-    rcNt = NtCreateFile(&hFile,
-                        FILE_READ_DATA | SYNCHRONIZE,
-                        &ObjAttr,
-                        &Ios,
-                        NULL /* Allocation Size*/,
-                        FILE_ATTRIBUTE_NORMAL,
-                        FILE_SHARE_READ,
-                        FILE_OPEN,
-                        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-                        NULL /*EaBuffer*/,
-                        0 /*EaLength*/);
-    if (NT_SUCCESS(rcNt))
-        rcNt = Ios.Status;
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, RTErrConvertFromNtStatus(rcNt),
-                             "NtCreateFile returned %#x opening '%ls'.", rcNt, uBuf.UniStr.Buffer);
-
-    /*
-     * Read the headers, ASSUMES the stub isn't pushing the optional header out
-     * of a 4KB buffer.  Also ASSUMEs that the file is more than 4KB in size.
-     */
-    int             rc;
-    uint8_t         abFile[_4K];
-    LARGE_INTEGER   off;
-    off.QuadPart = 0;
-    rcNt = NtReadFile(hFile, NULL, NULL, NULL, &Ios, abFile, sizeof(abFile), &off, NULL);
-    if (NT_SUCCESS(rcNt))
-        rcNt = Ios.Status;
-    if (NT_SUCCESS(rcNt))
-    {
-        PIMAGE_NT_HEADERS pNtFile = supR3HardNtPuChFindNtHeaders(abFile, sizeof(abFile));
-        if (pNtFile)
-        {
-            /*
-             * Read the first 4KB of the process memory.
-             */
-            uint8_t abProc[_4K];
-            SIZE_T cbActualMem;
-            rcNt = NtReadVirtualMemory(pThis->hProcess, pMemInfo->BaseAddress, abProc, sizeof(abProc), &cbActualMem);
-            if (NT_SUCCESS(rcNt))
-            {
-                /*
-                 * Watch out for apisetschema.dll, it only has section #1
-                 * mapped into the process.
-                 */
-                if (   g_uNtVerCombined < SUP_NT_VER_W70
-                    || pThis->Peb.Diff3.W7.ApiSetMap != pMemInfo->BaseAddress
-                    || !supR3HardNtIsNamedSystem32Dll(&uBuf.UniStr, "apisetschema.dll"))
-                {
-                    PIMAGE_NT_HEADERS pNtProc = supR3HardNtPuChFindNtHeaders(abProc, sizeof(abProc));
-                    if ((uintptr_t)pNtProc - (uintptr_t)abProc == (uintptr_t)pNtFile - (uintptr_t)abFile)
-                    {
-                        pNtFile->OptionalHeader.ImageBase = pNtProc->OptionalHeader.ImageBase;
-
-                        size_t cbCompare = RT_MIN(pNtFile->OptionalHeader.SizeOfHeaders, sizeof(abProc));
-                        if (cbCompare < sizeof(abFile))
-                            RT_BZERO(&abFile[cbCompare], sizeof(abFile) - cbCompare);
-                        if (!memcmp(abFile, abProc, cbCompare))
-                            rc = VINF_SUCCESS;
-                        else
-                        {
-                            SUP_DPRINTF(("supR3HardNtPuChSanitizeImage: Header diff @%#x in ('%ls')\n",
-                                         supR3HardNtPuChFindFirstDiff(abFile, abProc, sizeof(abProc)), uBuf.UniStr.Buffer));
-                            rc = supR3HardNtPuChRestoreImageBits(pThis, pMemInfo->BaseAddress, abFile, cbCompare, PAGE_READONLY);
-                        }
-                    }
-                    else
-                        rc = RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                                           "PE header offset differs between file and memory: offProc=%p offFile=%p '%ls'\n",
-                                           (uintptr_t)pNtProc - (uintptr_t)abProc, (uintptr_t)pNtFile - (uintptr_t)abFile,
-                                           uBuf.UniStr.Buffer);
-                }
-                else
-                {
-                    /*
-                     * Validate the API set map.
-                     */
-                }
-            }
-            else
-                rc = RTErrInfoSetF(pThis->pErrInfo, RTErrConvertFromNtStatus(rcNt),
-                                   "NtReadVirtualMemory returned %#x read 4KB at %p ('%ls').", rcNt,
-                                   pMemInfo->BaseAddress, uBuf.UniStr.Buffer);
-        }
-        else
-            rc = RTErrInfoSetF(pThis->pErrInfo, RTErrConvertFromNtStatus(rcNt),
-                               "No PE header in the first 4KB of '%ls'.", rcNt, uBuf.UniStr.Buffer);
-    }
-    else
-        rc = RTErrInfoSetF(pThis->pErrInfo, RTErrConvertFromNtStatus(rcNt),
-                           "NtReadFile returned %#x reading the header of '%ls'.", rcNt, uBuf.UniStr.Buffer);
-
-    NtClose(hFile);
-
-    return rc;
-}
-
-
-static int supR3HardNtPuChSanitizeMemory(PSUPR3HARDNTPUCH pThis)
-{
-    /*
-     * Find and remove/disable any unwanted executable memory.
-     */
-    uint32_t    cXpExceptions = 0;
-    uintptr_t   cbAdvance = 0;
-    uintptr_t   uPtrWhere = 0;
-    for (uint32_t i = 0; i < 1024; i++)
-    {
-        SIZE_T                      cbActual = 0;
-        MEMORY_BASIC_INFORMATION    MemInfo  = { 0, 0, 0, 0, 0, 0, 0 };
-        NTSTATUS rcNt = NtQueryVirtualMemory(pThis->hProcess,
-                                             (void const *)uPtrWhere,
-                                             MemoryBasicInformation,
-                                             &MemInfo,
-                                             sizeof(MemInfo),
-                                             &cbActual);
-        if (!NT_SUCCESS(rcNt))
-            break;
-        //SUP_DPRINTF(("supR3HardNtPuChSanitizeMemory: %p (%p LB %#zx): type=%#010x prot=%#06x state=%#07x aprot=%#06x abase=%p\n",
-        //             uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize,MemInfo.Type,
-        //             MemInfo.Protect, MemInfo.State, MemInfo.AllocationBase, MemInfo.AllocationProtect));
-
-        if (   MemInfo.Type == SEC_IMAGE
-            || MemInfo.Type == SEC_PROTECTED_IMAGE
-            || MemInfo.Type == (SEC_IMAGE | SEC_PROTECTED_IMAGE))
-        {
-            /*
-             * Restore modified parts of the image from file.
-             */
-            if (MemInfo.BaseAddress == MemInfo.AllocationBase)
-            {
-                int rc = supR3HardNtPuChSanitizeImage(pThis, &MemInfo);
-                if (RT_FAILURE(rc))
-                    return rc;
-            }
-        }
-        /*
-         * Executable memory outside an image is evil by definition.
-         */
-        else if (MemInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))
-        {
-            /*
-             * XP, W2K3 exception: Ignore the CSRSS read-only region as best we can.
-             */
-            if (   (MemInfo.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))
-                   == PAGE_EXECUTE_READ
-                && cXpExceptions == 0
-                && (uintptr_t)MemInfo.BaseAddress >= UINT32_C(0x78000000)
-                /* && MemInfo.BaseAddress == pPeb->ReadOnlySharedMemoryBase */
-                && g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 0) )
-                cXpExceptions++;
-#ifndef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
-            else
-            {
-                /*
-                 * Free any private executable memory (sysplant.sys allocates executable memory).
-                 */
-                if (MemInfo.Type == MEM_PRIVATE)
-                {
-                    SUP_DPRINTF(("supR3HardNtPuChSanitizeMemory: Freeing exec mem at %p (%p LB %#zx)\n",
-                                 uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize));
-                    PVOID   pvFree = MemInfo.BaseAddress;
-                    SIZE_T  cbFree = MemInfo.RegionSize;
-                    rcNt = NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);
-                    if (!NT_SUCCESS(rcNt))
-                        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                                             "NtFreeVirtualMemory (%p LB %#zx) failed: %#x",
-                                             MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-                }
-                /*
-                 * Unmap mapped memory, failing that, drop exec privileges.
-                 */
-                else if (MemInfo.Type == MEM_MAPPED)
-                {
-                    SUP_DPRINTF(("supR3HardNtPuChSanitizeMemory: Unmapping exec mem at %p (%p/%p LB %#zx)\n",
-                                 uPtrWhere, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize));
-                    rcNt = NtUnmapViewOfSection(pThis->hProcess, MemInfo.AllocationBase);
-                    if (!NT_SUCCESS(rcNt))
-                    {
-                        PVOID  pvCopy = MemInfo.BaseAddress;
-                        SIZE_T cbCopy = MemInfo.RegionSize;
-                        NTSTATUS rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvCopy, &cbCopy, PAGE_NOACCESS, NULL);
-                        if (!NT_SUCCESS(rcNt2))
-                            rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvCopy, &cbCopy, PAGE_READONLY, NULL);
-                        if (!NT_SUCCESS(rcNt2))
-                            return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                                                 "NtUnmapViewOfSection (%p/%p LB %#zx) failed: %#x (%#x)",
-                                                 MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize, rcNt, rcNt2);
-                    }
-                }
-                else
-                    return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                                         "Unknown executable memory type %#x at %p/%p LB %#zx",
-                                         MemInfo.Type, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize);
-            }
-#endif
-        }
-
-        /*
-         * Advance.
-         */
-        cbAdvance = MemInfo.RegionSize;
-        if (uPtrWhere + cbAdvance <= uPtrWhere)
-            break;
-        uPtrWhere += MemInfo.RegionSize;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
 static void supR3HardNtPuChFindNtdll(PSUPR3HARDNTPUCH pThis)
 {
     /*
@@ -2152,7 +1858,7 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     supR3HardNtPuChFindNtdll(&This);
 
     /*
-     * Do the work.
+     * Do the work, the last bit we tag along with the process verfication code.
      */
     int rc = supR3HardNtPuChScrewUpPebForInitialImageEvents(&This);
     if (RT_SUCCESS(rc))
@@ -2160,7 +1866,7 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     if (RT_SUCCESS(rc))
         rc = supR3HardNtPuChSanitizePeb(&This);
     if (RT_SUCCESS(rc))
-        rc = supR3HardNtPuChSanitizeMemory(&This);
+        rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, pErrInfo);
 
     return rc;
 }
@@ -2300,6 +2006,18 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     HANDLE hThread  = ProcessInfoNt.ThreadHandle;
 #endif
 
+#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
+    /*
+     * Apply anti debugger notification trick to the thread.  (Also done in
+     * supR3HardenedWinInstallHooks.)
+     */
+    rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
+    if (!NT_SUCCESS(rcNt))
+    {
+        NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
+        supR3HardenedError(rcNt, true /*fFatal*/, "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
+    }
+#endif
 
     /*
      * Clean up the process.
@@ -2686,7 +2404,13 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
                               "supHardenedWinInitImageVerifier failed: %s", g_ErrInfoStatic.szMsg);
 
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
+    {
+        /* Do a self purification to cure avast's weird NtOpenFile write-thru
+           change in GetBinaryTypeW change in kernel32. */
+        supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION, NULL);
+
         supR3HardenedWinInstallHooks();
+    }
 
 #ifndef VBOX_WITH_VISTA_NO_SP
     /*

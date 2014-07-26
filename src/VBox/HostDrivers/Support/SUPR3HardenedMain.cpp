@@ -242,9 +242,14 @@ static void suplibHardenedPrintStrN(const char *pch, size_t cch)
     HANDLE hStdOut = NtCurrentPeb()->ProcessParameters->StandardOutput;
     if (hStdOut != NULL)
     {
+# if 0 /* Windows 7 and earlier uses fake handles, with the last two bits set ((hStdOut & 3) == 3). */
         IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         NtWriteFile(hStdOut, NULL /*Event*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
                     &Ios, (PVOID)pch, (ULONG)cch, NULL /*ByteOffset*/, NULL /*Key*/);
+# else
+        DWORD cbWritten;
+        WriteFile(hStdOut, pch, cch, &cbWritten, NULL);
+# endif
     }
 #else
     (void)write(2, pch, cch);

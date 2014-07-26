@@ -29,6 +29,12 @@
 
 #include <iprt/types.h>
 #include <iprt/crypto/x509.h>
+#ifndef SUP_CERTIFICATES_ONLY
+# ifdef RT_OS_WINDOWS
+#  include <iprt/ldr.h>
+# endif
+#endif
+
 
 RT_C_DECLS_BEGIN
 
@@ -36,11 +42,45 @@ RT_C_DECLS_BEGIN
 # ifdef RT_OS_WINDOWS
 DECLHIDDEN(int)      supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
 DECLHIDDEN(void)     supHardenedWinTermImageVerifier(void);
-DECLHIDDEN(int)      supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo);
+
+typedef enum SUPHARDNTVPKIND
+{
+    SUPHARDNTVPKIND_VERIFY_ONLY = 1,
+    SUPHARDNTVPKIND_CHILD_PURIFICATION,
+    SUPHARDNTVPKIND_SELF_PURIFICATION,
+    SUPHARDNTVPKIND_32BIT_HACK = 0x7fffffff
+} SUPHARDNTVPKIND;
+DECLHIDDEN(int)      supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, PRTERRINFO pErrInfo);
 
 DECLHIDDEN(bool)     supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName);
-DECLHIDDEN(int)      supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, bool *pfCacheable, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)      supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
+
+/**
+ * SUP image verifier loader reader instance.
+ */
+typedef struct SUPHNTVIRDR
+{
+    /** The core reader structure. */
+    RTLDRREADER Core;
+    /** The file handle . */
+    HANDLE      hFile;
+    /** Current file offset. */
+    RTFOFF      off;
+    /** The file size. */
+    RTFOFF      cbFile;
+    /** Flags for the verification callback, SUPHNTVI_F_XXX. */
+    uint32_t    fFlags;
+    /** The executable timstamp in second since unix epoch. */
+    uint64_t    uTimestamp;
+    /** Log name. */
+    char        szFilename[1];
+} SUPHNTVIRDR;
+/** Pointer to an SUP image verifier loader reader instance. */
+typedef SUPHNTVIRDR *PSUPHNTVIRDR;
+DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr);
+DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, bool *pfCacheable, PRTERRINFO pErrInfo);
+DECLHIDDEN(int) supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
+DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
+                                                  bool *pfCacheable, PRTERRINFO pErrInfo);
 /** @name SUPHNTVI_F_XXX - Flags for supHardenedWinVerifyImageByHandle.
  * @{ */
 /** The signing certificate must be the same as the one the VirtualBox build

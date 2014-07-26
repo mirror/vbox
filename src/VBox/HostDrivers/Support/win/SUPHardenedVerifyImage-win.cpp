@@ -73,29 +73,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * SUP image verifier loader reader instance.
- */
-typedef struct SUPHNTVIRDR
-{
-    /** The core reader structure. */
-    RTLDRREADER Core;
-    /** The file handle . */
-    HANDLE      hFile;
-    /** Current file offset. */
-    RTFOFF      off;
-    /** The file size. */
-    RTFOFF      cbFile;
-    /** Flags for the verification callback, SUPHNTVI_F_XXX. */
-    uint32_t    fFlags;
-    /** The executable timstamp in second since unix epoch. */
-    uint64_t    uTimestamp;
-    /** Log name. */
-    char        szFilename[1];
-} SUPHNTVIRDR;
-/** Pointer to an SUP image verifier loader reader instance. */
-typedef SUPHNTVIRDR *PSUPHNTVIRDR;
-
 
 #ifdef IN_RING3
 typedef LONG (WINAPI * PFNWINVERIFYTRUST)(HWND hwnd, GUID const *pgActionID, PVOID pWVTData);
@@ -348,7 +325,7 @@ static DECLCALLBACK(int) supHardNtViRdrDestroy(PRTLDRREADER pReader)
  * @param   fFlags          Flags, SUPHNTVI_F_XXX.
  * @param   ppNtViRdr       Where to store the reader instance on success.
  */
-static int supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr)
+DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr)
 {
     /*
      * Try determine the size of the file.
@@ -881,6 +858,134 @@ static bool supR3HardNtViCanCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName)
 
 
 /**
+ * Verifies the given loader image.
+ *
+ * @returns IPRT status code.
+ * @param   hLdrMod     File handle to the executable file.
+ * @param   pwszName    Full NT path to the DLL in question, used for dealing
+ *                      with unsigned system dlls as well as for error/logging.
+ * @param   pNtViRdr    The reader instance /w flags.
+ * @param   pfCacheable Where to return whether the result can be cached.  A
+ *                      valid value is always returned. Optional.
+ * @param   pErrInfo    Pointer to error info structure. Optional.
+ */
+DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
+                                                  bool *pfCacheable, PRTERRINFO pErrInfo)
+{
+#ifdef IN_RING3
+    /* Check that the caller has performed the necessary library initialization. */
+    if (!RTCrX509Certificate_IsPresent(&g_BuildX509Cert))
+        return RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER,
+                            "supHardenedWinVerifyImageByHandle: supHardenedWinInitImageVerifier was not called.");
+#endif
+
+    /*
+     * Verify it.
+     *
+     * The PKCS #7 SignedData signature is checked in the callback. Any
+     * signing certificate restrictions are also enforced there.
+     *
+     * For the time being, we use the executable timestamp as the
+     * certificate validation date.  We must query that first to avoid
+     * potential issues re-entering the loader code from the callback.
+     *
+     * Update: Save the first timestamp we validate with build cert and
+     *         use this as a minimum timestamp for further build cert
+     *         validations.  This works around issues with old DLLs that
+     *         we sign against with our certificate (crt, sdl, qt).
+     */
+    int rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pNtViRdr->uTimestamp, sizeof(pNtViRdr->uTimestamp));
+    if (RT_SUCCESS(rc))
+    {
+#ifdef IN_RING3 /* Hack alert! (see above) */
+        if (   (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
+            && (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT)
+            && pNtViRdr->uTimestamp < g_uBuildTimestampHack)
+            pNtViRdr->uTimestamp = g_uBuildTimestampHack;
+#endif
+
+        rc = RTLdrVerifySignature(hLdrMod, supHardNtViCallback, pNtViRdr, pErrInfo);
+
+#ifdef IN_RING3 /* Hack alert! (see above) */
+        if ((pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && g_uBuildTimestampHack == 0 && RT_SUCCESS(rc))
+            g_uBuildTimestampHack = pNtViRdr->uTimestamp;
+#endif
+
+        /*
+         * Microsoft doesn't sign a whole bunch of DLLs, so we have to
+         * ASSUME that a bunch of system DLLs are fine.
+         */
+        if (rc == VERR_LDRVI_NOT_SIGNED)
+            rc = supHardNtViCheckIfNotSignedOk(hLdrMod, pwszName, pNtViRdr->fFlags, rc);
+        if (RT_FAILURE(rc))
+            RTErrInfoAddF(pErrInfo, rc, ": %ls", pwszName);
+
+        /*
+         * Check for the signature checking enforcement, if requested to do so.
+         */
+        if (RT_SUCCESS(rc) && (pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT))
+        {
+            bool fEnforced = false;
+            int rc2 = RTLdrQueryProp(hLdrMod, RTLDRPROP_SIGNATURE_CHECKS_ENFORCED, &fEnforced, sizeof(fEnforced));
+            if (RT_FAILURE(rc2))
+                rc = RTErrInfoSetF(pErrInfo, rc2, "Querying RTLDRPROP_SIGNATURE_CHECKS_ENFORCED failed on %ls: %Rrc.",
+                                   pwszName, rc2);
+            else if (!fEnforced)
+                rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED,
+                                   "The image '%ls' was not linked with /IntegrityCheck.", pwszName);
+        }
+    }
+    else
+        RTErrInfoSetF(pErrInfo, rc, "RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on %ls: %Rrc", pwszName, rc);
+
+#ifdef IN_RING3
+     /*
+      * Call the windows verify trust API if we've resolved it.
+      */
+     if (   g_pfnWinVerifyTrust
+         && supR3HardNtViCanCallWinVerifyTrust(pNtViRdr->hFile, pwszName))
+     {
+         if (pfCacheable)
+             *pfCacheable = g_pfnWinVerifyTrust != NULL;
+         if (rc != VERR_LDRVI_NOT_SIGNED)
+         {
+             if (rc == VINF_LDRVI_NOT_SIGNED)
+             {
+                 if (pNtViRdr->fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
+                 {
+                     int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                                      g_pfnWinVerifyTrust);
+                     SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
+                     rc = rc2;
+                 }
+                 else
+                 {
+                     AssertFailed();
+                     rc = VERR_LDRVI_NOT_SIGNED;
+                 }
+             }
+             else if (RT_SUCCESS(rc))
+                 rc = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                      g_pfnWinVerifyTrust);
+             else
+             {
+                 int rc2 = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                           g_pfnWinVerifyTrust);
+                 AssertMsg(RT_FAILURE_NP(rc2),
+                           ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
+             }
+         }
+     }
+#else  /* !IN_RING3 */
+     if (pfCacheable)
+         *pfCacheable = true;
+#endif /* !IN_RING3 */
+
+     return rc;
+}
+
+
+/**
  * Verifies the given executable image.
  *
  * @returns IPRT status code.
@@ -898,13 +1003,6 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
     /* Clear the cacheable indicator as it needs to be valid in all return paths. */
     if (pfCacheable)
         *pfCacheable = false;
-
-#ifdef IN_RING3
-    /* Check that the caller has performed the necessary library initialization. */
-    if (!RTCrX509Certificate_IsPresent(&g_BuildX509Cert))
-        return RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER,
-                            "supHardenedWinVerifyImageByHandle: supHardenedWinInitImageVerifier was not called.");
-#endif
 
     /*
      * Create a reader instance.
@@ -925,105 +1023,9 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
         {
             /*
              * Verify it.
-             *
-             * The PKCS #7 SignedData signature is checked in the callback. Any
-             * signing certificate restrictions are also enforced there.
-             *
-             * For the time being, we use the executable timestamp as the
-             * certificate validation date.  We must query that first to avoid
-             * potential issues re-entering the loader code from the callback.
-             *
-             * Update: Save the first timestamp we validate with build cert and
-             *         use this as a minimum timestamp for further build cert
-             *         validations.  This works around issues with old DLLs that
-             *         we sign against with our certificate (crt, sdl, qt).
              */
-            rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pNtViRdr->uTimestamp, sizeof(pNtViRdr->uTimestamp));
-            if (RT_SUCCESS(rc))
-            {
-#ifdef IN_RING3 /* Hack alert! (see above) */
-                if (   (fFlags & SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING)
-                    && (fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT)
-                    && pNtViRdr->uTimestamp < g_uBuildTimestampHack)
-                    pNtViRdr->uTimestamp = g_uBuildTimestampHack;
-#endif
-
-                rc = RTLdrVerifySignature(hLdrMod, supHardNtViCallback, pNtViRdr, pErrInfo);
-
-#ifdef IN_RING3 /* Hack alert! (see above) */
-                if ((fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && g_uBuildTimestampHack == 0 && RT_SUCCESS(rc))
-                    g_uBuildTimestampHack = pNtViRdr->uTimestamp;
-#endif
-
-                /*
-                 * Microsoft doesn't sign a whole bunch of DLLs, so we have to
-                 * ASSUME that a bunch of system DLLs are fine.
-                 */
-                if (rc == VERR_LDRVI_NOT_SIGNED)
-                    rc = supHardNtViCheckIfNotSignedOk(hLdrMod, pwszName, fFlags, rc);
-                if (RT_FAILURE(rc))
-                    RTErrInfoAddF(pErrInfo, rc, ": %ls", pwszName);
-
-                /*
-                 * Check for the signature checking enforcement, if requested to do so.
-                 */
-                if (RT_SUCCESS(rc) && (fFlags & SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT))
-                {
-                    bool fEnforced = false;
-                    int rc2 = RTLdrQueryProp(hLdrMod, RTLDRPROP_SIGNATURE_CHECKS_ENFORCED, &fEnforced, sizeof(fEnforced));
-                    if (RT_FAILURE(rc2))
-                        rc = RTErrInfoSetF(pErrInfo, rc2, "Querying RTLDRPROP_SIGNATURE_CHECKS_ENFORCED failed on %ls: %Rrc.",
-                                           pwszName, rc2);
-                    else if (!fEnforced)
-                        rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED,
-                                           "The image '%ls' was not linked with /IntegrityCheck.", pwszName);
-                }
-            }
-            else
-                RTErrInfoSetF(pErrInfo, rc, "RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on %ls: %Rrc", pwszName, rc);
-
-             int rc2 = RTLdrClose(hLdrMod); AssertRC(rc2);
-
-#ifdef IN_RING3
-             /*
-              * Call the windows verify trust API if we've resolved it.
-              */
-             if (   g_pfnWinVerifyTrust
-                 && supR3HardNtViCanCallWinVerifyTrust(hFile, pwszName))
-             {
-                 if (pfCacheable)
-                     *pfCacheable = g_pfnWinVerifyTrust != NULL;
-                 if (rc != VERR_LDRVI_NOT_SIGNED)
-                 {
-                     if (rc == VINF_LDRVI_NOT_SIGNED)
-                     {
-                         if (fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
-                         {
-                             int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(hFile, pwszName, fFlags, pErrInfo,
-                                                                              g_pfnWinVerifyTrust);
-                             SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
-                             rc = rc2;
-                         }
-                         else
-                         {
-                             AssertFailed();
-                             rc = VERR_LDRVI_NOT_SIGNED;
-                         }
-                     }
-                     else if (RT_SUCCESS(rc))
-                         rc = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
-                     else
-                     {
-                         int rc2 = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
-                         AssertMsg(RT_FAILURE_NP(rc2),
-                                   ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
-                     }
-                 }
-             }
-#else
-             if (pfCacheable)
-                 *pfCacheable = true;
-#endif /* IN_RING3 */
+            rc = supHardenedWinVerifyImageByLdrMod(hLdrMod, pwszName, pNtViRdr, pfCacheable, pErrInfo);
+            int rc2 = RTLdrClose(hLdrMod); AssertRC(rc2);
         }
         else
             supHardNtViRdrDestroy(&pNtViRdr->Core);
