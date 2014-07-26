@@ -220,6 +220,7 @@ RT_EXPORT_SYMBOL(RTLdrSize);
  *                          Must be as large as RTLdrSize() suggests.
  * @param   BaseAddress     The base address.
  * @param   pfnGetImport    Callback function for resolving imports one by one.
+ *                          If this is NULL, imports will not be resolved.
  * @param   pvUser          User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
@@ -232,8 +233,8 @@ RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR BaseAddress, 
      * Validate input.
      */
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
-    AssertMsgReturn(VALID_PTR(pvBits), ("pvBits=%p\n", pvBits), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pfnGetImport), ("pfnGetImport=%p\n", pfnGetImport), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvBits, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnGetImport, VERR_INVALID_POINTER);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
     AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
 
