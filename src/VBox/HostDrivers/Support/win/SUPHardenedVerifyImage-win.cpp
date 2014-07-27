@@ -1455,12 +1455,13 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(DWORD fLoadLibraryFlags)
         {
             if (pCurCtx->dwCertEncodingType & X509_ASN_ENCODING)
             {
+                RTERRINFOSTATIC StaticErrInfo;
                 RTASN1CURSORPRIMARY PrimaryCursor;
-                RTAsn1CursorInitPrimary(&PrimaryCursor, pCurCtx->pbCertEncoded, pCurCtx->cbCertEncoded, NULL /*pErrInfo*/,
+                RTAsn1CursorInitPrimary(&PrimaryCursor, pCurCtx->pbCertEncoded, pCurCtx->cbCertEncoded,
+                                        RTErrInfoInitStatic(&StaticErrInfo),
                                         &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, "CurCtx");
                 RTCRX509CERTIFICATE MyCert;
                 int rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &MyCert, "Cert");
-                AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
                     if (supR3HardenedWinIsDesiredRootCA(&MyCert))
@@ -1477,6 +1478,11 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(DWORD fLoadLibraryFlags)
 
                     RTCrX509Certificate_Delete(&MyCert);
                 }
+                /* XP root certificate "C&W HKT SecureNet CA SGC Root" has non-standard validity
+                   timestamps, the UTC formatting isn't Zulu time but specifies timezone offsets.
+                   Ignore these failures and certificates. */
+                else if (rc != VERR_ASN1_INVALID_UTC_TIME_ENCODING)
+                    AssertMsgFailed(("RTCrX509Certificate_DecodeAsn1 failed: rc=%#x: %s\n", rc, StaticErrInfo.szMsg));
             }
         }
         pfnCertCloseStore(hStore, CERT_CLOSE_STORE_CHECK_FLAG);

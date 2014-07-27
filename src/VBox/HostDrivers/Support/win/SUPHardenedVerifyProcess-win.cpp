@@ -113,6 +113,9 @@ typedef struct SUPHNTVPIMAGE
     RTLDRMOD        hLdrMod;
     /** The file reader. */
     PSUPHNTVIRDR    pNtViRdr;
+    /** The module file handle, if we've opened it.
+     * (pNtviRdr does not close the file handle on destruction.)  */
+    HANDLE          hFile;
     /** Image bits for lazy cleanup. */
     uint8_t        *pbBits;
 } SUPHNTVPIMAGE;
@@ -649,11 +652,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
     if (RT_FAILURE(rc))
         return supHardNtVpSetInfo2(pThis, rc, "%s: RTLdrGetBits failed: %Rrc", pImage->pszName, rc);
 
-    /** @todo figure out if all windows versions do this... */
-    if (fIs32Bit)
-        ((PIMAGE_NT_HEADERS32)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase = (uint32_t)pImage->uImageBase;
-    else
-        ((PIMAGE_NT_HEADERS)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase   = pImage->uImageBase;
+    /* XP SP3 does not set ImageBase to load address. It fixes up the image on load time though. */
+    if (g_uNtVerCombined >= SUP_NT_VER_VISTA)
+    {
+        if (fIs32Bit)
+            ((PIMAGE_NT_HEADERS32)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase = (uint32_t)pImage->uImageBase;
+        else
+            ((PIMAGE_NT_HEADERS)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase   = pImage->uImageBase;
+    }
 
     /*
      * Figure out areas we should skip during comparison.
@@ -1059,6 +1065,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
      */
     pImage->uImageBase = (uintptr_t)pMemInfo->AllocationBase;
     pImage->cbImage    = pMemInfo->RegionSize;
+    pImage->hFile      = NULL;
     pImage->hLdrMod    = NIL_RTLDRMOD;
     pImage->pNtViRdr   = NULL;
     pImage->cRegions   = 1;
@@ -1331,8 +1338,8 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
 }
 
 /**
- * Opens all the images with the IPRT loader, setting both pNtViRdr and hLdrMod
- * for each image.
+ * Opens all the images with the IPRT loader, setting both, hFile, pNtViRdr and
+ * hLdrMod for each image.
  *
  * @returns VBox status code.
  * @param   pThis               The process scanning state structure.
@@ -1388,6 +1395,7 @@ static int supHardNtVpOpenImages(PSUPHNTVPSTATE pThis)
             NtClose(hFile);
             return rc;
         }
+        pImage->hFile    = hFile;
         pImage->pNtViRdr = pNtViRdr;
 
         /*
@@ -1481,12 +1489,20 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis, HANDLE hProcess)
 
     /*
      * Check linking requirements.
+     * This query is only available using the current process pseudo handle on
+     * older windows versions.  The cut-off seems to be Vista.
      */
     SECTION_IMAGE_INFORMATION ImageInfo;
     rcNt = NtQueryInformationProcess(hProcess, ProcessImageInformation, &ImageInfo, sizeof(ImageInfo), NULL);
     if (!NT_SUCCESS(rcNt))
+    {
+        if (   rcNt == STATUS_INVALID_PARAMETER
+            && g_uNtVerCombined < SUP_NT_VER_VISTA
+            && hProcess != NtCurrentProcess() )
+            return VINF_SUCCESS;
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NT_QI_PROCESS_IMG_INFO_ERROR,
-                                   "NtQueryInformationProcess/ProcessImageInformation failed: %#x", rcNt);
+                                   "NtQueryInformationProcess/ProcessImageInformation failed: %#x hProcess=%#x", rcNt, hProcess);
+    }
     if ( !(ImageInfo.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_EXE_MISSING_FORCE_INTEGRITY,
                                    "EXE DllCharacteristics=%#x, expected IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY to be set.",
@@ -1640,6 +1656,8 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
                     RTLdrClose(pThis->aImages[i].hLdrMod);
                 else if (pThis->aImages[i].pNtViRdr)
                     pThis->aImages[i].pNtViRdr->Core.pfnDestroy(&pThis->aImages[i].pNtViRdr->Core);
+                if (pThis->aImages[i].hFile)
+                    NtClose(pThis->aImages[i].hFile);
             }
             suplibHardenedFree(pThis);
         }
