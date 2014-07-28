@@ -48,6 +48,9 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
+    /** Pointer to menu update-handler for this class: */
+    typedef void (UIMachineLogic::*MenuUpdateHandler)(QMenu *pMenu);
+
 signals:
 
     /** Notifies about frame-buffer resize. */
@@ -196,6 +199,9 @@ protected:
 
 private slots:
 
+    /** Handle menu prepare. */
+    void sltHandleMenuPrepare(int iIndex, QMenu *pMenu);
+
     /* "Machine" menu functionality: */
     void sltToggleGuestAutoresize(bool fEnabled);
     void sltAdjustWindow();
@@ -224,16 +230,10 @@ private slots:
     void sltOpenUSBDevicesSettingsDialog();
     void sltOpenNetworkSettingsDialog();
     void sltOpenSharedFoldersSettingsDialog();
-    void sltPrepareStorageMenu();
     void sltMountStorageMedium();
-    void sltPrepareUSBMenu();
-    void sltPrepareWebCamMenu();
     void sltAttachUSBDevice();
     void sltAttachWebCamDevice();
-    void sltPrepareSharedClipboardMenu();
     void sltChangeSharedClipboardType(QAction *pAction);
-    void sltPrepareDragAndDropMenu();
-    void sltPrepareNetworkMenu();
     void sltToggleNetworkAdapterConnection();
     void sltChangeDragAndDropType(QAction *pAction);
     void sltToggleVRDE(bool fEnabled);
@@ -243,7 +243,6 @@ private slots:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* "Debug" menu functionality: */
-    void sltPrepareDebugMenu();
     void sltShowDebugStatistics();
     void sltShowDebugCommandLine();
     void sltLoggingToggled(bool);
@@ -266,6 +265,23 @@ private slots:
 
 private:
 
+    /** Update 'Devices' : 'Optical/Floppy Devices' menu routine. */
+    void updateMenuDevicesStorage(QMenu *pMenu);
+    /** Update 'Devices' : 'USB Devices' menu routine. */
+    void updateMenuDevicesUSB(QMenu *pMenu);
+    /** Update 'Devices' : 'Web Cams' menu routine. */
+    void updateMenuDevicesWebCams(QMenu *pMenu);
+    /** Update 'Devices' : 'Shared Clipboard' menu routine. */
+    void updateMenuDevicesSharedClipboard(QMenu *pMenu);
+    /** Update 'Devices' : 'Drag and Drop' menu routine. */
+    void updateMenuDevicesDragAndDrop(QMenu *pMenu);
+    /** Update 'Devices' : 'Network' menu routine. */
+    void updateMenuDevicesNetwork(QMenu *pMenu);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Update 'Debug' menu routine. */
+    void updateMenuDebug(QMenu *pMenu);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
     /** Show Global Preferences on the page defined by @a strCategory and tab defined by @a strControl. */
     void showGlobalPreferences(const QString &strCategory = QString(), const QString &strControl = QString());
 
@@ -285,6 +301,9 @@ private:
     QActionGroup *m_pRunningOrPausedOrStackedActions;
     QActionGroup *m_pSharedClipboardActions;
     QActionGroup *m_pDragAndDropActions;
+
+    /** Holds the map of menu update-handlers. */
+    QMap<int, MenuUpdateHandler> m_menuUpdateHandlers;
 
     bool m_fIsWindowsCreated : 1;
     bool m_fIsPreventAutoClose : 1;

@@ -126,13 +126,6 @@ public:
     /** Defines menu-bar @a restriction for passed @a level. */
     void setRestrictionForMenuBar(UIActionRestrictionLevel level, RuntimeMenuType restriction);
 
-#ifdef Q_WS_MAC
-    /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
-    bool isAllowedInMenuApplication(RuntimeMenuApplicationActionType type) const;
-    /** Defines 'Application' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, RuntimeMenuApplicationActionType restriction);
-#endif /* Q_WS_MAC */
-
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
     bool isAllowedInMenuMachine(RuntimeMenuMachineActionType type) const;
     /** Defines 'Machine' menu @a restriction for passed @a level. */
@@ -181,6 +174,8 @@ protected:
     /** Update configuration routine. */
     virtual void updateConfiguration();
 
+    /** Update menu routine. */
+    void updateMenu(int iIndex);
     /** Update menus routine. */
     void updateMenus();
     /** Update 'Machine' menu routine. */
@@ -230,10 +225,6 @@ private:
 
     /** Holds restricted menu types. */
     QMap<UIActionRestrictionLevel, RuntimeMenuType> m_restrictedMenus;
-#ifdef Q_WS_MAC
-    /** Holds restricted action types of the Application menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuApplicationActionType> m_restrictedActionsMenuApplication;
-#endif /* Q_WS_MAC */
     /** Holds restricted action types of the Machine menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
     /** Holds restricted action types of the View menu. */

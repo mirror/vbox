@@ -70,10 +70,10 @@ template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); re
 template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<MenuHelpActionType>();
-template<> bool canConvert<RuntimeMenuType>();
 #ifdef Q_WS_MAC
-template<> bool canConvert<RuntimeMenuApplicationActionType>();
+template<> bool canConvert<MenuApplicationActionType>();
 #endif /* Q_WS_MAC */
+template<> bool canConvert<RuntimeMenuType>();
 template<> bool canConvert<RuntimeMenuMachineActionType>();
 template<> bool canConvert<RuntimeMenuViewActionType>();
 template<> bool canConvert<RuntimeMenuDevicesActionType>();
@@ -124,12 +124,12 @@ template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
 template<> QString toInternalString(const MenuHelpActionType &menuHelpActionType);
 template<> MenuHelpActionType fromInternalString<MenuHelpActionType>(const QString &strMenuHelpActionType);
+#ifdef Q_WS_MAC
+template<> QString toInternalString(const MenuApplicationActionType &runtimeMenuApplicationActionType);
+template<> MenuApplicationActionType fromInternalString<MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType);
+#endif /* Q_WS_MAC */
 template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);
 template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType);
-#ifdef Q_WS_MAC
-template<> QString toInternalString(const RuntimeMenuApplicationActionType &runtimeMenuApplicationActionType);
-template<> RuntimeMenuApplicationActionType fromInternalString<RuntimeMenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType);
-#endif /* Q_WS_MAC */
 template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeMenuMachineActionType);
 template<> RuntimeMenuMachineActionType fromInternalString<RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType);
 template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenuViewActionType);

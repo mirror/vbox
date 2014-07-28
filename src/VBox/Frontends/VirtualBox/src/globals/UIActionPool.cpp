@@ -178,7 +178,7 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDis));
-    setMenu(new UIMenu);
+    prepare();
 }
 
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
@@ -187,12 +187,24 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 {
     if (!icon.isNull())
         setIcon(icon);
-    setMenu(new UIMenu);
+    prepare();
 }
 
 void UIActionMenu::setShowToolTip(bool fShowToolTip)
 {
     qobject_cast<UIMenu*>(menu())->setShowToolTip(fShowToolTip);
+}
+
+void UIActionMenu::prepare()
+{
+    /* Create menu: */
+    setMenu(new UIMenu);
+    AssertPtrReturnVoid(menu());
+    {
+        /* Prepare menu: */
+        connect(menu(), SIGNAL(aboutToShow()),
+                parent(), SLOT(sltHandleMenuPrepare()));
+    }
 }
 
 void UIActionMenu::updateText()
@@ -621,6 +633,41 @@ void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, Men
     updateMenuHelp();
 }
 
+#ifdef Q_WS_MAC
+bool UIActionPool::isAllowedInMenuApplication(MenuApplicationActionType type) const
+{
+    foreach (const MenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
+        if (restriction & type)
+            return false;
+    return true;
+}
+
+void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, MenuApplicationActionType restriction)
+{
+    m_restrictedActionsMenuApplication[level] = restriction;
+    updateMenuHelp();
+}
+#endif /* Q_WS_MAC */
+
+void UIActionPool::sltHandleMenuPrepare()
+{
+    /* Make sure menu is valid: */
+    UIMenu *pMenu = qobject_cast<UIMenu*>(sender());
+    AssertPtrReturnVoid(pMenu);
+    /* Make sure action is valid: */
+    UIAction *pAction = qobject_cast<UIAction*>(pMenu->menuAction());
+    AssertPtrReturnVoid(pAction);
+
+    /* Determine action index: */
+    const int iIndex = m_pool.key(pAction);
+
+    /* Update menu if necessary: */
+    updateMenu(iIndex);
+
+    /* Notify listeners about menu prepared: */
+    emit sigNotifyAboutMenuPrepare(iIndex, pMenu);
+}
+
 void UIActionPool::prepare()
 {
     /* Prepare pool: */
@@ -649,6 +696,12 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
+
+    /* Prepare update-handlers for known menus: */
+    m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
+
+    /* Invalidate all known menus: */
+    m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
 
     /* Retranslate finally: */
     retranslateUi();
@@ -719,6 +772,13 @@ void UIActionPool::updateConfiguration()
 
     /* Update menus: */
     updateMenus();
+}
+
+void UIActionPool::updateMenu(int iIndex)
+{
+    /* Update if menu with such index is invalidated and there is update-handler: */
+    if (m_invalidations.contains(iIndex) && m_menuUpdateHandlers.contains(iIndex))
+        (this->*(m_menuUpdateHandlers.value(iIndex).ptf))();
 }
 
 void UIActionPool::updateMenuHelp()
@@ -826,7 +886,7 @@ void UIActionPool::updateMenuHelp()
     /* 'About' action: */
     const bool fAllowToShowActionAbout =
 #ifdef Q_WS_MAC
-        isAllowedInMenuApplication(RuntimeMenuApplicationActionType_About);
+        isAllowedInMenuApplication(MenuApplicationActionType_About);
 #else /* !Q_WS_MAC */
         isAllowedInMenuHelp(MenuHelpActionType_About);
 #endif /* Q_WS_MAC */
@@ -844,7 +904,7 @@ void UIActionPool::updateMenuHelp()
         /* 'Preferences' action: */
         const bool fAllowToShowActionPreferences =
 #ifdef Q_WS_MAC
-            isAllowedInMenuApplication(RuntimeMenuApplicationActionType_Preferences);
+            isAllowedInMenuApplication(MenuApplicationActionType_Preferences);
 #else /* !Q_WS_MAC */
             isAllowedInMenuHelp(MenuHelpActionType_Preferences);
 #endif /* Q_WS_MAC */
@@ -852,6 +912,10 @@ void UIActionPool::updateMenuHelp()
         if (fAllowToShowActionPreferences)
             pMenu->addAction(action(UIActionIndex_Simple_Preferences));
     }
+
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_Menu_Help);
 }
 
 void UIActionPool::retranslateUi()
