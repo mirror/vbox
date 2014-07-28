@@ -2,6 +2,7 @@ _ITM_deregisterTMCloneTable
 _ITM_registerTMCloneTable
 _Jv_RegisterClasses
 ___errno
+__ctype_b_loc
 __cxa_finalize
 __deregister_frame_info_bases
 __divdi3
