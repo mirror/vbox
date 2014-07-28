@@ -106,7 +106,9 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /** The saved state version. */
-#define OHCI_SAVED_STATE_VERSION            4
+#define OHCI_SAVED_STATE_VERSION            5
+// The saved state with support of 8 ports
+#define OHCI_SAVED_STATE_VERSION_8PORTS     4
 /** The saved state version used in 3.0 and earlier.
  *
  * @remarks Because of the SSMR3MemPut/Get laziness we ended up with an
@@ -120,7 +122,7 @@
  * If you change this you need to add more status register words to the 'opreg'
  * array.
  */
-#define OHCI_NDP 8
+#define OHCI_NDP 15
 
 /** Pointer to OHCI device data. */
 typedef struct OHCI *POHCI;
@@ -184,7 +186,7 @@ typedef struct ohci_roothub
     R3PTRTYPE(POHCI)                    pOhci;
 } OHCIROOTHUB;
 #if HC_ARCH_BITS == 64
-AssertCompile(sizeof(OHCIROOTHUB) == 280); /* saved state */
+AssertCompile(sizeof(OHCIROOTHUB) == 392); /* saved state */
 #endif
 /** Pointer to the OHCI root hub. */
 typedef OHCIROOTHUB *POHCIROOTHUB;
@@ -756,6 +758,13 @@ static SSMFIELD const g_aOhciFields[] =
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[5].fReg),
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[6].fReg),
     SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[7].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[8].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[9].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[10].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[11].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[12].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[13].fReg),
+    SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[14].fReg),
     SSMFIELD_ENTRY(         OHCI, ctl),
     SSMFIELD_ENTRY(         OHCI, status),
     SSMFIELD_ENTRY(         OHCI, intr_status),
@@ -4973,6 +4982,13 @@ static const OHCIOPREG g_aOpRegs[] =
     { "HcRhPortStatus[5]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 26 */
     { "HcRhPortStatus[6]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 27 */
     { "HcRhPortStatus[7]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 28 */
+    { "HcRhPortStatus[8]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 29 */
+    { "HcRhPortStatus[9]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 30 */
+    { "HcRhPortStatus[10]",  HcRhPortStatus_r,       HcRhPortStatus_w },        /* 31 */
+    { "HcRhPortStatus[11]",  HcRhPortStatus_r,       HcRhPortStatus_w },        /* 32 */
+    { "HcRhPortStatus[12]",  HcRhPortStatus_r,       HcRhPortStatus_w },        /* 33 */
+    { "HcRhPortStatus[13]",  HcRhPortStatus_r,       HcRhPortStatus_w },        /* 34 */
+    { "HcRhPortStatus[14]",  HcRhPortStatus_r,       HcRhPortStatus_w },        /* 35 */
 };
 
 
@@ -5270,6 +5286,44 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (uVersion == OHCI_SAVED_STATE_VERSION)
     {
         rc = SSMR3GetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields[0], NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else if (uVersion == OHCI_SAVED_STATE_VERSION_8PORTS)
+    {
+        static SSMFIELD const s_aOhciFields8Ports[] =
+        {
+            SSMFIELD_ENTRY(         OHCI, SofTime),
+            SSMFIELD_ENTRY_CUSTOM(        dpic+fno, RT_OFFSETOF(OHCI, SofTime) + RT_SIZEOFMEMB(OHCI, SofTime), 4),
+            SSMFIELD_ENTRY(         OHCI, RootHub.status),
+            SSMFIELD_ENTRY(         OHCI, RootHub.desc_a),
+            SSMFIELD_ENTRY(         OHCI, RootHub.desc_b),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[0].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[1].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[2].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[3].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[4].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[5].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[6].fReg),
+            SSMFIELD_ENTRY(         OHCI, RootHub.aPorts[7].fReg),
+            SSMFIELD_ENTRY(         OHCI, ctl),
+            SSMFIELD_ENTRY(         OHCI, status),
+            SSMFIELD_ENTRY(         OHCI, intr_status),
+            SSMFIELD_ENTRY(         OHCI, intr),
+            SSMFIELD_ENTRY(         OHCI, hcca),
+            SSMFIELD_ENTRY(         OHCI, per_cur),
+            SSMFIELD_ENTRY(         OHCI, ctrl_cur),
+            SSMFIELD_ENTRY(         OHCI, ctrl_head),
+            SSMFIELD_ENTRY(         OHCI, bulk_cur),
+            SSMFIELD_ENTRY(         OHCI, bulk_head),
+            SSMFIELD_ENTRY(         OHCI, done),
+            SSMFIELD_ENTRY_CUSTOM(        fsmps+fit+fi+frt, RT_OFFSETOF(OHCI, done) + RT_SIZEOFMEMB(OHCI, done), 4),
+            SSMFIELD_ENTRY(         OHCI, HcFmNumber),
+            SSMFIELD_ENTRY(         OHCI, pstart),
+            SSMFIELD_ENTRY_TERM()
+        };
+
+        rc = SSMR3GetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &s_aOhciFields8Ports[0], NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
