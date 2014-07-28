@@ -690,6 +690,7 @@
 # define RTLdrOpenkLdr                                  RT_MANGLER(RTLdrOpenkLdr)
 # define RTLdrRelocate                                  RT_MANGLER(RTLdrRelocate)
 # define RTLdrRvaToSegOffset                            RT_MANGLER(RTLdrRvaToSegOffset)
+# define RTLdrQueryForwarderInfo                        RT_MANGLER(RTLdrQueryForwarderInfo)
 # define RTLdrQueryProp                                 RT_MANGLER(RTLdrQueryProp)
 # define RTLdrSegOffsetToRva                            RT_MANGLER(RTLdrSegOffsetToRva)
 # define RTLdrSize                                      RT_MANGLER(RTLdrSize)

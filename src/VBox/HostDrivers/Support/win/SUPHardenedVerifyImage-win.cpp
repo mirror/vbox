@@ -1664,7 +1664,8 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
          * Failed. Format a nice error message.
          */
 # ifdef DEBUG_bird
-        __debugbreak();
+        if (hrc != CERT_E_CHAINING /* Un-updated vistas, XPs, ++ */)
+            __debugbreak();
 # endif
         const char *pszErrConst = NULL;
         switch (hrc)
@@ -1684,6 +1685,7 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
             case TRUST_E_NOSIGNATURE:              pszErrConst = "TRUST_E_NOSIGNATURE";           break;
             case TRUST_E_FAIL:                     pszErrConst = "TRUST_E_FAIL";                  break;
             case TRUST_E_EXPLICIT_DISTRUST:        pszErrConst = "TRUST_E_EXPLICIT_DISTRUST";     break;
+            case CERT_E_CHAINING:                  pszErrConst = "CERT_E_CHAINING";               break;
         }
         if (pszErrConst)
             rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_UNSUPPORTED_ARCH,

@@ -62,7 +62,7 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
     else
     {
         RTUINTPTR Value = 0;
-        rc = pMod->pOps->pfnGetSymbolEx(pMod, NULL, 0, pszSymbol, &Value);
+        rc = pMod->pOps->pfnGetSymbolEx(pMod, NULL, 0, UINT32_MAX, pszSymbol, &Value);
         if (RT_SUCCESS(rc))
         {
             *ppvValue = (void *)(uintptr_t)Value;
