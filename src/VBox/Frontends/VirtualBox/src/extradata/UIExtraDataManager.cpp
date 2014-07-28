@@ -2581,16 +2581,16 @@ RuntimeMenuDebuggerActionType UIExtraDataManager::restrictedRuntimeMenuDebuggerA
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-RuntimeMenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
+MenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuHelpActionType result = RuntimeMenuHelpActionType_Invalid;
+    MenuHelpActionType result = MenuHelpActionType_Invalid;
     /* Get restricted runtime-help-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, strID))
     {
-        RuntimeMenuHelpActionType value = gpConverter->fromInternalString<RuntimeMenuHelpActionType>(strValue);
-        if (value != RuntimeMenuHelpActionType_Invalid)
-            result = static_cast<RuntimeMenuHelpActionType>(result | value);
+        MenuHelpActionType value = gpConverter->fromInternalString<MenuHelpActionType>(strValue);
+        if (value != MenuHelpActionType_Invalid)
+            result = static_cast<MenuHelpActionType>(result | value);
     }
     /* Return result: */
     return result;

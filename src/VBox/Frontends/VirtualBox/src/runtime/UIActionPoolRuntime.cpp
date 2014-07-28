@@ -18,12 +18,8 @@
 /* GUI includes: */
 #include "UIActionPoolRuntime.h"
 #include "UIExtraDataManager.h"
-#include "UIMessageCenter.h"
 #include "UIShortcutPool.h"
 #include "VBoxGlobal.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -1355,20 +1351,6 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-bool UIActionPoolRuntime::isAllowedInMenuHelp(RuntimeMenuHelpActionType type) const
-{
-    foreach (const RuntimeMenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
-        if (restriction & type)
-            return false;
-    return true;
-}
-
-void UIActionPoolRuntime::setRestrictionForMenuHelp(UIActionRestrictionLevel level, RuntimeMenuHelpActionType restriction)
-{
-    m_restrictedActionsMenuHelp[level] = restriction;
-    updateMenuHelp();
-}
-
 void UIActionPoolRuntime::setCurrentFrameBufferSizes(const QList<QSize> &sizes, bool fUpdateMenu /* = false */)
 {
     m_sizes = sizes;
@@ -1402,9 +1384,6 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewResize(QAction *pAction)
 
 void UIActionPoolRuntime::preparePool()
 {
-    /* Call to base-class: */
-    UIActionPool::preparePool();
-
     /* 'Machine' actions: */
     m_pool[UIActionIndexRT_M_Machine] = new UIActionMenuMachineRuntime(this);
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleShowSettingsDialog(this);
@@ -1475,8 +1454,8 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor] = new UIActionToggleDockDisableMonitor(this);
 #endif /* Q_WS_MAC */
 
-    /* Retranslate finally: */
-    retranslateUi();
+    /* Call to base-class: */
+    UIActionPool::preparePool();
 }
 
 void UIActionPoolRuntime::prepareConnections()
@@ -1574,8 +1553,8 @@ void UIActionPoolRuntime::updateConfiguration()
 #endif /* !Q_WS_MAC */
     }
 
-    /* Update menus: */
-    updateMenus();
+    /* Call to base-class: */
+    UIActionPool::updateConfiguration();
 }
 
 void UIActionPoolRuntime::updateMenus()
@@ -2299,125 +2278,10 @@ void UIActionPoolRuntime::updateMenuDebug()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::updateMenuHelp()
-{
-    /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndex_Menu_Help)->menu();
-    AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
-
-
-    /* Separator #1? */
-    bool fSeparator1 = false;
-
-    /* 'Contents' action: */
-    const bool fAllowToShowActionContents = isAllowedInMenuHelp(RuntimeMenuHelpActionType_Contents);
-    action(UIActionIndex_Simple_Contents)->setEnabled(fAllowToShowActionContents);
-    if (fAllowToShowActionContents)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_Contents));
-        VBoxGlobal::connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
-                            &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
-        fSeparator1 = true;
-    }
-
-    /* 'Web Site' action: */
-    const bool fAllowToShowActionWebSite = isAllowedInMenuHelp(RuntimeMenuHelpActionType_WebSite);
-    action(RuntimeMenuHelpActionType_WebSite)->setEnabled(fAllowToShowActionWebSite);
-    if (fAllowToShowActionWebSite)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_WebSite));
-        VBoxGlobal::connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
-                            &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
-        fSeparator1 = true;
-    }
-
-    /* Separator #1: */
-    if (fSeparator1)
-        pMenu->addSeparator();
-
-
-    /* Separator #2? */
-    bool fSeparator2 = false;
-
-    /* 'Reset Warnings' action: */
-    const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(RuntimeMenuHelpActionType_ResetWarnings);
-    action(UIActionIndex_Simple_ResetWarnings)->setEnabled(fAllowToShowActionResetWarnings);
-    if (fAllowToShowActionResetWarnings)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_ResetWarnings));
-        VBoxGlobal::connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-                            &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
-        fSeparator2 = true;
-    }
-
-    /* Separator #2: */
-    if (fSeparator2)
-        pMenu->addSeparator();
-
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# ifndef Q_WS_MAC
-    /* Separator #3? */
-    bool fSeparator3 = false;
-# endif /* !Q_WS_MAC */
-
-    /* 'Network Manager' action: */
-    const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(RuntimeMenuHelpActionType_NetworkAccessManager);
-    action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionNetworkManager);
-    if (fAllowToShowActionNetworkManager)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_NetworkAccessManager));
-        VBoxGlobal::connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
-                            gNetworkManager, SLOT(show()), Qt::UniqueConnection);
-# ifndef Q_WS_MAC
-        fSeparator3 = true;
-# endif /* !Q_WS_MAC */
-    }
-
-# ifndef Q_WS_MAC
-    /* Separator #3: */
-    if (fSeparator3)
-        pMenu->addSeparator();
-# endif /* !Q_WS_MAC */
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
-
-    /* 'About' action: */
-    const bool fAllowToShowActionAbout =
-#ifdef Q_WS_MAC
-        isAllowedInMenuApplication(RuntimeMenuApplicationActionType_About);
-#else /* !Q_WS_MAC */
-        isAllowedInMenuHelp(RuntimeMenuHelpActionType_About);
-#endif /* Q_WS_MAC */
-    action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
-    if (fAllowToShowActionAbout)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_About));
-        VBoxGlobal::connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-                            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
-    }
-
-    /* 'Preferences' action: */
-    const bool fAllowToShowActionPreferences =
-#ifdef Q_WS_MAC
-        isAllowedInMenuApplication(RuntimeMenuApplicationActionType_Preferences);
-#else /* !Q_WS_MAC */
-        isAllowedInMenuHelp(RuntimeMenuHelpActionType_Preferences);
-#endif /* Q_WS_MAC */
-    action(UIActionIndex_Simple_Preferences)->setEnabled(fAllowToShowActionPreferences);
-    if (fAllowToShowActionPreferences)
-        pMenu->addAction(action(UIActionIndex_Simple_Preferences));
-}
-
 void UIActionPoolRuntime::retranslateUi()
 {
-    /* Translate all the actions: */
-    foreach (const int iActionPoolKey, m_pool.keys())
-        m_pool[iActionPoolKey]->retranslateUi();
-    /* Update Runtime UI shortcuts: */
-    updateShortcuts();
+    /* Call to base-class: */
+    UIActionPool::retranslateUi();
     /* Create temporary Selector UI pool to do the same: */
     if (!m_fTemporary)
         UIActionPool::createTemporary(UIActionPoolType_Selector);

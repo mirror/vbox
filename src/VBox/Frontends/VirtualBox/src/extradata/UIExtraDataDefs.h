@@ -359,6 +359,24 @@ enum PreviewUpdateIntervalType
 };
 
 
+/** Menu "Help": Action types. */
+enum MenuHelpActionType
+{
+    MenuHelpActionType_Invalid              = 0,
+    MenuHelpActionType_Contents             = RT_BIT(0),
+    MenuHelpActionType_WebSite              = RT_BIT(1),
+    MenuHelpActionType_ResetWarnings        = RT_BIT(2),
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    MenuHelpActionType_NetworkAccessManager = RT_BIT(3),
+    MenuHelpActionType_CheckForUpdates      = RT_BIT(4),
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef Q_WS_MAC
+    MenuHelpActionType_About                = RT_BIT(5),
+    MenuHelpActionType_Preferences          = RT_BIT(6),
+#endif /* !Q_WS_MAC */
+    MenuHelpActionType_All                  = 0xFFFF
+};
+
 /** Runtime UI: Menu types. */
 enum RuntimeMenuType
 {
@@ -465,23 +483,6 @@ enum RuntimeMenuDebuggerActionType
     RuntimeMenuDebuggerActionType_All         = 0xFFFF
 };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-/** Runtime UI: Menu "Help": Action types. */
-enum RuntimeMenuHelpActionType
-{
-    RuntimeMenuHelpActionType_Invalid              = 0,
-    RuntimeMenuHelpActionType_Contents             = RT_BIT(0),
-    RuntimeMenuHelpActionType_WebSite              = RT_BIT(1),
-    RuntimeMenuHelpActionType_ResetWarnings        = RT_BIT(2),
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    RuntimeMenuHelpActionType_NetworkAccessManager = RT_BIT(3),
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#ifndef Q_WS_MAC
-    RuntimeMenuHelpActionType_About                = RT_BIT(4),
-    RuntimeMenuHelpActionType_Preferences          = RT_BIT(5),
-#endif /* !Q_WS_MAC */
-    RuntimeMenuHelpActionType_All                  = 0xFFFF
-};
 
 /** Runtime UI: Visual-state types. */
 enum UIVisualStateType

@@ -128,7 +128,6 @@ private:
     void prepareMenuMachine(QMenu *pMenu);
     void prepareMenuGroupClose(QMenu *pMenu);
     void prepareMenuMachineClose(QMenu *pMenu);
-    void prepareMenuHelp(QMenu *pMenu);
     void prepareStatusBar();
     void prepareWidgets();
     void prepareConnections();

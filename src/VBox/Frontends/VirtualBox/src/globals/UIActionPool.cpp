@@ -26,6 +26,12 @@
 #include "UIShortcutPool.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIExtraDataManager.h"
+# include "UINetworkManager.h"
+# include "UIUpdateManager.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
 /** QEvent extension
@@ -601,6 +607,20 @@ UIActionPoolSelector* UIActionPool::toSelector()
     return qobject_cast<UIActionPoolSelector*>(this);
 }
 
+bool UIActionPool::isAllowedInMenuHelp(MenuHelpActionType type) const
+{
+    foreach (const MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
+        if (restriction & type)
+            return false;
+    return true;
+}
+
+void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction)
+{
+    m_restrictedActionsMenuHelp[level] = restriction;
+    updateMenuHelp();
+}
+
 void UIActionPool::prepare()
 {
     /* Prepare pool: */
@@ -629,6 +649,9 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
+
+    /* Retranslate finally: */
+    retranslateUi();
 }
 
 void UIActionPool::cleanupPool()
@@ -677,6 +700,167 @@ bool UIActionPool::processHotKey(const QKeySequence &key)
         }
     }
     return false;
+}
+
+void UIActionPool::updateConfiguration()
+{
+    /* Recache common action restrictions: */
+    // Nothing here for now..
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* Recache update action restrictions: */
+    bool fUpdateAllowed = gEDataManager->applicationUpdateEnabled();
+    if (!fUpdateAllowed)
+    {
+        m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] = (MenuHelpActionType)
+            (m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] | MenuHelpActionType_CheckForUpdates);
+    }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+    /* Update menus: */
+    updateMenus();
+}
+
+void UIActionPool::updateMenuHelp()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = action(UIActionIndex_Menu_Help)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+
+    /* Separator #1? */
+    bool fSeparator1 = false;
+
+    /* 'Contents' action: */
+    const bool fAllowToShowActionContents = isAllowedInMenuHelp(MenuHelpActionType_Contents);
+    action(UIActionIndex_Simple_Contents)->setEnabled(fAllowToShowActionContents);
+    if (fAllowToShowActionContents)
+    {
+        pMenu->addAction(action(UIActionIndex_Simple_Contents));
+        connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
+                &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
+        fSeparator1 = true;
+    }
+
+    /* 'Web Site' action: */
+    const bool fAllowToShowActionWebSite = isAllowedInMenuHelp(MenuHelpActionType_WebSite);
+    action(MenuHelpActionType_WebSite)->setEnabled(fAllowToShowActionWebSite);
+    if (fAllowToShowActionWebSite)
+    {
+        pMenu->addAction(action(UIActionIndex_Simple_WebSite));
+        connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
+                &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
+        fSeparator1 = true;
+    }
+
+    /* Separator #1: */
+    if (fSeparator1)
+        pMenu->addSeparator();
+
+
+    /* Separator #2? */
+    bool fSeparator2 = false;
+
+    /* 'Reset Warnings' action: */
+    const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(MenuHelpActionType_ResetWarnings);
+    action(UIActionIndex_Simple_ResetWarnings)->setEnabled(fAllowToShowActionResetWarnings);
+    if (fAllowToShowActionResetWarnings)
+    {
+        pMenu->addAction(action(UIActionIndex_Simple_ResetWarnings));
+        connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+                &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
+        fSeparator2 = true;
+    }
+
+    /* Separator #2: */
+    if (fSeparator2)
+        pMenu->addSeparator();
+
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# ifndef Q_WS_MAC
+    /* Separator #3? */
+    bool fSeparator3 = false;
+# endif /* !Q_WS_MAC */
+
+    /* 'Network Manager' action: */
+    const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(MenuHelpActionType_NetworkAccessManager);
+    action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionNetworkManager);
+    if (fAllowToShowActionNetworkManager)
+    {
+        pMenu->addAction(action(UIActionIndex_Simple_NetworkAccessManager));
+        connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
+                gNetworkManager, SLOT(show()), Qt::UniqueConnection);
+# ifndef Q_WS_MAC
+        fSeparator3 = true;
+# endif /* !Q_WS_MAC */
+    }
+
+    /* Only for Selector pool: */
+    if (type() == UIActionPoolType_Selector)
+    {
+        /* 'Check for Updates' action: */
+        const bool fAllowToShowActionCheckForUpdates = isAllowedInMenuHelp(MenuHelpActionType_CheckForUpdates);
+        action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionCheckForUpdates);
+        if (fAllowToShowActionCheckForUpdates)
+        {
+            pMenu->addAction(action(UIActionIndex_Simple_CheckForUpdates));
+            connect(action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()),
+                    gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
+# ifndef Q_WS_MAC
+            fSeparator3 = true;
+# endif /* !Q_WS_MAC */
+        }
+    }
+
+# ifndef Q_WS_MAC
+    /* Separator #3: */
+    if (fSeparator3)
+        pMenu->addSeparator();
+# endif /* !Q_WS_MAC */
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+
+    /* 'About' action: */
+    const bool fAllowToShowActionAbout =
+#ifdef Q_WS_MAC
+        isAllowedInMenuApplication(RuntimeMenuApplicationActionType_About);
+#else /* !Q_WS_MAC */
+        isAllowedInMenuHelp(MenuHelpActionType_About);
+#endif /* Q_WS_MAC */
+    action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
+    if (fAllowToShowActionAbout)
+    {
+        pMenu->addAction(action(UIActionIndex_Simple_About));
+        connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+                &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+    }
+
+    /* Only for Runtime pool: */
+    if (type() == UIActionPoolType_Runtime)
+    {
+        /* 'Preferences' action: */
+        const bool fAllowToShowActionPreferences =
+#ifdef Q_WS_MAC
+            isAllowedInMenuApplication(RuntimeMenuApplicationActionType_Preferences);
+#else /* !Q_WS_MAC */
+            isAllowedInMenuHelp(MenuHelpActionType_Preferences);
+#endif /* Q_WS_MAC */
+        action(UIActionIndex_Simple_Preferences)->setEnabled(fAllowToShowActionPreferences);
+        if (fAllowToShowActionPreferences)
+            pMenu->addAction(action(UIActionIndex_Simple_Preferences));
+    }
+}
+
+void UIActionPool::retranslateUi()
+{
+    /* Translate all the actions: */
+    foreach (const int iActionPoolKey, m_pool.keys())
+        m_pool[iActionPoolKey]->retranslateUi();
+    /* Update shortcuts: */
+    updateShortcuts();
 }
 
 bool UIActionPool::event(QEvent *pEvent)

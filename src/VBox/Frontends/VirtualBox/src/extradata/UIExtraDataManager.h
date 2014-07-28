@@ -300,7 +300,7 @@ public:
         RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID);
     #endif /* VBOX_WITH_DEBUGGER_GUI */
         /** Returns restricted Runtime UI action types for Help menu. */
-        RuntimeMenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
+        MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
 
         /** Returns restricted Runtime UI visual-states. */
         UIVisualStateType restrictedVisualStates(const QString &strID);

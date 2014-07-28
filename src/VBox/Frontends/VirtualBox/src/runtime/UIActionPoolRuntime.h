@@ -155,11 +155,6 @@ public:
     void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-    /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
-    bool isAllowedInMenuHelp(RuntimeMenuHelpActionType type) const;
-    /** Defines 'Help' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, RuntimeMenuHelpActionType restriction);
-
     /** Defines current frame-buffer sizes
       * for menus which uses such arguments to build content. */
     void setCurrentFrameBufferSizes(const QList<QSize> &sizes, bool fUpdateMenu = false);
@@ -218,8 +213,6 @@ protected:
     /** Update 'Debug' menu routine. */
     void updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Update 'Help' menu routine. */
-    void updateMenuHelp();
 
     /** Translation handler. */
     virtual void retranslateUi();
@@ -235,24 +228,22 @@ private:
     /** Holds the list of main-menus. */
     QList<QMenu*> m_mainMenus;
 
-    /** Holds restricted menus. */
+    /** Holds restricted menu types. */
     QMap<UIActionRestrictionLevel, RuntimeMenuType> m_restrictedMenus;
 #ifdef Q_WS_MAC
-    /** Holds restricted actions of the Application menu. */
+    /** Holds restricted action types of the Application menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuApplicationActionType> m_restrictedActionsMenuApplication;
 #endif /* Q_WS_MAC */
-    /** Holds restricted actions of the Machine menu. */
+    /** Holds restricted action types of the Machine menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
-    /** Holds restricted actions of the View menu. */
+    /** Holds restricted action types of the View menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuViewActionType> m_restrictedActionsMenuView;
-    /** Holds restricted actions of the Devices menu. */
+    /** Holds restricted action types of the Devices menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Holds restricted actions of the Debugger menu. */
+    /** Holds restricted action types of the Debugger menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Holds restricted actions of the Help menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuHelpActionType> m_restrictedActionsMenuHelp;
 
     /** Defines current frame-buffer sizes
       * for menus which uses such arguments to build content. */
