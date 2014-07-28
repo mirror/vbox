@@ -896,11 +896,20 @@ static DECLCALLBACK(int) rtldrPERelocate(PRTLDRMODINTERNAL pMod, void *pvBits, R
 }
 
 
-/** @copydoc RTLDROPS::pfnGetSymbolEx. */
-static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress, const char *pszSymbol, RTUINTPTR *pValue)
+/**
+ * Internal worker for pfnGetSymbolEx and pfnQueryForwarderInfo.
+ *
+ * @returns IPRT status code.
+ * @param   pModPe              The PE module instance.
+ * @param   iOrdinal            The symbol ordinal, UINT32_MAX if named symbol.
+ * @param   pszSymbol           The symbol name.
+ * @param   ppvBits             The image bits pointer (input/output).
+ * @param   puRvaExport         Where to return the symbol RVA.
+ * @param   puOrdinal           Where to return the ordinal number. Optional.
+ */
+static int rtLdrPE_ExportToRva(PRTLDRMODPE pModPe, uint32_t iOrdinal, const char *pszSymbol,
+                               const void **ppvBits, uint32_t *puRvaExport, uint32_t *puOrdinal)
 {
-    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
-
     /*
      * Check if there is actually anything to work on.
      */
@@ -911,6 +920,7 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
     /*
      * No bits supplied? Do we need to read the bits?
      */
+    void const *pvBits = *ppvBits;
     if (!pvBits)
     {
         if (!pModPe->pvBits)
@@ -919,21 +929,20 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
             if (RT_FAILURE(rc))
                 return rc;
         }
-        pvBits = pModPe->pvBits;
+        *ppvBits = pvBits = pModPe->pvBits;
     }
 
     PIMAGE_EXPORT_DIRECTORY pExpDir = PE_RVA2TYPE(pvBits, pModPe->ExportDir.VirtualAddress, PIMAGE_EXPORT_DIRECTORY);
     int                     iExpOrdinal = 0;    /* index into address table. */
-    if ((uintptr_t)pszSymbol <= 0xffff)
+    if (iOrdinal != UINT32_MAX)
     {
         /*
          * Find ordinal export: Simple table lookup.
          */
-        unsigned uOrdinal = (uintptr_t)pszSymbol & 0xffff;
-        if (    uOrdinal >= pExpDir->Base + RT_MAX(pExpDir->NumberOfNames, pExpDir->NumberOfFunctions)
-            ||  uOrdinal < pExpDir->Base)
+        if (    iOrdinal >= pExpDir->Base + RT_MAX(pExpDir->NumberOfNames, pExpDir->NumberOfFunctions)
+            ||  iOrdinal < pExpDir->Base)
             return VERR_SYMBOL_NOT_FOUND;
-        iExpOrdinal = uOrdinal - pExpDir->Base;
+        iExpOrdinal = iOrdinal - pExpDir->Base;
     }
     else
     {
@@ -950,7 +959,7 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
             /* end of search? */
             if (iStart > iEnd)
             {
-            #ifdef RT_STRICT
+#ifdef RT_STRICT
                 /* do a linear search just to verify the correctness of the above algorithm */
                 for (unsigned i = 0; i < pExpDir->NumberOfNames; i++)
                 {
@@ -959,7 +968,7 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
                     AssertMsg(strcmp(PE_RVA2TYPE(pvBits, paRVANames[i], const char *), pszSymbol) != 0,
                               ("bug in binary export search!!!\n"));
                 }
-            #endif
+#endif
                 return VERR_SYMBOL_NOT_FOUND;
             }
 
@@ -981,21 +990,130 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
     /*
      * Found export (iExpOrdinal).
      */
-    uint32_t *  paAddress = PE_RVA2TYPE(pvBits, pExpDir->AddressOfFunctions, uint32_t *);
-    unsigned    uRVAExport = paAddress[iExpOrdinal];
-
-    if (    uRVAExport > pModPe->ExportDir.VirtualAddress
-        &&  uRVAExport < pModPe->ExportDir.VirtualAddress + pModPe->ExportDir.Size)
-    {
-        /* Resolve forwarder. */
-        AssertMsgFailed(("Forwarders are not supported!\n"));
-        return VERR_SYMBOL_NOT_FOUND;
-    }
-
-    /* Get plain export address */
-    *pValue = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
-
+    uint32_t *paAddress = PE_RVA2TYPE(pvBits, pExpDir->AddressOfFunctions, uint32_t *);
+    *puRvaExport = paAddress[iExpOrdinal];
+    if (puOrdinal)
+        *puOrdinal = iExpOrdinal;
     return VINF_SUCCESS;
+}
+
+
+/** @copydoc RTLDROPS::pfnGetSymbolEx. */
+static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
+                                            uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue)
+{
+    PRTLDRMODPE pThis = (PRTLDRMODPE)pMod;
+    uint32_t uRvaExport;
+    int rc = rtLdrPE_ExportToRva(pThis, iOrdinal, pszSymbol, &pvBits, &uRvaExport, NULL);
+    if (RT_SUCCESS(rc))
+    {
+
+        uint32_t offForwarder = uRvaExport - pThis->ExportDir.VirtualAddress;
+        if (offForwarder >= pThis->ExportDir.Size)
+            /* Get plain export address */
+            *pValue = PE_RVA2TYPE(BaseAddress, uRvaExport, RTUINTPTR);
+        else
+        {
+            /* Return the approximate length of the forwarder buffer. */
+            const char *pszForwarder = PE_RVA2TYPE(pvBits, uRvaExport, const char *);
+            *pValue = sizeof(RTLDRIMPORTINFO) + RTStrNLen(pszForwarder, offForwarder - pThis->ExportDir.Size);
+            rc = VERR_LDR_FORWARDER;
+        }
+    }
+    return rc;
+}
+
+
+/** @copydoc RTLDROPS::pfnQueryForwarderInfo. */
+static DECLCALLBACK(int) rtldrPE_QueryForwarderInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,  uint32_t iOrdinal,
+                                                    const char *pszSymbol, PRTLDRIMPORTINFO pInfo, size_t cbInfo)
+{
+    AssertReturn(cbInfo >= sizeof(*pInfo), VERR_INVALID_PARAMETER);
+
+    PRTLDRMODPE pThis = (PRTLDRMODPE)pMod;
+    uint32_t uRvaExport;
+    int rc = rtLdrPE_ExportToRva(pThis, iOrdinal, pszSymbol, &pvBits, &uRvaExport, &iOrdinal);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t offForwarder = uRvaExport - pThis->ExportDir.VirtualAddress;
+        if (offForwarder < pThis->ExportDir.Size)
+        {
+            const char *pszForwarder = PE_RVA2TYPE(pvBits, uRvaExport, const char *);
+
+            /*
+             * Parse and validate the string.  We must make sure it's valid
+             * UTF-8, so we restrict it to ASCII.
+             */
+            const char *pszEnd = RTStrEnd(pszForwarder, offForwarder - pThis->ExportDir.Size);
+            if (pszEnd)
+            {
+                /* The module name. */
+                char ch;
+                uint32_t off = 0;
+                while ((ch = pszForwarder[off]) != '.' && ch != '\0')
+                {
+                    if (RT_UNLIKELY((uint8_t)ch >= 0x80))
+                        return VERR_LDR_BAD_FORWARDER;
+                    off++;
+                }
+                if (RT_UNLIKELY(ch != '.'))
+                    return VERR_LDR_BAD_FORWARDER;
+                uint32_t const offDot = off;
+                off++;
+
+                /* The function name or ordinal number. Ordinals starts with a hash. */
+                uint32_t iImpOrdinal;
+                if (pszForwarder[off] != '#')
+                {
+                    iImpOrdinal = UINT32_MAX;
+                    while ((ch = pszForwarder[off]) != '\0')
+                    {
+                        if (RT_UNLIKELY((uint8_t)ch >= 0x80))
+                            return VERR_LDR_BAD_FORWARDER;
+                        off++;
+                    }
+                    if (RT_UNLIKELY(off == offDot + 1))
+                        return VERR_LDR_BAD_FORWARDER;
+                }
+                else
+                {
+                    rc = RTStrToUInt32Full(&pszForwarder[off + 1], 10, &iImpOrdinal);
+                    if (RT_UNLIKELY(rc != VINF_SUCCESS || iImpOrdinal > UINT16_MAX))
+                        return VERR_LDR_BAD_FORWARDER;
+                }
+
+                /*
+                 * Enough buffer?
+                 */
+                uint32_t cbNeeded = RT_OFFSETOF(RTLDRIMPORTINFO, szModule[iImpOrdinal != UINT32_MAX ? offDot + 1 : off + 1]);
+                if (cbNeeded > cbInfo)
+                    return VERR_BUFFER_OVERFLOW;
+
+                /*
+                 * Fill in the return buffer.
+                 */
+                pInfo->iSelfOrdinal = iOrdinal;
+                pInfo->iOrdinal     = iImpOrdinal;
+                if (iImpOrdinal == UINT32_MAX)
+                {
+                    pInfo->pszSymbol = &pInfo->szModule[offDot + 1];
+                    memcpy(&pInfo->szModule[0], pszForwarder, off + 1);
+                }
+                else
+                {
+                    pInfo->pszSymbol = NULL;
+                    memcpy(&pInfo->szModule[0], pszForwarder, offDot);
+                }
+                pInfo->szModule[offDot] = '\0';
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_LDR_BAD_FORWARDER;
+        }
+        else
+            rc = VERR_LDR_NOT_FORWARDER;
+    }
+    return rc;
 }
 
 
@@ -2541,6 +2659,7 @@ static const RTLDROPSPE s_rtldrPE32Ops =
         rtldrPEGetBits,
         rtldrPERelocate,
         rtldrPEGetSymbolEx,
+        rtldrPE_QueryForwarderInfo,
         rtldrPE_EnumDbgInfo,
         rtldrPE_EnumSegments,
         rtldrPE_LinkAddressToSegOffset,
@@ -2574,6 +2693,7 @@ static const RTLDROPSPE s_rtldrPE64Ops =
         rtldrPEGetBits,
         rtldrPERelocate,
         rtldrPEGetSymbolEx,
+        rtldrPE_QueryForwarderInfo,
         rtldrPE_EnumDbgInfo,
         rtldrPE_EnumSegments,
         rtldrPE_LinkAddressToSegOffset,

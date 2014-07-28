@@ -175,9 +175,11 @@ static int testLdrOne(const char *pszFilename)
         {
             /* get the pointer. */
             RTUINTPTR Value;
-            rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits, "DisasmTest1", &Value);
+            rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
+                                  UINT32_MAX, "DisasmTest1", &Value);
             if (rc == VERR_SYMBOL_NOT_FOUND)
-                rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits, "_DisasmTest1", &Value);
+                rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
+                                      UINT32_MAX, "_DisasmTest1", &Value);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstLdr-4: Failed to get symbol \"DisasmTest1\" from load #%d: %Rrc\n", i, rc);

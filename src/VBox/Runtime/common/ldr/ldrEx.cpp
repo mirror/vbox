@@ -287,46 +287,29 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddre
 RT_EXPORT_SYMBOL(RTLdrRelocate);
 
 
-/**
- * Gets the address of a named exported symbol.
- *
- * This function differs from the plain one in that it can deal with
- * both GC and HC address sizes, and that it can calculate the symbol
- * value relative to any given base address.
- *
- * @returns iprt status code.
- * @param   hLdrMod         The loader module handle.
- * @param   pvBits          Optional pointer to the loaded image.
- *                          Set this to NULL if no RTLdrGetBits() processed image bits are available.
- *                          Not supported for RTLdrLoad() images and must be NULL.
- * @param   BaseAddress     Image load address.
- *                          Not supported for RTLdrLoad() images and must be 0.
- * @param   pszSymbol       Symbol name.
- * @param   pValue          Where to store the symbol value.
- */
-RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress, const char *pszSymbol,
-                             PRTLDRADDR pValue)
+RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress,
+                             uint32_t iOrdinal, const char *pszSymbol, PRTLDRADDR pValue)
 {
-    LogFlow(("RTLdrGetSymbolEx: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr pszSymbol=%p:{%s} pValue\n",
-             hLdrMod, pvBits, BaseAddress, pszSymbol, pszSymbol, pValue));
+    LogFlow(("RTLdrGetSymbolEx: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr iOrdinal=%#x pszSymbol=%p:{%s} pValue\n",
+             hLdrMod, pvBits, BaseAddress, iOrdinal, pszSymbol, pszSymbol, pValue));
 
     /*
      * Validate input.
      */
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
-    AssertMsgReturn(!pvBits || VALID_PTR(pvBits), ("pvBits=%p\n", pvBits), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pszSymbol, ("pszSymbol=%p\n", pszSymbol), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pValue), ("pValue=%p\n", pvBits), VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pvBits, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszSymbol, VERR_INVALID_POINTER);
+    AssertReturn(pszSymbol || iOrdinal != UINT32_MAX, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pValue, VERR_INVALID_POINTER);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
-    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
 
     /*
      * Do it.
      */
     int rc;
     if (pMod->pOps->pfnGetSymbolEx)
-        rc = pMod->pOps->pfnGetSymbolEx(pMod, pvBits, BaseAddress, pszSymbol, pValue);
-    else if (!BaseAddress && !pvBits)
+        rc = pMod->pOps->pfnGetSymbolEx(pMod, pvBits, BaseAddress, iOrdinal, pszSymbol, pValue);
+    else if (!BaseAddress && !pvBits && iOrdinal == UINT32_MAX)
     {
         void *pvValue;
         rc = pMod->pOps->pfnGetSymbol(pMod, pszSymbol, &pvValue);
@@ -339,6 +322,46 @@ RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR Bas
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLdrGetSymbolEx);
+
+
+RTDECL(int) RTLdrQueryForwarderInfo(RTLDRMOD hLdrMod, const void *pvBits, uint32_t iOrdinal, const char *pszSymbol,
+                                    PRTLDRIMPORTINFO pInfo, size_t cbInfo)
+{
+    LogFlow(("RTLdrQueryForwarderInfo: hLdrMod=%RTldrm pvBits=%p iOrdinal=%#x pszSymbol=%p:{%s} pInfo=%p cbInfo=%zu\n",
+             hLdrMod, pvBits, iOrdinal, pszSymbol, pszSymbol, pInfo, cbInfo));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pvBits, VERR_INVALID_POINTER);
+    AssertMsgReturn(pszSymbol, ("pszSymbol=%p\n", pszSymbol), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pInfo, VERR_INVALID_PARAMETER);
+    AssertReturn(cbInfo >= sizeof(*pInfo), VERR_INVALID_PARAMETER);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnQueryForwarderInfo)
+    {
+        rc = pMod->pOps->pfnQueryForwarderInfo(pMod, pvBits, iOrdinal, pszSymbol, pInfo, cbInfo);
+        if (RT_SUCCESS(rc))
+            LogFlow(("RTLdrQueryForwarderInfo: returns %Rrc pInfo={%#x,%#x,%s,%s}\n", rc,
+                     pInfo->iSelfOrdinal, pInfo->iOrdinal, pInfo->pszSymbol, pInfo->szModule));
+        else
+            LogFlow(("RTLdrQueryForwarderInfo: returns %Rrc\n", rc));
+    }
+    else
+    {
+        LogFlow(("RTLdrQueryForwarderInfo: returns VERR_NOT_SUPPORTED\n"));
+        rc = VERR_NOT_SUPPORTED;
+    }
+    return rc;
+
+}
+RT_EXPORT_SYMBOL(RTLdrQueryForwarderInfo);
 
 
 /**

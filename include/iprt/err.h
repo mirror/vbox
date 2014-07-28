@@ -2161,6 +2161,17 @@ RT_C_DECLS_END
 #define VERR_LDRVI_PAGE_HASH_MISMATCH               (-22928)
 /** Image hash mismatch. */
 #define VERR_LDRVI_IMAGE_HASH_MISMATCH              (-22929)
+
+/** Cannot resolve symbol because it's a forwarder. */
+#define VERR_LDR_FORWARDER                          (-22950)
+/** The symbol is not a forwarder. */
+#define VERR_LDR_NOT_FORWARDER                      (-22951)
+/** Malformed forwarder entry. */
+#define VERR_LDR_BAD_FORWARDER                      (-22952)
+/** Too long forwarder chain or there is a loop. */
+#define VERR_LDR_FORWARDER_CHAIN_TOO_LONG           (-22953)
+/** Support for forwarders has not been implemented. */
+#define VERR_LDR_FORWARDERS_NOT_SUPPORTED           (-22954)
 /** @} */
 
 /** @name RTCrX509 status codes.

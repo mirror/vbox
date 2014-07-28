@@ -921,8 +921,37 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
 }
 
 
+/**
+ * Worker for pfnGetSymbolEx.
+ */
+static int RTLDRELF_NAME(ReturnSymbol)(PRTLDRMODELF pThis, const Elf_Sym *pSym, Elf_Addr uBaseAddr, PRTUINTPTR pValue)
+{
+    Elf_Addr Value;
+    if (pSym->st_shndx == SHN_ABS)
+        /* absolute symbols are not subject to any relocation. */
+        Value = pSym->st_value;
+    else if (pSym->st_shndx < pThis->Ehdr.e_shnum)
+    {
+        if (pThis->Ehdr.e_type == ET_REL)
+            /* relative to the section. */
+            Value = uBaseAddr + pSym->st_value + pThis->paShdrs[pSym->st_shndx].sh_addr;
+        else /* Fixed up for link address. */
+            Value = uBaseAddr + pSym->st_value - pThis->LinkAddress;
+    }
+    else
+    {
+        AssertMsgFailed(("Arg! pSym->st_shndx=%d\n", pSym->st_shndx));
+        return VERR_BAD_EXE_FORMAT;
+    }
+    AssertMsgReturn(Value == (RTUINTPTR)Value, (FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG);
+    *pValue = (RTUINTPTR)Value;
+    return VINF_SUCCESS;
+}
+
+
 /** @copydoc RTLDROPS::pfnGetSymbolEx */
-static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress, const char *pszSymbol, RTUINTPTR *pValue)
+static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress,
+                                                    uint32_t iOrdinal, const char *pszSymbol, RTUINTPTR *pValue)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
     NOREF(pvBits);
@@ -930,8 +959,8 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
     /*
      * Validate the input.
      */
-    Elf_Addr BaseAddr = (Elf_Addr)BaseAddress;
-    AssertMsgReturn((RTUINTPTR)BaseAddr == BaseAddress, ("#RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
+    Elf_Addr uBaseAddr = (Elf_Addr)BaseAddress;
+    AssertMsgReturn((RTUINTPTR)uBaseAddr == BaseAddress, ("#RTptr", BaseAddress), VERR_IMAGE_BASE_TOO_HIGH);
 
     /*
      * Map the image bits if not already done and setup pointer into it.
@@ -943,50 +972,41 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
     /*
      * Calc all kinds of pointers before we start iterating the symbol table.
      */
-    const char         *pStr  = pModElf->pStr;
     const Elf_Sym     *paSyms = pModElf->paSyms;
     unsigned            cSyms = pModElf->cSyms;
-    for (unsigned iSym = 1; iSym < cSyms; iSym++)
+    if (iOrdinal == UINT32_MAX)
     {
-        /* Undefined symbols are not exports, they are imports. */
-        if (    paSyms[iSym].st_shndx != SHN_UNDEF
-            &&  (   ELF_ST_BIND(paSyms[iSym].st_info) == STB_GLOBAL
-                 || ELF_ST_BIND(paSyms[iSym].st_info) == STB_WEAK))
+        const char     *pStr  = pModElf->pStr;
+        for (unsigned iSym = 1; iSym < cSyms; iSym++)
         {
-            /* Validate the name string and try match with it. */
-            if (paSyms[iSym].st_name < pModElf->cbStr)
+            /* Undefined symbols are not exports, they are imports. */
+            if (    paSyms[iSym].st_shndx != SHN_UNDEF
+                &&  (   ELF_ST_BIND(paSyms[iSym].st_info) == STB_GLOBAL
+                     || ELF_ST_BIND(paSyms[iSym].st_info) == STB_WEAK))
             {
-                if (!strcmp(pszSymbol, pStr + paSyms[iSym].st_name))
+                /* Validate the name string and try match with it. */
+                if (paSyms[iSym].st_name < pModElf->cbStr)
                 {
-                    /* matched! */
-                    Elf_Addr Value;
-                    if (paSyms[iSym].st_shndx == SHN_ABS)
-                        /* absolute symbols are not subject to any relocation. */
-                        Value = paSyms[iSym].st_value;
-                    else if (paSyms[iSym].st_shndx < pModElf->Ehdr.e_shnum)
+                    if (!strcmp(pszSymbol, pStr + paSyms[iSym].st_name))
                     {
-                        if (pModElf->Ehdr.e_type == ET_REL)
-                            /* relative to the section. */
-                            Value = BaseAddr + paSyms[iSym].st_value + pModElf->paShdrs[paSyms[iSym].st_shndx].sh_addr;
-                        else /* Fixed up for link address. */
-                            Value = BaseAddr + paSyms[iSym].st_value - pModElf->LinkAddress;
+                        /* matched! */
+                        return RTLDRELF_NAME(ReturnSymbol)(pModElf, &paSyms[iSym], uBaseAddr, pValue);
                     }
-                    else
-                    {
-                        AssertMsgFailed(("Arg. paSyms[iSym].st_shndx=%d\n", paSyms[iSym].st_shndx));
-                        return VERR_BAD_EXE_FORMAT;
-                    }
-                    AssertMsgReturn(Value == (RTUINTPTR)Value, (FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG);
-                    *pValue = (RTUINTPTR)Value;
-                    return VINF_SUCCESS;
+                }
+                else
+                {
+                    AssertMsgFailed(("String outside string table! iSym=%d paSyms[iSym].st_name=%#x\n", iSym, paSyms[iSym].st_name));
+                    return VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET;
                 }
             }
-            else
-            {
-                AssertMsgFailed(("String outside string table! iSym=%d paSyms[iSym].st_name=%#x\n", iSym, paSyms[iSym].st_name));
-                return VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET;
-            }
         }
+    }
+    else if (iOrdinal < cSyms)
+    {
+        if (    paSyms[iOrdinal].st_shndx != SHN_UNDEF
+            &&  (   ELF_ST_BIND(paSyms[iOrdinal].st_info) == STB_GLOBAL
+                 || ELF_ST_BIND(paSyms[iOrdinal].st_info) == STB_WEAK))
+            return RTLDRELF_NAME(ReturnSymbol)(pModElf, &paSyms[iOrdinal], uBaseAddr, pValue);
     }
 
     return VERR_SYMBOL_NOT_FOUND;
@@ -1393,6 +1413,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(GetBits),
     RTLDRELF_NAME(Relocate),
     RTLDRELF_NAME(GetSymbolEx),
+    NULL /*pfnQueryForwarderInfo*/,
     RTLDRELF_NAME(EnumDbgInfo),
     RTLDRELF_NAME(EnumSegments),
     RTLDRELF_NAME(LinkAddressToSegOffset),

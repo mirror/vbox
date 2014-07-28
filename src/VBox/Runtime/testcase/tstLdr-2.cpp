@@ -112,7 +112,7 @@ static int testLdrOne(const char *pszFilename)
             if (RT_SUCCESS(rc))
             {
                 RTUINTPTR Value;
-                rc = RTLdrGetSymbolEx(hLdrMod, pvBits, Addr, "Entrypoint", &Value);
+                rc = RTLdrGetSymbolEx(hLdrMod, pvBits, Addr, UINT32_MAX, "Entrypoint", &Value);
                 if (RT_SUCCESS(rc))
                 {
                     unsigned off = Value - Addr;

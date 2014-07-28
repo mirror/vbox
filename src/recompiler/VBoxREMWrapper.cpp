@@ -2042,7 +2042,7 @@ static int remLoadLinuxObj(void)
                 for (i = 0; i < RT_ELEMENTS(g_aExports); i++)
                 {
                     RTUINTPTR Value;
-                    rc = RTLdrGetSymbolEx(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, g_aExports[i].pszName, &Value);
+                    rc = RTLdrGetSymbolEx(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, UINT32_MAX, g_aExports[i].pszName, &Value);
                     AssertMsgRC(rc, ("%s rc=%Rrc\n", g_aExports[i].pszName, rc));
                     if (RT_FAILURE(rc))
                         break;

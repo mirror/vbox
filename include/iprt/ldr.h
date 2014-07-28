@@ -471,6 +471,8 @@ RTDECL(int) RTLdrClose(RTLDRMOD hLdrMod);
  * Gets the address of a named exported symbol.
  *
  * @returns iprt status code.
+ * @retval  VERR_LDR_FORWARDER forwarder, use pfnQueryForwarderInfo. Buffer size
+ *          hint in @a ppvValue.
  * @param   hLdrMod         The loader module handle.
  * @param   pszSymbol       Symbol name.
  * @param   ppvValue        Where to store the symbol value. Note that this is restricted to the
@@ -486,18 +488,21 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
  * value relative to any given base address.
  *
  * @returns iprt status code.
+ * @retval  VERR_LDR_FORWARDER forwarder, use pfnQueryForwarderInfo. Buffer size
+ *          hint in @a pValue.
  * @param   hLdrMod         The loader module handle.
  * @param   pvBits          Optional pointer to the loaded image.
  *                          Set this to NULL if no RTLdrGetBits() processed image bits are available.
  *                          Not supported for RTLdrLoad() images.
  * @param   BaseAddress     Image load address.
  *                          Not supported for RTLdrLoad() images.
+ * @param   iOrdinal        Symbol ordinal number, pass UINT32_MAX if pszSymbol
+ *                          should be used instead.
  * @param   pszSymbol       Symbol name.
  * @param   pValue          Where to store the symbol value.
  */
-RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress, const char *pszSymbol,
-                             PRTLDRADDR pValue);
-
+RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress,
+                             uint32_t iOrdinal, const char *pszSymbol, PRTLDRADDR pValue);
 
 /**
  * Gets the address of a named exported function.
@@ -510,6 +515,46 @@ RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR Bas
  * @param   pszSymbol       Function name.
  */
 RTDECL(PFNRT) RTLdrGetFunction(RTLDRMOD hLdrMod, const char *pszSymbol);
+
+/**
+ * Information about an imported symbol.
+ */
+typedef struct RTLDRIMPORTINFO
+{
+    /** Symbol table entry number, UINT32_MAX if not available. */
+    uint32_t        iSelfOrdinal;
+    /** The ordinal of the imported symbol in szModule, UINT32_MAX if not used. */
+    uint32_t        iOrdinal;
+    /** The symbol name, NULL if not used.  This points to the char immediately
+     *  following szModule when returned by RTLdrQueryForwarderInfo. */
+    const char     *pszSymbol;
+    /** The name of the module being imported from. */
+    char            szModule[1];
+} RTLDRIMPORTINFO;
+/** Pointer to information about an imported symbol. */
+typedef RTLDRIMPORTINFO *PRTLDRIMPORTINFO;
+/** Pointer to const information about an imported symbol. */
+typedef RTLDRIMPORTINFO const *PCRTLDRIMPORTINFO;
+
+/**
+ * Query information about a forwarded symbol.
+ *
+ * @returns IPRT status code.
+ * @param   hLdrMod         The loader module handle.
+ * @param   pvBits          Optional pointer to the loaded image.
+ *                          Set this to NULL if no RTLdrGetBits() processed image bits are available.
+ *                          Not supported for RTLdrLoad() images.
+ * @param   iOrdinal        Symbol ordinal number, pass UINT32_MAX if pszSymbol
+ *                          should be used instead.
+ * @param   pszSymbol       Symbol name.
+ * @param   pInfo           Where to return the forwarder info.
+ * @param   cbInfo          Size of the buffer @a pInfo points to.  For a size
+ *                          hint, see @a pValue when RTLdrGetSymbolEx returns
+ *                          VERR_LDR_FORWARDER.
+ */
+RTDECL(int) RTLdrQueryForwarderInfo(RTLDRMOD hLdrMod, const void *pvBits, uint32_t iOrdinal, const char *pszSymbol,
+                                    PRTLDRIMPORTINFO pInfo, size_t cbInfo);
+
 
 /**
  * Gets the size of the loaded image.

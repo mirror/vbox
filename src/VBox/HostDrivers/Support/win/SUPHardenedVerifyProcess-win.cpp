@@ -37,9 +37,11 @@
 
 #include <VBox/sup.h>
 #include <VBox/err.h>
+#include <iprt/alloca.h>
 #include <iprt/ctype.h>
-#include <iprt/zero.h>
 #include <iprt/param.h>
+#include <iprt/string.h>
+#include <iprt/zero.h>
 
 #ifdef IN_RING0
 # include "SUPDrvInternal.h"
@@ -133,6 +135,8 @@ typedef struct SUPHNTVPSTATE
     int                     rcResult;
     /** Number of images in aImages. */
     uint32_t                cImages;
+    /** The index of the last image we looked up. */
+    uint32_t                iImageHint;
     /** The process handle. */
     HANDLE                  hProcess;
     /** Images found in the process.
@@ -511,6 +515,149 @@ static int supHardNtVpCheckSectionProtection(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAG
 }
 
 
+static DECLINLINE(bool) supHardNtVpIsModuleNameMatch(PSUPHNTVPIMAGE pImage, const char *pszModule)
+{
+    if (pImage->fDll)
+    {
+        const char *pszImageNm = pImage->pszName;
+        for (;;)
+        {
+            char chLeft  = *pszImageNm++;
+            char chRight = *pszModule++;
+            if (chLeft != chRight)
+            {
+                Assert(chLeft == RT_C_TO_LOWER(chLeft));
+                if (chLeft != RT_C_TO_LOWER(chRight))
+                {
+                    if (   chRight == '\0'
+                        && chLeft  == '.'
+                        && pszImageNm[0] == 'd'
+                        && pszImageNm[1] == 'l'
+                        && pszImageNm[2] == 'l'
+                        && pszImageNm[3] == '\0')
+                        return true;
+                    break;
+                }
+            }
+
+            if (chLeft == '\0')
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
+/**
+ * Worker for supHardNtVpGetImport that looks up a module in the module table.
+ *
+ * @returns Pointer to the module if found, NULL if not found.
+ * @param   pThis               The process validator instance.
+ * @param   pszModule           The name of the module we're looking for.
+ */
+static PSUPHNTVPIMAGE supHardNtVpFindModule(PSUPHNTVPSTATE pThis, const char *pszModule)
+{
+    /*
+     * Check out the hint first.
+     */
+    if (   pThis->iImageHint < pThis->cImages
+        && supHardNtVpIsModuleNameMatch(&pThis->aImages[pThis->iImageHint], pszModule))
+        return &pThis->aImages[pThis->iImageHint];
+
+    /*
+     * Linear array search next.
+     */
+    uint32_t i = pThis->cImages;
+    while (i-- > 0)
+        if (supHardNtVpIsModuleNameMatch(&pThis->aImages[i], pszModule))
+        {
+            pThis->iImageHint = i;
+            return &pThis->aImages[i];
+        }
+
+    /* No cigar. */
+    return NULL;
+}
+
+
+/**
+ * @callback_method_impl{FNRTLDRIMPORT}
+ */
+static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
+                                              PRTLDRADDR pValue, void *pvUser)
+{
+    /*SUP_DPRINTF(("supHardNtVpGetImport: %s / %#x / %s.\n", pszModule, uSymbol, pszSymbol));*/
+    PSUPHNTVPSTATE pThis = (PSUPHNTVPSTATE)pvUser;
+
+    int rc = VERR_MODULE_NOT_FOUND;
+    PSUPHNTVPIMAGE pImage = supHardNtVpFindModule(pThis, pszModule);
+    if (pImage)
+    {
+        rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, uSymbol, pszSymbol, pValue);
+        if (RT_SUCCESS(rc))
+            return rc;
+    }
+    /*
+     * API set hacks.
+     */
+    else if (!RTStrNICmp(pszModule, RT_STR_TUPLE("api-ms-win-")))
+    {
+        static const char * const s_apszDlls[] = { "ntdll.dll", "kernelbase.dll", "kernel32.dll" };
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_apszDlls); i++)
+        {
+            pImage = supHardNtVpFindModule(pThis, s_apszDlls[i]);
+            if (pImage)
+            {
+                rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, uSymbol, pszSymbol, pValue);
+                if (RT_SUCCESS(rc))
+                    return rc;
+                if (rc != VERR_SYMBOL_NOT_FOUND)
+                    break;
+            }
+        }
+    }
+
+    /*
+     * Deal with forwarders.
+     * ASSUMES no forwarders thru any api-ms-win-core-*.dll.
+     * ASSUMES forwarders are resolved after one redirection.
+     */
+    if (rc == VERR_LDR_FORWARDER)
+    {
+        size_t           cbInfo = RT_MIN((uint32_t)*pValue, sizeof(RTLDRIMPORTINFO) + 32);
+        PRTLDRIMPORTINFO pInfo  = (PRTLDRIMPORTINFO)alloca(cbInfo);
+        rc = RTLdrQueryForwarderInfo(pImage->hLdrMod, NULL, uSymbol, pszSymbol, pInfo, cbInfo);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VERR_MODULE_NOT_FOUND;
+            pImage = supHardNtVpFindModule(pThis, pInfo->szModule);
+            if (pImage)
+            {
+                rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, pInfo->iOrdinal, pInfo->pszSymbol, pValue);
+                if (RT_SUCCESS(rc))
+                    return rc;
+
+                SUP_DPRINTF(("supHardNtVpGetImport: Failed to find symbol '%s' in '%s' (forwarded from %s / %s): %Rrc\n",
+                             pInfo->pszSymbol, pInfo->szModule, pszModule, pszSymbol, rc));
+                if (rc == VERR_LDR_FORWARDER)
+                    rc = VERR_LDR_FORWARDER_CHAIN_TOO_LONG;
+            }
+            else
+                SUP_DPRINTF(("supHardNtVpGetImport: Failed to find forwarder module '%s' (%#x / %s; originally %s / %#x / %s): %Rrc\n",
+                             pInfo->szModule, pInfo->iOrdinal, pInfo->pszSymbol, pszModule, uSymbol, pszSymbol, rc));
+        }
+        else
+            SUP_DPRINTF(("supHardNtVpGetImport: RTLdrQueryForwarderInfo failed on symbol %#x/'%s' in '%s': %Rrc\n",
+                         uSymbol, pszSymbol, pszModule, rc));
+    }
+    else
+        SUP_DPRINTF(("supHardNtVpGetImport: Failed to find symbol %#x / '%s' in '%s': %Rrc\n",
+                     uSymbol, pszSymbol, pszModule, rc));
+    return rc;
+}
+
+
 /**
  * Compares process memory with the disk content.
  *
@@ -647,8 +794,10 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
     if (RT_UNLIKELY(!pImage->pbBits))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_MEMORY,
                                    "%s: Error allocating %#x bytes for fixed up image bits.", pImage->pszName, cbImage);
-    rc = RTLdrGetBits(pImage->hLdrMod, pImage->pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis);
-    /**@todo resolve import when not in SUPHARDNTVPKIND_CHILD_PURIFICATION mode. */
+    if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
+        rc = RTLdrGetBits(pImage->hLdrMod, pImage->pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis);
+    else
+        rc = RTLdrGetBits(pImage->hLdrMod, pImage->pbBits, pImage->uImageBase, supHardNtVpGetImport, pThis);
     if (RT_FAILURE(rc))
         return supHardNtVpSetInfo2(pThis, rc, "%s: RTLdrGetBits failed: %Rrc", pImage->pszName, rc);
 
@@ -665,14 +814,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      * Figure out areas we should skip during comparison.
      */
     uint32_t         cSkipAreas = 0;
-    SUPHNTVPSKIPAREA aSkipAreas[2];
+    SUPHNTVPSKIPAREA aSkipAreas[3];
     if (pImage->fNtCreateSectionPatch)
     {
         RTLDRADDR uValue;
         if (pThis->enmKind == SUPHARDNTVPKIND_VERIFY_ONLY)
         {
             /* Ignore our NtCreateSection hack. */
-            rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, "NtCreateSection", &uValue);
+            rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, UINT32_MAX, "NtCreateSection", &uValue);
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'NtCreateSection': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
@@ -680,7 +829,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         }
 
         /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
-        rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, "LdrSystemDllInitBlock", &uValue);
+        rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, UINT32_MAX, "LdrSystemDllInitBlock", &uValue);
         if (RT_SUCCESS(rc))
         {
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
@@ -757,7 +906,8 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
 
             /* The section bits, only child purification verifies all bits . */
             if (   pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION
-                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE)) )
+                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
+                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE)) == IMAGE_SCN_MEM_READ)
             {
                 rc = VINF_SUCCESS;
                 if (uRva < uSectRva && !pImage->fApiSetSchemaOnlySection1) /* Any gap worth checking? */
@@ -1006,7 +1156,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
     if (!pImage->pszName)
     {
         /*
-         * Not a known DLL, executable?
+         * Not a known DLL, is it a known executable?
          */
         for (uint32_t i = 0; i < RT_ELEMENTS(g_apszSupNtVpAllowedVmExes); i++)
             if (supHardNtVpAreNamesEqual(g_apszSupNtVpAllowedVmExes[i], pwszFilename))
