@@ -804,6 +804,46 @@ protected:
     }
 };
 
+class UIActionMenuNetworkAdapters : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuNetworkAdapters(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png") {}
+
+protected:
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Network"));
+    }
+};
+
+class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowNetworkSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("NetworkSettingsDialog");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Network Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of network adapters"));
+    }
+};
+
 class UIActionMenuUSBDevices : public UIActionMenu
 {
     Q_OBJECT;
@@ -898,46 +938,6 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Drag'n'Drop"));
-    }
-};
-
-class UIActionMenuNetworkAdapters : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionMenuNetworkAdapters(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png") {}
-
-protected:
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "Network"));
-    }
-};
-
-class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimpleShowNetworkSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png") {}
-
-protected:
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("NetworkSettingsDialog");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Network Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of network adapters"));
     }
 };
 
@@ -1286,7 +1286,7 @@ bool UIActionPoolRuntime::isAllowedInMenuMachine(RuntimeMenuMachineActionType ty
 void UIActionPoolRuntime::setRestrictionForMenuMachine(UIActionRestrictionLevel level, RuntimeMenuMachineActionType restriction)
 {
     m_restrictedActionsMenuMachine[level] = restriction;
-    updateMenuMachine();
+    m_invalidations << UIActionIndexRT_M_Machine;
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuView(RuntimeMenuViewActionType type) const
@@ -1300,8 +1300,7 @@ bool UIActionPoolRuntime::isAllowedInMenuView(RuntimeMenuViewActionType type) co
 void UIActionPoolRuntime::setRestrictionForMenuView(UIActionRestrictionLevel level, RuntimeMenuViewActionType restriction)
 {
     m_restrictedActionsMenuView[level] = restriction;
-    updateMenuView();
-    updateMenuViewPopup();
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuDevices(RuntimeMenuDevicesActionType type) const
@@ -1315,7 +1314,7 @@ bool UIActionPoolRuntime::isAllowedInMenuDevices(RuntimeMenuDevicesActionType ty
 void UIActionPoolRuntime::setRestrictionForMenuDevices(UIActionRestrictionLevel level, RuntimeMenuDevicesActionType restriction)
 {
     m_restrictedActionsMenuDevices[level] = restriction;
-    updateMenuDevices();
+    m_invalidations << UIActionIndexRT_M_Devices;
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1330,7 +1329,7 @@ bool UIActionPoolRuntime::isAllowedInMenuDebug(RuntimeMenuDebuggerActionType typ
 void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction)
 {
     m_restrictedActionsMenuDebug[level] = restriction;
-    updateMenuDebug();
+    m_invalidations << UIActionIndexRT_M_Debug;
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -1338,10 +1337,7 @@ void UIActionPoolRuntime::setCurrentFrameBufferSizes(const QList<QSize> &sizes, 
 {
     m_sizes = sizes;
     if (fUpdateMenu)
-    {
-        updateMenuView();
-        updateMenuViewPopup();
-    }
+        m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
 void UIActionPoolRuntime::sltPrepareMenuViewResize()
@@ -1406,13 +1402,13 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowStorageSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleShowNetworkSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuUSBDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_USBDevices_S_Settings] = new UIActionSimpleShowUSBDevicesSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_WebCams] = new UIActionMenuWebCams(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard] = new UIActionMenuSharedClipboard(this);
     m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuDragAndDrop(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleShowNetworkSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuSharedFolders(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_T_VRDEServer] = new UIActionToggleVRDEServer(this);
@@ -1446,8 +1442,8 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices].ptfr =                 &UIActionPoolRuntime::updateMenuDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_HardDrives].ptfr =    &UIActionPoolRuntime::updateMenuDevicesHardDrives;
-    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices].ptfr =    &UIActionPoolRuntime::updateMenuDevicesUSBDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network].ptfr =       &UIActionPoolRuntime::updateMenuDevicesNetwork;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices].ptfr =    &UIActionPoolRuntime::updateMenuDevicesUSBDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedFolders].ptfr = &UIActionPoolRuntime::updateMenuDevicesSharedFolders;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_VideoCapture].ptfr =  &UIActionPoolRuntime::updateMenuDevicesVideoCapture;
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1509,9 +1505,9 @@ void UIActionPoolRuntime::updateConfiguration()
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_HardDrivesSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_USBDevicesSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_NetworkSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_USBDevicesSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_SharedFoldersSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
@@ -2104,6 +2100,16 @@ void UIActionPoolRuntime::updateMenuDevices()
         fSeparator1 = true;
     }
 
+    /* 'Network' submenu: */
+    const bool fAllowToShowActionNetwork = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_Network);
+    action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(fAllowToShowActionNetwork);
+    if (fAllowToShowActionNetwork)
+    {
+        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network));
+        fSeparator1 = true;
+    }
+    updateMenuDevicesNetwork();
+
     /* 'USB Devices' submenu: */
     const bool fAllowToShowActionUSBDevices = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevices);
     action(UIActionIndexRT_M_Devices_M_USBDevices)->setEnabled(fAllowToShowActionUSBDevices);
@@ -2140,16 +2146,6 @@ void UIActionPoolRuntime::updateMenuDevices()
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_DragAndDrop));
         fSeparator1 = true;
     }
-
-    /* 'Network' submenu: */
-    const bool fAllowToShowActionNetwork = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_Network);
-    action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(fAllowToShowActionNetwork);
-    if (fAllowToShowActionNetwork)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network));
-        fSeparator1 = true;
-    }
-    updateMenuDevicesNetwork();
 
     /* 'Shared Folders' submenu: */
     const bool fAllowToShowActionSharedFolders = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_SharedFolders);
@@ -2222,21 +2218,6 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_HardDrives);
 }
 
-void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
-{
-    /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
-    AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* 'USB Devices Settings' action: */
-    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevicesSettings);
-    action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)->setEnabled(fAllowToShowActionUSBDevicesSettings);
-    if (fAllowToShowActionUSBDevicesSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
-}
-
 void UIActionPoolRuntime::updateMenuDevicesNetwork()
 {
     /* Get corresponding menu: */
@@ -2250,6 +2231,21 @@ void UIActionPoolRuntime::updateMenuDevicesNetwork()
     action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(fAllowToShowActionNetworkSettings);
     if (fAllowToShowActionNetworkSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+}
+
+void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'USB Devices Settings' action: */
+    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevicesSettings);
+    action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)->setEnabled(fAllowToShowActionUSBDevicesSettings);
+    if (fAllowToShowActionUSBDevicesSettings)
+        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
 }
 
 void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
@@ -2283,6 +2279,12 @@ void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
     action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionVideoCaptureSettings);
     if (fAllowToShowActionVideoCaptureSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+
+    /* 'Start Video Capture' action: */
+    const bool fAllowToShowActionStartVideoCapture = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_StartVideoCapture);
+    action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionStartVideoCapture);
+    if (fAllowToShowActionStartVideoCapture)
+        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_VideoCapture);

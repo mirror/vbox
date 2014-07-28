@@ -630,7 +630,7 @@ bool UIActionPool::isAllowedInMenuHelp(MenuHelpActionType type) const
 void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction)
 {
     m_restrictedActionsMenuHelp[level] = restriction;
-    updateMenuHelp();
+    m_invalidations << UIActionIndex_Menu_Help;
 }
 
 #ifdef Q_WS_MAC
@@ -645,7 +645,7 @@ bool UIActionPool::isAllowedInMenuApplication(MenuApplicationActionType type) co
 void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, MenuApplicationActionType restriction)
 {
     m_restrictedActionsMenuApplication[level] = restriction;
-    updateMenuHelp();
+    m_invalidations << UIActionIndex_Menu_Help;
 }
 #endif /* Q_WS_MAC */
 

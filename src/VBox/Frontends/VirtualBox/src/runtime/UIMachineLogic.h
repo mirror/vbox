@@ -227,8 +227,8 @@ private slots:
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenStorageSettingsDialog();
-    void sltOpenUSBDevicesSettingsDialog();
     void sltOpenNetworkSettingsDialog();
+    void sltOpenUSBDevicesSettingsDialog();
     void sltOpenSharedFoldersSettingsDialog();
     void sltMountStorageMedium();
     void sltAttachUSBDevice();
@@ -267,6 +267,8 @@ private:
 
     /** Update 'Devices' : 'Optical/Floppy Devices' menu routine. */
     void updateMenuDevicesStorage(QMenu *pMenu);
+    /** Update 'Devices' : 'Network' menu routine. */
+    void updateMenuDevicesNetwork(QMenu *pMenu);
     /** Update 'Devices' : 'USB Devices' menu routine. */
     void updateMenuDevicesUSB(QMenu *pMenu);
     /** Update 'Devices' : 'Web Cams' menu routine. */
@@ -275,8 +277,6 @@ private:
     void updateMenuDevicesSharedClipboard(QMenu *pMenu);
     /** Update 'Devices' : 'Drag and Drop' menu routine. */
     void updateMenuDevicesDragAndDrop(QMenu *pMenu);
-    /** Update 'Devices' : 'Network' menu routine. */
-    void updateMenuDevicesNetwork(QMenu *pMenu);
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Update 'Debug' menu routine. */
     void updateMenuDebug(QMenu *pMenu);

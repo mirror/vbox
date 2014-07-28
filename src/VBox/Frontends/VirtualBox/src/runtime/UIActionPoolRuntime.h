@@ -73,13 +73,13 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Devices_M_HardDrives_S_Settings,
     UIActionIndexRT_M_Devices_M_OpticalDevices,
     UIActionIndexRT_M_Devices_M_FloppyDevices,
+    UIActionIndexRT_M_Devices_M_Network,
+    UIActionIndexRT_M_Devices_M_Network_S_Settings,
     UIActionIndexRT_M_Devices_M_USBDevices,
     UIActionIndexRT_M_Devices_M_USBDevices_S_Settings,
     UIActionIndexRT_M_Devices_M_WebCams,
     UIActionIndexRT_M_Devices_M_SharedClipboard,
     UIActionIndexRT_M_Devices_M_DragAndDrop,
-    UIActionIndexRT_M_Devices_M_Network,
-    UIActionIndexRT_M_Devices_M_Network_S_Settings,
     UIActionIndexRT_M_Devices_M_SharedFolders,
     UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings,
     UIActionIndexRT_M_Devices_T_VRDEServer,
@@ -196,10 +196,10 @@ protected:
     void updateMenuDevices();
     /** Update 'Devices' : 'Hard Drives' menu routine. */
     void updateMenuDevicesHardDrives();
-    /** Update 'Devices' : 'USB' menu routine. */
-    void updateMenuDevicesUSBDevices();
     /** Update 'Devices' : 'Network' menu routine. */
     void updateMenuDevicesNetwork();
+    /** Update 'Devices' : 'USB' menu routine. */
+    void updateMenuDevicesUSBDevices();
     /** Update 'Devices' : 'Shared Folders' menu routine. */
     void updateMenuDevicesSharedFolders();
     /** Update 'Devices' : 'Video Capture' menu routine. */
