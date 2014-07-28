@@ -322,6 +322,9 @@ RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
                     }
                     else
                         rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+
+                    if (RT_FAILURE(rc))
+                        RTMemFree(*pabSha1);
                 }
                 else
                     rc = VERR_NO_MEMORY;
@@ -336,12 +339,6 @@ RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
     }
     else
         rc = VERR_INTERNAL_ERROR;
-
-    if (RT_FAILURE(rc))
-    {
-        RTMemFree(*pabSha512);
-        RTMemFree(*pabSha1);
-    }
 
     return rc;
 }
