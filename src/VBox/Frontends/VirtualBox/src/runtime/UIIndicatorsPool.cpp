@@ -299,72 +299,6 @@ private:
     }
 };
 
-/** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
-class UIIndicatorUSB : public UISessionStateStatusBarIndicator
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorUSB(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
-    {
-        /* Assign state-icons: */
-        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
-        /* Translate finally: */
-        retranslateUi();
-    }
-
-private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
-    /** Update routine. */
-    void updateAppearance()
-    {
-        /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
-
-        /* Prepare tool-tip: */
-        QString strToolTip = QApplication::translate("UIIndicatorsPool",
-                                                     "<p style='white-space:pre'><nobr>Indicates the activity of "
-                                                     "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
-        QString strFullData;
-
-        /* Check whether there is at least one USB controller with an available proxy. */
-        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
-                           && !machine.GetUSBControllers().isEmpty()
-                           && machine.GetUSBProxyAvailable();
-        if (fUSBEnabled)
-        {
-            /* Enumerate all the USB devices: */
-            const CConsole &console = m_session.GetConsole();
-            foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
-                strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usbDevice));
-            /* Handle 'no-usb-devices' case: */
-            if (strFullData.isNull())
-                strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
-        }
-
-        /* Hide indicator if there are USB controllers: */
-        if (!fUSBEnabled)
-            hide();
-
-        /* Update tool-tip: */
-        setToolTip(strToolTip.arg(strFullData));
-        /* Update indicator state: */
-        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
-    }
-};
-
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Network indicator. */
 class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 {
@@ -485,6 +419,72 @@ private:
 
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
+};
+
+/** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
+class UIIndicatorUSB : public UISessionStateStatusBarIndicator
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorUSB(CSession &session)
+        : UISessionStateStatusBarIndicator(session)
+    {
+        /* Assign state-icons: */
+        setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/usb_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/usb_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/usb_disabled_16px.png"));
+        /* Translate finally: */
+        retranslateUi();
+    }
+
+private:
+
+    /** Retranslation routine. */
+    void retranslateUi()
+    {
+        updateAppearance();
+    }
+
+    /** Update routine. */
+    void updateAppearance()
+    {
+        /* Get machine: */
+        const CMachine machine = m_session.GetMachine();
+
+        /* Prepare tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
+                                                     "<p style='white-space:pre'><nobr>Indicates the activity of "
+                                                     "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
+        QString strFullData;
+
+        /* Check whether there is at least one USB controller with an available proxy. */
+        bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
+                           && !machine.GetUSBControllers().isEmpty()
+                           && machine.GetUSBProxyAvailable();
+        if (fUSBEnabled)
+        {
+            /* Enumerate all the USB devices: */
+            const CConsole &console = m_session.GetConsole();
+            foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
+                strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usbDevice));
+            /* Handle 'no-usb-devices' case: */
+            if (strFullData.isNull())
+                strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
+        }
+
+        /* Hide indicator if there are USB controllers: */
+        if (!fUSBEnabled)
+            hide();
+
+        /* Update tool-tip: */
+        setToolTip(strToolTip.arg(strFullData));
+        /* Update indicator state: */
+        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+    }
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Shared-folders indicator. */
@@ -1188,8 +1188,8 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_session);     break;
                 case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_session);  break;
                 case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_session);   break;
-                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
                 case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_session);       break;
+                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
                 case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_session);       break;
                 case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_session);  break;

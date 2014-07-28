@@ -861,13 +861,13 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_Network));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_WebCams));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_Network));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer));
@@ -924,10 +924,10 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenStorageSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenUSBDevicesSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkSettingsDialog()));
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltOpenUSBDevicesSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
@@ -966,11 +966,11 @@ void UIMachineLogic::prepareHandlers()
     /* Prepare menu update-handlers: */
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_OpticalDevices] =  &UIMachineLogic::updateMenuDevicesStorage;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_FloppyDevices] =   &UIMachineLogic::updateMenuDevicesStorage;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network] =         &UIMachineLogic::updateMenuDevicesNetwork;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices] =      &UIMachineLogic::updateMenuDevicesUSB;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_WebCams] =         &UIMachineLogic::updateMenuDevicesWebCams;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedClipboard] = &UIMachineLogic::updateMenuDevicesSharedClipboard;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_DragAndDrop] =     &UIMachineLogic::updateMenuDevicesDragAndDrop;
-    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network] =         &UIMachineLogic::updateMenuDevicesNetwork;
 #ifdef VBOX_WITH_DEBUGGER_GUI
     m_menuUpdateHandlers[UIActionIndexRT_M_Debug] =                     &UIMachineLogic::updateMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -1534,16 +1534,16 @@ void UIMachineLogic::sltOpenStorageSettingsDialog()
     sltOpenVMSettingsDialog("#storage");
 }
 
-void UIMachineLogic::sltOpenUSBDevicesSettingsDialog()
-{
-    /* Machine settings: Storage page: */
-    sltOpenVMSettingsDialog("#usb");
-}
-
 void UIMachineLogic::sltOpenNetworkSettingsDialog()
 {
     /* Open VM settings : Network page: */
     sltOpenVMSettingsDialog("#network");
+}
+
+void UIMachineLogic::sltOpenUSBDevicesSettingsDialog()
+{
+    /* Machine settings: Storage page: */
+    sltOpenVMSettingsDialog("#usb");
 }
 
 void UIMachineLogic::sltOpenSharedFoldersSettingsDialog()
@@ -2032,6 +2032,48 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
     }
 }
 
+void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
+{
+    /* Get and check current machine: */
+    const CMachine machine = session().GetMachine();
+    AssertReturnVoid(!machine.isNull());
+
+    /* Determine how many adapters we should display: */
+    const KChipsetType chipsetType = machine.GetChipsetType();
+    const ULONG uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
+
+    /* Enumerate existing network adapters: */
+    QMap<int, bool> adapterData;
+    for (ULONG uSlot = 0; uSlot < uCount; ++uSlot)
+    {
+        /* Get and check iterated adapter: */
+        const CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
+        AssertReturnVoid(machine.isOk() && !adapter.isNull());
+
+        /* Skip disabled adapters: */
+        if (!adapter.GetEnabled())
+            continue;
+
+        /* Remember adapter data: */
+        adapterData.insert((int)uSlot, (bool)adapter.GetCableConnected());
+    }
+
+    /* Make sure at least one adapter was enabled: */
+    if (adapterData.isEmpty())
+        return;
+
+    /* Add new actions: */
+    foreach (int iSlot, adapterData.keys())
+    {
+        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(adapterData[iSlot] ? ":/connect_16px.png": ":/disconnect_16px.png"),
+                                            adapterData.size() == 1 ? tr("Connect Network Adapter") : tr("Connect Network Adapter %1").arg(iSlot + 1),
+                                            this, SLOT(sltToggleNetworkAdapterConnection()));
+        pAction->setProperty("slot", iSlot);
+        pAction->setCheckable(true);
+        pAction->setChecked(adapterData[iSlot]);
+    }
+}
+
 void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
 {
     /* Get current host: */
@@ -2170,48 +2212,6 @@ void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
         foreach (QAction *pAction, m_pDragAndDropActions->actions())
             if (pAction->data().value<KDnDMode>() == session().GetMachine().GetDnDMode())
                 pAction->setChecked(true);
-}
-
-void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
-{
-    /* Get and check current machine: */
-    const CMachine machine = session().GetMachine();
-    AssertReturnVoid(!machine.isNull());
-
-    /* Determine how many adapters we should display: */
-    const KChipsetType chipsetType = machine.GetChipsetType();
-    const ULONG uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
-
-    /* Enumerate existing network adapters: */
-    QMap<int, bool> adapterData;
-    for (ULONG uSlot = 0; uSlot < uCount; ++uSlot)
-    {
-        /* Get and check iterated adapter: */
-        const CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
-        AssertReturnVoid(machine.isOk() && !adapter.isNull());
-
-        /* Skip disabled adapters: */
-        if (!adapter.GetEnabled())
-            continue;
-
-        /* Remember adapter data: */
-        adapterData.insert((int)uSlot, (bool)adapter.GetCableConnected());
-    }
-
-    /* Make sure at least one adapter was enabled: */
-    if (adapterData.isEmpty())
-        return;
-
-    /* Add new actions: */
-    foreach (int iSlot, adapterData.keys())
-    {
-        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(adapterData[iSlot] ? ":/connect_16px.png": ":/disconnect_16px.png"),
-                                            adapterData.size() == 1 ? tr("Connect Network Adapter") : tr("Connect Network Adapter %1").arg(iSlot + 1),
-                                            this, SLOT(sltToggleNetworkAdapterConnection()));
-        pAction->setProperty("slot", iSlot);
-        pAction->setCheckable(true);
-        pAction->setChecked(adapterData[iSlot]);
-    }
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

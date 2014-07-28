@@ -620,18 +620,19 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
         case RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
         case RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
         case RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
+        case RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
+        case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
         case RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
         case RuntimeMenuDevicesActionType_USBDevicesSettings:    strResult = "USBDevicesSettings"; break;
         case RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
         case RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
         case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
-        case RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
-        case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
         case RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
         case RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
         case RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
         case RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
         case RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
+        case RuntimeMenuDevicesActionType_StartVideoCapture:     strResult = "StartVideoCapture"; break;
         case RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
         case RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
         default:
@@ -653,18 +654,19 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
     keys << "HardDrivesSettings";    values << RuntimeMenuDevicesActionType_HardDrivesSettings;
     keys << "OpticalDevices";        values << RuntimeMenuDevicesActionType_OpticalDevices;
     keys << "FloppyDevices";         values << RuntimeMenuDevicesActionType_FloppyDevices;
+    keys << "Network";               values << RuntimeMenuDevicesActionType_Network;
+    keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
     keys << "USBDevices";            values << RuntimeMenuDevicesActionType_USBDevices;
     keys << "USBDevicesSettings";    values << RuntimeMenuDevicesActionType_USBDevicesSettings;
     keys << "WebCams";               values << RuntimeMenuDevicesActionType_WebCams;
     keys << "SharedClipboard";       values << RuntimeMenuDevicesActionType_SharedClipboard;
     keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;
-    keys << "Network";               values << RuntimeMenuDevicesActionType_Network;
-    keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
     keys << "SharedFolders";         values << RuntimeMenuDevicesActionType_SharedFolders;
     keys << "SharedFoldersSettings"; values << RuntimeMenuDevicesActionType_SharedFoldersSettings;
     keys << "VRDEServer";            values << RuntimeMenuDevicesActionType_VRDEServer;
     keys << "VideoCapture";          values << RuntimeMenuDevicesActionType_VideoCapture;
     keys << "VideoCaptureSettings";  values << RuntimeMenuDevicesActionType_VideoCaptureSettings;
+    keys << "StartVideoCapture";     values << RuntimeMenuDevicesActionType_StartVideoCapture;
     keys << "InstallGuestTools";     values << RuntimeMenuDevicesActionType_InstallGuestTools;
     keys << "All";                   values << RuntimeMenuDevicesActionType_All;
     /* Invalid type for unknown words: */
