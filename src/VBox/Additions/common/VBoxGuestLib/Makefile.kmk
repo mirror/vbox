@@ -37,12 +37,15 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) && !defined(VBOX_ONLY_VALIDATIONKIT)
 endif
 LIBRARIES += \
 	VBoxGuestR3Lib \
-	VBoxGuestR3LibShared \
-  	VBoxGuestR3LibXOrg
+	VBoxGuestR3LibShared
 ifndef VBOX_ONLY_VALIDATIONKIT
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
   LIBRARIES += \
   	VBoxGuestR3LibXFree86
+ endif
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+  LIBRARIES += \
+  	VBoxGuestR3LibXOrg
  endif
 endif
 LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86 VBoxGuestR3LibShared-x86
