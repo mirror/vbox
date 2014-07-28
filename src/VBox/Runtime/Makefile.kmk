@@ -31,7 +31,7 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+ LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared
  LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
  ifdef VBOX_WITH_ADDITION_DRIVERS
   LIBRARIES += RuntimeGuestR0
@@ -86,7 +86,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared
   LIBRARIES.win.amd64 += RuntimeGuestR3-x86 RuntimeGuestR3Shared-x86
   ifdef VBOX_WITH_ADDITION_DRIVERS
    LIBRARIES += RuntimeGuestR0
@@ -1253,147 +1253,6 @@ RuntimeGuestR3Shared_INST                = $(INST_ADDITIONS_LIB)
 #
 RuntimeGuestR3Shared-x86_EXTENDS        := RuntimeGuestR3Shared
 RuntimeGuestR3Shared-x86_BLD_TRG_ARCH   := x86
-
-
-#
-# RuntimeGuestR3Mini - Minimal Guest Additions Runtime which does not require
-#                      initialization and can be linked into an .so. Intended
-#                      for X11 drivers, GRADD and similar.
-#
-RuntimeGuestR3Mini_TEMPLATE                 := VBoxGuestR3Dll
-## @todo change this to EXTEND the RuntimeGuestR3 target.
-RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
-RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3Mini_DEFS                     := \
-	$(filter-out RTCRITSECT_STRICT RT_NO_GIP RT_WITH_ICONV_CACHE, $(RuntimeR3_DEFS)) \
-	RT_MINI IN_RT_STATIC RTMEM_NO_WRAP_TO_EF_APIS
-RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
-RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
-RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
-RuntimeGuestR3Mini_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
-RuntimeGuestR3Mini_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
-RuntimeGuestR3Mini_SOURCES = \
-	common/alloc/alloc.cpp \
-	common/err/errmsg.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/log/logformat.cpp \
-	common/misc/RTAssertMsg1Weak.cpp \
-	common/misc/RTAssertMsg2.cpp \
-	common/misc/RTAssertMsg2Add.cpp \
-	common/misc/RTAssertMsg2AddWeak.cpp \
-	common/misc/RTAssertMsg2AddWeakV.cpp \
-	common/misc/RTAssertMsg2Weak.cpp \
-	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/assert.cpp \
-	common/misc/buildconfig.cpp \
-	common/misc/sanity-c.c \
-	common/misc/sanity-cpp.cpp \
-	common/misc/sg.cpp \
-	common/path/rtPathVolumeSpecLen.cpp \
-	common/path/RTPathAbsDup.cpp \
-	common/path/RTPathAbsEx.cpp \
-	common/path/RTPathAbsExDup.cpp \
-	common/path/RTPathAppend.cpp \
-	common/path/RTPathAppendEx.cpp \
-	common/path/RTPathExt.cpp \
-	common/path/RTPathFilename.cpp \
-	common/path/RTPathHasExt.cpp \
-	common/path/RTPathHasPath.cpp \
-	common/path/RTPathJoin.cpp \
-	common/path/RTPathJoinA.cpp \
-	common/path/RTPathParseSimple.cpp \
-	common/path/RTPathRealDup.cpp \
-	common/path/RTPathStripExt.cpp \
-	common/path/RTPathStripFilename.cpp \
-	common/path/RTPathStripTrailingSlash.cpp \
-	common/string/RTStrCat.cpp \
-	common/string/RTStrCatEx.cpp \
-	common/string/RTStrCatP.cpp \
-	common/string/RTStrCatPEx.cpp \
-	common/string/RTStrCmp.cpp \
-	common/string/RTStrCopy.cpp \
-	common/string/RTStrCopyEx.cpp \
-	common/string/RTStrCopyP.cpp \
-	common/string/RTStrCopyPEx.cpp \
-	common/string/RTStrNCmp.cpp \
-	common/string/RTStrNLen.cpp \
-	common/string/RTStrNLenEx.cpp \
-	common/string/RTStrStr.cpp \
-	common/string/straprintf.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatnum.cpp \
-	common/string/strformatrt.cpp \
-	common/string/strformattype.cpp \
-	common/string/stringalloc.cpp \
-	common/string/strprintf.cpp \
-	common/string/strtonum.cpp \
-	common/string/unidata-flags.cpp \
-	common/string/unidata-lower.cpp \
-	common/string/unidata-upper.cpp \
-	common/string/utf-8.cpp \
-	common/string/utf-8-case.cpp \
-	common/string/utf-8-case2.cpp \
-	common/string/utf-16.cpp \
-	common/string/utf-16-case.cpp \
-	common/string/utf-16-latin-1.cpp \
-	common/table/avlpv.cpp \
-	generic/critsect-generic.cpp \
-	generic/pathhost-generic.cpp \
-	generic/RTAssertShouldPanic-generic.cpp \
-	generic/errvars-generic.cpp \
-	r3/alloc.cpp \
-	r3/alloc-ef.cpp \
-	r3/fileio.cpp \
-	r3/fs.cpp
-RuntimeGuestR3Mini_SOURCES.freebsd = \
-	r3/posix/RTMemProtect-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-posix.cpp \
-	r3/posix/RTPathUserHome-posix.cpp \
-	r3/posix/env-posix.cpp \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/fileio2-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	r3/posix/thread2-posix.cpp \
-	common/err/errmsgxpcom.cpp
-RuntimeGuestR3Mini_SOURCES.linux = \
-	r3/posix/RTMemProtect-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-posix.cpp \
-	r3/posix/RTPathUserHome-posix.cpp \
-	r3/posix/env-posix.cpp \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/fileio2-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	r3/posix/thread2-posix.cpp \
-	common/err/errmsgxpcom.cpp
-RuntimeGuestR3Mini_SOURCES.solaris = \
-	r3/posix/RTMemProtect-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-posix.cpp \
-	r3/posix/RTPathUserHome-posix.cpp \
-	r3/posix/env-posix.cpp \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/fileio2-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/path2-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	r3/posix/thread2-posix.cpp \
-	common/err/errmsgxpcom.cpp
-RuntimeGuestR3Mini_SOURCES.win = \
-	r3/win/alloc-win.cpp \
-	r3/win/fileio-win.cpp \
-	r3/win/path-win.cpp \
-	r3/win/utf8-win.cpp \
-	r3/win/thread2-win.cpp \
-	win/errmsgwin.cpp \
-	win/RTErrConvertFromWin32.cpp
-
-# VBox specific stuff.
-RuntimeGuestR3Mini_SOURCES += \
-	VBox/logbackdoor.cpp \
-	VBox/logbackdoor-redirect.cpp
 
 
 #
