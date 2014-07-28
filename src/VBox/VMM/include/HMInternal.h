@@ -344,7 +344,7 @@ typedef struct HM
     bool                        fTPRPatchingActive;
     bool                        u8Alignment[3];
 
-    /** Host kernel flags that HM might need to know (SUPKERNFEATURES_XXX). */
+    /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    uHostKernelFeatures;
 
     /** Maximum ASID allowed. */
