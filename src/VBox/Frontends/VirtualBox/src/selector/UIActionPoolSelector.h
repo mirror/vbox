@@ -101,8 +101,8 @@ protected:
     /** Prepare connections routine. */
     virtual void prepareConnections();
 
-    /** Update configuration routine. */
-    virtual void updateConfiguration();
+    /** Update menus routine. */
+    virtual void updateMenus();
 
     /** Translation handler. */
     virtual void retranslateUi();

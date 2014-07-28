@@ -893,9 +893,6 @@ UIActionPoolSelector::UIActionPoolSelector(bool fTemporary /* = false */)
 
 void UIActionPoolSelector::preparePool()
 {
-    /* Call to base-class: */
-    UIActionPool::preparePool();
-
     /* 'File' actions: */
     m_pool[UIActionIndexST_M_File] = new UIActionMenuFile(this);
     m_pool[UIActionIndexST_M_File_S_ShowMediumManager] = new UIActionSimpleMediumManagerDialog(this);
@@ -946,8 +943,8 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleMachineSortParent(this);
 
-    /* Retranslate finally: */
-    retranslateUi();
+    /* Call to base-class: */
+    UIActionPool::preparePool();
 }
 
 void UIActionPoolSelector::prepareConnections()
@@ -956,18 +953,16 @@ void UIActionPoolSelector::prepareConnections()
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
 }
 
-void UIActionPoolSelector::updateConfiguration()
+void UIActionPoolSelector::updateMenus()
 {
-    // TODO: Make it proper way..
+    /* 'Help' menu: */
+    updateMenuHelp();
 }
 
 void UIActionPoolSelector::retranslateUi()
 {
-    /* Translate all the actions: */
-    foreach (const int iActionPoolKey, m_pool.keys())
-        m_pool[iActionPoolKey]->retranslateUi();
-    /* Update Selector UI shortcuts: */
-    updateShortcuts();
+    /* Call to base-class: */
+    UIActionPool::retranslateUi();
     /* Create temporary Runtime UI pool to do the same: */
     if (!m_fTemporary)
         UIActionPool::createTemporary(UIActionPoolType_Runtime);

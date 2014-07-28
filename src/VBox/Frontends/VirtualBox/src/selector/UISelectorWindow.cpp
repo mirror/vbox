@@ -1123,7 +1123,6 @@ void UISelectorWindow::prepareMenuBar()
 #endif /* Q_WS_MAC */
 
     /* Prepare Help-menu: */
-    prepareMenuHelp(actionPool()->action(UIActionIndex_Menu_Help)->menu());
     menuBar()->addMenu(actionPool()->action(UIActionIndex_Menu_Help)->menu());
 
     /* Setup menubar policy: */
@@ -1274,31 +1273,6 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
                      << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff);
 }
 
-void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-    /* Populate Help-menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_Contents));
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_WebSite));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_ResetWarnings));
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_NetworkAccessManager));
-    if (gEDataManager->applicationUpdateEnabled())
-        pMenu->addAction(actionPool()->action(UIActionIndex_Simple_CheckForUpdates));
-    else
-        actionPool()->action(UIActionIndex_Simple_CheckForUpdates)->setEnabled(false);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#ifndef Q_WS_MAC
-    pMenu->addSeparator();
-#endif /* !Q_WS_MAC */
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_About));
-}
-
 void UISelectorWindow::prepareStatusBar()
 {
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1427,16 +1401,6 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState), SIGNAL(triggered()), this, SLOT(sltPerformSaveAction()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown), SIGNAL(triggered()), this, SLOT(sltPerformACPIShutdownAction()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff), SIGNAL(triggered()), this, SLOT(sltPerformPowerOffAction()));
-
-    /* 'Help' menu connections: */
-    connect(actionPool()->action(UIActionIndex_Simple_Contents), SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-    connect(actionPool()->action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpWebDialog()));
-    connect(actionPool()->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()), &msgCenter(), SLOT(sltResetSuppressedMessages()));
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    connect(actionPool()->action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()), gNetworkManager, SLOT(show()));
-    connect(actionPool()->action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()), gUpdateManager, SLOT(sltForceCheck()));
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    connect(actionPool()->action(UIActionIndex_Simple_About), SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 
     /* Status-bar connections: */
     connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),

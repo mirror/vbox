@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
 class UIActionPolymorphic;
@@ -301,6 +302,11 @@ public:
     /** Returns all the actions action-pool contains. */
     QList<UIAction*> actions() const { return m_pool.values(); }
 
+    /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
+    bool isAllowedInMenuHelp(MenuHelpActionType type) const;
+    /** Defines 'Help' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction);
+
     /** Hot-key processing delegate. */
     bool processHotKey(const QKeySequence &key);
 
@@ -334,9 +340,18 @@ protected:
     void cleanup();
 
     /** Update configuration routine. */
-    virtual void updateConfiguration() = 0;
+    virtual void updateConfiguration();
+
+    /** Update menus routine. */
+    virtual void updateMenus() = 0;
+    /** Update 'Help' menu routine. */
+    virtual void updateMenuHelp();
+
     /** Update shortcuts. */
     virtual void updateShortcuts();
+
+    /** Translation handler. */
+    virtual void retranslateUi();
 
     /** General event handler. */
     virtual bool event(QEvent *pEvent);
@@ -347,6 +362,9 @@ protected:
     const bool m_fTemporary;
     /** Holds all the actions action-pool contains. */
     QMap<int, UIAction*> m_pool;
+
+    /** Holds restricted action types of the Help menu. */
+    QMap<UIActionRestrictionLevel, MenuHelpActionType> m_restrictedActionsMenuHelp;
 };
 
 #endif /* !___UIActionPool_h___ */

@@ -69,6 +69,7 @@ template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); re
 /* Declare global canConvert specializations: */
 template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
+template<> bool canConvert<MenuHelpActionType>();
 template<> bool canConvert<RuntimeMenuType>();
 #ifdef Q_WS_MAC
 template<> bool canConvert<RuntimeMenuApplicationActionType>();
@@ -79,7 +80,6 @@ template<> bool canConvert<RuntimeMenuDevicesActionType>();
 #ifdef VBOX_WITH_DEBUGGER_GUI
 template<> bool canConvert<RuntimeMenuDebuggerActionType>();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-template<> bool canConvert<RuntimeMenuHelpActionType>();
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<PreviewUpdateIntervalType>();
@@ -122,6 +122,8 @@ template<> QString toString(const SizeSuffix &sizeSuffix);
 template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix);
 template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
+template<> QString toInternalString(const MenuHelpActionType &menuHelpActionType);
+template<> MenuHelpActionType fromInternalString<MenuHelpActionType>(const QString &strMenuHelpActionType);
 template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);
 template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType);
 #ifdef Q_WS_MAC
@@ -138,8 +140,6 @@ template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesAct
 template<> QString toInternalString(const RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType);
 template<> RuntimeMenuDebuggerActionType fromInternalString<RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-template<> QString toInternalString(const RuntimeMenuHelpActionType &runtimeMenuHelpActionType);
-template<> RuntimeMenuHelpActionType fromInternalString<RuntimeMenuHelpActionType>(const QString &strRuntimeMenuHelpActionType);
 template<> QString toInternalString(const UIVisualStateType &visualStateType);
 template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> QString toString(const DetailsElementType &detailsElementType);
