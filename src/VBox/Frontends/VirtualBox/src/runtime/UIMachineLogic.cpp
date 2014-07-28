@@ -921,24 +921,11 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltAdjustWindow()));
 
     /* 'Devices' actions connections: */
+    connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenStorageSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareStorageMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareStorageMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareUSBMenu()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenUSBDevicesSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_WebCams)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareWebCamMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareSharedClipboardMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareDragAndDropMenu()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareNetworkMenu()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
@@ -954,8 +941,6 @@ void UIMachineLogic::prepareActionConnections()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_Debug)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareDebugMenu()));
     connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics), SIGNAL(triggered()),
             this, SLOT(sltShowDebugStatistics()));
     connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine), SIGNAL(triggered()),
@@ -978,10 +963,21 @@ void UIMachineLogic::prepareOtherConnections()
 
 void UIMachineLogic::prepareHandlers()
 {
-    /* Create handlers: */
+    /* Prepare menu update-handlers: */
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_OpticalDevices] =  &UIMachineLogic::updateMenuDevicesStorage;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_FloppyDevices] =   &UIMachineLogic::updateMenuDevicesStorage;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices] =      &UIMachineLogic::updateMenuDevicesUSB;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_WebCams] =         &UIMachineLogic::updateMenuDevicesWebCams;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedClipboard] = &UIMachineLogic::updateMenuDevicesSharedClipboard;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_DragAndDrop] =     &UIMachineLogic::updateMenuDevicesDragAndDrop;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network] =         &UIMachineLogic::updateMenuDevicesNetwork;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    m_menuUpdateHandlers[UIActionIndexRT_M_Debug] =                     &UIMachineLogic::updateMenuDebug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
+    /* Create keyboard/mouse handlers: */
     setKeyboardHandler(UIKeyboardHandler::create(this, visualStateType()));
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
-
     /* Update UI session values with current: */
     uisession()->setKeyboardState(keyboardHandler()->state());
     uisession()->setMouseState(mouseHandler()->state());
@@ -1168,6 +1164,13 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
     /* Call to base-class: */
     return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
+}
+
+void UIMachineLogic::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
+{
+    /* Update if there is update-handler: */
+    if (m_menuUpdateHandlers.contains(iIndex))
+        (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
 }
 
 void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
@@ -1553,64 +1556,6 @@ void UIMachineLogic::sltOpenSharedFoldersSettingsDialog()
     sltOpenVMSettingsDialog("#sharedFolders");
 }
 
-void UIMachineLogic::sltPrepareStorageMenu()
-{
-    /* Get the sender() menu: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertMsg(pMenu, ("This slot should only be called on hovering storage menu!\n"));
-    pMenu->clear();
-
-    /* Determine device-type: */
-    const QMenu *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu();
-    const QMenu *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu();
-    const KDeviceType deviceType = pMenu == pOpticalDevicesMenu ? KDeviceType_DVD :
-                                   pMenu == pFloppyDevicesMenu  ? KDeviceType_Floppy :
-                                                                  KDeviceType_Null;
-    AssertMsgReturnVoid(deviceType != KDeviceType_Null, ("Incorrect storage device-type!\n"));
-
-    /* Prepare/fill all storage menus: */
-    const CMachine machine = session().GetMachine();
-    foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
-    {
-        /* Current controller: */
-        const CStorageController controller = machine.GetStorageControllerByName(attachment.GetController());
-        /* If controller present and device-type correct: */
-        if (!controller.isNull() && attachment.GetType() == deviceType)
-        {
-            /* Current controller/attachment attributes: */
-            const QString strControllerName = controller.GetName();
-            const StorageSlot storageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
-
-            /* Prepare current storage menu: */
-            QMenu *pStorageMenu = 0;
-            /* If it will be more than one storage menu: */
-            if (pMenu->menuAction()->data().toInt() > 1)
-            {
-                /* We have to create sub-menu for each of them: */
-                pStorageMenu = new QMenu(QString("%1 (%2)").arg(strControllerName).arg(gpConverter->toString(storageSlot)), pMenu);
-                switch (controller.GetBus())
-                {
-                    case KStorageBus_IDE:    pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
-                    case KStorageBus_SATA:   pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
-                    case KStorageBus_SCSI:   pStorageMenu->setIcon(QIcon(":/scsi_16px.png")); break;
-                    case KStorageBus_Floppy: pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
-                    case KStorageBus_SAS:    pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
-                    case KStorageBus_USB:    pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
-                    default: break;
-                }
-                pMenu->addMenu(pStorageMenu);
-            }
-            /* Otherwise just use existing one: */
-            else pStorageMenu = pMenu;
-
-            /* Fill current storage menu: */
-            vboxGlobal().prepareStorageMenu(*pStorageMenu,
-                                            this, SLOT(sltMountStorageMedium()),
-                                            machine, strControllerName, storageSlot);
-        }
-    }
-}
-
 void UIMachineLogic::sltMountStorageMedium()
 {
     /* Sender action: */
@@ -1624,128 +1569,6 @@ void UIMachineLogic::sltMountStorageMedium()
 
     /* Update current machine mount-target: */
     vboxGlobal().updateMachineStorage(machine, target);
-}
-
-void UIMachineLogic::sltPrepareUSBMenu()
-{
-    /* Get and check the sender menu object: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pUSBDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
-    AssertMsg(pMenu == pUSBDevicesMenu, ("This slot should only be called on hovering USB menu!\n"));
-    Q_UNUSED(pUSBDevicesMenu);
-
-    /* Clear menu initially: */
-    pMenu->clear();
-
-    /* Add settings action: */
-    pMenu->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
-
-    /* Get current host: */
-    CHost host = vboxGlobal().host();
-
-    /* Get host USB device list: */
-    CHostUSBDeviceVector devices = host.GetUSBDevices();
-
-    /* Fill USB device menu: */
-    bool fIsUSBListEmpty = devices.size() == 0;
-    /* If device list is empty: */
-    if (fIsUSBListEmpty)
-    {
-        /* Add only one - "empty" action: */
-        QAction *pEmptyMenuAction = new QAction(pMenu);
-        pEmptyMenuAction->setEnabled(false);
-        pEmptyMenuAction->setText(tr("No USB Devices Connected"));
-        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
-        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/usb_unavailable_16px.png", ":/usb_unavailable_disabled_16px.png"));
-        pMenu->addAction(pEmptyMenuAction);
-    }
-    /* If device list is NOT empty: */
-    else
-    {
-        /* Populate menu with host USB devices: */
-        for (int i = 0; i < devices.size(); ++i)
-        {
-            /* Get current host USB device: */
-            const CHostUSBDevice& hostDevice = devices[i];
-            /* Get USB device from current host USB device: */
-            CUSBDevice device(hostDevice);
-
-            /* Create USB device action: */
-            QAction *pAttachUSBAction = new QAction(vboxGlobal().details(device), pMenu);
-            pAttachUSBAction->setCheckable(true);
-            connect(pAttachUSBAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachUSBDevice()));
-            pMenu->addAction(pAttachUSBAction);
-
-            /* Check if that USB device was already attached to this session: */
-            CConsole console = session().GetConsole();
-            CUSBDevice attachedDevice = console.FindUSBDeviceById(device.GetId());
-            pAttachUSBAction->setChecked(!attachedDevice.isNull());
-            pAttachUSBAction->setEnabled(hostDevice.GetState() != KUSBDeviceState_Unavailable);
-
-            /* Set USB attach data: */
-            pAttachUSBAction->setData(QVariant::fromValue(USBTarget(!pAttachUSBAction->isChecked(), device.GetId())));
-            pAttachUSBAction->setToolTip(vboxGlobal().toolTip(device));
-        }
-    }
-}
-
-/**
- * Prepares menu content when user hovers <b>Webcam</b> submenu of the <b>Devices</b> menu.
- * @note If host currently have no webcams attached there will be just one dummy action
- *       called <i>No Webcams Connected</i>. Otherwise there will be actions corresponding
- *       to existing webcams allowing user to attach/detach them within the guest.
- * @note In order to enumerate webcams GUI assigns #WebCamTarget object as internal data
- *       for each the enumerated webcam menu action. Corresponding #sltAttachWebCamDevice
- *       slot will be called on action triggering. It will parse assigned #WebCamTarget data.
- */
-void UIMachineLogic::sltPrepareWebCamMenu()
-{
-    /* Get and check the sender menu object: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pWebCamMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_WebCams)->menu();
-    AssertReturnVoid(pMenu == pWebCamMenu); Q_UNUSED(pWebCamMenu);
-
-    /* Clear menu initially: */
-    pMenu->clear();
-
-    /* Get current host: */
-    const CHost &host = vboxGlobal().host();
-
-    /* Get host webcams list: */
-    const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices();
-
-    /* If webcam list is empty: */
-    if (webcams.isEmpty())
-    {
-        /* Add only one - "empty" action: */
-        QAction *pEmptyMenuAction = new QAction(pMenu);
-        pEmptyMenuAction->setEnabled(false);
-        pEmptyMenuAction->setText(tr("No Webcams Connected"));
-        pEmptyMenuAction->setToolTip(tr("No supported webcams connected to the host PC"));
-        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/web_camera_unavailable_16px.png", ":/web_camera_unavailable_disabled_16px.png"));
-        pMenu->addAction(pEmptyMenuAction);
-    }
-    /* If webcam list is NOT empty: */
-    else
-    {
-        /* Populate menu with host webcams: */
-        const QVector<QString> &attachedWebcamPaths = session().GetConsole().GetEmulatedUSB().GetWebcams();
-        foreach (const CHostVideoInputDevice &webcam, webcams)
-        {
-            /* Get webcam data: */
-            const QString &strWebcamName = webcam.GetName();
-            const QString &strWebcamPath = webcam.GetPath();
-
-            /* Create/configure webcam action: */
-            QAction *pAttachWebcamAction = new QAction(strWebcamName, pMenu);
-            pAttachWebcamAction->setToolTip(vboxGlobal().toolTip(webcam));
-            pAttachWebcamAction->setCheckable(true);
-            pAttachWebcamAction->setChecked(attachedWebcamPaths.contains(strWebcamPath));
-            pAttachWebcamAction->setData(QVariant::fromValue(WebCamTarget(!pAttachWebcamAction->isChecked(), strWebcamName, strWebcamPath)));
-            connect(pAttachWebcamAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachWebCamDevice()));
-            pMenu->addAction(pAttachWebcamAction);
-        }
-    }
 }
 
 void UIMachineLogic::sltAttachUSBDevice()
@@ -1794,12 +1617,6 @@ void UIMachineLogic::sltAttachUSBDevice()
     }
 }
 
-/**
- * Attaches/detaches webcam within the guest.
- * @note In order to attach/detach webcams #sltPrepareWebCamMenu assigns #WebCamTarget object
- *       as internal data for each the enumerated webcam menu action. Corresponding data
- *       will be parsed here resulting in device attaching/detaching.
- */
 void UIMachineLogic::sltAttachWebCamDevice()
 {
     /* Get and check sender action object: */
@@ -1833,126 +1650,11 @@ void UIMachineLogic::sltAttachWebCamDevice()
     }
 }
 
-void UIMachineLogic::sltPrepareSharedClipboardMenu()
-{
-    /* Get and check the sender menu object: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pSharedClipboardMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_SharedClipboard)->menu();
-    AssertMsg(pMenu == pSharedClipboardMenu, ("This slot should only be called on hovering Shared Clipboard menu!\n"));
-    Q_UNUSED(pSharedClipboardMenu);
-
-    /* First run: */
-    if (!m_pSharedClipboardActions)
-    {
-        m_pSharedClipboardActions = new QActionGroup(this);
-        for (int i = KClipboardMode_Disabled; i < KClipboardMode_Max; ++i)
-        {
-            KClipboardMode mode = (KClipboardMode)i;
-            QAction *pAction = new QAction(gpConverter->toString(mode), m_pSharedClipboardActions);
-            pMenu->addAction(pAction);
-            pAction->setData(QVariant::fromValue(mode));
-            pAction->setCheckable(true);
-            pAction->setChecked(session().GetMachine().GetClipboardMode() == mode);
-        }
-        connect(m_pSharedClipboardActions, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltChangeSharedClipboardType(QAction*)));
-    }
-    /* Subsequent runs: */
-    else
-        foreach (QAction *pAction, m_pSharedClipboardActions->actions())
-            if (pAction->data().value<KClipboardMode>() == session().GetMachine().GetClipboardMode())
-                pAction->setChecked(true);
-}
-
 void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
 {
     /* Assign new mode (without save): */
     KClipboardMode mode = pAction->data().value<KClipboardMode>();
     session().GetMachine().SetClipboardMode(mode);
-}
-
-void UIMachineLogic::sltPrepareDragAndDropMenu()
-{
-    /* Get and check the sender menu object: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pDragAndDropMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop)->menu();
-    AssertMsg(pMenu == pDragAndDropMenu, ("This slot should only be called on hovering Drag'n'drop menu!\n"));
-    Q_UNUSED(pDragAndDropMenu);
-
-    /* First run: */
-    if (!m_pDragAndDropActions)
-    {
-        m_pDragAndDropActions = new QActionGroup(this);
-        for (int i = KDnDMode_Disabled; i < KDnDMode_Max; ++i)
-        {
-            KDnDMode mode = (KDnDMode)i;
-            QAction *pAction = new QAction(gpConverter->toString(mode), m_pDragAndDropActions);
-            pMenu->addAction(pAction);
-            pAction->setData(QVariant::fromValue(mode));
-            pAction->setCheckable(true);
-            pAction->setChecked(session().GetMachine().GetDnDMode() == mode);
-        }
-        connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltChangeDragAndDropType(QAction*)));
-    }
-    /* Subsequent runs: */
-    else
-        foreach (QAction *pAction, m_pDragAndDropActions->actions())
-            if (pAction->data().value<KDnDMode>() == session().GetMachine().GetDnDMode())
-                pAction->setChecked(true);
-}
-
-/** Prepares menu content when user hovers <b>Network</b> submenu of the <b>Devices</b> menu. */
-void UIMachineLogic::sltPrepareNetworkMenu()
-{
-    /* Get and check 'the sender' menu object: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    QMenu *pNetworkMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_Network)->menu();
-    AssertReturnVoid(pMenu == pNetworkMenu);
-    Q_UNUSED(pNetworkMenu);
-
-    /* Get and check current machine: */
-    const CMachine &machine = session().GetMachine();
-    AssertReturnVoid(!machine.isNull());
-
-    /* Determine how many adapters we should display: */
-    KChipsetType chipsetType = machine.GetChipsetType();
-    ULONG uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
-
-    /* Enumerate existing network adapters: */
-    QMap<int, bool> adapterData;
-    for (ULONG uSlot = 0; uSlot < uCount; ++uSlot)
-    {
-        /* Get and check iterated adapter: */
-        const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
-        AssertReturnVoid(machine.isOk());
-        Assert(!adapter.isNull());
-        if (adapter.isNull())
-            continue;
-
-        /* Remember adapter data if it is enabled: */
-        if (adapter.GetEnabled())
-            adapterData.insert((int)uSlot, (bool)adapter.GetCableConnected());
-    }
-    AssertReturnVoid(!adapterData.isEmpty());
-
-    /* Delete all "temporary" actions: */
-    QList<QAction*> actions = pMenu->actions();
-    foreach (QAction *pAction, actions)
-        if (pAction->property("temporary").toBool())
-            delete pAction;
-
-    /* Add new "temporary" actions: */
-    foreach (int iSlot, adapterData.keys())
-    {
-        QAction *pAction = pMenu->addAction(QIcon(adapterData[iSlot] ? ":/connect_16px.png": ":/disconnect_16px.png"),
-                                            adapterData.size() == 1 ? tr("Connect Network Adapter") : tr("Connect Network Adapter %1").arg(iSlot + 1),
-                                            this, SLOT(sltToggleNetworkAdapterConnection()));
-        pAction->setProperty("temporary", true);
-        pAction->setProperty("slot", iSlot);
-        pAction->setCheckable(true);
-        pAction->setChecked(adapterData[iSlot]);
-    }
 }
 
 /** Toggles network adapter's <i>Cable Connected</i> state. */
@@ -2126,27 +1828,6 @@ void UIMachineLogic::sltInstallGuestAdditions()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 
-void UIMachineLogic::sltPrepareDebugMenu()
-{
-    /* The "Logging" item. */
-    bool fEnabled = false;
-    bool fChecked = false;
-    CConsole console = session().GetConsole();
-    if (console.isOk())
-    {
-        CMachineDebugger cdebugger = console.GetDebugger();
-        if (console.isOk())
-        {
-            fEnabled = true;
-            fChecked = cdebugger.GetLogEnabled() != FALSE;
-        }
-    }
-    if (fEnabled != actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->isEnabled())
-        actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fEnabled);
-    if (fChecked != actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->isChecked())
-        actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fChecked);
-}
-
 void UIMachineLogic::sltShowDebugStatistics()
 {
     if (dbgCreated())
@@ -2294,6 +1975,267 @@ void UIMachineLogic::sltShowGlobalPreferences()
     /* Just show Global Preferences: */
     showGlobalPreferences();
 }
+
+void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Determine device-type: */
+    const QMenu *pOpticalDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices)->menu();
+    const QMenu *pFloppyDevicesMenu = actionPool()->action(UIActionIndexRT_M_Devices_M_FloppyDevices)->menu();
+    const KDeviceType deviceType = pMenu == pOpticalDevicesMenu ? KDeviceType_DVD :
+                                   pMenu == pFloppyDevicesMenu  ? KDeviceType_Floppy :
+                                                                  KDeviceType_Null;
+    AssertMsgReturnVoid(deviceType != KDeviceType_Null, ("Incorrect storage device-type!\n"));
+
+    /* Prepare/fill all storage menus: */
+    const CMachine machine = session().GetMachine();
+    foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
+    {
+        /* Current controller: */
+        const CStorageController controller = machine.GetStorageControllerByName(attachment.GetController());
+        /* If controller present and device-type correct: */
+        if (!controller.isNull() && attachment.GetType() == deviceType)
+        {
+            /* Current controller/attachment attributes: */
+            const QString strControllerName = controller.GetName();
+            const StorageSlot storageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+
+            /* Prepare current storage menu: */
+            QMenu *pStorageMenu = 0;
+            /* If it will be more than one storage menu: */
+            if (pMenu->menuAction()->data().toInt() > 1)
+            {
+                /* We have to create sub-menu for each of them: */
+                pStorageMenu = new QMenu(QString("%1 (%2)").arg(strControllerName).arg(gpConverter->toString(storageSlot)), pMenu);
+                switch (controller.GetBus())
+                {
+                    case KStorageBus_IDE:    pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
+                    case KStorageBus_SATA:   pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
+                    case KStorageBus_SCSI:   pStorageMenu->setIcon(QIcon(":/scsi_16px.png")); break;
+                    case KStorageBus_Floppy: pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
+                    case KStorageBus_SAS:    pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
+                    case KStorageBus_USB:    pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
+                    default: break;
+                }
+                pMenu->addMenu(pStorageMenu);
+            }
+            /* Otherwise just use existing one: */
+            else pStorageMenu = pMenu;
+
+            /* Fill current storage menu: */
+            vboxGlobal().prepareStorageMenu(*pStorageMenu,
+                                            this, SLOT(sltMountStorageMedium()),
+                                            machine, strControllerName, storageSlot);
+        }
+    }
+}
+
+void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
+{
+    /* Get current host: */
+    const CHost host = vboxGlobal().host();
+    /* Get host USB device list: */
+    const CHostUSBDeviceVector devices = host.GetUSBDevices();
+
+    /* If device list is empty: */
+    if (devices.isEmpty())
+    {
+        /* Add only one - "empty" action: */
+        QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/usb_unavailable_16px.png",
+                                                                         ":/usb_unavailable_disabled_16px.png"),
+                                                     tr("No USB Devices Connected"));
+        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
+        pEmptyMenuAction->setEnabled(false);
+    }
+    /* If device list is NOT empty: */
+    else
+    {
+        /* Populate menu with host USB devices: */
+        foreach (const CHostUSBDevice& hostDevice, devices)
+        {
+            /* Get USB device from current host USB device: */
+            const CUSBDevice device(hostDevice);
+
+            /* Create USB device action: */
+            QAction *pAttachUSBAction = pMenu->addAction(vboxGlobal().details(device),
+                                                         this, SLOT(sltAttachUSBDevice()));
+            pAttachUSBAction->setToolTip(vboxGlobal().toolTip(device));
+            pAttachUSBAction->setCheckable(true);
+
+            /* Check if that USB device was already attached to this session: */
+            CConsole console = session().GetConsole();
+            const CUSBDevice attachedDevice = console.FindUSBDeviceById(device.GetId());
+            pAttachUSBAction->setChecked(!attachedDevice.isNull());
+            pAttachUSBAction->setEnabled(hostDevice.GetState() != KUSBDeviceState_Unavailable);
+
+            /* Set USB attach data: */
+            pAttachUSBAction->setData(QVariant::fromValue(USBTarget(!pAttachUSBAction->isChecked(), device.GetId())));
+        }
+    }
+}
+
+void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
+{
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Get current host: */
+    const CHost host = vboxGlobal().host();
+    /* Get host webcam list: */
+    const CHostVideoInputDeviceVector webcams = host.GetVideoInputDevices();
+
+    /* If webcam list is empty: */
+    if (webcams.isEmpty())
+    {
+        /* Add only one - "empty" action: */
+        QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/web_camera_unavailable_16px.png",
+                                                                         ":/web_camera_unavailable_disabled_16px.png"),
+                                                     tr("No Webcams Connected"));
+        pEmptyMenuAction->setToolTip(tr("No supported webcams connected to the host PC"));
+        pEmptyMenuAction->setEnabled(false);
+    }
+    /* If webcam list is NOT empty: */
+    else
+    {
+        /* Populate menu with host webcams: */
+        const QVector<QString> attachedWebcamPaths = session().GetConsole().GetEmulatedUSB().GetWebcams();
+        foreach (const CHostVideoInputDevice &webcam, webcams)
+        {
+            /* Get webcam data: */
+            const QString strWebcamName = webcam.GetName();
+            const QString strWebcamPath = webcam.GetPath();
+
+            /* Create/configure webcam action: */
+            QAction *pAttachWebcamAction = pMenu->addAction(strWebcamName,
+                                                            this, SLOT(sltAttachWebCamDevice()));
+            pAttachWebcamAction->setToolTip(vboxGlobal().toolTip(webcam));
+            pAttachWebcamAction->setCheckable(true);
+
+            /* Check if that webcam was already attached to this session: */
+            pAttachWebcamAction->setChecked(attachedWebcamPaths.contains(strWebcamPath));
+
+            /* Set USB attach data: */
+            pAttachWebcamAction->setData(QVariant::fromValue(WebCamTarget(!pAttachWebcamAction->isChecked(), strWebcamName, strWebcamPath)));
+        }
+    }
+}
+
+void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
+{
+    /* First run: */
+    if (!m_pSharedClipboardActions)
+    {
+        m_pSharedClipboardActions = new QActionGroup(this);
+        for (int i = KClipboardMode_Disabled; i < KClipboardMode_Max; ++i)
+        {
+            KClipboardMode mode = (KClipboardMode)i;
+            QAction *pAction = new QAction(gpConverter->toString(mode), m_pSharedClipboardActions);
+            pMenu->addAction(pAction);
+            pAction->setData(QVariant::fromValue(mode));
+            pAction->setCheckable(true);
+            pAction->setChecked(session().GetMachine().GetClipboardMode() == mode);
+        }
+        connect(m_pSharedClipboardActions, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltChangeSharedClipboardType(QAction*)));
+    }
+    /* Subsequent runs: */
+    else
+        foreach (QAction *pAction, m_pSharedClipboardActions->actions())
+            if (pAction->data().value<KClipboardMode>() == session().GetMachine().GetClipboardMode())
+                pAction->setChecked(true);
+}
+
+void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
+{
+    /* First run: */
+    if (!m_pDragAndDropActions)
+    {
+        m_pDragAndDropActions = new QActionGroup(this);
+        for (int i = KDnDMode_Disabled; i < KDnDMode_Max; ++i)
+        {
+            KDnDMode mode = (KDnDMode)i;
+            QAction *pAction = new QAction(gpConverter->toString(mode), m_pDragAndDropActions);
+            pMenu->addAction(pAction);
+            pAction->setData(QVariant::fromValue(mode));
+            pAction->setCheckable(true);
+            pAction->setChecked(session().GetMachine().GetDnDMode() == mode);
+        }
+        connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltChangeDragAndDropType(QAction*)));
+    }
+    /* Subsequent runs: */
+    else
+        foreach (QAction *pAction, m_pDragAndDropActions->actions())
+            if (pAction->data().value<KDnDMode>() == session().GetMachine().GetDnDMode())
+                pAction->setChecked(true);
+}
+
+void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
+{
+    /* Get and check current machine: */
+    const CMachine machine = session().GetMachine();
+    AssertReturnVoid(!machine.isNull());
+
+    /* Determine how many adapters we should display: */
+    const KChipsetType chipsetType = machine.GetChipsetType();
+    const ULONG uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
+
+    /* Enumerate existing network adapters: */
+    QMap<int, bool> adapterData;
+    for (ULONG uSlot = 0; uSlot < uCount; ++uSlot)
+    {
+        /* Get and check iterated adapter: */
+        const CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
+        AssertReturnVoid(machine.isOk() && !adapter.isNull());
+
+        /* Skip disabled adapters: */
+        if (!adapter.GetEnabled())
+            continue;
+
+        /* Remember adapter data: */
+        adapterData.insert((int)uSlot, (bool)adapter.GetCableConnected());
+    }
+
+    /* Make sure at least one adapter was enabled: */
+    if (adapterData.isEmpty())
+        return;
+
+    /* Add new actions: */
+    foreach (int iSlot, adapterData.keys())
+    {
+        QAction *pAction = pMenu->addAction(UIIconPool::iconSet(adapterData[iSlot] ? ":/connect_16px.png": ":/disconnect_16px.png"),
+                                            adapterData.size() == 1 ? tr("Connect Network Adapter") : tr("Connect Network Adapter %1").arg(iSlot + 1),
+                                            this, SLOT(sltToggleNetworkAdapterConnection()));
+        pAction->setProperty("slot", iSlot);
+        pAction->setCheckable(true);
+        pAction->setChecked(adapterData[iSlot]);
+    }
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIMachineLogic::updateMenuDebug(QMenu*)
+{
+    /* The "Logging" item. */
+    bool fEnabled = false;
+    bool fChecked = false;
+    const CConsole console = session().GetConsole();
+    if (console.isOk())
+    {
+        const CMachineDebugger cdebugger = console.GetDebugger();
+        if (console.isOk())
+        {
+            fEnabled = true;
+            fChecked = cdebugger.GetLogEnabled() != FALSE;
+        }
+    }
+    if (fEnabled != actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->isEnabled())
+        actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fEnabled);
+    if (fChecked != actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->isChecked())
+        actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fChecked);
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
 {

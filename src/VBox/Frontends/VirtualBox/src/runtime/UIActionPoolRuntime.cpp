@@ -1275,23 +1275,6 @@ void UIActionPoolRuntime::setRestrictionForMenuBar(UIActionRestrictionLevel leve
     updateMenus();
 }
 
-#ifdef Q_WS_MAC
-bool UIActionPoolRuntime::isAllowedInMenuApplication(RuntimeMenuApplicationActionType type) const
-{
-    foreach (const RuntimeMenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
-        if (restriction & type)
-            return false;
-    return true;
-}
-
-void UIActionPoolRuntime::setRestrictionForMenuApplication(UIActionRestrictionLevel level, RuntimeMenuApplicationActionType restriction)
-{
-    m_restrictedActionsMenuApplication[level] = restriction;
-    updateMenuMachine();
-    updateMenuHelp();
-}
-#endif /* Q_WS_MAC */
-
 bool UIActionPoolRuntime::isAllowedInMenuMachine(RuntimeMenuMachineActionType type) const
 {
     foreach (const RuntimeMenuMachineActionType &restriction, m_restrictedActionsMenuMachine.values())
@@ -1454,6 +1437,23 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor] = new UIActionToggleDockDisableMonitor(this);
 #endif /* Q_WS_MAC */
 
+    /* Prepare update-handlers for known menus: */
+    m_menuUpdateHandlers[UIActionIndexRT_M_Machine].ptfr =                 &UIActionPoolRuntime::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Machine_M_Keyboard].ptfr =      &UIActionPoolRuntime::updateMenuMachineKeyboard;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Machine_M_Mouse].ptfr =         &UIActionPoolRuntime::updateMenuMachineMouse;
+    m_menuUpdateHandlers[UIActionIndexRT_M_View].ptfr =                    &UIActionPoolRuntime::updateMenuView;
+    m_menuUpdateHandlers[UIActionIndexRT_M_ViewPopup].ptfr =               &UIActionPoolRuntime::updateMenuViewPopup;
+    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices].ptfr =                 &UIActionPoolRuntime::updateMenuDevices;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_HardDrives].ptfr =    &UIActionPoolRuntime::updateMenuDevicesHardDrives;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices].ptfr =    &UIActionPoolRuntime::updateMenuDevicesUSBDevices;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network].ptfr =       &UIActionPoolRuntime::updateMenuDevicesNetwork;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedFolders].ptfr = &UIActionPoolRuntime::updateMenuDevicesSharedFolders;
+    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_VideoCapture].ptfr =  &UIActionPoolRuntime::updateMenuDevicesVideoCapture;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    m_menuUpdateHandlers[UIActionIndexRT_M_Debug].ptfr =                   &UIActionPoolRuntime::updateMenuDebug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
     /* Call to base-class: */
     UIActionPool::preparePool();
 }
@@ -1545,8 +1545,8 @@ void UIActionPoolRuntime::updateConfiguration()
     if (fAllCloseActionsRestricted)
     {
 #ifdef Q_WS_MAC
-        m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (RuntimeMenuApplicationActionType)
-            (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | RuntimeMenuApplicationActionType_Close);
+        m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (MenuApplicationActionType)
+            (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | MenuApplicationActionType_Close);
 #else /* !Q_WS_MAC */
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_Close);
@@ -1555,6 +1555,17 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Call to base-class: */
     UIActionPool::updateConfiguration();
+}
+
+void UIActionPoolRuntime::updateMenu(int iIndex)
+{
+    /* Call to base-class: */
+    if (iIndex < UIActionIndex_Max)
+        UIActionPool::updateMenu(iIndex);
+
+    /* If menu with such index is invalidated and there is update-handler: */
+    if (m_invalidations.contains(iIndex) && m_menuUpdateHandlers.contains(iIndex))
+        (this->*(m_menuUpdateHandlers.value(iIndex).ptfr))();
 }
 
 void UIActionPoolRuntime::updateMenus()
@@ -1778,12 +1789,16 @@ void UIActionPoolRuntime::updateMenuMachine()
     /* Close action: */
     const bool fAllowToShowActionClose =
 #ifdef Q_WS_MAC
-        isAllowedInMenuApplication(RuntimeMenuApplicationActionType_Close);
+        isAllowedInMenuApplication(MenuApplicationActionType_Close);
 #else /* !Q_WS_MAC */
         isAllowedInMenuMachine(RuntimeMenuMachineActionType_Close);
 #endif /* !Q_WS_MAC */
     pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
     action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(fAllowToShowActionClose);
+
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Machine);
 }
 
 void UIActionPoolRuntime::updateMenuMachineKeyboard()
@@ -1799,6 +1814,9 @@ void UIActionPoolRuntime::updateMenuMachineKeyboard()
     action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
     if (fAllowToShowActionKeyboardSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Machine_M_Keyboard);
 }
 
 void UIActionPoolRuntime::updateMenuMachineMouse()
@@ -1814,6 +1832,9 @@ void UIActionPoolRuntime::updateMenuMachineMouse()
     action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
     if (fAllowToShowActionMouseIntegration)
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Machine_M_Mouse);
 }
 
 void UIActionPoolRuntime::updateMenuView()
@@ -1905,6 +1926,10 @@ void UIActionPoolRuntime::updateMenuView()
             pSubMenu->setProperty("Screen Index", iScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
         }
+
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_View);
 }
 
 void UIActionPoolRuntime::updateMenuViewPopup()
@@ -1953,6 +1978,10 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             pSubMenu->setProperty("Screen Index", iScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
         }
+
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
 }
 
 void UIActionPoolRuntime::updateMenuViewStatusBar()
@@ -1974,6 +2003,9 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
     action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(fAllowToShowActionToggleStatusBar);
     if (fAllowToShowActionToggleStatusBar)
         pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_View_M_StatusBar);
 }
 
 void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
@@ -2166,6 +2198,10 @@ void UIActionPoolRuntime::updateMenuDevices()
     action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(fAllowToShowActionInstallGuestTools);
     if (fAllowToShowActionInstallGuestTools)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
+
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Devices);
 }
 
 void UIActionPoolRuntime::updateMenuDevicesHardDrives()
@@ -2181,6 +2217,9 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
     action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(fAllowToShowActionHardDrivesSettings);
     if (fAllowToShowActionHardDrivesSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Devices_M_HardDrives);
 }
 
 void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
@@ -2226,6 +2265,9 @@ void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
     action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(fAllowToShowActionSharedFoldersSettings);
     if (fAllowToShowActionSharedFoldersSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Devices_M_SharedFolders);
 }
 
 void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
@@ -2241,6 +2283,9 @@ void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
     action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionVideoCaptureSettings);
     if (fAllowToShowActionVideoCaptureSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Devices_M_VideoCapture);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2275,6 +2320,9 @@ void UIActionPoolRuntime::updateMenuDebug()
     action(UIActionIndex_Simple_LogDialog)->setEnabled(fAllowToShowActionLogDialog);
     if (fAllowToShowActionLogDialog)
         pMenu->addAction(action(UIActionIndex_Simple_LogDialog));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_Debug);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 

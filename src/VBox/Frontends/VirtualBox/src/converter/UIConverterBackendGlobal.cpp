@@ -34,10 +34,10 @@
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<MenuHelpActionType>() { return true; }
-template<> bool canConvert<RuntimeMenuType>() { return true; }
 #ifdef Q_WS_MAC
-template<> bool canConvert<RuntimeMenuApplicationActionType>() { return true; }
+template<> bool canConvert<MenuApplicationActionType>() { return true; }
 #endif /* Q_WS_MAC */
+template<> bool canConvert<RuntimeMenuType>() { return true; }
 template<> bool canConvert<RuntimeMenuMachineActionType>() { return true; }
 template<> bool canConvert<RuntimeMenuViewActionType>() { return true; }
 template<> bool canConvert<RuntimeMenuDevicesActionType>() { return true; }
@@ -408,6 +408,44 @@ template<> MenuHelpActionType fromInternalString<MenuHelpActionType>(const QStri
     return values.at(keys.indexOf(QRegExp(strMenuHelpActionType, Qt::CaseInsensitive)));
 }
 
+#ifdef Q_WS_MAC
+/* QString <= MenuApplicationActionType: */
+template<> QString toInternalString(const MenuApplicationActionType &runtimeMenuApplicationActionType)
+{
+    QString strResult;
+    switch (runtimeMenuApplicationActionType)
+    {
+        case MenuApplicationActionType_About:       strResult = "About"; break;
+        case MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
+        case MenuApplicationActionType_Close:       strResult = "Close"; break;
+        case MenuApplicationActionType_All:         strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* MenuApplicationActionType <= QString: */
+template<> MenuApplicationActionType fromInternalString<MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<MenuApplicationActionType> values;
+    keys << "About";       values << MenuApplicationActionType_About;
+    keys << "Preferences"; values << MenuApplicationActionType_Preferences;
+    keys << "Close";       values << MenuApplicationActionType_Close;
+    keys << "All";         values << MenuApplicationActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
+        return MenuApplicationActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
+}
+#endif /* Q_WS_MAC */
+
 /* QString <= RuntimeMenuType: */
 template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType)
 {
@@ -451,44 +489,6 @@ template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &st
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
 }
-
-#ifdef Q_WS_MAC
-/* QString <= RuntimeMenuApplicationActionType: */
-template<> QString toInternalString(const RuntimeMenuApplicationActionType &runtimeMenuApplicationActionType)
-{
-    QString strResult;
-    switch (runtimeMenuApplicationActionType)
-    {
-        case RuntimeMenuApplicationActionType_About:       strResult = "About"; break;
-        case RuntimeMenuApplicationActionType_Preferences: strResult = "Preferences"; break;
-        case RuntimeMenuApplicationActionType_Close:       strResult = "Close"; break;
-        case RuntimeMenuApplicationActionType_All:         strResult = "All"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* RuntimeMenuApplicationActionType <= QString: */
-template<> RuntimeMenuApplicationActionType fromInternalString<RuntimeMenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<RuntimeMenuApplicationActionType> values;
-    keys << "About";       values << RuntimeMenuApplicationActionType_About;
-    keys << "Preferences"; values << RuntimeMenuApplicationActionType_Preferences;
-    keys << "Close";       values << RuntimeMenuApplicationActionType_Close;
-    keys << "All";         values << RuntimeMenuApplicationActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
-        return RuntimeMenuApplicationActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
-}
-#endif /* Q_WS_MAC */
 
 /* QString <= RuntimeMenuMachineActionType: */
 template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeMenuMachineActionType)

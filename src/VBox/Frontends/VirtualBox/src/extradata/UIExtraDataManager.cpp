@@ -2503,16 +2503,16 @@ RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &st
 }
 
 #ifdef Q_WS_MAC
-RuntimeMenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID)
+MenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuApplicationActionType result = RuntimeMenuApplicationActionType_Invalid;
+    MenuApplicationActionType result = MenuApplicationActionType_Invalid;
     /* Get restricted runtime-application-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, strID))
     {
-        RuntimeMenuApplicationActionType value = gpConverter->fromInternalString<RuntimeMenuApplicationActionType>(strValue);
-        if (value != RuntimeMenuApplicationActionType_Invalid)
-            result = static_cast<RuntimeMenuApplicationActionType>(result | value);
+        MenuApplicationActionType value = gpConverter->fromInternalString<MenuApplicationActionType>(strValue);
+        if (value != MenuApplicationActionType_Invalid)
+            result = static_cast<MenuApplicationActionType>(result | value);
     }
     /* Return result: */
     return result;

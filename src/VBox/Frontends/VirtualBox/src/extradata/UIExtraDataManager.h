@@ -287,7 +287,7 @@ public:
         RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID);
     #ifdef Q_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
-        RuntimeMenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
+        MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
     #endif /* Q_WS_MAC */
         /** Returns restricted Runtime UI action types for Machine menu. */
         RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);

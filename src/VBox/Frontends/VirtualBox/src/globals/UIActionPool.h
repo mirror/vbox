@@ -190,6 +190,9 @@ protected:
 
 private:
 
+    /** Prepare routine. */
+    void prepare();
+
     /** Updates action text accordingly. */
     virtual void updateText();
 };
@@ -278,6 +281,22 @@ class UIActionPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
+    /** Pointer to menu update-handler for this class. */
+    typedef void (UIActionPool::*PTFActionPool)();
+    /** Pointer to menu update-handler for Runtime sub-class. */
+    typedef void (UIActionPoolRuntime::*PTFActionPoolRuntime)();
+    /** Union for two defines above. */
+    union PointerToFunction
+    {
+        PTFActionPool ptf;
+        PTFActionPoolRuntime ptfr;
+    };
+
+signals:
+
+    /** Notifies about menu prepare. */
+    void sigNotifyAboutMenuPrepare(int iIndex, QMenu *pMenu);
+
 public:
 
     /** Static factory constructor. */
@@ -307,6 +326,13 @@ public:
     /** Defines 'Help' menu @a restriction for passed @a level. */
     void setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction);
 
+#ifdef Q_WS_MAC
+    /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
+    bool isAllowedInMenuApplication(MenuApplicationActionType type) const;
+    /** Defines 'Application' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, MenuApplicationActionType restriction);
+#endif /* Q_WS_MAC */
+
     /** Hot-key processing delegate. */
     bool processHotKey(const QKeySequence &key);
 
@@ -317,6 +343,9 @@ public:
     virtual QList<QMenu*> menus() const = 0;
 
 protected slots:
+
+    /** Handles menu prepare. */
+    void sltHandleMenuPrepare();
 
     /** Loads keyboard shortcuts of action-pool into shortcuts-pool. */
     void sltApplyShortcuts() { updateShortcuts(); }
@@ -342,6 +371,8 @@ protected:
     /** Update configuration routine. */
     virtual void updateConfiguration();
 
+    /** Update menu routine. */
+    virtual void updateMenu(int iIndex);
     /** Update menus routine. */
     virtual void updateMenus() = 0;
     /** Update 'Help' menu routine. */
@@ -360,11 +391,20 @@ protected:
     const UIActionPoolType m_type;
     /** Holds whether this action-pool is temporary. */
     const bool m_fTemporary;
-    /** Holds all the actions action-pool contains. */
+
+    /** Holds the map of actions. */
     QMap<int, UIAction*> m_pool;
+    /** Holds the map of validation handlers. */
+    QMap<int, PointerToFunction> m_menuUpdateHandlers;
+    /** Holds the set of invalidated action indexes. */
+    QSet<int> m_invalidations;
 
     /** Holds restricted action types of the Help menu. */
     QMap<UIActionRestrictionLevel, MenuHelpActionType> m_restrictedActionsMenuHelp;
+#ifdef Q_WS_MAC
+    /** Holds restricted action types of the Application menu. */
+    QMap<UIActionRestrictionLevel, MenuApplicationActionType> m_restrictedActionsMenuApplication;
+#endif /* Q_WS_MAC */
 };
 
 #endif /* !___UIActionPool_h___ */
