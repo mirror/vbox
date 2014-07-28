@@ -34,12 +34,28 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#if defined(VBOX_VBGLR3_XFREE86)
 extern "C" {
 # define XFree86LOADER
 # include <xf86_ansic.h>
 # include <errno.h>
 # undef size_t
 }
+#else
+# include <ctype.h>
+# include <errno.h>
+# include <stdarg.h>
+# include <stdio.h>
+# include <stdlib.h>
+# define xalloc malloc
+# define xf86vsnprintf vsnprintf
+# define xf86errno errno
+# define xf86strtoul strtoul
+# define xf86isspace isspace
+# define xfree free
+extern "C" void ErrorF(const char *f, ...);
+extern "C" void VErrorF(const char *f, va_list args);
+#endif
 
 /* This is risky as it restricts call to the ANSI format type specifiers. */
 RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)

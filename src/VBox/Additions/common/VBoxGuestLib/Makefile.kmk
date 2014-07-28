@@ -41,7 +41,8 @@ LIBRARIES += \
 ifndef VBOX_ONLY_VALIDATIONKIT
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
   LIBRARIES += \
-  	VBoxGuestR3LibXFree86
+  	VBoxGuestR3LibXFree86 \
+  	VBoxGuestR3LibXOrg
  endif
 endif
 LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86 VBoxGuestR3LibShared-x86
@@ -194,6 +195,21 @@ VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
         $(VBOX_PATH_X11_XFREE_4_3)/include \
         $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
+
+#
+# VBoxGuestR3LibXOrg - a reduced version of the guest library which uses
+# the C server runtime instead of IPRT.
+#
+VBoxGuestR3LibXOrg_TEMPLATE = VBOXGUESTR3XORGLIB
+VBoxGuestR3LibXOrg_DEFS     = \
+	VBOX_WITH_HGCM \
+	VBOX_VBGLR3_XORG \
+	RTMEM_NO_WRAP_TO_EF_APIS \
+	IN_RT_STATIC \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP,) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
+VBoxGuestR3LibXOrg_SOURCES  = $(VBoxGuestR3LibXFree86_SOURCES)
 
 VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
 

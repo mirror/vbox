@@ -36,6 +36,7 @@ iconv
 iconv_close
 iconv_open
 ioctl
+isspace
 lchown
 lseek
 lseek64
@@ -81,6 +82,8 @@ strlen
 strncmp
 strpbrk
 strstr
+strtoul
+__strtoul_internal
 symlink
 tolower
 unlink
@@ -88,6 +91,8 @@ unsetenv
 utimes
 vfprintf
 __vfprintf_chk
+vsnprintf
+__vsnprintf_chk
 write
 xf86AddEnabledDevice
 xf86AddInputDriver
