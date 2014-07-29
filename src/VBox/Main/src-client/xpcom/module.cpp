@@ -61,8 +61,6 @@
 
 NS_DECL_CLASSINFO(VirtualBoxClient)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxClient, IVirtualBoxClient)
-NS_DECL_CLASSINFO(Session)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 
 #ifndef VBOX_COM_INPROC_API_CLIENT
 NS_DECL_CLASSINFO(Keyboard)
@@ -78,6 +76,14 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
  #endif
 
 #endif /* VBOX_COM_INPROC_API_CLIENT */
+
+/*
+ * Declare extern variables here to tell the compiler that
+ * NS_DECL_CLASSINFO(SessionWrap)
+ * already exists in the VBoxAPIWrap library.
+ */
+NS_DECL_CI_INTERFACE_GETTER(SessionWrap)
+extern nsIClassInfo *NS_CLASSINFO_NAME(SessionWrap);
 
 /**
  *  Singleton class factory that holds a reference to the created instance
@@ -150,9 +156,9 @@ static const nsModuleComponentInfo components[] =
 /** @note this is for singleton; disabled for now */
 //        SessionClassFactory::releaseInstance,
         NULL, // destructor function
-        NS_CI_INTERFACE_GETTER_NAME(Session), // interfaces function
+        NS_CI_INTERFACE_GETTER_NAME(SessionWrap), // interfaces function
         NULL, // language helper
-        &NS_CLASSINFO_NAME(Session) // global class info & flags
+        &NS_CLASSINFO_NAME(SessionWrap) // global class info & flags
     },
     {
         "VirtualBoxClient component", // description

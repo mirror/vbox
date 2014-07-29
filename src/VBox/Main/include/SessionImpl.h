@@ -17,7 +17,7 @@
 #ifndef ____H_SESSIONIMPL
 #define ____H_SESSIONIMPL
 
-#include "VirtualBoxBase.h"
+#include "SessionWrap.h"
 #include "ConsoleImpl.h"
 
 #ifdef RT_OS_WINDOWS
@@ -28,29 +28,20 @@
 [threading(free)]
 #endif
 class ATL_NO_VTABLE Session :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(ISession),
-    VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
+    public SessionWrap
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<Session, &CLSID_Session>
 #endif
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Session, ISession)
-
     DECLARE_CLASSFACTORY()
 
     DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
+
     DECLARE_NOT_AGGREGATABLE(Session)
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(Session)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(ISession)
-        COM_INTERFACE_ENTRY2(IDispatch, IInternalSessionControl)
-        COM_INTERFACE_ENTRY(IInternalSessionControl)
-    END_COM_MAP()
+    DECLARE_EMPTY_CTOR_DTOR(Session)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -59,61 +50,77 @@ public:
     HRESULT init();
     void uninit();
 
-    // ISession properties
-    STDMETHOD(COMGETTER(State))(SessionState_T *aState);
-    STDMETHOD(COMGETTER(Type))(SessionType_T *aType);
-    STDMETHOD(COMGETTER(Machine))(IMachine **aMachine);
-    STDMETHOD(COMGETTER(Console))(IConsole **aConsole);
-
-    // ISession methods
-    STDMETHOD(UnlockMachine)();
-
-    // IInternalSessionControl methods
-    STDMETHOD(GetPID)(ULONG *aPid);
-    STDMETHOD(GetRemoteConsole)(IConsole **aConsole);
 #ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IN_BSTR aTokenId);
 #else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
     STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IToken *aToken);
 #endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-    STDMETHOD(AssignRemoteMachine)(IMachine *aMachine, IConsole *aConsole);
-    STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
-    STDMETHOD(Uninitialize)();
-    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter, BOOL changeAdapter);
-    STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
-    STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
-    STDMETHOD(OnStorageControllerChange)();
-    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment, BOOL aForce);
-    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
-    STDMETHOD(OnCPUExecutionCapChange)(ULONG aExecutionCap);
-    STDMETHOD(OnVRDEServerChange)(BOOL aRestart);
-    STDMETHOD(OnVideoCaptureChange)();
-    STDMETHOD(OnUSBControllerChange)();
-    STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
-    STDMETHOD(OnClipboardModeChange)(ClipboardMode_T aClipboardMode);
-    STDMETHOD(OnDnDModeChange)(DnDMode_T aDnDMode);
-    STDMETHOD(OnUSBDeviceAttach)(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
-    STDMETHOD(OnUSBDeviceDetach)(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
-    STDMETHOD(OnShowWindow)(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId);
-    STDMETHOD(OnBandwidthGroupChange)(IBandwidthGroup *aBandwidthGroup);
-    STDMETHOD(OnStorageDeviceChange)(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
-    STDMETHOD(AccessGuestProperty)(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
-                                   BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags);
-    STDMETHOD(EnumerateGuestProperties)(IN_BSTR aPatterns,
-                                        ComSafeArrayOut(BSTR, aNames),
-                                        ComSafeArrayOut(BSTR, aValues),
-                                        ComSafeArrayOut(LONG64, aTimestamps),
-                                        ComSafeArrayOut(BSTR, aFlags));
-    STDMETHOD(OnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
-                                 ULONG aSourceIdx, ULONG aTargetIdx,
-                                 IProgress *aProgress);
-    STDMETHOD(EnableVMMStatistics)(BOOL aEnable);
-    STDMETHOD(PauseWithReason)(Reason_T aReason);
-    STDMETHOD(ResumeWithReason)(Reason_T aReason);
-    STDMETHOD(SaveStateWithReason)(Reason_T aReason, IProgress **aProgress);
 
 private:
 
+    // Wrapped Isession properties
+    HRESULT getState(SessionState_T *aState);
+    HRESULT getType(SessionType_T *aType);
+    HRESULT getMachine(ComPtr<IMachine> &aMachine);
+    HRESULT getConsole(ComPtr<IConsole> &aConsole);
+
+    // Wrapped Isession methods
+    HRESULT unlockMachine();
+    HRESULT getPID(ULONG *aPid);
+    HRESULT getRemoteConsole(ComPtr<IConsole> &aConsole);
+    HRESULT assignRemoteMachine(const ComPtr<IMachine> &aMachine,
+                                const ComPtr<IConsole> &aConsole);
+    HRESULT updateMachineState(MachineState_T aMachineState);
+    HRESULT uninitialize();
+    HRESULT onNetworkAdapterChange(const ComPtr<INetworkAdapter> &aNetworkAdapter,
+                                   BOOL aChangeAdapter);
+    HRESULT onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort);
+    HRESULT onParallelPortChange(const ComPtr<IParallelPort> &aParallelPort);
+    HRESULT onStorageControllerChange();
+    HRESULT onMediumChange(const ComPtr<IMediumAttachment> &aMediumAttachment,
+                           BOOL aForce);
+    HRESULT onStorageDeviceChange(const ComPtr<IMediumAttachment> &aMediumAttachment,
+                                  BOOL aRemove,
+                                  BOOL aSilent);
+    HRESULT onClipboardModeChange(ClipboardMode_T aClipboardMode);
+    HRESULT onDnDModeChange(DnDMode_T aDndMode);
+    HRESULT onCPUChange(ULONG aCpu,
+                        BOOL aAdd);
+    HRESULT onCPUExecutionCapChange(ULONG aExecutionCap);
+    HRESULT onVRDEServerChange(BOOL aRestart);
+    HRESULT onVideoCaptureChange();
+    HRESULT onUSBControllerChange();
+    HRESULT onSharedFolderChange(BOOL aGlobal);
+    HRESULT onUSBDeviceAttach(const ComPtr<IUSBDevice> &aDevice,
+                              const ComPtr<IVirtualBoxErrorInfo> &aError,
+                              ULONG aMaskedInterfaces);
+    HRESULT onUSBDeviceDetach(const com::Guid &aId,
+                              const ComPtr<IVirtualBoxErrorInfo> &aError);
+    HRESULT onShowWindow(BOOL aCheck,
+                         BOOL *aCanShow,
+                         LONG64 *aWinId);
+    HRESULT onBandwidthGroupChange(const ComPtr<IBandwidthGroup> &aBandwidthGroup);
+    HRESULT accessGuestProperty(const com::Utf8Str &aName,
+                                const com::Utf8Str &aValue,
+                                const com::Utf8Str &aFlags,
+                                BOOL aIsSetter,
+                                com::Utf8Str &aRetValue,
+                                LONG64 *aRetTimestamp,
+                                com::Utf8Str &aRetFlags);
+    HRESULT enumerateGuestProperties(const com::Utf8Str &aPatterns,
+                                     std::vector<com::Utf8Str> &aKeys,
+                                     std::vector<com::Utf8Str> &aValues,
+                                     std::vector<LONG64> &aTimestamps,
+                                     std::vector<com::Utf8Str> &aFlags);
+    HRESULT onlineMergeMedium(const ComPtr<IMediumAttachment> &aMediumAttachment,
+                              ULONG aSourceIdx,
+                              ULONG aTargetIdx,
+                              const ComPtr<IProgress> &aProgress);
+    HRESULT enableVMMStatistics(BOOL aEnable);
+    HRESULT pauseWithReason(Reason_T aReason);
+    HRESULT resumeWithReason(Reason_T aReason);
+    HRESULT saveStateWithReason(Reason_T aReason,
+                                ComPtr<IProgress> &aProgress);
     HRESULT unlockMachine(bool aFinalRelease, bool aFromServer);
 
     SessionState_T mState;
