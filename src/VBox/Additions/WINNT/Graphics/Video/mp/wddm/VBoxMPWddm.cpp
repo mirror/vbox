@@ -4967,23 +4967,24 @@ DxgkDdiQueryCurrentFenceNew(
 
     uint32_t u32FenceSubmitted = 0;
     uint32_t u32FenceCompleted = 0;
+    uint32_t u32FenceProcessed = 0;
 
     LARGE_INTEGER DelayInterval;
     DelayInterval.QuadPart = -10LL * 1000LL * 1000LL;
 
     for (;;)
     {
-        u32FenceCompleted = VBoxCmdVbvaCheckCompleted(pDevExt, &pDevExt->CmdVbva, false, &u32FenceSubmitted);
+        u32FenceCompleted = VBoxCmdVbvaCheckCompleted(pDevExt, &pDevExt->CmdVbva, false, &u32FenceSubmitted, &u32FenceProcessed);
         if (!u32FenceCompleted)
         {
             WARN(("VBoxCmdVbvaCheckCompleted failed"));
             return STATUS_UNSUCCESSFUL;
         }
 
-        if (u32FenceSubmitted == u32FenceCompleted)
+        if (u32FenceSubmitted == u32FenceProcessed)
             break;
 
-        WARN(("uncompleted fences, u32FenceSubmitted(%d), u32FenceCompleted(%d)", u32FenceSubmitted, u32FenceCompleted));
+        WARN(("uncompleted fences, u32FenceSubmitted(%d), u32FenceCompleted(%d) u32FenceProcessed(%d)", u32FenceSubmitted, u32FenceCompleted, u32FenceProcessed));
 
         NTSTATUS Status = KeDelayExecutionThread(KernelMode, FALSE, &DelayInterval);
         if (Status != STATUS_SUCCESS)
