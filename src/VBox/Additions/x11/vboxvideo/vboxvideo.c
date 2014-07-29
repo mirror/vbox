@@ -236,6 +236,7 @@ static const char *shadowfbSymbols[] = {
 };
 
 static const char *ramdacSymbols[] = {
+    "xf86DestroyCursorInfoRec",
     "xf86InitCursor",
     "xf86CreateCursorInfoRec",
     NULL
