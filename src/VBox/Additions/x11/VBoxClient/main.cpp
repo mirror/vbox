@@ -60,6 +60,20 @@ static RTFILE g_hPidFile;
  */
 RTCRITSECT g_critSect;
 
+/** Exit with a fatal error. */
+void doFatalError(char *pszMessage)
+{
+    char *pszCommand;
+    if (pszMessage)
+    {
+        pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"",
+                                   pszMessage);
+        if (pszCommand)
+            system(pszCommand);
+    }
+    exit(1);
+}
+
 /** Clean up if we get a signal or something.  This is extern so that we
  * can call it from other compilation units. */
 void VBoxClient::CleanUp()

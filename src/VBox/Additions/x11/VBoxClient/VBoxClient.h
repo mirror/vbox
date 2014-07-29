@@ -18,7 +18,20 @@
 #ifndef ___vboxclient_vboxclient_h
 # define ___vboxclient_vboxclient_h
 
+#include <VBox/log.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/string.h>
+
+/** Exit with a fatal error. */
+#define FatalError(format) \
+do { \
+    char *pszMessage = RTStrAPrintf2 format; \
+    LogRel(format); \
+    doFatalError(pszMessage); \
+} while(0)
+
+/** Exit with a fatal error. */
+extern void doFatalError(char *pszMessage);
 
 /** Namespace for VBoxClient-specific things */
 namespace VBoxClient {
