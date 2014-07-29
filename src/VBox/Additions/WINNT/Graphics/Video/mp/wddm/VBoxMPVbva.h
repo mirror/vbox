@@ -131,6 +131,8 @@ typedef struct VBOXCMDVBVA
     uint32_t u32FenceCompleted;
     /* last submitted fence id */
     uint32_t u32FenceSubmitted;
+    /* last processed fence id (i.e. either completed or cancelled) */
+    uint32_t u32FenceProcessed;
 
     /* node ordinal */
     uint32_t idNode;
@@ -215,7 +217,7 @@ int VBoxCmdVbvaSubmit(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, struct VBOXCMD
 void VBoxCmdVbvaSubmitUnlock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, VBOXCMDVBVA_HDR* pCmd, uint32_t u32FenceID);
 VBOXCMDVBVA_HDR* VBoxCmdVbvaSubmitLock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t cbCmd);
 bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32FenceID);
-uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, uint32_t *pu32FenceSubmitted);
+uint32_t VBoxCmdVbvaCheckCompleted(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, bool fPingHost, uint32_t *pu32FenceSubmitted, uint32_t *pu32FenceProcessed);
 bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva);
 
 /*helper functions for filling vbva commands */
