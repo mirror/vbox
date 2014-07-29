@@ -57,28 +57,6 @@ struct x11State
     long *paSizeHints;
 };
 
-/** Exit with a fatal error.
- * @todo Make this application global. */
-#define FatalError(format) \
-do { \
-    char *pszMessage = RTStrAPrintf2 format; \
-    LogRel(format); \
-    doFatalError(pszMessage); \
-} while(0)
-
-static void doFatalError(char *pszMessage)
-{
-    char *pszCommand;
-    if (pszMessage)
-    {
-        pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"",
-                                   pszMessage);
-        if (pszCommand)
-            system(pszCommand);
-    }
-    exit(1);
-}
-
 /** Tell the VBoxGuest driver we no longer want any events and tell the host
  * we no longer support any capabilities. */
 static int disableEventsAndCaps()
