@@ -256,7 +256,7 @@ ifdef VBOX_WITH_TESTCASES
 $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST) \
-	    "$(vboxmouse_drv_1_STAGE_TARGET)" --static "$(VBOXMOUSE_SRC_PATH)/undefined"
+	    "$(vboxmouse_drv_1_STAGE_TARGET)" --static "$(VBOXMOUSE_SRC_PATH)/../undefined_xfree86" "$(VBOXMOUSE_SRC_PATH)/../undefined_xfree86_modules"
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 
@@ -269,7 +269,7 @@ $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
       $$$$(vboxmouse_drv$(ver)_0_OUTDIR)/tstvboxmouse$(ver).run: $$$$(vboxmouse_drv$(ver)_1_STAGE_TARGET)
 	$$(QUIET)$$(call MSG_L1,Checking for unresolved symbols in $$<)
 	$$(QUIET)$$(ASH) $$(PATH_ROOT)/src/bldprogs/checkUndefined.sh $$(KBUILD_HOST)  \
-	        $$(vboxmouse_drv$(ver)_1_STAGE_TARGET) $$(VBOXMOUSE_SRC_PATH)/undefined $$(VBOXMOUSE_SRC_PATH)/undefined_extra
+	        $$(vboxmouse_drv$(ver)_1_STAGE_TARGET) $$(VBOXMOUSE_SRC_PATH)/../undefined_xfree86 $(VBOXMOUSE_SRC_PATH)/../undefined_xfree86_modules $$(VBOXMOUSE_SRC_PATH)/../undefined_xorg
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
     endef
 
