@@ -1505,8 +1505,10 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
             rule->guest_addr.s_addr = guest_addr;
 #endif
 
-        LogRel(("NAT: set redirect %s host port %d => guest port %d @ %RTnaipv4\n",
-               rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, guest_addr));
+        LogRel(("NAT: set redirect %s host %RTnaipv4:%d => guest %RTnaipv4:%d\n",
+                rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+                rule->bind_ip, rule->host_port,
+                guest_addr, rule->guest_port));
 
         if (rule->proto == IPPROTO_UDP)
             so = udp_listen(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
@@ -1551,8 +1553,10 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         continue;
 
     remove_port_forwarding:
-        LogRel(("NAT: failed to redirect %s %d => %d\n",
-                (rule->proto == IPPROTO_UDP?"UDP":"TCP"), rule->host_port, rule->guest_port));
+        LogRel(("NAT: failed to redirect %s %RTnaipv4:%d => %RTnaipv4:%d\n",
+                (rule->proto == IPPROTO_UDP ? "UDP" : "TCP"),
+                rule->bind_ip, rule->host_port,
+                guest_addr, rule->guest_port));
         LIST_REMOVE(rule, list);
         pData->cRedirectionsStored--;
         RTMemFree(rule);
@@ -1620,8 +1624,10 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
             && rule->guest_addr.s_addr == guest_addr.s_addr
             && rule->activated)
         {
-            LogRel(("NAT: remove redirect %s host port %d => guest port %d @ %RTnaipv4\n",
-                   rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, guest_addr.s_addr));
+            LogRel(("NAT: remove redirect %s host %RTnaipv4:%d => guest %RTnaipv4:%d\n",
+                    rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
+                    rule->bind_ip, rule->host_port,
+                    guest_addr.s_addr, rule->guest_port));
 
             LibAliasUninit(rule->so->so_la);
             if (is_udp)
