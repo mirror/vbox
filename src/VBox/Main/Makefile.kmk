@@ -832,7 +832,8 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
   VBoxClient-x86_SOURCES += \
   	src-client/xpcom/module.cpp
  endif
- VBoxClient-x86_LIBS = $(NO_SUCH_VARIABLE)
+ VBoxClient-x86_LIBS = \
+	$(PATH_STAGE_LIB)/VBoxAPIWrap-x86$(VBOX_SUFF_LIB)
  VBoxClient-x86_LIBS.win = $(NO_SUCH_VARIABLE)
  VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
  src-client/win/VBoxClient-x86.rc_DEPS = \
