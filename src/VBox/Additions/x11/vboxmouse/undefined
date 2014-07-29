@@ -13,6 +13,7 @@ chdir
 chmod
 chown
 close
+__ctype_mask
 fchmod
 fchown
 fcntl
