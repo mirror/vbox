@@ -607,6 +607,7 @@ void UIVMInfoDialog::refreshStatistics()
         QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
             VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
             VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
+        QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
 
         /* Guest information: */
         CGuest guest = console.GetGuest();
@@ -650,6 +651,7 @@ void UIVMInfoDialog::refreshStatistics()
         strResult += formatValue(VBoxGlobal::tr("VT-x/AMD-V", "details report"), strVirtualization, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Nested Paging", "details report"), strNestedPaging, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Unrestricted Execution", "details report"), strUnrestrictedExecution, iMaxLength);
+        strResult += formatValue(VBoxGlobal::tr("Paravirtualization Interface", "details report"), strParavirtProvider, iMaxLength);
         strResult += formatValue(tr("Guest Additions"), strGAVersion, iMaxLength);
         strResult += formatValue(tr("Guest OS Type"), strOSType, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Remote Desktop Server Port", "details report (VRDE Server)"), strVRDEInfo, iMaxLength);
