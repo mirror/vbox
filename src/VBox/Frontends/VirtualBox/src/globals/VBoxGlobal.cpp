@@ -1210,7 +1210,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             iRowCount += 2; /* VT-x/AMD-V items. */
 
         /* Paravirtualization Interface: */
-        const QString strParavirtProvider = gpConverter->toString(aMachine.GetEffectiveParavirtProvider());
+        const QString strParavirtProvider = gpConverter->toString(aMachine.GetParavirtProvider());
 
         iRowCount += 1; /* Paravirtualization Interface. */
 
