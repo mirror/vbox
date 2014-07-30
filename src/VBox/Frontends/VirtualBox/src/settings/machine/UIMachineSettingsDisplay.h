@@ -191,6 +191,7 @@ private:
     /* Helpers: Video Capture stuff: */
     void lookForCorrespondingSizePreset();
     void updateVideoCaptureScreenCount();
+    void updateVideoCaptureSizeHint();
     static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);

@@ -485,6 +485,8 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelVideoCaptureQualityMed->setText(tr("medium", "quality"));
     m_pLabelVideoCaptureQualityMax->setText(tr("high", "quality"));
     m_pLabelVideoCaptureBitRateUnits->setText(tr("kbps"));
+
+    updateVideoCaptureSizeHint();
 }
 
 void UIMachineSettingsDisplay::polishPage()
@@ -597,6 +599,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     m_pLabelVideoCaptureBitRateUnits->setEnabled(fIsVideoCaptureOptionsEnabled);
 
     m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
+    m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled);
     m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
 }
 
@@ -660,6 +663,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureQualitySliderChange()
                                                             m_pEditorVideoCaptureFrameRate->value(),
                                                             m_pSliderVideoCaptureQuality->value()));
     m_pEditorVideoCaptureBitRate->blockSignals(false);
+    updateVideoCaptureSizeHint();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
@@ -671,6 +675,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
                                                             m_pEditorVideoCaptureFrameRate->value(),
                                                             m_pEditorVideoCaptureBitRate->value()));
     m_pSliderVideoCaptureQuality->blockSignals(false);
+    updateVideoCaptureSizeHint();
 }
 
 void UIMachineSettingsDisplay::prepare()
@@ -938,6 +943,11 @@ void UIMachineSettingsDisplay::updateVideoCaptureScreenCount()
     QVector<BOOL> screens = m_cache.base().m_screens;
     screens.resize(m_pEditorVideoScreenCount->value());
     m_pScrollerVideoCaptureScreens->setValue(screens);
+}
+
+void UIMachineSettingsDisplay::updateVideoCaptureSizeHint()
+{
+    m_pLabelVideoCaptureSizeHint->setText(tr("<i>About %1MB per 5 minute video</i>").arg(m_pEditorVideoCaptureBitRate->value() * 300 / 8 / 1024));
 }
 
 /* static */
