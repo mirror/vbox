@@ -838,10 +838,8 @@ void UISession::sltCheckIfHostDisplayChanged()
     QDesktopWidget *pDesktop = QApplication::desktop();
 
     /* Check if display count changed: */
-    if (pDesktop->screenCount() != m_screens.size())
+    if (pDesktop->screenCount() != m_hostScreens.size())
     {
-        /* Recache display data: */
-        recacheDisplayData();
         /* Reset watchdog: */
         m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
         /* Notify listeners about screen-count changed: */
@@ -852,10 +850,8 @@ void UISession::sltCheckIfHostDisplayChanged()
         /* Check if at least one display geometry changed: */
         for (int iScreenIndex = 0; iScreenIndex < pDesktop->screenCount(); ++iScreenIndex)
         {
-            if (pDesktop->screenGeometry(iScreenIndex) != m_screens.at(iScreenIndex))
+            if (pDesktop->screenGeometry(iScreenIndex) != m_hostScreens.at(iScreenIndex))
             {
-                /* Recache display data: */
-                recacheDisplayData();
                 /* Reset watchdog: */
                 m_pWatchdogDisplayChange->setProperty("tryNumber", 0);
                 /* Notify listeners about screen-geometry changed: */
@@ -884,6 +880,9 @@ void UISession::sltHandleHostScreenCountChange()
 {
     LogRelFlow(("UISession: Host-screen count changed.\n"));
 
+    /* Recache display data: */
+    updateHostScreenData();
+
     /* Notify current machine-logic: */
     emit sigHostScreenCountChanged();
 }
@@ -891,6 +890,9 @@ void UISession::sltHandleHostScreenCountChange()
 void UISession::sltHandleHostScreenGeometryChange()
 {
     LogRelFlow(("UISession: Host-screen geometry changed.\n"));
+
+    /* Recache display data: */
+    updateHostScreenData();
 
     /* Notify current machine-logic: */
     emit sigHostScreenGeometryChanged();
@@ -1087,9 +1089,10 @@ void UISession::prepareConnections()
 
 void UISession::prepareScreens()
 {
-#ifdef Q_WS_MAC
     /* Recache display data: */
-    recacheDisplayData();
+    updateHostScreenData();
+
+#ifdef Q_WS_MAC
     /* Prepare display-change watchdog: */
     m_pWatchdogDisplayChange = new QTimer(this);
     {
@@ -1620,17 +1623,13 @@ void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
         m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
 }
 
-#ifdef Q_WS_MAC
-/** MacOS X: Recaches display-configuration data. */
-void UISession::recacheDisplayData()
+void UISession::updateHostScreenData()
 {
-    /* Recache display data: */
-    m_screens.clear();
+    m_hostScreens.clear();
     QDesktopWidget *pDesktop = QApplication::desktop();
     for (int iScreenIndex = 0; iScreenIndex < pDesktop->screenCount(); ++iScreenIndex)
-        m_screens << pDesktop->screenGeometry(iScreenIndex);
+        m_hostScreens << pDesktop->screenGeometry(iScreenIndex);
 }
-#endif /* Q_WS_MAC */
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 /**

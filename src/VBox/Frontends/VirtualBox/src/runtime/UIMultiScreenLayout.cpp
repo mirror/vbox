@@ -42,25 +42,10 @@
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
-    , m_pViewMenu(0)
 {
     /* Calculate host/guest screen count: */
     calculateHostMonitorCount();
     calculateGuestScreenCount();
-}
-
-UIMultiScreenLayout::~UIMultiScreenLayout()
-{
-    /* Cleanup view-menu: */
-    cleanupViewMenu();
-}
-
-void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
-{
-    /* Assign view-menu: */
-    m_pViewMenu = pViewMenu;
-    /* Prepare view-menu: */
-    prepareViewMenu();
 }
 
 void UIMultiScreenLayout::update()
@@ -177,8 +162,8 @@ void UIMultiScreenLayout::update()
         }
     }
 
-    /* Update menu actions: */
-    updateMenuActions(false);
+    /* Notifies about layout update: */
+    emit sigScreenLayoutUpdate();
 
     LogRelFlow(("UIMultiScreenLayout::update: Finished!\n"));
 }
@@ -190,8 +175,6 @@ void UIMultiScreenLayout::rebuild()
     /* Recalculate host/guest screen count: */
     calculateHostMonitorCount();
     calculateGuestScreenCount();
-    /* Update view-menu: */
-    prepareViewMenu();
     /* Update layout: */
     update();
 
@@ -241,13 +224,8 @@ bool UIMultiScreenLayout::isHostTaskbarCovert() const
     return false;
 }
 
-void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
+void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen, int iRequestedHostScreen)
 {
-    /* Parse incoming information: */
-    int a = pAction->data().toInt();
-    int iRequestedGuestScreen = RT_LOWORD(a);
-    int iRequestedHostScreen = RT_HIWORD(a);
-
     /* Search for the virtual screen which is currently displayed on the
      * requested host screen. When there is one found, we swap both. */
     QMap<int,int> tmpMap(m_screenMap);
@@ -281,10 +259,12 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 
     /* Swap the maps: */
     m_screenMap = tmpMap;
-    /* Update menu actions: */
-    updateMenuActions(true);
-    /* Inform the observer: */
-    emit sigScreenLayoutChanged();
+
+    /* Save guest-to-host mapping: */
+    saveScreenMapping();
+
+    /* Notifies about layout change: */
+    emit sigScreenLayoutChange();
 }
 
 void UIMultiScreenLayout::calculateHostMonitorCount()
@@ -306,81 +286,12 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
             m_disabledGuestScreens << iGuestScreen;
 }
 
-void UIMultiScreenLayout::prepareViewMenu()
+void UIMultiScreenLayout::saveScreenMapping()
 {
-    /* Make sure view-menu was set: */
-    if (!m_pViewMenu)
-        return;
-
-    /* Cleanup menu first: */
-    cleanupViewMenu();
-
-    /* If we do have more than one host/guest screen: */
-    if (m_cHostScreens > 1 || m_guestScreens.size() > 1)
+    foreach (const int &iGuestScreen, m_guestScreens)
     {
-        m_pViewMenu->addSeparator();
-        foreach (int iGuestScreen, m_guestScreens)
-        {
-            m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(iGuestScreen + 1));
-            m_screenMenuList.last()->menuAction()->setData(true);
-            QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
-            pScreenGroup->setExclusive(true);
-            connect(pScreenGroup, SIGNAL(triggered(QAction*)), this, SLOT(sltScreenLayoutChanged(QAction*)));
-            for (int a = 0; a < m_cHostScreens; ++a)
-            {
-                QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
-                pAction->setCheckable(true);
-                pAction->setData(RT_MAKE_U32(iGuestScreen, a));
-            }
-            m_screenMenuList.last()->addActions(pScreenGroup->actions());
-        }
-    }
-
-    /* Update menu actions: */
-    updateMenuActions(false);
-}
-
-void UIMultiScreenLayout::cleanupViewMenu()
-{
-    /* Make sure view-menu was set: */
-    if (!m_pViewMenu)
-        return;
-
-    /* Cleanup view-menu actions: */
-    while (!m_screenMenuList.isEmpty())
-        delete m_screenMenuList.takeFirst();
-}
-
-void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
-{
-    /* Make sure view-menu was set: */
-    if (!m_pViewMenu)
-        return;
-
-    /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = m_pMachineLogic->actionPool()->action(UIActionIndexRT_M_View)->menu()->actions();
-    /* Get the list of all view related actions: */
-    QList<QAction*> viewActions;
-    for (int i = 0; i < viewMenuActions.size(); ++i)
-        if (viewMenuActions[i]->data().toBool())
-            viewActions << viewMenuActions[i];
-    /* Update view actions: */
-    CMachine machine = m_pMachineLogic->session().GetMachine();
-    for (int iViewAction = 0; iViewAction < viewActions.size(); ++iViewAction)
-    {
-        int iGuestScreen = m_guestScreens[iViewAction];
-        int iHostScreen = m_screenMap.value(iGuestScreen, -1);
-        if (fWithSave)
-            gEDataManager->setHostScreenForPassedGuestScreen(iViewAction, iHostScreen, vboxGlobal().managedVMUuid());
-        QList<QAction*> screenActions = viewActions.at(iViewAction)->menu()->actions();
-        /* Update screen actions: */
-        for (int j = 0; j < screenActions.size(); ++j)
-        {
-            QAction *pTmpAction = screenActions.at(j);
-            pTmpAction->blockSignals(true);
-            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
-            pTmpAction->blockSignals(false);
-        }
+        const int iHostScreen = m_screenMap.value(iGuestScreen, -1);
+        gEDataManager->setHostScreenForPassedGuestScreen(iGuestScreen, iHostScreen, vboxGlobal().managedVMUuid());
     }
 }
 

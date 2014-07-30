@@ -116,6 +116,12 @@ public:
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** @} */
 
+    /** @name Host-screen configuration variables.
+     ** @{ */
+    /** Returns the list of host-screen geometries we currently have. */
+    QList<QRect> hostScreens() const { return m_hostScreens; }
+    /** @} */
+
     /** @name Application Close configuration stuff.
      * @{ */
     /** Returns default close action. */
@@ -314,10 +320,8 @@ private:
     bool preparePowerUp();
     int countOfVisibleWindows();
 
-#ifdef Q_WS_MAC
-    /* Helper: Display reconfiguration stuff: */
-    void recacheDisplayData();
-#endif /* Q_WS_MAC */
+    /** Update host-screen data. */
+    void updateHostScreenData();
 
     /* Private variables: */
     UIMachine *m_pMachine;
@@ -372,15 +376,15 @@ private:
     HCURSOR m_alphaCursor;
 #endif
 
-#ifdef Q_WS_MAC
-    /** @name MacOS X: Display reconfiguration variables.
+    /** @name Host-screen configuration variables.
      * @{ */
-    /** MacOS X: Watchdog timer looking for display reconfiguration. */
+    /** Holds the list of host-screen geometries we currently have. */
+    QList<QRect> m_hostScreens;
+#ifdef Q_WS_MAC
+    /** Mac OS X: Watchdog timer looking for display reconfiguration. */
     QTimer *m_pWatchdogDisplayChange;
-    /** MacOS X: A list of display geometries we currently have. */
-    QList<QRect> m_screens;
-    /** @} */
 #endif /* Q_WS_MAC */
+    /** @} */
 
     /** @name Application Close configuration variables.
      * @{ */
