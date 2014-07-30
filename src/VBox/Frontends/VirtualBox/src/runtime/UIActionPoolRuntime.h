@@ -27,6 +27,7 @@
 
 /* Forward declarations: */
 class UISession;
+class UIMultiScreenLayout;
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
@@ -121,6 +122,8 @@ signals:
 
     /** Notifies about 'View' : 'Resize' menu action trigger. */
     void sigNotifyAboutTriggeringViewResize(int iGuestScreenIndex, const QSize &size);
+    /** Notifies about 'View' : 'Multiscreen' menu action trigger. */
+    void sigNotifyAboutTriggeringViewMultiscreen(int iGuestScreenIndex, int iHostScreenIndex);
 
 public:
 
@@ -128,7 +131,13 @@ public:
       * @note For menus which uses it to build contents. */
     void setSession(UISession *pSession);
     /** Returns UI session object reference. */
-    UISession* session() const;
+    UISession* session() const { return m_pSession; }
+
+    /** Defines UI multi-screen layout object reference.
+      * @note For menus which uses it to build contents. */
+    void setMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout);
+    /** Returns UI multi-screen layout object reference. */
+    UIMultiScreenLayout* multiScreenLayout() const { return m_pMultiScreenLayout; }
 
     /** Returns whether the menu with passed @a type is allowed in menu-bar. */
     bool isAllowedInMenuBar(RuntimeMenuType type) const;
@@ -161,9 +170,16 @@ protected slots:
 
     /** Prepare 'View' : 'Resize' menu routine. */
     void sltPrepareMenuViewResize();
+    /** Prepare 'View' : 'Multiscreen' menu routine. */
+    void sltPrepareMenuViewMultiscreen();
 
     /** Handles 'View' : 'Resize' menu @a pAction trigger. */
     void sltHandleActionTriggerViewResize(QAction *pAction);
+    /** Handles 'View' : 'Multiscreen' menu @a pAction trigger. */
+    void sltHandleActionTriggerViewMultiscreen(QAction *pAction);
+
+    /** Handles screen-layout update. */
+    void sltHandleScreenLayoutUpdate();
 
 protected:
 
@@ -198,6 +214,8 @@ protected:
     void updateMenuViewStatusBar();
     /** Update 'View' : 'Resize' @a pMenu routine. */
     void updateMenuViewResize(QMenu *pMenu);
+    /** Update 'View' : 'Multiscreen' @a pMenu routine. */
+    void updateMenuViewMultiscreen(QMenu *pMenu);
     /** Update 'Devices' menu routine. */
     void updateMenuDevices();
     /** Update 'Devices' : 'Hard Drives' menu routine. */
@@ -228,6 +246,8 @@ private:
 
     /** Holds the UI session object reference. */
     UISession *m_pSession;
+    /** Holds the UI multi-screen layout object reference. */
+    UIMultiScreenLayout *m_pMultiScreenLayout;
 
     /** Holds the list of main-menus. */
     QList<QMenu*> m_mainMenus;

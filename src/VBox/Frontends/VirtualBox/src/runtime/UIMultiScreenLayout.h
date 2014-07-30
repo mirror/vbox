@@ -35,17 +35,15 @@ class UIMultiScreenLayout : public QObject
 
 signals:
 
-    /* Notifier: Layout change stuff: */
-    void sigScreenLayoutChanged();
+    /** Notifies about layout update. */
+    void sigScreenLayoutUpdate();
+    /** Notifies about layout change. */
+    void sigScreenLayoutChange();
 
 public:
 
     /* Constructor/destructor: */
     UIMultiScreenLayout(UIMachineLogic *pMachineLogic);
-    ~UIMultiScreenLayout();
-
-    /* API: View-menu stuff: */
-    void setViewMenu(QMenu *pViewMenu);
 
     /* API: Update stuff: */
     void update();
@@ -62,20 +60,16 @@ public:
 private slots:
 
     /* Handler: Screen change stuff: */
-    void sltScreenLayoutChanged(QAction *pAction);
+    void sltHandleScreenLayoutChange(int iRequestedGuestScreen, int iRequestedHostScreen);
 
 private:
 
     /* Helpers: Prepare stuff: */
     void calculateHostMonitorCount();
     void calculateGuestScreenCount();
-    void prepareViewMenu();
-
-    /* Helper: Cleanup stuff: */
-    void cleanupViewMenu();
 
     /* Other helpers: */
-    void updateMenuActions(bool fWithSave);
+    void saveScreenMapping();
     quint64 memoryRequirements(const QMap<int, int> &screenLayout) const;
 
     /* Variables: */
@@ -84,7 +78,6 @@ private:
     QList<int> m_disabledGuestScreens;
     int m_cHostScreens;
     QMap<int, int> m_screenMap;
-    QMenu *m_pViewMenu;
     QList<QMenu*> m_screenMenuList;
 };
 
