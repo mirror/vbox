@@ -55,7 +55,7 @@ static void vboxFillDisplayMode(ScrnInfoPtr pScrn, DisplayModePtr m,
     }
     TRACE_LOG("pszName=%s, cx=%u, cy=%u\n", pszName, cx, cy);
     if (m->name)
-        free(m->name);
+        free((void*)m->name);
     memset(m, '\0', sizeof(*m));
     m->prev          = pPrev;
     m->next          = pNext;
