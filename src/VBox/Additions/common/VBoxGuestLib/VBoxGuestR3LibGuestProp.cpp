@@ -24,12 +24,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#if defined(VBOX_VBGLR3_XFREE86) || defined(VBOX_VBGLR3_XORG)
+# define VBOX_VBGLR3_XSERVER
+#endif
 
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
-#ifndef VBOX_VBGLR3_XFREE86
+#ifndef VBOX_VBGLR3_XSERVER
 # include <iprt/cpp/mem.h>
 #endif
 #include <iprt/assert.h>
@@ -51,6 +54,10 @@ extern "C" void* xf86memchr(const void*,int,xf86size_t);
 extern "C" void* xf86memset(const void*,int,xf86size_t);
 # undef memset
 # define memset xf86memset
+
+#endif /* VBOX_VBGLR3_XFREE86 */
+
+#ifdef VBOX_VBGLR3_XSERVER
 
 # undef RTSTrEnd
 # define RTStrEnd xf86RTStrEnd
@@ -85,7 +92,7 @@ DECLINLINE(char *) RTStrEnd(char *pszString, size_t cchMax)
     return (char *)memchr(pszString, '\0', cchMax);
 }
 
-#endif /* VBOX_VBGLR3_XFREE86 */
+#endif /* VBOX_VBGLR3_XSERVER */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -248,7 +255,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValue(uint32_t u32ClientId, const char *pszN
     return rc;
 }
 
-#ifndef VBOX_VBGLR3_XFREE86
+#ifndef VBOX_VBGLR3_XSERVER
 /**
  * Write a property value where the value is formatted in RTStrPrintfV fashion.
  *
@@ -293,7 +300,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *psz
     va_end(va);
     return rc;
 }
-#endif /* VBOX_VBGLR3_XFREE86 */
+#endif /* VBOX_VBGLR3_XSERVER */
 
 /**
  * Retrieve a property.
@@ -390,7 +397,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
     return VINF_SUCCESS;
 }
 
-#ifndef VBOX_VBGLR3_XFREE86
+#ifndef VBOX_VBGLR3_XSERVER
 /**
  * Retrieve a property value, allocating space for it.
  *
@@ -470,7 +477,7 @@ VBGLR3DECL(void) VbglR3GuestPropReadValueFree(char *pszValue)
 {
     RTMemFree(pszValue);
 }
-#endif /* VBOX_VBGLR3_XFREE86 */
+#endif /* VBOX_VBGLR3_XSERVER */
 
 /**
  * Retrieve a property value, using a user-provided buffer to store it.
@@ -505,7 +512,7 @@ VBGLR3DECL(int) VbglR3GuestPropReadValue(uint32_t u32ClientId, const char *pszNa
 }
 
 
-#ifndef VBOX_VBGLR3_XFREE86
+#ifndef VBOX_VBGLR3_XSERVER
 /**
  * Raw API for enumerating guest properties which match a given pattern.
  *
@@ -974,4 +981,4 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
 
     return VINF_SUCCESS;
 }
-#endif /* VBOX_VBGLR3_XFREE86 */
+#endif /* VBOX_VBGLR3_XSERVER */
