@@ -25,6 +25,9 @@
 #include "UIActionPool.h"
 #include "UIExtraDataDefs.h"
 
+/* Forward declarations: */
+class UISession;
+
 /** Runtime action-pool index enum.
   * Naming convention is following:
   * 1. Every menu index prepended with 'M',
@@ -121,6 +124,12 @@ signals:
 
 public:
 
+    /** Defines UI session object reference.
+      * @note For menus which uses it to build contents. */
+    void setSession(UISession *pSession);
+    /** Returns UI session object reference. */
+    UISession* session() const;
+
     /** Returns whether the menu with passed @a type is allowed in menu-bar. */
     bool isAllowedInMenuBar(RuntimeMenuType type) const;
     /** Defines menu-bar @a restriction for passed @a level. */
@@ -148,16 +157,15 @@ public:
     void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-    /** Defines current frame-buffer sizes
-      * for menus which uses such arguments to build content. */
-    void setCurrentFrameBufferSizes(const QList<QSize> &sizes, bool fUpdateMenu = false);
-
 protected slots:
 
     /** Prepare 'View' : 'Resize' menu routine. */
     void sltPrepareMenuViewResize();
     /** Handles 'View' : 'Resize' menu @a pAction trigger. */
     void sltHandleActionTriggerViewResize(QAction *pAction);
+
+    /** Handles frame-buffer resize. */
+    void sltHandleFrameBufferResize();
 
 protected:
 
@@ -220,6 +228,9 @@ protected:
 
 private:
 
+    /** Holds the UI session object reference. */
+    UISession *m_pSession;
+
     /** Holds the list of main-menus. */
     QList<QMenu*> m_mainMenus;
 
@@ -236,9 +247,8 @@ private:
     QMap<UIActionRestrictionLevel, RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-    /** Defines current frame-buffer sizes
-      * for menus which uses such arguments to build content. */
-    QList<QSize> m_sizes;
+    /** Holds current frame-buffer sizes. */
+    QList<QSize> m_frameBufferSizes;
 
     /* Enable factory in base-class: */
     friend class UIActionPool;
