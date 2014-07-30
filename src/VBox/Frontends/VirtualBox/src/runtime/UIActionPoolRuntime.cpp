@@ -1362,23 +1362,10 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewResize(QAction *pAction)
     /* Make sure sender is valid: */
     AssertPtrReturnVoid(pAction);
 
-    /* Resize guest to required size: */
-    const int iScreenIndex = pAction->property("Screen Index").toInt();
+    /* Send request to resize guest-screen to required size: */
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
     const QSize size = pAction->property("Requested Size").toSize();
-    emit sigNotifyAboutTriggeringViewResize(iScreenIndex, size);
-}
-
-void UIActionPoolRuntime::sltHandleFrameBufferResize()
-{
-    /* Make sure session was set: */
-    AssertPtrReturnVoid(m_pSession);
-
-    /* Update the list of frame-buffer sizes: */
-    m_frameBufferSizes.clear();
-    foreach (const UIFrameBuffer *pFrameBuffer, session()->frameBuffers())
-        m_frameBufferSizes << QSize(pFrameBuffer->width(), pFrameBuffer->height());
-    /* Invalidate View and ViewPopup menus: */
-    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+    emit sigNotifyAboutTriggeringViewResize(iGuestScreenIndex, size);
 }
 
 void UIActionPoolRuntime::preparePool()
@@ -1931,17 +1918,19 @@ void UIActionPoolRuntime::updateMenuView()
         pMenu->addSeparator();
 
 
-    /* For each the guest-screen we have: */
+    /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
-    if (fAllowToShowActionResize)
-        for (int iScreenIndex = 0; iScreenIndex < m_frameBufferSizes.size(); ++iScreenIndex)
+    if (fAllowToShowActionResize && session())
+    {
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
-                                                                     "Virtual Screen %1").arg(iScreenIndex + 1));
-            pSubMenu->setProperty("Screen Index", iScreenIndex);
+                                                                     "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+            pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
         }
+    }
 
 
     /* Mark menu as valid: */
@@ -1983,17 +1972,19 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         pMenu->addSeparator();
 
 
-    /* For each the guest-screen we have: */
+    /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
-    if (fAllowToShowActionResize)
-        for (int iScreenIndex = 0; iScreenIndex < m_frameBufferSizes.size(); ++iScreenIndex)
+    if (fAllowToShowActionResize && session())
+    {
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
-                                                                     "Virtual Screen %1").arg(iScreenIndex + 1));
-            pSubMenu->setProperty("Screen Index", iScreenIndex);
+                                                                     "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+            pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
         }
+    }
 
 
     /* Mark menu as valid: */
@@ -2026,6 +2017,9 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
 
 void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
 {
+    /* Make sure UI session defined: */
+    AssertPtrReturnVoid(session());
+
     /* Clear contents: */
     pMenu->clear();
 
@@ -2043,9 +2037,10 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
                                << QSize(1920, 1080)
                                << QSize(1920, 1200);
 
-    /* Get corresponding screen index and size: */
-    const int iScreenIndex = pMenu->property("Screen Index").toInt();
-    const QSize screenSize = m_frameBufferSizes.at(iScreenIndex);
+    /* Get corresponding screen index and frame-buffer size: */
+    const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
+    const UIFrameBuffer* pFrameBuffer = session()->frameBuffer(iGuestScreenIndex);
+    const QSize screenSize = QSize(pFrameBuffer->width(), pFrameBuffer->height());
 
     /* Create exclusive action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
@@ -2062,7 +2057,8 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
             AssertPtrReturnVoid(pAction);
             {
                 /* Configure exclusive action: */
-                pAction->setProperty("Screen Index", iScreenIndex);
+                pAction->setEnabled(session()->isGuestSupportsGraphics());
+                pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
                 if (screenSize.width() == size.width() &&
@@ -2070,10 +2066,10 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
                 {
                     pAction->setChecked(true);
                 }
-                /* Insert group actions into menu: */
-                pMenu->addActions(pActionGroup->actions());
             }
         }
+        /* Insert group actions into menu: */
+        pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
         connect(pActionGroup, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltHandleActionTriggerViewResize(QAction*)));
