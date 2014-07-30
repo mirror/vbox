@@ -985,7 +985,6 @@ void UISession::prepareActions()
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
     m_pActionPool->toRuntime()->setSession(this);
-    connect(this, SIGNAL(sigFrameBufferResize()), m_pActionPool, SLOT(sltHandleFrameBufferResize()));
 
     /* Get host/machine: */
     const CHost host = vboxGlobal().host();

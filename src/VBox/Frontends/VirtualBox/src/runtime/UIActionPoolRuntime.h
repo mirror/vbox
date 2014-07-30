@@ -120,7 +120,7 @@ class UIActionPoolRuntime : public UIActionPool
 signals:
 
     /** Notifies about 'View' : 'Resize' menu action trigger. */
-    void sigNotifyAboutTriggeringViewResize(int iScreenIndex, const QSize &size);
+    void sigNotifyAboutTriggeringViewResize(int iGuestScreenIndex, const QSize &size);
 
 public:
 
@@ -161,11 +161,9 @@ protected slots:
 
     /** Prepare 'View' : 'Resize' menu routine. */
     void sltPrepareMenuViewResize();
+
     /** Handles 'View' : 'Resize' menu @a pAction trigger. */
     void sltHandleActionTriggerViewResize(QAction *pAction);
-
-    /** Handles frame-buffer resize. */
-    void sltHandleFrameBufferResize();
 
 protected:
 
@@ -246,9 +244,6 @@ private:
     /** Holds restricted action types of the Debugger menu. */
     QMap<UIActionRestrictionLevel, RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-    /** Holds current frame-buffer sizes. */
-    QList<QSize> m_frameBufferSizes;
 
     /* Enable factory in base-class: */
     friend class UIActionPool;
