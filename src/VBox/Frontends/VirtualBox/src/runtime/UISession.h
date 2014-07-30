@@ -205,6 +205,8 @@ public:
     /* Sets framebuffer for the given screen-number;
      * Ignores (asserts) if screen-number attribute is out of bounds: */
     void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
+    /** Returns existing frame-buffer vector. */
+    const QVector<ComObjPtr<UIFrameBuffer> >& frameBuffers() const { return m_frameBufferVector; }
 
     /* Temporary API: */
     void updateStatusVRDE() { sltVRDEChange(); }
@@ -214,6 +216,9 @@ signals:
 
     /* Notifier: Close Runtime UI stuff: */
     void sigCloseRuntimeUI();
+
+    /** Notifies about frame-buffer resize. */
+    void sigFrameBufferResize();
 
     /* Console callback signals: */
     /** Notifies listeners about keyboard state-change. */

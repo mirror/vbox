@@ -804,10 +804,11 @@ void UIMachineLogic::prepareSessionConnections()
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 
     /* Host-screen-change updaters: */
-    connect(uisession(), SIGNAL(sigHostScreenCountChanged()),
-            this, SLOT(sltHostScreenCountChanged()));
-    connect(uisession(), SIGNAL(sigHostScreenGeometryChanged()),
-            this, SLOT(sltHostScreenGeometryChanged()));
+    connect(uisession(), SIGNAL(sigHostScreenCountChanged()), this, SLOT(sltHostScreenCountChanged()));
+    connect(uisession(), SIGNAL(sigHostScreenGeometryChanged()), this, SLOT(sltHostScreenGeometryChanged()));
+
+    /* Frame-buffer connections: */
+    connect(this, SIGNAL(sigFrameBufferResize()), uisession(), SIGNAL(sigFrameBufferResize()));
 }
 
 void UIMachineLogic::prepareActionGroups()
@@ -954,11 +955,6 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Help' actions connections: */
     connect(actionPool()->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
             this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
-}
-
-void UIMachineLogic::prepareOtherConnections()
-{
-    connect(this, SIGNAL(sigFrameBufferResize()), this, SLOT(sltHandleFrameBufferResize()));
 }
 
 void UIMachineLogic::prepareHandlers()
@@ -1484,19 +1480,6 @@ void UIMachineLogic::sltClose()
 
     /* Try to close active machine-window: */
     activeMachineWindow()->close();
-}
-
-void UIMachineLogic::sltHandleFrameBufferResize()
-{
-    /* Prepare the list of frame-buffer sizes: */
-    QList<QSize> frameBufferSizes;
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-    {
-        const UIFrameBuffer *pFB = uisession()->frameBuffer(pMachineWindow->screenId());
-        frameBufferSizes << QSize(pFB->width(), pFB->height());
-    }
-    /* Pass that list to the action-pool to update 'View' menu accordingly: */
-    actionPool()->toRuntime()->setCurrentFrameBufferSizes(frameBufferSizes);
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,

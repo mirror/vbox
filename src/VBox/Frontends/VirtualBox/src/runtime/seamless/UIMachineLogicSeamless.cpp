@@ -261,6 +261,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         connect(pMachineWindow, SIGNAL(sigFrameBufferResize()),
                 this, SIGNAL(sigFrameBufferResize()));
+    emit sigFrameBufferResize();
 
     /* Connect multi-screen layout change handler: */
     connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),

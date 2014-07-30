@@ -19,6 +19,8 @@
 #include "UIActionPoolRuntime.h"
 #include "UIExtraDataManager.h"
 #include "UIShortcutPool.h"
+#include "UIFrameBuffer.h"
+#include "UISession.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -1258,7 +1260,19 @@ protected:
 
 UIActionPoolRuntime::UIActionPoolRuntime(bool fTemporary /* = false */)
     : UIActionPool(UIActionPoolType_Runtime, fTemporary)
+    , m_pSession(0)
 {
+}
+
+void UIActionPoolRuntime::setSession(UISession *pSession)
+{
+    m_pSession = pSession;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+}
+
+UISession* UIActionPoolRuntime::session() const
+{
+    return m_pSession;
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuBar(RuntimeMenuType type) const
@@ -1333,13 +1347,6 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::setCurrentFrameBufferSizes(const QList<QSize> &sizes, bool fUpdateMenu /* = false */)
-{
-    m_sizes = sizes;
-    if (fUpdateMenu)
-        m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
-}
-
 void UIActionPoolRuntime::sltPrepareMenuViewResize()
 {
     /* Make sure sender is valid: */
@@ -1359,6 +1366,19 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewResize(QAction *pAction)
     const int iScreenIndex = pAction->property("Screen Index").toInt();
     const QSize size = pAction->property("Requested Size").toSize();
     emit sigNotifyAboutTriggeringViewResize(iScreenIndex, size);
+}
+
+void UIActionPoolRuntime::sltHandleFrameBufferResize()
+{
+    /* Make sure session was set: */
+    AssertPtrReturnVoid(m_pSession);
+
+    /* Update the list of frame-buffer sizes: */
+    m_frameBufferSizes.clear();
+    foreach (const UIFrameBuffer *pFrameBuffer, session()->frameBuffers())
+        m_frameBufferSizes << QSize(pFrameBuffer->width(), pFrameBuffer->height());
+    /* Invalidate View and ViewPopup menus: */
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
 void UIActionPoolRuntime::preparePool()
@@ -1914,7 +1934,7 @@ void UIActionPoolRuntime::updateMenuView()
     /* For each the guest-screen we have: */
     const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
     if (fAllowToShowActionResize)
-        for (int iScreenIndex = 0; iScreenIndex < m_sizes.size(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < m_frameBufferSizes.size(); ++iScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
@@ -1966,7 +1986,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     /* For each the guest-screen we have: */
     const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
     if (fAllowToShowActionResize)
-        for (int iScreenIndex = 0; iScreenIndex < m_sizes.size(); ++iScreenIndex)
+        for (int iScreenIndex = 0; iScreenIndex < m_frameBufferSizes.size(); ++iScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
@@ -2025,7 +2045,7 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
 
     /* Get corresponding screen index and size: */
     const int iScreenIndex = pMenu->property("Screen Index").toInt();
-    const QSize screenSize = m_sizes.at(iScreenIndex);
+    const QSize screenSize = m_frameBufferSizes.at(iScreenIndex);
 
     /* Create exclusive action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);

@@ -176,6 +176,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         connect(pMachineWindow, SIGNAL(sigFrameBufferResize()),
                 this, SIGNAL(sigFrameBufferResize()));
+    emit sigFrameBufferResize();
 
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);

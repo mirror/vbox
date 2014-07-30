@@ -165,7 +165,7 @@ protected:
     virtual void prepareSessionConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
-    virtual void prepareOtherConnections();
+    virtual void prepareOtherConnections() {}
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
     virtual void prepareMenu() {}
@@ -220,9 +220,6 @@ private slots:
     void sltShutdown();
     void sltPowerOff();
     void sltClose();
-
-    /** Handles frame-buffer resize. */
-    void sltHandleFrameBufferResize();
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
