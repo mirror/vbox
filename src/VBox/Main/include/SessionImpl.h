@@ -50,12 +50,6 @@ public:
     HRESULT init();
     void uninit();
 
-#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
-    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IN_BSTR aTokenId);
-#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IToken *aToken);
-#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-
 private:
 
     // Wrapped Isession properties
@@ -68,6 +62,15 @@ private:
     HRESULT unlockMachine();
     HRESULT getPID(ULONG *aPid);
     HRESULT getRemoteConsole(ComPtr<IConsole> &aConsole);
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
+    HRESULT assignMachine(const ComPtr<IMachine> &aMachine,
+                          LockType_T aLockType,
+                          const com::Utf8Str &aTokenId);
+#else
+    HRESULT assignMachine(const ComPtr<IMachine> &aMachine,
+                          LockType_T aLockType,
+                          const ComPtr<IToken> &aToken);
+#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
     HRESULT assignRemoteMachine(const ComPtr<IMachine> &aMachine,
                                 const ComPtr<IConsole> &aConsole);
     HRESULT updateMachineState(MachineState_T aMachineState);

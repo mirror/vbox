@@ -267,19 +267,15 @@ HRESULT Session::getRemoteConsole(ComPtr<IConsole> &aConsole)
 }
 
 #ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
-STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
-                                    IN_BSTR aTokenId)
-#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
-                                    IToken *aToken)
-#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
+                          LockType_T aLockType,
+                          const com::Utf8Str &aTokenId)
+#else
+HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
+                          LockType_T aLockType,
+                          const ComPtr<IToken> &aToken)
+#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 {
-    LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aMachine=%p\n", aMachine));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mState == SessionState_Unlocked, VBOX_E_INVALID_VM_STATE);
@@ -296,7 +292,6 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
         mType = SessionType_Remote;
         mState = SessionState_Spawning;
 
-        LogFlowThisFuncLeave();
         return S_OK;
     }
 
@@ -319,7 +314,7 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
     Utf8Str strTokenId(aTokenId);
     Assert(!strTokenId.isEmpty());
 #else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-    AssertPtr(aToken);
+    Assert(!aToken.isNull());
 #endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
     /* create the machine client token */
     try
@@ -365,9 +360,6 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
         }
 #endif
     }
-
-    LogFlowThisFunc(("rc=%08X\n", rc));
-    LogFlowThisFuncLeave();
 
     return rc;
 }

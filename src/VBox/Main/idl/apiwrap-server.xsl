@@ -804,6 +804,12 @@ public:
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="attribute" mode="public">
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
     <xsl:variable name="attrbasename">
         <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
@@ -825,9 +831,19 @@ public:
         <xsl:text>);
 </xsl:text>
     </xsl:if>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 </xsl:template>
 
 <xsl:template match="attribute" mode="wrapped">
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
     <xsl:variable name="attrbasename">
         <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
@@ -861,10 +877,19 @@ public:
         <xsl:text>) = 0;
 </xsl:text>
     </xsl:if>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 </xsl:template>
 
 <xsl:template match="attribute" mode="code">
     <xsl:param name="topclass"/>
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 
     <xsl:variable name="attrbasename">
         <xsl:call-template name="capitalize">
@@ -959,9 +984,10 @@ public:
     <xsl:text>, hrc));
     return hrc;
 }
-
 </xsl:text>
     <xsl:if test="not(@readonly) or @readonly!='yes'">
+    <xsl:text>
+</xsl:text>
         <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMSETTER(', $attrbasename, ')(')"/>
         <xsl:apply-templates select="@type" mode="public">
             <xsl:with-param name="dir" select="'in'"/>
@@ -1025,9 +1051,15 @@ public:
         <xsl:text>hrc));
     return hrc;
 }
-
 </xsl:text>
     </xsl:if>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
+    <xsl:text>
+</xsl:text>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -1064,25 +1096,69 @@ public:
     </xsl:choose>
     <xsl:choose>
         <xsl:when test="$pmode='public'">
-            <xsl:apply-templates select="$iface/attribute" mode="public"/>
+            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="public">
+                <xsl:with-param name="emitmode" select="'attribute'"/>
+            </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
-            <xsl:apply-templates select="$iface/attribute" mode="wrapped"/>
+            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="wrapped">
+                <xsl:with-param name="emitmode" select="'attribute'"/>
+            </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='code'">
-            <xsl:apply-templates select="$iface/attribute" mode="code">
+            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:otherwise/>
     </xsl:choose>
 </xsl:template>
 
+<xsl:template name="emitTargetBegin">
+    <xsl:param name="target"/>
+
+    <xsl:choose>
+        <xsl:when test="$target = 'xpidl'">
+            <xsl:text>#ifdef VBOX_WITH_XPCOM
+</xsl:text>
+        </xsl:when>
+        <xsl:when test="$target = 'midl'">
+            <xsl:text>#ifndef VBOX_WITH_XPCOM
+</xsl:text>
+        </xsl:when>
+        <xsl:otherwise/>
+    </xsl:choose>
+</xsl:template>
+
+<xsl:template name="emitTargetEnd">
+    <xsl:param name="target"/>
+
+    <xsl:choose>
+        <xsl:when test="$target = 'xpidl'">
+            <xsl:text>#endif /* VBOX_WITH_XPCOM */
+</xsl:text>
+        </xsl:when>
+        <xsl:when test="$target = 'midl'">
+            <xsl:text>#endif /* !VBOX_WITH_XPCOM */
+</xsl:text>
+        </xsl:when>
+        <xsl:otherwise/>
+    </xsl:choose>
+</xsl:template>
+
+
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   emit method
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="method" mode="public">
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
     <xsl:variable name="methodindent">
       <xsl:call-template name="tospace">
           <xsl:with-param name="str" select="@name"/>
@@ -1106,9 +1182,19 @@ public:
     </xsl:for-each>
     <xsl:text>);
 </xsl:text>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 </xsl:template>
 
 <xsl:template match="method" mode="wrapped">
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
     <xsl:variable name="methodindent">
         <xsl:call-template name="tospace">
             <xsl:with-param name="str" select="@name"/>
@@ -1146,10 +1232,19 @@ public:
     </xsl:for-each>
     <xsl:text>) = 0;
 </xsl:text>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 </xsl:template>
 
 <xsl:template match="method" mode="code">
     <xsl:param name="topclass"/>
+    <xsl:param name="target"/>
+
+    <xsl:call-template name="emitTargetBegin">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
 
     <xsl:variable name="methodindent">
       <xsl:call-template name="tospace">
@@ -1298,8 +1393,113 @@ public:
     <xsl:text>, hrc));
     return hrc;
 }
-
 </xsl:text>
+
+    <xsl:call-template name="emitTargetEnd">
+        <xsl:with-param name="target" select="$target"/>
+    </xsl:call-template>
+
+    <xsl:text>
+</xsl:text>
+</xsl:template>
+
+<xsl:template name="emitIf">
+    <xsl:param name="passmode"/>
+    <xsl:param name="target"/>
+    <xsl:param name="topclass"/>
+    <xsl:param name="emitmode"/>
+
+    <xsl:if test="($target = 'xpidl') or ($target = 'midl')">
+        <xsl:choose>
+            <xsl:when test="$filelistonly=''">
+                <xsl:choose>
+                    <xsl:when test="$passmode='public'">
+                        <xsl:choose>
+                            <xsl:when test="$emitmode='method'">
+                                <xsl:apply-templates select="method" mode="public">
+                                    <xsl:with-param name="target" select="$target"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:when test="$emitmode='attribute'">
+                                <xsl:apply-templates select="attribute" mode="public">
+                                    <xsl:with-param name="target" select="$target"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:otherwise/>
+                        </xsl:choose>
+                    </xsl:when>
+                    <xsl:when test="$passmode='wrapped'">
+                        <xsl:choose>
+                            <xsl:when test="$emitmode='method'">
+                                <xsl:apply-templates select="method" mode="wrapped">
+                                    <xsl:with-param name="target" select="$target"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:when test="$emitmode='attribute'">
+                                <xsl:apply-templates select="attribute" mode="wrapped">
+                                    <xsl:with-param name="target" select="$target"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:otherwise/>
+                        </xsl:choose>
+                    </xsl:when>
+                    <xsl:when test="$passmode='code'">
+                        <xsl:choose>
+                            <xsl:when test="$emitmode='method'">
+                                <xsl:apply-templates select="method" mode="code">
+                                    <xsl:with-param name="target" select="$target"/>
+                                    <xsl:with-param name="topclass" select="$topclass"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:when test="$emitmode='attribute'">
+                                <xsl:apply-templates select="attribute" mode="code">
+                                    <xsl:with-param name="target" select="$target"/>
+                                    <xsl:with-param name="topclass" select="$topclass"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:otherwise/>
+                        </xsl:choose>
+                    </xsl:when>
+                    <xsl:otherwise/>
+                </xsl:choose>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:if>
+</xsl:template>
+
+<xsl:template match="if" mode="public">
+    <xsl:param name="emitmode"/>
+
+    <xsl:call-template name="emitIf">
+        <xsl:with-param name="passmode" select="'public'"/>
+        <xsl:with-param name="target" select="@target"/>
+        <xsl:with-param name="emitmode" select="$emitmode"/>
+    </xsl:call-template>
+</xsl:template>
+
+<xsl:template match="if" mode="wrapped">
+    <xsl:param name="emitmode"/>
+
+    <xsl:call-template name="emitIf">
+        <xsl:with-param name="passmode" select="'wrapped'"/>
+        <xsl:with-param name="target" select="@target"/>
+        <xsl:with-param name="emitmode" select="$emitmode"/>
+    </xsl:call-template>
+</xsl:template>
+
+<xsl:template match="if" mode="code">
+    <xsl:param name="topclass"/>
+    <xsl:param name="emitmode"/>
+
+    <xsl:call-template name="emitIf">
+        <xsl:with-param name="passmode" select="'code'"/>
+        <xsl:with-param name="target" select="@target"/>
+        <xsl:with-param name="emitmode" select="$emitmode"/>
+        <xsl:with-param name="topclass" select="$topclass"/>
+    </xsl:call-template>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -1336,14 +1536,19 @@ public:
     </xsl:choose>
     <xsl:choose>
         <xsl:when test="$pmode='public'">
-            <xsl:apply-templates select="$iface/method" mode="public"/>
+            <xsl:apply-templates select="$iface/method | $iface/if" mode="public">
+                <xsl:with-param name="emitmode" select="'method'"/>
+            </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
-            <xsl:apply-templates select="$iface/method" mode="wrapped"/>
+            <xsl:apply-templates select="$iface/method | $iface/if" mode="wrapped">
+                <xsl:with-param name="emitmode" select="'method'"/>
+            </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='code'">
-            <xsl:apply-templates select="$iface/method" mode="code">
+            <xsl:apply-templates select="$iface/method | $iface/if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:otherwise/>
