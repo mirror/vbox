@@ -622,6 +622,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
                 }
             }
             fResult = false;
+            break;
         }
         case XKeyPress:
         case XKeyRelease:
