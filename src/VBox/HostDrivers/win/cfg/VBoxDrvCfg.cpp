@@ -679,23 +679,21 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
 
 VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWSTR lpszPnPId, DWORD Flags)
 {
-    WCHAR InfDirPath[MAX_PATH];
-    HRESULT hr = SHGetFolderPathW(NULL, /*          HWND hwndOwner*/
-            CSIDL_WINDOWS, /* int nFolder*/
-            NULL, /*HANDLE hToken*/
-            SHGFP_TYPE_CURRENT, /*DWORD dwFlags*/
-            InfDirPath);
-    NonStandardAssert(hr == S_OK);
-    if (hr == S_OK)
+    static WCHAR const s_wszFilter[] = L"\\inf\\oem*.inf";
+    HRESULT hr;
+    WCHAR wszInfDirPath[MAX_PATH];
+    UINT cwcInput = RT_ELEMENTS(wszInfDirPath) - RT_ELEMENTS(s_wszFilter);
+    UINT cwcWindows = GetSystemWindowsDirectory(wszInfDirPath, cwcInput);
+    if (cwcWindows > 0 && cwcWindows < cwcInput)
     {
-        wcscat(InfDirPath, L"\\inf\\oem*.inf");
+        wcscpy(&wszInfDirPath[cwcWindows], s_wszFilter);
 
         INFENUM_CONTEXT Context;
         Context.InfInfo.lpszClassName = lpszClassName;
         Context.InfInfo.lpszPnPId = lpszPnPId;
         Context.Flags = Flags;
         Context.hr = S_OK;
-        hr = vboxDrvCfgEnumFiles(InfDirPath, vboxDrvCfgInfEnumerationCallback, &Context);
+        hr = vboxDrvCfgEnumFiles(wszInfDirPath, vboxDrvCfgInfEnumerationCallback, &Context);
         NonStandardAssert(hr == S_OK);
         if (hr == S_OK)
         {
@@ -708,7 +706,9 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWS
     }
     else
     {
-        NonStandardLogRelCrap((__FUNCTION__": SHGetFolderPathW failed, hr=0x%x\n", hr));
+        NonStandardLogRelCrap((__FUNCTION__": GetSystemWindowsDirectory failed, cwcWindows=%u lasterr=%u\n", cwcWindows, GetLastError()));
+        NonStandardAssertFailed();
+        hr = E_FAIL;
     }
 
     return hr;
