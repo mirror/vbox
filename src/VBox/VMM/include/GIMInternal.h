@@ -45,8 +45,6 @@ typedef struct GIM
     GIMPROVIDERID                    enmProviderId;
     /** The interface implementation version. */
     uint32_t                         u32Version;
-    /** The Guest OS identifier. */
-    GIMOSID                          enmGuestOsId;
 
     /** Pointer to the GIM device - ring-3 context. */
     R3PTRTYPE(PPDMDEVINS)            pDevInsR3;
