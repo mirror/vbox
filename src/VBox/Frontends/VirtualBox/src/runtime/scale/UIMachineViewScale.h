@@ -62,6 +62,9 @@ private:
     /* Cleanup helpers: */
     void saveMachineViewSettings();
 
+    /** Resends guest size-hint if necessary. */
+    void maybeResendSizeHint();
+
     /* Private helpers: */
     QSize sizeHint() const;
     QRect workingArea() const;

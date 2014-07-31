@@ -49,10 +49,8 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                     )
     , m_bIsGuestAutoresizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked())
 {
-    /* Resend the last resize hint if there was a fullscreen or
-     * seamless transition previously. If we were not in graphical
-     * mode initially after the transition this happens when we switch. */
-    maybeResendResizeHint();
+    /* Resend the last resize hint if necessary: */
+    maybeResendSizeHint();
 }
 
 UIMachineViewNormal::~UIMachineViewNormal()
@@ -145,8 +143,9 @@ void UIMachineViewNormal::prepareConsoleConnections()
 
 void UIMachineViewNormal::saveMachineViewSettings()
 {
-    /* Store guest size in case we are switching to fullscreen: */
-    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
+    /* If guest screen-still visible => store it's size-hint: */
+    if (uisession()->isScreenVisible(screenId()))
+        storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
@@ -160,27 +159,23 @@ void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
     }
 }
 
-/**
- * Resends guest size-hint if necessary.
- * If the last guest size hint was sent to switch to
- * fullscreen or seamless mode then send one to restore the old view size.
- * @note This method also does some hacks to suppress intermediary resizes
- *       to the old fullscreen size.
- */
-void UIMachineViewNormal::maybeResendResizeHint()
+void UIMachineViewNormal::maybeResendSizeHint()
 {
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
         /* Send guest-screen size-hint if needed to reverse a transition to fullscreen or seamless: */
         if (gEDataManager->wasLastGuestSizeHintForFullScreen(m_uScreenId, vboxGlobal().managedVMUuid()))
         {
-            QSize hint = guestSizeHint();
+            const QSize sizeHint = guestSizeHint();
+            LogRel(("UIMachineViewNormal::maybeResendSizeHint: "
+                    "Restoring guest size-hint for screen %d to %dx%d\n",
+                    (int)screenId(), sizeHint.width(), sizeHint.height()));
             /* Temporarily restrict the size to prevent a brief resize to the
              * framebuffer dimensions (see @a UIMachineView::sizeHint()) before
              * the following resize() is acted upon. */
-            setMaximumSize(hint);
-            m_sizeHintOverride = hint;
-            sltPerformGuestResize(hint);
+            setMaximumSize(sizeHint);
+            m_sizeHintOverride = sizeHint;
+            sltPerformGuestResize(sizeHint);
         }
     }
 }

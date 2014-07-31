@@ -63,8 +63,10 @@ private:
     /* Hidden setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);
 
+    /** Resends guest size-hint if necessary. */
+    void maybeResendSizeHint();
+
     /* Private helpers: */
-    void maybeResendResizeHint();
     void maybeAdjustGuestScreenSize();
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
