@@ -1494,3 +1494,7 @@ EXPORTS
     SUPR3HardenedLdrLoadPlugIn
     SUPR3QueryVTxSupported
     SUPR3QueryVTCaps
+    SUPSemEventSignal
+    SUPSemEventWaitNoResume
+    SUPSemEventClose
+    SUPSemEventCreate
