@@ -652,7 +652,9 @@ VBoxC_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
 	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
-VBoxC_LDFLAGS.win += /MANIFEST
+VBoxC_LDFLAGS.win += /MANIFEST \
+  	/DELAYLOAD:user32.dll
+
 
 VBoxC_LIBS += \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
@@ -666,6 +668,10 @@ ifdef VBOX_WITH_NETFLT
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+ VBoxC_LDFLAGS.win += \
+  	/DELAYLOAD:newdev.dll \
+  	/DELAYLOAD:setupapi.dll \
+  	/DELAYLOAD:iphlpapi.dll
 endif
 
 ifdef VBOX_WITH_CROGL
