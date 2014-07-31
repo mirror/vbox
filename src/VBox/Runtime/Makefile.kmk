@@ -1353,9 +1353,16 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
 endif
 VBoxRT_LIBS.win                = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/vccomsup.lib \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -framework CoreFoundation -framework CoreServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
-VBoxRT_LDFLAGS.win             = /MANIFEST
+VBoxRT_LDFLAGS.win             = /MANIFEST \
+	/delayload:gdi32.dll \
+	/delayload:user32.dll \
+	/delayload:shell32.dll \
+	/delayload:ole32.dll \
+	/delayload:oleaut32.dll \
+	/delayload:advapi32.dll
 
 if1of ($(DLLS), VBoxRT)
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
@@ -1448,7 +1455,8 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
 endif
 VBoxRT-x86_LIBS.win                = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/vccomsup.lib \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/wbemuuid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/wbemuuid.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
 
 VBoxRT-x86_SOURCES.win = $(filter-out %.def,$(VBoxRT_SOURCES.win)) \
 	$(VBoxRT-x86_0_OUTDIR)/VBoxRT-x86.def
