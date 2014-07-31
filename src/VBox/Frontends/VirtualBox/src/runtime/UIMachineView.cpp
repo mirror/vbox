@@ -180,8 +180,9 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     setMaxGuestSize(newSize);
 
     /* Send new size-hint to the guest: */
-    LogRelFlow(("UIMachineView: Sending guest size-hint to screen %d: %dx%d\n",
-                (int)screenId(), newSize.width(), newSize.height()));
+    LogRel(("UIMachineView::sltPerformGuestResize: "
+            "Sending guest size-hint to screen %d as %dx%d\n",
+            (int)screenId(), newSize.width(), newSize.height()));
     session().GetConsole().GetDisplay().SetVideoModeHint(screenId(),
                                                          uisession()->isScreenVisible(screenId()),
                                                          false, 0, 0, newSize.width(), newSize.height(), 0);
@@ -653,6 +654,9 @@ QSize UIMachineView::guestSizeHint()
 void UIMachineView::storeGuestSizeHint(const QSize &size)
 {
     /* Save guest-screen size-hint: */
+    LogRel(("UIMachineView::storeGuestSizeHint: "
+            "Storing guest size-hint for screen %d as %dx%d\n",
+            (int)screenId(), size.width(), size.height()));
     gEDataManager->setLastGuestSizeHint(m_uScreenId, size, vboxGlobal().managedVMUuid());
 }
 
