@@ -140,53 +140,20 @@ BEGIN_OBJECT_MAP(ObjectMap)
 END_OBJECT_MAP()
 
 
-LPCTSTR FindOneOf(LPCTSTR p1, LPCTSTR p2)
-{
-    while (p1 != NULL && *p1 != NULL)
-    {
-        LPCTSTR p = p2;
-        while (p != NULL && *p != NULL)
-        {
-            if (*p1 == *p)
-                return CharNext(p1);
-            p = CharNext(p);
-        }
-        p1 = CharNext(p1);
-    }
-    return NULL;
-}
-
-static int WordCmpI(LPCTSTR psz1, LPCTSTR psz2) throw()
-{
-    TCHAR c1 = (TCHAR)CharUpper((LPTSTR)*psz1);
-    TCHAR c2 = (TCHAR)CharUpper((LPTSTR)*psz2);
-    while (c1 != NULL && c1 == c2 && c1 != ' ' && c1 != '\t')
-    {
-        psz1 = CharNext(psz1);
-        psz2 = CharNext(psz2);
-        c1 = (TCHAR)CharUpper((LPTSTR)*psz1);
-        c2 = (TCHAR)CharUpper((LPTSTR)*psz2);
-    }
-    if ((c1 == NULL || c1 == ' ' || c1 == '\t') && (c2 == NULL || c2 == ' ' || c2 == '\t'))
-        return 0;
-
-    return (c1 < c2) ? -1 : 1;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
 {
-    LPCTSTR lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
+    int    argc = __argc;
+    char **argv = __argv;
 
     /*
-     * Need to parse the command line before initializing the VBox runtime.
+     * Need to parse the command line before initializing the VBox runtime so we can
+     * change to the user home directory before logs are being created.
      */
-    TCHAR szTokens[] = _T("-/");
-    LPCTSTR lpszToken = FindOneOf(lpCmdLine, szTokens);
-    while (lpszToken != NULL)
-    {
-        if (WordCmpI(lpszToken, _T("Embedding")) == 0)
+    for (int i = 1; i < argc; i++)
+        if (   (argv[i][0] == '/' || argv[i][0] == '-')
+            && stricmp(&argv[i][1], "embedding") == 0) /* ANSI */
         {
             /* %HOMEDRIVE%%HOMEPATH% */
             wchar_t wszHome[RTPATH_MAX];
@@ -203,15 +170,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             }
         }
 
-        lpszToken = FindOneOf(lpszToken, szTokens);
-    }
-
     /*
      * Initialize the VBox runtime without loading
      * the support driver.
      */
-    int    argc = __argc;
-    char **argv = __argv;
     RTR3InitExe(argc, &argv, 0);
 
     /* Note that all options are given lowercase/camel case/uppercase to
