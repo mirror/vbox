@@ -660,14 +660,15 @@ VBoxC_LIBS += \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
 	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
 	$(VBOX_LIB_VMM_LAZY)
+VBoxC_LIBS.win += \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
  VBoxC_LDFLAGS.win += \
   	/DELAYLOAD:newdev.dll \
   	/DELAYLOAD:setupapi.dll \
@@ -841,6 +842,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  VBoxClient-x86_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxAPIWrap-x86$(VBOX_SUFF_LIB)
  VBoxClient-x86_LIBS.win = $(NO_SUCH_VARIABLE)
+ VBoxClient-x86_LIBS.win.x86 = $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
  VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
  src-client/win/VBoxClient-x86.rc_DEPS = \
  	$(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs \
