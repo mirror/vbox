@@ -68,6 +68,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
    VBoxDDU_DEFS          += VBOX_WITH_EHCI_IMPL
   endif
+  if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   VBoxDDU_DEFS          += VBOX_WITH_XHCI_IMPL
+  endif
   ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
    VBoxDDU_DEFS.darwin   += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
   endif
@@ -319,6 +322,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_DEFS          += VBOX_WITH_EHCI_IMPL
    VBoxDD_SOURCES       += \
  	USB/DevEHCI.cpp
+  endif
+
+  if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   VBoxDD_DEFS          += VBOX_WITH_XHCI_IMPL
+   VBoxDD_SOURCES       += \
+ 	USB/DevXHCI.cpp
   endif
 
   if defined(VBOX_WITH_USB_VIDEO_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
@@ -937,6 +946,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     VBoxDDGC_SOURCES    += \
   	USB/DevEHCI.cpp
    endif
+   if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+    VBoxDDGC_DEFS       += VBOX_WITH_XHCI_IMPL
+    VBoxDDGC_SOURCES    += \
+  	USB/DevXHCI.cpp
+   endif
   endif
 
   ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1101,6 +1115,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDDR0_DEFS        += VBOX_WITH_EHCI_IMPL
    VBoxDDR0_SOURCES     += \
  	USB/DevEHCI.cpp
+  endif
+  if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+   VBoxDDR0_DEFS        += VBOX_WITH_XHCI_IMPL
+   VBoxDDR0_SOURCES     += \
+ 	USB/DevXHCI.cpp
   endif
  endif
 
@@ -1274,16 +1293,22 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  if defined(VBOX_WITH_USB)
   DLLS += VBoxEhciR3
   VBoxEhciR3_TEMPLATE = VBoxR3ExtPackPuel
-  VBoxEhciR3_SOURCES  = USB/DevEHCI.cpp
+  VBoxEhciR3_SOURCES  = \
+	USB/DevEHCI.cpp \
+	USB/DevXHCI.cpp
 
   SYSMODS += VBoxEhciR0
   VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
-  VBoxEhciR0_SOURCES  = USB/DevEHCI.cpp
+  VBoxEhciR0_SOURCES  = \
+	USB/DevEHCI.cpp \
+	USB/DevXHCI.cpp
 
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += VBoxEhciRC
    VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
-   VBoxEhciRC_SOURCES  = USB/DevEHCI.cpp
+   VBoxEhciRC_SOURCES  = \
+	USB/DevEHCI.cpp \
+	USB/DevXHCI.cpp
   endif
  endif
 

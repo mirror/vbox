@@ -60,6 +60,7 @@ extern const PDMDEVREG g_DeviceAudioSniffer;
 #endif
 extern const PDMDEVREG g_DeviceOHCI;
 extern const PDMDEVREG g_DeviceEHCI;
+extern const PDMDEVREG g_DeviceXHCI;
 extern const PDMDEVREG g_DeviceACPI;
 extern const PDMDEVREG g_DeviceDMA;
 extern const PDMDEVREG g_DeviceFloppyController;
