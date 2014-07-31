@@ -66,7 +66,6 @@
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach. */
 #include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice. */
-#include <VBox/vmm/gim.h>    /* For GIMOSID. */
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
@@ -1002,6 +1001,39 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
         }
 
+        if (fOsXGuest)
+        {
+            /* Expose extended MWAIT features to Mac OS X guests. */
+            LogRel(("Using MWAIT extensions\n"));
+            InsertConfigInteger(pCPUM, "MWaitExtensions", true);
+
+            /* Fake the CPU family/model so the guest works.  This is partly
+               because older mac releases really doesn't work on newer cpus,
+               and partly because mac os x expects more from systems with newer
+               cpus (MSRs, power features, whatever). */
+            uint32_t uMaxIntelFamilyModelStep = UINT32_MAX;
+            if (   osTypeId == "MacOS"
+                || osTypeId == "MacOS_64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482. */
+            else if (   osTypeId == "MacOS106"
+                     || osTypeId == "MacOS106_64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */
+            else if (   osTypeId == "MacOS107"
+                     || osTypeId == "MacOS107_64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
+                                                                                what is required here. */
+            else if (   osTypeId == "MacOS108"
+                     || osTypeId == "MacOS108_64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure out
+                                                                                what is required here. */
+            else if (   osTypeId == "MacOS109"
+                     || osTypeId == "MacOS109_64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 7); /* Penryn / X5482 */ /** @todo figure
+                                                                                out what is required here. */
+            if (uMaxIntelFamilyModelStep != UINT32_MAX)
+                InsertConfigInteger(pCPUM, "MaxIntelFamilyModelStep", uMaxIntelFamilyModelStep);
+        }
+
         /* Synthetic CPU */
         BOOL fSyntheticCpu = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
@@ -1177,31 +1209,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                     paravirtProvider);
         }
         InsertConfigString(pParavirtNode, "Provider", pcszParavirtProvider);
-
-        if (   !RTStrCmp(pcszParavirtProvider, "Minimal")
-            && fOsXGuest)
-        {
-            /* When adding new OS X types, please add corresponding types to GIMOSID and
-               update GIMR3IsOSXGuest().  */
-            GIMOSID enmOsId = GIMOSID_OSX;
-            if (osTypeId == "MacOS_64")
-                enmOsId = GIMOSID_OSX_64;
-            else if (osTypeId == "MacOS106")
-                enmOsId = GIMOSID_OSX_106;
-            else if (osTypeId == "MacOS106_64")
-                enmOsId = GIMOSID_OSX_106_64;
-            else if (osTypeId == "MacOS107")
-                enmOsId = GIMOSID_OSX_107;
-            else if (osTypeId == "MacOS107_64")
-                enmOsId = GIMOSID_OSX_107_64;
-            else if (osTypeId == "MacOS108")
-                enmOsId = GIMOSID_OSX_108;
-            else if (osTypeId == "MacOS108_64")
-                enmOsId = GIMOSID_OSX_108_64;
-
-            InsertConfigInteger(pParavirtNode, "GuestOsId", enmOsId);
-        }
-
 
         /*
          * MM values.
