@@ -173,8 +173,9 @@ public:
     HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
     HRESULT i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR aVal);
 
-    HRESULT i_getGuestProperty(IN_BSTR aKey, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
-    HRESULT i_setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
+    HRESULT i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG64 *aTimestamp, Utf8Str *aFlags);
+    HRESULT i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);
+    HRESULT i_deleteGuestProperty(const Utf8Str &aName);
     HRESULT i_enumerateGuestProperties(IN_BSTR aPatterns,
                                        ComSafeArrayOut(BSTR, aNames),
                                        ComSafeArrayOut(BSTR, aValues),
