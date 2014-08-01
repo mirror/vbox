@@ -826,26 +826,22 @@ void Console::uninit()
  */
 void Console::i_guestPropertiesHandleVMReset(void)
 {
-    com::SafeArray<BSTR>   arrNames;
-    com::SafeArray<BSTR>   arrValues;
-    com::SafeArray<LONG64> arrTimestamps;
-    com::SafeArray<BSTR>   arrFlags;
-    HRESULT hrc = i_enumerateGuestProperties(Bstr("*").raw(),
-                                             ComSafeArrayAsOutParam(arrNames),
-                                             ComSafeArrayAsOutParam(arrValues),
-                                             ComSafeArrayAsOutParam(arrTimestamps),
-                                             ComSafeArrayAsOutParam(arrFlags));
+    std::vector<Utf8Str> names;
+    std::vector<Utf8Str> values;
+    std::vector<LONG64>  timestamps;
+    std::vector<Utf8Str> flags;
+    HRESULT hrc = i_enumerateGuestProperties("*", names, values, timestamps, flags);
     if (SUCCEEDED(hrc))
     {
-        for (size_t i = 0; i < arrFlags.size(); i++)
+        for (size_t i = 0; i < flags.size(); i++)
         {
             /* Delete all properties which have the flag "TRANSRESET". */
-            if (Utf8Str(arrFlags[i]).contains("TRANSRESET", Utf8Str::CaseInsensitive))
+            if (flags[i].contains("TRANSRESET", Utf8Str::CaseInsensitive))
             {
-                hrc = mMachine->DeleteGuestProperty(arrNames[i]);
+                hrc = mMachine->DeleteGuestProperty(Bstr(names[i]).raw());
                 if (FAILED(hrc))
-                    LogRel(("RESET: Could not delete transient property \"%ls\", rc=%Rhrc\n",
-                            arrNames[i], hrc));
+                    LogRel(("RESET: Could not delete transient property \"%s\", rc=%Rhrc\n",
+                            names[i].c_str(), hrc));
             }
         }
     }
@@ -1803,11 +1799,11 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
     return rc;
 }
 
-HRESULT Console::i_doEnumerateGuestProperties(CBSTR aPatterns,
-                                              ComSafeArrayOut(BSTR, aNames),
-                                              ComSafeArrayOut(BSTR, aValues),
-                                              ComSafeArrayOut(LONG64, aTimestamps),
-                                              ComSafeArrayOut(BSTR, aFlags))
+HRESULT Console::i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
+                                              std::vector<Utf8Str> &aNames,
+                                              std::vector<Utf8Str> &aValues,
+                                              std::vector<LONG64>  &aTimestamps,
+                                              std::vector<Utf8Str> &aFlags)
 {
     AssertReturn(m_pVMMDev, E_FAIL);
 
@@ -1815,10 +1811,9 @@ HRESULT Console::i_doEnumerateGuestProperties(CBSTR aPatterns,
 
     VBOXHGCMSVCPARM parm[3];
 
-    Utf8Str utf8Patterns(aPatterns);
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = (void*)utf8Patterns.c_str();
-    parm[0].u.pointer.size = (uint32_t)utf8Patterns.length() + 1;
+    parm[0].u.pointer.addr = (void*)aPatterns.c_str();
+    parm[0].u.pointer.size = (uint32_t)aPatterns.length() + 1;
 
     /*
      * Now things get slightly complicated. Due to a race with the guest adding
@@ -1840,9 +1835,14 @@ HRESULT Console::i_doEnumerateGuestProperties(CBSTR aPatterns,
         {
             return E_OUTOFMEMORY;
         }
+
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
         parm[1].u.pointer.size = (uint32_t)cchBuf + 1024;
+
+        parm[2].type = VBOX_HGCM_SVC_PARM_32BIT;
+        parm[2].u.uint32 = 0;
+
         vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
                                       &parm[0]);
         Utf8Buf.jolt();
@@ -1871,34 +1871,33 @@ HRESULT Console::i_doEnumerateGuestProperties(CBSTR aPatterns,
        ++cEntries;
     }
 
-    /*
-     * And now we create the COM safe arrays and fill them in.
-     */
-    com::SafeArray<BSTR> names(cEntries);
-    com::SafeArray<BSTR> values(cEntries);
-    com::SafeArray<LONG64> timestamps(cEntries);
-    com::SafeArray<BSTR> flags(cEntries);
+    
+    aNames.resize(cEntries);
+    aValues.resize(cEntries);
+    aTimestamps.resize(cEntries);
+    aFlags.resize(cEntries);
+
     size_t iBuf = 0;
     /* Rely on the service to have formated the data correctly. */
     for (unsigned i = 0; i < cEntries; ++i)
     {
         size_t cchName = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&names[i]);
+        aNames[i] = &pszBuf[iBuf];
         iBuf += cchName + 1;
+
         size_t cchValue = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&values[i]);
+        aValues[i] = &pszBuf[iBuf];
         iBuf += cchValue + 1;
+
         size_t cchTimestamp = strlen(pszBuf + iBuf);
-        timestamps[i] = RTStrToUInt64(pszBuf + iBuf);
+        aTimestamps[i] = RTStrToUInt64(&pszBuf[iBuf]);
         iBuf += cchTimestamp + 1;
+
         size_t cchFlags = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&flags[i]);
+        aFlags[i] = &pszBuf[iBuf];
         iBuf += cchFlags + 1;
     }
-    names.detachTo(ComSafeArrayOutArg(aNames));
-    values.detachTo(ComSafeArrayOutArg(aValues));
-    timestamps.detachTo(ComSafeArrayOutArg(aTimestamps));
-    flags.detachTo(ComSafeArrayOutArg(aFlags));
+
     return S_OK;
 }
 
@@ -5740,25 +5739,15 @@ HRESULT Console::i_deleteGuestProperty(const Utf8Str &aName)
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::i_enumerateGuestProperties(IN_BSTR aPatterns,
-                                            ComSafeArrayOut(BSTR, aNames),
-                                            ComSafeArrayOut(BSTR, aValues),
-                                            ComSafeArrayOut(LONG64, aTimestamps),
-                                            ComSafeArrayOut(BSTR, aFlags))
+HRESULT Console::i_enumerateGuestProperties(const Utf8Str &aPatterns,
+                                            std::vector<Utf8Str> &aNames,
+                                            std::vector<Utf8Str> &aValues,
+                                            std::vector<LONG64>  &aTimestamps,
+                                            std::vector<Utf8Str> &aFlags)
 {
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_PROPS */
-    if (!VALID_PTR(aPatterns) && (aPatterns != NULL))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull(aNames))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull(aValues))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull(aTimestamps))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull(aFlags))
-        return E_POINTER;
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -5771,10 +5760,7 @@ HRESULT Console::i_enumerateGuestProperties(IN_BSTR aPatterns,
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
 
-    return i_doEnumerateGuestProperties(aPatterns, ComSafeArrayOutArg(aNames),
-                                        ComSafeArrayOutArg(aValues),
-                                        ComSafeArrayOutArg(aTimestamps),
-                                        ComSafeArrayOutArg(aFlags));
+    return i_doEnumerateGuestProperties(aPatterns, aNames, aValues, aTimestamps, aFlags);
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
 

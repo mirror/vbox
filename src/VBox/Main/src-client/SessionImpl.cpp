@@ -882,32 +882,7 @@ HRESULT Session::enumerateGuestProperties(const com::Utf8Str &aPatterns,
     if (!mConsole)
         return E_ACCESSDENIED;
 
-    com::SafeArray<BSTR>   arrKeys;
-    com::SafeArray<BSTR>   arrValues;
-    com::SafeArray<LONG64> arrTimestamps;
-    com::SafeArray<BSTR>   arrFlags;
-
-    HRESULT hrc = mConsole->i_enumerateGuestProperties(Bstr(aPatterns).raw(),
-                                                       ComSafeArrayAsOutParam(arrKeys),
-                                                       ComSafeArrayAsOutParam(arrValues),
-                                                       ComSafeArrayAsOutParam(arrTimestamps),
-                                                       ComSafeArrayAsOutParam(arrFlags));
-
-    size_t i = 0;
-    aKeys.resize(arrKeys.size());
-    for(i = 0; i < arrKeys.size(); ++i)
-        aKeys[i] = arrKeys[i];
-    aValues.resize(arrValues.size());
-    for(i = 0; i < arrValues.size(); ++i)
-        aValues[i] = arrValues[i];
-    aTimestamps.resize(arrTimestamps.size());
-    for(i = 0; i < arrTimestamps.size(); ++i)
-        aTimestamps[i] = arrTimestamps[i];
-    aFlags.resize(arrFlags.size());
-    for(i = 0; i < arrFlags.size(); ++i)
-        aFlags[i] = arrFlags[i];
-
-    return hrc;
+    return mConsole->i_enumerateGuestProperties(aPatterns, aKeys, aValues, aTimestamps, aFlags);
 
 #else /* VBOX_WITH_GUEST_PROPS not defined */
     ReturnComNotImplemented();
