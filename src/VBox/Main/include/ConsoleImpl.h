@@ -176,11 +176,11 @@ public:
     HRESULT i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG64 *aTimestamp, Utf8Str *aFlags);
     HRESULT i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags);
     HRESULT i_deleteGuestProperty(const Utf8Str &aName);
-    HRESULT i_enumerateGuestProperties(IN_BSTR aPatterns,
-                                       ComSafeArrayOut(BSTR, aNames),
-                                       ComSafeArrayOut(BSTR, aValues),
-                                       ComSafeArrayOut(LONG64, aTimestamps),
-                                       ComSafeArrayOut(BSTR, aFlags));
+    HRESULT i_enumerateGuestProperties(const Utf8Str &aPatterns,
+                                       std::vector<Utf8Str> &aNames,
+                                       std::vector<Utf8Str> &aValues,
+                                       std::vector<LONG64>  &aTimestamps,
+                                       std::vector<Utf8Str> &aFlags);
     HRESULT i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                 ULONG aSourceIdx, ULONG aTargetIdx,
                                 IProgress *aProgress);
@@ -819,11 +819,11 @@ private:
 
 #ifdef VBOX_WITH_GUEST_PROPS
     static DECLCALLBACK(int)    i_doGuestPropNotification(void *pvExtension, uint32_t, void *pvParms, uint32_t cbParms);
-    HRESULT                     i_doEnumerateGuestProperties(CBSTR aPatterns,
-                                                             ComSafeArrayOut(BSTR, aNames),
-                                                             ComSafeArrayOut(BSTR, aValues),
-                                                             ComSafeArrayOut(LONG64, aTimestamps),
-                                                             ComSafeArrayOut(BSTR, aFlags));
+    HRESULT                     i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
+                                                             std::vector<Utf8Str> &aNames,
+                                                             std::vector<Utf8Str> &aValues,
+                                                             std::vector<LONG64>  &aTimestamps,
+                                                             std::vector<Utf8Str> &aFlags);
 
     void i_guestPropertiesHandleVMReset(void);
     bool i_guestPropertiesVRDPEnabled(void);
