@@ -106,7 +106,7 @@ private:
     HRESULT accessGuestProperty(const com::Utf8Str &aName,
                                 const com::Utf8Str &aValue,
                                 const com::Utf8Str &aFlags,
-                                BOOL aIsSetter,
+                                ULONG aAccessMode,
                                 com::Utf8Str &aRetValue,
                                 LONG64 *aRetTimestamp,
                                 com::Utf8Str &aRetFlags);

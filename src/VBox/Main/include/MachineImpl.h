@@ -717,11 +717,11 @@ protected:
     HRESULT i_getGuestPropertyFromService(const com::Utf8Str &aName, com::Utf8Str &aValue,
                                           LONG64 *aTimestamp, com::Utf8Str &aFlags) const;
     HRESULT i_setGuestPropertyToService(const com::Utf8Str &aName, const com::Utf8Str &aValue,
-                                        const com::Utf8Str &aFlags);
+                                        const com::Utf8Str &aFlags, bool fDelete);
     HRESULT i_getGuestPropertyFromVM(const com::Utf8Str &aName, com::Utf8Str &aValue,
                                      LONG64 *aTimestamp, com::Utf8Str &aFlags) const;
     HRESULT i_setGuestPropertyToVM(const com::Utf8Str &aName, const com::Utf8Str &aValue,
-                                   const com::Utf8Str &aFlags);
+                                   const com::Utf8Str &aFlags, bool fDelete);
     HRESULT i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatterns,
                                                 std::vector<com::Utf8Str> &aNames,
                                                 std::vector<com::Utf8Str> &aValues,

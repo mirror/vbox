@@ -5492,8 +5492,8 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
     if (!directControl)
         rc = E_ACCESSDENIED;
     else
-        rc = directControl->AccessGuestProperty(Bstr(aName).raw(), NULL, NULL,
-                                                false /* isSetter */,
+        rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr("").raw(), Bstr("").raw(),
+                                                0 /* accessMode */,
                                                 &bValue, aTimestamp, &bFlags);
 
     aValue = bValue;
@@ -5542,7 +5542,7 @@ HRESULT Machine::getGuestPropertyTimestamp(const com::Utf8Str &aProperty, LONG64
  * Set a guest property in VBoxSVC's internal structures.
  */
 HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const com::Utf8Str &aValue,
-                                             const com::Utf8Str &aFlags)
+                                             const com::Utf8Str &aFlags, bool fDelete)
 {
     using namespace guestProp;
 
@@ -5558,7 +5558,6 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         if (aFlags.length() && RT_FAILURE(validateFlags(aFlags.c_str(), &fFlags)))
             return setError(E_INVALIDARG, tr("Invalid guest property flag values: '%s'"), aFlags.c_str());
 
-        bool fDelete = aValue.isEmpty();
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(aName);
         if (it == mHWData->mGuestProperties.end())
         {
@@ -5636,7 +5635,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
  *          VBoxSVC.
  */
 HRESULT Machine::i_setGuestPropertyToVM(const com::Utf8Str &aName, const com::Utf8Str &aValue,
-                                        const com::Utf8Str &aFlags)
+                                        const com::Utf8Str &aFlags, bool fDelete)
 {
     HRESULT rc;
 
@@ -5651,7 +5650,7 @@ HRESULT Machine::i_setGuestPropertyToVM(const com::Utf8Str &aName, const com::Ut
         else
             /** @todo Fix when adding DeleteGuestProperty(), see defect. */
             rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw(),
-                                                    true /* isSetter */,
+                                                    fDelete? 2: 1 /* accessMode */,
                                                     &dummy, &dummy64, &dummy);
     }
     catch (std::bad_alloc &)
@@ -5669,10 +5668,10 @@ HRESULT Machine::setGuestProperty(const com::Utf8Str &aProperty, const com::Utf8
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    HRESULT rc = i_setGuestPropertyToVM(aProperty, aValue, aFlags);
+    HRESULT rc = i_setGuestPropertyToVM(aProperty, aValue, aFlags, /* fDelete = */ false);
     if (rc == E_ACCESSDENIED)
         /* The VM is not running or the service is not (yet) accessible */
-        rc = i_setGuestPropertyToService(aProperty, aValue, aFlags);
+        rc = i_setGuestPropertyToService(aProperty, aValue, aFlags, /* fDelete = */ false);
     return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
@@ -5684,7 +5683,15 @@ HRESULT Machine::setGuestPropertyValue(const com::Utf8Str &aProperty, const com:
 
 HRESULT Machine::deleteGuestProperty(const com::Utf8Str &aName)
 {
-    return setGuestProperty(aName, "", "");
+#ifndef VBOX_WITH_GUEST_PROPS
+    ReturnComNotImplemented();
+#else // VBOX_WITH_GUEST_PROPS
+    HRESULT rc = i_setGuestPropertyToVM(aName, "", "", /* fDelete = */ true);
+    if (rc == E_ACCESSDENIED)
+        /* The VM is not running or the service is not (yet) accessible */
+        rc = i_setGuestPropertyToService(aName, "", "", /* fDelete = */ true);
+    return rc;
+#endif // VBOX_WITH_GUEST_PROPS
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS

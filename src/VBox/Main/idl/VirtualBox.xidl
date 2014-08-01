@@ -17743,7 +17743,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="2d2124a7-0f62-4907-ae21-eee5a559bdde"
+    uuid="b7c71040-2761-42c4-a44a-4e2c2d7e2820"
     internal="yes"
     wsmap="suppress"
     >
@@ -18150,7 +18150,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="name" type="wstring" dir="in"/>
       <param name="value" type="wstring" dir="in"/>
       <param name="flags" type="wstring" dir="in"/>
-      <param name="isSetter" type="boolean" dir="in"/>
+      <param name="accessMode" type="unsigned long" dir="in">
+        <desc>0 = get, 1 = set, 2 = delete.</desc>
+      </param>
       <param name="retValue" type="wstring" dir="out"/>
       <param name="retTimestamp" type="long long" dir="out"/>
       <param name="retFlags" type="wstring" dir="out"/>

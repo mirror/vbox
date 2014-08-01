@@ -822,7 +822,7 @@ HRESULT Session::onStorageDeviceChange(const ComPtr<IMediumAttachment> &aMediumA
 }
 
 HRESULT Session::accessGuestProperty(const com::Utf8Str &aName, const com::Utf8Str &aValue, const com::Utf8Str &aFlags,
-                                     BOOL aIsSetter, com::Utf8Str &aRetValue, LONG64 *aRetTimestamp, com::Utf8Str &aRetFlags)
+                                     ULONG aAccessMode, com::Utf8Str &aRetValue, LONG64 *aRetTimestamp, com::Utf8Str &aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
 # ifndef VBOX_COM_INPROC_API_CLIENT
@@ -833,7 +833,7 @@ HRESULT Session::accessGuestProperty(const com::Utf8Str &aName, const com::Utf8S
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
     if (aName.isEmpty())
         return E_INVALIDARG;
-    if (!aIsSetter && !VALID_PTR(aRetTimestamp))
+    if (aAccessMode == 0 && !RT_VALID_PTR(aRetTimestamp))
         return E_POINTER;
 
     /* If this session is not in a VM process fend off the call. The caller
@@ -841,22 +841,17 @@ HRESULT Session::accessGuestProperty(const com::Utf8Str &aName, const com::Utf8S
     if (!mConsole)
         return E_ACCESSDENIED;
 
-    if (!aIsSetter)
-    {
-        Bstr bstrRetValue;
-        Bstr bstrRetFlags;
-        HRESULT hr = mConsole->i_getGuestProperty(Bstr(aName).raw(),
-                                                  bstrRetValue.asOutParam(), aRetTimestamp, bstrRetFlags.asOutParam());
-        if (SUCCEEDED(hr))
-        {
-            aRetValue = bstrRetValue;
-            aRetFlags = bstrRetFlags;
-        }
-        return hr;
-    }
+    HRESULT hr;
+    if (aAccessMode == 2)
+        hr = mConsole->i_deleteGuestProperty(aName);
+    else if (aAccessMode == 1)
+        hr = mConsole->i_setGuestProperty(aName, aValue, aFlags);
+    else if (aAccessMode == 0)
+        hr = mConsole->i_getGuestProperty(aName, &aRetValue, aRetTimestamp, &aRetFlags);
     else
-        return mConsole->i_setGuestProperty(Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw());
+        hr = E_INVALIDARG;
 
+    return hr;
 # else  /* VBOX_COM_INPROC_API_CLIENT */
     /** @todo This is nonsense, non-VM API users shouldn't need to deal with this
      *        method call, VBoxSVC should be clever enough to see that the
