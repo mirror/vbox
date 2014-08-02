@@ -9,6 +9,10 @@
 #ifndef RT_OS_WINDOWS
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifdef RT_OS_DARWIN
+# define __APPLE_USE_RFC_3542
+#endif
+#include <netinet/in.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,6 +31,7 @@
 #include "lwip/sys.h"
 #include "lwip/tcpip.h"
 #include "lwip/udp.h"
+#include "lwip/icmp.h"
 
 struct pxudp {
     /**
@@ -43,6 +48,26 @@ struct pxudp {
      * Host ("external") side of the proxied connection.
      */
     SOCKET sock;
+
+    /**
+     * Is this pcb a mapped host loopback?
+     */
+    int is_mapped;
+
+    /**
+     * Cached value of TTL socket option.
+     */
+    int ttl;
+
+    /**
+     * Cached value of TOS socket option.
+     */
+    int tos;
+
+    /**
+     * Cached value of "don't fragment" socket option.
+     */
+    int df;
 
     /**
      * For some protocols (notably: DNS) we know we are getting just
@@ -97,6 +122,9 @@ static int pxudp_schedule_delete(struct pxudp *);
 
 /* lwip thread callbacks called via proxy_lwip_post() */
 static void pxudp_pcb_delete_pxudp(void *);
+
+/* outbound ttl check */
+static int pxudp_ttl_expired(struct pbuf *);
 
 /* udp pcb callbacks &c */
 static void pxudp_pcb_accept(void *, struct udp_pcb *, struct pbuf *, ip_addr_t *, u16_t);
@@ -259,6 +287,9 @@ pxudp_allocate(void)
 
     pxudp->pcb = NULL;
     pxudp->sock = INVALID_SOCKET;
+    pxudp->df = -1;
+    pxudp->ttl = -1;
+    pxudp->tos = -1;
     pxudp->count = 0;
 
     pxudp->rp = pollmgr_refptr_create(&pxudp->pmhdl);
@@ -406,6 +437,39 @@ pxudp_schedule_delete(struct pxudp *pxudp)
 
 
 /**
+ * Outbound TTL/HOPL check.
+ */
+static int
+pxudp_ttl_expired(struct pbuf *p)
+{
+    int ttl;
+
+    if (ip_current_is_v6()) {
+        ttl = IP6H_HOPLIM(ip6_current_header());
+    }
+    else {
+        ttl = IPH_TTL(ip_current_header());
+    }
+
+    if (RT_UNLIKELY(ttl <= 1)) {
+        int status = pbuf_header(p, ip_current_header_tot_len() + UDP_HLEN);
+        if (RT_LIKELY(status == 0)) {
+            if (ip_current_is_v6()) {
+                icmp6_time_exceeded(p, ICMP6_TE_HL);
+            }
+            else {
+                icmp_time_exceeded(p, ICMP_TE_TTL);
+            }
+        }
+        pbuf_free(p);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/**
  * New proxied UDP conversation created.
  * Global callback for udp_proxy_accept().
  */
@@ -423,6 +487,12 @@ pxudp_pcb_accept(void *arg, struct udp_pcb *newpcb, struct pbuf *p,
     LWIP_ASSERT1(p != NULL);
     LWIP_UNUSED_ARG(arg);
 
+    mapping = pxremap_outbound_ipX(PCB_ISIPV6(newpcb), &dst_addr, &newpcb->local_ip);
+    if (mapping != PXREMAP_MAPPED && pxudp_ttl_expired(p)) {
+        udp_remove(newpcb);
+        return;
+    }
+
     pxudp = pxudp_allocate();
     if (pxudp == NULL) {
         DPRINTF(("pxudp_allocate: failed\n"));
@@ -432,10 +502,10 @@ pxudp_pcb_accept(void *arg, struct udp_pcb *newpcb, struct pbuf *p,
     }
 
     sdom = PCB_ISIPV6(newpcb) ? PF_INET6 : PF_INET;
-    mapping = pxremap_outbound_ipX(PCB_ISIPV6(newpcb), &dst_addr, &newpcb->local_ip);
+    pxudp->is_mapped = (mapping == PXREMAP_MAPPED);
 
 #if 0 /* XXX: DNS IPv6->IPv4 remapping hack */
-    if (mapping == PXREMAP_MAPPED
+    if (pxudp->is_mapped
         && newpcb->local_port == 53
         && PCB_ISIPV6(newpcb))
     {
@@ -494,8 +564,104 @@ static void
 pxudp_pcb_forward_outbound(struct pxudp *pxudp, struct pbuf *p,
                            ip_addr_t *addr, u16_t port)
 {
+    int status;
+
     LWIP_UNUSED_ARG(addr);
     LWIP_UNUSED_ARG(port);
+
+    if (!pxudp->is_mapped && pxudp_ttl_expired(p)) {
+        return;
+    }
+
+    if (!ip_current_is_v6()) { /* IPv4 */
+        const struct ip_hdr *iph = ip_current_header();
+        int ttl, tos, df;
+
+        /*
+         * Different OSes have different socket options for DF.
+         * Unlike pxping.c, we can't use IP_HDRINCL here as it's only
+         * valid for SOCK_RAW.
+         */
+#     define USE_DF_OPTION(_Optname)                    \
+        const int dfopt = _Optname;                     \
+        const char * const dfoptname = #_Optname;
+#if   defined(RT_OS_LINUX)
+        USE_DF_OPTION(IP_MTU_DISCOVER);
+#elif defined(IP_DONTFRAG)      /* Solaris 11+, FreeBSD */
+        USE_DF_OPTION(IP_DONTFRAG);
+#elif defined(IP_DONTFRAGMENT)  /* Windows */
+        USE_DF_OPTION(IP_DONTFRAGMENT);
+#else
+        USE_DF_OPTION(0);
+#endif
+
+        ttl = IPH_TTL(iph);
+        if (!pxudp->is_mapped) {
+            LWIP_ASSERT1(ttl > 1);
+            --ttl;
+        }
+
+        if (ttl != pxudp->ttl) {
+            status = setsockopt(pxudp->sock, IPPROTO_IP, IP_TTL,
+                                (char *)&ttl, sizeof(ttl));
+            if (RT_LIKELY(status == 0)) {
+                pxudp->ttl = ttl;
+            }
+            else {
+                DPRINTF(("IP_TTL: %R[sockerr]\n", SOCKERRNO()));
+            }
+        }
+
+        tos = IPH_TOS(iph);
+        if (tos != pxudp->tos) {
+            status = setsockopt(pxudp->sock, IPPROTO_IP, IP_TOS,
+                                (char *)&tos, sizeof(tos));
+            if (RT_LIKELY(status == 0)) {
+                pxudp->tos = tos;
+            }
+            else {
+                DPRINTF(("IP_TOS: %R[sockerr]\n", SOCKERRNO()));
+            }
+        }
+
+        if (dfopt) {
+            df = (IPH_OFFSET(iph) & PP_HTONS(IP_DF)) != 0;
+#if defined(RT_OS_LINUX)
+            df = df ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
+#endif
+            if (df != pxudp->df) {
+                status = setsockopt(pxudp->sock, IPPROTO_IP, dfopt,
+                                    (char *)&df, sizeof(df));
+                if (RT_LIKELY(status == 0)) {
+                    pxudp->df = df;
+                }
+                else {
+                    DPRINTF(("%s: %R[sockerr]\n", dfoptname, SOCKERRNO()));
+                }
+            }
+        }
+    }
+    else { /* IPv6 */
+        const struct ip6_hdr *iph = ip6_current_header();
+        int ttl;
+
+        ttl = IP6H_HOPLIM(iph);
+        if (!pxudp->is_mapped) {
+            LWIP_ASSERT1(ttl > 1);
+            --ttl;
+        }
+
+        if (ttl != pxudp->ttl) {
+            status = setsockopt(pxudp->sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
+                                (char *)&ttl, sizeof(ttl));
+            if (RT_LIKELY(status == 0)) {
+                pxudp->ttl = ttl;
+            }
+            else {
+                DPRINTF(("IPV6_UNICAST_HOPS: %R[sockerr]\n", SOCKERRNO()));
+            }
+        }
+    }
 
     if (pxudp->pcb->local_port == 53) {
         ++pxudp->count;
