@@ -218,7 +218,7 @@ typedef struct VUSBDEV
     bool volatile       fWokenUp;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
-    bool                afAlignment0[6];
+    bool                afAlignment0[2];
 #endif
 } VUSBDEV;
 
