@@ -1119,11 +1119,7 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
     AssertPtrReturnVoid(pRh);
 #endif
 
-    /** @todo explain why we do this pDev change. */
-    PVUSBDEV pTmp = pUrb->VUsb.pDev;
-    pUrb->VUsb.pDev = &pRh->Hub.Dev;
     pRh->pIRhPort->pfnXferCompletion(pRh->pIRhPort, pUrb);
-    pUrb->VUsb.pDev = pTmp;
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
     {
         LogFlow(("%s: vusbUrbCompletionRh: Freeing URB\n", pUrb->pszDesc));
@@ -1204,19 +1200,24 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
         return VERR_OBJECT_DESTROYED;
     }
 
+    RTCritSectEnter(&pRh->CritSect);
+    int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("%s: vusbUrbQueueAsyncRh: returns %Rrc (queue_urb)\n", pUrb->pszDesc, rc));
+        RTCritSectLeave(&pRh->CritSect);
+        return rc;
+    }
+
     ASMAtomicIncU32(&pDev->aPipes[pUrb->EndPt].async);
 
     /* Queue the pUrb on the roothub */
-    RTCritSectEnter(&pRh->CritSect);
     pUrb->VUsb.pNext = pRh->pAsyncUrbHead;
     if (pRh->pAsyncUrbHead)
         pRh->pAsyncUrbHead->VUsb.ppPrev = &pUrb->VUsb.pNext;
     pRh->pAsyncUrbHead = pUrb;
     pUrb->VUsb.ppPrev = &pRh->pAsyncUrbHead;
     RTCritSectLeave(&pRh->CritSect);
-
-    RTQueueAtomicInsert(&pDev->QueueUrb, &pUrb->Dev.QueueItem);
-    vusbDevUrbIoThreadWakeup(pDev);
 
     return VINF_SUCCESS;
 }
@@ -1880,9 +1881,9 @@ int vusbUrbSubmit(PVUSBURB pUrb)
     int rc;
 
 #ifdef VBOX_WITH_USB
-    if (pPipe && pPipe->pBuffUrbHead)
+    if (pPipe && pPipe->hReadAhead)
     {
-        rc = vusbUrbSubmitBufferedRead(pUrb, pPipe);
+        rc = vusbUrbSubmitBufferedRead(pUrb, pPipe->hReadAhead);
         return rc;
     }
 #endif
@@ -2124,19 +2125,8 @@ static void vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
  */
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
 {
-    PRTREQ hReq = NULL;
-
-    if (pUrb->VUsb.pDev->hUrbIoThread != NIL_RTTHREAD)
-    {
-        int rc = RTReqQueueCallVoid(pUrb->VUsb.pDev->hReqQueueCancel, &hReq, 0,
-                                    (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
-        Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
-        vusbDevUrbIoThreadWakeup(pUrb->VUsb.pDev);
-        rc = RTReqWait(hReq, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-    }
-    else /* Call the worker directly. */
-        vusbUrbCancelWorker(pUrb, mode);
+    int rc = vusbDevIoThreadExecSync(pUrb->VUsb.pDev, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
+    AssertRC(rc);
 }
 
 

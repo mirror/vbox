@@ -112,6 +112,8 @@ typedef struct vusb_ctrl_extra
 void vusbMsgFreeExtraData(PVUSBCTRLEXTRA pExtra);
 void vusbMsgResetExtraData(PVUSBCTRLEXTRA pExtra);
 
+/** Opaque VUSB read ahead buffer management handle. */
+typedef struct VUSBREADAHEADINT *VUSBREADAHEAD;
 
 /**
  * A VUSB pipe
@@ -124,18 +126,8 @@ typedef struct vusb_pipe
     PVUSBCTRLEXTRA      pCtrl;
     /** Count of active async transfers. */
     volatile uint32_t   async;
-    /** The periodic read-ahead buffer thread. */
-    RTTHREAD            ReadAheadThread;
-    /** Pointer to the reset thread arguments. */
-    void               *pvReadAheadArgs;
-    /** Pointer to the first buffered URB. */
-    PVUSBURB            pBuffUrbHead;
-    /** Pointer to the last buffered URB. */
-    PVUSBURB            pBuffUrbTail;
-    /** Count of URBs in read-ahead buffer. */
-    uint32_t            cBuffered;
-    /** Count of URBs submitted for read-ahead but not yet reaped. */
-    uint32_t            cSubmitted;
+    /** Read ahead handle. */
+    VUSBREADAHEAD       hReadAhead;
 } VUSBPIPE;
 /** Pointer to a VUSB pipe structure. */
 typedef VUSBPIPE *PVUSBPIPE;
@@ -217,10 +209,9 @@ typedef struct VUSBDEV
     PTMTIMER            pResetTimer;
     /** URB submit and reap thread. */
     RTTHREAD            hUrbIoThread;
-    /** Queue of URBs to submit. */
-    RTQUEUEATOMIC       QueueUrb;
-    /** Request queue for cancelling URBs on the I/O thread. */
-    RTREQQUEUE          hReqQueueCancel;
+    /** Request queue for executing tasks on the I/O thread which should be done
+     * synchronous and without any other thread accessing the USB device. */
+    RTREQQUEUE          hReqQueueSync;
     /** Flag whether the URB I/O thread should terminate. */
     bool volatile       fTerminate;
     /** Flag whether the I/O thread was woken up. */
@@ -454,12 +445,13 @@ int vusbUrbErrorRh(PVUSBURB pUrb);
 int vusbDevUrbIoThreadWakeup(PVUSBDEV pDev);
 int vusbDevUrbIoThreadCreate(PVUSBDEV pDev);
 int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
+DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...);
 
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb);
-void vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
-void vusbReadAheadStop(void *pvReadAheadArgs);
+VUSBREADAHEAD vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
+void vusbReadAheadStop(VUSBREADAHEAD hReadAhead);
 int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
-int  vusbUrbSubmitBufferedRead(PVUSBURB pUrb, PVUSBPIPE pPipe);
+int  vusbUrbSubmitBufferedRead(PVUSBURB pUrb, VUSBREADAHEAD hReadAhead);
 PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uint32_t cTds);
 
 

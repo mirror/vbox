@@ -585,27 +585,11 @@ static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, P
      */
     LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh));
 
-    /* Tear down reaper thread on the device. */
-    PVUSBDEV pDev = pUrb->VUsb.pDev;
-    int rc = vusbDevUrbIoThreadDestroy(pDev);
-    if (RT_FAILURE(rc))
-        return rc;
-
     vusbUrbCancel(pUrb, CANCELMODE_UNDO);
 
-    PVUSBURB pRipe;
-    if (pUrb->enmState == VUSBURBSTATE_REAPED)
-        pRipe = pUrb;
-    else
-        pRipe = pUrb->pUsbIns->pReg->pfnUrbReap(pUrb->pUsbIns, 0);
-    if (pRipe)
-    {
-        pRipe->enmStatus = VUSBSTATUS_CRC;
-        vusbUrbRipe(pRipe);
-    }
+    /* The reaper thread will take care of completing the URB. */
 
-    rc = vusbDevUrbIoThreadCreate(pDev);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelAllUrbs */
@@ -614,20 +598,9 @@ static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
 
     /*
-     * Tear down all reaper threads first to avoid concurrency issues.
-     * pfnUrbReap is not thread safe.
-     */
-    PVUSBDEV pDev = pRh->pDevices;
-    while (pDev)
-    {
-        int rc = vusbDevUrbIoThreadDestroy(pDev);
-        AssertRC(rc); /* Should not fail. */
-        pDev = pDev->pNext;
-    }
-
-    /*
      * Cancel the URBS.
      */
+    RTCritSectEnter(&pRh->CritSect);
     PVUSBURB pUrb = pRh->pAsyncUrbHead;
     LogFlow(("vusbRhCancelAllUrbs: pRh=%p\n", pRh));
     while (pUrb)
@@ -636,37 +609,7 @@ static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
         vusbUrbCancel(pUrb, CANCELMODE_FAIL);
         pUrb = pNext;
     }
-
-    /*
-     * Reap any URBs which now are ripe.
-     */
-    pUrb = pRh->pAsyncUrbHead;
-    while (pUrb)
-    {
-        PVUSBURB pRipe;
-        if (pUrb->enmState == VUSBURBSTATE_REAPED)
-            pRipe = pUrb;
-        else
-            pRipe = pUrb->pUsbIns->pReg->pfnUrbReap(pUrb->pUsbIns, 0);
-        if (!pRipe || pUrb == pRipe)
-            pUrb = pUrb->VUsb.pNext;
-        if (pRipe)
-        {
-            pRipe->enmStatus = VUSBSTATUS_CRC;
-            vusbUrbRipe(pRipe);
-        }
-    }
-
-    /*
-     * Create the reaper threads again.
-     */
-    pDev = pRh->pDevices;
-    while (pDev)
-    {
-        int rc = vusbDevUrbIoThreadCreate(pDev);
-        AssertRC(rc); /** @todo: What if this fails? */
-        pDev = pDev->pNext;
-    }
+    RTCritSectLeave(&pRh->CritSect);
 }
 
 
