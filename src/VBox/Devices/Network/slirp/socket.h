@@ -68,6 +68,10 @@ struct socket
 
     u_int8_t        so_iptos;    /* Type of service */
 
+    uint8_t         so_sottl;    /* cached socket's IP_TTL option */
+    uint8_t         so_sotos;    /* cached socket's IP_TOS option */
+    int8_t          so_sodf;     /* cached socket's DF option */
+
     u_char          so_type;     /* Type of socket, UDP or TCP */
     int             so_state;    /* internal state flags SS_*, below */
 

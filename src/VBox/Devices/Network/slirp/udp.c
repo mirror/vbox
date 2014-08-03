@@ -92,7 +92,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     struct ip save_ip;
     struct socket *so;
     int ret;
-    int ttl;
+    int ttl, tos;
 
     LogFlowFunc(("ENTER: m = %p, iphlen = %d\n", m, iphlen));
     ip = mtod(m, struct ip *);
@@ -289,10 +289,54 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     m->m_data += iphlen;
 
     ttl = ip->ip_ttl = save_ip.ip_ttl;
-    ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, (const char*)&ttl, sizeof(ttl));
-    if (ret < 0)
-        LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute "
-                "of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
+    if (ttl != so->so_sottl) {
+        ret = setsockopt(so->s, IPPROTO_IP, IP_TTL,
+                         (char *)&ttl, sizeof(ttl));
+        LogRel(("NAT: IP_TTL: %d -> %d (%d)\n", so->so_sottl, ttl, ret));
+        if (RT_LIKELY(ret == 0))
+            so->so_sottl = ttl;
+    }
+
+    tos = save_ip.ip_tos;
+    if (tos != so->so_sotos) {
+        ret = setsockopt(so->s, IPPROTO_IP, IP_TOS,
+                         (char *)&tos, sizeof(tos));
+        LogRel(("NAT: IP_TOS: %d -> %d (%d)\n", so->so_sotos, tos, ret));
+        if (RT_LIKELY(ret == 0))
+            so->so_sotos = tos;
+    }
+
+    {
+        /*
+         * Different OSes have different socket options for DF.  We
+         * can't use IP_HDRINCL here as it's only valid for SOCK_RAW.
+         */
+#     define USE_DF_OPTION(_Optname)                    \
+        const int dfopt = _Optname;                     \
+        const char * const dfoptname = #_Optname;
+#if   defined(IP_MTU_DISCOVER)
+        USE_DF_OPTION(IP_MTU_DISCOVER);
+#elif defined(IP_DONTFRAG)      /* Solaris 11+, FreeBSD */
+        USE_DF_OPTION(IP_DONTFRAG);
+#elif defined(IP_DONTFRAGMENT)  /* Windows */
+        USE_DF_OPTION(IP_DONTFRAGMENT);
+#else
+        USE_DF_OPTION(0);
+#endif
+        if (dfopt) {
+            int df = (save_ip.ip_off & IP_DF) != 0;
+#if defined(IP_MTU_DISCOVER)
+            df = df ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
+#endif
+            if (df != so->so_sodf) {
+                ret = setsockopt(so->s, IPPROTO_IP, dfopt,
+                                 (char *)&df, sizeof(df));
+                LogRel(("NAT: IP_DF: %d -> %d (%d)\n", so->so_sodf, df, ret));
+                if (RT_LIKELY(ret == 0))
+                    so->so_sodf = df;
+            }
+        }
+    }
 
     if (   sosendto(pData, so, m) == -1
         && (   !soIgnorableErrorCode(errno)
@@ -467,6 +511,9 @@ udp_attach(PNATState pData, struct socket *so)
     Assert(so->so_type == 0);
     if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
         goto error;
+    so->so_sottl = 0;
+    so->so_sotos = 0;
+    so->so_sodf = -1;
     /*
      * Here, we bind() the socket.  Although not really needed
      * (sendto() on an unbound socket will bind it), it's done
@@ -565,6 +612,9 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     so->so_expire = curtime + SO_EXPIRE;
     so->so_type = IPPROTO_UDP;
     fd_nonblock(so->s);
+    so->so_sottl = 0;
+    so->so_sotos = 0;
+    so->so_sodf = -1;
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
     insque(pData, so, &udb);
