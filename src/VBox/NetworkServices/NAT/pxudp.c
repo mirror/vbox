@@ -585,7 +585,7 @@ pxudp_pcb_forward_outbound(struct pxudp *pxudp, struct pbuf *p,
 #     define USE_DF_OPTION(_Optname)                    \
         const int dfopt = _Optname;                     \
         const char * const dfoptname = #_Optname;
-#if   defined(RT_OS_LINUX)
+#if   defined(IP_MTU_DISCOVER)  /* Linux */
         USE_DF_OPTION(IP_MTU_DISCOVER);
 #elif defined(IP_DONTFRAG)      /* Solaris 11+, FreeBSD */
         USE_DF_OPTION(IP_DONTFRAG);
@@ -626,7 +626,7 @@ pxudp_pcb_forward_outbound(struct pxudp *pxudp, struct pbuf *p,
 
         if (dfopt) {
             df = (IPH_OFFSET(iph) & PP_HTONS(IP_DF)) != 0;
-#if defined(RT_OS_LINUX)
+#if defined(IP_MTU_DISCOVER)
             df = df ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
 #endif
             if (df != pxudp->df) {
