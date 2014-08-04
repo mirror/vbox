@@ -594,6 +594,11 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
     else
         crPackMakeCurrent( window, nativeWindow, serverCtx );
 
+    if (serverCtx)
+    {
+        packspuInitStrings();
+    }
+
     {
         GET_THREAD(t);
         (void) t;
