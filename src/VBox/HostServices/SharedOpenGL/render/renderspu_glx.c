@@ -1973,6 +1973,8 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     }
 }
 
+#define CR_RENDER_FORCE_PRESENT_MAIN_THREAD
+
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
     /* the CR_RENDER_FORCE_PRESENT_MAIN_THREAD is actually inherited from cocoa backend impl,
@@ -2004,8 +2006,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VB
         status = XSendEvent(render_spu.pCommunicationDisplay, render_spu.WinCmdWindow.window, False, 0, &event);
         if (!status)
         {
-            Assert(0);
-            crWarning("XSendEvent returned null");
+            WARN(("XSendEvent returned null"));
         }
         XFlush(render_spu.pCommunicationDisplay);
     }
@@ -2013,7 +2014,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VB
     else
     {
         /* this is somewhat we do not expect */
-        crWarning("renderspuVBoxCompositorTryAcquire failed rc %d", rc);
+        WARN(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
     }
 #endif
 }
