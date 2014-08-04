@@ -70,6 +70,10 @@
 #  undef LOG_GROUP
 #  include "../USB/DevEHCI.cpp"
 # endif
+# ifdef VBOX_WITH_XHCI_IMPL
+#  undef LOG_GROUP
+#  include "../USB/DevXHCI.cpp"
+# endif
 #endif
 #undef LOG_GROUP
 #include "../VMMDev/VMMDev.cpp"
@@ -1107,6 +1111,86 @@ int main()
     GEN_CHECK_OFF(EHCI, nsWait);
     GEN_CHECK_OFF(EHCI, CritSect);
 # endif /* VBOX_WITH_EHCI_IMPL */
+
+# ifdef VBOX_WITH_XHCI_IMPL
+    /* USB/DevXHCI.cpp */
+    GEN_CHECK_SIZE(XHCIHUBPORT);
+    GEN_CHECK_OFF(XHCIHUBPORT, portsc);
+    GEN_CHECK_OFF(XHCIHUBPORT, portpm);
+    GEN_CHECK_OFF(XHCIHUBPORT, portli);
+    GEN_CHECK_OFF(XHCIHUBPORT, pDev);
+
+    GEN_CHECK_SIZE(XHCIROOTHUB);
+    GEN_CHECK_OFF(XHCIROOTHUB, pIBase);
+    GEN_CHECK_OFF(XHCIROOTHUB, pIRhConn);
+    GEN_CHECK_OFF(XHCIROOTHUB, pIDev);
+    GEN_CHECK_OFF(XHCIROOTHUB, IBase);
+    GEN_CHECK_OFF(XHCIROOTHUB, IRhPort);
+    GEN_CHECK_OFF(XHCIROOTHUB, Led);
+    GEN_CHECK_OFF(XHCIROOTHUB, ILeds);
+    GEN_CHECK_OFF(XHCIROOTHUB, pLedsConnector);
+    GEN_CHECK_OFF(XHCIROOTHUB, aPorts);
+    GEN_CHECK_OFF(XHCIROOTHUB, aPorts[1]);
+    GEN_CHECK_OFF(XHCIROOTHUB, aPorts[XHCI_NDP - 1]);
+    GEN_CHECK_OFF(XHCIROOTHUB, pXhci);
+
+    GEN_CHECK_SIZE(XHCIINTRPTR);
+    GEN_CHECK_OFF(XHCIINTRPTR, iman);
+    GEN_CHECK_OFF(XHCIINTRPTR, imod);
+    GEN_CHECK_OFF(XHCIINTRPTR, erstba);
+    GEN_CHECK_OFF(XHCIINTRPTR, erdp);
+    GEN_CHECK_OFF(XHCIINTRPTR, erep);
+    GEN_CHECK_OFF(XHCIINTRPTR, erst_idx);
+    GEN_CHECK_OFF(XHCIINTRPTR, trb_count);
+    GEN_CHECK_OFF(XHCIINTRPTR, evtr_pcs);
+    GEN_CHECK_OFF(XHCIINTRPTR, ipe);
+
+    GEN_CHECK_SIZE(XHCI);
+    GEN_CHECK_OFF(XHCI, PciDev);
+    GEN_CHECK_OFF(XHCI, pDevInsR3);
+    GEN_CHECK_OFF(XHCI, pDevInsR0);
+    GEN_CHECK_OFF(XHCI, pDevInsRC);
+    GEN_CHECK_OFF(XHCI, pNotifierQueueR3);
+    GEN_CHECK_OFF(XHCI, pNotifierQueueR0);
+    GEN_CHECK_OFF(XHCI, pNotifierQueueRC);
+    GEN_CHECK_OFF(XHCI, pWorkerThread);
+    GEN_CHECK_OFF(XHCI, pSupDrvSession);
+    GEN_CHECK_OFF(XHCI, hEvtProcess);
+    GEN_CHECK_OFF(XHCI, fWrkThreadSleeping);
+    GEN_CHECK_OFF(XHCI, u32TasksNew);
+    GEN_CHECK_OFF(XHCI, MMIOBase);
+    GEN_CHECK_OFF(XHCI, RootHub);
+    GEN_CHECK_OFF(XHCI, cap_length);
+    GEN_CHECK_OFF(XHCI, hci_version);
+    GEN_CHECK_OFF(XHCI, hcs_params3);
+    GEN_CHECK_OFF(XHCI, hcc_params);
+    GEN_CHECK_OFF(XHCI, dbell_off);
+    GEN_CHECK_OFF(XHCI, rts_off);
+    GEN_CHECK_OFF(XHCI, cmd);
+    GEN_CHECK_OFF(XHCI, status);
+    GEN_CHECK_OFF(XHCI, dnctrl);
+    GEN_CHECK_OFF(XHCI, config);
+    GEN_CHECK_OFF(XHCI, crcr);
+    GEN_CHECK_OFF(XHCI, dcbaap);
+    GEN_CHECK_OFF(XHCI, abExtCap);
+    GEN_CHECK_OFF(XHCI, cbExtCap);
+    GEN_CHECK_OFF(XHCI, cmdr_dqp);
+    GEN_CHECK_OFF(XHCI, cmdr_ccs);
+    GEN_CHECK_OFF(XHCI, aSlotState);
+    GEN_CHECK_OFF(XHCI, aBellsRung);
+    GEN_CHECK_OFF(XHCI, pLoad);
+#  ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(XHCI, StatCanceledIsocUrbs);
+    GEN_CHECK_OFF(XHCI, StatCanceledGenUrbs);
+    GEN_CHECK_OFF(XHCI, StatDroppedUrbs);
+    GEN_CHECK_OFF(XHCI, StatEventsWritten);
+    GEN_CHECK_OFF(XHCI, StatEventsDropped);
+    GEN_CHECK_OFF(XHCI, StatIntrsPending);
+    GEN_CHECK_OFF(XHCI, StatIntrsSet);
+    GEN_CHECK_OFF(XHCI, StatIntrsNotSet);
+    GEN_CHECK_OFF(XHCI, StatIntrsCleared);
+#  endif
+# endif /* VBOX_WITH_XHCI_IMPL */
 #endif /* VBOX_WITH_USB */
 
     /* VMMDev/VBoxDev.cpp */
