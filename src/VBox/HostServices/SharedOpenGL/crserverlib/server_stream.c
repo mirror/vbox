@@ -550,6 +550,9 @@ int crServerPendLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
 static void crServerPendProcess(CRConnection *conn)
 {
     CR_SERVER_PENDING_MSG *pIter, *pNext;
+
+    cr_server.fProcessingPendedCommands = GL_TRUE;
+
     RTListForEachSafe(&conn->PendingMsgList, pIter, pNext, CR_SERVER_PENDING_MSG, Node)
     {
         CRMessage *msg = &pIter->Msg;
@@ -573,6 +576,8 @@ static void crServerPendProcess(CRConnection *conn)
 
         RTMemFree(pIter);
     }
+
+    cr_server.fProcessingPendedCommands = GL_FALSE;
 }
 
 /**

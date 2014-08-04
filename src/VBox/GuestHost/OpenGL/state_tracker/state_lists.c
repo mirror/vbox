@@ -174,6 +174,8 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
     CRStateBits *sb = GetCurrentBits();
     CRbitvalue *bitID=g->bitid, *negbitID=g->neg_bitid;
 
+    CRASSERT(g_bVBoxEnableDiffOnMakeCurrent);
+
     if (CHECKDIRTY(sb->buffer.dirty, negbitID))
     {
         if (CHECKDIRTY(sb->buffer.enable, negbitID))

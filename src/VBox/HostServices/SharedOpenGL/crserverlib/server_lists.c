@@ -70,19 +70,22 @@ crServerDispatchNewList( GLuint list, GLenum mode )
 
 static void crServerQueryHWState()
 {
-    GLuint fbFbo, bbFbo;
-    CRClient *client = cr_server.curClient;
-    CRMuralInfo *mural = client ? client->currentMural : NULL;
-    if (mural && mural->fRedirected)
+    if (!cr_server.bUseMultipleContexts)
     {
-        fbFbo = mural->aidFBOs[CR_SERVER_FBO_FB_IDX(mural)];
-        bbFbo = mural->aidFBOs[CR_SERVER_FBO_BB_IDX(mural)];
+        GLuint fbFbo, bbFbo;
+        CRClient *client = cr_server.curClient;
+        CRMuralInfo *mural = client ? client->currentMural : NULL;
+        if (mural && mural->fRedirected)
+        {
+            fbFbo = mural->aidFBOs[CR_SERVER_FBO_FB_IDX(mural)];
+            bbFbo = mural->aidFBOs[CR_SERVER_FBO_BB_IDX(mural)];
+        }
+        else
+        {
+            fbFbo = bbFbo = 0;
+        }
+        crStateQueryHWState(fbFbo, bbFbo);
     }
-    else
-    {
-        fbFbo = bbFbo = 0;
-    }
-    crStateQueryHWState(fbFbo, bbFbo);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchEndList(void)
