@@ -222,6 +222,18 @@ void crStateSwitchPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO
 void crStateSwitchPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO);
 
 void crStateSyncHWErrorState(CRContext *ctx);
+GLenum crStateCleanHWErrorState();
+
+#define CR_STATE_CLEAN_HW_ERR_WARN(_s) do {\
+            GLenum _err = crStateCleanHWErrorState(); \
+            if (_err != GL_NO_ERROR) { \
+                static int _cErrPrints = 0; \
+                if (_cErrPrints < 5) { \
+                    ++_cErrPrints; \
+                    WARN(("%s %#x, ignoring.. (%d out of 5)", _s, _err, _cErrPrints)); \
+                } \
+            } \
+        } while (0)
 
 DECLEXPORT(void) crStateFlushFunc( CRStateFlushFunc ff );
 DECLEXPORT(void) crStateFlushArg( void *arg );

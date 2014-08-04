@@ -587,6 +587,25 @@ void crStateSyncHWErrorState(CRContext *ctx)
     }
 }
 
+GLenum crStateCleanHWErrorState()
+{
+    GLenum err;
+    while ((err = diff_api.GetError()) != GL_NO_ERROR)
+    {
+        static int cErrPrints = 0;
+#ifndef DEBUG_misha
+        if (cErrPrints < 5)
+#endif
+        {
+            ++cErrPrints;
+            WARN(("cleaning gl error (0x%x), ignoring.. (%d out of 5) ..", err, cErrPrints));
+        }
+    }
+
+    return err;
+}
+
+
 void crStateSwitchPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
 {
     if (!fromCtx)
@@ -605,22 +624,12 @@ void crStateSwitchPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDra
     if (!toCtx)
         return;
 
-    if (g_bVBoxEnableDiffOnMakeCurrent && fromCtx && toCtx != fromCtx)
-    {
-        GLenum err;
-        while ((err = diff_api.GetError()) != GL_NO_ERROR)
-        {
-            static int cErrPrints = 0;
-#ifndef DEBUG_misha
-            if (cErrPrints < 5)
-#endif
-            {
-                ++cErrPrints;
-                crWarning("gl error (0x%x) after context switch, ignoring.. (%d out of 5) ..", err, cErrPrints);
-            }
-        }
-    }
 #ifdef CR_EXT_framebuffer_object
     crStateFramebufferObjectReenableHW(fromCtx, toCtx, idDrawFBO, idReadFBO);
 #endif
+
+    if (g_bVBoxEnableDiffOnMakeCurrent && fromCtx && toCtx != fromCtx)
+    {
+        CR_STATE_CLEAN_HW_ERR_WARN("error on make current");
+    }
 }
