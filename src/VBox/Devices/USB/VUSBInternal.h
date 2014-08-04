@@ -201,12 +201,10 @@ typedef struct VUSBDEV
         uint8_t             u8ScsiCmd;
     } Urb;
 
-    /** The reset thread. */
-    RTTHREAD            hResetThread;
-    /** Pointer to the reset thread arguments. */
-    void               *pvResetArgs;
     /** The reset timer handle. */
     PTMTIMER            pResetTimer;
+    /** Reset handler arguments. */
+    void               *pvArgs;
     /** URB submit and reap thread. */
     RTTHREAD            hUrbIoThread;
     /** Request queue for executing tasks on the I/O thread which should be done
@@ -445,6 +443,8 @@ int vusbUrbErrorRh(PVUSBURB pUrb);
 int vusbDevUrbIoThreadWakeup(PVUSBDEV pDev);
 int vusbDevUrbIoThreadCreate(PVUSBDEV pDev);
 int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
+DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+DECLHIDDEN(int) vusbDevIoThreadExec(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...);
 
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb);
@@ -481,6 +481,9 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 #else
 # define vusbUrbAssert(pUrb) do {} while (0)
 #endif
+
+/** Executes a function synchronously. */
+#define VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC RT_BIT_32(0)
 
 /** @} */
 
