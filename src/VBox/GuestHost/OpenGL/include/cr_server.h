@@ -356,6 +356,8 @@ typedef struct {
 
     GLboolean fCrCmdEnabled;
 
+    GLboolean fProcessingPendedCommands;
+
     int numClients;
     CRClient *clients[CR_MAX_CLIENTS];  /**< array [numClients] */
     CRClient *curClient;

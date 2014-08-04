@@ -207,6 +207,18 @@ void PACKSPU_APIENTRY packspu_Flush( void )
     }
 }
 
+void PACKSPU_APIENTRY packspu_NewList(GLuint list, GLenum mode)
+{
+    crStateNewList(list, mode);
+    crPackNewList(list, mode);
+}
+
+void PACKSPU_APIENTRY packspu_EndList()
+{
+    crStateEndList();
+    crPackEndList();
+}
+
 void PACKSPU_APIENTRY packspu_VBoxWindowDestroy( GLint con, GLint window )
 {
     if (CRPACKSPU_IS_WDDM_CRHGSMI())

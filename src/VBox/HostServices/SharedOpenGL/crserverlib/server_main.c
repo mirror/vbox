@@ -383,6 +383,7 @@ crServerInit(int argc, char *argv[])
 #endif
 
     cr_server.fCrCmdEnabled = GL_FALSE;
+    cr_server.fProcessingPendedCommands = GL_FALSE;
     CrHTableCreate(&cr_server.clientTable, CR_MAX_CLIENTS);
 
     cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
@@ -490,6 +491,7 @@ GLboolean crVBoxServerInit(void)
 #endif
 
     cr_server.fCrCmdEnabled = GL_FALSE;
+    cr_server.fProcessingPendedCommands = GL_FALSE;
     CrHTableCreate(&cr_server.clientTable, CR_MAX_CLIENTS);
 
     cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);

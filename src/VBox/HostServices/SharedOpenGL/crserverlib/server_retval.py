@@ -20,31 +20,40 @@ print """
 
 void crServerReturnValue( const void *payload, unsigned int payload_len )
 {
-    CRMessageReadback *rb;
-    int msg_len = sizeof( *rb ) + payload_len;
-
-    /* Don't reply to client if we're loading VM snapshot*/
-    if (cr_server.bIsInLoadingState)
-        return;
-
-    if (cr_server.curClient->conn->type == CR_FILE)
-    {
+    if (!cr_server.fProcessingPendedCommands)
+    { 
+        CRMessageReadback *rb;
+        int msg_len = sizeof( *rb ) + payload_len;
+    
+        /* Don't reply to client if we're loading VM snapshot*/
+        if (cr_server.bIsInLoadingState)
+            return;
+    
+        if (cr_server.curClient->conn->type == CR_FILE)
+        {
+            return;
+        }
+    
+        rb = (CRMessageReadback *) crAlloc( msg_len );
+    
+        rb->header.type = CR_MESSAGE_READBACK;
+        CRDBGPTR_PRINTRB(cr_server.curClient->conn->u32ClientID, &cr_server.writeback_ptr);
+        CRDBGPTR_CHECKNZ(&cr_server.writeback_ptr);
+        CRDBGPTR_CHECKNZ(&cr_server.return_ptr);
+        crMemcpy( &(rb->writeback_ptr), &(cr_server.writeback_ptr), sizeof( rb->writeback_ptr ) );
+        crMemcpy( &(rb->readback_ptr), &(cr_server.return_ptr), sizeof( rb->readback_ptr ) );
+        crMemcpy( rb+1, payload, payload_len );
+        crNetSend( cr_server.curClient->conn, NULL, rb, msg_len );
+        CRDBGPTR_SETZ(&cr_server.writeback_ptr);
+        CRDBGPTR_SETZ(&cr_server.return_ptr);
+        crFree( rb );
         return;
     }
-
-    rb = (CRMessageReadback *) crAlloc( msg_len );
-
-    rb->header.type = CR_MESSAGE_READBACK;
-    CRDBGPTR_PRINTRB(cr_server.curClient->conn->u32ClientID, &cr_server.writeback_ptr);
-    CRDBGPTR_CHECKNZ(&cr_server.writeback_ptr);
-    CRDBGPTR_CHECKNZ(&cr_server.return_ptr);
-    crMemcpy( &(rb->writeback_ptr), &(cr_server.writeback_ptr), sizeof( rb->writeback_ptr ) );
-    crMemcpy( &(rb->readback_ptr), &(cr_server.return_ptr), sizeof( rb->readback_ptr ) );
-    crMemcpy( rb+1, payload, payload_len );
-    crNetSend( cr_server.curClient->conn, NULL, rb, msg_len );
+#ifdef DEBUG_misha
+    WARN(("Pending command returns value"));
+#endif
     CRDBGPTR_SETZ(&cr_server.writeback_ptr);
     CRDBGPTR_SETZ(&cr_server.return_ptr);
-    crFree( rb );
 }
 """
 

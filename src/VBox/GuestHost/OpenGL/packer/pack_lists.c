@@ -63,6 +63,13 @@ void PACK_APIENTRY crPackNewList( GLuint list, GLenum mode )
     CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     (void) pc;
+
+    if (CR_CMDBLOCK_IS_STARTED(pc, CRPACKBLOCKSTATE_OP_NEWLIST))
+    {
+        WARN(("recursive NewList?"));
+        return;
+    }
+
     CR_CMDBLOCK_BEGIN( pc, CRPACKBLOCKSTATE_OP_NEWLIST );
     CR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, 16, GL_FALSE );
     WRITE_DATA( 0, GLint, 16 );
