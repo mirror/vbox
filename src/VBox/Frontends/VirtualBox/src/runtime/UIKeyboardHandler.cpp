@@ -202,7 +202,18 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
                  * and after we will just ignore that issue: */
                 int cTriesLeft = 50;
+                XEvent dummy;
                 while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+                /* If the grab succeeds, X will insert a FocusIn event for this
+                 * window into the event queue.  If we have two windows they can
+                 * end up in an endless cycle of passing the focus back and
+                 * forward as there is always a pending FocusIn for each, and we
+                 * drop and re-take the grab each time the focus changes.  So we
+                 * remove the event again before Qt can see it. */
+                if (cTriesLeft > 0)
+                    XCheckTypedWindowEvent(QX11Info::display(),
+                            m_windows[m_iKeyboardCaptureViewIndex]->winId(),
+                            XFocusIn, &dummy);
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
