@@ -841,12 +841,7 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
 
     logStringW(hModule, L"CreateHostOnlyInterface: Creating host-only interface");
 
-    HRESULT hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(NETADP_ID);
-    if (FAILED(hr))
-    {
-        logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinRemoveAllNetDevicesOfId failed, error = 0x%x", hr);
-        bSetStaticIp = false;
-    }
+    HRESULT hr;
 
     GUID guid;
     WCHAR wszMpInf[MAX_PATH];
@@ -889,21 +884,40 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
 
     if (SUCCEEDED(hr))
     {
-        logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinCreateHostOnlyNetworkInterface");
-        hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, bIsFile, &guid, NULL, NULL);
-        logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface returns 0x%x", hr);
+    //first, try to update Host Only Network Interface
+        BOOL fRebootRequired = FALSE;
+        hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(pwszInfPath, &fRebootRequired);
         if (SUCCEEDED(hr))
         {
-            ULONG ip = inet_addr("192.168.56.1");
-            ULONG mask = inet_addr("255.255.255.0");
-            logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinEnableStaticIpConfig");
-            hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
-            logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig returns 0x%x", hr);
-            if (FAILED(hr))
-                logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig failed, error = 0x%x", hr);
+            if (fRebootRequired)
+            {
+                logStringW(hModule, L"UpdateHostOnlyInterfaces: Reboot required, setting REBOOT property to force");
+                HRESULT hr2 = MsiSetPropertyW(hModule, L"REBOOT", L"Force");
+                if (hr2 != ERROR_SUCCESS)
+                    logStringW(hModule, L"UpdateHostOnlyInterfaces: Failed to set REBOOT property, error = 0x%x", hr2);
+            }
         }
         else
-            logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface failed, error = 0x%x", hr);
+            logStringW(hModule, L"UpdateHostOnlyInterfaces: VBoxNetCfgWinUpdateHostOnlyNetworkInterface failed, hr = 0x%x", hr);
+    //in fail case call CreateHostOnlyInterface
+        if (FAILED(hr))
+        {
+            logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinCreateHostOnlyNetworkInterface");
+            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, bIsFile, &guid, NULL, NULL);
+            logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface returns 0x%x", hr);
+            if (SUCCEEDED(hr))
+            {
+                ULONG ip = inet_addr("192.168.56.1");
+                ULONG mask = inet_addr("255.255.255.0");
+                logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinEnableStaticIpConfig");
+                hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
+                logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig returns 0x%x", hr);
+                if (FAILED(hr))
+                    logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig failed, error = 0x%x", hr);
+            }
+            else
+                logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface failed, error = 0x%x", hr);
+        }
     }
 
     if (SUCCEEDED(hr))
