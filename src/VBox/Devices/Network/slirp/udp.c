@@ -292,7 +292,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     if (ttl != so->so_sottl) {
         ret = setsockopt(so->s, IPPROTO_IP, IP_TTL,
                          (char *)&ttl, sizeof(ttl));
-        LogRel(("NAT: IP_TTL: %d -> %d (%d)\n", so->so_sottl, ttl, ret));
         if (RT_LIKELY(ret == 0))
             so->so_sottl = ttl;
     }
@@ -301,7 +300,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     if (tos != so->so_sotos) {
         ret = setsockopt(so->s, IPPROTO_IP, IP_TOS,
                          (char *)&tos, sizeof(tos));
-        LogRel(("NAT: IP_TOS: %d -> %d (%d)\n", so->so_sotos, tos, ret));
         if (RT_LIKELY(ret == 0))
             so->so_sotos = tos;
     }
@@ -331,7 +329,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             if (df != so->so_sodf) {
                 ret = setsockopt(so->s, IPPROTO_IP, dfopt,
                                  (char *)&df, sizeof(df));
-                LogRel(("NAT: IP_DF: %d -> %d (%d)\n", so->so_sodf, df, ret));
                 if (RT_LIKELY(ret == 0))
                     so->so_sodf = df;
             }
