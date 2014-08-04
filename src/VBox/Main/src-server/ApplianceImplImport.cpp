@@ -1590,7 +1590,6 @@ HRESULT Appliance::i_importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     void *pvMfBuf = NULL;
     void *pvCertBuf = NULL;
     Utf8Str OVFfilename;
-    void  *pSignatureRSA = NULL;
 
     writeLock.release();
 

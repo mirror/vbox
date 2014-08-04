@@ -89,6 +89,7 @@ void QIRichToolButton::keyPressEvent(QKeyEvent *pEvent)
 
 void QIRichToolButton::mousePressEvent(QMouseEvent *pEvent)
 {
+    NOREF(pEvent);
     /* Animate-click: */
     animateClick();
 }

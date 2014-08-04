@@ -2049,6 +2049,7 @@ HRESULT ExtPackManager::cleanup(void)
 
 HRESULT ExtPackManager::queryAllPlugInsForFrontend(const com::Utf8Str &aFrontendName, std::vector<com::Utf8Str> &aPlugInModules)
 {
+    NOREF(aFrontendName);
     aPlugInModules.resize(0);
     return S_OK;
 }
