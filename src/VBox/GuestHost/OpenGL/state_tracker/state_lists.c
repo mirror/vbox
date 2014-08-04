@@ -176,6 +176,8 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
 
     CRASSERT(g_bVBoxEnableDiffOnMakeCurrent);
 
+    crStateSyncHWErrorState(g);
+
     if (CHECKDIRTY(sb->buffer.dirty, negbitID))
     {
         if (CHECKDIRTY(sb->buffer.enable, negbitID))
@@ -1203,6 +1205,8 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
             }
         }
     }
+
+    CR_STATE_CLEAN_HW_ERR_WARN("error on hw sync");
 }
 
 void STATE_APIENTRY crStateNewList (GLuint list, GLenum mode) 
