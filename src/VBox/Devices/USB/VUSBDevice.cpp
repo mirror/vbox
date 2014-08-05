@@ -1236,18 +1236,11 @@ void vusbDevDestroy(PVUSBDEV pDev)
 {
     LogFlow(("vusbDevDestroy: pDev=%p[%s] enmState=%d\n", pDev, pDev->pUsbIns->pszName, pDev->enmState));
 
-    /* Destroy I/O thread. */
-    vusbDevUrbIoThreadDestroy(pDev);
-
     /*
      * Deal with pending async reset.
      */
     if (pDev->enmState == VUSB_DEVICE_STATE_RESET)
         pDev->enmState = VUSB_DEVICE_STATE_DEFAULT; /* anything but reset */
-
-    /* Destroy request queue. */
-    int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
-    AssertRC(rc);
 
     /*
      * Detach and free resources.
@@ -1257,6 +1250,16 @@ void vusbDevDestroy(PVUSBDEV pDev)
     RTMemFree(pDev->paIfStates);
     TMR3TimerDestroy(pDev->pResetTimer);
     pDev->pResetTimer = NULL;
+
+    /*
+     * Destroy I/O thread and request queue last because they might still be used
+     * when cancelling URBs.
+     */
+    vusbDevUrbIoThreadDestroy(pDev);
+
+    int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
+    AssertRC(rc);
+
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
 }
 
