@@ -1422,7 +1422,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     /*
      * Anyone single stepping on the host side? If so, we'll have to use the
      * trap flag in the guest EFLAGS since AMD-V doesn't have a trap flag on
-     * the VMM level like VT-x implementations does.
+     * the VMM level like the VT-x implementations does.
      */
     bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
     if (fStepping)
@@ -1812,16 +1812,16 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Clear any unused and reserved bits. */
     HMCPU_CF_CLEAR(pVCpu,   HM_CHANGED_GUEST_RIP                  /* Unused (loaded unconditionally). */
-                            | HM_CHANGED_GUEST_RSP
-                            | HM_CHANGED_GUEST_RFLAGS
-                            | HM_CHANGED_GUEST_SYSENTER_CS_MSR
-                            | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
-                            | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
-                            | HM_CHANGED_GUEST_LAZY_MSRS          /* Unused. */
-                            | HM_CHANGED_SVM_RESERVED1            /* Reserved. */
-                            | HM_CHANGED_SVM_RESERVED2
-                            | HM_CHANGED_SVM_RESERVED3
-                            | HM_CHANGED_SVM_RESERVED4);
+                          | HM_CHANGED_GUEST_RSP
+                          | HM_CHANGED_GUEST_RFLAGS
+                          | HM_CHANGED_GUEST_SYSENTER_CS_MSR
+                          | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
+                          | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
+                          | HM_CHANGED_GUEST_LAZY_MSRS            /* Unused. */
+                          | HM_CHANGED_SVM_RESERVED1              /* Reserved. */
+                          | HM_CHANGED_SVM_RESERVED2
+                          | HM_CHANGED_SVM_RESERVED3
+                          | HM_CHANGED_SVM_RESERVED4);
 
     /* All the guest state bits should be loaded except maybe the host context and/or shared host/guest bits. */
     AssertMsg(   !HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_ALL_GUEST)
