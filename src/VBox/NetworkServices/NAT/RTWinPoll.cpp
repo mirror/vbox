@@ -103,10 +103,10 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
 #define WSA_TO_POLL(_wsaev, _pollev)                                    \
         do {                                                            \
             if (NetworkEvents.lNetworkEvents & (_wsaev))                \
-        	if (NetworkEvents.iErrorCode[_wsaev##_BIT] == 0)        \
-        	    revents |= (_pollev);                               \
-        	else                                                    \
-        	    revents |= POLLERR;                                 \
+                if (NetworkEvents.iErrorCode[_wsaev##_BIT] == 0)        \
+                    revents |= (_pollev);                               \
+                else                                                    \
+                    revents |= POLLERR;                                 \
         } while (0)
 
         WSA_TO_POLL(FD_READ,    POLLIN);
