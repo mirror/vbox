@@ -884,7 +884,7 @@ void UISession::sltHandleHostScreenCountChange()
     updateHostScreenData();
 
     /* Notify current machine-logic: */
-    emit sigHostScreenCountChanged();
+    emit sigHostScreenCountChange();
 }
 
 void UISession::sltHandleHostScreenGeometryChange()
@@ -895,7 +895,15 @@ void UISession::sltHandleHostScreenGeometryChange()
     updateHostScreenData();
 
     /* Notify current machine-logic: */
-    emit sigHostScreenGeometryChanged();
+    emit sigHostScreenGeometryChange();
+}
+
+void UISession::sltHandleHostScreenAvailableAreaChange()
+{
+    LogRelFlow(("UISession: Host-screen available-area changed.\n"));
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenAvailableAreaChange();
 }
 
 void UISession::sltAdditionsChange()
@@ -1083,7 +1091,7 @@ void UISession::prepareConnections()
     connect(QApplication::desktop(), SIGNAL(resized(int)),
             this, SLOT(sltHandleHostScreenGeometryChange()));
     connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),
-            this, SLOT(sltHandleHostScreenGeometryChange()));
+            this, SLOT(sltHandleHostScreenAvailableAreaChange()));
 #endif /* !Q_WS_MAC */
 }
 
