@@ -51,7 +51,7 @@
  */
 #if defined(RT_OS_NETBSD) || defined(RT_OS_SOLARIS)
 # define HAVE_TCP_POLLHUP 0                     /* not reported */
-#elif defined(RT_OS_DARWIN)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
 # define HAVE_TCP_POLLHUP POLLIN                /* reported when remote closes */
 #else
 # define HAVE_TCP_POLLHUP (POLLIN|POLLOUT)      /* reported when both directions are closed */
@@ -1682,6 +1682,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     LWIP_ASSERT1((revents & POLLHUP) == 0);
 #else
     if (revents & POLLHUP) {
+        DPRINTF(("sock %d: HUP\n", fd));
 #if HAVE_TCP_POLLHUP == POLLIN
         /*
          * Remote closed inbound.
@@ -1704,7 +1705,6 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
          * Both directions are closed.
          */
         {
-            DPRINTF(("sock %d: HUP\n", fd));
             LWIP_ASSERT1(pxtcp->outbound_close_done);
 
             if (pxtcp->inbound_close) {
