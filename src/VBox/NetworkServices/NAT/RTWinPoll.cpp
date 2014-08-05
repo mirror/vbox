@@ -100,23 +100,19 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
         /* deassociate socket with event */
         WSAEventSelect(pFds[i].fd, g_hNetworkEvent, 0);
 
-        if (NetworkEvents.lNetworkEvents & (FD_READ|FD_ACCEPT))
-        {
-            if (   NetworkEvents.iErrorCode[FD_READ_BIT] != 0
-                || NetworkEvents.iErrorCode[FD_ACCEPT_BIT] != 0)
-                revents |= POLLERR;
+#define WSA_TO_POLL(_wsaev, _pollev)                                    \
+        do {                                                            \
+            if (NetworkEvents.lNetworkEvents & (_wsaev))                \
+        	if (NetworkEvents.iErrorCode[_wsaev##_BIT] == 0)        \
+        	    revents |= (_pollev);                               \
+        	else                                                    \
+        	    revents |= POLLERR;                                 \
+        } while (0)
 
-            revents |= POLLIN;
-        }
-
-        if (NetworkEvents.lNetworkEvents & (FD_WRITE|FD_CONNECT))
-        {
-            if (   NetworkEvents.iErrorCode[FD_WRITE_BIT] != 0
-                || NetworkEvents.iErrorCode[FD_CONNECT_BIT] != 0)
-                revents |= POLLERR;
-
-            revents |= POLLOUT;
-        }
+        WSA_TO_POLL(FD_READ,    POLLIN);
+        WSA_TO_POLL(FD_ACCEPT,  POLLIN);
+        WSA_TO_POLL(FD_WRITE,   POLLOUT);
+        WSA_TO_POLL(FD_CONNECT, POLLOUT);
 
         if (NetworkEvents.lNetworkEvents & FD_CLOSE)
         {
