@@ -134,11 +134,15 @@ protected slots:
 #ifdef RT_OS_DARWIN
     virtual void sltShowWindows();
 #endif /* RT_OS_DARWIN */
+    /** Handles guest-screen count change. */
     virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
-    /* Qt callback handler: */
-    virtual void sltHostScreenCountChanged();
-    virtual void sltHostScreenGeometryChanged();
+    /** Handles host-screen count change. */
+    virtual void sltHostScreenCountChange();
+    /** Handles host-screen geometry change. */
+    virtual void sltHostScreenGeometryChange();
+    /** Handles host-screen available-area change. */
+    virtual void sltHostScreenAvailableAreaChange();
 
 protected:
 

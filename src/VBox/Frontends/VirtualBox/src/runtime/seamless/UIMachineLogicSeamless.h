@@ -56,8 +56,10 @@ private slots:
     /** Updates machine-window(s) location/size on screen-layout changes. */
     void sltScreenLayoutChanged();
 
-    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    void sltHostScreenCountChanged();
+    /** Handles guest-screen count change. */
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    /** Handles host-screen count change. */
+    virtual void sltHostScreenCountChange();
 
 #ifndef RT_OS_DARWIN
     /** Invokes popup-menu. */

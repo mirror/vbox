@@ -93,8 +93,12 @@ private slots:
     /** Updates machine-window(s) location/size on screen-layout changes. */
     void sltScreenLayoutChanged();
 
-    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    void sltHostScreenCountChanged();
+    /** Handles guest-screen count change. */
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    /** Handles host-screen count change. */
+    virtual void sltHostScreenCountChange();
+    /** Handles host-screen available-area change. */
+    virtual void sltHostScreenAvailableAreaChange();
 
 private:
 

@@ -401,7 +401,7 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 
 void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
-    LogRel(("UIMachineLogicFullscreen::sltGuestMonitorChange: Guest-screen count changed.\n"));
+    LogRel(("UIMachineLogicFullscreen: Guest-screen count changed.\n"));
 
     /* Update multi-screen layout before any window update: */
     if (changeType == KGuestMonitorChangedEventType_Enabled ||
@@ -420,9 +420,9 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
 #endif /* !Q_WS_MAC */
 }
 
-void UIMachineLogicFullscreen::sltHostScreenCountChanged()
+void UIMachineLogicFullscreen::sltHostScreenCountChange()
 {
-    LogRel(("UIMachineLogicFullscreen::sltHostScreenCountChanged: Host-screen count changed.\n"));
+    LogRel(("UIMachineLogicFullscreen: Host-screen count changed.\n"));
 
     /* Update multi-screen layout before any window update: */
     m_pScreenLayout->rebuild();
@@ -430,13 +430,18 @@ void UIMachineLogicFullscreen::sltHostScreenCountChanged()
 #ifdef Q_WS_MAC
     /* Call to base-class for Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        UIMachineLogic::sltHostScreenCountChanged();
+        UIMachineLogic::sltHostScreenCountChange();
     /* Revalidate 'fullscreen' windows for ML and next: */
     else revalidateNativeFullScreen();
 #else /* !Q_WS_MAC */
     /* Call to base-class: */
-    UIMachineLogic::sltHostScreenCountChanged();
+    UIMachineLogic::sltHostScreenCountChange();
 #endif /* !Q_WS_MAC */
+}
+
+void UIMachineLogicFullscreen::sltHostScreenAvailableAreaChange()
+{
+    LogRel(("UIMachineLogicFullscreen: Host-screen available-area change ignored.\n"));
 }
 
 void UIMachineLogicFullscreen::prepareActionGroups()
