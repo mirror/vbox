@@ -902,7 +902,7 @@ DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBl
     AssertMsg(puBitmap < (pImage->pu8Bitmap + pImage->cbDataBlockBitmap),
                 ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
 
-    return ASMBitTest(puBitmap, iBitInByte);
+    return ((*puBitmap) & RT_BIT(iBitInByte)) != 0;
 }
 
 /**
@@ -922,7 +922,9 @@ DECLINLINE(bool) vhdBlockBitmapSectorSet(PVHDIMAGE pImage, uint8_t *pu8Bitmap, u
     AssertMsg(puBitmap < (pu8Bitmap + pImage->cbDataBlockBitmap),
                 ("VHD: Current bitmap position exceeds maximum size of the bitmap\n"));
 
-    return !ASMBitTestAndSet(puBitmap, iBitInByte);
+    bool fClear = ((*puBitmap) & RT_BIT(iBitInByte)) == 0;
+    *puBitmap |= RT_BIT(iBitInByte);
+    return fClear;
 }
 
 /**
