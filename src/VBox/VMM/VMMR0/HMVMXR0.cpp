@@ -1438,13 +1438,13 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
     /*
      * Note: If you're adding MSRs here, make sure to update the MSR-bitmap permissions in hmR0VmxSetupProcCtls().
      */
-    if (!(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_LOADED_GUEST))
+    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
     {
         pVCpu->hm.s.vmx.u64HostLStarMsr        = ASMRdMsr(MSR_K8_LSTAR);
         pVCpu->hm.s.vmx.u64HostStarMsr         = ASMRdMsr(MSR_K6_STAR);
         pVCpu->hm.s.vmx.u64HostSFMaskMsr       = ASMRdMsr(MSR_K8_SF_MASK);
         pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);
-        pVCpu->hm.s.vmx.fRestoreHostMsrs |= VMX_RESTORE_HOST_MSR_SAVED_HOST;
+        pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_SAVED_HOST;
     }
 }
 
@@ -1473,7 +1473,7 @@ static bool hmR0VmxIsLazyGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
 
 
 /**
- * Saves a set of guests MSRs back into the guest-CPU context.
+ * Saves a set of guest MSRs back into the guest-CPU context.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
@@ -1487,9 +1487,9 @@ static void hmR0VmxLazySaveGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_LOADED_GUEST)
+    if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
-        Assert(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_SAVED_HOST);
+        Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
         pMixedCtx->msrLSTAR        = ASMRdMsr(MSR_K8_LSTAR);
         pMixedCtx->msrSTAR         = ASMRdMsr(MSR_K6_STAR);
         pMixedCtx->msrSFMASK       = ASMRdMsr(MSR_K8_SF_MASK);
@@ -1518,9 +1518,6 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    Assert(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_SAVED_HOST);
-    if (!(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_LOADED_GUEST))
-    {
 #define VMXLOCAL_LAZY_LOAD_GUEST_MSR(uMsr, a_GuestMsr, a_HostMsr) \
     do { \
         if (pMixedCtx->msr##a_GuestMsr != pVCpu->hm.s.vmx.u64Host##a_HostMsr##Msr) \
@@ -1529,11 +1526,14 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(ASMRdMsr(uMsr) == pVCpu->hm.s.vmx.u64Host##a_HostMsr##Msr); \
     } while (0)
 
+    Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
+    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
+    {
         VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_LSTAR, LSTAR, LStar);
         VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K6_STAR, STAR, Star);
         VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_SF_MASK, SFMASK, SFMask);
         VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_KERNEL_GS_BASE, KERNELGSBASE, KernelGSBase);
-#undef VMXLOCAL_LAZY_LOAD_GUEST_MSR
+        pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
     }
     else
     {
@@ -1542,7 +1542,8 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         ASMWrMsr(MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK);
         ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE);
     }
-    pVCpu->hm.s.vmx.fRestoreHostMsrs |= VMX_RESTORE_HOST_MSR_LOADED_GUEST;
+
+#undef VMXLOCAL_LAZY_LOAD_GUEST_MSR
 }
 
 
@@ -1561,15 +1562,15 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_LOADED_GUEST)
+    if (pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
     {
-        Assert(pVCpu->hm.s.vmx.fRestoreHostMsrs & VMX_RESTORE_HOST_MSR_SAVED_HOST);
+        Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
         ASMWrMsr(MSR_K8_LSTAR,          pVCpu->hm.s.vmx.u64HostLStarMsr);
         ASMWrMsr(MSR_K6_STAR,           pVCpu->hm.s.vmx.u64HostStarMsr);
         ASMWrMsr(MSR_K8_SF_MASK,        pVCpu->hm.s.vmx.u64HostSFMaskMsr);
         ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr);
     }
-    pVCpu->hm.s.vmx.fRestoreHostMsrs &= ~(VMX_RESTORE_HOST_MSR_LOADED_GUEST | VMX_RESTORE_HOST_MSR_SAVED_HOST);
+    pVCpu->hm.s.vmx.fLazyMsrs &= ~(VMX_LAZY_MSRS_LOADED_GUEST | VMX_LAZY_MSRS_SAVED_HOST);
 }
 #endif  /* HC_ARCH_BITS == 64 */
 
@@ -7028,9 +7029,9 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
 #endif
 
 #if HC_ARCH_BITS == 64
-    /* Restore the host MSRs as we're leaving VT-x context. */
+    /* Restore the lazy host MSRs as we're leaving VT-x context. */
     if (   pVM->hm.s.fAllow64BitGuests
-        && pVCpu->hm.s.vmx.fRestoreHostMsrs)
+        && pVCpu->hm.s.vmx.fLazyMsrs)
     {
         /* We shouldn't reload the guest MSRs without saving it first. */
         if (!fSaveGuestState)
@@ -7040,7 +7041,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
         }
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS));
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
-        Assert(!pVCpu->hm.s.vmx.fRestoreHostMsrs);
+        Assert(!pVCpu->hm.s.vmx.fLazyMsrs);
     }
 #endif
 
@@ -7261,9 +7262,9 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 
-        /* Restore the host MSRs as we're leaving VT-x context. */
+        /* Restore the lazy host MSRs as we're leaving VT-x context. */
         if (   pVM->hm.s.fAllow64BitGuests
-            && pVCpu->hm.s.vmx.fRestoreHostMsrs)
+            && pVCpu->hm.s.vmx.fLazyMsrs)
         {
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
         }

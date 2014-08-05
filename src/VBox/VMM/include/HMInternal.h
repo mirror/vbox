@@ -680,7 +680,7 @@ typedef struct HMCPU
         /** Host KernelGS-Base MSR value to restore lazily while leaving VT-x. */
         uint64_t                    u64HostKernelGSBaseMsr;
         /** A mask of which MSRs have been swapped and need restoration. */
-        uint32_t                    fRestoreHostMsrs;
+        uint32_t                    fLazyMsrs;
         uint32_t                    u32Alignment2;
 
         /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
