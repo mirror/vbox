@@ -122,6 +122,9 @@ RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready)
         {
             if (NetworkEvents.iErrorCode[FD_CLOSE_BIT] != 0)
                 revents |= POLLERR;
+            else if (pFds[i].events & POLLIN)
+                /* FD_READ is not reported for successful FD_CLOSE */
+                revents |= POLLIN;
 
             revents |= POLLHUP;
         }
