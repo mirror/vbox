@@ -140,9 +140,9 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @{
  */
 /** The host MSRs have been saved. */
-#define VMX_RESTORE_HOST_MSR_SAVED_HOST            RT_BIT(0)
+#define VMX_LAZY_MSRS_SAVED_HOST              RT_BIT(0)
 /** The guest MSRs are loaded and in effect. */
-#define VMX_RESTORE_HOST_MSR_LOADED_GUEST          RT_BIT(1)
+#define VMX_LAZY_MSRS_LOADED_GUEST            RT_BIT(1)
 /** @} */
 
 /** @name VMX HM-error codes for VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO.
