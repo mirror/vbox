@@ -41,7 +41,7 @@ UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Fullscreen)
     , m_pPopupMenu(0)
 #ifdef Q_WS_MAC
-    , m_fadeToken(kCGDisplayFadeReservationInvalidToken)
+    , m_fScreensHaveSeparateSpaces(darwinScreensHaveSeparateSpaces())
 #endif /* Q_WS_MAC */
 {
     /* Create multiscreen layout: */
@@ -143,7 +143,7 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
         if (   uisession()->isScreenVisible(pMachineWindow->screenId())
             && hasHostScreenForGuestScreen(pMachineWindow->screenId()))
             visibleMachineWindows << pMachineWindow;
-    if (   !darwinScreensHaveSeparateSpaces()
+    if (   !screensHaveSeparateSpaces()
         || m_fullscreenMachineWindows == visibleMachineWindows)
         fadeToNormal();
 }
@@ -721,7 +721,7 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             (int)uScreenID));
 
     /* Validate window which can't be fullscreen: */
-    if (uScreenID != 0 && !darwinScreensHaveSeparateSpaces())
+    if (uScreenID != 0 && !screensHaveSeparateSpaces())
     {
         LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                 "Ask machine-window #%d to show/normalize.\n", (int)uScreenID));

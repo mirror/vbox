@@ -128,8 +128,7 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachi
 
     /* Make sure this window has fullscreen logic: */
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
-    if (!pFullscreenLogic)
-        return;
+    AssertPtrReturnVoid(pFullscreenLogic);
 
     /* Make sure this window mapped to some host-screen: */
     if (!pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
@@ -139,7 +138,7 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachi
     m_fIsInFullscreenTransition = true;
 
     /* Enter native fullscreen mode if necessary: */
-    if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+    if (   (pFullscreenLogic->screensHaveSeparateSpaces() || m_uScreenId == 0)
         && !darwinIsInFullscreenMode(this))
         darwinToggleFullscreenMode(this);
 }
@@ -153,11 +152,15 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachin
     if (pMachineWindow && pMachineWindow != this)
         return;
 
+    /* Make sure this window has fullscreen logic: */
+    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+    AssertPtrReturnVoid(pFullscreenLogic);
+
     /* Mark window 'transitioned from fullscreen': */
     m_fIsInFullscreenTransition = true;
 
     /* Exit native fullscreen mode if necessary: */
-    if (   (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+    if (   (pFullscreenLogic->screensHaveSeparateSpaces() || m_uScreenId == 0)
         && darwinIsInFullscreenMode(this))
         darwinToggleFullscreenMode(this);
 }
@@ -188,8 +191,11 @@ void UIMachineWindowFullscreen::prepareVisualState()
     /* Native fullscreen stuff on ML and next: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
+        /* Make sure this window has fullscreen logic: */
+        UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+        AssertPtrReturnVoid(pFullscreenLogic);
         /* Enable fullscreen support for every screen which requires it: */
-        if (darwinScreensHaveSeparateSpaces() || m_uScreenId == 0)
+        if (pFullscreenLogic->screensHaveSeparateSpaces() || m_uScreenId == 0)
             darwinEnableFullscreenSupport(this);
         /* Enable transience support for other screens: */
         else
@@ -275,12 +281,15 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Move to the appropriate position: */
     move(workingArea.topLeft());
 #ifdef Q_WS_MAC
+    /* Make sure this window has fullscreen logic: */
+    UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+    AssertPtrReturnVoid(pFullscreenLogic);
     /* Resize to the appropriate size on Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         resize(workingArea.size());
     /* Resize to the appropriate size on ML and next
      * only if that screen has no own user-space: */
-    else if (!darwinScreensHaveSeparateSpaces() && m_uScreenId != 0)
+    else if (!pFullscreenLogic->screensHaveSeparateSpaces() && m_uScreenId != 0)
         resize(workingArea.size());
 #else /* !Q_WS_MAC */
     /* Resize to the appropriate size: */
