@@ -1101,7 +1101,7 @@ pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
             status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
                                 (char *)&pxtcp->sockerr, &optlen);
-            if (status < 0) {   /* should not happen */
+            if (status == SOCKET_ERROR) { /* should not happen */
                 DPRINTF(("%s: sock %d: SO_ERROR failed: %R[sockerr]\n",
                          __func__, fd, SOCKERRNO()));
             }
@@ -1633,7 +1633,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
 
         status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
                             (char *)&sockerr, &optlen);
-        if (status < 0) {       /* should not happen */
+        if (status == SOCKET_ERROR) { /* should not happen */
             DPRINTF(("sock %d: SO_ERROR failed: %R[sockerr]\n",
                      fd, SOCKERRNO()));
         }
