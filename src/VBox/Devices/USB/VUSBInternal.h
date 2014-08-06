@@ -350,9 +350,6 @@ typedef struct VUSBROOTHUB
     /** The HUB.
      * @todo remove this? */
     VUSBHUB                 Hub;
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignment0;
-#endif
     /** Address hash table. */
     PVUSBDEV                apAddrHash[VUSB_ADDR_HASHSZ];
     /** The default address. */
