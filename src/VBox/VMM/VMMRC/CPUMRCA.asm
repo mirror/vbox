@@ -200,11 +200,8 @@ hlfpua_switch_fpu_ctx:
     fxsave  [xDX + CPUMCPU.Host.fpu]
 %endif
     or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
-%ifdef RT_ARCH_AMD64
-    o64 fxrstor [xDX + CPUMCPU.Guest.fpu]
-%else
-    fxrstor [xDX + CPUMCPU.Guest.fpu]
-%endif
+    fxrstor [xDX + CPUMCPU.Guest.fpu]           ; raw-mode guest is always 32-bit. See @bugref{7138}.
+
 hlfpua_finished_switch:
 
     ; Load new CR0 value.
