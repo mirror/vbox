@@ -362,6 +362,9 @@ typedef struct VUSBROOTHUB
     /** Connector interface exposed upwards. */
     VUSBIROOTHUBCONNECTOR   IRhConnector;
 
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment0;
+#endif
     /** Critical section protecting the device list. */
     RTCRITSECT              CritSectDevices;
     /** Chain of devices attached to this hub. */
