@@ -35,11 +35,19 @@ class UIMachineLogicFullscreen : public UIMachineLogic
 
 #ifdef RT_OS_DARWIN
 signals:
+
     /** Mac OS X: Notifies listeners about native fullscreen mode should be entered on @a pMachineWindow. */
     void sigNotifyAboutNativeFullscreenShouldBeEntered(UIMachineWindow *pMachineWindow = 0);
     /** Mac OS X: Notifies listeners about native fullscreen mode should be exited on @a pMachineWindow. */
     void sigNotifyAboutNativeFullscreenShouldBeExited(UIMachineWindow *pMachineWindow = 0);
 #endif /* RT_OS_DARWIN */
+
+#ifdef Q_WS_MAC
+public:
+
+    /** Returns whether screens have separate spaces. */
+    bool screensHaveSeparateSpaces() const { return m_fScreensHaveSeparateSpaces; }
+#endif /* Q_WS_MAC */
 
 protected:
 
@@ -89,9 +97,9 @@ private slots:
     /** Invokes popup-menu. */
     void sltInvokePopupMenu();
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
     void sltChangePresentationMode(bool fEnabled);
-#endif /* Q_WS_MAC */
+#endif /* RT_OS_DARWIN */
 
     /** Updates machine-window(s) location/size on screen-layout changes. */
     void sltScreenLayoutChanged();
@@ -144,6 +152,9 @@ private:
     UIMultiScreenLayout *m_pScreenLayout;
 
 #ifdef Q_WS_MAC
+    /** Mac OS X: Holds whether screens have separate spaces. */
+    const bool m_fScreensHaveSeparateSpaces;
+
     /** Mac OS X: Fade token. */
     CGDisplayFadeReservationToken m_fadeToken;
 
