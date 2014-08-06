@@ -135,7 +135,6 @@ protected:
 
     /* Helpers: */
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
-    static Qt::WindowFlags windowFlags(UIVisualStateType visualStateType);
     static Qt::Alignment viewAlignment(UIVisualStateType visualStateType);
 
 #ifdef Q_WS_MAC

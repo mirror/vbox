@@ -68,6 +68,9 @@ public:
     /* Check if this logic is available: */
     virtual bool checkAvailability() = 0;
 
+    /** Returns machine-window flags for current machine-logic and passed @a uScreenId. */
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const = 0;
+
     /* Prepare/cleanup the logic: */
     virtual void prepare();
     virtual void cleanup();

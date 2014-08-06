@@ -33,6 +33,9 @@ protected:
     /* Check if this logic is available: */
     bool checkAvailability();
 
+    /** Returns machine-window flags for 'Normal' machine-logic and passed @a uScreenId. */
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::Window; }
+
 private slots:
 
     /** Checks if some visual-state type was requested. */

@@ -163,7 +163,7 @@ void UIMachineWindow::sltMachineStateChanged()
 }
 
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QMainWindow>(0, windowFlags(pMachineLogic->visualStateType()))
+    : QIWithRetranslateUI2<QMainWindow>(0, pMachineLogic->windowFlags(uScreenId))
     , m_pMachineLogic(pMachineLogic)
     , m_pMachineView(0)
     , m_uScreenId(uScreenId)
@@ -493,20 +493,6 @@ void UIMachineWindow::updateDbgWindows()
         machineLogic()->dbgAdjustRelativePos();
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-/* static */
-Qt::WindowFlags UIMachineWindow::windowFlags(UIVisualStateType visualStateType)
-{
-    switch (visualStateType)
-    {
-        case UIVisualStateType_Normal: return Qt::Window;
-        case UIVisualStateType_Fullscreen: return Qt::FramelessWindowHint;
-        case UIVisualStateType_Seamless: return Qt::FramelessWindowHint;
-        case UIVisualStateType_Scale: return Qt::Window;
-    }
-    AssertMsgFailed(("Incorrect visual state!"));
-    return 0;
-}
 
 /* static */
 Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
