@@ -28,6 +28,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+/*#ifdef IN_RING3
+# define RTMEM_WRAP_TO_EF_APIS
+#endif*/
 #include "internal/iprt.h"
 #include <iprt/bignum.h>
 
@@ -39,8 +42,67 @@
 #include <iprt/string.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Allocation alignment in elements. */
+#ifndef RTMEM_WRAP_TO_EF_APIS
+# define RTBIGNUM_ALIGNMENT             4U
+#else
+# define RTBIGNUM_ALIGNMENT             1U
+#endif
+
 /** The max size (in bytes) of an elements array. */
 #define RTBIGNUM_MAX_SIZE               _4M
+
+
+/** Assert the validity of a big number structure pointer in strict builds. */
+#ifdef RT_STRICT
+# define RTBIGNUM_ASSERT_VALID(a_pBigNum) \
+    do { \
+        AssertPtr(a_pBigNum); \
+        Assert(!(a_pBigNum)->fCurScrambled); \
+        Assert(   (a_pBigNum)->cUsed == (a_pBigNum)->cAllocated \
+               || ASMMemIsAllU32(&(a_pBigNum)->pauElements[(a_pBigNum)->cUsed], \
+                                 ((a_pBigNum)->cAllocated - (a_pBigNum)->cUsed) * RTBIGNUM_ELEMENT_SIZE, 0) == NULL); \
+    } while (0)
+#else
+# define RTBIGNUM_ASSERT_VALID(a_pBigNum) do {} while (0)
+#endif
+
+
+/** Enable assembly optimizations. */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# define IPRT_BIGINT_WITH_ASM
+#endif
+
+
+/** @def RTBIGNUM_ZERO_ALIGN
+ * For calculating the rtBigNumEnsureExtraZeroElements argument from cUsed.
+ * This has to do with 64-bit assembly instruction operating as RTBIGNUMELEMENT
+ * was 64-bit on some hosts.
+ */
+#if defined(IPRT_BIGINT_WITH_ASM) && ARCH_BITS == 64 && RTBIGNUM_ELEMENT_SIZE == 4 && defined(RT_LITTLE_ENDIAN)
+# define RTBIGNUM_ZERO_ALIGN(a_cUsed)   RT_ALIGN_32(a_cUsed, 2)
+#elif defined(IPRT_BIGINT_WITH_ASM)
+# define RTBIGNUM_ZERO_ALIGN(a_cUsed)   (a_cUsed)
+#else
+# define RTBIGNUM_ZERO_ALIGN(a_cUsed)   (a_cUsed)
+#endif
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef IPRT_BIGINT_WITH_ASM
+/* bignum-amd64-x86.asm: */
+DECLASM(void) rtBigNumMagnitudeSubAssemblyWorker(RTBIGNUMELEMENT *pauResult, RTBIGNUMELEMENT const *pauMinuend,
+                                                 RTBIGNUMELEMENT const *pauSubtrahend, uint32_t cUsed);
+DECLASM(void) rtBigNumMagnitudeSubThisAssemblyWorker(RTBIGNUMELEMENT *pauMinuendResult, RTBIGNUMELEMENT const *pauSubtrahend,
+                                                     uint32_t cUsed);
+DECLASM(RTBIGNUMELEMENT) rtBigNumMagnitudeShiftLeftOneAssemblyWorker(RTBIGNUMELEMENT *pauElements, uint32_t cUsed,
+                                                                     RTBIGNUMELEMENT uCarry);
+#endif
 
 
 /**
@@ -109,11 +171,13 @@ DECLINLINE(RTBIGNUMELEMENT) rtBigNumGetElement(PCRTBIGNUM pBigNum, uint32_t iEle
  * @returns IPRT status code.
  * @param   pBigNum         The big number.
  * @param   cNewUsed        The new cUsed value.
+ * @param   cMinElements    The minimum number of elements.
  */
-static int rtBigNumGrow(PRTBIGNUM pBigNum, uint32_t cNewUsed)
+static int rtBigNumGrow(PRTBIGNUM pBigNum, uint32_t cNewUsed, uint32_t cMinElements)
 {
+    Assert(cMinElements >= cNewUsed);
     uint32_t const cbOld = pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE;
-    uint32_t const cNew  = RT_ALIGN_32(cNewUsed, 4);
+    uint32_t const cNew  = RT_ALIGN_32(cMinElements, RTBIGNUM_ALIGNMENT);
     uint32_t const cbNew = cNew * RTBIGNUM_ELEMENT_SIZE;
     Assert(cbNew > cbOld);
 
@@ -139,9 +203,7 @@ static int rtBigNumGrow(PRTBIGNUM pBigNum, uint32_t cNewUsed)
 /**
  * Changes the cUsed member, growing the pauElements array if necessary.
  *
- * No assumptions about the value of any added elements should be made. This
- * method is mainly for resizing result values where the caller will repopulate
- * the element values short after this call.
+ * Any elements added to the array will be initialized to zero.
  *
  * @returns IPRT status code.
  * @param   pBigNum         The big number.
@@ -151,11 +213,72 @@ DECLINLINE(int) rtBigNumSetUsed(PRTBIGNUM pBigNum, uint32_t cNewUsed)
 {
     if (pBigNum->cAllocated >= cNewUsed)
     {
+        if (pBigNum->cUsed > cNewUsed)
+            RT_BZERO(&pBigNum->pauElements[cNewUsed], (pBigNum->cUsed - cNewUsed) * RTBIGNUM_ELEMENT_SIZE);
+#ifdef RT_STRICT
+        else if (pBigNum->cUsed != cNewUsed)
+            Assert(ASMMemIsAllU32(&pBigNum->pauElements[pBigNum->cUsed],
+                                  (cNewUsed - pBigNum->cUsed) * RTBIGNUM_ELEMENT_SIZE, 0) == NULL);
+#endif
         pBigNum->cUsed = cNewUsed;
         return VINF_SUCCESS;
     }
-    return rtBigNumGrow(pBigNum, cNewUsed);
+    return rtBigNumGrow(pBigNum, cNewUsed, cNewUsed);
 }
+
+
+/**
+ * Extended version of rtBigNumSetUsed that also allow specifying the number of
+ * zero elements required.
+ *
+ * @returns IPRT status code.
+ * @param   pBigNum         The big number.
+ * @param   cNewUsed        The new cUsed value.
+ * @param   cMinElements    The minimum number of elements allocated. The
+ *                          difference between @a cNewUsed and @a cMinElements
+ *                          is initialized to zero because all free elements are
+ *                          zero.
+ */
+DECLINLINE(int) rtBigNumSetUsedEx(PRTBIGNUM pBigNum, uint32_t cNewUsed, uint32_t cMinElements)
+{
+    if (pBigNum->cAllocated >= cMinElements)
+    {
+        if (pBigNum->cUsed > cNewUsed)
+            RT_BZERO(&pBigNum->pauElements[cNewUsed], (pBigNum->cUsed - cNewUsed) * RTBIGNUM_ELEMENT_SIZE);
+#ifdef RT_STRICT
+        else if (pBigNum->cUsed != cNewUsed)
+            Assert(ASMMemIsAllU32(&pBigNum->pauElements[pBigNum->cUsed],
+                                  (cNewUsed - pBigNum->cUsed) * RTBIGNUM_ELEMENT_SIZE, 0) == NULL);
+#endif
+        pBigNum->cUsed = cNewUsed;
+        return VINF_SUCCESS;
+    }
+    return rtBigNumGrow(pBigNum, cNewUsed, cMinElements);
+}
+
+
+/**
+ * For ensuring zero padding of pauElements for sub/add with carry assembly
+ * operations.
+ *
+ * @returns IPRT status code.
+ * @param   pBigNum         The big number.
+ * @param   cElements       The number of elements that must be in the elements
+ *                          array array, where those after pBigNum->cUsed must
+ *                          be zero.
+ */
+DECLINLINE(int) rtBigNumEnsureExtraZeroElements(PRTBIGNUM pBigNum, uint32_t cElements)
+{
+    if (pBigNum->cAllocated >= cElements)
+    {
+        Assert(   pBigNum->cAllocated == pBigNum->cUsed
+               || ASMMemIsAllU32(&pBigNum->pauElements[pBigNum->cUsed],
+                                 (pBigNum->cAllocated - pBigNum->cUsed) * RTBIGNUM_ELEMENT_SIZE, 0) == NULL);
+        return VINF_SUCCESS;
+    }
+    return rtBigNumGrow(pBigNum, pBigNum->cUsed, cElements);
+}
+
 
 /**
  * The slow part of rtBigNumEnsureElementPresent where we need to do actual zero
@@ -320,7 +443,7 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
     pBigNum->cUsed = (uint32_t)cbAligned / RTBIGNUM_ELEMENT_SIZE;
     if (pBigNum->cUsed)
     {
-        pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, 4);
+        pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, RTBIGNUM_ALIGNMENT);
         if (pBigNum->fSensitive)
             pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemSaferAllocZ(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         else
@@ -414,6 +537,23 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
             for (i = 1; i < pBigNum->cUsed; i++)
                 pBigNum->pauElements[i] = 0U - pBigNum->pauElements[i] - 1U;
         }
+
+        /*
+         * Clear unused elements.
+         */
+        if (pBigNum->cUsed != pBigNum->cAllocated)
+        {
+            RTBIGNUMELEMENT *puUnused = &pBigNum->pauElements[pBigNum->cUsed];
+            AssertCompile(RTBIGNUM_ALIGNMENT <= 4);
+            switch (pBigNum->cAllocated - pBigNum->cUsed)
+            {
+                default: AssertFailed();
+                case 3: *puUnused++ = 0;
+                case 2: *puUnused++ = 0;
+                case 1: *puUnused++ = 0;
+            }
+        }
+        RTBIGNUM_ASSERT_VALID(pBigNum);
     }
 
     rtBigNumScramble(pBigNum);
@@ -454,13 +594,17 @@ static int rtBigNumCloneInternal(PRTBIGNUM pBigNum, PCRTBIGNUM pSrc)
     if (pSrc->cUsed)
     {
         /* Duplicate the element array. */
-        pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, 4);
+        pBigNum->cAllocated = RT_ALIGN_32(pBigNum->cUsed, RTBIGNUM_ALIGNMENT);
         if (pBigNum->fSensitive)
             pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemSaferAllocZ(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         else
             pBigNum->pauElements = (RTBIGNUMELEMENT *)RTMemAlloc(pBigNum->cAllocated * RTBIGNUM_ELEMENT_SIZE);
         if (RT_LIKELY(pBigNum->pauElements))
+        {
             memcpy(pBigNum->pauElements, pSrc->pauElements, pBigNum->cUsed * RTBIGNUM_ELEMENT_SIZE);
+            if (pBigNum->cUsed != pBigNum->cAllocated)
+                RT_BZERO(&pBigNum->pauElements[pBigNum->cUsed], (pBigNum->cAllocated - pBigNum->cUsed) * RTBIGNUM_ELEMENT_SIZE);
+        }
         else
         {
             RT_ZERO(*pBigNum);
@@ -476,6 +620,7 @@ RTDECL(int) RTBigNumClone(PRTBIGNUM pBigNum, PCRTBIGNUM pSrc)
     int rc = rtBigNumUnscramble((PRTBIGNUM)pSrc);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pSrc);
         rc = rtBigNumCloneInternal(pBigNum, pSrc);
         if (RT_SUCCESS(rc))
             rtBigNumScramble(pBigNum);
@@ -511,21 +656,25 @@ RTDECL(int) RTBigNumAssign(PRTBIGNUM pDst, PCRTBIGNUM pSrc)
     int rc = rtBigNumUnscramble(pDst);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pDst);
         rc = rtBigNumUnscramble((PRTBIGNUM)pSrc);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pSrc);
             if (   pDst->fSensitive == pSrc->fSensitive
                 || pDst->fSensitive)
             {
                 if (pDst->cAllocated >= pSrc->cUsed)
                 {
+                    if (pDst->cUsed > pSrc->cUsed)
+                        RT_BZERO(&pDst->pauElements[pSrc->cUsed], (pDst->cUsed - pSrc->cUsed) * RTBIGNUM_ELEMENT_SIZE);
                     pDst->cUsed     = pSrc->cUsed;
                     pDst->fNegative = pSrc->fNegative;
                     memcpy(pDst->pauElements, pSrc->pauElements, pSrc->cUsed * RTBIGNUM_ELEMENT_SIZE);
                 }
                 else
                 {
-                    rc = rtBigNumGrow(pDst, pSrc->cUsed);
+                    rc = rtBigNumGrow(pDst, pSrc->cUsed, pSrc->cUsed);
                     if (RT_SUCCESS(rc))
                     {
                         pDst->fNegative = pSrc->fNegative;
@@ -609,6 +758,7 @@ RTDECL(int) RTBigNumToBytesBigEndian(PCRTBIGNUM pBigNum, void *pvBuf, size_t cbW
     int rc = rtBigNumUnscramble((PRTBIGNUM)pBigNum);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pBigNum);
         rc = VINF_SUCCESS;
         if (pBigNum->cUsed != 0)
         {
@@ -680,9 +830,11 @@ RTDECL(int) RTBigNumCompare(PRTBIGNUM pLeft, PRTBIGNUM pRight)
     int rc = rtBigNumUnscramble(pLeft);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pLeft);
         rc = rtBigNumUnscramble(pRight);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pRight);
             if (pLeft->fNegative == pRight->fNegative)
             {
                 if (pLeft->cUsed == pRight->cUsed)
@@ -719,6 +871,7 @@ RTDECL(int) RTBigNumCompareWithU64(PRTBIGNUM pLeft, uint64_t uRight)
     int rc = rtBigNumUnscramble(pLeft);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pLeft);
         if (!pLeft->fNegative)
         {
             if (pLeft->cUsed * RTBIGNUM_ELEMENT_SIZE <= sizeof(uRight))
@@ -766,6 +919,7 @@ RTDECL(int) RTBigNumCompareWithS64(PRTBIGNUM pLeft, int64_t iRight)
     int rc = rtBigNumUnscramble(pLeft);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pLeft);
         if (pLeft->fNegative == (iRight < 0))
         {
             if (pLeft->cUsed * RTBIGNUM_ELEMENT_SIZE <= sizeof(iRight))
@@ -837,6 +991,25 @@ static int rtBigNumMagnitudeCompare(PCRTBIGNUM pLeft, PCRTBIGNUM pRight)
     }
     else
         rc = i < pRight->cUsed ? -1 : 1;
+    return rc;
+}
+
+
+/**
+ * Copies the magnitude of on number (@a pSrc) to another (@a pBigNum).
+ *
+ * The variables must be unscrambled.  The sign flag is not considered nor
+ * touched.
+ *
+ * @returns IPRT status code.
+ * @param   pDst            The destination number.
+ * @param   pSrc            The source number.
+ */
+DECLINLINE(int) rtBigNumMagnitudeCopy(PRTBIGNUM pDst, PCRTBIGNUM pSrc)
+{
+    int rc = rtBigNumSetUsed(pDst, pSrc->cUsed);
+    if (RT_SUCCESS(rc))
+        memcpy(pDst->pauElements, pSrc->pauElements, pSrc->cUsed * RTBIGNUM_ELEMENT_SIZE);
     return rc;
 }
 
@@ -952,24 +1125,60 @@ static int rtBigNumMagnitudeSub(PRTBIGNUM pResult, PCRTBIGNUM pMinuend, PCRTBIGN
     Assert(pResult != pMinuend); Assert(pResult != pSubtrahend);
     Assert(pMinuend->cUsed >= pSubtrahend->cUsed);
 
-    int rc = rtBigNumSetUsed(pResult, pMinuend->cUsed);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (pSubtrahend->cUsed)
     {
         /*
-         * The primitive way, as usual.
+         * Resize the result. In the assembly case, ensure that all three arrays
+         * has the same number of used entries, possibly with an extra zero
+         * element on 64-bit systems.
          */
-        RTBIGNUMELEMENT fBorrow = 0;
-        for (uint32_t i = 0; i < pMinuend->cUsed; i++)
-            pResult->pauElements[i] = rtBigNumElementSubWithBorrow(pMinuend->pauElements[i],
-                                                                   rtBigNumGetElement(pSubtrahend, i),
-                                                                   &fBorrow);
-        Assert(fBorrow == 0);
+        rc = rtBigNumSetUsedEx(pResult, pMinuend->cUsed, RTBIGNUM_ZERO_ALIGN(pMinuend->cUsed));
+#ifdef IPRT_BIGINT_WITH_ASM
+        if (RT_SUCCESS(rc))
+            rc = rtBigNumEnsureExtraZeroElements((PRTBIGNUM)pMinuend, RTBIGNUM_ZERO_ALIGN(pMinuend->cUsed));
+        if (RT_SUCCESS(rc))
+            rc = rtBigNumEnsureExtraZeroElements((PRTBIGNUM)pSubtrahend, RTBIGNUM_ZERO_ALIGN(pMinuend->cUsed));
+#endif
+        if (RT_SUCCESS(rc))
+        {
+#ifdef IPRT_BIGINT_WITH_ASM
+            /*
+             * Call assembly to do the work.
+             */
+            rtBigNumMagnitudeSubAssemblyWorker(pResult->pauElements, pMinuend->pauElements,
+                                               pSubtrahend->pauElements, pMinuend->cUsed);
+# ifdef RT_STRICT
+            RTBIGNUMELEMENT fBorrow = 0;
+            for (uint32_t i = 0; i < pMinuend->cUsed; i++)
+            {
+                RTBIGNUMELEMENT uCorrect = rtBigNumElementSubWithBorrow(pMinuend->pauElements[i], rtBigNumGetElement(pSubtrahend, i), &fBorrow);
+                AssertMsg(pResult->pauElements[i] == uCorrect, ("[%u]=%#x, expected %#x\n", i, pResult->pauElements[i], uCorrect));
+            }
+# endif
+#else
+            /*
+             * The primitive C way.
+             */
+            RTBIGNUMELEMENT fBorrow = 0;
+            for (uint32_t i = 0; i < pMinuend->cUsed; i++)
+                pResult->pauElements[i] = rtBigNumElementSubWithBorrow(pMinuend->pauElements[i],
+                                                                       rtBigNumGetElement(pSubtrahend, i),
+                                                                       &fBorrow);
+            Assert(fBorrow == 0);
+#endif
 
-        /*
-         * Trim the result.
-         */
-        rtBigNumStripTrailingZeros(pResult);
+            /*
+             * Trim the result.
+             */
+            rtBigNumStripTrailingZeros(pResult);
+        }
     }
+    /*
+     * Special case: Subtrahend is zero.
+     */
+    else
+        rc = rtBigNumMagnitudeCopy(pResult, pMinuend);
 
     return rc;
 }
@@ -983,15 +1192,27 @@ static int rtBigNumMagnitudeSub(PRTBIGNUM pResult, PCRTBIGNUM pMinuend, PCRTBIGN
  * touched.  For this reason, the @a pMinuendResult must be larger or equal to
  * @a pSubtrahend.
  *
+ * @returns IPRT status code (memory alloc error).
  * @param   pMinuendResult      What to subtract from and return as result.
  * @param   pSubtrahend         What to subtract.
  */
-static void rtBigNumMagnitudeSubThis(PRTBIGNUM pMinuendResult, PCRTBIGNUM pSubtrahend)
+static int rtBigNumMagnitudeSubThis(PRTBIGNUM pMinuendResult, PCRTBIGNUM pSubtrahend)
 {
     Assert(!pMinuendResult->fCurScrambled); Assert(!pSubtrahend->fCurScrambled);
     Assert(pMinuendResult != pSubtrahend);
     Assert(pMinuendResult->cUsed >= pSubtrahend->cUsed);
 
+#ifdef IPRT_BIGINT_WITH_ASM
+    /*
+     * Use the assembly worker. Requires same sized element arrays, so zero extend them.
+     */
+    int rc = rtBigNumEnsureExtraZeroElements(pMinuendResult, RTBIGNUM_ZERO_ALIGN(pMinuendResult->cUsed));
+    if (RT_SUCCESS(rc))
+        rc = rtBigNumEnsureExtraZeroElements((PRTBIGNUM)pSubtrahend, RTBIGNUM_ZERO_ALIGN(pMinuendResult->cUsed));
+    if (RT_FAILURE(rc))
+        return rc;
+    rtBigNumMagnitudeSubThisAssemblyWorker(pMinuendResult->pauElements, pSubtrahend->pauElements, pMinuendResult->cUsed);
+#else
     /*
      * The primitive way, as usual.
      */
@@ -1001,11 +1222,14 @@ static void rtBigNumMagnitudeSubThis(PRTBIGNUM pMinuendResult, PCRTBIGNUM pSubtr
                                                                       rtBigNumGetElement(pSubtrahend, i),
                                                                       &fBorrow);
     Assert(fBorrow == 0);
+#endif
 
     /*
      * Trim the result.
      */
     rtBigNumStripTrailingZeros(pMinuendResult);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1017,12 +1241,16 @@ RTDECL(int) RTBigNumAdd(PRTBIGNUM pResult, PCRTBIGNUM pAugend, PCRTBIGNUM pAdden
     int rc = rtBigNumUnscramble(pResult);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pResult);
         rc = rtBigNumUnscramble((PRTBIGNUM)pAugend);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pAugend);
             rc = rtBigNumUnscramble((PRTBIGNUM)pAddend);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pAddend);
+
                 /*
                  * Same sign: Add magnitude, keep sign.
                  *       1  +   1  =  2
@@ -1070,14 +1298,18 @@ RTDECL(int) RTBigNumSubtract(PRTBIGNUM pResult, PCRTBIGNUM pMinuend, PCRTBIGNUM 
     int rc = rtBigNumUnscramble(pResult);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pResult);
         if (pMinuend != pSubtrahend)
         {
             rc = rtBigNumUnscramble((PRTBIGNUM)pMinuend);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pMinuend);
                 rc = rtBigNumUnscramble((PRTBIGNUM)pSubtrahend);
                 if (RT_SUCCESS(rc))
                 {
+                    RTBIGNUM_ASSERT_VALID(pSubtrahend);
+
                     /*
                      * Different sign: Add magnitude, keep sign of first.
                      *       1 - (-2) ==  3
@@ -1116,7 +1348,7 @@ RTDECL(int) RTBigNumSubtract(PRTBIGNUM pResult, PCRTBIGNUM pMinuend, PCRTBIGNUM 
         {
             /* zero. */
             pResult->fNegative = 0;
-            pResult->cUsed     = 0;
+            rtBigNumSetUsed(pResult, 0);
         }
         rtBigNumScramble(pResult);
     }
@@ -1160,7 +1392,7 @@ static int rtBigNumMagnitudeMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand
     if (!pMultiplicand->cUsed || !pMultiplier->cUsed)
     {
         pResult->fNegative = 0;
-        pResult->cUsed = 0;
+        rtBigNumSetUsed(pResult, 0);
         return VINF_SUCCESS;
     }
 
@@ -1219,12 +1451,16 @@ RTDECL(int) RTBigNumMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand, PCRTBI
     int rc = rtBigNumUnscramble(pResult);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pResult);
         rc = rtBigNumUnscramble((PRTBIGNUM)pMultiplicand);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pMultiplicand);
             rc = rtBigNumUnscramble((PRTBIGNUM)pMultiplier);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pMultiplier);
+
                 /*
                  * The sign values follow XOR rules:
                  *       -1 *  1 = -1;      1 ^ 0 = 1
@@ -1246,25 +1482,6 @@ RTDECL(int) RTBigNumMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand, PCRTBI
 
 
 /**
- * Copies the magnitude of on number (@a pSrc) to another (@a pBigNum).
- *
- * The variables must be unscrambled.  The sign flag is not considered nor
- * touched.
- *
- * @returns IPRT status code.
- * @param   pDst            The destination number.
- * @param   pSrc            The source number.
- */
-DECLINLINE(int) rtBigNumMagnitudeCopy(PRTBIGNUM pDst, PCRTBIGNUM pSrc)
-{
-    int rc = rtBigNumSetUsed(pDst, pSrc->cUsed);
-    if (RT_SUCCESS(rc))
-        memcpy(pDst->pauElements, pSrc->pauElements, pSrc->cUsed * RTBIGNUM_ELEMENT_SIZE);
-    return rc;
-}
-
-
-/**
  * Clears a bit in the magnitude of @a pBigNum.
  *
  * The variables must be unscrambled.
@@ -1277,6 +1494,7 @@ DECLINLINE(void) rtBigNumMagnitudeClearBit(PRTBIGNUM pBigNum, uint32_t iBit)
     uint32_t iElement = iBit / RTBIGNUM_ELEMENT_BITS;
     if (iElement < pBigNum->cUsed)
     {
+        iBit &= RTBIGNUM_ELEMENT_BITS - 1;
         pBigNum->pauElements[iElement] &= ~RTBIGNUM_ELEMENT_BIT(iBit);
         if (iElement + 1 == pBigNum->cUsed && !pBigNum->pauElements[iElement])
             rtBigNumStripTrailingZeros(pBigNum);
@@ -1299,6 +1517,7 @@ DECLINLINE(int) rtBigNumMagnitudeSetBit(PRTBIGNUM pBigNum, uint32_t iBit)
     int rc = rtBigNumEnsureElementPresent(pBigNum, iElement);
     if (RT_SUCCESS(rc))
     {
+        iBit &= RTBIGNUM_ELEMENT_BITS - 1;
         pBigNum->pauElements[iElement] |= RTBIGNUM_ELEMENT_BIT(iBit);
         return VINF_SUCCESS;
     }
@@ -1338,7 +1557,10 @@ DECLINLINE(RTBIGNUMELEMENT) rtBigNumMagnitudeGetBit(PCRTBIGNUM pBigNum, uint32_t
 {
     uint32_t iElement = iBit / RTBIGNUM_ELEMENT_BITS;
     if (iElement < pBigNum->cUsed)
+    {
+        iBit &= RTBIGNUM_ELEMENT_BITS - 1;
         return (pBigNum->pauElements[iElement] >> iBit) & 1;
+    }
     return 0;
 }
 
@@ -1358,12 +1580,16 @@ DECLINLINE(int) rtBigNumMagnitudeShiftLeftOne(PRTBIGNUM pBigNum, RTBIGNUMELEMENT
 
     /* Do the shifting. */
     uint32_t cUsed = pBigNum->cUsed;
+#ifdef IPRT_BIGINT_WITH_ASM
+    uCarry = rtBigNumMagnitudeShiftLeftOneAssemblyWorker(pBigNum->pauElements, cUsed, uCarry);
+#else
     for (uint32_t i = 0; i < cUsed; i++)
     {
         RTBIGNUMELEMENT uTmp = pBigNum->pauElements[i];
         pBigNum->pauElements[i] = (uTmp << 1) | uCarry;
         uCarry = uTmp >> (RTBIGNUM_ELEMENT_BITS - 1);
     }
+#endif
 
     /* If we still carry a bit, we need to increase the size. */
     if (uCarry)
@@ -1398,8 +1624,8 @@ static int rtBigNumMagnitudeDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PC
      * Just set both output values to zero as that's the return for several
      * special case and the initial state of the general case.
      */
-    pQuotient->cUsed = 0;
-    pRemainder->cUsed = 0;
+    rtBigNumSetUsed(pQuotient, 0);
+    rtBigNumSetUsed(pRemainder, 0);
 
     /*
      * Dividing something by zero is undefined.
@@ -1446,9 +1672,12 @@ static int rtBigNumMagnitudeDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PC
         if (iDiff >= 0)
         {
             if (iDiff != 0)
-                rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+            {
+                rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+                AssertRCBreak(rc);
+            }
             else
-                pRemainder->cUsed = 0;
+                rtBigNumSetUsed(pRemainder, 0);
             rc = rtBigNumMagnitudeSetBit(pQuotient, iBit);
             AssertRCBreak(rc);
         }
@@ -1470,15 +1699,20 @@ RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM
     int rc = rtBigNumUnscramble(pQuotient);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pQuotient);
         rc = rtBigNumUnscramble(pRemainder);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pRemainder);
             rc = rtBigNumUnscramble((PRTBIGNUM)pDividend);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pDividend);
                 rc = rtBigNumUnscramble((PRTBIGNUM)pDivisor);
                 if (RT_SUCCESS(rc))
                 {
+                    RTBIGNUM_ASSERT_VALID(pDivisor);
+
                     /*
                      * The sign value of the remainder is the same as the dividend.
                      * The sign values of the quotient follow XOR rules, just like multiplication:
@@ -1530,7 +1764,7 @@ static int rtBigNumMagnitudeModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, P
      * Just set the output value to zero as that's the return for several
      * special case and the initial state of the general case.
      */
-    pRemainder->cUsed = 0;
+    rtBigNumSetUsed(pRemainder, 0);
 
     /*
      * Dividing something by zero is undefined.
@@ -1572,10 +1806,12 @@ static int rtBigNumMagnitudeModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, P
         if (iDiff >= 0)
         {
             if (iDiff != 0)
-                rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+            {
+                rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+                AssertRCBreak(rc);
+            }
             else
-                pRemainder->cUsed = 0;
-            AssertRCBreak(rc);
+                rtBigNumSetUsed(pRemainder, 0);
         }
     }
 
@@ -1587,18 +1823,22 @@ static int rtBigNumMagnitudeModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, P
 
 RTDECL(int) RTBigNumModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
 {
-     Assert(pRemainder != pDividend); Assert(pRemainder != pDivisor);
+    Assert(pRemainder != pDividend); Assert(pRemainder != pDivisor);
     AssertReturn(pRemainder->fSensitive >= (pDividend->fSensitive | pDivisor->fSensitive), VERR_BIGNUM_SENSITIVE_INPUT);
 
     int rc = rtBigNumUnscramble(pRemainder);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pRemainder);
         rc = rtBigNumUnscramble((PRTBIGNUM)pDividend);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pDividend);
             rc = rtBigNumUnscramble((PRTBIGNUM)pDivisor);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pDivisor);
+
                 /*
                  * The sign value of the remainder is the same as the dividend.
                  */
@@ -1717,12 +1957,15 @@ RTDECL(int) RTBigNumExponentiate(PRTBIGNUM pResult, PCRTBIGNUM pBase, PCRTBIGNUM
     int rc = rtBigNumUnscramble(pResult);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pResult);
         rc = rtBigNumUnscramble((PRTBIGNUM)pBase);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pBase);
             rc = rtBigNumUnscramble((PRTBIGNUM)pExponent);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pExponent);
                 if (!pExponent->fNegative)
                 {
                     pResult->fNegative = pBase->fNegative; /* sign unchanged. */
@@ -1770,7 +2013,7 @@ static int rtBigNumMagnitudeModExp(PRTBIGNUM pResult, PRTBIGNUM pBase, PRTBIGNUM
     /* Div by 1 => no remainder. */
     if (pModulus->cUsed == 1 && pModulus->pauElements[0] == 1)
     {
-        pResult->cUsed = 0;
+        rtBigNumSetUsed(pResult, 0);
         return VINF_SUCCESS;
     }
 
@@ -1866,15 +2109,19 @@ RTDECL(int) RTBigNumModExp(PRTBIGNUM pResult, PRTBIGNUM pBase, PRTBIGNUM pExpone
     int rc = rtBigNumUnscramble(pResult);
     if (RT_SUCCESS(rc))
     {
+        RTBIGNUM_ASSERT_VALID(pResult);
         rc = rtBigNumUnscramble((PRTBIGNUM)pBase);
         if (RT_SUCCESS(rc))
         {
+            RTBIGNUM_ASSERT_VALID(pBase);
             rc = rtBigNumUnscramble((PRTBIGNUM)pExponent);
             if (RT_SUCCESS(rc))
             {
+                RTBIGNUM_ASSERT_VALID(pExponent);
                 rc = rtBigNumUnscramble((PRTBIGNUM)pModulus);
                 if (RT_SUCCESS(rc))
                 {
+                    RTBIGNUM_ASSERT_VALID(pModulus);
                     if (!pExponent->fNegative)
                     {
                         pResult->fNegative = pModulus->fNegative; /* pBase ^ pExponent / pModulus; result = remainder. */
