@@ -369,6 +369,11 @@ typedef struct VUSBROOTHUB
     RTCRITSECT              CritSectDevices;
     /** Chain of devices attached to this hub. */
     PVUSBDEV                pDevices;
+
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment1;
+#endif
+
     /** Availability Bitmap. */
     VUSBPORTBITMAP          Bitmap;
 
@@ -382,7 +387,7 @@ typedef struct VUSBROOTHUB
     uint32_t                fHcVersions;
 #ifdef VBOX_WITH_STATISTICS
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment1; /**< Counters must be 64-bit aligned. */
+    uint32_t                Alignment2; /**< Counters must be 64-bit aligned. */
 #endif
     VUSBROOTHUBTYPESTATS    Total;
     VUSBROOTHUBTYPESTATS    aTypes[VUSBXFERTYPE_MSG];
