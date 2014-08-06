@@ -37,13 +37,25 @@ RT_C_DECLS_BEGIN
  */
 
 /** The big integer number element type. */
+#if ARCH_BITS == 64
+typedef uint64_t RTBIGNUMELEMENT;
+#else
 typedef uint32_t RTBIGNUMELEMENT;
+#endif
 /** The size (in bytes) of one array element. */
-#define RTBIGNUM_ELEMENT_SIZE           4
+#if ARCH_BITS == 64
+# define RTBIGNUM_ELEMENT_SIZE          8
+#else
+# define RTBIGNUM_ELEMENT_SIZE          4
+#endif
 /** The number of bits in one array element. */
 #define RTBIGNUM_ELEMENT_BITS           (RTBIGNUM_ELEMENT_SIZE * 8)
 /** Returns the bitmask corrsponding to given bit number. */
-#define RTBIGNUM_ELEMENT_BIT(iBit)      RT_BIT_32(iBit)
+#if ARCH_BITS == 64
+# define RTBIGNUM_ELEMENT_BIT(iBit)     RT_BIT_64(iBit)
+#else
+# define RTBIGNUM_ELEMENT_BIT(iBit)     RT_BIT_32(iBit)
+#endif
 
 /**
  * IPRT big integer number.

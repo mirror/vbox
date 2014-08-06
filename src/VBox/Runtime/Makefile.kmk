@@ -641,7 +641,8 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/math/bignum-amd64-x86.asm
 RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
@@ -649,7 +650,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/math/bignum-amd64-x86.asm
 
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
@@ -1806,10 +1808,12 @@ RuntimeR0Drv_SOURCES    = \
 
 RuntimeR0Drv_SOURCES.amd64 = \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/math/bignum-amd64-x86.asm
 RuntimeR0Drv_SOURCES.x86   = \
 	common/asm/ASMRdMsrEx.asm \
-	common/asm/ASMWrMsrEx.asm
+	common/asm/ASMWrMsrEx.asm \
+	common/math/bignum-amd64-x86.asm
 
 
 RuntimeR0Drv_SOURCES.linux = \
