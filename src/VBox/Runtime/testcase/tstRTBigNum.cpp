@@ -34,6 +34,10 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 
+#if 1
+# include <openssl/bn.h>
+#endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -864,6 +868,45 @@ static void testBenchmarks(void)
     uint64_t uElapsed = RTTimeNanoTS() - uStartTS;
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
     RTTestIValue("RTBigNumModExp", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+
+#if 1
+    /* Compare with OpenSSL BN. */
+    BN_CTX *pObnCtx = BN_CTX_new();
+    BIGNUM *pObnPubKeyExp = BN_bin2bn(s_abPubKeyExp, sizeof(s_abPubKeyExp), NULL);
+    BIGNUM *pObnPubKeyMod = BN_bin2bn(s_abPubKeyMod, sizeof(s_abPubKeyMod), NULL);
+    BIGNUM *pObnSignature = BN_bin2bn(s_abSignature, sizeof(s_abSignature), NULL);
+    BIGNUM *pObnResult = BN_new();
+    RTTESTI_CHECK_RETV(BN_mod_exp(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx) == 1);
+    BN_CTX_free(pObnCtx);
+
+    rc = 1;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 4096)
+    {
+        pObnCtx = BN_CTX_new();
+        rc &= BN_mod_exp(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx);
+        BN_CTX_free(pObnCtx);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, 1);
+    RTTestIValue("BN_mod_exp", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+
+    rc = 1;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 4096)
+    {
+        pObnCtx = BN_CTX_new();
+        rc &= BN_mod_exp_simple(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx);
+        BN_CTX_free(pObnCtx);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, 1);
+    RTTestIValue("BN_mod_exp_simple", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+#endif
 }
 
 
