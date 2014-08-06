@@ -35,7 +35,8 @@
 #  define __func__ __FUNCTION__
 #  define __attribute__(x) /* IGNORE */
 
-#  define SOCKERRNO() (WSAGetLastError())
+#  define SOCKERRNO()          (WSAGetLastError())
+#  define SET_SOCKERRNO(error) do { WSASetLastError(error); } while (0)
 
 /**
  * "Windows Sockets Error Codes" obtained with WSAGetLastError().
@@ -152,7 +153,8 @@ RT_C_DECLS_END
 #  define INVALID_SOCKET (-1)
 #  define SOCKET_ERROR (-1)
 
-#  define SOCKERRNO() (errno)
+#  define SOCKERRNO()          (errno)
+#  define SET_SOCKERRNO(error) do { errno = (error); } while (0)
 
 #  define closesocket(s) close(s)
 #  define ioctlsocket(s, req, arg) ioctl((s), (req), (arg))
