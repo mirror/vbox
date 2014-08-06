@@ -50,6 +50,9 @@ protected:
     /* Check if this logic is available: */
     bool checkAvailability();
 
+    /** Returns machine-window flags for 'Fullscreen' machine-logic and passed @a uScreenId. */
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::FramelessWindowHint; }
+
     /* Helpers: Multi-screen stuff: */
     void maybeAdjustGuestScreenSize();
     int hostScreenForGuestScreen(int iScreenId) const;
