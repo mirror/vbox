@@ -59,7 +59,7 @@ protected:
     bool checkAvailability();
 
     /** Returns machine-window flags for 'Fullscreen' machine-logic and passed @a uScreenId. */
-    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::FramelessWindowHint; }
+    virtual Qt::WindowFlags windowFlags(ulong uScreenId) const;
 
     /* Helpers: Multi-screen stuff: */
     void maybeAdjustGuestScreenSize();
@@ -134,11 +134,6 @@ private:
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 
-    /** Mac OS X: Performs fade to black if possible. */
-    void fadeToBlack();
-    /** Mac OS X: Performs fade to normal if possible. */
-    void fadeToNormal();
-
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
     void revalidateNativeFullScreen(UIMachineWindow *pMachineWindow);
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
@@ -154,9 +149,6 @@ private:
 #ifdef Q_WS_MAC
     /** Mac OS X: Holds whether screens have separate spaces. */
     const bool m_fScreensHaveSeparateSpaces;
-
-    /** Mac OS X: Fade token. */
-    CGDisplayFadeReservationToken m_fadeToken;
 
     /** Mac OS X: Contains machine-window(s) marked as 'fullscreen'. */
     QSet<UIMachineWindow*> m_fullscreenMachineWindows;

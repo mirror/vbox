@@ -84,6 +84,17 @@ bool UIMachineLogicFullscreen::checkAvailability()
     return true;
 }
 
+Qt::WindowFlags UIMachineLogicFullscreen::windowFlags(ulong uScreenId) const
+{
+    Q_UNUSED(uScreenId);
+#ifdef Q_WS_MAC
+    return vboxGlobal().osRelease() <= MacOSXRelease_Lion ? Qt::FramelessWindowHint :
+           uScreenId == 0 || screensHaveSeparateSpaces() ? Qt::Window : Qt::FramelessWindowHint;
+#else /* !Q_WS_MAC */
+    return Qt::FramelessWindowHint;
+#endif /* !Q_WS_MAC */
+}
+
 /** Adjusts guest screen count/size for the machine-logic we have. */
 void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
 {
@@ -116,9 +127,6 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenWillEnter()
     LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenWillEnter: "
             "Machine-window #%d will enter native fullscreen.\n",
             (int)pMachineWindow->screenId()));
-
-    /* Fade to black: */
-    fadeToBlack();
 }
 
 void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
@@ -136,16 +144,6 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
     /* Add machine-window to corresponding set: */
     m_fullscreenMachineWindows.insert(pMachineWindow);
     AssertReturnVoid(m_fullscreenMachineWindows.contains(pMachineWindow));
-
-    /* Fade to normal if necessary: */
-    QSet<UIMachineWindow*> visibleMachineWindows;
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        if (   uisession()->isScreenVisible(pMachineWindow->screenId())
-            && hasHostScreenForGuestScreen(pMachineWindow->screenId()))
-            visibleMachineWindows << pMachineWindow;
-    if (   !screensHaveSeparateSpaces()
-        || m_fullscreenMachineWindows == visibleMachineWindows)
-        fadeToNormal();
 }
 
 void UIMachineLogicFullscreen::sltHandleNativeFullscreenWillExit()
@@ -159,9 +157,6 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenWillExit()
     LogRel(("UIMachineLogicFullscreen::sltHandleNativeFullscreenWillExit: "
             "Machine-window #%d will exit native fullscreen.\n",
             (int)pMachineWindow->screenId()));
-
-    /* Fade to black: */
-    fadeToBlack();
 }
 
 void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
@@ -222,9 +217,6 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
                 type = UIVisualStateType_Normal;
             uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
             uisession()->changeVisualState(type);
-
-            /* Fade to normal: */
-            fadeToNormal();
         }
     }
 }
@@ -501,9 +493,6 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
     darwinSetFrontMostProcess();
-
-    /* Fade to black: */
-    fadeToBlack();
 #endif /* Q_WS_MAC */
 
     /* Update the multi-screen layout: */
@@ -526,10 +515,6 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 #ifdef Q_WS_MAC
     /* Activate 'presentation mode': */
     setPresentationModeEnabled(true);
-
-    /* For Lion and previous fade to normal: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        fadeToNormal();
 
     /* For ML and next: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
@@ -593,12 +578,6 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     if (!isMachineWindowsCreated())
         return;
 
-#ifdef Q_WS_MAC
-    /* For Lion and previous fade to black: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        fadeToBlack();
-#endif/* Q_WS_MAC */
-
     /* Mark machine-window(s) destroyed: */
     setMachineWindowsCreated(false);
 
@@ -609,9 +588,6 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
 #ifdef Q_WS_MAC
     /* Deactivate 'presentation mode': */
     setPresentationModeEnabled(false);
-
-    /* Fade to normal: */
-    fadeToNormal();
 #endif/* Q_WS_MAC */
 }
 
@@ -680,31 +656,6 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
     else SetSystemUIMode(kUIModeNormal, 0);
 }
 
-void UIMachineLogicFullscreen::fadeToBlack()
-{
-    /* Make sure fade-token invalid: */
-    if (m_fadeToken != kCGDisplayFadeReservationInvalidToken)
-        return;
-
-    /* Acquire fade-token: */
-    LogRel(("UIMachineLogicFullscreen::fadeToBlack\n"));
-    CGAcquireDisplayFadeReservation(kCGMaxDisplayReservationInterval, &m_fadeToken);
-    CGDisplayFade(m_fadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-}
-
-void UIMachineLogicFullscreen::fadeToNormal()
-{
-    /* Make sure fade-token valid: */
-    if (m_fadeToken == kCGDisplayFadeReservationInvalidToken)
-        return;
-
-    /* Release fade-token: */
-    LogRel(("UIMachineLogicFullscreen::fadeToNormal\n"));
-    CGDisplayFade(m_fadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
-    CGReleaseDisplayFadeReservation(m_fadeToken);
-    m_fadeToken = kCGDisplayFadeReservationInvalidToken;
-}
-
 void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMachineWindow)
 {
     /* Make sure window is not already invalidated: */
@@ -744,9 +695,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to enter native fullscreen.\n", (int)uScreenID));
 
-                /* Fade to black: */
-                fadeToBlack();
-
                 /* Update 'presentation mode': */
                 setPresentationModeEnabled(true);
 
@@ -765,9 +713,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
 
                 /* Else make sure that window is hidden: */
                 pMachineWindow->showInNecessaryMode();
-
-                /* Fade to normal: */
-                fadeToNormal();
             }
         }
         /* Validate window which is in fullscreen: */
@@ -791,9 +736,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             {
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to exit native fullscreen.\n", (int)uScreenID));
-
-                /* Fade to black: */
-                fadeToBlack();
 
                 /* Mark window as invalidated: */
                 m_invalidFullscreenMachineWindows << pMachineWindow;
