@@ -28,6 +28,7 @@
 #include "UIMachineWindowFullscreen.h"
 #include "UIMultiScreenLayout.h"
 #include "UIShortcutPool.h"
+#include "UIMachineView.h"
 #include "QIMenu.h"
 #ifdef Q_WS_MAC
 # include "UIExtraDataManager.h"
@@ -144,6 +145,9 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
     /* Add machine-window to corresponding set: */
     m_fullscreenMachineWindows.insert(pMachineWindow);
     AssertReturnVoid(m_fullscreenMachineWindows.contains(pMachineWindow));
+
+    /* Revalidate native fullscreen: */
+    revalidateNativeFullScreen();
 }
 
 void UIMachineLogicFullscreen::sltHandleNativeFullscreenWillExit()
@@ -185,11 +189,12 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
                 "Machine-window #%d exited invalidated native fullscreen, revalidate it.\n",
                 (int)pMachineWindow->screenId()));
 
-        /* Exclude window from invalidation list: */
+        /* Exclude machine-window from invalidation set: */
         m_invalidFullscreenMachineWindows.remove(pMachineWindow);
+        AssertReturnVoid(!m_invalidFullscreenMachineWindows.contains(pMachineWindow));
 
-        /* Revalidate 'fullscreen' window: */
-        revalidateNativeFullScreen(pMachineWindow);
+        /* Revalidate native fullscreen: */
+        revalidateNativeFullScreen();
     }
     /* If there are no invalidated windows: */
     else if (m_invalidFullscreenMachineWindows.isEmpty())
@@ -382,7 +387,7 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
         /* Update 'presentation mode': */
         setPresentationModeEnabled(true);
     }
-    /* Revalidate 'fullscreen' windows for ML and next: */
+    /* Revalidate native fullscreen for ML and next: */
     else revalidateNativeFullScreen();
 #else /* !Q_WS_MAC */
     /* Make sure all machine-window(s) have proper geometry: */
@@ -404,7 +409,7 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
     /* Call to base-class for Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
-    /* Revalidate 'fullscreen' windows for ML and next: */
+    /* Revalidate native fullscreen for ML and next: */
     else revalidateNativeFullScreen();
 #else /* !Q_WS_MAC */
     /* Call to base-class: */
@@ -423,7 +428,7 @@ void UIMachineLogicFullscreen::sltHostScreenCountChange()
     /* Call to base-class for Lion and previous: */
     if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
         UIMachineLogic::sltHostScreenCountChange();
-    /* Revalidate 'fullscreen' windows for ML and next: */
+    /* Revalidate native fullscreen for ML and next: */
     else revalidateNativeFullScreen();
 #else /* !Q_WS_MAC */
     /* Call to base-class: */
@@ -544,7 +549,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
                     this, SLOT(sltHandleNativeFullscreenFailToEnter()),
                     Qt::QueuedConnection);
         }
-        /* Revalidate 'fullscreen' windows: */
+        /* Revalidate native fullscreen: */
         revalidateNativeFullScreen();
     }
 #endif /* Q_WS_MAC */
@@ -674,11 +679,23 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
     /* Validate window which can't be fullscreen: */
     if (uScreenID != 0 && !screensHaveSeparateSpaces())
     {
-        LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
-                "Ask machine-window #%d to show/normalize.\n", (int)uScreenID));
+        /* If there is no fullscreen window or it's invalidated: */
+        if (m_fullscreenMachineWindows.isEmpty() || !m_invalidFullscreenMachineWindows.isEmpty())
+        {
+            LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
+                    "Ask transient machine-window #%d to hide.\n", (int)uScreenID));
 
-        /* Make sure window have proper geometry: */
-        pMachineWindow->showInNecessaryMode();
+            pMachineWindow->hide();
+        }
+        /* If there is valid fullscreen window: */
+        else
+        {
+            LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
+                    "Ask transient machine-window #%d to show/normalize.\n", (int)uScreenID));
+
+            /* Make sure window have proper geometry and shown: */
+            pMachineWindow->showInNecessaryMode();
+        }
     }
     /* Validate window which can be fullscreen: */
     else
@@ -711,8 +728,7 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to hide.\n", (int)uScreenID));
 
-                /* Else make sure that window is hidden: */
-                pMachineWindow->showInNecessaryMode();
+                pMachineWindow->hide();
             }
         }
         /* Validate window which is in fullscreen: */
@@ -727,12 +743,10 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             /* If that window
              * 1. shouldn't really be shown or
              * 2. isn't mapped to some host-screen or
-             * 3. should be located on another host-screen than currently or
-             * 4. have another frame-buffer size than actually should. */
+             * 3. should be located on another host-screen than currently. */
             if (   !uisession()->isScreenVisible(uScreenID)
                 || !hasHostScreenForGuestScreen(uScreenID)
-                || iWantedHostScreenIndex != iCurrentHostScreenIndex
-                || frameBufferSize != screenSize)
+                || iWantedHostScreenIndex != iCurrentHostScreenIndex)
             {
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to exit native fullscreen.\n", (int)uScreenID));
@@ -742,6 +756,17 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
 
                 /* Ask window to exit 'fullscreen' mode: */
                 emit sigNotifyAboutNativeFullscreenShouldBeExited(pMachineWindow);
+            }
+
+            /* If that window
+             * 1. have another frame-buffer size than actually should. */
+            else if (frameBufferSize != screenSize)
+            {
+                LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
+                        "Ask machine-window #%d to adjust guest geometry.\n", (int)uScreenID));
+
+                /* Adjust guest screen size if necessary: */
+                pMachineWindow->machineView()->maybeAdjustGuestScreenSize();
             }
         }
     }
