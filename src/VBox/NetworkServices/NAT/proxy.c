@@ -370,6 +370,7 @@ proxy_connected_socket(int sdom, int stype,
     const struct sockaddr *psrc_sa;
     socklen_t src_sa_len;
     int status;
+    int sockerr;
     SOCKET s;
 
     LWIP_ASSERT1(sdom == PF_INET || sdom == PF_INET6);
@@ -425,16 +426,20 @@ proxy_connected_socket(int sdom, int stype,
     if (psrc_sa != NULL) {
         status = bind(s, psrc_sa, src_sa_len);
         if (status == SOCKET_ERROR) {
-            DPRINTF(("socket %d: bind: %R[sockerr]\n", s, SOCKERRNO()));
+            sockerr = SOCKERRNO();
+            DPRINTF(("socket %d: bind: %R[sockerr]\n", s, sockerr));
             closesocket(s);
+            SET_SOCKERRNO(sockerr);
             return INVALID_SOCKET;
         }
     }
 
     status = connect(s, pdst_sa, dst_sa_len);
     if (status == SOCKET_ERROR && SOCKERRNO() != EINPROGRESS) {
-        DPRINTF(("socket %d: connect: %R[sockerr]\n", s, SOCKERRNO()));
+        sockerr = SOCKERRNO();
+        DPRINTF(("socket %d: connect: %R[sockerr]\n", s, sockerr));
         closesocket(s);
+        SET_SOCKERRNO(sockerr);
         return INVALID_SOCKET;
     }
 
@@ -460,6 +465,7 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
     int on;
     const socklen_t onlen = sizeof(on);
     int status;
+    int sockerr;
 
     s = proxy_create_socket(sdom, stype);
     if (s == INVALID_SOCKET) {
@@ -477,17 +483,21 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
                   sdom == PF_INET ?
                     sizeof(struct sockaddr_in)
                   : sizeof(struct sockaddr_in6));
-    if (status < 0) {
-        DPRINTF(("bind: %R[sockerr]\n", SOCKERRNO()));
+    if (status == SOCKET_ERROR) {
+        sockerr = SOCKERRNO();
+        DPRINTF(("bind: %R[sockerr]\n", sockerr));
         closesocket(s);
+        SET_SOCKERRNO(sockerr);
         return INVALID_SOCKET;
     }
 
     if (stype == SOCK_STREAM) {
         status = listen(s, 5);
-        if (status < 0) {
-            DPRINTF(("listen: %R[sockerr]\n", SOCKERRNO()));
+        if (status == SOCKET_ERROR) {
+            sockerr = SOCKERRNO();
+            DPRINTF(("listen: %R[sockerr]\n", sockerr));
             closesocket(s);
+            SET_SOCKERRNO(sockerr);
             return INVALID_SOCKET;
         }
     }
