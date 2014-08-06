@@ -337,7 +337,7 @@ proxy_create_socket(int sdom, int stype)
 
 #if defined(RT_OS_WINDOWS)
     {
-        u_long mode = 0;
+        u_long mode = 1;
         status = ioctlsocket(s, FIONBIO, &mode);
         if (status == SOCKET_ERROR) {
             DPRINTF(("FIONBIO: %R[sockerr]\n", SOCKERRNO()));
@@ -435,7 +435,14 @@ proxy_connected_socket(int sdom, int stype,
     }
 
     status = connect(s, pdst_sa, dst_sa_len);
-    if (status == SOCKET_ERROR && SOCKERRNO() != EINPROGRESS) {
+    if (status == SOCKET_ERROR
+#if !defined(RT_OS_WINDOWS)
+        && SOCKERRNO() != EINPROGRESS
+#else
+        && SOCKERRNO() != EWOULDBLOCK
+#endif
+        )
+    {
         sockerr = SOCKERRNO();
         DPRINTF(("socket %d: connect: %R[sockerr]\n", s, sockerr));
         closesocket(s);
