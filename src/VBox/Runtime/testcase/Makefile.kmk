@@ -226,6 +226,7 @@ tstRTBase64_SOURCES = tstRTBase64.cpp
 
 tstRTBigNum_TEMPLATE = VBOXR3TSTEXE
 tstRTBigNum_SOURCES = tstRTBigNum.cpp
+tstRTBigNum_SDKS = VBOX_OPENSSL
 
 tstRTBitOperations_TEMPLATE = VBOXR3TSTEXE
 tstRTBitOperations_SOURCES = tstRTBitOperations.cpp
