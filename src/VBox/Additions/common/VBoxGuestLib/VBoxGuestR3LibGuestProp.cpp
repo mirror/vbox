@@ -580,8 +580,6 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  * @retval  VINF_SUCCESS on success, *ppHandle points to a handle for continuing
  *          the enumeration and *ppszName, *ppszValue, *pu64Timestamp and
  *          *ppszFlags are set.
- * @retval  VERR_NOT_FOUND if no matching properties were found.  In this case
- *          the return parameters are not initialised.
  * @retval  VERR_TOO_MUCH_DATA if it was not possible to determine the amount
  *          of local space needed to store all the enumeration data.  This is
  *          due to a race between allocating space and the host adding new
@@ -596,14 +594,21 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  * @param   ppHandle        where the handle for continued enumeration is stored
  *                          on success.  This must be freed with
  *                          VbglR3GuestPropEnumFree when it is no longer needed.
- * @param   ppszName        Where to store the first property name on success.
- *                          Should not be freed. Optional.
- * @param   ppszValue       Where to store the first property value on success.
- *                          Should not be freed. Optional.
- * @param   ppszValue       Where to store the first timestamp value on success.
- *                          Optional.
- * @param   ppszFlags       Where to store the first flags value on success.
- *                          Should not be freed. Optional.
+ * @param  ppszName      Where to store the next property name.  This will be
+ *                       set to NULL if there are no more properties to
+ *                       enumerate.  This pointer should not be freed. Optional.
+ * @param  ppszValue     Where to store the next property value.  This will be
+ *                       set to NULL if there are no more properties to
+ *                       enumerate.  This pointer should not be freed. Optional.
+ * @param  pu64Timestamp Where to store the next property timestamp.  This
+ *                       will be set to zero if there are no more properties
+ *                       to enumerate. Optional.
+ * @param  ppszFlags     Where to store the next property flags.  This will be
+ *                       set to NULL if there are no more properties to
+ *                       enumerate.  This pointer should not be freed. Optional.
+ *
+ * @remarks While all output parameters are optional, you need at least one to
+ *          figure out when to stop.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     char const * const *papszPatterns,
@@ -672,10 +677,8 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
             ppszName = &pszNameTmp;
         rc = VbglR3GuestPropEnumNext(Handle.get(), ppszName, ppszValue,
                                      pu64Timestamp, ppszFlags);
-        if (RT_SUCCESS(rc) && *ppszName != NULL)
+        if (RT_SUCCESS(rc))
             *ppHandle = Handle.release();
-        else if (RT_SUCCESS(rc))
-            rc = VERR_NOT_FOUND; /* No matching properties found. */
     }
     else if (rc == VERR_BUFFER_OVERFLOW)
         rc = VERR_TOO_MUCH_DATA;
