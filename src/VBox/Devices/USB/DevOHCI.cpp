@@ -1117,9 +1117,7 @@ static void ohciDoReset(POHCI pThis, uint32_t fNewMode, bool fResetOnLinux)
      * suspend/reset state. Also, a real HC isn't going to send anything
      * any more when a reset has been signaled.
      */
-    RTCritSectEnter(&pThis->CritSect);
     pThis->RootHub.pIRhConn->pfnCancelAllUrbs(pThis->RootHub.pIRhConn);
-    RTCritSectLeave(&pThis->CritSect);
 
     /*
      * Reset the hardware registers.

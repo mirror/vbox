@@ -538,7 +538,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @param   pInterface  Pointer to this struct.
      * @param   cMillies    Number of milliseconds to poll for completion.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies));
 
     /**
      * Cancels and completes - with CRC failure - all URBs queued on an endpoint.
@@ -597,9 +597,9 @@ DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUr
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnReapAsyncUrbs */
-DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, RTMSINTERVAL cMillies)
+DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies)
 {
-    pInterface->pfnReapAsyncUrbs(pInterface, cMillies);
+    pInterface->pfnReapAsyncUrbs(pInterface, pDevice, cMillies);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelAllUrbs */
@@ -1069,8 +1069,6 @@ typedef struct VUSBURB
         void             *pvPrivate;
         /** Used by the device when linking the URB in some list of its own.   */
         PVUSBURB          pNext;
-        /** Work queue item. */
-        RTQUEUEATOMICITEM QueueItem;
     } Dev;
 
 #ifndef RDESKTOP

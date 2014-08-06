@@ -1200,24 +1200,24 @@ int vusbUrbQueueAsyncRh(PVUSBURB pUrb)
         return VERR_OBJECT_DESTROYED;
     }
 
-    RTCritSectEnter(&pRh->CritSect);
+    RTCritSectEnter(&pDev->CritSectAsyncUrbs);
     int rc = pUrb->pUsbIns->pReg->pfnUrbQueue(pUrb->pUsbIns, pUrb);
     if (RT_FAILURE(rc))
     {
         LogFlow(("%s: vusbUrbQueueAsyncRh: returns %Rrc (queue_urb)\n", pUrb->pszDesc, rc));
-        RTCritSectLeave(&pRh->CritSect);
+        RTCritSectLeave(&pDev->CritSectAsyncUrbs);
         return rc;
     }
 
     ASMAtomicIncU32(&pDev->aPipes[pUrb->EndPt].async);
 
     /* Queue the pUrb on the roothub */
-    pUrb->VUsb.pNext = pRh->pAsyncUrbHead;
-    if (pRh->pAsyncUrbHead)
-        pRh->pAsyncUrbHead->VUsb.ppPrev = &pUrb->VUsb.pNext;
-    pRh->pAsyncUrbHead = pUrb;
-    pUrb->VUsb.ppPrev = &pRh->pAsyncUrbHead;
-    RTCritSectLeave(&pRh->CritSect);
+    pUrb->VUsb.pNext = pDev->pAsyncUrbHead;
+    if (pDev->pAsyncUrbHead)
+        pDev->pAsyncUrbHead->VUsb.ppPrev = &pUrb->VUsb.pNext;
+    pDev->pAsyncUrbHead = pUrb;
+    pUrb->VUsb.ppPrev = &pDev->pAsyncUrbHead;
+    RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 
     return VINF_SUCCESS;
 }
@@ -2044,7 +2044,7 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
  * @param   pUrb        The URB to cancel.
  * @param   enmMode     The way the URB should be canceled.
  */
-static void vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
+DECLHIDDEN(void) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
 {
     vusbUrbAssert(pUrb);
 #ifdef VBOX_WITH_STATISTICS
@@ -2126,6 +2126,16 @@ static void vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode)
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode)
 {
     int rc = vusbDevIoThreadExecSync(pUrb->VUsb.pDev, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
+    AssertRC(rc);
+}
+
+
+/**
+ * Async version of vusbUrbCancel() - doesn't wait for the cancelling to be complete.
+ */
+void vusbUrbCancelAsync(PVUSBURB pUrb, CANCELMODE mode)
+{
+    int rc = vusbDevIoThreadExec(pUrb->VUsb.pDev, 0 /* fFlags */, (PFNRT)vusbUrbCancelWorker, 2, pUrb, mode);
     AssertRC(rc);
 }
 
