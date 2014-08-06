@@ -1024,31 +1024,20 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
 }
 
 
-/**
- * Cancels and completes (with CRC failure) all async URBs pending
- * on a device. This is typically done as part of a reset and
- * before detaching a device.
- *
- * @param   fDetaching  If set, we will unconditionally unlink (and leak)
- *                      any URBs which isn't reaped.
- */
-static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
+static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetaching)
 {
-    PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
-    AssertPtrReturnVoid(pRh);
-
     /*
      * Iterate the URBs and cancel them.
      */
-    PVUSBURB pUrb = pRh->pAsyncUrbHead;
+    PVUSBURB pUrb = pDev->pAsyncUrbHead;
     while (pUrb)
     {
         PVUSBURB pNext = pUrb->VUsb.pNext;
-        if (pUrb->VUsb.pDev == pDev)
-        {
-            LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
-            vusbUrbCancel(pUrb, CANCELMODE_FAIL);
-        }
+
+        Assert(pUrb->VUsb.pDev == pDev);
+
+        LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
+        vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
         pUrb = pNext;
     }
 
@@ -1059,32 +1048,32 @@ static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
     do
     {
         cReaped = 0;
-        pUrb = pRh->pAsyncUrbHead;
+        pUrb = pDev->pAsyncUrbHead;
         while (pUrb)
         {
             PVUSBURB pNext = pUrb->VUsb.pNext;
-            if (pUrb->VUsb.pDev == pDev)
-            {
-                PVUSBURB pRipe = NULL;
-                if (pUrb->enmState == VUSBURBSTATE_REAPED)
-                    pRipe = pUrb;
-                else if (pUrb->enmState == VUSBURBSTATE_CANCELLED)
+            Assert(pUrb->VUsb.pDev == pDev);
+
+            PVUSBURB pRipe = NULL;
+            if (pUrb->enmState == VUSBURBSTATE_REAPED)
+                pRipe = pUrb;
+            else if (pUrb->enmState == VUSBURBSTATE_CANCELLED)
 #ifdef RT_OS_WINDOWS   /** @todo Windows doesn't do cancelling, thus this kludge to prevent really bad
-                        * things from happening if we leave a pending URB behinds. */
-                    pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, fDetaching ? 1500 : 0 /*ms*/);
+                    * things from happening if we leave a pending URB behinds. */
+                pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, fDetaching ? 1500 : 0 /*ms*/);
 #else
-                    pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, fDetaching ? 10 : 0 /*ms*/);
+                pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, fDetaching ? 10 : 0 /*ms*/);
 #endif
-                else
-                    AssertMsgFailed(("pUrb=%p enmState=%d\n", pUrb, pUrb->enmState));
-                if (pRipe)
-                {
-                    if (pRipe == pNext)
-                        pNext = pNext->VUsb.pNext;
-                    vusbUrbRipe(pRipe);
-                    cReaped++;
-                }
+            else
+                AssertMsgFailed(("pUrb=%p enmState=%d\n", pUrb, pUrb->enmState));
+            if (pRipe)
+            {
+                if (pRipe == pNext)
+                    pNext = pNext->VUsb.pNext;
+                vusbUrbRipe(pRipe);
+                cReaped++;
             }
+
             pUrb = pNext;
         }
     } while (cReaped > 0);
@@ -1094,24 +1083,39 @@ static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
      */
     if (fDetaching)
     {
-        pUrb = pRh->pAsyncUrbHead;
+        pUrb = pDev->pAsyncUrbHead;
         while (pUrb)
         {
             PVUSBURB pNext = pUrb->VUsb.pNext;
-            if (pUrb->VUsb.pDev == pDev)
-            {
-                AssertMsgFailed(("%s: Leaking left over URB! state=%d pDev=%p[%s]\n",
-                                 pUrb->pszDesc, pUrb->enmState, pDev, pDev->pUsbIns->pszName));
-                vusbUrbUnlink(pUrb);
-                /* Unlink isn't enough, because boundary timer and detaching will try to reap it.
-                 * It was tested with MSD & iphone attachment to vSMP guest, if
-                 * it breaks anything, please add comment here, why we should unlink only.
-                 */
-                pUrb->VUsb.pfnFree(pUrb);
-            }
+            Assert(pUrb->VUsb.pDev == pDev);
+
+            AssertMsgFailed(("%s: Leaking left over URB! state=%d pDev=%p[%s]\n",
+                             pUrb->pszDesc, pUrb->enmState, pDev, pDev->pUsbIns->pszName));
+            vusbUrbUnlink(pUrb);
+            /* Unlink isn't enough, because boundary timer and detaching will try to reap it.
+             * It was tested with MSD & iphone attachment to vSMP guest, if
+             * it breaks anything, please add comment here, why we should unlink only.
+             */
+            pUrb->VUsb.pfnFree(pUrb);
             pUrb = pNext;
         }
     }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Cancels and completes (with CRC failure) all async URBs pending
+ * on a device. This is typically done as part of a reset and
+ * before detaching a device.
+ *
+ * @param   fDetaching  If set, we will unconditionally unlink (and leak)
+ *                      any URBs which isn't reaped.
+ */
+static void vusbDevCancelAllUrbs(PVUSBDEV pDev, bool fDetaching)
+{
+    int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)vusbDevCancelAllUrbsWorker, 2, pDev, fDetaching);
+    AssertRC(rc);
 }
 
 
@@ -1260,6 +1264,7 @@ void vusbDevDestroy(PVUSBDEV pDev)
     int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
     AssertRC(rc);
 
+    RTCritSectDelete(&pDev->CritSectAsyncUrbs);
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
 }
 
@@ -1517,7 +1522,7 @@ DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface)
     {
         PVUSBROOTHUB pRh = (PVUSBROOTHUB)pDev;
         VUSBIRhCancelAllUrbs(&pRh->IRhConnector);
-        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, 0);
+        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, pInterface, 0);
     }
 
     pDev->enmState = VUSB_DEVICE_STATE_ATTACHED;
@@ -1707,8 +1712,11 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     memset(&pDev->aPipes[0], 0, sizeof(pDev->aPipes));
     pDev->pResetTimer = NULL;
 
+    int rc = RTCritSectInit(&pDev->CritSectAsyncUrbs);
+    AssertRCReturn(rc, rc);
+
     /* Setup request queue executing synchronous tasks on the I/O thread. */
-    int rc = RTReqQueueCreate(&pDev->hReqQueueSync);
+    rc = RTReqQueueCreate(&pDev->hReqQueueSync);
     AssertRCReturn(rc, rc);
 
     /* Create I/O thread. */

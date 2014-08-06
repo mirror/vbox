@@ -193,6 +193,10 @@ typedef struct VUSBDEV
 
     /** Pipe/direction -> endpoint descriptor mapping */
     VUSBPIPE            aPipes[VUSB_PIPE_MAX];
+    /** Critical section protecting the active URB list. */
+    RTCRITSECT          CritSectAsyncUrbs;
+    /** List of active async URBs. */
+    PVUSBURB            pAsyncUrbHead;
 
     /** Dumper state. */
     union VUSBDEVURBDUMPERSTATE
@@ -216,7 +220,7 @@ typedef struct VUSBDEV
     bool volatile       fWokenUp;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
-    bool                afAlignment0[6];
+    bool                afAlignment0[2];
 #endif
 } VUSBDEV;
 
@@ -350,8 +354,6 @@ typedef struct VUSBROOTHUB
 #endif
     /** Address hash table. */
     PVUSBDEV                apAddrHash[VUSB_ADDR_HASHSZ];
-    /** List of async URBs. */
-    PVUSBURB                pAsyncUrbHead;
     /** The default address. */
     PVUSBDEV                pDefaultAddress;
 
@@ -362,13 +364,15 @@ typedef struct VUSBROOTHUB
     /** Connector interface exposed upwards. */
     VUSBIROOTHUBCONNECTOR   IRhConnector;
 
+    /** Critical section protecting the device list. */
+    RTCRITSECT              CritSectDevices;
     /** Chain of devices attached to this hub. */
     PVUSBDEV                pDevices;
     /** Availability Bitmap. */
     VUSBPORTBITMAP          Bitmap;
 
     /** Critical section protecting the free list. */
-    RTCRITSECT              CritSect;
+    RTCRITSECT              CritSectFreeUrbs;
     /** Chain of free URBs. (Singly linked) */
     PVUSBURB                pFreeUrbs;
     /** The number of URBs in the pool. */
@@ -406,7 +410,8 @@ typedef struct VUSBROOTHUB
 } VUSBROOTHUB;
 AssertCompileMemberAlignment(VUSBROOTHUB, IRhConnector, 8);
 AssertCompileMemberAlignment(VUSBROOTHUB, Bitmap, 8);
-AssertCompileMemberAlignment(VUSBROOTHUB, CritSect, 8);
+AssertCompileMemberAlignment(VUSBROOTHUB, CritSectDevices, 8);
+AssertCompileMemberAlignment(VUSBROOTHUB, CritSectFreeUrbs, 8);
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(VUSBROOTHUB, Total, 8);
 #endif
@@ -436,6 +441,7 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete);
 void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies);
 void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies);
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
+void vusbUrbCancelAsync(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbRipe(PVUSBURB pUrb);
 void vusbUrbCompletionRh(PVUSBURB pUrb);
 int vusbUrbSubmitHardError(PVUSBURB pUrb);
@@ -446,6 +452,7 @@ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
 DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
 DECLHIDDEN(int) vusbDevIoThreadExec(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...);
+DECLHIDDEN(void) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode);
 
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb);
 VUSBREADAHEAD vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
@@ -457,15 +464,15 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uin
 
 DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 {
-    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
+    PVUSBDEV pDev = pUrb->VUsb.pDev;
 
-    RTCritSectEnter(&pRh->CritSect);
+    RTCritSectEnter(&pDev->CritSectAsyncUrbs);
     *pUrb->VUsb.ppPrev = pUrb->VUsb.pNext;
     if (pUrb->VUsb.pNext)
         pUrb->VUsb.pNext->VUsb.ppPrev = pUrb->VUsb.ppPrev;
     pUrb->VUsb.pNext = NULL;
     pUrb->VUsb.ppPrev = NULL;
-    RTCritSectLeave(&pRh->CritSect);
+    RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 }
 
 /** @def vusbUrbAssert
