@@ -122,16 +122,13 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachi
     if (pMachineWindow && pMachineWindow != this)
         return;
 
-    /* Make sure this window should be shown at all: */
-    if (!uisession()->isScreenVisible(m_uScreenId))
-        return;
-
     /* Make sure this window has fullscreen logic: */
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
     AssertPtrReturnVoid(pFullscreenLogic);
 
-    /* Make sure this window mapped to some host-screen: */
-    if (!pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
+    /* Make sure this window should be shown and mapped to host-screen: */
+    if (!uisession()->isScreenVisible(m_uScreenId) ||
+        !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
         return;
 
     /* Mark window 'transitioned to fullscreen': */
@@ -291,6 +288,13 @@ void UIMachineWindowFullscreen::placeOnScreen()
      * only if that screen has no own user-space: */
     else if (!pFullscreenLogic->screensHaveSeparateSpaces() && m_uScreenId != 0)
         resize(workingArea.size());
+    else
+    {
+        /* Move window to the center of working-area: */
+        QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, m_uScreenId, vboxGlobal().managedVMUuid());
+        geo.moveCenter(workingArea.center());
+        setGeometry(geo);
+    }
 #else /* !Q_WS_MAC */
     /* Resize to the appropriate size: */
     resize(workingArea.size());
