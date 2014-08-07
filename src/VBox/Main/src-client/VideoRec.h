@@ -26,7 +26,8 @@ typedef struct VIDEORECSTREAM *PVIDEORECSTREAM;
 
 int  VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens);
 int  VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
-                      uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps);
+                      uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps,
+                      uint32_t uMaxTime, uint32_t uMaxFileSize, const char *pszOptions);
 void VideoRecContextClose(PVIDEORECCONTEXT pCtx);
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx);
 int  VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
@@ -34,6 +35,7 @@ int  VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
                           uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
                           uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
 bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp);
+bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp);
 
 #endif /* !____H_VIDEOREC */
 

@@ -2914,6 +2914,16 @@ int Display::i_VideoCaptureStart()
     BSTR strFile;
     hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    ULONG ulMaxTime;
+    hrc = pMachine->COMGETTER(VideoCaptureMaxTime)(&ulMaxTime);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    ULONG ulMaxSize;
+    hrc = pMachine->COMGETTER(VideoCaptureMaxFileSize)(&ulMaxSize);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    BSTR strOptions;
+    hrc = pMachine->COMGETTER(VideoCaptureOptions)(&strOptions);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+
     RTTIMESPEC ts;
     RTTimeNow(&ts);
     RTTIME time;
@@ -2940,7 +2950,9 @@ int Display::i_VideoCaptureStart()
         if (RT_SUCCESS(rc))
         {
             rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
-                                  pszName, ulWidth, ulHeight, ulRate, ulFPS);
+                                  pszName, ulWidth, ulHeight,
+                                  ulRate, ulFPS, ulMaxTime,
+                                  ulMaxSize, com::Utf8Str(strOptions).c_str());
             if (rc == VERR_ALREADY_EXISTS)
             {
                 RTStrFree(pszName);
@@ -2958,7 +2970,9 @@ int Display::i_VideoCaptureStart()
                                       pszSuff);
                 if (RT_SUCCESS(rc))
                     rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
-                                          pszName, ulWidth, ulHeight, ulRate, ulFPS);
+                                          pszName, ulWidth, ulHeight, ulRate,
+                                          ulFPS, ulMaxTime,
+                                          ulMaxSize, com::Utf8Str(strOptions).c_str());
             }
         }
 
@@ -3782,6 +3796,13 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
             {
                 if (!pDisplay->maVideoRecEnabled[uScreenId])
                     continue;
+
+                if(VideoRecIsFull(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
+                {
+                    pDisplay->i_VideoCaptureStop();
+                    pDisplay->mParent->i_machine()->COMSETTER(VideoCaptureEnabled)(false);
+                    break;
+                }
 
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 

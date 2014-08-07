@@ -144,6 +144,25 @@ Utf8Str& Utf8Str::stripSuffix()
     return *this;
 }
 
+size_t Utf8Str::parseKeyValue(Utf8Str &key, Utf8Str &value, size_t pos, const Utf8Str &pairSeparator, const Utf8Str &keyValueSeparator) const
+{
+    size_t start = pos;
+    while(start == (pos = find(pairSeparator.c_str(), pos)))
+        start = ++pos;
+
+    size_t kvSepPos = find(keyValueSeparator.c_str(), start);
+    if (kvSepPos < pos)
+    {
+        key = substr(start, kvSepPos - start);
+        value = substr(kvSepPos + 1, pos - kvSepPos - 1);
+    }
+    else
+    {
+        key = value = "";
+    }
+    return pos;
+}
+
 /**
  * Internal function used in Utf8Str copy constructors and assignment when
  * copying from a UTF-16 string.
