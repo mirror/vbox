@@ -45,6 +45,11 @@ void Ebml::write(const void *data, size_t size)
     if (!RT_SUCCESS(rc)) throw rc;
 }
 
+uint64_t WebMWriter::getFileSize() 
+{
+    return RTFileTell(m_File);
+}
+
 WebMWriter::WebMWriter() :
     m_bDebug(false),
     m_iLastPtsMs(-1),
@@ -77,7 +82,7 @@ void WebMWriter::close()
 
 Ebml &operator<<(Ebml &a_Ebml, const WebMWriter::SimpleBlockData &a_Data)
 {
-    a_Ebml.serializeConst<WebMWriter::Mkv::SimpleBlock>();
+    a_Ebml.serializeConst<WebMWriter::SimpleBlock>();
     a_Ebml.write<uint32_t>(0x10000000u | (Ebml::getSizeOfUInt(a_Data.trackNumber) + 2 + 1 + a_Data.dataSize));
     a_Ebml.serializeInteger(a_Data.trackNumber);
     a_Ebml.write(a_Data.timeCode);
