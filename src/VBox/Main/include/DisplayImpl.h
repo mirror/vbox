@@ -413,8 +413,8 @@ public:
 #endif
 
 private:
-    static void i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
-    static int  i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+    static int i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
+    static int i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
 
     int  i_videoAccelRefreshProcess(void);
 
