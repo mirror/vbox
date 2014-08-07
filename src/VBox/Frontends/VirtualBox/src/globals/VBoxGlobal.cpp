@@ -4661,3 +4661,13 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
     return true;
 }
 
+bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget,
+                                         unsigned long cScreen)
+{
+    return XXSendClientMessage(pWidget->x11Info().display(),
+                               pWidget->window()->winId(),
+                               "_NET_WM_FULLSCREEN_MONITORS", cScreen, cScreen,
+                               cScreen, cScreen, 1
+                               /* Source indication (1 = normal application) */
+                              );
+}

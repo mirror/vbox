@@ -119,6 +119,8 @@ public:
 
     bool switchToMachine(CMachine &machine);
     bool launchMachine(CMachine &machine, bool fHeadless = false);
+    bool setFullScreenMonitorX11(QWidget *pWidget, unsigned long cScreen);
+
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     bool showStartVMErrors() const { return mShowStartVMErrors; }
