@@ -3159,8 +3159,10 @@ HRESULT Display::drawToScreen(ULONG aScreenId, BYTE *aAddress, ULONG aX, ULONG a
     return rc;
 }
 
-void Display::i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll)
+int Display::i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll)
 {
+    LogRelFlowFunc(("uId=%d, fUpdateAll %d\n", uId, fUpdateAll));
+
     unsigned uScreenId;
     for (uScreenId = (fUpdateAll ? 0 : uId); uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
@@ -3243,6 +3245,8 @@ void Display::i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUp
         if (!fUpdateAll)
             break;
     }
+    LogRelFlowFunc(("done\n"));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -3271,9 +3275,8 @@ HRESULT Display::invalidateAndUpdate()
     /* Have to release the lock when calling EMT.  */
     alock.release();
 
-    /* pdm.h says that this has to be called from the EMT thread */
-    int rcVBox = VMR3ReqCallVoidWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                      3, this, 0, true);
+    int rcVBox = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
+                                    3, this, 0, true);
     alock.acquire();
 
     if (RT_FAILURE(rcVBox))
@@ -3294,9 +3297,8 @@ HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* pdm.h says that this has to be called from the EMT thread */
-    int rcVBox = VMR3ReqCallVoidWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                      3, this, aScreenId, false);
+    int rcVBox = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
+                                    3, this, aScreenId, false);
     if (RT_FAILURE(rcVBox))
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not invalidate and update the screen %d (%Rrc)"), aScreenId, rcVBox);
