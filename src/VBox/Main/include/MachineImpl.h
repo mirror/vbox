@@ -264,6 +264,9 @@ public:
         ULONG               mVideoCaptureHeight;
         ULONG               mVideoCaptureRate;
         ULONG               mVideoCaptureFPS;
+        ULONG               mVideoCaptureMaxTime;
+        ULONG               mVideoCaptureMaxFileSize;
+        Utf8Str             mVideoCaptureOptions;
         Utf8Str             mVideoCaptureFile;
         BOOL                mVideoCaptureEnabled;
         BOOL                maVideoCaptureScreens[SchemaDefs::MaxGuestMonitors];
@@ -838,6 +841,12 @@ private:
     HRESULT setVideoCaptureRate(ULONG aVideoCaptureRate);
     HRESULT getVideoCaptureFPS(ULONG *aVideoCaptureFPS);
     HRESULT setVideoCaptureFPS(ULONG aVideoCaptureFPS);
+    HRESULT getVideoCaptureMaxTime(ULONG *aVideoCaptureMaxTime);
+    HRESULT setVideoCaptureMaxTime(ULONG aVideoCaptureMaxTime);
+    HRESULT getVideoCaptureMaxFileSize(ULONG *aVideoCaptureMaxFileSize);
+    HRESULT setVideoCaptureMaxFileSize(ULONG aVideoCaptureMaxFileSize);
+    HRESULT getVideoCaptureOptions(com::Utf8Str &aVideoCaptureOptions);
+    HRESULT setVideoCaptureOptions(const com::Utf8Str &aVideoCaptureOptions);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
     HRESULT setFirmwareType(FirmwareType_T aFirmwareType);

@@ -383,6 +383,9 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--vcpheight <height>]\n"
                      "                            [--vcprate <rate>]\n"
                      "                            [--vcpfps <fps>]\n"
+                     "                            [--vcpmaxtime <time>]\n"
+                     "                            [--vcpmaxsize <size>]\n"
+                     "                            [--vcpoptions <options>]\n"
 #endif
                      "                            [--defaultfrontend default|<name>]\n"
                      "\n");

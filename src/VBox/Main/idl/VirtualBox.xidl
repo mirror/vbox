@@ -4569,6 +4569,33 @@
       </desc>
     </attribute>
 
+    <attribute name="videoCaptureMaxTime" type="unsigned long" default="0">
+      <desc>
+        This setting determines the maximal number of time video capture
+        will work for. The capture stops as the defined time interval
+        has elapsed. If this value is zero the capturing will not be limited
+        by time. This setting cannot be changed while video capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoCaptureMaxFileSize" type="unsigned long" default="0">
+      <desc>
+        This setting determines the maximal number of captured video file
+        size in MB. The capture stops as the captured video file size
+        has reached the defined. If this value is zero the capturing
+        will not be limited by file size. This setting cannot be changed
+        while video capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoCaptureOptions" type="wstring">
+      <desc>
+        This setting contains any additional video capture options
+        required in comma-separated key=value format. This setting
+        cannot be changed while video capturing is enabled.
+      </desc>
+    </attribute>
+
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
       <desc>Object containing all BIOS settings.</desc>
     </attribute>

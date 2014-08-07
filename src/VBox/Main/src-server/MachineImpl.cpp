@@ -165,6 +165,8 @@ Machine::HWData::HWData()
     mVideoCaptureHeight = 768;
     mVideoCaptureRate = 512;
     mVideoCaptureFPS = 25;
+    mVideoCaptureMaxTime = 0;
+    mVideoCaptureMaxFileSize = 0;
     mVideoCaptureEnabled = false;
     for (unsigned i = 0; i < RT_ELEMENTS(maVideoCaptureScreens); ++i)
         maVideoCaptureScreens[i] = true;
@@ -1809,6 +1811,73 @@ HRESULT Machine::setVideoCaptureFPS(ULONG aVideoCaptureFPS)
     i_setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mVideoCaptureFPS = aVideoCaptureFPS;
+
+    return S_OK;
+}
+
+HRESULT Machine::getVideoCaptureMaxTime(ULONG *aVideoCaptureMaxTime)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aVideoCaptureMaxTime = mHWData->mVideoCaptureMaxTime;
+    return S_OK;
+}
+
+HRESULT Machine::setVideoCaptureMaxTime(ULONG aVideoCaptureMaxTime)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
+
+    i_setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mVideoCaptureMaxTime = aVideoCaptureMaxTime;
+
+    return S_OK;
+}
+
+HRESULT Machine::getVideoCaptureMaxFileSize(ULONG *aVideoCaptureMaxFileSize)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aVideoCaptureMaxFileSize = mHWData->mVideoCaptureMaxFileSize;
+    return S_OK;
+}
+
+HRESULT Machine::setVideoCaptureMaxFileSize(ULONG aVideoCaptureMaxFileSize)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
+
+    i_setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mVideoCaptureMaxFileSize = aVideoCaptureMaxFileSize;
+
+    return S_OK;
+}
+
+HRESULT Machine::getVideoCaptureOptions(com::Utf8Str &aVideoCaptureOptions)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    
+    aVideoCaptureOptions = mHWData->mVideoCaptureOptions;
+    return S_OK;
+}
+
+HRESULT Machine::setVideoCaptureOptions(const com::Utf8Str &aVideoCaptureOptions)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
+
+    i_setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mVideoCaptureOptions = aVideoCaptureOptions;
 
     return S_OK;
 }

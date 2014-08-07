@@ -1919,6 +1919,8 @@ Hardware::Hardware()
           ulVideoCaptureVertRes(768),
           ulVideoCaptureRate(512),
           ulVideoCaptureFPS(25),
+          ulVideoCaptureMaxTime(0),
+          ulVideoCaptureMaxSize(0),
           fVideoCaptureEnabled(false),
           u64VideoCaptureScreens(UINT64_C(0xffffffffffffffff)),
           strVideoCaptureFile(""),
@@ -1997,6 +1999,8 @@ bool Hardware::operator==(const Hardware& h) const
                   && (ulVideoCaptureVertRes     == h.ulVideoCaptureVertRes)
                   && (ulVideoCaptureRate        == h.ulVideoCaptureRate)
                   && (ulVideoCaptureFPS         == h.ulVideoCaptureFPS)
+                  && (ulVideoCaptureMaxTime     == h.ulVideoCaptureMaxTime)
+                  && (ulVideoCaptureMaxSize     == h.ulVideoCaptureMaxTime)
                   && (firmwareType              == h.firmwareType)
                   && (pointingHIDType           == h.pointingHIDType)
                   && (keyboardHIDType           == h.keyboardHIDType)
@@ -2936,6 +2940,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("vertRes",   hw.ulVideoCaptureVertRes);
             pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
             pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFPS);
+            pelmHwChild->getAttributeValue("maxTime",   hw.ulVideoCaptureMaxTime);
+            pelmHwChild->getAttributeValue("maxSize",   hw.ulVideoCaptureMaxSize);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -4226,6 +4232,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmVideoCapture->setAttribute("vertRes",   hw.ulVideoCaptureVertRes);
         pelmVideoCapture->setAttribute("rate",      hw.ulVideoCaptureRate);
         pelmVideoCapture->setAttribute("fps",       hw.ulVideoCaptureFPS);
+        pelmVideoCapture->setAttribute("maxTime",   hw.ulVideoCaptureMaxTime);
+        pelmVideoCapture->setAttribute("maxSize",   hw.ulVideoCaptureMaxSize);
     }
 
     xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");

@@ -564,8 +564,6 @@ public:
         return *this;
     }
 
-    bool operator<(const RTCString &that) const { return RTCString::operator<(that); }
-
     /**
      * Extended assignment method that returns a COM status code instead of an
      * exception on failure.
@@ -709,6 +707,9 @@ public:
      * Calls RTPathStripSuffix() without having to mess with mutableRaw().
      */
     Utf8Str& stripSuffix();
+
+    // Parse key=value pairs from string
+    size_t parseKeyValue(Utf8Str &key, Utf8Str &value, size_t pos = 0, const Utf8Str &pairSeparator = ",", const Utf8Str &keyValueSeparator = "=") const;
 
     /**
      *  Static immutable empty-string object. May be used for comparison purposes.

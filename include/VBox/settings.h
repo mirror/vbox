@@ -906,6 +906,8 @@ struct Hardware
     uint32_t            ulVideoCaptureVertRes;  // requires settings version 1.14 (VirtualBox 4.3)
     uint32_t            ulVideoCaptureRate;     // requires settings version 1.14 (VirtualBox 4.3)
     uint32_t            ulVideoCaptureFPS;      // requires settings version 1.14 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureMaxTime;  // requires settings version 1.14 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureMaxSize;  // requires settings version 1.14 (VirtualBox 4.3)
     bool                fVideoCaptureEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
     uint64_t            u64VideoCaptureScreens; // requires settings version 1.14 (VirtualBox 4.3)
     com::Utf8Str        strVideoCaptureFile;    // requires settings version 1.14 (VirtualBox 4.3)

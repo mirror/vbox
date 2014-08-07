@@ -201,6 +201,9 @@ enum
     MODIFYVM_VCP_HEIGHT,
     MODIFYVM_VCP_RATE,
     MODIFYVM_VCP_FPS,
+    MODIFYVM_VCP_MAXTIME,
+    MODIFYVM_VCP_MAXSIZE,
+    MODIFYVM_VCP_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
     MODIFYVM_DEFAULTFRONTEND
@@ -356,6 +359,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 },
     { "--vcprate",                  MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 },
     { "--vcpfps",                   MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 },
+    { "--vcpmaxtime",               MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  },
+    { "--vcpmaxsize",               MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  },
+    { "--vcpoptions",               MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING },
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2722,6 +2728,22 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_VCP_FPS:
             {
                 CHECK_ERROR(machine, COMSETTER(VideoCaptureFPS)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_MAXTIME:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureMaxTime)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_MAXSIZE:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureMaxFileSize)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_OPTIONS:
+            {
+                Bstr bstr(ValueUnion.psz);
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureOptions)(bstr.raw()));
                 break;
             }
 #endif

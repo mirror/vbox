@@ -32,473 +32,245 @@
 #include <iprt/string.h>
 #include <VBox/log.h>
 
-static int ebml_Write(EbmlGlobal *glob, const void *pv, size_t cb)
+Ebml::Ebml() {}
+
+void Ebml::init(const RTFILE &a_File)
 {
-    return RTFileWrite(glob->file, pv, cb, NULL);
+    m_File = a_File;
 }
 
-static int ebml_WriteU8(EbmlGlobal *glob, uint8_t u8)
+void Ebml::write(const void *data, size_t size)
 {
-    return ebml_Write(glob, &u8, 1);
+    int rc = RTFileWrite(m_File, data, size, NULL);
+    if (!RT_SUCCESS(rc)) throw rc;
 }
 
-static int ebml_WriteU16(EbmlGlobal *glob, uint16_t u16)
-{
-    return ebml_Write(glob, &u16, 2);
-}
+WebMWriter::WebMWriter() :
+    m_bDebug(false),
+    m_iLastPtsMs(-1),
+    m_Framerate(),
+    m_uPositionReference(0),
+    m_uSeekInfoPos(0),
+    m_uSegmentInfoPos(0),
+    m_uTrackPos(0),
+    m_uCuePos(0),
+    m_uClusterPos(0),
+    m_uTrackIdPos(0),
+    m_uStartSegment(0),
+    m_uClusterTimecode(0),
+    m_bClusterOpen(false) {}
 
-static int ebml_WriteU32(EbmlGlobal *glob, uint32_t u32)
+int WebMWriter::create(const char *a_pszFilename)
 {
-    return ebml_Write(glob, &u32, 4);
-}
-
-static int ebml_WriteU64(EbmlGlobal *glob, uint64_t u64)
-{
-    return ebml_Write(glob, &u64, 8);
-}
-
-static int ebml_Serialize(EbmlGlobal *glob, const uint8_t *pb, size_t cb)
-{
-    for (; cb; cb--)
+    int rc = RTFileOpen(&m_File, a_pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
     {
-        int rc = ebml_WriteU8(glob, pb[cb-1]);
-        if (RT_FAILURE(rc))
-            return rc;
+        m_Ebml.init(m_File);
+    }
+    return rc;
+}
+
+void WebMWriter::close()
+{
+    RTFileClose(m_File);
+}
+
+Ebml &operator<<(Ebml &a_Ebml, const WebMWriter::SimpleBlockData &a_Data)
+{
+    a_Ebml.serializeConst<WebMWriter::Mkv::SimpleBlock>();
+    a_Ebml.write<uint32_t>(0x10000000u | (Ebml::getSizeOfUInt(a_Data.trackNumber) + 2 + 1 + a_Data.dataSize));
+    a_Ebml.serializeInteger(a_Data.trackNumber);
+    a_Ebml.write(a_Data.timeCode);
+    a_Ebml.write(a_Data.flags);
+    a_Ebml.write(a_Data.data, a_Data.dataSize);
+    return a_Ebml;
+}
+
+void WebMWriter::writeSeekInfo()
+{
+    // Save the current file pointer
+    uint64_t uPos = RTFileTell(m_File);
+    if (m_uSeekInfoPos)
+        RTFileSeek(m_File, m_uSeekInfoPos, RTFILE_SEEK_BEGIN, NULL);
+    else
+        m_uSeekInfoPos = uPos;
+
+    m_Ebml << Ebml::SubStart<SeekHead>()
+
+          << Ebml::SubStart<Seek>()
+          << Ebml::Const<SeekID, Tracks>()
+          << Ebml::Var<SeekPosition, uint64_t>(m_uTrackPos - m_uPositionReference)
+          << Ebml::SubEnd<Seek>()
+
+          << Ebml::SubStart<Seek>()
+          << Ebml::Const<SeekID, Cues>()
+          << Ebml::Var<SeekPosition, uint64_t>(m_uCuePos - m_uPositionReference)
+          << Ebml::SubEnd<Seek>()
+
+          << Ebml::SubStart<Seek>()
+          << Ebml::Const<SeekID, Info>()
+          << Ebml::Var<SeekPosition, uint64_t>(m_uSegmentInfoPos - m_uPositionReference)
+          << Ebml::SubEnd<Seek>()
+
+          << Ebml::SubEnd<SeekHead>();
+
+    int64_t iFrameTime = (int64_t)1000 * m_Framerate.den / m_Framerate.num;
+    m_uSegmentInfoPos = RTFileTell(m_File);
+
+    char szVersion[64];
+    RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%",
+                m_bDebug ? vpx_codec_version_str() : "");
+
+    m_Ebml << Ebml::SubStart<Info>()
+           << Ebml::UnsignedInteger<TimecodeScale>(1000000)
+           << Ebml::Float<Segment_Duration>(m_iLastPtsMs + iFrameTime)
+           << Ebml::String<MuxingApp>(szVersion)
+           << Ebml::String<WritingApp>(szVersion)
+           << Ebml::SubEnd<Info>();
+}
+
+int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
+                            const struct vpx_rational *a_pFps)
+{
+    try
+    {
+        m_Ebml << Ebml::SubStart<EBML>()
+               << Ebml::UnsignedInteger<EBMLVersion>(1)
+               << Ebml::UnsignedInteger<EBMLReadVersion>(1)
+               << Ebml::UnsignedInteger<EBMLMaxIDLength>(4)
+               << Ebml::UnsignedInteger<EBMLMaxSizeLength>(8)
+               << Ebml::String<DocType>("webm")
+               << Ebml::UnsignedInteger<DocTypeVersion>(2)
+               << Ebml::UnsignedInteger<DocTypeReadVersion>(2)
+               << Ebml::SubEnd<EBML>();
+
+        m_Ebml << Ebml::SubStart<Segment>();
+
+        m_uPositionReference = RTFileTell(m_File);
+        m_Framerate = *a_pFps;
+
+        writeSeekInfo();
+
+        m_uTrackPos = RTFileTell(m_File);
+
+        m_Ebml << Ebml::SubStart<Tracks>()
+               << Ebml::SubStart<TrackEntry>()
+               << Ebml::UnsignedInteger<TrackNumber>(1);
+
+        m_uTrackIdPos = RTFileTell(m_File);
+
+        m_Ebml << Ebml::Var<TrackUID, uint32_t>(0)
+               << Ebml::UnsignedInteger<TrackType>(1)
+               << Ebml::String<CodecID>("V_VP8")
+               << Ebml::SubStart<Video>()
+               << Ebml::UnsignedInteger<PixelWidth>(a_pCfg->g_w)
+               << Ebml::UnsignedInteger<PixelHeight>(a_pCfg->g_h)
+               << Ebml::Float<FrameRate>((double)a_pFps->num / a_pFps->den)
+               << Ebml::SubEnd<Video>()
+               << Ebml::SubEnd<TrackEntry>()
+               << Ebml::SubEnd<Tracks>();
+    }
+    catch(int rc)
+    {
+        LogFlow(("WebMWriter::writeHeader catched"));
+        return rc;
     }
     return VINF_SUCCESS;
 }
 
-static int ebml_WriteID(EbmlGlobal *glob, uint32_t class_id)
+int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
+                            const vpx_codec_cx_pkt_t *a_pPkt)
 {
-    int rc;
-    if (class_id >= 0x01000000)
-        rc = ebml_WriteU32(glob, RT_H2BE_U32(class_id));
-    else if (class_id >= 0x00010000)
-        rc = ebml_Serialize(glob, (uint8_t*)&class_id, 3);
-    else if (class_id >= 0x00000100)
-        rc = ebml_WriteU16(glob, RT_H2BE_U16((uint16_t)class_id));
-    else
-        rc = ebml_WriteU8(glob, (uint8_t)class_id);
-    return rc;
-}
+    try {
+        uint16_t uBlockTimecode = 0;
+        int64_t  iPtsMs;
+        bool     bStartCluster = false;
 
-static int ebml_SerializeUnsigned32(EbmlGlobal *glob, uint32_t class_id, uint32_t ui)
-{
-    int rc = ebml_WriteID(glob, class_id);
-    rc = ebml_WriteU8(glob, 4 | 0x80);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU32(glob, RT_H2BE_U32(ui));
-    return rc;
-}
+        /* Calculate the PTS of this frame in milliseconds */
+        iPtsMs = a_pPkt->data.frame.pts * 1000
+                 * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
+        if (iPtsMs <= m_iLastPtsMs)
+            iPtsMs = m_iLastPtsMs + 1;
+        m_iLastPtsMs = iPtsMs;
 
-static int ebml_StartSubElement(EbmlGlobal *glob, uint64_t *ebmlLoc, uint32_t class_id)
-{
-    // todo this is always taking 8 bytes, this may need later optimization
-    // this is a key that says lenght unknown
-    uint64_t unknownLen =  UINT64_C(0x01FFFFFFFFFFFFFF);
+        /* Calculate the relative time of this block */
+        if (iPtsMs - m_uClusterTimecode > 65536)
+            bStartCluster = 1;
+        else
+            uBlockTimecode = static_cast<uint16_t>(iPtsMs - m_uClusterTimecode);
 
-    ebml_WriteID(glob, class_id);
-    *ebmlLoc = RTFileTell(glob->file);
-    return ebml_WriteU64(glob, RT_H2BE_U64(unknownLen));
-}
+        int fKeyframe = (a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
+        if (bStartCluster || fKeyframe)
+        {
+            if (m_bClusterOpen)
+                m_Ebml << Ebml::SubEnd<Cluster>();
 
-static int ebml_EndSubElement(EbmlGlobal *glob, uint64_t ebmlLoc)
-{
-    /* Save the current file pointer */
-    uint64_t pos = RTFileTell(glob->file);
+            /* Open a new cluster */
+            uBlockTimecode = 0;
+            m_bClusterOpen = true;
+            m_uClusterTimecode = (uint32_t)iPtsMs;
+            m_uClusterPos = RTFileTell(m_File);
+            m_Ebml << Ebml::SubStart<Cluster>()
+                   << Ebml::UnsignedInteger<Timecode>(m_uClusterTimecode);
 
-    /* Calculate the size of this element */
-    uint64_t size  = pos - ebmlLoc - 8;
-    size |= UINT64_C(0x0100000000000000);
+            /* Save a cue point if this is a keyframe. */
+            if (fKeyframe)
+            {
+                CueEntry cue(m_uClusterTimecode, m_uClusterPos);
+                m_CueList.push_back(cue);
+            }
+        }
 
-    /* Seek back to the beginning of the element and write the new size */
-    RTFileSeek(glob->file, ebmlLoc, RTFILE_SEEK_BEGIN, NULL);
-    int rc = ebml_WriteU64(glob, RT_H2BE_U64(size));
+        // Write a Simple Block
+        SimpleBlockData block(1, uBlockTimecode,
+            (fKeyframe ? 0x80 : 0) | (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE ? 0x08 : 0),
+            a_pPkt->data.frame.buf, a_pPkt->data.frame.sz);
 
-    /* Reset the file pointer */
-    RTFileSeek(glob->file, pos, RTFILE_SEEK_BEGIN, NULL);
-
-    return rc;
-}
-
-static int ebml_WriteLen(EbmlGlobal *glob, uint64_t val)
-{
-    //TODO check and make sure we are not > than 0x0100000000000000LLU
-    size_t size = 8;
-    uint64_t minVal = UINT64_C(0x00000000000000ff); //mask to compare for byte size
-
-    for (size = 1; size < 8; size ++)
-    {
-        if (val < minVal)
-            break;
-
-        minVal = (minVal << 7);
+        m_Ebml << block;
     }
-
-    val |= (UINT64_C(0x000000000000080) << ((size - 1) * 7));
-
-    return ebml_Serialize(glob, (uint8_t *)&val, size);
-}
-
-static int ebml_WriteString(EbmlGlobal *glob, const char *str)
-{
-    const size_t cb = strlen(str);
-    int rc = ebml_WriteLen(glob, cb);
-    //TODO: it's not clear from the spec whether the nul terminator
-    //should be serialized too.  For now we omit the null terminator.
-    if (RT_SUCCESS(rc))
-        rc = ebml_Write(glob, str, cb);
-    return rc;
-}
-
-int Ebml_SerializeUnsigned64(EbmlGlobal *glob, uint32_t class_id, uint64_t ui)
-{
-    int rc = ebml_WriteID(glob, class_id);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU8(glob, 8 | 0x80);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU64(glob, RT_H2BE_U64(ui));
-    return rc;
-}
-
-int Ebml_SerializeUnsigned(EbmlGlobal *glob, uint32_t class_id, uint32_t ui)
-{
-    int rc = ebml_WriteID(glob, class_id);
-    if (RT_FAILURE(rc))
+    catch(int rc)
+    {
+        LogFlow(("WebMWriter::writeBlock catched"));
         return rc;
-
-    uint32_t minVal = 0x7fLU; //mask to compare for byte size
-    size_t size = 8; //size in bytes to output
-    for (size = 1; size < 4; size ++)
-    {
-        if (ui < minVal)
-            break;
-
-        minVal <<= 7;
     }
-
-    rc = ebml_WriteU8(glob, 0x80 | size);
-    if (RT_SUCCESS(rc))
-        rc = ebml_Serialize(glob, (uint8_t*)&ui, size);
-    return rc;
+    return VINF_SUCCESS;
 }
 
-//TODO: perhaps this is a poor name for this id serializer helper function
-int Ebml_SerializeBinary(EbmlGlobal *glob, uint32_t class_id, uint32_t bin)
+int WebMWriter::writeFooter(uint32_t a_u64Hash)
 {
-    int size;
-    for (size = 4; size > 1; size--)
-    {
-        if (bin & 0x000000ff << ((size-1) * 8))
-            break;
-    }
-    int rc = ebml_WriteID(glob, class_id);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteLen(glob, size);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteID(glob, bin);
-    return rc;
-}
+    try {
+        if (m_bClusterOpen)
+            m_Ebml << Ebml::SubEnd<Cluster>();
 
-int Ebml_SerializeFloat(EbmlGlobal *glob, uint32_t class_id, double d)
-{
-    int rc = ebml_WriteID(glob, class_id);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU8(glob, 0x80 | 8);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU64(glob, RT_H2BE_U64(*(uint64_t*)&d));
-    return rc;
-}
-
-int Ebml_SerializeString(EbmlGlobal *glob, uint32_t class_id, const char *s)
-{
-    int rc = ebml_WriteID(glob, class_id);
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteString(glob, s);
-    return rc;
-}
-
-int Ebml_WriteWebMSeekElement(EbmlGlobal *ebml, uint32_t id, uint64_t pos)
-{
-    uint64_t offset = pos - ebml->position_reference;
-    uint64_t start;
-    int rc = ebml_StartSubElement(ebml, &start, Seek);
-    if (RT_SUCCESS(rc))
-        rc = Ebml_SerializeBinary(ebml, SeekID, id);
-    if (RT_SUCCESS(rc))
-        rc = Ebml_SerializeUnsigned64(ebml, SeekPosition, offset);
-    if (RT_SUCCESS(rc))
-        rc = ebml_EndSubElement(ebml, start);
-    return rc;
-}
-
-int Ebml_WriteWebMSeekInfo(EbmlGlobal *ebml)
-{
-    int rc = VINF_SUCCESS;
-
-    /* Save the current file pointer */
-    uint64_t pos = RTFileTell(ebml->file);
-
-    if (ebml->seek_info_pos)
-        rc = RTFileSeek(ebml->file, ebml->seek_info_pos, RTFILE_SEEK_BEGIN, NULL);
-    else
-        ebml->seek_info_pos = pos;
-
-    {
-        uint64_t start;
-
-        if (RT_SUCCESS(rc))
-            rc = ebml_StartSubElement(ebml, &start, SeekHead);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_WriteWebMSeekElement(ebml, Tracks, ebml->track_pos);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_WriteWebMSeekElement(ebml, Cues, ebml->cue_pos);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_WriteWebMSeekElement(ebml, Info, ebml->segment_info_pos);
-        if (RT_SUCCESS(rc))
-            rc = ebml_EndSubElement(ebml, start);
-    }
-    {
-        //segment info
-        uint64_t startInfo;
-        uint64_t frame_time;
-
-        frame_time = (uint64_t)1000 * ebml->framerate.den / ebml->framerate.num;
-        ebml->segment_info_pos = RTFileTell(ebml->file);
-        if (RT_SUCCESS(rc))
-            rc = ebml_StartSubElement(ebml, &startInfo, Info);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(ebml, TimecodeScale, 1000000);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeFloat(ebml, Segment_Duration,
-                                     (double)(ebml->last_pts_ms + frame_time));
-        char szVersion[64];
-        RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%",
-                    ebml->debug ? vpx_codec_version_str() : "");
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeString(ebml, MuxingApp, szVersion);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeString(ebml, WritingApp, szVersion);
-        if (RT_SUCCESS(rc))
-            rc = ebml_EndSubElement(ebml, startInfo);
-    }
-    return rc;
-}
-
-int Ebml_WriteWebMFileHeader(EbmlGlobal                *glob,
-                             const vpx_codec_enc_cfg_t *cfg,
-                             const struct vpx_rational *fps)
-{
-    int rc = VINF_SUCCESS;
-    {
-        uint64_t start;
-        rc = ebml_StartSubElement(glob, &start, EBML);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, EBMLVersion, 1);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, EBMLReadVersion, 1);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, EBMLMaxIDLength, 4);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, EBMLMaxSizeLength, 8);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeString(glob, DocType, "webm");
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, DocTypeVersion, 2);
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, DocTypeReadVersion, 2);
-        if (RT_SUCCESS(rc))
-            rc = ebml_EndSubElement(glob, start);
-    }
-    {
-        if (RT_SUCCESS(rc))
-            rc = ebml_StartSubElement(glob, &glob->startSegment, Segment);
-        glob->position_reference = RTFileTell(glob->file);
-        glob->framerate = *fps;
-        if (RT_SUCCESS(rc))
-            rc = Ebml_WriteWebMSeekInfo(glob);
+        m_uCuePos = RTFileTell(m_File);
+        m_Ebml << Ebml::SubStart<Cues>();
+        for (std::list<CueEntry>::iterator it = m_CueList.begin(); it != m_CueList.end(); ++it)
         {
-            uint64_t trackStart;
-            glob->track_pos = RTFileTell(glob->file);
-            if (RT_SUCCESS(rc))
-                rc = ebml_StartSubElement(glob, &trackStart, Tracks);
-            {
-                uint32_t trackNumber = 1;
-                uint32_t trackID = 0;
-
-                uint64_t start;
-                if (RT_SUCCESS(rc))
-                    rc = ebml_StartSubElement(glob, &start, TrackEntry);
-                if (RT_SUCCESS(rc))
-                    rc = Ebml_SerializeUnsigned(glob, TrackNumber, trackNumber);
-                glob->track_id_pos = RTFileTell(glob->file);
-                ebml_SerializeUnsigned32(glob, TrackUID, trackID);
-                Ebml_SerializeUnsigned(glob, TrackType, 1); //video is always 1
-                Ebml_SerializeString(glob, CodecID, "V_VP8");
-                {
-                    uint64_t videoStart;
-                    if (RT_SUCCESS(rc))
-                        rc = ebml_StartSubElement(glob, &videoStart, Video);
-                    uint32_t pixelWidth = cfg->g_w;
-                    if (RT_SUCCESS(rc))
-                        rc = Ebml_SerializeUnsigned(glob, PixelWidth, pixelWidth);
-                    uint32_t pixelHeight = cfg->g_h;
-                    if (RT_SUCCESS(rc))
-                        rc = Ebml_SerializeUnsigned(glob, PixelHeight, pixelHeight);
-                    double   frameRate   = (double)fps->num / (double)fps->den;
-                    if (RT_SUCCESS(rc))
-                        rc = Ebml_SerializeFloat(glob, FrameRate, frameRate);
-                    if (RT_SUCCESS(rc))
-                        rc = ebml_EndSubElement(glob, videoStart);
-                }
-                if (RT_SUCCESS(rc))
-                    rc = ebml_EndSubElement(glob, start); //Track Entry
-            }
-            if (RT_SUCCESS(rc))
-                rc = ebml_EndSubElement(glob, trackStart);
+            m_Ebml << Ebml::SubStart<CuePoint>()
+                   << Ebml::UnsignedInteger<CueTime>(it->time)
+                   << Ebml::SubStart<CueTrackPositions>()
+                   << Ebml::Const<CueTrack, 1>()
+                   << Ebml::Var<CueClusterPosition, uint64_t>(it->loc - m_uPositionReference)
+                   << Ebml::SubEnd<CueTrackPositions>()
+                   << Ebml::SubEnd<CuePoint>();        
         }
-        // segment element is open
+        m_Ebml << Ebml::SubEnd<Cues>()
+               << Ebml::SubEnd<Segment>();
+
+        writeSeekInfo();
+
+        int rc = RTFileSeek(m_File, m_uTrackIdPos, RTFILE_SEEK_BEGIN, NULL);
+        if (!RT_SUCCESS(rc)) throw rc;
+
+        m_Ebml << Ebml::Var<TrackUID, uint32_t>(m_bDebug ? 0xDEADBEEF : a_u64Hash);
+
+        rc = RTFileSeek(m_File, 0, RTFILE_SEEK_END, NULL);
+        if (!RT_SUCCESS(rc)) throw rc;
     }
-    return rc;
-}
-
-int Ebml_WriteWebMBlock(EbmlGlobal                *glob,
-                        const vpx_codec_enc_cfg_t *cfg,
-                        const vpx_codec_cx_pkt_t  *pkt)
-{
-    uint16_t block_timecode = 0;
-    int64_t  pts_ms;
-    int      start_cluster = 0;
-    int      rc = VINF_SUCCESS;
-
-    /* Calculate the PTS of this frame in milliseconds */
-    pts_ms = pkt->data.frame.pts * 1000
-             * (uint64_t)cfg->g_timebase.num / (uint64_t)cfg->g_timebase.den;
-    if (pts_ms <= glob->last_pts_ms)
-        pts_ms = glob->last_pts_ms + 1;
-    glob->last_pts_ms = pts_ms;
-
-    /* Calculate the relative time of this block */
-    if (pts_ms - glob->cluster_timecode > 65536)
-        start_cluster = 1;
-    else
-        block_timecode = (uint16_t)(pts_ms - glob->cluster_timecode);
-
-    int fKeyframe = (pkt->data.frame.flags & VPX_FRAME_IS_KEY);
-    if (start_cluster || fKeyframe)
+    catch(int rc)
     {
-        if (glob->cluster_open)
-            rc = ebml_EndSubElement(glob, glob->startCluster);
-
-        /* Open the new cluster */
-        block_timecode = 0;
-        glob->cluster_open = 1;
-        glob->cluster_timecode = (uint32_t)pts_ms;
-        glob->cluster_pos = RTFileTell(glob->file);
-        if (RT_SUCCESS(rc))
-            rc = ebml_StartSubElement(glob, &glob->startCluster, Cluster); //cluster
-        if (RT_SUCCESS(rc))
-            rc = Ebml_SerializeUnsigned(glob, Timecode, glob->cluster_timecode);
-
-        /* Save a cue point if this is a keyframe. */
-        if (fKeyframe)
-        {
-            struct cue_entry *cue;
-
-            glob->cue_list = (cue_entry*)RTMemRealloc(glob->cue_list, (glob->cues+1) * sizeof(cue_entry));
-            cue = &glob->cue_list[glob->cues];
-            cue->time = glob->cluster_timecode;
-            cue->loc = glob->cluster_pos;
-            glob->cues++;
-        }
+        LogFlow(("WebMWriter::writeFooterException catched"));
+        return rc;
     }
-
-    /* Write the Simple Block */
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteID(glob, SimpleBlock);
-
-    uint32_t block_length = pkt->data.frame.sz + 4;
-    block_length |= 0x10000000;
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU32(glob, RT_H2BE_U32(block_length));
-
-    uint8_t track_number = 0x80 | 1;
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU8(glob, track_number);
-
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU16(glob, RT_H2BE_U16(block_timecode));
-
-    uint8_t flags = 0;
-    if (fKeyframe)
-        flags |= 0x80;
-    if (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
-        flags |= 0x08;
-    if (RT_SUCCESS(rc))
-        rc = ebml_WriteU8(glob, flags);
-
-    if (RT_SUCCESS(rc))
-        rc = ebml_Write(glob, pkt->data.frame.buf, pkt->data.frame.sz);
-
-    return rc;
-}
-
-int Ebml_WriteWebMFileFooter(EbmlGlobal *glob, long hash)
-{
-    int rc = VINF_SUCCESS;
-    if (glob->cluster_open)
-        rc = ebml_EndSubElement(glob, glob->startCluster);
-
-    {
-        uint64_t start;
-
-        glob->cue_pos = RTFileTell(glob->file);
-        if (RT_SUCCESS(rc))
-            rc = ebml_StartSubElement(glob, &start, Cues);
-        for (unsigned i = 0;  i < glob->cues; i++)
-        {
-            struct cue_entry *cue = &glob->cue_list[i];
-            uint64_t startSub;
-
-            if (RT_SUCCESS(rc))
-                rc = ebml_StartSubElement(glob, &startSub, CuePoint);
-            {
-                uint64_t startSubsub;
-
-                if (RT_SUCCESS(rc))
-                    rc = Ebml_SerializeUnsigned(glob, CueTime, cue->time);
-                if (RT_SUCCESS(rc))
-                    rc = ebml_StartSubElement(glob, &startSubsub, CueTrackPositions);
-                if (RT_SUCCESS(rc))
-                    rc = Ebml_SerializeUnsigned(glob, CueTrack, 1);
-                if (RT_SUCCESS(rc))
-                    rc = Ebml_SerializeUnsigned64(glob, CueClusterPosition,
-                                                  cue->loc - glob->position_reference);
-                //Ebml_SerializeUnsigned(glob, CueBlockNumber, cue->blockNumber);
-                if (RT_SUCCESS(rc))
-                    rc = ebml_EndSubElement(glob, startSubsub);
-            }
-            if (RT_SUCCESS(rc))
-                rc = ebml_EndSubElement(glob, startSub);
-        }
-        if (RT_SUCCESS(rc))
-            rc = ebml_EndSubElement(glob, start);
-    }
-
-    if (RT_SUCCESS(rc))
-        rc = ebml_EndSubElement(glob, glob->startSegment);
-
-    /* Patch up the seek info block */
-    if (RT_SUCCESS(rc))
-        rc = Ebml_WriteWebMSeekInfo(glob);
-
-    /* Patch up the track id */
-    if (RT_SUCCESS(rc))
-        rc = RTFileSeek(glob->file, glob->track_id_pos, RTFILE_SEEK_BEGIN, NULL);
-    if (RT_SUCCESS(rc))
-        rc  = ebml_SerializeUnsigned32(glob, TrackUID, glob->debug ? 0xDEADBEEF : hash);
-
-    if (RT_SUCCESS(rc))
-        rc = RTFileSeek(glob->file, 0, RTFILE_SEEK_END, NULL);
-    return rc;
+    return VINF_SUCCESS;
 }
