@@ -3404,6 +3404,18 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
     return result;
 }
 
+#ifdef Q_WS_X11
+/* static */
+bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId)
+{
+    return XXSendClientMessage(pWidget->x11Info().display(),
+                               pWidget->window()->winId(),
+                               "_NET_WM_FULLSCREEN_MONITORS",
+                               uScreenId, uScreenId, uScreenId, uScreenId,
+                               1 /* Source indication (1 = normal application) */);
+}
+#endif /* Q_WS_X11 */
+
 /**
  *  Removes the accelerator mark (the ampersand symbol) from the given string
  *  and returns the result. The string is supposed to be a menu item's text
@@ -4661,15 +4673,3 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
     return true;
 }
 
-#ifdef Q_WS_X11
-bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget,
-                                         unsigned long cScreen)
-{
-    return XXSendClientMessage(pWidget->x11Info().display(),
-                               pWidget->window()->winId(),
-                               "_NET_WM_FULLSCREEN_MONITORS", cScreen, cScreen,
-                               cScreen, cScreen, 1
-                               /* Source indication (1 = normal application) */
-                              );
-}
-#endif
