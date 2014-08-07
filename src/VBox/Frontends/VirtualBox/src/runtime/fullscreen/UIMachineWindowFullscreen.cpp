@@ -295,9 +295,14 @@ void UIMachineWindowFullscreen::placeOnScreen()
         geo.moveCenter(workingArea.center());
         setGeometry(geo);
     }
-#else /* !Q_WS_MAC */
+#elif defined(Q_WS_WIN)
     /* Resize to the appropriate size: */
     resize(workingArea.size());
+#elif defined(Q_WS_X11)
+    /* Any more-or-less modern window manager provides special mechanisms for
+     * multi-monitor resizing.  We may fail on very old ones, but since we
+     * do not test them I prefer not to write speculative code to make them
+     * work. */
 #endif /* !Q_WS_MAC */
     /* Adjust guest screen size if necessary: */
     machineView()->maybeAdjustGuestScreenSize();
@@ -326,6 +331,9 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         return;
 
     /* Make sure this window is maximized and placed on valid screen: */
+    /** @todo Only needed for legacy window managers on X11 which we do not
+     *        test; therefore this may not help there.  Better to just refuse
+     *        to support them? */
     placeOnScreen();
 
 #ifdef Q_WS_MAC
@@ -339,10 +347,12 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #endif /* !Q_WS_MAC */
 
 #ifdef Q_WS_X11
-    /* Make sure the window is placed on valid screen again
-     * after window is shown & window's decorations applied.
-     * That is required (still?) due to X11 Window Geometry Rules. */
-    placeOnScreen();
+    /* This tells recent window managers which screen(s) a window should be
+     * mapped to.  Apparently some window managers will not respond to requests
+     * for unmapped windows, so do this after the call to showFullScreen(). */
+    vboxGlobal().setFullScreenMonitorX11(this, pFullscreenLogic
+                                                  ->hostScreenForGuestScreen
+                                                      (m_uScreenId));
 #endif /* Q_WS_X11 */
 }
 
