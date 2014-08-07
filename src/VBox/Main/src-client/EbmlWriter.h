@@ -112,7 +112,7 @@ public:
     {
         serializeConst<classId>();
         serializeConstEbml<sizeof(T)>();
-        write(value.value);
+        write<T>(value.value);
         return *this;
     }
 
