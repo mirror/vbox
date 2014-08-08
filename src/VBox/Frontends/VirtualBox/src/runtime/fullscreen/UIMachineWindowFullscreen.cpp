@@ -295,13 +295,9 @@ void UIMachineWindowFullscreen::placeOnScreen()
         geo.moveCenter(workingArea.center());
         setGeometry(geo);
     }
-#elif defined(Q_WS_WIN)
+#else /* !Q_WS_MAC */
     /* Resize to the appropriate size: */
     resize(workingArea.size());
-#elif defined(Q_WS_X11)
-    /* Any more-or-less modern window manager provides special mechanisms for multi-monitor resizing.
-     * We may fail on very old ones, but since we do not test them we prefer not to write
-     * speculative code to make them work. */
 #endif /* !Q_WS_MAC */
     /* Adjust guest screen size if necessary: */
     machineView()->maybeAdjustGuestScreenSize();
@@ -330,8 +326,13 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         return;
 
     /* Make sure this window is maximized and placed on valid screen: */
-    /** @todo Only needed for legacy window managers on X11 which we do not test;
-     *        therefore this may not help there. Better to just refuse to support them? */
+#ifdef Q_WS_X11
+    /* Only needed for legacy window managers on X11 which we do not test, so
+     * this is best effort code.  With window managers which support the
+     * _NET_WM_FULLSCREEN_MONITORS protocol this would interfere with them
+     * correctly restoring the old positions. */
+    if (!vboxGlobal().supportsFullScreenMonitorsProtocolX11())
+#endif
     placeOnScreen();
 
 #ifdef Q_WS_MAC
@@ -348,7 +349,13 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* Tell recent window managers which screen this window should be mapped to.
      * Apparently some window managers will not respond to requests for
      * unmapped windows, so do this *after* the call to showFullScreen(). */
-    VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+    if (vboxGlobal().supportsFullScreenMonitorsProtocolX11())
+        VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+    else
+    /* Make sure the window is placed on valid screen again 
+     * after window is shown & window's decorations applied. 
+     * That is required (still?) due to X11 Window Geometry Rules. */ 
+        placeOnScreen();
 #endif /* Q_WS_X11 */
 }
 
