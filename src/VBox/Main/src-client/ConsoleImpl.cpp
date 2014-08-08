@@ -2753,73 +2753,79 @@ inline uint32_t readAndClearLed(PPDMLED pLed)
     return u32;
 }
 
-HRESULT Console::getDeviceActivity(DeviceType_T aType,
-                                   DeviceActivity_T *aActivity)
+HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType,
+                                   std::vector<DeviceActivity_T> &aActivity)
 {
     /*
      * Note: we don't lock the console object here because
      * readAndClearLed() should be thread safe.
      */
 
-    /* Get LED array to read */
-    PDMLEDCORE SumLed = {0};
-    switch (aType)
+    aActivity.resize(aType.size());
+
+    size_t iType;
+    for (iType = 0; iType < aType.size(); ++iType)
     {
-        case DeviceType_Floppy:
-        case DeviceType_DVD:
-        case DeviceType_HardDisk:
+        /* Get LED array to read */
+        PDMLEDCORE SumLed = {0};
+        switch (aType[iType])
         {
-            for (unsigned i = 0; i < RT_ELEMENTS(mapStorageLeds); ++i)
-                if (maStorageDevType[i] == aType)
-                    SumLed.u32 |= readAndClearLed(mapStorageLeds[i]);
-            break;
+            case DeviceType_Floppy:
+            case DeviceType_DVD:
+            case DeviceType_HardDisk:
+            {
+                for (unsigned i = 0; i < RT_ELEMENTS(mapStorageLeds); ++i)
+                    if (maStorageDevType[i] == aType[iType])
+                        SumLed.u32 |= readAndClearLed(mapStorageLeds[i]);
+                break;
+            }
+
+            case DeviceType_Network:
+            {
+                for (unsigned i = 0; i < RT_ELEMENTS(mapNetworkLeds); ++i)
+                    SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
+                break;
+            }
+
+            case DeviceType_USB:
+            {
+                for (unsigned i = 0; i < RT_ELEMENTS(mapUSBLed); ++i)
+                    SumLed.u32 |= readAndClearLed(mapUSBLed[i]);
+                break;
+            }
+
+            case DeviceType_SharedFolder:
+            {
+                SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
+                break;
+            }
+
+            case DeviceType_Graphics3D:
+            {
+                SumLed.u32 |= readAndClearLed(mapCrOglLed);
+                break;
+            }
+
+            default:
+                return setError(E_INVALIDARG,
+                    tr("Invalid device type: %d"),
+                    aType[iType]);
         }
 
-        case DeviceType_Network:
+        /* Compose the result */
+        switch (SumLed.u32 & (PDMLED_READING | PDMLED_WRITING))
         {
-            for (unsigned i = 0; i < RT_ELEMENTS(mapNetworkLeds); ++i)
-                SumLed.u32 |= readAndClearLed(mapNetworkLeds[i]);
-            break;
+            case 0:
+                aActivity[iType] = DeviceActivity_Idle;
+                break;
+            case PDMLED_READING:
+                aActivity[iType] = DeviceActivity_Reading;
+                break;
+            case PDMLED_WRITING:
+            case PDMLED_READING | PDMLED_WRITING:
+                aActivity[iType] = DeviceActivity_Writing;
+                break;
         }
-
-        case DeviceType_USB:
-        {
-            for (unsigned i = 0; i < RT_ELEMENTS(mapUSBLed); ++i)
-                SumLed.u32 |= readAndClearLed(mapUSBLed[i]);
-            break;
-        }
-
-        case DeviceType_SharedFolder:
-        {
-            SumLed.u32 |= readAndClearLed(mapSharedFolderLed);
-            break;
-        }
-
-        case DeviceType_Graphics3D:
-        {
-            SumLed.u32 |= readAndClearLed(mapCrOglLed);
-            break;
-        }
-
-        default:
-            return setError(E_INVALIDARG,
-                tr("Invalid device type: %d"),
-                aType);
-    }
-
-    /* Compose the result */
-    switch (SumLed.u32 & (PDMLED_READING | PDMLED_WRITING))
-    {
-        case 0:
-            *aActivity = DeviceActivity_Idle;
-            break;
-        case PDMLED_READING:
-            *aActivity = DeviceActivity_Reading;
-            break;
-        case PDMLED_WRITING:
-        case PDMLED_READING | PDMLED_WRITING:
-            *aActivity = DeviceActivity_Writing;
-            break;
     }
 
     return S_OK;
