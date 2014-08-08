@@ -3447,7 +3447,7 @@ bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
     /* Get atom value: */
     rc = XGetWindowProperty(pDisplay, DefaultRootWindow(pDisplay),
                             atomSupported, 0, 0x7fffffff /*LONG_MAX*/,
-                            False /* delete */, XA_WINDOW, &atomType,
+                            False /* delete */, XA_ATOM, &atomType,
                             &cFormat, &cItems, &cbLeft,
                             (unsigned char **)&pAtomHints);
     if (rc != Success)
