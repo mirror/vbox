@@ -699,6 +699,12 @@ bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSta
         if(sizeInMB >= pCtx->uMaxFileSize)
             return true;
     }
+    /* Check for available free disk space */
+    if (pStrm->Ebml.getAvailableSpace() < 0x100000)
+    {
+        LogRel(("Storage has not enough free space available, stopping video capture\n"));
+        return true;
+    }
 
     return false;
 }

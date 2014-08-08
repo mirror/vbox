@@ -50,6 +50,13 @@ uint64_t WebMWriter::getFileSize()
     return RTFileTell(m_File);
 }
 
+uint64_t WebMWriter::getAvailableSpace()
+{
+    RTFOFF pcbFree;
+    int rc = RTFileQueryFsSizes(m_File, NULL, &pcbFree, 0, 0);
+    return (RT_SUCCESS(rc)? (uint64_t)pcbFree : UINT64_MAX);
+}
+
 WebMWriter::WebMWriter() :
     m_bDebug(false),
     m_iLastPtsMs(-1),
