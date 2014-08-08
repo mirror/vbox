@@ -3314,11 +3314,17 @@ VMMDECL(int) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_
 
         /* copy */
         size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
-        rc = PGMPhysRead(pVM, GCPhys, pvDst, cbRead);
-        if (cbRead >= cb || RT_FAILURE(rc))
-            return rc;
+        if (cbRead < cb)
+        {
+            rc = PGMPhysRead(pVM, GCPhys, pvDst, cbRead);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        else    /* Last page (cbRead is PAGE_SIZE, we only need cb!) */
+            return PGMPhysRead(pVM, GCPhys, pvDst, cb);
 
         /* next */
+        Assert(cb > cbRead);
         cb         -= cbRead;
         pvDst       = (uint8_t *)pvDst + cbRead;
         GCPtrSrc   += cbRead;
@@ -3404,11 +3410,17 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc
 
         /* copy */
         size_t cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-        rc = PGMPhysWrite(pVM, GCPhys, pvSrc, cbWrite);
-        if (cbWrite >= cb || RT_FAILURE(rc))
-            return rc;
+        if (cbWrite < cb)
+        {
+            rc = PGMPhysWrite(pVM, GCPhys, pvSrc, cbWrite);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        else    /* Last page (cbWrite is PAGE_SIZE, we only need cb!) */
+            rc = PGMPhysWrite(pVM, GCPhys, pvSrc, cb);
 
         /* next */
+        Assert(cb > cbWrite);
         cb         -= cbWrite;
         pvSrc       = (uint8_t *)pvSrc + cbWrite;
         GCPtrDst   += cbWrite;
