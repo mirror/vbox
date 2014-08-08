@@ -320,6 +320,8 @@ public:
     static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
 
 #ifdef Q_WS_X11
+    /** X11: Test whether the current window manager supports full screen mode. */
+    static bool supportsFullScreenMonitorsProtocolX11();
     /** X11: Performs mapping of the passed @a pWidget to host-screen with passed @a uScreenId. */
     static bool setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId);
 #endif /* Q_WS_X11 */
