@@ -76,4 +76,5 @@ void crStateFreeRBO(void *data);
 
 void crStateGenNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names);
 void crStateRegNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names);
+void crStateOnTextureUsageRelease(CRSharedState *pS, CRTextureObj *pObj);
 #endif

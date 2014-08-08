@@ -1046,21 +1046,10 @@ DECLCALLBACK(void) crFbTexRelease(CR_TEXDATA *pTex)
 
     if (pTobj)
     {
-        CR_STATE_SHAREDOBJ_USAGE_CLEAR(pTobj, cr_server.MainContextInfo.pContext);
-
         crHashtableDelete(g_CrPresenter.pFbTexMap, pTobj->id, NULL);
 
-        if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pTobj))
-        {
-            CRSharedState *pShared = crStateGlobalSharedAcquire();
+        crStateReleaseTexture(cr_server.MainContextInfo.pContext, pTobj);
 
-            CRASSERT(pShared);
-            /* on the host side, we need to delete an ogl texture object here as well, which crStateDeleteTextureCallback will do
-             * in addition to calling crStateDeleteTextureObject to delete a state object */
-            crHashtableDelete(pShared->textureTable, pTobj->id, crStateDeleteTextureCallback);
-
-            crStateGlobalSharedRelease();
-        }
 
         crStateGlobalSharedRelease();
     }

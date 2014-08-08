@@ -316,6 +316,7 @@ NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT 
 NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF);
 #ifdef VBOX_WITH_CROGL
 NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData);
+NTSTATUS VBoxVdmaChromiumParameteriCRSubmit(PVBOXMP_DEVEXT pDevExt, uint32_t target, uint32_t value);
 #endif
 
 #endif /* #ifndef ___VBoxMPVdma_h___ */

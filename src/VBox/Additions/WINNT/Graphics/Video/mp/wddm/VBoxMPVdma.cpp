@@ -28,6 +28,8 @@
 # include <packer.h>
 #endif
 
+static NTSTATUS vboxVdmaCrCtlGetDefaultClientId(PVBOXMP_DEVEXT pDevExt, uint32_t *pu32ClienID);
+
 NTSTATUS vboxVdmaPipeConstruct(PVBOXVDMAPIPE pPipe)
 {
     KeInitializeSpinLock(&pPipe->SinchLock);
@@ -1110,6 +1112,59 @@ static NTSTATUS vboxVdmaTexPresentSubmit(PVBOXMP_DEVEXT pDevExt,
         VBoxMpCrShgsmiTransportBufFree(&pDevExt->CrHgsmiTransport, pvCommandBuffer);
     }
 
+    return Status;
+}
+
+static NTSTATUS vboxVdmaChromiumParameteriCRSubmit(PVBOXMP_DEVEXT pDevExt,
+        VBOXMP_CRPACKER *pCrPacker,
+        uint32_t u32CrConClientID,
+        uint32_t target, uint32_t value)
+{
+    Assert(pDevExt->fTexPresentEnabled);
+
+    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_CHROMIUMPARAMETERICR;
+    uint32_t cCommands = 1;
+    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    if (!pvCommandBuffer)
+    {
+        WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+
+    VBoxMpCrPackerTxBufferInit(pCrPacker, pvCommandBuffer, cbCommandBuffer, cCommands);
+
+    crPackChromiumParameteriCR(&pCrPacker->CrPacker, target, value);
+
+    NTSTATUS Status = vboxVdmaCrSubmitWriteAsync(pDevExt, pCrPacker, u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrSubmitWriteAsync failed Status 0x%x", Status));
+        VBoxMpCrShgsmiTransportBufFree(&pDevExt->CrHgsmiTransport, pvCommandBuffer);
+    }
+
+    return Status;
+}
+
+NTSTATUS VBoxVdmaChromiumParameteriCRSubmit(PVBOXMP_DEVEXT pDevExt, uint32_t target, uint32_t value)
+{
+    uint32_t u32CrConClientID;
+    NTSTATUS Status = vboxVdmaCrCtlGetDefaultClientId(pDevExt, &u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrCtlGetDefaultClientId failed Status 0x%x", Status));
+        return Status;
+    }
+
+    VBOXMP_CRPACKER *pCrPacker = (VBOXMP_CRPACKER *)RTMemTmpAlloc(sizeof(*pCrPacker));
+    if (!pCrPacker)
+        return STATUS_NO_MEMORY;
+    VBoxMpCrPackerInit(pCrPacker);
+
+    Status = vboxVdmaChromiumParameteriCRSubmit(pDevExt, pCrPacker, u32CrConClientID, target, value);
+    if (!NT_SUCCESS(Status))
+        WARN(("vboxVdmaChromiumParameteriCRSubmit failed Status 0x%x", Status));
+
+    RTMemTmpFree(pCrPacker);
     return Status;
 }
 
