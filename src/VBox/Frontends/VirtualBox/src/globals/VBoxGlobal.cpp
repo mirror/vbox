@@ -3405,15 +3405,14 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 }
 
 #ifdef Q_WS_X11
-/* This method tests whether the current X11 window manager supports
- * full-screen mode as we need it.  Unfortunately the EWMH specification
- * was not fully clear about whether we can expect to find all of these
- * atoms on the _NET_SUPPORTED root window property, so we have to test
- * with all interesting window managers.  If this fails for a user when
- * you think it should succeed they should try executing
- *   xprop -root | egrep -w '_NET_WM_FULLSCREEN_MONITORS|_NET_WM_STATE|_NET_WM_STATE_FULLSCREEN'
- * in an X11 terminal window.  All three strings should be found under a
- * property called "_NET_SUPPORTED(ATOM)". */
+/* This method tests whether the current X11 window manager supports full-screen mode as we need it.
+ * Unfortunately the EWMH specification was not fully clear about whether we can expect to find
+ * all of these atoms on the _NET_SUPPORTED root window property, so we have to test with all
+ * interesting window managers. If this fails for a user when you think it should succeed
+ * they should try executing:
+ * xprop -root | egrep -w '_NET_WM_FULLSCREEN_MONITORS|_NET_WM_STATE|_NET_WM_STATE_FULLSCREEN'
+ * in an X11 terminal window.
+ * All three strings should be found under a property called "_NET_SUPPORTED(ATOM)". */
 /* static */
 bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
 {
@@ -3421,16 +3420,16 @@ bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
      * how it is done elsewhere in the code. */
     Display *pDisplay = QX11Info::display();
     Atom atomSupported            = XInternAtom(pDisplay, "_NET_SUPPORTED",
-                                           True /* only_if_exists */);
+                                                True /* only_if_exists */);
     Atom atomWMFullScreenMonitors = XInternAtom(pDisplay,
-                                           "_NET_WM_FULLSCREEN_MONITORS",
-                                           True /* only_if_exists */);
+                                                "_NET_WM_FULLSCREEN_MONITORS",
+                                                True /* only_if_exists */);
     Atom atomWMState              = XInternAtom(pDisplay,
-                                           "_NET_WM_STATE",
-                                           True /* only_if_exists */);
+                                                "_NET_WM_STATE",
+                                                True /* only_if_exists */);
     Atom atomWMStateFullScreen    = XInternAtom(pDisplay,
-                                           "_NET_WM_STATE_FULLSCREEN",
-                                           True /* only_if_exists */);
+                                                "_NET_WM_STATE_FULLSCREEN",
+                                                True /* only_if_exists */);
     bool fFoundFullScreenMonitors = false;
     bool fFoundState              = false;
     bool fFoundStateFullScreen    = false;
@@ -3438,7 +3437,7 @@ bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
     int cFormat;
     unsigned long cItems;
     unsigned long cbLeft;
-    Atom *patomHints;
+    Atom *pAtomHints;
     int rc;
     unsigned i;
 
@@ -3450,22 +3449,22 @@ bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
                             atomSupported, 0, 0x7fffffff /*LONG_MAX*/,
                             False /* delete */, XA_WINDOW, &atomType,
                             &cFormat, &cItems, &cbLeft,
-                            (unsigned char **)&patomHints);
+                            (unsigned char **)&pAtomHints);
     if (rc != Success)
         return false;
-    if (patomHints == NULL)
+    if (pAtomHints == NULL)
         return false;
     if (atomType == XA_ATOM && cFormat == 32 && cbLeft == 0)
         for (i = 0; i < cItems; ++i)
         {
-            if (patomHints[i] == atomWMFullScreenMonitors)
+            if (pAtomHints[i] == atomWMFullScreenMonitors)
                 fFoundFullScreenMonitors = true;
-            if (patomHints[i] == atomWMState)
+            if (pAtomHints[i] == atomWMState)
                 fFoundState = true;
-            if (patomHints[i] == atomWMStateFullScreen)
+            if (pAtomHints[i] == atomWMStateFullScreen)
                 fFoundStateFullScreen = true;
         }
-    XFree(patomHints);
+    XFree(pAtomHints);
     return fFoundFullScreenMonitors && fFoundState && fFoundStateFullScreen;
 }
 
