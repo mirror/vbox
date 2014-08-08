@@ -1011,6 +1011,7 @@ static HRESULT cubetexture_init(struct wined3d_texture *texture, const struct wi
 
             Assert(!(*shared_handle));
             *shared_handle = VBOXSHRC_GET_SHAREHANDLE(texture);
+            pglChromiumParameteriCR(GL_PIN_TEXTURE_SET_CR, (GLuint)VBOXSHRC_GET_SHAREHANDLE(texture));
         }
         else
         {
@@ -1291,6 +1292,7 @@ static HRESULT texture_init(struct wined3d_texture *texture, const struct wined3
 
             Assert(!(*shared_handle));
             *shared_handle = VBOXSHRC_GET_SHAREHANDLE(texture);
+            pglChromiumParameteriCR(GL_PIN_TEXTURE_SET_CR, (GLuint)VBOXSHRC_GET_SHAREHANDLE(texture));
         }
         else
         {

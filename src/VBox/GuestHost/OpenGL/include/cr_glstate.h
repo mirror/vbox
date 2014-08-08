@@ -282,6 +282,8 @@ DECLEXPORT(void) crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget,
                                      CRTextureObj **obj, CRTextureLevel **img);
 
 
+DECLEXPORT(void) crStateReleaseTexture(CRContext *pCtx, CRTextureObj *pObj);
+
 #ifndef IN_GUEST
 DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);
 typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
@@ -297,6 +299,7 @@ DECLEXPORT(void) crStateGlobalSharedRelease();
 #endif
 
 DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used);
+DECLEXPORT(void) crStatePinTexture(GLuint texture, GLboolean pin);
 DECLEXPORT(void) crStateDeleteTextureCallback(void *texObj);
 
    /* XXX move these! */

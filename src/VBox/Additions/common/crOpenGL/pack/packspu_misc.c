@@ -520,11 +520,24 @@ void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
             crStateShareContext(value);
             break;
         case GL_RCUSAGE_TEXTURE_SET_CR:
+        {
+            Assert(value);
             crStateSetTextureUsed(value, GL_TRUE);
             break;
+        }
         case GL_RCUSAGE_TEXTURE_CLEAR_CR:
+        {
+            Assert(value);
+#ifdef DEBUG
+            {
+                CRContext *pCurState = crStateGetCurrent();
+                CRTextureObj *tobj = (CRTextureObj*)crHashtableSearch(pCurState->shared->textureTable, value);
+                Assert(tobj);
+            }
+#endif
             crStateSetTextureUsed(value, GL_FALSE);
             break;
+        }
         default:
             break;
     }

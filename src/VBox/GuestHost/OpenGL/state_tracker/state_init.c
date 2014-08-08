@@ -49,8 +49,6 @@ crStateAllocShared(void)
     return s;
 }
 
-
-
 /**
  * Callback used for crFreeHashtable().
  */
@@ -69,40 +67,90 @@ typedef struct CR_STATE_RELEASEOBJ
     CRSharedState *s;
 } CR_STATE_RELEASEOBJ, *PCR_STATE_RELEASEOBJ;
 
+void crStateOnTextureUsageRelease(CRSharedState *pS, CRTextureObj *pObj)
+{
+    if (!pObj->pinned)
+        crHashtableDelete(pS->textureTable, pObj->id, crStateDeleteTextureCallback);
+    else
+        Assert(crHashtableSearch(pS->textureTable, pObj->id));
+}
+
+void crStateReleaseTextureInternal(CRSharedState *pS, CRContext *pCtx, CRTextureObj *pObj)
+{
+    Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj) || pObj->pinned);
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
+    if (CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
+        return;
+
+    crStateOnTextureUsageRelease(pS, pObj);
+}
+
+DECLEXPORT(void) crStateReleaseTexture(CRContext *pCtx, CRTextureObj *pObj)
+{
+    Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
+    if (CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
+        return;
+
+    if (!gSharedState)
+    {
+        WARN(("no global shared"));
+        return;
+    }
+
+    crStateOnTextureUsageRelease(gSharedState, pObj);
+}
+
+void crStateReleaseBufferObjectInternal(CRSharedState *pS, CRContext *pCtx, CRBufferObject *pObj)
+{
+    Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
+    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
+        crHashtableDelete(pS->buffersTable, pObj->id, crStateFreeBufferObject);
+}
+
+void crStateReleaseFBOInternal(CRSharedState *pS, CRContext *pCtx, CRFramebufferObject *pObj)
+{
+    Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
+    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
+        crHashtableDelete(pS->fbTable, pObj->id, crStateFreeFBO);
+}
+
+void crStateReleaseRBOInternal(CRSharedState *pS, CRContext *pCtx, CRRenderbufferObject *pObj)
+{
+    Assert(CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj));
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pCtx);
+    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
+        crHashtableDelete(pS->rbTable, pObj->id, crStateFreeRBO);
+}
+
 static void ReleaseTextureCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRTextureObj *pObj = (CRTextureObj *)data1;
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pData->pCtx);
-    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
-        crHashtableDelete(pData->s->textureTable, key, crStateDeleteTextureCallback);
+    crStateReleaseTextureInternal(pData->s, pData->pCtx, pObj);
 }
 
 static void ReleaseBufferObjectCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRBufferObject *pObj = (CRBufferObject *)data1;
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pData->pCtx);
-    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
-        crHashtableDelete(pData->s->buffersTable, key, crStateFreeBufferObject);
+    crStateReleaseBufferObjectInternal(pData->s, pData->pCtx, pObj);
 }
 
 static void ReleaseFBOCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRFramebufferObject *pObj = (CRFramebufferObject *)data1;
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pData->pCtx);
-    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
-        crHashtableDelete(pData->s->fbTable, key, crStateFreeFBO);
+    crStateReleaseFBOInternal(pData->s, pData->pCtx, pObj);
 }
 
 static void ReleaseRBOCallback(unsigned long key, void *data1, void *data2)
 {
     PCR_STATE_RELEASEOBJ pData = (PCR_STATE_RELEASEOBJ)data2;
     CRRenderbufferObject *pObj = (CRRenderbufferObject *)data1;
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pObj, pData->pCtx);
-    if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
-        crHashtableDelete(pData->s->rbTable, key, crStateFreeRBO);
+    crStateReleaseRBOInternal(pData->s, pData->pCtx, pObj);
 }
 
 /**

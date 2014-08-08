@@ -7713,6 +7713,7 @@ static HRESULT surface_init(struct wined3d_surface *surface, UINT alignment, UIN
             surface_shrc_unlock(surface);
             Assert(!(*shared_handle));
             *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
+            pglChromiumParameteriCR(GL_PIN_TEXTURE_SET_CR, (GLuint)VBOXSHRC_GET_SHAREHANDLE(surface));
         }
         else
         {

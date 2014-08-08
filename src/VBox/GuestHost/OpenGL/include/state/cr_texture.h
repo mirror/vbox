@@ -93,6 +93,7 @@ typedef struct {
 #ifdef CR_SGIS_generate_mipmap
     GLboolean              generateMipmap;
 #endif
+    GLboolean              pinned; /* <- keep the texture alive if its ctxUsage reaches zero */
     CRbitvalue             dirty[CR_MAX_BITARRAY];
     CRbitvalue             imageBit[CR_MAX_BITARRAY];
     CRbitvalue             paramsBit[CR_MAX_TEXTURE_UNITS][CR_MAX_BITARRAY];

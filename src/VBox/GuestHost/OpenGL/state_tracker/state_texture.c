@@ -753,8 +753,6 @@ static void crStateCleanupTextureRefs(CRContext *g, CRTextureObj *tObj)
         crStateTextureCheckFBOAPs(GL_READ_FRAMEBUFFER, tObj->id);
 #endif
     }
-
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(tObj, g);
 }
 
 void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures) 
@@ -795,6 +793,8 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
 
             crStateCleanupTextureRefs(g, tObj);
 
+            CR_STATE_SHAREDOBJ_USAGE_CLEAR(tObj, g);
+
             CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(tObj, j)
             {
                 /* saved state version <= SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS does not have usage bits info,
@@ -803,7 +803,10 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
                  * also g_pAvailableContexts[0] will hold default context, which we should discard */
                 CRContext *ctx = g_pAvailableContexts[j];
                 if (j && ctx)
+                {
                     crStateCleanupTextureRefs(ctx, tObj);
+                    CR_STATE_SHAREDOBJ_USAGE_CLEAR(tObj, g);
+                }
                 else
                     CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(tObj, j);
             }
@@ -893,6 +896,50 @@ void STATE_APIENTRY crStateActiveTextureARB( GLenum texture )
     }
 }
 
+#ifndef IN_GUEST
+# ifdef DEBUG
+static uint32_t gDbgNumPinned = 0;
+# endif
+
+DECLEXPORT(void) crStatePinTexture(GLuint texture, GLboolean pin)
+{
+    CRTextureObj * pTobj;
+    CRSharedState *pShared = crStateGlobalSharedAcquire();
+    if (pShared)
+    {
+        pTobj = (CRTextureObj*)crHashtableSearch(pShared->textureTable, texture);
+
+        if (pTobj)
+        {
+# ifdef DEBUG
+            if (!pTobj->pinned != !pin)
+            {
+                if (pin)
+                    ++gDbgNumPinned;
+                else
+                {
+                    Assert(gDbgNumPinned);
+                    --gDbgNumPinned;
+                }
+            }
+# endif
+            pTobj->pinned = !!pin;
+            if (!pin)
+            {
+                if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pTobj))
+                    crStateOnTextureUsageRelease(pShared, pTobj);
+            }
+        }
+        else
+            WARN(("texture %d not defined", texture));
+
+        crStateGlobalSharedRelease();
+    }
+    else
+        WARN(("no global shared"));
+}
+#endif
+
 DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
 {
     CRContext *g = GetCurrentContext();
@@ -915,7 +962,7 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
         else
 #endif
         {
-            crWarning("crStateSetTextureUsed: failed to fined a HW name for texture(%d)!", texture);
+            WARN(("crStateSetTextureUsed: failed to fined a HW name for texture(%d)!", texture));
             return;
         }
     }
@@ -930,12 +977,7 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
 
         crStateCleanupTextureRefs(g, tobj);
 
-        if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(tobj))
-        {
-            /* on the host side, we need to delete an ogl texture object here as well, which crStateDeleteTextureCallback will do
-             * in addition to calling crStateDeleteTextureObject to delete a state object */
-            crHashtableDelete(g->shared->textureTable, texture, crStateDeleteTextureCallback);
-        }
+        crStateReleaseTexture(g, tobj);
 
         DIRTY(tb->dirty, g->neg_bitid);
         DIRTY(tb->current[t->curTextureUnit], g->neg_bitid);

@@ -10,6 +10,9 @@
 #include "cr_mem.h"
 #include "cr_string.h"
 #include "cr_pixeldata.h"
+#ifdef VBOX_WITH_CRDUMPER
+# include "cr_dump.h"
+#endif
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchSelectBuffer( GLsizei size, GLuint *buffer )
 {
@@ -310,6 +313,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
         break;
     case GL_RCUSAGE_TEXTURE_CLEAR_CR:
         crStateSetTextureUsed(value, GL_FALSE);
+        break;
+    case GL_PIN_TEXTURE_SET_CR:
+        crStatePinTexture(value, GL_TRUE);
+        break;
+    case GL_PIN_TEXTURE_CLEAR_CR:
+        crStatePinTexture(value, GL_FALSE);
         break;
     case GL_SHARED_DISPLAY_LISTS_CR:
         cr_server.sharedDisplayLists = value;
@@ -1484,6 +1493,10 @@ void crServerInitTmpCtxDispatch()
 
 /* dump stuff */
 #ifdef VBOX_WITH_CRSERVER_DUMPER
+
+# ifndef VBOX_WITH_CRDUMPER
+#  error "VBOX_WITH_CRDUMPER undefined!"
+# endif
 
 /* first four bits are buffer dump config
  * second four bits are texture dump config

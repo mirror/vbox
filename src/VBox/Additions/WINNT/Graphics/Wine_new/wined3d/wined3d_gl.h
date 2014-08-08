@@ -192,6 +192,10 @@ enum wined3d_gl_extension
 /* enable zero vertex attribute generation to work around wine bug */
 #define GL_CHECK_ZERO_VERT_ARRT       0x8B30
 
+#define GL_PIN_TEXTURE_SET_CR         0x8B32
+#define GL_PIN_TEXTURE_CLEAR_CR       0x8B33
+
+
 typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 PGLFNCHROMIUMPARAMETERUCR pglChromiumParameteriCR;
 
