@@ -92,7 +92,7 @@ public:
     void addMenus(const QList<QMenu*> &menus);
 
     /* API: Geometry stuff: */
-    void adjustGeometry();
+    void adjustGeometry(int iHostScreen = -1);
 
 private slots:
 

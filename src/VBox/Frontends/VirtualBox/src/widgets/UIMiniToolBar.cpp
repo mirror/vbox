@@ -133,12 +133,16 @@ void UIRuntimeMiniToolBar::addMenus(const QList<QMenu*> &menus)
     m_pToolbar->addMenus(menus);
 }
 
-void UIRuntimeMiniToolBar::adjustGeometry()
+void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 {
     /* This method could be called before parent-widget
      * become visible, we should skip everything in that case: */
     if (QApplication::desktop()->screenNumber(parentWidget()) == -1)
         return;
+
+    /* Determine host-screen number if necessary: */
+    if (iHostScreen == -1)
+        iHostScreen = QApplication::desktop()->screenNumber(parentWidget());
 
     /* Reset toolbar geometry: */
     m_pEmbeddedToolbar->move(0, 0);
@@ -153,7 +157,7 @@ void UIRuntimeMiniToolBar::adjustGeometry()
         case IntegrationMode_Embedded:
         {
             /* Screen geometry: */
-            screenRect = QApplication::desktop()->screenGeometry(parentWidget());
+            screenRect = QApplication::desktop()->screenGeometry(iHostScreen);
             /* Local coordinates, tool-bar is a child of the parent-widget: */
             iX = screenRect.width() / 2 - width() / 2;
             switch (m_alignment)
@@ -170,7 +174,7 @@ void UIRuntimeMiniToolBar::adjustGeometry()
         case IntegrationMode_External:
         {
             /* Available geometry: */
-            screenRect = vboxGlobal().availableGeometry(QApplication::desktop()->screenNumber(parentWidget()));
+            screenRect = vboxGlobal().availableGeometry(iHostScreen);
             /* Global coordinates, tool-bar is tool-window aligned according the parent-widget: */
             iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
             switch (m_alignment)
