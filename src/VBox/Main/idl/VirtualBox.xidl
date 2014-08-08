@@ -13866,7 +13866,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="setIds">
+    <method name="setIds" wrap-hint-server="passcaller">
       <desc>
         Changes the UUID and parent UUID for a hard disk medium.
       </desc>
@@ -13902,7 +13902,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </result>
     </method>
 
-    <method name="refreshState">
+    <method name="refreshState" wrap-hint-server="passcaller">
       <desc>
         If the current medium state (see <link to="MediumState"/>) is one of
         "Created", "Inaccessible" or "LockedRead", then this performs an
