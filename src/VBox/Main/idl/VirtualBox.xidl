@@ -1145,7 +1145,8 @@
     </const>
     <const name="Graphics3D"          value="7">
       <desc>Graphics device 3D activity.</desc>
-    </const>  </enum>
+    </const>
+  </enum>
 
   <enum
     name="DeviceActivity"
@@ -7517,7 +7518,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="8ab7c520-2442-4b66-8d74-4ff1e195d2b6"
+    uuid="d129b03e-037a-40b1-b288-a08ae73de535"
     wsmap="managed"
     >
     <desc>
@@ -7930,13 +7931,13 @@
 
     <method name="getDeviceActivity">
       <desc>
-        Gets the current activity type of a given device or device group.
+        Gets the current activity type of given devices or device groups.
         <result name="E_INVALIDARG">
           Invalid device type.
         </result>
       </desc>
-      <param name="type" type="DeviceType" dir="in"/>
-      <param name="activity" type="DeviceActivity" dir="return"/>
+      <param name="type" type="DeviceType" safearray="yes" dir="in"/>
+      <param name="activity" type="DeviceActivity" safearray="yes" dir="return"/>
     </method>
 
     <method name="attachUSBDevice">
