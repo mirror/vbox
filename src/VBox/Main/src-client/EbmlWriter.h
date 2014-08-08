@@ -263,10 +263,10 @@ public:
                    ! (arg & (UINT64_MAX << 8));
 
         static const size_t ebmlValue = 8 -
-                          ! (arg & (UINT64_MAX << 49)) - ! (arg & (UINT64_MAX << 42)) -
-                          ! (arg & (UINT64_MAX << 35)) - ! (arg & (UINT64_MAX << 28)) -
-                          ! (arg & (UINT64_MAX << 21)) - ! (arg & (UINT64_MAX << 14)) -
-                          ! (arg & (UINT64_MAX << 7));
+                   ! (arg & (UINT64_MAX << 49)) - ! (arg & (UINT64_MAX << 42)) -
+                   ! (arg & (UINT64_MAX << 35)) - ! (arg & (UINT64_MAX << 28)) -
+                   ! (arg & (UINT64_MAX << 21)) - ! (arg & (UINT64_MAX << 14)) -
+                   ! (arg & (UINT64_MAX << 7));
     };
 
 private:
@@ -534,6 +534,7 @@ public:
     int writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
     int writeFooter(uint32_t a_u64Hash);
     uint64_t getFileSize();
+    uint64_t getAvailableSpace();
 
     struct SimpleBlockData
     {
