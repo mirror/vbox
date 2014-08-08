@@ -2151,8 +2151,8 @@ endif
 # VBOX_WITH_ORIGIN translates into VBOX_WITH_RELATIVE_RUNPATH.
 #
 # We use two helper variables for the VBOX_WITH_ORIGIN stuff:
-#	VBOX_ORIGIN - Indirect expansion trick.
-#	VBOX_GCC_RPATH_OPT - Different GCC/LD combinations needs different options.
+#   VBOX_ORIGIN - Indirect expansion trick.
+#   VBOX_GCC_RPATH_OPT - Different GCC/LD combinations needs different options.
 #
 VBOX_ORIGIN = $$ORIGIN
 ifeq ($(KBUILD_TARGET),solaris)
