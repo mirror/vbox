@@ -272,11 +272,13 @@ void UIMachineWindowFullscreen::cleanupVisualState()
 void UIMachineWindowFullscreen::placeOnScreen()
 {
     /* Get corresponding screen: */
-    int iScreen = qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+    const int iScreen = qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* Calculate working area: */
-    QRect workingArea = QApplication::desktop()->screenGeometry(iScreen);
+    const QRect workingArea = QApplication::desktop()->screenGeometry(iScreen);
+
     /* Move to the appropriate position: */
     move(workingArea.topLeft());
+
 #ifdef Q_WS_MAC
     /* Make sure this window has fullscreen logic: */
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
@@ -299,8 +301,10 @@ void UIMachineWindowFullscreen::placeOnScreen()
     /* Resize to the appropriate size: */
     resize(workingArea.size());
 #endif /* !Q_WS_MAC */
+
     /* Adjust guest screen size if necessary: */
     machineView()->maybeAdjustGuestScreenSize();
+
     /* Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)
         m_pMiniToolBar->adjustGeometry();
@@ -327,12 +331,12 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 
     /* Make sure this window is maximized and placed on valid screen: */
 #ifdef Q_WS_X11
-    /* Only needed for legacy window managers on X11 which we do not test, so
-     * this is best effort code.  With window managers which support the
-     * _NET_WM_FULLSCREEN_MONITORS protocol this would interfere with them
-     * correctly restoring the old positions. */
-    if (!vboxGlobal().supportsFullScreenMonitorsProtocolX11())
-#endif
+    /* On X11 calling placeOnScreen() is only needed for legacy window managers
+     * which we do not test, so this is 'best effort' code. With window managers which
+     * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable. */
+    const bool fSupportsNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11();
+    if (!fSupportsNativeFullScreen)
+#endif /* Q_WS_X11 */
     placeOnScreen();
 
 #ifdef Q_WS_MAC
@@ -346,16 +350,22 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #endif /* !Q_WS_MAC */
 
 #ifdef Q_WS_X11
-    /* Tell recent window managers which screen this window should be mapped to.
-     * Apparently some window managers will not respond to requests for
-     * unmapped windows, so do this *after* the call to showFullScreen(). */
-    if (vboxGlobal().supportsFullScreenMonitorsProtocolX11())
+    if (fSupportsNativeFullScreen)
+    {
+        /* Tell recent window managers which screen this window should be mapped to.
+         * Apparently some window managers will not respond to requests for
+         * unmapped windows, so do this *after* the call to showFullScreen(). */
         VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+    }
     else
-    /* Make sure the window is placed on valid screen again 
-     * after window is shown & window's decorations applied. 
-     * That is required (still?) due to X11 Window Geometry Rules. */ 
+    {
+        /* On X11 calling placeOnScreen() is only needed for legacy window managers
+         * which we do not test, so this is 'best effort' code. With window managers which
+         * support the _NET_WM_FULLSCREEN_MONITORS protocol this would interfere unreliable.
+         * Make sure this window is maximized and placed on valid screen again
+         * after window is shown & window's decorations applied. */
         placeOnScreen();
+    }
 #endif /* Q_WS_X11 */
 }
 
