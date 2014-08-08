@@ -531,6 +531,50 @@ void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
     crPackChromiumParameteriCR(target, value);
 }
 
+GLenum PACKSPU_APIENTRY packspu_GetError( void )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+    GLenum return_val = (GLenum) 0;
+    CRContext *pCurState = crStateGetCurrent();
+
+    if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
+    {
+        crError( "packspu_GetError doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
+    }
+    if (pack_spu.swap)
+    {
+        crPackGetErrorSWAP( &return_val, &writeback );
+    }
+    else
+    {
+        crPackGetError( &return_val, &writeback );
+    }
+
+#ifdef DEBUG_misha
+    if (pCurState->lists.currentIndex)
+    {
+        WARN(("GetError called in DisplayList"));
+    }
+#endif
+
+    if (!pCurState->lists.currentIndex || !(g_u32VBoxHostCaps & CR_VBOX_CAP_CMDBLOCKS))
+    {
+        packspuFlush( (void *) thread );
+        CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
+        if (pack_spu.swap)
+        {
+            return_val = (GLenum) SWAP32(return_val);
+        }
+    }
+    else
+    {
+        return_val = GL_NO_ERROR;
+    }
+
+    return return_val;
+}
+
 #ifdef CHROMIUM_THREADSAFE
 GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi)
 {
