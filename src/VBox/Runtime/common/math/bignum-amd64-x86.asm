@@ -250,7 +250,7 @@ SEH64_END_PROLOGUE
         add     cUsed, 1                ; cUsed = RT_ALIGN(cUsed, 2) / 2
         shr     cUsed, 1
 %endif
-        cmp     cUsed, 4                ; Skip the big loop if small number.
+        cmp     cUsed, 8                ; Skip the big loop if small number.
         jb      .small_job
 
         mov     r10d, cUsed
