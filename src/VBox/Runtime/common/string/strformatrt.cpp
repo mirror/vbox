@@ -711,7 +711,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'x':
                     {
                         uint8_t *pu8 = va_arg(*pArgs, uint8_t *);
-                        if (cchPrecision <= 0)
+                        if (cchPrecision < 0)
                             cchPrecision = 16;
                         if (pu8)
                         {
