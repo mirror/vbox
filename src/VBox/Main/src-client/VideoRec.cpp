@@ -91,6 +91,8 @@ typedef struct VIDEORECSTREAM
     uint64_t            u64LastTimeStamp;
     /* time stamp of the current frame */
     uint64_t            u64TimeStamp;
+    /* encoder deadline */
+    unsigned int        uEncoderDeadline;
 } VIDEORECSTREAM;
 
 typedef struct VIDEORECCONTEXT
@@ -486,6 +488,8 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     pStrm->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pStrm->pu8RgbBuf, VERR_NO_MEMORY);
 
+    pStrm->uEncoderDeadline = 1000000 / uFps;
+
     /* Play safe: the file must not exist, overwriting is potentially
      * hazardous as nothing prevents the user from picking a file name of some
      * other important file, causing unintentional data loss. */
@@ -512,32 +516,25 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
         com::Utf8Str key, value;
         pos = options.parseKeyValue(key, value, pos);
 
-        if(key == "kf_mode")
+        if (key == "quality")
         {
-            if(value == "auto")
-                pStrm->VpxConfig.kf_mode = VPX_KF_AUTO;
-            else if (value == "fixed")
-                pStrm->VpxConfig.kf_mode = VPX_KF_FIXED;
-            else if (value == "disabled")
-                pStrm->VpxConfig.kf_mode = VPX_KF_DISABLED;
-            else LogRel(("Unknown value %s for parameter keyframe", value.c_str()));
-            continue;
-        }
-        else if(key == "kf_min_dist")
-        {
-            pStrm->VpxConfig.kf_min_dist = value.toUInt32();
-        }
-        else if(key == "kf_max_dist")
-        {
-            pStrm->VpxConfig.kf_max_dist = value.toUInt32();
-        }
-        else if(key == "rc_buf_optimal_sz")
-        {
-            pStrm->VpxConfig.rc_buf_optimal_sz = value.toUInt32();
-        }
-        else if(key == "rc_dropframe_thresh")
-        {
-            pStrm->VpxConfig.rc_dropframe_thresh = value.toUInt32();
+            if (value == "realtime")
+            {
+                pStrm->uEncoderDeadline = VPX_DL_REALTIME;
+            }
+            else if (value == "good")
+            {
+                pStrm->uEncoderDeadline = 1000000 / uFps;
+            }
+            else if (value == "best")
+            {
+                pStrm->uEncoderDeadline = VPX_DL_BEST_QUALITY;
+            }
+            else 
+            {
+                LogRel(("Settings quality deadline to = %s\n", value.c_str()));
+                pStrm->uEncoderDeadline = value.toUInt32();
+            }
         }
         else LogRel(("Getting unknown option: %s=%s\n", key.c_str(), value.c_str()));
 
@@ -727,7 +724,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm)
                                            pts /* time stamp */,
                                            10  /* how long to show this frame */,
                                            0   /* flags */,
-                                           VPX_DL_REALTIME /* deadline */);
+                                           pStrm->uEncoderDeadline /* quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to encode:%s\n", vpx_codec_err_to_string(rcv)));
