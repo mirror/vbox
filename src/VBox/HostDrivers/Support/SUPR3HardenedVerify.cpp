@@ -517,7 +517,7 @@ static int supR3HardenedVerifyFileOpen(PCSUPINSTFILE pFile, bool fFatal, intptr_
                                        OPEN_EXISTING,
                                        FILE_ATTRIBUTE_NORMAL,
                                        NULL);
-            if (hFile)
+            if (hFile != INVALID_HANDLE_VALUE)
             {
                 *phFile = (intptr_t)hFile;
                 rc = VINF_SUCCESS;
