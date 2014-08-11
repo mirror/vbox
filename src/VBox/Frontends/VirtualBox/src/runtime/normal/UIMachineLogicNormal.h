@@ -45,7 +45,7 @@ private slots:
     void sltOpenStatusBarSettings();
     void sltStatusBarSettingsClosed();
     void sltToggleStatusBar();
-    void sltHandleActionTriggerViewResize(int iIndex, const QSize &size);
+    void sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size);
 
 private:
 

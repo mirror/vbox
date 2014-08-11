@@ -1277,7 +1277,7 @@ void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreen
     /* Disconnect old stuff: */
     if (m_pMultiScreenLayout)
     {
-        disconnect(this, SIGNAL(sigNotifyAboutTriggeringViewMultiscreen(int, int)),
+        disconnect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
                    m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
         disconnect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
                    this, SLOT(sltHandleScreenLayoutUpdate()));
@@ -1289,7 +1289,7 @@ void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreen
     /* Connect new stuff: */
     if (m_pMultiScreenLayout)
     {
-        connect(this, SIGNAL(sigNotifyAboutTriggeringViewMultiscreen(int, int)),
+        connect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
                 m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
         connect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
                 this, SLOT(sltHandleScreenLayoutUpdate()));
@@ -1371,14 +1371,14 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::sltPrepareMenuViewResize()
+void UIActionPoolRuntime::sltPrepareMenuViewScreen()
 {
     /* Make sure sender is valid: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertPtrReturnVoid(pMenu);
 
     /* Call to corresponding handler: */
-    updateMenuViewResize(pMenu);
+    updateMenuViewScreen(pMenu);
 }
 
 void UIActionPoolRuntime::sltPrepareMenuViewMultiscreen()
@@ -1391,7 +1391,7 @@ void UIActionPoolRuntime::sltPrepareMenuViewMultiscreen()
     updateMenuViewMultiscreen(pMenu);
 }
 
-void UIActionPoolRuntime::sltHandleActionTriggerViewResize(QAction *pAction)
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenResize(QAction *pAction)
 {
     /* Make sure sender is valid: */
     AssertPtrReturnVoid(pAction);
@@ -1399,10 +1399,10 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewResize(QAction *pAction)
     /* Send request to resize guest-screen to required size: */
     const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
     const QSize size = pAction->property("Requested Size").toSize();
-    emit sigNotifyAboutTriggeringViewResize(iGuestScreenIndex, size);
+    emit sigNotifyAboutTriggeringViewScreenResize(iGuestScreenIndex, size);
 }
 
-void UIActionPoolRuntime::sltHandleActionTriggerViewMultiscreen(QAction *pAction)
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction)
 {
     /* Make sure sender is valid: */
     AssertPtrReturnVoid(pAction);
@@ -1410,7 +1410,7 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewMultiscreen(QAction *pAction
     /* Send request to remap guest-screen to required host-screen: */
     const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
     const int iHostScreenIndex = pAction->property("Host Screen Index").toInt();
-    emit sigNotifyAboutTriggeringViewMultiscreen(iGuestScreenIndex, iHostScreenIndex);
+    emit sigNotifyAboutTriggeringViewScreenRemap(iGuestScreenIndex, iHostScreenIndex);
 }
 
 void UIActionPoolRuntime::sltHandleScreenLayoutUpdate()
@@ -1980,7 +1980,7 @@ void UIActionPoolRuntime::updateMenuView()
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
                                                                      "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
-            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
+            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
     }
     else if (fAllowToShowActionMultiscreen && multiScreenLayout())
@@ -2050,7 +2050,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
                                                                      "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
-            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewResize()));
+            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
     }
 
@@ -2083,7 +2083,7 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
     m_invalidations.remove(UIActionIndexRT_M_View_M_StatusBar);
 }
 
-void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
+void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 {
     /* Make sure UI session defined: */
     AssertPtrReturnVoid(session());
@@ -2110,21 +2110,21 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
     const UIFrameBuffer* pFrameBuffer = session()->frameBuffer(iGuestScreenIndex);
     const QSize screenSize = QSize(pFrameBuffer->width(), pFrameBuffer->height());
 
-    /* Create exclusive action-group: */
+    /* Create exclusive 'resize' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
     AssertPtrReturnVoid(pActionGroup);
     {
-        /* Configure exclusive action-group: */
+        /* Configure exclusive 'resize' action-group: */
         pActionGroup->setExclusive(true);
         /* For every available size: */
         foreach (const QSize &size, sizes)
         {
-            /* Create exclusive action: */
+            /* Create exclusive 'resize' action: */
             QAction *pAction = pActionGroup->addAction(UIActionPoolRuntime::tr("Resize to %1x%2", "Virtual Screen")
                                                                                .arg(size.width()).arg(size.height()));
             AssertPtrReturnVoid(pAction);
             {
-                /* Configure exclusive action: */
+                /* Configure exclusive 'resize' action: */
                 pAction->setEnabled(session()->isGuestSupportsGraphics());
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
@@ -2140,7 +2140,7 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
         connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewResize(QAction*)));
+                this, SLOT(sltHandleActionTriggerViewScreenResize(QAction*)));
     }
 }
 
@@ -2179,7 +2179,7 @@ void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
         connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewMultiscreen(QAction*)));
+                this, SLOT(sltHandleActionTriggerViewScreenRemap(QAction*)));
     }
 }
 
