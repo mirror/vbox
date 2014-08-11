@@ -418,7 +418,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
                                         RTALLOC_EFENCE_NOMAN_FILLER);
         if (pvWrong)
             RTAssertDoPanic();
-        pvWrong = ASMMemIsAll8((void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK),
+        pvWrong = ASMMemIsAll8((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK),
                                RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbAligned,
                                RTALLOC_EFENCE_NOMAN_FILLER);
 #  endif
@@ -451,7 +451,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
 #  ifdef RTALLOC_EFENCE_IN_FRONT
                 void  *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
 #  else
-                void  *pvBlock = (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK);
+                void  *pvBlock = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
 #  endif
                 size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
                 rc = RTMemProtect(pvBlock, cbBlock, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
@@ -474,7 +474,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
         void *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
         void *pvEFence = pvBlock;
 #  else
-        void *pvBlock = (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK);
+        void *pvBlock = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
         void *pvEFence = (char *)pv + pBlock->cb;
 #  endif
         int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
@@ -497,9 +497,9 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
      * Let's just expand the E-fence to the first page of the user bit
      * since we know that it's around.
      */
-    int rc = RTMemProtect((void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK), PAGE_SIZE, RTMEM_PROT_NONE);
+    int rc = RTMemProtect((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), PAGE_SIZE, RTMEM_PROT_NONE);
     if (RT_FAILURE(rc))
-        rtmemComplain(pszOp, "RTMemProtect(%p, PAGE_SIZE, RTMEM_PROT_NONE) -> %d\n", (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK), rc);
+        rtmemComplain(pszOp, "RTMemProtect(%p, PAGE_SIZE, RTMEM_PROT_NONE) -> %d\n", (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), rc);
 #endif /* !RTALLOC_EFENCE_TRACE */
 }
 
