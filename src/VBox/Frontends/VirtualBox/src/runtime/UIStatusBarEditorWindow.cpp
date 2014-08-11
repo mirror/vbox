@@ -806,6 +806,14 @@ void UIStatusBarEditorWindow::prepareGeometry()
     /* But move mdi-sub-window to initial position: */
     m_pEmbeddedWidget->setGeometry(0, sh.height(), qMax(width(), sh.width()), sh.height());
 
+#ifdef Q_WS_X11
+    /* The setMask functionality is excessive under Win/Mac hosts
+     * because there is a Qt composition works properly,
+     * Mac host has native translucency support,
+     * Win host allows to enable it through Qt::WA_TranslucentBackground: */
+    setMask(m_pEmbeddedWidget->geometry());
+#endif /* Q_WS_X11 */
+
 #ifdef Q_WS_WIN
     /* Raise tool-window for proper z-order. */
     raise();
@@ -840,6 +848,14 @@ void UIStatusBarEditorWindow::adjustGeometry()
                 qMax(m_rect.width(), sh.width()), sh.height());
     /* And move mdi-sub-window to corresponding position: */
     m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
+
+#ifdef Q_WS_X11
+    /* The setMask functionality is excessive under Win/Mac hosts
+     * because there is a Qt composition works properly,
+     * Mac host has native translucency support,
+     * Win host allows to enable it through Qt::WA_TranslucentBackground: */
+    setMask(m_pEmbeddedWidget->geometry());
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
     /* Raise tool-window for proper z-order. */
