@@ -1970,19 +1970,6 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 }
 
 
-
-/** @todo use the nocrt stuff? */
-int VBOXCALL mymemcmp(const void *pv1, const void *pv2, size_t cb)
-{
-    const uint8_t *pb1 = (const uint8_t *)pv1;
-    const uint8_t *pb2 = (const uint8_t *)pv2;
-    for (; cb > 0; cb--, pb1++, pb2++)
-        if (*pb1 != *pb2)
-            return *pb1 - *pb2;
-    return 0;
-}
-
-
 #if 0 /* See alternative in SUPDrvA-win.asm */
 /**
  * Alternative version of SUPR0Printf for Windows.
