@@ -120,10 +120,10 @@ class UIActionPoolRuntime : public UIActionPool
 
 signals:
 
-    /** Notifies about 'View' : 'Resize' menu action trigger. */
-    void sigNotifyAboutTriggeringViewResize(int iGuestScreenIndex, const QSize &size);
-    /** Notifies about 'View' : 'Multiscreen' menu action trigger. */
-    void sigNotifyAboutTriggeringViewMultiscreen(int iGuestScreenIndex, int iHostScreenIndex);
+    /** Notifies about 'View' : 'Virtual Screen #' menu : 'Resize' action trigger. */
+    void sigNotifyAboutTriggeringViewScreenResize(int iGuestScreenIndex, const QSize &size);
+    /** Notifies about 'View' : 'Virtual Screen #' menu : 'Remap' action trigger. */
+    void sigNotifyAboutTriggeringViewScreenRemap(int iGuestScreenIndex, int iHostScreenIndex);
 
 public:
 
@@ -168,15 +168,15 @@ public:
 
 protected slots:
 
-    /** Prepare 'View' : 'Resize' menu routine. */
-    void sltPrepareMenuViewResize();
-    /** Prepare 'View' : 'Multiscreen' menu routine. */
+    /** Prepare 'View' : 'Virtual Screen #' menu routine (Normal, Scale). */
+    void sltPrepareMenuViewScreen();
+    /** Prepare 'View' : 'Virtual Screen #' menu routine (Fullscreen, Seamless). */
     void sltPrepareMenuViewMultiscreen();
 
-    /** Handles 'View' : 'Resize' menu @a pAction trigger. */
-    void sltHandleActionTriggerViewResize(QAction *pAction);
-    /** Handles 'View' : 'Multiscreen' menu @a pAction trigger. */
-    void sltHandleActionTriggerViewMultiscreen(QAction *pAction);
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Resize' @a pAction trigger. */
+    void sltHandleActionTriggerViewScreenResize(QAction *pAction);
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
+    void sltHandleActionTriggerViewScreenRemap(QAction *pAction);
 
     /** Handles screen-layout update. */
     void sltHandleScreenLayoutUpdate();
@@ -212,9 +212,9 @@ protected:
     void updateMenuViewPopup();
     /** Update 'View' : 'Status Bar' menu routine. */
     void updateMenuViewStatusBar();
-    /** Update 'View' : 'Resize' @a pMenu routine. */
-    void updateMenuViewResize(QMenu *pMenu);
-    /** Update 'View' : 'Multiscreen' @a pMenu routine. */
+    /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Normal, Scale). */
+    void updateMenuViewScreen(QMenu *pMenu);
+    /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Fullscreen, Seamless). */
     void updateMenuViewMultiscreen(QMenu *pMenu);
     /** Update 'Devices' menu routine. */
     void updateMenuDevices();
