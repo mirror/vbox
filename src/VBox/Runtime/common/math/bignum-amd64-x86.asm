@@ -494,3 +494,352 @@ SEH64_END_PROLOGUE
         jmp     .return
 ENDPROC rtBigNumMagnitudeShiftLeftOneAssemblyWorker
 
+
+;;
+; Performs a 128-bit by 64-bit division on 64-bit and
+; a 64-bit by 32-bit divison on 32-bit.
+;
+; @returns nothing.
+; @param    puQuotient          x86:[ebp +  8]  gcc:rdi  msc:rcx        Double element.
+; @param    puRemainder         x86:[ebp + 12]  gcc:rsi  msc:rdx        Normal element.
+; @param    uDividendHi         x86:[ebp + 16]  gcc:rdx  msc:r8
+; @param    uDividendLo         x86:[ebp + 20]  gcc:rcx  msc:r9
+; @param    uDivisior           x86:[ebp + 24]  gcc:r8   msc:[rbp + 30h]
+;
+BEGINPROC rtBigNumElement2xDiv2xBy1x
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+%ifdef RT_ARCH_AMD64
+ %if RTBIGNUM_ELEMENT_SIZE == 4
+  %error "sorry not implemented yet."
+          sorry not implemented yet.
+ %endif
+
+ %define  uDividendHi           rdx
+ %define  uDividendLo           rax
+ %ifdef ASM_CALL64_GCC
+  %define uDivisior             r8
+  %define puQuotient            rdi
+  %define puRemainder           rsi
+        mov     rax, rcx
+ %else
+  %define puQuotient            rcx
+  %define puRemainder           r11
+  %define uDivisor              r10
+        mov     r11, rdx
+        mov     r10, [rbp + 30h]
+        mov     rdx, r8
+        mov     rax, r9
+ %endif
+
+%elifdef RT_ARCH_X86
+        push    edi
+        push    ebx
+
+ %define uDividendHi            edx
+        mov     uDividendHi, [ebp + 10h]
+ %define uDividendLo            eax
+        mov     uDividendLo, [ebp + 14h]
+ %define uDivisor               ecx
+        mov     uDivisor,    [ebp + 18h]
+ %define puQuotient             edi
+        mov     puQuotient,  [ebp + 08h]
+ %define puRemainder            ebx
+        mov     puRemainder, [ebp + 0ch]
+%else
+ %error "Unsupported arch."
+%endif
+
+%ifdef RT_STRICT
+        ;
+        ; The dividend shall not be zero.
+        ;
+        test    uDivisor, uDivisor
+        jnz     .divisor_not_zero
+        int3
+.divisor_not_zero:
+%endif
+
+        ;
+        ; Avoid division overflow.  This will calculate the high part of the quotient.
+        ;
+        mov     RTBIGNUM_ELEMENT_PRE [puQuotient + RTBIGNUM_ELEMENT_SIZE], 0
+        cmp     uDividendHi, uDivisor
+        jb      .do_divide
+        push    xAX
+        mov     xAX, xDX
+        xor     edx, edx
+        div     uDivisor
+        mov     RTBIGNUM_ELEMENT_PRE [puQuotient + RTBIGNUM_ELEMENT_SIZE], xAX
+        pop     xAX
+
+        ;
+        ; Perform the division and store the result.
+        ;
+.do_divide:
+        div     uDivisor
+        mov     RTBIGNUM_ELEMENT_PRE [puQuotient], xAX
+        mov     RTBIGNUM_ELEMENT_PRE [puRemainder], xDX
+
+
+%ifdef RT_ARCH_X86
+        pop     ebx
+        pop     edi
+%endif
+        leave
+        ret
+ENDPROC rtBigNumElement2xDiv2xBy1x
+
+
+;;
+; Performs the core of long multiplication.
+;
+; @returns nothing.
+; @param    pauResult           x86:[ebp +  8]  gcc:rdi  msc:rcx        Initialized to zero.
+; @param    pauMultiplier       x86:[ebp + 12]  gcc:rsi  msc:rdx
+; @param    cMultiplier         x86:[ebp + 16]  gcc:rdx  msc:r8
+; @param    pauMultiplicand     x86:[ebp + 20]  gcc:rcx  msc:r9
+; @param    cMultiplicand       x86:[ebp + 24]  gcc:r8   msc:[rbp + 30h]
+;
+BEGINPROC rtBigNumMagnitudeMultiplyAssemblyWorker
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+%ifdef RT_ARCH_AMD64
+ %if RTBIGNUM_ELEMENT_SIZE == 4
+  %error "sorry not implemented yet."
+          sorry not implemented yet.
+ %endif
+
+ %ifdef ASM_CALL64_GCC
+  %define pauResult             rdi
+  %define pauMultiplier         rsi
+  %define cMultiplier           r9
+  %define pauMultiplicand       rcx
+  %define cMultiplicand         r8
+        mov     r9d, edx                ; cMultiplier
+        mov     r8d, r8d                ; cMultiplicand - paranoia
+  %define uMultiplier           r10
+  %define iMultiplicand         r11
+ %else
+  %define pauResult             rcx
+  %define pauMultiplier         r11
+  %define cMultiplier           r8
+  %define pauMultiplicand       r9
+  %define cMultiplicand         r10
+        mov     pauMultiplier, rdx
+        mov     r10d, dword [rbp + 30h] ; cMultiplicand
+        mov     r8d, r8d                ; cMultiplier - paranoia
+  %define uMultiplier           r12
+        push    r12
+  %define iMultiplicand         r13
+        push    r13
+ %endif
+
+%elifdef RT_ARCH_X86
+        push    edi
+        push    esi
+        push    ebx
+        sub     esp, 10h
+ %define pauResult              edi
+        mov     pauResult,      [ebp + 08h]
+ %define pauMultiplier          dword [ebp + 0ch]
+ %define cMultiplier            dword [ebp + 10h]
+ %define pauMultiplicand        ecx
+        mov     pauMultiplicand, [ebp + 14h]
+ %define cMultiplicand          dword [ebp + 18h]
+ %define uMultiplier            dword [ebp - 10h]
+ %define iMultiplicand          ebx
+
+%else
+ %error "Unsupported arch."
+%endif
+
+        ;
+        ; Check that the multiplicand isn't empty (avoids an extra jump in the inner loop).
+        ;
+        cmp     cMultiplicand, 0
+        je      .done
+
+        ;
+        ; Loop thru each element in the multiplier.
+        ;
+        ; while (cMultiplier-- > 0)
+.multiplier_loop:
+        cmp     cMultiplier, 0
+        jz      .done
+        dec     cMultiplier
+
+        ; uMultiplier = *pauMultiplier
+%ifdef RT_ARCH_X86
+        mov     edx, pauMultiplier
+        mov     eax, [edx]
+        mov     uMultiplier, eax
+%else
+        mov     uMultiplier, [pauMultiplier]
+%endif
+        ; for (iMultiplicand = 0; iMultiplicand < cMultiplicand; iMultiplicand++)
+        xor     iMultiplicand, iMultiplicand
+.multiplicand_loop:
+        mov     xAX, [pauMultiplicand + iMultiplicand * RTBIGNUM_ELEMENT_SIZE]
+        mul     uMultiplier
+        add     [pauResult + iMultiplicand * RTBIGNUM_ELEMENT_SIZE], xAX
+        adc     [pauResult + iMultiplicand * RTBIGNUM_ELEMENT_SIZE + RTBIGNUM_ELEMENT_SIZE], xDX
+        jnc     .next_multiplicand
+        lea     xDX, [iMultiplicand + 2]
+.next_adc:
+        adc     RTBIGNUM_ELEMENT_PRE [pauResult + xDX * RTBIGNUM_ELEMENT_SIZE], 0
+        inc     xDX
+        jc      .next_adc
+
+.next_multiplicand:
+        inc     iMultiplicand                   ; iMultiplicand++
+        cmp     iMultiplicand, cMultiplicand    ; iMultiplicand < cMultiplicand
+        jb      .multiplicand_loop
+
+        ; Advance and loop on multiplier.
+        add     pauMultiplier, RTBIGNUM_ELEMENT_SIZE
+        add     pauResult, RTBIGNUM_ELEMENT_SIZE
+        jmp     .multiplier_loop
+
+.done:
+
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+ %else
+        pop     r13
+        pop     r12
+ %endif
+%elifdef RT_ARCH_X86
+        add     esp, 10h
+        pop     ebx
+        pop     esi
+        pop     edi
+%endif
+        leave
+        ret
+ENDPROC rtBigNumMagnitudeMultiplyAssemblyWorker
+
+;;
+; Assembly implementation of the D4 step of Knuth's division algorithm.
+;
+; This subtracts Divisor * Qhat from the dividend at the current J index.
+;
+; @returns true if negative result (unlikely), false if positive.
+; @param    pauDividendJ        x86:[ebp +  8]  gcc:rdi  msc:rcx        Initialized to zero.
+; @param    pauDivisor          x86:[ebp + 12]  gcc:rsi  msc:rdx
+; @param    cDivisor            x86:[ebp + 16]  gcc:edx  msc:r8d
+; @param    uQhat               x86:[ebp + 16]  gcc:rcx  msc:r9
+;
+BEGINPROC rtBigNumKnuthD4_MulSub
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0
+SEH64_END_PROLOGUE
+
+%ifdef RT_ARCH_AMD64
+ %if RTBIGNUM_ELEMENT_SIZE == 4
+  %error "sorry not implemented yet."
+          sorry not implemented yet.
+ %endif
+
+ %ifdef ASM_CALL64_GCC
+  %define pauDividendJ          rdi
+  %define pauDivisor            rsi
+  %define cDivisor              r8
+  %define uQhat                 rcx
+        mov     r8d, edx                ; cDivisor
+  %define uMulCarry             r11
+ %else
+  %define pauDividendJ          rcx
+  %define pauDivisor            r10
+  %define cDivisor              r8
+  %define uQhat                 r9
+        mov     r10, rdx                ; pauDivisor
+        mov     r8d, r8d                ; cDivisor - paranoia
+  %define uMulCarry             r11
+ %endif
+
+%elifdef RT_ARCH_X86
+        push    edi
+        push    esi
+        push    ebx
+ %define pauDividendJ           edi
+        mov     pauDividendJ,   [ebp + 08h]
+ %define pauDivisor             esi
+        mov     pauDivisor,     [ebp + 0ch]
+ %define cDivisor               ecx
+        mov     cDivisor,       [ebp + 10h]
+ %define uQhat                  dword [ebp + 14h]
+ %define uMulCarry              ebx
+%else
+ %error "Unsupported arch."
+%endif
+
+%ifdef RT_STRICT
+        ;
+        ; Some sanity checks.
+        ;
+        cmp     cDivisor, 0
+        jne     .cDivisor_not_zero
+        int3
+.cDivisor_not_zero:
+%endif
+
+        ;
+        ; Initialize the loop.
+        ;
+        xor     uMulCarry, uMulCarry
+
+        ;
+        ; do ... while (cDivisor-- > 0);
+        ;
+.the_loop:
+        ; RTUInt128MulU64ByU64(&uSub, uQhat, pauDivisor[i]);
+        mov     xAX, uQhat
+        mul     RTBIGNUM_ELEMENT_PRE [pauDivisor]
+        ; RTUInt128AssignAddU64(&uSub, uMulCarry);
+        add     xAX, uMulCarry
+        adc     xDX, 0
+        mov     uMulCarry, xDX
+        ; Subtract uSub.s.Lo+fCarry from pauDividendJ[i]
+        sub     [pauDividendJ], xAX
+        adc     uMulCarry, 0
+%ifdef RT_STRICT
+        jnc     .uMulCarry_did_not_overflow
+        int3
+.uMulCarry_did_not_overflow
+%endif
+
+        ; Advance.
+        add     pauDividendJ, RTBIGNUM_ELEMENT_SIZE
+        add     pauDivisor, RTBIGNUM_ELEMENT_SIZE
+        dec     cDivisor
+        jnz     .the_loop
+
+        ;
+        ; Final dividend element (no corresponding divisor element).
+        ;
+        sub     [pauDividendJ], uMulCarry
+        sbb     eax, eax
+        and     eax, 1
+
+.done:
+%ifdef RT_ARCH_AMD64
+%elifdef RT_ARCH_X86
+        pop     ebx
+        pop     esi
+        pop     edi
+%endif
+        leave
+        ret
+ENDPROC rtBigNumKnuthD4_MulSub
+

@@ -29,6 +29,10 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/err.h>
+#include <iprt/asm.h>
+#ifdef RT_ARCH_AMD64
+# include <iprt/asm-math.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -100,17 +104,369 @@ DECLINLINE(PRTUINT128U) RTUInt128SetMax(PRTUINT128U pResult)
 }
 
 
-RTDECL(PRTUINT128U) RTUInt128Add(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128Sub(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128Div(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128Mod(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128And(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128Or( PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128Xor(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128ShiftLeft( PRTUINT128U pResult, PCRTUINT128U pValue, int cBits);
-RTDECL(PRTUINT128U) RTUInt128ShiftRight(PRTUINT128U pResult, PCRTUINT128U pValue, int cBits);
-RTDECL(PRTUINT128U) RTUInt128BooleanNot(PRTUINT128U pResult, PCRTUINT128U pValue);
-RTDECL(PRTUINT128U) RTUInt128BitwiseNot(PRTUINT128U pResult, PCRTUINT128U pValue);
+
+
+/**
+ * Adds two 128-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Add(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    pResult->s.Hi = pValue1->s.Hi + pValue2->s.Hi;
+    pResult->s.Lo = pValue1->s.Lo + pValue2->s.Lo;
+    if (pResult->s.Lo < pValue1->s.Lo)
+        pResult->s.Hi++;
+    return pResult;
+}
+
+
+/**
+ * Adds a 128-bit and a 64-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   uValue2             The second value, 64-bit.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AddU64(PRTUINT128U pResult, PCRTUINT128U pValue1, uint64_t uValue2)
+{
+    pResult->s.Hi = pValue1->s.Hi;
+    pResult->s.Lo = pValue1->s.Lo + uValue2;
+    if (pResult->s.Lo < pValue1->s.Lo)
+        pResult->s.Hi++;
+    return pResult;
+}
+
+
+/**
+ * Subtracts a 128-bit unsigned integer value from another.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The minuend value.
+ * @param   pValue2             The subtrahend value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Sub(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    pResult->s.Lo = pValue1->s.Lo - pValue2->s.Lo;
+    pResult->s.Hi = pValue1->s.Hi - pValue2->s.Hi;
+    if (pResult->s.Lo > pValue1->s.Lo)
+        pResult->s.Hi--;
+    return pResult;
+}
+
+
+/**
+ * Multiplies two 128-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Mul(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    RTUINT64U uTmp;
+
+    /* multiply all dwords in v1 by v2.dw0. */
+    pResult->s.Lo = (uint64_t)pValue1->DWords.dw0 * pValue2->DWords.dw0;
+
+    uTmp.u = (uint64_t)pValue1->DWords.dw1 * pValue2->DWords.dw0;
+    pResult->DWords.dw3 = 0;
+    pResult->DWords.dw2 = uTmp.DWords.dw1;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    pResult->s.Hi += (uint64_t)pValue1->DWords.dw2 * pValue2->DWords.dw0;
+    pResult->DWords.dw3     += pValue1->DWords.dw3 * pValue2->DWords.dw0;
+
+    /* multiply dw0, dw1 & dw2 in v1 by v2.dw1. */
+    uTmp.u = (uint64_t)pValue1->DWords.dw0 * pValue2->DWords.dw1;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    pResult->DWords.dw2 += uTmp.DWords.dw1;
+    if (pResult->DWords.dw2 < uTmp.DWords.dw1)
+        pResult->DWords.dw3++;
+
+    pResult->s.Hi += (uint64_t)pValue1->DWords.dw1 * pValue2->DWords.dw1;
+    pResult->DWords.dw3     += pValue1->DWords.dw2 * pValue2->DWords.dw1;
+
+    /* multiply dw0 & dw1 in v1 by v2.dw2. */
+    pResult->s.Hi += (uint64_t)pValue1->DWords.dw0 * pValue2->DWords.dw2;
+    pResult->DWords.dw3     += pValue1->DWords.dw1 * pValue2->DWords.dw2;
+
+    /* multiply dw0 in v1 by v2.dw3. */
+    pResult->DWords.dw3     += pValue1->DWords.dw0 * pValue2->DWords.dw3;
+
+    return pResult;
+}
+
+
+/**
+ * Multiplies an 128-bit unsigned integer by a 64-bit unsigned integer value.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   uValue2             The second value, 64-bit.
+ */
+#if defined(RT_ARCH_AMD64)
+RTDECL(PRTUINT128U) RTUInt128MulByU64(PRTUINT128U pResult, PCRTUINT128U pValue1, uint64_t uValue2);
+#else
+DECLINLINE(PRTUINT128U) RTUInt128MulByU64(PRTUINT128U pResult, PCRTUINT128U pValue1, uint64_t uValue2)
+{
+    uint32_t const uLoValue2 = (uint32_t)uValue2;
+    uint32_t const uHiValue2 = (uint32_t)(uValue2 >> 32);
+    RTUINT64U uTmp;
+
+    /* multiply all dwords in v1 by uLoValue1. */
+    pResult->s.Lo = (uint64_t)pValue1->DWords.dw0 * uLoValue2;
+
+    uTmp.u = (uint64_t)pValue1->DWords.dw1 * uLoValue2;
+    pResult->DWords.dw3 = 0;
+    pResult->DWords.dw2 = uTmp.DWords.dw1;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    pResult->s.Hi += (uint64_t)pValue1->DWords.dw2 * uLoValue2;
+    pResult->DWords.dw3     += pValue1->DWords.dw3 * uLoValue2;
+
+    /* multiply dw0, dw1 & dw2 in v1 by uHiValue2. */
+    uTmp.u = (uint64_t)pValue1->DWords.dw0 * uHiValue2;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    pResult->DWords.dw2 += uTmp.DWords.dw1;
+    if (pResult->DWords.dw2 < uTmp.DWords.dw1)
+        pResult->DWords.dw3++;
+
+    pResult->s.Hi += (uint64_t)pValue1->DWords.dw1 * uHiValue2;
+    pResult->DWords.dw3     += pValue1->DWords.dw2 * uHiValue2;
+
+    return pResult;
+}
+#endif
+
+
+/**
+ * Multiplies two 64-bit unsigned integer values with 128-bit precision.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   uValue1             The first value. 64-bit.
+ * @param   uValue2             The second value, 64-bit.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128MulU64ByU64(PRTUINT128U pResult, uint64_t uValue1, uint64_t uValue2)
+{
+#ifdef RT_ARCH_AMD64
+    pResult->s.Lo = ASMMult2xU64Ret2xU64(uValue1, uValue2, &pResult->s.Hi);
+#else
+    uint32_t const uLoValue1 = (uint32_t)uValue1;
+    uint32_t const uHiValue1 = (uint32_t)(uValue1 >> 32);
+    uint32_t const uLoValue2 = (uint32_t)uValue2;
+    uint32_t const uHiValue2 = (uint32_t)(uValue2 >> 32);
+    RTUINT64U uTmp;
+
+    /* Multiply uLoValue1 and uHiValue1 by uLoValue1. */
+    pResult->s.Lo = (uint64_t)uLoValue1 * uLoValue2;
+
+    uTmp.u = (uint64_t)uHiValue1 * uLoValue2;
+    pResult->DWords.dw3 = 0;
+    pResult->DWords.dw2 = uTmp.DWords.dw1;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    /* Multiply uLoValue1 and uHiValue1 by uHiValue2. */
+    uTmp.u = (uint64_t)uLoValue1 * uHiValue2;
+    pResult->DWords.dw1 += uTmp.DWords.dw0;
+    if (pResult->DWords.dw1 < uTmp.DWords.dw0)
+        if (pResult->DWords.dw2++ == UINT32_MAX)
+            pResult->DWords.dw3++;
+
+    pResult->DWords.dw2 += uTmp.DWords.dw1;
+    if (pResult->DWords.dw2 < uTmp.DWords.dw1)
+        pResult->DWords.dw3++;
+
+    pResult->s.Hi += (uint64_t)uHiValue1 * uHiValue2;
+#endif
+    return pResult;
+}
+
+
+DECLINLINE(PRTUINT128U) RTUInt128DivRem(PRTUINT128U pQuotient, PRTUINT128U pRemainder, PCRTUINT128U pValue1, PCRTUINT128U pValue2);
+
+/**
+ * Divides a 128-bit unsigned integer value by another.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Div(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    RTUINT128U Ignored;
+    return RTUInt128DivRem(pResult, &Ignored, pValue1, pValue2);
+}
+
+
+/**
+ * Divides a 128-bit unsigned integer value by another, returning the remainder.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable (remainder).
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Mod(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    RTUINT128U Ignored;
+    RTUInt128DivRem(&Ignored, pResult, pValue1, pValue2);
+    return pResult;
+}
+
+
+/**
+ * Bitwise AND of two 128-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128And(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    pResult->s.Hi = pValue1->s.Hi & pValue2->s.Hi;
+    pResult->s.Lo = pValue1->s.Lo & pValue2->s.Lo;
+    return pResult;
+}
+
+
+/**
+ * Bitwise OR of two 128-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Or( PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    pResult->s.Hi = pValue1->s.Hi | pValue2->s.Hi;
+    pResult->s.Lo = pValue1->s.Lo | pValue2->s.Lo;
+    return pResult;
+}
+
+
+/**
+ * Bitwise XOR of two 128-bit unsigned integer values.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128Xor(PRTUINT128U pResult, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    pResult->s.Hi = pValue1->s.Hi ^ pValue2->s.Hi;
+    pResult->s.Lo = pValue1->s.Lo ^ pValue2->s.Lo;
+    return pResult;
+}
+
+
+/**
+ * Shifts a 128-bit unsigned integer value @a cBits to the left.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue              The value to shift.
+ * @param   cBits               The number of bits to shift it.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128ShiftLeft(PRTUINT128U pResult, PCRTUINT128U pValue, int cBits)
+{
+    cBits &= 127;
+    if (cBits < 64)
+    {
+        pResult->s.Lo = pValue->s.Lo << cBits;
+        pResult->s.Hi = (pValue->s.Hi << cBits) | (pValue->s.Lo >> (64 - cBits));
+    }
+    else
+    {
+        pResult->s.Lo = 0;
+        pResult->s.Hi = pValue->s.Lo << (cBits - 64);
+    }
+    return pResult;
+}
+
+
+/**
+ * Shifts a 128-bit unsigned integer value @a cBits to the right.
+ *
+ * @returns pResult
+ * @param   pResult             The result variable.
+ * @param   pValue              The value to shift.
+ * @param   cBits               The number of bits to shift it.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128ShiftRight(PRTUINT128U pResult, PCRTUINT128U pValue, int cBits)
+{
+    cBits &= 127;
+    if (cBits < 64)
+    {
+        pResult->s.Hi = pValue->s.Hi >> cBits;
+        pResult->s.Lo = (pValue->s.Lo >> cBits) | (pValue->s.Hi << (64 - cBits));
+    }
+    else
+    {
+        pResult->s.Hi = 0;
+        pResult->s.Lo = pValue->s.Hi >> (cBits - 64);
+    }
+    return pResult;
+}
+
+
+/**
+ * Boolean not (result 0 or 1).
+ *
+ * @returns pResult.
+ * @param   pResult             The result variable.
+ * @param   pValue              The value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128BooleanNot(PRTUINT128U pResult, PCRTUINT128U pValue)
+{
+    pResult->s.Hi = 0;
+    pResult->s.Lo = pValue->s.Lo || pValue->s.Hi ? 0 : 1;
+    return pResult;
+}
+
+
+/**
+ * Bitwise not (flips each bit of the 128 bits).
+ *
+ * @returns pResult.
+ * @param   pResult             The result variable.
+ * @param   pValue              The value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128BitwiseNot(PRTUINT128U pResult, PCRTUINT128U pValue)
+{
+    pResult->s.Hi = ~pValue->s.Hi;
+    pResult->s.Lo = ~pValue->s.Lo;
+    return pResult;
+}
 
 
 /**
@@ -238,10 +594,111 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignU64(PRTUINT128U pValueResult, uint64_t u6
 }
 
 
-RTDECL(PRTUINT128U) RTUInt128AssignAdd(PRTUINT128U pValue1Result, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128AssignSub(PRTUINT128U pValue1Result, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128AssignDiv(PRTUINT128U pValue1Result, PCRTUINT128U pValue2);
-RTDECL(PRTUINT128U) RTUInt128AssignMod(PRTUINT128U pValue1Result, PCRTUINT128U pValue2);
+/**
+ * Adds two 128-bit unsigned integer values, storing the result in the first.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The first value and result.
+ * @param   pValue2         The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignAdd(PRTUINT128U pValue1Result, PCRTUINT128U pValue2)
+{
+    uint64_t const uTmp = pValue1Result->s.Lo;
+    pValue1Result->s.Lo += pValue2->s.Lo;
+    if (pValue1Result->s.Lo < uTmp)
+        pValue1Result->s.Hi++;
+    pValue1Result->s.Hi += pValue2->s.Hi;
+    return pValue1Result;
+}
+
+
+/**
+ * Adds a 64-bit unsigned integer value to a 128-bit unsigned integer values,
+ * storing the result in the 128-bit one.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The first value and result.
+ * @param   uValue2         The second value, 64-bit.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignAddU64(PRTUINT128U pValue1Result, uint64_t uValue2)
+{
+    pValue1Result->s.Lo += uValue2;
+    if (pValue1Result->s.Lo < uValue2)
+        pValue1Result->s.Hi++;
+    return pValue1Result;
+}
+
+
+/**
+ * Subtracts two 128-bit unsigned integer values, storing the result in the
+ * first.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The minuend value and result.
+ * @param   pValue2         The subtrahend value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignSub(PRTUINT128U pValue1Result, PCRTUINT128U pValue2)
+{
+    uint64_t const uTmp = pValue1Result->s.Lo;
+    pValue1Result->s.Lo -= pValue2->s.Lo;
+    if (pValue1Result->s.Lo > uTmp)
+        pValue1Result->s.Hi--;
+    pValue1Result->s.Hi -= pValue2->s.Hi;
+    return pValue1Result;
+}
+
+
+/**
+ * Multiplies two 128-bit unsigned integer values, storing the result in the
+ * first.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The first value and result.
+ * @param   pValue2         The second value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignMul(PRTUINT128U pValue1Result, PCRTUINT128U pValue2)
+{
+    RTUINT128U Result;
+    RTUInt128Mul(&Result, pValue1Result, pValue2);
+    *pValue1Result = Result;
+    return pValue1Result;
+}
+
+
+/**
+ * Divides a 128-bit unsigned integer value by another, storing the result in
+ * the first.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The dividend value and result.
+ * @param   pValue2         The divisor value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignDiv(PRTUINT128U pValue1Result, PCRTUINT128U pValue2)
+{
+    RTUINT128U Result;
+    RTUINT128U Ignored;
+    RTUInt128DivRem(&Result, &Ignored, pValue1Result, pValue2);
+    *pValue1Result = Result;
+    return pValue1Result;
+}
+
+
+/**
+ * Divides a 128-bit unsigned integer value by another, storing the remainder in
+ * the first.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The dividend value and result (remainder).
+ * @param   pValue2         The divisor value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignMod(PRTUINT128U pValue1Result, PCRTUINT128U pValue2)
+{
+    RTUINT128U Ignored;
+    RTUINT128U Result;
+    RTUInt128DivRem(&Ignored, &Result, pValue1Result, pValue2);
+    *pValue1Result = Result;
+    return pValue1Result;
+}
 
 
 /**
@@ -312,6 +769,41 @@ DECLINLINE(PRTUINT128U) RTUInt128AssignOr(PRTUINT128U pValue1Result, PCRTUINT128
 #endif
     return pValue1Result;
 }
+
+
+/**
+ * ORs in a bit and assign the result to the input value.
+ *
+ * @returns pValue1Result.
+ * @param   pValue1Result   The first value and result.
+ * @param   iBit            The bit to set (0 based).
+ */
+DECLINLINE(PRTUINT128U) RTUInt128AssignOrBit(PRTUINT128U pValue1Result, uint32_t iBit)
+{
+#if ARCH_BITS >= 64
+    if (iBit >= 64)
+        pValue1Result->s.Hi |= RT_BIT_64(iBit - 64);
+    else
+        pValue1Result->s.Lo |= RT_BIT_64(iBit);
+#else
+    if (iBit >= 64)
+    {
+        if (iBit >= 96)
+            pValue1Result->DWords.dw3 |= RT_BIT_32(iBit - 96);
+        else
+            pValue1Result->DWords.dw2 |= RT_BIT_32(iBit - 64);
+    }
+    else
+    {
+        if (iBit >= 32)
+            pValue1Result->DWords.dw1 |= RT_BIT_32(iBit - 32);
+        else
+            pValue1Result->DWords.dw0 |= RT_BIT_32(iBit);
+    }
+#endif
+    return pValue1Result;
+}
+
 
 
 /**
@@ -456,15 +948,90 @@ DECLINLINE(int) RTUInt128Compare(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
         return pValue1->s.Lo > pValue2->s.Lo ? 1 : -1;
     return 0;
 #else
-    if (pValue1->DWords.dw0 != pValue2->DWords.dw0)
-        return pValue1->DWords.dw0 > pValue2->DWords.dw0 ? 1 : -1;
-    if (pValue1->DWords.dw1 != pValue2->DWords.dw1)
-        return pValue1->DWords.dw1 > pValue2->DWords.dw1 ? 1 : -1;
-    if (pValue1->DWords.dw2 != pValue2->DWords.dw2)
-        return pValue1->DWords.dw2 > pValue2->DWords.dw2 ? 1 : -1;
     if (pValue1->DWords.dw3 != pValue2->DWords.dw3)
         return pValue1->DWords.dw3 > pValue2->DWords.dw3 ? 1 : -1;
+    if (pValue1->DWords.dw2 != pValue2->DWords.dw2)
+        return pValue1->DWords.dw2 > pValue2->DWords.dw2 ? 1 : -1;
+    if (pValue1->DWords.dw1 != pValue2->DWords.dw1)
+        return pValue1->DWords.dw1 > pValue2->DWords.dw1 ? 1 : -1;
+    if (pValue1->DWords.dw0 != pValue2->DWords.dw0)
+        return pValue1->DWords.dw0 > pValue2->DWords.dw0 ? 1 : -1;
     return 0;
+#endif
+}
+
+
+/**
+ * Tests if a 128-bit unsigned integer value is smaller than another.
+ *
+ * @returns true if the first value is smaller, false if not.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(bool) RTUInt128IsSmaller(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+#if ARCH_BITS >= 64
+    return pValue1->s.Hi < pValue2->s.Hi
+        || (   pValue1->s.Hi == pValue2->s.Hi
+            && pValue1->s.Lo  < pValue2->s.Lo);
+#else
+    return pValue1->DWords.dw3 < pValue2->DWords.dw3
+        || (   pValue1->DWords.dw3 == pValue2->DWords.dw3
+            && (   pValue1->DWords.dw2  < pValue2->DWords.dw2
+                || (   pValue1->DWords.dw2 == pValue2->DWords.dw2
+                    && (   pValue1->DWords.dw1  < pValue2->DWords.dw1
+                        || (   pValue1->DWords.dw1 == pValue2->DWords.dw1
+                            && pValue1->DWords.dw0  < pValue2->DWords.dw0)))));
+#endif
+}
+
+
+/**
+ * Tests if a 128-bit unsigned integer value is larger than another.
+ *
+ * @returns true if the first value is larger, false if not.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(bool) RTUInt128IsLarger(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+#if ARCH_BITS >= 64
+    return pValue1->s.Hi > pValue2->s.Hi
+        || (   pValue1->s.Hi == pValue2->s.Hi
+            && pValue1->s.Lo  > pValue2->s.Lo);
+#else
+    return pValue1->DWords.dw3 > pValue2->DWords.dw3
+        || (   pValue1->DWords.dw3 == pValue2->DWords.dw3
+            && (   pValue1->DWords.dw2  > pValue2->DWords.dw2
+                || (   pValue1->DWords.dw2 == pValue2->DWords.dw2
+                    && (   pValue1->DWords.dw1  > pValue2->DWords.dw1
+                        || (   pValue1->DWords.dw1 == pValue2->DWords.dw1
+                            && pValue1->DWords.dw0  > pValue2->DWords.dw0)))));
+#endif
+}
+
+
+/**
+ * Tests if a 128-bit unsigned integer value is larger or equal than another.
+ *
+ * @returns true if the first value is larger or equal, false if not.
+ * @param   pValue1             The first value.
+ * @param   pValue2             The second value.
+ */
+DECLINLINE(bool) RTUInt128IsLargerOrEqual(PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+#if ARCH_BITS >= 64
+    return pValue1->s.Hi > pValue2->s.Hi
+        || (   pValue1->s.Hi == pValue2->s.Hi
+            && pValue1->s.Lo >= pValue2->s.Lo);
+#else
+    return pValue1->DWords.dw3 > pValue2->DWords.dw3
+        || (   pValue1->DWords.dw3 == pValue2->DWords.dw3
+            && (   pValue1->DWords.dw2  > pValue2->DWords.dw2
+                || (   pValue1->DWords.dw2 == pValue2->DWords.dw2
+                    && (   pValue1->DWords.dw1  > pValue2->DWords.dw1
+                        || (   pValue1->DWords.dw1 == pValue2->DWords.dw1
+                            && pValue1->DWords.dw0 >= pValue2->DWords.dw0)))));
 #endif
 }
 
@@ -689,6 +1256,119 @@ DECLINLINE(bool) RTUInt128BitAreAllClear(PRTUINT128U pValue)
         && pValue->DWords.dw3 == 0;
 #endif
 }
+
+
+DECLINLINE(uint32_t) RTUInt128BitCount(PCRTUINT128U pValue)
+{
+    uint32_t cBits;
+    if (pValue->s.Hi != 0)
+    {
+        if (pValue->DWords.dw3)
+            cBits = 96 + ASMBitLastSetU32(pValue->DWords.dw3);
+        else
+            cBits = 64 + ASMBitLastSetU32(pValue->DWords.dw2);
+    }
+    else
+    {
+        if (pValue->DWords.dw1)
+            cBits = 32 + ASMBitLastSetU32(pValue->DWords.dw1);
+        else
+            cBits =  0 + ASMBitLastSetU32(pValue->DWords.dw0);
+    }
+    return cBits;
+}
+
+
+/**
+ * Divides a 128-bit unsigned integer value by another, returning both quotient
+ * and remainder.
+ *
+ * @returns pQuotient, NULL if pValue2 is 0.
+ * @param   pQuotient           Where to return the quotient.
+ * @param   pRemainder          Where to return the remainder.
+ * @param   pValue1             The dividend value.
+ * @param   pValue2             The divisor value.
+ */
+DECLINLINE(PRTUINT128U) RTUInt128DivRem(PRTUINT128U pQuotient, PRTUINT128U pRemainder, PCRTUINT128U pValue1, PCRTUINT128U pValue2)
+{
+    int iDiff;
+
+    /*
+     * Sort out all the special cases first.
+     */
+    /* Divide by zero or 1? */
+    if (!pValue2->s.Hi)
+    {
+        if (!pValue2->s.Lo)
+            return NULL;
+
+        if (pValue2->s.Lo == 1)
+        {
+            RTUInt128SetZero(pRemainder);
+            *pQuotient = *pValue1;
+            return pQuotient;
+        }
+        /** @todo RTUint128DivModBy64 */
+    }
+
+    /* Dividend is smaller? */
+    iDiff = RTUInt128Compare(pValue1, pValue2);
+    if (iDiff < 0)
+    {
+        *pRemainder = *pValue1;
+        RTUInt128SetZero(pQuotient);
+    }
+
+    /* The values are equal? */
+    else if (iDiff == 0)
+    {
+        RTUInt128SetZero(pRemainder);
+        RTUInt128AssignU64(pQuotient, 1);
+    }
+    else
+    {
+        /*
+         * Prepare.
+         */
+        uint32_t   iBitAdder = RTUInt128BitCount(pValue1) - RTUInt128BitCount(pValue2);
+        RTUINT128U NormDivisor = *pValue2;
+        if (iBitAdder)
+        {
+            RTUInt128ShiftLeft(&NormDivisor, pValue2, iBitAdder);
+            if (RTUInt128IsLarger(&NormDivisor, pValue1))
+            {
+                RTUInt128AssignShiftRight(&NormDivisor, 1);
+                iBitAdder--;
+            }
+        }
+        else
+            NormDivisor = *pValue2;
+
+        RTUInt128SetZero(pQuotient);
+        *pRemainder = *pValue1;
+
+        /*
+         * Do the division.
+         */
+        if (RTUInt128IsLargerOrEqual(pRemainder, pValue2))
+        {
+            for (;;)
+            {
+                if (RTUInt128IsLargerOrEqual(pRemainder, &NormDivisor))
+                {
+                    RTUInt128AssignSub(pRemainder, &NormDivisor);
+                    RTUInt128AssignOrBit(pQuotient, iBitAdder);
+                }
+                if (RTUInt128IsSmaller(pRemainder, pValue2))
+                    break;
+                RTUInt128AssignShiftRight(&NormDivisor, 1);
+                iBitAdder--;
+            }
+        }
+    }
+    return pQuotient;
+}
+
 
 /** @} */
 

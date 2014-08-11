@@ -42,6 +42,11 @@ typedef uint64_t RTBIGNUMELEMENT;
 #else
 typedef uint32_t RTBIGNUMELEMENT;
 #endif
+/** Pointer to a big integer number element. */
+typedef RTBIGNUMELEMENT        *PRTBIGNUMELEMENT;
+/** Pointer to a const big integer number element. */
+typedef RTBIGNUMELEMENT const  *PCRTBIGNUMELEMENT;
+
 /** The size (in bytes) of one array element. */
 #if ARCH_BITS == 64
 # define RTBIGNUM_ELEMENT_SIZE          8
@@ -56,6 +61,15 @@ typedef uint32_t RTBIGNUMELEMENT;
 #else
 # define RTBIGNUM_ELEMENT_BIT(iBit)     RT_BIT_32(iBit)
 #endif
+/** The maximum value one element can hold. */
+#if ARCH_BITS == 64
+# define RTBIGNUM_ELEMENT_MAX           UINT64_MAX
+#else
+# define RTBIGNUM_ELEMENT_MAX           UINT32_MAX
+#endif
+/** Mask including all the element bits set to 1. */
+#define RTBIGNUM_ELEMENT_MASK           RTBIGNUM_ELEMENT_MAX
+
 
 /**
  * IPRT big integer number.
@@ -153,8 +167,12 @@ RTDECL(int) RTBigNumAdd(PRTBIGNUM pResult, PCRTBIGNUM pAugend, PCRTBIGNUM pAdden
 RTDECL(int) RTBigNumSubtract(PRTBIGNUM pResult, PCRTBIGNUM pMinuend, PCRTBIGNUM pSubtrahend);
 RTDECL(int) RTBigNumMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand, PCRTBIGNUM pMultiplier);
 RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor);
+RTDECL(int) RTBigNumDivideKnuth(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor);
+RTDECL(int) RTBigNumDivideLong(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor);
 RTDECL(int) RTBigNumModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor);
 RTDECL(int) RTBigNumExponentiate(PRTBIGNUM pResult, PCRTBIGNUM pBase, PCRTBIGNUM pExponent);
+RTDECL(int) RTBigNumShiftLeft(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits);
+RTDECL(int) RTBigNumShiftRight(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits);
 
 RTDECL(int) RTBigNumModExp(PRTBIGNUM pResult, PRTBIGNUM pBase, PRTBIGNUM pExponent, PRTBIGNUM pModulus);
 
