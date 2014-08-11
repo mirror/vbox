@@ -297,43 +297,45 @@ void VBoxVidPnAllocDataInit(VBOXWDDM_ALLOC_DATA *pData, D3DDDI_VIDEO_PRESENT_SOU
     pData->Addr.offVram = VBOXVIDEOOFFSET_VOID;
 }
 
-void VBoxVidPnSourceInit(PVBOXWDDM_SOURCE pSource, const D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+void VBoxVidPnSourceInit(PVBOXWDDM_SOURCE pSource, const D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, uint8_t u8SyncState)
 {
     memset(pSource, 0, sizeof (*pSource));
     VBoxVidPnAllocDataInit(&pSource->AllocData, VidPnSourceId);
+    pSource->u8SyncState = (u8SyncState & VBOXWDDM_HGSYNC_F_SYNCED_ALL);
 }
 
-void VBoxVidPnTargetInit(PVBOXWDDM_TARGET pTarget, const D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+void VBoxVidPnTargetInit(PVBOXWDDM_TARGET pTarget, const D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId, uint8_t u8SyncState)
 {
     memset(pTarget, 0, sizeof (*pTarget));
     pTarget->u32Id = VidPnTargetId;
     pTarget->VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+    pTarget->u8SyncState = (u8SyncState & VBOXWDDM_HGSYNC_F_SYNCED_ALL);
 }
 
-void VBoxVidPnSourcesInit(PVBOXWDDM_SOURCE pSources, uint32_t cScreens)
+void VBoxVidPnSourcesInit(PVBOXWDDM_SOURCE pSources, uint32_t cScreens, uint8_t u8SyncState)
 {
     for (uint32_t i = 0; i < cScreens; ++i)
-        VBoxVidPnSourceInit(&pSources[i], i);
+        VBoxVidPnSourceInit(&pSources[i], i, u8SyncState);
 }
 
-void VBoxVidPnTargetsInit(PVBOXWDDM_TARGET pTargets, uint32_t cScreens)
+void VBoxVidPnTargetsInit(PVBOXWDDM_TARGET pTargets, uint32_t cScreens, uint8_t u8SyncState)
 {
     for (uint32_t i = 0; i < cScreens; ++i)
-        VBoxVidPnTargetInit(&pTargets[i], i);
+        VBoxVidPnTargetInit(&pTargets[i], i, u8SyncState);
 }
 
 void VBoxVidPnSourceCopy(VBOXWDDM_SOURCE *pDst, const VBOXWDDM_SOURCE *pSrc)
 {
     uint8_t u8SyncState = pDst->u8SyncState;
     *pDst = *pSrc;
-    pDst->u8SyncState |= u8SyncState;
+    pDst->u8SyncState &= u8SyncState;
 }
 
 void VBoxVidPnTargetCopy(VBOXWDDM_TARGET *pDst, const VBOXWDDM_TARGET *pSrc)
 {
     uint8_t u8SyncState = pDst->u8SyncState;
     *pDst = *pSrc;
-    pDst->u8SyncState |= u8SyncState;
+    pDst->u8SyncState &= u8SyncState;
 }
 
 void VBoxVidPnSourcesCopy(VBOXWDDM_SOURCE *pDst, const VBOXWDDM_SOURCE *pSrc, uint32_t cScreens)
