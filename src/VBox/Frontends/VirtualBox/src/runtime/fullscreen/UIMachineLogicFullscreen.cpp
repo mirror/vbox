@@ -99,7 +99,7 @@ Qt::WindowFlags UIMachineLogicFullscreen::windowFlags(ulong uScreenId) const
 /** Adjusts guest screen count/size for the machine-logic we have. */
 void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
 {
-    /* We should rebuild screen-layout: */
+    /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -146,6 +146,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter()
     m_fullscreenMachineWindows.insert(pMachineWindow);
     AssertReturnVoid(m_fullscreenMachineWindows.contains(pMachineWindow));
 
+    /* Rebuild multi-screen layout: */
+    m_pScreenLayout->rebuild();
     /* Revalidate native fullscreen: */
     revalidateNativeFullScreen();
 }
@@ -193,6 +195,8 @@ void UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit()
         m_invalidFullscreenMachineWindows.remove(pMachineWindow);
         AssertReturnVoid(!m_invalidFullscreenMachineWindows.contains(pMachineWindow));
 
+        /* Rebuild multi-screen layout: */
+        m_pScreenLayout->rebuild();
         /* Revalidate native fullscreen: */
         revalidateNativeFullScreen();
     }
@@ -348,7 +352,7 @@ void UIMachineLogicFullscreen::sltMachineStateChanged()
 
         /* Make sure further code will be called just once: */
         uisession()->forgetPreviousMachineState();
-        /* We should rebuild screen-layout: */
+        /* Rebuild multi-screen layout: */
         m_pScreenLayout->rebuild();
         /* Make sure all machine-window(s) have proper geometry: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -400,10 +404,8 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
 {
     LogRel(("UIMachineLogicFullscreen: Guest-screen count changed.\n"));
 
-    /* Update multi-screen layout before any window update: */
-    if (changeType == KGuestMonitorChangedEventType_Enabled ||
-        changeType == KGuestMonitorChangedEventType_Disabled)
-        m_pScreenLayout->rebuild();
+    /* Rebuild multi-screen layout: */
+    m_pScreenLayout->rebuild();
 
 #ifdef Q_WS_MAC
     /* Call to base-class for Lion and previous: */
@@ -421,7 +423,7 @@ void UIMachineLogicFullscreen::sltHostScreenCountChange()
 {
     LogRel(("UIMachineLogicFullscreen: Host-screen count changed.\n"));
 
-    /* Update multi-screen layout before any window update: */
+    /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
 
 #ifdef Q_WS_MAC
