@@ -2800,6 +2800,7 @@
 # define RTBigNumSubtract                               RT_MANGLER(RTBigNumSubtract)
 # define RTBigNumToBytesBigEndian                       RT_MANGLER(RTBigNumToBytesBigEndian)
 # define RTUInt128MulByU64                              RT_MANGLER(RTUInt128MulByU64)
+# define RTUInt128MulByU64_EndProc                      RT_MANGLER(RTUInt128MulByU64_EndProc)
 # define RTUtf16Copy                                    RT_MANGLER(RTUtf16Copy)
 # define RTUtf16CopyAscii                               RT_MANGLER(RTUtf16CopyAscii)
 # define RTUtf16Cat                                     RT_MANGLER(RTUtf16Cat)
