@@ -123,6 +123,26 @@ void UIMachineLogicNormal::sltToggleStatusBar()
     gEDataManager->setStatusBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
 }
 
+void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bool fEnabled)
+{
+    /* Enable/disable guest keeping current size: */
+    ULONG uWidth, uHeight, uBitsPerPixel;
+    LONG uOriginX, uOriginY;
+    CDisplay display = session().GetConsole().GetDisplay();
+    display.GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY);
+    if (!fEnabled)
+        display.SetVideoModeHint(iIndex, false, false, 0, 0, 0, 0, 0);
+    else
+    {
+        /* Defaults: */
+        if (!uWidth)
+            uWidth = 800;
+        if (!uHeight)
+            uHeight = 600;
+        display.SetVideoModeHint(iIndex, true, false, 0, 0, uWidth, uHeight, 32);
+    }
+}
+
 void UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size)
 {
     /* Resize guest to required size: */
@@ -147,6 +167,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltOpenStatusBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
             this, SLOT(sltToggleStatusBar()));
+    connect(actionPool(), SIGNAL(sigNotifyAboutTriggeringViewScreenToggle(int, bool)),
+            this, SLOT(sltHandleActionTriggerViewScreenToggle(int, bool)));
     connect(actionPool(), SIGNAL(sigNotifyAboutTriggeringViewScreenResize(int, const QSize&)),
             this, SLOT(sltHandleActionTriggerViewScreenResize(int, const QSize&)));
 }

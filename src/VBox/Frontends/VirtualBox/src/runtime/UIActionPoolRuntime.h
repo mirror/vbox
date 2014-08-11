@@ -120,6 +120,8 @@ class UIActionPoolRuntime : public UIActionPool
 
 signals:
 
+    /** Notifies about 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
+    void sigNotifyAboutTriggeringViewScreenToggle(int iGuestScreenIndex, bool fEnabled);
     /** Notifies about 'View' : 'Virtual Screen #' menu : 'Resize' action trigger. */
     void sigNotifyAboutTriggeringViewScreenResize(int iGuestScreenIndex, const QSize &size);
     /** Notifies about 'View' : 'Virtual Screen #' menu : 'Remap' action trigger. */
@@ -173,6 +175,8 @@ protected slots:
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Fullscreen, Seamless). */
     void sltPrepareMenuViewMultiscreen();
 
+    /** Handles 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
+    void sltHandleActionTriggerViewScreenToggle();
     /** Handles 'View' : 'Virtual Screen #' menu : 'Resize' @a pAction trigger. */
     void sltHandleActionTriggerViewScreenResize(QAction *pAction);
     /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
