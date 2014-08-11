@@ -40,8 +40,8 @@ RT_C_DECLS_BEGIN
 
 #ifndef SUP_CERTIFICATES_ONLY
 # ifdef RT_OS_WINDOWS
-DECLHIDDEN(int)      supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
-DECLHIDDEN(void)     supHardenedWinTermImageVerifier(void);
+DECLHIDDEN(int)     supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
+DECLHIDDEN(void)    supHardenedWinTermImageVerifier(void);
 
 typedef enum SUPHARDNTVPKIND
 {
@@ -50,9 +50,13 @@ typedef enum SUPHARDNTVPKIND
     SUPHARDNTVPKIND_SELF_PURIFICATION,
     SUPHARDNTVPKIND_32BIT_HACK = 0x7fffffff
 } SUPHARDNTVPKIND;
-DECLHIDDEN(int)      supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, PRTERRINFO pErrInfo);
 
-DECLHIDDEN(bool)     supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName);
+DECLHIDDEN(bool)    supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniStrLeft,
+                                                        UNICODE_STRING const *pUniStrRight, bool fCheckSlash);
+DECLHIDDEN(bool)    supHardViUtf16PathStartsWithEx(PCRTUTF16 pwszLeft, uint32_t cwcLeft,
+                                                PCRTUTF16 pwszRight, uint32_t cwcRight, bool fCheckSlash);
+DECLHIDDEN(bool)    supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName);
 
 /**
  * SUP image verifier loader reader instance.
@@ -120,9 +124,11 @@ extern SUPSYSROOTDIRBUF g_WinSxSNtPath;
 extern SUPSYSROOTDIRBUF g_SupLibHardenedExeNtPath;
 extern uint32_t         g_offSupLibHardenedExeNtName;
 
+#   ifdef IN_RING0
 /** Pointer to NtQueryVirtualMemory. */
 typedef NTSTATUS (NTAPI *PFNNTQUERYVIRTUALMEMORY)(HANDLE, void const *, MEMORY_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
 extern PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory;
+#   endif
 
 #  endif /* SUPHNTVI_NO_NT_STUFF */
 

@@ -62,12 +62,12 @@
 /** The first argument of a respawed stub when respawned for the first time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_1_ARG0  "0384ad8f-4f0c-d002-e3ae-5597cd55af98-suplib-2ndchild"
+#define SUPR3_RESPAWN_1_ARG0  "5cb9562b-4b8c-d13f-6bc4-3da9b0f37da6-suplib-2ndchild"
 
 /** The first argument of a respawed stub when respawned for the second time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_2_ARG0  "0384ad8f-4f0c-d002-e3ae-5597cd55af98-suplib-3rdchild"
+#define SUPR3_RESPAWN_2_ARG0  "5cb9562b-4b8c-d13f-6bc4-3da9b0f37da6-suplib-3rdchild"
 
 /** Unconditional assertion. */
 #define SUPR3HARDENED_ASSERT(a_Expr) \
@@ -617,7 +617,6 @@ static void supR3HardenedWinFix8dot3Path(HANDLE hFile, PUNICODE_STRING pUniStr)
 }
 
 
-
 /**
  * Hook that monitors NtCreateSection calls.
  *
@@ -770,20 +769,16 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             bool fSystem32 = false;
             Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
             uint32_t fFlags = 0;
-            if (   uBuf.UniStr.Length > g_System32NtPath.UniStr.Length
-                && memcmp(uBuf.UniStr.Buffer, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length) == 0
-                && uBuf.UniStr.Buffer[g_System32NtPath.UniStr.Length / sizeof(WCHAR)] == '\\')
+            if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_System32NtPath.UniStr, true /*fCheckSlash*/))
             {
                 fSystem32 = true;
                 fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
             }
-            else if (   uBuf.UniStr.Length > g_WinSxSNtPath.UniStr.Length
-                     && memcmp(uBuf.UniStr.Buffer, g_WinSxSNtPath.UniStr.Buffer, g_WinSxSNtPath.UniStr.Length) == 0
-                     && uBuf.UniStr.Buffer[g_WinSxSNtPath.UniStr.Length / sizeof(WCHAR)] == '\\')
+            else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
                 fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
-            else if (   uBuf.UniStr.Length > g_offSupLibHardenedExeNtName
-                     && memcmp(uBuf.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Buffer,
-                               g_offSupLibHardenedExeNtName * sizeof(WCHAR)) == 0)
+            else if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
+                                                    g_SupLibHardenedExeNtPath.UniStr.Buffer,
+                                                    g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
                 fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
 #ifdef VBOX_PERMIT_MORE
             else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
@@ -803,7 +798,7 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             else
             {
                 supR3HardenedError(VINF_SUCCESS, false,
-                                   "supR3HardenedMonitor_NtCreateSection: Not a trusted location: '%ls' (fImage=%d fExecMap=%d fExecProt=%d)\n",
+                                   "supR3HardenedMonitor_NtCreateSection: Not a trusted location: '%ls' (fImage=%d fExecMap=%d fExecProt=%d)",
                                     uBuf.UniStr.Buffer, fImage, fExecMap, fExecProt);
                 if (hMyFile != hFile)
                     NtClose(hMyFile);
@@ -1866,7 +1861,11 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     if (RT_SUCCESS(rc))
         rc = supR3HardNtPuChSanitizePeb(&This);
     if (RT_SUCCESS(rc))
+    {
         rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, pErrInfo);
+        if (RT_FAILURE(rc))
+            Sleep(300000);
+    }
 
     return rc;
 }
@@ -2531,6 +2530,12 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     g_cSuplibHardenedWindowsMainCalls++;
 
     /*
+     * Initialize the NTDLL API wrappers. This aims at bypassing patched NTDLL
+     * in all the processes leading up the VM process.
+     */
+    supR3HardenedWinInitImports();
+
+    /*
      * Init g_uNtVerCombined. (The code is shared with SUPR3.lib and lives in
      * SUPHardenedVerfiyImage-win.cpp.)
      */
@@ -2549,7 +2554,7 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     /*
      * Get the executable name.
      */
-    DWORD cwcExecName = GetModuleFileNameW(GetModuleHandle(NULL), g_wszSupLibHardenedExePath,
+    DWORD cwcExecName = GetModuleFileNameW(GetModuleHandleW(NULL), g_wszSupLibHardenedExePath,
                                            RT_ELEMENTS(g_wszSupLibHardenedExePath));
     if (cwcExecName >= RT_ELEMENTS(g_wszSupLibHardenedExePath))
         supR3HardenedFatalMsg("suplibHardenedWindowsMain", kSupInitOp_Integrity, VERR_BUFFER_OVERFLOW,

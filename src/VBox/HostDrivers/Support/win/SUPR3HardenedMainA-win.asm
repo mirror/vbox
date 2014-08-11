@@ -74,3 +74,79 @@ BEGINCODE
 
 %endif
 
+;;
+; Composes a standard call name.
+%ifdef RT_ARCH_X86
+ %define SUPHNTIMP_STDCALL_NAME(a,b) _ %+ a %+ @ %+ b
+%else
+ %define SUPHNTIMP_STDCALL_NAME(a,b) NAME(a)
+%endif
+
+
+;;
+; Import data and code for an API call.
+;
+; @param 1  The plain API name.
+; @param 2  The parameter frame size on x86. Multiple of dword.
+; @param 3  Non-zero expression if system call.
+;
+%define SUPHNTIMP_SYSCALL 1
+%macro SupHardNtImport 3
+        ;
+        ; The data.
+        ;
+BEGINDATA
+global __imp_ %+ %1                     ; The import name used via dllimport.
+__imp_ %+ %1:
+GLOBALNAME g_pfn %+ %1                  ; The name we like to refer to.
+        RTCCPTR_DEF 0
+%if %3
+GLOBALNAME g_uApiNo %+ %1                  ; The name we like to refer to.
+        RTCCPTR_DEF 0
+%endif
+
+        ;
+        ; The code: First a call stub.
+        ;
+BEGINCODE
+global SUPHNTIMP_STDCALL_NAME(%1, %2)
+SUPHNTIMP_STDCALL_NAME(%1, %2):
+        jmp     RTCCPTR_PRE [NAME(g_pfn %+ %1) xWrtRIP]
+
+%if %3
+        ;
+        ; Make system calls.
+        ;
+ %ifdef RT_ARCH_AMD64
+BEGINPROC %1 %+ _SyscallType1
+        mov     eax, [NAME(g_uApiNo %+ %1) xWrtRIP]
+        mov     r10, rcx
+        syscall
+        ret
+ENDPROC %1 %+ _SyscallType1
+ %else
+BEGINPROC %1 %+ _SyscallType1
+        mov     edx, 07ffe0300h         ; SharedUserData!SystemCallStub
+        mov     eax, [NAME(g_uApiNo %+ %1) xWrtRIP]
+        call    edx
+        ret     %2
+ENDPROC %1 %+ _SyscallType1
+BEGINPROC %1 %+ _SyscallType2
+        push    .return
+        mov     edx, esp
+        mov     eax, [NAME(g_uApiNo %+ %1) xWrtRIP]
+        sysenter
+        add     esp, 4
+.return:
+        ret     %2
+ENDPROC %1 %+ _SyscallType2
+  %endif
+%endif
+%endmacro
+
+%define SUPHARNT_COMMENT(a_Comment)
+%define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) SupHardNtImport a_Name, a_cbParamsX86, SUPHNTIMP_SYSCALL
+%define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) SupHardNtImport a_Name, a_cbParamsX86, 0
+%include "import-template-ntdll.h"
+%include "import-template-kernel32.h"
+
