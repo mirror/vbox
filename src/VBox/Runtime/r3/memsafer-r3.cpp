@@ -291,7 +291,7 @@ static int rtMemSaferSupR3AllocPages(PRTMEMSAFERNODE pThis)
         rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, (pThis->cPages - PAGE_SIZE) * PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+            rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, (pThis->cPages - 1) * PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
             SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
