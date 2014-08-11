@@ -94,7 +94,7 @@ int suplibOsHardenedVerifyInit(void)
         int rc = supHardenedWinInitImageVerifier(NULL);
         if (RT_FAILURE(rc))
             return rc;
-        supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation();
+        supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(NULL);
 #endif
         g_fHardenedVerifyInited = true;
     }

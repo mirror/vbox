@@ -197,6 +197,7 @@ SUPR3HardenedStatic_SOURCES  = \
 SUPR3HardenedStatic_SOURCES.win = \
 	win/SUPR3HardenedMain-win.cpp \
 	win/SUPR3HardenedMainA-win.asm \
+	win/SUPR3HardenedMainImports-win.cpp \
        win/SUPHardenedVerifyProcess-win.cpp \
        win/SUPHardenedVerifyImage-win.cpp \
 	$(VBOX_SUP_WIN_CERTS_FILE)
@@ -380,6 +381,7 @@ VBoxSupLib_DEFS = \
 VBoxSupLib_SOURCES = \
 	$(KBUILD_TARGET)/VBoxSupLib-$(KBUILD_TARGET).cpp
 VBoxSupLib_LIBS.win = \
+	kernel32.lib \
 	$(SUPR3HardenedStatic_1_TARGET)
 
 

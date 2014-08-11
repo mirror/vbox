@@ -439,7 +439,7 @@ static bool supHardViUtf16PathEndsWith(PCRTUTF16 pwsz, const char *pszSuffix)
  * @param   pwsz                The UTF-16 path string.
  * @param   pszPrefix           The ascii prefix string.
  */
-static bool supHardViUtf16PathStartsWith(PCRTUTF16 pwszLeft, const char *pszRight)
+static bool supHardViUtf16PathStartsWithAscii(PCRTUTF16 pwszLeft, const char *pszRight)
 {
     for (;;)
     {
@@ -468,6 +468,69 @@ static bool supHardViUtf16PathStartsWith(PCRTUTF16 pwszLeft, const char *pszRigh
         }
     }
 }
+
+
+/**
+ * Simple case insensitive UNICODE_STRING starts-with path predicate.
+ *
+ * @returns true if starts with given string, false if not.
+ * @param   pwszLeft            The path to check.
+ * @param   cwcLeft             The length of @a pwszLeft
+ * @param   pwszRight           The starts-with path.
+ * @param   cwcRight            The length of @a pwszRight.
+ * @param   fCheckSlash         Check for a slash following the prefix.
+ */
+DECLHIDDEN(bool) supHardViUtf16PathStartsWithEx(PCRTUTF16 pwszLeft, uint32_t cwcLeft,
+                                                PCRTUTF16 pwszRight, uint32_t cwcRight, bool fCheckSlash)
+{
+    if (cwcLeft < cwcRight)
+        return false;
+
+    /* See if we can get away with a case sensitive compare first. */
+    if (memcmp(pwszLeft, pwszRight, cwcRight) == 0)
+        pwszLeft += cwcRight;
+    else
+    {
+        /* No luck, do a slow case insensitive comapre.  */
+        uint32_t cLeft = cwcRight;
+        while (cLeft-- > 0)
+        {
+            RTUTF16 wcLeft  = *pwszLeft++;
+            RTUTF16 wcRight = *pwszRight++;
+            if (wcLeft != wcRight)
+            {
+                wcLeft  = wcLeft < 0x80  ? wcLeft  == '/' ? '\\' : RT_C_TO_LOWER(wcLeft)  : wcLeft;
+                wcRight = wcRight < 0x80 ? wcRight == '/' ? '\\' : RT_C_TO_LOWER(wcRight) : wcRight;
+                if (wcLeft != wcRight)
+                    return false;
+            }
+        }
+    }
+
+    /* Check for slash following the prefix, if request. */
+    if (   !fCheckSlash
+        || *pwszLeft == '\\'
+        || *pwszLeft == '/')
+        return true;
+    return false;
+}
+
+
+/**
+ * Simple case insensitive UNICODE_STRING starts-with path predicate.
+ *
+ * @returns true if starts with given string, false if not.
+ * @param   pUniStrLeft         The path to check.
+ * @param   pUniStrRight        The starts-with path.
+ * @param   fCheckSlash         Check for a slash following the prefix.
+ */
+DECLHIDDEN(bool) supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniStrLeft, UNICODE_STRING const *pUniStrRight,
+                                                     bool fCheckSlash)
+{
+    return supHardViUtf16PathStartsWithEx(pUniStrLeft->Buffer, pUniStrLeft->Length / sizeof(WCHAR),
+                                          pUniStrRight->Buffer, pUniStrRight->Length / sizeof(WCHAR), fCheckSlash);
+}
+
 
 
 /**
@@ -504,7 +567,7 @@ DECLHIDDEN(bool) supHardViIsAppPatchDir(PCRTUTF16 pwszPath, uint32_t cwcName)
     if (memcmp(pwszPath, g_System32NtPath.UniStr.Buffer, cwcWinDir * sizeof(WCHAR)))
         return false;
 
-    if (!supHardViUtf16PathStartsWith(&pwszPath[cwcWinDir], "\\AppPatch\\"))
+    if (!supHardViUtf16PathStartsWithAscii(&pwszPath[cwcWinDir], "\\AppPatch\\"))
         return false;
 
     return g_uNtVerCombined >= SUP_NT_VER_VISTA;
@@ -558,9 +621,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
     PCRTUTF16 pwsz;
     uint32_t cwcName = (uint32_t)RTUtf16Len(pwszName);
     uint32_t cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR);
-    if (   cwcName > cwcOther
-        && RTPATH_IS_SLASH(pwszName[cwcOther])
-        && memcmp(pwszName, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length) == 0)
+    if (supHardViUtf16PathStartsWithEx(pwszName, cwcName, g_System32NtPath.UniStr.Buffer, cwcOther, true /*fCheckSlash*/))
     {
         pwsz = pwszName + cwcOther + 1;
 
@@ -595,7 +656,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
         if (cSlashes > 0)
         {
             if (   cSlashes == 1
-                && supHardViUtf16PathStartsWith(pwsz, "drivers\\ati")
+                && supHardViUtf16PathStartsWithAscii(pwsz, "drivers\\ati")
                 && (   supHardViUtf16PathEndsWith(pwsz, ".sys")
                     || supHardViUtf16PathEndsWith(pwsz, ".dll") ) )
                 return VINF_LDRVI_NOT_SIGNED;
@@ -625,9 +686,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
      * whitelisting of unsigned families of DLLs.
      */
     cwcOther = g_WinSxSNtPath.UniStr.Length / sizeof(WCHAR);
-    if (   cwcName > cwcOther
-        && RTPATH_IS_SLASH(pwszName[cwcOther])
-        && memcmp(pwszName, g_WinSxSNtPath.UniStr.Buffer, g_WinSxSNtPath.UniStr.Length) == 0)
+    if (supHardViUtf16PathStartsWithEx(pwszName, cwcName, g_WinSxSNtPath.UniStr.Buffer, cwcOther, true /*fCheckSlash*/))
     {
         pwsz = pwszName + cwcOther + 1;
         cwcName -= cwcOther + 1;
@@ -640,9 +699,9 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 # if 0 /* See below */
         /* The common controls mess. */
 # ifdef RT_ARCH_AMD64
-        if (supHardViUtf16PathStartsWith(pwsz, "amd64_microsoft.windows.common-controls_"))
+        if (supHardViUtf16PathStartsWithAscii(pwsz, "amd64_microsoft.windows.common-controls_"))
 # elif defined(RT_ARCH_X86)
-        if (supHardViUtf16PathStartsWith(pwsz, "x86_microsoft.windows.common-controls_"))
+        if (supHardViUtf16PathStartsWithAscii(pwsz, "x86_microsoft.windows.common-controls_"))
 # else
 #  error "Unsupported architecture"
 # endif
@@ -654,9 +713,9 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 
         /* Allow anything slightly microsoftish from WinSxS. W2K3 wanted winhttp.dll early on... */
 # ifdef RT_ARCH_AMD64
-        if (supHardViUtf16PathStartsWith(pwsz, "amd64_microsoft."))
+        if (supHardViUtf16PathStartsWithAscii(pwsz, "amd64_microsoft."))
 # elif defined(RT_ARCH_X86)
-        if (supHardViUtf16PathStartsWith(pwsz, "x86_microsoft."))
+        if (supHardViUtf16PathStartsWithAscii(pwsz, "x86_microsoft."))
 # else
 #  error "Unsupported architecture"
 # endif
@@ -940,48 +999,61 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
 
 #ifdef IN_RING3
      /*
-      * Call the windows verify trust API if we've resolved it.
+      * Call the windows verify trust API if we've resolved it and aren't in
+      * some obvious recursion.  Assumes the loader semaphore will reduce the
+      * risk of concurrency here, so no TLS, only a single static variable.
       */
-     if (   g_pfnWinVerifyTrust
-         && supR3HardNtViCanCallWinVerifyTrust(pNtViRdr->hFile, pwszName))
-     {
-         if (pfCacheable)
-             *pfCacheable = g_pfnWinVerifyTrust != NULL;
-         if (rc != VERR_LDRVI_NOT_SIGNED)
-         {
-             if (rc == VINF_LDRVI_NOT_SIGNED)
-             {
-                 if (pNtViRdr->fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
-                 {
-                     int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                                      g_pfnWinVerifyTrust);
-                     SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
-                     rc = rc2;
-                 }
-                 else
-                 {
-                     AssertFailed();
-                     rc = VERR_LDRVI_NOT_SIGNED;
-                 }
-             }
-             else if (RT_SUCCESS(rc))
-                 rc = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                      g_pfnWinVerifyTrust);
-             else
-             {
-                 int rc2 = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                           g_pfnWinVerifyTrust);
-                 AssertMsg(RT_FAILURE_NP(rc2),
-                           ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
-             }
-         }
-     }
+    if (g_pfnWinVerifyTrust)
+    {
+        static uint32_t volatile s_idActiveThread = UINT32_MAX;
+        uint32_t const idCurrentThread = GetCurrentThreadId();
+        if (   s_idActiveThread != idCurrentThread
+            && supR3HardNtViCanCallWinVerifyTrust(pNtViRdr->hFile, pwszName) )
+        {
+            ASMAtomicCmpXchgU32(&s_idActiveThread, idCurrentThread, UINT32_MAX);
+
+            if (pfCacheable)
+                *pfCacheable = g_pfnWinVerifyTrust != NULL;
+            if (rc != VERR_LDRVI_NOT_SIGNED)
+            {
+                if (rc == VINF_LDRVI_NOT_SIGNED)
+                {
+                    if (pNtViRdr->fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
+                    {
+                        int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                                         g_pfnWinVerifyTrust);
+                        SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
+                        rc = rc2;
+                    }
+                    else
+                    {
+                        AssertFailed();
+                        rc = VERR_LDRVI_NOT_SIGNED;
+                    }
+                }
+                else if (RT_SUCCESS(rc))
+                    rc = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                         g_pfnWinVerifyTrust);
+                else
+                {
+                    int rc2 = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
+                                                              g_pfnWinVerifyTrust);
+                    AssertMsg(RT_FAILURE_NP(rc2),
+                              ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
+                }
+            }
+
+            ASMAtomicCmpXchgU32(&s_idActiveThread, UINT32_MAX, idCurrentThread);
+        }
+        else
+            SUP_DPRINTF(("Detected WinVerifyTrust recursion: rc=%Rrc '%ls'.\n", rc, pwszName));
+    }
 #else  /* !IN_RING3 */
-     if (pfCacheable)
-         *pfCacheable = true;
+    if (pfCacheable)
+        *pfCacheable = true;
 #endif /* !IN_RING3 */
 
-     return rc;
+    return rc;
 }
 
 
@@ -1501,8 +1573,10 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(DWORD fLoadLibraryFlags)
  * set, it will be checked again by the kernel.  All our image has this flag set
  * and we require all VBox extensions to have it set as well.  In effect, the
  * authenticode signature will be checked two or three times.
+ *
+ * @param   pszProgName     The program name.
  */
-DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(void)
+DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(const char *pszProgName)
 {
 # ifdef IN_SUP_HARDENED_R3
     /*
@@ -1571,7 +1645,8 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(void
     int rc = supR3HardNtViCallWinVerifyTrust(NULL, g_SupLibHardenedExeNtPath.UniStr.Buffer, 0,
                                              &ErrInfoStatic.Core, pfnWinVerifyTrust);
     if (RT_FAILURE(rc))
-        supR3HardenedFatal("WinVerifyTrust failed on stub executable: %s", ErrInfoStatic.szMsg);
+        supR3HardenedFatalMsg(pszProgName, kSupInitOp_Integrity, rc,
+                              "WinVerifyTrust failed on stub executable: %s", ErrInfoStatic.szMsg);
 # endif
 
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* ntdll isn't signed on XP, assuming this is the case on W2K3 for now. */
@@ -1579,6 +1654,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(void
     supR3HardNtViCallWinVerifyTrustCatFile(NULL, L"\\SystemRoot\\System32\\ntdll.dll", 0, NULL, pfnWinVerifyTrust);
 
     g_pfnWinVerifyTrust = pfnWinVerifyTrust;
+    SUP_DPRINTF(("g_pfnWinVerifyTrust=%p\n", pfnWinVerifyTrust));
 
     /*
      * Now, get trusted root CAs so we can verify a broader scope of signatures.
@@ -1686,6 +1762,7 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
             case TRUST_E_FAIL:                     pszErrConst = "TRUST_E_FAIL";                  break;
             case TRUST_E_EXPLICIT_DISTRUST:        pszErrConst = "TRUST_E_EXPLICIT_DISTRUST";     break;
             case CERT_E_CHAINING:                  pszErrConst = "CERT_E_CHAINING";               break;
+            case CERT_E_REVOCATION_FAILURE:        pszErrConst = "CERT_E_REVOCATION_FAILURE";     break;
         }
         if (pszErrConst)
             rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_UNSUPPORTED_ARCH,
