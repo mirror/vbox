@@ -380,9 +380,10 @@ VBoxSupLib_DEFS = \
 	$(if $(VBOX_WITHOUT_DEBUGGER_CHECKS),VBOX_WITHOUT_DEBUGGER_CHECKS,)
 VBoxSupLib_SOURCES = \
 	$(KBUILD_TARGET)/VBoxSupLib-$(KBUILD_TARGET).cpp
-VBoxSupLib_LIBS.win = \
-	kernel32.lib \
-	$(SUPR3HardenedStatic_1_TARGET)
+VBoxSupLib_LIBS.win.x86 = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib   # for __chkstk
+VBoxSupLib_LIBS.win.amd64 = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib # for __chkstk
 
 
 #
