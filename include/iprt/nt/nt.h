@@ -444,7 +444,7 @@ typedef struct _PEB_COMMON
 #endif
     HANDLE Mutant;                                                          /**< 0x008 / 0x004 */
     PVOID ImageBaseAddress;                                                 /**< 0x010 / 0x008 */
-    PPEB_LDR_DATA *Ldr;                                                     /**< 0x018 / 0x00c */
+    PPEB_LDR_DATA Ldr;                                                      /**< 0x018 / 0x00c */
     struct _RTL_USER_PROCESS_PARAMETERS *ProcessParameters;                 /**< 0x020 / 0x010 */
     PVOID SubSystemData;                                                    /**< 0x028 / 0x014 */
     HANDLE ProcessHeap;                                                     /**< 0x030 / 0x018 */
