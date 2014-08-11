@@ -72,8 +72,6 @@
 #       include <iprt/nt/nt.h>
 #   endif
 #   include <memory.h>
-#   define memcmp(a,b,c) mymemcmp(a,b,c)
-    int VBOXCALL mymemcmp(const void *, const void *, size_t);
     RT_C_DECLS_END
 
 #elif defined(RT_OS_LINUX)
