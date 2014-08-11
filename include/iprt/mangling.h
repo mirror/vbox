@@ -53,16 +53,20 @@
 # define ASMAtomicCmpXchgU64_EndProc                    RT_MANGLER(ASMAtomicCmpXchgU64_EndProc)
 # define ASMAtomicReadU64                               RT_MANGLER(ASMAtomicReadU64)        /* not-some-systems... */
 # define ASMAtomicReadU64_EndProc                       RT_MANGLER(ASMAtomicReadU64_EndProc)
-# define ASMAtomicUoReadU64                             RT_MANGLER(ASMAtomicUoReadU64)      /* not-some-systems... */
-# define ASMAtomicUoReadU64_EndProc                     RT_MANGLER(ASMAtomicUoReadU64_EndProc)
-# define ASMAtomicUoAndU64                              RT_MANGLER(ASMAtomicUoAndU64)       /* not-some-systems... */
-# define ASMAtomicUoAndU64_EndProc                      RT_MANGLER(ASMAtomicUoAndU64_EndProc)
 # define ASMAtomicUoAndU32                              RT_MANGLER(ASMAtomicUoAndU32)       /* not-some-systems... */
 # define ASMAtomicUoAndU32_EndProc                      RT_MANGLER(ASMAtomicUoAndU32_EndProc)
-# define ASMAtomicUoOrU64                               RT_MANGLER(ASMAtomicUoOrU64)        /* not-some-systems... */
-# define ASMAtomicUoOrU64_EndProc                       RT_MANGLER(ASMAtomicUoOrU64_EndProc)
+# define ASMAtomicUoAndU64                              RT_MANGLER(ASMAtomicUoAndU64)       /* not-some-systems... */
+# define ASMAtomicUoAndU64_EndProc                      RT_MANGLER(ASMAtomicUoAndU64_EndProc)
+# define ASMAtomicUoDecU32                              RT_MANGLER(ASMAtomicUoDecU32)       /* not-some-systems... */
+# define ASMAtomicUoDecU32_EndProc                      RT_MANGLER(ASMAtomicUoDecU32_EndProc)
+# define ASMAtomicUoIncU32                              RT_MANGLER(ASMAtomicUoIncU32)       /* not-some-systems... */
+# define ASMAtomicUoIncU32_EndProc                      RT_MANGLER(ASMAtomicUoIncU32_EndProc)
 # define ASMAtomicUoOrU32                               RT_MANGLER(ASMAtomicUoOrU32)        /* not-some-systems... */
 # define ASMAtomicUoOrU32_EndProc                       RT_MANGLER(ASMAtomicUoOrU32_EndProc)
+# define ASMAtomicUoOrU64                               RT_MANGLER(ASMAtomicUoOrU64)        /* not-some-systems... */
+# define ASMAtomicUoOrU64_EndProc                       RT_MANGLER(ASMAtomicUoOrU64_EndProc)
+# define ASMAtomicUoReadU64                             RT_MANGLER(ASMAtomicUoReadU64)      /* not-some-systems... */
+# define ASMAtomicUoReadU64_EndProc                     RT_MANGLER(ASMAtomicUoReadU64_EndProc)
 # define ASMAtomicXchgU64                               RT_MANGLER(ASMAtomicXchgU64)        /* not-some-systems... */
 # define ASMAtomicXchgU64_EndProc                       RT_MANGLER(ASMAtomicXchgU64_EndProc)
 # define ASMCpuIdExSlow                                 RT_MANGLER(ASMCpuIdExSlow)

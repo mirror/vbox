@@ -638,6 +638,8 @@ RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
+	common/asm/ASMAtomicUoDecU32.asm \
+	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
@@ -647,6 +649,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
+	common/asm/ASMAtomicUoDecU32.asm \
+	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
@@ -1649,6 +1653,8 @@ RuntimeR0_SOURCES.x86 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
+	common/asm/ASMAtomicUoDecU32.asm \
+	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
@@ -1657,6 +1663,8 @@ RuntimeR0_SOURCES.amd64 += \
 	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMAtomicUoAndU64.asm \
 	common/asm/ASMAtomicUoAndU32.asm \
+	common/asm/ASMAtomicUoDecU32.asm \
+	common/asm/ASMAtomicUoIncU32.asm \
 	common/asm/ASMAtomicUoOrU64.asm \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \

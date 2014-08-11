@@ -947,9 +947,56 @@ DECLINLINE(void) tstASMAtomicAddS32Worker(int32_t *pi32)
 #undef MYCHECK
 }
 
+
 static void tstASMAtomicAddS32(void)
 {
     DO_SIMPLE_TEST(ASMAtomicAddS32, int32_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoIncU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = 0;
+
+    CHECKOP(ASMAtomicUoIncU32(pu32), UINT32_C(1), "%#x", uint32_t);
+    CHECKVAL(*pu32, UINT32_C(1), "%#x");
+
+    *pu32 = ~UINT32_C(0);
+    CHECKOP(ASMAtomicUoIncU32(pu32), 0, "%#x", uint32_t);
+    CHECKVAL(*pu32, 0, "%#x");
+
+    *pu32 = UINT32_C(0x7fffffff);
+    CHECKOP(ASMAtomicUoIncU32(pu32), UINT32_C(0x80000000), "%#x", uint32_t);
+    CHECKVAL(*pu32, UINT32_C(0x80000000), "%#x");
+}
+
+
+static void tstASMAtomicUoIncU32(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicUoIncU32, uint32_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoDecU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = 0;
+
+    CHECKOP(ASMAtomicUoDecU32(pu32), ~UINT32_C(0), "%#x", uint32_t);
+    CHECKVAL(*pu32, ~UINT32_C(0), "%#x");
+
+    *pu32 = ~UINT32_C(0);
+    CHECKOP(ASMAtomicUoDecU32(pu32), UINT32_C(0xfffffffe), "%#x", uint32_t);
+    CHECKVAL(*pu32, UINT32_C(0xfffffffe), "%#x");
+
+    *pu32 = UINT32_C(0x80000000);
+    CHECKOP(ASMAtomicUoDecU32(pu32), UINT32_C(0x7fffffff), "%#x", uint32_t);
+    CHECKVAL(*pu32, UINT32_C(0x7fffffff), "%#x");
+}
+
+
+static void tstASMAtomicUoDecU32(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicUoDecU32, uint32_t);
 }
 
 
@@ -1176,6 +1223,45 @@ DECLINLINE(void) tstASMAtomicAndOrU64Worker(uint64_t volatile *pu64)
 static void tstASMAtomicAndOrU64(void)
 {
     DO_SIMPLE_TEST(ASMAtomicAndOrU64, uint64_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicUoAndOrU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = UINT32_C(0xffffffff);
+
+    ASMAtomicUoOrU32(pu32, UINT32_C(0xffffffff));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
+
+    ASMAtomicUoAndU32(pu32, UINT32_C(0xffffffff));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
+
+    ASMAtomicUoAndU32(pu32, UINT32_C(0x8f8f8f8f));
+    CHECKVAL(*pu32, UINT32_C(0x8f8f8f8f), "%#x");
+
+    ASMAtomicUoOrU32(pu32, UINT32_C(0x70707070));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%#x");
+
+    ASMAtomicUoAndU32(pu32, UINT32_C(1));
+    CHECKVAL(*pu32, UINT32_C(1), "%#x");
+
+    ASMAtomicUoOrU32(pu32, UINT32_C(0x80000000));
+    CHECKVAL(*pu32, UINT32_C(0x80000001), "%#x");
+
+    ASMAtomicUoAndU32(pu32, UINT32_C(0x80000000));
+    CHECKVAL(*pu32, UINT32_C(0x80000000), "%#x");
+
+    ASMAtomicUoAndU32(pu32, UINT32_C(0));
+    CHECKVAL(*pu32, UINT32_C(0), "%#x");
+
+    ASMAtomicUoOrU32(pu32, UINT32_C(0x42424242));
+    CHECKVAL(*pu32, UINT32_C(0x42424242), "%#x");
+}
+
+
+static void tstASMAtomicUoAndOrU32(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicUoAndOrU32, uint32_t);
 }
 
 
@@ -1519,61 +1605,66 @@ void tstASMBench(void)
     } while (0)
 #endif
 
-    BENCH(s_u32 = 0,                            "s_u32 = 0");
-    BENCH(ASMAtomicUoReadU8(&s_u8),             "ASMAtomicUoReadU8");
-    BENCH(ASMAtomicUoReadS8(&s_i8),             "ASMAtomicUoReadS8");
-    BENCH(ASMAtomicUoReadU16(&s_u16),           "ASMAtomicUoReadU16");
-    BENCH(ASMAtomicUoReadS16(&s_i16),           "ASMAtomicUoReadS16");
-    BENCH(ASMAtomicUoReadU32(&s_u32),           "ASMAtomicUoReadU32");
-    BENCH(ASMAtomicUoReadS32(&s_i32),           "ASMAtomicUoReadS32");
-    BENCH(ASMAtomicUoReadU64(&s_u64),           "ASMAtomicUoReadU64");
-    BENCH(ASMAtomicUoReadS64(&s_i64),           "ASMAtomicUoReadS64");
-    BENCH(ASMAtomicReadU8(&s_u8),               "ASMAtomicReadU8");
-    BENCH(ASMAtomicReadS8(&s_i8),               "ASMAtomicReadS8");
-    BENCH(ASMAtomicReadU16(&s_u16),             "ASMAtomicReadU16");
-    BENCH(ASMAtomicReadS16(&s_i16),             "ASMAtomicReadS16");
-    BENCH(ASMAtomicReadU32(&s_u32),             "ASMAtomicReadU32");
-    BENCH(ASMAtomicReadS32(&s_i32),             "ASMAtomicReadS32");
-    BENCH(ASMAtomicReadU64(&s_u64),             "ASMAtomicReadU64");
-    BENCH(ASMAtomicReadS64(&s_i64),             "ASMAtomicReadS64");
-    BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8");
-    BENCH(ASMAtomicUoWriteS8(&s_i8, 0),         "ASMAtomicUoWriteS8");
-    BENCH(ASMAtomicUoWriteU16(&s_u16, 0),       "ASMAtomicUoWriteU16");
-    BENCH(ASMAtomicUoWriteS16(&s_i16, 0),       "ASMAtomicUoWriteS16");
-    BENCH(ASMAtomicUoWriteU32(&s_u32, 0),       "ASMAtomicUoWriteU32");
-    BENCH(ASMAtomicUoWriteS32(&s_i32, 0),       "ASMAtomicUoWriteS32");
-    BENCH(ASMAtomicUoWriteU64(&s_u64, 0),       "ASMAtomicUoWriteU64");
-    BENCH(ASMAtomicUoWriteS64(&s_i64, 0),       "ASMAtomicUoWriteS64");
-    BENCH(ASMAtomicWriteU8(&s_u8, 0),           "ASMAtomicWriteU8");
-    BENCH(ASMAtomicWriteS8(&s_i8, 0),           "ASMAtomicWriteS8");
-    BENCH(ASMAtomicWriteU16(&s_u16, 0),         "ASMAtomicWriteU16");
-    BENCH(ASMAtomicWriteS16(&s_i16, 0),         "ASMAtomicWriteS16");
-    BENCH(ASMAtomicWriteU32(&s_u32, 0),         "ASMAtomicWriteU32");
-    BENCH(ASMAtomicWriteS32(&s_i32, 0),         "ASMAtomicWriteS32");
-    BENCH(ASMAtomicWriteU64(&s_u64, 0),         "ASMAtomicWriteU64");
-    BENCH(ASMAtomicWriteS64(&s_i64, 0),         "ASMAtomicWriteS64");
-    BENCH(ASMAtomicXchgU8(&s_u8, 0),            "ASMAtomicXchgU8");
-    BENCH(ASMAtomicXchgS8(&s_i8, 0),            "ASMAtomicXchgS8");
-    BENCH(ASMAtomicXchgU16(&s_u16, 0),          "ASMAtomicXchgU16");
-    BENCH(ASMAtomicXchgS16(&s_i16, 0),          "ASMAtomicXchgS16");
-    BENCH(ASMAtomicXchgU32(&s_u32, 0),          "ASMAtomicXchgU32");
-    BENCH(ASMAtomicXchgS32(&s_i32, 0),          "ASMAtomicXchgS32");
-    BENCH(ASMAtomicXchgU64(&s_u64, 0),          "ASMAtomicXchgU64");
-    BENCH(ASMAtomicXchgS64(&s_i64, 0),          "ASMAtomicXchgS64");
-    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),    "ASMAtomicCmpXchgU32");
-    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),    "ASMAtomicCmpXchgS32");
-    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),    "ASMAtomicCmpXchgU64");
-    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),    "ASMAtomicCmpXchgS64");
-    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),    "ASMAtomicCmpXchgU32/neg");
-    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),    "ASMAtomicCmpXchgS32/neg");
-    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),    "ASMAtomicCmpXchgU64/neg");
-    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),    "ASMAtomicCmpXchgS64/neg");
-    BENCH(ASMAtomicIncU32(&s_u32),              "ASMAtomicIncU32");
-    BENCH(ASMAtomicIncS32(&s_i32),              "ASMAtomicIncS32");
-    BENCH(ASMAtomicDecU32(&s_u32),              "ASMAtomicDecU32");
-    BENCH(ASMAtomicDecS32(&s_i32),              "ASMAtomicDecS32");
-    BENCH(ASMAtomicAddU32(&s_u32, 5),           "ASMAtomicAddU32");
-    BENCH(ASMAtomicAddS32(&s_i32, 5),           "ASMAtomicAddS32");
+    BENCH(s_u32 = 0,                             "s_u32 = 0");
+    BENCH(ASMAtomicUoReadU8(&s_u8),              "ASMAtomicUoReadU8");
+    BENCH(ASMAtomicUoReadS8(&s_i8),              "ASMAtomicUoReadS8");
+    BENCH(ASMAtomicUoReadU16(&s_u16),            "ASMAtomicUoReadU16");
+    BENCH(ASMAtomicUoReadS16(&s_i16),            "ASMAtomicUoReadS16");
+    BENCH(ASMAtomicUoReadU32(&s_u32),            "ASMAtomicUoReadU32");
+    BENCH(ASMAtomicUoReadS32(&s_i32),            "ASMAtomicUoReadS32");
+    BENCH(ASMAtomicUoReadU64(&s_u64),            "ASMAtomicUoReadU64");
+    BENCH(ASMAtomicUoReadS64(&s_i64),            "ASMAtomicUoReadS64");
+    BENCH(ASMAtomicReadU8(&s_u8),                "ASMAtomicReadU8");
+    BENCH(ASMAtomicReadS8(&s_i8),                "ASMAtomicReadS8");
+    BENCH(ASMAtomicReadU16(&s_u16),              "ASMAtomicReadU16");
+    BENCH(ASMAtomicReadS16(&s_i16),              "ASMAtomicReadS16");
+    BENCH(ASMAtomicReadU32(&s_u32),              "ASMAtomicReadU32");
+    BENCH(ASMAtomicReadS32(&s_i32),              "ASMAtomicReadS32");
+    BENCH(ASMAtomicReadU64(&s_u64),              "ASMAtomicReadU64");
+    BENCH(ASMAtomicReadS64(&s_i64),              "ASMAtomicReadS64");
+    BENCH(ASMAtomicUoWriteU8(&s_u8, 0),          "ASMAtomicUoWriteU8");
+    BENCH(ASMAtomicUoWriteS8(&s_i8, 0),          "ASMAtomicUoWriteS8");
+    BENCH(ASMAtomicUoWriteU16(&s_u16, 0),        "ASMAtomicUoWriteU16");
+    BENCH(ASMAtomicUoWriteS16(&s_i16, 0),        "ASMAtomicUoWriteS16");
+    BENCH(ASMAtomicUoWriteU32(&s_u32, 0),        "ASMAtomicUoWriteU32");
+    BENCH(ASMAtomicUoWriteS32(&s_i32, 0),        "ASMAtomicUoWriteS32");
+    BENCH(ASMAtomicUoWriteU64(&s_u64, 0),        "ASMAtomicUoWriteU64");
+    BENCH(ASMAtomicUoWriteS64(&s_i64, 0),        "ASMAtomicUoWriteS64");
+    BENCH(ASMAtomicWriteU8(&s_u8, 0),            "ASMAtomicWriteU8");
+    BENCH(ASMAtomicWriteS8(&s_i8, 0),            "ASMAtomicWriteS8");
+    BENCH(ASMAtomicWriteU16(&s_u16, 0),          "ASMAtomicWriteU16");
+    BENCH(ASMAtomicWriteS16(&s_i16, 0),          "ASMAtomicWriteS16");
+    BENCH(ASMAtomicWriteU32(&s_u32, 0),          "ASMAtomicWriteU32");
+    BENCH(ASMAtomicWriteS32(&s_i32, 0),          "ASMAtomicWriteS32");
+    BENCH(ASMAtomicWriteU64(&s_u64, 0),          "ASMAtomicWriteU64");
+    BENCH(ASMAtomicWriteS64(&s_i64, 0),          "ASMAtomicWriteS64");
+    BENCH(ASMAtomicXchgU8(&s_u8, 0),             "ASMAtomicXchgU8");
+    BENCH(ASMAtomicXchgS8(&s_i8, 0),             "ASMAtomicXchgS8");
+    BENCH(ASMAtomicXchgU16(&s_u16, 0),           "ASMAtomicXchgU16");
+    BENCH(ASMAtomicXchgS16(&s_i16, 0),           "ASMAtomicXchgS16");
+    BENCH(ASMAtomicXchgU32(&s_u32, 0),           "ASMAtomicXchgU32");
+    BENCH(ASMAtomicXchgS32(&s_i32, 0),           "ASMAtomicXchgS32");
+    BENCH(ASMAtomicXchgU64(&s_u64, 0),           "ASMAtomicXchgU64");
+    BENCH(ASMAtomicXchgS64(&s_i64, 0),           "ASMAtomicXchgS64");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),     "ASMAtomicCmpXchgU32");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),     "ASMAtomicCmpXchgS32");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),     "ASMAtomicCmpXchgU64");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),     "ASMAtomicCmpXchgS64");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),     "ASMAtomicCmpXchgU32/neg");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),     "ASMAtomicCmpXchgS32/neg");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),     "ASMAtomicCmpXchgU64/neg");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),     "ASMAtomicCmpXchgS64/neg");
+    BENCH(ASMAtomicIncU32(&s_u32),               "ASMAtomicIncU32");
+    BENCH(ASMAtomicIncS32(&s_i32),               "ASMAtomicIncS32");
+    BENCH(ASMAtomicDecU32(&s_u32),               "ASMAtomicDecU32");
+    BENCH(ASMAtomicDecS32(&s_i32),               "ASMAtomicDecS32");
+    BENCH(ASMAtomicAddU32(&s_u32, 5),            "ASMAtomicAddU32");
+    BENCH(ASMAtomicAddS32(&s_i32, 5),            "ASMAtomicAddS32");
+    BENCH(ASMAtomicUoIncU32(&s_u32),             "ASMAtomicUoIncU32");
+    BENCH(ASMAtomicUoDecU32(&s_u32),             "ASMAtomicUoDecU32");
+    BENCH(ASMAtomicUoAndU32(&s_u32, 0xffffffff), "ASMAtomicUoAndU32");
+    BENCH(ASMAtomicUoOrU32(&s_u32, 0xffffffff),  "ASMAtomicUoOrU32");
+
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
@@ -1617,6 +1708,10 @@ int main(int argc, char *argv[])
     tstASMAtomicDecIncS64();
     tstASMAtomicAndOrU32();
     tstASMAtomicAndOrU64();
+
+    tstASMAtomicUoIncU32();
+    tstASMAtomicUoDecU32();
+    tstASMAtomicUoAndOrU32();
 
     tstASMMemZeroPage();
     tstASMMemIsZeroPage(g_hTest);
