@@ -522,7 +522,7 @@ SEH64_END_PROLOGUE
  %define  uDividendHi           rdx
  %define  uDividendLo           rax
  %ifdef ASM_CALL64_GCC
-  %define uDivisior             r8
+  %define uDivisor              r8
   %define puQuotient            rdi
   %define puRemainder           rsi
         mov     rax, rcx
