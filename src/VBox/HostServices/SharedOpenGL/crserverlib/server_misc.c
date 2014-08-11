@@ -1701,8 +1701,6 @@ void crServerDumpDrawelv(GLuint idx, const char*pszElFormat, uint32_t cbEl, cons
 void crServerDumpBuffer(int idx)
 {
     CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
-    CR_BLITTER_WINDOW BltWin;
-    CR_BLITTER_CONTEXT BltCtx;
     CRContext *ctx = crStateGetCurrent();
     GLint idFBO;
     GLint idTex;
@@ -1724,15 +1722,12 @@ void crServerDumpBuffer(int idx)
     idFBO = CR_SERVER_FBO_FOR_IDX(cr_server.currentMural, idx);
     idTex = CR_SERVER_FBO_TEX_FOR_IDX(cr_server.currentMural, idx);
 
-    crServerVBoxBlitterWinInit(&BltWin, cr_server.currentMural);
-    crServerVBoxBlitterCtxInit(&BltCtx, pCtxInfo);
-
     RedirTex.width = cr_server.currentMural->fboWidth;
     RedirTex.height = cr_server.currentMural->fboHeight;
     RedirTex.target = GL_TEXTURE_2D;
     RedirTex.hwid = idTex;
 
-    crRecDumpBuffer(&cr_server.Recorder, ctx, &BltCtx, &BltWin, idFBO, idTex ? &RedirTex : NULL);
+    crRecDumpBuffer(&cr_server.Recorder, ctx, idFBO, idTex ? &RedirTex : NULL);
 }
 
 void crServerDumpTexture(const VBOXVR_TEXTURE *pTex)
@@ -1757,8 +1752,6 @@ void crServerDumpTexture(const VBOXVR_TEXTURE *pTex)
 void crServerDumpTextures()
 {
     CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
-    CR_BLITTER_WINDOW BltWin;
-    CR_BLITTER_CONTEXT BltCtx;
     CRContext *ctx = crStateGetCurrent();
     int rc = crServerDumpCheckInit();
     if (!RT_SUCCESS(rc))
@@ -1767,10 +1760,7 @@ void crServerDumpTextures()
         return;
     }
 
-    crServerVBoxBlitterWinInit(&BltWin, cr_server.currentMural);
-    crServerVBoxBlitterCtxInit(&BltCtx, pCtxInfo);
-
-    crRecDumpTextures(&cr_server.Recorder, ctx, &BltCtx, &BltWin);
+    crRecDumpTextures(&cr_server.Recorder, ctx);
 }
 
 void crServerDumpFilterOpLeave(unsigned long event, CR_DUMPER *pDumper)

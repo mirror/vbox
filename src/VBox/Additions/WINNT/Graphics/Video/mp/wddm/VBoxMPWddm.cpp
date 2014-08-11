@@ -448,7 +448,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSourceNew(PVBOXMP_DEVEXT pDevExt, PVBOXWDD
             return false;
     }
 
-    if (!pSource->AllocData.Addr.SegmentId)
+    if (!pSource->AllocData.Addr.SegmentId && pSource->AllocData.SurfDesc.width)
         return false;
 
     VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
@@ -5140,31 +5140,17 @@ DxgkDdiSetVidPnSourceAddress(
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
 
-    NTSTATUS Status = STATUS_SUCCESS;
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    Assert((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceAddress->VidPnSourceId);
-
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
-    POINT Pos;
-    Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &Pos);
-    //Assert(Status == STATUS_SUCCESS);
-    if (NT_SUCCESS(Status))
-    {
-        if (memcmp(&pSource->VScreenPos, &Pos, sizeof (Pos)))
-        {
-            pSource->VScreenPos = Pos;
-            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
-        }
-    }
-
-    Status = STATUS_SUCCESS;
-
     if ((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays <= pSetVidPnSourceAddress->VidPnSourceId)
     {
         WARN(("invalid VidPnSourceId (%d), for displays(%d)", pSetVidPnSourceAddress->VidPnSourceId, VBoxCommonFromDeviceExt(pDevExt)->cDisplays));
         return STATUS_INVALID_PARAMETER;
     }
 
+    vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId);
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
     PVBOXWDDM_ALLOCATION pAllocation;
     Assert(pSetVidPnSourceAddress->hAllocation);
     Assert(pSetVidPnSourceAddress->hAllocation || pSource->pPrimaryAllocation);
@@ -5224,23 +5210,7 @@ DxgkDdiSetVidPnSourceVisibility(
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
 
-    NTSTATUS Status = STATUS_SUCCESS;
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
-    Assert((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceVisibility->VidPnSourceId);
-
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
-    POINT Pos;
-    Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId, &Pos);
-    //Assert(Status == STATUS_SUCCESS);
-    if (NT_SUCCESS(Status))
-    {
-        if (memcmp(&pSource->VScreenPos, &Pos, sizeof (Pos)))
-        {
-            pSource->VScreenPos = Pos;
-            pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
-        }
-    }
-    Status = STATUS_SUCCESS;
 
     if ((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays <= pSetVidPnSourceVisibility->VidPnSourceId)
     {
@@ -5248,6 +5218,10 @@ DxgkDdiSetVidPnSourceVisibility(
         return STATUS_INVALID_PARAMETER;
     }
 
+    vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId);
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
     PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
     if (pAllocation)
     {
@@ -6748,10 +6722,9 @@ DxgkDdiCreateContext(
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
             for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
-                pDevExt->aSources[i].u8SyncState = 0;
-                NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
-                //Assert(tmpStatus == STATUS_SUCCESS);
+                vboxWddmDisplaySettingsCheckPos(pDevExt, i);
             }
+
 #ifdef VBOX_WITH_CROGL
             if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
             {
