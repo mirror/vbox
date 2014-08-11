@@ -31,6 +31,8 @@
 
 #if defined(WINDOWS)
 # define CR_DEBUG_CONSOLE_ENABLE
+
+# include "Shlwapi.h"
 #endif
 
 #if defined(WINDOWS) && defined(IN_GUEST)
@@ -313,7 +315,7 @@ static DECLCALLBACK(void) crDebugBackdoorDispMp(char* pcszStr)
 #endif
 
 
-#if defined(DEBUG) && defined(WINDOWS) /* && (!defined(DEBUG_misha) || !defined(IN_GUEST) ) */
+#if defined(WINDOWS) /* && (!defined(DEBUG_misha) || !defined(IN_GUEST) ) */
 # define CR_DEBUG_DBGPRINT_ENABLE
 #endif
 
@@ -323,6 +325,75 @@ static void crDebugDbgPrint(const char *str)
     OutputDebugString(str);
     OutputDebugString("\n");
 }
+
+static void crDebugDbgPrintF(const char * szString, ...)
+{
+    char szBuffer[4096] = {0};
+    va_list pArgList;
+    va_start(pArgList, szString);
+    vsprintf( szBuffer, szString, pArgList );
+    va_end(pArgList);
+
+    OutputDebugStringA(szBuffer);
+}
+
+static void crDebugDmlPrint(const char* pszDesc, const char* pszCmd)
+{
+    crDebugDbgPrintF("<?dml?><exec cmd=\"%s\">%s</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd);
+}
+
+
+DECLEXPORT(void) crDbgCmdPrint(const char *description1, const char *description2, const char *cmd, ...)
+{
+    va_list args;
+    char aTxt[8092];
+    char aCmd[8092];
+
+    sprintf( aTxt, "%s%s", description1, description2 );
+
+    va_start( args, cmd );
+
+    vsprintf( aCmd, cmd, args );
+
+    va_end( args );
+
+    crDebugDmlPrint(aTxt, aCmd);
+
+    crDebug("%s: %s", aTxt, aCmd);
+}
+
+DECLEXPORT(void) crDbgCmdSymLoadPrint(const char *modName, const void*pvAddress)
+{
+    static bool fEnable = false;
+    static bool fInitialized = false;
+    const char * pszName;
+    static const char * pszModulePath = NULL;
+
+    if (!fInitialized)
+    {
+#ifndef DEBUG_misha
+        if (crGetenv( "CR_DEBUG_MODULE_ENABLE" ))
+#endif
+        {
+            fEnable = true;
+        }
+
+        fInitialized = true;
+    }
+
+    if (!fEnable)
+        return;
+
+    pszName = PathFindFileNameA(modName);
+
+    if (!pszModulePath)
+        pszModulePath = crGetenv("CR_DEBUG_MODULE_PATH");
+    if (!pszModulePath)
+        pszModulePath = "c:\\Users\\senmk\\Downloads\\Data\\Data";
+
+    crDbgCmdPrint("load modules for ", pszName, ".reload /i /f %s\\%s=%#p", pszModulePath, pszName, pvAddress);
+}
+
 #endif
 
 DECLEXPORT(void) crDebug(const char *format, ... )
@@ -512,4 +583,24 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     }
 #endif
     va_end( args );
+}
+
+BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
+{
+    (void) lpvReserved;
+
+    switch (fdwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+        {
+            char aName[MAX_PATH];
+            GetModuleFileNameA(hDLLInst, aName, RT_ELEMENTS(aName));
+            crDbgCmdSymLoadPrint(aName, hDLLInst);
+            break;
+        }
+        default:
+            break;
+    }
+
+    return TRUE;
 }
