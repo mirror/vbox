@@ -651,7 +651,8 @@ RuntimeR3_SOURCES.amd64 += \
 	common/asm/ASMAtomicUoOrU32.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
-	common/math/bignum-amd64-x86.asm
+	common/math/bignum-amd64-x86.asm \
+	common/math/RTUInt128MulByU64.asm
 
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
@@ -1809,7 +1810,8 @@ RuntimeR0Drv_SOURCES    = \
 RuntimeR0Drv_SOURCES.amd64 = \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
-	common/math/bignum-amd64-x86.asm
+	common/math/bignum-amd64-x86.asm \
+	common/math/RTUInt128MulByU64.asm
 RuntimeR0Drv_SOURCES.x86   = \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \

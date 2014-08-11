@@ -34,10 +34,12 @@
  %define RTBIGNUM_ELEMENT_SIZE          8
  %define RTBIGNUM_ELEMENT_BITS          (RTBIGNUM_ELEMENT_SIZE * 8)
  %define RTBIGNUM_ELEMENT_BIT(iBit)     RT_BIT_64(iBit)
+ %define RTBIGNUM_ELEMENT_PRE           qword
 %else
  %define RTBIGNUM_ELEMENT_SIZE          4
  %define RTBIGNUM_ELEMENT_BITS          (RTBIGNUM_ELEMENT_SIZE * 8)
  %define RTBIGNUM_ELEMENT_BIT(iBit)     RT_BIT_32(iBit)
+ %define RTBIGNUM_ELEMENT_PRE           dword
 %endif
 
 struc RTBIGNUM

@@ -28,6 +28,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/bignum.h>
+#include <iprt/uint128.h>
 
 #include <iprt/test.h>
 #include <iprt/thread.h>
@@ -109,6 +110,75 @@ static uint8_t const g_abMinus1[] = { 0xff, 0xff, 0xff, 0xff,  0xff, 0xff, 0xff,
 static int64_t  g_iBitMinus1 = -1;
 static RTBIGNUM g_Minus1;
 
+
+/** @name The components of a real PKCS #7 signature (extracted from a build of
+ *   this testcase).
+ * @{ */
+static uint8_t const g_abPubKeyExp[] = { 0x01, 0x00, 0x01 };
+static RTBIGNUM      g_PubKeyExp;
+static uint8_t const g_abPubKeyMod[] =
+{
+    0x00, 0xea, 0x61, 0x4e, 0xa0, 0xb2, 0xae, 0x38, 0xbc, 0x43, 0x24, 0x5a, 0x28, 0xc7, 0xa0, 0x69,
+    0x82, 0x11, 0xd5, 0x78, 0xe8, 0x6b, 0x41, 0x54, 0x7b, 0x6c, 0x69, 0x13, 0xc8, 0x68, 0x75, 0x0f,
+    0xe4, 0x66, 0x54, 0xcd, 0xe3, 0x55, 0x33, 0x3b, 0x7f, 0x9f, 0x55, 0x75, 0x80, 0x6e, 0xd0, 0x8a,
+    0xff, 0xc1, 0xf4, 0xbf, 0xfd, 0x70, 0x9b, 0x73, 0x7e, 0xee, 0xf1, 0x80, 0x23, 0xd4, 0xbd, 0xba,
+    0xdc, 0xce, 0x09, 0x4a, 0xeb, 0xb0, 0xdd, 0x86, 0x4a, 0x0b, 0x8e, 0x3e, 0x9a, 0x8a, 0x58, 0xed,
+    0x98, 0x4f, 0x25, 0xe5, 0x0c, 0x18, 0xd8, 0x10, 0x95, 0xce, 0xe4, 0x19, 0x82, 0x38, 0xcd, 0x76,
+    0x6a, 0x38, 0xe5, 0x14, 0xe6, 0x95, 0x0d, 0x80, 0xc5, 0x09, 0x5e, 0x93, 0xf4, 0x6f, 0x82, 0x8e,
+    0x9c, 0x81, 0x09, 0xd6, 0xd4, 0xee, 0xd5, 0x1f, 0x94, 0x2d, 0x13, 0x18, 0x9a, 0xbc, 0x88, 0x5d,
+    0x9a, 0xe5, 0x66, 0x08, 0x99, 0x93, 0x1b, 0x8a, 0x69, 0x3f, 0x68, 0xb2, 0x97, 0x2a, 0x24, 0xf6,
+    0x65, 0x2a, 0x94, 0x33, 0x94, 0x14, 0x5c, 0x6f, 0xff, 0x95, 0xd0, 0x2b, 0xf0, 0x2b, 0xcb, 0x49,
+    0xcd, 0x03, 0x3a, 0x45, 0xd5, 0x22, 0x1c, 0xb3, 0xee, 0xd5, 0xaf, 0xb3, 0x5b, 0xcb, 0x1b, 0x35,
+    0x4e, 0xff, 0x21, 0x0a, 0x55, 0x1f, 0xa0, 0xf9, 0xdc, 0xad, 0x7a, 0x89, 0x0b, 0x6e, 0x3f, 0x75,
+    0xc0, 0x6c, 0x44, 0xff, 0x90, 0x63, 0x79, 0xcf, 0x70, 0x20, 0x60, 0x33, 0x3c, 0xb1, 0xfa, 0x6b,
+    0x6c, 0x55, 0x3c, 0xeb, 0x8d, 0x18, 0xe9, 0x0a, 0x81, 0xd5, 0x24, 0xc1, 0x88, 0x7c, 0xa6, 0x8e,
+    0xd3, 0x2c, 0x51, 0x1d, 0x6d, 0xdf, 0x51, 0xd5, 0x72, 0x54, 0x7a, 0x98, 0xc0, 0x36, 0x35, 0x21,
+    0x66, 0x3c, 0x2f, 0x01, 0xc0, 0x8e, 0xb0, 0x56, 0x60, 0x6e, 0x67, 0x4f, 0x5f, 0xac, 0x05, 0x60,
+    0x9b
+};
+static RTBIGNUM g_PubKeyMod;
+static uint8_t const g_abSignature[] =
+{
+    0x00, 0xae, 0xca, 0x93, 0x47, 0x0b, 0xfa, 0xd8, 0xb9, 0xbb, 0x5a, 0x5e, 0xf6, 0x75, 0x90, 0xed,
+    0x80, 0x37, 0x03, 0x6d, 0x23, 0x91, 0x30, 0x0c, 0x9d, 0xbf, 0x34, 0xc1, 0xf9, 0x43, 0xa7, 0xec,
+    0xc0, 0x83, 0xc0, 0x98, 0x3f, 0x8a, 0x65, 0x48, 0x7c, 0xa4, 0x9f, 0x14, 0x4d, 0x52, 0x90, 0x2d,
+    0x17, 0xd1, 0x3e, 0x05, 0xd6, 0x35, 0x1b, 0xdb, 0xe5, 0x1a, 0xa2, 0x54, 0x8c, 0x30, 0x6f, 0xfe,
+    0xa1, 0xd9, 0x98, 0x3f, 0xb5, 0x65, 0x14, 0x9c, 0x50, 0x55, 0xa1, 0xbf, 0xb5, 0x12, 0xc4, 0xf2,
+    0x72, 0x27, 0x14, 0x59, 0xb5, 0x23, 0x67, 0x11, 0x2a, 0xd8, 0xa8, 0x85, 0x4b, 0xc5, 0xb0, 0x2f,
+    0x73, 0x54, 0xcf, 0x33, 0xa0, 0x06, 0xf2, 0x8e, 0x4f, 0x4b, 0x18, 0x97, 0x08, 0x47, 0xce, 0x0c,
+    0x47, 0x97, 0x0d, 0xbd, 0x8b, 0xce, 0x61, 0x31, 0x21, 0x7e, 0xc4, 0x1d, 0x03, 0xf8, 0x06, 0xca,
+    0x9f, 0xd3, 0x5e, 0x4b, 0xfc, 0xf1, 0x99, 0x34, 0x78, 0x83, 0xfa, 0xab, 0x9c, 0x7c, 0x6b, 0x5c,
+    0x3d, 0x45, 0x39, 0x6d, 0x6a, 0x6c, 0xd5, 0x63, 0x3e, 0xbe, 0x09, 0x62, 0x64, 0x5f, 0x83, 0x3b,
+    0xb6, 0x5c, 0x7e, 0x8e, 0xeb, 0x1e, 0x6a, 0x34, 0xb9, 0xc7, 0x92, 0x92, 0x58, 0x64, 0x48, 0xfe,
+    0xf8, 0x35, 0x53, 0x07, 0x89, 0xb4, 0x29, 0x4d, 0x3d, 0x79, 0x43, 0x73, 0x0f, 0x16, 0x21, 0xab,
+    0xb7, 0x07, 0x2b, 0x5a, 0x8a, 0x0f, 0xd7, 0x2e, 0x95, 0xb4, 0x26, 0x66, 0x65, 0x72, 0xac, 0x7e,
+    0x46, 0x70, 0xe6, 0xad, 0x43, 0xa2, 0x73, 0x54, 0x6a, 0x41, 0xc8, 0x9c, 0x1e, 0x65, 0xed, 0x06,
+    0xd1, 0xc7, 0x99, 0x3e, 0x5f, 0x5a, 0xd3, 0xd0, 0x1a, 0x9b, 0x0e, 0x3e, 0x04, 0x66, 0xb6, 0xaa,
+    0xa6, 0x51, 0xb8, 0xc0, 0x13, 0x19, 0x34, 0x0e, 0x86, 0x02, 0xd5, 0xc8, 0x10, 0xaa, 0x1f, 0x97,
+    0x95
+};
+static RTBIGNUM g_Signature;
+static uint8_t const g_abSignatureDecrypted[] =
+{
+    0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x30, 0x21, 0x30,
+    0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14, 0x54, 0x60, 0xb0, 0x65,
+    0xf1, 0xbc, 0x40, 0x77, 0xfc, 0x9e, 0xfc, 0x2f, 0x94, 0x62, 0x62, 0x61, 0x43, 0xb9, 0x01, 0xb9
+};
+static RTBIGNUM g_SignatureDecrypted;
+/** @} */
 
 
 static void testInitOneLittleEndian(uint8_t const *pb, size_t cb, PRTBIGNUM pBigNum)
@@ -362,6 +432,116 @@ static void testAddition(void)
     }
 }
 
+static void testShift(void)
+{
+    RTTestSub(g_hTest, "RTBigNumShiftLeft, RTBigNumShiftRight");
+
+    for (uint32_t fFlags = 0; fFlags <= RTBIGNUMINIT_F_SENSITIVE; fFlags += RTBIGNUMINIT_F_SENSITIVE)
+    {
+        RTBIGNUM Result;
+        RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Result, fFlags), VINF_SUCCESS);
+        RTBIGNUM Result2;
+        RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Result2, fFlags), VINF_SUCCESS);
+
+        /* basic left tests */
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Minus1, 1), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, -2) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Minus1, 0), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, -1) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Minus1, 2), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, -4) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Minus1, 8), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, -256) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Zero, 511), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_FourtyTwo, 1), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 84) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_FourtyTwo, 27+24), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, UINT64_C(0x150000000000000)) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_FourtyTwo, 27), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result2, &Result, 24), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result2, UINT64_C(0x150000000000000)) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_LargePositive, 2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumMultiply(&Result2, &g_LargePositive, &g_Four), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompare(&Result2, &Result) == 0);
+
+        /* basic right tests. */
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_Minus1, 1), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_Minus1, 8), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_Zero, 511), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 0), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 42) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 1), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 21) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 2), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 10) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 3), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 5) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 4), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 2) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 5), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 1) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 6), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_FourtyTwo, 549), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompareWithS64(&Result, 0) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumDivideLong(&Result2, &Result, &g_LargePositive, &g_Four), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &g_LargePositive, 2), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompare(&Result2, &Result) == 0);
+
+        /* Some simple back and forth. */
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_One, 2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result2, &Result, 2), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompare(&Result2, &g_One) == 0);
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_Three, 63), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result2, &Result, 63), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompare(&Result2, &g_Three) == 0);
+
+        for (uint32_t i = 0; i < 1024; i++)
+        {
+            RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_LargePositive, i), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result2, &Result, i), VINF_SUCCESS);
+            RTTESTI_CHECK(RTBigNumCompare(&Result2, &g_LargePositive) == 0);
+        }
+
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &g_LargePositive, 2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result2, &Result, 250), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftLeft(&Result, &Result2, 999), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result2, &Result, 1), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &Result2, 250), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result2, &Result, 1), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumShiftRight(&Result, &Result2, 999), VINF_SUCCESS);
+        RTTESTI_CHECK(RTBigNumCompare(&Result, &g_LargePositive) == 0);
+
+
+        RTTESTI_CHECK_RC(RTBigNumDestroy(&Result), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTBigNumDestroy(&Result2), VINF_SUCCESS);
+    }
+}
+
 static bool testHexStringToNum(PRTBIGNUM pBigNum, const char *pszHex, uint32_t fFlags)
 {
     uint8_t abBuf[_4K];
@@ -435,11 +615,71 @@ static void testMultiplication(void)
 }
 
 
+#if 0 /* Java program for generating testDivision test data. */
+import java.math.BigInteger;
+import java.lang.System;
+import java.lang.Integer;
+import java.util.Random;
+import java.security.SecureRandom;
+
+class bigintdivtestgen
+{
+
+public static String format(BigInteger BigNum)
+{
+    String str = BigNum.toString(16);
+    if ((str.length() & 1) != 0)
+        str = "0" + str;
+    return str;
+}
+
+public static void main(String args[])
+{
+    Random Rnd = new SecureRandom();
+
+    /* Can't go to far here because before we reach 11K both windows compilers
+       will have reached some kind of section limit. Probably string pool related. */
+    int cDivisorLarger = 0;
+    for (int i = 0; i < 9216; i++)
+    {
+        int cDividendBits = Rnd.nextInt(4095) + 1;
+        int cDivisorBits  = i < 9 ? cDividendBits : Rnd.nextInt(4095) + 1;
+        if (cDivisorBits > cDividendBits)
+        {
+            cDivisorLarger++;
+            if (cDivisorLarger > i / 4)
+                cDivisorBits = Rnd.nextInt(cDividendBits);
+        }
+
+        BigInteger Dividend = new BigInteger(cDividendBits, Rnd);
+        BigInteger Divisor  = new BigInteger(cDivisorBits, Rnd);
+        while (Divisor.compareTo(BigInteger.ZERO) == 0) {
+            cDivisorBits++;
+            Divisor = new BigInteger(cDivisorBits, Rnd);
+        }
+
+        BigInteger[] Result = Dividend.divideAndRemainder(Divisor);
+
+        System.out.println("    { /* i=" + Integer.toString(i)
+                           + " cDividendBits=" + Integer.toString(cDividendBits)
+                           + " cDivisorBits=" + Integer.toString(cDivisorBits) + " */");
+
+        System.out.println("        \"" + format(Dividend)  + "\",");
+        System.out.println("        \"" + format(Divisor)   + "\",");
+        System.out.println("        \"" + format(Result[0]) + "\",");
+        System.out.println("        \"" + format(Result[1]) + "\"");
+        System.out.println("    },");
+    }
+}
+}
+#endif
+
 static void testDivision(void)
 {
     RTTestSub(g_hTest, "RTBigNumDivide");
 
-    for (uint32_t fFlags = 0; fFlags <= RTBIGNUMINIT_F_SENSITIVE; fFlags += RTBIGNUMINIT_F_SENSITIVE)
+    //for (uint32_t fFlags = 0; fFlags <= RTBIGNUMINIT_F_SENSITIVE; fFlags += RTBIGNUMINIT_F_SENSITIVE)
+    uint32_t fFlags = 0;
     {
         RTBIGNUM Quotient;
         RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Quotient, fFlags), VINF_SUCCESS);
@@ -479,39 +719,90 @@ static void testDivision(void)
         RTTESTI_CHECK(RTBigNumCompareWithS64(&Quotient, 1) == 0);
         RTTESTI_CHECK(RTBigNumCompareWithS64(&Remainder, -1) == 0);
 
-
-#if 0
         static struct
         {
-            const char *pszF1, *pszF2, *pszQuotient, *pszRemainder;
-        } s_aTests[] =
+            const char *pszDividend, *pszDivisor, *pszQuotient, *pszRemainder;
+        } const s_aTests[] =
         {
-            {
-                "29865DBFA717181B9DD4B515BD072DE10A5A314385F6DED735AC553FCD307D30C499",
-                "4DD65692F7365B90C55F63988E5B6C448653E7DB9DD941507586BD8CF71398287C",
-                "0CA02E8FFDB0EEA37264338A4AAA91C8974E162DDFCBCF804B434A11955671B89B3645AAB75423D60CA3459B0B4F3F28978DA768779FB54CF362FD61924637582F221C"
+#if 1
+#include "tstRTBigNum-div-test-data.h"
+            {   "ff", "10", /* = */ "0f", "0f" },
+            { /* cDividendBits=323 cDivisorBits=195 */
+                "064530fd21b30e179b5bd5efd1f4a7e8df173c13965bd75e1502891303060b417e62711ceb17a73e56",
+                "0784fac4a7c6b5165a99dc3228b6484cba9c7dfadde85cdde3",
+                "d578cc87ed22ac3630a4d1e5fc590ae6",
+                "06acef436982f9c4fc9b0a44d3df1e72cad3ef0cb51ba20664"
             },
             {
-                "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-                "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-                "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE0000000000000000000000000000000000000001"
-            }
+                "ffffffffffffffffffffffffffffffffffffffffffffffff",
+                "fffffffffffffffffffffffffffffffffffffffffffffffe",
+                "01",
+                "01"
+            },
+            {
+                "922222222222222222222222222222222222222222222222",
+                "811111111111111111111111111111111111111111111111",
+                "01",
+                "111111111111111111111111111111111111111111111111"
+            },
+            {
+                "955555555555555555555555555555555555555555555555",
+                "211111111111111111111111111111111111111111111111",
+                "04",
+                "111111111111111111111111111111111111111111111111"
+            },
+#endif
+            /* This test triggers negative special cases in Knuth's division algorithm. */
+            {
+                "0137698320ec00bcaa13cd9c18df564bf6df45c5c4c73ad2012cb36cf897c5ff00db638256e19c9ba5a8fbe828ac6e8d470a5f3391d4350ca1390f79c4e4f944eb",
+                "67cdd6604eaae98e0699deb2f51cc3fcf51741ec4268f0ab0ee679a83297550049212b724b3433e1e2fea2b8397a2f17ae1fbbdb46bc598b13052896f6fdc1a4",
+                "02",
+                "67cdd6604eaae98e0699deb2f51cc3fcf51741ec4268f0ab0ee679a83297550049212b724b3433e1e2fea2b8397a2f17ae1fbbdb46bc598b13052896f6fdc1a3"
+            },
         };
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
         {
-            RTBIGNUM F1, F2, Expected;
-            if (   testHexStringToNum(&F1, s_aTests[i].pszF1, RTBIGNUMINIT_F_UNSIGNED | fFlags)
-                && testHexStringToNum(&F2, s_aTests[i].pszF2, RTBIGNUMINIT_F_UNSIGNED | fFlags)
-                && testHexStringToNum(&Expected, s_aTests[i].pszResult, RTBIGNUMINIT_F_UNSIGNED | fFlags))
+            RTBIGNUM Dividend, Divisor, ExpectedQ, ExpectedR;
+            if (   testHexStringToNum(&Dividend,  s_aTests[i].pszDividend, RTBIGNUMINIT_F_UNSIGNED | fFlags)
+                && testHexStringToNum(&Divisor,   s_aTests[i].pszDivisor, RTBIGNUMINIT_F_UNSIGNED | fFlags)
+                && testHexStringToNum(&ExpectedQ, s_aTests[i].pszQuotient, RTBIGNUMINIT_F_UNSIGNED | fFlags)
+                && testHexStringToNum(&ExpectedR, s_aTests[i].pszRemainder, RTBIGNUMINIT_F_UNSIGNED | fFlags))
             {
-                RTTESTI_CHECK_RC(RTBigNumDivide(&Quotient, &Remainder, &F1, &F2), VINF_SUCCESS);
-                RTTESTI_CHECK(RTBigNumCompare(&Quotient, &Expected) == 0);
-                RTTESTI_CHECK_RC(RTBigNumDestroy(&F1), VINF_SUCCESS);
-                RTTESTI_CHECK_RC(RTBigNumDestroy(&F2), VINF_SUCCESS);
-                RTTESTI_CHECK_RC(RTBigNumDestroy(&Expected), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTBigNumDivide(&Quotient, &Remainder, &Dividend, &Divisor), VINF_SUCCESS);
+
+                if (   RTBigNumCompare(&Quotient,  &ExpectedQ) != 0
+                    || RTBigNumCompare(&Remainder, &ExpectedR) != 0)
+                {
+                    RTTestIFailed("i=%#x both\n"
+                                  "ExpQ: %.*Rhxs\n"
+                                  "GotQ: %.*Rhxs\n"
+                                  "ExpR: %.*Rhxs\n"
+                                  "GotR: %.*Rhxs\n",
+                                  i,
+                                  ExpectedQ.cUsed * RTBIGNUM_ELEMENT_SIZE, ExpectedQ.pauElements,
+                                  Quotient.cUsed  * RTBIGNUM_ELEMENT_SIZE, Quotient.pauElements,
+                                  ExpectedR.cUsed * RTBIGNUM_ELEMENT_SIZE, ExpectedR.pauElements,
+                                  Remainder.cUsed * RTBIGNUM_ELEMENT_SIZE, Remainder.pauElements);
+                    RTTestIPrintf(RTTESTLVL_ALWAYS,  "{ \"%s\", \"%s\", \"%s\", \"%s\" },\n",
+                                  s_aTests[i].pszDividend, s_aTests[i].pszDivisor,
+                                  s_aTests[i].pszQuotient, s_aTests[i].pszRemainder);
+                }
+
+                RTTESTI_CHECK_RC(RTBigNumDivideLong(&Quotient, &Remainder, &Dividend, &Divisor), VINF_SUCCESS);
+                RTTESTI_CHECK(RTBigNumCompare(&Quotient,  &ExpectedQ) == 0);
+                RTTESTI_CHECK(RTBigNumCompare(&Remainder, &ExpectedR) == 0);
+
+                RTTESTI_CHECK_RC(RTBigNumModulo(&Remainder, &Dividend, &Divisor), VINF_SUCCESS);
+                RTTESTI_CHECK(RTBigNumCompare(&Remainder, &ExpectedR) == 0);
+
+
+                RTTESTI_CHECK_RC(RTBigNumDestroy(&ExpectedR), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTBigNumDestroy(&ExpectedQ), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTBigNumDestroy(&Divisor), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTBigNumDestroy(&Dividend), VINF_SUCCESS);
             }
         }
-#endif
+
         RTTESTI_CHECK_RC(RTBigNumDestroy(&Quotient), VINF_SUCCESS);
         RTTESTI_CHECK_RC(RTBigNumDestroy(&Remainder), VINF_SUCCESS);
     }
@@ -664,10 +955,10 @@ static void testExponentiation(void)
 static void testModExp(void)
 {
     RTTestSub(g_hTest, "RTBigNumModExp");
+    RTBIGNUM Result;
 
     for (uint32_t fFlags = 0; fFlags <= RTBIGNUMINIT_F_SENSITIVE; fFlags += RTBIGNUMINIT_F_SENSITIVE)
     {
-        RTBIGNUM Result;
         RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Result, fFlags), VINF_SUCCESS);
 
         RTTESTI_CHECK_RC(RTBigNumModExp(&Result, &g_One, &g_One, &g_One), VINF_SUCCESS);
@@ -738,6 +1029,11 @@ static void testModExp(void)
 
         RTTESTI_CHECK_RC(RTBigNumDestroy(&Result), VINF_SUCCESS);
     }
+
+    /* Decrypt a PKCS#7 signature. */
+    RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Result, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTBigNumModExp(&Result, &g_Signature, &g_PubKeyExp, &g_PubKeyMod), VINF_SUCCESS);
+    RTTESTI_CHECK(RTBigNumCompare(&Result, &g_SignatureDecrypted) == 0);
 }
 
 
@@ -789,104 +1085,54 @@ static void testToBytes(void)
     RTTESTI_CHECK_RC(RTBigNumToBytesBigEndian(&g_LargePositive, abBuf, sizeof(g_abLargePositive) -1 ), VERR_BUFFER_OVERFLOW);
     RTTESTI_CHECK(memcmp(abBuf, &g_abLargePositive[1], sizeof(g_abLargePositive) - 1) == 0);
     RTTESTI_CHECK(abBuf[sizeof(g_abLargePositive) - 1] == 0xcc);
-
 }
 
 
-static void testBenchmarks(void)
+static void testBenchmarks(bool fOnlyModExp)
 {
     RTTestSub(g_hTest, "Benchmarks");
 
-    /* For the modexp benchmark we decrypt a real PKCS #7 signature. */
-    static uint8_t const s_abPubKeyExp[] = { 0x01, 0x00, 0x01 };
-    RTBIGNUM PubKeyExp;
-    RTTESTI_CHECK_RC_RETV(RTBigNumInit(&PubKeyExp, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
-                                       s_abPubKeyExp, sizeof(s_abPubKeyExp)), VINF_SUCCESS);
-
-    static uint8_t const s_abPubKeyMod[] =
-    {
-        0x00, 0xea, 0x61, 0x4e, 0xa0, 0xb2, 0xae, 0x38, 0xbc, 0x43, 0x24, 0x5a, 0x28, 0xc7, 0xa0, 0x69,
-        0x82, 0x11, 0xd5, 0x78, 0xe8, 0x6b, 0x41, 0x54, 0x7b, 0x6c, 0x69, 0x13, 0xc8, 0x68, 0x75, 0x0f,
-        0xe4, 0x66, 0x54, 0xcd, 0xe3, 0x55, 0x33, 0x3b, 0x7f, 0x9f, 0x55, 0x75, 0x80, 0x6e, 0xd0, 0x8a,
-        0xff, 0xc1, 0xf4, 0xbf, 0xfd, 0x70, 0x9b, 0x73, 0x7e, 0xee, 0xf1, 0x80, 0x23, 0xd4, 0xbd, 0xba,
-        0xdc, 0xce, 0x09, 0x4a, 0xeb, 0xb0, 0xdd, 0x86, 0x4a, 0x0b, 0x8e, 0x3e, 0x9a, 0x8a, 0x58, 0xed,
-        0x98, 0x4f, 0x25, 0xe5, 0x0c, 0x18, 0xd8, 0x10, 0x95, 0xce, 0xe4, 0x19, 0x82, 0x38, 0xcd, 0x76,
-        0x6a, 0x38, 0xe5, 0x14, 0xe6, 0x95, 0x0d, 0x80, 0xc5, 0x09, 0x5e, 0x93, 0xf4, 0x6f, 0x82, 0x8e,
-        0x9c, 0x81, 0x09, 0xd6, 0xd4, 0xee, 0xd5, 0x1f, 0x94, 0x2d, 0x13, 0x18, 0x9a, 0xbc, 0x88, 0x5d,
-        0x9a, 0xe5, 0x66, 0x08, 0x99, 0x93, 0x1b, 0x8a, 0x69, 0x3f, 0x68, 0xb2, 0x97, 0x2a, 0x24, 0xf6,
-        0x65, 0x2a, 0x94, 0x33, 0x94, 0x14, 0x5c, 0x6f, 0xff, 0x95, 0xd0, 0x2b, 0xf0, 0x2b, 0xcb, 0x49,
-        0xcd, 0x03, 0x3a, 0x45, 0xd5, 0x22, 0x1c, 0xb3, 0xee, 0xd5, 0xaf, 0xb3, 0x5b, 0xcb, 0x1b, 0x35,
-        0x4e, 0xff, 0x21, 0x0a, 0x55, 0x1f, 0xa0, 0xf9, 0xdc, 0xad, 0x7a, 0x89, 0x0b, 0x6e, 0x3f, 0x75,
-        0xc0, 0x6c, 0x44, 0xff, 0x90, 0x63, 0x79, 0xcf, 0x70, 0x20, 0x60, 0x33, 0x3c, 0xb1, 0xfa, 0x6b,
-        0x6c, 0x55, 0x3c, 0xeb, 0x8d, 0x18, 0xe9, 0x0a, 0x81, 0xd5, 0x24, 0xc1, 0x88, 0x7c, 0xa6, 0x8e,
-        0xd3, 0x2c, 0x51, 0x1d, 0x6d, 0xdf, 0x51, 0xd5, 0x72, 0x54, 0x7a, 0x98, 0xc0, 0x36, 0x35, 0x21,
-        0x66, 0x3c, 0x2f, 0x01, 0xc0, 0x8e, 0xb0, 0x56, 0x60, 0x6e, 0x67, 0x4f, 0x5f, 0xac, 0x05, 0x60,
-        0x9b
-    };
-    RTBIGNUM PubKeyMod;
-    RTTESTI_CHECK_RC_RETV(RTBigNumInit(&PubKeyMod, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
-                                       s_abPubKeyMod, sizeof(s_abPubKeyMod)), VINF_SUCCESS);
-
-    static uint8_t const  s_abSignature[] =
-    {
-        0x00, 0xae, 0xca, 0x93, 0x47, 0x0b, 0xfa, 0xd8, 0xb9, 0xbb, 0x5a, 0x5e, 0xf6, 0x75, 0x90, 0xed,
-        0x80, 0x37, 0x03, 0x6d, 0x23, 0x91, 0x30, 0x0c, 0x9d, 0xbf, 0x34, 0xc1, 0xf9, 0x43, 0xa7, 0xec,
-        0xc0, 0x83, 0xc0, 0x98, 0x3f, 0x8a, 0x65, 0x48, 0x7c, 0xa4, 0x9f, 0x14, 0x4d, 0x52, 0x90, 0x2d,
-        0x17, 0xd1, 0x3e, 0x05, 0xd6, 0x35, 0x1b, 0xdb, 0xe5, 0x1a, 0xa2, 0x54, 0x8c, 0x30, 0x6f, 0xfe,
-        0xa1, 0xd9, 0x98, 0x3f, 0xb5, 0x65, 0x14, 0x9c, 0x50, 0x55, 0xa1, 0xbf, 0xb5, 0x12, 0xc4, 0xf2,
-        0x72, 0x27, 0x14, 0x59, 0xb5, 0x23, 0x67, 0x11, 0x2a, 0xd8, 0xa8, 0x85, 0x4b, 0xc5, 0xb0, 0x2f,
-        0x73, 0x54, 0xcf, 0x33, 0xa0, 0x06, 0xf2, 0x8e, 0x4f, 0x4b, 0x18, 0x97, 0x08, 0x47, 0xce, 0x0c,
-        0x47, 0x97, 0x0d, 0xbd, 0x8b, 0xce, 0x61, 0x31, 0x21, 0x7e, 0xc4, 0x1d, 0x03, 0xf8, 0x06, 0xca,
-        0x9f, 0xd3, 0x5e, 0x4b, 0xfc, 0xf1, 0x99, 0x34, 0x78, 0x83, 0xfa, 0xab, 0x9c, 0x7c, 0x6b, 0x5c,
-        0x3d, 0x45, 0x39, 0x6d, 0x6a, 0x6c, 0xd5, 0x63, 0x3e, 0xbe, 0x09, 0x62, 0x64, 0x5f, 0x83, 0x3b,
-        0xb6, 0x5c, 0x7e, 0x8e, 0xeb, 0x1e, 0x6a, 0x34, 0xb9, 0xc7, 0x92, 0x92, 0x58, 0x64, 0x48, 0xfe,
-        0xf8, 0x35, 0x53, 0x07, 0x89, 0xb4, 0x29, 0x4d, 0x3d, 0x79, 0x43, 0x73, 0x0f, 0x16, 0x21, 0xab,
-        0xb7, 0x07, 0x2b, 0x5a, 0x8a, 0x0f, 0xd7, 0x2e, 0x95, 0xb4, 0x26, 0x66, 0x65, 0x72, 0xac, 0x7e,
-        0x46, 0x70, 0xe6, 0xad, 0x43, 0xa2, 0x73, 0x54, 0x6a, 0x41, 0xc8, 0x9c, 0x1e, 0x65, 0xed, 0x06,
-        0xd1, 0xc7, 0x99, 0x3e, 0x5f, 0x5a, 0xd3, 0xd0, 0x1a, 0x9b, 0x0e, 0x3e, 0x04, 0x66, 0xb6, 0xaa,
-        0xa6, 0x51, 0xb8, 0xc0, 0x13, 0x19, 0x34, 0x0e, 0x86, 0x02, 0xd5, 0xc8, 0x10, 0xaa, 0x1f, 0x97,
-        0x95
-    };
-    RTBIGNUM Signature;
-    RTTESTI_CHECK_RC_RETV(RTBigNumInit(&Signature, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
-                                       s_abSignature, sizeof(s_abSignature)), VINF_SUCCESS);
-
+    /*
+     * For the modexp benchmark we decrypt a real PKCS #7 signature.
+     */
     RTBIGNUM Decrypted;
     RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Decrypted, 0 /*fFlags*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTBigNumModExp(&Decrypted, &Signature, &PubKeyExp, &PubKeyMod), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTBigNumModExp(&Decrypted, &Signature, &PubKeyExp, &PubKeyMod), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTBigNumModExp(&Decrypted, &g_Signature, &g_PubKeyExp, &g_PubKeyMod), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTBigNumModExp(&Decrypted, &g_Signature, &g_PubKeyExp, &g_PubKeyMod), VINF_SUCCESS);
 
     RTThreadYield();
     int      rc       = VINF_SUCCESS;
     uint32_t cRounds  = 0;
     uint64_t uStartTS = RTTimeNanoTS();
-    while (cRounds < 256)
+    while (cRounds < 10240)
     {
-        rc |= RTBigNumModExp(&Decrypted, &Signature, &PubKeyExp, &PubKeyMod);
+        rc |= RTBigNumModExp(&Decrypted, &g_Signature, &g_PubKeyExp, &g_PubKeyMod);
         cRounds++;
     }
     uint64_t uElapsed = RTTimeNanoTS() - uStartTS;
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
     RTTestIValue("RTBigNumModExp", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
 
+    if (fOnlyModExp)
+        return;
+
 #if 1
     /* Compare with OpenSSL BN. */
     BN_CTX *pObnCtx = BN_CTX_new();
-    BIGNUM *pObnPubKeyExp = BN_bin2bn(s_abPubKeyExp, sizeof(s_abPubKeyExp), NULL);
-    BIGNUM *pObnPubKeyMod = BN_bin2bn(s_abPubKeyMod, sizeof(s_abPubKeyMod), NULL);
-    BIGNUM *pObnSignature = BN_bin2bn(s_abSignature, sizeof(s_abSignature), NULL);
+    BIGNUM *pObnPubKeyExp = BN_bin2bn(g_abPubKeyExp, sizeof(g_abPubKeyExp), NULL);
+    BIGNUM *pObnPubKeyMod = BN_bin2bn(g_abPubKeyMod, sizeof(g_abPubKeyMod), NULL);
+    BIGNUM *pObnSignature = BN_bin2bn(g_abSignature, sizeof(g_abSignature), NULL);
+    BIGNUM *pObnSignatureDecrypted = BN_bin2bn(g_abSignatureDecrypted, sizeof(g_abSignatureDecrypted), NULL);
     BIGNUM *pObnResult = BN_new();
     RTTESTI_CHECK_RETV(BN_mod_exp(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx) == 1);
-    BN_CTX_free(pObnCtx);
+    RTTESTI_CHECK_RETV(BN_ucmp(pObnResult, pObnSignatureDecrypted) == 0);
 
     rc = 1;
     cRounds  = 0;
     uStartTS = RTTimeNanoTS();
     while (cRounds < 4096)
     {
-        pObnCtx = BN_CTX_new();
         rc &= BN_mod_exp(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx);
-        BN_CTX_free(pObnCtx);
         cRounds++;
     }
     uElapsed = RTTimeNanoTS() - uStartTS;
@@ -898,15 +1144,469 @@ static void testBenchmarks(void)
     uStartTS = RTTimeNanoTS();
     while (cRounds < 4096)
     {
-        pObnCtx = BN_CTX_new();
         rc &= BN_mod_exp_simple(pObnResult, pObnSignature, pObnPubKeyExp, pObnPubKeyMod, pObnCtx);
-        BN_CTX_free(pObnCtx);
         cRounds++;
     }
     uElapsed = RTTimeNanoTS() - uStartTS;
     RTTESTI_CHECK_RC(rc, 1);
     RTTestIValue("BN_mod_exp_simple", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
 #endif
+
+    /*
+     * Check out the speed of modulo.
+     */
+    RTBIGNUM Product;
+    RTTESTI_CHECK_RC_RETV(RTBigNumInitZero(&Product, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTBigNumMultiply(&Product, &g_Signature, &g_Signature), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTBigNumModulo(&Decrypted, &Product, &g_PubKeyMod), VINF_SUCCESS);
+    RTThreadYield();
+    rc       = VINF_SUCCESS;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 10240)
+    {
+        rc |= RTBigNumModulo(&Decrypted, &Product, &g_PubKeyMod);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+    RTTestIValue("RTBigNumModulo", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+
+#if 1
+    /* Compare with OpenSSL BN. */
+    BIGNUM *pObnProduct = BN_new();
+    RTTESTI_CHECK_RETV(BN_mul(pObnProduct, pObnSignature, pObnSignature, pObnCtx) == 1);
+    RTTESTI_CHECK_RETV(BN_mod(pObnResult, pObnProduct, pObnPubKeyMod, pObnCtx) == 1);
+    rc = 1;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 10240)
+    {
+        rc &= BN_mod(pObnResult, pObnProduct, pObnPubKeyMod, pObnCtx);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, 1);
+    RTTestIValue("BN_mod", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+#endif
+
+    /*
+     * Check out the speed of multiplication.
+     */
+    RTThreadYield();
+    rc       = VINF_SUCCESS;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 10240)
+    {
+        rc |= RTBigNumMultiply(&Product, &g_Signature, &g_Signature);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+    RTTestIValue("RTBigNumMultiply", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+
+#if 1
+    /* Compare with OpenSSL BN. */
+    rc = 1;
+    cRounds  = 0;
+    uStartTS = RTTimeNanoTS();
+    while (cRounds < 10240)
+    {
+        rc &= BN_mul(pObnProduct, pObnSignature, pObnSignature, pObnCtx);
+        cRounds++;
+    }
+    uElapsed = RTTimeNanoTS() - uStartTS;
+    RTTESTI_CHECK_RC(rc, 1);
+    RTTestIValue("BN_mul", uElapsed / cRounds, RTTESTUNIT_NS_PER_CALL);
+#endif
+
+}
+
+/*
+ * UInt128 tests (RTBigInt uses UInt128 in some cases.
+ */
+
+static void testUInt128Subtraction(void)
+{
+    RTTestSub(g_hTest, "RTUInt128Sub");
+
+    static struct
+    {
+        RTUINT128U uMinuend, uSubtrahend, uResult;
+    } const s_aTests[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(~0, ~0) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(~0, ~0) },
+        { RTUINT128_INIT_C(2, 9), RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(0, 9) },
+        { RTUINT128_INIT_C(2, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(1, ~0) },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0x0000000000000000),
+            RTUINT128_INIT_C(0x0000000000000000, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0xfffffffffffffffe, 0x0000000000000001),
+        },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xfffffffffff00000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x00000000000fffff),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffe00001),
+        },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x00000fffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0xfffff00000000000, 0x0000000000000000)
+        },
+        {
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000251ce8fe85),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000301f41b4d),
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000221af4e338),
+        },
+        {
+            RTUINT128_INIT_C(0xfd4d22a441ffa48c, 0x170739b573a9498d),
+            RTUINT128_INIT_C(0x43459cea40782b26, 0xc8c16bb29cb3b343),
+            RTUINT128_INIT_C(0xba0785ba01877965, 0x4e45ce02d6f5964a),
+        },
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        RTUINT128U uResult;
+        PRTUINT128U pResult = RTUInt128Sub(&uResult, &s_aTests[i].uMinuend, &s_aTests[i].uSubtrahend);
+        if (pResult != &uResult)
+            RTTestIFailed("test #%i returns %p instead of %p", i, pResult, &uResult);
+        else if (RTUInt128IsNotEqual(&uResult, &s_aTests[i].uResult))
+            RTTestIFailed("test #%i failed: remainder differs:\nExp: %016RX64`%016RX64\nGot: %016RX64`%016RX64",
+                          i, s_aTests[i].uResult.s.Hi, s_aTests[i].uResult.s.Lo, uResult.s.Hi, uResult.s.Lo );
+
+        uResult = s_aTests[i].uMinuend;
+        pResult = RTUInt128AssignSub(&uResult, &s_aTests[i].uSubtrahend);
+        RTTESTI_CHECK(pResult == &uResult);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+    }
+}
+
+
+static void testUInt128Addition(void)
+{
+    RTTestSub(g_hTest, "RTUInt128Add");
+
+    static struct
+    {
+        RTUINT128U uAugend, uAddend, uResult;
+    } const s_aTests[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 2) },
+        { RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 3) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(0, 3) },
+        { RTUINT128_INIT_C(2, 9), RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(4, 9) },
+        { RTUINT128_INIT_C(2, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(2, 3) },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0x0000000000000000),
+            RTUINT128_INIT_C(0x0000000000000000, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+        },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xfffffffffff00000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x00000000000ffeff),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xfffffffffffffeff),
+        },
+        {
+            RTUINT128_INIT_C(0xefffffffffffffff, 0xfffffffffff00000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x00000000001fffff),
+            RTUINT128_INIT_C(0xf000000000000000, 0x00000000000fffff),
+        },
+        {
+            RTUINT128_INIT_C(0xeeeeeeeeeeeeeeee, 0xeeeeeeeeeee00000),
+            RTUINT128_INIT_C(0x0111111111111111, 0x11111111112fffff),
+            RTUINT128_INIT_C(0xf000000000000000, 0x00000000000fffff),
+        },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x00000fffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x00000fffffffffff, 0xfffffffffffffffe)
+        },
+        {
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xfffffffffffffffe)
+        },
+        {
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000251ce8fe85),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000301f41b4d),
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000281edd19d2),
+        },
+        {
+            RTUINT128_INIT_C(0xfd4d22a441ffa48c, 0x170739b573a9498d),
+            RTUINT128_INIT_C(0x43459cea40782b26, 0xc8c16bb29cb3b343),
+            RTUINT128_INIT_C(0x4092bf8e8277cfb2, 0xdfc8a568105cfcd0),
+        },
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        RTUINT128U uResult;
+        PRTUINT128U pResult = RTUInt128Add(&uResult, &s_aTests[i].uAugend, &s_aTests[i].uAddend);
+        if (pResult != &uResult)
+            RTTestIFailed("test #%i returns %p instead of %p", i, pResult, &uResult);
+        else if (RTUInt128IsNotEqual(&uResult, &s_aTests[i].uResult))
+            RTTestIFailed("test #%i failed: result differs:\nExp: %016RX64`%016RX64\nGot: %016RX64`%016RX64",
+                          i, s_aTests[i].uResult.s.Hi, s_aTests[i].uResult.s.Lo, uResult.s.Hi, uResult.s.Lo );
+
+        uResult = s_aTests[i].uAugend;
+        pResult = RTUInt128AssignAdd(&uResult, &s_aTests[i].uAddend);
+        RTTESTI_CHECK(pResult == &uResult);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+
+        if (s_aTests[i].uAddend.s.Hi == 0)
+        {
+            pResult = RTUInt128AddU64(&uResult, &s_aTests[i].uAugend, s_aTests[i].uAddend.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+
+            uResult = s_aTests[i].uAugend;
+            pResult = RTUInt128AssignAddU64(&uResult, s_aTests[i].uAddend.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+        }
+
+        if (s_aTests[i].uAugend.s.Hi == 0)
+        {
+            pResult = RTUInt128AddU64(&uResult, &s_aTests[i].uAddend, s_aTests[i].uAugend.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+
+            uResult = s_aTests[i].uAddend;
+            pResult = RTUInt128AssignAddU64(&uResult, s_aTests[i].uAugend.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+        }
+    }
+}
+
+static void testUInt128Multiplication(void)
+{
+    RTTestSub(g_hTest, "RTUInt128Mul");
+
+    static struct
+    {
+        RTUINT128U uFactor1, uFactor2, uResult;
+    } const s_aTests[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(~0, ~0), RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1) },
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(0, 2) },
+        { RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(0, 0) },
+        { RTUINT128_INIT_C(2, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(4, 2) },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0, 2),
+            RTUINT128_INIT_C(0x2222222222222222, 0x2222222222222222)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0, 0xf),
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0,                             0x30000),
+            RTUINT128_INIT_C(0x3333333333333333, 0x3333333333330000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0,                          0x30000000),
+            RTUINT128_INIT_C(0x3333333333333333, 0x3333333330000000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0,                     0x3000000000000),
+            RTUINT128_INIT_C(0x3333333333333333, 0x3333000000000000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0x0000000000000003, 0x0000000000000000),
+            RTUINT128_INIT_C(0x3333333333333333, 0x0000000000000000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0x0000000300000000, 0x0000000000000000),
+            RTUINT128_INIT_C(0x3333333300000000, 0x0000000000000000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0x0003000000000000, 0x0000000000000000),
+            RTUINT128_INIT_C(0x3333000000000000, 0x0000000000000000)
+        },
+        {
+            RTUINT128_INIT_C(0x1111111111111111, 0x1111111111111111),
+            RTUINT128_INIT_C(0x3000000000000000, 0x0000000000000000),
+            RTUINT128_INIT_C(0x3000000000000000, 0x0000000000000000)
+        },
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        RTUINT128U uResult;
+        PRTUINT128U pResult = RTUInt128Mul(&uResult, &s_aTests[i].uFactor1, &s_aTests[i].uFactor2);
+        if (pResult != &uResult)
+            RTTestIFailed("test #%i returns %p instead of %p", i, pResult, &uResult);
+        else if (RTUInt128IsNotEqual(&uResult, &s_aTests[i].uResult))
+            RTTestIFailed("test #%i failed: \nExp: %016RX64`%016RX64\nGot: %016RX64`%016RX64",
+                          i, s_aTests[i].uResult.s.Hi, s_aTests[i].uResult.s.Lo, uResult.s.Hi, uResult.s.Lo );
+
+        if (s_aTests[i].uFactor2.s.Hi == 0)
+        {
+            pResult = RTUInt128MulByU64(&uResult, &s_aTests[i].uFactor1, s_aTests[i].uFactor2.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+        }
+
+        if (s_aTests[i].uFactor1.s.Hi == 0)
+        {
+            pResult = RTUInt128MulByU64(&uResult, &s_aTests[i].uFactor2, s_aTests[i].uFactor1.s.Lo);
+            RTTESTI_CHECK(pResult == &uResult);
+            RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+        }
+
+        uResult = s_aTests[i].uFactor1;
+        pResult = RTUInt128AssignMul(&uResult, &s_aTests[i].uFactor2);
+        RTTESTI_CHECK(pResult == &uResult);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResult, &s_aTests[i].uResult));
+    }
+}
+
+
+#if 0 /* Java program for generating testUInt128Division test data. */
+import java.math.BigInteger;
+import java.lang.System;
+import java.lang.Integer;
+import java.util.Random;
+import java.security.SecureRandom;
+
+class uint128divtestgen
+{
+
+public static String format(BigInteger BigNum)
+{
+    String str = BigNum.toString(16);
+    while (str.length() < 32)
+        str = "0" + str;
+    return "RTUINT128_INIT_C(0x" + str.substring(0, 16) + ", 0x" + str.substring(16) + ")";
+}
+
+public static void main(String args[])
+{
+    Random Rnd = new SecureRandom();
+
+    int cDivisorLarger = 0;
+    for (int i = 0; i < 4096; i++)
+    {
+        int cDividendBits = Rnd.nextInt(127) + 1;
+        int cDivisorBits  = i < 9 ? cDividendBits : Rnd.nextInt(127) + 1;
+        if (cDivisorBits > cDividendBits)
+        {
+            if (cDivisorLarger > i / 16)
+                cDividendBits = 128 - Rnd.nextInt(16);
+            else
+                cDivisorLarger++;
+        }
+
+        BigInteger Dividend = new BigInteger(cDividendBits, Rnd);
+        BigInteger Divisor  = new BigInteger(cDivisorBits, Rnd);
+        while (Divisor.compareTo(BigInteger.ZERO) == 0) {
+            cDivisorBits++;
+            Divisor = new BigInteger(cDivisorBits, Rnd);
+        }
+
+        BigInteger[] Result = Dividend.divideAndRemainder(Divisor);
+
+        System.out.println("    { /* i=" + Integer.toString(i) + "; " + Integer.toString(cDividendBits) + " / " + Integer.toString(cDivisorBits) + " */");
+        System.out.println("        " + format(Dividend)  + ", " + format(Divisor)   + ",");
+        System.out.println("        " + format(Result[0]) + ", " + format(Result[1]) + "");
+        System.out.println("    },");
+    }
+}
+}
+#endif
+
+static void testUInt128Division(void)
+{
+    RTTestSub(g_hTest, "RTUInt128DivMod");
+
+    static struct
+    {
+        RTUINT128U uDividend, uDivisor, uQuotient, uRemainder;
+    } const s_aTests[] =
+    {
+        { RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 0) }, /* #0 */
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 0) }, /* #1 */
+        { RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(0, 0), RTUINT128_INIT_C(0, 1) }, /* #2 */
+        { RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(2, 0), RTUINT128_INIT_C(0, 1), RTUINT128_INIT_C(0, 0) }, /* #3 */
+        { RTUINT128_INIT_C(2, 1), RTUINT128_INIT_C(0, 2), RTUINT128_INIT_C(1, 0), RTUINT128_INIT_C(0, 1) }, /* #4 */
+        {   /* #5 */
+            RTUINT128_INIT_C(0xffffffffffffffff, 0x0000000000000000),
+            RTUINT128_INIT_C(0x0000000000000000, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x0000000000000001, 0x0000000000000000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000000000000)
+        },
+        {   /* #6 */
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xfffffffffff00000),
+            RTUINT128_INIT_C(0x00000fffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000000100000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000000000000)
+        },
+        {   /* #7 */
+            RTUINT128_INIT_C(0xffffffffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x00000fffffffffff, 0xffffffffffffffff),
+            RTUINT128_INIT_C(0x0000000000000000, 0x0000000000100000),
+            RTUINT128_INIT_C(0x0000000000000000, 0x00000000000fffff)
+        },
+        {   /* #8 */
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000251ce8fe85), RTUINT128_INIT_C(0x0000000000000000, 0x0000000301f41b4d),
+            RTUINT128_INIT_C(0x0000000000000000, 0x000000000000000c), RTUINT128_INIT_C(0x0000000000000000, 0x000000010577b6e9)
+        },
+
+#include "tstRTBigNum-uint128-div-test-data.h"
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        RTUINT128U uResultQ, uResultR;
+        PRTUINT128U pResultQ = RTUInt128DivRem(&uResultQ, &uResultR, &s_aTests[i].uDividend, &s_aTests[i].uDivisor);
+        if (pResultQ != &uResultQ)
+            RTTestIFailed("test #%i returns %p instead of %p", i, pResultQ, &uResultQ);
+        else if (   RTUInt128IsNotEqual(&uResultQ, &s_aTests[i].uQuotient)
+                 && RTUInt128IsNotEqual(&uResultR, &s_aTests[i].uRemainder))
+        {
+            RTTestIFailed("test #%i failed on both counts", i);
+        }
+        else if (RTUInt128IsNotEqual(&uResultQ, &s_aTests[i].uQuotient))
+            RTTestIFailed("test #%i failed: quotient differs:\nExp: %016RX64`%016RX64\nGot: %016RX64`%016RX64",
+                          i, s_aTests[i].uQuotient.s.Hi, s_aTests[i].uQuotient.s.Lo, uResultQ.s.Hi, uResultQ.s.Lo );
+        else if (RTUInt128IsNotEqual(&uResultR, &s_aTests[i].uRemainder))
+            RTTestIFailed("test #%i failed: remainder differs:\nExp: %016RX64`%016RX64\nGot: %016RX64`%016RX64",
+                          i, s_aTests[i].uRemainder.s.Hi, s_aTests[i].uRemainder.s.Lo, uResultR.s.Hi, uResultR.s.Lo );
+
+        pResultQ = RTUInt128Div(&uResultQ, &s_aTests[i].uDividend, &s_aTests[i].uDivisor);
+        RTTESTI_CHECK(pResultQ == &uResultQ);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResultQ, &s_aTests[i].uQuotient));
+
+        uResultQ = s_aTests[i].uDividend;
+        pResultQ = RTUInt128AssignDiv(&uResultQ, &s_aTests[i].uDivisor);
+        RTTESTI_CHECK(pResultQ == &uResultQ);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResultQ, &s_aTests[i].uQuotient));
+
+
+        PRTUINT128U pResultR = RTUInt128Mod(&uResultR, &s_aTests[i].uDividend, &s_aTests[i].uDivisor);
+        RTTESTI_CHECK(pResultR == &uResultR);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResultR, &s_aTests[i].uRemainder));
+
+        uResultR = s_aTests[i].uDividend;
+        pResultR = RTUInt128AssignMod(&uResultR, &s_aTests[i].uDivisor);
+        RTTESTI_CHECK(pResultR == &uResultR);
+        RTTESTI_CHECK(RTUInt128IsEqual(&uResultR, &s_aTests[i].uRemainder));
+    }
 }
 
 
@@ -946,16 +1646,32 @@ int main(int argc, char **argv)
 
     RTTESTI_CHECK_RC(RTBigNumInit(&g_Minus1, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_SIGNED,
                                   g_abMinus1, sizeof(g_abMinus1)), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(RTBigNumInit(&g_PubKeyExp, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
+                                  g_abPubKeyExp, sizeof(g_abPubKeyExp)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTBigNumInit(&g_PubKeyMod, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
+                                  g_abPubKeyMod, sizeof(g_abPubKeyMod)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTBigNumInit(&g_Signature, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
+                                  g_abSignature, sizeof(g_abSignature)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTBigNumInit(&g_SignatureDecrypted, RTBIGNUMINIT_F_ENDIAN_BIG | RTBIGNUMINIT_F_UNSIGNED,
+                                  g_abSignatureDecrypted, sizeof(g_abSignatureDecrypted)), VINF_SUCCESS);
     testMoreInit();
 
     if (RTTestIErrorCount() == 0)
     {
         if (argc != 2)
         {
-            /* Do testing. */
+            /* Test UInt128 first as it may be used by RTBigInt. */
+            testUInt128Multiplication();
+            testUInt128Division();
+            testUInt128Subtraction();
+            testUInt128Addition();
+
+            /* Test the RTBigInt operations. */
             testCompare();
             testSubtraction();
             testAddition();
+            testShift();
             testMultiplication();
             testDivision();
             testModulo();
@@ -965,7 +1681,7 @@ int main(int argc, char **argv)
         }
 
         /* Benchmarks */
-        testBenchmarks();
+        testBenchmarks(argc == 2);
 
         /* Cleanups. */
         RTTestSub(g_hTest, "RTBigNumDestroy");

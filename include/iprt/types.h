@@ -401,10 +401,9 @@ typedef const RTUINT64U *PCRTUINT64U;
 #pragma pack(1)
 typedef union RTUINT128U
 {
-    /** Natural view.
-     * WARNING! This member depends on the compiler supporting 128-bit stuff. */
-    uint128_t   u;
-    /** Hi/Low view. */
+    /** Hi/Low view.
+     * @remarks We put this first so we can have portable initializers
+     *          (RTUINT128_INIT) */
     struct
     {
 #ifdef RT_BIG_ENDIAN
@@ -415,6 +414,11 @@ typedef union RTUINT128U
         uint64_t    Hi;
 #endif
     } s;
+
+    /** Natural view.
+     * WARNING! This member depends on the compiler supporting 128-bit stuff. */
+    uint128_t   u;
+
     /** Quad-Word view. */
     struct
     {
@@ -479,6 +483,22 @@ typedef union RTUINT128U
 typedef RTUINT128U *PRTUINT128U;
 /** Pointer to a const 64-bit unsigned integer union. */
 typedef const RTUINT128U *PCRTUINT128U;
+
+/** @def RTUINT128_INIT
+ * Portable RTUINT128U initializer. */
+#ifdef RT_BIG_ENDIAN
+# define RTUINT128_INIT(a_Hi, a_Lo) { a_Hi, a_Lo }
+#else
+# define RTUINT128_INIT(a_Hi, a_Lo) { a_Lo, a_Hi }
+#endif
+
+/** @def RTUINT128_INIT_C
+ * Portable RTUINT128U initializer for 64-bit constants. */
+#ifdef RT_BIG_ENDIAN
+# define RTUINT128_INIT_C(a_Hi, a_Lo) { UINT64_C(a_Hi), UINT64_C(a_Lo) }
+#else
+# define RTUINT128_INIT_C(a_Hi, a_Lo) { UINT64_C(a_Lo), UINT64_C(a_Hi) }
+#endif
 
 
 /**

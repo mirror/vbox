@@ -275,7 +275,15 @@ GLOBALNAME_EX %1, function hidden
 ;;
 ; Begins a C callable exported procedure.
 %macro BEGINPROC_EXPORTED 1
+ %ifdef RT_ASM_WITH_SEH64
+  %ifdef ASM_FORMAT_PE
+export  %1=NAME(%1)
+  %endif
+global     NAME(%1):function
+proc_frame NAME(%1)
+ %else
 EXPORTEDNAME_EX %1, function
+ %endif
 %endmacro
 
 ;;

@@ -40,6 +40,9 @@
 #include <iprt/mem.h>
 #include <iprt/memsafer.h>
 #include <iprt/string.h>
+#if RTBIGNUM_ELEMENT_BITS == 64
+# include <iprt/uint128.h>
+#endif
 
 
 /*******************************************************************************
@@ -90,10 +93,27 @@
 # define RTBIGNUM_ZERO_ALIGN(a_cUsed)   (a_cUsed)
 #endif
 
+#define RTBIGNUMELEMENT_HALF_MASK              ( ((RTBIGNUMELEMENT)1 << (RTBIGNUM_ELEMENT_BITS / 2)) - (RTBIGNUMELEMENT)1)
+#define RTBIGNUMELEMENT_LO_HALF(a_uElement)    ( (RTBIGNUMELEMENT_HALF_MASK) & (a_uElement) )
+#define RTBIGNUMELEMENT_HI_HALF(a_uElement)    ( (a_uElement) >> (RTBIGNUM_ELEMENT_BITS / 2) )
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/** Type the size of two elements. */
+#if RTBIGNUM_ELEMENT_BITS == 64
+typedef RTUINT128U RTBIGNUMELEMENT2X;
+#else
+typedef RTUINT64U  RTBIGNUMELEMENT2X;
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+DECLINLINE(int) rtBigNumSetUsed(PRTBIGNUM pBigNum, uint32_t cNewUsed);
+
 #ifdef IPRT_BIGINT_WITH_ASM
 /* bignum-amd64-x86.asm: */
 DECLASM(void) rtBigNumMagnitudeSubAssemblyWorker(RTBIGNUMELEMENT *pauResult, RTBIGNUMELEMENT const *pauMinuend,
@@ -102,7 +122,178 @@ DECLASM(void) rtBigNumMagnitudeSubThisAssemblyWorker(RTBIGNUMELEMENT *pauMinuend
                                                      uint32_t cUsed);
 DECLASM(RTBIGNUMELEMENT) rtBigNumMagnitudeShiftLeftOneAssemblyWorker(RTBIGNUMELEMENT *pauElements, uint32_t cUsed,
                                                                      RTBIGNUMELEMENT uCarry);
+DECLASM(void) rtBigNumElement2xDiv2xBy1x(RTBIGNUMELEMENT2X *puQuotient, RTBIGNUMELEMENT *puRemainder,
+                                         RTBIGNUMELEMENT uDividendHi, RTBIGNUMELEMENT uDividendLo, RTBIGNUMELEMENT uDivisor);
+DECLASM(void) rtBigNumMagnitudeMultiplyAssemblyWorker(PRTBIGNUMELEMENT pauResult,
+                                                      PCRTBIGNUMELEMENT pauMultiplier, uint32_t cMultiplier,
+                                                      PCRTBIGNUMELEMENT pauMultiplicand, uint32_t cMultiplicand);
 #endif
+
+
+
+
+
+/** @name Functions working on one element.
+ * @{  */
+
+DECLINLINE(uint32_t) rtBigNumElementBitCount(RTBIGNUMELEMENT uElement)
+{
+#if RTBIGNUM_ELEMENT_SIZE == 8
+    if (uElement >> 32)
+        return ASMBitLastSetU32((uint32_t)(uElement >> 32)) + 32;
+    return ASMBitLastSetU32((uint32_t)uElement);
+#elif RTBIGNUM_ELEMENT_SIZE == 4
+    return ASMBitLastSetU32(uElement);
+#else
+# error "Bad RTBIGNUM_ELEMENT_SIZE value"
+#endif
+}
+
+
+/**
+ * Does addition with carry.
+ *
+ * This is a candidate for inline assembly on some platforms.
+ *
+ * @returns The result (the sum)
+ * @param   uAugend         What to add to.
+ * @param   uAddend         What to add to it.
+ * @param   pfCarry         Where to read the input carry and return the output
+ *                          carry.
+ */
+DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementAddWithCarry(RTBIGNUMELEMENT uAugend, RTBIGNUMELEMENT uAddend,
+                                                        RTBIGNUMELEMENT *pfCarry)
+{
+    RTBIGNUMELEMENT uRet = uAugend + uAddend;
+    if (!*pfCarry)
+        *pfCarry = uRet < uAugend;
+    else
+    {
+        uRet    += 1;
+        *pfCarry = uRet <= uAugend;
+    }
+    return uRet;
+}
+
+
+/**
+ * Does addition with borrow.
+ *
+ * This is a candidate for inline assembly on some platforms.
+ *
+ * @returns The result (the sum)
+ * @param   uMinuend        What to subtract from.
+ * @param   uSubtrahend     What to subtract.
+ * @param   pfBorrow        Where to read the input borrow and return the output
+ *                          borrow.
+ */
+DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementSubWithBorrow(RTBIGNUMELEMENT uMinuend, RTBIGNUMELEMENT uSubtrahend,
+                                                         RTBIGNUMELEMENT *pfBorrow)
+{
+    RTBIGNUMELEMENT uRet = uMinuend - uSubtrahend - *pfBorrow;
+
+    /* Figure out if we borrowed. */
+    *pfBorrow = !*pfBorrow ? uMinuend < uSubtrahend : uMinuend <= uSubtrahend;
+    return uRet;
+}
+
+/** @} */
+
+
+
+
+/** @name Double element primitives.
+ * @{ */
+
+static int rtBigNumElement2xCopyToMagnitude(RTBIGNUMELEMENT2X const *pValue2x, PRTBIGNUM pDst)
+{
+    int rc;
+    if (pValue2x->s.Hi)
+    {
+        rc = rtBigNumSetUsed(pDst, 2);
+        if (RT_SUCCESS(rc))
+        {
+            pDst->pauElements[0] = pValue2x->s.Lo;
+            pDst->pauElements[1] = pValue2x->s.Hi;
+        }
+    }
+    else if (pValue2x->s.Lo)
+    {
+        rc = rtBigNumSetUsed(pDst, 1);
+        if (RT_SUCCESS(rc))
+            pDst->pauElements[0] = pValue2x->s.Lo;
+    }
+    else
+        rc = rtBigNumSetUsed(pDst, 0);
+    return rc;
+}
+
+static void rtBigNumElement2xDiv(RTBIGNUMELEMENT2X *puQuotient, RTBIGNUMELEMENT2X *puRemainder,
+                                 RTBIGNUMELEMENT uDividendHi, RTBIGNUMELEMENT uDividendLo,
+                                 RTBIGNUMELEMENT uDivisorHi, RTBIGNUMELEMENT uDivisorLo)
+{
+    RTBIGNUMELEMENT2X uDividend;
+    uDividend.s.Lo = uDividendLo;
+    uDividend.s.Hi = uDividendHi;
+
+    RTBIGNUMELEMENT2X uDivisor;
+    uDivisor.s.Lo = uDivisorLo;
+    uDivisor.s.Hi = uDivisorHi;
+
+#if RTBIGNUM_ELEMENT_BITS == 64
+    RTUInt128DivRem(puQuotient, puRemainder, &uDividend, &uDivisor);
+#else
+    puQuotient->u  = uDividend.u / uDivisor.u;
+    puRemainder->u = uDividend.u % uDivisor.u;
+#endif
+}
+
+#ifndef IPRT_BIGINT_WITH_ASM
+static void rtBigNumElement2xDiv2xBy1x(RTBIGNUMELEMENT2X *puQuotient, RTBIGNUMELEMENT *puRemainder,
+                                       RTBIGNUMELEMENT uDividendHi, RTBIGNUMELEMENT uDividendLo, RTBIGNUMELEMENT uDivisor)
+{
+    RTBIGNUMELEMENT2X uDividend;
+    uDividend.s.Lo = uDividendLo;
+    uDividend.s.Hi = uDividendHi;
+
+# if RTBIGNUM_ELEMENT_BITS == 64
+    RTBIGNUMELEMENT2X uRemainder2x;
+    RTBIGNUMELEMENT2X uDivisor2x;
+    uDivisor2x.s.Hi = 0;
+    uDivisor2x.s.Lo = uDivisor;
+    /** @todo optimize this. */
+    RTUInt128DivRem(puQuotient, &uRemainder2x, &uDividend, &uDivisor2x);
+    puRemainder->u = uRemainder2x.s.Lo;
+# else
+    puQuotient->u  = uDividend.u / uDivisor;
+    puRemainder->u = uDividend.u % uDivisor;
+# endif
+}
+#endif
+
+DECLINLINE(void) rtBigNumElement2xDec(RTBIGNUMELEMENT2X *puValue)
+{
+#if RTBIGNUM_ELEMENT_BITS == 64
+    if (puValue->s.Lo-- == 0)
+        puValue->s.Hi--;
+#else
+    puValue->u -= 1;
+#endif
+}
+
+DECLINLINE(void) rtBigNumElement2xAdd1x(RTBIGNUMELEMENT2X *puValue, RTBIGNUMELEMENT uAdd)
+{
+#if RTBIGNUM_ELEMENT_BITS == 64
+    RTUInt128AssignAddU64(puValue, uAdd);
+#else
+    puValue->u += uAdd;
+#endif
+}
+
+/** @} */
+
+
+
 
 
 /**
@@ -180,23 +371,28 @@ static int rtBigNumGrow(PRTBIGNUM pBigNum, uint32_t cNewUsed, uint32_t cMinEleme
     uint32_t const cNew  = RT_ALIGN_32(cMinElements, RTBIGNUM_ALIGNMENT);
     uint32_t const cbNew = cNew * RTBIGNUM_ELEMENT_SIZE;
     Assert(cbNew > cbOld);
-
-    void *pvNew;
-    if (pBigNum->fSensitive)
-        pvNew = RTMemSaferReallocZ(cbOld, pBigNum->pauElements, cbNew);
-    else
-        pvNew = RTMemRealloc(pBigNum->pauElements, cbNew);
-    if (RT_LIKELY(pvNew))
+    if (cbNew <= RTBIGNUM_MAX_SIZE && cbNew > cbOld)
     {
-        if (cbNew > cbOld)
-            RT_BZERO((char *)pvNew + cbOld, cbNew - cbOld);
+        void *pvNew;
+        if (pBigNum->fSensitive)
+            pvNew = RTMemSaferReallocZ(cbOld, pBigNum->pauElements, cbNew);
+        else
+            pvNew = RTMemRealloc(pBigNum->pauElements, cbNew);
+        if (RT_LIKELY(pvNew))
+        {
+            if (cbNew > cbOld)
+                RT_BZERO((char *)pvNew + cbOld, cbNew - cbOld);
+            if (pBigNum->cUsed > cNewUsed)
+                RT_BZERO((RTBIGNUMELEMENT *)pvNew + cNewUsed, (pBigNum->cUsed - cNewUsed) * RTBIGNUM_ELEMENT_SIZE);
 
-        pBigNum->pauElements = (RTBIGNUMELEMENT *)pvNew;
-        pBigNum->cUsed       = cNewUsed;
-        pBigNum->cAllocated  = cNew;
-        return VINF_SUCCESS;
+            pBigNum->pauElements = (RTBIGNUMELEMENT *)pvNew;
+            pBigNum->cUsed       = cNewUsed;
+            pBigNum->cAllocated  = cNew;
+            return VINF_SUCCESS;
+        }
+        return VERR_NO_MEMORY;
     }
-    return VERR_NO_MEMORY;
+    return VERR_OUT_OF_RANGE;
 }
 
 
@@ -692,20 +888,6 @@ RTDECL(int) RTBigNumAssign(PRTBIGNUM pDst, PCRTBIGNUM pSrc)
 }
 
 
-static uint32_t rtBigNumElementBitCount(RTBIGNUMELEMENT uElement)
-{
-#if RTBIGNUM_ELEMENT_SIZE == 8
-    if (uElement >> 32)
-        return ASMBitLastSetU32((uint32_t)(uElement >> 32)) + 32;
-    return ASMBitLastSetU32((uint32_t)uElement);
-#elif RTBIGNUM_ELEMENT_SIZE == 4
-    return ASMBitLastSetU32(uElement);
-#else
-# error "Bad RTBIGNUM_ELEMENT_SIZE value"
-#endif
-}
-
-
 /**
  * Same as RTBigNumBitWidth, except that it ignore the signed bit.
  *
@@ -922,6 +1104,7 @@ RTDECL(int) RTBigNumCompareWithS64(PRTBIGNUM pLeft, int64_t iRight)
         RTBIGNUM_ASSERT_VALID(pLeft);
         if (pLeft->fNegative == (iRight < 0))
         {
+            AssertCompile(RTBIGNUM_ELEMENT_SIZE <= sizeof(iRight));
             if (pLeft->cUsed * RTBIGNUM_ELEMENT_SIZE <= sizeof(iRight))
             {
                 uint64_t uRightMagn = !pLeft->fNegative ? (uint64_t)iRight : (uint64_t)-iRight;
@@ -958,11 +1141,6 @@ RTDECL(int) RTBigNumCompareWithS64(PRTBIGNUM pLeft, int64_t iRight)
     }
     return rc;
 }
-
-
-#define RTBIGNUMELEMENT_HALF_MASK              ( ((RTBIGNUMELEMENT)1 << (RTBIGNUM_ELEMENT_BITS / 2)) - (RTBIGNUMELEMENT)1)
-#define RTBIGNUMELEMENT_LO_HALF(a_uElement)    ( (RTBIGNUMELEMENT_HALF_MASK) & (a_uElement) )
-#define RTBIGNUMELEMENT_HI_HALF(a_uElement)    ( (a_uElement) >> (RTBIGNUM_ELEMENT_BITS / 2) )
 
 
 /**
@@ -1014,33 +1192,6 @@ DECLINLINE(int) rtBigNumMagnitudeCopy(PRTBIGNUM pDst, PCRTBIGNUM pSrc)
 }
 
 
-/**
- * Does addition with carry.
- *
- * This is a candidate for inline assembly on some platforms.
- *
- * @returns The result (the sum)
- * @param   uAugend         What to add to.
- * @param   uAddend         What to add to it.
- * @param   pfCarry         Where to read the input carry and return the output
- *                          carry.
- */
-DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementAddWithCarry(RTBIGNUMELEMENT uAugend, RTBIGNUMELEMENT uAddend,
-                                                        RTBIGNUMELEMENT *pfCarry)
-{
-    RTBIGNUMELEMENT uRet = uAugend + uAddend + *pfCarry;
-
-    /* Determin carry the expensive way. */
-    RTBIGNUMELEMENT uTmp = RTBIGNUMELEMENT_HI_HALF(uAugend) + RTBIGNUMELEMENT_HI_HALF(uAddend);
-    if (uTmp < RTBIGNUMELEMENT_HALF_MASK)
-        *pfCarry = 0;
-    else
-        *pfCarry = uTmp > RTBIGNUMELEMENT_HALF_MASK
-                ||   RTBIGNUMELEMENT_LO_HALF(uAugend) + RTBIGNUMELEMENT_LO_HALF(uAddend) + *pfCarry
-                   > RTBIGNUMELEMENT_HALF_MASK;
-    return uRet;
-}
-
 
 /**
  * Adds two magnitudes and stores them into a third.
@@ -1081,28 +1232,6 @@ static int rtBigNumMagnitudeAdd(PRTBIGNUM pResult, PCRTBIGNUM pAugend, PCRTBIGNU
     }
 
     return rc;
-}
-
-
-/**
- * Does addition with borrow.
- *
- * This is a candidate for inline assembly on some platforms.
- *
- * @returns The result (the sum)
- * @param   uMinuend        What to subtract from.
- * @param   uSubtrahend     What to subtract.
- * @param   pfBorrow        Where to read the input borrow and return the output
- *                          borrow.
- */
-DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementSubWithBorrow(RTBIGNUMELEMENT uMinuend, RTBIGNUMELEMENT uSubtrahend,
-                                                         RTBIGNUMELEMENT *pfBorrow)
-{
-    RTBIGNUMELEMENT uRet = uMinuend - uSubtrahend - *pfBorrow;
-
-    /* Figure out if we borrowed. */
-    *pfBorrow = !*pfBorrow ? uMinuend < uSubtrahend : uMinuend <= uSubtrahend;
-    return uRet;
 }
 
 
@@ -1406,6 +1535,11 @@ static int rtBigNumMagnitudeMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand
     {
         RT_BZERO(pResult->pauElements, pResult->cUsed * RTBIGNUM_ELEMENT_SIZE);
 
+#ifdef IPRT_BIGINT_WITH_ASM
+        rtBigNumMagnitudeMultiplyAssemblyWorker(pResult->pauElements,
+                                                pMultiplier->pauElements, pMultiplier->cUsed,
+                                                pMultiplicand->pauElements, pMultiplicand->cUsed);
+#else
         for (uint32_t i = 0; i < pMultiplier->cUsed; i++)
         {
             RTBIGNUMELEMENT uMultiplier = pMultiplier->pauElements[i];
@@ -1435,6 +1569,7 @@ static int rtBigNumMagnitudeMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand
                 Assert(k < cMax);
             }
         }
+#endif
 
         /* It's possible we overestimated the output size by 1 element. */
         rtBigNumStripTrailingZeros(pResult);
@@ -1603,6 +1738,528 @@ DECLINLINE(int) rtBigNumMagnitudeShiftLeftOne(PRTBIGNUM pBigNum, RTBIGNUMELEMENT
 
 
 /**
+ * Shifts the magnitude left by @a cBits.
+ *
+ * The variables must be unscrambled.
+ *
+ * @returns IPRT status code.
+ * @param   pResult         Where to store the result.
+ * @param   pValue          The value to shift.
+ * @param   cBits           The shift count.
+ */
+static int rtBigNumMagnitudeShiftLeft(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits)
+{
+    int rc;
+    if (cBits)
+    {
+        uint32_t cBitsNew = rtBigNumMagnitudeBitWidth(pValue);
+        if (cBitsNew > 0)
+        {
+            if (cBitsNew + cBits > cBitsNew)
+            {
+                cBitsNew += cBits;
+                rc = rtBigNumSetUsedEx(pResult, 0, RT_ALIGN_32(cBitsNew, RTBIGNUM_ELEMENT_BITS) / RTBIGNUM_ELEMENT_BITS);
+                if (RT_SUCCESS(rc))
+                    rc = rtBigNumSetUsed(pResult, RT_ALIGN_32(cBitsNew, RTBIGNUM_ELEMENT_BITS) / RTBIGNUM_ELEMENT_BITS);
+                if (RT_SUCCESS(rc))
+                {
+                    uint32_t const      cLeft  = pValue->cUsed;
+                    PCRTBIGNUMELEMENT   pauSrc = pValue->pauElements;
+                    PRTBIGNUMELEMENT    pauDst = pResult->pauElements;
+
+                    Assert(ASMMemIsAllU32(pauDst, (cBits / RTBIGNUM_ELEMENT_BITS) * RTBIGNUM_ELEMENT_SIZE, 0) == NULL);
+                    pauDst += cBits / RTBIGNUM_ELEMENT_BITS;
+
+                    cBits &= RTBIGNUM_ELEMENT_BITS - 1;
+                    if (cBits)
+                    {
+                        RTBIGNUMELEMENT uPrev = 0;
+                        for (uint32_t i = 0; i < cLeft; i++)
+                        {
+                            RTBIGNUMELEMENT uCur = pauSrc[i];
+                            pauDst[i] = (uCur << cBits) | (uPrev >> (RTBIGNUM_ELEMENT_BITS - cBits));
+                            uPrev = uCur;
+                        }
+                        uPrev >>= RTBIGNUM_ELEMENT_BITS - cBits;
+                        if (uPrev)
+                            pauDst[pValue->cUsed] = uPrev;
+                    }
+                    else
+                        memcpy(pauDst, pauSrc, cLeft * RTBIGNUM_ELEMENT_SIZE);
+                }
+            }
+            else
+                rc = VERR_OUT_OF_RANGE;
+        }
+        /* Shifting zero always yields a zero result. */
+        else
+            rc = rtBigNumSetUsed(pResult, 0);
+    }
+    else
+        rc = rtBigNumMagnitudeCopy(pResult, pValue);
+    return rc;
+}
+
+
+RTDECL(int) RTBigNumShiftLeft(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits)
+{
+    Assert(pResult != pValue);
+    AssertReturn(pResult->fSensitive >= pValue->fSensitive, VERR_BIGNUM_SENSITIVE_INPUT);
+
+    int rc = rtBigNumUnscramble(pResult);
+    if (RT_SUCCESS(rc))
+    {
+        RTBIGNUM_ASSERT_VALID(pResult);
+        rc = rtBigNumUnscramble((PRTBIGNUM)pValue);
+        if (RT_SUCCESS(rc))
+        {
+            RTBIGNUM_ASSERT_VALID(pValue);
+
+            pResult->fNegative = pValue->fNegative;
+            rc = rtBigNumMagnitudeShiftLeft(pResult, pValue, cBits);
+
+            rtBigNumScramble((PRTBIGNUM)pValue);
+        }
+        rtBigNumScramble(pResult);
+    }
+    return rc;
+}
+
+
+/**
+ * Shifts the magnitude right by @a cBits.
+ *
+ * The variables must be unscrambled.
+ *
+ * @returns IPRT status code.
+ * @param   pResult         Where to store the result.
+ * @param   pValue          The value to shift.
+ * @param   cBits           The shift count.
+ */
+static int rtBigNumMagnitudeShiftRight(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits)
+{
+    int rc;
+    if (cBits)
+    {
+        uint32_t cBitsNew = rtBigNumMagnitudeBitWidth(pValue);
+        if (cBitsNew > cBits)
+        {
+            cBitsNew -= cBits;
+            uint32_t cElementsNew = RT_ALIGN_32(cBitsNew, RTBIGNUM_ELEMENT_BITS) / RTBIGNUM_ELEMENT_BITS;
+            rc = rtBigNumSetUsed(pResult, cElementsNew);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t            i      = cElementsNew;
+                PCRTBIGNUMELEMENT   pauSrc = pValue->pauElements;
+                PRTBIGNUMELEMENT    pauDst = pResult->pauElements;
+
+                pauSrc += cBits / RTBIGNUM_ELEMENT_BITS;
+
+                cBits &= RTBIGNUM_ELEMENT_BITS - 1;
+                if (cBits)
+                {
+                    RTBIGNUMELEMENT uPrev = &pauSrc[i] == &pValue->pauElements[pValue->cUsed] ? 0 : pauSrc[i];
+                    while (i-- > 0)
+                    {
+                        RTBIGNUMELEMENT uCur = pauSrc[i];
+                        pauDst[i] = (uCur >> cBits) | (uPrev << (RTBIGNUM_ELEMENT_BITS - cBits));
+                        uPrev = uCur;
+                    }
+                }
+                else
+                    memcpy(pauDst, pauSrc, i * RTBIGNUM_ELEMENT_SIZE);
+            }
+        }
+        else
+            rc = rtBigNumSetUsed(pResult, 0);
+    }
+    else
+        rc = rtBigNumMagnitudeCopy(pResult, pValue);
+    return rc;
+}
+
+
+RTDECL(int) RTBigNumShiftRight(PRTBIGNUM pResult, PCRTBIGNUM pValue, uint32_t cBits)
+{
+    Assert(pResult != pValue);
+    AssertReturn(pResult->fSensitive >= pValue->fSensitive, VERR_BIGNUM_SENSITIVE_INPUT);
+
+    int rc = rtBigNumUnscramble(pResult);
+    if (RT_SUCCESS(rc))
+    {
+        RTBIGNUM_ASSERT_VALID(pResult);
+        rc = rtBigNumUnscramble((PRTBIGNUM)pValue);
+        if (RT_SUCCESS(rc))
+        {
+            RTBIGNUM_ASSERT_VALID(pValue);
+
+            pResult->fNegative = pValue->fNegative;
+            rc = rtBigNumMagnitudeShiftRight(pResult, pValue, cBits);
+            if (!pResult->cUsed)
+                pResult->fNegative = 0;
+
+            rtBigNumScramble((PRTBIGNUM)pValue);
+        }
+        rtBigNumScramble(pResult);
+    }
+    return rc;
+}
+
+
+/**
+ * Implements the D3 test for Qhat decrementation.
+ *
+ * @returns True if Qhat should be decremented.
+ * @param   puQhat              Pointer to Qhat.
+ * @param   uRhat               The remainder.
+ * @param   uDivisorY           The penultimate divisor element.
+ * @param   uDividendJMinus2    The j-2 dividend element.
+ */
+DECLINLINE(bool) rtBigNumKnuthD3_ShouldDecrementQhat(RTBIGNUMELEMENT2X const *puQhat, RTBIGNUMELEMENT uRhat,
+                                                     RTBIGNUMELEMENT uDivisorY, RTBIGNUMELEMENT uDividendJMinus2)
+{
+    if (puQhat->s.Lo == RTBIGNUM_ELEMENT_MAX && puQhat->s.Hi == 0)
+        return true;
+#if RTBIGNUM_ELEMENT_BITS == 64
+    RTBIGNUMELEMENT2X TmpLeft;
+    RTUInt128MulByU64(&TmpLeft, puQhat, uDivisorY);
+
+    RTBIGNUMELEMENT2X TmpRight;
+    TmpRight.s.Lo = 0;
+    TmpRight.s.Hi = uRhat;
+    RTUInt128AssignAddU64(&TmpRight, uDividendJMinus2);
+
+    if (RTUInt128Compare(&TmpLeft, &TmpRight) > 0)
+        return true;
+#else
+    if (puQhat->u * uDivisorY > ((uint64_t)uRhat << 32) + uDividendJMinus2)
+        return true;
+#endif
+    return false;
+}
+
+
+/**
+ * C implementation of the D3 step of Knuth's division algorithm.
+ *
+ * This estimates a value Qhat that will be used as quotient "digit" (element)
+ * at the current level of the division (j).
+ *
+ * @returns The Qhat value we've estimated.
+ * @param   pauDividendJN   Pointer to the j+n (normalized) dividend element.
+ *                          Will access up to two elements prior to this.
+ * @param   uDivZ           The last element in the (normalized) divisor.
+ * @param   uDivY           The penultimate element in the (normalized) divisor.
+ */
+DECLINLINE(RTBIGNUMELEMENT) rtBigNumKnuthD3_EstimateQhat(PCRTBIGNUMELEMENT pauDividendJN,
+                                                         RTBIGNUMELEMENT uDivZ, RTBIGNUMELEMENT uDivY)
+{
+    RTBIGNUMELEMENT2X   uQhat;
+    RTBIGNUMELEMENT     uRhat;
+    RTBIGNUMELEMENT     uDividendJN = pauDividendJN[0];
+    Assert(uDividendJN <= uDivZ);
+    if (uDividendJN != uDivZ)
+        rtBigNumElement2xDiv2xBy1x(&uQhat, &uRhat, uDividendJN, pauDividendJN[-1], uDivZ);
+    else
+    {
+        /*
+         * This is the case where we end up with an initial Qhat that's all Fs.
+         */
+        /* Calc the remainder for max Qhat value. */
+        RTBIGNUMELEMENT2X uTmp1;        /* (v[j+n] << bits) + v[J+N-1]  */
+        uTmp1.s.Hi = uDivZ;
+        uTmp1.s.Lo = pauDividendJN[-1];
+
+        RTBIGNUMELEMENT2X uTmp2;        /* uQhat * uDividendJN */
+        uTmp2.s.Hi = uDivZ - 1;
+        uTmp2.s.Lo = 0 - uDivZ;
+#if RTBIGNUM_ELEMENT_BITS == 64
+        RTUInt128AssignSub(&uTmp1, &uTmp2);
+#else
+        uTmp1.u -= uTmp2.u;
+#endif
+        /* If we overflowed the remainder, don't bother trying to adjust. */
+        if (uTmp1.s.Hi)
+            return RTBIGNUM_ELEMENT_MAX;
+
+        uRhat = uTmp1.s.Lo;
+        uQhat.s.Lo = RTBIGNUM_ELEMENT_MAX;
+        uQhat.s.Hi = 0;
+    }
+
+    /*
+     * Adjust Q to eliminate all cases where it's two to large and most cases
+     * where it's one too large.
+     */
+    while (rtBigNumKnuthD3_ShouldDecrementQhat(&uQhat, uRhat, uDivY, pauDividendJN[-2]))
+    {
+        rtBigNumElement2xDec(&uQhat);
+        uRhat += uDivZ;
+        if (uRhat < uDivZ /* overflow */ || uRhat == RTBIGNUM_ELEMENT_MAX)
+            break;
+    }
+
+    return uQhat.s.Lo;
+}
+
+
+#ifdef IPRT_BIGINT_WITH_ASM
+DECLASM(bool) rtBigNumKnuthD4_MulSub(PRTBIGNUMELEMENT pauDividendJ, PRTBIGNUMELEMENT pauDivisor,
+                                     uint32_t cDivisor, RTBIGNUMELEMENT uQhat);
+#else
+/**
+ * C implementation of the D4 step of Knuth's division algorithm.
+ *
+ * This subtracts Divisor * Qhat from the dividend at the current J index.
+ *
+ * @returns true if negative result (unlikely), false if positive.
+ * @param   pauDividendJ    Pointer to the j-th (normalized) dividend element.
+ *                          Will access up to two elements prior to this.
+ * @param   uDivZ           The last element in the (normalized) divisor.
+ * @param   uDivY           The penultimate element in the (normalized) divisor.
+ */
+DECLINLINE(bool) rtBigNumKnuthD4_MulSub(PRTBIGNUMELEMENT pauDividendJ, PRTBIGNUMELEMENT pauDivisor,
+                                        uint32_t cDivisor, RTBIGNUMELEMENT uQhat)
+{
+    uint32_t        i;
+    bool            fBorrow   = false;
+    RTBIGNUMELEMENT uMulCarry = 0;
+    for (i = 0; i < cDivisor; i++)
+    {
+        RTBIGNUMELEMENT2X uSub;
+# if RTBIGNUM_ELEMENT_BITS == 64
+        RTUInt128MulU64ByU64(&uSub, uQhat, pauDivisor[i]);
+        RTUInt128AssignAddU64(&uSub, uMulCarry);
+# else
+        uSub.u = (uint64_t)uQhat * pauDivisor[i] + uMulCarry;
+# endif
+        uMulCarry = uSub.s.Hi;
+
+        RTBIGNUMELEMENT uDividendI = pauDividendJ[i];
+        if (!fBorrow)
+        {
+            fBorrow = uDividendI < uSub.s.Lo;
+            uDividendI -= uSub.s.Lo;
+        }
+        else
+        {
+            fBorrow = uDividendI <= uSub.s.Lo;
+            uDividendI -= uSub.s.Lo + 1;
+        }
+        pauDividendJ[i] = uDividendI;
+    }
+
+    /* Carry and borrow into the final dividend element. */
+    RTBIGNUMELEMENT uDividendI = pauDividendJ[i];
+    if (!fBorrow)
+    {
+        fBorrow = uDividendI < uMulCarry;
+        pauDividendJ[i] = uDividendI - uMulCarry;
+    }
+    else
+    {
+        fBorrow = uDividendI <= uMulCarry;
+        pauDividendJ[i] = uDividendI - uMulCarry - 1;
+    }
+
+    return fBorrow;
+}
+#endif /* !IPRT_BIGINT_WITH_ASM */
+
+
+/**
+ * C implementation of the D6 step of Knuth's division algorithm.
+ *
+ * This adds the divisor to the dividend to undo the negative value step D4
+ * produced.  This is not very frequent occurence.
+ *
+ * @param   pauDividendJ    Pointer to the j-th (normalized) dividend element.
+ *                          Will access up to two elements prior to this.
+ * @param   uDivZ           The last element in the (normalized) divisor.
+ * @param   uDivY           The penultimate element in the (normalized) divisor.
+ */
+DECLINLINE(void) rtBigNumKnuthD6_AddBack(PRTBIGNUMELEMENT pauDividendJ, PRTBIGNUMELEMENT pauDivisor, uint32_t cDivisor)
+{
+    RTBIGNUMELEMENT2X uTmp;
+    uTmp.s.Lo = 0;
+
+    uint32_t i;
+    for (i = 0; i < cDivisor; i++)
+    {
+        uTmp.s.Hi = 0;
+#if RTBIGNUM_ELEMENT_BITS == 64
+        RTUInt128AssignAddU64(&uTmp, pauDivisor[i]);
+        RTUInt128AssignAddU64(&uTmp, pauDividendJ[i]);
+#else
+        uTmp.u += pauDivisor[i];
+        uTmp.u += pauDividendJ[i];
+#endif
+        pauDividendJ[i] = uTmp.s.Lo;
+        uTmp.s.Lo = uTmp.s.Hi;
+    }
+
+    /* The final dividend entry. */
+    Assert(pauDividendJ[i] + uTmp.s.Lo < uTmp.s.Lo);
+    pauDividendJ[i] += uTmp.s.Lo;
+}
+
+
+/**
+ * Knuth's division (core).
+ *
+ * @returns IPRT status code.
+ * @param   pQuotient       Where to return the quotient.  Can be NULL.
+ * @param   pRemainder      Where to return the remainder.
+ * @param   pDividend       What to divide.
+ * @param   pDivisor        What to divide by.
+ */
+static int rtBigNumMagnitudeDivideKnuth(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+{
+    Assert(pDivisor->cUsed > 1);
+    uint32_t const cDivisor = pDivisor->cUsed;
+    Assert(pDividend->cUsed >= cDivisor);
+
+    /*
+     * Make sure we've got enough space in the quotient, so we can build it
+     * without any trouble come step D5.
+     */
+    int rc;
+    if (pQuotient)
+    {
+        rc = rtBigNumSetUsedEx(pQuotient, 0, pDividend->cUsed - cDivisor + 1);
+        if (RT_SUCCESS(rc))
+            rc = rtBigNumSetUsed(pQuotient, pDividend->cUsed - cDivisor + 1);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * D1. Normalize.  The goal here is to make sure the last element in the
+     * divisor is greater than RTBIGNUMELEMENTS_MAX/2.  We must also make sure
+     * we can access element pDividend->cUsed of the normalized dividend.
+     */
+    RTBIGNUM    NormDividend;
+    RTBIGNUM    NormDivisor;
+    PCRTBIGNUM  pNormDivisor = &NormDivisor;
+    rtBigNumInitZeroTemplate(&NormDivisor, pDividend);
+
+    uint32_t cNormShift = (RTBIGNUM_ELEMENT_BITS - rtBigNumMagnitudeBitWidth(pDivisor)) & (RTBIGNUM_ELEMENT_BITS - 1);
+    if (cNormShift)
+    {
+        rtBigNumInitZeroTemplate(&NormDividend, pDividend);
+        rc = rtBigNumMagnitudeShiftLeft(&NormDividend, pDividend, cNormShift);
+        if (RT_SUCCESS(rc))
+            rc = rtBigNumMagnitudeShiftLeft(&NormDivisor, pDivisor, cNormShift);
+    }
+    else
+    {
+        pNormDivisor = pDivisor;
+        rc = rtBigNumCloneInternal(&NormDividend, pDividend);
+    }
+    if (RT_SUCCESS(rc) && pDividend->cUsed == NormDividend.cUsed)
+        rc = rtBigNumEnsureExtraZeroElements(&NormDividend, NormDividend.cUsed + 1);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * D2. Initialize the j index so we can loop thru the elements in the
+         *     dividend that makes it larger than the divisor.
+         */
+        uint32_t j = pDividend->cUsed - cDivisor;
+
+        RTBIGNUMELEMENT const DivZ = pNormDivisor->pauElements[cDivisor - 1];
+        RTBIGNUMELEMENT const DivY = pNormDivisor->pauElements[cDivisor - 2];
+        for (;;)
+        {
+            /*
+             * D3. Estimate a Q' by dividing the j and j-1 dividen elements by
+             * the last divisor element, then adjust against the next elements.
+             */
+            RTBIGNUMELEMENT uQhat = rtBigNumKnuthD3_EstimateQhat(&NormDividend.pauElements[j + cDivisor], DivZ, DivY);
+
+            /*
+             * D4. Multiply and subtract.
+             */
+            bool fNegative = rtBigNumKnuthD4_MulSub(&NormDividend.pauElements[j], pNormDivisor->pauElements, cDivisor, uQhat);
+
+            /*
+             * D5. Test remainder.
+             * D6. Add back.
+             */
+            if (fNegative)
+            {
+//__debugbreak();
+                rtBigNumKnuthD6_AddBack(&NormDividend.pauElements[j], pNormDivisor->pauElements, cDivisor);
+                uQhat--;
+            }
+
+            if (pQuotient)
+                pQuotient->pauElements[j] = uQhat;
+
+            /*
+             * D7. Loop on j.
+             */
+            if (j == 0)
+                break;
+            j--;
+        }
+
+        /*
+         * D8. Unnormalize the remainder.
+         */
+        rtBigNumStripTrailingZeros(&NormDividend);
+        if (cNormShift)
+            rc = rtBigNumMagnitudeShiftRight(pRemainder, &NormDividend, cNormShift);
+        else
+            rc = rtBigNumMagnitudeCopy(pRemainder, &NormDividend);
+        if (pQuotient)
+            rtBigNumStripTrailingZeros(pQuotient);
+    }
+
+    /*
+     * Delete temporary variables.
+     */
+    RTBigNumDestroy(&NormDividend);
+    if (pDivisor == &NormDivisor)
+        RTBigNumDestroy(&NormDivisor);
+    return rc;
+}
+
+
+static int rtBigNumMagnitudeDivideSlowLong(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+{
+    /*
+     * Do very simple long division.  This ain't fast, but it does the trick.
+     */
+    int rc = VINF_SUCCESS;
+    uint32_t iBit = rtBigNumMagnitudeBitWidth(pDividend);
+    while (iBit-- > 0)
+    {
+        rc = rtBigNumMagnitudeShiftLeftOne(pRemainder, rtBigNumMagnitudeGetBit(pDividend, iBit));
+        AssertRCBreak(rc);
+        int iDiff = rtBigNumMagnitudeCompare(pRemainder, pDivisor);
+        if (iDiff >= 0)
+        {
+            if (iDiff != 0)
+            {
+                rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+                AssertRCBreak(rc);
+            }
+            else
+                rtBigNumSetUsed(pRemainder, 0);
+            rc = rtBigNumMagnitudeSetBit(pQuotient, iBit);
+            AssertRCBreak(rc);
+        }
+    }
+
+    /* This shouldn't be necessary. */
+    rtBigNumStripTrailingZeros(pQuotient);
+    rtBigNumStripTrailingZeros(pRemainder);
+
+    return rc;
+}
+
+
+/**
  * Divides the magnitudes of two values, letting the caller care about the sign
  * bit.
  *
@@ -1611,11 +2268,13 @@ DECLINLINE(int) rtBigNumMagnitudeShiftLeftOne(PRTBIGNUM pBigNum, RTBIGNUMELEMENT
  *
  * @returns IPRT status code.
  * @param   pQuotient       Where to return the quotient.
- * @param   pRemainder      Where to return the reminder.
+ * @param   pRemainder      Where to return the remainder.
  * @param   pDividend       What to divide.
  * @param   pDivisor        What to divide by.
+ * @param   fForceLong      Force long division.
  */
-static int rtBigNumMagnitudeDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+static int rtBigNumMagnitudeDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor,
+                                   bool fForceLong)
 {
     Assert(pQuotient != pDividend); Assert(pQuotient != pDivisor); Assert(pRemainder != pDividend); Assert(pRemainder != pDivisor); Assert(pRemainder != pQuotient);
     Assert(!pQuotient->fCurScrambled); Assert(!pRemainder->fCurScrambled); Assert(!pDividend->fCurScrambled); Assert(!pDivisor->fCurScrambled);
@@ -1660,37 +2319,66 @@ static int rtBigNumMagnitudeDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PC
     }
 
     /*
-     * Do very simple long division.  This ain't fast, but it does the trick.
+     * Sort out special cases before going to the preferred or select algorithm.
      */
-    int rc = VINF_SUCCESS;
-    uint32_t iBit = rtBigNumMagnitudeBitWidth(pDividend);
-    while (iBit-- > 0)
+    int rc;
+    if (pDividend->cUsed <= 2 && !fForceLong)
     {
-        rc = rtBigNumMagnitudeShiftLeftOne(pRemainder, rtBigNumMagnitudeGetBit(pDividend, iBit));
-        AssertRCBreak(rc);
-        iDiff = rtBigNumMagnitudeCompare(pRemainder, pDivisor);
-        if (iDiff >= 0)
+        if (pDividend->cUsed < 2)
         {
-            if (iDiff != 0)
+            /*
+             * Single element division.
+             */
+            RTBIGNUMELEMENT uQ = pDividend->pauElements[0] / pDivisor->pauElements[0];
+            RTBIGNUMELEMENT uR = pDividend->pauElements[0] % pDivisor->pauElements[0];
+            rc = VINF_SUCCESS;
+            if (uQ)
             {
-                rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
-                AssertRCBreak(rc);
+                rc = rtBigNumSetUsed(pQuotient, 1);
+                if (RT_SUCCESS(rc))
+                    pQuotient->pauElements[0] = uQ;
+            }
+            if (uR && RT_SUCCESS(rc))
+            {
+                rc = rtBigNumSetUsed(pRemainder, 1);
+                if (RT_SUCCESS(rc))
+                    pRemainder->pauElements[0] = uR;
+            }
+        }
+        else
+        {
+            /*
+             * Two elements dividend by a one or two element divisor.
+             */
+            RTBIGNUMELEMENT2X uQ, uR;
+            if (pDivisor->cUsed == 1)
+            {
+                rtBigNumElement2xDiv2xBy1x(&uQ, &uR.s.Lo, pDividend->pauElements[1], pDividend->pauElements[0],
+                                           pDivisor->pauElements[0]);
+                uR.s.Hi = 0;
             }
             else
-                rtBigNumSetUsed(pRemainder, 0);
-            rc = rtBigNumMagnitudeSetBit(pQuotient, iBit);
-            AssertRCBreak(rc);
+                rtBigNumElement2xDiv(&uQ, &uR, pDividend->pauElements[1], pDividend->pauElements[0],
+                                     pDivisor->pauElements[1], pDivisor->pauElements[0]);
+            rc = rtBigNumElement2xCopyToMagnitude(&uQ, pQuotient);
+            if (RT_SUCCESS(rc))
+                rc = rtBigNumElement2xCopyToMagnitude(&uR, pRemainder);
         }
     }
-
-    /* This shouldn't be necessary. */
-    rtBigNumStripTrailingZeros(pQuotient);
-    rtBigNumStripTrailingZeros(pRemainder);
+    /*
+     * Decide upon which algorithm to use.  Knuth requires a divisor that's at
+     * least 2 elements big.
+     */
+    else if (pDivisor->cUsed < 2 || fForceLong)
+        rc = rtBigNumMagnitudeDivideSlowLong(pQuotient, pRemainder, pDividend, pDivisor);
+    else
+        rc = rtBigNumMagnitudeDivideKnuth(pQuotient, pRemainder, pDividend, pDivisor);
     return rc;
 }
 
 
-RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+static int rtBigNumDivideCommon(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder,
+                                PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor, bool fForceLong)
 {
     Assert(pQuotient != pDividend); Assert(pQuotient != pDivisor); Assert(pRemainder != pDividend); Assert(pRemainder != pDivisor); Assert(pRemainder != pQuotient);
     AssertReturn(pQuotient->fSensitive  >= (pDividend->fSensitive | pDivisor->fSensitive), VERR_BIGNUM_SENSITIVE_INPUT);
@@ -1724,7 +2412,7 @@ RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM
                     pQuotient->fNegative  = pDividend->fNegative ^ pDivisor->fNegative;
                     pRemainder->fNegative = pDividend->fNegative;
 
-                    rc = rtBigNumMagnitudeDivide(pQuotient, pRemainder, pDividend, pDivisor);
+                    rc = rtBigNumMagnitudeDivide(pQuotient, pRemainder, pDividend, pDivisor, fForceLong);
 
                     if (pQuotient->cUsed == 0)
                         pQuotient->fNegative = 0;
@@ -1743,6 +2431,18 @@ RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM
 }
 
 
+RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+{
+    return rtBigNumDivideCommon(pQuotient, pRemainder, pDividend, pDivisor, false /*fForceLong*/);
+}
+
+
+RTDECL(int) RTBigNumDivideLong(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, PCRTBIGNUM pDivisor)
+{
+    return rtBigNumDivideCommon(pQuotient, pRemainder, pDividend, pDivisor, true /*fForceLong*/);
+}
+
+
 /**
  * Calculates the modulus of a magnitude value, leaving the sign bit to the
  * caller.
@@ -1751,7 +2451,7 @@ RTDECL(int) RTBigNumDivide(PRTBIGNUM pQuotient, PRTBIGNUM pRemainder, PCRTBIGNUM
  * touched, this means the caller have to check for zero outputs.
  *
  * @returns IPRT status code.
- * @param   pRemainder      Where to return the reminder.
+ * @param   pRemainder      Where to return the remainder.
  * @param   pDividend       What to divide.
  * @param   pDivisor        What to divide by.
  */
@@ -1793,26 +2493,37 @@ static int rtBigNumMagnitudeModulo(PRTBIGNUM pRemainder, PCRTBIGNUM pDividend, P
     if (iDiff == 0)
         return VINF_SUCCESS;
 
-    /*
-     * Do very simple long division.  This ain't fast, but it does the trick.
-     */
+    /** @todo optimize small numbers. */
     int rc = VINF_SUCCESS;
-    uint32_t iBit = rtBigNumMagnitudeBitWidth(pDividend);
-    while (iBit-- > 0)
+    if (pDivisor->cUsed < 2)
     {
-        rc = rtBigNumMagnitudeShiftLeftOne(pRemainder, rtBigNumMagnitudeGetBit(pDividend, iBit));
-        AssertRCBreak(rc);
-        iDiff = rtBigNumMagnitudeCompare(pRemainder, pDivisor);
-        if (iDiff >= 0)
+        /*
+         * Do very simple long division.  This ain't fast, but it does the trick.
+         */
+        uint32_t iBit = rtBigNumMagnitudeBitWidth(pDividend);
+        while (iBit-- > 0)
         {
-            if (iDiff != 0)
+            rc = rtBigNumMagnitudeShiftLeftOne(pRemainder, rtBigNumMagnitudeGetBit(pDividend, iBit));
+            AssertRCBreak(rc);
+            iDiff = rtBigNumMagnitudeCompare(pRemainder, pDivisor);
+            if (iDiff >= 0)
             {
-                rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
-                AssertRCBreak(rc);
+                if (iDiff != 0)
+                {
+                    rc = rtBigNumMagnitudeSubThis(pRemainder, pDivisor);
+                    AssertRCBreak(rc);
+                }
+                else
+                    rtBigNumSetUsed(pRemainder, 0);
             }
-            else
-                rtBigNumSetUsed(pRemainder, 0);
         }
+    }
+    else
+    {
+        /*
+         * Join paths with division.
+         */
+        rc = rtBigNumMagnitudeDivideKnuth(NULL, pRemainder, pDividend, pDivisor);
     }
 
     /* This shouldn't be necessary. */
