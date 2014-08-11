@@ -39,6 +39,8 @@ extern "C" {
 DECLEXPORT(void) crEnableWarnings(int onOff);
 
 DECLEXPORT(void) crDebug(const char *format, ... ) PRINTF;
+DECLEXPORT(void) crDbgCmdPrint(const char *description1, const char *description2, const char *cmd, ...);
+DECLEXPORT(void) crDbgCmdSymLoadPrint(const char *modName, const void*pvAddress);
 #if defined(DEBUG_misha) && defined(RT_OS_WINDOWS)
 typedef void FNCRDEBUG(const char *format, ... ) PRINTF;
 typedef FNCRDEBUG *PFNCRDEBUG;
