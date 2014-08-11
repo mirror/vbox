@@ -327,6 +327,8 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/generic/memsafer-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/uuid-generic.cpp \
 
+ SUPR3HardenedStatic_SOURCES.amd64 += \
+	$(VBOX_PATH_RUNTIME_SRC)/common/math/RTUInt128MulByU64.asm
 
  SUPR3HardenedStatic_SOURCES.win += \
  	win/SUPR3HardenedNoCrt-win.cpp \
