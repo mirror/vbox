@@ -1280,7 +1280,6 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                 {
                     if (fOsXGuest)
                         *aParavirtProvider = ParavirtProvider_Minimal;
-#if 0           /* Activate this soon. */
                     else if (   mUserData->s.strOsType == "Windows81"
                              || mUserData->s.strOsType == "Windows81_64"
                              || mUserData->s.strOsType == "Windows8"
@@ -1296,7 +1295,6 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                     {
                         *aParavirtProvider = ParavirtProvider_HyperV;
                     }
-#endif
                     else
                         *aParavirtProvider = ParavirtProvider_None;
                     break;
