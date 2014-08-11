@@ -1391,6 +1391,18 @@ void UIActionPoolRuntime::sltPrepareMenuViewMultiscreen()
     updateMenuViewMultiscreen(pMenu);
 }
 
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenToggle()
+{
+    /* Make sure sender is valid: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertPtrReturnVoid(pAction);
+
+    /* Send request to enable/disable guest-screen: */
+    const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
+    const bool fScreenEnabled = pAction->isChecked();
+    emit sigNotifyAboutTriggeringViewScreenToggle(iGuestScreenIndex, fScreenEnabled);
+}
+
 void UIActionPoolRuntime::sltHandleActionTriggerViewScreenResize(QAction *pAction)
 {
     /* Make sure sender is valid: */
@@ -2109,6 +2121,25 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
     const UIFrameBuffer* pFrameBuffer = session()->frameBuffer(iGuestScreenIndex);
     const QSize screenSize = QSize(pFrameBuffer->width(), pFrameBuffer->height());
+    const bool fScreenEnabled = session()->isScreenVisible(iGuestScreenIndex);
+
+    /* For non-primary screens: */
+    if (iGuestScreenIndex > 0)
+    {
+        /* Create 'toggle' action: */
+        QAction *pToggleAction = pMenu->addAction(UIActionPoolRuntime::tr("Enable", "Virtual Screen"),
+                                                  this, SLOT(sltHandleActionTriggerViewScreenToggle()));
+        AssertPtrReturnVoid(pToggleAction);
+        {
+            /* Configure 'toggle' action: */
+            pToggleAction->setEnabled(session()->isGuestSupportsGraphics());
+            pToggleAction->setProperty("Guest Screen Index", iGuestScreenIndex);
+            pToggleAction->setCheckable(true);
+            pToggleAction->setChecked(fScreenEnabled);
+            /* Add separator: */
+            pMenu->addSeparator();
+        }
+    }
 
     /* Create exclusive 'resize' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
@@ -2125,7 +2156,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
             AssertPtrReturnVoid(pAction);
             {
                 /* Configure exclusive 'resize' action: */
-                pAction->setEnabled(session()->isGuestSupportsGraphics());
+                pAction->setEnabled(session()->isGuestSupportsGraphics() && fScreenEnabled);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
