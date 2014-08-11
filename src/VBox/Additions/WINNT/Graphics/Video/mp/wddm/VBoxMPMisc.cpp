@@ -803,11 +803,11 @@ NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK f
     return vboxWddmRegOpenKeyEx(phKey, NULL, pName, fAccess);
 }
 
-NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PVBOXMP_DEVEXT pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, OUT PHANDLE phKey)
+NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, OUT PHANDLE phKey)
 {
     WCHAR Buf[512];
     ULONG cbBuf = sizeof(Buf);
-    NTSTATUS Status = vboxWddmRegQueryDisplaySettingsKeyName(pDeviceExtension, VidPnSourceId, cbBuf, Buf, &cbBuf);
+    NTSTATUS Status = vboxWddmRegQueryDisplaySettingsKeyName(pDevExt, VidPnSourceId, cbBuf, Buf, &cbBuf);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
@@ -850,11 +850,11 @@ NTSTATUS vboxWddmRegDisplaySettingsQueryRelY(HANDLE hKey, int * pResult)
     return Status;
 }
 
-NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, POINT * pPos)
+NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, POINT * pPos)
 {
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     HANDLE hKey;
-    NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDeviceExtension, VidPnSourceId, &hKey);
+    NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDevExt, VidPnSourceId, &hKey);
     //Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
@@ -876,6 +876,27 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDeviceExtension, D3D
     }
 
     return Status;
+}
+
+void vboxWddmDisplaySettingsCheckPos(IN PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    POINT Pos = {0};
+    NTSTATUS Status = vboxWddmDisplaySettingsQueryPos(pDevExt, VidPnSourceId, &Pos);
+    if (!NT_SUCCESS(Status))
+    {
+        Log(("vboxWddmDisplaySettingsQueryPos failed %#x", Status));
+        return;
+    }
+
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
+
+    if (!memcmp(&pSource->VScreenPos, &Pos, sizeof (Pos)))
+        return;
+
+    pSource->VScreenPos = Pos;
+    pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_DIMENSIONS;
+
+    vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
 }
 
 NTSTATUS vboxWddmRegDrvFlagsSet(PVBOXMP_DEVEXT pDevExt, DWORD fVal)
