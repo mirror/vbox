@@ -402,6 +402,30 @@ DECLINLINE(void) RTListMove(PRTLISTNODE pListDst, PRTLISTNODE pListSrc)
     }
 }
 
+/**
+ * List concatenation.
+ *
+ * @returns nothing.
+ * @param   pListDst            The destination list.
+ * @param   pListSrc            The source list to concatenate.
+ */
+DECLINLINE(void) RTListConcatenate(PRTLISTANCHOR pListDst, PRTLISTANCHOR pListSrc)
+{
+    if (!RTListIsEmpty(pListSrc))
+    {
+        PRTLISTNODE pFirst = pListSrc->pNext;
+        PRTLISTNODE pLast = pListSrc->pPrev;
+
+        pListDst->pPrev->pNext = pFirst;
+        pFirst->pPrev          = pListDst->pPrev;
+        pLast->pNext           = pListDst;
+        pListDst->pPrev        = pLast;
+
+        /* Finally remove the elements from the source list */
+        RTListInit(pListSrc);
+    }
+}
+
 RT_C_DECLS_END
 
 /** @} */

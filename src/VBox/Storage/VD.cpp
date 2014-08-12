@@ -578,6 +578,12 @@ typedef struct VDMETAXFER
     unsigned         cRefs;
     /** Size of the data stored with this entry. */
     size_t           cbMeta;
+    /** Shadow buffer which is used in case a write is still active and other
+     * writes update the shadow buffer. */
+    uint8_t         *pbDataShw;
+    /** List of I/O contexts updating the shadow buffer while there is a write
+     * in progress. */
+    RTLISTNODE       ListIoCtxShwWrites;
     /** Data stored - variable size. */
     uint8_t          abData[1];
 } VDMETAXFER;
@@ -1544,7 +1550,9 @@ DECLINLINE(PVDMETAXFER) vdMetaXferAlloc(PVDIOSTORAGE pIoStorage, uint64_t uOffse
         pMetaXfer->cbMeta       = cb;
         pMetaXfer->pIoStorage   = pIoStorage;
         pMetaXfer->cRefs        = 0;
+        pMetaXfer->pbDataShw    = NULL;
         RTListInit(&pMetaXfer->ListIoCtxWaiting);
+        RTListInit(&pMetaXfer->ListIoCtxShwWrites);
     }
     return pMetaXfer;
 }
@@ -4012,51 +4020,18 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     return rc;
 }
 
-/**
- * Internal - Called when a meta transfer completed.
- */
-static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnComplete, void *pvUser,
-                               PVDMETAXFER pMetaXfer, int rcReq)
+static void vdIoCtxContinueDeferredList(PVDIOSTORAGE pIoStorage, PRTLISTANCHOR pListWaiting,
+                                        PFNVDXFERCOMPLETED pfnComplete, void *pvUser, int rcReq)
 {
-    PVBOXHDD pDisk = pIoStorage->pVDIo->pDisk;
-    RTLISTNODE ListIoCtxWaiting;
-    bool fFlush;
-
-    LogFlowFunc(("pIoStorage=%#p pfnComplete=%#p pvUser=%#p pMetaXfer=%#p rcReq=%Rrc\n",
-                 pIoStorage, pfnComplete, pvUser, pMetaXfer, rcReq));
-
-    VD_IS_LOCKED(pDisk);
-
-    fFlush = VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_FLUSH;
-    VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
-
-    if (!fFlush)
-    {
-        RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
-
-        if (RT_FAILURE(rcReq))
-        {
-            /* Remove from the AVL tree. */
-            LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
-            bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key) != NULL;
-            Assert(fRemoved);
-            RTMemFree(pMetaXfer);
-        }
-        else
-        {
-            /* Increase the reference counter to make sure it doesn't go away before the last context is processed. */
-            pMetaXfer->cRefs++;
-        }
-    }
-    else
-        RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
+    LogFlowFunc(("pIoStorage=%#p pListWaiting=%#p pfnComplete=%#p pvUser=%#p rcReq=%Rrc\n",
+                 pIoStorage, pListWaiting, pfnComplete, pvUser, rcReq));
 
     /* Go through the waiting list and continue the I/O contexts. */
-    while (!RTListIsEmpty(&ListIoCtxWaiting))
+    while (!RTListIsEmpty(pListWaiting))
     {
         int rc = VINF_SUCCESS;
         bool fContinue = true;
-        PVDIOCTXDEFERRED pDeferred = RTListGetFirst(&ListIoCtxWaiting, VDIOCTXDEFERRED, NodeDeferred);
+        PVDIOCTXDEFERRED pDeferred = RTListGetFirst(pListWaiting, VDIOCTXDEFERRED, NodeDeferred);
         PVDIOCTX pIoCtx = pDeferred->pIoCtx;
         RTListNodeRemove(&pDeferred->NodeDeferred);
 
@@ -4076,9 +4051,107 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
         else
             Assert(rc == VERR_VD_ASYNC_IO_IN_PROGRESS);
     }
+}
+
+/**
+ * Internal - Called when a meta transfer completed.
+ */
+static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnComplete, void *pvUser,
+                               PVDMETAXFER pMetaXfer, int rcReq)
+{
+    PVBOXHDD pDisk = pIoStorage->pVDIo->pDisk;
+    RTLISTNODE ListIoCtxWaiting;
+    bool fFlush;
+
+    LogFlowFunc(("pIoStorage=%#p pfnComplete=%#p pvUser=%#p pMetaXfer=%#p rcReq=%Rrc\n",
+                 pIoStorage, pfnComplete, pvUser, pMetaXfer, rcReq));
+
+    VD_IS_LOCKED(pDisk);
+
+    fFlush = VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_FLUSH;
+
+    if (!fFlush)
+    {
+        RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
+
+        if (RT_FAILURE(rcReq))
+        {
+            /* Remove from the AVL tree. */
+            LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
+            bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key) != NULL;
+            Assert(fRemoved);
+            /* If this was a write check if there is a shadow buffer with updated data. */
+            if (pMetaXfer->pbDataShw)
+            {
+                Assert(VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_WRITE);
+                Assert(!RTListIsEmpty(&pMetaXfer->ListIoCtxShwWrites));
+                RTListConcatenate(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxShwWrites);
+                RTMemFree(pMetaXfer->pbDataShw);
+                pMetaXfer->pbDataShw = NULL;
+            }
+            RTMemFree(pMetaXfer);
+        }
+        else
+        {
+            /* Increase the reference counter to make sure it doesn't go away before the last context is processed. */
+            pMetaXfer->cRefs++;
+        }
+    }
+    else
+        RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
+
+    VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
+    vdIoCtxContinueDeferredList(pIoStorage, &ListIoCtxWaiting, pfnComplete, pvUser, rcReq);
+
+    /*
+     * If there is a shadow buffer and the previous write was successful update with the
+     * new data and trigger a new write.
+     */
+    if (   pMetaXfer->pbDataShw
+        && RT_SUCCESS(rcReq)
+        && VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_NONE)
+    {
+        LogFlowFunc(("pMetaXfer=%#p Updating from shadow buffer and triggering new write\n", pMetaXfer));
+        memcpy(pMetaXfer->abData, pMetaXfer->pbDataShw, pMetaXfer->cbMeta);
+        RTMemFree(pMetaXfer->pbDataShw);
+        pMetaXfer->pbDataShw = NULL;
+        Assert(!RTListIsEmpty(&pMetaXfer->ListIoCtxShwWrites));
+
+        /* Setup a new I/O write. */
+        PVDIOTASK pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvUser, pMetaXfer);
+        if (RT_LIKELY(pIoTask))
+        {
+            void *pvTask = NULL;
+            RTSGSEG Seg;
+
+            Seg.cbSeg = pMetaXfer->cbMeta;
+            Seg.pvSeg = pMetaXfer->abData;
+
+            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_WRITE);
+            rcReq = pIoStorage->pVDIo->pInterfaceIo->pfnWriteAsync(pIoStorage->pVDIo->pInterfaceIo->Core.pvUser,
+                                                                   pIoStorage->pStorage,
+                                                                   pMetaXfer->Core.Key, &Seg, 1,
+                                                                   pMetaXfer->cbMeta, pIoTask,
+                                                                   &pvTask);
+            if (   RT_SUCCESS(rcReq)
+                || rcReq != VERR_VD_ASYNC_IO_IN_PROGRESS)
+            {
+                VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
+                vdIoTaskFree(pDisk, pIoTask);
+            }
+            else
+                RTListMove(&pMetaXfer->ListIoCtxWaiting, &pMetaXfer->ListIoCtxShwWrites);
+        }
+        else
+            rcReq = VERR_NO_MEMORY;
+
+        /* Cleanup if there was an error or the request completed already. */
+        if (rcReq != VERR_VD_ASYNC_IO_IN_PROGRESS)
+            vdIoCtxContinueDeferredList(pIoStorage, &pMetaXfer->ListIoCtxShwWrites, pfnComplete, pvUser, rcReq);
+    }
 
     /* Remove if not used anymore. */
-    if (RT_SUCCESS(rcReq) && !fFlush)
+    if (!fFlush)
     {
         pMetaXfer->cRefs--;
         if (!pMetaXfer->cRefs && RTListIsEmpty(&pMetaXfer->ListIoCtxWaiting))
@@ -4682,7 +4755,10 @@ static int vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
                 pMetaXfer->cRefs++;
                 Assert(pMetaXfer->cbMeta >= cbRead);
                 Assert(pMetaXfer->Core.Key == (RTFOFF)uOffset);
-                memcpy(pvBuf, pMetaXfer->abData, cbRead);
+                if (pMetaXfer->pbDataShw)
+                    memcpy(pvBuf, pMetaXfer->pbDataShw, cbRead);
+                else
+                    memcpy(pvBuf, pMetaXfer->abData, cbRead);
                 *ppMetaXfer = pMetaXfer;
             }
         }
@@ -4744,60 +4820,105 @@ static int vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
             fInTree = true;
         }
 
-        Assert(VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_NONE);
-
-        pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvCompleteUser, pMetaXfer);
-        if (!pIoTask)
+        if (VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_NONE)
         {
-            RTMemFree(pMetaXfer);
-            return VERR_NO_MEMORY;
-        }
-
-        memcpy(pMetaXfer->abData, pvBuf, cbWrite);
-        Seg.cbSeg = cbWrite;
-        Seg.pvSeg = pMetaXfer->abData;
-
-        ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
-
-        VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_WRITE);
-        rc = pVDIo->pInterfaceIo->pfnWriteAsync(pVDIo->pInterfaceIo->Core.pvUser,
-                                                pIoStorage->pStorage,
-                                                uOffset, &Seg, 1, cbWrite, pIoTask,
-                                                &pvTask);
-        if (RT_SUCCESS(rc))
-        {
-            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
-            ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
-            vdIoTaskFree(pDisk, pIoTask);
-            if (fInTree && !pMetaXfer->cRefs)
+            pIoTask = vdIoTaskMetaAlloc(pIoStorage, pfnComplete, pvCompleteUser, pMetaXfer);
+            if (!pIoTask)
             {
-                LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
-                bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key) != NULL;
-                AssertMsg(fRemoved, ("Metadata transfer wasn't removed\n"));
+                RTMemFree(pMetaXfer);
+                return VERR_NO_MEMORY;
+            }
+
+            memcpy(pMetaXfer->abData, pvBuf, cbWrite);
+            Seg.cbSeg = cbWrite;
+            Seg.pvSeg = pMetaXfer->abData;
+
+            ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
+
+            VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_WRITE);
+            rc = pVDIo->pInterfaceIo->pfnWriteAsync(pVDIo->pInterfaceIo->Core.pvUser,
+                                                    pIoStorage->pStorage,
+                                                    uOffset, &Seg, 1, cbWrite, pIoTask,
+                                                    &pvTask);
+            if (RT_SUCCESS(rc))
+            {
+                VDMETAXFER_TXDIR_SET(pMetaXfer->fFlags, VDMETAXFER_TXDIR_NONE);
+                ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
+                vdIoTaskFree(pDisk, pIoTask);
+                if (fInTree && !pMetaXfer->cRefs)
+                {
+                    LogFlow(("Removing meta xfer=%#p\n", pMetaXfer));
+                    bool fRemoved = RTAvlrFileOffsetRemove(pIoStorage->pTreeMetaXfers, pMetaXfer->Core.Key) != NULL;
+                    AssertMsg(fRemoved, ("Metadata transfer wasn't removed\n"));
+                    RTMemFree(pMetaXfer);
+                    pMetaXfer = NULL;
+                }
+            }
+            else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            {
+                PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
+                AssertPtr(pDeferred);
+
+                RTListInit(&pDeferred->NodeDeferred);
+                pDeferred->pIoCtx = pIoCtx;
+
+                if (!fInTree)
+                {
+                    bool fInserted = RTAvlrFileOffsetInsert(pIoStorage->pTreeMetaXfers, &pMetaXfer->Core);
+                    Assert(fInserted);
+                }
+
+                RTListAppend(&pMetaXfer->ListIoCtxWaiting, &pDeferred->NodeDeferred);
+            }
+            else
+            {
                 RTMemFree(pMetaXfer);
                 pMetaXfer = NULL;
             }
         }
-        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        {
-            PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
-            AssertPtr(pDeferred);
-
-            RTListInit(&pDeferred->NodeDeferred);
-            pDeferred->pIoCtx = pIoCtx;
-
-            if (!fInTree)
-            {
-                bool fInserted = RTAvlrFileOffsetInsert(pIoStorage->pTreeMetaXfers, &pMetaXfer->Core);
-                Assert(fInserted);
-            }
-
-            RTListAppend(&pMetaXfer->ListIoCtxWaiting, &pDeferred->NodeDeferred);
-        }
         else
         {
-            RTMemFree(pMetaXfer);
-            pMetaXfer = NULL;
+            /* I/O is in progress, update shadow buffer and add to waiting list. */
+            Assert(VDMETAXFER_TXDIR_GET(pMetaXfer->fFlags) == VDMETAXFER_TXDIR_WRITE);
+            if (!pMetaXfer->pbDataShw)
+            {
+                /* Allocate shadow buffer and set initial state. */
+                LogFlowFunc(("pMetaXfer=%#p Creating shadow buffer\n", pMetaXfer));
+                pMetaXfer->pbDataShw = (uint8_t *)RTMemAlloc(pMetaXfer->cbMeta);
+                if (RT_LIKELY(pMetaXfer->pbDataShw))
+                    memcpy(pMetaXfer->pbDataShw, pMetaXfer->abData, pMetaXfer->cbMeta);
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Update with written data and append to waiting list. */
+                PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
+                if (pDeferred)
+                {
+                    LogFlowFunc(("pMetaXfer=%#p Updating shadow buffer\n", pMetaXfer));
+
+                    RTListInit(&pDeferred->NodeDeferred);
+                    pDeferred->pIoCtx = pIoCtx;
+                    ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
+                    memcpy(pMetaXfer->pbDataShw, pvBuf, cbWrite);
+                    RTListAppend(&pMetaXfer->ListIoCtxShwWrites, &pDeferred->NodeDeferred);
+                }
+                else
+                {
+                    /*
+                     * Free shadow buffer if there is no one depending on it, i.e.
+                     * we just allocated it.
+                     */
+                    if (RTListIsEmpty(&pMetaXfer->ListIoCtxShwWrites))
+                    {
+                        RTMemFree(pMetaXfer->pbDataShw);
+                        pMetaXfer->pbDataShw = NULL;
+                    }
+                    rc = VERR_NO_MEMORY;
+                }
+            }
         }
     }
 
