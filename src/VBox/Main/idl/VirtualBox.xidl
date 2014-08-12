@@ -4248,7 +4248,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="5cabbce0-6565-4713-a7fd-1f8c70e51797"
+    uuid="96ae59d6-fecd-4a32-b051-23643eb4cd56"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
