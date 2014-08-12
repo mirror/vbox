@@ -4030,7 +4030,6 @@ static void vdIoCtxContinueDeferredList(PVDIOSTORAGE pIoStorage, PRTLISTANCHOR p
     while (!RTListIsEmpty(pListWaiting))
     {
         int rc = VINF_SUCCESS;
-        bool fContinue = true;
         PVDIOCTXDEFERRED pDeferred = RTListGetFirst(pListWaiting, VDIOCTXDEFERRED, NodeDeferred);
         PVDIOCTX pIoCtx = pDeferred->pIoCtx;
         RTListNodeRemove(&pDeferred->NodeDeferred);
