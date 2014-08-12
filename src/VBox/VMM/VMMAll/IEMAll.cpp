@@ -975,7 +975,8 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
             Assert(GCPtrPC32 == 0); Assert(pCtx->cs.u32Limit == UINT32_MAX);
             cbToTryRead = UINT32_MAX;
         }
-        GCPtrPC = pCtx->cs.u64Base + GCPtrPC32;
+        GCPtrPC = (uint32_t)pCtx->cs.u64Base + GCPtrPC32;
+        Assert(GCPtrPC <= UINT32_MAX);
     }
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
