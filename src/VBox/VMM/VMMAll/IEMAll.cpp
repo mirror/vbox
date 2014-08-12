@@ -1116,7 +1116,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         }
         if (cbToTryRead < cbMin - cbLeft)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
-        GCPtrNext = pCtx->cs.u64Base + GCPtrNext32;
+        GCPtrNext = (uint32_t)pCtx->cs.u64Base + GCPtrNext32;
     }
 
     /* Only read up to the end of the page, and make sure we don't read more
