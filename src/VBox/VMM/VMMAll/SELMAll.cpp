@@ -107,11 +107,11 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
     if (    pCtxCore->eflags.Bits.u1VM
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
-        RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
+        uint32_t uFlat = (uint32_t)Addr & 0xffff;
         if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-            uFlat += pSReg->u64Base;
+            uFlat += (uint32_t)pSReg->u64Base;
         else
-            uFlat += (RTGCUINTPTR)pSReg->Sel << 4;
+            uFlat += (uint32_t)pSReg->Sel << 4;
         return (RTGCPTR)uFlat;
     }
 
@@ -144,7 +144,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
 
     /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
     Assert(pSReg->u64Base <= 0xffffffff);
-    return ((pSReg->u64Base + (RTGCUINTPTR)Addr) & 0xffffffff);
+    return (uint32_t)pSReg->u64Base + (uint32_t)Addr;
 }
 
 
@@ -177,13 +177,13 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
     if (    pCtxCore->eflags.Bits.u1VM
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
-        RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
         if (ppvGC)
         {
+            uint32_t uFlat = (uint32_t)Addr & 0xffff;
             if (CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-                *ppvGC = pSReg->u64Base + uFlat;
+                *ppvGC = (uint32_t)pSReg->u64Base + uFlat;
             else
-                *ppvGC = ((RTGCUINTPTR)pSReg->Sel << 4) + uFlat;
+                *ppvGC = ((uint32_t)pSReg->Sel << 4) + uFlat;
         }
         return VINF_SUCCESS;
     }
@@ -222,8 +222,8 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
     {
         /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
         Assert(pSReg->u64Base <= UINT32_C(0xffffffff));
-        pvFlat  = pSReg->u64Base + Addr;
-        pvFlat &= UINT32_C(0xffffffff);
+        pvFlat  = (uint32_t)pSReg->u64Base + (uint32_t)Addr;
+        Assert(pvFlat <= UINT32_MAX);
     }
 
     /*
@@ -609,11 +609,11 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
                                                      PRTGCPTR ppvFlat)
 {
     NOREF(pVCpu);
-    RTGCUINTPTR uFlat = Addr & 0xffff;
+    uint32_t uFlat = Addr & 0xffff;
     if (!pSReg || !CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-        uFlat += (RTGCUINTPTR)SelCS << 4;
+        uFlat += (uint32_t)SelCS << 4;
     else
-        uFlat += pSReg->u64Base;
+        uFlat += (uint32_t)pSReg->u64Base;
     *ppvFlat = uFlat;
     return VINF_SUCCESS;
 }
@@ -739,9 +739,9 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
              * final value. The granularity bit was included in its calculation.
              */
             uint32_t u32Limit = pSRegCS->u32Limit;
-            if ((RTGCUINTPTR)Addr <= u32Limit)
+            if ((uint32_t)Addr <= u32Limit)
             {
-                *ppvFlat = Addr + pSRegCS->u64Base;
+                *ppvFlat = (uint32_t)Addr + (uint32_t)pSRegCS->u64Base;
                 return VINF_SUCCESS;
             }
 
