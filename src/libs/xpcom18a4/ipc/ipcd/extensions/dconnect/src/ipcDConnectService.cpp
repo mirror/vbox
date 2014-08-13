@@ -57,6 +57,8 @@
 # include <iprt/err.h>
 # include <iprt/req.h>
 # include <iprt/mem.h>
+# include <iprt/time.h>
+# include <iprt/thread.h>
 #endif /* VBOX */
 
 #if defined(DCONNECT_MULTITHREADED)
@@ -130,6 +132,9 @@ static const nsID kDConnectTargetID = DCONNECT_IPC_TARGETID;
 
 // DCON_OP_SETUP_REPLY and DCON_OP_INVOKE_REPLY flags
 #define DCON_OP_FLAGS_REPLY_EXCEPTION   0x0001
+
+// Within this time all the worker threads must be terminated.
+#define VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS  (5000)
 
 #pragma pack(1)
 
@@ -2901,13 +2906,17 @@ public:
 
   NS_DECL_NSIRUNNABLE
 
-  DConnectWorker(ipcDConnectService *aDConnect) : mDConnect (aDConnect) {}
+  DConnectWorker(ipcDConnectService *aDConnect) : mDConnect (aDConnect), mIsRunnable (PR_FALSE) {}
   NS_HIDDEN_(nsresult) Init();
   NS_HIDDEN_(void) Join() { mThread->Join(); };
+  NS_HIDDEN_(bool) IsRunning() { return mIsRunnable; };
 
 private:
   nsCOMPtr <nsIThread> mThread;
   ipcDConnectService *mDConnect;
+
+  // Indicate if thread might be quickly joined on shutdown.
+  volatile bool mIsRunnable;
 };
 
 NS_IMPL_QUERY_INTERFACE1(DConnectWorker, nsIRunnable)
@@ -2922,6 +2931,8 @@ NS_IMETHODIMP
 DConnectWorker::Run()
 {
   LOG(("DConnect Worker thread started.\n"));
+
+  mIsRunnable = PR_TRUE;
 
   nsAutoMonitor mon(mDConnect->mPendingMon);
 
@@ -2971,6 +2982,8 @@ DConnectWorker::Run()
       mon.Enter();
     }
   }
+
+  mIsRunnable = PR_FALSE;
 
   LOG(("DConnect Worker thread stopped.\n"));
   return NS_OK;
@@ -3191,13 +3204,37 @@ ipcDConnectService::Shutdown()
   LOG((" => number of worker threads: %d\n", mWorkers.Count()));
 #endif
 
-  // destroy all worker threads
-  for (int i = 0; i < mWorkers.Count(); i++)
+
+  // Iterate over currently running worker threads
+  // during VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS, join() those who
+  // exited a working loop and abandon ones which have not
+  // managed to do that when timeout occurred.
+  LOG(("Worker threads: %d\n", mWorkers.Count()));
+  uint64_t tsStart = RTTimeMilliTS();
+  while ((tsStart + VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS ) > RTTimeMilliTS() && mWorkers.Count() > 0)
   {
-    DConnectWorker *worker = NS_STATIC_CAST(DConnectWorker *, mWorkers[i]);
-    worker->Join();
-    delete worker;
+    // Some array elements might be deleted while iterating. Going from the last
+    // to the first array element (intentionally) in order to do not conflict with
+    // array indexing once element is deleted.
+    for (int i = mWorkers.Count() - 1; i >= 0; i--)
+    {
+      DConnectWorker *worker = NS_STATIC_CAST(DConnectWorker *, mWorkers[i]);
+      if (worker->IsRunning() == PR_FALSE)
+      {
+        LOG(("Worker %p joined.\n", worker));
+        worker->Join();
+        delete worker;
+        mWorkers.RemoveElementAt(i);
+      }
+    }
+
+    // Relax a bit before the next round.
+    RTThreadSleep(10);
   }
+
+  LOG(("There are %d thread(s) left.\n", mWorkers.Count()));
+
+  // If there are some running threads left, just forget about them.
   mWorkers.Clear();
 
   nsAutoMonitor::DestroyMonitor(mWaitingWorkersMon);
