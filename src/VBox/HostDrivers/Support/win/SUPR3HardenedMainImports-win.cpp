@@ -472,7 +472,7 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
         && pbFunction[ 3] == 0x00
         && pbFunction[ 4] == 0x00)
     {
-        *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[0], pbFunction[1]);
+        *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[1], pbFunction[2]);
         if (   pbFunction[5] == 0xba /* mov edx, offset SharedUserData!SystemCallStub */
             && pbFunction[ 6] == 0x00
             && pbFunction[ 7] == 0x03
@@ -480,9 +480,13 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
             && pbFunction[ 9] == 0x7f
             && pbFunction[10] == 0xff /* call [edx] */
             && pbFunction[11] == 0x12
-            && pbFunction[12] == 0xc2 /* ret 1ch */
-            && pbFunction[13] == pSyscall->cbParams
-            && pbFunction[14] == 0x00)
+            && (   (   pbFunction[12] == 0xc2 /* ret 1ch */
+                    && pbFunction[13] == pSyscall->cbParams
+                    && pbFunction[14] == 0x00)
+                || (   pbFunction[12] == 0xc3 /* ret */
+                    && pSyscall->cbParams == 0)
+                )
+           )
         {
             *pImport->ppfnImport = pSyscall->pfnType1;
             return;
@@ -490,9 +494,13 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
 
         if (   pbFunction[ 5] == 0xe8 /* call [$+3] */
             && RT_ABS(*(int32_t *)&pbFunction[6]) < 0x10
-            && pbFunction[10] == 0xc2 /* ret 1ch */
-            && pbFunction[11] == pSyscall->cbParams
-            && pbFunction[12] == 0x00)
+            && (   (   pbFunction[10] == 0xc2 /* ret 1ch */
+                    && pbFunction[11] == pSyscall->cbParams
+                    && pbFunction[12] == 0x00)
+                || (   pbFunction[12] == 0xc3 /* ret */
+                    && pSyscall->cbParams == 0)
+               )
+           )
         {
             *pImport->ppfnImport = pSyscall->pfnType2;
             return;

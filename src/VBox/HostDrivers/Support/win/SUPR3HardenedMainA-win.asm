@@ -128,7 +128,7 @@ ENDPROC %1 %+ _SyscallType1
 BEGINPROC %1 %+ _SyscallType1
         mov     edx, 07ffe0300h         ; SharedUserData!SystemCallStub
         mov     eax, [NAME(g_uApiNo %+ %1) xWrtRIP]
-        call    edx
+        call    dword [edx]
         ret     %2
 ENDPROC %1 %+ _SyscallType1
 BEGINPROC %1 %+ _SyscallType2
