@@ -25,14 +25,14 @@ void main()
     /* Create disk containers, read verification is on. */
     createdisk("disk", true /* fVerify */);
     /* Create the disk. */
-    create("disk", "base", "tstCompact.vdi", "dynamic", "VDI", 2G, false /* fIgnoreFlush */);
+    create("disk", "base", "tstCompact.vdi", "dynamic", "VDI", 2G, false /* fIgnoreFlush */, false);
     /* Fill the disk with random data */
-    io("disk", false, 1, "seq", 64K, 0, 2G, 2G, 100, "none");
+    io("disk", false, 1, "seq", 64K, 0, 200M, 200M, 100, "none");
     /* Read the data to verify it once. */
-    io("disk", false, 1, "seq", 64K, 0, 2G, 2G,   0, "none");
+    io("disk", false, 1, "seq", 64K, 0, 200M, 200M,   0, "none");
     close("disk", "single", false);
 
-    open("disk", "tstCompact.vdi", "VDI", true, false, false, true, false);
+    open("disk", "tstCompact.vdi", "VDI", true, false, false, true, false, false);
     printfilesize("disk", 0);
     discard("disk", true, "6,0M,512K,1M,512K,2M,512K,3M,512K,4M,512K,5M,512K");
     discard("disk", true, "6,6M,512K,7M,512K,8M,512K,9M,512K,10M,512K,11M,512K");

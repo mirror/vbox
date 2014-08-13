@@ -42,6 +42,7 @@ typedef enum VDSCRIPTTYPE
     VDSCRIPTTYPE_INT64,
     VDSCRIPTTYPE_STRING,
     VDSCRIPTTYPE_BOOL,
+    VDSCRIPTTYPE_POINTER,
     /** As usual, the 32bit blowup hack. */
     VDSCRIPTTYPE_32BIT_HACK = 0x7fffffff
 } VDSCRIPTTYPE;
@@ -70,6 +71,7 @@ typedef struct VDSCRIPTARG
         int64_t     i64;
         const char *psz;
         bool        f;
+        void       *p;
     };
 } VDSCRIPTARG;
 /** Pointer to an argument. */
@@ -100,6 +102,43 @@ typedef struct VDSCRIPTCALLBACK
 typedef VDSCRIPTCALLBACK *PVDSCRIPTCALLBACK;
 /** Pointer to a const callback register entry. */
 typedef const VDSCRIPTCALLBACK *PCVDSCRIPTCALLBACK;
+
+/**
+ * @{
+ */
+/** The address space stays assigned to a variable
+ * even if the pointer is casted to another type.
+ */
+#define VDSCRIPT_AS_FLAGS_TRANSITIVE RT_BIT(0)
+/** @} */
+
+/**
+ * Address space read callback
+ *
+ * @returns VBox status code.
+ * @param   pvUser         Opaque user data given on registration.
+ * @param   Address        The address to read from, address is stored in the member for
+ *                         base type given on registration.
+ * @param   pvBuf          Where to store the read bits.
+ * @param   cbRead         How much to read.
+ */
+typedef DECLCALLBACK(int) FNVDSCRIPTASREAD(void *pvUser, VDSCRIPTARG Address, void *pvBuf, size_t cbRead);
+/** Pointer to a read callback. */
+typedef FNVDSCRIPTASREAD *PFNVDSCRIPTASREAD;
+
+/**
+ * Address space write callback
+ *
+ * @returns VBox status code.
+ * @param   pvUser         Opaque user data given on registration.
+ * @param   Address        The address to write to, address is stored in the member for
+ *                         base type given on registration.
+ * @param   pvBuf          Data to write.
+ * @param   cbWrite        How much to write.
+ */
+typedef DECLCALLBACK(int) FNVDSCRIPTASWRITE(void *pvUser, VDSCRIPTARG Address, const void *pvBuf, size_t cbWrite);
+/** Pointer to a write callback. */
+typedef FNVDSCRIPTASWRITE *PFNVDSCRIPTASWRITE;
 
 /**
  * Create a new scripting context.
@@ -149,5 +188,35 @@ DECLHIDDEN(int) VDScriptCtxLoadScript(VDSCRIPTCTX hScriptCtx, const char *pszScr
  */
 DECLHIDDEN(int) VDScriptCtxCallFn(VDSCRIPTCTX hScriptCtx, const char *pszFnCall,
                                   PVDSCRIPTARG paArgs, unsigned cArgs);
+
+/**
+ * Registers a new address space provider.
+ *
+ * @returns VBox status code.
+ * @param   hScriptCtx     The script context handle.
+ * @param   pszType        The type string.
+ * @param   enmBaseType    The base integer type to use for the address space.
+ *                         Bool and String are not supported of course.
+ * @param   pfnRead        The read callback for the registered address space.
+ * @param   pfnWrite       The write callback for the registered address space.
+ * @param   pvUser         Opaque user data to pass to the read and write callbacks.
+ * @param   fFlags         Flags, see VDSCRIPT_AS_FLAGS_*.
+ *
+ * @note This will automatically register a new type with the identifier given in pszType
+ *       used for the pointer. Every variable with this type is automatically treated as a pointer.
+ *
+ * @note If the transitive flag is set the address space stays assigned even if the pointer value
+ *       is casted to another pointer type.
+ *       In the following example the pointer pStruct will use the registered address space for RTGCPHYS
+ *       and dereferencing the pointer causes the read/write callbacks to be triggered.
+ *
+ *       ...
+ *       Struct *pStruct = (Struct *)(RTGCPHYS)0x12345678;
+ *       pStruct->count++;
+ *       ...
+ */
+DECLHIDDEN(int) VDScriptCtxAsRegister(VDSCRIPTCTX hScriptCtx, const char *pszType, VDSCRIPTTYPE enmBaseType,
+                                      PFNVDSCRIPTASREAD pfnRead, PFNVDSCRIPTASWRITE pfnWrite, void *pvUser,
+                                      uint32_t fFlags);
 
 #endif /* _VDScript_h__ */

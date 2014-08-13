@@ -53,6 +53,10 @@ typedef enum VDSCRIPTASTCLASS
     VDSCRIPTASTCLASS_STATEMENT,
     /** Expression node. */
     VDSCRIPTASTCLASS_EXPRESSION,
+    /** Type name node. */
+    VDSCRIPTASTCLASS_TYPENAME,
+    /** Type specifier node. */
+    VDSCRIPTASTCLASS_TYPESPECIFIER,
     /** 32bit blowup. */
     VDSCRIPTASTCLASS_32BIT_HACK = 0x7fffffff
 } VDSCRIPTASTCLASS;
@@ -95,6 +99,105 @@ typedef struct VDSCRIPTASTIDE
 typedef VDSCRIPTASTIDE *PVDSCRIPTASTIDE;
 
 /**
+ * Type specifier.
+ */
+typedef enum VDSCRIPTASTTYPESPECIFIER
+{
+    /** Invalid type specifier. */
+    VDSCRIPTASTTYPESPECIFIER_INVALID = 0,
+    /** Union type specifier. */
+    VDSCRIPTASTTYPESPECIFIER_UNION,
+    /** Struct type specifier. */
+    VDSCRIPTASTTYPESPECIFIER_STRUCT,
+    /** Identifier of a typedefed type. */
+    VDSCRIPTASTTYPESPECIFIER_IDE,
+    /** 32bit hack. */
+    VDSCRIPTASTTYPESPECIFIER_32BIT_HACK = 0x7fffffff
+} VDSCRIPTASTTYPESPECIFIER;
+/** Pointer to a typespecifier. */
+typedef VDSCRIPTASTTYPESPECIFIER *PVDSCRIPTASTTYPESPECIFIER;
+
+/**
+ * AST type specifier.
+ */
+typedef struct VDSCRIPTASTTYPESPEC
+{
+    /** Core structure. */
+    VDSCRIPTASTCORE          Core;
+    /** Specifier type. */
+    VDSCRIPTASTTYPESPECIFIER enmType;
+    /** Type dependent data .*/
+    union
+    {
+        /** Pointer to an identifier for typedefed types. */
+        PVDSCRIPTASTIDE      pIde;
+        /** struct or union specifier. */
+        struct
+        {
+            /** Pointer to the identifier, optional. */
+            PVDSCRIPTASTIDE  pIde;
+            /** Declaration list - VDSCRIPTAST. */
+            RTLISTANCHOR     ListDecl;
+        } StructUnion;
+    };
+} VDSCRIPTASTTYPESPEC;
+/** Pointer to an AST type specifier. */
+typedef VDSCRIPTASTTYPESPEC *PVDSCRIPTASTTYPESPEC;
+
+/**
+ * Storage clase specifier.
+ */
+typedef enum VDSCRIPTASTSTORAGECLASS
+{
+    /** Invalid storage class sepcifier. */
+    VDSCRIPTASTSTORAGECLASS_INVALID = 0,
+    /** A typedef type. */
+    VDSCRIPTASTSTORAGECLASS_TYPEDEF,
+    /** An external declared object. */
+    VDSCRIPTASTSTORAGECLASS_EXTERN,
+    /** A static declared object. */
+    VDSCRIPTASTSTORAGECLASS_STATIC,
+    /** Auto object. */
+    VDSCRIPTASTSTORAGECLASS_AUTO,
+    /** Object should be stored in a register. */
+    VDSCRIPTASTSTORAGECLASS_REGISTER,
+    /** 32bit hack. */
+    VDSCRIPTASTSTORAGECLASS_32BIT_HACK = 0x7fffffff
+} VDSCRIPTASTSTORAGECLASS;
+/** Pointer to a storage class. */
+typedef VDSCRIPTASTSTORAGECLASS *PVDSCRIPTASTSTORAGECLASS;
+
+/**
+ * Type qualifier.
+ */
+typedef enum VDSCRIPTASTTYPEQUALIFIER
+{
+    /** Invalid type qualifier. */
+    VDSCRIPTASTTYPEQUALIFIER_INVALID = 0,
+    /** Const type qualifier. */
+    VDSCRIPTASTTYPEQUALIFIER_CONST,
+    /** Restrict type qualifier. */
+    VDSCRIPTASTTYPEQUALIFIER_RESTRICT,
+    /** Volatile type qualifier. */
+    VDSCRIPTASTTYPEQUALIFIER_VOLATILE,
+    /** 32bit hack. */
+    VDSCRIPTASTTYPEQUALIFIER_32BIT_HACK = 0x7fffffff
+} VDSCRIPTASTTYPEQUALIFIER;
+/** Pointer to a type qualifier. */
+typedef VDSCRIPTASTTYPEQUALIFIER *PVDSCRIPTASTTYPEQUALIFIER;
+
+/**
+ * AST type name node.
+ */
+typedef struct VDSCRIPTASTTYPENAME
+{
+    /** Core structure. */
+    VDSCRIPTASTCORE    Core;
+} VDSCRIPTASTTYPENAME;
+/** Pointer to a type name node. */
+typedef VDSCRIPTASTTYPENAME *PVDSCRIPTASTTYPENAME;
+
+/**
  * AST declaration node.
  */
 typedef struct VDSCRIPTASTDECL
@@ -129,6 +232,10 @@ typedef enum VDSCRIPTEXPRTYPE
     VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT,
     /** Postfix function call expression. */
     VDSCRIPTEXPRTYPE_POSTFIX_FNCALL,
+    /** Postfix dereference expression. */
+    VDSCRIPTEXPRTYPE_POSTFIX_DEREFERENCE,
+    /** Dot operator (@todo: Is there a better name for it?). */
+    VDSCRIPTEXPRTYPE_POSTFIX_DOT,
     /** Unary increment expression. */
     VDSCRIPTEXPRTYPE_UNARY_INCREMENT,
     /** Unary decrement expression. */
@@ -141,6 +248,12 @@ typedef enum VDSCRIPTEXPRTYPE
     VDSCRIPTEXPRTYPE_UNARY_INVERT,
     /** Unary negate expression. */
     VDSCRIPTEXPRTYPE_UNARY_NEGATE,
+    /** Unary reference expression. */
+    VDSCRIPTEXPRTYPE_UNARY_REFERENCE,
+    /** Unary dereference expression. */
+    VDSCRIPTEXPRTYPE_UNARY_DEREFERENCE,
+    /** Cast expression. */
+    VDSCRIPTEXPRTYPE_CAST,
     /** Multiplicative expression. */
     VDSCRIPTEXPRTYPE_MULTIPLICATION,
     /** Division expression. */
@@ -245,6 +358,22 @@ typedef struct VDSCRIPTASTEXPR
             /** Right operator. */
             PVDSCRIPTASTEXPR pRightExpr;
         } BinaryOp;
+        /** Dereference or dot operation. */
+        struct
+        {
+            /** The identifier to access. */
+            PVDSCRIPTASTIDE  pIde;
+            /** Postfix expression coming after this. */
+            PVDSCRIPTASTEXPR pExpr;
+        } Deref;
+        /** Cast expression. */
+        struct
+        {
+            /** Type name. */
+            PVDSCRIPTASTTYPENAME pTypeName;
+            /** Following cast expression. */
+            PVDSCRIPTASTEXPR     pExpr;
+        } Cast;
     };
 } VDSCRIPTASTEXPR;
 

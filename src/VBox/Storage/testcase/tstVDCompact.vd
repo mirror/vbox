@@ -21,7 +21,7 @@ void tstCompact(string strMsg, string strBackend)
 
     /* Create disk containers, read verification is on. */
     createdisk("disk", true);
-    create("disk", "base", "tstCompact.disk", "dynamic", strBackend, 200M, false);
+    create("disk", "base", "tstCompact.disk", "dynamic", strBackend, 200M, false, false);
 
     /* Fill the disk with random data. */
     io("disk", false, 1, "seq", 64K, 0, 200M, 200M, 100, "none");
@@ -45,6 +45,31 @@ void tstCompact(string strMsg, string strBackend)
     destroydisk("disk");
 }
 
+void tstSnapshotCompact(string strMsg, string strBackend)
+{
+    print(strMsg);
+
+    /* Create disk containers, read verification is on. */
+    createdisk("disk", true);
+    create("disk", "base", "tstCompact.disk", "dynamic", strBackend, 200M, false, false);
+
+    /* Fill the disk with random data. */
+    io("disk", false, 1, "seq", 64K, 0, 100M, 100M, 100, "none");
+
+    create("test", "diff", "tst2.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */, true /* fHonorSame */);
+
+    io("disk", false, 1, "seq", 64K, 100M, 200M, 100M, 100, "none");
+    io("disk", false, 1, "seq", 64K, 100M, 150M, 50M, 100, "zero");
+
+    create("disk", "diff", "tst3.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */, true /* fHonorSame */);
+    merge("disk", 1, 2);
+
+    compact("disk", 1);
+
+    close("disk", "single", true);
+    destroydisk("disk");
+}
+
 void main()
 {
     /* Init I/O RNG for generating random data for writes. */
@@ -55,6 +80,9 @@ void main()
 
     tstCompact("Testing VDI", "VDI");
     tstCompact("Testing VHD", "VHD");
+
+    tstSnapshotCompact("Testing Snapshot VDI", "VDI");
+    tstSnapshotCompact("Testing Snapshot VHD", "VHD");
 
     /* Destroy RNG and pattern */
     iopatterndestroy("zero");

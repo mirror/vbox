@@ -72,6 +72,13 @@ static void vdScriptAstNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
             }
             break;
         }
+        case VDSCRIPTEXPRTYPE_POSTFIX_DEREFERENCE:
+        case VDSCRIPTEXPRTYPE_POSTFIX_DOT:
+        {
+            RTListAppend(pList, &pExpr->Deref.pIde->Core.ListNode);
+            RTListAppend(pList, &pExpr->Deref.pExpr->Core.ListNode);
+            break;
+        }
         case VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT:
         case VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT:
         case VDSCRIPTEXPRTYPE_UNARY_INCREMENT:
@@ -80,6 +87,8 @@ static void vdScriptAstNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
         case VDSCRIPTEXPRTYPE_UNARY_NEGSIGN:
         case VDSCRIPTEXPRTYPE_UNARY_INVERT:
         case VDSCRIPTEXPRTYPE_UNARY_NEGATE:
+        case VDSCRIPTEXPRTYPE_UNARY_REFERENCE:
+        case VDSCRIPTEXPRTYPE_UNARY_DEREFERENCE:
         {
             RTListAppend(pList, &pExpr->pExpr->Core.ListNode);
             break;
@@ -153,7 +162,7 @@ static void vdScriptAstNodeStatmentPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIPTA
             /* Put all statements on the to free list. */
             while (!RTListIsEmpty(&pStmt->Compound.ListStmts))
             {
-                PVDSCRIPTASTCORE pNode = RTListGetFirst(&pStmt->Compound.ListDecls, VDSCRIPTASTCORE, ListNode);
+                PVDSCRIPTASTCORE pNode = RTListGetFirst(&pStmt->Compound.ListStmts, VDSCRIPTASTCORE, ListNode);
                 RTListNodeRemove(&pNode->ListNode);
                 RTListAppend(pList, &pNode->ListNode);
             }
@@ -272,7 +281,11 @@ DECLHIDDEN(void) vdScriptAstNodeFree(PVDSCRIPTASTCORE pAstNode)
             case VDSCRIPTASTCLASS_IDENTIFIER:
                 break;
             case VDSCRIPTASTCLASS_DECLARATION:
+            case VDSCRIPTASTCLASS_TYPENAME:
+            {
+                AssertMsgFailed(("TODO\n"));
                 break;
+            }
             case VDSCRIPTASTCLASS_STATEMENT:
             {
                 vdScriptAstNodeStatmentPutOnFreeList(&ListFree, pAstNode);
@@ -313,6 +326,9 @@ DECLHIDDEN(PVDSCRIPTASTCORE) vdScriptAstNodeAlloc(VDSCRIPTASTCLASS enmClass)
             break;
         case VDSCRIPTASTCLASS_EXPRESSION:
             cbAlloc = sizeof(VDSCRIPTASTEXPR);
+            break;
+        case VDSCRIPTASTCLASS_TYPENAME:
+            cbAlloc = sizeof(VDSCRIPTASTTYPENAME);
             break;
         case VDSCRIPTASTCLASS_IDENTIFIER:
         case VDSCRIPTASTCLASS_INVALID:

@@ -23,23 +23,23 @@ void main()
     /* Create source disk and fill data. */
     print("Creating Source Disk");
     createdisk("source", false);
-    create("source", "base", "source_base.vdi", "dynamic", "VDI", 1G, false);
+    create("source", "base", "source_base.vdi", "dynamic", "VDI", 1G, false, false);
     io("source", false, 1, "rnd", 64K, 0, 512M, 256M, 100, "none");
 
     print("Creating first diff");
-    create("source", "diff", "source_diff1.vdi", "dynamic", "VDI", 1G, false);
+    create("source", "diff", "source_diff1.vdi", "dynamic", "VDI", 1G, false, false);
     io("source", false, 1, "rnd", 64K, 512M, 1G, 256M, 50, "none");
 
     print("Creating second diff");
-    create("source", "diff", "source_diff2.vdi", "dynamic", "VDI", 1G, false);
+    create("source", "diff", "source_diff2.vdi", "dynamic", "VDI", 1G, false, false);
     io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
     print("Creating third diff");
-    create("source", "diff", "source_diff3.vdi", "dynamic", "VDI", 1G, false);
+    create("source", "diff", "source_diff3.vdi", "dynamic", "VDI", 1G, false, false);
     io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
     print("Creating fourth diff");
-    create("source", "diff", "source_diff4.vdi", "dynamic", "VDI", 1G, false);
+    create("source", "diff", "source_diff4.vdi", "dynamic", "VDI", 1G, false, false);
     io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
     print("Creating destination disk");
@@ -56,7 +56,7 @@ void main()
     copy("source", "dest", 3, "VDI", "dest_diff1.vdi", false, 0, 2, 2);
     copy("source", "dest", 4, "VDI", "dest_diff1.vdi", false, 0, 3, 3);
 
-    print("Comparing_Disks");
+    print("Comparing disks");
     comparedisks("source", "dest");
 
     printfilesize("source", 0);
