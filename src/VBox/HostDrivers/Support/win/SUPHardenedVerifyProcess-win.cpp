@@ -111,15 +111,12 @@ typedef struct SUPHNTVPIMAGE
     /** This may be a 32-bit resource DLL. */
     bool            f32bitResourceDll;
 
-    /** Load module associated with the image during content verfication. */
-    RTLDRMOD        hLdrMod;
-    /** The file reader. */
-    PSUPHNTVIRDR    pNtViRdr;
-    /** The module file handle, if we've opened it.
-     * (pNtviRdr does not close the file handle on destruction.)  */
-    HANDLE          hFile;
-    /** Image bits for lazy cleanup. */
-    uint8_t        *pbBits;
+    /** Pointer to the loader cache entry for the image. */
+    PSUPHNTLDRCACHEENTRY    pCacheEntry;
+#ifdef IN_RING0
+    /** In ring-0 we don't currently cache images, so put it here. */
+    SUPHNTLDRCACHEENTRY     CacheEntry;
+#endif
 } SUPHNTVPIMAGE;
 /** Pointer to image info from the virtual address space scan. */
 typedef SUPHNTVPIMAGE *PSUPHNTVPIMAGE;
@@ -230,6 +227,13 @@ PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory = NULL;
 # define g_pfnNtQueryVirtualMemory NtQueryVirtualMemory
 #endif
 
+#ifdef IN_RING3
+/** The number of valid entries in the loader cache.. */
+static uint32_t                 g_cSupNtVpLdrCacheEntries = 0;
+/** The loader cache entries. */
+static SUPHNTLDRCACHEENTRY      g_aSupNtVpLdrCacheEntries[RT_ELEMENTS(g_apszSupNtVpAllowedDlls) + 1 + 3];
+#endif
+
 
 /**
  * Fills in error information.
@@ -304,7 +308,7 @@ static int supHardNtVpSetInfo2(PSUPHNTVPSTATE pThis, int rc, const char *pszMsg,
 
 static int supHardNtVpReadImage(PSUPHNTVPIMAGE pImage, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    return pImage->pNtViRdr->Core.pfnRead(&pImage->pNtViRdr->Core, pvBuf, cbRead, off);
+    return pImage->pCacheEntry->pNtViRdr->Core.pfnRead(&pImage->pCacheEntry->pNtViRdr->Core, pvBuf, cbRead, off);
 }
 
 
@@ -594,7 +598,8 @@ static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszM
     PSUPHNTVPIMAGE pImage = supHardNtVpFindModule(pThis, pszModule);
     if (pImage)
     {
-        rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, uSymbol, pszSymbol, pValue);
+        rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pImage->pCacheEntry->pbBits,
+                              pImage->uImageBase, uSymbol, pszSymbol, pValue);
         if (RT_SUCCESS(rc))
             return rc;
     }
@@ -609,7 +614,8 @@ static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszM
             pImage = supHardNtVpFindModule(pThis, s_apszDlls[i]);
             if (pImage)
             {
-                rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, uSymbol, pszSymbol, pValue);
+                rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pImage->pCacheEntry->pbBits,
+                                      pImage->uImageBase, uSymbol, pszSymbol, pValue);
                 if (RT_SUCCESS(rc))
                     return rc;
                 if (rc != VERR_SYMBOL_NOT_FOUND)
@@ -627,14 +633,16 @@ static DECLCALLBACK(int) supHardNtVpGetImport(RTLDRMOD hLdrMod, const char *pszM
     {
         size_t           cbInfo = RT_MIN((uint32_t)*pValue, sizeof(RTLDRIMPORTINFO) + 32);
         PRTLDRIMPORTINFO pInfo  = (PRTLDRIMPORTINFO)alloca(cbInfo);
-        rc = RTLdrQueryForwarderInfo(pImage->hLdrMod, NULL, uSymbol, pszSymbol, pInfo, cbInfo);
+        rc = RTLdrQueryForwarderInfo(pImage->pCacheEntry->hLdrMod, pImage->pCacheEntry->pbBits,
+                                     uSymbol, pszSymbol, pInfo, cbInfo);
         if (RT_SUCCESS(rc))
         {
             rc = VERR_MODULE_NOT_FOUND;
             pImage = supHardNtVpFindModule(pThis, pInfo->szModule);
             if (pImage)
             {
-                rc = RTLdrGetSymbolEx(pImage->hLdrMod, NULL, pImage->uImageBase, pInfo->iOrdinal, pInfo->pszSymbol, pValue);
+                rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pImage->pCacheEntry->pbBits,
+                                      pImage->uImageBase, pInfo->iOrdinal, pInfo->pszSymbol, pValue);
                 if (RT_SUCCESS(rc))
                     return rc;
 
@@ -740,10 +748,10 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_BAD_IMAGE_SIZE,
                                    "%s: SizeOfImage (%#x) isn't close enough to the mapping size (%#x)",
                                    pImage->pszName, cbImage, pImage->cbImage);
-    if (cbImage != RTLdrSize(pImage->hLdrMod))
+    if (cbImage != RTLdrSize(pImage->pCacheEntry->hLdrMod))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_BAD_IMAGE_SIZE,
                                    "%s: SizeOfImage (%#x) differs from what RTLdrSize returns (%#zx)",
-                                   pImage->pszName, cbImage, RTLdrSize(pImage->hLdrMod));
+                                   pImage->pszName, cbImage, RTLdrSize(pImage->pCacheEntry->hLdrMod));
 
     uint32_t const cbSectAlign = fIs32Bit ? pNtHdrs32->OptionalHeader.SectionAlignment : pNtHdrs->OptionalHeader.SectionAlignment;
     if (   !RT_IS_POWER_OF_TWO(cbSectAlign)
@@ -790,14 +798,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
     /*
      * Get relocated bits.
      */
-    pImage->pbBits = (uint8_t *)suplibHardenedAllocZ(cbImage);
-    if (RT_UNLIKELY(!pImage->pbBits))
-        return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_MEMORY,
-                                   "%s: Error allocating %#x bytes for fixed up image bits.", pImage->pszName, cbImage);
+    uint8_t *pbBits;
+    rc = supHardNtLdrCacheEntryAllocBits(pImage->pCacheEntry, &pbBits, pThis->pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
     if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
-        rc = RTLdrGetBits(pImage->hLdrMod, pImage->pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis);
+        rc = RTLdrGetBits(pImage->pCacheEntry->hLdrMod, pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis);
     else
-        rc = RTLdrGetBits(pImage->hLdrMod, pImage->pbBits, pImage->uImageBase, supHardNtVpGetImport, pThis);
+        rc = RTLdrGetBits(pImage->pCacheEntry->hLdrMod, pbBits, pImage->uImageBase, supHardNtVpGetImport, pThis);
     if (RT_FAILURE(rc))
         return supHardNtVpSetInfo2(pThis, rc, "%s: RTLdrGetBits failed: %Rrc", pImage->pszName, rc);
 
@@ -805,9 +813,9 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
     if (g_uNtVerCombined >= SUP_NT_VER_VISTA)
     {
         if (fIs32Bit)
-            ((PIMAGE_NT_HEADERS32)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase = (uint32_t)pImage->uImageBase;
+            ((PIMAGE_NT_HEADERS32)&pbBits[offNtHdrs])->OptionalHeader.ImageBase = (uint32_t)pImage->uImageBase;
         else
-            ((PIMAGE_NT_HEADERS)&pImage->pbBits[offNtHdrs])->OptionalHeader.ImageBase   = pImage->uImageBase;
+            ((PIMAGE_NT_HEADERS)&pbBits[offNtHdrs])->OptionalHeader.ImageBase   = pImage->uImageBase;
     }
 
     /*
@@ -821,7 +829,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         if (pThis->enmKind == SUPHARDNTVPKIND_VERIFY_ONLY)
         {
             /* Ignore our NtCreateSection hack. */
-            rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, UINT32_MAX, "NtCreateSection", &uValue);
+            rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "NtCreateSection", &uValue);
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'NtCreateSection': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
@@ -829,11 +837,11 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         }
 
         /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
-        rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pbBits, 0, UINT32_MAX, "LdrSystemDllInitBlock", &uValue);
+        rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrSystemDllInitBlock", &uValue);
         if (RT_SUCCESS(rc))
         {
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = RT_MAX(pImage->pbBits[(uint32_t)uValue], 0x50);
+            aSkipAreas[cSkipAreas++].cb = RT_MAX(pbBits[(uint32_t)uValue], 0x50);
         }
     }
 
@@ -843,7 +851,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      */
     if (!pImage->fApiSetSchemaOnlySection1)
     {
-        rc = supHardNtVpFileMemCompareSection(pThis, pImage, 0 /*uRva*/, cbHdrsFile, pImage->pbBits, -1, NULL, 0, PAGE_READONLY);
+        rc = supHardNtVpFileMemCompareSection(pThis, pImage, 0 /*uRva*/, cbHdrsFile, pbBits, -1, NULL, 0, PAGE_READONLY);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -911,10 +919,10 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             {
                 rc = VINF_SUCCESS;
                 if (uRva < uSectRva && !pImage->fApiSetSchemaOnlySection1) /* Any gap worth checking? */
-                    rc = supHardNtVpFileMemCompareSection(pThis, pImage, uRva, uSectRva - uRva, pImage->pbBits + uRva,
+                    rc = supHardNtVpFileMemCompareSection(pThis, pImage, uRva, uSectRva - uRva, pbBits + uRva,
                                                           i - 1, NULL, 0, fPrevProt);
                 if (RT_SUCCESS(rc))
-                    rc = supHardNtVpFileMemCompareSection(pThis, pImage, uSectRva, cbMap, pImage->pbBits + uSectRva,
+                    rc = supHardNtVpFileMemCompareSection(pThis, pImage, uSectRva, cbMap, pbBits + uSectRva,
                                                           i, aSkipAreas, cSkipAreas, fProt);
                 if (RT_SUCCESS(rc))
                 {
@@ -962,23 +970,15 @@ static int supHardNtVpVerifyImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, H
      * Validate the file signature first, then do the memory compare.
      */
     int rc;
-    if (pImage->hLdrMod != NIL_RTLDRMOD)
+    if (   pImage->pCacheEntry != NULL
+        && pImage->pCacheEntry->hLdrMod != NIL_RTLDRMOD)
     {
-        rc = supHardenedWinVerifyImageByLdrMod(pImage->hLdrMod, pImage->Name.UniStr.Buffer, pImage->pNtViRdr,
-                                               NULL /*pfCacheable*/, pThis->pErrInfo);
+        rc = supHardNtLdrCacheEntryVerify(pImage->pCacheEntry, pImage->Name.UniStr.Buffer, pThis->pErrInfo);
         if (RT_SUCCESS(rc))
-        {
             rc = supHardNtVpVerifyImageMemoryCompare(pThis, pImage, hProcess, pThis->pErrInfo);
-
-            if (pImage->pbBits)
-            {
-                suplibHardenedFree(pImage->pbBits);
-                pImage->pbBits = NULL;
-            }
-        }
     }
     else
-        rc = supHardNtVpSetInfo2(pThis, VERR_OPEN_FAILED, "hLdrMod is NIL! Impossible!");
+        rc = supHardNtVpSetInfo2(pThis, VERR_OPEN_FAILED, "pCacheEntry/hLdrMod is NIL! Impossible!");
     return rc;
 }
 
@@ -1215,9 +1215,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
      */
     pImage->uImageBase = (uintptr_t)pMemInfo->AllocationBase;
     pImage->cbImage    = pMemInfo->RegionSize;
-    pImage->hFile      = NULL;
-    pImage->hLdrMod    = NIL_RTLDRMOD;
-    pImage->pNtViRdr   = NULL;
+    pImage->pCacheEntry= NULL;
     pImage->cRegions   = 1;
     pImage->aRegions[0].uRva    = 0;
     pImage->aRegions[0].cb      = (uint32_t)pMemInfo->RegionSize;
@@ -1487,6 +1485,219 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                                "Too many virtual memory regions.\n");
 }
 
+
+/**
+ * Verifies the loader image, i.e. check cryptographic signatures if present.
+ *
+ * @returns VBox status code.
+ * @param   pEntry              The loader cache entry.
+ * @param   pwszName            The filename to use in error messages.
+ * @param   pErRInfo            Where to return extened error information.
+ */
+DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo)
+{
+    int rc = VINF_SUCCESS;
+    if (!pEntry->fVerified)
+    {
+        rc = supHardenedWinVerifyImageByLdrMod(pEntry->hLdrMod, pwszName, pEntry->pNtViRdr, NULL /*pfCacheable*/, pErrInfo);
+        pEntry->fVerified = RT_SUCCESS(rc);
+    }
+    return rc;
+}
+
+
+/**
+ * Allocates a image bits buffer for use with RTLdrGetBits.
+ *
+ * An assumption here is that there won't ever be concurrent use of the cache.
+ * It's currently 104% single threaded, non-reentrant.  Thus, we can't reuse the
+ * pbBits allocation.
+ *
+ * @returns VBox status code
+ * @param   pEntry              The loader cache entry.
+ * @param   ppbBits             Where to return the pointer to the allocation.
+ * @param   pErRInfo            Where to return extened error information.
+ */
+DECLHIDDEN(int) supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, PRTERRINFO pErrInfo)
+{
+    if (!pEntry->pbBits)
+    {
+        size_t cbBits = RTLdrSize(pEntry->hLdrMod);
+        if (cbBits >= _1M*32U)
+            return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_IMAGE_TOO_BIG, "Image %s is too large: %zu bytes (%#zx).",
+                                       pEntry->pszName, cbBits, cbBits);
+
+        pEntry->pbBits = (uint8_t *)suplibHardenedAllocZ(cbBits);
+        if (!pEntry->pbBits)
+            return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY, "Failed to allocate %zu bytes for image %s.",
+                                       cbBits, pEntry->pszName);
+    }
+
+    /** @todo Try cache RTLdrGetBits calls too. */
+
+    *ppbBits = pEntry->pbBits;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Frees all resources associated with a cache entry and wipes the members
+ * clean.
+ *
+ * @param   pEntry              The entry to delete.
+ */
+static void supHardNTLdrCacheDeleteEntry(PSUPHNTLDRCACHEENTRY pEntry)
+{
+    if (pEntry->pbBits)
+    {
+        suplibHardenedFree(pEntry->pbBits);
+        pEntry->pbBits = NULL;
+    }
+
+    if (pEntry->hLdrMod != NIL_RTLDRMOD)
+    {
+        RTLdrClose(pEntry->hLdrMod);
+        pEntry->hLdrMod = NIL_RTLDRMOD;
+        pEntry->pNtViRdr = NULL;
+    }
+    else if (pEntry->pNtViRdr)
+    {
+        pEntry->pNtViRdr->Core.pfnDestroy(&pEntry->pNtViRdr->Core);
+        pEntry->pNtViRdr = NULL;
+    }
+
+    if (pEntry->hFile)
+    {
+        NtClose(pEntry->hFile);
+        pEntry->hFile = NULL;
+    }
+
+    pEntry->pszName   = NULL;
+    pEntry->fVerified = false;
+}
+
+#ifdef IN_RING3
+
+/**
+ * Flushes the cache.
+ *
+ * This is called from one of two points in the hardened main code, first is
+ * after respawning and the second is when we open the vboxdrv device for
+ * unrestricted access.
+ */
+DECLHIDDEN(void) supR3HardenedWinFlushLoaderCache(void)
+{
+    uint32_t i = g_cSupNtVpLdrCacheEntries;
+    while (i-- > 0)
+        supHardNTLdrCacheDeleteEntry(&g_aSupNtVpLdrCacheEntries[i]);
+    g_cSupNtVpLdrCacheEntries = 0;
+}
+
+
+/**
+ * Searches the cache for a loader image.
+ *
+ * @returns Pointer to the cache entry if found, NULL if not.
+ * @param   pszName             The name (from g_apszSupNtVpAllowedVmExes or
+ *                              g_apszSupNtVpAllowedDlls).
+ */
+static PSUPHNTLDRCACHEENTRY supHardNtLdrCacheLookupEntry(const char *pszName)
+{
+    /*
+     * Since the caller is supplying us a pszName from one of the two tables,
+     * we can dispense with string compare and simply compare string pointers.
+     */
+    uint32_t i = g_cSupNtVpLdrCacheEntries;
+    while (i-- > 0)
+        if (g_aSupNtVpLdrCacheEntries[i].pszName == pszName)
+            return &g_aSupNtVpLdrCacheEntries[i];
+    return NULL;
+}
+
+#endif /* IN_RING3 */
+
+static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *pszName, PUNICODE_STRING pUniStrPath,
+                                     bool fDll, bool f32bitResourceDll, PRTERRINFO pErrInfo)
+{
+    /*
+     * Open the image file.
+     */
+    HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+
+    OBJECT_ATTRIBUTES   ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, pUniStrPath, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+#ifdef IN_RING0
+    ObjAttr.Attributes |= OBJ_KERNEL_HANDLE;
+#endif
+
+    NTSTATUS rcNt = NtCreateFile(&hFile,
+                                 GENERIC_READ,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* Allocation Size*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 FILE_SHARE_READ,
+                                 FILE_OPEN,
+                                 FILE_NON_DIRECTORY_FILE, /** @todo nonalert? */
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+    if (!NT_SUCCESS(rcNt))
+        return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_IMAGE_FILE_OPEN_ERROR,
+                                   "Error opening image for scanning: %#x (name %ls)", rcNt, pUniStrPath->Buffer);
+
+    /*
+     * Figure out validation flags we'll be using and create the reader
+     * for this image.
+     */
+    uint32_t fFlags = fDll
+                    ? SUPHNTVI_F_TRUSTED_INSTALLER_OWNER | SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION
+                    : SUPHNTVI_F_REQUIRE_BUILD_CERT;
+    if (f32bitResourceDll)
+        fFlags |= SUPHNTVI_F_RESOURCE_IMAGE;
+
+    PSUPHNTVIRDR pNtViRdr;
+    int rc = supHardNtViRdrCreate(hFile, pUniStrPath->Buffer, fFlags, &pNtViRdr);
+    if (RT_FAILURE(rc))
+    {
+        NtClose(hFile);
+        return rc;
+    }
+
+    /*
+     * Finally, open the image with the loader
+     */
+    RTLDRMOD hLdrMod;
+    RTLDRARCH enmArch = fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST;
+    if (fFlags & SUPHNTVI_F_RESOURCE_IMAGE)
+        enmArch = RTLDRARCH_WHATEVER;
+    rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pErrInfo);
+    if (RT_FAILURE(rc))
+        return supHardNtVpSetInfo1(pErrInfo, rc, "RTLdrOpenWithReader failed: %Rrc (Image='%ls').",
+                                   rc, pUniStrPath->Buffer);
+
+    /*
+     * Fill in the cache entry.
+     */
+    pEntry->pszName   = pszName;
+    pEntry->hLdrMod   = hLdrMod;
+    pEntry->pNtViRdr  = pNtViRdr;
+    pEntry->hFile     = hFile;
+    pEntry->pbBits    = NULL;
+    pEntry->fVerified = false;
+
+    return VINF_SUCCESS;
+}
+
+#if 0//def IN_RING3
+DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PRTERRINFO pErrInfo, PSUPHNTLDRCACHEENTRY *ppEntry)
+{
+}
+#endif
+
+
 /**
  * Opens all the images with the IPRT loader, setting both, hFile, pNtViRdr and
  * hLdrMod for each image.
@@ -1501,68 +1712,35 @@ static int supHardNtVpOpenImages(PSUPHNTVPSTATE pThis)
     {
         PSUPHNTVPIMAGE pImage = &pThis->aImages[i];
 
+#ifdef IN_RING3
         /*
-         * Open the image file.
+         * Try the cache first.
          */
-        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
-        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        pImage->pCacheEntry = supHardNtLdrCacheLookupEntry(pImage->pszName);
+        if (pImage->pCacheEntry)
+            continue;
 
-        OBJECT_ATTRIBUTES   ObjAttr;
-        InitializeObjectAttributes(&ObjAttr, &pImage->Name.UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-#ifdef IN_RING0
-        ObjAttr.Attributes |= OBJ_KERNEL_HANDLE;
+        /*
+         * Not in the cache, so load it into the cache.
+         */
+        if (g_cSupNtVpLdrCacheEntries >= RT_ELEMENTS(g_aSupNtVpLdrCacheEntries))
+            return supHardNtVpSetInfo2(pThis, VERR_INTERNAL_ERROR_3, "Loader cache overflow.");
+        pImage->pCacheEntry = &g_aSupNtVpLdrCacheEntries[g_cSupNtVpLdrCacheEntries];
+#else
+        /*
+         * In ring-0 we don't have a cache at the moment (resource reasons), so
+         * we have a static cache entry in each image structure that we use instead.
+         */
+        pImage->pCacheEntry = &pImage->CacheEntry;
 #endif
 
-        NTSTATUS rcNt = NtCreateFile(&hFile,
-                                     GENERIC_READ,
-                                     &ObjAttr,
-                                     &Ios,
-                                     NULL /* Allocation Size*/,
-                                     FILE_ATTRIBUTE_NORMAL,
-                                     FILE_SHARE_READ,
-                                     FILE_OPEN,
-                                     FILE_NON_DIRECTORY_FILE,
-                                     NULL /*EaBuffer*/,
-                                     0 /*EaLength*/);
-        if (NT_SUCCESS(rcNt))
-            rcNt = Ios.Status;
-        if (!NT_SUCCESS(rcNt))
-            return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_IMAGE_FILE_OPEN_ERROR,
-                                      "Error opening image for scanning: %#x (name %ls)", rcNt, pImage->Name.UniStr.Buffer);
-
-        /*
-         * Figure out validation flags we'll be using and create the reader
-         * for this image.
-         */
-        uint32_t fFlags = pImage->fDll
-                        ? SUPHNTVI_F_TRUSTED_INSTALLER_OWNER | SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION
-                        : SUPHNTVI_F_REQUIRE_BUILD_CERT;
-        if (pImage->f32bitResourceDll)
-            fFlags |= SUPHNTVI_F_RESOURCE_IMAGE;
-
-        PSUPHNTVIRDR pNtViRdr;
-        int rc = supHardNtViRdrCreate(hFile, pImage->Name.UniStr.Buffer, fFlags, &pNtViRdr);
+        int rc = supHardNtLdrCacheNewEntry(pImage->pCacheEntry, pImage->pszName, &pImage->Name.UniStr,
+                                           pImage->fDll, pImage->f32bitResourceDll, pThis->pErrInfo);
         if (RT_FAILURE(rc))
-        {
-            NtClose(hFile);
             return rc;
-        }
-        pImage->hFile    = hFile;
-        pImage->pNtViRdr = pNtViRdr;
-
-        /*
-         * Finally, open the image with the laoder.
-         */
-        RTLDRMOD hLdrMod;
-        RTLDRARCH enmArch = fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST;
-        if (fFlags & SUPHNTVI_F_RESOURCE_IMAGE)
-            enmArch = RTLDRARCH_WHATEVER;
-        rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pThis->pErrInfo);
-        if (RT_FAILURE(rc))
-            return supHardNtVpSetInfo2(pThis, rc, "RTLdrOpenWithReader failed: %Rrc (Image='%ls').",
-                                       rc, pImage->Name.UniStr.Buffer);
-
-        pImage->hLdrMod = hLdrMod;
+#ifdef IN_RING3
+        g_cSupNtVpLdrCacheEntries++;
+#endif
     }
 
     return VINF_SUCCESS;
@@ -1802,15 +1980,10 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
             /*
              * Clean up the state.
              */
+#ifdef IN_RING0
             for (uint32_t i = 0; i < pThis->cImages; i++)
-            {
-                if (pThis->aImages[i].hLdrMod != NIL_RTLDRMOD)
-                    RTLdrClose(pThis->aImages[i].hLdrMod);
-                else if (pThis->aImages[i].pNtViRdr)
-                    pThis->aImages[i].pNtViRdr->Core.pfnDestroy(&pThis->aImages[i].pNtViRdr->Core);
-                if (pThis->aImages[i].hFile)
-                    NtClose(pThis->aImages[i].hFile);
-            }
+                supHardNTLdrCacheDeleteEntry(&pThis->aImages[i].CacheEntry);
+#endif
             suplibHardenedFree(pThis);
         }
         else

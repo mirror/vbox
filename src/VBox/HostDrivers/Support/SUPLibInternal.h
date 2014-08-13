@@ -438,6 +438,7 @@ DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
 DECLHIDDEN(void)    supR3HardenedWinInitImports(void);
 DECLHIDDEN(void)    supR3HardenedWinVerifyProcess(void);
 DECLHIDDEN(void)    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(const char *pszProgName);
+DECLHIDDEN(void)    supR3HardenedWinFlushLoaderCache();
 DECLHIDDEN(bool)    supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **papszArgs);
 DECLHIDDEN(int)     supR3HardenedWinReSpawn(int iWhich);
 DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only);

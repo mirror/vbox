@@ -2506,6 +2506,8 @@
 #define VERR_SUP_VP_UNKOWN_MEM_TYPE                 (-5666)
 /** The image file is not owned by TrustedInstaller is it should be. */
 #define VERR_SUP_VP_NOT_OWNED_BY_TRUSTED_INSTALLER  (-5667)
+/** The image is outside the expected range. */
+#define VERR_SUP_VP_IMAGE_TOO_BIG                   (-5668)
 
 /** @} */
 
