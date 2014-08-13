@@ -2127,6 +2127,12 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     hProcess = NULL;
 
     /*
+     * Ditch the loader cache so we don't sit on too much memory while waiting.
+     */
+    supR3HardenedWinFlushLoaderCache();
+    HeapCompact(GetProcessHeap(), 0 /*dwFlags*/);
+
+    /*
      * If this is the middle process, wait for both parent and child to quit.
      */
     HANDLE hParent = NULL;

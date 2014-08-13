@@ -248,7 +248,7 @@ static void suplibHardenedPrintStrN(const char *pch, size_t cch)
                     &Ios, (PVOID)pch, (ULONG)cch, NULL /*ByteOffset*/, NULL /*Key*/);
 # else
         DWORD cbWritten;
-        WriteFile(hStdOut, pch, cch, &cbWritten, NULL);
+        WriteFile(hStdOut, pch, (DWORD)cch, &cbWritten, NULL);
 # endif
     }
 #else
@@ -1725,6 +1725,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
             return supR3HardenedWinReSpawn(2 /* iWhich*/);
         }
         SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
+        supR3HardenedWinFlushLoaderCache();
 #endif /* RT_OS_WINDOWS */
 
         /*
@@ -1737,6 +1738,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     /*
      * Windows: Enable the use of windows APIs to verify images at load time.
      */
+    supR3HardenedWinFlushLoaderCache();
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(g_pszSupLibHardenedProgName);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_VERIFY_TRUST_READY;
 #endif

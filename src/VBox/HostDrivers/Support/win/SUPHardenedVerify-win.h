@@ -104,6 +104,37 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
 #  define SUPHNTVI_F_RC_IMAGE                       RT_BIT(31)
 /** @} */
 
+/**
+ * Loader cache entry.
+ *
+ * This is for avoiding loading and signature checking a file multiple times,
+ * due to multiple passes thru the process validation code (and syscall import
+ * code of NTDLL).
+ */
+typedef struct SUPHNTLDRCACHEENTRY
+{
+    /** The file name (from g_apszSupNtVpAllowedDlls or
+     *  g_apszSupNtVpAllowedVmExes). */
+    const char         *pszName;
+    /** Load module associated with the image during content verfication. */
+    RTLDRMOD            hLdrMod;
+    /** The file reader. */
+    PSUPHNTVIRDR        pNtViRdr;
+    /** The module file handle, if we've opened it.
+     * (pNtviRdr does not close the file handle on destruction.)  */
+    HANDLE              hFile;
+    /** Bits buffer. */
+    uint8_t            *pbBits;
+    /** Set if verified. */
+    bool                fVerified;
+} SUPHNTLDRCACHEENTRY;
+/** Pointer to a loader cache entry. */
+typedef SUPHNTLDRCACHEENTRY *PSUPHNTLDRCACHEENTRY;
+DECLHIDDEN(int)  supHardNtLdrCacheOpen(const char *pszName, PRTERRINFO pErrInfo, PSUPHNTLDRCACHEENTRY *ppEntry);
+DECLHIDDEN(int)  supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)  supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, PRTERRINFO pErrInfo);
+
+
 /** Which directory under the system root to get. */
 typedef enum SUPHARDNTSYSROOTDIR
 {

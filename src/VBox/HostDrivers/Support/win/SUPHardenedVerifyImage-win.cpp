@@ -422,7 +422,6 @@ static bool supHardNtViCheckIsOwnedByTrustedInstaller(HANDLE hFile, PCRTUTF16 pw
     } uBuf;
     ULONG cbActual;
     NTSTATUS rcNt = NtQuerySecurityObject(hFile, OWNER_SECURITY_INFORMATION, &uBuf.Abs, sizeof(uBuf), &cbActual);
-SUP_DPRINTF(("NtQuerySecurityObject: rcNt=%#x on '%ls'\n", rcNt, pwszName));
     if (!NT_SUCCESS(rcNt))
     {
         SUP_DPRINTF(("NtQuerySecurityObject failed with rcNt=%#x on '%ls'\n", rcNt, pwszName));
