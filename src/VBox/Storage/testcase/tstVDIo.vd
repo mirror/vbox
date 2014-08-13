@@ -19,15 +19,15 @@ void tstIo(string strMessage, string strBackend)
 {
     print(strMessage);
     createdisk("test", true /* fVerify */);
-    create("test", "base", "tst.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    create("test", "base", "tst.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */, false);
     io("test", true, 32, "seq", 64K, 0, 200M, 200M, 100, "none");
     io("test", false, 1, "seq", 64K, 0, 200M, 200M, 100, "none");
     io("test", true, 32, "seq", 64K, 0, 200M, 200M,   0, "none");
     io("test", false, 1, "seq", 64K, 0, 200M, 200M,   0, "none");
-    create("test", "diff", "tst2.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    create("test", "diff", "tst2.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */, false);
     io("test", true, 32, "rnd", 64K, 0, 200M, 200M,  50, "none");
     io("test", false, 1, "rnd", 64K, 0, 200M, 200M,  50, "none");
-    create("test", "diff", "tst3.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    create("test", "diff", "tst3.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */, false);
     io("test", true, 32, "rnd", 64K, 0, 200M, 200M,  50, "none");
     io("test", false, 1, "rnd", 64K, 0, 200M, 200M,  50, "none");
     close("test", "single", true /* fDelete */);

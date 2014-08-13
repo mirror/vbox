@@ -17,16 +17,17 @@
 
 void main()
 {
-	/* Init I/O RNG for generating random data for writes. */
-	iorngcreate(10M, "manual", 1234567890);
+    /* Init I/O RNG for generating random data for writes. */
+    iorngcreate(10M, "manual", 1234567890);
 
-	print("Testing VDI");
-	createdisk("test", true);
-	create("test", "base", "tst.vdi", "dynamic", "VDI", 1T, false);
-	io("test", false, 1, "seq", 64K, 255G, 257G, 2G, 100, "none");
-	resize("test", 1331200M);
-	io("test", false, 1, "seq", 64K, 255G, 257G, 2G,   0, "none");
-	destroydisk("test");
+    print("Testing VDI");
+    createdisk("test", true);
+    create("test", "base", "tst.vdi", "dynamic", "VDI", 1T, false, false);
+    io("test", false, 1, "seq", 64K, 255G, 257G, 2G, 100, "none");
+    resize("test", 1331200M);
+    io("test", false, 1, "seq", 64K, 255G, 257G, 2G,   0, "none");
+    destroydisk("test");
 
-	iorngdestroy();
+    iorngdestroy();
 }
+

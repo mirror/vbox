@@ -25,12 +25,12 @@ void main()
     createdisk("shared2", false);
 
     /* Create the disk and close it. */
-    create("shared1", "base", "tstShared.vdi", "fixed", "VDI", 20M, false);
+    create("shared1", "base", "tstShared.vdi", "fixed", "VDI", 20M, false, false);
     close("shared1", "all", false);
 
     /* Open the disk with sharing enabled. */
-    open("shared1", "tstShared.vdi", "VDI", true /* fAsync */, true /* fShareable */, false, false, false);
-    open("shared2", "tstShared.vdi", "VDI", true /* fAsync */, true /* fShareable */, false, false, false);
+    open("shared1", "tstShared.vdi", "VDI", true /* fAsync */, true /* fShareable */, false, false, false, false);
+    open("shared2", "tstShared.vdi", "VDI", true /* fAsync */, true /* fShareable */, false, false, false, false);
 
     /* Write to one disk and verify that the other disk can see the content. */
     io("shared1", true, 32, "seq", 64K, 0, 20M, 20M, 100, "none");
@@ -45,7 +45,7 @@ void main()
     close("shared2", "all", false);
 
     /* Open and delete. */
-    open("shared1", "tstShared.vdi", "VDI", false /* fAsync */, false /* fShareable */, false, false, false);
+    open("shared1", "tstShared.vdi", "VDI", false /* fAsync */, false /* fShareable */, false, false, false, false);
     close("shared1", "single", true);
 
     /* Cleanup */
@@ -53,3 +53,4 @@ void main()
     destroydisk("shared2");
     iorngdestroy();
 }
+
