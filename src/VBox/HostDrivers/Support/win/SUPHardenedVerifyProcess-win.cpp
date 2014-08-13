@@ -1534,7 +1534,9 @@ static int supHardNtVpOpenImages(PSUPHNTVPSTATE pThis)
          * Figure out validation flags we'll be using and create the reader
          * for this image.
          */
-        uint32_t fFlags = pImage->fDll ? 0 : SUPHNTVI_F_REQUIRE_BUILD_CERT;
+        uint32_t fFlags = pImage->fDll
+                        ? SUPHNTVI_F_TRUSTED_INSTALLER_OWNER | SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION
+                        : SUPHNTVI_F_REQUIRE_BUILD_CERT;
         if (pImage->f32bitResourceDll)
             fFlags |= SUPHNTVI_F_RESOURCE_IMAGE;
 
