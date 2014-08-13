@@ -111,7 +111,7 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
 
     /* Create mini-toolbar: */
     m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
-                                              IntegrationMode_External,
+                                              GeometryType_Available,
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->show();
