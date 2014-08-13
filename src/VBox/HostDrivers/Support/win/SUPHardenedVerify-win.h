@@ -130,7 +130,7 @@ typedef struct SUPHNTLDRCACHEENTRY
 } SUPHNTLDRCACHEENTRY;
 /** Pointer to a loader cache entry. */
 typedef SUPHNTLDRCACHEENTRY *PSUPHNTLDRCACHEENTRY;
-DECLHIDDEN(int)  supHardNtLdrCacheOpen(const char *pszName, PRTERRINFO pErrInfo, PSUPHNTLDRCACHEENTRY *ppEntry);
+DECLHIDDEN(int)  supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry);
 DECLHIDDEN(int)  supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo);
 DECLHIDDEN(int)  supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, PRTERRINFO pErrInfo);
 

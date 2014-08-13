@@ -1140,7 +1140,7 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
         && pbNtCreateSection[ 2] <= 0x02
         && pbNtCreateSection[ 3] == 0x00
         && pbNtCreateSection[ 4] == 0x00
-           (   (   pbNtCreateSection[ 5] == 0xba /* mov edx, offset SharedUserData!SystemCallStub */
+        && (   (   pbNtCreateSection[ 5] == 0xba /* mov edx, offset SharedUserData!SystemCallStub */
                 && pbNtCreateSection[ 6] == 0x00
                 && pbNtCreateSection[ 7] == 0x03
                 && pbNtCreateSection[ 8] == 0xfe
@@ -1600,10 +1600,29 @@ static int supR3HardNtPuChScrewUpPebForInitialImageEvents(PSUPR3HARDNTPUCH pThis
  */
 static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
 {
-    PVOID pvLdrInitThunk      = (PVOID)((uintptr_t)LdrInitializeThunk + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
-    PVOID pvNtTerminateThread = (PVOID)((uintptr_t)NtTerminateThread  + pThis->uNtDllAddr - pThis->uNtDllParentAddr);
-    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: pvLdrInitThunk=%p pvNtTerminateThread=%p\n",
-                 pvLdrInitThunk, pvNtTerminateThread));
+    /*
+     * Use the on-disk image for the ntdll entrypoints here.
+     */
+    PSUPHNTLDRCACHEENTRY pLdrEntry;
+    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pThis->pErrInfo, rc, "supHardNtLdrCacheOpen failed on NTDLL: %Rrc", rc);
+
+    RTLDRADDR uLdrInitThunk;
+    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pLdrEntry->pbBits, pThis->uNtDllAddr, UINT32_MAX,
+                          "LdrInitializeThunk", &uLdrInitThunk);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pThis->pErrInfo, rc, "Error locating LdrInitializeThunk in NTDLL: %Rrc", rc);
+    PVOID pvLdrInitThunk = (PVOID)(uintptr_t)uLdrInitThunk;
+
+    RTLDRADDR uNtTerminateThread;
+    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pLdrEntry->pbBits, pThis->uNtDllAddr, UINT32_MAX,
+                          "NtTerminateThread", &uNtTerminateThread);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(pThis->pErrInfo, rc, "Error locating NtTerminateThread in NTDLL: %Rrc", rc);
+
+    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: uLdrInitThunk=%p uNtTerminateThread=%p\n",
+                 (uintptr_t)uLdrInitThunk, (uintptr_t)uNtTerminateThread));
 
     /*
      * Back up the thunk code.
@@ -1627,7 +1646,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     abReplacement[2] = 0x31;    /* xor edx, edx */
     abReplacement[3] = 0xd2;
     abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
-    *(int32_t *)&abReplacement[5] = (int32_t)((intptr_t)pvNtTerminateThread - ((intptr_t)pvLdrInitThunk + 9));
+    *(int32_t *)&abReplacement[5] = (int32_t)(uNtTerminateThread - (uLdrInitThunk + 9));
     abReplacement[9] = 0xcc;    /* int3 */
 #elif defined(RT_ARCH_X86)
     abReplacement[0] = 0x6a;    /* push 0 */
@@ -1635,7 +1654,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     abReplacement[2] = 0x6a;    /* push 0 */
     abReplacement[3] = 0x00;
     abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
-    *(int32_t *)&abReplacement[5] = (int32_t)((intptr_t)pvNtTerminateThread - ((intptr_t)pvLdrInitThunk + 9));
+    *(int32_t *)&abReplacement[5] = (int32_t)(uNtTerminateThread - (uLdrInitThunk + 9));
     abReplacement[9] = 0xcc;    /* int3 */
 #else
 # error "Unsupported arch."
@@ -1893,11 +1912,7 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     if (RT_SUCCESS(rc))
         rc = supR3HardNtPuChSanitizePeb(&This);
     if (RT_SUCCESS(rc))
-    {
         rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, pErrInfo);
-        if (RT_FAILURE(rc))
-            Sleep(300000);
-    }
 
     return rc;
 }

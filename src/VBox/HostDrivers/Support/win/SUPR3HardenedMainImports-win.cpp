@@ -37,6 +37,7 @@
 #include <iprt/param.h>
 
 #include "SUPLibInternal.h"
+#include "SUPHardenedVerify-win.h"
 
 
 /*******************************************************************************
@@ -58,20 +59,45 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/**
+ * Import function entry.
+ */
 typedef struct SUPHNTIMPFUNC
 {
+    /** The name of the function we're importing. */
     const char         *pszName;
+    /** Where to store the function address (think __imp_ApiName). */
     PFNRT              *ppfnImport;
 } SUPHNTIMPFUNC;
+/** Pointer to an import table entry.  */
 typedef SUPHNTIMPFUNC const *PCSUPHNTIMPFUNC;
 
+/**
+ * Information for constructing a direct system call.
+ */
 typedef struct SUPHNTIMPSYSCALL
 {
-    PFNRT              pfnType1;
-    PFNRT              pfnType2;
+    /** Where to store the system call number.
+     * NULL if this import doesn't stupport direct system call.  */
+    uint32_t               *puApiNo;
+    /** Assembly system call routine, type 1.  */
+    PFNRT                   pfnType1;
+#ifdef RT_ARCH_X86
+    /** Assembly system call routine, type 2.  */
+    PFNRT                   pfnType2;
+    /** The parameter size in bytes for a standard call. */
+    uint32_t                cbParams;
+#endif
 } SUPHNTIMPSYSCALL;
+/** Pointer to a system call entry. */
 typedef SUPHNTIMPSYSCALL const *PCSUPHNTIMPSYSCALL;
 
+/**
+ * Import DLL.
+ *
+ * This contains both static (like name & imports) and runtime information (like
+ * load and export table locations).
+ */
 typedef struct SUPHNTIMPDLL
 {
     /** @name Static data.
@@ -113,6 +139,7 @@ typedef struct SUPHNTIMPDLL
     uint16_t const         *pau16NameOrdinals;
 
 } SUPHNTIMPDLL;
+/** Pointer to an import DLL entry. */
 typedef SUPHNTIMPDLL *PSUPHNTIMPDLL;
 
 
@@ -155,16 +182,21 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 /*
  * Syscalls in ntdll.
  */
-static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
-{
 #undef SUPHARNT_IMPORT_SYSCALL
 #undef SUPHARNT_IMPORT_STDCALL
 #ifdef RT_ARCH_AMD64
-# define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) { &RT_CONCAT(a_Name, _SyscallType1), NULL },
-#else
-# define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) { &RT_CONCAT(a_Name,_SyscallType1), &RT_CONCAT(a_Name, _SyscallType2) },
+# define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+    { NULL, NULL },
+# define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
+    { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name, _SyscallType1) },
+#elif defined(RT_ARCH_X86)
+# define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+    { NULL, NULL, NULL, 0 },
+# define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
+    { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name,_SyscallType1), &RT_CONCAT(a_Name, _SyscallType2), a_cbParamsX86 },
 #endif
-#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)  { NULL, NULL },
+static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
+{
 #include "import-template-ntdll.h"
 };
 
@@ -360,6 +392,122 @@ static const char *supR3HardenedResolveImport(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUN
 }
 
 
+static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImport, PCSUPHNTIMPSYSCALL pSyscall,
+                                       PSUPHNTLDRCACHEENTRY pLdrEntry, uint8_t *pbBits)
+{
+    /*
+     * Skip non-syscall entries.
+     */
+    if (!pSyscall->puApiNo)
+        return;
+
+    /*
+     * Locate the virgin bits.
+     */
+    RTLDRADDR uValue;
+    int rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbBits, (uintptr_t)pDll->pbImageBase, UINT32_MAX, pImport->pszName, &uValue);
+    if (RT_FAILURE(rc))
+    {
+        SUPHNTIMP_ERROR(16, "supR3HardenedDirectSyscall", kSupInitOp_Misc, rc,
+                        "%s: RTLdrGetSymbolEx failed on %s: %Rrc", pDll->pszName, pImport->pszName, rc);
+        return;
+    }
+    uintptr_t offSymbol = (uintptr_t)uValue - (uintptr_t)pDll->pbImageBase;
+    uint8_t const *pbFunction = &pbBits[offSymbol];
+
+    /*
+     * Parse the code and extract the API call number.
+     */
+#ifdef RT_ARCH_AMD64
+    /* Pattern #1: XP64/W2K3-64 thru Windows 8.1
+       0:000> u ntdll!NtCreateSection
+       ntdll!NtCreateSection:
+       00000000`779f1750 4c8bd1          mov     r10,rcx
+       00000000`779f1753 b847000000      mov     eax,47h
+       00000000`779f1758 0f05            syscall
+       00000000`779f175a c3              ret
+       00000000`779f175b 0f1f440000      nop     dword ptr [rax+rax] */
+    if (   pbFunction[ 0] == 0x4c /* mov r10, rcx */
+        && pbFunction[ 1] == 0x8b
+        && pbFunction[ 2] == 0xd1
+        && pbFunction[ 3] == 0xb8 /* mov eax, 0000yyzzh */
+        //&& pbFunction[ 4] == 0xZZ
+        //&& pbFunction[ 5] == 0xYY
+        && pbFunction[ 6] == 0x00
+        && pbFunction[ 7] == 0x00
+        && pbFunction[ 8] == 0x0f /* syscall */
+        && pbFunction[ 9] == 0x05
+        && pbFunction[10] == 0xc3 /* ret */ )
+    {
+        *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[4], pbFunction[5]);
+        *pImport->ppfnImport = pSyscall->pfnType1;
+        return;
+    }
+#else
+    /* Pattern #1: XP thru Windows 7
+            kd> u ntdll!NtCreateSection
+            ntdll!NtCreateSection:
+            7c90d160 b832000000      mov     eax,32h
+            7c90d165 ba0003fe7f      mov     edx,offset SharedUserData!SystemCallStub (7ffe0300)
+            7c90d16a ff12            call    dword ptr [edx]
+            7c90d16c c21c00          ret     1Ch
+            7c90d16f 90              nop
+       The variable bit is the value loaded into eax: XP=32h, W2K3=34h, Vista=4bh, W7=54h
+
+       Pattern #2: Windows 8.1
+            0:000:x86> u ntdll_6a0f0000!NtCreateSection
+            ntdll_6a0f0000!NtCreateSection:
+            6a15eabc b854010000      mov     eax,154h
+            6a15eac1 e803000000      call    ntdll_6a0f0000!NtCreateSection+0xd (6a15eac9)
+            6a15eac6 c21c00          ret     1Ch
+            6a15eac9 8bd4            mov     edx,esp
+            6a15eacb 0f34            sysenter
+            6a15eacd c3              ret
+       The variable bit is the value loaded into eax: W81=154h
+       Note! One nice thing here is that we can share code pattern #1.  */
+
+    if (   pbFunction[ 0] == 0xb8 /* mov eax, 0000yyzzh*/
+        //&& pbFunction[ 1] <= 0xZZ
+        //&& pbFunction[ 2] <= 0xYY
+        && pbFunction[ 3] == 0x00
+        && pbFunction[ 4] == 0x00)
+    {
+        *pSyscall->puApiNo = RT_MAKE_U16(pbFunction[0], pbFunction[1]);
+        if (   pbFunction[5] == 0xba /* mov edx, offset SharedUserData!SystemCallStub */
+            && pbFunction[ 6] == 0x00
+            && pbFunction[ 7] == 0x03
+            && pbFunction[ 8] == 0xfe
+            && pbFunction[ 9] == 0x7f
+            && pbFunction[10] == 0xff /* call [edx] */
+            && pbFunction[11] == 0x12
+            && pbFunction[12] == 0xc2 /* ret 1ch */
+            && pbFunction[13] == pSyscall->cbParams
+            && pbFunction[14] == 0x00)
+        {
+            *pImport->ppfnImport = pSyscall->pfnType1;
+            return;
+        }
+
+        if (   pbFunction[ 5] == 0xe8 /* call [$+3] */
+            && RT_ABS(*(int32_t *)&pbFunction[6]) < 0x10
+            && pbFunction[10] == 0xc2 /* ret 1ch */
+            && pbFunction[11] == pSyscall->cbParams
+            && pbFunction[12] == 0x00)
+        {
+            *pImport->ppfnImport = pSyscall->pfnType2;
+            return;
+        }
+    }
+#endif
+
+    /*
+     * Failed to parse it.
+     */
+    SUPHNTIMP_ERROR(17, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
+                    "%ls: supHardNtLdrCacheOpen failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+}
+
+
 
 /**
  * Resolves imported functions, esp. system calls from NTDLL.
@@ -400,10 +548,45 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
                 else if (cchDllName == sizeof("kernelbase") - 1 && RTStrNICmp(pszForwarder, RT_STR_TUPLE("kernelbase")) == 0)
                     supR3HardenedResolveImport(&g_aSupNtImpDlls[1], &Tmp);
                 else
-                    SUPHNTIMP_ERROR(16, "supR3HardenedWinInitImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
+                    SUPHNTIMP_ERROR(18, "supR3HardenedWinInitImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
                                     "%ls: Failed to resolve forwarder '%s'.", g_aSupNtImpDlls[iDll].pwszName, pszForwarder);
             }
         }
-}
 
+    /*
+     * Check out system calls and try do them directly if we can.
+     * In order to do this though, we need to access the DLL on disk as we
+     * cannot trust the memory content to be unpatched.
+     *
+     * Note! It's too early to validate any signatures.
+     */
+    for (uint32_t iDll = 0; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
+        if (g_aSupNtImpDlls[iDll].paSyscalls)
+        {
+            PSUPHNTLDRCACHEENTRY pLdrEntry;
+            int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry);
+            if (RT_SUCCESS(rc))
+            {
+                uint8_t *pbBits;
+                rc = supHardNtLdrCacheEntryAllocBits(pLdrEntry, &pbBits, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTLdrGetBits(pLdrEntry->hLdrMod, pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL);
+                    if (RT_SUCCESS(rc))
+                        for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
+                            supR3HardenedDirectSyscall(&g_aSupNtImpDlls[iDll], &g_aSupNtImpDlls[iDll].paImports[i],
+                                                       &g_aSupNtImpDlls[iDll].paSyscalls[i], pLdrEntry, pbBits);
+                    else
+                        SUPHNTIMP_ERROR(19, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
+                                        "%ls: RTLdrGetBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                }
+                else
+                    SUPHNTIMP_ERROR(20, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
+                                    "%ls: supHardNtLdrCacheEntryAllocBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+            }
+            else
+                SUPHNTIMP_ERROR(21, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
+                                "%ls: supHardNtLdrCacheOpen failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+        }
+}
 

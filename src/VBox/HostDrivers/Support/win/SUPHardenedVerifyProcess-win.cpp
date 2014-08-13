@@ -1691,11 +1691,65 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
     return VINF_SUCCESS;
 }
 
-#if 0//def IN_RING3
-DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PRTERRINFO pErrInfo, PSUPHNTLDRCACHEENTRY *ppEntry)
+#ifdef IN_RING3
+/**
+ * Opens a loader cache entry.
+ *
+ * Currently this is only used by the import code for getting NTDLL.
+ *
+ * @returns VBox status code.
+ * @param   pszName             The DLL name.  Must be one from the
+ *                              g_apszSupNtVpAllowedDlls array.
+ * @param   ppEntry             Where to return the entry we've opened/found.
+ */
+DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry)
 {
+    /*
+     * Locate the dll.
+     */
+    uint32_t i = 0;
+    while (i < RT_ELEMENTS(g_apszSupNtVpAllowedDlls))
+        if (!strcmp(pszName, g_apszSupNtVpAllowedDlls[i]))
+            break;
+    if (i >= RT_ELEMENTS(g_apszSupNtVpAllowedDlls))
+        return VERR_FILE_NOT_FOUND;
+    pszName = g_apszSupNtVpAllowedDlls[i];
+
+    /*
+     * Try the cache.
+     */
+    *ppEntry = supHardNtLdrCacheLookupEntry(pszName);
+    if (*ppEntry)
+        return VINF_SUCCESS;
+
+    /*
+     * Not in the cache, so open it.
+     * Note! We cannot assume that g_System32NtPath has been initialized at this point.
+     */
+    if (g_cSupNtVpLdrCacheEntries >= RT_ELEMENTS(g_aSupNtVpLdrCacheEntries))
+        return VERR_INTERNAL_ERROR_3;
+
+    static WCHAR s_wszSystem32[] = L"\\SystemRoot\\System32\\";
+    WCHAR wszPath[64];
+    memcpy(wszPath, s_wszSystem32, sizeof(s_wszSystem32));
+    RTUtf16CatAscii(wszPath, sizeof(wszPath), pszName);
+
+    UNICODE_STRING UniStr;
+    UniStr.Buffer = wszPath;
+    UniStr.Length = (USHORT)(RTUtf16Len(wszPath) * sizeof(WCHAR));
+    UniStr.MaximumLength = UniStr.Length + sizeof(WCHAR);
+
+    int rc = supHardNtLdrCacheNewEntry(&g_aSupNtVpLdrCacheEntries[g_cSupNtVpLdrCacheEntries], pszName, &UniStr,
+                                       true /*fDll*/, false /*f32bitResourceDll*/, NULL /*pErrInfo*/);
+    if (RT_SUCCESS(rc))
+    {
+        *ppEntry = &g_aSupNtVpLdrCacheEntries[g_cSupNtVpLdrCacheEntries];
+        g_cSupNtVpLdrCacheEntries++;
+        return VINF_SUCCESS;
+    }
+    return rc;
 }
-#endif
+#endif /* IN_RING3 */
 
 
 /**
