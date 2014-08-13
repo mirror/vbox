@@ -757,7 +757,7 @@ renderspuWindowShow( GLint win, GLint flag )
         
         visible = !!flag;
         
-        if (window->visible != visible)
+//        if (window->visible != visible)
         {
             renderspu_SystemShowWindow( window, visible );
             window->visible = visible;

@@ -375,6 +375,9 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)makeCurrentFBO;
 - (void)swapFBO;
+- (void)vboxSubmitVisible:(GLboolean)fVisible;
+- (void)vboxSetVisibleUI;
+- (void)vboxSetHiddenUI;
 - (void)vboxTryDraw;
 - (void)vboxTryDrawUI;
 - (void)vboxPresent:(const VBOXVR_SCR_COMPOSITOR*)pCompositor;
@@ -1180,6 +1183,24 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [self setNeedsDisplay:YES];
 }
 
+- (void)vboxSubmitVisible:(GLboolean)fVisible
+{
+    if (fVisible)
+        [self performSelectorOnMainThread:@selector(vboxSetVisibleUI) withObject:nil waitUntilDone:NO];
+    else
+        [self performSelectorOnMainThread:@selector(vboxSetHiddenUI) withObject:nil waitUntilDone:NO];
+}
+
+- (void)vboxSetVisibleUI
+{
+    [self setHidden: NO];
+}
+
+- (void)vboxSetHiddenUI
+{
+    [self setHidden: YES];
+}
+
 - (void)vboxTryDrawUI
 {
     const VBOXVR_SCR_COMPOSITOR *pCompositor;
@@ -1852,7 +1873,7 @@ void cocoaViewShow(NativeNSViewRef pView, GLboolean fShowIt)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    [pView setHidden: fShowIt==GL_TRUE?NO:YES];
+    [pView vboxSubmitVisible:fShowIt];
 
     [pPool release];
 }
