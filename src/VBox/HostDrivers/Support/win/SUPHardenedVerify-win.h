@@ -96,6 +96,8 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
 #  define SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT  RT_BIT(2)
 /** Whether to allow image verification by catalog file. */
 #  define SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION    RT_BIT(3)
+/** The file owner must be TrustedInstaller on Vista+. */
+#  define SUPHNTVI_F_TRUSTED_INSTALLER_OWNER        RT_BIT(4)
 /** Resource image, could be any bitness. */
 #  define SUPHNTVI_F_RESOURCE_IMAGE                 RT_BIT(30)
 /** Raw-mode context image, always 32-bit. */
@@ -121,6 +123,14 @@ typedef struct SUPSYSROOTDIRBUF
 } SUPSYSROOTDIRBUF;
 extern SUPSYSROOTDIRBUF g_System32NtPath;
 extern SUPSYSROOTDIRBUF g_WinSxSNtPath;
+#ifdef IN_RING3
+extern SUPSYSROOTDIRBUF g_ProgramFilesNtPath;
+extern SUPSYSROOTDIRBUF g_CommonFilesNtPath;
+# if ARCH_BITS == 64
+extern SUPSYSROOTDIRBUF g_ProgramFilesX86NtPath;
+extern SUPSYSROOTDIRBUF g_CommonFilesX86NtPath;
+# endif
+#endif
 extern SUPSYSROOTDIRBUF g_SupLibHardenedExeNtPath;
 extern uint32_t         g_offSupLibHardenedExeNtName;
 

@@ -657,7 +657,7 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             if (!NT_SUCCESS(rcNt))
             {
                 supR3HardenedError(VINF_SUCCESS, false,
-                                   "supR3HardenedMonitor_NtCreateSection: NtQueryObject -> %#x (fImage=%d fExecMap=%d fExecProt=%d)\n",
+                                   "NtCreateSection: NtQueryObject -> %#x (fImage=%d fExecMap=%d fExecProt=%d)\n",
                                    fImage, fExecMap, fExecProt);
                 return rcNt;
             }
@@ -674,44 +674,44 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             PVERIFIERCACHEENTRY pCacheHit = supR3HardenedWinVerifyCacheLookup(&uBuf.UniStr, hFile);
             if (pCacheHit)
             {
-                SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: cache hit (%Rrc) on %ls\n", pCacheHit->rc, pCacheHit->wszPath));
+                SUP_DPRINTF(("NtCreateSection: cache hit (%Rrc) on %ls\n", pCacheHit->rc, pCacheHit->wszPath));
                 if (RT_SUCCESS(pCacheHit->rc))
                     return g_pfnNtCreateSectionReal(phSection, fAccess, pObjAttribs, pcbSection, fProtect, fAttribs, hFile);
                 supR3HardenedError(VINF_SUCCESS, false,
-                                   "supR3HardenedMonitor_NtCreateSection: cached rc=%Rrc fImage=%d fExecMap=%d fExecProt=%d %ls\n",
+                                   "NtCreateSection: cached rc=%Rrc fImage=%d fExecMap=%d fExecProt=%d %ls\n",
                                    pCacheHit->rc, fImage, fExecMap, fExecProt, uBuf.UniStr.Buffer);
                 return STATUS_TRUST_FAILURE;
             }
 
             /*
              * On XP the loader might hand us handles with just FILE_EXECUTE and
-             * SYNCRHONIZE, the means reading will fail later on.  So, we might
-             * have to reopen the file here in order to validate it - annoying.
+             * SYNCHRONIZE, the means reading will fail later on.  Also, we need
+             * READ_CONTROL access to check the file ownership later on, and non
+             * of the OS versions seems be giving us that.  So, in effect we
+             * more or less always reopen the file here.
              */
             HANDLE hMyFile = NULL;
             rcNt = NtDuplicateObject(NtCurrentProcess(), hFile, NtCurrentProcess(),
                                      &hMyFile,
-                                     FILE_READ_DATA | SYNCHRONIZE,
+                                     FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
                                      0 /* Handle attributes*/, 0 /* Options */);
             if (!NT_SUCCESS(rcNt))
             {
                 if (rcNt == STATUS_ACCESS_DENIED)
                 {
-                    HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
                     IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-
                     OBJECT_ATTRIBUTES   ObjAttr;
                     InitializeObjectAttributes(&ObjAttr, &uBuf.UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
 
                     rcNt = NtCreateFile(&hMyFile,
-                                        FILE_READ_DATA | SYNCHRONIZE,
+                                        FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
                                         &ObjAttr,
                                         &Ios,
                                         NULL /* Allocation Size*/,
                                         FILE_ATTRIBUTE_NORMAL,
                                         FILE_SHARE_READ,
                                         FILE_OPEN,
-                                        FILE_NON_DIRECTORY_FILE,
+                                        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
                                         NULL /*EaBuffer*/,
                                         0 /*EaLength*/);
                     if (NT_SUCCESS(rcNt))
@@ -719,13 +719,29 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                     if (!NT_SUCCESS(rcNt))
                     {
                         supR3HardenedError(VINF_SUCCESS, false,
-                                           "supR3HardenedMonitor_NtCreateSection: Failed to duplicate and open the file: rcNt=%#x hFile=%p %ls\n",
+                                           "NtCreateSection: Failed to duplicate and open the file: rcNt=%#x hFile=%p %ls\n",
                                            rcNt, hFile, uBuf.UniStr.Buffer);
                         return rcNt;
+                    }
+
+                    /* Check that we've got the same file. */
+                    LARGE_INTEGER idMyFile, idInFile;
+                    bool fMyValid = supR3HardenedWinVerifyCacheGetIndexNumber(hMyFile, &idMyFile);
+                    bool fInValid = supR3HardenedWinVerifyCacheGetIndexNumber(hFile, &idInFile);
+                    if (   fMyValid
+                        && (   fMyValid != fInValid
+                            || idMyFile.QuadPart != idInFile.QuadPart))
+                    {
+                        supR3HardenedError(VINF_SUCCESS, false,
+                                           "NtCreateSection: Re-opened has different ID that input: %#llx vx %#llx (%ls)\n",
+                                           rcNt, idMyFile.QuadPart, idInFile.QuadPart, uBuf.UniStr.Buffer);
+                        NtClose(hMyFile);
+                        return STATUS_TRUST_FAILURE;
                     }
                 }
                 else
                 {
+                    SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: NtDuplicateObject -> %#x\n", rcNt));
 #ifdef DEBUG
 
                     supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_NtCreateSection: NtDuplicateObject(,%#x,) failed: %#x\n", hFile, rcNt);
@@ -756,15 +772,21 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
                     if (fProtect & PAGE_EXECUTE)
                         fProtect = (fProtect & ~PAGE_EXECUTE) | PAGE_READONLY;
                     fProtect = (fProtect & ~UINT32_C(0xf0)) | ((fProtect & UINT32_C(0xe0)) >> 4);
+                    if (hMyFile != hFile)
+                        NtClose(hMyFile);
                     return g_pfnNtCreateSectionReal(phSection, fAccess, pObjAttribs, pcbSection, fProtect, fAttribs, hFile);
                 }
             }
 
             /*
              * Check the path.  We don't allow DLLs to be loaded from just anywhere:
-             *      1. System32   - normal code or cat signing.
-             *      2. WinSxS     - normal code or cat signing.
-             *      3. VirtualBox - kernel code signing and integrity checks.
+             *      1. System32      - normal code or cat signing, owner TrustedInstaller.
+             *      2. WinSxS        - normal code or cat signing, owner TrustedInstaller.
+             *      3. VirtualBox    - kernel code signing and integrity checks.
+             *      4. AppPatchDir   - normal code or cat signing, owner TrustedInstaller.
+             *      5. Program Files - normal code or cat signing, owner TrustedInstaller.
+             *      6. Common Files  - normal code or cat signing, owner TrustedInstaller.
+             *      7. x86 variations of 4 & 5 - ditto.
              */
             bool fSystem32 = false;
             Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
@@ -772,17 +794,27 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_System32NtPath.UniStr, true /*fCheckSlash*/))
             {
                 fSystem32 = true;
-                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
             }
             else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
-                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
             else if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
                                                     g_SupLibHardenedExeNtPath.UniStr.Buffer,
                                                     g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
                 fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
 #ifdef VBOX_PERMIT_MORE
             else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
-                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION;
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+            else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesNtPath.UniStr, true /*fCheckSlash*/))
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+            else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesNtPath.UniStr, true /*fCheckSlash*/))
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+# ifdef RT_ARCH_AMD64
+            else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesX86NtPath.UniStr, true /*fCheckSlash*/))
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+            else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesX86NtPath.UniStr, true /*fCheckSlash*/))
+                fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+# endif
 #endif
 #ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
             /* Hack to allow profiling our code with Visual Studio. */
