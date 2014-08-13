@@ -41,12 +41,12 @@
 #endif /* !Q_WS_X11 */
 
 UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
-                                           IntegrationMode integrationMode,
+                                           GeometryType geometryType,
                                            Qt::Alignment alignment,
                                            bool fAutoHide /* = true */)
-    : QWidget(pParent)
+    : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
     /* Variables: General stuff: */
-    , m_integrationMode(integrationMode)
+    , m_geometryType(geometryType)
     , m_alignment(alignment)
     , m_fAutoHide(fAutoHide)
     /* Variables: Contents stuff: */
@@ -85,26 +85,7 @@ void UIRuntimeMiniToolBar::setAlignment(Qt::Alignment alignment)
     m_pToolbar->setAlignment(m_alignment);
 }
 
-void UIRuntimeMiniToolBar::setIntegrationMode(IntegrationMode integrationMode)
-{
-    /* Make sure integration-mode really changed: */
-    if (m_integrationMode == integrationMode)
-        return;
-
-    /* Update integration-mode: */
-    m_integrationMode = integrationMode;
-
-    /* Re-integrate: */
-    integrate();
-
-    /* Re-initialize: */
-    adjustGeometry();
-
-    /* Propagate to child to update shape: */
-    m_pToolbar->setIntegrationMode(m_integrationMode);
-}
-
-void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true*/)
+void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true */)
 {
     /* Make sure auto-hide really changed: */
     if (m_fAutoHide == fAutoHide)
@@ -152,42 +133,18 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     resize(m_pEmbeddedToolbar->size());
     QRect screenRect;
     int iX = 0, iY = 0;
-    switch (m_integrationMode)
+    switch (m_geometryType)
     {
-        case IntegrationMode_Embedded:
-        {
-            /* Screen geometry: */
-            screenRect = QApplication::desktop()->screenGeometry(iHostScreen);
-            /* Local coordinates, tool-bar is a child of the parent-widget: */
-            iX = screenRect.width() / 2 - width() / 2;
-            switch (m_alignment)
-            {
-                case Qt::AlignTop:
-                    iY = 0;
-                    break;
-                case Qt::AlignBottom:
-                    iY = screenRect.height() - height();
-                    break;
-            }
-            break;
-        }
-        case IntegrationMode_External:
-        {
-            /* Available geometry: */
-            screenRect = vboxGlobal().availableGeometry(iHostScreen);
-            /* Global coordinates, tool-bar is tool-window aligned according the parent-widget: */
-            iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
-            switch (m_alignment)
-            {
-                case Qt::AlignTop:
-                    iY = screenRect.y();
-                    break;
-                case Qt::AlignBottom:
-                    iY = screenRect.y() + screenRect.height() - height();
-                    break;
-            }
-            break;
-        }
+        case GeometryType_Available: screenRect = vboxGlobal().availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
+        default: break;
+    }
+    iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
+    switch (m_alignment)
+    {
+        case Qt::AlignTop:    iY = screenRect.y(); break;
+        case Qt::AlignBottom: iY = screenRect.y() + screenRect.height() - height(); break;
+        default: break;
     }
     move(iX, iY);
 
@@ -239,14 +196,19 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 
 void UIRuntimeMiniToolBar::prepare()
 {
-    /* Allow any size: */
-    setMinimumSize(1, 1);
+#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
+    /* Using Qt API to enable translucent background: */
+    setAttribute(Qt::WA_TranslucentBackground, true);
+#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
+
     /* Make sure we have no focus: */
     setFocusPolicy(Qt::NoFocus);
 
     /* Prepare mdi-area: */
     m_pMdiArea = new QMdiArea;
     {
+        /* Allow any MDI area size: */
+        m_pMdiArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
         /* Configure own background: */
         QPalette pal = m_pMdiArea->palette();
         pal.setColor(QPalette::Window, QColor(Qt::transparent));
@@ -270,7 +232,6 @@ void UIRuntimeMiniToolBar::prepare()
         /* Propagate known options to child: */
         m_pToolbar->setAutoHide(m_fAutoHide);
         m_pToolbar->setAlignment(m_alignment);
-        m_pToolbar->setIntegrationMode(m_integrationMode);
         /* Configure own background: */
         QPalette pal = m_pToolbar->palette();
         pal.setColor(QPalette::Window, palette().color(QPalette::Window));
@@ -311,11 +272,11 @@ void UIRuntimeMiniToolBar::prepare()
                                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()),
                                                          true);
 
-    /* Integrate if necessary: */
-    integrate();
-
     /* Adjust geometry finally: */
     adjustGeometry();
+
+    /* Show: */
+    show();
 }
 
 void UIRuntimeMiniToolBar::cleanup()
@@ -422,27 +383,6 @@ QPoint UIRuntimeMiniToolBar::toolbarPosition() const
     return m_pEmbeddedToolbar->pos();
 }
 
-void UIRuntimeMiniToolBar::integrate()
-{
-    /* Reintegrate if necessary: */
-    if (m_integrationMode == IntegrationMode_Embedded && isWindow())
-    {
-        setWindowFlags(Qt::Widget);
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
-        setAttribute(Qt::WA_TranslucentBackground, false);
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
-        show();
-    }
-    else if (m_integrationMode == IntegrationMode_External && !isWindow())
-    {
-        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
-        setAttribute(Qt::WA_TranslucentBackground, true);
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
-        show();
-    }
-}
-
 
 UIMiniToolBar::UIMiniToolBar()
     /* Variables: General stuff: */
@@ -471,19 +411,6 @@ void UIMiniToolBar::setAlignment(Qt::Alignment alignment)
 
     /* Update alignment: */
     m_alignment = alignment;
-
-    /* Rebuild shape: */
-    rebuildShape();
-}
-
-void UIMiniToolBar::setIntegrationMode(IntegrationMode integrationMode)
-{
-    /* Make sure integration-mode really changed: */
-    if (m_integrationMode == integrationMode)
-        return;
-
-    /* Update integration-mode: */
-    m_integrationMode = integrationMode;
 
     /* Rebuild shape: */
     rebuildShape();

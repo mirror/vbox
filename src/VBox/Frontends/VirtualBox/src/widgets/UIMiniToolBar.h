@@ -35,11 +35,11 @@ class UIMiniToolBar;
 class QMdiSubWindow;
 class UIAnimation;
 
-/* IntegrationMode enum: */
-enum IntegrationMode
+/** Geometry types. */
+enum GeometryType
 {
-    IntegrationMode_Embedded,
-    IntegrationMode_External
+    GeometryType_Available,
+    GeometryType_Full
 };
 
 /* Runtime mini-toolbar frameless-window prototype: */
@@ -70,16 +70,13 @@ public:
 
     /* Constructor/destructor: */
     UIRuntimeMiniToolBar(QWidget *pParent,
-                         IntegrationMode integrationMode,
+                         GeometryType geometryType,
                          Qt::Alignment alignment,
                          bool fAutoHide = true);
     ~UIRuntimeMiniToolBar();
 
     /* API: Alignment stuff: */
     void setAlignment(Qt::Alignment alignment);
-
-    /* API: Integration mode stuff: */
-    void setIntegrationMode(IntegrationMode integrationMode);
 
     /* API: Auto-hide stuff: */
     bool autoHide() const { return m_fAutoHide; }
@@ -126,11 +123,8 @@ private:
     QPoint hiddenToolbarPosition() const { return m_hiddenToolbarPosition; }
     QPoint shownToolbarPosition() const { return m_shownToolbarPosition; }
 
-    /* Helper: Integration stuff: */
-    void integrate();
-
     /* Variables: General stuff: */
-    IntegrationMode m_integrationMode;
+    const GeometryType m_geometryType;
     Qt::Alignment m_alignment;
     bool m_fAutoHide;
 
@@ -174,9 +168,6 @@ public:
     /* API: Alignment stuff: */
     void setAlignment(Qt::Alignment alignment);
 
-    /* API: Integration mode stuff: */
-    void setIntegrationMode(IntegrationMode integrationMode);
-
     /* API: Auto-hide stuff: */
     bool autoHide() const;
     void setAutoHide(bool fAutoHide);
@@ -206,7 +197,6 @@ private:
     /* Variables: General stuff: */
     bool m_fPolished;
     Qt::Alignment m_alignment;
-    IntegrationMode m_integrationMode;
     QPainterPath m_shape;
 
     /* Variables: Contents stuff: */

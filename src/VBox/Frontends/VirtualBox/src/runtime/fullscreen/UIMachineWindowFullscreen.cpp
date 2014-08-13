@@ -220,7 +220,7 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
 
     /* Create mini-toolbar: */
     m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
-                                              IntegrationMode_Embedded,
+                                              GeometryType_Full,
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->addMenus(actionPool()->menus());
