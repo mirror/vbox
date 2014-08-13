@@ -40,6 +40,7 @@
 # define NtQueryInformationProcess      ZwQueryInformationProcess
 # define NtQueryInformationThread       ZwQueryInformationThread
 # define NtQuerySystemInformation       ZwQuerySystemInformation
+# define NtQuerySecurityObject          ZwQuerySecurityObject
 # define NtClose                        ZwClose
 # define NtCreateFile                   ZwCreateFile
 # define NtReadFile                     ZwReadFile
@@ -217,6 +218,8 @@
 #define RTNT_IO_STATUS_BLOCK_INITIALIZER  { STATUS_FAILED_DRIVER_ENTRY, ~(uintptr_t)42 }
 /** Similar to INVALID_HANDLE_VALUE in the Windows environment. */
 #define RTNT_INVALID_HANDLE_VALUE         ( (HANDLE)~(uintptr_t)0 )
+/** Constant UNICODE_STRING initializer. */
+#define RTNT_CONSTANT_UNISTR(a_String)   { sizeof(a_String) - sizeof(WCHAR), sizeof(a_String), (WCHAR *)a_String }
 /** @}  */
 
 
@@ -1373,6 +1376,7 @@ NTSYSAPI NTSTATUS NTAPI RtlAddAccessAllowedAce(PACL, ULONG, ULONG, PSID);
 NTSYSAPI NTSTATUS NTAPI RtlCopySid(ULONG, PSID, PSID);
 NTSYSAPI NTSTATUS NTAPI RtlCreateAcl(PACL, ULONG, ULONG);
 NTSYSAPI NTSTATUS NTAPI RtlCreateSecurityDescriptor(PSECURITY_DESCRIPTOR, ULONG);
+NTSYSAPI BOOLEAN  NTAPI RtlEqualSid(PSID, PSID);
 NTSYSAPI NTSTATUS NTAPI RtlGetVersion(PRTL_OSVERSIONINFOW);
 NTSYSAPI NTSTATUS NTAPI RtlInitializeSid(PSID, PSID_IDENTIFIER_AUTHORITY, UCHAR);
 NTSYSAPI NTSTATUS NTAPI RtlSetDaclSecurityDescriptor(PSECURITY_DESCRIPTOR, BOOLEAN, PACL, BOOLEAN);
@@ -1710,6 +1714,33 @@ NTSYSAPI NTSTATUS NTAPI NtWaitForSingleObject(HANDLE, BOOLEAN PLARGE_INTEGER);
 typedef enum _OBJECT_WAIT_TYPE { WaitAllObjects = 0, WaitAnyObject = 1, ObjectWaitTypeHack = 0x7fffffff } OBJECT_WAIT_TYPE;
 NTSYSAPI NTSTATUS NTAPI NtWaitForMultipleObjects(ULONG, PHANDLE, OBJECT_WAIT_TYPE, BOOLEAN, PLARGE_INTEGER);
 
+NTSYSAPI NTSTATUS NTAPI NtQuerySecurityObject(HANDLE, ULONG, PSECURITY_DESCRIPTOR, ULONG, PULONG);
+
+
+#ifdef IPRT_NT_USE_WINTERNL
+/** For NtQueryValueKey. */
+typedef enum _KEY_VALUE_INFORMATION_CLASS
+{
+    KeyValueBasicInformation = 0,
+    KeyValueFullInformation,
+    KeyValuePartialInformation,
+    KeyValueFullInformationAlign64,
+    KeyValuePartialInformationAlign64
+} KEY_VALUE_INFORMATION_CLASS;
+
+/** KeyValuePartialInformation and KeyValuePartialInformationAlign64 struct. */
+typedef struct _KEY_VALUE_PARTIAL_INFORMATION
+{
+    ULONG TitleIndex;
+    ULONG Type;
+    ULONG DataLength;
+    UCHAR Data[1];
+} KEY_VALUE_PARTIAL_INFORMATION;
+typedef KEY_VALUE_PARTIAL_INFORMATION *PKEY_VALUE_PARTIAL_INFORMATION;
+#endif
+NTSYSAPI NTSTATUS NTAPI NtOpenKey(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
+NTSYSAPI NTSTATUS NTAPI NtQueryValueKey(HANDLE, PUNICODE_STRING, KEY_VALUE_INFORMATION_CLASS, PVOID, ULONG, PULONG);
+
 
 NTSYSAPI NTSTATUS NTAPI RtlAddAccessDeniedAce(PACL, ULONG, ULONG, PSID);
 
@@ -1790,7 +1821,6 @@ NTSYSAPI VOID     NTAPI RtlDestroyProcessParameters(PRTL_USER_PROCESS_PARAMETERS
 NTSYSAPI NTSTATUS NTAPI RtlCreateUserThread(HANDLE, PSECURITY_DESCRIPTOR, BOOLEAN, ULONG, SIZE_T, SIZE_T,
                                             PFNRT, PVOID, PHANDLE, PCLIENT_ID);
 
-
 RT_C_DECLS_END
 /** @} */
 
@@ -1839,6 +1869,7 @@ typedef struct CSR_MSG_DATA_CREATED_PROCESS
 NTSYSAPI NTSTATUS NTAPI CsrClientCallServer(PVOID, PVOID, ULONG, SIZE_T);
 #endif
 NTSYSAPI VOID NTAPI     LdrInitializeThunk(PVOID, PVOID, PVOID);
+NTSYSAPI NTSTATUS NTAPI RtlExpandEnvironmentStrings_U(PVOID, PUNICODE_STRING, PUNICODE_STRING, PULONG);
 
 RT_C_DECLS_END
 /** @} */

@@ -42,6 +42,7 @@ EXPORTS
     NtGetContextThread                    ;;= _NtGetContextThread@8
     NtMapViewOfSection                    ;;= _NtMapViewOfSection@40
     NtOpenDirectoryObject                 ;;= _NtOpenDirectoryObject@12
+    NtOpenKey                             ;;= _NtOpenKey@12
     NtOpenProcess                         ;;= _NtOpenProcess@16
     NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
     NtOpenThread                          ;;= _NtOpenThread@16
@@ -54,7 +55,9 @@ EXPORTS
     NtQueryInformationThread              ;;= _NtQueryInformationThread@20
     NtQueryInformationToken               ;;= _NtQueryInformationToken@20
     NtQueryObject                         ;;= _NtQueryObject@20
+    NtQuerySecurityObject                 ;;= _NtQuerySecurityObject@20
     NtQueryTimerResolution                ;;= _NtQueryTimerResolution@12
+    NtQueryValueKey                       ;;= _NtQueryValueKey@24
     NtQueryVirtualMemory                  ;;= _NtQueryVirtualMemory@24
     NtQueryVolumeInformationFile          ;;= _NtQueryVolumeInformationFile@20
     NtReadFile                            ;;= _NtReadFile@36
@@ -89,6 +92,8 @@ EXPORTS
     RtlCreateUserProcess                  ;;= _RtlCreateUserProcess@40
     RtlCreateUserThread                   ;;= _RtlCreateUserThread@40
     RtlDestroyProcessParameters           ;;= _RtlDestroyProcessParameters@4
+    RtlEqualSid                           ;;= _RtlEqualSid@8
+    RtlExpandEnvironmentStrings_U         ;;= _RtlExpandEnvironmentStrings_U@16
     RtlGetVersion                         ;;= _RtlGetVersion@4
     RtlInitializeSid                      ;;= _RtlInitializeSid@12
     RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
