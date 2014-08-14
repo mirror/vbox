@@ -2350,6 +2350,41 @@ static bool supdrvNtProtectIsFrigginThemesService(PSUPDRVNTPROTECT pNtProtect, P
 }
 
 
+#ifdef VBOX_WITHOUT_DEBUGGER_CHECKS
+/**
+ * Checks if the given process is one of the whitelisted debuggers.
+ *
+ * @returns true / false.
+ * @param   pProcess            The process to check.
+ */
+static bool supdrvNtProtectIsWhitelistedDebugger(PEPROCESS pProcess)
+{
+    const char *pszImageFile = (const char *)PsGetProcessImageFileName(pProcess);
+    if (!pszImageFile)
+        return false;
+
+    if (pszImageFile[0] == 'w' || pszImageFile[0] == 'W')
+    {
+        if (RTStrICmp(pszImageFile, "windbg.exe") == 0)
+            return true;
+        if (RTStrICmp(pszImageFile, "werfault.exe") == 0)
+            return true;
+        if (RTStrICmp(pszImageFile, "werfaultsecure.exe") == 0)
+            return true;
+    }
+    else if (pszImageFile[0] == 'd' || pszImageFile[0] == 'D')
+    {
+        if (RTStrICmp(pszImageFile, "drwtsn32.exe") == 0)
+            return true;
+        if (RTStrICmp(pszImageFile, "dwwin.exe") == 0)
+            return true;
+    }
+
+    return false;
+}
+#endif /* VBOX_WITHOUT_DEBUGGER_CHECKS */
+
+
 /** @} */
 
 
@@ -2742,6 +2777,20 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
                      PsGetProcessImageFileName(PsGetCurrentProcess()) ));
             }
+#ifdef VBOX_WITHOUT_DEBUGGER_CHECKS
+            /* Allow debuggers full access. */
+            else if (supdrvNtProtectIsWhitelistedDebugger(PsGetCurrentProcess()))
+            {
+                pOpInfo->CallContext = NULL; /* don't assert */
+                pNtProtect->fFirstProcessCreateHandle = false;
+
+                Log(("vboxdrv/ProcessHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
+                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                     pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
+                     pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
+                     PsGetProcessImageFileName(PsGetCurrentProcess()) ));
+            }
+#endif
             else
             {
                 /* Special case 1 on Vista, 7 & 8:
@@ -2979,6 +3028,18 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                 pOpInfo->CallContext = NULL; /* don't assert */
                 pNtProtect->fFirstThreadCreateHandle = false;
             }
+#ifdef VBOX_WITHOUT_DEBUGGER_CHECKS
+            /* Allow debuggers full access. */
+            else if (supdrvNtProtectIsWhitelistedDebugger(PsGetCurrentProcess()))
+            {
+                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
+                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                     pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
+                     pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
+                     PsGetProcessImageFileName(PsGetCurrentProcess()) ));
+                pOpInfo->CallContext = NULL; /* don't assert */
+            }
+#endif
             else
             {
                 /* Special case 1 on Vista, 7, 8:
@@ -3289,6 +3350,9 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
      * Walk the information and look for handles to the two objects we're protecting.
      */
     int rc = VINF_SUCCESS;
+# ifdef VBOX_WITHOUT_DEBUGGER_CHECKS
+    HANDLE   idLastDebugger = (HANDLE)~(uintptr_t)0;
+# endif
 
     uint32_t cCsrssProcessHandles  = 0;
     uint32_t cSystemProcessHandles = 0;
@@ -3362,6 +3426,24 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
         }
         else
             continue;
+
+# ifdef VBOX_WITHOUT_DEBUGGER_CHECKS
+        /* Ignore whitelisted debuggers. */
+        if (pHandleInfo->UniqueProcessId == idLastDebugger)
+            continue;
+        PEPROCESS pDbgProc;
+        NTSTATUS rcNt = PsLookupProcessByProcessId(pHandleInfo->UniqueProcessId, &pDbgProc);
+        if (NT_SUCCESS(rcNt))
+        {
+            bool fIsDebugger = supdrvNtProtectIsWhitelistedDebugger(pDbgProc);
+            ObDereferenceObject(pDbgProc);
+            if (fIsDebugger)
+            {
+                idLastDebugger = pHandleInfo->UniqueProcessId;
+                continue;
+            }
+        }
+# endif
 
         /* Found evil handle. Currently ignoring on pre-Vista. */
 # ifndef VBOX_WITH_VISTA_NO_SP
