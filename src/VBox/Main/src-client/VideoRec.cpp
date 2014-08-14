@@ -487,8 +487,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     pStrm->uTargetHeight = uHeight;
     pStrm->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pStrm->pu8RgbBuf, VERR_NO_MEMORY);
-
-    pStrm->uEncoderDeadline = 1000000 / uFps;
+    pStrm->uEncoderDeadline = VPX_DL_REALTIME;
 
     /* Play safe: the file must not exist, overwriting is potentially
      * hazardous as nothing prevents the user from picking a file name of some
@@ -554,7 +553,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
 
     pStrm->uDelay = 1000 / uFps;
 
-    struct vpx_rational arg_framerate = { 30, 1 };
+    struct vpx_rational arg_framerate = { uFps, 1 };
     rc = pStrm->Ebml.writeHeader(&pStrm->VpxConfig, &arg_framerate);
     AssertRCReturn(rc, rc);
 
@@ -722,7 +721,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm)
     vpx_codec_err_t rcv = vpx_codec_encode(&pStrm->VpxCodec,
                                            &pStrm->VpxRawImage,
                                            pts /* time stamp */,
-                                           10  /* how long to show this frame */,
+                                           pStrm->uDelay  /* how long to show this frame */,
                                            0   /* flags */,
                                            pStrm->uEncoderDeadline /* quality setting */);
     if (rcv != VPX_CODEC_OK)

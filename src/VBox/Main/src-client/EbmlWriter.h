@@ -33,14 +33,11 @@
 #include <iprt/file.h>
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
-#include <iprt/mem.h>
 #include <iprt/string.h>
-#include <VBox/log.h>
 #include <vpx/vpx_encoder.h>
 
 #include <stack>
 #include <list>
-#include <limits>
 
 class Ebml
 {
@@ -60,178 +57,131 @@ private:
     RTFILE m_File;
 
 public:
-    template<EbmlClassId, typename T>
-    struct Var
+
+    /* Initialize EBML object */
+    inline void init(const RTFILE &a_File) { m_File = a_File; }
+
+    /* Starts an EBML sub-element */
+    inline Ebml &subStart(EbmlClassId classId)
     {
-        T value;
-        explicit Var(const T &v) : value(v) {}
-    };
-
-    template<EbmlClassId classId> struct SignedInteger : Var<classId, int64_t> { SignedInteger(int64_t v) : Var<classId, int64_t>(v) {} };
-    template<EbmlClassId classId> struct UnsignedInteger : Var<classId, uint64_t> { UnsignedInteger(int64_t v) : Var<classId, uint64_t>(v) {} };
-    template<EbmlClassId classId> struct Float : Var<classId, double> { Float(double v) : Var<classId, double>(v) {}};
-    template<EbmlClassId classId> struct String : Var<classId, const char *> { String(const char *v) : Var<classId, const char *>(v) {}};
-    /* Master-element block */
-    template<EbmlClassId classId> struct SubStart {};
-    /* End of master-element block, a pseudo type */
-    template<EbmlClassId classId> struct SubEnd {};
-    /* Not an EBML type, used for optimization purposes */
-    template<EbmlClassId classId, EbmlClassId id> struct Const {};
-
-    Ebml();
-
-    void init(const RTFILE &a_File);
-
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const SubStart<classId> &dummy)
-    {
-        serializeConst<classId>();
+        writeClassId(classId);
+        /* store the current file offset */
         m_Elements.push(EbmlSubElement(RTFileTell(m_File), classId));
-        write<uint64_t>(UINT64_C(0x01FFFFFFFFFFFFFF));
+        /* Indicates that size of the element
+         * is unkown (as according to EBML specs)
+         */
+        writeUnsignedInteger(UINT64_C(0x01FFFFFFFFFFFFFF));
         return *this;
     }
 
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const SubEnd<classId> &dummy)
+    /* Ends an EBML sub-element */
+    inline Ebml &subEnd(EbmlClassId classId)
     {
+        /* Class ID on the top of the stack should match the class ID passed
+         * to the function. Otherwise it may mean that we have a bug in the code
+         */
         if(m_Elements.empty() || m_Elements.top().classId != classId) throw VERR_INTERNAL_ERROR;
 
         uint64_t uPos = RTFileTell(m_File);
         uint64_t uSize = uPos - m_Elements.top().offset - 8;
         RTFileSeek(m_File, m_Elements.top().offset, RTFILE_SEEK_BEGIN, NULL);
 
-        // make sure that size will be serialized as uint64
-        write<uint64_t>(uSize | UINT64_C(0x0100000000000000));
+        /* make sure that size will be serialized as uint64 */
+        writeUnsignedInteger(uSize | UINT64_C(0x0100000000000000));
         RTFileSeek(m_File, uPos, RTFILE_SEEK_BEGIN, NULL);
         m_Elements.pop();
         return *this;
     }
 
-    template<EbmlClassId classId, typename T>
-    inline Ebml &operator<<(const Var<classId, T> &value)
+    /* Serializes a null-terminated string */
+    inline Ebml &serializeString(EbmlClassId classId, const char *str)
     {
-        serializeConst<classId>();
-        serializeConstEbml<sizeof(T)>();
-        write<T>(value.value);
+        writeClassId(classId);
+        uint64_t size = strlen(str);
+        writeSize(size);
+        write(str, size);
         return *this;
     }
 
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const String<classId> &str)
+    /* Serializes an UNSIGNED integer 
+     * If size is zero then it will be detected automatically */
+    inline Ebml &serializeUnsignedInteger(EbmlClassId classId, uint64_t parm, size_t size = 0)
     {
-        serializeConst<classId>();
-        uint64_t size = strlen(str.value);
-        serializeInteger(size);
-        write(str.value, size);
+        writeClassId(classId);
+        if (!size) size = getSizeOfUInt(parm);
+        writeSize(size);
+        writeUnsignedInteger(parm, size);
         return *this;
     }
 
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const SignedInteger<classId> &parm)
+    /* Serializes a floating point value
+     * Only 8-bytes double precision values are supported
+     * by this function
+     */
+    inline Ebml &serializeFloat(EbmlClassId classId, double value)
     {
-        serializeConst<classId>();
-        size_t size = getSizeOfInt(parm.value);
-        serializeInteger(size);
-        int64_t value = RT_H2BE_U64(parm.value);
-        write(reinterpret_cast<uint8_t*>(&value) + 8 - size, size);
+        writeClassId(classId);
+        writeSize(sizeof(double));
+        writeUnsignedInteger(*reinterpret_cast<uint64_t*>(&value));
         return *this;
     }
 
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const UnsignedInteger<classId> &parm)
+    /* Writes raw data to file */
+    inline void write(const void *data, size_t size)
     {
-        serializeConst<classId>();
-        size_t size = getSizeOfUInt(parm.value);
-        serializeInteger(size);
-        uint64_t value = RT_H2BE_U64(parm.value);
-        write(reinterpret_cast<uint8_t*>(&value) + 8 - size, size);
-        return *this;
+        int rc = RTFileWrite(m_File, data, size, NULL);
+        if (!RT_SUCCESS(rc)) throw rc;
     }
 
-    template<EbmlClassId classId>
-    inline Ebml &operator<<(const Float<classId> &parm)
+    /* Writes an unsigned integer of variable of fixed size */
+    inline void writeUnsignedInteger(uint64_t value, size_t size = sizeof(uint64_t))
     {
-        return operator<<(Var<classId, uint64_t>(*reinterpret_cast<const uint64_t *>(&parm.value)));
+        /* Convert to big-endian */
+        value = RT_H2BE_U64(value);
+        write(reinterpret_cast<uint8_t*>(&value) + sizeof(value) - size, size);
     }
 
-    template<EbmlClassId classId, EbmlClassId id>
-    inline Ebml &operator<<(const Const<classId, id> &)
+    /* Writes EBML class ID to file
+     * EBML ID already has a UTF8-like represenation
+     * so getSizeOfUInt is used to determine
+     * the number of its bytes
+     */
+    inline void writeClassId(EbmlClassId parm)
     {
-        serializeConst<classId>();
-        serializeConstEbml<SizeOfConst<id>::value>();
-        serializeInteger(id);
-        serializeConst<id>();
-        return *this;
+        writeUnsignedInteger(parm, getSizeOfUInt(parm));
     }
 
-    void write(const void *data, size_t size);
-
-    template <typename T>
-    void write(const T &data)
+    /* Writes data size value */
+    inline void writeSize(uint64_t parm)
     {
-        if (std::numeric_limits<T>::is_integer)
-        {
-            T tmp;
-            switch(sizeof(T))
-            {
-                case 2:
-                tmp = RT_H2BE_U16(data);
-                break;
-                case 4:
-                tmp = RT_H2BE_U32(data);
-                break;
-                case 8:
-                tmp = RT_H2BE_U64(data);
-                break;
-                default:
-                tmp = data;
-            }
-            write(&tmp, sizeof(T));
-        }
-        else write(&data, sizeof(T));
-    }
-
-    template<uint64_t parm>
-    inline void serializeConst()
-    {
-        static const uint64_t mask = RT_BIT_64(SizeOfConst<parm>::value * 8 - 1);
-        uint64_t value = RT_H2BE_U64((parm &
-                                    (((mask << 1) - 1) >> SizeOfConst<parm>::value)) |
-                                    (mask >> (SizeOfConst<parm>::value - 1)));
-
-        write(reinterpret_cast<uint8_t *>(&value) + (8 - SizeOfConst<parm>::value),
-                    SizeOfConst<parm>::value);
-    }
-
-    template<uint64_t parm>
-    inline void serializeConstEbml()
-    {
-        static const uint64_t mask = RT_BIT_64(SizeOfConst<parm>::ebmlValue * 8 - 1);
-        uint64_t value = RT_H2BE_U64((parm &
-                                    (((mask << 1) - 1) >> SizeOfConst<parm>::ebmlValue)) |
-                                    (mask >> (SizeOfConst<parm>::ebmlValue - 1)));
-
-        write(reinterpret_cast<uint8_t *>(&value) + (8 - SizeOfConst<parm>::ebmlValue),
-                    SizeOfConst<parm>::ebmlValue);
-    }
-
-    inline void serializeInteger(uint64_t parm)
-    {
-        const size_t size = 8 - ! (parm & (UINT64_MAX << 49)) - ! (parm & (UINT64_MAX << 42)) -
+        /* The following expression defines the size of the value that will be serialized
+         * as an EBML UTF-8 like integer (with trailing bits represeting its size)
+          1xxx xxxx                                                                              - value 0 to  2^7-2
+          01xx xxxx  xxxx xxxx                                                                   - value 0 to 2^14-2
+          001x xxxx  xxxx xxxx  xxxx xxxx                                                        - value 0 to 2^21-2
+          0001 xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx                                             - value 0 to 2^28-2
+          0000 1xxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx                                  - value 0 to 2^35-2
+          0000 01xx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx                       - value 0 to 2^42-2
+          0000 001x  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx            - value 0 to 2^49-2
+          0000 0001  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx  xxxx xxxx - value 0 to 2^56-2
+         */
+        size_t size = 8 - ! (parm & (UINT64_MAX << 49)) - ! (parm & (UINT64_MAX << 42)) -
                           ! (parm & (UINT64_MAX << 35)) - ! (parm & (UINT64_MAX << 28)) -
                           ! (parm & (UINT64_MAX << 21)) - ! (parm & (UINT64_MAX << 14)) -
                           ! (parm & (UINT64_MAX << 7));
-
+        /* One is subtracted in order to avoid loosing significant bit when size = 8 */
         uint64_t mask = RT_BIT_64(size * 8 - 1);
-        uint64_t value = RT_H2BE_U64((parm &
-                                    (((mask << 1) - 1) >> size)) |
-                                    (mask >> (size - 1)));
-
-        write(reinterpret_cast<uint8_t *>(&value) + (8 - size),
-                    size);
+        writeUnsignedInteger((parm & (((mask << 1) - 1) >> size)) | (mask >> (size - 1)), size);
     }
-
-    /* runtime calculation */
+    /* Size calculation for variable size UNSIGNED integer.
+     * The function defines the size of the number by trimming
+     * consequent trailing zero bytes starting from the most significant.
+     * The following statement is always true:
+     * 1 <= getSizeOfUInt(arg) <= 8
+     *
+     * Every !(arg & (UINT64_MAX << X)) expression gives one
+     * if an only if all the bits from X to 63 are set to zero.
+     */
     static inline size_t getSizeOfUInt(uint64_t arg)
     {
         return 8 - ! (arg & (UINT64_MAX << 56)) - ! (arg & (UINT64_MAX << 48)) -
@@ -240,44 +190,14 @@ public:
                    ! (arg & (UINT64_MAX << 8));
     }
 
-    static inline size_t getSizeOfInt(int64_t arg)
-    {
-        return 8 - ! (arg & (INT64_C(-1) << 56)) - ! (~arg & (INT64_C(-1) << 56)) - 
-                   ! (arg & (INT64_C(-1) << 48)) - ! (~arg & (INT64_C(-1) << 48)) -
-                   ! (arg & (INT64_C(-1) << 40)) - ! (~arg & (INT64_C(-1) << 40)) -
-                   ! (arg & (INT64_C(-1) << 32)) - ! (~arg & (INT64_C(-1) << 32)) -
-                   ! (arg & (INT64_C(-1) << 24)) - ! (~arg & (INT64_C(-1) << 24)) -
-                   ! (arg & (INT64_C(-1) << 16)) - ! (~arg & (INT64_C(-1) << 16)) -
-                   ! (arg & (INT64_C(-1) << 8))  - ! (~arg & (INT64_C(-1) << 8));
-    }
-
-
-    /* Compile-time calculation for constants */
-    template<uint64_t arg>
-    struct SizeOfConst
-    {
-        static const size_t value = 8 - 
-                   ! (arg & (UINT64_MAX << 56)) - ! (arg & (UINT64_MAX << 48)) -
-                   ! (arg & (UINT64_MAX << 40)) - ! (arg & (UINT64_MAX << 32)) -
-                   ! (arg & (UINT64_MAX << 24)) - ! (arg & (UINT64_MAX << 16)) -
-                   ! (arg & (UINT64_MAX << 8));
-
-        static const size_t ebmlValue = 8 -
-                   ! (arg & (UINT64_MAX << 49)) - ! (arg & (UINT64_MAX << 42)) -
-                   ! (arg & (UINT64_MAX << 35)) - ! (arg & (UINT64_MAX << 28)) -
-                   ! (arg & (UINT64_MAX << 21)) - ! (arg & (UINT64_MAX << 14)) -
-                   ! (arg & (UINT64_MAX << 7));
-    };
-
 private:
-    Ebml(const Ebml &);
     void operator=(const Ebml &);
 
 };
 
 class WebMWriter
 {
-
+    /* Matroska EBML Class IDs supported by WebM */
     enum Mkv
     {
         EBML = 0x1A45DFA3,
@@ -521,41 +441,36 @@ class WebMWriter
     bool            m_bClusterOpen;
     std::list<CueEntry> m_CueList;
 
-    void writeSeekInfo();
-
     Ebml m_Ebml;
     RTFILE m_File;
 
 public:
     WebMWriter();
+    /* Creates output file */
     int create(const char *a_pszFilename);
+    /* closes the file */
     void close();
+    /* Writes WebM header to file
+     * Should be called before any writeBlock call
+     */
     int writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps);
+    /* Writes a block of compressed data */
     int writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
+    /* Writes WebM footer
+     * No other write functions should be called after this one
+     */
     int writeFooter(uint32_t a_u64Hash);
+    /* Returns current output file size */
     uint64_t getFileSize();
+    /* Returns current free storage space
+     * available for the file
+     */
     uint64_t getAvailableSpace();
 
-    struct SimpleBlockData
-    {
-        uint32_t    trackNumber;
-        int16_t     timeCode;
-        uint8_t     flags;
-        const void *data;
-        size_t      dataSize;
-
-        SimpleBlockData(uint32_t tn, int16_t tc, uint8_t f, const void *d, size_t ds) : 
-            trackNumber(tn),
-            timeCode(tc),
-            flags(f),
-            data(d),
-            dataSize(ds) {}
-    };
-
 private:
+    void writeSeekInfo();
     void operator=(const WebMWriter &);
     WebMWriter(const WebMWriter &);
-    friend Ebml &operator<<(Ebml &a_Ebml, const SimpleBlockData &a_Data);
 };
 
 #endif
