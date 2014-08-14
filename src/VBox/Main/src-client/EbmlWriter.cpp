@@ -27,23 +27,7 @@
  */
 
 #include "EbmlWriter.h"
-#include <iprt/asm.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
 #include <VBox/log.h>
-
-Ebml::Ebml() {}
-
-void Ebml::init(const RTFILE &a_File)
-{
-    m_File = a_File;
-}
-
-void Ebml::write(const void *data, size_t size)
-{
-    int rc = RTFileWrite(m_File, data, size, NULL);
-    if (!RT_SUCCESS(rc)) throw rc;
-}
 
 uint64_t WebMWriter::getFileSize() 
 {
@@ -87,44 +71,32 @@ void WebMWriter::close()
     RTFileClose(m_File);
 }
 
-Ebml &operator<<(Ebml &a_Ebml, const WebMWriter::SimpleBlockData &a_Data)
-{
-    a_Ebml.serializeConst<WebMWriter::SimpleBlock>();
-    a_Ebml.write<uint32_t>(0x10000000u | (Ebml::getSizeOfUInt(a_Data.trackNumber) + 2 + 1 + a_Data.dataSize));
-    a_Ebml.serializeInteger(a_Data.trackNumber);
-    a_Ebml.write(a_Data.timeCode);
-    a_Ebml.write(a_Data.flags);
-    a_Ebml.write(a_Data.data, a_Data.dataSize);
-    return a_Ebml;
-}
-
 void WebMWriter::writeSeekInfo()
 {
-    // Save the current file pointer
     uint64_t uPos = RTFileTell(m_File);
     if (m_uSeekInfoPos)
         RTFileSeek(m_File, m_uSeekInfoPos, RTFILE_SEEK_BEGIN, NULL);
     else
         m_uSeekInfoPos = uPos;
 
-    m_Ebml << Ebml::SubStart<SeekHead>()
+    m_Ebml.subStart(SeekHead)
 
-          << Ebml::SubStart<Seek>()
-          << Ebml::Const<SeekID, Tracks>()
-          << Ebml::Var<SeekPosition, uint64_t>(m_uTrackPos - m_uPositionReference)
-          << Ebml::SubEnd<Seek>()
+          .subStart(Seek)
+          .serializeUnsignedInteger(SeekID, Tracks)
+          .serializeUnsignedInteger(SeekPosition, m_uTrackPos - m_uPositionReference, 8)
+          .subEnd(Seek)
 
-          << Ebml::SubStart<Seek>()
-          << Ebml::Const<SeekID, Cues>()
-          << Ebml::Var<SeekPosition, uint64_t>(m_uCuePos - m_uPositionReference)
-          << Ebml::SubEnd<Seek>()
+          .subStart(Seek)
+          .serializeUnsignedInteger(SeekID, Cues)
+          .serializeUnsignedInteger(SeekPosition, m_uCuePos - m_uPositionReference, 8)
+          .subEnd(Seek)
 
-          << Ebml::SubStart<Seek>()
-          << Ebml::Const<SeekID, Info>()
-          << Ebml::Var<SeekPosition, uint64_t>(m_uSegmentInfoPos - m_uPositionReference)
-          << Ebml::SubEnd<Seek>()
+          .subStart(Seek)
+          .serializeUnsignedInteger(SeekID, Info)
+          .serializeUnsignedInteger(SeekPosition, m_uSegmentInfoPos - m_uPositionReference, 8)
+          .subEnd(Seek)
 
-          << Ebml::SubEnd<SeekHead>();
+          .subEnd(SeekHead);
 
     int64_t iFrameTime = (int64_t)1000 * m_Framerate.den / m_Framerate.num;
     m_uSegmentInfoPos = RTFileTell(m_File);
@@ -133,12 +105,12 @@ void WebMWriter::writeSeekInfo()
     RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%",
                 m_bDebug ? vpx_codec_version_str() : "");
 
-    m_Ebml << Ebml::SubStart<Info>()
-           << Ebml::UnsignedInteger<TimecodeScale>(1000000)
-           << Ebml::Float<Segment_Duration>(m_iLastPtsMs + iFrameTime)
-           << Ebml::String<MuxingApp>(szVersion)
-           << Ebml::String<WritingApp>(szVersion)
-           << Ebml::SubEnd<Info>();
+    m_Ebml.subStart(Info)
+          .serializeUnsignedInteger(TimecodeScale, 1000000)
+          .serializeFloat(Segment_Duration, m_iLastPtsMs + iFrameTime)
+          .serializeString(MuxingApp, szVersion)
+          .serializeString(WritingApp, szVersion)
+          .subEnd(Info);
 }
 
 int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
@@ -146,17 +118,18 @@ int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
 {
     try
     {
-        m_Ebml << Ebml::SubStart<EBML>()
-               << Ebml::UnsignedInteger<EBMLVersion>(1)
-               << Ebml::UnsignedInteger<EBMLReadVersion>(1)
-               << Ebml::UnsignedInteger<EBMLMaxIDLength>(4)
-               << Ebml::UnsignedInteger<EBMLMaxSizeLength>(8)
-               << Ebml::String<DocType>("webm")
-               << Ebml::UnsignedInteger<DocTypeVersion>(2)
-               << Ebml::UnsignedInteger<DocTypeReadVersion>(2)
-               << Ebml::SubEnd<EBML>();
 
-        m_Ebml << Ebml::SubStart<Segment>();
+        m_Ebml.subStart(EBML)
+              .serializeUnsignedInteger(EBMLVersion, 1)
+              .serializeUnsignedInteger(EBMLReadVersion, 1)
+              .serializeUnsignedInteger(EBMLMaxIDLength, 4)
+              .serializeUnsignedInteger(EBMLMaxSizeLength, 8)
+              .serializeString(DocType, "webm")
+              .serializeUnsignedInteger(DocTypeVersion, 2)
+              .serializeUnsignedInteger(DocTypeReadVersion, 2)
+              .subEnd(EBML);
+
+        m_Ebml.subStart(Segment);
 
         m_uPositionReference = RTFileTell(m_File);
         m_Framerate = *a_pFps;
@@ -165,26 +138,26 @@ int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
 
         m_uTrackPos = RTFileTell(m_File);
 
-        m_Ebml << Ebml::SubStart<Tracks>()
-               << Ebml::SubStart<TrackEntry>()
-               << Ebml::UnsignedInteger<TrackNumber>(1);
+        m_Ebml.subStart(Tracks)
+              .subStart(TrackEntry)
+              .serializeUnsignedInteger(TrackNumber, 1);
 
         m_uTrackIdPos = RTFileTell(m_File);
 
-        m_Ebml << Ebml::Var<TrackUID, uint32_t>(0)
-               << Ebml::UnsignedInteger<TrackType>(1)
-               << Ebml::String<CodecID>("V_VP8")
-               << Ebml::SubStart<Video>()
-               << Ebml::UnsignedInteger<PixelWidth>(a_pCfg->g_w)
-               << Ebml::UnsignedInteger<PixelHeight>(a_pCfg->g_h)
-               << Ebml::Float<FrameRate>((double)a_pFps->num / a_pFps->den)
-               << Ebml::SubEnd<Video>()
-               << Ebml::SubEnd<TrackEntry>()
-               << Ebml::SubEnd<Tracks>();
+        m_Ebml.serializeUnsignedInteger(TrackUID, 0, 4)
+              .serializeUnsignedInteger(TrackType, 1)
+              .serializeString(CodecID, "V_VP8")
+              .subStart(Video)
+              .serializeUnsignedInteger(PixelWidth, a_pCfg->g_w)
+              .serializeUnsignedInteger(PixelHeight, a_pCfg->g_h)
+              .serializeFloat(FrameRate, (double) a_pFps->num / a_pFps->den)
+              .subEnd(Video)
+              .subEnd(TrackEntry)
+              .subEnd(Tracks);
+
     }
     catch(int rc)
     {
-        LogFlow(("WebMWriter::writeHeader catched"));
         return rc;
     }
     return VINF_SUCCESS;
@@ -193,7 +166,8 @@ int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
 int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
                             const vpx_codec_cx_pkt_t *a_pPkt)
 {
-    try {
+  try 
+    {
         uint16_t uBlockTimecode = 0;
         int64_t  iPtsMs;
         bool     bStartCluster = false;
@@ -215,15 +189,15 @@ int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
         if (bStartCluster || fKeyframe)
         {
             if (m_bClusterOpen)
-                m_Ebml << Ebml::SubEnd<Cluster>();
+                m_Ebml.subEnd(Cluster);
 
             /* Open a new cluster */
             uBlockTimecode = 0;
             m_bClusterOpen = true;
             m_uClusterTimecode = (uint32_t)iPtsMs;
             m_uClusterPos = RTFileTell(m_File);
-            m_Ebml << Ebml::SubStart<Cluster>()
-                   << Ebml::UnsignedInteger<Timecode>(m_uClusterTimecode);
+            m_Ebml.subStart(Cluster)
+                  .serializeUnsignedInteger(Timecode, m_uClusterTimecode);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
@@ -233,16 +207,16 @@ int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
             }
         }
 
-        // Write a Simple Block
-        SimpleBlockData block(1, uBlockTimecode,
-            (fKeyframe ? 0x80 : 0) | (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE ? 0x08 : 0),
-            a_pPkt->data.frame.buf, a_pPkt->data.frame.sz);
-
-        m_Ebml << block;
+        /* Write a Simple Block */
+        m_Ebml.writeClassId(SimpleBlock);
+        m_Ebml.writeUnsignedInteger(0x10000000u | (4 + a_pPkt->data.frame.sz), 4);
+        m_Ebml.writeSize(1);
+        m_Ebml.writeUnsignedInteger(uBlockTimecode, 2);
+        m_Ebml.writeUnsignedInteger((fKeyframe ? 0x80 : 0) | (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE ? 0x08 : 0), 1);
+        m_Ebml.write(a_pPkt->data.frame.buf, a_pPkt->data.frame.sz);
     }
     catch(int rc)
     {
-        LogFlow(("WebMWriter::writeBlock catched"));
         return rc;
     }
     return VINF_SUCCESS;
@@ -250,38 +224,39 @@ int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
 
 int WebMWriter::writeFooter(uint32_t a_u64Hash)
 {
-    try {
+    try 
+    {
         if (m_bClusterOpen)
-            m_Ebml << Ebml::SubEnd<Cluster>();
+            m_Ebml.subEnd(Cluster);
 
         m_uCuePos = RTFileTell(m_File);
-        m_Ebml << Ebml::SubStart<Cues>();
+        m_Ebml.subStart(Cues);
         for (std::list<CueEntry>::iterator it = m_CueList.begin(); it != m_CueList.end(); ++it)
         {
-            m_Ebml << Ebml::SubStart<CuePoint>()
-                   << Ebml::UnsignedInteger<CueTime>(it->time)
-                   << Ebml::SubStart<CueTrackPositions>()
-                   << Ebml::Const<CueTrack, 1>()
-                   << Ebml::Var<CueClusterPosition, uint64_t>(it->loc - m_uPositionReference)
-                   << Ebml::SubEnd<CueTrackPositions>()
-                   << Ebml::SubEnd<CuePoint>();        
+          m_Ebml.subStart(CuePoint)
+                .serializeUnsignedInteger(CueTime, it->time)
+                .subStart(CueTrackPositions)
+                .serializeUnsignedInteger(CueTrack, 1)
+                .serializeUnsignedInteger(CueClusterPosition, it->loc - m_uPositionReference, 8)
+                .subEnd(CueTrackPositions)
+                .subEnd(CuePoint);   
         }
-        m_Ebml << Ebml::SubEnd<Cues>()
-               << Ebml::SubEnd<Segment>();
+
+        m_Ebml.subEnd(Cues)
+              .subEnd(Segment);
 
         writeSeekInfo();
 
         int rc = RTFileSeek(m_File, m_uTrackIdPos, RTFILE_SEEK_BEGIN, NULL);
         if (!RT_SUCCESS(rc)) throw rc;
 
-        m_Ebml << Ebml::Var<TrackUID, uint32_t>(m_bDebug ? 0xDEADBEEF : a_u64Hash);
+        m_Ebml.serializeUnsignedInteger(TrackUID, (m_bDebug ? 0xDEADBEEF : a_u64Hash), 4);
 
         rc = RTFileSeek(m_File, 0, RTFILE_SEEK_END, NULL);
         if (!RT_SUCCESS(rc)) throw rc;
     }
     catch(int rc)
     {
-        LogFlow(("WebMWriter::writeFooterException catched"));
         return rc;
     }
     return VINF_SUCCESS;
