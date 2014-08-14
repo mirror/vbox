@@ -552,7 +552,7 @@ DECLHIDDEN(bool) supHardViUtf16PathStartsWithEx(PCRTUTF16 pwszLeft, uint32_t cwc
         return false;
 
     /* See if we can get away with a case sensitive compare first. */
-    if (memcmp(pwszLeft, pwszRight, cwcRight) == 0)
+    if (memcmp(pwszLeft, pwszRight, cwcRight * sizeof(RTUTF16)) == 0)
         pwszLeft += cwcRight;
     else
     {
