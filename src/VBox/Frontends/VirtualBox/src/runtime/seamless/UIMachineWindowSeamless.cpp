@@ -62,6 +62,10 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
 
 void UIMachineWindowSeamless::sltRevokeFocus()
 {
+    /* Make sure window is visible: */
+    if (!isVisible())
+        return;
+
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
 }
@@ -157,33 +161,33 @@ void UIMachineWindowSeamless::placeOnScreen()
     int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* Calculate working area: */
     QRect workingArea = vboxGlobal().availableGeometry(iScreen);
+
     /* Move to the appropriate position: */
     move(workingArea.topLeft());
+
     /* Resize to the appropriate size: */
     resize(workingArea.size());
-    /* Adjust guest screen size if necessary: */
-    machineView()->maybeAdjustGuestScreenSize();
-#ifndef Q_WS_MAC
-    /* Move mini-toolbar into appropriate place: */
-    if (m_pMiniToolBar)
-        m_pMiniToolBar->adjustGeometry();
-#endif /* !Q_WS_MAC */
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
 {
-    /* Make sure this window should be shown at all: */
-    if (!uisession()->isScreenVisible(m_uScreenId))
-        return hide();
-
     /* Make sure this window has seamless logic: */
     UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
-    if (!pSeamlessLogic)
-        return hide();
+    AssertPtrReturnVoid(pSeamlessLogic);
 
-    /* Make sure this window mapped to some host-screen: */
-    if (!pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
-        return hide();
+    /* Make sure this window should be shown and mapped to some host-screen: */
+    if (!uisession()->isScreenVisible(m_uScreenId) ||
+        !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
+    {
+#ifndef Q_WS_MAC
+        /* Hide mini-toolbar: */
+        if (m_pMiniToolBar)
+            m_pMiniToolBar->hide();
+#endif /* !Q_WS_MAC */
+        /* Hide window: */
+        hide();
+        return;
+    }
 
     /* Make sure this window is not minimized: */
     if (isMinimized())
@@ -194,6 +198,18 @@ void UIMachineWindowSeamless::showInNecessaryMode()
 
     /* Show in normal mode: */
     show();
+
+    /* Adjust guest screen size if necessary: */
+    machineView()->maybeAdjustGuestScreenSize();
+
+#ifndef Q_WS_MAC
+    /* Show/Move mini-toolbar into appropriate place: */
+    if (m_pMiniToolBar)
+    {
+        m_pMiniToolBar->show();
+        m_pMiniToolBar->adjustGeometry();
+    }
+#endif /* !Q_WS_MAC */
 }
 
 #ifndef Q_WS_MAC
