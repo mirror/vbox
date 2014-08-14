@@ -35,6 +35,9 @@
 #include "UIAnimationFramework.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 #ifndef Q_WS_X11
 # define VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
@@ -197,8 +200,21 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 void UIRuntimeMiniToolBar::prepare()
 {
 #ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
-    /* Using Qt API to enable translucent background: */
-    setAttribute(Qt::WA_TranslucentBackground, true);
+    /* Make sure we have no background
+     * until the first one paint-event: */
+    setAttribute(Qt::WA_NoSystemBackground);
+# if defined(Q_WS_MAC)
+    /* Using native API to enable translucent background:
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1. */
+    ::darwinSetShowsWindowTransparent(this, true);
+# elif defined(Q_WS_WIN)
+    /* Using Qt API to enable translucent background:
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1.
+     * - Under x11 host Qt has broken XComposite support (black background): */
+    setAttribute(Qt::WA_TranslucentBackground);
+# endif /* Q_WS_WIN */
 #endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
 
     /* Make sure we have no focus: */
