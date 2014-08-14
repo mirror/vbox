@@ -17,7 +17,6 @@
  */
 #define LOGGROUP LOGGROUP_DEFAULT
 #include <VBox/vd.h>
-#include <VBox/vddbg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -34,6 +33,10 @@
 #include <iprt/critsect.h>
 #include <iprt/test.h>
 #include <iprt/system.h>
+
+#ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
+# include <VBox/vddbg.h>
+#endif
 
 #include "VDMemDisk.h"
 #include "VDIoBackend.h"
@@ -237,7 +240,6 @@ static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDSCRIPTARG paScriptArgs, void 
 static DECLCALLBACK(int) vdScriptHandlerCopy(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerPrintFileSize(PVDSCRIPTARG paScriptArgs, void *pvUser);
-static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromNumber(PVDSCRIPTARG paScriptArgs, void *pvUser);
@@ -254,6 +256,10 @@ static DECLCALLBACK(int) vdScriptHandlerShowStatistics(PVDSCRIPTARG paScriptArgs
 static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerResize(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerSetFileBackend(PVDSCRIPTARG paScriptArgs, void *pvUser);
+
+#ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
+static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, void *pvUser);
+#endif
 
 /* create action */
 const VDSCRIPTTYPE g_aArgCreate[] =
@@ -356,12 +362,14 @@ const VDSCRIPTTYPE g_aArgPrintFileSize[] =
     VDSCRIPTTYPE_UINT32 /* image */
 };
 
+#ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
 /* print file size action */
 const VDSCRIPTTYPE g_aArgIoLogReplay[] =
 {
     VDSCRIPTTYPE_STRING, /* disk */
     VDSCRIPTTYPE_STRING  /* iolog */
 };
+#endif
 
 /* I/O RNG create action */
 const VDSCRIPTTYPE g_aArgIoRngCreate[] =
@@ -471,7 +479,9 @@ const VDSCRIPTCALLBACK g_aScriptActions[] =
     {"flush",                      VDSCRIPTTYPE_VOID, g_aArgFlush,                       RT_ELEMENTS(g_aArgFlush),                      vdScriptHandlerFlush},
     {"close",                      VDSCRIPTTYPE_VOID, g_aArgClose,                       RT_ELEMENTS(g_aArgClose),                      vdScriptHandlerClose},
     {"printfilesize",              VDSCRIPTTYPE_VOID, g_aArgPrintFileSize,               RT_ELEMENTS(g_aArgPrintFileSize),              vdScriptHandlerPrintFileSize},
+#ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
     {"ioreplay",                   VDSCRIPTTYPE_VOID, g_aArgIoLogReplay,                 RT_ELEMENTS(g_aArgIoLogReplay),                vdScriptHandlerIoLogReplay},
+#endif
     {"merge",                      VDSCRIPTTYPE_VOID, g_aArgMerge,                       RT_ELEMENTS(g_aArgMerge),                      vdScriptHandlerMerge},
     {"compact",                    VDSCRIPTTYPE_VOID, g_aArgCompact,                     RT_ELEMENTS(g_aArgCompact),                    vdScriptHandlerCompact},
     {"discard",                    VDSCRIPTTYPE_VOID, g_aArgDiscard,                     RT_ELEMENTS(g_aArgDiscard),                    vdScriptHandlerDiscard},
@@ -1392,6 +1402,7 @@ static DECLCALLBACK(int) vdScriptHandlerPrintFileSize(PVDSCRIPTARG paScriptArgs,
 }
 
 
+#ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
 static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -1542,6 +1553,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDSCRIPTARG paScriptArgs, v
 
     return rc;
 }
+#endif
 
 
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDSCRIPTARG paScriptArgs, void *pvUser)
