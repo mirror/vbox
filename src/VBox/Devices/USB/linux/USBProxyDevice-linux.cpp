@@ -1366,8 +1366,10 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
     pUrbLnx->KUrb.endpoint          = pUrb->EndPt;
     if (pUrb->enmDir == VUSBDIRECTION_IN)
         pUrbLnx->KUrb.endpoint |= 0x80;
+    pUrbLnx->KUrb.flags             = 0;
+    if (pUrb->enmDir == VUSBDIRECTION_IN && pUrb->fShortNotOk)
+        pUrbLnx->KUrb.flags        |= USBDEVFS_URB_SHORT_NOT_OK;
     pUrbLnx->KUrb.status            = 0;
-    pUrbLnx->KUrb.flags             = pUrb->fShortNotOk ? USBDEVFS_URB_SHORT_NOT_OK : 0; /* ISO_ASAP too? */
     pUrbLnx->KUrb.buffer            = pb;
     pUrbLnx->KUrb.buffer_length     = RT_MIN(cbLeft, SPLIT_SIZE);
     pUrbLnx->KUrb.actual_length     = 0;
@@ -1451,7 +1453,9 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB 
 
     pUrbLnx->KUrb.endpoint          = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0);
     pUrbLnx->KUrb.status            = 0;
-    pUrbLnx->KUrb.flags             = pUrb->fShortNotOk ? USBDEVFS_URB_SHORT_NOT_OK : 0;
+    pUrbLnx->KUrb.flags             = 0;
+    if (pUrb->enmDir == VUSBDIRECTION_IN && pUrb->fShortNotOk)
+        pUrbLnx->KUrb.flags        |= USBDEVFS_URB_SHORT_NOT_OK;
     pUrbLnx->KUrb.buffer            = pUrb->abData;
     pUrbLnx->KUrb.buffer_length     = pUrb->cbData;
     pUrbLnx->KUrb.actual_length     = 0;
