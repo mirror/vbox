@@ -953,32 +953,6 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
 
 
 /**
- * Checks if it's safe to call WinVerifyTrust or whether we might end up in an
- * infinite recursion.
- *
- * @returns true if ok, false if not.
- * @param   hFile               The file name.
- * @param   pwszName            The executable name.
- */
-static bool supR3HardNtViCanCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName)
-{
-     /*
-      * Recursion preventions hacks:
-      *  - Don't try call WinVerifyTrust on Wintrust.dll when called from the
-      *    create section hook. CRYPT32.DLL tries to load WinTrust.DLL in some cases.
-      */
-     size_t cwcName = RTUtf16Len(pwszName);
-     if (   hFile != NULL
-         && cwcName > g_System32NtPath.UniStr.Length / sizeof(WCHAR)
-         && !memcmp(pwszName, g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length)
-         && supHardViUtf16PathIsEqual(&pwszName[g_System32NtPath.UniStr.Length / sizeof(WCHAR)], "\\wintrust.dll"))
-         return false;
-
-     return true;
-}
-
-
-/**
  * Verifies the given loader image.
  *
  * @returns IPRT status code.
@@ -1078,8 +1052,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
     {
         static uint32_t volatile s_idActiveThread = UINT32_MAX;
         uint32_t const idCurrentThread = GetCurrentThreadId();
-        if (   s_idActiveThread != idCurrentThread
-            && supR3HardNtViCanCallWinVerifyTrust(pNtViRdr->hFile, pwszName) )
+        if (s_idActiveThread != idCurrentThread)
         {
             ASMAtomicCmpXchgU32(&s_idActiveThread, idCurrentThread, UINT32_MAX);
 
@@ -1103,8 +1076,11 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
                     }
                 }
                 else if (RT_SUCCESS(rc))
+                {
+                    /** @todo having trouble with a 32-bit windows box when letting these calls thru */
                     rc = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
                                                          g_pfnWinVerifyTrust);
+                }
                 else
                 {
                     int rc2 = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
@@ -1173,7 +1149,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
         else
             supHardNtViRdrDestroy(&pNtViRdr->Core);
     }
-    SUP_DPRINTF(("supHardenedWinVerifyImageByHandle: -> %d (%ls)\n", rc, pwszName));
+    SUP_DPRINTF(("supHardenedWinVerifyImageByHandle: -> %d %s(%ls)\n", rc, pfCacheable && *pfCacheable ? "cacheable ": "", pwszName));
     return rc;
 }
 
@@ -1768,26 +1744,52 @@ static bool supR3HardenedWinIsDesiredRootCA(PCRTCRX509CERTIFICATE pCert)
     return false;
 }
 
+
+/**
+ * Loads a module in the system32 directory.
+ *
+ * @returns Module handle on success. Won't return on faliure.
+ * @param   pszName             The name of the DLL to load.
+ */
+DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName)
+{
+    WCHAR wszName[200+60];
+    UINT cwcDir = GetSystemWindowsDirectoryW(wszName, RT_ELEMENTS(wszName) - 60);
+    memcpy(&wszName[cwcDir], RT_STR_TUPLE(L"\\System32\\"));
+    RTUtf16CopyAscii(&wszName[cwcDir + sizeof("\\System32\\") - 1], RT_ELEMENTS(wszName) - cwcDir, pszName);
+
+    DWORD fFlags = 0;
+    if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0))
+       fFlags = LOAD_LIBRARY_SEARCH_SYSTEM32;
+    HMODULE hMod = LoadLibraryExW(wszName, NULL, fFlags);
+    if (   hMod == NULL
+        && fFlags
+        && g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 2)
+        && GetLastError() == ERROR_INVALID_PARAMETER)
+    {
+        fFlags = 0;
+        hMod = LoadLibraryExW(wszName, NULL, fFlags);
+    }
+    if (hMod == NULL)
+        supR3HardenedFatal("Error loading '%s': %u [%ls]", pszName, GetLastError(), wszName);
+    return hMod;
+}
+
+
 /**
  * Called by supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation to
  * import selected root CAs from the system certificate store.
  *
  * These certificates permits us to correctly validate third party DLLs.
- *
- * @param   fLoadLibraryFlags       The LoadLibraryExW flags that the caller
- *                                  found to work.  Avoids us having to retry on
- *                                  ERROR_INVALID_PARAMETER.
  */
-static void supR3HardenedWinRetrieveTrustedRootCAs(DWORD fLoadLibraryFlags)
+static void supR3HardenedWinRetrieveTrustedRootCAs(void)
 {
     uint32_t cAdded = 0;
 
     /*
      * Load crypt32.dll and resolve the APIs we need.
      */
-    HMODULE hCrypt32 = LoadLibraryExW(L"\\\\.\\GLOBALROOT\\SystemRoot\\System32\\crypt32.dll", NULL, fLoadLibraryFlags);
-    if (!hCrypt32)
-        supR3HardenedFatal("Error loading 'crypt32.dll': %u", GetLastError());
+    HMODULE hCrypt32 = supR3HardenedWinLoadSystem32Dll("crypt32.dll");
 
 #define RESOLVE_CRYPT32_API(a_Name, a_pfnType) \
     a_pfnType pfn##a_Name = (a_pfnType)GetProcAddress(hCrypt32, #a_Name); \
@@ -1884,21 +1886,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     /*
      * Resolve it.
      */
-    DWORD fFlags = 0;
-    if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0))
-       fFlags = LOAD_LIBRARY_SEARCH_SYSTEM32;
-    HMODULE hWintrust = LoadLibraryExW(L"\\\\.\\GLOBALROOT\\SystemRoot\\System32\\Wintrust.dll", NULL, fFlags);
-    if (   hWintrust == NULL
-        && fFlags
-        && g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 2)
-        && GetLastError() == ERROR_INVALID_PARAMETER)
-    {
-        fFlags = 0;
-        hWintrust = LoadLibraryExW(L"\\\\.\\GLOBALROOT\\SystemRoot\\System32\\Wintrust.dll", NULL, fFlags);
-    }
-    if (hWintrust == NULL)
-        supR3HardenedFatal("Error loading 'Wintrust.dll': %u", GetLastError());
-
+    HMODULE hWintrust = supR3HardenedWinLoadSystem32Dll("Wintrust.dll");
 #define RESOLVE_CRYPT_API(a_Name, a_pfnType, a_uMinWinVer) \
     do { \
         g_pfn##a_Name = (a_pfnType)GetProcAddress(hWintrust, #a_Name); \
@@ -1942,10 +1930,64 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     g_pfnWinVerifyTrust = pfnWinVerifyTrust;
     SUP_DPRINTF(("g_pfnWinVerifyTrust=%p\n", pfnWinVerifyTrust));
 
+# ifdef IN_SUP_HARDENED_R3
+    /*
+     * Load some problematic DLLs into the verifier cache to prevent
+     * recursion trouble.
+     */
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\crypt32.dll");
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\Wintrust.dll");
+# endif
+
     /*
      * Now, get trusted root CAs so we can verify a broader scope of signatures.
      */
-    supR3HardenedWinRetrieveTrustedRootCAs(fFlags);
+    supR3HardenedWinRetrieveTrustedRootCAs();
+
+# ifdef IN_SUP_HARDENED_R3
+    /*
+     * Do some verify cache preloading.  The MS Visual C++ CRT DLLs works
+     * around recursion issues with WinVerifyTrust on 32-bit windows 7.
+     */
+    SUP_DPRINTF(("preloading part 2...\n"));
+#  if 0 /* Seeing if this helps with the later Win7/32 issue... apparently not :-/ */
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\cfgmgr32.dll");
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\devobj.dll");
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\setupapi.dll");
+    supR3HardenedWinLoadSystem32Dll("setupapi.dll");
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\rsaenh.dll");
+    supR3HardenedWinLoadSystem32Dll("rsaenh.dll");
+#  endif
+
+    WCHAR wszPath[260+16];
+    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\apphelp.dll");
+    memcpy(wszPath, g_SupLibHardenedExeNtPath.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Length);
+    static char const *s_apszAppDlls[] =
+    {
+        NULL,
+        "VBoxRT.dll",
+#  if _MSC_VER < 1600
+        "msvcr90.dll",  "msvcp90.dll",
+#  elif _MSC_VER < 1700
+        "msvcr100.dll", "msvcp100.dll",
+#  elif _MSC_VER < 1800
+        "msvcr110.dll", "msvcp110.dll",
+#  elif _MSC_VER < 1900
+        "msvcr120.dll", "msvcp120.dll",
+#  elif _MSC_VER < 1900
+        "msvcr130.dll", "msvcp130.dll",
+#  else
+#   error "Unsupported compiler version."
+#  endif
+    };
+    s_apszAppDlls[0] = pszProgName;
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_apszAppDlls); i++)
+    {
+        RTUtf16CopyAscii(&wszPath[g_offSupLibHardenedExeNtName], 300 - g_offSupLibHardenedExeNtName, s_apszAppDlls[i]);
+        supR3HardenedWinVerifyCachePreload(wszPath);
+    }
+    SUP_DPRINTF(("preloading part 2 - done.\n"));
+# endif
 }
 
 
