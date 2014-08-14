@@ -33,6 +33,7 @@
 #include <iprt/rand.h>
 #include <iprt/critsect.h>
 #include <iprt/test.h>
+#include <iprt/system.h>
 
 #include "VDMemDisk.h"
 #include "VDIoBackend.h"
@@ -2797,6 +2798,20 @@ static void tstVDIoScriptRun(const char *pcszFilename)
  */
 static void tstVDIoRunBuiltinTests(void)
 {
+    /*
+     * We need quite a bit of RAM for the builtin tests. Skip it if there
+     * is not enough free RAM available.
+     */
+    uint64_t cbFree = 0;
+    int rc = RTSystemQueryAvailableRam(&cbFree);
+    if (   RT_FAILURE(rc)
+        || cbFree < (UINT64_C(6) * _1G))
+    {
+        RTStrmPrintf(g_pStdErr, "tstVDIo: fatal error: Failed to query available RAM or not enough available, skipping (rc=%Rrc cbFree=%llu)\n",
+                     rc, cbFree);
+        return;
+    }
+
     for (unsigned i = 0; i < g_cVDIoTests; i++)
     {
         char *pszScript = RTStrDupN((const char *)g_aVDIoTests[i].pch, g_aVDIoTests[i].cb);
