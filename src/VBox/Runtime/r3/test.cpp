@@ -635,7 +635,7 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
 RTR3DECL(void *) RTTestGuardedAllocTail(RTTEST hTest, size_t cb)
 {
     void *pvUser;
-    int rc = RTTestGuardedAlloc(hTest, cb, 1, false /*fHead*/, &pvUser);
+    int rc = RTTestGuardedAlloc(hTest, cb, 1 /* cbAlign */, false /* fHead */, &pvUser);
     if (RT_SUCCESS(rc))
         return pvUser;
     return NULL;
@@ -654,7 +654,7 @@ RTR3DECL(void *) RTTestGuardedAllocTail(RTTEST hTest, size_t cb)
 RTR3DECL(void *) RTTestGuardedAllocHead(RTTEST hTest, size_t cb)
 {
     void *pvUser;
-    int rc = RTTestGuardedAlloc(hTest, cb, 1, true /*fHead*/, &pvUser);
+    int rc = RTTestGuardedAlloc(hTest, cb, 1 /* cbAlign */, true /* fHead */, &pvUser);
     if (RT_SUCCESS(rc))
         return pvUser;
     return NULL;
