@@ -1039,9 +1039,8 @@ void UIIndicatorsPool::sltHandleConfigurationChange()
 
 void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
 {
-    /* Update states for following indicators: */
-    QVector <KDeviceType> deviceTypes(0);
-
+    /* We should update states for following indicators: */
+    QVector<KDeviceType> deviceTypes;
     if (m_pool.contains(IndicatorType_HardDisks))
         deviceTypes.append(KDeviceType_HardDisk);
     if (m_pool.contains(IndicatorType_OpticalDisks))
@@ -1057,46 +1056,28 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
     if (m_pool.contains(IndicatorType_Display))
         deviceTypes.append(KDeviceType_Graphics3D);
 
+    /* Acquire current states from the console: */
     CConsole console = m_session.GetConsole();
-    QVector <KDeviceActivity> activities = console.GetDeviceActivity(deviceTypes);
-    if (!console.isOk())
-        return;
+    const QVector<KDeviceActivity> states = console.GetDeviceActivity(deviceTypes);
+    AssertReturnVoid(console.isOk());
 
-    int i;
-    for (i = 0; i < activities.size(); ++i)
+    /* Update indicators with the acquired states: */
+    for (int iIndicator = 0; iIndicator < states.size(); ++iIndicator)
     {
-        QIStatusBarIndicator *pIndicator = NULL;
-
-        switch (deviceTypes[i])
+        QIStatusBarIndicator *pIndicator = 0;
+        switch (deviceTypes[iIndicator])
         {
-            case KDeviceType_HardDisk:
-                pIndicator = m_pool.value(IndicatorType_HardDisks);
-                break;
-            case KDeviceType_DVD:
-                pIndicator = m_pool.value(IndicatorType_OpticalDisks);
-                break;
-            case KDeviceType_Floppy:
-                pIndicator = m_pool.value(IndicatorType_FloppyDisks);
-                break;
-            case KDeviceType_USB:
-                pIndicator = m_pool.value(IndicatorType_USB);
-                break;
-            case KDeviceType_Network:
-                pIndicator = m_pool.value(IndicatorType_Network);
-                break;
-            case KDeviceType_SharedFolder:
-                pIndicator = m_pool.value(IndicatorType_SharedFolders);
-                break;
-            case KDeviceType_Graphics3D:
-                pIndicator = m_pool.value(IndicatorType_Display);
-                break;
-            default:
-                AssertFailed();
-                break;
+            case KDeviceType_HardDisk:     pIndicator = m_pool.value(IndicatorType_HardDisks); break;
+            case KDeviceType_DVD:          pIndicator = m_pool.value(IndicatorType_OpticalDisks); break;
+            case KDeviceType_Floppy:       pIndicator = m_pool.value(IndicatorType_FloppyDisks); break;
+            case KDeviceType_USB:          pIndicator = m_pool.value(IndicatorType_USB); break;
+            case KDeviceType_Network:      pIndicator = m_pool.value(IndicatorType_Network); break;
+            case KDeviceType_SharedFolder: pIndicator = m_pool.value(IndicatorType_SharedFolders); break;
+            case KDeviceType_Graphics3D:   pIndicator = m_pool.value(IndicatorType_Display); break;
+            default: AssertFailed(); break;
         }
-
         if (pIndicator)
-            updateIndicatorStateForDevice(pIndicator, deviceTypes[i], activities[i]);
+            updateIndicatorStateForDevice(pIndicator, states[iIndicator]);
     }
 }
 
@@ -1293,8 +1274,7 @@ int UIIndicatorsPool::indicatorPosition(IndicatorType indicatorType) const
     return iPosition;
 }
 
-void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceType deviceType,
-                                                     KDeviceActivity deviceActivity)
+void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceActivity state)
 {
     /* Assert indicators with NO state: */
     QIStateStatusBarIndicator *pStateIndicator = qobject_cast<QIStateStatusBarIndicator*>(pIndicator);
@@ -1314,7 +1294,7 @@ void UIIndicatorsPool::updateIndicatorStateForDevice(QIStatusBarIndicator *pIndi
     else
     {
         /* If current state differs from actual => set the actual one: */
-        const int iState = (int)deviceActivity;
+        const int iState = (int)state;
         if (pStateIndicator->state() != iState)
             pStateIndicator->setState(iState);
     }

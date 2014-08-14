@@ -97,9 +97,8 @@ private:
     /** Returns position for passed @a indicatorType. */
     int indicatorPosition(IndicatorType indicatorType) const;
 
-    /** Updates state for passed @a pIndicator through @a deviceType. */
-    void updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceType deviceType,
-                                       KDeviceActivity deviceActivity);
+    /** Updates passed @a pIndicator with current @a state value. */
+    void updateIndicatorStateForDevice(QIStatusBarIndicator *pIndicator, KDeviceActivity state);
 
     /** Holds the UI session reference. */
     UISession *m_pSession;
