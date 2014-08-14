@@ -165,6 +165,10 @@ void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachin
 
 void UIMachineWindowFullscreen::sltRevokeFocus()
 {
+    /* Make sure window is visible: */
+    if (!isVisible())
+        return;
+
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
 }
@@ -313,7 +317,14 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* Make sure this window should be shown and mapped to some host-screen: */
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
-        return hide();
+    {
+        /* Hide mini-toolbar: */
+        if (m_pMiniToolBar)
+            m_pMiniToolBar->hide();
+        /* Hide window: */
+        hide();
+        return;
+    }
 
     /* Make sure this window is not minimized: */
     if (isMinimized())
@@ -367,9 +378,12 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* Adjust guest-screen size if necessary: */
     machineView()->maybeAdjustGuestScreenSize();
 
-    /* Move mini-toolbar into appropriate place: */
+    /* Show/Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)
+    {
+        m_pMiniToolBar->show();
         m_pMiniToolBar->adjustGeometry(iHostScreen);
+    }
 }
 
 void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
