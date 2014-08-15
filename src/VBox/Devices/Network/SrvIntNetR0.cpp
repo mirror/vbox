@@ -5014,34 +5014,40 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWP
 static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwitchPort)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+
     /*
-     * We intentionally do not increase the busy count of the trunk as it will cause a deadlock
-     * with a racing intnetR0NetworkDestruct. It is safe to do only due to the fact that our
-     * caller must have increased the busy count of the corresponding netflt instance thus
-     * preventing intnetR0NetworkDestruct from destroying the trunk.
+     * The caller has marked the trunk instance busy on his side before making
+     * the call (see method docs) to let us safely grab the network and internal
+     * network instance pointers without racing the network destruction code
+     * (intnetR0TrunkIfDestroy (called by intnetR0TrunkIfDestroy) will wait for
+     * the interface to stop being busy before setting pNetwork to NULL and
+     * freeing up the resources).
      */
     PINTNETNETWORK pNetwork = pThis->pNetwork;
     if (pNetwork)
     {
-        /*
-         * We need to save pIntNet too in case pNetwork becomes invalid while we are waiting
-         * on pIntNet->hMtxCreateOpenDestroy.
-         */
         PINTNET pIntNet = pNetwork->pIntNet;
         Assert(pNetwork->pIntNet);
+
         /*
-         * We must decrease the busy count of corresponing netflt instance here allowing
-         * intnetR0NetworkDestruct to proceed with destruction.
+         * We must decrease the callers busy count here to prevent deadlocking
+         * when requesting the big mutex ownership.  This will of course
+         * unblock anyone stuck in intnetR0TrunkIfDestroy doing pfnWaitForIdle
+         * (the other deadlock party), so we have to revalidate the network
+         * pointer after taking ownership of the big mutex.
          */
-        pThis->pIfPort->pfnRelease(pThis->pIfPort, true);
-        /* Take the big create/open/destroy sem. */
+        pThis->pIfPort->pfnRelease(pThis->pIfPort, true /*fBusy*/);
+
         RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
-        /*
-         * At this point pNetwork may no longer exist, being destroyed by intnetR0NetworkDestruct
-         * so we need to make sure it is still valid by looking it up in pIntNet->pNetworks.
-         */
+
         if (intnetR0NetworkIsValid(pIntNet, pNetwork))
         {
+            Assert(pNetwork->MacTab.pTrunk == pThis); /* Must be valid as long as tehre are no concurrent calls to this method. */
+
+            /*
+             * Disconnect the trunk and destroy it, similar to what is done int
+             * intnetR0NetworkDestruct.
+             */
             pThis->pIfPort->pfnSetState(pThis->pIfPort, INTNETTRUNKIFSTATE_DISCONNECTING);
 
             RTSpinlockAcquire(pNetwork->hAddrSpinlock);
@@ -5051,7 +5057,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
             intnetR0TrunkIfDestroy(pThis, pNetwork);
         }
 
-        RTSemMutexRelease(pNetwork->pIntNet->hMtxCreateOpenDestroy);
+        RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
 }
 #endif /* VBOX_WITH_INTNET_DISCONNECT */
@@ -5280,7 +5286,7 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
         /* unset it */
         pThis->pIfPort = NULL;
 
-        /* wait in portions so we can complain ever now an then. */
+        /* wait in portions so we can complain every now an then. */
         uint64_t StartTS = RTTimeSystemNanoTS();
         int rc = pIfPort->pfnWaitForIdle(pIfPort, 10*1000);
         if (RT_FAILURE(rc))
@@ -5314,7 +5320,7 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
     /*
      * Free up the resources.
      */
-    pThis->pNetwork   = NULL;
+    pThis->pNetwork = NULL; /* Must not be cleared while busy, see intnetR0TrunkIfPortDisconnect. */
     RTSpinlockDestroy(pThis->hDstTabSpinlock);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->apTaskDstTabs); i++)
     {

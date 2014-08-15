@@ -562,7 +562,14 @@ typedef struct INTNETTRUNKSWPORT
 
 #ifdef VBOX_WITH_INTNET_DISCONNECT
     /**
-     * Reports premature destruction of NetFlt instance by OS.
+     * OS triggered trunk disconnect.
+     *
+     * The caller shall must be busy when calling this method to prevent racing the
+     * network destruction code. This method will consume this busy reference
+     * (released via INTNETTRUNKIFPORT::pfnRelease).
+     *
+     * The caller shall guarantee that there are absolutely no chance of concurrent
+     * calls to this method on the same instance.
      *
      * @param   pSwitchPort         Pointer to this structure.
      */
