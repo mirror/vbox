@@ -151,7 +151,7 @@ public:
                                           uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
     bool i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
     void i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
-    void i_handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
+    void i_handleVRecCompletion();
 #endif
 
     int i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
@@ -319,8 +319,7 @@ private:
     static DECLCALLBACK(bool) i_displayCrVRecScreenshotBegin(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
     static DECLCALLBACK(void) i_displayCrVRecScreenshotEnd(void *pvCtx, uint32_t uScreen, uint64_t u64TimeStamp);
 
-    static DECLCALLBACK(void) i_displayVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam,
-                                                      void *pvContext);
+    static DECLCALLBACK(void) i_displayVRecCompletion(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion);
 #endif
     static DECLCALLBACK(void) i_displayCrCmdFree(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion);
 
