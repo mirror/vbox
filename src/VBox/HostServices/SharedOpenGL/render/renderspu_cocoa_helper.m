@@ -1180,7 +1180,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     glFlush();
                         
     /* issue to the gui thread */
-    [self setNeedsDisplay:YES];
+    [self performSelectorOnMainThread:@selector(vboxTryDrawUI) withObject:nil waitUntilDone:NO];
 }
 
 - (void)vboxSubmitVisible:(GLboolean)fVisible
