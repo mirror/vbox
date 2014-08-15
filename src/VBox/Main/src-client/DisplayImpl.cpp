@@ -3752,8 +3752,10 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
                         pData->aParms[0].type = VBOX_HGCM_SVC_PARM_PTR;
                         pData->aParms[0].u.pointer.addr = &pDisplay->mCrOglScreenshotData;
                         pData->aParms[0].u.pointer.size = sizeof(pDisplay->mCrOglScreenshotData);
-                        rc = pDisplay->i_crCtlSubmit(&pData->Hdr, sizeof(*pData), NULL, NULL);
-                        if (!RT_SUCCESS(rc))
+                        rc = pDisplay->i_crCtlSubmit(&pData->Hdr, sizeof(*pData), Display::i_displayVRecCompletion, pDisplay);
+                        if (RT_SUCCESS(rc))
+                            break;
+                        else
                             AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                     }
 
@@ -4399,7 +4401,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 # endif
 }
 
-void  Display::i_handleVRecCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+void  Display::i_handleVRecCompletion()
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
     ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
@@ -4430,11 +4432,10 @@ DECLCALLBACK(void) Display::i_displayCrVRecScreenshotEnd(void *pvCtx, uint32_t u
     pDisplay->i_handleCrVRecScreenshotEnd(uScreen, u64TimeStamp);
 }
 
-DECLCALLBACK(void) Display::i_displayVRecCompletion(int32_t result, uint32_t u32Function,
-                                                    PVBOXHGCMSVCPARM pParam, void *pvContext)
+DECLCALLBACK(void) Display::i_displayVRecCompletion(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
 {
-    Display *pDisplay = (Display *)pvContext;
-    pDisplay->i_handleVRecCompletion(result, u32Function, pParam, pvContext);
+    Display *pDisplay = (Display *)pvCompletion;
+    pDisplay->i_handleVRecCompletion();
 }
 
 #endif
