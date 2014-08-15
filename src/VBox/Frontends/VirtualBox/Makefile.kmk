@@ -303,6 +303,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMultiScreenLayout.h \
 	src/runtime/UISession.h \
+	src/runtime/UISlidingToolBar.h \
 	src/runtime/UIStatusBarEditorWindow.h \
 	src/runtime/UIVMCloseDialog.h \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
@@ -580,6 +581,7 @@ VirtualBox_SOURCES = \
 	src/runtime/UIMouseHandler.cpp \
 	src/runtime/UIMultiScreenLayout.cpp \
 	src/runtime/UISession.cpp \
+	src/runtime/UISlidingToolBar.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/runtime/UIVMCloseDialog.cpp \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
