@@ -2424,7 +2424,7 @@ static VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PIEMCPU pIemCpu, 
     pSReg->Sel      = uSel;
     pSReg->Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pSReg->u32Limit = cbLimit;
-    pSReg->u64Base  = u64Base;
+    pSReg->u64Base  = u64Base;  /** @todo testcase/investigate: seen claims that the upper half of the base remains unchanged... */
     pSReg->ValidSel = uSel;
     pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
     if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
