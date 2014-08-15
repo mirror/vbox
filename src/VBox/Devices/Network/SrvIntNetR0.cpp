@@ -449,7 +449,6 @@ g_afIntNetOpenNetworkIfFlags[] =
 };
 
 
-#ifdef VBOX_WITH_INTNET_DISCONNECT
 /*******************************************************************************
 *   Forward Declarations                                                       *
 *******************************************************************************/
@@ -471,7 +470,6 @@ DECLINLINE(bool) intnetR0NetworkIsValid(PINTNET pIntNet, PINTNETNETWORK pNetwork
             return true;
     return false;
 }
-#endif /* VBOX_WITH_INTNET_DISCONNECT */
 
 
 /**
@@ -5011,7 +5009,8 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWP
 
 #ifdef VBOX_WITH_INTNET_DISCONNECT
 /** @copydoc INTNETTRUNKSWPORT::pfnDisconnect */
-static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwitchPort)
+static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT pIfPort,
+                                                        PFNINTNETTRUNKIFPORTRELEASEBUSY pfnReleaseBusy)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
 
@@ -5036,19 +5035,20 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
          * (the other deadlock party), so we have to revalidate the network
          * pointer after taking ownership of the big mutex.
          */
-        pThis->pIfPort->pfnRelease(pThis->pIfPort, true /*fBusy*/);
+        pfnReleaseBusy(pIfPort);
 
         RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
 
         if (intnetR0NetworkIsValid(pIntNet, pNetwork))
         {
             Assert(pNetwork->MacTab.pTrunk == pThis); /* Must be valid as long as tehre are no concurrent calls to this method. */
+            Assert(pThis->pIfPort == pIfPort);        /* Ditto */
 
             /*
              * Disconnect the trunk and destroy it, similar to what is done int
              * intnetR0NetworkDestruct.
              */
-            pThis->pIfPort->pfnSetState(pThis->pIfPort, INTNETTRUNKIFSTATE_DISCONNECTING);
+            pIfPort->pfnSetState(pIfPort, INTNETTRUNKIFSTATE_DISCONNECTING);
 
             RTSpinlockAcquire(pNetwork->hAddrSpinlock);
             pNetwork->MacTab.pTrunk = NULL;
@@ -5059,6 +5059,11 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
 
         RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
+    /*
+     * We must always release the busy reference.
+     */
+    else
+        pfnReleaseBusy(pIfPort);
 }
 #endif /* VBOX_WITH_INTNET_DISCONNECT */
 
