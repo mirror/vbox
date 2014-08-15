@@ -386,6 +386,21 @@ typedef enum INTNETSWDECISION
 } INTNETSWDECISION;
 
 
+/** Pointer to the interface side of a trunk port. */
+typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
+
+
+/**
+ * Special variation of INTNETTRUNKIFPORT::pfnRelease for use with
+ * INTNETTRUNKSWPORT::pfnDisconnect.
+ *
+ * @param   pIfPort     Pointer to the INTNETTRUNKIFPORT instance.
+ */
+typedef DECLCALLBACK(void) FNINTNETTRUNKIFPORTRELEASEBUSY(PINTNETTRUNKIFPORT pIfPort);
+/** Pointer to a FNINTNETTRUNKIFPORTRELEASEBUSY function. */
+typedef FNINTNETTRUNKIFPORTRELEASEBUSY *PFNINTNETTRUNKIFPORTRELEASEBUSY;
+
+
 /** Pointer to the switch side of a trunk port. */
 typedef struct INTNETTRUNKSWPORT *PINTNETTRUNKSWPORT;
 /**
@@ -565,15 +580,23 @@ typedef struct INTNETTRUNKSWPORT
      * OS triggered trunk disconnect.
      *
      * The caller shall must be busy when calling this method to prevent racing the
-     * network destruction code. This method will consume this busy reference
-     * (released via INTNETTRUNKIFPORT::pfnRelease).
+     * network destruction code. This method will always consume this busy reference
+     * (released via @a pfnReleaseBusy using @a pIfPort).
      *
      * The caller shall guarantee that there are absolutely no chance of concurrent
      * calls to this method on the same instance.
      *
      * @param   pSwitchPort         Pointer to this structure.
+     * @param   pIfPort             The interface port structure corresponding to @a
+     *                              pSwitchPort and which should be used when
+     *                              calling @a pfnReleaseBusy.  This is required as
+     *                              the method may no longer have access to a valid
+     *                              @a pIfPort pointer.
+     * @param   pfnReleaseBusy      Callback for releasing the callers busy
+     *                              reference to it's side of things.
      */
-    DECLR0CALLBACKMEMBER(void, pfnDisconnect,(PINTNETTRUNKSWPORT pSwitchPort));
+    DECLR0CALLBACKMEMBER(void, pfnDisconnect,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT pIfPort,
+                                              PFNINTNETTRUNKIFPORTRELEASEBUSY pfnReleaseBusy));
 #endif /* VBOX_WITH_INTNET_DISCONNECT */
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
@@ -582,10 +605,10 @@ typedef struct INTNETTRUNKSWPORT
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
 #ifdef VBOX_WITH_INTNET_DISCONNECT
-#define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf002)
-#else /* !VBOX_WITH_INTNET_DISCONNECT */
-#define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
-#endif /* !VBOX_WITH_INTNET_DISCONNECT */
+# define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf003)
+#else
+# define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
+#endif
 
 
 /**
@@ -609,8 +632,7 @@ typedef enum INTNETTRUNKIFSTATE
     INTNETTRUNKIFSTATE_32BIT_HACK = 0x7fffffff
 } INTNETTRUNKIFSTATE;
 
-/** Pointer to the interface side of a trunk port. */
-typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
+
 /**
  * This is the port on the trunk interface, i.e. the driver side which the
  * internal network is connected to.
@@ -638,16 +660,11 @@ typedef struct INTNETTRUNKIFPORT
      *
      * This must be called for every pfnRetain call.
      *
-     *
      * @param   pIfPort     Pointer to this structure.
      *
      * @remarks May own the big mutex, no spinlocks.
      */
-#ifdef VBOX_WITH_INTNET_DISCONNECT
-    DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort, bool fBusy));
-#else /* !VBOX_WITH_INTNET_DISCONNECT */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
-#endif /* !VBOX_WITH_INTNET_DISCONNECT */
 
     /**
      * Disconnect from the switch and release the object.
@@ -769,11 +786,7 @@ typedef struct INTNETTRUNKIFPORT
 } INTNETTRUNKIFPORT;
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
-#ifdef VBOX_WITH_INTNET_DISCONNECT
-#define INTNETTRUNKIFPORT_VERSION   UINT32_C(0xA2CDe002)
-#else /* !VBOX_WITH_INTNET_DISCONNECT */
 #define INTNETTRUNKIFPORT_VERSION   UINT32_C(0xA2CDe001)
-#endif /* !VBOX_WITH_INTNET_DISCONNECT */
 
 
 /**

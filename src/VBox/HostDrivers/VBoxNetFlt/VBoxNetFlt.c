@@ -748,21 +748,23 @@ DECLHIDDEN(void) vboxNetFltRelease(PVBOXNETFLTINS pThis, bool fBusy)
 
 
 /**
- * @copydoc INTNETTRUNKIFPORT::pfnRetain
+ * @copydoc INTNETTRUNKIFPORT::pfnRelease
  */
-#ifdef VBOX_WITH_INTNET_DISCONNECT
-static DECLCALLBACK(void) vboxNetFltPortRelease(PINTNETTRUNKIFPORT pIfPort, bool fBusy)
-{
-    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-    vboxNetFltRelease(pThis, fBusy);
-}
-#else /* !VBOX_WITH_INTNET_DISCONNECT */
 static DECLCALLBACK(void) vboxNetFltPortRelease(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     vboxNetFltRelease(pThis, false /* fBusy */);
 }
-#endif /* !VBOX_WITH_INTNET_DISCONNECT */
+
+
+/**
+ * @callback_method_impl{FNINTNETTRUNKIFPORTRELEASEBUSY}
+ */
+DECLHIDDEN(DECLCALLBACK(void)) vboxNetFltPortReleaseBusy(PINTNETTRUNKIFPORT pIfPort)
+{
+    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+    vboxNetFltRelease(pThis, true /*fBusy*/);
+}
 
 
 /**
