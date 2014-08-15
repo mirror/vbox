@@ -92,7 +92,7 @@ typedef enum SUPPAGINGMODE
 } SUPPAGINGMODE;
 
 
-/** Flags returned by SUPR0GetKernelFeatures().
+/** @name Flags returned by SUPR0GetKernelFeatures().
  * @{
  */
 /** GDT is read-only. */
