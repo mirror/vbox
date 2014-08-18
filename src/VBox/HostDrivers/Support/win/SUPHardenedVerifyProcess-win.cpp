@@ -822,7 +822,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      * Figure out areas we should skip during comparison.
      */
     uint32_t         cSkipAreas = 0;
-    SUPHNTVPSKIPAREA aSkipAreas[3];
+    SUPHNTVPSKIPAREA aSkipAreas[4];
     if (pImage->fNtCreateSectionPatch)
     {
         RTLDRADDR uValue;
@@ -833,7 +833,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'NtCreateSection': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = 16;
+            aSkipAreas[cSkipAreas++].cb = 5 + (ARCH_BITS == 64);
+
+            /* Ignore our LdrLoadDll hack. */
+            rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrLoadDll", &uValue);
+            if (RT_FAILURE(rc))
+                return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'LdrLoadDll': %Rrc", pImage->pszName, rc);
+            aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
+            aSkipAreas[cSkipAreas++].cb = 5 + (ARCH_BITS == 64);
         }
 
         /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
@@ -843,6 +850,8 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
             aSkipAreas[cSkipAreas++].cb = RT_MAX(pbBits[(uint32_t)uValue], 0x50);
         }
+
+        Assert(cSkipAreas <= RT_ELEMENTS(aSkipAreas));
     }
 
     /*
@@ -906,6 +915,17 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
                 case IMAGE_SCN_MEM_EXECUTE:
                     fProt = PAGE_EXECUTE;
                     break;
+                case IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE:
+                    /* Only the executable is allowed to have this section,
+                       and it's protected after we're done patching. */
+                    if (!pImage->fDll)
+                    {
+                        if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
+                            fProt = PAGE_EXECUTE_READWRITE;
+                        else
+                            fProt = PAGE_EXECUTE_READ;
+                        break;
+                    }
                 default:
                     return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_UNEXPECTED_SECTION_FLAGS,
                                                "%s: Section %u: Unexpected characteristics: %#x (uSectRva=%#x, cbMap=%#x)",
@@ -914,7 +934,8 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
 
             /* The section bits, only child purification verifies all bits . */
             if (   pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION
-                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
+                || (   (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
+                    && !(pThis->aSecHdrs[i].Characteristics & IMAGE_SCN_MEM_WRITE))
                 || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE)) == IMAGE_SCN_MEM_READ)
             {
                 rc = VINF_SUCCESS;
@@ -1499,7 +1520,7 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUT
     int rc = VINF_SUCCESS;
     if (!pEntry->fVerified)
     {
-        rc = supHardenedWinVerifyImageByLdrMod(pEntry->hLdrMod, pwszName, pEntry->pNtViRdr, NULL /*pfCacheable*/, pErrInfo);
+        rc = supHardenedWinVerifyImageByLdrMod(pEntry->hLdrMod, pwszName, pEntry->pNtViRdr, NULL /*pfWinVerifyTrust*/, pErrInfo);
         pEntry->fVerified = RT_SUCCESS(rc);
     }
     return rc;

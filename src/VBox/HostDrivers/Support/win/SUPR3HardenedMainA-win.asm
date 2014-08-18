@@ -150,3 +150,12 @@ ENDPROC %1 %+ _SyscallType2
 %include "import-template-ntdll.h"
 %include "import-template-kernel32.h"
 
+
+;
+; For simplified LdrLoadDll patching we define a special writable, readable and
+; exectuable section of 4KB where we can put jump back code.
+;
+section .rwxpg bss execute read write align=4096
+GLOBALNAME g_abSupHardReadWriteExecPage
+        resb    4096
+

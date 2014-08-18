@@ -152,13 +152,13 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
 #endif
     void      *pvBuf = RTMemAlloc(cbBuf);
     size_t     cbRet = 0;
-    rc = RTLdrQueryPropEx(hLdrMod, RTLDRPROP_PKCS7_SIGNED_DATA, pvBuf, cbBuf, &cbRet);
+    rc = RTLdrQueryPropEx(hLdrMod, RTLDRPROP_PKCS7_SIGNED_DATA, NULL /*pvBits*/, pvBuf, cbBuf, &cbRet);
     if (rc == VERR_BUFFER_OVERFLOW && cbRet < _4M && cbRet > 0)
     {
         RTMemFree(pvBuf);
         cbBuf = cbRet;
         pvBuf = RTMemAlloc(cbBuf);
-        rc = RTLdrQueryPropEx(hLdrMod, RTLDRPROP_PKCS7_SIGNED_DATA, pvBuf, cbBuf, &cbRet);
+        rc = RTLdrQueryPropEx(hLdrMod, RTLDRPROP_PKCS7_SIGNED_DATA, NULL /*pvBits*/, pvBuf, cbBuf, &cbRet);
     }
     if (RT_SUCCESS(rc))
     {

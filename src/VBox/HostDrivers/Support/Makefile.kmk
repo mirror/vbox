@@ -203,7 +203,16 @@ SUPR3HardenedStatic_SOURCES.win = \
 	$(VBOX_SUP_WIN_CERTS_FILE)
 
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of this move up.
- SUPR3HardenedStatic_DEFS += IN_RT IN_RT_R3 IN_RT_STATIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES LOG_DISABLED IPRT_NO_ERROR_DATA
+ SUPR3HardenedStatic_DEFS += \
+  	IN_RT \
+ 	IN_RT_R3 \
+ 	IN_RT_STATIC \
+ 	IN_DIS \
+ 	DIS_CORE_ONLY \
+  	IPRT_NO_CRT \
+ 	RT_WITH_NOCRT_ALIASES \
+ 	LOG_DISABLED \
+ 	IPRT_NO_ERROR_DATA
  SUPR3HardenedStatic_DEFS.win += LDR_ONLY_PE __STRALIGN_H_
 
  SUPR3HardenedStatic_INCS += $(PATH_ROOT)/include/iprt/nocrt  $(VBOX_PATH_RUNTIME_SRC)/include
@@ -330,6 +339,11 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/memsafer-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/uuid-generic.cpp \
+       \
+	../../Disassembler/DisasmCore.cpp \
+	../../Disassembler/DisasmTables.cpp \
+	../../Disassembler/DisasmTablesX64.cpp \
+	../../Disassembler/DisasmReg.cpp
 
  SUPR3HardenedStatic_SOURCES.amd64 += \
  	$(VBOX_PATH_RUNTIME_SRC)/common/math/RTUInt128MulByU64.asm

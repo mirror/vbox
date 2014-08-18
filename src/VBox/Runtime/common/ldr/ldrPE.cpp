@@ -309,21 +309,23 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
             if (   pThis->paSections[0].PointerToRawData > 0
                 && pThis->paSections[0].SizeOfRawData > 0)
                 offFirstRawData = pThis->paSections[0].PointerToRawData;
-            if (offFile > offFirstRawData)
+            if (offFile >= offFirstRawData)
                 cbToRead = 0;
             else if (offFile + cbToRead > offFirstRawData)
-                cbToRead = offFile + cbToRead - offFirstRawData;
+                cbToRead = offFile - offFirstRawData;
         }
         else
         {
             /* Find the matching section and its mapping size. */
-            uint32_t j         = 0;
-            uint32_t cbMapping = 0;
+            uint32_t j          = 0;
+            uint32_t cbMapping  = 0;
+            uint32_t offSection = 0;
             while (j < pThis->cSections)
             {
                 cbMapping = (j + 1 < pThis->cSections ? pThis->paSections[j + 1].VirtualAddress : pThis->cbImage)
                           - pThis->paSections[j].VirtualAddress;
-                if (uRva - pThis->paSections[j].VirtualAddress < cbMapping)
+                offSection = uRva - pThis->paSections[j].VirtualAddress;
+                if (offSection < cbMapping)
                     break;
                 j++;
             }
@@ -331,12 +333,13 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
                 break; /* This shouldn't happen, just return zeros if it does. */
 
             /* Adjust the sizes and calc the file offset. */
-            if (cbToAdv > cbMapping)
-                cbToAdv = cbToRead = cbMapping;
+            if (offSection + cbToAdv > cbMapping)
+                cbToAdv = cbToRead = cbMapping - offSection;
+
             if (   pThis->paSections[j].PointerToRawData > 0
                 && pThis->paSections[j].SizeOfRawData > 0)
             {
-                offFile = uRva - pThis->paSections[j].VirtualAddress;
+                offFile = offSection;
                 if (offFile + cbToRead > pThis->paSections[j].SizeOfRawData)
                     cbToRead = pThis->paSections[j].SizeOfRawData - offFile;
                 offFile += pThis->paSections[j].PointerToRawData;
@@ -365,11 +368,11 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
         }
 
         /* Advance */
-        if (cbMem == cbToRead)
+        if (cbMem <= cbToAdv)
             break;
-        cbMem -= cbToRead;
-        pbMem += cbToRead;
-        uRva  += cbToRead;
+        cbMem -= cbToAdv;
+        pbMem += cbToAdv;
+        uRva  += cbToAdv;
     }
 
     return VINF_SUCCESS;
@@ -432,7 +435,10 @@ static int rtldrPEReadPartFromFile(PRTLDRMODPE pThis, uint32_t offFile, uint32_t
 static int rtldrPEReadPart(PRTLDRMODPE pThis, const void *pvBits, RTFOFF offFile, RTLDRADDR uRva,
                            uint32_t cbMem, void const **ppvMem)
 {
-    if (uRva == NIL_RTLDRADDR || uRva > pThis->cbImage)
+    if (   uRva == NIL_RTLDRADDR
+        || uRva         > pThis->cbImage
+        || cbMem        > pThis->cbImage
+        || uRva + cbMem > pThis->cbImage)
     {
         if (offFile < 0 || offFile >= UINT32_MAX)
             return VERR_INVALID_PARAMETER;
@@ -454,9 +460,9 @@ static void rtldrPEFreePart(PRTLDRMODPE pThis, const void *pvBits, void const *p
     if (!pvMem)
         return;
 
-    if (pvBits        && (uintptr_t)pvBits        - (uintptr_t)pvMem < pThis->cbImage)
+    if (pvBits        && (uintptr_t)pvMem - (uintptr_t)pvBits        < pThis->cbImage)
         return;
-    if (pThis->pvBits && (uintptr_t)pThis->pvBits - (uintptr_t)pvMem < pThis->cbImage)
+    if (pThis->pvBits && (uintptr_t)pvMem - (uintptr_t)pThis->pvBits < pThis->cbImage)
         return;
 
     RTMemFree((void *)pvMem);
@@ -1722,9 +1728,100 @@ static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADD
     return rc;
 }
 
+/**
+ * Worker for rtLdrPE_QueryProp that retrievs the name of an import DLL.
+ *
+ * @returns IPRT status code. If VERR_BUFFER_OVERFLOW, pcbBuf is required size.
+ * @param   pThis           The PE module instance.
+ * @param   pvBits          Image bits if the caller had them available, NULL if
+ *                          not. Saves a couple of file accesses.
+ * @param   iImport         The index of the import table descriptor to fetch
+ *                          the name from.
+ * @param   pvBuf           The output buffer.
+ * @param   cbBuf           The buffer size.
+ * @param   pcbRet          Where to return the number of bytes we've returned
+ *                          (or in case of VERR_BUFFER_OVERFLOW would have).
+ */
+static int rtLdrPE_QueryImportModule(PRTLDRMODPE pThis, void const *pvBits, uint32_t iImport,
+                                     void *pvBuf, size_t cbBuf, size_t *pcbRet)
+{
+    /*
+     * Check the index first, converting it to an RVA.
+     */
+    int rc;
+    if (iImport < pThis->ImportDir.Size / sizeof(IMAGE_IMPORT_DESCRIPTOR))
+    {
+        uint32_t offEntry = iImport * sizeof(IMAGE_IMPORT_DESCRIPTOR) + pThis->ImportDir.VirtualAddress;
+
+        /*
+         * Retrieve the import table descriptor.
+         */
+        PCIMAGE_IMPORT_DESCRIPTOR pImpDesc;
+        rc = rtldrPEReadPartByRva(pThis, pvBits, offEntry, sizeof(*pImpDesc), (void const **)&pImpDesc);
+        if (RT_SUCCESS(rc))
+        {
+            if (   pImpDesc->Name >= pThis->cbHeaders
+                && pImpDesc->Name < pThis->cbImage)
+            {
+                /*
+                 * Limit the name to 1024 bytes (more than enough for everyone).
+                 */
+                uint32_t cchNameMax = pThis->cbImage - pImpDesc->Name;
+                if (cchNameMax > 1024)
+                    cchNameMax = 1024;
+                char *pszName;
+                rc = rtldrPEReadPartByRva(pThis, pvBits, pImpDesc->Name, cchNameMax, (void const **)&pszName);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Make sure it's null terminated and valid UTF-8 encoding.
+                     *
+                     * Which encoding this really is isn't defined, I think,
+                     * but we need to make sure we don't get bogus UTF-8 into
+                     * the process, so making sure it's valid UTF-8 is a good
+                     * as anything else since it covers ASCII.
+                     */
+                    size_t cchName = RTStrNLen(pszName, cchNameMax);
+                    if (cchName < cchNameMax)
+                    {
+                        rc = RTStrValidateEncodingEx(pszName, cchName, 0 /*fFlags*/);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Copy out the result and we're done.
+                             * (We have to do all the cleanup code though, so no return success here.)
+                             */
+                            *pcbRet = cchName + 1;
+                            if (cbBuf >= cchName + 1)
+                                memcpy(pvBuf, pszName, cchName + 1);
+                            else
+                                rc = VERR_BUFFER_OVERFLOW;
+                        }
+                    }
+                    else
+                        rc = VERR_BAD_EXE_FORMAT;
+                    rtldrPEFreePart(pThis, pvBits, pszName);
+                }
+            }
+            else
+                rc = VERR_BAD_EXE_FORMAT;
+            rtldrPEFreePart(pThis, pvBits, pImpDesc);
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+
+    *pcbRet = 0;
+    return rc;
+}
+
 
 /** @interface_method_impl{RTLDROPS,pfnQueryProp} */
-static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                           void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
     switch (enmProp)
@@ -1764,6 +1861,20 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
             *(bool *)pvBuf = pModPe->offPkcs7SignedData > 0
                           && (pModPe->fDllCharacteristics & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
             break;
+
+        case RTLDRPROP_IMPORT_COUNT:
+            Assert(cbBuf == sizeof(uint32_t));
+            Assert(*pcbRet == cbBuf);
+            *(uint32_t *)pvBuf = pModPe->ImportDir.Size / sizeof(IMAGE_IMPORT_DESCRIPTOR);
+            if (*(uint32_t *)pvBuf > 0)
+                *(uint32_t *)pvBuf -= 1; /* The last entry is a NULL entry. */
+            /** @todo Is there some linkers out there that doesn't generiate a
+             *        terminator entry? */
+            break;
+
+        case RTLDRPROP_IMPORT_MODULE:
+            Assert(cbBuf >= sizeof(uint32_t));
+            return rtLdrPE_QueryImportModule(pModPe, pvBits, *(uint32_t *)pvBuf, pvBuf, cbBuf, pcbRet);
 
         default:
             return VERR_NOT_FOUND;

@@ -974,7 +974,7 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                 NULL,
                                                 OPEN_ALWAYS,
-                                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
+                                                FILE_ATTRIBUTE_NORMAL /*| FILE_FLAG_WRITE_THROUGH*/,
                                                 NULL);
                     RTUtf16Free(pwszPath);
                 }

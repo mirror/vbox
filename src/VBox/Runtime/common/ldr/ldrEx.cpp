@@ -589,12 +589,12 @@ RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
 
 RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
 {
-    return RTLdrQueryPropEx(hLdrMod, enmProp, pvBuf, cbBuf, NULL);
+    return RTLdrQueryPropEx(hLdrMod, enmProp, NULL /*pvBits*/, pvBuf, cbBuf, NULL);
 }
 RT_EXPORT_SYMBOL(RTLdrQueryProp);
 
 
-RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), RTLDRENDIAN_INVALID);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
@@ -628,6 +628,14 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, s
             *pcbRet = sizeof(bool);
             AssertReturn(cbBuf == sizeof(bool), VERR_INVALID_PARAMETER);
             break;
+        case RTLDRPROP_IMPORT_COUNT:
+            *pcbRet = sizeof(uint32_t);
+            AssertReturn(cbBuf == sizeof(uint32_t), VERR_INVALID_PARAMETER);
+            break;
+        case RTLDRPROP_IMPORT_MODULE:
+            *pcbRet = sizeof(uint32_t);
+            AssertReturn(cbBuf >= sizeof(uint32_t), VERR_INVALID_PARAMETER);
+            break;
 
         default:
             AssertFailedReturn(VERR_INVALID_FUNCTION);
@@ -639,7 +647,7 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, s
      */
     if (!pMod->pOps->pfnQueryProp)
         return VERR_NOT_SUPPORTED;
-    return pMod->pOps->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf, pcbRet);
+    return pMod->pOps->pfnQueryProp(pMod, enmProp, pvBits, pvBuf, cbBuf, pcbRet);
 }
 RT_EXPORT_SYMBOL(RTLdrQueryPropEx);
 
