@@ -929,7 +929,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [self performSelectorOnMainThread:@selector(vboxReshapeOnResizePerform) withObject:nil waitUntilDone:NO];
 
     /* ensure window contents is updated after that */
-    [self setNeedsDisplay:YES];
+    [self performSelectorOnMainThread:@selector(vboxTryDrawUI) withObject:nil waitUntilDone:NO];
 }
 
 - (NSSize)size
@@ -1178,7 +1178,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (void)vboxTryDraw
 {
     glFlush();
-                        
+                  
+    DEBUG_MSG(("My[%p]: Draw\n", self));      
     /* issue to the gui thread */
     [self performSelectorOnMainThread:@selector(vboxTryDrawUI) withObject:nil waitUntilDone:NO];
 }
@@ -1203,6 +1204,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)vboxTryDrawUI
 {
+    DEBUG_MSG(("My[%p]: DrawUI\n", self));
     const VBOXVR_SCR_COMPOSITOR *pCompositor;
     int rc = renderspuVBoxCompositorLock(m_pWinInfo, &pCompositor);
     if (RT_FAILURE(rc))
@@ -1213,6 +1215,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     if (!pCompositor && !m_fCleanupNeeded)
     {
+        DEBUG_MSG(("My[%p]: noCompositorUI\n", self));
         renderspuVBoxCompositorUnlock(m_pWinInfo);
         return;
     }
@@ -1243,6 +1246,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     }
     else
     {
+        DEBUG_MSG(("My[%p]: NeedCleanup\n", self));
         Assert(m_fCleanupNeeded);
         CrVrScrCompositorInit(&TmpCompositor, NULL);
         pCompositor = &TmpCompositor;
@@ -1253,8 +1257,14 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         [self vboxPresent:pCompositor];            
         [self unlockFocus];
     }
+    else if (!m_pWinInfo->visible)
+    {
+        DEBUG_MSG(("My[%p]: NotVisible\n", self));
+        m_fCleanupNeeded = false;
+    }
     else
     {
+        DEBUG_MSG(("My[%p]: Reschedule\n", self));
         [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
     }
     
@@ -1297,7 +1307,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                 m_fNeedViewportUpdate = false;
             }
             
-            m_fCleanupNeeded = GL_FALSE;
+            m_fCleanupNeeded = false;
             
             /* Render FBO content to the dock tile when necessary. */
             [self vboxPresentToDockTileCS:pCompositor];
