@@ -28,8 +28,9 @@
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
 
-UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget)
+UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position position)
     : QWidget(pParentWidget, Qt::Tool | Qt::FramelessWindowHint)
+    , m_position(position)
     , m_parentRect(pParentWidget->geometry())
     , m_indentRect(pIndentWidget->geometry())
     , m_pAnimation(0)
@@ -127,12 +128,26 @@ void UISlidingToolBar::prepareContents()
 
 void UISlidingToolBar::prepareGeometry()
 {
-    /* Prepare geometry based on parent and mdi-sub-window size-hints: */
+    /* Prepare geometry based on parent and mdi-sub-window size-hints,
+     * But move mdi-sub-window to initial position: */
     const QSize sh = m_pEmbeddedWidget->sizeHint();
-    setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                qMax(m_parentRect.width(), sh.width()), sh.height());
-    /* But move mdi-sub-window to initial position: */
-    m_pEmbeddedWidget->setGeometry(0, sh.height(), qMax(width(), sh.width()), sh.height());
+    switch (m_position)
+    {
+        case Position_Top:
+        {
+            setGeometry(m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            m_pEmbeddedWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
+            break;
+        }
+        case Position_Bottom:
+        {
+            setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            m_pEmbeddedWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
+            break;
+        }
+    }
 
 #ifdef Q_WS_X11
     /* Qt composition broken on X11 hosts: */
@@ -170,8 +185,21 @@ void UISlidingToolBar::adjustGeometry()
 {
     /* Adjust geometry based on parent and mdi-sub-window size-hints: */
     const QSize sh = m_pEmbeddedWidget->sizeHint();
-    setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                qMax(m_parentRect.width(), sh.width()), sh.height());
+    switch (m_position)
+    {
+        case Position_Top:
+        {
+            setGeometry(m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            break;
+        }
+        case Position_Bottom:
+        {
+            setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            break;
+        }
+    }
     /* And move mdi-sub-window to corresponding position: */
     m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
@@ -194,8 +222,12 @@ void UISlidingToolBar::updateAnimation()
 
     /* Recalculate mdi-sub-window geometry animation boundaries based on size-hint: */
     const QSize sh = m_pEmbeddedWidget->sizeHint();
-    m_startWidgetGeometry = QRect(0, sh.height(), qMax(width(), sh.width()), sh.height());
-    m_finalWidgetGeometry = QRect(0,           0, qMax(width(), sh.width()), sh.height());
+    switch (m_position)
+    {
+        case Position_Top:    m_startWidgetGeometry = QRect(0, -sh.height(), qMax(width(), sh.width()), sh.height()); break;
+        case Position_Bottom: m_startWidgetGeometry = QRect(0,  sh.height(), qMax(width(), sh.width()), sh.height()); break;
+    }
+    m_finalWidgetGeometry = QRect(0, 0, qMax(width(), sh.width()), sh.height());
     m_pAnimation->update();
 }
 

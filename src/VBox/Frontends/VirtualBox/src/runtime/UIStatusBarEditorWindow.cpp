@@ -117,9 +117,7 @@ signals:
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor.
-      * @param rect is used to define initial cached parent geometry.
-      * @param statusBarRect is used to define initial cached status-bar geometry. */
+    /** Constructor, passes @a pParent to the QWidget constructor. */
     UIStatusBarEditorWidget(QWidget *pParent = 0);
 
 private slots:
@@ -444,6 +442,7 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
     /* Listen for the status-bar configuration changes: */
     connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange()),
             this, SLOT(sltHandleConfigurationChange()));
+
     /* Update status buttons: */
     updateStatusButtons();
 }
@@ -545,14 +544,16 @@ void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
         grad5.setColorAt(1, color2);
     }
 
-    /* Paint frames: */
-    painter.fillRect(QRect(5, 5, width() - 5 * 2, height() - 5), color0);
-    painter.fillRect(QRect(0, 0, 5, 5), grad1);
-    painter.fillRect(QRect(width() - 5, 0, 5, 5), grad2);
-    painter.fillRect(QRect(5, 0, width() - 5 * 2, 5), grad3);
-    painter.fillRect(QRect(0, 5, 5, height() - 5), grad4);
-    painter.fillRect(QRect(width() - 5, 5, 5, height() - 5), grad5);
+    /* Paint shape/shadow: */
+    painter.fillRect(QRect(5, 5, width() - 5 * 2, height() - 5), color0); // background
+    painter.fillRect(QRect(0,           0, 5, 5), grad1); // left corner
+    painter.fillRect(QRect(width() - 5, 0, 5, 5), grad2); // right corner
+    painter.fillRect(QRect(5, 0, width() - 5 * 2, 5), grad3); // bottom line
+    painter.fillRect(QRect(0,           5, 5, height() - 5), grad4); // left line
+    painter.fillRect(QRect(width() - 5, 5, 5, height() - 5), grad5); // right line
+
 #if defined(Q_WS_WIN) || defined(Q_WS_X11)
+    /* Paint frames: */
     painter.save();
     painter.setPen(color3);
     painter.drawLine(QLine(QPoint(5 + 1, 5 + 1),                      QPoint(width() - 1 - 5 - 1, 5 + 1)));
@@ -694,7 +695,7 @@ int UIStatusBarEditorWidget::position(IndicatorType type) const
 
 
 UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
-    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget)
+    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget, UISlidingToolBar::Position_Bottom)
 {
 }
 

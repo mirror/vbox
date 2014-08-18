@@ -46,11 +46,18 @@ signals:
 
 public:
 
+    /** Possible positions. */
+    enum Position
+    {
+        Position_Top,
+        Position_Bottom
+    };
+
     /** Constructor, passes @a pParentWidget to the QWidget constructor.
       * @param pParentWidget is used to get parent-widget geoemtry,
       * @param pIndentWidget is used to get indent-widget geometry,
       * @param pChildWidget  brings child-widget to be injected into tool-bar. */
-    UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget);
+    UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position position);
 
 private slots:
 
@@ -97,6 +104,8 @@ private:
 
     /** @name Geometry
       * @{ */
+        /** Holds the tool-bar position. */
+        const Position m_position;
         /** Holds the cached parent-widget geometry. */
         QRect m_parentRect;
         /** Holds the cached indent-widget geometry. */
