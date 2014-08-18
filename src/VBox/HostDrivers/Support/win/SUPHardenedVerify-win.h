@@ -42,7 +42,9 @@ RT_C_DECLS_BEGIN
 # ifdef RT_OS_WINDOWS
 DECLHIDDEN(int)     supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo);
 DECLHIDDEN(void)    supHardenedWinTermImageVerifier(void);
+DECLHIDDEN(void)    supR3HardenedWinVerifyCacheScheduleImports(RTLDRMOD hLdrMod, PCRTUTF16 pwszName);
 DECLHIDDEN(void)    supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName);
+
 
 typedef enum SUPHARDNTVPKIND
 {
@@ -82,11 +84,13 @@ typedef struct SUPHNTVIRDR
 } SUPHNTVIRDR;
 /** Pointer to an SUP image verifier loader reader instance. */
 typedef SUPHNTVIRDR *PSUPHNTVIRDR;
-DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr);
-DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, bool *pfCacheable, PRTERRINFO pErrInfo);
-DECLHIDDEN(int) supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
-DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
-                                                  bool *pfCacheable, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)  supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PSUPHNTVIRDR *ppNtViRdr);
+DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void);
+DECLHIDDEN(int)  supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags,
+                                                   bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)  supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t fFlags, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
+                                                   bool *pfWinVerifyTrust, PRTERRINFO pErrInfo);
 /** @name SUPHNTVI_F_XXX - Flags for supHardenedWinVerifyImageByHandle.
  * @{ */
 /** The signing certificate must be the same as the one the VirtualBox build

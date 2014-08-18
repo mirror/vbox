@@ -172,6 +172,10 @@ PFNCRYPTCATADMINRELEASECATALOGCONTEXT   g_pfnCryptCATAdminReleaseCatalogContext;
 PFNCRYPTCATDADMINRELEASECONTEXT         g_pfnCryptCATAdminReleaseContext;
 /** Pointer to CryptCATCatalogInfoFromContext. */
 PFNCRYPTCATCATALOGINFOFROMCONTEXT       g_pfnCryptCATCatalogInfoFromContext;
+
+/** Indicates active WinVerifyTrust thread. */
+static uint32_t volatile                g_idActiveThread = UINT32_MAX;
+
 #endif
 
 
@@ -956,17 +960,20 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
  * Verifies the given loader image.
  *
  * @returns IPRT status code.
- * @param   hLdrMod     File handle to the executable file.
- * @param   pwszName    Full NT path to the DLL in question, used for dealing
- *                      with unsigned system dlls as well as for error/logging.
- * @param   pNtViRdr    The reader instance /w flags.
- * @param   pfCacheable Where to return whether the result can be cached.  A
- *                      valid value is always returned. Optional.
- * @param   pErrInfo    Pointer to error info structure. Optional.
+ * @param   hLdrMod             File handle to the executable file.
+ * @param   pwszName            Full NT path to the DLL in question, used for
+ *                              dealing with unsigned system dlls as well as for
+ *                              error/logging.
+ * @param   pNtViRdr            The reader instance /w flags.
+ * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was used.
+ * @param   pErrInfo            Pointer to error info structure. Optional.
  */
 DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
-                                                  bool *pfCacheable, PRTERRINFO pErrInfo)
+                                                  bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
 {
+    if (pfWinVerifyTrust)
+        *pfWinVerifyTrust = false;
+
 #ifdef IN_RING3
     /* Check that the caller has performed the necessary library initialization. */
     if (!RTCrX509Certificate_IsPresent(&g_BuildX509Cert))
@@ -1046,18 +1053,18 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      /*
       * Call the windows verify trust API if we've resolved it and aren't in
       * some obvious recursion.  Assumes the loader semaphore will reduce the
-      * risk of concurrency here, so no TLS, only a single static variable.
+      * risk of concurrency here, so no TLS, only a single global variable.
       */
     if (g_pfnWinVerifyTrust)
     {
-        static uint32_t volatile s_idActiveThread = UINT32_MAX;
         uint32_t const idCurrentThread = GetCurrentThreadId();
-        if (s_idActiveThread != idCurrentThread)
+        if (g_idActiveThread != idCurrentThread)
         {
-            ASMAtomicCmpXchgU32(&s_idActiveThread, idCurrentThread, UINT32_MAX);
+            ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
 
-            if (pfCacheable)
-                *pfCacheable = g_pfnWinVerifyTrust != NULL;
+            if (pfWinVerifyTrust)
+                *pfWinVerifyTrust = true;
+
             if (rc != VERR_LDRVI_NOT_SIGNED)
             {
                 if (rc == VINF_LDRVI_NOT_SIGNED)
@@ -1090,15 +1097,20 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
                 }
             }
 
-            ASMAtomicCmpXchgU32(&s_idActiveThread, UINT32_MAX, idCurrentThread);
+            ASMAtomicCmpXchgU32(&g_idActiveThread, UINT32_MAX, idCurrentThread);
         }
         else
             SUP_DPRINTF(("Detected WinVerifyTrust recursion: rc=%Rrc '%ls'.\n", rc, pwszName));
     }
-#else  /* !IN_RING3 */
-    if (pfCacheable)
-        *pfCacheable = true;
-#endif /* !IN_RING3 */
+#endif /* IN_RING3 */
+
+#ifdef IN_SUP_HARDENED_R3
+    /*
+     * Hook for the LdrLoadDll code to schedule scanning of imports.
+     */
+    if (RT_SUCCESS(rc))
+        supR3HardenedWinVerifyCacheScheduleImports(hLdrMod, pwszName);
+#endif
 
     return rc;
 }
@@ -1108,21 +1120,17 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
  * Verifies the given executable image.
  *
  * @returns IPRT status code.
- * @param   hFile       File handle to the executable file.
- * @param   pwszName    Full NT path to the DLL in question, used for dealing
- *                      with unsigned system dlls as well as for error/logging.
- * @param   fFlags      Flags, SUPHNTVI_F_XXX.
- * @param   pfCacheable Where to return whether the result can be cached.  A
- *                      valid value is always returned. Optional.
- * @param   pErrInfo    Pointer to error info structure. Optional.
+ * @param   hFile               File handle to the executable file.
+ * @param   pwszName            Full NT path to the DLL in question, used for
+ *                              dealing with unsigned system dlls as well as for
+ *                              error/logging.
+ * @param   fFlags              Flags, SUPHNTVI_F_XXX.
+ * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was used.
+ * @param   pErrInfo            Pointer to error info structure. Optional.
  */
 DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags,
-                                                  bool *pfCacheable, PRTERRINFO pErrInfo)
+                                                  bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
 {
-    /* Clear the cacheable indicator as it needs to be valid in all return paths. */
-    if (pfCacheable)
-        *pfCacheable = false;
-
     /*
      * Create a reader instance.
      */
@@ -1143,13 +1151,14 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
             /*
              * Verify it.
              */
-            rc = supHardenedWinVerifyImageByLdrMod(hLdrMod, pwszName, pNtViRdr, pfCacheable, pErrInfo);
+            rc = supHardenedWinVerifyImageByLdrMod(hLdrMod, pwszName, pNtViRdr, pfWinVerifyTrust, pErrInfo);
             int rc2 = RTLdrClose(hLdrMod); AssertRC(rc2);
         }
         else
             supHardNtViRdrDestroy(&pNtViRdr->Core);
     }
-    SUP_DPRINTF(("supHardenedWinVerifyImageByHandle: -> %d %s(%ls)\n", rc, pfCacheable && *pfCacheable ? "cacheable ": "", pwszName));
+    SUP_DPRINTF(("supHardenedWinVerifyImageByHandle: -> %d (%ls)%s\n",
+                 rc, pwszName, pfWinVerifyTrust && *pfWinVerifyTrust ? "WinVerifyTrust" : ""));
     return rc;
 }
 
@@ -1187,7 +1196,24 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t f
     else
         uBuf.UniStr.Buffer = (WCHAR *)L"TODO3";
 
-    return supHardenedWinVerifyImageByHandle(hFile, uBuf.UniStr.Buffer, fFlags, NULL /*pfCacheable*/, pErrInfo);
+    return supHardenedWinVerifyImageByHandle(hFile, uBuf.UniStr.Buffer, fFlags, NULL /*pfWinVerifyTrust*/, pErrInfo);
+}
+#endif /* IN_RING3 */
+
+
+#ifdef IN_RING3
+/**
+ * Checks if WinVerifyTrust is callable on the current thread.
+ *
+ * Used by the main code to figure whether it makes sense to try revalidate an
+ * image that hasn't passed thru WinVerifyTrust yet.
+ *
+ * @returns true if callable on current thread, false if not.
+ */
+DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
+{
+    return g_pfnWinVerifyTrust != NULL
+        && g_idActiveThread != GetCurrentThreadId();
 }
 #endif /* IN_RING3 */
 
@@ -1754,9 +1780,9 @@ static bool supR3HardenedWinIsDesiredRootCA(PCRTCRX509CERTIFICATE pCert)
 DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName)
 {
     WCHAR wszName[200+60];
-    UINT cwcDir = GetSystemWindowsDirectoryW(wszName, RT_ELEMENTS(wszName) - 60);
-    memcpy(&wszName[cwcDir], RT_STR_TUPLE(L"\\System32\\"));
-    RTUtf16CopyAscii(&wszName[cwcDir + sizeof("\\System32\\") - 1], RT_ELEMENTS(wszName) - cwcDir, pszName);
+    UINT cwcDir = GetSystemDirectoryW(wszName, RT_ELEMENTS(wszName) - 60);
+    wszName[cwcDir] = '\\';
+    RTUtf16CopyAscii(&wszName[cwcDir + 1], RT_ELEMENTS(wszName) - cwcDir, pszName);
 
     DWORD fFlags = 0;
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0))
@@ -1943,51 +1969,6 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
      * Now, get trusted root CAs so we can verify a broader scope of signatures.
      */
     supR3HardenedWinRetrieveTrustedRootCAs();
-
-# ifdef IN_SUP_HARDENED_R3
-    /*
-     * Do some verify cache preloading.  The MS Visual C++ CRT DLLs works
-     * around recursion issues with WinVerifyTrust on 32-bit windows 7.
-     */
-    SUP_DPRINTF(("preloading part 2...\n"));
-#  if 0 /* Seeing if this helps with the later Win7/32 issue... apparently not :-/ */
-    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\cfgmgr32.dll");
-    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\devobj.dll");
-    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\setupapi.dll");
-    supR3HardenedWinLoadSystem32Dll("setupapi.dll");
-    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\rsaenh.dll");
-    supR3HardenedWinLoadSystem32Dll("rsaenh.dll");
-#  endif
-
-    WCHAR wszPath[260+16];
-    supR3HardenedWinVerifyCachePreload(L"\\SystemRoot\\System32\\apphelp.dll");
-    memcpy(wszPath, g_SupLibHardenedExeNtPath.UniStr.Buffer, g_SupLibHardenedExeNtPath.UniStr.Length);
-    static char const *s_apszAppDlls[] =
-    {
-        NULL,
-        "VBoxRT.dll",
-#  if _MSC_VER < 1600
-        "msvcr90.dll",  "msvcp90.dll",
-#  elif _MSC_VER < 1700
-        "msvcr100.dll", "msvcp100.dll",
-#  elif _MSC_VER < 1800
-        "msvcr110.dll", "msvcp110.dll",
-#  elif _MSC_VER < 1900
-        "msvcr120.dll", "msvcp120.dll",
-#  elif _MSC_VER < 1900
-        "msvcr130.dll", "msvcp130.dll",
-#  else
-#   error "Unsupported compiler version."
-#  endif
-    };
-    s_apszAppDlls[0] = pszProgName;
-    for (uint32_t i = 0; i < RT_ELEMENTS(s_apszAppDlls); i++)
-    {
-        RTUtf16CopyAscii(&wszPath[g_offSupLibHardenedExeNtName], 300 - g_offSupLibHardenedExeNtName, s_apszAppDlls[i]);
-        supR3HardenedWinVerifyCachePreload(wszPath);
-    }
-    SUP_DPRINTF(("preloading part 2 - done.\n"));
-# endif
 }
 
 
@@ -2207,15 +2188,26 @@ static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszNa
              * Create a context.
              */
             fTryNextPolicy = false;
+            bool fFreshContext = false;
             BOOL fRc;
             HCATADMIN hCatAdmin = ASMAtomicXchgPtr(&s_aHashes[i].hCachedCatAdmin, NULL);
             if (hCatAdmin)
+            {
+                SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: Cached context %p\n", hCatAdmin));
+                fFreshContext = false;
                 fRc = TRUE;
-            else if (g_pfnCryptCATAdminAcquireContext2)
-                fRc = g_pfnCryptCATAdminAcquireContext2(&hCatAdmin, &s_aPolicies[iPolicy], s_aHashes[i].pszAlgorithm,
-                                                        NULL /*pStrongHashPolicy*/, 0 /*dwFlags*/);
+            }
             else
-                fRc = g_pfnCryptCATAdminAcquireContext(&hCatAdmin, &s_aPolicies[iPolicy], 0 /*dwFlags*/);
+            {
+l_fresh_context:
+                fFreshContext = true;
+                if (g_pfnCryptCATAdminAcquireContext2)
+                    fRc = g_pfnCryptCATAdminAcquireContext2(&hCatAdmin, &s_aPolicies[iPolicy], s_aHashes[i].pszAlgorithm,
+                                                            NULL /*pStrongHashPolicy*/, 0 /*dwFlags*/);
+                else
+                    fRc = g_pfnCryptCATAdminAcquireContext(&hCatAdmin, &s_aPolicies[iPolicy], 0 /*dwFlags*/);
+                SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: New context %p\n", hCatAdmin));
+            }
             if (fRc)
             {
                 SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: hCatAdmin=%p\n", hCatAdmin));
@@ -2249,6 +2241,14 @@ static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszNa
                             HCATINFO hCatInfo = g_pfnCryptCATAdminEnumCatalogFromHash(hCatAdmin, abHash, cbHash, 0, &hCatInfoPrev);
                             if (!hCatInfo)
                             {
+                                if (!fFreshContext)
+                                {
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: Retrying with fresh context (CryptCATAdminEnumCatalogFromHash -> %u; iCat=%#x)\n", GetLastError(), iCat));
+                                    if (hCatInfoPrev != NULL)
+                                        g_pfnCryptCATAdminReleaseCatalogContext(hCatAdmin, hCatInfoPrev, 0 /*dwFlags*/);
+                                    g_pfnCryptCATAdminReleaseContext(hCatAdmin, 0 /*dwFlags*/);
+                                    goto l_fresh_context;
+                                }
                                 if (iCat == 0)
                                     SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", GetLastError()));
                                 break;
@@ -2304,7 +2304,7 @@ static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszNa
                                     rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_WINTRUST_CAT_FAILURE,
                                                        "WinVerifyTrust failed with hrc=%#x on '%ls' and .cat-file='%ls'.",
                                                        hrc, pwszWinPath, CatInfo.wszCatalogFile);
-                                    fTryNextPolicy = (hrc == CERT_E_UNTRUSTEDROOT);
+                                    fTryNextPolicy |= (hrc == CERT_E_UNTRUSTEDROOT);
                                 }
 
                                 /* clean up state data. */

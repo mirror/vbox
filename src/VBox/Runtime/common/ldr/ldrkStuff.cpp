@@ -839,7 +839,8 @@ static DECLCALLBACK(int) rtkldr_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDb
 
 
 /** @interface_method_impl{RTLDROPS,pfnQueryProp} */
-static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet)
+static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                          void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     PRTLDRMODKLDR pThis = (PRTLDRMODKLDR)pMod;
     int           rc;

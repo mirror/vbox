@@ -1001,6 +1001,11 @@ typedef enum RTLDRPROP
     /** Query whether code signature checks are enabled.  */
     RTLDRPROP_SIGNATURE_CHECKS_ENFORCED,
 
+    /** Number of import or needed modules. */
+    RTLDRPROP_IMPORT_COUNT,
+    /** Import module by index (32-bit) stored in the buffer. */
+    RTLDRPROP_IMPORT_MODULE,
+
     /** End of valid properties.  */
     RTLDRPROP_END,
     /** Blow the type up to 32 bits. */
@@ -1023,8 +1028,9 @@ typedef enum RTLDRPROP
  *
  * @param   hLdrMod         The module handle.
  * @param   enmLdrProp      The property to query.
- * @param   pvBuf           Pointer to the return buffer.
- * @param   cbBuf           The size of the return buffer.
+ * @param   pvBuf           Pointer to the input / output buffer.  In most cases
+ *                          it's only used for returning data.
+ * @param   cbBuf           The size of the buffer.
  */
 RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
 
@@ -1045,13 +1051,18 @@ RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, siz
  *
  * @param   hLdrMod         The module handle.
  * @param   enmLdrProp      The property to query.
- * @param   pvBuf           Pointer to the return buffer.
- * @param   cbBuf           The size of the return buffer.
+ * @param   pvBits          Optional pointer to bits returned by
+ *                          RTLdrGetBits().  This can be utilized by some module
+ *                          interpreters to reduce memory consumption and file
+ *                          access.
+ * @param   pvBuf           Pointer to the input / output buffer.  In most cases
+ *                          it's only used for returning data.
+ * @param   cbBuf           The size of the buffer.
  * @param   pcbRet          Where to return the amount of data returned.  On
  *                          buffer size errors, this is set to the correct size.
  *                          Optional.
  */
-RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbBuf);
+RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, void *pvBuf, size_t cbBuf, size_t *pcbBuf);
 
 
 /**

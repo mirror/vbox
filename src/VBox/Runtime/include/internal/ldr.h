@@ -358,14 +358,19 @@ typedef struct RTLDROPS
      *
      * @param   pMod            Pointer to the loader module structure.
      * @param   enmLdrProp      The property to query (valid).
-     * @param   pvBuf           Pointer to the return buffer (valid).
-     * @param   cbBuf           The size of the return buffer (valid as per
+     * @param   pvBits          Pointer to the bits returned by
+     *                          RTLDROPS::pfnGetBits(), optional.
+     * @param   pvBuf           Pointer to the input / output buffer. This is valid.
+     *                          Normally only used for returning data, but in some
+     *                          cases it also holds input.
+     * @param   cbBuf           The size of the buffer (valid as per
      *                          property).
      * @param   pcbRet          The number of bytes actually returned.  If
      *                          VERR_BUFFER_OVERFLOW is returned, this is set to the
      *                          required buffer size.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf, size_t *pcbRet);
+    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void const *pvBits,
+                                          void *pvBuf, size_t cbBuf, size_t *pcbRet);
 
     /**
      * Verify the image signature.
