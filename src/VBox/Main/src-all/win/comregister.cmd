@@ -6,7 +6,7 @@ REM (both inproc and out-of-process)
 REM
 
 REM
-REM Copyright (C) 2006-2013 Oracle Corporation
+REM Copyright (C) 2006-2014 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
@@ -154,34 +154,33 @@ REM
 
 :register_x86
 @echo on
-%_VBOX_DIR%VBoxSVC.exe /UnregServer
-regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
-%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
+"%_VBOX_DIR%VBoxSVC.exe" /UnregServer
+regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
+%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub.dll"
 @if %fUninstallOnly% == 1 goto end
-%_VBOX_DIR%VBoxSVC.exe /RegServer
-regsvr32 /s    %_VBOX_DIR%VBoxC.dll
+"%_VBOX_DIR%VBoxSVC.exe" /RegServer
+regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
 @if %fNoProxy% == 1 goto end
-if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
+if exist "%_VBOX_DIR%VBoxProxyStub.dll"     %windir%\system32\regsvr32 /s "%_VBOX_DIR%VBoxProxyStub.dll"
 @echo off
 goto end
 
 REM Unregister all first, then register them. The order matters here.
 :register_amd64
 @echo on
-%_VBOX_DIR%VBoxSVC.exe /UnregServer
-%windir%\syswow64\regsvr32 /s /u %_VBOX_DIR%x86\VBoxClient-x86.dll
-%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
-%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub.dll
-%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxProxyStub-x86.dll
+"%_VBOX_DIR%VBoxSVC.exe" /UnregServer
+%windir%\syswow64\regsvr32 /s /u "%_VBOX_DIR%x86\VBoxClient-x86.dll"
+%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxC.dll"
+%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub.dll"
+%windir%\system32\regsvr32 /s /u "%_VBOX_DIR%VBoxProxyStub-x86.dll"
 @if %fUninstallOnly% == 1 goto end
-%_VBOX_DIR%VBoxSVC.exe /RegServer
-%windir%\system32\regsvr32 /s    %_VBOX_DIR%VBoxC.dll
-%windir%\syswow64\regsvr32 /s    %_VBOX_DIR%x86\VBoxClient-x86.dll
+"%_VBOX_DIR%VBoxSVC.exe" /RegServer
+%windir%\system32\regsvr32 /s    "%_VBOX_DIR%VBoxC.dll"
+%windir%\syswow64\regsvr32 /s    "%_VBOX_DIR%x86\VBoxClient-x86.dll"
 @if %fNoProxy% == 1 goto end
-if exist %_VBOX_DIR%VBoxProxyStub.dll     %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub.dll
-if exist %_VBOX_DIR%VBoxProxyStub-x86.dll %windir%\system32\regsvr32 /s %_VBOX_DIR%VBoxProxyStub-x86.dll
+if exist "%_VBOX_DIR%VBoxProxyStub.dll"     %windir%\system32\regsvr32 /s "%_VBOX_DIR%VBoxProxyStub.dll"
+if exist "%_VBOX_DIR%VBoxProxyStub-x86.dll" %windir%\system32\regsvr32 /s "%_VBOX_DIR%VBoxProxyStub-x86.dll"
 @echo off
 
 :end
 @endlocal
-
