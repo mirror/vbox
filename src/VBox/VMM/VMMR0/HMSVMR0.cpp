@@ -3913,12 +3913,12 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
 static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
-    bool fPatchFound = false;
 
     /*
      * We do this in a loop as we increment the RIP after a successful emulation
      * and the new RIP may be a patched instruction which needs emulation as well.
      */
+    bool fPatchFound = false;
     for (;;)
     {
         bool    fPending;
