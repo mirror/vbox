@@ -367,12 +367,12 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             if (!isMaximizedChecked())
             {
                 m_normalGeometry.setSize(pResizeEvent->size());
-                emit sigGeometryChange(m_normalGeometry);
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 /* Update debugger window position: */
                 updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
             }
+            emit sigGeometryChange(geometry());
             break;
         }
         case QEvent::Move:
@@ -380,16 +380,16 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             if (!isMaximizedChecked())
             {
                 m_normalGeometry.moveTo(geometry().x(), geometry().y());
-                emit sigGeometryChange(m_normalGeometry);
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 /* Update debugger window position: */
                 updateDbgWindows();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
             }
+            emit sigGeometryChange(geometry());
             break;
         }
         case QEvent::WindowActivate:
-            emit sigGeometryChange(m_normalGeometry);
+            emit sigGeometryChange(geometry());
             break;
         default:
             break;
