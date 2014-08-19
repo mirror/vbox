@@ -8093,14 +8093,8 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
             }
 
 #ifdef VBOX_STRICT
-            /* Check that all cached tasks were freed at this point. */
-            for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
-            {
-                PAHCIPort pAhciPort = &pThis->ahciPort[iPort];
-
-                for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
-                    Assert(!pAhciPort->aCachedTasks[i]);
-            }
+            for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
+                Assert(!pAhciPort->aCachedTasks[i]);
 #endif
         }
 
