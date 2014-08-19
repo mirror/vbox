@@ -100,6 +100,8 @@
 #define CPUM_SYNC_DEBUG_REGS_HYPER      RT_BIT(18)
 /** Host CPU requires fxsave/fxrstor leaky bit handling. */
 #define CPUM_USE_FFXSR_LEAKY            RT_BIT(19)
+/** Set if the VM supports long-mode. */
+#define CPUM_USE_SUPPORTS_LONGMODE      RT_BIT(20)
 /** @} */
 
 /* Sanity check. */

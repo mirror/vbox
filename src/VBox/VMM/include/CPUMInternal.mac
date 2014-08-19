@@ -32,6 +32,7 @@
 %define CPUM_SYNC_DEBUG_REGS_GUEST      RT_BIT(17)
 %define CPUM_SYNC_DEBUG_REGS_HYPER      RT_BIT(18)
 %define CPUM_USE_FFXSR_LEAKY            RT_BIT(19)
+%define CPUM_USE_SUPPORTS_LONGMODE      RT_BIT(20)
 
 %define CPUM_HANDLER_DS                 1
 %define CPUM_HANDLER_ES                 2
@@ -482,3 +483,4 @@ endstruc
 %macro CPUM_FROM_CPUMCPU_WITH_OFFSET 2
     sub     %1, %2
 %endmacro
+
