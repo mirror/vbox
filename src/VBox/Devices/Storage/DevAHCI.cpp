@@ -8053,8 +8053,6 @@ static DECLCALLBACK(void) ahciR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
-
     Log(("achiR3PowerOff\n"));
     ahciR3SuspendOrPowerOff(pDevIns);
 }
