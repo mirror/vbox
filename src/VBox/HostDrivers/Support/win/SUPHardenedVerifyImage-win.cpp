@@ -178,7 +178,9 @@ PFNCRYPTCATDADMINRELEASECONTEXT         g_pfnCryptCATAdminReleaseContext;
 /** Pointer to CryptCATCatalogInfoFromContext. */
 PFNCRYPTCATCATALOGINFOFROMCONTEXT       g_pfnCryptCATCatalogInfoFromContext;
 
-/** Indicates active WinVerifyTrust thread. */
+/** Where we store the TLS entry for detecting WinVerifyTrustRecursion. */
+static uint32_t                         g_iTlsWinVerifyTrustRecursion = UINT32_MAX;
+/** Fallback WinVerifyTrust recursion protection. */
 static uint32_t volatile                g_idActiveThread = UINT32_MAX;
 
 #endif
@@ -1869,6 +1871,15 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
 # endif
 
     /*
+     * Allocate TLS entry for WinVerifyTrust recursion prevention.
+     */
+    DWORD iTls = TlsAlloc();
+    if (iTls != TLS_OUT_OF_INDEXES)
+        g_iTlsWinVerifyTrustRecursion = iTls;
+    else
+        supR3HardenedError(GetLastError(), false /*fFatal*/, "TlsAlloc failed");
+
+    /*
      * Resolve it.
      */
     HMODULE hWintrust = supR3HardenedWinLoadSystem32Dll("Wintrust.dll");
@@ -2342,16 +2353,26 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
 
     /*
      * Call the windows verify trust API if we've resolved it and aren't in
-     * some obvious recursion.  Assume we won't be having too much
-     * concurrency, so a single global variable should suffice, right...
+     * some obvious recursion.
      */
     if (g_pfnWinVerifyTrust != NULL)
     {
-        uint32_t const idCurrentThread = GetCurrentThreadId();
-        if (g_idActiveThread != idCurrentThread)
+        /* Check for recursion. */
+        bool fNoRecursion;
+        if (g_iTlsWinVerifyTrustRecursion != UINT32_MAX)
         {
-            ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
-
+            fNoRecursion = TlsGetValue(g_iTlsWinVerifyTrustRecursion) == 0;
+            if (fNoRecursion)
+                TlsSetValue(g_iTlsWinVerifyTrustRecursion, (void *)1);
+        }
+        else
+        {
+            uint32_t const idCurrentThread = GetCurrentThreadId();
+            fNoRecursion = ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
+        }
+        if (fNoRecursion)
+        {
+            /* We can call WinVerifyTrust. */
             if (pfWinVerifyTrust)
                 *pfWinVerifyTrust = true;
 
@@ -2384,7 +2405,11 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
                 }
             }
 
-            ASMAtomicCmpXchgU32(&g_idActiveThread, UINT32_MAX, idCurrentThread);
+            /* Unwind recursion. */
+            if (g_iTlsWinVerifyTrustRecursion != UINT32_MAX)
+                TlsSetValue(g_iTlsWinVerifyTrustRecursion, (void *)0);
+            else
+                ASMAtomicWriteU32(&g_idActiveThread, UINT32_MAX);
         }
         else
             SUP_DPRINTF(("Detected WinVerifyTrust recursion: rc=%Rrc '%ls'.\n", rc, pwszName));
@@ -2404,7 +2429,9 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
 DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
 {
     return g_pfnWinVerifyTrust != NULL
-        && g_idActiveThread != GetCurrentThreadId();
+        && (   g_iTlsWinVerifyTrustRecursion != UINT32_MAX
+            ?  (uintptr_t)TlsGetValue(g_iTlsWinVerifyTrustRecursion) == 0
+            : g_idActiveThread != GetCurrentThreadId() );
 }
 
 
