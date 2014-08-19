@@ -5659,6 +5659,25 @@ static void ahciIoBufFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq,
 
 
 /**
+ * Free all cached tasks on the given port.
+ *
+ * @returns nothing.
+ * @param   pAhciPort    The AHCI port.
+ */
+static void ahciR3PortCachedReqsFree(PAHCIPort pAhciPort)
+{
+    for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
+    {
+        if (pAhciPort->aCachedTasks[i])
+        {
+            ahciReqMemFree(pAhciPort, pAhciPort->aCachedTasks[i], true /* fForceFree */);
+            RTMemFree(pAhciPort->aCachedTasks[i]);
+            pAhciPort->aCachedTasks[i] = NULL;
+        }
+    }
+}
+
+/**
  * Cancels all active tasks on the port.
  *
  * @returns Whether all active tasks were canceled.
@@ -7587,6 +7606,12 @@ static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
 
     PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    /*
+     * Free all cached tasks here, not possible on destruct because the driver
+     * is destroyed before us.
+     */
+    for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
+        ahciR3PortCachedReqsFree(&pThis->ahciPort[iPort]);
     return true;
 }
 
@@ -7601,7 +7626,16 @@ static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
         PDMDevHlpSetAsyncNotification(pDevIns, ahciR3IsAsyncSuspendOrPowerOffDone);
     else
+    {
+        /*
+         * Free all cached tasks here, not possible on destruct because the driver
+         * is destroyed before us.
+         */
+        for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
+            ahciR3PortCachedReqsFree(&pThis->ahciPort[iPort]);
+
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    }
 }
 
 /**
@@ -7810,6 +7844,9 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     if (pAhciPort->fATAPI)
         ahciMediumRemoved(pAhciPort);
 
+    /* Free all cached I/O tasks. */
+    ahciR3PortCachedReqsFree(pAhciPort);
+
     if (!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG))
     {
         /*
@@ -8016,6 +8053,8 @@ static DECLCALLBACK(void) ahciR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
 {
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+
     Log(("achiR3PowerOff\n"));
     ahciR3SuspendOrPowerOff(pDevIns);
 }
@@ -8055,14 +8094,16 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
                 pAhciPort->hEvtProcess = NIL_SUPSEMEVENT;
             }
 
-            /* Free all cached tasks. */
-            for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
-                if (pAhciPort->aCachedTasks[i])
-                {
-                    ahciReqMemFree(pAhciPort, pAhciPort->aCachedTasks[i], true /* fForceFree */);
-                    RTMemFree(pAhciPort->aCachedTasks[i]);
-                    pAhciPort->aCachedTasks[i] = NULL;
-                }
+#ifdef VBOX_STRICT
+            /* Check that all cached tasks were freed at this point. */
+            for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
+            {
+                PAHCIPort pAhciPort = &pThis->ahciPort[iPort];
+
+                for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
+                    Assert(!pAhciPort->aCachedTasks[i]);
+            }
+#endif
         }
 
         PDMR3CritSectDelete(&pThis->lock);
