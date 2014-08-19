@@ -904,7 +904,7 @@ typedef struct RTNETARPIPV4
     RTNETADDRIPV4   ar_spa;
     /** The target hardware address. */
     RTMAC           ar_tha;
-    /** The arget protocol address. */
+    /** The target protocol address. */
     RTNETADDRIPV4   ar_tpa;
 } RTNETARPIPV4;
 #pragma pack()
