@@ -187,27 +187,34 @@ static PRTMEMHDR rtR0MemAllocExecVmArea(size_t cb)
     if (iPage == cPages)
     {
         /*
-         * Map the pages.  The API requires an iterator argument, which can be
-         * used, in case of failure, to figure out how much was actually
-         * mapped.  Not sure how useful this really is, but whatever.
+         * Map the pages.
          *
          * Not entirely sure we really need to set nr_pages and pages here, but
          * they provide a very convenient place for storing something we need
          * in the free function, if nothing else...
          */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
         struct page **papPagesIterator = papPages;
+# endif
         pVmArea->nr_pages = cPages;
         pVmArea->pages    = papPages;
-        if (!map_vm_area(pVmArea, PAGE_KERNEL_EXEC, &papPagesIterator))
+        if (!map_vm_area(pVmArea, PAGE_KERNEL_EXEC,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+                         &papPagesIterator
+# else
+                         papPages
+# endif
+                         ))
         {
             PRTMEMLNXHDREX pHdrEx = (PRTMEMLNXHDREX)pVmArea->addr;
             pHdrEx->pVmArea     = pVmArea;
             pHdrEx->pvDummy     = NULL;
             return &pHdrEx->Hdr;
         }
-
         /* bail out */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
         pVmArea->nr_pages = papPagesIterator - papPages;
+# endif
     }
 
     vunmap(pVmArea->addr);

@@ -183,6 +183,9 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     /* No need for private data. */
     pNetDev = alloc_netdev(sizeof(VBOXNETADPPRIV),
                            pThis->szName[0] ? pThis->szName : VBOXNETADP_LINUX_NAME,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0)
+                           NET_NAME_UNKNOWN,
+#endif
                            vboxNetAdpNetDevInit);
     if (pNetDev)
     {
