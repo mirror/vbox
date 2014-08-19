@@ -19,6 +19,11 @@ REM
 
 setlocal
 
+REM Check if the current user is an administrator. Otherwise
+REM all the COM registration will fail silently.
+NET FILE 1>NUL 2>NUL & IF ERRORLEVEL 1 ^
+    (ECHO Must be run as Administrator. Exiting.) & GOTO end
+
 REM
 REM Figure out where the script lives first, so that we can invoke the
 REM correct VBoxSVC and register the right VBoxC.dll.
