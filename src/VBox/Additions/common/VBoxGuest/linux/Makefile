@@ -126,7 +126,7 @@ ifeq ($(KERN_VERSION),24)
  ## @todo move to MOD_DEFS when we have finished refactoring
  MOD_CFLAGS = -DEXPORT_SYMTAB
 else
- MOD_CFLAGS = -include $(MANGLING)
+ MOD_CFLAGS = -Wno-declaration-after-statement -include $(MANGLING)
 endif
 
 MOD_CLEAN = . linux r0drv generic r0drv/linux r0drv/generic VBox \

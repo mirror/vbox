@@ -27,7 +27,7 @@ ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxvideo),)
 else
  MANGLING := $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h
 endif
-MOD_CFLAGS = -fshort-wchar -include $(MANGLING)
+MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(MANGLING)
 MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
 # What on earth is this?
 MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include /r0drv/linux)
