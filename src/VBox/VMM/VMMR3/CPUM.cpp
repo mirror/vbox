@@ -3129,13 +3129,20 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         return VERR_INTERNAL_ERROR_2;
     }
 
+    bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+
         /* Notify PGM of the NXE states in case they've changed. */
-        PGMNotifyNxeChanged(&pVM->aCpus[iCpu], !!(pVM->aCpus[iCpu].cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
+        PGMNotifyNxeChanged(pVCpu, RT_BOOL(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
 
         /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
-        PDMApicGetBase(&pVM->aCpus[iCpu], &pVM->aCpus[iCpu].cpum.s.Guest.msrApicBase);
+        PDMApicGetBase(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase);
+
+        /* During init. this is done in CPUMR3InitCompleted(). */
+        if (fSupportsLongMode)
+            pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
     }
     return VINF_SUCCESS;
 }
@@ -4685,14 +4692,26 @@ VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
  */
 VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
 {
+    /*
+     * Figure out if the guest uses 32-bit or 64-bit FPU state at runtime for 64-bit capable VMs.
+     * Only applicable/used on 64-bit hosts, refer CPUMR0A.asm. See @bugref{7138}.
+     */
+    bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
         /* Cache the APIC base (from the APIC device) once it has been initialized. */
-        PDMApicGetBase(&pVM->aCpus[i], &pVM->aCpus[i].cpum.s.Guest.msrApicBase);
-        Log(("CPUMR3InitCompleted pVM=%p APIC base[%u]=%RX64\n", pVM, (unsigned)i, pVM->aCpus[i].cpum.s.Guest.msrApicBase));
+        PDMApicGetBase(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase);
+        Log(("CPUMR3InitCompleted pVM=%p APIC base[%u]=%RX64\n", pVM, (unsigned)i, pVCpu->cpum.s.Guest.msrApicBase));
+
+        /* While loading a saved-state we fix it up in, cpumR3LoadDone(). */
+        if (fSupportsLongMode)
+            pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;
     }
     return VINF_SUCCESS;
 }
+
 
 /**
  * Called when the ring-0 init phases comleted.

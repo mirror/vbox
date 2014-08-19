@@ -4284,6 +4284,21 @@ VMMR3_INT_DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
 
 
 /**
+ * Checks if the VM is long-mode (64-bit) capable or not.
+ * @returns true if VM can operate in long-mode, false
+ *        otherwise.
+ *
+ * @param   pVM             Pointer to the VM.
+ */
+VMMR3_INT_DECL(bool) VMR3IsLongModeAllowed(PVM pVM)
+{
+    if (HMIsEnabled(pVM))
+        return HMIsLongModeAllowed(pVM);
+    return false;
+}
+
+
+/**
  * Returns the native handle of the current EMT VMCPU thread.
  *
  * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise

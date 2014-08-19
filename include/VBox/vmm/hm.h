@@ -151,11 +151,13 @@ VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
+VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
 VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                  do { } while (0)
 # define HMIsNestedPagingActive(pVM)        false
+# define HMIsLongModeAllowed(pVM)           false
 # define HMAreMsrBitmapsAvailable(pVM)      false
 # define HMFlushTLBOnAllVCpus(pVM)          do { } while (0)
 #endif
@@ -189,8 +191,8 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR 
  */
 VMMR3DECL(bool)                 HMR3IsEnabled(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsNestedPagingActive(PUVM pUVM);
-VMMR3DECL(bool)                 HMR3IsVpidActive(PUVM pVUM);
-VMMR3DECL(bool)                 HMR3IsUXActive(PUVM pVUM);
+VMMR3DECL(bool)                 HMR3IsVpidActive(PUVM pUVM);
+VMMR3DECL(bool)                 HMR3IsUXActive(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsSvmEnabled(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsVmxEnabled(PUVM pUVM);
 

@@ -36,6 +36,13 @@
 ;; The offset of the XMM registers in X86FXSTATE.
 ; Use define because I'm too lazy to convert the struct.
 %define XMM_OFF_IN_X86FXSTATE   160
+%define RSVD_OFF_IN_X86FXSTATE  2ch     ; Reserved upper 32-bit part of ST(0)/MM0.
+%define IP_OFF_IN_X86FXSTATE    08h
+%define CS_OFF_IN_X86FXSTATE    0ch
+%define DS_OFF_IN_X86FXSTATE    14h
+
+; Must fit into the dword (32-bits) at RSVD_OFF_IN_X86FXSTATE.
+%define FPUSTATE_32BIT_MAGIC    032b3232bh
 
 
 ;*******************************************************************************
@@ -91,6 +98,51 @@ BEGINCODE
 .nothing_to_clean:
 %endmacro
 
+
+;; Macro for FXSAVE for the guest FPU but tries to figure out whether to
+;  save the 32-bit FPU state or 64-bit FPU state.
+;
+; @remarks Requires CPUMCPU pointer in RDX
+%macro SAVE_32_OR_64_FPU 0
+    o64 fxsave  [rdx + CPUMCPU.Guest.fpu]
+
+    ; Shouldn't be necessary to check if the entire 64-bit FIP is 0 (i.e. guest hasn't used its FPU yet) because it should
+    ; be taken care of by the calling code, i.e. hmR0[Vmx|Svm]LoadSharedCR0() and hmR0[Vmx|Svm]ExitXcptNm() which ensure
+    ; we swap the guest FPU state when it starts using it (#NM). In any case it's only a performance optimization.
+    ; cmp         qword [rdx + CPUMCPU.Guest.fpu + IP_OFF_IN_X86FXSTATE], 0
+    ; je          short %%save_done
+
+    cmp         dword [rdx + CPUMCPU.Guest.fpu + CS_OFF_IN_X86FXSTATE], 0
+    jne         short %%save_done
+    sub         rsp, 20h                         ; Only need 1ch bytes but keep stack aligned otherwise we #GP(0)
+    fnstenv     [rsp]
+    movzx       eax, word [rsp + 10h]
+    mov         [rdx + CPUMCPU.Guest.fpu + CS_OFF_IN_X86FXSTATE], eax
+    movzx       eax, word [rsp + 18h]
+    mov         [rdx + CPUMCPU.Guest.fpu + DS_OFF_IN_X86FXSTATE], eax
+    add         rsp, 20h
+    mov         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
+%%save_done:
+%endmacro
+
+;; Macro for FXRSTOR for the guest FPU but loads the one based on what
+;  was saved before using SAVE_32_OR_64_FPU().
+;
+; @remarks Requires CPUMCPU pointer in RDX
+%macro RESTORE_32_OR_64_FPU 0
+    cmp         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
+    jne         short %%restore_64bit_fpu
+    ; We probably don't need to wipe out the reserved field - safer this way due to our limited testing
+    mov         word [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], 0
+    fxrstor     [rdx + CPUMCPU.Guest.fpu]
+    mov         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
+    jmp         short %%restore_fpu_done
+%%restore_64bit_fpu:
+    o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
+%%restore_fpu_done:
+%endmacro
+
+
 ;; Macro to save and modify CR0 (if necessary) before touching the FPU state
 ;  so as to not cause any FPU exceptions.
 ;
@@ -116,6 +168,7 @@ BEGINCODE
     mov     cr0, xCX
 %%skip_cr0_restore:
 %endmacro
+
 
 ;;
 ; Saves the host FPU/XMM state and restores the guest state.
@@ -154,11 +207,19 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 
 %ifdef RT_ARCH_AMD64
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
-    o64 fxrstor [xDX + CPUMCPU.Guest.fpu]
+    o64 fxsave  [rdx + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+
+    ; Restore the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
+    test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
+    jnz     short .fpu_load_32_or_64
+    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    jmp     short .fpu_load_done
+.fpu_load_32_or_64:
+    RESTORE_32_OR_64_FPU
+.fpu_load_done:
 %else
-    fxsave  [xDX + CPUMCPU.Host.fpu]        ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
-    fxrstor [xDX + CPUMCPU.Guest.fpu]
+    fxsave  [edx + CPUMCPU.Host.fpu]        ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    fxrstor [edx + CPUMCPU.Guest.fpu]
 %endif
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -189,7 +250,16 @@ BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
     o64 fxsave  [rdx + CPUMCPU.Host.fpu]
-    o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
+
+    ; Restore the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
+    test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
+    jnz     short .fpu_load_32_or_64_darwin
+    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    jmp     short .fpu_load_done_darwin
+.fpu_load_32_or_64_darwin:
+    RESTORE_32_OR_64_FPU
+.fpu_load_done_darwin:
+
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)
@@ -255,7 +325,7 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
     ; Only restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
-    jz short .fpu_not_used
+    jz      .fpu_not_used
 
     pushf                               ; The darwin kernel can get upset or upset things if an
     cli                                 ; interrupt occurs while we're doing fxsave/fxrstor/cr0.
@@ -273,12 +343,20 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
 %ifdef RT_ARCH_AMD64
+    ; Save the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
+    test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
+    jnz     short .fpu_save_32_or_64
+    fxsave  [rdx + CPUMCPU.Guest.fpu]
+    jmp     short .fpu_save_done
+.fpu_save_32_or_64:
+    SAVE_32_OR_64_FPU
+.fpu_save_done:
+
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
-    o64 fxrstor [xDX + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
 %else
-    fxsave  [xDX + CPUMCPU.Guest.fpu]       ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
-    fxrstor [xDX + CPUMCPU.Host.fpu]
+    fxsave  [edx + CPUMCPU.Guest.fpu]       ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
+    fxrstor [edx + CPUMCPU.Host.fpu]
 %endif
 
 .done:
@@ -295,7 +373,16 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    o64 fxsave  [rdx + CPUMCPU.Guest.fpu]
+
+    ; Save the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
+    test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
+    jnz     short .fpu_save_32_or_64_darwin
+    fxsave  [rdx + CPUMCPU.Guest.fpu]
+    jmp     short .fpu_save_done_darwin
+.fpu_save_32_or_64_darwin:
+    SAVE_32_OR_64_FPU
+.fpu_save_done_darwin:
+
     o64 fxrstor [rdx + CPUMCPU.Host.fpu]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
