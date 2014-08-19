@@ -497,7 +497,7 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
             && (   (   pbFunction[10] == 0xc2 /* ret 1ch */
                     && pbFunction[11] == pSyscall->cbParams
                     && pbFunction[12] == 0x00)
-                || (   pbFunction[12] == 0xc3 /* ret */
+                || (   pbFunction[10] == 0xc3 /* ret */
                     && pSyscall->cbParams == 0)
                )
            )
@@ -511,8 +511,11 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
     /*
      * Failed to parse it.
      */
+    volatile uint8_t abCopy[16];
+    memcpy((void *)&abCopy[0], pbFunction, sizeof(abCopy));
     SUPHNTIMP_ERROR(17, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                    "%ls: supHardNtLdrCacheOpen failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                    "%ls: supHardNtLdrCacheOpen failed: '%s': %.16Rhxs",
+                    g_aSupNtImpDlls[iDll].pwszName, pImport->pszName, &abCopy[0]);
 }
 
 
