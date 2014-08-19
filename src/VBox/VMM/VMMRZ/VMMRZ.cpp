@@ -133,8 +133,8 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
 #endif
 
     Assert(pVCpu->vmm.s.cCallRing3Disabled < 16);
-    if (ASMAtomicIncU32(&pVCpu->vmm.s.cCallRing3Disabled) == 1) /** @todo replace with unordered variant (ASMAtomicUoIncU32). */
-    {                                                           /** @todo See @bugref{6208} comment #36 for impl. diff. */
+    if (ASMAtomicUoIncU32(&pVCpu->vmm.s.cCallRing3Disabled) == 1)
+    {
         /** @todo it might make more sense to just disable logging here, then we
          * won't flush away important bits... but that goes both ways really. */
 #ifdef IN_RC
@@ -154,7 +154,7 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
 
 
 /**
- * Counters VMMRZCallRing3Disable and re-enables host calls.
+ * Counters VMMRZCallRing3Disable() and re-enables host calls.
  *
  * @param   pVCpu               The CPU struct for the calling EMT.
  * @thread  EMT.
@@ -167,7 +167,7 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPU pVCpu)
 #endif
 
     Assert(pVCpu->vmm.s.cCallRing3Disabled > 0);
-    if (ASMAtomicDecU32(&pVCpu->vmm.s.cCallRing3Disabled) == 0) /** @todo replace with unordered variant (ASMAtomicUoDecU32). */
+    if (ASMAtomicUoDecU32(&pVCpu->vmm.s.cCallRing3Disabled) == 0)
     {
 #ifdef IN_RC
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = false;

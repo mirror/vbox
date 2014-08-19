@@ -2350,7 +2350,6 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, val);
     AssertRCReturn(rc, rc);
 
-    /* Update VCPU with the currently set pin-based VM-execution controls. */
     pVCpu->hm.s.vmx.u32PinCtls = val;
     return rc;
 }
@@ -2474,7 +2473,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, val);
     AssertRCReturn(rc, rc);
 
-    /* Update VCPU with the currently set processor-based VM-execution controls. */
     pVCpu->hm.s.vmx.u32ProcCtls = val;
 
     /*
@@ -2533,7 +2531,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, val);
         AssertRCReturn(rc, rc);
 
-        /* Update VCPU with the currently set secondary processor-based VM-execution controls. */
         pVCpu->hm.s.vmx.u32ProcCtls2 = val;
     }
     else if (RT_UNLIKELY(pVM->hm.s.vmx.fUnrestrictedGuest))
@@ -2718,9 +2715,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     /*
      * Without UnrestrictedGuest, pRealModeTSS and pNonPagingModeEPTPageTable *must* always be allocated.
-     * We no longer support the highly unlikely case of UnrestrictedGuest without pRealModeTSS. See hmR3InitFinalizeR0().
+     * We no longer support the highly unlikely case of UnrestrictedGuest without pRealModeTSS. See hmR3InitFinalizeR0Intel().
      */
-    /* -XXX- change hmR3InitFinalizeR0Intel() to fail if pRealModeTSS alloc fails. */
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
         &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
              || !pVM->hm.s.vmx.pRealModeTSS))
@@ -3335,7 +3331,6 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY, val);
         AssertRCReturn(rc, rc);
 
-        /* Update VCPU with the currently set VM-exit controls. */
         pVCpu->hm.s.vmx.u32EntryCtls = val;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_ENTRY_CTLS);
     }
@@ -3422,7 +3417,6 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT, val);
         AssertRCReturn(rc, rc);
 
-        /* Update VCPU with the currently set VM-exit controls. */
         pVCpu->hm.s.vmx.u32ExitCtls = val;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_EXIT_CTLS);
     }
@@ -7984,14 +7978,12 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
     int rc;
     Log4Func(("vcpu[%d]\n", pVCpu->idCpu));
 
-    /* Clear interrupt-window exiting control. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
     {
         hmR0VmxClearIntWindowExitVmcs(pVCpu);
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
-    /* Clear NMI-window exiting control. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)
     {
         hmR0VmxClearNmiWindowExitVmcs(pVCpu);
@@ -8008,11 +8000,9 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
     Assert(VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo));
 #endif
 
-    /* Clear the entry-interruption field (including the valid bit). */
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
     AssertRC(rc);
 
-    /* Clear the pending debug exception field. */
     rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
     AssertRC(rc);
 
@@ -8232,16 +8222,8 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertPtr(pMixedCtx);
     HMVMX_ASSERT_PREEMPT_SAFE();
 
-#ifdef LOG_ENABLED
-    /** @todo r=ramshankar: I'm not able to use VMMRZCallRing3Disable() here,
-     *        probably not initialized yet? Anyway this will do for now.
-     *
-     *  Update: Should be possible once VMXR0LoadGuestState() is removed as an
-     *  interface and disable ring-3 calls when thread-context hooks are not
-     *  available. */
-    bool fCallerDisabledLogFlush = VMMR0IsLogFlushDisabled(pVCpu);
-    VMMR0LogFlushDisable(pVCpu);
-#endif
+    VMMRZCallRing3Disable(pVCpu);
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
@@ -8299,11 +8281,7 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Clear any unused and reserved bits. */
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
 
-#ifdef LOG_ENABLED
-    /* Only reenable log-flushing if the caller has it enabled. */
-    if (!fCallerDisabledLogFlush)
-        VMMR0LogFlushEnable(pVCpu);
-#endif
+    VMMRZCallRing3Enable(pVCpu);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
