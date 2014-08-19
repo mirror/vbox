@@ -578,6 +578,7 @@ private:
     EventSource                  *mOwner;
 
     RTSEMEVENT                    mQEvent;
+    int32_t volatile              mWaitCnt;
     RTCRITSECT                    mcsQLock;
     PassiveQueue                  mQueue;
     int32_t volatile              mRefCnt;
@@ -724,7 +725,7 @@ ListenerRecord::ListenerRecord(IEventListener *aListener,
                                com::SafeArray<VBoxEventType_T> &aInterested,
                                BOOL aActive,
                                EventSource *aOwner) :
-    mActive(aActive), mOwner(aOwner), mRefCnt(0)
+    mActive(aActive), mOwner(aOwner), mWaitCnt(0), mRefCnt(0)
 {
     mListener = aListener;
     EventMap *aEvMap = &aOwner->m->mEvMap;
@@ -881,7 +882,12 @@ HRESULT ListenerRecord::dequeue(IEvent **aEvent,
         }
         // release lock while waiting, listener will not go away due to above holder
         aAlock.release();
+
+        // In order to safely shutdown, count all waiting threads here.
+        ASMAtomicIncS32(&mWaitCnt);
         ::RTSemEventWait(mQEvent, aTimeout);
+        ASMAtomicDecS32(&mWaitCnt);
+
         // reacquire lock
         aAlock.acquire();
         ::RTCritSectEnter(&mcsQLock);
@@ -917,6 +923,23 @@ void ListenerRecord::shutdown()
     {
         RTSEMEVENT tmp = mQEvent;
         mQEvent = NIL_RTSEMEVENT;
+
+        /* On Darwin it is known that RTSemEventDestroy() returns 0 while
+         * corresponding thread remains to be blocked after that. In order to prevent
+         * undesireble freeze on shutdown, this workaround is used. */
+        Log(("Wait for %d waiters to release.\n", ASMAtomicReadS32(&mWaitCnt)));
+        while (ASMAtomicReadS32(&mWaitCnt) > 0)
+        {
+            ::RTSemEventSignal(tmp);
+
+            /* Are we already done? */
+            if (ASMAtomicReadS32(&mWaitCnt) == 0)
+                break;
+
+            RTThreadSleep(10);
+        }
+        Log(("All waiters just released the lock.\n"));
+
         ::RTSemEventDestroy(tmp);
     }
 }

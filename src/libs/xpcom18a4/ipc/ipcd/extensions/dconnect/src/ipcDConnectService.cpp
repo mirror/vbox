@@ -3228,14 +3228,20 @@ ipcDConnectService::Shutdown()
       }
     }
 
+    /* Double-ckeck if we already allowed to quit. */
+    if ((tsStart + VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS ) < RTTimeMilliTS() || mWorkers.Count() == 0)
+        break;
+
     // Relax a bit before the next round.
     RTThreadSleep(10);
   }
 
   LOG(("There are %d thread(s) left.\n", mWorkers.Count()));
 
-  // If there are some running threads left, just forget about them.
-  mWorkers.Clear();
+  // If there are some running threads left, terminate the process.
+  if (mWorkers.Count() > 0)
+    exit(1);
+
 
   nsAutoMonitor::DestroyMonitor(mWaitingWorkersMon);
   nsAutoMonitor::DestroyMonitor(mPendingMon);
