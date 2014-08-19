@@ -107,6 +107,8 @@ typedef struct RTLDRMODPE
     uint32_t                cbHeaders;
     /** The image timestamp. */
     uint32_t                uTimestamp;
+    /** The number of imports.  UINT32_MAX if not determined. */
+    uint32_t                cImports;
     /** Set if the image is 64-bit, clear if 32-bit. */
     bool                    f64Bit;
     /** The import data directory entry. */
@@ -618,9 +620,11 @@ static DECLCALLBACK(int) rtldrPEResolveImports32(PRTLDRMODPE pModPe, const void 
          !rc && pImps->Name != 0 && pImps->FirstThunk != 0;
          pImps++)
     {
+        AssertReturn(pImps->Name < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
         const char *pszModName = PE_RVA2TYPE(pvBitsR, pImps->Name, const char *);
-        PIMAGE_THUNK_DATA32 pFirstThunk;    /* update this. */
-        PIMAGE_THUNK_DATA32 pThunk;         /* read from this. */
+        AssertReturn(pImps->FirstThunk < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
+        AssertReturn(pImps->u.OriginalFirstThunk < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
+
         Log3(("RTLdrPE: Import descriptor: %s\n", pszModName));
         Log4(("RTLdrPE:   OriginalFirstThunk = %#RX32\n"
               "RTLdrPE:   TimeDateStamp      = %#RX32\n"
@@ -633,10 +637,10 @@ static DECLCALLBACK(int) rtldrPEResolveImports32(PRTLDRMODPE pModPe, const void 
         /*
          * Walk the thunks table(s).
          */
-        pFirstThunk = PE_RVA2TYPE(pvBitsW, pImps->FirstThunk, PIMAGE_THUNK_DATA32);
-        pThunk = pImps->u.OriginalFirstThunk == 0
-            ? PE_RVA2TYPE(pvBitsR, pImps->FirstThunk, PIMAGE_THUNK_DATA32)
-            : PE_RVA2TYPE(pvBitsR, pImps->u.OriginalFirstThunk, PIMAGE_THUNK_DATA32);
+        PIMAGE_THUNK_DATA32 pFirstThunk = PE_RVA2TYPE(pvBitsW, pImps->FirstThunk, PIMAGE_THUNK_DATA32); /* update this. */
+        PIMAGE_THUNK_DATA32 pThunk      = pImps->u.OriginalFirstThunk == 0                              /* read from this. */
+                                        ? PE_RVA2TYPE(pvBitsR, pImps->FirstThunk, PIMAGE_THUNK_DATA32)
+                                        : PE_RVA2TYPE(pvBitsR, pImps->u.OriginalFirstThunk, PIMAGE_THUNK_DATA32);
         while (!rc && pThunk->u1.Ordinal != 0)
         {
             RTUINTPTR Value = 0;
@@ -693,9 +697,11 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
          !rc && pImps->Name != 0 && pImps->FirstThunk != 0;
          pImps++)
     {
-        const char *        pszModName = PE_RVA2TYPE(pvBitsR, pImps->Name, const char *);
-        PIMAGE_THUNK_DATA64 pFirstThunk;    /* update this. */
-        PIMAGE_THUNK_DATA64 pThunk;         /* read from this. */
+        AssertReturn(pImps->Name < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
+        const char *pszModName = PE_RVA2TYPE(pvBitsR, pImps->Name, const char *);
+        AssertReturn(pImps->FirstThunk < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
+        AssertReturn(pImps->u.OriginalFirstThunk < pModPe->cbImage, VERR_BAD_EXE_FORMAT);
+
         Log3(("RTLdrPE: Import descriptor: %s\n", pszModName));
         Log4(("RTLdrPE:   OriginalFirstThunk = %#RX32\n"
               "RTLdrPE:   TimeDateStamp      = %#RX32\n"
@@ -708,10 +714,10 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
         /*
          * Walk the thunks table(s).
          */
-        pFirstThunk = PE_RVA2TYPE(pvBitsW, pImps->FirstThunk, PIMAGE_THUNK_DATA64);
-        pThunk = pImps->u.OriginalFirstThunk == 0
-            ? PE_RVA2TYPE(pvBitsR, pImps->FirstThunk, PIMAGE_THUNK_DATA64)
-            : PE_RVA2TYPE(pvBitsR, pImps->u.OriginalFirstThunk, PIMAGE_THUNK_DATA64);
+        PIMAGE_THUNK_DATA64 pFirstThunk = PE_RVA2TYPE(pvBitsW, pImps->FirstThunk, PIMAGE_THUNK_DATA64); /* update this. */
+        PIMAGE_THUNK_DATA64 pThunk      = pImps->u.OriginalFirstThunk == 0                              /* read from this. */
+                                        ? PE_RVA2TYPE(pvBitsR, pImps->FirstThunk, PIMAGE_THUNK_DATA64)
+                                        : PE_RVA2TYPE(pvBitsR, pImps->u.OriginalFirstThunk, PIMAGE_THUNK_DATA64);
         while (!rc && pThunk->u1.Ordinal != 0)
         {
             RTUINTPTR Value = 0;
@@ -1728,6 +1734,39 @@ static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADD
     return rc;
 }
 
+
+/**
+ * Worker for rtLdrPE_QueryProp and rtLdrPE_QueryImportModule that counts the
+ * number of imports, storing the result in RTLDRMODPE::cImports.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The PE module instance.
+ * @param   pvBits          Image bits if the caller had them available, NULL if
+ *                          not. Saves a couple of file accesses.
+ */
+static int rtLdrPE_CountImports(PRTLDRMODPE pThis, void const *pvBits)
+{
+    PCIMAGE_IMPORT_DESCRIPTOR paImpDescs;
+    int rc = rtldrPEReadPartByRva(pThis, pvBits, pThis->ImportDir.VirtualAddress, pThis->ImportDir.Size,
+                                  (void const **)&paImpDescs);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const cMax = pThis->ImportDir.Size / sizeof(IMAGE_IMPORT_DESCRIPTOR);
+        uint32_t       i = 0;
+        while (   i < cMax
+               && paImpDescs[i].Name > pThis->offNtHdrs
+               && paImpDescs[i].Name < pThis->cbImage
+               && paImpDescs[i].FirstThunk > pThis->offNtHdrs
+               && paImpDescs[i].FirstThunk < pThis->cbImage)
+            i++;
+        pThis->cImports = i;
+
+        rtldrPEFreePart(pThis, pvBits, paImpDescs);
+    }
+    return rc;
+}
+
+
 /**
  * Worker for rtLdrPE_QueryProp that retrievs the name of an import DLL.
  *
@@ -1746,10 +1785,20 @@ static int rtLdrPE_QueryImportModule(PRTLDRMODPE pThis, void const *pvBits, uint
                                      void *pvBuf, size_t cbBuf, size_t *pcbRet)
 {
     /*
-     * Check the index first, converting it to an RVA.
+     * Make sure we got the import count.
      */
     int rc;
-    if (iImport < pThis->ImportDir.Size / sizeof(IMAGE_IMPORT_DESCRIPTOR))
+    if (pThis->cImports == UINT32_MAX)
+    {
+        rc = rtLdrPE_CountImports(pThis, pvBits);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Check the index first, converting it to an RVA.
+     */
+    if (iImport < pThis->cImports)
     {
         uint32_t offEntry = iImport * sizeof(IMAGE_IMPORT_DESCRIPTOR) + pThis->ImportDir.VirtualAddress;
 
@@ -1865,12 +1914,15 @@ static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enm
         case RTLDRPROP_IMPORT_COUNT:
             Assert(cbBuf == sizeof(uint32_t));
             Assert(*pcbRet == cbBuf);
-            *(uint32_t *)pvBuf = pModPe->ImportDir.Size / sizeof(IMAGE_IMPORT_DESCRIPTOR);
-            if (*(uint32_t *)pvBuf > 0)
-                *(uint32_t *)pvBuf -= 1; /* The last entry is a NULL entry. */
-            /** @todo Is there some linkers out there that doesn't generiate a
-             *        terminator entry? */
+            if (pModPe->cImports == UINT32_MAX)
+            {
+                int rc = rtLdrPE_CountImports(pModPe, pvBits);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+            *(uint32_t *)pvBuf = pModPe->cImports;
             break;
+
 
         case RTLDRPROP_IMPORT_MODULE:
             Assert(cbBuf >= sizeof(uint32_t));
@@ -3628,6 +3680,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                 pModPe->cbImage       = OptHdr.SizeOfImage;
                 pModPe->cbHeaders     = OptHdr.SizeOfHeaders;
                 pModPe->uTimestamp    = FileHdr.TimeDateStamp;
+                pModPe->cImports      = UINT32_MAX;
                 pModPe->f64Bit        = FileHdr.SizeOfOptionalHeader == sizeof(OptHdr);
                 pModPe->ImportDir     = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
                 pModPe->RelocDir      = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
