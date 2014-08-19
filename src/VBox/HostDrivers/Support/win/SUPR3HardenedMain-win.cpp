@@ -1055,6 +1055,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
 
     /*
      * Check the cache.
+     * If we haven't done the WinVerifyTrust thing, do it if we can.
      */
     PVERIFIERCACHEENTRY pCacheHit = supR3HardenedWinVerifyCacheLookup(&uBuf.UniStr, hFile);
     if (   pCacheHit
@@ -1252,8 +1253,16 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
     RTERRINFO ErrInfo;
     RTErrInfoInit(&ErrInfo, (char *)&uBuf.abBuffer[cbNameBuf], sizeof(uBuf) - cbNameBuf);
 
+    int  rc;
     bool fWinVerifyTrust = false;
-    int rc = supHardenedWinVerifyImageByHandle(hMyFile, uBuf.UniStr.Buffer, fFlags, &fWinVerifyTrust, &ErrInfo);
+    if (!pCacheHit)
+        rc = supHardenedWinVerifyImageByHandle(hMyFile, uBuf.UniStr.Buffer, fFlags, &fWinVerifyTrust, &ErrInfo);
+    else
+    {
+        rc = supHardenedWinVerifyImageTrust(hMyFile, uBuf.UniStr.Buffer, fFlags, pCacheHit->rc, &fWinVerifyTrust, &ErrInfo);
+        SUP_DPRINTF(("supR3HardenedScreenImage/%s: supHardenedWinVerifyImageTrust returns %d (was %d) fWinVerifyTrust=%d\n",
+                     pszCaller, rc, pCacheHit->rc, fWinVerifyTrust));
+    }
     if (RT_FAILURE(rc))
     {
         supR3HardenedError(VINF_SUCCESS, false,
@@ -1275,7 +1284,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
     else
     {
         if (fWinVerifyTrust)
-            pCacheHit->fWinVerifyTrust = true;
+            pCacheHit->fWinVerifyTrust = fWinVerifyTrust;
         if (hMyFile != hFile)
             NtClose(hMyFile);
     }

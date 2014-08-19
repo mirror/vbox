@@ -305,6 +305,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/math/bignum.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/math/bignum-amd64-x86.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg1Weak.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2Weak.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2WeakV.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/zero.asm \
