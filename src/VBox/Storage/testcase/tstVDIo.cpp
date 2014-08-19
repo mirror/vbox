@@ -2810,6 +2810,11 @@ static void tstVDIoScriptRun(const char *pcszFilename)
  */
 static void tstVDIoRunBuiltinTests(void)
 {
+    /* 32bit hosts are excluded because of the 4GB address space. */
+#ifdef HC_ARCH_BITS == 32
+    RTStrmPrintf(g_pStdErr, "tstVDIo: Running on a 32bit host is not supported for the builtin tests, skipping\n");
+    return;
+#else
     /*
      * We need quite a bit of RAM for the builtin tests. Skip it if there
      * is not enough free RAM available.
@@ -2831,6 +2836,7 @@ static void tstVDIoRunBuiltinTests(void)
         AssertPtr(pszScript);
         tstVDIoScriptExec(pszScript);
     }
+#endif
 }
 
 /**
