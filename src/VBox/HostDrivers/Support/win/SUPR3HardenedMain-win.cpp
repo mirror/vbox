@@ -1172,6 +1172,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
         }
     }
 
+#ifndef VBOX_PERMIT_EVEN_MORE
     /*
      * Check the path.  We don't allow DLLs to be loaded from just anywhere:
      *      1. System32      - normal code or cat signing, owner TrustedInstaller.
@@ -1182,35 +1183,31 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
      *      6. Common Files  - normal code or cat signing, owner TrustedInstaller.
      *      7. x86 variations of 4 & 5 - ditto.
      */
-    bool fSystem32 = false;
     Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
     uint32_t fFlags = 0;
     if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_System32NtPath.UniStr, true /*fCheckSlash*/))
-    {
-        fSystem32 = true;
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
-    }
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_WinSxSNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
                                             g_SupLibHardenedExeNtPath.UniStr.Buffer,
                                             g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
-#ifdef VBOX_PERMIT_MORE
+# ifdef VBOX_PERMIT_MORE
     else if (supHardViIsAppPatchDir(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR)))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesNtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
-# ifdef RT_ARCH_AMD64
+#  ifdef RT_ARCH_AMD64
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_ProgramFilesX86NtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
     else if (supHardViUniStrPathStartsWithUniStr(&uBuf.UniStr, &g_CommonFilesX86NtPath.UniStr, true /*fCheckSlash*/))
         fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+#  endif
 # endif
-#endif
-#ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
+# ifdef VBOX_PERMIT_VISUAL_STUDIO_PROFILING
     /* Hack to allow profiling our code with Visual Studio. */
     else if (   uBuf.UniStr.Length > sizeof(L"\\SamplingRuntime.dll")
              && memcmp(uBuf.UniStr.Buffer + (uBuf.UniStr.Length - sizeof(L"\\SamplingRuntime.dll") + sizeof(WCHAR)) / sizeof(WCHAR),
@@ -1221,7 +1218,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
         *pfCallRealApi = true;
         return STATUS_SUCCESS;
     }
-#endif
+# endif
     else
     {
         supR3HardenedError(VINF_SUCCESS, false,
@@ -1231,6 +1228,22 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
             NtClose(hMyFile);
         return STATUS_TRUST_FAILURE;
     }
+
+#else  /* VBOX_PERMIT_EVEN_MORE */
+    /*
+     * Require trusted installer + some kind of signature on everything, except
+     * for the VBox bits where we require kernel code signing and special
+     * integrity checks.
+     */
+    Assert(g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] == '\\');
+    uint32_t fFlags = 0;
+    if (supHardViUtf16PathStartsWithEx(uBuf.UniStr.Buffer, uBuf.UniStr.Length / sizeof(WCHAR),
+                                       g_SupLibHardenedExeNtPath.UniStr.Buffer,
+                                       g_offSupLibHardenedExeNtName, false /*fCheckSlash*/))
+        fFlags |= SUPHNTVI_F_REQUIRE_KERNEL_CODE_SIGNING | SUPHNTVI_F_REQUIRE_SIGNATURE_ENFORCEMENT;
+    else
+        fFlags |= SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION | SUPHNTVI_F_TRUSTED_INSTALLER_OWNER;
+#endif /* VBOX_PERMIT_EVEN_MORE */
 
     /*
      * Do the verification. For better error message we borrow what's
