@@ -84,8 +84,8 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
  * Resumes the CPU timestamp counter ticking.
  *
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
- * @param   pVM     Pointer to the VM. 
- * @param   pVCpu   Pointer to the VCPU. 
+ * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VCPU.
  */
 int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
 {
@@ -149,7 +149,7 @@ int tmCpuTickPause(PVMCPU pVCpu)
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM. 
+ * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @internal
  */
