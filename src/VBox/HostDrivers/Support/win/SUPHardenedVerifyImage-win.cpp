@@ -1074,59 +1074,11 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
         RTErrInfoSetF(pErrInfo, rc, "RTLdrQueryProp/RTLDRPROP_TIMESTAMP_SECONDS failed on %ls: %Rrc", pwszName, rc);
 
 #ifdef IN_RING3
-     /*
-      * Call the windows verify trust API if we've resolved it and aren't in
-      * some obvious recursion.  Assumes the loader semaphore will reduce the
-      * risk of concurrency here, so no TLS, only a single global variable.
-      */
-    if (g_pfnWinVerifyTrust)
-    {
-        uint32_t const idCurrentThread = GetCurrentThreadId();
-        if (g_idActiveThread != idCurrentThread)
-        {
-            ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
-
-            if (pfWinVerifyTrust)
-                *pfWinVerifyTrust = true;
-
-            if (rc != VERR_LDRVI_NOT_SIGNED)
-            {
-                if (rc == VINF_LDRVI_NOT_SIGNED)
-                {
-                    if (pNtViRdr->fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
-                    {
-                        int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                                         g_pfnWinVerifyTrust);
-                        SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
-                        rc = rc2;
-                    }
-                    else
-                    {
-                        AssertFailed();
-                        rc = VERR_LDRVI_NOT_SIGNED;
-                    }
-                }
-                else if (RT_SUCCESS(rc))
-                {
-                    /** @todo having trouble with a 32-bit windows box when letting these calls thru */
-                    rc = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                         g_pfnWinVerifyTrust);
-                }
-                else
-                {
-                    int rc2 = supR3HardNtViCallWinVerifyTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, pErrInfo,
-                                                              g_pfnWinVerifyTrust);
-                    AssertMsg(RT_FAILURE_NP(rc2),
-                              ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
-                }
-            }
-
-            ASMAtomicCmpXchgU32(&g_idActiveThread, UINT32_MAX, idCurrentThread);
-        }
-        else
-            SUP_DPRINTF(("Detected WinVerifyTrust recursion: rc=%Rrc '%ls'.\n", rc, pwszName));
-    }
-#endif /* IN_RING3 */
+    /*
+     * Pass it thru WinVerifyTrust when possible.
+     */
+    rc = supHardenedWinVerifyImageTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, rc, pfWinVerifyTrust, pErrInfo);
+#endif
 
 #ifdef IN_SUP_HARDENED_R3
     /*
@@ -1221,23 +1173,6 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t f
         uBuf.UniStr.Buffer = (WCHAR *)L"TODO3";
 
     return supHardenedWinVerifyImageByHandle(hFile, uBuf.UniStr.Buffer, fFlags, NULL /*pfWinVerifyTrust*/, pErrInfo);
-}
-#endif /* IN_RING3 */
-
-
-#ifdef IN_RING3
-/**
- * Checks if WinVerifyTrust is callable on the current thread.
- *
- * Used by the main code to figure whether it makes sense to try revalidate an
- * image that hasn't passed thru WinVerifyTrust yet.
- *
- * @returns true if callable on current thread, false if not.
- */
-DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
-{
-    return g_pfnWinVerifyTrust != NULL
-        && g_idActiveThread != GetCurrentThreadId();
 }
 #endif /* IN_RING3 */
 
@@ -2382,6 +2317,96 @@ l_fresh_context:
 
     return rc;
 }
+
+
+/**
+ * Verifies the given image using WinVerifyTrust in some way.
+ *
+ * This is used by supHardenedWinVerifyImageByLdrMod as well as
+ * supR3HardenedScreenImage.
+ *
+ * @returns IPRT status code.
+ * @param   hFile               Handle of the file to verify.
+ * @param   pwszName            Full NT path to the DLL in question, used for
+ *                              dealing with unsigned system dlls as well as for
+ *                              error/logging.
+ * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was
+ *                              actually used.
+ * @param   pErrInfo            Pointer to error info structure. Optional.
+ */
+DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, int rc,
+                                               bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
+{
+    if (pfWinVerifyTrust)
+        *pfWinVerifyTrust = false;
+
+    /*
+     * Call the windows verify trust API if we've resolved it and aren't in
+     * some obvious recursion.  Assume we won't be having too much
+     * concurrency, so a single global variable should suffice, right...
+     */
+    if (g_pfnWinVerifyTrust != NULL)
+    {
+        uint32_t const idCurrentThread = GetCurrentThreadId();
+        if (g_idActiveThread != idCurrentThread)
+        {
+            ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
+
+            if (pfWinVerifyTrust)
+                *pfWinVerifyTrust = true;
+
+            if (rc != VERR_LDRVI_NOT_SIGNED)
+            {
+                if (rc == VINF_LDRVI_NOT_SIGNED)
+                {
+                    if (fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION)
+                    {
+                        int rc2 = supR3HardNtViCallWinVerifyTrustCatFile(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                        SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (org %d)\n", rc2, rc));
+                        rc = rc2;
+                    }
+                    else
+                    {
+                        AssertFailed();
+                        rc = VERR_LDRVI_NOT_SIGNED;
+                    }
+                }
+                else if (RT_SUCCESS(rc))
+                {
+                    /** @todo having trouble with a 32-bit windows box when letting these calls thru */
+                    rc = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                }
+                else
+                {
+                    int rc2 = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                    AssertMsg(RT_FAILURE_NP(rc2),
+                              ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
+                }
+            }
+
+            ASMAtomicCmpXchgU32(&g_idActiveThread, UINT32_MAX, idCurrentThread);
+        }
+        else
+            SUP_DPRINTF(("Detected WinVerifyTrust recursion: rc=%Rrc '%ls'.\n", rc, pwszName));
+    }
+    return rc;
+}
+
+
+/**
+ * Checks if WinVerifyTrust is callable on the current thread.
+ *
+ * Used by the main code to figure whether it makes sense to try revalidate an
+ * image that hasn't passed thru WinVerifyTrust yet.
+ *
+ * @returns true if callable on current thread, false if not.
+ */
+DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
+{
+    return g_pfnWinVerifyTrust != NULL
+        && g_idActiveThread != GetCurrentThreadId();
+}
+
 
 
 /**
