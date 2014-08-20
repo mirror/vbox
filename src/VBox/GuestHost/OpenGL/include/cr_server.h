@@ -417,6 +417,10 @@ typedef struct {
 
     VBOXCRCMDCTL_HGCMDISABLE_DATA DisableData;
 
+    RTSEMEVENT hCalloutCompletionEvent;
+    VBOXCRCMDCTL *pCurrentCalloutCtl;
+    VBOXCRCLIENT_INFO ClientInfo;
+
     /** configuration options */
     /*@{*/
     int useL2;
@@ -557,6 +561,9 @@ extern DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect 
 extern DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h);
 
 extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnCb);
+
+extern DECLEXPORT(void) crVBoxServerCalloutEnable(VBOXCRCMDCTL *pCtl);
+extern DECLEXPORT(void) crVBoxServerCalloutDisable();
 
 #ifdef VBOX_WITH_CRHGSMI
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.

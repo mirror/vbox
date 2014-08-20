@@ -218,6 +218,10 @@ typedef void (*PFNGET_OBJECT_PARAMETERFV)( GLhandleARB obj, GLenum pname, GLfloa
 typedef void (*PFNGET_OBJECT_PARAMETERIV)( GLhandleARB obj, GLenum pname, GLint * params );
 #endif
 
+typedef DECLCALLBACKPTR(void, PFNVCRSERVER_CLIENT_CALLOUT_CB)(void *pvCb);
+typedef DECLCALLBACKPTR(void, PFNVCRSERVER_CLIENT_CALLOUT)(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void*pvCb);
+
+
 /**
  * Renderspu state info
  */
@@ -286,6 +290,8 @@ typedef struct {
 
     SPUDispatchTable blitterDispatch;
     CRHashTable *blitterTable;
+
+    PFNVCRSERVER_CLIENT_CALLOUT pfnClientCallout;
 
 #ifdef USE_OSMESA
     /** Off screen rendering hooks.  */
@@ -452,6 +458,10 @@ ContextInfo * renderspuDefaultSharedContextAcquire();
 void renderspuDefaultSharedContextRelease(ContextInfo * pCtx);
 uint32_t renderspuContextRelease(ContextInfo *context);
 uint32_t renderspuContextRetain(ContextInfo *context);
+
+bool renderspuCalloutAvailable();
+bool renderspuCalloutClient(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void *pvCb);
+
 
 #ifdef __cplusplus
 extern "C" {

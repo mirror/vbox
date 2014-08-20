@@ -35,7 +35,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBit
 #ifdef RT_OS_DARWIN
     if (fGuestWindow)
     {
-        CRMuralInfo *dummy = crServerGetDummyMural(visBits);
+        CRMuralInfo *dummy = crServerGetDummyMural(realVisBits);
         if (!dummy)
         {
             WARN(("crServerGetDummyMural failed"));
@@ -43,6 +43,9 @@ GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBit
         }
         spuWindow = dummy->spuWindow;
         mural->fIsDummyRefference = GL_TRUE;
+
+        dims[0] = dummy->width;
+        dims[1] = dummy->height;
     }
     else
 #endif
@@ -55,10 +58,10 @@ GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBit
             return spuWindow;
         }
         mural->fIsDummyRefference = GL_FALSE;
-    }
 
-    /* get initial window size */
-    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, spuWindow, GL_INT, 2, dims);
+        /* get initial window size */
+        cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, spuWindow, GL_INT, 2, dims);
+    }
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);

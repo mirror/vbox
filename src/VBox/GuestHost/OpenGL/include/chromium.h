@@ -736,6 +736,8 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 /* share lists */
 #define GL_SHARE_LISTS_CR             0x8B31
 
+#define GL_HH_SET_CLIENT_CALLOUT      0x8B32
+
 /* ensure the resource is  */
 #define GL_PIN_TEXTURE_SET_CR         0x8B32
 #define GL_PIN_TEXTURE_CLEAR_CR       0x8B33
