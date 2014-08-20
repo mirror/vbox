@@ -63,12 +63,12 @@
 /** The first argument of a respawed stub when respawned for the first time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_1_ARG0  "5cb9562b-4b8c-d13f-6bc4-3da9b0f37da6-suplib-2ndchild"
+#define SUPR3_RESPAWN_1_ARG0  "60eaff78-4bdd-042d-2e72-669728efd737-suplib-2ndchild"
 
 /** The first argument of a respawed stub when respawned for the second time.
  * This just needs to be unique enough to avoid most confusion with real
  * executable names,  there are other checks in place to make sure we've respanwed. */
-#define SUPR3_RESPAWN_2_ARG0  "5cb9562b-4b8c-d13f-6bc4-3da9b0f37da6-suplib-3rdchild"
+#define SUPR3_RESPAWN_2_ARG0  "60eaff78-4bdd-042d-2e72-669728efd737-suplib-3rdchild"
 
 /** Unconditional assertion. */
 #define SUPR3HARDENED_ASSERT(a_Expr) \
