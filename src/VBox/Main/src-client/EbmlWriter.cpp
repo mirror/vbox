@@ -103,8 +103,8 @@ void WebMWriter::writeSeekInfo()
     m_uSegmentInfoPos = RTFileTell(m_File);
 
     char szVersion[64];
-    RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%",
-                m_bDebug ? vpx_codec_version_str() : "");
+    RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%s",
+                m_bDebug ? "" : vpx_codec_version_str());
 
     m_Ebml.subStart(Info)
           .serializeUnsignedInteger(TimecodeScale, 1000000)
