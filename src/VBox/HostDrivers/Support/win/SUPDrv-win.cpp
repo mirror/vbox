@@ -2806,7 +2806,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                 if (   pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fFirstProcessCreateHandle
                     && pOpInfo->KernelHandle == 0
-                    && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess()))
+                    && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess())
+                    && ExGetPreviousMode() != KernelMode)
                 {
                     if (   !pOpInfo->KernelHandle
                         && pOpInfo->Parameters->CreateHandleInformation.DesiredAccess == s_fCsrssStupidDesires)
@@ -2867,12 +2868,12 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     pOpInfo->CallContext = NULL; /* don't assert this. */
                 }
 
-                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p wants %#x to %p/pid=%04zx [%d], allow %#x => %#x; %s\n",
+                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p wants %#x to %p/pid=%04zx [%d], allow %#x => %#x; %s [prev=%#x]\n",
                      pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind, fAllowedRights,
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess & fAllowedRights,
-                     PsGetProcessImageFileName(PsGetCurrentProcess())));
+                     PsGetProcessImageFileName(PsGetCurrentProcess()), ExGetPreviousMode() ));
 
                 pOpInfo->Parameters->CreateHandleInformation.DesiredAccess &= fAllowedRights;
             }
@@ -3082,12 +3083,12 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     pOpInfo->CallContext = NULL; /* don't assert this. */
                 }
 
-                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s\n",
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s [prev=%#x]\n",
                      pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind, fAllowedRights,
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess & fAllowedRights,
-                     PsGetProcessImageFileName(PsGetCurrentProcess())));
+                     PsGetProcessImageFileName(PsGetCurrentProcess()), ExGetPreviousMode()));
 
                 pOpInfo->Parameters->CreateHandleInformation.DesiredAccess &= fAllowedRights;
             }
