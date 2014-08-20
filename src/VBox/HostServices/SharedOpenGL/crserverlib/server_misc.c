@@ -82,6 +82,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetChromiumParametervCR(GLenum tar
             }
             break;
         }
+        case GL_HH_SET_DEFAULT_SHARED_CTX:
+            WARN(("Recieved GL_HH_SET_DEFAULT_SHARED_CTX from guest, ignoring"));
+            break;
+        case GL_HH_SET_CLIENT_CALLOUT:
+            WARN(("Recieved GL_HH_SET_CLIENT_CALLOUT from guest, ignoring"));
+            break;
         default:
             cr_server.head_spu->dispatch_table.GetChromiumParametervCR( target, index, type, count, local_storage );
             break;
@@ -294,6 +300,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
         /*we should not receive it from the guest! */
         break;
 
+    case GL_HH_SET_CLIENT_CALLOUT:
+        WARN(("Recieved GL_HH_SET_CLIENT_CALLOUT from guest, ignoring"));
+        break;
+
     default:
         /* Pass the parameter info to the head SPU */
         cr_server.head_spu->dispatch_table.ChromiumParametervCR( target, type, count, values );
@@ -336,10 +346,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
         cr_server.bWindowsInitiallyHidden = value ? 1 : 0;
         break;
     case GL_HH_SET_DEFAULT_SHARED_CTX:
-        crWarning("Recieved GL_HH_SET_DEFAULT_SHARED_CTX from guest, ignoring");
+        WARN(("Recieved GL_HH_SET_DEFAULT_SHARED_CTX from guest, ignoring"));
         break;
     case GL_HH_RENDERTHREAD_INFORM:
-        crWarning("Recieved GL_HH_RENDERTHREAD_INFORM from guest, ignoring");
+        WARN(("Recieved GL_HH_RENDERTHREAD_INFORM from guest, ignoring"));
         break;
     default:
         /* Pass the parameter info to the head SPU */
