@@ -44,6 +44,7 @@ uint64_t WebMWriter::getAvailableSpace()
 WebMWriter::WebMWriter() :
     m_bDebug(false),
     m_iLastPtsMs(-1),
+    m_iInitialPtsMs(-1),
     m_Framerate(),
     m_uPositionReference(0),
     m_uSeekInfoPos(0),
@@ -107,7 +108,7 @@ void WebMWriter::writeSeekInfo()
 
     m_Ebml.subStart(Info)
           .serializeUnsignedInteger(TimecodeScale, 1000000)
-          .serializeFloat(Segment_Duration, m_iLastPtsMs + iFrameTime)
+          .serializeFloat(Segment_Duration, m_iLastPtsMs + iFrameTime - m_iInitialPtsMs)
           .serializeString(MuxingApp, szVersion)
           .serializeString(WritingApp, szVersion)
           .subEnd(Info);
@@ -178,6 +179,9 @@ int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
         if (iPtsMs <= m_iLastPtsMs)
             iPtsMs = m_iLastPtsMs + 1;
         m_iLastPtsMs = iPtsMs;
+
+        if (m_iInitialPtsMs < 0)
+          m_iInitialPtsMs = m_iLastPtsMs;
 
         /* Calculate the relative time of this block */
         if (iPtsMs - m_uClusterTimecode > 65536)
