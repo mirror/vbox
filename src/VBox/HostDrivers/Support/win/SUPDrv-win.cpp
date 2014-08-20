@@ -2588,7 +2588,8 @@ static void supdrvNtProtectVerifyNewChildProtection(PSUPDRVNTPROTECT pNtStub, PS
         && pNtVm->u.pParent        == pNtStub
         && pNtStub->u.pChild       == pNtVm)
     {
-        /* Fine, nothing to do. */
+        /* Fine, reset the CSRSS hack (fixes ViRobot APT Shield 2.0 issue). */
+        pNtVm->fFirstProcessCreateHandle = true;
         return;
     }
 
@@ -2771,8 +2772,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                 pOpInfo->CallContext = NULL; /* don't assert */
                 pNtProtect->fFirstProcessCreateHandle = false;
 
-                Log(("vboxdrv/ProcessHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
                      PsGetProcessImageFileName(PsGetCurrentProcess()) ));
@@ -2784,8 +2785,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                 pOpInfo->CallContext = NULL; /* don't assert */
                 pNtProtect->fFirstProcessCreateHandle = false;
 
-                Log(("vboxdrv/ProcessHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
                      PsGetProcessImageFileName(PsGetCurrentProcess()) ));
@@ -2866,8 +2867,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     pOpInfo->CallContext = NULL; /* don't assert this. */
                 }
 
-                Log(("vboxdrv/ProcessHandlePre: ctx=%04zx/%p wants %#x to %p/pid=%04zx [%d], allow %#x => %#x; %s\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p wants %#x to %p/pid=%04zx [%d], allow %#x => %#x; %s\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind, fAllowedRights,
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess & fAllowedRights,
@@ -2920,8 +2921,8 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     }
                 }
 
-                Log(("vboxdrv/ProcessHandlePre: ctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d] %s\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ProcessHandlePre: %sctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d] %s\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess,
                      PsGetProcessId((PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess),
                      pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess,
@@ -3021,8 +3022,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
             /* Don't restrict the process accessing its own threads. */
             if (pProcess == PsGetCurrentProcess())
             {
-                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] self\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] self\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind));
                 pOpInfo->CallContext = NULL; /* don't assert */
@@ -3032,8 +3033,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
             /* Allow debuggers full access. */
             else if (supdrvNtProtectIsWhitelistedDebugger(PsGetCurrentProcess()))
             {
-                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d] %s [debugger]\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind,
                      PsGetProcessImageFileName(PsGetCurrentProcess()) ));
@@ -3081,8 +3082,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     pOpInfo->CallContext = NULL; /* don't assert this. */
                 }
 
-                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p wants %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p wants %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess,
                      pOpInfo->Object, pNtProtect->AvlCore.Key, pNtProtect->enmProcessKind, fAllowedRights,
                      pOpInfo->Parameters->CreateHandleInformation.DesiredAccess & fAllowedRights,
@@ -3097,8 +3098,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
             if (   pProcess == PsGetCurrentProcess()
                 && (PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess == pProcess)
             {
-                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d] self\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d] self\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess,
                      PsGetProcessId((PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess),
                      pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess,
@@ -3125,8 +3126,8 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     pOpInfo->CallContext = NULL; /* don't assert this. */
                 }
 
-                Log(("vboxdrv/ThreadHandlePre: ctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s\n",
-                     PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
+                Log(("vboxdrv/ThreadHandlePre: %sctx=%04zx/%p[%p] dup from %04zx/%p with %#x to %p in pid=%04zx [%d], allow %#x => %#x; %s\n",
+                     pOpInfo->KernelHandle ? "k" : "", PsGetProcessId(PsGetCurrentProcess()), PsGetCurrentProcess(),
                      pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess,
                      PsGetProcessId((PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess),
                      pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess,
