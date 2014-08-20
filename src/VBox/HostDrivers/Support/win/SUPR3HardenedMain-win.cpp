@@ -2886,6 +2886,20 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
         return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
                              "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
 
+    /*
+     * Fudge factor for letting kernel threads get a chance to mess up our
+     * process asynchronously.
+     */
+    DWORD dwStart = GetTickCount();
+    NtYieldExecution();
+
+    LARGE_INTEGER Time;
+    Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+    NtDelayExecution(FALSE, &Time);
+
+    NtYieldExecution();
+    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n", GetTickCount() - dwStart));
+
     return VINF_SUCCESS;
 }
 
@@ -3628,10 +3642,34 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
 
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
     {
-        /* Do a self purification to cure avast's weird NtOpenFile write-thru
-           change in GetBinaryTypeW change in kernel32. */
+        /*
+         * Do a self purification to cure avast's weird NtOpenFile write-thru
+         * change in GetBinaryTypeW change in kernel32.  Unfortunately, avast
+         * uses a system thread to perform the process modifications, which
+         * means it's hard to make sure it had the chance to make them...
+         *
+         * We have to resort to kludge doing yield and sleep fudging for a
+         * number of milliseconds and schedulings before we can hope that avast
+         * and similar products have done what they need to do.  Pretty fragile...
+         */
+        uint32_t    cSleeps = 0;
+        DWORD       dwStart = GetTickCount();
+        do
+        {
+            NtYieldExecution();
+            LARGE_INTEGER Time;
+            Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+            NtDelayExecution(FALSE, &Time);
+            cSleeps++;
+        } while (   GetTickCount() - dwStart <= 80
+                 || cSleeps < 8);
+        SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2: %u ms, %u sleeps\n", GetTickCount() - dwStart, cSleeps));
+
         supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION, NULL);
 
+        /*
+         * Install the hooks.
+         */
         supR3HardenedWinInstallHooks();
     }
 
