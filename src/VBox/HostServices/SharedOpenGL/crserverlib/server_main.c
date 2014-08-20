@@ -281,6 +281,8 @@ static void crServerTearDown( void )
     VBoxVrListClear(&cr_server.RootVr);
 
     VBoxVrTerm();
+
+    RTSemEventDestroy(cr_server.hCalloutCompletionEvent);
 }
 
 static void crServerClose( unsigned int id )
@@ -512,6 +514,13 @@ GLboolean crVBoxServerInit(void)
     cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
 
     cr_server.pCleanupClient = NULL;
+
+    rc = RTSemEventCreate(&cr_server.hCalloutCompletionEvent);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("RTSemEventCreate failed %d", rc));
+        return GL_FALSE;
+    }
 
     /*
      * Create default mural info and hash table.
@@ -4230,6 +4239,8 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             g_cbVRam = pSetup->cbVRam;
 
             g_pLed = pSetup->pLed;
+
+            cr_server.ClientInfo = pSetup->CrClientInfo;
 
             pSetup->CrCmdServerInfo.hSvr = NULL;
             pSetup->CrCmdServerInfo.pfnEnable = crVBoxCrCmdEnable;

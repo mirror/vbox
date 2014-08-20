@@ -56,6 +56,9 @@ struct VBOXVDMATHREAD;
 
 typedef DECLCALLBACKPTR(void, PFNVBOXVDMATHREAD_CHANGED)(struct VBOXVDMATHREAD *pThread, int rc, void *pvThreadContext, void *pvChangeContext);
 
+static DECLCALLBACK(int) vboxCmdVBVACmdCallout(struct VBOXVDMAHOST *pVdma, struct VBOXCRCMDCTL* pCmd, VBOXCRCMDCTL_CALLOUT_LISTENTRY *pEntry, PFNVBOXCRCMDCTL_CALLOUT_CB pfnCb);
+
+
 typedef struct VBOXVDMATHREAD
 {
     RTTHREAD hWorkerThread;
@@ -807,6 +810,7 @@ typedef struct VBOXVDMAHOST
     VBVAEXHOSTCTL* pCurRemainingHostCtl;
     RTSEMEVENTMULTI HostCrCtlCompleteEvent;
     int32_t volatile i32cHostCrCtlCompleted;
+    RTCRITSECT CalloutCritSect;
 //    VBOXVDMA_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
 #endif
 #ifdef VBOX_VDMA_WITH_WATCHDOG
@@ -1104,6 +1108,8 @@ static int vboxVDMACrHgcmSubmitSync(struct VBOXVDMAHOST *pVdma, VBOXCRCMDCTL* pC
         WARN(("RTSemEventCreate failed %d\n", rc));
         return rc;
     }
+
+    pCtl->CalloutList.List.pNext = NULL;
 
     PVGASTATE pVGAState = pVdma->pVGAState;
     rc = pVGAState->pDrv->pfnCrHgcmCtlSubmit(pVGAState->pDrv, pCtl, cbCtl, vboxVDMACrHgcmSubmitSyncCompletion, &Data);
@@ -1470,6 +1476,13 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
 
     int rc = VINF_SUCCESS;
 
+    rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("pfnResize failed %d\n", rc));
+        return rc;
+    }
+
     for (int i = ASMBitFirstSet(aTargetMap, pVGAState->cMonitors);
             i >= 0;
             i = ASMBitNextSet(aTargetMap, pVGAState->cMonitors, i))
@@ -1509,10 +1522,6 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
         return rc;
 
     Screen.u32ViewIndex = u32ViewIndex;
-
-    rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
-    if (RT_FAILURE(rc))
-        WARN(("pfnResize failed %d\n", rc));
 
     return rc;
 }
@@ -2057,6 +2066,8 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
         pCmd->pvVRamBase = pVGAState->vram_ptrR3;
         pCmd->cbVRam = pVGAState->vram_size;
         pCmd->pLed = &pVGAState->Led3D;
+        pCmd->CrClientInfo.hClient = pVdma;
+        pCmd->CrClientInfo.pfnCallout = vboxCmdVBVACmdCallout;
         rc = vboxVDMACrCtlPost(pVGAState, &pCmd->Hdr, sizeof (*pCmd));
         if (RT_SUCCESS(rc))
         {
@@ -2698,9 +2709,17 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
             rc = VBoxVBVAExHSInit(&pVdma->CmdVbva);
             if (RT_SUCCESS(rc))
             {
-                pVGAState->pVdma = pVdma;
-                int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
-                return VINF_SUCCESS;
+                rc = RTCritSectInit(&pVdma->CalloutCritSect);
+                if (RT_SUCCESS(rc))
+                {
+                    pVGAState->pVdma = pVdma;
+                    int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
+                    return VINF_SUCCESS;
+
+                    RTCritSectDelete(&pVdma->CalloutCritSect);
+                }
+                else
+                    WARN(("RTCritSectInit failed %d\n", rc));
 
                 VBoxVBVAExHSTerm(&pVdma->CmdVbva);
             }
@@ -2742,6 +2761,7 @@ int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
     VBoxVDMAThreadCleanup(&pVdma->Thread);
     VBoxVBVAExHSTerm(&pVdma->CmdVbva);
     RTSemEventMultiDestroy(pVdma->HostCrCtlCompleteEvent);
+    RTCritSectDelete(&pVdma->CalloutCritSect);
 #endif
     RTMemFree(pVdma);
     return VINF_SUCCESS;
@@ -3159,6 +3179,7 @@ int vboxCmdVBVACmdHostCtl(PPDMIDISPLAYVBVACALLBACKS pInterface,
 {
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
+    pCmd->CalloutList.List.pNext = NULL;
     return vdmaVBVACtlOpaqueHostSubmit(pVdma, pCmd, cbCmd, pfnCompletion, pvCompletion);
 }
 
@@ -3183,6 +3204,52 @@ static DECLCALLBACK(void) vboxCmdVBVACmdHostCtlSyncCb(struct VBOXCRCMDCTL* pCmd,
     RTSemEventMultiSignal(pVdma->HostCrCtlCompleteEvent);
 }
 
+static DECLCALLBACK(int) vboxCmdVBVACmdCallout(struct VBOXVDMAHOST *pVdma, struct VBOXCRCMDCTL* pCmd, VBOXCRCMDCTL_CALLOUT_LISTENTRY *pEntry, PFNVBOXCRCMDCTL_CALLOUT_CB pfnCb)
+{
+    pEntry->pfnCb = pfnCb;
+    int rc = RTCritSectEnter(&pVdma->CalloutCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        RTListAppend(&pCmd->CalloutList.List, &pEntry->Node);
+        RTCritSectLeave(&pVdma->CalloutCritSect);
+
+        RTSemEventMultiSignal(pVdma->HostCrCtlCompleteEvent);
+    }
+    else
+        WARN(("RTCritSectEnter failed %d\n", rc));
+
+    return rc;
+}
+
+
+static int vboxCmdVBVACmdCalloutProcess(struct VBOXVDMAHOST *pVdma, struct VBOXCRCMDCTL* pCmd)
+{
+    int rc = VINF_SUCCESS;
+    for(;;)
+    {
+        rc = RTCritSectEnter(&pVdma->CalloutCritSect);
+        if (RT_SUCCESS(rc))
+        {
+            VBOXCRCMDCTL_CALLOUT_LISTENTRY* pEntry = RTListGetFirst(&pCmd->CalloutList.List, VBOXCRCMDCTL_CALLOUT_LISTENTRY, Node);
+            if (pEntry)
+                RTListNodeRemove(&pEntry->Node);
+            RTCritSectLeave(&pVdma->CalloutCritSect);
+
+            if (!pEntry)
+                break;
+
+            pEntry->pfnCb(pEntry);
+        }
+        else
+        {
+            WARN(("RTCritSectEnter failed %d\n", rc));
+            break;
+        }
+    }
+
+    return rc;
+}
+
 int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                                struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd)
 {
@@ -3192,6 +3259,7 @@ int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
     Data.pVdma = pVdma;
     Data.fProcessing = 1;
     Data.rc = VERR_INTERNAL_ERROR;
+    RTListInit(&pCmd->CalloutList.List);
     int rc = vdmaVBVACtlOpaqueHostSubmit(pVdma, pCmd, cbCmd, vboxCmdVBVACmdHostCtlSyncCb, &Data);
     if (!RT_SUCCESS(rc))
     {
@@ -3204,9 +3272,14 @@ int vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface,
         /* Poll infrequently to make sure no completed message has been missed. */
         RTSemEventMultiWait(pVdma->HostCrCtlCompleteEvent, 500);
 
+        vboxCmdVBVACmdCalloutProcess(pVdma, pCmd);
+
         if (Data.fProcessing)
             RTThreadYield();
     }
+
+    /* extra check callouts */
+    vboxCmdVBVACmdCalloutProcess(pVdma, pCmd);
 
     /* 'Our' message has been processed, so should reset the semaphore.
      * There is still possible that another message has been processed

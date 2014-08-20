@@ -1443,6 +1443,20 @@ renderspuChromiumParameterfCR(GLenum target, GLfloat value)
 #endif
 }
 
+bool renderspuCalloutAvailable()
+{
+    return render_spu.pfnClientCallout != NULL;
+}
+
+bool renderspuCalloutClient(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void *pvCb)
+{
+    if (render_spu.pfnClientCallout)
+    {
+        pfnCb(pvCb);
+        return true;
+    }
+    return false;
+}
 
 static void RENDER_APIENTRY
 renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
@@ -1454,7 +1468,9 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
     unsigned char *privbuf = NULL;
 
     switch (target) {
-
+        case GL_HH_SET_CLIENT_CALLOUT:
+            render_spu.pfnClientCallout = (PFNVCRSERVER_CLIENT_CALLOUT)values;
+            break;
         case GL_GATHER_CONNECT_CR:
             if (render_spu.gather_userbuf_size)
                 privbuf = (unsigned char *)crAlloc(1024*768*4);

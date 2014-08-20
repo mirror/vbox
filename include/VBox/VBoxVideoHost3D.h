@@ -29,6 +29,7 @@
 #include <VBox/VBoxVideo.h>
 #include <VBox/hgcmsvc.h>
 #include <VBox/vmm/pdmifs.h>
+#include <iprt/list.h>
 
 /* screen update instance */
 typedef struct PDMIDISPLAYCONNECTOR *HVBOXCRCMDCLTSCR;
@@ -49,6 +50,33 @@ typedef struct VBOXCRCMD_SVRENABLE_INFO
     PFNVBOXCRCMD_CLTSCR_UPDATE_PROCESS pfnCltScrUpdateProcess;
     PFNVBOXCRCMD_CLTSCR_UPDATE_END pfnCltScrUpdateEnd;
 } VBOXCRCMD_SVRENABLE_INFO;
+
+typedef struct VBOXVDMAHOST * HVBOXCRCLIENT;
+struct VBOXCRCMDCTL_CALLOUT_LISTENTRY;
+typedef DECLCALLBACKPTR(void, PFNVBOXCRCMDCTL_CALLOUT_CB)(struct VBOXCRCMDCTL_CALLOUT_LISTENTRY *pEntry);
+
+#pragma pack(1)
+typedef struct VBOXCRCMDCTL_CALLOUT_LISTENTRY
+{
+    RTLISTNODE Node;
+    PFNVBOXCRCMDCTL_CALLOUT_CB pfnCb;
+} VBOXCRCMDCTL_CALLOUT_LISTENTRY;
+
+typedef struct VBOXCRCMDCTL_CALLOUT_LIST
+{
+    RTLISTANCHOR List;
+} VBOXCRCMDCTL_CALLOUT_LIST;
+#pragma pack()
+
+struct VBOXCRCMDCTL;
+
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCLIENT_CALLOUT)(HVBOXCRCLIENT hClient, struct VBOXCRCMDCTL* pCmd, VBOXCRCMDCTL_CALLOUT_LISTENTRY *pEntry, PFNVBOXCRCMDCTL_CALLOUT_CB pfnCb);
+
+typedef struct VBOXCRCLIENT_INFO
+{
+    HVBOXCRCLIENT hClient;
+    PFNVBOXCRCLIENT_CALLOUT pfnCallout;
+} VBOXCRCLIENT_INFO;
 
 typedef void * HVBOXCRCMDSVR;
 
@@ -96,6 +124,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
     };
     uint64_t cbVRam;
     PPDMLED pLed;
+    VBOXCRCLIENT_INFO CrClientInfo;
     /* out */
     struct VBOXCRCMD_SVRINFO CrCmdServerInfo;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
@@ -109,17 +138,21 @@ typedef enum
 } VBOXCRCMDCTL_TYPE;
 
 #pragma pack(1)
+
 typedef struct VBOXCRCMDCTL
 {
     VBOXCRCMDCTL_TYPE enmType;
     uint32_t u32Function;
     /* not to be used by clients */
+    VBOXCRCMDCTL_CALLOUT_LIST CalloutList;
     union
     {
         void(*pfnInternal)();
         void* pvInternal;
     } u;
 } VBOXCRCMDCTL;
+
+#define VBOXCRCMDCTL_IS_CALLOUT_AVAILABLE(_pCtl) (!!((_pCtl)->CalloutList.List.pNext))
 
 typedef struct VBOXCRCMDCTL_HGCM
 {
