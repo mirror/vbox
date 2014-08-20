@@ -56,6 +56,6 @@ int main(int argc, char **argv, char **envp)
             break;
         }
 
-    return SUPR3HardenedMain("VirtualBox", fFlags, argc, argv, envp);
+    return SUPR3HardenedMain("VirtualBox", fFlags | SUPSECMAIN_FLAGS_TRUSTED_ERROR, argc, argv, envp);
 }
 

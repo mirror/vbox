@@ -134,6 +134,8 @@ static char             g_szSupLibHardenedDirPath[RTPATH_MAX];
 
 /** The program name. */
 static const char      *g_pszSupLibHardenedProgName;
+/** The flags passed to SUPR3HardenedMain. */
+static uint32_t         g_fSupHardenedMain;
 
 #ifdef SUP_HARDENED_SUID
 /** The real UID at startup. */
@@ -1537,6 +1539,14 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
 static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgName)
 {
     /*
+     * Don't bother if the main() function didn't advertise any TrustedError
+     * export.  It's both a waste of time and may trigger additional problems,
+     * confusing or obscuring the original issue.
+     */
+    if (!(g_fSupHardenedMain & SUPSECMAIN_FLAGS_TRUSTED_ERROR))
+        return NULL;
+
+    /*
      * Construct the name.
      */
     char szPath[RTPATH_MAX];
@@ -1645,6 +1655,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * to basic CRT functions that everyone agree upon.
      */
     g_pszSupLibHardenedProgName = pszProgName;
+    g_fSupHardenedMain          = fFlags;
     g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
     g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
     g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;

@@ -742,7 +742,9 @@ typedef enum SUPINITOP
  * Trusted error entry point, optional.
  *
  * This is exported as "TrustedError" by the dynamic libraries which contains
- * the "real" application binary for which the hardened stub is built.
+ * the "real" application binary for which the hardened stub is built. The
+ * hardened main() must specify SUPSECMAIN_FLAGS_TRUSTED_ERROR when calling
+ * SUPR3HardenedMain.
  *
  * @param   pszWhere        Where the error occurred (function name).
  * @param   enmWhat         Which operation went wrong.
@@ -776,10 +778,12 @@ typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
  */
 DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp);
 
-/** @name SUPR3SecureMain flags.
+/** @name SUPR3HardenedMain flags.
  * @{ */
 /** Don't open the device. (Intended for VirtualBox without -startvm.) */
 #define SUPSECMAIN_FLAGS_DONT_OPEN_DEV      RT_BIT_32(0)
+/** The hardened DLL has a "TrustedError" function (see FNSUPTRUSTEDERROR). */
+#define SUPSECMAIN_FLAGS_TRUSTED_ERROR      RT_BIT_32(1)
 /** @} */
 
 /**
