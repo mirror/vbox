@@ -424,6 +424,7 @@ class WebMWriter
 
     bool            m_bDebug;
     int64_t         m_iLastPtsMs;
+    int64_t         m_iInitialPtsMs;
     vpx_rational_t  m_Framerate;
 
     uint64_t        m_uPositionReference;

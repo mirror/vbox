@@ -3777,7 +3777,7 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
                 if (!pDisplay->maVideoRecEnabled[uScreenId])
                     continue;
 
-                if(VideoRecIsFull(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
+                if (VideoRecIsFull(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
                 {
                     pDisplay->i_VideoCaptureStop();
                     pDisplay->mParent->i_machine()->COMSETTER(VideoCaptureEnabled)(false);
