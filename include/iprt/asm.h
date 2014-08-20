@@ -3290,8 +3290,10 @@ DECLINLINE(uint32_t) ASMAtomicUoIncU32(uint32_t volatile *pu32)
     {
         mov     eax, 1
 #  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
         xadd    [rdx], eax
 #  else
+        mov     edx, [pu32]
         xadd    [edx], eax
 #  endif
         mov     u32, eax
