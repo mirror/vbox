@@ -5717,8 +5717,6 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept)
         }
     }
 
-    AssertRelease(   !ASMAtomicReadU32(&pAhciPort->cTasksActive)
-                  || (pAhciReqExcept && ASMAtomicReadU32(&pAhciPort->cTasksActive) == 1));
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
@@ -5978,10 +5976,10 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
     }
 
+    bool fPortReset = ASMAtomicReadBool(&pAhciPort->fPortReset);
     fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE);
 
-    if (   fXchg
-        && !ASMAtomicReadBool(&pAhciPort->fPortReset))
+    if (fXchg && !fPortReset)
     {
         if (pAhciReq->enmTxDir == AHCITXDIR_READ)
         {
@@ -6096,9 +6094,20 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          * Task was canceled, do the cleanup but DO NOT access the guest memory!
          * The guest might use it for other things now because it doesn't know about that task anymore.
          */
-        AssertMsg(   pAhciReq->enmTxState == AHCITXSTATE_CANCELED
-                  || pAhciPort->fPortReset,
-                  ("Task is not active but wasn't canceled!\n"));
+        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED || fPortReset,
+                  ("Task is not active but wasn't canceled and no port reset is active!\n"));
+
+        /*
+         * If this handler switched the request state from active to free the request counter
+         * must be decremented.
+         */
+        if (fXchg)
+        {
+            Assert(fPortReset);
+            AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0 ,
+                             ("Inconsistent request counter\n"));
+            ASMAtomicDecU32(&pAhciPort->cTasksActive);
+        }
 
         fCanceled = true;
         ASMAtomicXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_FREE);
