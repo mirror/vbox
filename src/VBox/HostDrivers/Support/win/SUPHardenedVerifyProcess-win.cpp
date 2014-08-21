@@ -1109,6 +1109,8 @@ static bool supHardNtVpAreNamesEqual(const char *pszName1, PCRTUTF16 pwszName2)
  * Records an additional memory region for an image.
  *
  * @returns VBox status code.
+ * @retval  VINF_OBJECT_DESTROYED if we've unmapped the image (child
+ *          purification only).
  * @param   pThis               The process scanning state structure.
  * @param   pImage              The new image structure.  Only the unicode name
  *                              buffer is valid.
@@ -1189,10 +1191,33 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
     }
     if (!pImage->pszName)
     {
+        /*
+         * Unknown image.
+         *
+         * If we're cleaning up a child process, we can unmap the offending
+         * DLL...  Might have interesting side effects, or at least interesting
+         * as in "may you live in interesting times".
+         */
+#ifdef IN_RING3
+        if (   pMemInfo->AllocationBase == pMemInfo->BaseAddress
+            && pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
+        {
+            SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Unmapping image mem at %p (%p LB %#zx) - '%ls'\n",
+                         pMemInfo->AllocationBase, pMemInfo->BaseAddress, pMemInfo->RegionSize));
+            NTSTATUS rcNt = NtUnmapViewOfSection(pThis->hProcess, pMemInfo->AllocationBase);
+            if (NT_SUCCESS(rcNt))
+                return VINF_OBJECT_DESTROYED;
+            SUP_DPRINTF(("supHardNtVpScanVirtualMemory: NtUnmapViewOfSection(,%p) failed: %#x\n", pMemInfo->AllocationBase, rcNt));
+        }
+#endif
+        /*
+         * Special error message if we can.
+         */
         if (   pMemInfo->AllocationBase == pMemInfo->BaseAddress
             && (   supHardNtVpAreNamesEqual("sysfer.dll", pwszFilename)
                 || supHardNtVpAreNamesEqual("sysfer32.dll", pwszFilename)
-                || supHardNtVpAreNamesEqual("sysfer64.dll", pwszFilename)) )
+                || supHardNtVpAreNamesEqual("sysfer64.dll", pwszFilename)
+                || supHardNtVpAreNamesEqual("sysfrethunk.dll", pwszFilename)) )
         {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_SYSFER_DLL,
                                 "Found %ls at %p - This is probably part of Symantec Endpoint Protection. \n"
@@ -1387,10 +1412,13 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                 int rc = supHardNtVpNewImage(pThis, &pThis->aImages[iImg], &MemInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    pThis->cImages++;
-                    if (pThis->cImages >= RT_ELEMENTS(pThis->aImages))
-                        return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_TOO_MANY_DLLS_LOADED,
-                                                   "Internal error: aImages is full.\n");
+                    if (rc != VINF_OBJECT_DESTROYED)
+                    {
+                        pThis->cImages++;
+                        if (pThis->cImages >= RT_ELEMENTS(pThis->aImages))
+                            return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_TOO_MANY_DLLS_LOADED,
+                                                       "Internal error: aImages is full.\n");
+                    }
                 }
 #ifdef IN_RING3 /* Continue and add more information if unknown DLLs are found. */
                 else if (rc != VERR_SUP_VP_NOT_KNOWN_DLL_OR_EXE && rc != VERR_SUP_VP_NON_SYSTEM32_DLL)
