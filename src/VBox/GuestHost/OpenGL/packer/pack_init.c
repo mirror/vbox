@@ -17,7 +17,7 @@ int _PackerTSD;         /* dummy - for the sake of packer.def */  /* drm1 */
 DLLDATA(CRPackContext) cr_packer_globals;
 #endif
 
-int cr_packer_cmd_blocks_enabled = 0;
+uint32_t cr_packer_cmd_blocks_enabled = 0;
 
 CRPackContext *crPackNewContext( int swapping )
 {
@@ -68,7 +68,7 @@ CRPackContext *crPackGetContext( void )
 #endif
 }
 
-void crPackCmdBlocksEnable()
+void crPackCapsSet(uint32_t u32Caps)
 {
-    cr_packer_cmd_blocks_enabled = 1;
+    cr_packer_cmd_blocks_enabled = (u32Caps & (CR_VBOX_CAP_CMDBLOCKS_FLUSH | CR_VBOX_CAP_CMDBLOCKS));
 }

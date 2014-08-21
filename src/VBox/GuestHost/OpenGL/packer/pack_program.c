@@ -281,6 +281,7 @@ crPackAreProgramsResidentNV(GLsizei n, const GLuint * programs,
     WRITE_NETWORK_POINTER(12 + n * sizeof(*programs),   (void *) residences);
     WRITE_NETWORK_POINTER(20 + n * sizeof(*programs), (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -299,6 +300,7 @@ void PACK_APIENTRY crPackGetProgramNamedParameterfvNV( GLuint id, GLsizei len, c
     WRITE_NETWORK_POINTER( 16 + len, (void *) params );
     WRITE_NETWORK_POINTER( 16 + len + 8, (void *) writeback );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -316,6 +318,7 @@ void PACK_APIENTRY crPackGetProgramNamedParameterdvNV( GLuint id, GLsizei len, c
     WRITE_NETWORK_POINTER( 16 + len, (void *) params );
     WRITE_NETWORK_POINTER( 16 + len + 8, (void *) writeback );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 

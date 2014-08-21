@@ -210,6 +210,9 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     else:
         print "\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name )
 
+    if "get" in apiutil.Properties(func_name):
+        print '\tCR_CMDBLOCK_CHECK_FLUSH(pc);'
+
     print '\tCR_UNLOCK_PACKER_CONTEXT(pc);'
     print '}\n'
 

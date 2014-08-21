@@ -419,6 +419,7 @@ int CrPMgrResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM, const uint3
 int CrPMgrSaveState(PSSMHANDLE pSSM);
 int CrPMgrLoadState(PSSMHANDLE pSSM, uint32_t version);
 HCR_FRAMEBUFFER CrPMgrFbGet(uint32_t idScreen);
+int CrPMgrClearRegionsGlobal();
 /*cleanup stuff*/
 
 

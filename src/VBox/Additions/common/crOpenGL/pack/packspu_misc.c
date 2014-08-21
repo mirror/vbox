@@ -564,25 +564,12 @@ GLenum PACKSPU_APIENTRY packspu_GetError( void )
         crPackGetError( &return_val, &writeback );
     }
 
-#ifdef DEBUG_misha
-    if (pCurState->lists.currentIndex)
-    {
-        WARN(("GetError called in DisplayList"));
-    }
-#endif
+    packspuFlush( (void *) thread );
+    CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
-    if (!pCurState->lists.currentIndex || !(g_u32VBoxHostCaps & CR_VBOX_CAP_CMDBLOCKS))
+    if (pack_spu.swap)
     {
-        packspuFlush( (void *) thread );
-        CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-        if (pack_spu.swap)
-        {
-            return_val = (GLenum) SWAP32(return_val);
-        }
-    }
-    else
-    {
-        return_val = GL_NO_ERROR;
+        return_val = (GLenum) SWAP32(return_val);
     }
 
     return return_val;

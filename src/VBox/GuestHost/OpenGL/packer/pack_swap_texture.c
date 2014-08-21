@@ -684,6 +684,7 @@ void PACK_APIENTRY crPackAreTexturesResidentSWAP( GLsizei n, const GLuint *textu
     WRITE_NETWORK_POINTER( sizeof( int ) + 16 + n*sizeof( *textures ), (void *) return_val );
     WRITE_NETWORK_POINTER( sizeof( int ) + 24 + n*sizeof( *textures ), (void *) writeback );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 

@@ -103,6 +103,7 @@ void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width,
     WRITE_DATA( 44, GLint, packstate->rowLength );
     WRITE_NETWORK_POINTER( 48, (char *) pixels );
     WRITE_OPCODE( pc, CR_READPIXELS_OPCODE );
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -219,5 +220,6 @@ crPackGetTexImage( GLenum target, GLint level, GLenum format, GLenum type,
     WRITE_NETWORK_POINTER( 24, (void *) pixels );
     WRITE_NETWORK_POINTER( 32, (void *) writeback );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }

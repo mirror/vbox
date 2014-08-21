@@ -38,6 +38,8 @@ enum_index = enum_index + 1
 print "\tCR_CMDBLOCKBEGIN_OPCODE=%d," % enum_index
 enum_index = enum_index + 1
 print "\tCR_CMDBLOCKEND_OPCODE=%d," % enum_index
+enum_index = enum_index + 1
+print "\tCR_CMDBLOCKFLUSH_OPCODE=%d," % enum_index
 print "\tCR_NOP_OPCODE=255"
 if enum_index > 254:
 	# This would have saved Mike some grief if it had been here earlier.

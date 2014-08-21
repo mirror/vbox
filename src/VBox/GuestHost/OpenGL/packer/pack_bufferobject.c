@@ -99,6 +99,7 @@ crPackGetBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size
 	WRITE_NETWORK_POINTER( 20, (void *) data );
 	WRITE_NETWORK_POINTER( 28, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 

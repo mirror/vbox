@@ -428,6 +428,7 @@ void PACK_APIENTRY crPackGetActiveAttrib(GLuint program, GLuint index, GLsizei b
     WRITE_NETWORK_POINTER(20, (void *) length);
     WRITE_NETWORK_POINTER(28, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -448,6 +449,7 @@ void PACK_APIENTRY crPackGetActiveUniform(GLuint program, GLuint index, GLsizei 
     WRITE_NETWORK_POINTER(20, (void *) length);
     WRITE_NETWORK_POINTER(28, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -465,6 +467,7 @@ void PACK_APIENTRY crPackGetAttachedShaders(GLuint program, GLsizei maxCount, GL
     WRITE_NETWORK_POINTER(16, (void *) count);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -481,6 +484,7 @@ void PACK_APIENTRY crPackGetAttachedObjectsARB(VBoxGLhandleARB containerObj, GLs
 	WRITE_NETWORK_POINTER(16, (void *) count);
 	WRITE_NETWORK_POINTER(24, (void *) writeback);
 	WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -497,6 +501,7 @@ void PACK_APIENTRY crPackGetInfoLogARB(VBoxGLhandleARB obj, GLsizei maxLength, G
 	WRITE_NETWORK_POINTER(16, (void *) length);
 	WRITE_NETWORK_POINTER(24, (void *) writeback);
 	WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -514,6 +519,7 @@ void PACK_APIENTRY crPackGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsi
     WRITE_NETWORK_POINTER(16, (void *) length);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -531,6 +537,7 @@ void PACK_APIENTRY crPackGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsize
     WRITE_NETWORK_POINTER(16, (void *) length);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -548,6 +555,7 @@ void PACK_APIENTRY crPackGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei
     WRITE_NETWORK_POINTER(16, (void *) length);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -564,6 +572,7 @@ void PACK_APIENTRY crPackGetUniformsLocations(GLuint program, GLsizei maxcbData,
     WRITE_NETWORK_POINTER(16, (void *) cbData);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -580,6 +589,7 @@ void PACK_APIENTRY crPackGetAttribsLocations(GLuint program, GLsizei maxcbData, 
     WRITE_NETWORK_POINTER(16, (void *) cbData);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -599,6 +609,7 @@ void PACK_APIENTRY crPackGetAttribLocation(GLuint program, const char * name, GL
     WRITE_NETWORK_POINTER(0, (void *) return_value);
     WRITE_NETWORK_POINTER(8, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -618,6 +629,7 @@ void PACK_APIENTRY crPackGetUniformLocation(GLuint program, const char * name, G
     WRITE_NETWORK_POINTER(0, (void *) return_value);
     WRITE_NETWORK_POINTER(8, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
