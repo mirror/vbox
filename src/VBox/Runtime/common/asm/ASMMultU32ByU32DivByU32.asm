@@ -42,11 +42,11 @@ BEGINPROC_EXPORTED ASMMultU32ByU32DivByU32
 %ifdef RT_ARCH_AMD64
 
  %ifdef ASM_CALL64_MSC
-    mov     rax, ecx                    ; rax = u32A
+    mov     eax, ecx                    ; rax = u32A
     mov     r9d, edx                    ; should check the specs wrt to the high bits one day...
     mov     r8d, r8d                    ; be paranoid for the time being.
  %else
-    mov     rax, edi                    ; rax = u32A
+    mov     eax, edi                    ; rax = u32A
     mov     r9d, esi                    ; r9d = u32B
     mov     r8d, edx                    ; r8d = u32C
  %endif
