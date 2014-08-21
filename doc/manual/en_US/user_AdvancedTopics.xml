@@ -2611,239 +2611,284 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
       <screen>VBoxManage setextradata "VM name" GUI/RestrictedVisualStates</screen>
 
-      </sect2>
-
-      <sect2>
-        <title>Host Key customization</title>
-
-        <para>To disable all host key combinations, open the preferences and
-          change the host key to <emphasis>None</emphasis>. This might be useful
-          when using VirtualBox in a kiosk mode.</para>
-
-        <para>To redefine or disable certain host key actions, use the following command:</para>
-
-        <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</screen>
-
-        <para>The following list shows the possible host key actions together with their default
-          host key shortcut. Setting an action to <emphasis>None</emphasis> will disable
-          that host key action.</para>
-        <table>
-          <title>Host Key customization</title>
-          <tgroup cols="3">
-            <thead>
-              <row>
-                <entry><emphasis role="bold">Action</emphasis></entry>
-                <entry><emphasis role="bold">Default Key</emphasis></entry>
-                <entry><emphasis role="bold">Action</emphasis></entry>
-              </row>
-            </thead>
-            <tbody>
-              <row>
-                <entry><computeroutput>TakeSnapshot</computeroutput></entry>
-                <entry>T</entry>
-                <entry>take a snapshot</entry>
-              </row>
-              <row>
-                <entry><computeroutput>TakeScreenshot</computeroutput></entry>
-                <entry>E</entry>
-                <entry>take a screenshot</entry>
-              </row>
-              <row>
-                <entry><computeroutput>MouseIntegration</computeroutput></entry>
-                <entry>I</entry>
-                <entry>toggle mouse integration</entry>
-              </row>
-              <row>
-                <entry><computeroutput>TypeCAD</computeroutput></entry>
-                <entry>Del</entry>
-                <entry>inject Ctrl+Alt+Del</entry>
-              </row>
-              <row>
-                <entry><computeroutput>TypeCABS</computeroutput></entry>
-                <entry>Backspace</entry>
-                <entry>inject Ctrl+Alt+Backspace</entry>
-              </row>
-              <row>
-                <entry><computeroutput>Pause</computeroutput></entry>
-                <entry>P</entry>
-                <entry>Pause the VM</entry>
-              </row>
-              <row>
-                <entry><computeroutput>Reset</computeroutput></entry>
-                <entry>R</entry>
-                <entry>(hard) reset the guest</entry>
-              </row>
-              <row>
-                <entry><computeroutput>SaveState</computeroutput></entry>
-                <entry></entry>
-                <entry>save the VM state and terminate the VM</entry>
-              </row>
-              <row>
-                <entry><computeroutput>Shutdown</computeroutput></entry>
-                <entry>H</entry>
-                <entry>press the (virtual) ACPI power button</entry>
-              </row>
-              <row>
-                <entry><computeroutput>PowerOff</computeroutput></entry>
-                <entry></entry>
-                <entry>power the VM off (without saving the state!)</entry>
-              </row>
-              <row>
-                <entry><computeroutput>Close</computeroutput></entry>
-                <entry>Q</entry>
-                <entry>show the VM close dialog</entry>
-              </row>
-              <row>
-                <entry><computeroutput>FullscreenMode</computeroutput></entry>
-                <entry>F</entry>
-                <entry>switch the VM into full screen</entry>
-              </row>
-              <row>
-                <entry><computeroutput>SeamlessMode</computeroutput></entry>
-                <entry>L</entry>
-                <entry>switch the VM into seamless mode</entry>
-              </row>
-              <row>
-                <entry><computeroutput>ScaleMode</computeroutput></entry>
-                <entry>C</entry>
-                <entry>switch the VM into scale mode</entry>
-              </row>
-              <row>
-                <entry><computeroutput>GuestAutoResize</computeroutput></entry>
-                <entry>G</entry>
-                <entry>automatically resize the guest window</entry>
-              </row>
-              <row>
-                <entry><computeroutput>WindowAdjust</computeroutput></entry>
-                <entry>A</entry>
-                <entry>immediately resize the guest window</entry>
-              </row>
-              <row>
-                <entry><computeroutput>PopupMenu</computeroutput></entry>
-                <entry>Home</entry>
-                <entry>show popup menu in full screen / seaml. mode</entry>
-              </row>
-              <row>
-                <entry><computeroutput>SettingsDialog</computeroutput></entry>
-                <entry>S</entry>
-                <entry>open the VM settings dialog</entry>
-              </row>
-              <row>
-                <entry><computeroutput>InformationDialog</computeroutput></entry>
-                <entry>N</entry>
-                <entry>show the VM information window</entry>
-              </row>
-              <row>
-                <entry><computeroutput>NetworkAdaptersDialog</computeroutput></entry>
-                <entry></entry>
-                <entry>show the VM network adapters dialog</entry>
-              </row>
-              <row>
-                <entry><computeroutput>SharedFoldersDialog</computeroutput></entry>
-                <entry></entry>
-                <entry>show the VM shared folders dialog</entry>
-              </row>
-              <row>
-                <entry><computeroutput>InstallGuestAdditions</computeroutput></entry>
-                <entry>D</entry>
-                <entry>mount the ISO containing the Guest Additions</entry>
-              </row>
-            </tbody>
-          </tgroup>
-        </table>
-
-        <para>To disable the full screen mode as well as the seamless mode, use the following command:
-          <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</screen>
-        </para>
-
-      </sect2>
-
-      <sect2>
-        <title>Action when terminating the VM</title>
-
-        <para>You can disallow (i.e. black-list) certain actions when terminating a VM.
-          To disallow specific actions, type:</para>
-
-        <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
-
-        <para>where <computeroutput>OPTION</computeroutput> is one of the
-          following keywords:</para><glosslist>
-          <glossentry>
-            <glossterm><computeroutput>SaveState</computeroutput></glossterm>
-            <glossdef>
-              <para>Don't allow the user to save the VM state when terminating
-              the VM.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
-            <glossdef>
-              <para>Don't allow the user to shutdown the VM by sending the ACPI
-              power-off event to the guest.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
-            <glossdef>
-              <para>Don't allow the user to power off the VM.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
-            <glossdef>
-              <para>Don't allow the user to return to the last snapshot when
-                powering off the VM.</para>
-            </glossdef>
-          </glossentry>
-        </glosslist>
-
-        <para>This is a per-VM setting. Any combination of the above is allowed. If all
-          options are specified, the VM cannot be shut down at all.</para>
-      </sect2>
-
-      <sect2>
-        <title>Action for handling a Guru Meditation</title>
-
-        <para>A VM runs into a Guru Meditation if there is a problem which
-          cannot be fixed by other means than terminating the process. The
-          default is to show a message window which instructs the user to
-          open a bug report.</para>
-        <para>This behavior can be configured:</para>
-          
-        <para><screen>VBoxManage setextradata "VM name" GUI/GuruMeditationHandler MODE</screen></para>
-
-        <para>where <computeroutput>MODE</computeroutput> is one of the
-          following keywords:</para><glosslist>
-          <glossentry>
-            <glossterm><computeroutput>Default</computeroutput></glossterm>
-            <glossdef>
-              <para>A message window is shown. After the user confirmed, the
-                VM is terminated.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
-            <glossdef>
-              <para>The VM is immediately powered-off without showing any message
-                window. The VM logfile will show information about what happend.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm><computeroutput>Ignore</computeroutput></glossterm>
-            <glossdef>
-              <para>The VM is left in stuck mode. Execution is stopped but no
-              message window is shown. The VM has to be powered off manually.</para>
-            </glossdef>
-          </glossentry>
-        </glosslist>
-
-        <para>This is a per-VM setting.</para>
     </sect2>
+
+    <sect2>
+      <title>Host Key customization</title>
+
+      <para>To disable all host key combinations, open the preferences and
+        change the host key to <emphasis>None</emphasis>. This might be useful
+        when using VirtualBox in a kiosk mode.</para>
+
+      <para>To redefine or disable certain host key actions, use the following command:</para>
+
+      <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</screen>
+
+      <para>The following list shows the possible host key actions together with their default
+        host key shortcut. Setting an action to <emphasis>None</emphasis> will disable
+        that host key action.</para>
+      <table>
+        <title>Host Key customization</title>
+        <tgroup cols="3">
+          <thead>
+            <row>
+              <entry><emphasis role="bold">Action</emphasis></entry>
+              <entry><emphasis role="bold">Default Key</emphasis></entry>
+              <entry><emphasis role="bold">Action</emphasis></entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><computeroutput>TakeSnapshot</computeroutput></entry>
+              <entry>T</entry>
+              <entry>take a snapshot</entry>
+            </row>
+            <row>
+              <entry><computeroutput>TakeScreenshot</computeroutput></entry>
+              <entry>E</entry>
+              <entry>take a screenshot</entry>
+            </row>
+            <row>
+              <entry><computeroutput>MouseIntegration</computeroutput></entry>
+              <entry>I</entry>
+              <entry>toggle mouse integration</entry>
+            </row>
+            <row>
+              <entry><computeroutput>TypeCAD</computeroutput></entry>
+              <entry>Del</entry>
+              <entry>inject Ctrl+Alt+Del</entry>
+            </row>
+            <row>
+              <entry><computeroutput>TypeCABS</computeroutput></entry>
+              <entry>Backspace</entry>
+              <entry>inject Ctrl+Alt+Backspace</entry>
+            </row>
+            <row>
+              <entry><computeroutput>Pause</computeroutput></entry>
+              <entry>P</entry>
+              <entry>Pause the VM</entry>
+            </row>
+            <row>
+              <entry><computeroutput>Reset</computeroutput></entry>
+              <entry>R</entry>
+              <entry>(hard) reset the guest</entry>
+            </row>
+            <row>
+              <entry><computeroutput>SaveState</computeroutput></entry>
+              <entry></entry>
+              <entry>save the VM state and terminate the VM</entry>
+            </row>
+            <row>
+              <entry><computeroutput>Shutdown</computeroutput></entry>
+              <entry>H</entry>
+              <entry>press the (virtual) ACPI power button</entry>
+            </row>
+            <row>
+              <entry><computeroutput>PowerOff</computeroutput></entry>
+              <entry></entry>
+              <entry>power the VM off (without saving the state!)</entry>
+            </row>
+            <row>
+              <entry><computeroutput>Close</computeroutput></entry>
+              <entry>Q</entry>
+              <entry>show the VM close dialog</entry>
+            </row>
+            <row>
+              <entry><computeroutput>FullscreenMode</computeroutput></entry>
+              <entry>F</entry>
+              <entry>switch the VM into full screen</entry>
+            </row>
+            <row>
+              <entry><computeroutput>SeamlessMode</computeroutput></entry>
+              <entry>L</entry>
+              <entry>switch the VM into seamless mode</entry>
+            </row>
+            <row>
+              <entry><computeroutput>ScaleMode</computeroutput></entry>
+              <entry>C</entry>
+              <entry>switch the VM into scale mode</entry>
+            </row>
+            <row>
+              <entry><computeroutput>GuestAutoResize</computeroutput></entry>
+              <entry>G</entry>
+              <entry>automatically resize the guest window</entry>
+            </row>
+            <row>
+              <entry><computeroutput>WindowAdjust</computeroutput></entry>
+              <entry>A</entry>
+              <entry>immediately resize the guest window</entry>
+            </row>
+            <row>
+              <entry><computeroutput>PopupMenu</computeroutput></entry>
+              <entry>Home</entry>
+              <entry>show popup menu in full screen / seaml. mode</entry>
+            </row>
+            <row>
+              <entry><computeroutput>SettingsDialog</computeroutput></entry>
+              <entry>S</entry>
+              <entry>open the VM settings dialog</entry>
+            </row>
+            <row>
+              <entry><computeroutput>InformationDialog</computeroutput></entry>
+              <entry>N</entry>
+              <entry>show the VM information window</entry>
+            </row>
+            <row>
+              <entry><computeroutput>NetworkAdaptersDialog</computeroutput></entry>
+              <entry></entry>
+              <entry>show the VM network adapters dialog</entry>
+            </row>
+            <row>
+              <entry><computeroutput>SharedFoldersDialog</computeroutput></entry>
+              <entry></entry>
+              <entry>show the VM shared folders dialog</entry>
+            </row>
+            <row>
+              <entry><computeroutput>InstallGuestAdditions</computeroutput></entry>
+              <entry>D</entry>
+              <entry>mount the ISO containing the Guest Additions</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <para>To disable the full screen mode as well as the seamless mode, use the following command:
+        <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</screen>
+      </para>
+
+    </sect2>
+
+    <sect2>
+      <title>Action when terminating the VM</title>
+
+      <para>You can disallow (i.e. black-list) certain actions when terminating a VM.
+        To disallow specific actions, type:</para>
+
+      <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>SaveState</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to save the VM state when terminating
+            the VM.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to shutdown the VM by sending the ACPI
+            power-off event to the guest.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to power off the VM.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>PowerOffRestoringSnapshot</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to return to the last snapshot when
+              powering off the VM.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. If all
+        options are specified, the VM cannot be shut down at all.</para>
+    </sect2>
+
+    <sect2>
+      <title>Action for handling a Guru Meditation</title>
+
+      <para>A VM runs into a Guru Meditation if there is a problem which
+        cannot be fixed by other means than terminating the process. The
+        default is to show a message window which instructs the user to
+        open a bug report.</para>
+      <para>This behavior can be configured:</para>
+        
+      <para><screen>VBoxManage setextradata "VM name" GUI/GuruMeditationHandler MODE</screen></para>
+
+      <para>where <computeroutput>MODE</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>Default</computeroutput></glossterm>
+          <glossdef>
+            <para>A message window is shown. After the user confirmed, the
+              VM is terminated.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+          <glossdef>
+            <para>The VM is immediately powered-off without showing any message
+              window. The VM logfile will show information about what happend.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Ignore</computeroutput></glossterm>
+          <glossdef>
+            <para>The VM is left in stuck mode. Execution is stopped but no
+            message window is shown. The VM has to be powered off manually.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting.</para>
+    </sect2>
+
+    <sect2>
+      <title>Configuring automatic mouse capturing</title>
+
+      <para>
+        By default, the mouse is captured if the user clicks on the guest window
+        and the guest expects relative mouse coordiantes at this time. This
+        happens if the pointing device is configured as PS/2 mouse and the guest did
+        not (yet) start the VirtualBox Guest Additions (for instance, the guest is
+        booting or no Guest Additions installed at all) or if the pointing device
+        is configured as USB tablet but the guest has no USB driver loaded yet.
+        Once the Guest Additions become active or the USB guest driver is started,
+        the mouse capture is automatically released.
+      </para>
+      <para>
+        The default behavior is sometimes not desired. Therefore it can be configured:
+      </para>
+      <para><screen>VBoxManage setextradata "VM name" GUI/MouseCapturePolicy MODE</screen></para>
+      
+      <para>where <computeroutput>MODE</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>Default</computeroutput></glossterm>
+          <glossdef>
+            <para>The default behavior as described above.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>HostComboOnly</computeroutput></glossterm>
+          <glossdef>
+            <para>The mouse is only captured if the Host Key is toggled.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Disabled</computeroutput></glossterm>
+          <glossdef>
+            <para>The mouse is never captured, also not by toggling the Host Key</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting.</para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="vboxwebsrv-daemon">
