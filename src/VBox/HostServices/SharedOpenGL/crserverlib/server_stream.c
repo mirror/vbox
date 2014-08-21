@@ -654,9 +654,16 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg, int cbMsg)
             crServerPendProcess(conn);
             break;
         }
+        case CR_UNPACK_BUFFER_TYPE_CMDBLOCK_FLUSH: /* just flush for now */
+        {
+            CrPMgrClearRegionsGlobal(); /* clear regions to ensure we don't do MakeCurrent and friends */
+            crServerPendProcess(conn);
+            Assert(RTListIsEmpty(&conn->PendingMsgList));
+            break;
+        }
         case CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END:
         {
-            CRASSERT(!RTListIsEmpty(&conn->PendingMsgList));
+//            CRASSERT(!RTListIsEmpty(&conn->PendingMsgList));
             crServerPendProcess(conn);
             Assert(RTListIsEmpty(&conn->PendingMsgList));
             break;

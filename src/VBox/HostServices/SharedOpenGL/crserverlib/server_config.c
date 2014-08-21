@@ -177,6 +177,7 @@ void crServerSetVBoxConfiguration()
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
+                | CR_VBOX_CAP_CMDBLOCKS_FLUSH
                 ;
     }
 
@@ -327,6 +328,7 @@ void crServerSetVBoxConfigurationHGCM()
                 | CR_VBOX_CAP_CMDVBVA
                 | CR_VBOX_CAP_CMDBLOCKS
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
+                | CR_VBOX_CAP_CMDBLOCKS_FLUSH
                 ;
     }
 

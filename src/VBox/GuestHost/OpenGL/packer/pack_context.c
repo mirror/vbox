@@ -45,6 +45,7 @@ crPackCreateContext( const char *dpyName, GLint visual, GLint shareCtx,
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 16, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 24, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -77,6 +78,7 @@ crPackCreateContextSWAP( const char *dpyName, GLint visual, GLint shareCtx,
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 16, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 24, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -106,6 +108,7 @@ void PACK_APIENTRY crPackWindowCreate( const char *dpyName, GLint visBits, GLint
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 12, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 20, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -134,5 +137,6 @@ void PACK_APIENTRY crPackWindowCreateSWAP( const char *dpyName, GLint visBits, G
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 12, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 20, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+	CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }

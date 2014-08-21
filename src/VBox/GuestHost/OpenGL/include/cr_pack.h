@@ -190,8 +190,7 @@ extern DECLEXPORT(void) crPackExpandMultiDrawArraysEXTSWAP( GLenum mode, GLint *
 extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
 extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXTSWAP( GLenum mode, const GLsizei *count, GLenum type, const GLvoid **indices, GLsizei primcount, CRClientState *c, const GLfloat *pZva );
 
-extern DECLEXPORT(void) crPackCmdBlocksEnable();
-
+extern DECLEXPORT(void) crPackCapsSet(uint32_t u32Caps);
 
 /**
  * Return number of opcodes in given buffer.
@@ -308,6 +307,20 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
         (pc)->Flush( pc->flush_arg );                               \
       }                                                             \
     }                                                               \
+  } while (0)
+
+#define CR_CMDBLOCK_CHECK_FLUSH( pc )                               \
+  do {                                                              \
+    if (!(cr_packer_cmd_blocks_enabled & CR_VBOX_CAP_CMDBLOCKS_FLUSH)) break; \
+    if(!CRPACKBLOCKSTATE_IS_OP_STARTED((pc)->u32CmdBlockState, CRPACKBLOCKSTATE_OP_NEWLIST)) break; \
+    THREADASSERT( pc );                                             \
+    CRASSERT( (pc)->currentBuffer );                                \
+    if ( !crPackCanHoldOpcode( pc, 1, 4 ) ) {                       \
+      (pc)->Flush( (pc)->flush_arg );                               \
+      Assert(crPackCanHoldOpcode( pc, 1, 4 ) );                     \
+    }                                                               \
+    CR_CMDBLOCK_OP( pc, CR_CMDBLOCKFLUSH_OPCODE );                  \
+    (pc)->Flush( (pc)->flush_arg );                                 \
   } while (0)
 
 /**

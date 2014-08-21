@@ -210,7 +210,6 @@ CR_UNPACK_BUFFER_TYPE crUnpackGetBufferType(const void *opcodes, unsigned int nu
 {
     const uint8_t *pu8Codes = (const uint8_t *)opcodes;
 
-    CR_UNPACK_BUFFER_TYPE enmType;
     uint8_t first;
     uint8_t last;
 
@@ -219,14 +218,16 @@ CR_UNPACK_BUFFER_TYPE crUnpackGetBufferType(const void *opcodes, unsigned int nu
 
     first = pu8Codes[0];
     last = pu8Codes[1-(int)num_opcodes];
-
-    enmType = (first != CR_CMDBLOCKBEGIN_OPCODE) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN;
-
-    if (last != CR_CMDBLOCKEND_OPCODE)
-        return enmType;
-
-    /* last is CMDBLOCKEND*/
-    return (enmType == CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END;
+    
+    switch (last)
+    {
+        case CR_CMDBLOCKFLUSH_OPCODE:
+            return CR_UNPACK_BUFFER_TYPE_CMDBLOCK_FLUSH;
+        case CR_CMDBLOCKEND_OPCODE:
+            return (first == CR_CMDBLOCKBEGIN_OPCODE) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_END;
+        default:
+            return (first != CR_CMDBLOCKBEGIN_OPCODE) ? CR_UNPACK_BUFFER_TYPE_GENERIC : CR_UNPACK_BUFFER_TYPE_CMDBLOCK_BEGIN;
+    } 
 }
 
 void crUnpack( const void *data, const void *opcodes, 
@@ -287,6 +288,7 @@ print """
                 break;
             case CR_CMDBLOCKBEGIN_OPCODE:
             case CR_CMDBLOCKEND_OPCODE:
+            case CR_CMDBLOCKFLUSH_OPCODE:
             case CR_NOP_OPCODE:
                 INCR_DATA_PTR_NO_ARGS( );
                 break;

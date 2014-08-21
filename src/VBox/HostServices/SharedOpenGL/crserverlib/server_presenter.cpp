@@ -4889,6 +4889,28 @@ static int crPMgrModeModifyGlobal(uint32_t u32ModeAdd, uint32_t u32ModeRemove)
     return VINF_SUCCESS;
 }
 
+int CrPMgrClearRegionsGlobal()
+{
+    for (HCR_FRAMEBUFFER hFb = CrPMgrFbGetFirstEnabled();
+            hFb;
+            hFb = CrPMgrFbGetNextEnabled(hFb))
+    {
+        int rc = CrFbUpdateBegin(hFb);
+        if (RT_SUCCESS(rc))
+        {
+            rc = CrFbRegionsClear(hFb);
+            if (RT_FAILURE(rc))
+            {
+                WARN(("CrFbRegionsClear failed %d", rc));
+            }
+
+            CrFbUpdateEnd(hFb);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
 int CrPMgrModeVrdp(bool fEnable)
 {
     uint32_t u32ModeAdd, u32ModeRemove;

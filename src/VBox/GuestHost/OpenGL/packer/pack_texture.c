@@ -718,6 +718,7 @@ crPackAreTexturesResident(GLsizei n, const GLuint * textures,
     WRITE_NETWORK_POINTER(12 + n * sizeof(*textures),   (void *) residences);
     WRITE_NETWORK_POINTER(20 + n * sizeof(*textures), (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_CMDBLOCK_CHECK_FLUSH(pc);
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
