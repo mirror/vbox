@@ -15137,6 +15137,9 @@ pmode_setup:                                 ; 0xfe8e0 LB 0x37b
     mov eax, cr0                              ; 0f 20 c0
     and eax, strict dword 09fffffffh          ; 66 25 ff ff ff 9f
     mov cr0, eax                              ; 0f 22 c0
+    mov esi, strict dword 0fee000f0h          ; 66 be f0 00 e0 fe
+    mov eax, strict dword 00000010fh          ; 66 b8 0f 01 00 00
+    mov dword [esi], eax                      ; 67 66 89 06
     mov esi, strict dword 0fee00350h          ; 66 be 50 03 e0 fe
     mov eax, dword [esi]                      ; 67 66 8b 06
     and eax, strict dword 0fffe00ffh          ; 66 25 ff 00 fe ff
@@ -15147,12 +15150,12 @@ pmode_setup:                                 ; 0xfe8e0 LB 0x37b
     and eax, strict dword 0fffe00ffh          ; 66 25 ff 00 fe ff
     or ah, 004h                               ; 80 cc 04
     mov dword [esi], eax                      ; 67 66 89 06
-    call 0e87fh                               ; e8 59 ff
+    call 0e87fh                               ; e8 49 ff
     popfw                                     ; 9d
     pop esi                                   ; 66 5e
     pop eax                                   ; 66 58
     retn                                      ; c3
-    times 0x59 db 0
+    times 0x49 db 0
     pop ax                                    ; 58
     dec bp                                    ; 4d
     cli                                       ; fa
@@ -16131,4 +16134,4 @@ dummy_iret:                                  ; 0xfff53 LB 0x9d
     db  'XM'
 cpu_reset:                                   ; 0xffff0 LB 0x10
     jmp far 0f000h:0e05bh                     ; ea 5b e0 00 f0
-    db  030h, 036h, 02fh, 032h, 033h, 02fh, 039h, 039h, 000h, 0fch, 018h
+    db  030h, 036h, 02fh, 032h, 033h, 02fh, 039h, 039h, 000h, 0fch, 0ach
