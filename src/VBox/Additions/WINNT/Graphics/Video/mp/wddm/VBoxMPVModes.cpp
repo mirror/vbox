@@ -86,6 +86,13 @@ static void vboxWddmVModesInit(VBOXWDDM_VMODES *pModes, uint32_t cTargets)
     memset(pModes->aPendingRemoveCurResolutions, 0, cTargets * sizeof (pModes->aPendingRemoveCurResolutions[0]));
 }
 
+static void vboxWddmVModesCleanup(VBOXWDDM_VMODES *pModes)
+{
+    VBoxVModesCleanup(&pModes->Modes);
+    memset(pModes->aTransientResolutions, 0, sizeof (pModes->aTransientResolutions));
+    memset(pModes->aPendingRemoveCurResolutions, 0, sizeof (pModes->aPendingRemoveCurResolutions));
+}
+
 /*
 static void vboxWddmVModesClone(const VBOXWDDM_VMODES *pModes, VBOXWDDM_VMODES *pDst)
 {
@@ -383,6 +390,11 @@ int voxWddmVModesInitForTarget(PVBOXMP_DEVEXT pExt, VBOXWDDM_VMODES *pModes, uin
 
 static VBOXWDDM_VMODES g_VBoxWddmVModes;
 
+void VBoxWddmVModesCleanup()
+{
+    VBOXWDDM_VMODES *pModes = &g_VBoxWddmVModes;
+    vboxWddmVModesCleanup(pModes);
+}
 
 int VBoxWddmVModesInit(PVBOXMP_DEVEXT pExt)
 {
