@@ -1056,6 +1056,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
     if (IOM_SUCCESS(rcStrict))
     {
+        *puMem = (OP_TYPE)u32Value;
         VBOXSTRICTRC rcStrict2 = iemMemCommitAndUnmap(pIemCpu, puMem, IEM_ACCESS_DATA_W);
         if (RT_LIKELY(rcStrict2 == VINF_SUCCESS))
         {
