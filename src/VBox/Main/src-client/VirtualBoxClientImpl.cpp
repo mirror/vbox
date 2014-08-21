@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -147,15 +147,10 @@ void VirtualBoxClient::uninit()
  * @returns COM status code
  * @param   aVirtualBox Address of result variable.
  */
-STDMETHODIMP VirtualBoxClient::COMGETTER(VirtualBox)(IVirtualBox **aVirtualBox)
+HRESULT VirtualBoxClient::getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox)
 {
-    CheckComArgOutPointerValid(aVirtualBox);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mData.m_pVirtualBox.queryInterfaceTo(aVirtualBox);
+    aVirtualBox = mData.m_pVirtualBox;
     return S_OK;
 }
 
@@ -165,20 +160,13 @@ STDMETHODIMP VirtualBoxClient::COMGETTER(VirtualBox)(IVirtualBox **aVirtualBox)
  * @returns COM status code
  * @param   aSession    Address of result variable.
  */
-STDMETHODIMP VirtualBoxClient::COMGETTER(Session)(ISession **aSession)
+HRESULT VirtualBoxClient::getSession(ComPtr<ISession> &aSession)
 {
-    HRESULT rc;
-    CheckComArgOutPointerValid(aSession);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is not stored in this object, no need to lock */
     ComPtr<ISession> pSession;
-    rc = pSession.createInprocObject(CLSID_Session);
+    HRESULT rc = pSession.createInprocObject(CLSID_Session);
     if (SUCCEEDED(rc))
-        pSession.queryInterfaceTo(aSession);
-
+        aSession = pSession;
     return rc;
 }
 
@@ -188,18 +176,15 @@ STDMETHODIMP VirtualBoxClient::COMGETTER(Session)(ISession **aSession)
  * @returns COM status code
  * @param   aEventSource    Address of result variable.
  */
-STDMETHODIMP VirtualBoxClient::COMGETTER(EventSource)(IEventSource **aEventSource)
+HRESULT VirtualBoxClient::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-    CheckComArgOutPointerValid(aEventSource);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     /* this is const, no need to lock */
-    mData.m_pEventSource.queryInterfaceTo(aEventSource);
-
-    return mData.m_pEventSource.isNull() ? E_FAIL : S_OK;
+    aEventSource = mData.m_pEventSource;
+    return aEventSource.isNull() ? E_FAIL : S_OK;
 }
+
+// IVirtualBoxClient methods
+/////////////////////////////////////////////////////////////////////////////
 
 /**
  * Checks a Machine object for any pending errors.
@@ -207,13 +192,10 @@ STDMETHODIMP VirtualBoxClient::COMGETTER(EventSource)(IEventSource **aEventSourc
  * @returns COM status code
  * @param   aMachine    Machine object to check.
  */
-STDMETHODIMP VirtualBoxClient::CheckMachineError(IMachine *aMachine)
+HRESULT VirtualBoxClient::checkMachineError(const ComPtr<IMachine> &aMachine)
 {
-    HRESULT rc;
-    CheckComArgNotNull(aMachine);
-
     BOOL fAccessible = FALSE;
-    rc = aMachine->COMGETTER(Accessible)(&fAccessible);
+    HRESULT rc = aMachine->COMGETTER(Accessible)(&fAccessible);
     if (FAILED(rc))
         return setError(rc, tr("Could not check the accessibility status of the VM"));
     else if (!fAccessible)

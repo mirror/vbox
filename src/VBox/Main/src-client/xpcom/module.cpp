@@ -28,51 +28,18 @@
 // generated file
 #include "VirtualBox_XPCOM.h"
 
-#include "AdditionsFacilityImpl.h"
-#include "ConsoleImpl.h"
-#include "ConsoleVRDPServer.h"
-#include "DisplayImpl.h"
-#ifdef VBOX_WITH_EXTPACK
-# include "ExtPackManagerImpl.h"
-#endif
-#include "GuestImpl.h"
-#ifdef VBOX_WITH_GUEST_CONTROL
-# include "GuestDirectoryImpl.h"
-# include "GuestFileImpl.h"
-# include "GuestFsObjInfoImpl.h"
-# include "GuestProcessImpl.h"
-# include "GuestSessionImpl.h"
-#endif
-#include "KeyboardImpl.h"
-#include "MachineDebuggerImpl.h"
-#include "MouseImpl.h"
-#include "NATEngineImpl.h"
-#include "NetworkAdapterImpl.h"
-#include "ProgressImpl.h"
-#include "RemoteUSBDeviceImpl.h"
 #include "SessionImpl.h"
-#include "SharedFolderImpl.h"
-#include "USBDeviceImpl.h"
 #include "VirtualBoxClientImpl.h"
+#include "RemoteUSBDeviceImpl.h"
+#include "USBDeviceImpl.h"
 
 #include "Logging.h"
 
 // XPCOM glue code unfolding
 
-NS_DECL_CLASSINFO(VirtualBoxClient)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxClient, IVirtualBoxClient)
-
 #ifndef VBOX_COM_INPROC_API_CLIENT
 NS_DECL_CLASSINFO(RemoteUSBDevice)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(RemoteUSBDevice, IHostUSBDevice, IUSBDevice)
-NS_DECL_CLASSINFO(VRDEServerInfo)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
- #ifdef VBOX_WITH_EXTPACK
-// deliberately omit ExtPackFile as it's unusable in the client context
-// NS_DECL_CLASSINFO(ExtPackFile)
-// NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPackFile, IExtPackFile, IExtPackBase)
- #endif
-
 #endif /* VBOX_COM_INPROC_API_CLIENT */
 
 /*
@@ -82,6 +49,14 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
  */
 NS_DECL_CI_INTERFACE_GETTER(SessionWrap)
 extern nsIClassInfo *NS_CLASSINFO_NAME(SessionWrap);
+
+/*
+ * Declare extern variables here to tell the compiler that
+ * NS_DECL_CLASSINFO(VirtualBoxClientWrap)
+ * already exists in the VBoxAPIWrap library.
+ */
+NS_DECL_CI_INTERFACE_GETTER(VirtualBoxClientWrap)
+extern nsIClassInfo *NS_CLASSINFO_NAME(VirtualBoxClientWrap);
 
 /**
  *  Singleton class factory that holds a reference to the created instance
@@ -165,9 +140,9 @@ static const nsModuleComponentInfo components[] =
         NULL, // registration function
         NULL, // deregistration function
         NULL, // destructor function
-        NS_CI_INTERFACE_GETTER_NAME(VirtualBoxClient), // interfaces function
+        NS_CI_INTERFACE_GETTER_NAME(VirtualBoxClientWrap), // interfaces function
         NULL, // language helper
-        &NS_CLASSINFO_NAME(VirtualBoxClient) // global class info & flags
+        &NS_CLASSINFO_NAME(VirtualBoxClientWrap) // global class info & flags
     },
 };
 

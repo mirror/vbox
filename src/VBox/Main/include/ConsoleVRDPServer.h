@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
 #ifndef ____H_CONSOLEVRDPSERVER
 #define ____H_CONSOLEVRDPSERVER
 
+#include "VRDEServerInfoWrap.h"
 #include "RemoteUSBBackend.h"
 #include "HGCM.h"
 
@@ -363,50 +364,41 @@ private:
 class Console;
 
 class ATL_NO_VTABLE VRDEServerInfo :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IVRDEServerInfo)
+    public VRDEServerInfoWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDEServerInfo, IVRDEServerInfo)
-
     DECLARE_NOT_AGGREGATABLE(VRDEServerInfo)
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VRDEServerInfo)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IVRDEServerInfo)
-    END_COM_MAP()
-
-    DECLARE_EMPTY_CTOR_DTOR (VRDEServerInfo)
+    DECLARE_EMPTY_CTOR_DTOR(VRDEServerInfo)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     /* Public initializer/uninitializer for internal purposes only. */
-    HRESULT init (Console *aParent);
+    HRESULT init(Console *aParent);
     void uninit();
 
-    /* IVRDEServerInfo properties */
-    #define DECL_GETTER(_aType, _aName) STDMETHOD(COMGETTER(_aName)) (_aType *a##_aName)
-        DECL_GETTER (BOOL,    Active);
-        DECL_GETTER (LONG,    Port);
-        DECL_GETTER (ULONG,   NumberOfClients);
-        DECL_GETTER (LONG64,  BeginTime);
-        DECL_GETTER (LONG64,  EndTime);
-        DECL_GETTER (LONG64,  BytesSent);
-        DECL_GETTER (LONG64,  BytesSentTotal);
-        DECL_GETTER (LONG64,  BytesReceived);
-        DECL_GETTER (LONG64,  BytesReceivedTotal);
-        DECL_GETTER (BSTR,    User);
-        DECL_GETTER (BSTR,    Domain);
-        DECL_GETTER (BSTR,    ClientName);
-        DECL_GETTER (BSTR,    ClientIP);
-        DECL_GETTER (ULONG,   ClientVersion);
-        DECL_GETTER (ULONG,   EncryptionStyle);
-    #undef DECL_GETTER
-
 private:
+    // wrapped IVRDEServerInfo properties
+#define DECL_GETTER(_aType, _aName) virtual HRESULT get##_aName(_aType *a##_aName)
+#define DECL_GETTER_REF(_aType, _aName) virtual HRESULT get##_aName(_aType &a##_aName)
+    DECL_GETTER(BOOL, Active);
+    DECL_GETTER(LONG, Port);
+    DECL_GETTER(ULONG, NumberOfClients);
+    DECL_GETTER(LONG64, BeginTime);
+    DECL_GETTER(LONG64, EndTime);
+    DECL_GETTER(LONG64, BytesSent);
+    DECL_GETTER(LONG64, BytesSentTotal);
+    DECL_GETTER(LONG64, BytesReceived);
+    DECL_GETTER(LONG64, BytesReceivedTotal);
+    DECL_GETTER_REF(com::Utf8Str, User);
+    DECL_GETTER_REF(com::Utf8Str, Domain);
+    DECL_GETTER_REF(com::Utf8Str, ClientName);
+    DECL_GETTER_REF(com::Utf8Str, ClientIP);
+    DECL_GETTER(ULONG, ClientVersion);
+    DECL_GETTER(ULONG, EncryptionStyle);
+#undef DECL_GETTER_REF
+#undef DECL_GETTER
 
     Console * const         mParent;
 };

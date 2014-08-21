@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 #ifndef ____H_VIRTUALBOXCLIENTIMPL
 #define ____H_VIRTUALBOXCLIENTIMPL
 
-#include "VirtualBoxBase.h"
+#include "VirtualBoxClientWrap.h"
 #include "EventImpl.h"
 
 #ifdef RT_OS_WINDOWS
@@ -27,26 +27,17 @@
 #endif
 
 class ATL_NO_VTABLE VirtualBoxClient :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IVirtualBoxClient)
+    public VirtualBoxClientWrap
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<VirtualBoxClient, &CLSID_VirtualBoxClient>
 #endif
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBoxClient, IVirtualBoxClient)
-
     DECLARE_CLASSFACTORY()
 
     DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
+
     DECLARE_NOT_AGGREGATABLE(VirtualBoxClient)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VirtualBoxClient)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IVirtualBoxClient)
-    END_COM_MAP()
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -55,13 +46,15 @@ public:
     HRESULT init();
     void uninit();
 
-    // IUSBDevice properties
-    STDMETHOD(COMGETTER(VirtualBox))(IVirtualBox **aVirtualBox);
-    STDMETHOD(COMGETTER(Session))(ISession **aSession);
-    STDMETHOD(COMGETTER(EventSource))(IEventSource **aEventSource);
-    STDMETHOD(CheckMachineError)(IMachine *aMachine);
-
 private:
+    // wrapped IVirtualBoxClient properties
+    virtual HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox);
+    virtual HRESULT getSession(ComPtr<ISession> &aSession);
+    virtual HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+
+    // wrapped IVirtualBoxClient methods
+    virtual HRESULT checkMachineError(const ComPtr<IMachine> &aMachine);
+
     /** Instance counter for simulating something similar to a singleton.
      * Only the first instance will be a usable object, all additional
      * instances will return a failure at creation time and will not work. */
