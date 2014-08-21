@@ -1351,6 +1351,7 @@ NTSTATUS DxgkDdiStopDevice(
     {
         vboxWddmVGuidFree(pDevExt);
 
+        VBoxWddmVModesCleanup();
         /* revert back to the state we were right after the DxgkDdiAddDevice */
         vboxWddmDevExtZeroinit(pDevExt, pDevExt->pPDO);
     }
