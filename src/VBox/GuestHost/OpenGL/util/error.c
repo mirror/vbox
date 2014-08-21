@@ -584,3 +584,25 @@ DECLEXPORT(void) crDebug(const char *format, ... )
 #endif
     va_end( args );
 }
+
+#if defined(DEBUG_misha) && defined(RT_OS_WINDOWS)
+BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
+{
+    (void) lpvReserved;
+
+    switch (fdwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+        {
+            char aName[MAX_PATH];
+             GetModuleFileNameA(hDLLInst, aName, RT_ELEMENTS(aName));
+             crDbgCmdSymLoadPrint(aName, hDLLInst);
+            break;
+        }
+        default:
+            break;
+    }
+
+    return TRUE;
+}
+#endif

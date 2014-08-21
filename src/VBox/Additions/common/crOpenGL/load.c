@@ -1324,7 +1324,17 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         CRNetServer ns;
         const char * env;
+#if defined(DEBUG_misha)
+        HMODULE hCrUtil;
+        char aName[MAX_PATH];
 
+        GetModuleFileNameA(hDLLInst, aName, RT_ELEMENTS(aName));
+        crDbgCmdSymLoadPrint(aName, hDLLInst);
+
+        hCrUtil = GetModuleHandleA("VBoxOGLcrutil.dll");
+        Assert(hCrUtil);
+        crDbgCmdSymLoadPrint("VBoxOGLcrutil.dll", hCrUtil);
+#endif
 #ifdef CHROMIUM_THREADSAFE
         crInitTSD(&g_stubCurrentContextTSD);
 #endif
