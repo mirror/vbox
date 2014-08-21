@@ -2754,6 +2754,57 @@ static int supR3HardNtPuChScrewUpPebForInitialImageEvents(PSUPR3HARDNTPUCH pThis
 }
 
 
+static PVOID supR3HardNtPuChMapDllIntoChild(PSUPR3HARDNTPUCH pThis, PUNICODE_STRING pNtName, const char *pszShort)
+{
+    HANDLE              hFile  = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK     Ios    = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    OBJECT_ATTRIBUTES   ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, pNtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    NTSTATUS rcNt = NtCreateFile(&hFile,
+                                 GENERIC_READ | GENERIC_EXECUTE,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* Allocation Size*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 FILE_SHARE_READ,
+                                 FILE_OPEN,
+                                 FILE_NON_DIRECTORY_FILE,
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+    PVOID pvRet = NULL;
+    if (NT_SUCCESS(rcNt))
+    {
+        HANDLE hSection = RTNT_INVALID_HANDLE_VALUE;
+        rcNt = NtCreateSection(&hSection,
+                               SECTION_MAP_EXECUTE | SECTION_MAP_READ | SECTION_MAP_WRITE | SECTION_QUERY,
+                               NULL /* pObjAttr*/, NULL /*pMaxSize*/,
+                               PAGE_EXECUTE, SEC_IMAGE, hFile);
+        if (NT_SUCCESS(rcNt))
+        {
+            SIZE_T cbView = 0;
+            rcNt = NtMapViewOfSection(hSection, pThis->hProcess, &pvRet, 0 /*ZeroBits*/, 0 /*CommitSize*/,
+                                      NULL /*pOffSect*/, &cbView, ViewShare, 0 /*AllocationType*/, PAGE_READWRITE);
+            if (NT_SUCCESS(rcNt))
+                SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: %s mapped at %p LB %#x\n", pszShort, pvRet, cbView));
+            else
+            {
+                SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtMapViewOfSection failed on %s: %#x\n", pszShort, rcNt));
+                pvRet = NULL;
+            }
+            NtClose(hSection);
+        }
+        else
+            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtCreateSection failed on %s: %#x\n", pszShort, rcNt));
+        NtClose(hFile);
+    }
+    else
+        SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Error opening %s: %#x\n", pszShort, rcNt));
+    return pvRet;
+}
+
+
 /**
  * Trigger the initial image events without actually initializing the process.
  *
@@ -2887,6 +2938,19 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
                              "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
 
     /*
+     * Map kernel32.dll and kernelbase.dll (if applicable) into the process.
+     * This triggers should image load events that may set of AV activities
+     * that we'd rather see early than later.
+     */
+    UNICODE_STRING NtName1 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\kernel32.dll");
+    PVOID pvKernel32 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName1, "kernel32.dll");
+
+    UNICODE_STRING NtName2 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\KernelBase.dll");
+    PVOID pvKernelBase = g_uNtVerCombined >= SUP_NT_VER_VISTA
+                       ? supR3HardNtPuChMapDllIntoChild(pThis, &NtName2, "KernelBase.dll")
+                       : NULL;
+
+    /*
      * Fudge factor for letting kernel threads get a chance to mess up our
      * process asynchronously.
      */
@@ -2899,6 +2963,24 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
 
     NtYieldExecution();
     SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n", GetTickCount() - dwStart));
+
+    /*
+     * Unmap kernel32 & kernelbase. Wonder how the AV stuff is gonna react to this...
+     */
+    if (pvKernel32)
+    {
+        rcNt = NtUnmapViewOfSection(pThis->hProcess, pvKernel32);
+        if (!NT_SUCCESS(!rcNt))
+            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on kernel32: %#x (%p)\n",
+                         rcNt, pvKernel32));
+    }
+    if (pvKernelBase)
+    {
+        rcNt = NtUnmapViewOfSection(pThis->hProcess, pvKernelBase);
+        if (!NT_SUCCESS(!rcNt))
+            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on KernelBase: %#x (%p)\n",
+                         rcNt, pvKernelBase));
+    }
 
     return VINF_SUCCESS;
 }
@@ -3420,10 +3502,7 @@ static bool supR3HardenedWinDriverExists(const char *pszDriver)
     /*
      * Open the driver object directory.
      */
-    UNICODE_STRING NtDirName;
-    NtDirName.Buffer = L"\\Driver";
-    NtDirName.MaximumLength = sizeof(L"\\Driver");
-    NtDirName.Length = NtDirName.MaximumLength - sizeof(WCHAR);
+    UNICODE_STRING NtDirName = RTNT_CONSTANT_UNISTR(L"\\Driver");
 
     OBJECT_ATTRIBUTES ObjAttr;
     InitializeObjectAttributes(&ObjAttr, &NtDirName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
