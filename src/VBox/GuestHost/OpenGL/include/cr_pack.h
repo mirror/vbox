@@ -108,7 +108,7 @@ extern DLLDATA(CRPackContext) cr_packer_globals;
 #  define CR_LOCK_PACKER_CONTEXT(PC)
 #  define CR_UNLOCK_PACKER_CONTEXT(PC)
 # endif
-extern int cr_packer_cmd_blocks_enabled;
+extern uint32_t cr_packer_cmd_blocks_enabled;
 #else /* if defined IN_RING0 */
 # define CR_PACKER_CONTEXT_ARGSINGLEDECL CRPackContext *_pCtx
 # define CR_PACKER_CONTEXT_ARGDECL CR_PACKER_CONTEXT_ARGSINGLEDECL,
