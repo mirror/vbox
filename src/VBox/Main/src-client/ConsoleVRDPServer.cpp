@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -4081,21 +4081,15 @@ void VRDEServerInfo::uninit()
 /////////////////////////////////////////////////////////////////////////////
 
 #define IMPL_GETTER_BOOL(_aType, _aName, _aIndex)                         \
-    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+    HRESULT VRDEServerInfo::get##_aName(_aType *a##_aName)                \
     {                                                                     \
-        if (!a##_aName)                                                   \
-            return E_POINTER;                                             \
-                                                                          \
-        AutoCaller autoCaller(this);                                      \
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
-                                                                          \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->i_consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                         \
             (_aIndex, &value, sizeof(value), &cbOut);                     \
                                                                           \
         *a##_aName = cbOut? !!value: FALSE;                               \
@@ -4105,21 +4099,15 @@ void VRDEServerInfo::uninit()
     extern void IMPL_GETTER_BOOL_DUMMY(void)
 
 #define IMPL_GETTER_SCALAR(_aType, _aName, _aIndex, _aValueMask)          \
-    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+    HRESULT VRDEServerInfo::get##_aName(_aType *a##_aName)                \
     {                                                                     \
-        if (!a##_aName)                                                   \
-            return E_POINTER;                                             \
-                                                                          \
-        AutoCaller autoCaller(this);                                      \
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
-                                                                          \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->i_consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                         \
             (_aIndex, &value, sizeof(value), &cbOut);                     \
                                                                           \
         if (_aValueMask) value &= (_aValueMask);                          \
@@ -4129,27 +4117,20 @@ void VRDEServerInfo::uninit()
     }                                                                     \
     extern void IMPL_GETTER_SCALAR_DUMMY(void)
 
-#define IMPL_GETTER_BSTR(_aType, _aName, _aIndex)                         \
-    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+#define IMPL_GETTER_UTF8STR(_aType, _aName, _aIndex)                      \
+    HRESULT VRDEServerInfo::get##_aName(_aType &a##_aName)                \
     {                                                                     \
-        if (!a##_aName)                                                   \
-            return E_POINTER;                                             \
-                                                                          \
-        AutoCaller autoCaller(this);                                      \
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();              \
-                                                                          \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \
-        mParent->i_consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                         \
             (_aIndex, NULL, 0, &cbOut);                                   \
                                                                           \
         if (cbOut == 0)                                                   \
         {                                                                 \
-            Bstr str("");                                                 \
-            str.cloneTo(a##_aName);                                       \
+            a##_aName = Utf8Str::Empty;                                   \
             return S_OK;                                                  \
         }                                                                 \
                                                                           \
@@ -4163,12 +4144,10 @@ void VRDEServerInfo::uninit()
             return E_OUTOFMEMORY;                                         \
         }                                                                 \
                                                                           \
-        mParent->i_consoleVRDPServer()->QueryInfo                           \
+        mParent->i_consoleVRDPServer()->QueryInfo                         \
             (_aIndex, pchBuffer, cbOut, &cbOut);                          \
                                                                           \
-        Bstr str(pchBuffer);                                              \
-                                                                          \
-        str.cloneTo(a##_aName);                                           \
+        a##_aName = pchBuffer;                                            \
                                                                           \
         RTMemTmpFree(pchBuffer);                                          \
                                                                           \
@@ -4185,14 +4164,14 @@ IMPL_GETTER_SCALAR (LONG64,  BytesSent,          VRDE_QI_BYTES_SENT,            
 IMPL_GETTER_SCALAR (LONG64,  BytesSentTotal,     VRDE_QI_BYTES_SENT_TOTAL,      INT64_MAX);
 IMPL_GETTER_SCALAR (LONG64,  BytesReceived,      VRDE_QI_BYTES_RECEIVED,        INT64_MAX);
 IMPL_GETTER_SCALAR (LONG64,  BytesReceivedTotal, VRDE_QI_BYTES_RECEIVED_TOTAL,  INT64_MAX);
-IMPL_GETTER_BSTR   (BSTR,    User,               VRDE_QI_USER);
-IMPL_GETTER_BSTR   (BSTR,    Domain,             VRDE_QI_DOMAIN);
-IMPL_GETTER_BSTR   (BSTR,    ClientName,         VRDE_QI_CLIENT_NAME);
-IMPL_GETTER_BSTR   (BSTR,    ClientIP,           VRDE_QI_CLIENT_IP);
+IMPL_GETTER_UTF8STR(Utf8Str, User,               VRDE_QI_USER);
+IMPL_GETTER_UTF8STR(Utf8Str, Domain,             VRDE_QI_DOMAIN);
+IMPL_GETTER_UTF8STR(Utf8Str, ClientName,         VRDE_QI_CLIENT_NAME);
+IMPL_GETTER_UTF8STR(Utf8Str, ClientIP,           VRDE_QI_CLIENT_IP);
 IMPL_GETTER_SCALAR (ULONG,   ClientVersion,      VRDE_QI_CLIENT_VERSION,        0);
 IMPL_GETTER_SCALAR (ULONG,   EncryptionStyle,    VRDE_QI_ENCRYPTION_STYLE,      0);
 
-#undef IMPL_GETTER_BSTR
+#undef IMPL_GETTER_UTF8STR
 #undef IMPL_GETTER_SCALAR
 #undef IMPL_GETTER_BOOL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
