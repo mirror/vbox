@@ -268,9 +268,9 @@ class UIExtraDataMetaDefs : public QObject
 {
     Q_OBJECT;
     Q_ENUMS(MenuHelpActionType);
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
     Q_ENUMS(MenuApplicationActionType);
-#endif /* Q_WS_MAC */
+#endif /* RT_OS_DARWIN */
     Q_ENUMS(RuntimeMenuType);
     Q_ENUMS(RuntimeMenuMachineActionType);
     Q_ENUMS(RuntimeMenuViewActionType);
@@ -292,14 +292,14 @@ public:
         MenuHelpActionType_NetworkAccessManager = RT_BIT(3),
         MenuHelpActionType_CheckForUpdates      = RT_BIT(4),
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#ifndef Q_WS_MAC
+#ifndef RT_OS_DARWIN
         MenuHelpActionType_About                = RT_BIT(5),
         MenuHelpActionType_Preferences          = RT_BIT(6),
-#endif /* !Q_WS_MAC */
+#endif /* !RT_OS_DARWIN */
         MenuHelpActionType_All                  = 0xFFFF
     };
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
     /** Menu "Application": Action types. */
     enum MenuApplicationActionType
     {
@@ -309,7 +309,7 @@ public:
         MenuApplicationActionType_Close       = RT_BIT(2),
         MenuApplicationActionType_All         = 0xFFFF
     };
-#endif /* Q_WS_MAC */
+#endif /* RT_OS_DARWIN */
 
     /** Runtime UI: Menu types. */
     enum RuntimeMenuType
@@ -346,9 +346,9 @@ public:
         RuntimeMenuMachineActionType_SaveState         = RT_BIT(12),
         RuntimeMenuMachineActionType_Shutdown          = RT_BIT(13),
         RuntimeMenuMachineActionType_PowerOff          = RT_BIT(14),
-#ifndef Q_WS_MAC
+#ifndef RT_OS_DARWIN
         RuntimeMenuMachineActionType_Close             = RT_BIT(15),
-#endif /* !Q_WS_MAC */
+#endif /* !RT_OS_DARWIN */
         RuntimeMenuMachineActionType_All               = 0xFFFF
     };
 
