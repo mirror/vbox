@@ -172,7 +172,10 @@ public:
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Keyboard"));
+    }
 };
 
 class UIActionSimpleKeyboardSettings : public UIActionSimple
@@ -198,18 +201,21 @@ protected:
     }
 };
 
-class UIActionMenuMouseIntegration : public UIActionMenu
+class UIActionMenuMouse : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    UIActionMenuMouseIntegration(UIActionPool *pParent)
+    UIActionMenuMouse(UIActionPool *pParent)
         : UIActionMenu(pParent) {}
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Mouse"));
+    }
 };
 
 class UIActionToggleMouseIntegration : public UIActionToggle
@@ -727,13 +733,13 @@ protected:
     }
 };
 
-class UIActionMenuHardDisks : public UIActionMenu
+class UIActionMenuHardDrives : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    UIActionMenuHardDisks(UIActionPool *pParent)
+    UIActionMenuHardDrives(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/hd_16px.png", ":/hd_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -741,29 +747,32 @@ public:
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Hard Drives"));
+    }
 };
 
-class UIActionSimpleShowStorageSettingsDialog : public UIActionSimple
+class UIActionSimpleShowHardDrivesSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleShowStorageSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleShowHardDrivesSettingsDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png") {}
 
 protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("StorageSettingsDialog");
+        return QString("HardDriveSettingsDialog");
     }
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Storage Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of storage devices"));
+        setName(QApplication::translate("UIActionPool", "&Hard Drive Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of hard drives"));
     }
 };
 
@@ -951,11 +960,14 @@ class UIActionMenuSharedFolders : public UIActionMenu
 public:
 
     UIActionMenuSharedFolders(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent, ":/sf_16px.png", ":/sf_disabled_16px.png") {}
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Shared Folders"));
+    }
 };
 
 class UIActionSimpleShowSharedFoldersSettingsDialog : public UIActionSimple
@@ -1017,7 +1029,10 @@ public:
 
 protected:
 
-    void retranslateUi() {}
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+    }
 };
 
 class UIActionToggleVideoCapture : public UIActionToggle
@@ -1441,7 +1456,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
     m_pool[UIActionIndexRT_M_Machine_M_Keyboard] = new UIActionMenuKeyboard(this);
     m_pool[UIActionIndexRT_M_Machine_M_Keyboard_S_Settings] = new UIActionSimpleKeyboardSettings(this);
-    m_pool[UIActionIndexRT_M_Machine_M_Mouse] = new UIActionMenuMouseIntegration(this);
+    m_pool[UIActionIndexRT_M_Machine_M_Mouse] = new UIActionMenuMouse(this);
     m_pool[UIActionIndexRT_M_Machine_M_Mouse_T_Integration] = new UIActionToggleMouseIntegration(this);
     m_pool[UIActionIndexRT_M_Machine_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
 #ifdef Q_WS_X11
@@ -1468,8 +1483,8 @@ void UIActionPoolRuntime::preparePool()
 
     /* 'Devices' actions: */
     m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuDevices(this);
-    m_pool[UIActionIndexRT_M_Devices_M_HardDrives] = new UIActionMenuHardDisks(this);
-    m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowStorageSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives] = new UIActionMenuHardDrives(this);
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowHardDrivesSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
     m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
@@ -1745,6 +1760,15 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
     updateMenuMachineKeyboard();
 
+    /* 'Keyboard Settings' action: */
+    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
+    action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
+    if (fAllowToShowActionKeyboardSettings)
+    {
+        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+        fSeparator2 = true;
+    }
+
     /* 'Mouse' submenu: */
     const bool fAllowToShowActionMouse = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse);
     action(UIActionIndexRT_M_Machine_M_Mouse)->setEnabled(fAllowToShowActionMouse);
@@ -1823,8 +1847,8 @@ void UIActionPoolRuntime::updateMenuMachine()
     action(UIActionIndexRT_M_Machine_S_Save)->setEnabled(fAllowToShowActionSaveState);
     if (fAllowToShowActionSaveState)
     {
-//        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Save));
-//        fSeparator4 = true;
+        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Save));
+        fSeparator4 = true;
     }
 
     /* 'Shutdown' action: */
@@ -1841,8 +1865,8 @@ void UIActionPoolRuntime::updateMenuMachine()
     action(UIActionIndexRT_M_Machine_S_PowerOff)->setEnabled(fAllowToShowActionPowerOff);
     if (fAllowToShowActionPowerOff)
     {
-//        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_PowerOff));
-//        fSeparator4 = true;
+        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_PowerOff));
+        fSeparator4 = true;
     }
 
 #ifndef Q_WS_MAC
@@ -2230,8 +2254,8 @@ void UIActionPoolRuntime::updateMenuDevices()
     action(UIActionIndexRT_M_Devices_M_HardDrives)->setEnabled(fAllowToShowActionHardDrives);
     if (fAllowToShowActionHardDrives)
     {
-//        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives));
-//        fSeparator1 = true;
+        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives));
+        fSeparator1 = true;
     }
     updateMenuDevicesHardDrives();
 
@@ -2305,8 +2329,8 @@ void UIActionPoolRuntime::updateMenuDevices()
     action(UIActionIndexRT_M_Devices_M_SharedFolders)->setEnabled(fAllowToShowActionSharedFolders);
     if (fAllowToShowActionSharedFolders)
     {
-//        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders));
-//        fSeparator1 = true;
+        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders));
+        fSeparator1 = true;
     }
     updateMenuDevicesSharedFolders();
 
