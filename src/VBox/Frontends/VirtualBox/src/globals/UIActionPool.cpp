@@ -619,30 +619,30 @@ UIActionPoolSelector* UIActionPool::toSelector()
     return qobject_cast<UIActionPoolSelector*>(this);
 }
 
-bool UIActionPool::isAllowedInMenuHelp(MenuHelpActionType type) const
+bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
 {
-    foreach (const MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
+    foreach (const UIExtraDataMetaDefs::MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction)
+void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction)
 {
     m_restrictedActionsMenuHelp[level] = restriction;
     m_invalidations << UIActionIndex_Menu_Help;
 }
 
 #ifdef Q_WS_MAC
-bool UIActionPool::isAllowedInMenuApplication(MenuApplicationActionType type) const
+bool UIActionPool::isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const
 {
-    foreach (const MenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
+    foreach (const UIExtraDataMetaDefs::MenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, MenuApplicationActionType restriction)
+void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction)
 {
     m_restrictedActionsMenuApplication[level] = restriction;
     m_invalidations << UIActionIndex_Menu_Help;
@@ -765,8 +765,8 @@ void UIActionPool::updateConfiguration()
     bool fUpdateAllowed = gEDataManager->applicationUpdateEnabled();
     if (!fUpdateAllowed)
     {
-        m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] = (MenuHelpActionType)
-            (m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] | MenuHelpActionType_CheckForUpdates);
+        m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuHelpActionType)
+            (m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates);
     }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
@@ -794,7 +794,7 @@ void UIActionPool::updateMenuHelp()
     bool fSeparator1 = false;
 
     /* 'Contents' action: */
-    const bool fAllowToShowActionContents = isAllowedInMenuHelp(MenuHelpActionType_Contents);
+    const bool fAllowToShowActionContents = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
     action(UIActionIndex_Simple_Contents)->setEnabled(fAllowToShowActionContents);
     if (fAllowToShowActionContents)
     {
@@ -805,8 +805,8 @@ void UIActionPool::updateMenuHelp()
     }
 
     /* 'Web Site' action: */
-    const bool fAllowToShowActionWebSite = isAllowedInMenuHelp(MenuHelpActionType_WebSite);
-    action(MenuHelpActionType_WebSite)->setEnabled(fAllowToShowActionWebSite);
+    const bool fAllowToShowActionWebSite = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
+    action(UIActionIndex_Simple_WebSite)->setEnabled(fAllowToShowActionWebSite);
     if (fAllowToShowActionWebSite)
     {
         pMenu->addAction(action(UIActionIndex_Simple_WebSite));
@@ -824,7 +824,7 @@ void UIActionPool::updateMenuHelp()
     bool fSeparator2 = false;
 
     /* 'Reset Warnings' action: */
-    const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(MenuHelpActionType_ResetWarnings);
+    const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings);
     action(UIActionIndex_Simple_ResetWarnings)->setEnabled(fAllowToShowActionResetWarnings);
     if (fAllowToShowActionResetWarnings)
     {
@@ -846,7 +846,7 @@ void UIActionPool::updateMenuHelp()
 # endif /* !Q_WS_MAC */
 
     /* 'Network Manager' action: */
-    const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(MenuHelpActionType_NetworkAccessManager);
+    const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager);
     action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionNetworkManager);
     if (fAllowToShowActionNetworkManager)
     {
@@ -862,7 +862,7 @@ void UIActionPool::updateMenuHelp()
     if (type() == UIActionPoolType_Selector)
     {
         /* 'Check for Updates' action: */
-        const bool fAllowToShowActionCheckForUpdates = isAllowedInMenuHelp(MenuHelpActionType_CheckForUpdates);
+        const bool fAllowToShowActionCheckForUpdates = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates);
         action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionCheckForUpdates);
         if (fAllowToShowActionCheckForUpdates)
         {
@@ -886,9 +886,9 @@ void UIActionPool::updateMenuHelp()
     /* 'About' action: */
     const bool fAllowToShowActionAbout =
 #ifdef Q_WS_MAC
-        isAllowedInMenuApplication(MenuApplicationActionType_About);
+        isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
 #else /* !Q_WS_MAC */
-        isAllowedInMenuHelp(MenuHelpActionType_About);
+        isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
 #endif /* Q_WS_MAC */
     action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
     if (fAllowToShowActionAbout)
@@ -904,9 +904,9 @@ void UIActionPool::updateMenuHelp()
         /* 'Preferences' action: */
         const bool fAllowToShowActionPreferences =
 #ifdef Q_WS_MAC
-            isAllowedInMenuApplication(MenuApplicationActionType_Preferences);
+            isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
 #else /* !Q_WS_MAC */
-            isAllowedInMenuHelp(MenuHelpActionType_Preferences);
+            isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
 #endif /* Q_WS_MAC */
         action(UIActionIndex_Simple_Preferences)->setEnabled(fAllowToShowActionPreferences);
         if (fAllowToShowActionPreferences)

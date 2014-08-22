@@ -74,11 +74,11 @@ void UIMachineLogicScale::prepareActionGroups()
 
     /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
-                                                         (RuntimeMenuViewActionType)
-                                                         (RuntimeMenuViewActionType_AdjustWindow |
-                                                          RuntimeMenuViewActionType_GuestAutoresize |
-                                                          RuntimeMenuViewActionType_StatusBar |
-                                                          RuntimeMenuViewActionType_Resize));
+                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow |
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize |
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
 
     /* Take care of view-action toggle state: */
     UIAction *pActionScale = actionPool()->action(UIActionIndexRT_M_View_T_Scale);
@@ -200,7 +200,7 @@ void UIMachineLogicScale::cleanupActionGroups()
 
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
-                                                         RuntimeMenuViewActionType_Invalid);
+                                                         UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();

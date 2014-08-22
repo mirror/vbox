@@ -110,7 +110,7 @@ protected:
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const;
 
-    /** Returns the list of Runtime UI main menus. */
+    /** Returns the list of Selector UI main menus. */
     virtual QList<QMenu*> menus() const { return QList<QMenu*>(); }
 
 private:

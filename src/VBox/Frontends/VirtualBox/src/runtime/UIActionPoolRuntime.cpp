@@ -1299,72 +1299,72 @@ void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreen
     m_invalidations << UIActionIndexRT_M_View;
 }
 
-bool UIActionPoolRuntime::isAllowedInMenuBar(RuntimeMenuType type) const
+bool UIActionPoolRuntime::isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType type) const
 {
-    foreach (const RuntimeMenuType &restriction, m_restrictedMenus.values())
+    foreach (const UIExtraDataMetaDefs::RuntimeMenuType &restriction, m_restrictedMenus.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuBar(UIActionRestrictionLevel level, RuntimeMenuType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuType restriction)
 {
     m_restrictedMenus[level] = restriction;
     updateMenus();
 }
 
-bool UIActionPoolRuntime::isAllowedInMenuMachine(RuntimeMenuMachineActionType type) const
+bool UIActionPoolRuntime::isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const
 {
-    foreach (const RuntimeMenuMachineActionType &restriction, m_restrictedActionsMenuMachine.values())
+    foreach (const UIExtraDataMetaDefs::RuntimeMenuMachineActionType &restriction, m_restrictedActionsMenuMachine.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuMachine(UIActionRestrictionLevel level, RuntimeMenuMachineActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuMachine(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction)
 {
     m_restrictedActionsMenuMachine[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Machine;
 }
 
-bool UIActionPoolRuntime::isAllowedInMenuView(RuntimeMenuViewActionType type) const
+bool UIActionPoolRuntime::isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType type) const
 {
-    foreach (const RuntimeMenuViewActionType &restriction, m_restrictedActionsMenuView.values())
+    foreach (const UIExtraDataMetaDefs::RuntimeMenuViewActionType &restriction, m_restrictedActionsMenuView.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuView(UIActionRestrictionLevel level, RuntimeMenuViewActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuView(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction)
 {
     m_restrictedActionsMenuView[level] = restriction;
     m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
-bool UIActionPoolRuntime::isAllowedInMenuDevices(RuntimeMenuDevicesActionType type) const
+bool UIActionPoolRuntime::isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type) const
 {
-    foreach (const RuntimeMenuDevicesActionType &restriction, m_restrictedActionsMenuDevices.values())
+    foreach (const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType &restriction, m_restrictedActionsMenuDevices.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuDevices(UIActionRestrictionLevel level, RuntimeMenuDevicesActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuDevices(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction)
 {
     m_restrictedActionsMenuDevices[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Devices;
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-bool UIActionPoolRuntime::isAllowedInMenuDebug(RuntimeMenuDebuggerActionType type) const
+bool UIActionPoolRuntime::isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type) const
 {
-    foreach (const RuntimeMenuDebuggerActionType &restriction, m_restrictedActionsMenuDebug.values())
+    foreach (const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType &restriction, m_restrictedActionsMenuDebug.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction)
+void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction)
 {
     m_restrictedActionsMenuDebug[level] = restriction;
     m_invalidations << UIActionIndexRT_M_Debug;
@@ -1554,42 +1554,42 @@ void UIActionPoolRuntime::updateConfiguration()
     UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(strMachineID);
     {
         if (restrictedVisualStates & UIVisualStateType_Fullscreen)
-            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (RuntimeMenuViewActionType)
-                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | RuntimeMenuViewActionType_Fullscreen);
+            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
         if (restrictedVisualStates & UIVisualStateType_Seamless)
-            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (RuntimeMenuViewActionType)
-                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | RuntimeMenuViewActionType_Seamless);
+            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
         if (restrictedVisualStates & UIVisualStateType_Scale)
-            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (RuntimeMenuViewActionType)
-                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | RuntimeMenuViewActionType_Scale);
+            m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
     }
 
     /* Recache reconfiguration action restrictions: */
     bool fReconfigurationAllowed = gEDataManager->machineReconfigurationEnabled(strMachineID);
     if (!fReconfigurationAllowed)
     {
-        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
-            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_SettingsDialog);
-        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
-            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_KeyboardSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_HardDrivesSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_NetworkSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_USBDevicesSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_SharedFoldersSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_VideoCaptureSettings);
+        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
+            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
+        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
+            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings);
     }
 
     /* Recache snapshot related action restrictions: */
     bool fSnapshotOperationsAllowed = gEDataManager->machineSnapshotOperationsEnabled(strMachineID);
     if (!fSnapshotOperationsAllowed)
     {
-        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
-            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_TakeSnapshot);
+        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
+            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot);
     }
 
     /* Recache extension-pack related action restrictions: */
@@ -1597,8 +1597,8 @@ void UIActionPoolRuntime::updateConfiguration()
     bool fExtensionPackOperationsAllowed = !extPack.isNull() && extPack.GetUsable();
     if (!fExtensionPackOperationsAllowed)
     {
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | RuntimeMenuDevicesActionType_VRDEServer);
+        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
+            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer);
     }
 
     /* Recache close related action restrictions: */
@@ -1611,11 +1611,11 @@ void UIActionPoolRuntime::updateConfiguration()
     if (fAllCloseActionsRestricted)
     {
 #ifdef Q_WS_MAC
-        m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (MenuApplicationActionType)
-            (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | MenuApplicationActionType_Close);
+        m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuApplicationActionType)
+            (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::MenuApplicationActionType_Close);
 #else /* !Q_WS_MAC */
-        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (RuntimeMenuMachineActionType)
-            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | RuntimeMenuMachineActionType_Close);
+        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
+            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
 #endif /* !Q_WS_MAC */
     }
 
@@ -1640,14 +1640,14 @@ void UIActionPoolRuntime::updateMenus()
     m_mainMenus.clear();
 
     /* 'Machine' menu: */
-    const bool fAllowToShowMenuMachine = isAllowedInMenuBar(RuntimeMenuType_Machine);
+    const bool fAllowToShowMenuMachine = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Machine);
     action(UIActionIndexRT_M_Machine)->setVisible(fAllowToShowMenuMachine);
     if (fAllowToShowMenuMachine)
         m_mainMenus << action(UIActionIndexRT_M_Machine)->menu();
     updateMenuMachine();
 
     /* 'View' menu: */
-    const bool fAllowToShowMenuView = isAllowedInMenuBar(RuntimeMenuType_View);
+    const bool fAllowToShowMenuView = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_View);
     action(UIActionIndexRT_M_View)->setVisible(fAllowToShowMenuView);
     action(UIActionIndexRT_M_ViewPopup)->setVisible(fAllowToShowMenuView);
     if (fAllowToShowMenuView)
@@ -1656,7 +1656,7 @@ void UIActionPoolRuntime::updateMenus()
     updateMenuViewPopup();
 
     /* 'Devices' menu: */
-    const bool fAllowToShowMenuDevices = isAllowedInMenuBar(RuntimeMenuType_Devices);
+    const bool fAllowToShowMenuDevices = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Devices);
     action(UIActionIndexRT_M_Devices)->setVisible(fAllowToShowMenuDevices);
     if (fAllowToShowMenuDevices)
         m_mainMenus << action(UIActionIndexRT_M_Devices)->menu();
@@ -1664,7 +1664,7 @@ void UIActionPoolRuntime::updateMenus()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    const bool fAllowToShowMenuDebug = isAllowedInMenuBar(RuntimeMenuType_Debug);
+    const bool fAllowToShowMenuDebug = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Debug);
     action(UIActionIndexRT_M_Debug)->setVisible(fAllowToShowMenuDebug);
     if (fAllowToShowMenuDebug)
         m_mainMenus << action(UIActionIndexRT_M_Debug)->menu();
@@ -1672,7 +1672,7 @@ void UIActionPoolRuntime::updateMenus()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* 'Help' menu: */
-    const bool fAllowToShowMenuHelp = isAllowedInMenuBar(RuntimeMenuType_Help);
+    const bool fAllowToShowMenuHelp = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Help);
     action(UIActionIndex_Menu_Help)->setVisible(fAllowToShowMenuHelp);
     if (fAllowToShowMenuHelp)
         m_mainMenus << action(UIActionIndex_Menu_Help)->menu();
@@ -1692,7 +1692,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     bool fSeparator1 = false;
 
     /* 'Settings Dialog' action: */
-    const bool fAllowToShowActionSettingsDialog = isAllowedInMenuMachine(RuntimeMenuMachineActionType_SettingsDialog);
+    const bool fAllowToShowActionSettingsDialog = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
     action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(fAllowToShowActionSettingsDialog);
     if (fAllowToShowActionSettingsDialog)
     {
@@ -1701,7 +1701,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Take Snapshot' action: */
-    const bool fAllowToShowActionTakeSnapshot = isAllowedInMenuMachine(RuntimeMenuMachineActionType_TakeSnapshot);
+    const bool fAllowToShowActionTakeSnapshot = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot);
     action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(fAllowToShowActionTakeSnapshot);
     if (fAllowToShowActionTakeSnapshot)
     {
@@ -1710,7 +1710,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Take Screenshot' action: */
-    const bool fAllowToShowActionTakeScreenshot = isAllowedInMenuMachine(RuntimeMenuMachineActionType_TakeScreenshot);
+    const bool fAllowToShowActionTakeScreenshot = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot);
     action(UIActionIndexRT_M_Machine_S_TakeScreenshot)->setEnabled(fAllowToShowActionTakeScreenshot);
     if (fAllowToShowActionTakeScreenshot)
     {
@@ -1719,7 +1719,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Information Dialog' action: */
-    const bool fAllowToShowActionInformationDialog = isAllowedInMenuMachine(RuntimeMenuMachineActionType_InformationDialog);
+    const bool fAllowToShowActionInformationDialog = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog);
     action(UIActionIndexRT_M_Machine_S_ShowInformation)->setEnabled(fAllowToShowActionInformationDialog);
     if (fAllowToShowActionInformationDialog)
     {
@@ -1736,7 +1736,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     bool fSeparator2 = false;
 
     /* 'Keyboard' submenu: */
-    const bool fAllowToShowActionKeyboard = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Keyboard);
+    const bool fAllowToShowActionKeyboard = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard);
     action(UIActionIndexRT_M_Machine_M_Keyboard)->setEnabled(fAllowToShowActionKeyboard);
     if (fAllowToShowActionKeyboard)
     {
@@ -1746,7 +1746,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     updateMenuMachineKeyboard();
 
     /* 'Mouse' submenu: */
-    const bool fAllowToShowActionMouse = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Mouse);
+    const bool fAllowToShowActionMouse = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse);
     action(UIActionIndexRT_M_Machine_M_Mouse)->setEnabled(fAllowToShowActionMouse);
     if (fAllowToShowActionMouse)
     {
@@ -1756,7 +1756,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     updateMenuMachineMouse();
 
     /* 'Mouse Integration' action: */
-    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(RuntimeMenuMachineActionType_MouseIntegration);
+    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration);
     action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
     if (fAllowToShowActionMouseIntegration)
     {
@@ -1773,7 +1773,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     bool fSeparator3 = false;
 
     /* 'Type CAD' action: */
-    const bool fAllowToShowActionTypeCAD = isAllowedInMenuMachine(RuntimeMenuMachineActionType_TypeCAD);
+    const bool fAllowToShowActionTypeCAD = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD);
     action(UIActionIndexRT_M_Machine_S_TypeCAD)->setEnabled(fAllowToShowActionTypeCAD);
     if (fAllowToShowActionTypeCAD)
     {
@@ -1783,7 +1783,7 @@ void UIActionPoolRuntime::updateMenuMachine()
 
 #ifdef Q_WS_X11
     /* 'Type CABS' action: */
-    const bool fAllowToShowActionTypeCABS = isAllowedInMenuMachine(RuntimeMenuMachineActionType_TypeCABS);
+    const bool fAllowToShowActionTypeCABS = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS);
     action(UIActionIndexRT_M_Machine_S_TypeCABS)->setEnabled(fAllowToShowActionTypeCABS);
     if (fAllowToShowActionTypeCABS)
     {
@@ -1801,7 +1801,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     bool fSeparator4 = false;
 
     /* 'Pause' action: */
-    const bool fAllowToShowActionPause = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Pause);
+    const bool fAllowToShowActionPause = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause);
     action(UIActionIndexRT_M_Machine_T_Pause)->setEnabled(fAllowToShowActionPause);
     if (fAllowToShowActionPause)
     {
@@ -1810,7 +1810,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Reset' action: */
-    const bool fAllowToShowActionReset = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Reset);
+    const bool fAllowToShowActionReset = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset);
     action(UIActionIndexRT_M_Machine_S_Reset)->setEnabled(fAllowToShowActionReset);
     if (fAllowToShowActionReset)
     {
@@ -1819,7 +1819,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Save' action: */
-    const bool fAllowToShowActionSaveState = isAllowedInMenuMachine(RuntimeMenuMachineActionType_SaveState);
+    const bool fAllowToShowActionSaveState = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState);
     action(UIActionIndexRT_M_Machine_S_Save)->setEnabled(fAllowToShowActionSaveState);
     if (fAllowToShowActionSaveState)
     {
@@ -1828,7 +1828,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Shutdown' action: */
-    const bool fAllowToShowActionShutdown = isAllowedInMenuMachine(RuntimeMenuMachineActionType_Shutdown);
+    const bool fAllowToShowActionShutdown = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown);
     action(UIActionIndexRT_M_Machine_S_Shutdown)->setEnabled(fAllowToShowActionShutdown);
     if (fAllowToShowActionShutdown)
     {
@@ -1837,7 +1837,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'PowerOff' action: */
-    const bool fAllowToShowActionPowerOff = isAllowedInMenuMachine(RuntimeMenuMachineActionType_PowerOff);
+    const bool fAllowToShowActionPowerOff = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff);
     action(UIActionIndexRT_M_Machine_S_PowerOff)->setEnabled(fAllowToShowActionPowerOff);
     if (fAllowToShowActionPowerOff)
     {
@@ -1855,9 +1855,9 @@ void UIActionPoolRuntime::updateMenuMachine()
     /* Close action: */
     const bool fAllowToShowActionClose =
 #ifdef Q_WS_MAC
-        isAllowedInMenuApplication(MenuApplicationActionType_Close);
+        isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
 #else /* !Q_WS_MAC */
-        isAllowedInMenuMachine(RuntimeMenuMachineActionType_Close);
+        isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
 #endif /* !Q_WS_MAC */
     pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
     action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(fAllowToShowActionClose);
@@ -1876,7 +1876,7 @@ void UIActionPoolRuntime::updateMenuMachineKeyboard()
     pMenu->clear();
 
     /* 'Keyboard Settings' action: */
-    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(RuntimeMenuMachineActionType_KeyboardSettings);
+    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
     action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
     if (fAllowToShowActionKeyboardSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
@@ -1894,7 +1894,7 @@ void UIActionPoolRuntime::updateMenuMachineMouse()
     pMenu->clear();
 
     /* 'Machine Integration' action: */
-    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(RuntimeMenuMachineActionType_MouseIntegration);
+    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration);
     action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
     if (fAllowToShowActionMouseIntegration)
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
@@ -1913,9 +1913,9 @@ void UIActionPoolRuntime::updateMenuView()
 
 
     /* Visual representation mode flags: */
-    const bool fIsAllowToShowActionFullscreen = isAllowedInMenuView(RuntimeMenuViewActionType_Fullscreen);
-    const bool fIsAllowToShowActionSeamless   = isAllowedInMenuView(RuntimeMenuViewActionType_Seamless);
-    const bool fIsAllowToShowActionScale      = isAllowedInMenuView(RuntimeMenuViewActionType_Scale);
+    const bool fIsAllowToShowActionFullscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
+    const bool fIsAllowToShowActionSeamless   = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
+    const bool fIsAllowToShowActionScale      = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
 
     /* 'Fullscreen' action: */
     action(UIActionIndexRT_M_View_T_Fullscreen)->setEnabled(fIsAllowToShowActionFullscreen);
@@ -1941,7 +1941,7 @@ void UIActionPoolRuntime::updateMenuView()
     bool fSeparator1 = false;
 
     /* 'Adjust Window' action: */
-    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(RuntimeMenuViewActionType_AdjustWindow);
+    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
     action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(fAllowToShowActionAdjustWindow);
     if (fAllowToShowActionAdjustWindow)
     {
@@ -1950,7 +1950,7 @@ void UIActionPoolRuntime::updateMenuView()
     }
 
     /* 'Guest Autoresize' action: */
-    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(RuntimeMenuViewActionType_GuestAutoresize);
+    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
     action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(fAllowToShowActionGuestAutoresize);
     if (fAllowToShowActionGuestAutoresize)
     {
@@ -1967,7 +1967,7 @@ void UIActionPoolRuntime::updateMenuView()
     bool fSeparator2 = false;
 
     /* 'Status Bar' submenu: */
-    const bool fAllowToShowActionStatusBar = isAllowedInMenuView(RuntimeMenuViewActionType_StatusBar);
+    const bool fAllowToShowActionStatusBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar);
     action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(fAllowToShowActionStatusBar);
     if (fAllowToShowActionStatusBar)
     {
@@ -1982,8 +1982,8 @@ void UIActionPoolRuntime::updateMenuView()
 
 
     /* Do we have to show resize or multiscreen menu? */
-    const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(RuntimeMenuViewActionType_Multiscreen);
+    const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
+    const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
     if (fAllowToShowActionResize && session())
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
@@ -2029,7 +2029,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     bool fSeparator1 = false;
 
     /* 'Adjust Window' action: */
-    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(RuntimeMenuViewActionType_AdjustWindow);
+    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
     action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(fAllowToShowActionAdjustWindow);
     if (fAllowToShowActionAdjustWindow)
     {
@@ -2038,7 +2038,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     }
 
     /* 'Guest Autoresize' action: */
-    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(RuntimeMenuViewActionType_GuestAutoresize);
+    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
     action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(fAllowToShowActionGuestAutoresize);
     if (fAllowToShowActionGuestAutoresize)
     {
@@ -2052,7 +2052,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
 
     /* Do we have to show resize menu? */
-    const bool fAllowToShowActionResize = isAllowedInMenuView(RuntimeMenuViewActionType_Resize);
+    const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
     if (fAllowToShowActionResize && session())
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
@@ -2079,13 +2079,13 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
     pMenu->clear();
 
     /* 'Status Bar Settings' action: */
-    const bool fAllowToShowActionStatusBarSettings = isAllowedInMenuView(RuntimeMenuViewActionType_StatusBarSettings);
+    const bool fAllowToShowActionStatusBarSettings = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings);
     action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(fAllowToShowActionStatusBarSettings);
     if (fAllowToShowActionStatusBarSettings)
         pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
 
     /* 'Toggle Status Bar' action: */
-    const bool fAllowToShowActionToggleStatusBar = isAllowedInMenuView(RuntimeMenuViewActionType_ToggleStatusBar);
+    const bool fAllowToShowActionToggleStatusBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar);
     action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(fAllowToShowActionToggleStatusBar);
     if (fAllowToShowActionToggleStatusBar)
         pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
@@ -2226,7 +2226,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     bool fSeparator1 = false;
 
     /* 'Hard Drives' submenu: */
-    const bool fAllowToShowActionHardDrives = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_HardDrives);
+    const bool fAllowToShowActionHardDrives = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
     action(UIActionIndexRT_M_Devices_M_HardDrives)->setEnabled(fAllowToShowActionHardDrives);
     if (fAllowToShowActionHardDrives)
     {
@@ -2236,7 +2236,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     updateMenuDevicesHardDrives();
 
     /* 'Optical Devices' submenu: */
-    const bool fAllowToShowActionOpticalDevices = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_OpticalDevices);
+    const bool fAllowToShowActionOpticalDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
     action(UIActionIndexRT_M_Devices_M_OpticalDevices)->setEnabled(fAllowToShowActionOpticalDevices);
     if (fAllowToShowActionOpticalDevices)
     {
@@ -2245,7 +2245,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Floppy Devices' submenu: */
-    const bool fAllowToShowActionFloppyDevices = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_FloppyDevices);
+    const bool fAllowToShowActionFloppyDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
     action(UIActionIndexRT_M_Devices_M_FloppyDevices)->setEnabled(fAllowToShowActionFloppyDevices);
     if (fAllowToShowActionFloppyDevices)
     {
@@ -2254,7 +2254,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Network' submenu: */
-    const bool fAllowToShowActionNetwork = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_Network);
+    const bool fAllowToShowActionNetwork = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
     action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(fAllowToShowActionNetwork);
     if (fAllowToShowActionNetwork)
     {
@@ -2264,7 +2264,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     updateMenuDevicesNetwork();
 
     /* 'USB Devices' submenu: */
-    const bool fAllowToShowActionUSBDevices = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevices);
+    const bool fAllowToShowActionUSBDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
     action(UIActionIndexRT_M_Devices_M_USBDevices)->setEnabled(fAllowToShowActionUSBDevices);
     if (fAllowToShowActionUSBDevices)
     {
@@ -2274,7 +2274,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     updateMenuDevicesUSBDevices();
 
     /* 'Web Cams' submenu: */
-    const bool fAllowToShowActionWebCams = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_WebCams);
+    const bool fAllowToShowActionWebCams = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
     action(UIActionIndexRT_M_Devices_M_WebCams)->setEnabled(fAllowToShowActionWebCams);
     if (fAllowToShowActionWebCams)
     {
@@ -2283,7 +2283,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Shared Clipboard' submenu: */
-    const bool fAllowToShowActionSharedClipboard = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_SharedClipboard);
+    const bool fAllowToShowActionSharedClipboard = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard);
     action(UIActionIndexRT_M_Devices_M_SharedClipboard)->setEnabled(fAllowToShowActionSharedClipboard);
     if (fAllowToShowActionSharedClipboard)
     {
@@ -2292,7 +2292,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Drag&Drop' submenu: */
-    const bool fAllowToShowActionDragAndDrop = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_DragAndDrop);
+    const bool fAllowToShowActionDragAndDrop = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop);
     action(UIActionIndexRT_M_Devices_M_DragAndDrop)->setEnabled(fAllowToShowActionDragAndDrop);
     if (fAllowToShowActionDragAndDrop)
     {
@@ -2301,7 +2301,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Shared Folders' submenu: */
-    const bool fAllowToShowActionSharedFolders = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_SharedFolders);
+    const bool fAllowToShowActionSharedFolders = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders);
     action(UIActionIndexRT_M_Devices_M_SharedFolders)->setEnabled(fAllowToShowActionSharedFolders);
     if (fAllowToShowActionSharedFolders)
     {
@@ -2319,7 +2319,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     bool fSeparator2 = false;
 
     /* 'VRDE Server' action: */
-    const bool fAllowToShowActionVRDEServer = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_VRDEServer);
+    const bool fAllowToShowActionVRDEServer = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer);
     action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(fAllowToShowActionVRDEServer);
     if (fAllowToShowActionVRDEServer)
     {
@@ -2328,7 +2328,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     }
 
     /* 'Video Capture' action: */
-    const bool fAllowToShowActionVideoCapture = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_VideoCapture);
+    const bool fAllowToShowActionVideoCapture = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture);
     action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setEnabled(fAllowToShowActionVideoCapture);
     if (fAllowToShowActionVideoCapture)
     {
@@ -2343,7 +2343,7 @@ void UIActionPoolRuntime::updateMenuDevices()
 
 
     /* Install Guest Tools action: */
-    const bool fAllowToShowActionInstallGuestTools = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_InstallGuestTools);
+    const bool fAllowToShowActionInstallGuestTools = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
     action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(fAllowToShowActionInstallGuestTools);
     if (fAllowToShowActionInstallGuestTools)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
@@ -2362,7 +2362,7 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
     pMenu->clear();
 
     /* 'Hard Drives Settings' action: */
-    const bool fAllowToShowActionHardDrivesSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_HardDrivesSettings);
+    const bool fAllowToShowActionHardDrivesSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings);
     action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(fAllowToShowActionHardDrivesSettings);
     if (fAllowToShowActionHardDrivesSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
@@ -2380,7 +2380,7 @@ void UIActionPoolRuntime::updateMenuDevicesNetwork()
     pMenu->clear();
 
     /* 'Network Settings' action: */
-    const bool fAllowToShowActionNetworkSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_NetworkSettings);
+    const bool fAllowToShowActionNetworkSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings);
     action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(fAllowToShowActionNetworkSettings);
     if (fAllowToShowActionNetworkSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
@@ -2395,7 +2395,7 @@ void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
     pMenu->clear();
 
     /* 'USB Devices Settings' action: */
-    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_USBDevicesSettings);
+    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
     action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)->setEnabled(fAllowToShowActionUSBDevicesSettings);
     if (fAllowToShowActionUSBDevicesSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
@@ -2410,7 +2410,7 @@ void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
     pMenu->clear();
 
     /* 'Shared Folders Settings' action: */
-    const bool fAllowToShowActionSharedFoldersSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_SharedFoldersSettings);
+    const bool fAllowToShowActionSharedFoldersSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
     action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(fAllowToShowActionSharedFoldersSettings);
     if (fAllowToShowActionSharedFoldersSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
@@ -2428,13 +2428,13 @@ void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
     pMenu->clear();
 
     /* 'Video Capture Settings' action: */
-    const bool fAllowToShowActionVideoCaptureSettings = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_VideoCaptureSettings);
+    const bool fAllowToShowActionVideoCaptureSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings);
     action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionVideoCaptureSettings);
     if (fAllowToShowActionVideoCaptureSettings)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
 
     /* 'Start Video Capture' action: */
-    const bool fAllowToShowActionStartVideoCapture = isAllowedInMenuDevices(RuntimeMenuDevicesActionType_StartVideoCapture);
+    const bool fAllowToShowActionStartVideoCapture = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture);
     action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionStartVideoCapture);
     if (fAllowToShowActionStartVideoCapture)
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
@@ -2453,25 +2453,25 @@ void UIActionPoolRuntime::updateMenuDebug()
     pMenu->clear();
 
     /* 'Statistics' action: */
-    const bool fAllowToShowActionStatistics = isAllowedInMenuDebug(RuntimeMenuDebuggerActionType_Statistics);
+    const bool fAllowToShowActionStatistics = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics);
     action(UIActionIndexRT_M_Debug_S_ShowStatistics)->setEnabled(fAllowToShowActionStatistics);
     if (fAllowToShowActionStatistics)
         pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowStatistics));
 
     /* 'Command Line' action: */
-    const bool fAllowToShowActionCommandLine = isAllowedInMenuDebug(RuntimeMenuDebuggerActionType_CommandLine);
+    const bool fAllowToShowActionCommandLine = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine);
     action(UIActionIndexRT_M_Debug_S_ShowCommandLine)->setEnabled(fAllowToShowActionCommandLine);
     if (fAllowToShowActionCommandLine)
         pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
 
     /* 'Logging' action: */
-    const bool fAllowToShowActionLogging = isAllowedInMenuDebug(RuntimeMenuDebuggerActionType_Logging);
+    const bool fAllowToShowActionLogging = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging);
     action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fAllowToShowActionLogging);
     if (fAllowToShowActionLogging)
         pMenu->addAction(action(UIActionIndexRT_M_Debug_T_Logging));
 
     /* 'Log Dialog' action: */
-    const bool fAllowToShowActionLogDialog = isAllowedInMenuDebug(RuntimeMenuDebuggerActionType_LogDialog);
+    const bool fAllowToShowActionLogDialog = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
     action(UIActionIndex_Simple_LogDialog)->setEnabled(fAllowToShowActionLogDialog);
     if (fAllowToShowActionLogDialog)
         pMenu->addAction(action(UIActionIndex_Simple_LogDialog));

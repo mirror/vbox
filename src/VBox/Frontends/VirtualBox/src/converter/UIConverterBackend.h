@@ -69,16 +69,16 @@ template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); re
 /* Declare global canConvert specializations: */
 template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
-template<> bool canConvert<MenuHelpActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>();
 #ifdef Q_WS_MAC
-template<> bool canConvert<MenuApplicationActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>();
 #endif /* Q_WS_MAC */
-template<> bool canConvert<RuntimeMenuType>();
-template<> bool canConvert<RuntimeMenuMachineActionType>();
-template<> bool canConvert<RuntimeMenuViewActionType>();
-template<> bool canConvert<RuntimeMenuDevicesActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>();
 #ifdef VBOX_WITH_DEBUGGER_GUI
-template<> bool canConvert<RuntimeMenuDebuggerActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
@@ -122,23 +122,23 @@ template<> QString toString(const SizeSuffix &sizeSuffix);
 template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix);
 template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
-template<> QString toInternalString(const MenuHelpActionType &menuHelpActionType);
-template<> MenuHelpActionType fromInternalString<MenuHelpActionType>(const QString &strMenuHelpActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionType &menuHelpActionType);
+template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMenuHelpActionType);
 #ifdef Q_WS_MAC
-template<> QString toInternalString(const MenuApplicationActionType &runtimeMenuApplicationActionType);
-template<> MenuApplicationActionType fromInternalString<MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &runtimeMenuApplicationActionType);
+template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType);
 #endif /* Q_WS_MAC */
-template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);
-template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType);
-template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeMenuMachineActionType);
-template<> RuntimeMenuMachineActionType fromInternalString<RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType);
-template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenuViewActionType);
-template<> RuntimeMenuViewActionType fromInternalString<RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType);
-template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType);
-template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuType &runtimeMenuType);
+template<> UIExtraDataMetaDefs::RuntimeMenuType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuType>(const QString &strRuntimeMenuType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachineActionType &runtimeMenuMachineActionType);
+template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewActionType &runtimeMenuViewActionType);
+template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType);
+template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-template<> QString toInternalString(const RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType);
-template<> RuntimeMenuDebuggerActionType fromInternalString<RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType);
+template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> QString toInternalString(const UIVisualStateType &visualStateType);
 template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);

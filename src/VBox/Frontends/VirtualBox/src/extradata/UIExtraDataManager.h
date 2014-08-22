@@ -284,23 +284,23 @@ public:
         void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strID);
 
         /** Returns restricted Runtime UI menu types. */
-        RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID);
-    #ifdef Q_WS_MAC
+        UIExtraDataMetaDefs::RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID);
+#ifdef Q_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
-        MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
-    #endif /* Q_WS_MAC */
+        UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
+#endif /* Q_WS_MAC */
         /** Returns restricted Runtime UI action types for Machine menu. */
-        RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);
         /** Returns restricted Runtime UI action types for View menu. */
-        RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QString &strID);
         /** Returns restricted Runtime UI action types for Devices menu. */
-        RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID);
-    #ifdef VBOX_WITH_DEBUGGER_GUI
+        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID);
+#ifdef VBOX_WITH_DEBUGGER_GUI
         /** Returns restricted Runtime UI action types for Debugger menu. */
-        RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID);
-    #endif /* VBOX_WITH_DEBUGGER_GUI */
+        UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
         /** Returns restricted Runtime UI action types for Help menu. */
-        MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
 
         /** Returns restricted Runtime UI visual-states. */
         UIVisualStateType restrictedVisualStates(const QString &strID);

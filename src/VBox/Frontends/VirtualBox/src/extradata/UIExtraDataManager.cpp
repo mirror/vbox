@@ -2487,110 +2487,110 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     setExtraDataStringList(strKey, data, strID);
 }
 
-RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
+UIExtraDataMetaDefs::RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuType result = RuntimeMenuType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuType result = UIExtraDataMetaDefs::RuntimeMenuType_Invalid;
     /* Get restricted runtime-menu-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMenus, strID))
     {
-        RuntimeMenuType value = gpConverter->fromInternalString<RuntimeMenuType>(strValue);
-        if (value != RuntimeMenuType_Invalid)
-            result = static_cast<RuntimeMenuType>(result | value);
+        UIExtraDataMetaDefs::RuntimeMenuType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuType>(result | value);
     }
     /* Return result: */
     return result;
 }
 
 #ifdef Q_WS_MAC
-MenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID)
+UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    MenuApplicationActionType result = MenuApplicationActionType_Invalid;
+    UIExtraDataMetaDefs::MenuApplicationActionType result = UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
     /* Get restricted runtime-application-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, strID))
     {
-        MenuApplicationActionType value = gpConverter->fromInternalString<MenuApplicationActionType>(strValue);
-        if (value != MenuApplicationActionType_Invalid)
-            result = static_cast<MenuApplicationActionType>(result | value);
+        UIExtraDataMetaDefs::MenuApplicationActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::MenuApplicationActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(result | value);
     }
     /* Return result: */
     return result;
 }
 #endif /* Q_WS_MAC */
 
-RuntimeMenuMachineActionType UIExtraDataManager::restrictedRuntimeMenuMachineActionTypes(const QString &strID)
+UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restrictedRuntimeMenuMachineActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuMachineActionType result = RuntimeMenuMachineActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuMachineActionType result = UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
     /* Get restricted runtime-machine-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, strID))
     {
-        RuntimeMenuMachineActionType value = gpConverter->fromInternalString<RuntimeMenuMachineActionType>(strValue);
-        if (value != RuntimeMenuMachineActionType_Invalid)
-            result = static_cast<RuntimeMenuMachineActionType>(result | value);
+        UIExtraDataMetaDefs::RuntimeMenuMachineActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(result | value);
     }
     /* Return result: */
     return result;
 }
 
-RuntimeMenuViewActionType UIExtraDataManager::restrictedRuntimeMenuViewActionTypes(const QString &strID)
+UIExtraDataMetaDefs::RuntimeMenuViewActionType UIExtraDataManager::restrictedRuntimeMenuViewActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuViewActionType result = RuntimeMenuViewActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuViewActionType result = UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
     /* Get restricted runtime-view-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeViewMenuActions, strID))
     {
-        RuntimeMenuViewActionType value = gpConverter->fromInternalString<RuntimeMenuViewActionType>(strValue);
-        if (value != RuntimeMenuViewActionType_Invalid)
-            result = static_cast<RuntimeMenuViewActionType>(result | value);
+        UIExtraDataMetaDefs::RuntimeMenuViewActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(result | value);
     }
     /* Return result: */
     return result;
 }
 
-RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QString &strID)
+UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuDevicesActionType result = RuntimeMenuDevicesActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType result = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
     /* Get restricted runtime-devices-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, strID))
     {
-        RuntimeMenuDevicesActionType value = gpConverter->fromInternalString<RuntimeMenuDevicesActionType>(strValue);
-        if (value != RuntimeMenuDevicesActionType_Invalid)
-            result = static_cast<RuntimeMenuDevicesActionType>(result | value);
+        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(result | value);
     }
     /* Return result: */
     return result;
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-RuntimeMenuDebuggerActionType UIExtraDataManager::restrictedRuntimeMenuDebuggerActionTypes(const QString &strID)
+UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType UIExtraDataManager::restrictedRuntimeMenuDebuggerActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    RuntimeMenuDebuggerActionType result = RuntimeMenuDebuggerActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType result = UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid;
     /* Get restricted runtime-debugger-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeDebuggerMenuActions, strID))
     {
-        RuntimeMenuDebuggerActionType value = gpConverter->fromInternalString<RuntimeMenuDebuggerActionType>(strValue);
-        if (value != RuntimeMenuDebuggerActionType_Invalid)
-            result = static_cast<RuntimeMenuDebuggerActionType>(result | value);
+        UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(result | value);
     }
     /* Return result: */
     return result;
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-MenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
+UIExtraDataMetaDefs::MenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
 {
     /* Prepare result: */
-    MenuHelpActionType result = MenuHelpActionType_Invalid;
+    UIExtraDataMetaDefs::MenuHelpActionType result = UIExtraDataMetaDefs::MenuHelpActionType_Invalid;
     /* Get restricted runtime-help-menu action-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, strID))
     {
-        MenuHelpActionType value = gpConverter->fromInternalString<MenuHelpActionType>(strValue);
-        if (value != MenuHelpActionType_Invalid)
-            result = static_cast<MenuHelpActionType>(result | value);
+        UIExtraDataMetaDefs::MenuHelpActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::MenuHelpActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::MenuHelpActionType>(result | value);
     }
     /* Return result: */
     return result;

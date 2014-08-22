@@ -278,6 +278,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIWidgetValidator.h \
 	src/extensions/QIAdvancedToolBar.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
+	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
 	src/globals/UIAnimationFramework.h \
