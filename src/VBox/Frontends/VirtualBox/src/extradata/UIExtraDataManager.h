@@ -292,7 +292,7 @@ public:
         /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
         UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
         /** Mac OS X: Defines restricted Runtime UI action types for Application menu. */
-        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID);
+        void setRestrictedMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID);
 #endif /* Q_WS_MAC */
 
         /** Returns restricted Runtime UI action types for Machine menu. */
