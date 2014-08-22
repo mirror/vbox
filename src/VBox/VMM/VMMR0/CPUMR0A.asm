@@ -36,13 +36,9 @@
 ;; The offset of the XMM registers in X86FXSTATE.
 ; Use define because I'm too lazy to convert the struct.
 %define XMM_OFF_IN_X86FXSTATE   160
-%define RSVD_OFF_IN_X86FXSTATE  2ch     ; Reserved upper 32-bit part of ST(0)/MM0.
 %define IP_OFF_IN_X86FXSTATE    08h
 %define CS_OFF_IN_X86FXSTATE    0ch
 %define DS_OFF_IN_X86FXSTATE    14h
-
-; Must fit into the dword (32-bits) at RSVD_OFF_IN_X86FXSTATE.
-%define FPUSTATE_32BIT_MAGIC    032b3232bh
 
 
 ;*******************************************************************************
@@ -121,7 +117,7 @@ BEGINCODE
     movzx       eax, word [rsp + 18h]
     mov         [rdx + CPUMCPU.Guest.fpu + DS_OFF_IN_X86FXSTATE], eax
     add         rsp, 20h
-    mov         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
+    mov         dword [rdx + CPUMCPU.Guest.fpu + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
 %%save_done:
 %endmacro
 
@@ -130,12 +126,9 @@ BEGINCODE
 ;
 ; @remarks Requires CPUMCPU pointer in RDX
 %macro RESTORE_32_OR_64_FPU 0
-    cmp         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
+    cmp         dword [rdx + CPUMCPU.Guest.fpu + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
     jne         short %%restore_64bit_fpu
-    ; We probably don't need to wipe out the reserved field - safer this way due to our limited testing
-    mov         word [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], 0
     fxrstor     [rdx + CPUMCPU.Guest.fpu]
-    mov         dword [rdx + CPUMCPU.Guest.fpu + RSVD_OFF_IN_X86FXSTATE], FPUSTATE_32BIT_MAGIC
     jmp         short %%restore_fpu_done
 %%restore_64bit_fpu:
     o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
