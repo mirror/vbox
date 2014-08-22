@@ -662,6 +662,14 @@ void UISession::sltCloseRuntimeUI()
     m_pMachine->deleteLater();
 }
 
+#ifdef RT_OS_DARWIN
+void UISession::sltHandleMenuBarConfigurationChange()
+{
+    /* Update Mac OS X menu-bar: */
+    updateMenu();
+}
+#endif /* RT_OS_DARWIN */
+
 void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape)
 {
     /* In case of shape data is present: */
@@ -1069,9 +1077,11 @@ void UISession::prepareActions()
     m_pMenuBar = new UIMenuBar;
     AssertPtrReturnVoid(m_pMenuBar);
     {
-        /* Prepare menu-bar: */
-        foreach (QMenu *pMenu, actionPool()->menus())
-            m_pMenuBar->addMenu(pMenu);
+        /* Configure Mac OS X menu-bar: */
+        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()),
+                this, SLOT(sltHandleMenuBarConfigurationChange()));
+        /* Update Mac OS X menu-bar: */
+        updateMenu();
     }
 #endif /* Q_WS_MAC */
 }
@@ -1262,6 +1272,16 @@ void UISession::cleanupActions()
     /* Destroy action-pool: */
     UIActionPool::destroy(m_pActionPool);
 }
+
+#ifdef Q_WS_MAC
+void UISession::updateMenu()
+{
+    /* Rebuild Mac OS X menu-bar: */
+    m_pMenuBar->clear();
+    foreach (QMenu *pMenu, actionPool()->menus())
+        m_pMenuBar->addMenu(pMenu);
+}
+#endif /* Q_WS_MAC */
 
 WId UISession::winId() const
 {

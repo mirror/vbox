@@ -58,8 +58,10 @@ private slots:
     void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
 
+#ifndef RT_OS_DARWIN
     /** Handles menu-bar configuration-change. */
     void sltHandleMenuBarConfigurationChange();
+#endif /* !RT_OS_DARWIN */
 
     /** Handles status-bar configuration-change. */
     void sltHandleStatusBarConfigurationChange();
@@ -97,8 +99,10 @@ private:
     /* Update stuff: */
     void updateAppearanceOf(int aElement);
 
+#ifndef Q_WS_MAC
     /** Updates menu-bar content. */
     void updateMenu();
+#endif /* !Q_WS_MAC */
 
     /* Event handler: */
     bool event(QEvent *pEvent);

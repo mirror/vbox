@@ -278,6 +278,11 @@ private slots:
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
 
+#ifdef RT_OS_DARWIN
+    /** Mac OS X: Handles menu-bar configuration-change. */
+    void sltHandleMenuBarConfigurationChange();
+#endif /* RT_OS_DARWIN */
+
     /* Console events slots */
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
     void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
@@ -321,6 +326,11 @@ private:
     void cleanupConsoleEventHandlers();
     void cleanupConnections();
     void cleanupActions();
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Updates menu-bar content. */
+    void updateMenu();
+#endif /* Q_WS_MAC */
 
     /* Common helpers: */
     WId winId() const;
