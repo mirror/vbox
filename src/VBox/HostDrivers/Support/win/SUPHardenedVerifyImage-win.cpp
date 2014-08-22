@@ -136,12 +136,16 @@ SUPSYSROOTDIRBUF            g_CommonFilesX86NtPath;
 # endif
 #endif /* IN_RING3 */
 
-/** The TrustedInstaller SID (Vista+). */
 static union
 {
     SID                     Sid;
     uint8_t                 abPadding[SECURITY_MAX_SID_SIZE];
-}                           g_TrustedInstallerSid;
+}
+/** The TrustedInstaller SID (Vista+). */
+                            g_TrustedInstallerSid,
+/** Local system ID (S-1-5-21). */
+                            g_LocalSystemSid;
+
 
 /** Set after we've retrived other SPC root certificates from the system. */
 static bool                 g_fHaveOtherRoots = false;
@@ -410,14 +414,14 @@ DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t 
 
 
 /**
- * Checks if the file is owned by TrustedInstaller on Vista and later.
+ * Checks if the file is owned by TrustedInstaller (Vista+) or similar.
  *
  * @returns true if owned by TrustedInstaller of pre-Vista, false if not.
  *
  * @param   hFile               The handle to the file.
  * @param   pwszName            The name of the file.
  */
-static bool supHardNtViCheckIsOwnedByTrustedInstaller(HANDLE hFile, PCRTUTF16 pwszName)
+static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCRTUTF16 pwszName)
 {
     if (g_uNtVerCombined < SUP_NT_VER_VISTA)
         return true;
@@ -441,10 +445,17 @@ static bool supHardNtViCheckIsOwnedByTrustedInstaller(HANDLE hFile, PCRTUTF16 pw
 
     /*
      * Check the owner.
+     *
+     * Initially we wished to only allow TrustedInstaller.  But a Winodws CAPI
+     * plugin "Program Files\Tumbleweed\Desktop Validator\tmwdcapiclient.dll"
+     * turned up owned by the local system user, and we cannot operate without
+     * the plugin loaded once it's installed (WinVerityTrust fails).
      */
     PSID pOwner = uBuf.Rel.Control & SE_SELF_RELATIVE ? &uBuf.abView[uBuf.Rel.Owner] : uBuf.Abs.Owner;
     Assert((uintptr_t)pOwner - (uintptr_t)&uBuf < sizeof(uBuf) - sizeof(SID));
     if (RtlEqualSid(pOwner, &g_TrustedInstallerSid))
+        return true;
+    if (RtlEqualSid(pOwner, &g_LocalSystemSid))
         return true;
 
     SUP_DPRINTF(("%ls: Owner is not trusted installer (%.*Rhxs)\n",
@@ -704,7 +715,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 
         /* Must be owned by trusted installer. (This test is superfuous, thus no relaxation here.) */
         if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-            && !supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
+            && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
 
         /* Core DLLs. */
@@ -761,7 +772,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
 
         /* Must be owned by trusted installer. */
         if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-            && !supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
+            && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
         return VINF_LDRVI_NOT_SIGNED;
     }
@@ -778,7 +789,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
         pwsz = pwszName + cwcOther + 1;
 
         if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-            && !supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
+            && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
 
 # ifndef VBOX_PERMIT_EVEN_MORE
@@ -826,7 +837,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
        )
     {
         if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-            && !supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
+            && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
             return rc;
         return VINF_LDRVI_NOT_SIGNED;
     }
@@ -836,7 +847,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
      * Anything that's owned by the trusted installer.
      */
     if (   (fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-        || supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
+        || supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(hFile, pwszName))
         return VINF_LDRVI_NOT_SIGNED;
 
 # endif
@@ -1014,9 +1025,11 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      * or someone has changed the ownership of core windows DLLs like
      * user32.dll.  Since we need user32.dll and will be checking it's digital
      * signature, it's reasonably safe to let this thru.
+     * (The report was of SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS
+     * owning user32.dll, see public ticket 13187, VBoxStartup.3.log.)
      */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
-        && !supHardNtViCheckIsOwnedByTrustedInstaller(pNtViRdr->hFile, pwszName))
+        && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))
     {
         if (!supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
                                             g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length / sizeof(WCHAR),
@@ -1614,7 +1627,14 @@ DECLHIDDEN(int) supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo)
                 *RtlSubAuthoritySid(&g_TrustedInstallerSid, 3) = 1831038044;
                 *RtlSubAuthoritySid(&g_TrustedInstallerSid, 4) = 1853292631;
                 *RtlSubAuthoritySid(&g_TrustedInstallerSid, 5) = 2271478464;
-                return VINF_SUCCESS;
+
+                if (NT_SUCCESS(rcNt))
+                    rcNt = RtlInitializeSid(&g_LocalSystemSid, &s_NtAuth, 1);
+                if (NT_SUCCESS(rcNt))
+                {
+                    *RtlSubAuthoritySid(&g_LocalSystemSid, 0) = SECURITY_LOCAL_SYSTEM_RID;
+                    return VINF_SUCCESS;
+                }
             }
             rc = RTErrConvertFromNtStatus(rcNt);
         }
