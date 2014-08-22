@@ -372,9 +372,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog; }
+    virtual int extraDataID() const
+    {
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
+#else /* !VBOX_WITH_DEBUGGER_GUI */
+        return 0;
+#endif /* !VBOX_WITH_DEBUGGER_GUI */
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+    virtual QString extraDataKey() const
+    {
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
+#else /* !VBOX_WITH_DEBUGGER_GUI */
+        return QString();
+#endif /* !VBOX_WITH_DEBUGGER_GUI */
+    }
 
     QString shortcutExtraDataID() const
     {
