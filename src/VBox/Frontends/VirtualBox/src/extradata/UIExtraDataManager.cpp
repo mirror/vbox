@@ -3400,9 +3400,22 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
              && strMachineID == vboxGlobal().managedVMUuid())
     {
         /* Status-bar configuration change: */
-        if (strKey == GUI_StatusBar_Enabled ||
-            strKey == GUI_RestrictedStatusBarIndicators ||
-            strKey == GUI_StatusBar_IndicatorOrder)
+        if (strKey == GUI_RestrictedRuntimeMenus ||
+#ifdef Q_WS_MAC
+            strKey == GUI_RestrictedRuntimeApplicationMenuActions ||
+#endif /* Q_WS_MAC */
+            strKey == GUI_RestrictedRuntimeMachineMenuActions ||
+            strKey == GUI_RestrictedRuntimeViewMenuActions ||
+            strKey == GUI_RestrictedRuntimeDevicesMenuActions ||
+#ifdef VBOX_WITH_DEBUGGER_GUI
+            strKey == GUI_RestrictedRuntimeDebuggerMenuActions ||
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+            strKey == GUI_RestrictedRuntimeHelpMenuActions)
+            emit sigMenuBarConfigurationChange();
+        /* Status-bar configuration change: */
+        else if (strKey == GUI_StatusBar_Enabled ||
+                 strKey == GUI_RestrictedStatusBarIndicators ||
+                 strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange();
         /* HID LEDs sync state changed (allowed if not restricted)? */
         else if (strKey == GUI_HidLedsSync)

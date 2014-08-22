@@ -67,6 +67,8 @@ signals:
     /** Notifies about Runtime UI keyboard shortcut change. */
     void sigRuntimeUIShortcutChange();
 
+    /** Notifies about menu-bar configuration change. */
+    void sigMenuBarConfigurationChange();
     /** Notifies about status-bar configuration change. */
     void sigStatusBarConfigurationChange();
 
