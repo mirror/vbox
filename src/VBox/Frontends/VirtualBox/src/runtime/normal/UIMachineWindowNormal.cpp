@@ -114,11 +114,13 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
+#ifndef RT_OS_DARWIN
 void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange()
 {
     /* Update menu-bar: */
     updateMenu();
 }
+#endif /* !RT_OS_DARWIN */
 
 void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
 {
@@ -507,6 +509,7 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
 }
 
+#ifndef Q_WS_MAC
 void UIMachineWindowNormal::updateMenu()
 {
     /* Rebuild menu-bar: */
@@ -514,6 +517,7 @@ void UIMachineWindowNormal::updateMenu()
     foreach (QMenu *pMenu, actionPool()->menus())
         menuBar()->addMenu(pMenu);
 }
+#endif /* !Q_WS_MAC */
 
 bool UIMachineWindowNormal::isMaximizedChecked()
 {
