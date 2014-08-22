@@ -65,7 +65,7 @@
 #define PM_TMR_FREQ     3579545
 /* Default base for PM PIIX4 device */
 #define PM_PORT_BASE    0x4000
-/* Port offsets in PM device */
+/* Port offsets in PM device */    
 enum
 {
     PM1a_EVT_OFFSET                     = 0x00,
@@ -77,6 +77,9 @@ enum
     GPE0_OFFSET                         = 0x20,
     GPE1_OFFSET                         =   -1    /**<  not supported  */
 };
+
+/* Undef this to enable 24 bit PM timer (mostly for debugging purposes) */
+#define PM_TMR_32BIT
 
 #define BAT_INDEX       0x00004040
 #define BAT_DATA        0x00004044
@@ -218,6 +221,10 @@ typedef struct ACPIState
     PTMTIMERR0          pPmTimerR0;
     PTMTIMERRC          pPmTimerRC;
 
+    /* PM Timer last calculated value */
+    uint32_t            uPmTimerVal;
+    uint32_t            Alignment0;
+
     uint32_t            gpe0_en;
     uint32_t            gpe0_sts;
 
@@ -309,7 +316,11 @@ typedef struct ACPIState
     /** ACPI port interface. */
     PDMIACPIPORT        IACPIPort;
     /** Pointer to the device instance. */
-    PPDMDEVINSR3        pDevIns;
+    PPDMDEVINSR3        pDevInsR3;
+    PPDMDEVINSR0        pDevInsR0;
+    PPDMDEVINSRC        pDevInsRC;
+
+    uint32_t            Alignment1;
     /** Pointer to the driver base interface. */
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface. */
@@ -332,7 +343,7 @@ typedef struct ACPIState
     uint8_t             au8OemTabId[8];
     /** ACPI custom OEM Rev */
     uint32_t            u32OemRevision;
-    uint32_t            Alignment0;
+    uint32_t            Alignment2;
 
     /** The custom table binary data. */
     R3PTRTYPE(uint8_t *) pu8CustBin;
@@ -484,6 +495,17 @@ struct ACPITBLFADT
 #define FADT_FL_FORCE_APIC_CLUSTER_MODEL  RT_BIT(18)
 #define FADT_FL_FORCE_APIC_PHYS_DEST_MODE RT_BIT(19)
 
+/* PM Timer mask and msb */
+#ifndef PM_TMR_32BIT
+#define TMR_VAL_MSB     0x800000
+#define TMR_VAL_MASK    0xffffff
+#undef  FADT_FL_TMR_VAL_EXT
+#define FADT_FL_TMR_VAL_EXT     0
+#else
+#define TMR_VAL_MSB     0x80000000
+#define TMR_VAL_MASK    0xffffffff
+#endif
+
     /** Start of the ACPI 2.0 extension. */
     ACPIGENADDR         ResetReg;               /**< ext addr of reset register */
     uint8_t             u8ResetVal;             /**< ResetReg value to reset the system */
@@ -619,13 +641,11 @@ RT_C_DECLS_END
 static int acpiR3PlantTables(ACPIState *pThis);
 #endif
 
-#ifdef IN_RING3
-
 /* SCI IRQ */
-DECLINLINE(void) acpiR3SetIrq(ACPIState *pThis, int level)
+DECLINLINE(void) acpiSetIrq(ACPIState *pThis, int level)
 {
     if (pThis->pm1a_ctl & SCI_EN)
-        PDMDevHlpPCISetIrq(pThis->pDevIns, 0, level);
+        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, level);
 }
 
 DECLINLINE(uint32_t) pm1a_pure_en(uint32_t en)
@@ -650,16 +670,17 @@ DECLINLINE(bool) gpe0_level(ACPIState *pThis)
 
 /**
  * Used by acpiR3PM1aStsWrite, acpiR3PM1aEnWrite, acpiR3PmTimer,
- * acpiR3Port_PowerBuffonPress and acpiR3Port_SleepButtonPress to
- * update the GPE0.STS and GPE0.EN registers and trigger IRQs.
+ * acpiR3Port_PowerBuffonPress, acpiR3Port_SleepButtonPress
+ * and acpiPmTmrRead to update the PM1a.STS and PM1a.EN
+ * registers and trigger IRQs.
  *
  * Caller must hold the state lock.
  *
  * @param   pThis       The ACPI instance.
- * @param   sts         The new GPE0.STS value.
- * @param   en          The new GPE0.EN value.
+ * @param   sts         The new PM1a.STS value.
+ * @param   en          The new PM1a.EN value.
  */
-static void apicR3UpdatePm1a(ACPIState *pThis, uint32_t sts, uint32_t en)
+static void apicUpdatePm1a(ACPIState *pThis, uint32_t sts, uint32_t en)
 {
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
@@ -669,14 +690,16 @@ static void apicR3UpdatePm1a(ACPIState *pThis, uint32_t sts, uint32_t en)
     int const old_level = pm1a_level(pThis);
     int const new_level = (pm1a_pure_en(en) & pm1a_pure_sts(sts)) != 0;
 
-    Log(("apicR3UpdatePm1a() old=%x new=%x\n", old_level, new_level));
+    Log(("apicUpdatePm1a() old=%x new=%x\n", old_level, new_level));
 
     pThis->pm1a_en = en;
     pThis->pm1a_sts = sts;
 
     if (new_level != old_level)
-        acpiR3SetIrq(pThis, new_level);
+        acpiSetIrq(pThis, new_level);
 }
+
+#ifdef IN_RING3
 
 /**
  * Used by acpiR3Gpe0StsWrite, acpiR3Gpe0EnWrite, acpiAttach and acpiDetach to
@@ -695,14 +718,14 @@ static void apicR3UpdateGpe0(ACPIState *pThis, uint32_t sts, uint32_t en)
     if (pm1a_level(pThis))
         return;
 
-    int const old_level = (pThis->gpe0_en & pThis->gpe0_sts) != 0;
+    int const old_level = gpe0_level(pThis);
     int const new_level = (en & sts) != 0;
 
     pThis->gpe0_en  = en;
     pThis->gpe0_sts = sts;
 
     if (new_level != old_level)
-        acpiR3SetIrq(pThis, new_level);
+        acpiSetIrq(pThis, new_level);
 }
 
 /**
@@ -713,7 +736,7 @@ static void apicR3UpdateGpe0(ACPIState *pThis, uint32_t sts, uint32_t en)
  */
 static int acpiR3DoPowerOff(ACPIState *pThis)
 {
-    int rc = PDMDevHlpVMPowerOff(pThis->pDevIns);
+    int rc = PDMDevHlpVMPowerOff(pThis->pDevInsR3);
     if (RT_FAILURE(rc))
         AssertMsgFailed(("Could not power down the VM. rc = %Rrc\n", rc));
     return rc;
@@ -734,19 +757,19 @@ static int acpiR3DoSleep(ACPIState *pThis)
     pThis->fSetWakeupOnResume = true;
     if (pThis->fSuspendToSavedState)
     {
-        rc = PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevIns);
+        rc = PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevInsR3);
         if (rc != VERR_NOT_SUPPORTED)
             AssertRC(rc);
         else
         {
             LogRel(("ACPI: PDMDevHlpVMSuspendSaveAndPowerOff is not supported, falling back to suspend-only\n"));
-            rc = PDMDevHlpVMSuspend(pThis->pDevIns);
+            rc = PDMDevHlpVMSuspend(pThis->pDevInsR3);
             AssertRC(rc);
         }
     }
     else
     {
-        rc = PDMDevHlpVMSuspend(pThis->pDevIns);
+        rc = PDMDevHlpVMSuspend(pThis->pDevInsR3);
         AssertRC(rc);
     }
     return rc;
@@ -763,7 +786,7 @@ static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIACPIPORT pInterface)
 
     Log(("acpiR3Port_PowerButtonPress: handled=%d status=%x\n", pThis->fPowerButtonHandled, pThis->pm1a_sts));
     pThis->fPowerButtonHandled = false;
-    apicR3UpdatePm1a(pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
+    apicUpdatePm1a(pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -823,7 +846,7 @@ static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
     ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IACPIPort);
     DEVACPI_LOCK_R3(pThis);
 
-    apicR3UpdatePm1a(pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
+    apicUpdatePm1a(pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -841,10 +864,39 @@ static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
 static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
 {
     uint64_t uTimerFreq = TMTimerGetFreq(pThis->CTX_SUFF(pPmTimer));
-    uint64_t uInterval  = ASMMultU64ByU32DivByU32(0xffffffff, uTimerFreq, PM_TMR_FREQ);
-    TMTimerSet(pThis->pPmTimerR3, uNow + uInterval);
+    uint32_t uPmTmrCyclesToRollover = TMR_VAL_MSB - (pThis->uPmTimerVal & (TMR_VAL_MSB - 1));
+    uint64_t uInterval  = ASMMultU64ByU32DivByU32(uPmTmrCyclesToRollover, uTimerFreq, PM_TMR_FREQ);
+    TMTimerSet(pThis->pPmTimerR3, uNow + uInterval + 1);
     Log(("acpi: uInterval = %RU64\n", uInterval));
 }
+
+#endif
+
+/**
+  * Used by acpiR3PMTimer & acpiPmTmrRead to update TMR_VAL and update TMR_STS
+  * 
+  * The caller is expected to either hold the clock lock or to have made sure
+  * the VM is resetting or loading state.
+  *
+  * @param   pThis              The ACPI instance
+  * @param   uNow               The current time
+  */
+
+static void acpiPmTimerUpdate(ACPIState *pThis, uint64_t u64Now)
+{
+    uint32_t msb = pThis->uPmTimerVal & TMR_VAL_MSB;
+    uint64_t u64Elapsed = u64Now - pThis->u64PmTimerInitial;
+    Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPmTimer)));
+
+    pThis->uPmTimerVal = ASMMultU64ByU32DivByU32(u64Elapsed, PM_TMR_FREQ, TMTimerGetFreq(pThis->CTX_SUFF(pPmTimer))) & TMR_VAL_MASK;
+
+    if ( (pThis->uPmTimerVal & TMR_VAL_MSB) != msb)
+    {
+        apicUpdatePm1a(pThis, pThis->pm1a_sts | TMR_STS, pThis->pm1a_en);
+    }
+}
+
+#ifdef IN_RING3
 
 /**
  * @callback_method_impl{FNTMTIMERDEV, PM Timer callback}
@@ -859,10 +911,11 @@ static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
     Log(("acpi: pm timer sts %#x (%d), en %#x (%d)\n",
          pThis->pm1a_sts, (pThis->pm1a_sts & TMR_STS) != 0,
          pThis->pm1a_en, (pThis->pm1a_en & TMR_EN) != 0));
-    apicR3UpdatePm1a(pThis, pThis->pm1a_sts | TMR_STS, pThis->pm1a_en);
+    uint64_t u64Now = TMTimerGet(pTimer);
+    acpiPmTimerUpdate(pThis, u64Now);
     DEVACPI_UNLOCK(pThis);
 
-    acpiR3PmTimerReset(pThis, TMTimerGet(pTimer));
+    acpiR3PmTimerReset(pThis, u64Now);
 }
 
 /**
@@ -1342,7 +1395,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aEnWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     Log(("acpiR3PM1aEnWrite: %#x (%#x)\n", u32, u32 & ~(RSR_EN | IGN_EN) & 0xffff));
     u32 &= ~(RSR_EN | IGN_EN);
     u32 &= 0xffff;
-    apicR3UpdatePm1a(pThis, pThis->pm1a_sts, u32);
+    apicUpdatePm1a(pThis, pThis->pm1a_sts, u32);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1385,7 +1438,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aStsWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     if (u32 & PWRBTN_STS)
         pThis->fPowerButtonHandled = true; /* Remember that the guest handled the last power button event */
     u32 = pThis->pm1a_sts & ~(u32 & ~(RSR_STS | IGN_STS));
-    apicR3UpdatePm1a(pThis, u32, pThis->pm1a_en);
+    apicUpdatePm1a(pThis, u32, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1489,23 +1542,30 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 
     /*
      * We use the clock lock to serialize access to u64PmTimerInitial and to
-     * make sure we get a reliable time from the clock.
+     * make sure we get a reliable time from the clock
+     * as well as and to prevent uPmTimerVal from being updated during read.
      */
-    int rc = TMTimerLock(pThis->CTX_SUFF(pPmTimer), VINF_IOM_R3_IOPORT_READ);
-    if (rc == VINF_SUCCESS)
-    {
-        uint64_t const u64PmTimerInitial = pThis->u64PmTimerInitial;
-        uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pPmTimer));
-        TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
 
-        /*
-         * Calculate the return value.
-         */
-        DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
-        uint64_t u64Elapsed = u64Now - u64PmTimerInitial;
-        *pu32 = ASMMultU64ByU32DivByU32(u64Elapsed, PM_TMR_FREQ, TMTimerGetFreq(pThis->CTX_SUFF(pPmTimer)));
-        Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
+    int rc = TMTimerLock(pThis->CTX_SUFF(pPmTimer), VINF_IOM_R3_IOPORT_READ);
+    if (rc != VINF_SUCCESS)
+        return rc;
+    
+    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+    if (rc != VINF_SUCCESS)
+    {
+            TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
+            return rc;
     }
+
+    uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pPmTimer));
+    acpiPmTimerUpdate(pThis, u64Now);
+    *pu32 = pThis->uPmTimerVal;
+
+    DEVACPI_UNLOCK(pThis);
+    TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
+
+    DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi");
+    Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
 
     NOREF(pvUser); NOREF(Port);
     return rc;
@@ -1711,7 +1771,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
 
 #define R(offset, cnt, writer, reader, description) \
     do { \
-        rc = PDMDevHlpIOPortRegister(pThis->pDevIns, acpiR3CalcPmPort(pThis, offset), cnt, pThis, writer, reader, \
+        rc = PDMDevHlpIOPortRegister(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, offset), cnt, pThis, writer, reader, \
                                       NULL, NULL, description); \
         if (RT_FAILURE(rc)) \
             return rc; \
@@ -1730,7 +1790,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
     /* register RC stuff */
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pThis->pDevIns, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
+        rc = PDMDevHlpIOPortRegisterRC(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
                                        1, 0, NULL, "acpiPMTmrRead",
                                        NULL, NULL, "ACPI PM Timer");
         AssertRCReturn(rc, rc);
@@ -1739,7 +1799,7 @@ static int acpiR3RegisterPmHandlers(ACPIState *pThis)
     /* register R0 stuff */
     if (pThis->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pThis->pDevIns, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
+        rc = PDMDevHlpIOPortRegisterR0(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, PM_TMR_OFFSET),
                                        1, 0, NULL, "acpiPMTmrRead",
                                        NULL, NULL, "ACPI PM Timer");
         AssertRCReturn(rc, rc);
@@ -1759,7 +1819,7 @@ static int acpiR3UnregisterPmHandlers(ACPIState *pThis)
 {
 #define U(offset, cnt) \
     do { \
-        int rc = PDMDevHlpIOPortDeregister(pThis->pDevIns, acpiR3CalcPmPort(pThis, offset), cnt); \
+        int rc = PDMDevHlpIOPortDeregister(pThis->pDevInsR3, acpiR3CalcPmPort(pThis, offset), cnt); \
         AssertRCReturn(rc, rc); \
     } while (0)
 #define L       (GPE0_BLK_LEN / 2)
@@ -1870,6 +1930,26 @@ static const SSMFIELD g_AcpiSavedStateFields6[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+/**
+ * Saved state structure description, version 7.
+ */
+static const SSMFIELD g_AcpiSavedStateFields7[] =
+{
+    SSMFIELD_ENTRY(ACPIState, pm1a_en),
+    SSMFIELD_ENTRY(ACPIState, pm1a_sts),
+    SSMFIELD_ENTRY(ACPIState, pm1a_ctl),
+    SSMFIELD_ENTRY(ACPIState, u64PmTimerInitial),
+    SSMFIELD_ENTRY(ACPIState, uPmTimerVal),
+    SSMFIELD_ENTRY(ACPIState, gpe0_en),
+    SSMFIELD_ENTRY(ACPIState, gpe0_sts),
+    SSMFIELD_ENTRY(ACPIState, uBatteryIndex),
+    SSMFIELD_ENTRY(ACPIState, uSystemInfoIndex),
+    SSMFIELD_ENTRY(ACPIState, uSleepState),
+    SSMFIELD_ENTRY(ACPIState, u8IndexShift),
+    SSMFIELD_ENTRY(ACPIState, uPmIoPortBase),
+    SSMFIELD_ENTRY(ACPIState, fSuspendToSavedState),
+    SSMFIELD_ENTRY_TERM()
+};
 
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
@@ -1877,7 +1957,7 @@ static const SSMFIELD g_AcpiSavedStateFields6[] =
 static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
-    return SSMR3PutStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields6[0]);
+    return SSMR3PutStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields7[0]);
 }
 
 /**
@@ -1907,6 +1987,9 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         case 6:
             rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields6[0]);
             break;
+        case 7:
+            rc = SSMR3GetStruct(pSSMHandle, pThis, &g_AcpiSavedStateFields7[0]);
+            break;
         default:
             rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
             break;
@@ -1923,7 +2006,14 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         if (RT_FAILURE(rc))
             return rc;
         TMTimerLock(pThis->pPmTimerR3, VERR_IGNORED);
-        acpiR3PmTimerReset(pThis, TMTimerGet(pThis->pPmTimerR3));
+        DEVACPI_LOCK_R3(pThis);
+        uint64_t u64Now = TMTimerGet(pThis->pPmTimerR3);
+        /* The interrupt may be incorrectly re-generated
+         * if the state is restored from versions < 7
+         */
+        acpiPmTimerUpdate(pThis, u64Now);
+        acpiR3PmTimerReset(pThis, u64Now);
+        DEVACPI_UNLOCK(pThis);
         TMTimerUnlock(pThis->pPmTimerR3);
     }
     return rc;
@@ -1995,7 +2085,7 @@ static void acpiR3WriteGenericAddr(ACPIGENADDR *g, uint8_t u8AddressSpaceId,
  */
 DECLINLINE(void) acpiR3PhysCopy(ACPIState *pThis, RTGCPHYS32 GCPhys32Dst, const void *pvSrc, size_t cbToCopy)
 {
-    PDMDevHlpPhysWrite(pThis->pDevIns, GCPhys32Dst, pvSrc, cbToCopy);
+    PDMDevHlpPhysWrite(pThis->pDevInsR3, GCPhys32Dst, pvSrc, cbToCopy);
 }
 
 /**
@@ -2129,7 +2219,7 @@ static int acpiR3SetupRsdt(ACPIState *pThis, RTGCPHYS32 addr, unsigned int nb_en
 
     rsdt = (ACPITBLRSDT*)RTMemAllocZ(size);
     if (!rsdt)
-        return PDMDEV_SET_ERROR(pThis->pDevIns, VERR_NO_TMP_MEMORY, N_("Cannot allocate RSDT"));
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, VERR_NO_TMP_MEMORY, N_("Cannot allocate RSDT"));
 
     acpiR3PrepareHeader(pThis, &rsdt->header, "RSDT", (uint32_t)size, 1);
     for (unsigned int i = 0; i < nb_entries; ++i)
@@ -2513,15 +2603,15 @@ static int acpiR3PlantTables(ACPIState *pThis)
     cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
     cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
 
-    rc = CFGMR3QueryU64(pThis->pDevIns->pCfg, "RamSize", &pThis->u64RamSize);
+    rc = CFGMR3QueryU64(pThis->pDevInsR3->pCfg, "RamSize", &pThis->u64RamSize);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
 
     uint32_t cbRamHole;
-    rc = CFGMR3QueryU32Def(pThis->pDevIns->pCfg, "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    rc = CFGMR3QueryU32Def(pThis->pDevInsR3->pCfg, "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
 
     /*
@@ -2578,7 +2668,7 @@ static int acpiR3PlantTables(ACPIState *pThis)
 
     void  *pvSsdtCode = NULL;
     size_t cbSsdt = 0;
-    rc = acpiPrepareSsdt(pThis->pDevIns, &pvSsdtCode, &cbSsdt);
+    rc = acpiPrepareSsdt(pThis->pDevInsR3, &pvSsdtCode, &cbSsdt);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2589,14 +2679,14 @@ static int acpiR3PlantTables(ACPIState *pThis)
 
     void  *pvDsdtCode = NULL;
     size_t cbDsdt = 0;
-    rc = acpiPrepareDsdt(pThis->pDevIns, &pvDsdtCode, &cbDsdt);
+    rc = acpiPrepareDsdt(pThis->pDevInsR3, &pvDsdtCode, &cbDsdt);
     if (RT_FAILURE(rc))
         return rc;
 
     GCPhysCur = RT_ALIGN_32(GCPhysCur + cbDsdt, 16);
 
     if (GCPhysCur > 0x10000)
-        return PDMDEV_SET_ERROR(pThis->pDevIns, VERR_TOO_MUCH_DATA,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, VERR_TOO_MUCH_DATA,
                                 N_("Error: ACPI tables bigger than 64KB"));
 
     Log(("RSDP 0x%08X\n", apicR3FindRsdpSpace()));
@@ -2617,7 +2707,7 @@ static int acpiR3PlantTables(ACPIState *pThis)
 
     acpiR3SetupRsdp(pThis, (ACPITBLRSDP *)pThis->au8RSDPPage, GCPhysRsdt + addend, GCPhysXsdt + addend);
     acpiR3SetupDsdt(pThis, GCPhysDsdt + addend, pvDsdtCode, cbDsdt);
-    acpiCleanupDsdt(pThis->pDevIns, pvDsdtCode);
+    acpiCleanupDsdt(pThis->pDevInsR3, pvDsdtCode);
     acpiR3SetupFacs(pThis, GCPhysFacs + addend);
     acpiR3SetupFadt(pThis, GCPhysFadtAcpi1 + addend, GCPhysFadtAcpi2 + addend, GCPhysFacs + addend, GCPhysDsdt + addend);
 
@@ -2649,7 +2739,7 @@ static int acpiR3PlantTables(ACPIState *pThis)
     }
 
     acpiR3SetupSsdt(pThis, GCPhysSsdt + addend, pvSsdtCode, cbSsdt);
-    acpiCleanupSsdt(pThis->pDevIns, pvSsdtCode);
+    acpiCleanupSsdt(pThis->pDevInsR3, pvSsdtCode);
     aGCPhysRsdt[iSsdt] = GCPhysSsdt + addend;
     aGCPhysXsdt[iSsdt] = GCPhysSsdt + addend;
 
@@ -2826,6 +2916,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
     pThis->pm1a_sts          = 0;
     pThis->pm1a_ctl          = 0;
     pThis->u64PmTimerInitial = TMTimerGet(pThis->pPmTimerR3);
+    pThis->uPmTimerVal       = 0;
     acpiR3PmTimerReset(pThis, pThis->u64PmTimerInitial);
     pThis->uBatteryIndex     = 0;
     pThis->uSystemInfoIndex  = 0;
@@ -2875,7 +2966,9 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     /** @todo move more of the code up! */
 
-    pThis->pDevIns = pDevIns;
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     VMCPUSET_EMPTY(&pThis->CpuSetAttached);
     VMCPUSET_EMPTY(&pThis->CpuSetLocked);
     pThis->idCpuLockCheck  = UINT32_C(0xffffffff);
@@ -3106,34 +3199,34 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     char *pszOemId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pThis->pDevIns->pCfg, "AcpiOemId", &pszOemId, "VBOX  ");
+    rc = CFGMR3QueryStringAllocDef(pThis->pDevInsR3->pCfg, "AcpiOemId", &pszOemId, "VBOX  ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"AcpiOemId\" as string failed"));
     size_t cbOemId = strlen(pszOemId);
     if (cbOemId > 6)
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: \"AcpiOemId\" must contain not more than 6 characters"));
     memset(pThis->au8OemId, ' ', sizeof(pThis->au8OemId));
     memcpy(pThis->au8OemId, pszOemId, cbOemId);
     MMR3HeapFree(pszOemId);
 
     char *pszCreatorId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pThis->pDevIns->pCfg, "AcpiCreatorId", &pszCreatorId, "ASL ");
+    rc = CFGMR3QueryStringAllocDef(pThis->pDevInsR3->pCfg, "AcpiCreatorId", &pszCreatorId, "ASL ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"AcpiCreatorId\" as string failed"));
     size_t cbCreatorId = strlen(pszCreatorId);
     if (cbCreatorId > 4)
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: \"AcpiCreatorId\" must contain not more than 4 characters"));
     memset(pThis->au8CreatorId, ' ', sizeof(pThis->au8CreatorId));
     memcpy(pThis->au8CreatorId, pszCreatorId, cbCreatorId);
     MMR3HeapFree(pszCreatorId);
 
-    rc = CFGMR3QueryU32Def(pThis->pDevIns->pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
+    rc = CFGMR3QueryU32Def(pThis->pDevInsR3->pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"AcpiCreatorRev\" as integer failed"));
     pThis->u32OemRevision         = RT_H2LE_U32(0x1);
 
@@ -3141,16 +3234,16 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Get the custom table binary file name.
      */
     char *pszCustBinFile;
-    rc = CFGMR3QueryStringAlloc(pThis->pDevIns->pCfg, "CustomTable", &pszCustBinFile);
+    rc = CFGMR3QueryStringAlloc(pThis->pDevInsR3->pCfg, "CustomTable", &pszCustBinFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryStringAlloc(pThis->pDevIns->pCfg, "SLICTable", &pszCustBinFile);
+        rc = CFGMR3QueryStringAlloc(pThis->pDevInsR3->pCfg, "SLICTable", &pszCustBinFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pszCustBinFile = NULL;
         rc = VINF_SUCCESS;
     }
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
+        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
                                 N_("Configuration error: Querying \"CustomTable\" as a string failed"));
     else if (!*pszCustBinFile)
     {
@@ -3179,7 +3272,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 /*
                  * Allocate buffer for the custom table binary data.
                  */
-                pThis->pu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, pThis->cbCustBin);
+                pThis->pu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevInsR3, pThis->cbCustBin);
                 if (pThis->pu8CustBin)
                 {
                     rc = RTFileRead(FileCUSTBin, pThis->pu8CustBin, pThis->cbCustBin, NULL);
@@ -3327,7 +3420,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, 6, sizeof(*pThis), acpiR3SaveState, acpiR3LoadState);
+    rc = PDMDevHlpSSMRegister(pDevIns, 7, sizeof(*pThis), acpiR3SaveState, acpiR3LoadState);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -571,6 +571,7 @@ int main()
     GEN_CHECK_OFF(ACPIState, pPmTimerR3);
     GEN_CHECK_OFF(ACPIState, pPmTimerR0);
     GEN_CHECK_OFF(ACPIState, pPmTimerRC);
+    GEN_CHECK_OFF(ACPIState, uPmTimerVal);
     GEN_CHECK_OFF(ACPIState, gpe0_en);
     GEN_CHECK_OFF(ACPIState, gpe0_sts);
     GEN_CHECK_OFF(ACPIState, uBatteryIndex);
@@ -592,7 +593,8 @@ int main()
     GEN_CHECK_OFF(ACPIState, fCpuHotPlug);
     GEN_CHECK_OFF(ACPIState, IBase);
     GEN_CHECK_OFF(ACPIState, IACPIPort);
-    GEN_CHECK_OFF(ACPIState, pDevIns);
+    GEN_CHECK_OFF(ACPIState, pDevInsR3);
+    GEN_CHECK_OFF(ACPIState, pDevInsR0);
     GEN_CHECK_OFF(ACPIState, pDrvBase);
     GEN_CHECK_OFF(ACPIState, pDrv);
 
