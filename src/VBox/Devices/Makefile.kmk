@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -513,7 +513,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_SOURCES += Audio/audio.c \
  	 Audio/audiosniffer.c \
  	 Audio/noaudio.c \
- 	 Audio/filteraudio.c 
+ 	 Audio/filteraudio.c
  endif
 
  ifdef VBOX_WITH_ALSA
@@ -697,9 +697,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     Audio/DrvHostOssAudio.c
  else
    VBoxDD_SOURCES.linux  += \
- 	 Audio/ossaudio.c 
+ 	 Audio/ossaudio.c
  endif
-  
+
  ifeq ($(KBUILD_TARGET),os2)
  VBoxDD_SOURCES        := $(filter-out Storage/DrvHost%, $(VBoxDD_SOURCES))
  endif
@@ -713,7 +713,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	  Audio/DrvHostSolAudio.c
   else
     VBoxDD_SOURCES.solaris += \
- 	  Audio/solaudio.c 
+ 	  Audio/solaudio.c
   endif
   ifdef VBOX_WITH_SOLARIS_OSS
     ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -741,7 +741,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    Audio/DrvHostDSound.c
  else
  VBoxDD_SOURCES.win    += \
-   Audio/dsoundaudio.c 
+   Audio/dsoundaudio.c
+ endif
+
+ ifdef VBOX_WITH_VIRTUALKD
+  VBoxDD_DEFS.win     += VBOX_WITH_VIRTUALKD
+  VBoxDD_SOURCES.win  += \
+    Misc/VirtualKD.cpp
  endif
 
  if defined(VBOX_WITH_NETFLT)
