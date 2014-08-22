@@ -2360,7 +2360,7 @@ typedef const X86FXSTATE *PCX86FXSTATE;
  *  forget to update x86.mac if you change this! */
 #define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
 AssertCompileSize(X86FXSTATE, 512);
-AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, 0x1d0);
+AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD);
 
 /** @name FPU status word flags.
  * @{ */
