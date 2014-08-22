@@ -170,6 +170,9 @@ public:
 
 protected slots:
 
+    /** Handles configuration-change. */
+    void sltHandleConfigurationChange();
+
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Normal, Scale). */
     void sltPrepareMenuViewScreen();
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Fullscreen, Seamless). */
