@@ -268,12 +268,12 @@ HRESULT Session::getRemoteConsole(ComPtr<IConsole> &aConsole)
 
 #ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
-                          LockType_T aLockType,
-                          const com::Utf8Str &aTokenId)
+                               LockType_T aLockType,
+                               const com::Utf8Str &aTokenId)
 #else
 HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
-                          LockType_T aLockType,
-                          const ComPtr<IToken> &aToken)
+                               LockType_T aLockType,
+                               const ComPtr<IToken> &aToken)
 #endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

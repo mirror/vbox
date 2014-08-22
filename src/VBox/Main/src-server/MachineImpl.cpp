@@ -1860,7 +1860,7 @@ HRESULT Machine::setVideoCaptureMaxFileSize(ULONG aVideoCaptureMaxFileSize)
 HRESULT Machine::getVideoCaptureOptions(com::Utf8Str &aVideoCaptureOptions)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    
+
     aVideoCaptureOptions = mHWData->mVideoCaptureOptions;
     return S_OK;
 }
@@ -7206,7 +7206,8 @@ void Machine::i_getLogFolder(Utf8Str &aLogFolder)
 /**
  *  Returns the full path to the machine's log file for an given index.
  */
-Utf8Str Machine::i_queryLogFilename(ULONG idx) /** @todo r=bird: Misnamed. Should be i_getLogFilename as it cannot fail. See VBox-CodingGuidelines.cpp, Compulsory seciont, line 79. */
+Utf8Str Machine::i_queryLogFilename(ULONG idx) /** @todo r=bird: Misnamed. Should be i_getLogFilename as it cannot fail.
+                                                   See VBox-CodingGuidelines.cpp, Compulsory seciont, line 79. */
 {
     Utf8Str logFolder;
     getLogFolder(logFolder);
@@ -7411,7 +7412,8 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         {
             Utf8Str strStartupLogDir = strStartupLogFile;
             strStartupLogDir.stripFilename();
-            RTDirCreateFullPath(strStartupLogDir.c_str(), 0755); /** @todo add a variant for creating the path to a file without stripping the file. */
+            RTDirCreateFullPath(strStartupLogDir.c_str(), 0755); /** @todo add a variant for creating the path to a
+                                                                     file without stripping the file. */
         }
         strSupStartLogArg.append(strStartupLogFile);
     }
@@ -10868,7 +10870,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
                 if (!pMachine.isNull())
                 {
                     alock.release();
-                    rc = mData->mSession.mMachine->lockMedia();
+                    rc = mData->mSession.mMachine->i_lockMedia();
                     alock.acquire();
                     if (FAILED(rc))
                         throw rc;
@@ -12547,14 +12549,14 @@ RWLockHandle *SessionMachine::lockHandle() const
 /**
  *  Passes collected guest statistics to performance collector object
  */
-STDMETHODIMP SessionMachine::ReportVmStatistics(ULONG aValidStats, ULONG aCpuUser,
-                                                ULONG aCpuKernel, ULONG aCpuIdle,
-                                                ULONG aMemTotal, ULONG aMemFree,
-                                                ULONG aMemBalloon, ULONG aMemShared,
-                                                ULONG aMemCache, ULONG aPageTotal,
-                                                ULONG aAllocVMM, ULONG aFreeVMM,
-                                                ULONG aBalloonedVMM, ULONG aSharedVMM,
-                                                ULONG aVmNetRx, ULONG aVmNetTx)
+HRESULT SessionMachine::reportVmStatistics(ULONG aValidStats, ULONG aCpuUser,
+                                           ULONG aCpuKernel, ULONG aCpuIdle,
+                                           ULONG aMemTotal, ULONG aMemFree,
+                                           ULONG aMemBalloon, ULONG aMemShared,
+                                           ULONG aMemCache, ULONG aPageTotal,
+                                           ULONG aAllocVMM, ULONG aFreeVMM,
+                                           ULONG aBalloonedVMM, ULONG aSharedVMM,
+                                           ULONG aVmNetRx, ULONG aVmNetTx)
 {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     if (mCollectorGuest)
@@ -12588,11 +12590,8 @@ STDMETHODIMP SessionMachine::ReportVmStatistics(ULONG aValidStats, ULONG aCpuUse
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::SetRemoveSavedStateFile(BOOL aRemove)
+HRESULT SessionMachine::setRemoveSavedStateFile(BOOL aRemove)
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mRemoveSavedState = aRemove;
@@ -12603,19 +12602,19 @@ STDMETHODIMP SessionMachine::SetRemoveSavedStateFile(BOOL aRemove)
 /**
  *  @note Locks the same as #i_setMachineState() does.
  */
-STDMETHODIMP SessionMachine::UpdateState(MachineState_T aMachineState)
+HRESULT SessionMachine::updateState(MachineState_T aState)
 {
-    return i_setMachineState(aMachineState);
+    return i_setMachineState(aState);
 }
 
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
+HRESULT SessionMachine::beginPowerUp(const ComPtr<IProgress> &aProgress)
 {
-    LogFlowThisFunc(("aProgress=%p\n", aProgress));
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    IProgress* pProgress(aProgress);
+
+    LogFlowThisFunc(("aProgress=%p\n", pProgress));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -12623,7 +12622,7 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
         return VBOX_E_INVALID_OBJECT_STATE;
 
     if (!mData->mSession.mProgress.isNull())
-        mData->mSession.mProgress->setOtherProgressObject(aProgress);
+        mData->mSession.mProgress->setOtherProgressObject(pProgress);
 
     /* If we didn't reference the NAT network service yet, add a reference to
      * force a start */
@@ -12663,11 +12662,8 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
+HRESULT SessionMachine::endPowerUp(LONG aResult)
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mSession.mState != SessionState_Locked)
@@ -12676,11 +12672,11 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
     /* Finalize the LaunchVMProcess progress object. */
     if (mData->mSession.mProgress)
     {
-        mData->mSession.mProgress->notifyComplete((HRESULT)iResult);
+        mData->mSession.mProgress->notifyComplete((HRESULT)aResult);
         mData->mSession.mProgress.setNull();
     }
 
-    if (SUCCEEDED((HRESULT)iResult))
+    if (SUCCEEDED((HRESULT)aResult))
     {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
         /* The VM has been powered up successfully, so it makes sense
@@ -12697,12 +12693,9 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::BeginPoweringDown(IProgress **aProgress)
+HRESULT SessionMachine::beginPoweringDown(ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -12724,7 +12717,7 @@ STDMETHODIMP SessionMachine::BeginPoweringDown(IProgress **aProgress)
     /* set the state to Stopping (this is expected by Console::PowerDown()) */
     i_setMachineState(MachineState_Stopping);
 
-    pProgress.queryInterfaceTo(aProgress);
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return S_OK;
 }
@@ -12732,17 +12725,15 @@ STDMETHODIMP SessionMachine::BeginPoweringDown(IProgress **aProgress)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::EndPoweringDown(LONG iResult, IN_BSTR aErrMsg)
+HRESULT SessionMachine::endPoweringDown(LONG aResult,
+                                        const com::Utf8Str &aErrMsg)
 {
     LogFlowThisFuncEnter();
 
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_PoweredOff)
-                      || (FAILED(iResult) && mData->mMachineState == MachineState_Stopping))
+    AssertReturn(    (   (SUCCEEDED(aResult) && mData->mMachineState == MachineState_PoweredOff)
+                      || (FAILED(aResult) && mData->mMachineState == MachineState_Stopping))
                   && mConsoleTaskData.mLastState != MachineState_Null,
                  E_FAIL);
 
@@ -12752,23 +12743,22 @@ STDMETHODIMP SessionMachine::EndPoweringDown(LONG iResult, IN_BSTR aErrMsg)
      * task). On success the VM process already changed the state to
      * MachineState_PoweredOff, so no need to do anything.
      */
-    if (FAILED(iResult))
+    if (FAILED(aResult))
         i_setMachineState(mConsoleTaskData.mLastState);
 
     /* notify the progress object about operation completion */
     Assert(mConsoleTaskData.mProgress);
-    if (SUCCEEDED(iResult))
+    if (SUCCEEDED(aResult))
         mConsoleTaskData.mProgress->i_notifyComplete(S_OK);
     else
     {
-        Utf8Str strErrMsg(aErrMsg);
-        if (strErrMsg.length())
-            mConsoleTaskData.mProgress->i_notifyComplete(iResult,
+        if (aErrMsg.length())
+            mConsoleTaskData.mProgress->i_notifyComplete(aResult,
                                                          COM_IIDOF(ISession),
                                                          getComponentName(),
-                                                         strErrMsg.c_str());
+                                                         aErrMsg.c_str());
         else
-            mConsoleTaskData.mProgress->i_notifyComplete(iResult);
+            mConsoleTaskData.mProgress->i_notifyComplete(aResult);
     }
 
     /* clear out the temporary saved state data */
@@ -12786,20 +12776,17 @@ STDMETHODIMP SessionMachine::EndPoweringDown(LONG iResult, IN_BSTR aErrMsg)
  *
  *  @note Locks the same as USBController::hasMatchingFilter() does.
  */
-STDMETHODIMP SessionMachine::RunUSBDeviceFilters(IUSBDevice *aUSBDevice,
-                                                 BOOL *aMatched,
-                                                 ULONG *aMaskedIfs)
+HRESULT SessionMachine::runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
+                                            BOOL  *aMatched,
+                                            ULONG *aMaskedInterfaces)
 {
     LogFlowThisFunc(("\n"));
 
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
 #ifdef VBOX_WITH_USB
-    *aMatched = mUSBDeviceFilters->i_hasMatchingFilter(aUSBDevice, aMaskedIfs);
+    *aMatched = mUSBDeviceFilters->i_hasMatchingFilter(aDevice, aMaskedInterfaces);
 #else
-    NOREF(aUSBDevice);
-    NOREF(aMaskedIfs);
+    NOREF(aDevice);
+    NOREF(aMaskedInterfaces);
     *aMatched = FALSE;
 #endif
 
@@ -12809,12 +12796,9 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters(IUSBDevice *aUSBDevice,
 /**
  *  @note Locks the same as Host::captureUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
+HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId)
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
     /* if captureDeviceForVM() fails, it must have set extended error info */
@@ -12824,7 +12808,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 
     USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
-    return service->captureDeviceForVM(this, Guid(aId).ref());
+    return service->captureDeviceForVM(this, aId.ref());
 #else
     NOREF(aId);
     return E_NOTIMPL;
@@ -12834,17 +12818,15 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice(IN_BSTR aId)
 /**
  *  @note Locks the same as Host::detachUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::DetachUSBDevice(IN_BSTR aId, BOOL aDone)
+HRESULT SessionMachine::detachUSBDevice(const com::Guid &aId,
+                                        BOOL aDone)
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
     USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
-    return service->detachDeviceFromVM(this, Guid(aId).ref(), !!aDone);
+    return service->detachDeviceFromVM(this, aId.ref(), !!aDone);
 #else
     NOREF(aId);
     NOREF(aDone);
@@ -12860,12 +12842,9 @@ STDMETHODIMP SessionMachine::DetachUSBDevice(IN_BSTR aId, BOOL aDone)
  *
  *  @note Locks what called methods lock.
  */
-STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
+HRESULT SessionMachine::autoCaptureUSBDevices()
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
     HRESULT rc = mUSBDeviceFilters->i_notifyProxy(true /* aInsertFilters */);
@@ -12890,12 +12869,9 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
  *
  *  @note Locks what called methods lock.
  */
-STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
+HRESULT SessionMachine::detachAllUSBDevices(BOOL aDone)
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
     HRESULT rc = mUSBDeviceFilters->i_notifyProxy(false /* aInsertFilters */);
@@ -12914,22 +12890,16 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
-                                          IProgress **aProgress)
+HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
+                                     ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
-
-    AssertReturn(aSession, E_INVALIDARG);
-    AssertReturn(aProgress, E_INVALIDARG);
-
-    AutoCaller autoCaller(this);
 
     LogFlowThisFunc(("callerstate=%d\n", getObjectState().getState()));
     /*
      *  We don't assert below because it might happen that a non-direct session
      *  informs us it is closed right after we've been uninitialized -- it's ok.
      */
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* get IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control(aSession);
@@ -12942,7 +12912,8 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 
     if (control == mData->mSession.mDirectControl)
     {
-        ComAssertRet(aProgress, E_POINTER);
+        IProgress *pProgress = aProgress;
+        ComAssertRet(pProgress, E_POINTER);
 
         /* The direct session is being normally closed by the client process
          * ----------------------------------------------------------------- */
@@ -12979,7 +12950,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         progress->init(mParent, pPeer,
                        Bstr(tr("Closing session")).raw(),
                        FALSE /* aCancelable */);
-        progress.queryInterfaceTo(aProgress);
+        progress.queryInterfaceTo(aProgress.asOutParam());
         mData->mSession.mProgress = progress;
     }
     else
@@ -13011,15 +12982,10 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStateFilePath)
+HRESULT SessionMachine::beginSavingState(ComPtr<IProgress> &aProgress,
+                                         com::Utf8Str &aStateFilePath)
 {
     LogFlowThisFuncEnter();
-
-    CheckComArgOutPointerValid(aProgress);
-    CheckComArgOutPointerValid(aStateFilePath);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -13036,21 +13002,19 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
                     Bstr(tr("Saving the execution state of the virtual machine")).raw(),
                     FALSE /* aCancelable */);
 
-    Utf8Str strStateFilePath;
     /* stateFilePath is null when the machine is not running */
     if (mData->mMachineState == MachineState_Paused)
-        i_composeSavedStateFilename(strStateFilePath);
+        i_composeSavedStateFilename(aStateFilePath);
 
     /* fill in the console task data */
     mConsoleTaskData.mLastState = mData->mMachineState;
-    mConsoleTaskData.strStateFilePath = strStateFilePath;
+    mConsoleTaskData.strStateFilePath = aStateFilePath;
     mConsoleTaskData.mProgress = pProgress;
 
     /* set the state to Saving (this is expected by Console::SaveState()) */
     i_setMachineState(MachineState_Saving);
 
-    strStateFilePath.cloneTo(aStateFilePath);
-    pProgress.queryInterfaceTo(aProgress);
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return S_OK;
 }
@@ -13058,18 +13022,16 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
 /**
  *  @note Locks mParent + this object for writing.
  */
-STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
+HRESULT SessionMachine::endSavingState(LONG aResult,
+                                       const com::Utf8Str &aErrMsg)
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     /* endSavingState() need mParent lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_Saved)
-                      || (FAILED(iResult) && mData->mMachineState == MachineState_Saving))
+    AssertReturn(    (   (SUCCEEDED(aResult) && mData->mMachineState == MachineState_Saved)
+                      || (FAILED(aResult) && mData->mMachineState == MachineState_Saving))
                   && mConsoleTaskData.mLastState != MachineState_Null
                   && !mConsoleTaskData.strStateFilePath.isEmpty(),
                  E_FAIL);
@@ -13080,23 +13042,18 @@ STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
      * task). On success the VM process already changed the state to
      * MachineState_Saved, so no need to do anything.
      */
-    if (FAILED(iResult))
+    if (FAILED(aResult))
         i_setMachineState(mConsoleTaskData.mLastState);
 
-    return endSavingState(iResult, aErrMsg);
+    return i_endSavingState(aResult, aErrMsg);
 }
 
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::AdoptSavedState(IN_BSTR aSavedStateFile)
+HRESULT SessionMachine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
 {
     LogFlowThisFunc(("\n"));
-
-    CheckComArgStrNotEmptyOrNull(aSavedStateFile);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -13105,12 +13062,12 @@ STDMETHODIMP SessionMachine::AdoptSavedState(IN_BSTR aSavedStateFile)
                  || mData->mMachineState == MachineState_Aborted
                  , E_FAIL); /** @todo setError. */
 
-    Utf8Str stateFilePathFull = aSavedStateFile;
-    int vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
+    com::Utf8Str stateFilePathFull = aSavedStateFile;
+    int vrc = i_calculateFullPath(aSavedStateFile, stateFilePathFull);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid saved state file path '%ls' (%Rrc)"),
-                        aSavedStateFile,
+                        tr("Invalid saved state file path '%s' (%Rrc)"),
+                        stateFilePathFull.c_str(),
                         vrc);
 
     mSSData->strStateFilePath = stateFilePathFull;
@@ -13121,93 +13078,74 @@ STDMETHODIMP SessionMachine::AdoptSavedState(IN_BSTR aSavedStateFile)
     return i_setMachineState(MachineState_Saved);
 }
 
-STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
-                                                 ComSafeArrayOut(BSTR, aValues),
-                                                 ComSafeArrayOut(LONG64, aTimestamps),
-                                                 ComSafeArrayOut(BSTR, aFlags))
+HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
+                                            std::vector<com::Utf8Str> &aValues,
+                                            std::vector<LONG64>       &aTimestamps,
+                                            std::vector<com::Utf8Str> &aFlags)
 {
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CheckComArgOutSafeArrayPointerValid(aNames);
-    CheckComArgOutSafeArrayPointerValid(aValues);
-    CheckComArgOutSafeArrayPointerValid(aTimestamps);
-    CheckComArgOutSafeArrayPointerValid(aFlags);
-
     size_t cEntries = mHWData->mGuestProperties.size();
-    com::SafeArray<BSTR> names(cEntries);
-    com::SafeArray<BSTR> values(cEntries);
-    com::SafeArray<LONG64> timestamps(cEntries);
-    com::SafeArray<BSTR> flags(cEntries);
-    unsigned i = 0;
+    aNames.resize(cEntries);
+    aValues.resize(cEntries);
+    aTimestamps.resize(cEntries);
+    aFlags.resize(cEntries);
+
+    size_t  i = 0;
     for (HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.begin();
          it != mHWData->mGuestProperties.end();
-         ++it)
+         ++it, ++i)
     {
         char szFlags[MAX_FLAGS_LEN + 1];
-        it->first.cloneTo(&names[i]);
-        it->second.strValue.cloneTo(&values[i]);
-        timestamps[i] = it->second.mTimestamp;
+        aNames[i] = it->first;
+        aValues[i] = it->second.strValue;
+        aTimestamps[i] = it->second.mTimestamp;
+
         /* If it is NULL, keep it NULL. */
         if (it->second.mFlags)
         {
             writeFlags(it->second.mFlags, szFlags);
-            Bstr(szFlags).cloneTo(&flags[i]);
+            aFlags[i] = szFlags;
         }
         else
-            flags[i] = NULL;
-        ++i;
+            aFlags[i] = "";
     }
-    names.detachTo(ComSafeArrayOutArg(aNames));
-    values.detachTo(ComSafeArrayOutArg(aValues));
-    timestamps.detachTo(ComSafeArrayOutArg(aTimestamps));
-    flags.detachTo(ComSafeArrayOutArg(aFlags));
     return S_OK;
 #else
     ReturnComNotImplemented();
 #endif
 }
 
-STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
-                                               IN_BSTR aValue,
-                                               LONG64  aTimestamp,
-                                               IN_BSTR aFlags)
+HRESULT SessionMachine::pushGuestProperty(const  com::Utf8Str &aName,
+                                          const  com::Utf8Str &aValue,
+                                                 LONG64       aTimestamp,
+                                          const  com::Utf8Str &aFlags)
 {
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgNotNull(aValue);
-    CheckComArgNotNull(aFlags);
-
     try
     {
         /*
          * Convert input up front.
          */
-        Utf8Str  utf8Name(aName);
         uint32_t fFlags = NILFLAG;
-        if (aFlags)
+        if (aFlags.length())
         {
-            Utf8Str utf8Flags(aFlags);
-            int vrc = validateFlags(utf8Flags.c_str(), &fFlags);
+            int vrc = validateFlags(aFlags.c_str(), &fFlags);
             AssertRCReturn(vrc, E_INVALIDARG);
         }
 
         /*
          * Now grab the object lock, validate the state and do the update.
          */
-        AutoCaller autoCaller(this);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -13232,8 +13170,8 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         i_setModified(IsModified_MachineData);
         mHWData.backup();
 
-        bool fDelete = !RT_VALID_PTR(aValue) || *(aValue) == '\0';
-        HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(utf8Name);
+        bool fDelete = !aValue.length();
+        HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(aName);
         if (it != mHWData->mGuestProperties.end())
         {
             if (!fDelete)
@@ -13254,7 +13192,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
             prop.mTimestamp = aTimestamp;
             prop.mFlags     = fFlags;
 
-            mHWData->mGuestProperties[utf8Name] = prop;
+            mHWData->mGuestProperties[aName] = prop;
             mData->mGuestPropertiesModified = TRUE;
         }
 
@@ -13264,16 +13202,16 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         if (    mHWData->mGuestPropertyNotificationPatterns.isEmpty()
              || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.c_str(),
                                              RTSTR_MAX,
-                                             utf8Name.c_str(),
+                                             aName.c_str(),
                                              RTSTR_MAX, NULL)
            )
         {
             alock.release();
 
             mParent->i_onGuestPropertyChange(mData->mUuid,
-                                             aName,
-                                             aValue,
-                                             aFlags);
+                                             Bstr(aName).raw(),
+                                             Bstr(aValue).raw(),
+                                             Bstr(aFlags).raw());
         }
     }
     catch (...)
@@ -13286,11 +13224,9 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 #endif
 }
 
-STDMETHODIMP SessionMachine::LockMedia()
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
+HRESULT SessionMachine::lockMedia()
+{
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
@@ -13300,40 +13236,32 @@ STDMETHODIMP SessionMachine::LockMedia()
 
     clearError();
     alock.release();
-    return lockMedia();
+    return i_lockMedia();
 }
 
-STDMETHODIMP SessionMachine::UnlockMedia()
+HRESULT SessionMachine::unlockMedia()
 {
-    HRESULT hrc = unlockMedia();
+    HRESULT hrc = i_unlockMedia();
     return hrc;
 }
 
-STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
-                                         IMediumAttachment **aNewAttachment)
+HRESULT SessionMachine::ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
+                                    ComPtr<IMediumAttachment> &aNewAttachment)
 {
-    CheckComArgNotNull(aAttachment);
-    CheckComArgOutPointerValid(aNewAttachment);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
     AutoMultiWriteLock3 multiLock(mParent->i_host()->lockHandle(),
                                   this->lockHandle(),
                                   &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(aAttachment);
+    IMediumAttachment *iAttach = aAttachment;
+    ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(iAttach);
 
     Bstr ctrlName;
     LONG lPort;
     LONG lDevice;
     bool fTempEject;
     {
-        AutoCaller autoAttachCaller(this);
-        if (FAILED(autoAttachCaller.rc())) return autoAttachCaller.rc();
-
         AutoReadLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
         /* Need to query the details first, as the IMediumAttachment reference
@@ -13383,7 +13311,7 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
         }
     }
 
-    pAttach.queryInterfaceTo(aNewAttachment);
+    pAttach.queryInterfaceTo(aNewAttachment.asOutParam());
 
     return S_OK;
 }
@@ -13974,7 +13902,7 @@ HRESULT SessionMachine::i_onUSBDeviceDetach(IN_BSTR aId,
  *
  *  @note Locks mParent + this objects for writing.
  */
-HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
+HRESULT SessionMachine::i_endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
 {
     LogFlowThisFuncEnter();
 
@@ -14073,7 +14001,7 @@ void SessionMachine::i_releaseSavedStateFile(const Utf8Str &strStateFile,
  * The locks made by this method must be undone by calling #unlockMedia() when
  * no more needed.
  */
-HRESULT SessionMachine::lockMedia()
+HRESULT SessionMachine::i_lockMedia()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -14150,7 +14078,7 @@ HRESULT SessionMachine::lockMedia()
 /**
  * Undoes the locks made by by #lockMedia().
  */
-HRESULT SessionMachine::unlockMedia()
+HRESULT SessionMachine::i_unlockMedia()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(),autoCaller.rc());
