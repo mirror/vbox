@@ -184,11 +184,13 @@ VOID _wcsncpy(WCHAR *pwcd, WCHAR *pwcs, ULONG dstsize)
 
 static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInfo, DEVINFO *pDevInfo)
 {
-    VIDEO_MODE_INFORMATION *pModesTable, selectedMode;
+    VIDEO_MODE_INFORMATION *pModesTable = NULL, selectedMode;
     ULONG cModes, i=0;
     int rc;
 
     LOGF_ENTER();
+
+    memset(&selectedMode, 0, sizeof(VIDEO_MODE_INFORMATION));
 
     /* Get a list of supported modes by both miniport and display driver */
     rc = VBoxDispMPGetVideoModes(pDev->hDriver, &pModesTable, &cModes);
