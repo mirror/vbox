@@ -659,7 +659,7 @@ VBoxMPCheckPendingVideoMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE_INFORMATION pPendin
     /* Check if there's a pending display change request for this display */
     if (VBoxQueryDisplayRequest(&xres, &yres, &bpp, &display) && (xres || yres || bpp))
     {
-        if (display>RT_ELEMENTS(g_CustomVideoModes))
+        if (display >= RT_ELEMENTS(g_CustomVideoModes))
         {
             /*display = RT_ELEMENTS(g_CustomVideoModes) - 1;*/
             WARN(("VBoxQueryDisplayRequest returned invalid display number %d", display));
