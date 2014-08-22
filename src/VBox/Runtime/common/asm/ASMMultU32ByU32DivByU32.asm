@@ -40,34 +40,25 @@
 ;
 BEGINPROC_EXPORTED ASMMultU32ByU32DivByU32
 %ifdef RT_ARCH_AMD64
-
  %ifdef ASM_CALL64_MSC
-    mov     eax, ecx                    ; rax = u32A
-    mov     r9d, edx                    ; should check the specs wrt to the high bits one day...
-    mov     r8d, r8d                    ; be paranoid for the time being.
+        mov     eax, ecx
+        mul     edx
+        div     r8d
  %else
-    mov     eax, edi                    ; rax = u32A
-    mov     r9d, esi                    ; r9d = u32B
-    mov     r8d, edx                    ; r8d = u32C
+        mov     eax, edi
+        mov     ecx, edx
+        mul     esi
+        div     ecx
  %endif
-    mul     r9
-    div     r8
 
-%else ; X86
-    ;
-    ; This implementation is converted from the GCC inline
-    ; version of the code. Nothing additional has been done
-    ; performance wise.
-    ;
-%define u32A        [esp + 04h]
-%define u32B        [esp + 08h]
-%define u32C        [esp + 0ch]
-
-    ; Load parameters into registers.
-    mov     eax, u32A
-    mul     word u32B
-    div     word u32C
-
+%elifdef RT_ARCH_X86
+        mov     eax, [esp + 04h]
+        mul     dword [esp + 08h]
+        div     dword [esp + 0ch]
+%else
+ %error "Unsupported arch."
+ unsupported arch
 %endif
-    ret
+
+        ret
 ENDPROC ASMMultU32ByU32DivByU32

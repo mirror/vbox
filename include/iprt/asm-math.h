@@ -323,8 +323,6 @@ DECLINLINE(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32)
 /**
  * Multiple a 32-bit by a 32-bit integer and divide the result by a 32-bit integer
  * using a 64 bit intermediate result.
- * @note    Don't use 64-bit C arithmetic here since some gcc compilers generate references to
- *          __udivdi3 and __umoddi3 even if this inline function is not used.
  *
  * @returns (u32A * u32B) / u32C.
  * @param   u32A    The 32-bit value (A).
@@ -333,15 +331,15 @@ DECLINLINE(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32)
  *
  * @remarks Architecture specific.
  */
-#if RT_INLINE_ASM_EXTERNAL || !defined(__GNUC__) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
+#if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 DECLASM(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint32_t u32C);
 #else
 DECLINLINE(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint32_t u32C)
 {
-# if RT_INLINE_ASM_GNU_STYLE
+# if RT_INLINE_ASM_GNU_STYLE && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     uint32_t u32Result, u32Spill;
-    __asm__ __volatile__("mul %2\n\t"
-                         "div %3\n\t"
+    __asm__ __volatile__("mull %2\n\t"
+                         "divl %3\n\t"
                          : "=&a" (u32Result),
                            "=&d" (u32Spill)
                          : "r" (u32B),
