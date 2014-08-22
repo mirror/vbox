@@ -114,6 +114,12 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
     updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
+void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange()
+{
+    /* Update menu-bar: */
+    updateMenu();
+}
+
 void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
 {
     /* Check whether status-bar is enabled: */
@@ -205,9 +211,11 @@ void UIMachineWindowNormal::prepareMenu()
     setMenuBar(new UIMenuBar);
     AssertPtrReturnVoid(menuBar());
     {
-        /* Prepare menu-bar: */
-        foreach (QMenu *pMenu, actionPool()->menus())
-            menuBar()->addMenu(pMenu);
+        /* Post-configure menu-bar: */
+        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()),
+                this, SLOT(sltHandleMenuBarConfigurationChange()));
+        /* Update menu-bar: */
+        updateMenu();
     }
 }
 #endif /* !Q_WS_MAC */
@@ -497,6 +505,14 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         m_pIndicatorsPool->updateAppearance(IndicatorType_VideoCapture);
     if (iElement & UIVisualElement_FeaturesStuff)
         m_pIndicatorsPool->updateAppearance(IndicatorType_Features);
+}
+
+void UIMachineWindowNormal::updateMenu()
+{
+    /* Rebuild menu-bar: */
+    menuBar()->clear();
+    foreach (QMenu *pMenu, actionPool()->menus())
+        menuBar()->addMenu(pMenu);
 }
 
 bool UIMachineWindowNormal::isMaximizedChecked()

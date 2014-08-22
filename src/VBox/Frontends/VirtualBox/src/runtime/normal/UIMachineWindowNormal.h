@@ -58,11 +58,14 @@ private slots:
     void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
 
-    /** Handles status-bar configuration-change: */
+    /** Handles menu-bar configuration-change. */
+    void sltHandleMenuBarConfigurationChange();
+
+    /** Handles status-bar configuration-change. */
     void sltHandleStatusBarConfigurationChange();
-    /** Handles status-bar context-menu-request: */
+    /** Handles status-bar context-menu-request. */
     void sltHandleStatusBarContextMenuRequest(const QPoint &position);
-    /** Handles status-bar indicator context-menu-request: */
+    /** Handles status-bar indicator context-menu-request. */
     void sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position);
 
 private:
@@ -93,6 +96,9 @@ private:
 
     /* Update stuff: */
     void updateAppearanceOf(int aElement);
+
+    /** Updates menu-bar content. */
+    void updateMenu();
 
     /* Event handler: */
     bool event(QEvent *pEvent);
