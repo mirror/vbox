@@ -285,22 +285,42 @@ public:
 
         /** Returns restricted Runtime UI menu types. */
         UIExtraDataMetaDefs::RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID);
+        /** Defines restricted Runtime UI menu types. */
+        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::RuntimeMenuType types, const QString &strID);
+
 #ifdef Q_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
         UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
+        /** Mac OS X: Defines restricted Runtime UI action types for Application menu. */
+        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID);
 #endif /* Q_WS_MAC */
+
         /** Returns restricted Runtime UI action types for Machine menu. */
         UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for Machine menu. */
+        void setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QString &strID);
+
         /** Returns restricted Runtime UI action types for View menu. */
         UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for View menu. */
+        void setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QString &strID);
+
         /** Returns restricted Runtime UI action types for Devices menu. */
         UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for Devices menu. */
+        void setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QString &strID);
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Returns restricted Runtime UI action types for Debugger menu. */
         UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for Debugger menu. */
+        void setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QString &strID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
         /** Returns restricted Runtime UI action types for Help menu. */
         UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for Help menu. */
+        void setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QString &strID);
 
         /** Returns restricted Runtime UI visual-states. */
         UIVisualStateType restrictedVisualStates(const QString &strID);
