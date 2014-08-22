@@ -24,6 +24,7 @@
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
 #include "UIShortcutPool.h"
+#include "UIConverter.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
@@ -313,6 +314,25 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const
+    {
+#ifdef Q_WS_MAC
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+#else /* !Q_WS_MAC */
+        return UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
+#endif /* !Q_WS_MAC */
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const
+    {
+#ifdef Q_WS_MAC
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+#else /* !Q_WS_MAC */
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
+#endif /* !Q_WS_MAC */
+    }
+
     QString shortcutExtraDataID() const
     {
         return QString("Preferences");
@@ -351,6 +371,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+
     QString shortcutExtraDataID() const
     {
         return QString("ShowVMLog");
@@ -387,6 +412,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Help; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Help); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Help"));
@@ -406,6 +436,11 @@ public:
     }
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Contents; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
 
     QString shortcutExtraDataID() const
     {
@@ -443,6 +478,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_WebSite; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
+
     QString shortcutExtraDataID() const
     {
         return QString("Web");
@@ -468,6 +508,11 @@ public:
     }
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings); }
 
     QString shortcutExtraDataID() const
     {
@@ -496,6 +541,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager); }
+
     QString shortcutExtraDataID() const
     {
         return QString("NetworkAccessManager");
@@ -522,6 +572,11 @@ public:
     }
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates); }
 
     QString shortcutExtraDataID() const
     {
@@ -550,6 +605,25 @@ public:
     }
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const
+    {
+#ifdef Q_WS_MAC
+        return UIExtraDataMetaDefs::MenuApplicationActionType_About;
+#else /* !Q_WS_MAC */
+        return UIExtraDataMetaDefs::MenuHelpActionType_About;
+#endif /* !Q_WS_MAC */
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const
+    {
+#ifdef Q_WS_MAC
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_About);
+#else /* !Q_WS_MAC */
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_About);
+#endif /* !Q_WS_MAC */
+    }
 
     QString shortcutExtraDataID() const
     {

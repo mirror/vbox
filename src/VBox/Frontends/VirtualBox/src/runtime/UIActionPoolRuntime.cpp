@@ -21,6 +21,7 @@
 #include "UIExtraDataManager.h"
 #include "UIShortcutPool.h"
 #include "UIFrameBuffer.h"
+#include "UIConverter.h"
 #include "UISession.h"
 #include "VBoxGlobal.h"
 
@@ -43,6 +44,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Machine; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Machine); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Machine"));
@@ -59,6 +65,11 @@ public:
         : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog); }
 
     QString shortcutExtraDataID() const
     {
@@ -88,6 +99,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot); }
+
     QString shortcutExtraDataID() const
     {
         return QString("TakeSnapshot");
@@ -115,6 +131,11 @@ public:
         : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot); }
 
     QString shortcutExtraDataID() const
     {
@@ -144,6 +165,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog); }
+
     QString shortcutExtraDataID() const
     {
         return QString("InformationDialog");
@@ -172,6 +198,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Keyboard"));
@@ -188,6 +219,11 @@ public:
         : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -212,6 +248,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Mouse"));
@@ -230,6 +271,11 @@ public:
                          ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration); }
 
     QString shortcutExtraDataID() const
     {
@@ -259,6 +305,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD); }
+
     QString shortcutExtraDataID() const
     {
         return QString("TypeCAD");
@@ -287,6 +338,11 @@ public:
         : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS); }
 
     QString shortcutExtraDataID() const
     {
@@ -319,6 +375,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause); }
+
     QString shortcutExtraDataID() const
     {
         return QString("Pause");
@@ -346,6 +407,11 @@ public:
         : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset); }
 
     QString shortcutExtraDataID() const
     {
@@ -375,6 +441,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState); }
+
     QString shortcutExtraDataID() const
     {
         return QString("Save");
@@ -397,6 +468,11 @@ public:
         : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown); }
 
     QString shortcutExtraDataID() const
     {
@@ -430,6 +506,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff); }
+
     QString shortcutExtraDataID() const
     {
         return QString("PowerOff");
@@ -455,6 +536,25 @@ public:
     }
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const
+    {
+#ifdef Q_WS_MAC
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+#else /* !Q_WS_MAC */
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;
+#endif /* !Q_WS_MAC */
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const
+    {
+#ifdef Q_WS_MAC
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
+#else /* !Q_WS_MAC */
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
+#endif /* !Q_WS_MAC */
+    }
 
     QString shortcutExtraDataID() const
     {
@@ -484,6 +584,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_View; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_View); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&View"));
@@ -501,6 +606,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_View; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_View); }
+
     void retranslateUi() {}
 };
 
@@ -516,6 +626,11 @@ public:
                          ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen); }
 
     QString shortcutExtraDataID() const
     {
@@ -547,6 +662,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless); }
+
     QString shortcutExtraDataID() const
     {
         return QString("SeamlessMode");
@@ -576,6 +696,11 @@ public:
                          ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale); }
 
     QString shortcutExtraDataID() const
     {
@@ -607,6 +732,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize); }
+
     QString shortcutExtraDataID() const
     {
         return QString("GuestAutoresize");
@@ -634,6 +764,11 @@ public:
         : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
 
     QString shortcutExtraDataID() const
     {
@@ -663,6 +798,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Status Bar"));
@@ -679,6 +819,11 @@ public:
         : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -704,6 +849,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar); }
+
     QString shortcutExtraDataID() const
     {
         return QString("ToggleStatusBar");
@@ -727,6 +877,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Devices; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Devices); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Devices"));
@@ -747,6 +902,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Hard Drives"));
@@ -763,6 +923,11 @@ public:
         : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -790,6 +955,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&CD/DVD Devices"));
@@ -810,6 +980,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Floppy Devices"));
@@ -827,6 +1002,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Network"));
@@ -843,6 +1023,11 @@ public:
         : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -870,6 +1055,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&USB Devices"));
@@ -886,6 +1076,11 @@ public:
         : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -913,6 +1108,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Webcams"));
@@ -929,6 +1129,11 @@ public:
         : UIActionMenu(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard); }
 
     void retranslateUi()
     {
@@ -947,6 +1152,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Drag'n'Drop"));
@@ -964,6 +1174,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Shared Folders"));
@@ -980,6 +1195,11 @@ public:
         : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -1006,6 +1226,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer); }
+
     QString shortcutExtraDataID() const
     {
         return QString("VRDPServer");
@@ -1029,6 +1254,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture"));
@@ -1047,6 +1277,11 @@ public:
                          ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture); }
 
     QString shortcutExtraDataID() const
     {
@@ -1071,6 +1306,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings); }
+
     QString shortcutExtraDataID() const
     {
         return QString("VideoCaptureSettingsDialog");
@@ -1093,6 +1333,11 @@ public:
         : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png") {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools); }
 
     QString shortcutExtraDataID() const
     {
@@ -1123,6 +1368,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Debug; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Debug); }
+
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "De&bug"));
@@ -1139,6 +1389,11 @@ public:
         : UIActionSimple(pParent) {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics); }
 
     QString shortcutExtraDataID() const
     {
@@ -1162,6 +1417,11 @@ public:
 
 protected:
 
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine); }
+
     QString shortcutExtraDataID() const
     {
         return QString("CommandLineWindow");
@@ -1183,6 +1443,11 @@ public:
         : UIActionToggle(pParent) {}
 
 protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging); }
 
     QString shortcutExtraDataID() const
     {
