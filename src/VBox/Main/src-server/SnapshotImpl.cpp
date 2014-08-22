@@ -1693,7 +1693,7 @@ HRESULT SessionMachine::restoreSnapshot(const ComPtr<IConsole> &aInitiator,
                  E_FAIL);
 
     ISnapshot* iSnapshot = aSnapshot;
-    ComObjPtr<Snapshot>pSnapshot(static_cast<Snapshot*>(iSnapshot));
+    ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(iSnapshot));
     ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->i_getSnapshotMachine();
 
     // create a progress object. The number of operations is:
