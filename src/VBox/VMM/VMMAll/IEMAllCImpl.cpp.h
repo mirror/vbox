@@ -5504,15 +5504,23 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     }
 
     /* FPU IP, CS, DP and DS. */
-    /** @todo FPU IP, CS, DP and DS cannot be implemented correctly without extra
-     * state information. :-/
-     * Storing zeros now to prevent any potential leakage of host info. */
-    pDst->FPUIP  = 0;
-    pDst->CS     = 0;
-    pDst->Rsrvd1 = 0;
-    pDst->FPUDP  = 0;
-    pDst->DS     = 0;
-    pDst->Rsrvd2 = 0;
+    pDst->FPUIP  = pCtx->fpu.FPUIP;
+    pDst->CS     = pCtx->fpu.CS;
+    pDst->FPUDP  = pCtx->fpu.FPUDP;
+    pDst->DS     = pCtx->fpu.DS;
+    if (enmEffOpSize == IEMMODE_64BIT)
+    {
+        /* Save upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
+        pDst->Rsrvd1 = pCtx->fpu.Rsrvd1;
+        pDst->Rsrvd2 = pCtx->fpu.Rsrvd2;
+        pDst->au32RsrvdForSoftware[0] = 0;
+    }
+    else
+    {
+        pDst->Rsrvd1 = 0;
+        pDst->Rsrvd2 = 0;
+        pDst->au32RsrvdForSoftware[0] = X86_FXSTATE_RSVD_32BIT_MAGIC;
+    }
 
     /* XMM registers. */
     if (   !(pCtx->msrEFER & MSR_K6_EFER_FFXSR)

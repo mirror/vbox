@@ -270,6 +270,8 @@
 %define X86_DR7_LEN_ALL_MASKS               0xcccc0000
 %define X86_DR7_RW_LEN_ALL_MASKS            0xffff0000
 %define X86_DR7_INIT_VAL                    0x400
+%define X86_OFF_FXSTATE_RSVD                0x1d0
+%define X86_FXSTATE_RSVD_32BIT_MAGIC        0x32b3232b
 %define MSR_P5_MC_ADDR                      0x00000000
 %define MSR_P5_MC_TYPE                      0x00000001
 %define MSR_IA32_TSC                        0x10

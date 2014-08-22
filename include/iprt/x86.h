@@ -2343,13 +2343,24 @@ typedef struct X86FXSTATE
         uint128_t   au128[1];
     } aXMM[16]; /* 8 registers in 32 bits mode; 16 in long mode */
     /* - offset 416 - */
-    uint32_t    au32RsrvdRest[(512 - 416) / sizeof(uint32_t)];
+    uint32_t    au32RsrvdRest[(464 - 416) / sizeof(uint32_t)];
+    /* - offset 464 - Software usable reserved bits. */
+    uint32_t    au32RsrvdForSoftware[(512 - 464) / sizeof(uint32_t)];
 } X86FXSTATE;
 #pragma pack()
 /** Pointer to a FPU Extended state. */
 typedef X86FXSTATE *PX86FXSTATE;
 /** Pointer to a const FPU Extended state. */
 typedef const X86FXSTATE *PCX86FXSTATE;
+
+/** Offset for software usable reserved bits (464:511) where we store a 32-bit
+ *  magic. Don't forget to update x86.mac if you change this! */
+#define X86_OFF_FXSTATE_RSVD            0x1d0
+/** The 32-bit magic used to recognize if this a 32-bit FPU state. Don't
+ *  forget to update x86.mac if you change this! */
+#define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
+AssertCompileSize(X86FXSTATE, 512);
+AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, 0x1d0);
 
 /** @name FPU status word flags.
  * @{ */
