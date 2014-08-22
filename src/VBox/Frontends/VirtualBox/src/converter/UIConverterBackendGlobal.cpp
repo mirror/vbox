@@ -516,6 +516,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
 #ifndef Q_WS_MAC
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close:             strResult = "Close"; break;
 #endif /* !Q_WS_MAC */
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing:           strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:               strResult = "All"; break;
         default:
         {
@@ -552,6 +553,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
 #ifndef Q_WS_MAC
     keys << "Close";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;
 #endif /* !Q_WS_MAC */
+    keys << "Nothing";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
     keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuMachineActionType, Qt::CaseInsensitive))
@@ -571,6 +573,8 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:           strResult = "MenuBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:   strResult = "MenuBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
@@ -597,6 +601,8 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "Scale";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
     keys << "GuestAutoresize";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
     keys << "AdjustWindow";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    keys << "MenuBar";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
+    keys << "MenuBarSettings";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
     keys << "StatusBar";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
@@ -634,6 +640,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture:     strResult = "StartVideoCapture"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing:               strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
         default:
         {
@@ -668,6 +675,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<
     keys << "VideoCaptureSettings";  values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings;
     keys << "StartVideoCapture";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture;
     keys << "InstallGuestTools";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+    keys << "Nothing";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
     keys << "All";                   values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive))

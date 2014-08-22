@@ -192,6 +192,10 @@
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
         <file alias="machine_warning_16px.png">images/machine_warning_16px.png</file>
         <file alias="meditation_32px.png">images/meditation_32px.png</file>
+        <file alias="menubar_16px.png">images/menubar_16px.png</file>
+        <file alias="menubar_disabled_16px.png">images/menubar_disabled_16px.png</file>
+        <file alias="menubar_settings_16px.png">images/menubar_settings_16px.png</file>
+        <file alias="menubar_settings_disabled_16px.png">images/menubar_settings_disabled_16px.png</file>
         <file alias="minimize_16px.png">images/minimize_16px.png</file>
         <file alias="monitor.png">images/monitor.png</file>
         <file alias="monitor_glossy.png">images/monitor_glossy.png</file>

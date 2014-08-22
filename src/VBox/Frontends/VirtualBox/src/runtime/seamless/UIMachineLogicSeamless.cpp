@@ -210,6 +210,7 @@ void UIMachineLogicSeamless::prepareActionGroups()
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize |
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
 

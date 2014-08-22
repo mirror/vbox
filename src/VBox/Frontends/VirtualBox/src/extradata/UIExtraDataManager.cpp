@@ -2523,8 +2523,9 @@ void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::Runt
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::RuntimeMenuType enumValue =
                 static_cast<const UIExtraDataMetaDefs::RuntimeMenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuType_All)
+            /* Skip RuntimeMenuType_Invalid & RuntimeMenuType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
@@ -2570,8 +2571,9 @@ void UIExtraDataManager::setRestrictedMenuApplicationActionTypes(UIExtraDataMeta
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip MenuApplicationActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
+            /* Skip MenuApplicationActionType_Invalid & MenuApplicationActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
@@ -2590,6 +2592,12 @@ UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restricted
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, strID))
     {
         UIExtraDataMetaDefs::RuntimeMenuMachineActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(strValue);
+        /* Since empty value has default restriction, we are supporting special 'Nothing' value: */
+        if (value == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing)
+        {
+            result = UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
+            break;
+        }
         if (value != UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
             result = static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(result | value);
     }
@@ -2624,13 +2632,18 @@ void UIExtraDataManager::setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataM
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuMachineActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
+            /* Skip RuntimeMenuMachineActionType_Invalid, RuntimeMenuMachineActionType_Nothing & RuntimeMenuMachineActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
         }
     }
+    /* Since empty value has default restriction, we are supporting special 'Nothing' value: */
+    if (result.isEmpty())
+        result << gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing);
     /* Save result: */
     setExtraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, result, strID);
 }
@@ -2670,8 +2683,9 @@ void UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMeta
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::RuntimeMenuViewActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuViewActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
+            /* Skip RuntimeMenuViewActionType_Invalid & RuntimeMenuViewActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
@@ -2689,6 +2703,12 @@ UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restricted
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, strID))
     {
         UIExtraDataMetaDefs::RuntimeMenuDevicesActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(strValue);
+        /* Since empty value has default restriction, we are supporting special 'Nothing' value: */
+        if (value == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing)
+        {
+            result = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
+            break;
+        }
         if (value != UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid)
             result = static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(result | value);
     }
@@ -2722,13 +2742,18 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataM
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuDevicesActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
+            /* Skip RuntimeMenuDevicesActionType_Invalid, RuntimeMenuDevicesActionType_Nothing & RuntimeMenuDevicesActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
         }
     }
+    /* Since empty value has default restriction, we are supporting special 'Nothing' value: */
+    if (result.isEmpty())
+        result << gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing);
     /* Save result: */
     setExtraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, result, strID);
 }
@@ -2769,8 +2794,9 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraData
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuDebuggerActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
+            /* Skip RuntimeMenuDebuggerActionType_Invalid & RuntimeMenuDebuggerActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);
@@ -2816,8 +2842,9 @@ void UIExtraDataManager::setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMeta
             /* Get iterated enum-value: */
             const UIExtraDataMetaDefs::MenuHelpActionType enumValue =
                 static_cast<const UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip MenuHelpActionType_All enum-value: */
-            if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
+            /* Skip MenuHelpActionType_Invalid && MenuHelpActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);

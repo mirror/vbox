@@ -787,6 +787,56 @@ protected:
     }
 };
 
+class UIActionMenuMenuBar : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuMenuBar(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/menubar_16px.png", ":/menubar_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Menu Bar"));
+    }
+};
+
+class UIActionSimpleShowMenuBarSettingsWindow : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowMenuBarSettingsWindow(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("MenuBarSettings");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Menu Bar Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Opens window to configure menu-bar"));
+    }
+};
+
 class UIActionMenuStatusBar : public UIActionMenu
 {
     Q_OBJECT;
@@ -1748,6 +1798,8 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
@@ -1795,6 +1847,7 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_Machine_M_Mouse].ptfr =         &UIActionPoolRuntime::updateMenuMachineMouse;
     m_menuUpdateHandlers[UIActionIndexRT_M_View].ptfr =                    &UIActionPoolRuntime::updateMenuView;
     m_menuUpdateHandlers[UIActionIndexRT_M_ViewPopup].ptfr =               &UIActionPoolRuntime::updateMenuViewPopup;
+    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_MenuBar].ptfr =          &UIActionPoolRuntime::updateMenuViewMenuBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices].ptfr =                 &UIActionPoolRuntime::updateMenuDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_HardDrives].ptfr =    &UIActionPoolRuntime::updateMenuDevicesHardDrives;
@@ -2262,6 +2315,16 @@ void UIActionPoolRuntime::updateMenuView()
     /* Separator #2? */
     bool fSeparator2 = false;
 
+    /* 'Menu Bar' submenu: */
+    const bool fAllowToShowActionMenuBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar);
+    action(UIActionIndexRT_M_View_M_MenuBar)->setEnabled(fAllowToShowActionMenuBar);
+    if (fAllowToShowActionMenuBar)
+    {
+        pMenu->addAction(action(UIActionIndexRT_M_View_M_MenuBar));
+        fSeparator2 = true;
+    }
+    updateMenuViewMenuBar();
+
     /* 'Status Bar' submenu: */
     const bool fAllowToShowActionStatusBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar);
     action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(fAllowToShowActionStatusBar);
@@ -2364,6 +2427,24 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
+}
+
+void UIActionPoolRuntime::updateMenuViewMenuBar()
+{
+    /* Get corresponding menu: */
+    QMenu *pMenu = action(UIActionIndexRT_M_View_M_MenuBar)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* 'Menu Bar Settings' action: */
+    const bool fAllowToShowActionMenuBarSettings = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings);
+    action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(fAllowToShowActionMenuBarSettings);
+    if (fAllowToShowActionMenuBarSettings)
+        pMenu->addAction(action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_View_M_MenuBar);
 }
 
 void UIActionPoolRuntime::updateMenuViewStatusBar()
