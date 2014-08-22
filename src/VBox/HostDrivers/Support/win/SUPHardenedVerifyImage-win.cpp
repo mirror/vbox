@@ -702,7 +702,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
     {
         pwsz = pwszName + cwcOther + 1;
 
-        /* Must be owned by trusted installer. */
+        /* Must be owned by trusted installer. (This test is superfuous, thus no relaxation here.) */
         if (   !(fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
             && !supHardNtViCheckIsOwnedByTrustedInstaller(hFile, pwszName))
             return rc;
@@ -1009,12 +1009,22 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
 
     /*
      * Check the trusted installer bit first, if requested as it's somewhat
-     * cheaper than the rest.
+     * cheaper than the rest.  We relax this for system32, like we used to,
+     * as there are apparently some systems out there where the user, admin,
+     * or someone has changed the ownership of core windows DLLs like
+     * user32.dll.  Since we need user32.dll and will be checking it's digital
+     * signature, it's reasonably safe to let this thru.
      */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstaller(pNtViRdr->hFile, pwszName))
-        return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_OWNED_BY_TRUSTED_INSTALLER,
-                             "supHardenedWinVerifyImageByHandle: TrustedInstaller is not the owner of '%ls'.", pwszName);
+    {
+        if (!supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
+                                            g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length / sizeof(WCHAR),
+                                            true /*fCheckSlash*/))
+            return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_OWNED_BY_TRUSTED_INSTALLER,
+                                 "supHardenedWinVerifyImageByHandle: TrustedInstaller is not the owner of '%ls'.", pwszName);
+        SUP_DPRINTF(("%ls: Relaxing the TrustedInstaller requirement for this DLL (it's in system32).\n", pwszName));
+    }
 
     /*
      * Verify it.
