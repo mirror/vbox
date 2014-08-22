@@ -330,6 +330,10 @@ DECLINLINE(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32)
  * @param   u32C    The 32-bit value to divide A*B by.
  *
  * @remarks Architecture specific.
+ * @remarks Make sure the result won't ever exceed 32-bit, because hardware
+ *          exception may be raised if it does.
+ * @remarks On x86 this may be used to avoid dragging in 64-bit builtin
+ *          arithmetics functions.
  */
 #if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 DECLASM(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint32_t u32C);
@@ -357,8 +361,6 @@ DECLINLINE(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint3
 /**
  * Multiple a 64-bit by a 32-bit integer and divide the result by a 32-bit integer
  * using a 96 bit intermediate result.
- * @note    Don't use 64-bit C arithmetic here since some gcc compilers generate references to
- *          __udivdi3 and __umoddi3 even if this inline function is not used.
  *
  * @returns (u64A * u32B) / u32C.
  * @param   u64A    The 64-bit value.
@@ -366,6 +368,10 @@ DECLINLINE(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint3
  * @param   u32C    The 32-bit value to divide A*B by.
  *
  * @remarks Architecture specific.
+ * @remarks Make sure the result won't ever exceed 64-bit, because hardware
+ *          exception may be raised if it does.
+ * @remarks On x86 this may be used to avoid dragging in 64-bit builtin
+ *          arithmetics function.
  */
 #if RT_INLINE_ASM_EXTERNAL || !defined(__GNUC__) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C);
