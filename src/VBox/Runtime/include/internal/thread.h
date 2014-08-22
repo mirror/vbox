@@ -198,8 +198,14 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
  * threads properly.
  */
 DECLHIDDEN(void) rtThreadNativeDetach(void);
+
+/**
+ * Internal function for informing the debugger about a thread.
+ * @param   pThread     The thread. May differ from the calling thread.
+ */
+DECLHIDDEN(void) rtThreadNativeInformDebugger(PRTTHREADINT pThread);
 # endif
-#endif /* !IN_RING0 */
+#endif /* IN_RING3 */
 
 
 /* thread.cpp */
