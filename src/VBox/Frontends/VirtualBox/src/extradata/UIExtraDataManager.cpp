@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QMutex>
+#include <QMetaEnum>
 #include <QDesktopWidget>
 #ifdef DEBUG
 # include <QMainWindow>
@@ -2502,6 +2503,37 @@ UIExtraDataMetaDefs::RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTy
     return result;
 }
 
+void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::RuntimeMenuType types, const QString &strID)
+{
+    /* We have RuntimeMenuType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeMenus, result, strID);
+}
+
 #ifdef Q_WS_MAC
 UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QString &strID)
 {
@@ -2516,6 +2548,37 @@ UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRun
     }
     /* Return result: */
     return result;
+}
+
+void UIExtraDataManager::setRestrictedMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID)
+{
+    /* We have MenuApplicationActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("MenuApplicationActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle MenuApplicationActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::MenuApplicationActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip MenuApplicationActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, result, strID);
 }
 #endif /* Q_WS_MAC */
 
@@ -2534,6 +2597,37 @@ UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restricted
     return result;
 }
 
+void UIExtraDataManager::setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QString &strID)
+{
+    /* We have RuntimeMenuMachineActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuMachineActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuMachineActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuMachineActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, result, strID);
+}
+
 UIExtraDataMetaDefs::RuntimeMenuViewActionType UIExtraDataManager::restrictedRuntimeMenuViewActionTypes(const QString &strID)
 {
     /* Prepare result: */
@@ -2547,6 +2641,37 @@ UIExtraDataMetaDefs::RuntimeMenuViewActionType UIExtraDataManager::restrictedRun
     }
     /* Return result: */
     return result;
+}
+
+void UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QString &strID)
+{
+    /* We have RuntimeMenuViewActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuViewActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuViewActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuViewActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuViewActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuViewActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuViewActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeViewMenuActions, result, strID);
 }
 
 UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QString &strID)
@@ -2564,6 +2689,37 @@ UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restricted
     return result;
 }
 
+void UIExtraDataManager::setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QString &strID)
+{
+    /* We have RuntimeMenuDevicesActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDevicesActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuDevicesActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuDevicesActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, result, strID);
+}
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
 UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType UIExtraDataManager::restrictedRuntimeMenuDebuggerActionTypes(const QString &strID)
 {
@@ -2578,6 +2734,37 @@ UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType UIExtraDataManager::restricte
     }
     /* Return result: */
     return result;
+}
+
+void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QString &strID)
+{
+    /* We have RuntimeMenuDebuggerActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuDebuggerActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuDebuggerActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuDebuggerActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeDebuggerMenuActions, result, strID);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -2594,6 +2781,37 @@ UIExtraDataMetaDefs::MenuHelpActionType UIExtraDataManager::restrictedRuntimeMen
     }
     /* Return result: */
     return result;
+}
+
+void UIExtraDataManager::setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QString &strID)
+{
+    /* We have MenuHelpActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("MenuHelpActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle MenuHelpActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::MenuHelpActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::MenuHelpActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::MenuHelpActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip MenuHelpActionType_All enum-value: */
+            if (enumValue == UIExtraDataMetaDefs::MenuHelpActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, result, strID);
 }
 
 UIVisualStateType UIExtraDataManager::restrictedVisualStates(const QString &strID)
