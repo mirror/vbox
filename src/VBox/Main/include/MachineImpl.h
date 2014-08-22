@@ -72,7 +72,6 @@ class Snapshot;
 class SharedFolder;
 class HostUSBDevice;
 class StorageController;
-
 class SessionMachine;
 
 namespace settings
@@ -1257,54 +1256,6 @@ public:
     // util::Lockable interface
     RWLockHandle *lockHandle() const;
 
-    // IInternalMachineControl methods
-    STDMETHOD(SetRemoveSavedStateFile)(BOOL aRemove);
-    STDMETHOD(UpdateState)(MachineState_T machineState);
-    STDMETHOD(BeginPowerUp)(IProgress *aProgress);
-    STDMETHOD(EndPowerUp)(LONG iResult);
-    STDMETHOD(BeginPoweringDown)(IProgress **aProgress);
-    STDMETHOD(EndPoweringDown)(LONG aResult, IN_BSTR aErrMsg);
-    STDMETHOD(RunUSBDeviceFilters)(IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
-    STDMETHOD(CaptureUSBDevice)(IN_BSTR aId);
-    STDMETHOD(DetachUSBDevice)(IN_BSTR aId, BOOL aDone);
-    STDMETHOD(AutoCaptureUSBDevices)();
-    STDMETHOD(DetachAllUSBDevices)(BOOL aDone);
-    STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
-    STDMETHOD(BeginSavingState)(IProgress **aProgress, BSTR *aStateFilePath);
-    STDMETHOD(EndSavingState)(LONG aResult, IN_BSTR aErrMsg);
-    STDMETHOD(AdoptSavedState)(IN_BSTR aSavedStateFile);
-    STDMETHOD(BeginTakingSnapshot)(IConsole *aInitiator,
-                                   IN_BSTR aName,
-                                   IN_BSTR aDescription,
-                                   IProgress *aConsoleProgress,
-                                   BOOL fTakingSnapshotOnline,
-                                   BSTR *aStateFilePath);
-    STDMETHOD(EndTakingSnapshot)(BOOL aSuccess);
-    STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aStartId,
-                              IN_BSTR aEndID, BOOL fDeleteAllChildren,
-                              MachineState_T *aMachineState, IProgress **aProgress);
-    STDMETHOD(FinishOnlineMergeMedium)();
-    STDMETHOD(RestoreSnapshot)(IConsole *aInitiator,
-                               ISnapshot *aSnapshot,
-                               MachineState_T *aMachineState,
-                               IProgress **aProgress);
-    STDMETHOD(PullGuestProperties)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
-              ComSafeArrayOut(LONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
-    STDMETHOD(PushGuestProperty)(IN_BSTR aName, IN_BSTR aValue,
-                                  LONG64 aTimestamp, IN_BSTR aFlags);
-    STDMETHOD(LockMedia)();
-    STDMETHOD(UnlockMedia)();
-    STDMETHOD(EjectMedium)(IMediumAttachment *aAttachment,
-                           IMediumAttachment **aNewAttachment);
-    STDMETHOD(ReportVmStatistics)(ULONG aValidStats, ULONG aCpuUser,
-                                  ULONG aCpuKernel, ULONG aCpuIdle,
-                                  ULONG aMemTotal, ULONG aMemFree,
-                                  ULONG aMemBalloon, ULONG aMemShared,
-                                  ULONG aMemCache, ULONG aPageTotal,
-                                  ULONG aAllocVMM, ULONG aFreeVMM,
-                                  ULONG aBalloonedVMM, ULONG aSharedVMM,
-                                  ULONG aVmNetRx, ULONG aVmNetTx);
-
     // public methods only for internal purposes
 
     virtual bool i_isSessionMachine() const
@@ -1349,10 +1300,83 @@ public:
 
     bool i_hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 
-    HRESULT lockMedia();
-    HRESULT unlockMedia();
+    HRESULT i_lockMedia();
+    HRESULT i_unlockMedia();
 
 private:
+
+    // wrapped IInternalMachineControl properties
+
+    // wrapped IInternalMachineControl methods
+    HRESULT setRemoveSavedStateFile(BOOL aRemove);
+    HRESULT updateState(MachineState_T aState);
+    HRESULT beginPowerUp(const ComPtr<IProgress> &aProgress);
+    HRESULT endPowerUp(LONG aResult);
+    HRESULT beginPoweringDown(ComPtr<IProgress> &aProgress);
+    HRESULT endPoweringDown(LONG aResult,
+                            const com::Utf8Str &aErrMsg);
+    HRESULT runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
+                                BOOL *aMatched,
+                                ULONG *aMaskedInterfaces);
+    HRESULT captureUSBDevice(const com::Guid &aId);
+    HRESULT detachUSBDevice(const com::Guid &aId,
+                            BOOL aDone);
+    HRESULT autoCaptureUSBDevices();
+    HRESULT detachAllUSBDevices(BOOL aDone);
+    HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
+                         ComPtr<IProgress> &aProgress);
+    HRESULT beginSavingState(ComPtr<IProgress> &aProgress,
+                             com::Utf8Str &aStateFilePath);
+    HRESULT endSavingState(LONG aResult,
+                           const com::Utf8Str &aErrMsg);
+    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
+    HRESULT beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
+                                const com::Utf8Str &aName,
+                                const com::Utf8Str &aDescription,
+                                const ComPtr<IProgress> &aConsoleProgress,
+                                BOOL aFTakingSnapshotOnline,
+                                com::Utf8Str &aStateFilePath);
+    HRESULT endTakingSnapshot(BOOL aSuccess);
+    HRESULT deleteSnapshot(const ComPtr<IConsole> &aInitiator,
+                           const com::Guid &aStartId,
+                           const com::Guid &aEndId,
+                           BOOL aDeleteAllChildren,
+                           MachineState_T *aMachineState,
+                           ComPtr<IProgress> &aProgress);
+    HRESULT finishOnlineMergeMedium();
+    HRESULT restoreSnapshot(const ComPtr<IConsole> &aInitiator,
+                            const ComPtr<ISnapshot> &aSnapshot,
+                            MachineState_T *aMachineState,
+                            ComPtr<IProgress> &aProgress);
+    HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
+                                std::vector<com::Utf8Str> &aValues,
+                                std::vector<LONG64> &aTimestamps,
+                                std::vector<com::Utf8Str> &aFlags);
+    HRESULT pushGuestProperty(const com::Utf8Str &aName,
+                              const com::Utf8Str &aValue,
+                              LONG64 aTimestamp,
+                              const com::Utf8Str &aFlags);
+    HRESULT lockMedia();
+    HRESULT unlockMedia();
+    HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
+                        ComPtr<IMediumAttachment> &aNewAttachment);
+    HRESULT reportVmStatistics(ULONG aValidStats,
+                               ULONG aCpuUser,
+                               ULONG aCpuKernel,
+                               ULONG aCpuIdle,
+                               ULONG aMemTotal,
+                               ULONG aMemFree,
+                               ULONG aMemBalloon,
+                               ULONG aMemShared,
+                               ULONG aMemCache,
+                               ULONG aPagedTotal,
+                               ULONG aMemAllocTotal,
+                               ULONG aMemFreeTotal,
+                               ULONG aMemBalloonTotal,
+                               ULONG aMemSharedTotal,
+                               ULONG aVmNetRx,
+                               ULONG aVmNetTx);
+
 
     struct ConsoleTaskData
     {
@@ -1380,7 +1404,7 @@ private:
     friend struct DeleteSnapshotTask;
     friend struct RestoreSnapshotTask;
 
-    HRESULT endSavingState(HRESULT aRC, const Utf8Str &aErrMsg);
+    HRESULT i_endSavingState(HRESULT aRC, const Utf8Str &aErrMsg);
     void i_releaseSavedStateFile(const Utf8Str &strSavedStateFile, Snapshot *pSnapshotToIgnore);
 
     void i_deleteSnapshotHandler(DeleteSnapshotTask &aTask);

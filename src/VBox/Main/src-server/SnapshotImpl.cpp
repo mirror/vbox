@@ -1393,22 +1393,16 @@ struct SessionMachine::DeleteSnapshotTask
  * @param aStateFilePath out: name of file in snapshots folder to which the console should write the VM state.
  * @return
  */
-STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
-                                                 IN_BSTR aName,
-                                                 IN_BSTR aDescription,
-                                                 IProgress *aConsoleProgress,
-                                                 BOOL fTakingSnapshotOnline,
-                                                 BSTR *aStateFilePath)
+HRESULT SessionMachine::beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
+                                            const com::Utf8Str &aName,
+                                            const com::Utf8Str &aDescription,
+                                            const ComPtr<IProgress> &aConsoleProgress,
+                                            BOOL  aFTakingSnapshotOnline,
+                                            com::Utf8Str &aStateFilePath)
 {
     LogFlowThisFuncEnter();
 
-    AssertReturn(aInitiator && aName, E_INVALIDARG);
-    AssertReturn(aStateFilePath, E_POINTER);
-
-    LogFlowThisFunc(("aName='%ls' fTakingSnapshotOnline=%RTbool\n", aName, fTakingSnapshotOnline));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    LogFlowThisFunc(("aName='%s' aFTakingSnapshotOnline=%RTbool\n", aName.c_str(), aFTakingSnapshotOnline));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1427,7 +1421,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                         mUserData->s.strName.c_str());
     }
 
-    if (    !fTakingSnapshotOnline
+    if (    !aFTakingSnapshotOnline
          && mData->mMachineState != MachineState_Saved
        )
     {
@@ -1443,34 +1437,31 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     Guid snapshotId;
     snapshotId.create();
 
-    Utf8Str strStateFilePath;
     /* stateFilePath is null when the machine is not online nor saved */
-    if (fTakingSnapshotOnline)
+    if (aFTakingSnapshotOnline)
     {
         Bstr value;
         HRESULT rc = GetExtraData(Bstr("VBoxInternal2/ForceTakeSnapshotWithoutState").raw(),
                                   value.asOutParam());
         if (FAILED(rc) || value != "1")
-        {
             // creating a new online snapshot: we need a fresh saved state file
-            i_composeSavedStateFilename(strStateFilePath);
-        }
+            i_composeSavedStateFilename(aStateFilePath);
     }
     else if (mData->mMachineState == MachineState_Saved)
         // taking an online snapshot from machine in "saved" state: then use existing state file
-        strStateFilePath = mSSData->strStateFilePath;
+        aStateFilePath = mSSData->strStateFilePath;
 
-    if (strStateFilePath.isNotEmpty())
+    if (aStateFilePath.isNotEmpty())
     {
         // ensure the directory for the saved state file exists
-        HRESULT rc = VirtualBox::i_ensureFilePathExists(strStateFilePath, true /* fCreate */);
+        HRESULT rc = VirtualBox::i_ensureFilePathExists(aStateFilePath, true /* fCreate */);
         if (FAILED(rc)) return rc;
     }
 
     /* create a snapshot machine object */
     ComObjPtr<SnapshotMachine> snapshotMachine;
     snapshotMachine.createObject();
-    HRESULT rc = snapshotMachine->init(this, snapshotId.ref(), strStateFilePath);
+    HRESULT rc = snapshotMachine->init(this, snapshotId.ref(), aStateFilePath);
     AssertComRCReturn(rc, rc);
 
     /* create a snapshot object */
@@ -1489,6 +1480,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     /* fill in the snapshot data */
     mConsoleTaskData.mLastState = mData->mMachineState;
     mConsoleTaskData.mSnapshot = pSnapshot;
+
     /// @todo in the long run the progress object should be moved to
     // VBoxSVC to avoid trouble with monitoring the progress object state
     // when the process where it lives is terminating shortly after the
@@ -1497,7 +1489,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     try
     {
         LogFlowThisFunc(("Creating differencing hard disks (online=%d)...\n",
-                         fTakingSnapshotOnline));
+                         aFTakingSnapshotOnline));
 
         // backup the media data so we can recover if things goes wrong along the day;
         // the matching commit() is in fixupMedia() during endSnapshot()
@@ -1514,7 +1506,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         /* create new differencing hard disks and attach them to this machine */
         rc = i_createImplicitDiffs(aConsoleProgress,
                                    1,            // operation weight; must be the same as in Console::TakeSnapshot()
-                                   !!fTakingSnapshotOnline);
+                                   !!aFTakingSnapshotOnline);
         if (FAILED(rc))
             throw rc;
 
@@ -1542,10 +1534,8 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         // @todo r=dj what with the implicit diff that we created above? this is never cleaned up
     }
 
-    if (fTakingSnapshotOnline && SUCCEEDED(rc))
-        strStateFilePath.cloneTo(aStateFilePath);
-    else
-        *aStateFilePath = NULL;
+    if (!(aFTakingSnapshotOnline && SUCCEEDED(rc)))
+        aStateFilePath = "";
 
     LogFlowThisFunc(("LEAVE - %Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
     return rc;
@@ -1565,12 +1555,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
  * @param aSuccess Whether Console was successful with the client-side snapshot things.
  * @return
  */
-STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
+HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
 {
     LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1692,18 +1679,12 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
  * @param aProgress out: progress object to monitor restore thread.
  * @return
  */
-STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
-                                             ISnapshot *aSnapshot,
-                                             MachineState_T *aMachineState,
-                                             IProgress **aProgress)
+HRESULT SessionMachine::restoreSnapshot(const ComPtr<IConsole> &aInitiator,
+                                        const ComPtr<ISnapshot> &aSnapshot,
+                                        MachineState_T *aMachineState,
+                                        ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
-
-    AssertReturn(aInitiator, E_INVALIDARG);
-    AssertReturn(aSnapshot && aMachineState && aProgress, E_POINTER);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1711,7 +1692,8 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState),
                  E_FAIL);
 
-    ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(aSnapshot));
+    ISnapshot* iSnapshot = aSnapshot;
+    ComObjPtr<Snapshot>pSnapshot(static_cast<Snapshot*>(iSnapshot));
     ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->i_getSnapshotMachine();
 
     // create a progress object. The number of operations is:
@@ -1768,7 +1750,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     i_setMachineState(MachineState_RestoringSnapshot);
 
     /* return the progress to the caller */
-    pProgress.queryInterfaceTo(aProgress);
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
@@ -2054,7 +2036,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Implementation for IInternalMachineControl::DeleteSnapshot().
+ * Implementation for IInternalMachineControl::deleteSnapshot().
  *
  * Gets called from Console::DeleteSnapshot(), and that's basically the
  * only thing Console does initially. Deleting a snapshot happens entirely on
@@ -2069,28 +2051,22 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &aTask)
  *
  * @note Locks mParent + this + children objects for writing!
  */
-STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
-                                            IN_BSTR aStartId,
-                                            IN_BSTR aEndId,
-                                            BOOL fDeleteAllChildren,
-                                            MachineState_T *aMachineState,
-                                            IProgress **aProgress)
+HRESULT SessionMachine::deleteSnapshot(const ComPtr<IConsole> &aInitiator,
+                                       const com::Guid &aStartId,
+                                       const com::Guid &aEndId,
+                                       BOOL aDeleteAllChildren,
+                                       MachineState_T *aMachineState,
+                                       ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
 
-    Guid startId(aStartId);
-    Guid endId(aEndId);
-
-    AssertReturn(aInitiator && !startId.isZero() && !endId.isZero() && startId.isValid() && endId.isValid(), E_INVALIDARG);
+    AssertReturn(aInitiator && !aStartId.isZero() && !aEndId.isZero() && aStartId.isValid() && aEndId.isValid(), E_INVALIDARG);
 
     AssertReturn(aMachineState && aProgress, E_POINTER);
 
     /** @todo implement the "and all children" and "range" variants */
-    if (fDeleteAllChildren || startId != endId)
+    if (aDeleteAllChildren || aStartId != aEndId)
         ReturnComNotImplemented();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2107,7 +2083,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                         Global::stringifyMachineState(mData->mMachineState));
 
     ComObjPtr<Snapshot> pSnapshot;
-    HRESULT rc = i_findSnapshotById(startId, pSnapshot, true /* aSetError */);
+    HRESULT rc = i_findSnapshotById(aStartId, pSnapshot, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
     AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);
@@ -2225,7 +2201,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
         i_setMachineState(MachineState_DeletingSnapshot);
 
     /* return the progress to the caller */
-    pProgress.queryInterfaceTo(aProgress);
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
@@ -3427,7 +3403,7 @@ HRESULT SessionMachine::i_onlineMergeMedium(const ComObjPtr<MediumAttachment> &a
 }
 
 /**
- * Implementation for IInternalMachineControl::FinishOnlineMergeMedium().
+ * Implementation for IInternalMachineControl::finishOnlineMergeMedium().
  *
  * Gets called after the successful completion of an online merge from
  * Console::onlineMergeMedium(), which gets invoked indirectly above in
@@ -3436,7 +3412,7 @@ HRESULT SessionMachine::i_onlineMergeMedium(const ComObjPtr<MediumAttachment> &a
  * This updates the medium information and medium state so that the VM
  * can continue with the updated state of the medium chain.
  */
-STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
+HRESULT SessionMachine::finishOnlineMergeMedium()
 {
     HRESULT rc = S_OK;
     MediumDeleteRec *pDeleteRec = (MediumDeleteRec *)mConsoleTaskData.mDeleteSnapshotInfo;
