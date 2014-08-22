@@ -46,12 +46,15 @@ typedef struct VKDREQUESTHDR
     unsigned cbReplyMax;
 } VKDREQUESTHDR;
 
+#pragma pack(1)
 typedef struct VKDREPLYHDR
 {
     unsigned cbData;
     char chOne;
     char chSpace;
 } VKDREPLYHDR;
+#pragma pack()
+AssertCompileSize(VKDREPLYHDR, 6);
 
 class IKDClient
 {
