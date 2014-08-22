@@ -1537,3 +1537,33 @@ DECLHIDDEN(void) rtThreadClearTlsEntry(RTTLS iTls)
 }
 
 #endif /* IPRT_WITH_GENERIC_TLS */
+
+
+#if defined(RT_OS_WINDOWS) && defined(IN_RING3)
+
+/**
+ * Thread enumeration callback for RTThreadNameThreads
+ */
+static DECLCALLBACK(int) rtThreadNameThreadCallback(PAVLPVNODECORE pNode, void *pvUser)
+{
+    PRTTHREADINT pThread = (PRTTHREADINT)pNode;
+    rtThreadNativeInformDebugger(pThread);
+    return 0;
+}
+
+/**
+ * A function that can be called from the windows debugger to get the names of
+ * all threads when attaching to a process.
+ *
+ * Usage: .call VBoxRT!RTThreadNameThreads()
+ *
+ * @returns 0
+ * @remarks Do not call from source code as it skips locks.
+ */
+extern "C" RTDECL(int) RTThreadNameThreads(void);
+RTDECL(int) RTThreadNameThreads(void)
+{
+    return RTAvlPVDoWithAll(&g_ThreadTree, true /* fFromLeft*/, rtThreadNameThreadCallback, NULL);
+}
+
+#endif

@@ -57,6 +57,7 @@ static DWORD g_dwSelfTLS = TLS_OUT_OF_INDEXES;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static unsigned __stdcall rtThreadNativeMain(void *pvArgs);
+static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName);
 
 
 DECLHIDDEN(int) rtThreadNativeInit(void)
@@ -106,7 +107,45 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         return VERR_FAILED_TO_SET_SELF_TLS;
+    if (IsDebuggerPresent())
+        rtThreadWinTellDebuggerThreadName(GetCurrentThreadId(), pThread->szName);
     return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(void) rtThreadNativeInformDebugger(PRTTHREADINT pThread)
+{
+    rtThreadWinTellDebuggerThreadName((uint32_t)(uintptr_t)pThread->Core.Key, pThread->szName);
+}
+
+
+/**
+ * Communicates the thread name to the debugger, if we're begin debugged that
+ * is.
+ *
+ * See http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx for debugger
+ * interface details.
+ *
+ * @param   idThread        The thread ID. UINT32_MAX for current thread.
+ * @param   pszName         The name.
+ */
+static void rtThreadWinTellDebuggerThreadName(uint32_t idThread, const char *pszName)
+{
+    struct
+    {
+        uint32_t    uType;
+        const char *pszName;
+        uint32_t    idThread;
+        uint32_t    fFlags;
+    } Pkg = { 0x1000, pszName, idThread, 0 };
+    __try
+    {
+        RaiseException(0x406d1388, 0, sizeof(Pkg)/sizeof(ULONG_PTR), (ULONG_PTR *)&Pkg);
+    }
+    __except(EXCEPTION_CONTINUE_EXECUTION)
+    {
+
+    }
 }
 
 
@@ -207,6 +246,8 @@ static unsigned __stdcall rtThreadNativeMain(void *pvArgs)
 
     if (!TlsSetValue(g_dwSelfTLS, pThread))
         AssertReleaseMsgFailed(("failed to set self TLS. lasterr=%d thread '%s'\n", GetLastError(), pThread->szName));
+    if (IsDebuggerPresent())
+        rtThreadWinTellDebuggerThreadName(dwThreadId, &pThread->szName[0]);
 
     int rc = rtThreadMain(pThread, dwThreadId, &pThread->szName[0]);
 
