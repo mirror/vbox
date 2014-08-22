@@ -349,6 +349,7 @@ public:
 #ifndef RT_OS_DARWIN
         RuntimeMenuMachineActionType_Close             = RT_BIT(15),
 #endif /* !RT_OS_DARWIN */
+        RuntimeMenuMachineActionType_Nothing           = RT_BIT(16),
         RuntimeMenuMachineActionType_All               = 0xFFFF
     };
 
@@ -361,11 +362,13 @@ public:
         RuntimeMenuViewActionType_Scale             = RT_BIT(2),
         RuntimeMenuViewActionType_GuestAutoresize   = RT_BIT(3),
         RuntimeMenuViewActionType_AdjustWindow      = RT_BIT(4),
-        RuntimeMenuViewActionType_StatusBar         = RT_BIT(5),
-        RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(6),
-        RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(7),
-        RuntimeMenuViewActionType_Resize            = RT_BIT(8),
-        RuntimeMenuViewActionType_Multiscreen       = RT_BIT(9),
+        RuntimeMenuViewActionType_MenuBar           = RT_BIT(5),
+        RuntimeMenuViewActionType_MenuBarSettings   = RT_BIT(6),
+        RuntimeMenuViewActionType_StatusBar         = RT_BIT(7),
+        RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(8),
+        RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(9),
+        RuntimeMenuViewActionType_Resize            = RT_BIT(10),
+        RuntimeMenuViewActionType_Multiscreen       = RT_BIT(11),
         RuntimeMenuViewActionType_All               = 0xFFFF
     };
 
@@ -391,6 +394,7 @@ public:
         RuntimeMenuDevicesActionType_VideoCaptureSettings  = RT_BIT(15),
         RuntimeMenuDevicesActionType_StartVideoCapture     = RT_BIT(16),
         RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(17),
+        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(18),
         RuntimeMenuDevicesActionType_All                   = 0xFFFF
     };
 

@@ -25,6 +25,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
+#include "UIMenuBarEditorWindow.h"
 #include "UIStatusBarEditorWindow.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
@@ -72,6 +73,35 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
         default:
             break;
     }
+}
+
+void UIMachineLogicNormal::sltOpenMenuBarSettings()
+{
+    /* Do not process if window(s) missed! */
+    AssertReturnVoid(isMachineWindowsCreated());
+
+    /* Prevent user from opening another one editor: */
+    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(false);
+    /* Create menu-bar editor: */
+    UIMenuBarEditorWindow *pMenuBarEditor = new UIMenuBarEditorWindow(activeMachineWindow(), actionPool());
+    AssertPtrReturnVoid(pMenuBarEditor);
+    {
+        /* Configure menu-bar editor: */
+        connect(pMenuBarEditor, SIGNAL(destroyed(QObject*)),
+                this, SLOT(sltMenuBarSettingsClosed()));
+#ifdef Q_WS_MAC
+        connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+                pMenuBarEditor, SLOT(sltActivateWindow()));
+#endif /* Q_WS_MAC */
+        /* Show window: */
+        pMenuBarEditor->show();
+    }
+}
+
+void UIMachineLogicNormal::sltMenuBarSettingsClosed()
+{
+    /* Allow user to open editor again: */
+    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(true);
 }
 
 void UIMachineLogicNormal::sltOpenStatusBarSettings()
@@ -163,6 +193,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToSeamless()));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
             this, SLOT(sltChangeVisualStateToScale()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
+            this, SLOT(sltOpenMenuBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenStatusBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
@@ -227,6 +259,8 @@ void UIMachineLogicNormal::cleanupActionConnections()
                this, SLOT(sltChangeVisualStateToSeamless()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
                this, SLOT(sltChangeVisualStateToScale()));
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
+               this, SLOT(sltOpenMenuBarSettings()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenStatusBarSettings()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),

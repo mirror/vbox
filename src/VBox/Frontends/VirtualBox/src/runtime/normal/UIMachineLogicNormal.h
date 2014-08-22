@@ -42,6 +42,8 @@ private slots:
     void sltCheckForRequestedVisualStateType();
 
     /* View menu functionality: */
+    void sltOpenMenuBarSettings();
+    void sltMenuBarSettingsClosed();
     void sltOpenStatusBarSettings();
     void sltStatusBarSettingsClosed();
     void sltToggleStatusBar();

@@ -67,6 +67,8 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_Scale,
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
+    UIActionIndexRT_M_View_M_MenuBar,
+    UIActionIndexRT_M_View_M_MenuBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar,
     UIActionIndexRT_M_View_M_StatusBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar_T_Visibility,
@@ -217,6 +219,8 @@ protected:
     void updateMenuView();
     /** Update 'View' : 'Popup' menu routine. */
     void updateMenuViewPopup();
+    /** Update 'View' : 'Menu Bar' menu routine. */
+    void updateMenuViewMenuBar();
     /** Update 'View' : 'Status Bar' menu routine. */
     void updateMenuViewStatusBar();
     /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Normal, Scale). */
