@@ -142,30 +142,30 @@ public:
     UIMultiScreenLayout* multiScreenLayout() const { return m_pMultiScreenLayout; }
 
     /** Returns whether the menu with passed @a type is allowed in menu-bar. */
-    bool isAllowedInMenuBar(RuntimeMenuType type) const;
+    bool isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType type) const;
     /** Defines menu-bar @a restriction for passed @a level. */
-    void setRestrictionForMenuBar(UIActionRestrictionLevel level, RuntimeMenuType restriction);
+    void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
-    bool isAllowedInMenuMachine(RuntimeMenuMachineActionType type) const;
+    bool isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const;
     /** Defines 'Machine' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuMachine(UIActionRestrictionLevel level, RuntimeMenuMachineActionType restriction);
+    void setRestrictionForMenuMachine(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuMachineActionType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'View' menu. */
-    bool isAllowedInMenuView(RuntimeMenuViewActionType type) const;
+    bool isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType type) const;
     /** Defines 'View' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuView(UIActionRestrictionLevel level, RuntimeMenuViewActionType restriction);
+    void setRestrictionForMenuView(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'Devices' menu. */
-    bool isAllowedInMenuDevices(RuntimeMenuDevicesActionType type) const;
+    bool isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type) const;
     /** Defines 'Devices' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuDevices(UIActionRestrictionLevel level, RuntimeMenuDevicesActionType restriction);
+    void setRestrictionForMenuDevices(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Returns whether the action with passed @a type is allowed in the 'Debug' menu. */
-    bool isAllowedInMenuDebug(RuntimeMenuDebuggerActionType type) const;
+    bool isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type) const;
     /** Defines 'Debug' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, RuntimeMenuDebuggerActionType restriction);
+    void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 protected slots:
@@ -253,20 +253,20 @@ private:
     /** Holds the UI multi-screen layout object reference. */
     UIMultiScreenLayout *m_pMultiScreenLayout;
 
-    /** Holds the list of main-menus. */
+    /** Holds the list of Runtime UI main menus. */
     QList<QMenu*> m_mainMenus;
 
     /** Holds restricted menu types. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuType> m_restrictedMenus;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuType> m_restrictedMenus;
     /** Holds restricted action types of the Machine menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
     /** Holds restricted action types of the View menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuViewActionType> m_restrictedActionsMenuView;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuViewActionType> m_restrictedActionsMenuView;
     /** Holds restricted action types of the Devices menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Holds restricted action types of the Debugger menu. */
-    QMap<UIActionRestrictionLevel, RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Enable factory in base-class: */

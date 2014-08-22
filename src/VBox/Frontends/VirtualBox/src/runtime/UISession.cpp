@@ -999,7 +999,7 @@ void UISession::prepareActions()
     /* Get host/machine: */
     const CHost host = vboxGlobal().host();
     const CMachine machine = session().GetConsole().GetMachine();
-    RuntimeMenuDevicesActionType restriction = RuntimeMenuDevicesActionType_Invalid;
+    UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
 
     /* Storage stuff: */
     {
@@ -1018,9 +1018,9 @@ void UISession::prepareActions()
         pOpticalDevicesMenu->setData(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
         if (!iDevicesCountCD)
-            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_OpticalDevices);
+            restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
         if (!iDevicesCountFD)
-            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_FloppyDevices);
+            restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
     }
 
     /* Network stuff: */
@@ -1039,7 +1039,7 @@ void UISession::prepareActions()
             }
         }
         if (!fAtLeastOneAdapterActive)
-            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_Network);
+            restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
     }
 
     /* USB stuff: */
@@ -1049,7 +1049,7 @@ void UISession::prepareActions()
                                  && !machine.GetUSBControllers().isEmpty()
                                  && machine.GetUSBProxyAvailable();
         if (!fUSBEnabled)
-            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_USBDevices);
+            restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
     }
 
     /* WebCams stuff: */
@@ -1058,7 +1058,7 @@ void UISession::prepareActions()
         host.GetVideoInputDevices();
         const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
         if (!fWebCamsEnabled)
-            restriction = (RuntimeMenuDevicesActionType)(restriction | RuntimeMenuDevicesActionType_WebCams);
+            restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
     }
 
     /* Apply cumulative restriction: */

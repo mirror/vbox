@@ -33,16 +33,16 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
-template<> bool canConvert<MenuHelpActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
 #ifdef Q_WS_MAC
-template<> bool canConvert<MenuApplicationActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { return true; }
 #endif /* Q_WS_MAC */
-template<> bool canConvert<RuntimeMenuType>() { return true; }
-template<> bool canConvert<RuntimeMenuMachineActionType>() { return true; }
-template<> bool canConvert<RuntimeMenuViewActionType>() { return true; }
-template<> bool canConvert<RuntimeMenuDevicesActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>() { return true; }
 #ifdef VBOX_WITH_DEBUGGER_GUI
-template<> bool canConvert<RuntimeMenuDebuggerActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>() { return true; }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
@@ -356,24 +356,24 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
     return result;
 }
 
-/* QString <= MenuHelpActionType: */
-template<> QString toInternalString(const MenuHelpActionType &menuHelpActionType)
+/* QString <= UIExtraDataMetaDefs::MenuHelpActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionType &menuHelpActionType)
 {
     QString strResult;
     switch (menuHelpActionType)
     {
-        case MenuHelpActionType_Contents:             strResult = "Contents"; break;
-        case MenuHelpActionType_WebSite:              strResult = "WebSite"; break;
-        case MenuHelpActionType_ResetWarnings:        strResult = "ResetWarnings"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_Contents:             strResult = "Contents"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_WebSite:              strResult = "WebSite"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings:        strResult = "ResetWarnings"; break;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        case MenuHelpActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
-        case MenuHelpActionType_CheckForUpdates:      strResult = "CheckForUpdates"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates:      strResult = "CheckForUpdates"; break;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
-        case MenuHelpActionType_About:                strResult = "About"; break;
-        case MenuHelpActionType_Preferences:          strResult = "Preferences"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_About:                strResult = "About"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_Preferences:          strResult = "Preferences"; break;
 #endif /* !Q_WS_MAC */
-        case MenuHelpActionType_All:                  strResult = "All"; break;
+        case UIExtraDataMetaDefs::MenuHelpActionType_All:                  strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", menuHelpActionType));
@@ -383,42 +383,42 @@ template<> QString toInternalString(const MenuHelpActionType &menuHelpActionType
     return strResult;
 }
 
-/* MenuHelpActionType <= QString: */
-template<> MenuHelpActionType fromInternalString<MenuHelpActionType>(const QString &strMenuHelpActionType)
+/* UIExtraDataMetaDefs::MenuHelpActionType <= QString: */
+template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMenuHelpActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;               QList<MenuHelpActionType> values;
-    keys << "Contents";             values << MenuHelpActionType_Contents;
-    keys << "WebSite";              values << MenuHelpActionType_WebSite;
-    keys << "ResetWarnings";        values << MenuHelpActionType_ResetWarnings;
+    QStringList keys;               QList<UIExtraDataMetaDefs::MenuHelpActionType> values;
+    keys << "Contents";             values << UIExtraDataMetaDefs::MenuHelpActionType_Contents;
+    keys << "WebSite";              values << UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
+    keys << "ResetWarnings";        values << UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    keys << "NetworkAccessManager"; values << MenuHelpActionType_NetworkAccessManager;
-    keys << "CheckForUpdates";      values << MenuHelpActionType_CheckForUpdates;
+    keys << "NetworkAccessManager"; values << UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager;
+    keys << "CheckForUpdates";      values << UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
-    keys << "About";                values << MenuHelpActionType_About;
-    keys << "Preferences";          values << MenuHelpActionType_Preferences;
+    keys << "About";                values << UIExtraDataMetaDefs::MenuHelpActionType_About;
+    keys << "Preferences";          values << UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
 #endif /* !Q_WS_MAC */
-    keys << "All";                  values << MenuHelpActionType_All;
+    keys << "All";                  values << UIExtraDataMetaDefs::MenuHelpActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strMenuHelpActionType, Qt::CaseInsensitive))
-        return MenuHelpActionType_Invalid;
+        return UIExtraDataMetaDefs::MenuHelpActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMenuHelpActionType, Qt::CaseInsensitive)));
 }
 
 #ifdef Q_WS_MAC
-/* QString <= MenuApplicationActionType: */
-template<> QString toInternalString(const MenuApplicationActionType &runtimeMenuApplicationActionType)
+/* QString <= UIExtraDataMetaDefs::MenuApplicationActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &runtimeMenuApplicationActionType)
 {
     QString strResult;
     switch (runtimeMenuApplicationActionType)
     {
-        case MenuApplicationActionType_About:       strResult = "About"; break;
-        case MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
-        case MenuApplicationActionType_Close:       strResult = "Close"; break;
-        case MenuApplicationActionType_All:         strResult = "All"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_About:       strResult = "About"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Close:       strResult = "Close"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_All:         strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
@@ -428,38 +428,38 @@ template<> QString toInternalString(const MenuApplicationActionType &runtimeMenu
     return strResult;
 }
 
-/* MenuApplicationActionType <= QString: */
-template<> MenuApplicationActionType fromInternalString<MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
+/* UIExtraDataMetaDefs::MenuApplicationActionType <= QString: */
+template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<MenuApplicationActionType> values;
-    keys << "About";       values << MenuApplicationActionType_About;
-    keys << "Preferences"; values << MenuApplicationActionType_Preferences;
-    keys << "Close";       values << MenuApplicationActionType_Close;
-    keys << "All";         values << MenuApplicationActionType_All;
+    QStringList keys;      QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
+    keys << "About";       values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
+    keys << "Preferences"; values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+    keys << "Close";       values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+    keys << "All";         values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
-        return MenuApplicationActionType_Invalid;
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
 }
 #endif /* Q_WS_MAC */
 
-/* QString <= RuntimeMenuType: */
-template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType)
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuType &runtimeMenuType)
 {
     QString strResult;
     switch (runtimeMenuType)
     {
-        case RuntimeMenuType_Machine: strResult = "Machine"; break;
-        case RuntimeMenuType_View:    strResult = "View"; break;
-        case RuntimeMenuType_Devices: strResult = "Devices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Machine: strResult = "Machine"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_View:    strResult = "View"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Devices: strResult = "Devices"; break;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        case RuntimeMenuType_Debug:   strResult = "Debug"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Debug:   strResult = "Debug"; break;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        case RuntimeMenuType_Help:    strResult = "Help"; break;
-        case RuntimeMenuType_All:     strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Help:    strResult = "Help"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_All:     strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", runtimeMenuType));
@@ -469,54 +469,54 @@ template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType)
     return strResult;
 }
 
-/* RuntimeMenuType <= QString: */
-template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType)
+/* UIExtraDataMetaDefs::RuntimeMenuType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuType>(const QString &strRuntimeMenuType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;  QList<RuntimeMenuType> values;
-    keys << "Machine"; values << RuntimeMenuType_Machine;
-    keys << "View";    values << RuntimeMenuType_View;
-    keys << "Devices"; values << RuntimeMenuType_Devices;
+    QStringList keys;  QList<UIExtraDataMetaDefs::RuntimeMenuType> values;
+    keys << "Machine"; values << UIExtraDataMetaDefs::RuntimeMenuType_Machine;
+    keys << "View";    values << UIExtraDataMetaDefs::RuntimeMenuType_View;
+    keys << "Devices"; values << UIExtraDataMetaDefs::RuntimeMenuType_Devices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    keys << "Debug";   values << RuntimeMenuType_Debug;
+    keys << "Debug";   values << UIExtraDataMetaDefs::RuntimeMenuType_Debug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    keys << "Help";    values << RuntimeMenuType_Help;
-    keys << "All";     values << RuntimeMenuType_All;
+    keys << "Help";    values << UIExtraDataMetaDefs::RuntimeMenuType_Help;
+    keys << "All";     values << UIExtraDataMetaDefs::RuntimeMenuType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuType, Qt::CaseInsensitive))
-        return RuntimeMenuType_Invalid;
+        return UIExtraDataMetaDefs::RuntimeMenuType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
 }
 
-/* QString <= RuntimeMenuMachineActionType: */
-template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeMenuMachineActionType)
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuMachineActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachineActionType &runtimeMenuMachineActionType)
 {
     QString strResult;
     switch (runtimeMenuMachineActionType)
     {
-        case RuntimeMenuMachineActionType_SettingsDialog:    strResult = "SettingsDialog"; break;
-        case RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
-        case RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
-        case RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
-        case RuntimeMenuMachineActionType_Keyboard:          strResult = "Keyboard"; break;
-        case RuntimeMenuMachineActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
-        case RuntimeMenuMachineActionType_Mouse:             strResult = "Mouse"; break;
-        case RuntimeMenuMachineActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
-        case RuntimeMenuMachineActionType_TypeCAD:           strResult = "TypeCAD"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog:    strResult = "SettingsDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard:          strResult = "Keyboard"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse:             strResult = "Mouse"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD:           strResult = "TypeCAD"; break;
 #ifdef Q_WS_X11
-        case RuntimeMenuMachineActionType_TypeCABS:          strResult = "TypeCABS"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS:          strResult = "TypeCABS"; break;
 #endif /* Q_WS_X11 */
-        case RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
-        case RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
-        case RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
-        case RuntimeMenuMachineActionType_Shutdown:          strResult = "Shutdown"; break;
-        case RuntimeMenuMachineActionType_PowerOff:          strResult = "PowerOff"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:          strResult = "Shutdown"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:          strResult = "PowerOff"; break;
 #ifndef Q_WS_MAC
-        case RuntimeMenuMachineActionType_Close:             strResult = "Close"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close:             strResult = "Close"; break;
 #endif /* !Q_WS_MAC */
-        case RuntimeMenuMachineActionType_All:               strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:               strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuMachineActionType));
@@ -526,57 +526,57 @@ template<> QString toInternalString(const RuntimeMenuMachineActionType &runtimeM
     return strResult;
 }
 
-/* RuntimeMenuMachineActionType <= QString: */
-template<> RuntimeMenuMachineActionType fromInternalString<RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType)
+/* UIExtraDataMetaDefs::RuntimeMenuMachineActionType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;            QList<RuntimeMenuMachineActionType> values;
-    keys << "SettingsDialog";    values << RuntimeMenuMachineActionType_SettingsDialog;
-    keys << "TakeSnapshot";      values << RuntimeMenuMachineActionType_TakeSnapshot;
-    keys << "TakeScreenshot";    values << RuntimeMenuMachineActionType_TakeScreenshot;
-    keys << "InformationDialog"; values << RuntimeMenuMachineActionType_InformationDialog;
-    keys << "Keyboard";          values << RuntimeMenuMachineActionType_Keyboard;
-    keys << "KeyboardSettings";  values << RuntimeMenuMachineActionType_KeyboardSettings;
-    keys << "Mouse";             values << RuntimeMenuMachineActionType_Mouse;
-    keys << "MouseIntegration";  values << RuntimeMenuMachineActionType_MouseIntegration;
-    keys << "TypeCAD";           values << RuntimeMenuMachineActionType_TypeCAD;
+    QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuMachineActionType> values;
+    keys << "SettingsDialog";    values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
+    keys << "TakeSnapshot";      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
+    keys << "TakeScreenshot";    values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot;
+    keys << "InformationDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
+    keys << "Keyboard";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard;
+    keys << "KeyboardSettings";  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings;
+    keys << "Mouse";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse;
+    keys << "MouseIntegration";  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration;
+    keys << "TypeCAD";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD;
 #ifdef Q_WS_X11
-    keys << "TypeCABS";          values << RuntimeMenuMachineActionType_TypeCABS;
+    keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS;
 #endif /* Q_WS_X11 */
-    keys << "Pause";             values << RuntimeMenuMachineActionType_Pause;
-    keys << "Reset";             values << RuntimeMenuMachineActionType_Reset;
-    keys << "SaveState";         values << RuntimeMenuMachineActionType_SaveState;
-    keys << "Shutdown";          values << RuntimeMenuMachineActionType_Shutdown;
-    keys << "PowerOff";          values << RuntimeMenuMachineActionType_PowerOff;
+    keys << "Pause";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
+    keys << "Reset";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
+    keys << "SaveState";         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
+    keys << "Shutdown";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
+    keys << "PowerOff";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
 #ifndef Q_WS_MAC
-    keys << "Close";             values << RuntimeMenuMachineActionType_Close;
+    keys << "Close";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;
 #endif /* !Q_WS_MAC */
-    keys << "All";               values << RuntimeMenuMachineActionType_All;
+    keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuMachineActionType, Qt::CaseInsensitive))
-        return RuntimeMenuMachineActionType_Invalid;
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuMachineActionType, Qt::CaseInsensitive)));
 }
 
-/* QString <= RuntimeMenuViewActionType: */
-template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenuViewActionType)
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuViewActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewActionType &runtimeMenuViewActionType)
 {
     QString strResult;
     switch (runtimeMenuViewActionType)
     {
-        case RuntimeMenuViewActionType_Fullscreen:        strResult = "Fullscreen"; break;
-        case RuntimeMenuViewActionType_Seamless:          strResult = "Seamless"; break;
-        case RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
-        case RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
-        case RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
-        case RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
-        case RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
-        case RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
-        case RuntimeMenuViewActionType_Resize:            strResult = "Resize"; break;
-        case RuntimeMenuViewActionType_Multiscreen:       strResult = "Multiscreen"; break;
-        case RuntimeMenuViewActionType_All:               strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen:        strResult = "Fullscreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless:          strResult = "Seamless"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize:            strResult = "Resize"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen:       strResult = "Multiscreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_All:               strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuViewActionType));
@@ -586,55 +586,55 @@ template<> QString toInternalString(const RuntimeMenuViewActionType &runtimeMenu
     return strResult;
 }
 
-/* RuntimeMenuViewActionType <= QString: */
-template<> RuntimeMenuViewActionType fromInternalString<RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType)
+/* UIExtraDataMetaDefs::RuntimeMenuViewActionType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;            QList<RuntimeMenuViewActionType> values;
-    keys << "Fullscreen";        values << RuntimeMenuViewActionType_Fullscreen;
-    keys << "Seamless";          values << RuntimeMenuViewActionType_Seamless;
-    keys << "Scale";             values << RuntimeMenuViewActionType_Scale;
-    keys << "GuestAutoresize";   values << RuntimeMenuViewActionType_GuestAutoresize;
-    keys << "AdjustWindow";      values << RuntimeMenuViewActionType_AdjustWindow;
-    keys << "StatusBar";         values << RuntimeMenuViewActionType_StatusBar;
-    keys << "StatusBarSettings"; values << RuntimeMenuViewActionType_StatusBarSettings;
-    keys << "ToggleStatusBar";   values << RuntimeMenuViewActionType_ToggleStatusBar;
-    keys << "Resize";            values << RuntimeMenuViewActionType_Resize;
-    keys << "Multiscreen";       values << RuntimeMenuViewActionType_Multiscreen;
-    keys << "All";               values << RuntimeMenuViewActionType_All;
+    QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuViewActionType> values;
+    keys << "Fullscreen";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
+    keys << "Seamless";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
+    keys << "Scale";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
+    keys << "GuestAutoresize";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
+    keys << "AdjustWindow";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    keys << "StatusBar";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
+    keys << "StatusBarSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
+    keys << "ToggleStatusBar";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
+    keys << "Resize";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
+    keys << "Multiscreen";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen;
+    keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
-        return RuntimeMenuViewActionType_Invalid;
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuViewActionType, Qt::CaseInsensitive)));
 }
 
-/* QString <= RuntimeMenuDevicesActionType: */
-template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType)
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuDevicesActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType)
 {
     QString strResult;
     switch (runtimeMenuDevicesActionType)
     {
-        case RuntimeMenuDevicesActionType_HardDrives:            strResult = "HardDrives"; break;
-        case RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
-        case RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
-        case RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
-        case RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
-        case RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
-        case RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
-        case RuntimeMenuDevicesActionType_USBDevicesSettings:    strResult = "USBDevicesSettings"; break;
-        case RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
-        case RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
-        case RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
-        case RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
-        case RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
-        case RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
-        case RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
-        case RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
-        case RuntimeMenuDevicesActionType_StartVideoCapture:     strResult = "StartVideoCapture"; break;
-        case RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
-        case RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives:            strResult = "HardDrives"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings:    strResult = "HardDrivesSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices:        strResult = "OpticalDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices:         strResult = "FloppyDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network:               strResult = "Network"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings:       strResult = "NetworkSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices:            strResult = "USBDevices"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings:    strResult = "USBDevicesSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams:               strResult = "WebCams"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard:       strResult = "SharedClipboard"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture:     strResult = "StartVideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuDevicesActionType));
@@ -644,50 +644,50 @@ template<> QString toInternalString(const RuntimeMenuDevicesActionType &runtimeM
     return strResult;
 }
 
-/* RuntimeMenuDevicesActionType <= QString: */
-template<> RuntimeMenuDevicesActionType fromInternalString<RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType)
+/* UIExtraDataMetaDefs::RuntimeMenuDevicesActionType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                QList<RuntimeMenuDevicesActionType> values;
-    keys << "HardDrives";            values << RuntimeMenuDevicesActionType_HardDrives;
-    keys << "HardDrivesSettings";    values << RuntimeMenuDevicesActionType_HardDrivesSettings;
-    keys << "OpticalDevices";        values << RuntimeMenuDevicesActionType_OpticalDevices;
-    keys << "FloppyDevices";         values << RuntimeMenuDevicesActionType_FloppyDevices;
-    keys << "Network";               values << RuntimeMenuDevicesActionType_Network;
-    keys << "NetworkSettings";       values << RuntimeMenuDevicesActionType_NetworkSettings;
-    keys << "USBDevices";            values << RuntimeMenuDevicesActionType_USBDevices;
-    keys << "USBDevicesSettings";    values << RuntimeMenuDevicesActionType_USBDevicesSettings;
-    keys << "WebCams";               values << RuntimeMenuDevicesActionType_WebCams;
-    keys << "SharedClipboard";       values << RuntimeMenuDevicesActionType_SharedClipboard;
-    keys << "DragAndDrop";           values << RuntimeMenuDevicesActionType_DragAndDrop;
-    keys << "SharedFolders";         values << RuntimeMenuDevicesActionType_SharedFolders;
-    keys << "SharedFoldersSettings"; values << RuntimeMenuDevicesActionType_SharedFoldersSettings;
-    keys << "VRDEServer";            values << RuntimeMenuDevicesActionType_VRDEServer;
-    keys << "VideoCapture";          values << RuntimeMenuDevicesActionType_VideoCapture;
-    keys << "VideoCaptureSettings";  values << RuntimeMenuDevicesActionType_VideoCaptureSettings;
-    keys << "StartVideoCapture";     values << RuntimeMenuDevicesActionType_StartVideoCapture;
-    keys << "InstallGuestTools";     values << RuntimeMenuDevicesActionType_InstallGuestTools;
-    keys << "All";                   values << RuntimeMenuDevicesActionType_All;
+    QStringList keys;                QList<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType> values;
+    keys << "HardDrives";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives;
+    keys << "HardDrivesSettings";    values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings;
+    keys << "OpticalDevices";        values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices;
+    keys << "FloppyDevices";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices;
+    keys << "Network";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network;
+    keys << "NetworkSettings";       values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings;
+    keys << "USBDevices";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices;
+    keys << "USBDevicesSettings";    values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings;
+    keys << "WebCams";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams;
+    keys << "SharedClipboard";       values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard;
+    keys << "DragAndDrop";           values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop;
+    keys << "SharedFolders";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
+    keys << "SharedFoldersSettings"; values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
+    keys << "VRDEServer";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer;
+    keys << "VideoCapture";          values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture;
+    keys << "VideoCaptureSettings";  values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings;
+    keys << "StartVideoCapture";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture;
+    keys << "InstallGuestTools";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+    keys << "All";                   values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive))
-        return RuntimeMenuDevicesActionType_Invalid;
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive)));
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-/* QString <= RuntimeMenuDebuggerActionType: */
-template<> QString toInternalString(const RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType)
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType &runtimeMenuDebuggerActionType)
 {
     QString strResult;
     switch (runtimeMenuDebuggerActionType)
     {
-        case RuntimeMenuDebuggerActionType_Statistics:  strResult = "Statistics"; break;
-        case RuntimeMenuDebuggerActionType_CommandLine: strResult = "CommandLine"; break;
-        case RuntimeMenuDebuggerActionType_Logging:     strResult = "Logging"; break;
-        case RuntimeMenuDebuggerActionType_LogDialog:   strResult = "LogDialog"; break;
-        case RuntimeMenuDebuggerActionType_All:         strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics:  strResult = "Statistics"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine: strResult = "CommandLine"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging:     strResult = "Logging"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog:   strResult = "LogDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All:         strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuDebuggerActionType));
@@ -697,20 +697,20 @@ template<> QString toInternalString(const RuntimeMenuDebuggerActionType &runtime
     return strResult;
 }
 
-/* RuntimeMenuDebuggerActionType <= QString: */
-template<> RuntimeMenuDebuggerActionType fromInternalString<RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType)
+/* UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<RuntimeMenuDebuggerActionType> values;
-    keys << "Statistics";  values << RuntimeMenuDebuggerActionType_Statistics;
-    keys << "CommandLine"; values << RuntimeMenuDebuggerActionType_CommandLine;
-    keys << "Logging";     values << RuntimeMenuDebuggerActionType_Logging;
-    keys << "LogDialog";   values << RuntimeMenuDebuggerActionType_LogDialog;
-    keys << "All";         values << RuntimeMenuDebuggerActionType_All;
+    QStringList keys;      QList<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType> values;
+    keys << "Statistics";  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
+    keys << "CommandLine"; values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
+    keys << "Logging";     values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
+    keys << "LogDialog";   values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
+    keys << "All";         values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive))
-        return RuntimeMenuDebuggerActionType_Invalid;
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive)));
 }

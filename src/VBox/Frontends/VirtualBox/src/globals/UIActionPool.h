@@ -322,15 +322,15 @@ public:
     QList<UIAction*> actions() const { return m_pool.values(); }
 
     /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
-    bool isAllowedInMenuHelp(MenuHelpActionType type) const;
+    bool isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const;
     /** Defines 'Help' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, MenuHelpActionType restriction);
+    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction);
 
 #ifdef Q_WS_MAC
     /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
-    bool isAllowedInMenuApplication(MenuApplicationActionType type) const;
+    bool isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const;
     /** Defines 'Application' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, MenuApplicationActionType restriction);
+    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction);
 #endif /* Q_WS_MAC */
 
     /** Hot-key processing delegate. */
@@ -400,10 +400,10 @@ protected:
     QSet<int> m_invalidations;
 
     /** Holds restricted action types of the Help menu. */
-    QMap<UIActionRestrictionLevel, MenuHelpActionType> m_restrictedActionsMenuHelp;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType> m_restrictedActionsMenuHelp;
 #ifdef Q_WS_MAC
     /** Holds restricted action types of the Application menu. */
-    QMap<UIActionRestrictionLevel, MenuApplicationActionType> m_restrictedActionsMenuApplication;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType> m_restrictedActionsMenuApplication;
 #endif /* Q_WS_MAC */
 };
 
