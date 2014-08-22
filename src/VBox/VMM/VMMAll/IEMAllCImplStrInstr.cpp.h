@@ -1066,8 +1066,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
                 pCtx->ADDR_rDI -= OP_SIZE / 8;
             iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
-        /* iemMemMap already check permissions, so this may only be real errors
-           or access handlers medling. The access handler case is going to
+        /* iemMemMap already checked permissions, so this may only be real errors
+           or access handlers meddling. The access handler case is going to
            cause misbehavior if the instruction is re-interpreted or smth. So,
            we fail with an internal error here instead. */
         else
