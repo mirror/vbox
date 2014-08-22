@@ -341,7 +341,8 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
                 }
                 memcpy(pvBuf, pszFilename, cb);
             }
-            pLocator->u32DataLength = RT_H2BE_U32(cb);
+            if (RT_SUCCESS(rc))
+                pLocator->u32DataLength = RT_H2BE_U32(cb);
             break;
         }
         case VHD_PLATFORM_CODE_WI2K:
