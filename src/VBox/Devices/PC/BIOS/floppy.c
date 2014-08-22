@@ -582,7 +582,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x000c, 0x00); // clear flip-flop
             outb(0x0005, base_count);
             outb(0x0005, base_count>>8);
-            BX_DEBUG_INT13_FL("xfer buf at %x:%x\n", page, base_address);
+            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n", 
+                              base_count, page, base_address);
 
             // port 0b: DMA-1 Mode Register
             mode_register = 0x46; // single mode, increment, autoinit disable,
@@ -594,11 +595,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             // port 81: DMA-1 Page Register, channel 2
             outb(0x0081, page);
 
-            BX_DEBUG_INT13_FL("unmask chan 2\n");
-            outb(0x000a, 0x02); // unmask channel 2
-
             BX_DEBUG_INT13_FL("unmasking DMA-1 c2\n");
-            outb(0x000a, 0x02);
+            outb(0x000a, 0x02); // unmask channel 2
 
             //--------------------------------------
             // set up floppy controller for transfer
@@ -723,7 +721,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x000c, 0x00); // clear flip-flop
             outb(0x0005, base_count);
             outb(0x0005, base_count>>8);
-            BX_DEBUG_INT13_FL("xfer buf at %x:%x\n", page, base_address);
+            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n", 
+                              base_count, page, base_address);
 
             // port 0b: DMA-1 Mode Register
             mode_register = 0x4a; // single mode, increment, autoinit disable,
