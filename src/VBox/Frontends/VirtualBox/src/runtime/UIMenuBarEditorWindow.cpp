@@ -824,7 +824,11 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
 
 
 UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
+#ifndef Q_WS_MAC
     : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(pActionPool), UISlidingToolBar::Position_Top)
+#else /* Q_WS_MAC */
+    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(pActionPool), UISlidingToolBar::Position_Top)
+#endif /* Q_WS_MAC */
 {
 }
 
