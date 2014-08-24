@@ -119,8 +119,11 @@ void crServerRedirMuralFbClear(CRMuralInfo *mural)
         if (!pData->hFb)
             continue;
 
-        CrFbEntryRelease(pData->hFb, pData->hFbEntry);
-        pData->hFbEntry = NULL;
+        if (pData->hFbEntry != NULL)
+        {
+            CrFbEntryRelease(pData->hFb, pData->hFbEntry);
+            pData->hFbEntry = NULL;
+        }
 
         for (j = 0; j < mural->cBuffers; ++j)
         {
@@ -190,6 +193,14 @@ static int crServerRedirMuralDbSyncFb(CRMuralInfo *mural, HCR_FRAMEBUFFER hFb, C
     if (!pData->hFb)
     {
         pData->hFb = hFb;
+
+        /* Guard against modulo-by-zero when calling CrFbEntryCreateForTexData
+           below. Observed when failing to load atig6pxx.dll and similar. */
+        if (RT_UNLIKELY(mural->cBuffers == 0))
+        {
+            WARN(("crServerRedirMuralDbSyncFb: cBuffers == 0 (crServerSupportRedirMuralFBO=%d)", crServerSupportRedirMuralFBO()));
+            return VERR_NOT_SUPPORTED;
+        }
 
         for (uint32_t i = 0; i < mural->cBuffers; ++i)
         {
