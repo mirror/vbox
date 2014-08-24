@@ -450,6 +450,10 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
      * plugin "Program Files\Tumbleweed\Desktop Validator\tmwdcapiclient.dll"
      * turned up owned by the local system user, and we cannot operate without
      * the plugin loaded once it's installed (WinVerityTrust fails).
+     *
+     * Note! We cannot really allow Builtin\Administrators here it's the default
+     *       owner of anything an admin user creates. (We must, unforutnately,
+     *       allow that in system32 though.)
      */
     PSID pOwner = uBuf.Rel.Control & SE_SELF_RELATIVE ? &uBuf.abView[uBuf.Rel.Owner] : uBuf.Abs.Owner;
     Assert((uintptr_t)pOwner - (uintptr_t)&uBuf < sizeof(uBuf) - sizeof(SID));
