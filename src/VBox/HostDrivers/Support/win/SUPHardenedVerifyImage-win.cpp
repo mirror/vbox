@@ -446,7 +446,7 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
     /*
      * Check the owner.
      *
-     * Initially we wished to only allow TrustedInstaller.  But a Winodws CAPI
+     * Initially we wished to only allow TrustedInstaller.  But a Windows CAPI
      * plugin "Program Files\Tumbleweed\Desktop Validator\tmwdcapiclient.dll"
      * turned up owned by the local system user, and we cannot operate without
      * the plugin loaded once it's installed (WinVerityTrust fails).
@@ -1020,13 +1020,19 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
 
     /*
      * Check the trusted installer bit first, if requested as it's somewhat
-     * cheaper than the rest.  We relax this for system32, like we used to,
-     * as there are apparently some systems out there where the user, admin,
-     * or someone has changed the ownership of core windows DLLs like
-     * user32.dll.  Since we need user32.dll and will be checking it's digital
-     * signature, it's reasonably safe to let this thru.
-     * (The report was of SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS
+     * cheaper than the rest.
+     *
+     * We relax this for system32, like we used to, as there are apparently
+     * some systems out there where the user, admin, or someone has changed the
+     * ownership of core windows DLLs like user32.dll.  Since we need user32.dll
+     * and will be checking it's digital signature, it's reasonably safe to let
+     * this thru. (The report was of SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS
      * owning user32.dll, see public ticket 13187, VBoxStartup.3.log.)
+     *
+     * We've also had problems with graphics driver components like ig75icd64.dll
+     * and atig6pxx.dll not being owned by TrustedInstaller, with the result
+     * that 3D got broken (mod by zero issue in test build 5).  These were also
+     * SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS.
      */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))
