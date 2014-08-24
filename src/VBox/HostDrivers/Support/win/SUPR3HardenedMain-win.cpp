@@ -1316,7 +1316,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
     else
     {
         supR3HardenedError(VINF_SUCCESS, false,
-                           "supR3HardenedScreenImage/%s: Not a trusted location: '%ls' (fImage=%d fProtect=%#x fAccess=%#x)",
+                           "supR3HardenedScreenImage/%s: Not a trusted location: '%ls' (fImage=%d fProtect=%#x fAccess=%#x)\n",
                             pszCaller, uBuf.UniStr.Buffer, fImage, *pfAccess, *pfProtect);
         if (hMyFile != hFile)
             NtClose(hMyFile);
@@ -1505,6 +1505,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     if (!pName || pName->Length == 0)
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: name is NULL or have a zero length.\n");
+        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_INVALID_PARAMETER));
         return STATUS_INVALID_PARAMETER;
     }
     SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%ls\n",
@@ -1516,6 +1517,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     if (pName->Length > 256 * sizeof(WCHAR))
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: too long name: %#x bytes\n", pName->Length);
+        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
         return STATUS_NAME_TOO_LONG;
     }
 
@@ -1584,6 +1586,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             supR3HardenedError(VINF_SUCCESS, false,
                                "supR3HardenedMonitor_LdrLoadDll: relative name not permitted: %.*ls\n",
                                cwcName, pawcName);
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_OBJECT_NAME_INVALID));
             return STATUS_OBJECT_NAME_INVALID;
         }
 
@@ -1596,12 +1599,14 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         {
             supR3HardenedError(VINF_SUCCESS, false,
                                "supR3HardenedMonitor_LdrLoadDll: GetSystemDirectoryW failed: %u\n", GetLastError());
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_UNEXPECTED_IO_ERROR));
             return STATUS_UNEXPECTED_IO_ERROR;
         }
         if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
         {
             supR3HardenedError(VINF_SUCCESS, false,
                                "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcName, pawcName);
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
             return STATUS_NAME_TOO_LONG;
         }
         wszPath[cwc++] = '\\';
@@ -1645,7 +1650,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             NtClose(hFile);
             if (!NT_SUCCESS(rcNt))
             {
-                supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x", wszPath, rcNt);
+                supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x\n", wszPath, rcNt);
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
                 return rcNt;
             }
 
@@ -1664,18 +1670,21 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     SetLastError(dwSavedLastError);
     rcNt = g_pfnLdrLoadDllReal(pwszSearchPath, pfFlags, pName, phMod);
 
-    /* Log the result. */
+    /*
+     * Log the result and process pending WinVerifyTrust work if we can.
+     */
     dwSavedLastError = GetLastError();
+
     if (NT_SUCCESS(rcNt) && phMod)
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x hMod=%p '%ls'\n", rcNt, *phMod, wszPath));
     else
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
     supR3HardenedWinVerifyCacheProcessWvtTodos();
+
     SetLastError(dwSavedLastError);
 
     return rcNt;
 }
-
 
 
 #ifdef RT_ARCH_AMD64
