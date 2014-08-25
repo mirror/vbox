@@ -181,8 +181,8 @@ protected:
     void init(VirtualBoxBase *aObj, bool aLimited)
     {
         mObj = aObj;
-	mRC = S_OK;
-	mLimited = aLimited;
+        mRC = S_OK;
+        mLimited = aLimited;
         if (mObj)
             mRC = mObj->getObjectState().addCaller(mLimited);
     }
