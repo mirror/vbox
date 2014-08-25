@@ -890,7 +890,7 @@ HRESULT Machine::getParent(ComPtr<IVirtualBox> &aParent)
 {
     /* mParent is constant during life time, no need to lock */
     ComObjPtr<VirtualBox> pVirtualBox(mParent);
-    pVirtualBox.queryInterfaceTo(aParent.asOutParam());
+    aParent = pVirtualBox;
 
     return S_OK;
 }
@@ -968,7 +968,7 @@ HRESULT Machine::getAccessError(ComPtr<IVirtualBoxErrorInfo> &aAccessError)
                         mData->mAccessError.getInterfaceID().ref(),
                         Utf8Str(mData->mAccessError.getComponent()).c_str(),
                         Utf8Str(mData->mAccessError.getText()));
-        rc = errorInfo.queryInterfaceTo(aAccessError.asOutParam());
+        aAccessError = errorInfo;
     }
 
     return rc;
@@ -2090,7 +2090,7 @@ HRESULT Machine::setMonitorCount(ULONG aMonitorCount)
 HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
 {
     /* mBIOSSettings is constant during life time, no need to lock */
-    mBIOSSettings.queryInterfaceTo(aBIOSSettings.asOutParam());
+    aBIOSSettings = mBIOSSettings;
 
     return S_OK;
 }
@@ -2522,7 +2522,7 @@ HRESULT Machine::getMediumAttachments(std::vector<ComPtr<IMediumAttachment> > &a
     size_t i = 0;
     for (MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
          it != mMediaData->mAttachments.end(); ++it, ++i)
-        (*it).queryInterfaceTo(aMediumAttachments[i].asOutParam());
+        aMediumAttachments[i] = *it;
 
     return S_OK;
 }
@@ -2533,7 +2533,7 @@ HRESULT Machine::getVRDEServer(ComPtr<IVRDEServer> &aVRDEServer)
 
     Assert(!!mVRDEServer);
 
-    mVRDEServer.queryInterfaceTo(aVRDEServer.asOutParam());
+    aVRDEServer = mVRDEServer;
 
     return S_OK;
 }
@@ -2542,7 +2542,7 @@ HRESULT Machine::getAudioAdapter(ComPtr<IAudioAdapter> &aAudioAdapter)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mAudioAdapter.queryInterfaceTo(aAudioAdapter.asOutParam());
+    aAudioAdapter = mAudioAdapter;
 
     return S_OK;
 }
@@ -2564,7 +2564,7 @@ HRESULT Machine::getUSBControllers(std::vector<ComPtr<IUSBController> > &aUSBCon
     aUSBControllers.resize(data.size());
     size_t i = 0;
     for (USBControllerList::iterator it = data.begin(); it != data.end(); ++i, ++it)
-        (*it).queryInterfaceTo(aUSBControllers[i].asOutParam());
+        aUSBControllers[i] = *it;
 
     return S_OK;
 #else
@@ -2589,7 +2589,8 @@ HRESULT Machine::getUSBDeviceFilters(ComPtr<IUSBDeviceFilters> &aUSBDeviceFilter
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return rc = mUSBDeviceFilters.queryInterfaceTo(aUSBDeviceFilters.asOutParam());
+    aUSBDeviceFilters = mUSBDeviceFilters;
+    return rc;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -2692,7 +2693,7 @@ HRESULT Machine::getCurrentSnapshot(ComPtr<ISnapshot> &aCurrentSnapshot)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData->mCurrentSnapshot.queryInterfaceTo(aCurrentSnapshot.asOutParam());
+    aCurrentSnapshot = mData->mCurrentSnapshot;
 
     return S_OK;
 }
@@ -2731,7 +2732,7 @@ HRESULT Machine::getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFo
     size_t i = 0;
     for (std::list<ComObjPtr<SharedFolder> >::iterator it = mHWData->mSharedFolders.begin();
          it != mHWData->mSharedFolders.end(); ++i, ++it)
-        (*it).queryInterfaceTo(aSharedFolders[i].asOutParam());
+        aSharedFolders[i] = *it;
 
     return S_OK;
 }
@@ -2835,7 +2836,7 @@ HRESULT Machine::getStorageControllers(std::vector<ComPtr<IStorageController> > 
     size_t i = 0;
     aStorageControllers.resize(data.size());
     for (StorageControllerList::iterator it = data.begin(); it != data.end(); ++it, ++i)
-        (*it).queryInterfaceTo(aStorageControllers[i].asOutParam());
+        aStorageControllers[i] = *it;
     return S_OK;
 }
 
@@ -3593,7 +3594,7 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
             rc = i_launchVMProcess(control, strFrontend, strEnvironment, progress);
             if (SUCCEEDED(rc))
             {
-                progress.queryInterfaceTo(aProgress.asOutParam());
+                aProgress = progress;
 
                 /* signal the client watcher thread */
                 mParent->i_updateClientWatcher();
@@ -4778,7 +4779,7 @@ HRESULT Machine::getMedium(const com::Utf8Str &aName,
                         tr("No storage device attached to device slot %d on port %d of controller '%s'"),
                         aDevice, aControllerPort, aName.c_str());
 
-    pAttach->i_getMedium().queryInterfaceTo(aMedium.asOutParam());
+    aMedium = pAttach->i_getMedium();
 
     return S_OK;
 }
