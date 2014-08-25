@@ -1204,10 +1204,10 @@ HRESULT Machine::setChipsetType(ChipsetType_T aChipsetType)
         if (newCount > oldCount)
         {
             mNetworkAdapters.resize(newCount);
-            for (ULONG slot = oldCount; slot < mNetworkAdapters.size(); slot++)
+            for (size_t slot = oldCount; slot < mNetworkAdapters.size(); slot++)
             {
                 unconst(mNetworkAdapters[slot]).createObject();
-                mNetworkAdapters[slot]->init(this, slot);
+                mNetworkAdapters[slot]->init(this, (ULONG)slot);
             }
         }
     }
@@ -5167,7 +5167,7 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
                            static_cast<IMachine*>(this) /* aInitiator */,
                            Bstr(tr("Deleting files")).raw(),
                            true /* fCancellable */,
-                           pTask->llFilesToDelete.size() + pTask->llMediums.size() + 1,   // cOperations
+                           (ULONG)(pTask->llFilesToDelete.size() + pTask->llMediums.size() + 1),   // cOperations
                            BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()).raw());
 
     int vrc = RTThreadCreate(NULL,
@@ -8710,7 +8710,7 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
         mHWData->mPageFusionEnabled = data.fPageFusionEnabled;
 
         // boot order
-        for (size_t i = 0; i < RT_ELEMENTS(mHWData->mBootOrder); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mBootOrder); ++i)
         {
             settings::BootOrderMap::const_iterator it = data.mapBootOrder.find(i);
             if (it == data.mapBootOrder.end())
@@ -8774,15 +8774,15 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
         if (FAILED(rc)) return rc;
 
         // network adapters
-        uint32_t newCount = Global::getMaxNetworkAdapters(mHWData->mChipsetType);
-        uint32_t oldCount = mNetworkAdapters.size();
+        size_t newCount = Global::getMaxNetworkAdapters(mHWData->mChipsetType);
+        size_t oldCount = mNetworkAdapters.size();
         if (newCount > oldCount)
         {
             mNetworkAdapters.resize(newCount);
-            for (ULONG slot = oldCount; slot < mNetworkAdapters.size(); ++slot)
+            for (size_t slot = oldCount; slot < mNetworkAdapters.size(); ++slot)
             {
                 unconst(mNetworkAdapters[slot]).createObject();
-                mNetworkAdapters[slot]->init(this, slot);
+                mNetworkAdapters[slot]->init(this, (ULONG)slot);
             }
         }
         else if (newCount < oldCount)
@@ -10031,7 +10031,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         // boot order
         data.mapBootOrder.clear();
-        for (size_t i = 0; i < RT_ELEMENTS(mHWData->mBootOrder); ++i)
+        for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mBootOrder); ++i)
             data.mapBootOrder[i] = mHWData->mBootOrder[i];
 
         // display
@@ -10080,15 +10080,15 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
-        uint32_t uMaxNICs = RT_MIN(Global::getMaxNetworkAdapters(mHWData->mChipsetType), mNetworkAdapters.size());
+        size_t uMaxNICs = RT_MIN(Global::getMaxNetworkAdapters(mHWData->mChipsetType), mNetworkAdapters.size());
         data.llNetworkAdapters.clear();
         /* Write out only the nominal number of network adapters for this
          * chipset type. Since Machine::commit() hasn't been called there
          * may be extra NIC settings in the vector. */
-        for (ULONG slot = 0; slot < uMaxNICs; ++slot)
+        for (size_t slot = 0; slot < uMaxNICs; ++slot)
         {
             settings::NetworkAdapter nic;
-            nic.ulSlot = slot;
+            nic.ulSlot = (uint32_t)slot;
             /* paranoia check... must not be NULL, but must not crash either. */
             if (mNetworkAdapters[slot])
             {
