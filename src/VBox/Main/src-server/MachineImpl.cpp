@@ -12912,9 +12912,6 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
 
     if (control == mData->mSession.mDirectControl)
     {
-        IProgress *pProgress = aProgress;
-        ComAssertRet(pProgress, E_POINTER);
-
         /* The direct session is being normally closed by the client process
          * ----------------------------------------------------------------- */
 
