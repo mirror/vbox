@@ -3195,11 +3195,12 @@ static DECLCALLBACK(void) vboxCmdVBVACmdHostCtlSyncCb(struct VBOXCRCMDCTL* pCmd,
     VBOXCMDVBVA_CMDHOSTCTL_SYNC *pData = (VBOXCMDVBVA_CMDHOSTCTL_SYNC*)pvCompletion;
 
     pData->rc = rc;
-    pData->fProcessing = 0;
 
     struct VBOXVDMAHOST *pVdma = pData->pVdma;
 
     ASMAtomicIncS32(&pVdma->i32cHostCrCtlCompleted);
+
+    pData->fProcessing = 0;
 
     RTSemEventMultiSignal(pVdma->HostCrCtlCompleteEvent);
 }
