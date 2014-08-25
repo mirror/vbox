@@ -1171,7 +1171,7 @@ int VBoxUSBSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCr
     /*
      * Process the IOCtl.
      */
-    size_t cbDataOut;
+    size_t cbDataOut = 0;
     rc = vboxUSBSolarisProcessIOCtl(Cmd, pState, Mode, &ReqWrap, pvBuf, &cbDataOut);
     ReqWrap.rc = rc;
     rc = 0;
