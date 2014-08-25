@@ -310,6 +310,282 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (NSOpenGLPixelFormat*)openGLPixelFormat;
 @end
 
+@interface VBoxTask : NSObject
+{
+}
+- (void)run;
+@end
+
+@interface VBoxTaskPerformSelector : VBoxTask
+{
+@private
+    id m_Object;
+    SEL m_Selector;
+    id m_Arg;
+}
+- (id)initWithObject:(id)aObject selector:(SEL)aSelector arg:(id)aArg;
+- (void)run;
+- (void)dealloc;
+@end
+
+#if 0
+typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvCb);
+
+@interface VBoxTaskCallback: VBoxTask
+{
+@private
+    PFNVBOXTASKCALLBACK m_pfnCb;
+    void *m_pvCb;
+}
+- (id)initWithCb:(PFNVBOXTASKCALLBACK)pfnCb arg:(void*)pvCb;
+- (void)run;
+@end
+#endif
+
+@interface VBoxTaskComposite: VBoxTask
+{
+@private
+    NSUInteger m_CurIndex;
+    RTCRITSECT m_Lock;
+    NSMutableArray *m_pArray;
+}
+- (id)init;
+- (void)add:(VBoxTask*)pTask;
+- (void)run;
+- (void)dealloc;
+@end
+
+@implementation VBoxTask
+@end
+
+@implementation VBoxTaskPerformSelector
+- (id)initWithObject:(id)aObject selector:(SEL)aSelector arg:(id)aArg
+{
+    [aObject retain];
+    m_Object = aObject;
+    m_Selector = aSelector;
+    if (aArg != nil)
+        [aArg retain];
+    m_Arg = aArg;
+    
+    return self;
+}
+
+- (void)run
+{
+    [m_Object performSelector:m_Selector withObject:m_Arg];
+}
+
+- (void)dealloc
+{
+    [m_Object release];
+    if (m_Arg != nil)
+        [m_Arg release];
+}
+@end
+
+@implementation VBoxTaskComposite
+- (id)init
+{
+    int rc = RTCritSectInit(&m_Lock);
+    if (!RT_SUCCESS(rc))
+    {
+        DEBUG_WARN(("RTCritSectInit failed %d\n", rc));
+        return nil;
+    }
+
+    m_CurIndex = 0;
+    
+    m_pArray = [[NSMutableArray alloc] init];
+    return self;
+}
+
+- (void)add:(VBoxTask*)pTask
+{
+    [pTask retain];
+    int rc = RTCritSectEnter(&m_Lock);
+    if (RT_SUCCESS(rc))
+    {
+        [m_pArray addObject:pTask];
+        RTCritSectLeave(&m_Lock);
+    }
+    else
+    {
+        DEBUG_WARN(("RTCritSectEnter failed %d\n", rc));
+        [pTask release];
+    }
+}
+
+- (void)run
+{
+    for(;;)
+    {
+        int rc = RTCritSectEnter(&m_Lock);
+        if (RT_FAILURE(rc))
+        {
+            DEBUG_WARN(("RTCritSectEnter failed %d\n", rc));
+            break;
+        }
+        
+        NSUInteger count = [m_pArray count];
+        Assert(m_CurIndex <= count);
+        if (m_CurIndex == count)
+        {
+            [m_pArray removeAllObjects];
+            m_CurIndex = 0;
+            RTCritSectLeave(&m_Lock);
+            break;
+        }
+
+        VBoxTask* pTask = (VBoxTask*)[m_pArray objectAtIndex:m_CurIndex];
+        Assert(pTask != nil);
+        
+        ++m_CurIndex;
+        
+        if (m_CurIndex > 1024)
+        {
+            NSRange range;
+            range.location = 0;
+            range.length = m_CurIndex;
+            [m_pArray removeObjectsInRange:range];
+            m_CurIndex = 0;
+        }
+        RTCritSectLeave(&m_Lock);
+        
+        [pTask run];
+        [pTask release];
+    }
+}
+
+- (void)dealloc
+{
+    NSUInteger count = [m_pArray count];
+    for(;m_CurIndex < count; ++m_CurIndex)
+    {
+        VBoxTask* pTask = (VBoxTask*)[m_pArray objectAtIndex:m_CurIndex];
+        DEBUG_WARN(("dealloc with non-empty tasks! %p\n", pTask));
+        [pTask release];
+    }
+    
+    [m_pArray release];
+    RTCritSectDelete(&m_Lock);
+}
+@end
+
+@interface VBoxMainThreadTaskRunner : NSObject
+{
+@private
+    VBoxTaskComposite *m_pTasks;
+}
+- (id)init;
+- (void)add:(VBoxTask*)pTask;
+- (void)addObj:(id)aObject selector:(SEL)aSelector arg:(id)aArg;
+- (void)runTasks;
+- (bool)runTasksSyncIfPossible;
+- (void)dealloc;
++ (VBoxMainThreadTaskRunner*) globalInstance;
+@end
+
+@implementation VBoxMainThreadTaskRunner
+- (id)init
+{
+    self = [super init];
+    if (self)
+    {
+        m_pTasks = [[VBoxTaskComposite alloc] init];
+    }
+    
+    return self;
+}
+
++ (VBoxMainThreadTaskRunner*) globalInstance
+{
+    static dispatch_once_t dispatchOnce;
+    static VBoxMainThreadTaskRunner *pRunner = nil;
+    dispatch_once(&dispatchOnce, ^{
+        pRunner = [[VBoxMainThreadTaskRunner alloc] init];
+    });
+    return pRunner;
+}
+
+typedef struct CR_RCD_RUN
+{
+    VBoxMainThreadTaskRunner *pRunner;
+} CR_RCD_RUN;
+
+static DECLCALLBACK(void) vboxRcdRun(void *pvCb)
+{
+    DEBUG_FUNC_ENTER();
+    CR_RCD_RUN * pRun = (CR_RCD_RUN*)pvCb;
+    [pRun->pRunner runTasks];
+    DEBUG_FUNC_LEAVE();
+}
+
+- (void)add:(VBoxTask*)pTask
+{
+    DEBUG_FUNC_ENTER();
+    [m_pTasks add:pTask];
+    [self retain];
+
+    if (![self runTasksSyncIfPossible])
+    {
+        DEBUG_MSG(("task will be processed async\n"));
+        [self performSelectorOnMainThread:@selector(runTasks) withObject:nil waitUntilDone:NO];
+    }
+    
+    DEBUG_FUNC_LEAVE();
+}
+
+- (void)addObj:(id)aObject selector:(SEL)aSelector arg:(id)aArg
+{
+    VBoxTaskPerformSelector *pSelTask = [[VBoxTaskPerformSelector alloc] initWithObject:aObject selector:aSelector arg:aArg];
+    [self add:pSelTask];
+    [pSelTask release];
+}
+
+- (void)runTasks
+{
+    BOOL fIsMain = [NSThread isMainThread];
+    Assert(fIsMain);
+    if (fIsMain)
+    {
+        [m_pTasks run];
+        [self release];
+    }
+    else
+    {
+        DEBUG_WARN(("run tasks called not on main thread!\n"));
+        [self performSelectorOnMainThread:@selector(runTasks) withObject:nil waitUntilDone:YES];
+    }
+}
+
+- (bool)runTasksSyncIfPossible
+{
+    if (renderspuCalloutAvailable())
+    {
+        CR_RCD_RUN Run;
+        Run.pRunner = self;
+        Assert(![NSThread isMainThread]);
+        renderspuCalloutClient(vboxRcdRun, &Run);
+        return true;
+    }
+    
+    if ([NSThread isMainThread])
+    {
+        [self runTasks];
+        return true;
+    }
+    
+    return false;
+}
+
+- (void)dealloc
+{
+    [m_pTasks release];
+}
+
+@end
+
 @class DockOverlayView;
 
 /** The custom view class.
@@ -1044,7 +1320,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
     NSPoint pos = [pPos pointValue];
     [self vboxSetPosUI:pos];
-    [pPos release];
 
     DEBUG_FUNC_LEAVE();
 }
@@ -1070,21 +1345,9 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
     DEBUG_FUNC_ENTER();
 
     DEBUG_MSG(("OVIW(%p): vboxSetPos: new pos: %d, %d\n", (void*)self, (int)pos.x, (int)pos.y));
-
-    if (renderspuCalloutAvailable())
-    {
-        CR_RCD_SETPOS SetPos;
-        SetPos.pView = self;
-        SetPos.pos = pos;
-        renderspuCalloutClient(vboxRcdSetPos, &SetPos);
-    }
-    else
-    {
-        DEBUG_MSG(("no callout available on setPos\n"));
-        NSValue *pPos =  [NSValue valueWithPoint:pos];
-        [pPos retain];
-        [self performSelectorOnMainThread:@selector(vboxSetPosUIObj:) withObject:pPos waitUntilDone:NO];
-    }
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    NSValue *pPos =  [NSValue valueWithPoint:pos];
+    [pRunner addObj:self selector:@selector(vboxSetPosUIObj:) arg:pPos];
 
     DEBUG_FUNC_LEAVE();
 }
@@ -1108,6 +1371,8 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
     DEBUG_FUNC_ENTER();
     BOOL fIsMain = [NSThread isMainThread];
     NSWindow *pWin = nil;
+    
+    Assert(fIsMain);
 
     /* Hide the view early */
     [self setHidden: YES];
@@ -1148,7 +1413,6 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
     DEBUG_FUNC_ENTER();
     NSSize size = [pSize sizeValue];
     [self vboxSetSizeUI:size];
-//    [pSize release];
     DEBUG_FUNC_LEAVE();
 }
 
@@ -1184,20 +1448,11 @@ static DECLCALLBACK(void) vboxRcdSetSize(void *pvCb)
 - (void)vboxSetSize:(NSSize)size
 {
     DEBUG_FUNC_ENTER();
-    if (renderspuCalloutAvailable())
-    {
-        CR_RCD_SETSIZE SetSize;
-        SetSize.pView = self;
-        SetSize.size = size;
-        renderspuCalloutClient(vboxRcdSetSize, &SetSize);
-    }
-    else
-    {
-        NSValue *pSize = [NSValue valueWithSize:size];
-        [pSize retain];
-        DEBUG_MSG(("no callout available on setSize\n"));
-        [self performSelectorOnMainThread:@selector(vboxSetSizeUIObj:) withObject:pSize waitUntilDone:NO];
-    }
+    
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    NSValue *pSize = [NSValue valueWithSize:size];
+    [pRunner addObj:self selector:@selector(vboxSetSizeUIObj:) arg:pSize];
+
     DEBUG_FUNC_LEAVE();
 }
 
@@ -1492,20 +1747,11 @@ static DECLCALLBACK(void) vboxRcdSetVisible(void *pvCb)
 - (void)vboxSetVisible:(GLboolean)fVisible
 {
     DEBUG_FUNC_ENTER();
-    if (renderspuCalloutAvailable())
-    {
-        CR_RCD_SETVISIBLE Visible;
-        Visible.pView = self;
-        Visible.fVisible = fVisible;
-        renderspuCalloutClient(vboxRcdSetVisible, &Visible);
-    }
-    else
-    {
-        DEBUG_MSG(("no callout available on setVisible\n"));
-        NSNumber* pVisObj = [NSNumber numberWithBool:fVisible];
-        [pVisObj retain];
-        [self performSelectorOnMainThread:@selector(vboxSetVisibleUIObj:) withObject:pVisObj waitUntilDone:NO];
-    }
+    
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    NSNumber* pVisObj = [NSNumber numberWithBool:fVisible];
+    [pRunner addObj:self selector:@selector(vboxSetVisibleUIObj:) arg:pVisObj];
+
     DEBUG_FUNC_LEAVE();
 }
 
@@ -1521,7 +1767,6 @@ static DECLCALLBACK(void) vboxRcdSetVisible(void *pvCb)
     DEBUG_FUNC_ENTER();
     BOOL fVisible = [pVisible boolValue];
     [self vboxSetVisibleUI:fVisible];
-    [pVisible release];
     DEBUG_FUNC_LEAVE();
 }
 
@@ -1542,19 +1787,10 @@ static DECLCALLBACK(void) vboxRcdReparent(void *pvCb)
 - (void)vboxReparent:(NSView*)pParentView
 {
     DEBUG_FUNC_ENTER();
-    [pParentView retain];
-    if (renderspuCalloutAvailable())
-    {
-        CR_RCD_REPARENT Reparent;
-        Reparent.pView = self;
-        Reparent.pParent = pParentView;
-        renderspuCalloutClient(vboxRcdReparent, &Reparent);
-    }
-    else
-    {
-        DEBUG_MSG(("no callout available on reparent %p %p\n", self, pParentView));
-        [self performSelectorOnMainThread:@selector(vboxReparentUI:) withObject:pParentView waitUntilDone:NO];
-    }
+    
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    [pRunner addObj:self selector:@selector(vboxReparentUI:) arg:pParentView];
+
     DEBUG_FUNC_LEAVE();
 }
 
@@ -1577,8 +1813,6 @@ static DECLCALLBACK(void) vboxRcdReparent(void *pvCb)
         if ([self isEverSized])
             [self vboxReshapeOnReparentPerform];
     }
-    
-    [pParentView release];
     
     DEBUG_FUNC_LEAVE();
 }
@@ -2189,7 +2423,7 @@ typedef struct CR_RCD_CREATEVIEW
     OverlayView *pView;
 } CR_RCD_CREATEVIEW;
 
-static OverlayView * vboxViewCreate(WindowInfo *pWinInfo, NativeNSViewRef pParentView, GLbitfield fVisParams)
+static OverlayView * vboxViewCreate(WindowInfo *pWinInfo, NativeNSViewRef pParentView)
 {
     DEBUG_FUNC_ENTER();
     /* Create our worker view */
@@ -2212,7 +2446,7 @@ static DECLCALLBACK(void) vboxRcdCreateView(void *pvCb)
 {
     DEBUG_FUNC_ENTER();
     CR_RCD_CREATEVIEW * pCreateView = (CR_RCD_CREATEVIEW*)pvCb;
-    pCreateView->pView = vboxViewCreate(pCreateView->pWinInfo, pCreateView->pParentView, pCreateView->fVisParams);
+    pCreateView->pView = vboxViewCreate(pCreateView->pWinInfo, pCreateView->pParentView);
     DEBUG_FUNC_LEAVE();
 }
 
@@ -2220,6 +2454,10 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
 {
     DEBUG_FUNC_ENTER();
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    /* make sure all tasks are run, to preserve the order */
+    [pRunner runTasksSyncIfPossible];
 
     if (renderspuCalloutAvailable())
     {
@@ -2237,7 +2475,7 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
 #if 0
         dispatch_sync(dispatch_get_main_queue(), ^{
 #endif
-            *ppView = vboxViewCreate(pWinInfo, pParentView, fVisParams);
+            *ppView = vboxViewCreate(pWinInfo, pParentView);
 #if 0
         });
 #endif
@@ -2283,19 +2521,11 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     DEBUG_FUNC_ENTER();
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    if (renderspuCalloutAvailable())
-    {
-        CR_RCD_DESTROYVIEW DestroyView;
-        DestroyView.pView = (OverlayView*)pView;
-        renderspuCalloutClient(vboxRcdDestroyView, &DestroyView);
-    }
-    else
-    {
-        DEBUG_MSG(("no callout available on destroyView\n"));
-        [(OverlayView*)pView performSelectorOnMainThread:@selector(vboxDestroy) withObject:nil waitUntilDone:NO];
-    }
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    [pRunner addObj:pView selector:@selector(vboxDestroy) arg:nil];
 
     [pPool release];
+
     DEBUG_FUNC_LEAVE();
 }
 
@@ -2368,6 +2598,10 @@ void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int 
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
     NSRect frame;
+    VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
+    /* make sure all tasks are run, to preserve the order */
+    [pRunner runTasksSyncIfPossible];
+    
     
     if (renderspuCalloutAvailable())
     {

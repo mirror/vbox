@@ -1452,7 +1452,7 @@ bool renderspuCalloutClient(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void *pvCb)
 {
     if (render_spu.pfnClientCallout)
     {
-        pfnCb(pvCb);
+        render_spu.pfnClientCallout(pfnCb, pvCb);
         return true;
     }
     return false;
