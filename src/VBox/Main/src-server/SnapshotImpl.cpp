@@ -2062,7 +2062,6 @@ HRESULT SessionMachine::deleteSnapshot(const ComPtr<IConsole> &aInitiator,
 
     AssertReturn(aInitiator && !aStartId.isZero() && !aEndId.isZero() && aStartId.isValid() && aEndId.isValid(), E_INVALIDARG);
 
-    AssertReturn(aMachineState && aProgress, E_POINTER);
 
     /** @todo implement the "and all children" and "range" variants */
     if (aDeleteAllChildren || aStartId != aEndId)
