@@ -8064,7 +8064,7 @@ HRESULT Machine::initDataAndChildObjects()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
     AssertComRCReturn(   getObjectState().getState() == ObjectState::InInit
-		      || getObjectState().getState() == ObjectState::Limited, E_FAIL);
+                      || getObjectState().getState() == ObjectState::Limited, E_FAIL);
 
     AssertReturn(!mData->mAccessible, E_FAIL);
 

@@ -93,10 +93,10 @@ void CExeModule::MonitorShutdown()
         if (!bActivity && m_nLockCnt == 0) /* if no activity let's really bail */
         {
             /* Disable log rotation at this point, worst case a log file
-	     * becomes slightly bigger than it should. Avoids quirks with
-	     * log rotation: there might be another API service process
-	     * running at this point which would rotate the logs concurrently,
-	     * creating a mess. */
+             * becomes slightly bigger than it should. Avoids quirks with
+             * log rotation: there might be another API service process
+             * running at this point which would rotate the logs concurrently,
+             * creating a mess. */
             PRTLOGGER pReleaseLogger = RTLogRelDefaultInstance();
             if (pReleaseLogger)
             {
