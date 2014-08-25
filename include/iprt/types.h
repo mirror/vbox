@@ -487,17 +487,17 @@ typedef const RTUINT128U *PCRTUINT128U;
 /** @def RTUINT128_INIT
  * Portable RTUINT128U initializer. */
 #ifdef RT_BIG_ENDIAN
-# define RTUINT128_INIT(a_Hi, a_Lo) { a_Hi, a_Lo }
+# define RTUINT128_INIT(a_Hi, a_Lo) { { a_Hi, a_Lo } }
 #else
-# define RTUINT128_INIT(a_Hi, a_Lo) { a_Lo, a_Hi }
+# define RTUINT128_INIT(a_Hi, a_Lo) { { a_Lo, a_Hi } }
 #endif
 
 /** @def RTUINT128_INIT_C
  * Portable RTUINT128U initializer for 64-bit constants. */
 #ifdef RT_BIG_ENDIAN
-# define RTUINT128_INIT_C(a_Hi, a_Lo) { UINT64_C(a_Hi), UINT64_C(a_Lo) }
+# define RTUINT128_INIT_C(a_Hi, a_Lo) { { UINT64_C(a_Hi), UINT64_C(a_Lo) } }
 #else
-# define RTUINT128_INIT_C(a_Hi, a_Lo) { UINT64_C(a_Lo), UINT64_C(a_Hi) }
+# define RTUINT128_INIT_C(a_Hi, a_Lo) { { UINT64_C(a_Lo), UINT64_C(a_Hi) } }
 #endif
 
 

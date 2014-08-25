@@ -1539,7 +1539,11 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_OFFSETOF(type, member)               ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+#if defined(__GNUC__) && defined(__cplusplus)
+# define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
+#else
+# define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
+#endif
 
 /** @def RT_UOFFSETOF
  * Our own special offsetof() variant, returns an unsigned result.
@@ -1553,7 +1557,11 @@
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#define RT_UOFFSETOF(type, member)              ( (uintptr_t)&( ((type *)(void *)0)->member) )
+#if defined(__GNUC__) && defined(__cplusplus)
+# define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
+#else
+# define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0)->member) )
+#endif
 
 /** @def RT_OFFSETOF_ADD
  * RT_OFFSETOF with an addend.
