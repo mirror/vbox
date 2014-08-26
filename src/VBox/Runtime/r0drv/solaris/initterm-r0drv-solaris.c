@@ -80,7 +80,7 @@ size_t                          g_offrtSolCpuForceKernelPreempt;
 extern void contig_free(void *addr, size_t size);
 #pragma weak contig_free
 /** contig_free address. */
-PFNSOL_contig_free          g_pfnrtR0Sol_contig_free       = contig_free;
+PFNSOL_contig_free              g_pfnrtR0Sol_contig_free = contig_free;
 
 DECLHIDDEN(int) rtR0InitNative(void)
 {
@@ -106,7 +106,6 @@ DECLHIDDEN(int) rtR0InitNative(void)
 #else
         /* PORTME: See if the amd64/x86 problem applies to this architecture. */
 #endif
-
         /*
          * Mandatory: Preemption offsets.
          */
