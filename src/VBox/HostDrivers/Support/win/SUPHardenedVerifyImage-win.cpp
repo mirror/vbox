@@ -1683,25 +1683,45 @@ DECLHIDDEN(void) supHardenedWinTermImageVerifier(void)
  */
 static bool supR3HardenedWinIsDesiredRootCA(PCRTCRX509CERTIFICATE pCert)
 {
+    char szSubject[512];
+    szSubject[sizeof(szSubject) - 1] = '\0';
+    RTCrX509Name_FormatAsString(&pCert->TbsCertificate.Subject, szSubject, sizeof(szSubject) - 1, NULL);
+
     /*
      * Check that it's a plausible root certificate.
      */
     if (!RTCrX509Certificate_IsSelfSigned(pCert))
+    {
+        SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping - not-self-signed: %s\n", szSubject));
         return false;
+    }
+
     if (RTAsn1Integer_UnsignedCompareWithU32(&pCert->TbsCertificate.T0.Version, 3) > 0)
     {
         if (   !(pCert->TbsCertificate.T3.fExtKeyUsage & RTCRX509CERT_KEY_USAGE_F_KEY_CERT_SIGN)
             && (pCert->TbsCertificate.T3.fFlags & RTCRX509TBSCERTIFICATE_F_PRESENT_KEY_USAGE) )
+        {
+            SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping - non-cert-sign: %s\n", szSubject));
             return false;
+        }
         if (   pCert->TbsCertificate.T3.pBasicConstraints
             && !pCert->TbsCertificate.T3.pBasicConstraints->CA.fValue)
+        {
+            SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping - non-CA: %s\n", szSubject));
             return false;
+        }
     }
     if (pCert->TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.cBits < 256) /* mostly for u64KeyId reading. */
+    {
+        SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping - key too small: %u bits %s\n",
+                     pCert->TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.cBits, szSubject));
         return false;
+    }
+    uint64_t const u64KeyId = pCert->TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.uBits.pu64[1];
 
+# if 0
     /*
-     * Array of names and key clues of the certificates we want.
+     * Whitelist - Array of names and key clues of the certificates we want.
      */
     static struct
     {
@@ -1754,21 +1774,44 @@ static bool supR3HardenedWinIsDesiredRootCA(PCRTCRX509CERTIFICATE pCert)
     };
 
 
-    uint64_t const u64KeyId = pCert->TbsCertificate.SubjectPublicKeyInfo.SubjectPublicKey.uBits.pu64[1];
     uint32_t i = RT_ELEMENTS(s_aWanted);
     while (i-- > 0)
         if (   s_aWanted[i].u64KeyId == u64KeyId
             || s_aWanted[i].u64KeyId == UINT64_MAX)
             if (RTCrX509Name_MatchWithString(&pCert->TbsCertificate.Subject, s_aWanted[i].pszName))
+            {
+                SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: Adding %#llx %s\n", u64KeyId, szSubject));
                 return true;
+            }
 
-#ifdef DEBUG_bird
-    char szTmp[512];
-    szTmp[sizeof(szTmp) - 1] = '\0';
-    RTCrX509Name_FormatAsString(&pCert->TbsCertificate.Issuer, szTmp, sizeof(szTmp) - 1, NULL);
-    SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: %#llx %s\n", u64KeyId, szTmp));
-#endif
+    SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping %#llx %s\n", u64KeyId, szSubject));
     return false;
+# else
+    /*
+     * Blacklist approach.
+     */
+    static struct
+    {
+        uint64_t    u64KeyId;
+        const char *pszName;
+    } const s_aUnwanted[] =
+    {
+        { UINT64_C(0xffffffffffffffff), "C=US, O=U.S. Robots and Mechanical Men, Inc., OU=V.I.K.I." }, /* dummy entry */
+    };
+
+    uint32_t i = RT_ELEMENTS(s_aUnwanted);
+    while (i-- > 0)
+        if (   s_aUnwanted[i].u64KeyId == u64KeyId
+            || s_aUnwanted[i].u64KeyId == UINT64_MAX)
+            if (RTCrX509Name_MatchWithString(&pCert->TbsCertificate.Subject, s_aUnwanted[i].pszName))
+            {
+                SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: skipping - blacklisted: %#llx %s\n", u64KeyId, szSubject));
+                return false;
+            }
+
+    SUP_DPRINTF(("supR3HardenedWinIsDesiredRootCA: Adding %#llx %s\n", u64KeyId, szSubject));
+    return true;
+# endif
 }
 
 
