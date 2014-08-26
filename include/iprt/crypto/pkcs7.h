@@ -58,6 +58,13 @@ typedef RTCRPKCS7ISSUERANDSERIALNUMBER const *PCRTCRPKCS7ISSUERANDSERIALNUMBER;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7ISSUERANDSERIALNUMBER, RTDECL, RTCrPkcs7IssuerAndSerialNumber, SeqCore.Asn1Core);
 
 
+/** Pointer to the IPRT representation of a PKCS \#7 SignerInfo. */
+typedef struct RTCRPKCS7SIGNERINFO *PRTCRPKCS7SIGNERINFO;
+/** Pointer to the const IPRT representation of a PKCS \#7 SignerInfo. */
+typedef struct RTCRPKCS7SIGNERINFO const *PCRTCRPKCS7SIGNERINFO;
+RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SIGNERINFOS, RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfos);
+
+
 /**
  * Attribute value type (for the union).
  */
@@ -67,12 +74,16 @@ typedef enum RTCRPKCS7ATTRIBUTETYPE
     RTCRPKCS7ATTRIBUTETYPE_INVALID = 0,
     /** Not present, union is NULL. */
     RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT,
-    /** Unknown values, Asn1Core. */
+    /** Unknown values, pCores. */
     RTCRPKCS7ATTRIBUTETYPE_UNKNOWN,
-    /** Object IDs, use ObjId. */
+    /** Object IDs, use pObjIds. */
     RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS,
-    /** Octet strings. */
+    /** Octet strings, use pOctetStrings. */
     RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS,
+    /** Counter signatures (PKCS \#9), use pCounterSignatures. */
+    RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES,
+    /** Signing time (PKCS \#9), use pSigningTime. */
+    RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,
     /** Blow the type up to 32-bits. */
     RTCRPKCS7ATTRIBUTETYPE_32BIT_HACK = 0x7fffffff
 } RTCRPKCS7ATTRIBUTETYPE;
@@ -99,6 +110,10 @@ typedef struct RTCRPKCS7ATTRIBUTE
         PRTASN1SETOFOBJIDS              pObjIds;
         /** ASN.1 octet strings (RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS). */
         PRTASN1SETOFOCTETSTRINGS        pOctetStrings;
+        /** Counter signatures RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES(). */
+        PRTCRPKCS7SIGNERINFOS           pCounterSignatures;
+        /** Signing time(s) (RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME). */
+        PRTASN1SETOFTIMES               pSigningTime;
     } uValues;
 } RTCRPKCS7ATTRIBUTE;
 /** Pointer to the IPRT representation of a PKCS \#7 Attribute. */
@@ -138,12 +153,7 @@ typedef struct RTCRPKCS7SIGNERINFO
      *       have explicit tags, but combines it with the SET OF. */
     RTCRPKCS7ATTRIBUTES                 UnauthenticatedAttributes;
 } RTCRPKCS7SIGNERINFO;
-/** Pointer to the IPRT representation of a PKCS \#7 SignerInfo. */
-typedef RTCRPKCS7SIGNERINFO *PRTCRPKCS7SIGNERINFO;
-/** Pointer to the const IPRT representation of a PKCS \#7 SignerInfo. */
-typedef RTCRPKCS7SIGNERINFO const *PCRTCRPKCS7SIGNERINFO;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo, SeqCore.Asn1Core);
-RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SIGNERINFOS, RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfos);
 
 /** RTCRPKCS7SIGNERINFO::Version value.  */
 #define RTCRPKCS7SIGNERINFO_V1    1
