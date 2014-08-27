@@ -1161,6 +1161,7 @@ static const struct
     /* [0x0d] = */ { smcRegFF_w,       smcRegFF_r },
     /* [0x0e] = */ { smcRegFF_w,       smcRegFF_r },
     /* [0x0f] = */ { smcRegFF_w,       smcRegFF_r },
+    /* [0x10] = */ { smcRegGen_w,      smcRegGen_r },
     /* [0x11] = */ { smcRegGen_w,      smcRegGen_r },
     /* [0x12] = */ { smcRegGen_w,      smcRegGen_r },
     /* [0x13] = */ { smcRegGen_w,      smcRegGen_r },
