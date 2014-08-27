@@ -122,6 +122,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
 #include <iprt/ctype.h>
+#include <iprt/mem.h>
 
 #include "DrvHostBase.h"
 
@@ -322,6 +323,42 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid
     LogFlow(("%s-%d: drvHostBaseGetUuid: returns VINF_SUCCESS *pUuid=%RTuuid\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pUuid));
     return VINF_SUCCESS;
 }
+
+
+/** @copydoc PDMIBLOCK::pfnIoBufAlloc */
+static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIBLOCK pInterface, size_t cb, void **ppvNew)
+{
+    LogFlowFunc(("\n"));
+    int rc;
+    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+
+    void *pvNew = RTMemAlloc(cb);
+    if (RT_LIKELY(pvNew))
+    {
+        *ppvNew = pvNew;
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc PDMIBLOCK::pfnIoBufFree */
+static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIBLOCK pInterface, void *pv, size_t cb)
+{
+    LogFlowFunc(("\n"));
+    int rc = VINF_SUCCESS;
+    PDRVHOSTBASE pThis = PDMIBLOCK_2_DRVHOSTBASE(pInterface);
+
+    NOREF(cb);
+    RTMemFree(pv);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 
 
 /* -=-=-=-=- IBlockBios -=-=-=-=- */
@@ -1890,6 +1927,8 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType
     pThis->IBlock.pfnGetSize                = drvHostBaseGetSize;
     pThis->IBlock.pfnGetType                = drvHostBaseGetType;
     pThis->IBlock.pfnGetUuid                = drvHostBaseGetUuid;
+    pThis->IBlock.pfnIoBufAlloc             = drvHostBaseIoBufAlloc;
+    pThis->IBlock.pfnIoBufFree              = drvHostBaseIoBufFree;
 
     /* IBlockBios. */
     pThis->IBlockBios.pfnGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
