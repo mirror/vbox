@@ -1614,7 +1614,8 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
             }
 
             /* do vgaUpdateDisplayAll right away */
-            vgaUpdateDisplayAll(pVdma->pVGAState, /* fFailOnResize = */ false);
+            VMR3ReqCallNoWait(PDMDevHlpGetVM(pVdma->pVGAState->pDevInsR3), VMCPUID_ANY,
+                              (PFNRT)vgaUpdateDisplayAll, 2, pVdma->pVGAState, /* fFailOnResize = */ false);
 
             return VBoxVDMAThreadTerm(&pVdma->Thread, NULL, NULL, false);
         }
