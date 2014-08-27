@@ -4649,7 +4649,7 @@ static int updateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 }
 
 
-int vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
+DECLCALLBACK(int) vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 {
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplayAll\n"));
