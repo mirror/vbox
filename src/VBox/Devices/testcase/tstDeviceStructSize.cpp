@@ -65,7 +65,7 @@
 #undef LOG_GROUP
 #include "../PC/DevLPC.cpp"
 #undef LOG_GROUP
-#include "../PC/DevSMC.cpp"
+#include "../EFI/DevSmc.cpp"
 #undef LOG_GROUP
 #include "../Storage/DevATA.cpp"
 #ifdef VBOX_WITH_USB

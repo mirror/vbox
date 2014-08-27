@@ -243,6 +243,7 @@ AssertCompileMembersAtSameOffset(DEVSMC, u.abRegsRW[SMC_REG_STATUS_CODE], DEVSMC
 /** Pointer to the SMC state. */
 typedef DEVSMC *PDEVSMC;
 
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
 /**
@@ -1428,3 +1429,4 @@ const PDMDEVREG g_DeviceSmc =
 };
 
 #endif /* IN_RING3 */
+#endif /* VBOX_DEVICE_STRUCT_TESTCASE */
