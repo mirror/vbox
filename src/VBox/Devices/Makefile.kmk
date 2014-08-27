@@ -18,9 +18,6 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# Enable the new SMC code.
-VBOX_WITH_SMC_NEW = 1
-
 # Make sure our Config.kmk is included.
 ifndef VBOX_DEVICES_CONFIG_KMK_INCLUDED
  include $(PATH_SUB_CURRENT)/Config.kmk
@@ -124,8 +121,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
- 	VBOX_WITH_DMI_OEMSTRINGS \
-	$(if $(VBOX_WITH_SMC_NEW),VBOX_WITH_SMC_NEW,)
+ 	VBOX_WITH_DMI_OEMSTRINGS
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDD_DEFS.darwin     = VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -142,7 +138,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	$(if $(VBOX_WITH_SMC_NEW),EFI/DevSmc.cpp,) \
+	EFI/DevSmc.cpp \
  	Graphics/DevVGA.cpp \
  	Storage/DevATA.cpp \
  	PC/DevPit-i8254.cpp \
@@ -882,7 +878,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	$(if $(VBOX_WITH_SMC_NEW),EFI/DevSmc.cpp,) \
+	EFI/DevSmc.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
@@ -997,7 +993,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # VBoxDD2 (shared object)
  #
  VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
- VBoxDD2_DEFS            = IN_VBOXDD2 $(if $(VBOX_WITH_SMC_NEW),VBOX_WITH_SMC_NEW,)
+ VBoxDD2_DEFS            = IN_VBOXDD2
  VBoxDD2_INCS           := \
 	build \
  	$(PATH_SUB_CURRENT)
@@ -1005,7 +1001,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	build/VBoxDD2.cpp  \
  	PC/DevAPIC.cpp \
  	PC/DevIoApic.cpp \
- 	$(if $(VBOX_WITH_SMC_NEW),,PC/DevSMC.cpp) \
  	PC/DevLPC.cpp
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
@@ -1041,7 +1036,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	$(if $(VBOX_WITH_SMC_NEW),EFI/DevSmc.cpp,) \
+	EFI/DevSmc.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
@@ -1175,12 +1170,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   # VBoxDD2GC (LGPL sysmod)
   #
   VBoxDD2GC_TEMPLATE       = VBoxRc
-  VBoxDD2GC_DEFS           = $(if $(VBOX_WITH_SMC_NEW),VBOX_WITH_SMC_NEW,)
   VBoxDD2GC_INCS           = build
   VBoxDD2GC_SOURCES        = \
   	PC/DevAPIC.cpp \
-  	PC/DevIoApic.cpp \
-  	$(if $(VBOX_WITH_SMC_NEW),,PC/DevSMC.cpp)
+  	PC/DevIoApic.cpp
   if1of ($(VBOX_LDR_FMT32), pe lx)
    VBoxDD2GC_LIBS          = \
    	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
@@ -1193,13 +1186,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # VBoxDD2R0 (LGPL sysmod)
  #
  VBoxDD2R0_TEMPLATE       = VBoxR0
- VBoxDD2R0_DEFS           = IN_RT_R0 $(if $(VBOX_WITH_SMC_NEW),VBOX_WITH_SMC_NEW,)
+ VBoxDD2R0_DEFS           = IN_RT_R0
  VBoxDD2R0_INCS           = build
  VBoxDD2R0_SOURCES        = \
  	build/VBoxDD2R0.cpp \
  	PC/DevAPIC.cpp \
  	PC/DevIoApic.cpp \
- 	$(if $(VBOX_WITH_SMC_NEW),,PC/DevSMC.cpp)
 
  if1of ($(VBOX_LDR_FMT), pe lx)
   VBoxDD2R0_LIBS          = \
