@@ -1206,7 +1206,7 @@ void UIMachineLogic::sltAdjustWindow()
             pMachineWindow->showNormal();
 
         /* Normalize window geometry: */
-        pMachineWindow->normalizeGeometry(true);
+        pMachineWindow->normalizeGeometry(true /* adjust position */);
     }
 }
 

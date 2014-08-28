@@ -140,7 +140,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
     m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
 
     /* Normalize geometry without moving: */
-    normalizeGeometry(false);
+    normalizeGeometry(false /* adjust position */);
 }
 
 void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &position)
@@ -313,7 +313,7 @@ void UIMachineWindowNormal::loadSettings()
                 m_normalGeometry = QRect(geo.x(), geo.y(), width(), height());
                 setGeometry(m_normalGeometry);
                 /* And normalize to the optimal-size: */
-                normalizeGeometry(false);
+                normalizeGeometry(false /* adjust position */);
             }
 
             /* Maximize (if necessary): */
@@ -329,7 +329,7 @@ void UIMachineWindowNormal::loadSettings()
                                                  QApplication::desktop()->availableGeometry(this);
 
             /* Normalize to the optimal size: */
-            normalizeGeometry(true);
+            normalizeGeometry(true /* adjust position */);
             /* Move newly created window to the screen-center: */
             m_normalGeometry = geometry();
             m_normalGeometry.moveCenter(availableGeo.center());
@@ -340,7 +340,7 @@ void UIMachineWindowNormal::loadSettings()
 #ifdef Q_WS_X11
         QTimer::singleShot(0, this, SLOT(sltNormalizeGeometry()));
 #else /* !Q_WS_X11 */
-        normalizeGeometry(true);
+        normalizeGeometry(true /* adjust position */);
 #endif /* !Q_WS_X11 */
     }
 }
@@ -424,7 +424,7 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
 
     /* Calculate client window offsets: */
     QRect frameGeo = frameGeometry();
-    QRect geo = geometry();
+    const QRect geo = geometry();
     int dl = geo.left() - frameGeo.left();
     int dt = geo.top() - frameGeo.top();
     int dr = frameGeo.right() - geo.right();
@@ -441,16 +441,8 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
     /* Adjust position if necessary: */
     if (fAdjustPosition)
     {
-        QRegion availableGeo;
-        QDesktopWidget *dwt = QApplication::desktop();
-        if (dwt->isVirtualDesktop())
-            /* Compose complex available region: */
-            for (int i = 0; i < dwt->numScreens(); ++i)
-                availableGeo += dwt->availableGeometry(i);
-        else
-            /* Get just a simple available rectangle */
-            availableGeo = dwt->availableGeometry(pos());
-
+        const QDesktopWidget *pDesktopWidget = QApplication::desktop();
+        const QRegion availableGeo = pDesktopWidget->availableGeometry(pos());
         frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo);
     }
 

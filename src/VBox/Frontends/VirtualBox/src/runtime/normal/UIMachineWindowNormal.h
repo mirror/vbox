@@ -45,7 +45,7 @@ private slots:
 
 #ifdef Q_WS_X11
     /** X11: Performs machine-window async geometry normalization. */
-    void sltNormalizeGeometry() { normalizeGeometry(true); }
+    void sltNormalizeGeometry() { normalizeGeometry(true /* adjust position */); }
 #endif /* Q_WS_X11 */
 
     /* Session event-handlers: */
