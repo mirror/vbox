@@ -804,8 +804,21 @@ typedef RTNETICMPV4 const *PCRTNETICMPV4;
 
 #define RTNETIPV6_PROT_ICMPV6       (58)
 #define RTNETIPV6_ICMPV6_CODE_0     (0)
-#define RTNETIPV6_ICMP_NS_TYPE      (135)
-#define RTNETIPV6_ICMP_NA_TYPE      (136)
+
+/** @name Internet Control Message Protocol version 6 (ICMPv6) message types.
+ * @{ */
+#define RTNETIPV6_ICMP_TYPE_RS      133
+#define RTNETIPV6_ICMP_TYPE_RA      134
+#define RTNETIPV6_ICMP_TYPE_NS      135
+#define RTNETIPV6_ICMP_TYPE_NA      136
+#define RTNETIPV6_ICMP_TYPE_RDR     137
+/** @} */
+
+/** @deprecated */
+#define RTNETIPV6_ICMP_NS_TYPE      (RTNETIPV6_ICMP_TYPE_NS)
+/** @deprecated */
+#define RTNETIPV6_ICMP_NA_TYPE      (RTNETIPV6_ICMP_TYPE_NA)
+
 #define RTNETIPV6_ICMP_ND_SLLA_OPT  (1)
 #define RTNETIPV6_ICMP_ND_TLLA_OPT  (2)
 #define RTNETIPV6_ICMP_ND_LLA_LEN   (1)
