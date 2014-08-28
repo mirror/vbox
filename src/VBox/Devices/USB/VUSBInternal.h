@@ -124,6 +124,8 @@ typedef struct vusb_pipe
     PCVUSBDESCENDPOINTEX out;
     /** Pointer to the extra state data required to run a control pipe. */
     PVUSBCTRLEXTRA      pCtrl;
+    /** Critical section serializing access to the extra state data for a control pipe. */
+    RTCRITSECT          CritSectCtrl;
     /** Count of active async transfers. */
     volatile uint32_t   async;
     /** Read ahead handle. */

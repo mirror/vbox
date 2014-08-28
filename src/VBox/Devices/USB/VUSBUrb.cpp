@@ -934,7 +934,6 @@ static void vusbCtrlCompletion(PVUSBURB pUrb)
             vusbMsgStatusCompletion(pUrb);
             break;
     }
-    vusbUrbCompletionRh(pUrb);
 }
 
 /**
@@ -947,6 +946,8 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
 {
     PVUSBDEV        pDev   = pUrb->VUsb.pDev;
     PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
+
+    RTCritSectEnter(&pPipe->CritSectCtrl);
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
 
 #ifdef LOG_ENABLED
@@ -976,6 +977,10 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
            || pUrb->enmState == VUSBURBSTATE_CANCELLED);
     if (pUrb->enmState != VUSBURBSTATE_CANCELLED)
         pUrb->enmState = VUSBURBSTATE_ALLOCATED;
+    RTCritSectLeave(&pPipe->CritSectCtrl);
+
+    /* Complete the original control URB on the root hub now. */
+    vusbUrbCompletionRh(pCtrlUrb);
 }
 
 /**
@@ -1259,6 +1264,7 @@ static void vusbMsgSubmitSynchronously(PVUSBURB pUrb, bool fSafeRequest)
     pExtra->cbLeft = cbData; /* used by IN only */
 
     vusbCtrlCompletion(pUrb);
+    vusbUrbCompletionRh(pUrb);
 
     /*
      * 'Free' the message URB, i.e. put it back to the allocated state.
@@ -1571,9 +1577,15 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
 #endif
     PVUSBDEV        pDev = pUrb->VUsb.pDev;
     PVUSBPIPE       pPipe = &pDev->aPipes[pUrb->EndPt];
+
+    RTCritSectEnter(&pPipe->CritSectCtrl);
     PVUSBCTRLEXTRA  pExtra = pPipe->pCtrl;
+
     if (!pExtra && !(pExtra = pPipe->pCtrl = vusbMsgAllocExtraData(pUrb)))
+    {
+        RTCritSectLeave(&pPipe->CritSectCtrl);
         return VERR_VUSB_NO_URB_MEMORY;
+    }
     PVUSBSETUP      pSetup = pExtra->pMsg;
 
     AssertMsgReturn(!pPipe->async, ("%u\n", pPipe->async), VERR_GENERAL_FAILURE);
@@ -1612,7 +1624,8 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
             if (pUrb->enmDir != VUSBDIRECTION_SETUP)
             {
                 Log(("%s: vusbUrbSubmitCtrl: Stall at setup stage (dir=%#x)!!\n", pUrb->pszDesc, pUrb->enmDir));
-                return vusbMsgStall(pUrb);
+                vusbMsgStall(pUrb);
+                break;
             }
 
             /* Store setup details, return DNR if corrupt */
@@ -1621,7 +1634,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
                 pUrb->enmState = VUSBURBSTATE_REAPED;
                 pUrb->enmStatus = VUSBSTATUS_DNR;
                 vusbUrbCompletionRh(pUrb);
-                return VINF_SUCCESS;
+                break;
             }
             if (pPipe->pCtrl != pExtra)
             {
@@ -1679,7 +1692,8 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
                 else
                 {
                     Log(("%s: vusbUrbSubmitCtrl: Stall at data stage!!\n", pUrb->pszDesc));
-                    return vusbMsgStall(pUrb);
+                    vusbMsgStall(pUrb);
+                    break;
                 }
             }
 
@@ -1746,6 +1760,7 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
             break;
     }
 
+    RTCritSectLeave(&pPipe->CritSectCtrl);
     return VINF_SUCCESS;
 }
 
