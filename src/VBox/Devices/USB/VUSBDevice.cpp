@@ -1227,6 +1227,12 @@ int vusbDevDetach(PVUSBDEV pDev)
     {
         vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
         RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
+
+        if (pDev->aPipes[i].hReadAhead)
+        {
+            vusbReadAheadStop(pDev->aPipes[i].hReadAhead);
+            pDev->aPipes[i].hReadAhead = NULL;
+        }
     }
     memset(pDev->aPipes, 0, sizeof(pDev->aPipes));
     return VINF_SUCCESS;
@@ -1608,13 +1614,15 @@ DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFu
 
         rc = RTReqQueueCallV(pDev->hReqQueueSync, &hReq, 0 /* cMillies */, fReqFlags, pfnFunction, cArgs, Args);
         Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
-        vusbDevUrbIoThreadWakeup(pDev);
 
-        if (fFlags & VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC)
+        vusbDevUrbIoThreadWakeup(pDev);
+        if (   rc == VERR_TIMEOUT
+            && (fFlags & VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC))
         {
             rc = RTReqWait(hReq, RT_INDEFINITE_WAIT);
             AssertRC(rc);
         }
+        RTReqRelease(hReq);
     }
     else
         rc = VERR_INVALID_STATE;

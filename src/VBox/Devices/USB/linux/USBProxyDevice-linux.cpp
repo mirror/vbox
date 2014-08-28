@@ -1652,7 +1652,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
         if (pUrbLnx)
         {
             /* unlink from the pending delivery list */
-            RTListNodeRemove(&pDevLnx->ListTaxing);
+            RTListNodeRemove(&pUrbLnx->NodeList);
 
             /* temporarily into the active list, so free works right. */
             RTListAppend(&pDevLnx->ListInFlight, &pUrbLnx->NodeList);
