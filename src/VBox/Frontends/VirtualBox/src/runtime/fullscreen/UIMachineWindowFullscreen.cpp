@@ -30,6 +30,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMachineView.h"
+#include "UIFrameBuffer.h"
 #include "UIMachineDefs.h"
 #include "UIMiniToolBar.h"
 #ifdef Q_WS_MAC
@@ -297,8 +298,18 @@ void UIMachineWindowFullscreen::placeOnScreen()
         resize(workingArea.size());
     else
     {
-        /* Move window to the center of working-area: */
+        /* Load normal geometry first of all: */
         QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, m_uScreenId, vboxGlobal().managedVMUuid());
+        /* If normal geometry is null => use frame-buffer size: */
+        if (geo.isNull())
+        {
+            const UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(m_uScreenId);
+            geo = QRect(QPoint(0, 0), QSize(pFrameBuffer->width(), pFrameBuffer->height()).boundedTo(workingArea.size()));
+        }
+        /* If frame-buffer size is null => use default size: */
+        if (geo.isNull())
+            geo = QRect(QPoint(0, 0), QSize(800, 600).boundedTo(workingArea.size()));
+        /* Move window to the center of working-area: */
         geo.moveCenter(workingArea.center());
         setGeometry(geo);
     }
