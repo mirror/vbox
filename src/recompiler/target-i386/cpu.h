@@ -1195,7 +1195,10 @@ static inline void cpu_get_tb_cpu_state(CPUState *env, target_ulong *pc,
                                         target_ulong *cs_base, int *flags)
 {
     *cs_base = env->segs[R_CS].base;
-    *pc = *cs_base + env->eip;
+    if (env->hflags & HF_CS64_MASK)
+        *pc = *cs_base + env->eip;
+    else
+        *pc = (uint32_t)(*cs_base + env->eip);
     *flags = env->hflags |
         (env->eflags & (IOPL_MASK | TF_MASK | RF_MASK | VM_MASK));
 }
