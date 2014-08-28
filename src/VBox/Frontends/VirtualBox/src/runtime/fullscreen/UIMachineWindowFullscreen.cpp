@@ -202,16 +202,16 @@ void UIMachineWindowFullscreen::prepareVisualState()
         else
             darwinEnableTransienceSupport(this);
         /* Register to native fullscreen notifications: */
-        UICocoaApplication::instance()->registerToNativeNotification("NSWindowWillEnterFullScreenNotification", this,
-                                                                     UIMachineWindow::handleNativeNotification);
-        UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidEnterFullScreenNotification", this,
-                                                                     UIMachineWindow::handleNativeNotification);
-        UICocoaApplication::instance()->registerToNativeNotification("NSWindowWillExitFullScreenNotification", this,
-                                                                     UIMachineWindow::handleNativeNotification);
-        UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidExitFullScreenNotification", this,
-                                                                     UIMachineWindow::handleNativeNotification);
-        UICocoaApplication::instance()->registerToNativeNotification("NSWindowDidFailToEnterFullScreenNotification", this,
-                                                                     UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowWillEnterFullScreenNotification", this,
+                                                                       UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowDidEnterFullScreenNotification", this,
+                                                                       UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowWillExitFullScreenNotification", this,
+                                                                       UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowDidExitFullScreenNotification", this,
+                                                                       UIMachineWindow::handleNativeNotification);
+        UICocoaApplication::instance()->registerToNotificationOfWindow("NSWindowDidFailToEnterFullScreenNotification", this,
+                                                                       UIMachineWindow::handleNativeNotification);
     }
 #endif /* Q_WS_MAC */
 }
@@ -258,11 +258,11 @@ void UIMachineWindowFullscreen::cleanupVisualState()
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
         /* Unregister from native fullscreen notifications: */
-        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowWillEnterFullScreenNotification", this);
-        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowDidEnterFullScreenNotification", this);
-        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowWillExitFullScreenNotification", this);
-        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowDidExitFullScreenNotification", this);
-        UICocoaApplication::instance()->unregisterFromNativeNotification("NSWindowDidFailToEnterFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowWillEnterFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowDidEnterFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowWillExitFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowDidExitFullScreenNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowDidFailToEnterFullScreenNotification", this);
     }
 #endif /* Q_WS_MAC */
 

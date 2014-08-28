@@ -46,6 +46,7 @@ typedef void (*PfnNativeNotificationCallbackForQWidget)(const QString &strNative
 class UICocoaApplication
 {
 public:
+
     static UICocoaApplication* instance();
     void hide();
     ~UICocoaApplication();
@@ -54,20 +55,21 @@ public:
     void unregisterForNativeEvents(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser);
 
     /** Register passed @a pWidget to native notification @a strNativeNotificationName, using @a pCallback as handler. */
-    void registerToNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget, PfnNativeNotificationCallbackForQWidget pCallback);
+    void registerToNotificationOfWindow(const QString &strNativeNotificationName, QWidget *pWidget, PfnNativeNotificationCallbackForQWidget pCallback);
     /** Unregister passed @a pWidget from native notification @a strNativeNotificationName. */
-    void unregisterFromNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget);
+    void unregisterFromNotificationOfWindow(const QString &strNativeNotificationName, QWidget *pWidget);
     /** Redirects native notification @a pstrNativeNotificationName for window @a pWindow to registered listener. */
-    void nativeNotificationProxy(NativeNSStringRef pstrNativeNotificationName, NativeNSWindowRef pWindow);
+    void nativeNotificationProxyForWidget(NativeNSStringRef pstrNativeNotificationName, NativeNSWindowRef pWindow);
 
 private:
+
     UICocoaApplication();
     static UICocoaApplication *m_pInstance;
     NativeUICocoaApplicationPrivateRef m_pNative;
     NativeNSAutoreleasePoolRef m_pPool;
 
     /** Map of notification callbacks registered for corresponding QWidget(s). */
-    QMap<QWidget*, QMap<QString, PfnNativeNotificationCallbackForQWidget> > m_callbacks;
+    QMap<QWidget*, QMap<QString, PfnNativeNotificationCallbackForQWidget> > m_widgetCallbacks;
 };
 
 #endif /* ___darwin_VBoxCocoaApplication_h */
