@@ -1224,7 +1224,10 @@ int vusbDevDetach(PVUSBDEV pDev)
     /* Remove the configuration */
     pDev->pCurCfgDesc = NULL;
     for (unsigned i = 0; i < VUSB_PIPE_MAX; i++)
+    {
         vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
+        RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
+    }
     memset(pDev->aPipes, 0, sizeof(pDev->aPipes));
     return VINF_SUCCESS;
 }
@@ -1710,6 +1713,11 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     pDev->pCurCfgDesc = NULL;
     pDev->paIfStates = NULL;
     memset(&pDev->aPipes[0], 0, sizeof(pDev->aPipes));
+    for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
+    {
+        int rc = RTCritSectInit(&pDev->aPipes[i].CritSectCtrl);
+        AssertRCReturn(rc, rc);
+    }
     pDev->pResetTimer = NULL;
 
     int rc = RTCritSectInit(&pDev->CritSectAsyncUrbs);
