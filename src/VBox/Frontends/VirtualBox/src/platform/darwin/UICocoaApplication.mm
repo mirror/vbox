@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -207,11 +207,6 @@ UICocoaApplication* UICocoaApplication::instance()
     return m_pInstance;
 }
 
-void UICocoaApplication::hide()
-{
-    [m_pNative hide:m_pNative];
-}
-
 UICocoaApplication::UICocoaApplication()
 {
     /* Make sure our private NSApplication object is created */
@@ -227,6 +222,11 @@ UICocoaApplication::~UICocoaApplication()
 {
     [m_pNative release];
     [m_pPool release];
+}
+
+void UICocoaApplication::hide()
+{
+    [m_pNative hide:m_pNative];
 }
 
 void UICocoaApplication::registerForNativeEvents(uint32_t fMask, PFNVBOXCACALLBACK pfnCallback, void *pvUser)
