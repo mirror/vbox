@@ -2955,71 +2955,105 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
 
 
 /**
- * Work around the issue with WiFi routers that replace IPv6 multicast
- * Ethernet addresses with unicast ones. We check IPv6 destination address
- * to determine if the packet originally had a multicast address, and if so
- * we restore the original address and treat the modified packet as being a
- * broadcast.
+ * Detect broadcasts packaged as unicast and convert them back to broadcast.
  *
+ * WiFi routers try to use ethernet unicast instead of broadcast or
+ * multicast when possible.  Look inside the packet and fix up
+ * ethernet destination to be proper broadcast or multicast if
+ * necessary.
+ *
+ * @returns true broadcast (pEthHdr & pSG are modified), false if not.
  * @param   pNetwork        The network the frame is being sent to.
- * @param   pSG             Pointer to the gather list for the frame.
- * @param   pEthHdr         Pointer to the ethernet header.
+ * @param   pSG             Pointer to the gather list for the frame.  The
+ *                          ethernet destination address is modified when
+ *                          returning true.
+ * @param   pEthHdr         Pointer to the ethernet header.  The ethernet
+ *                          destination address is modified when returning true.
  */
-static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
+static bool intnetR0NetworkSharedMacDetectAndFixBroadcast(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
     NOREF(pNetwork);
 
-    if (RT_BE2H_U16(pEthHdr->EtherType) != RTNET_ETHERTYPE_IPV6)
-        return false;
-    /*
-     * Check the minimum size and get a linear copy of the thing to work on,
-     * using the temporary buffer if necessary.
-     */
-    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
-                                            sizeof(RTNETNDP)))
-        return false;
-    uint8_t bTmp[sizeof(RTNETIPV6) + sizeof(RTNETNDP)];
-    PRTNETIPV6 pIPv6 = (PRTNETIPV6)((uint8_t *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
-    if (    pSG->cSegsUsed != 1
-        &&  pSG->aSegs[0].cb < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
-                                                        sizeof(RTNETNDP))
+    switch (pEthHdr->EtherType)
     {
-        Log6(("fw: Copying IPv6 pkt %u\n", sizeof(RTNETIPV6)));
-        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), sizeof(RTNETIPV6)
-                                               + sizeof(RTNETNDP), bTmp))
-            return false;
-        pIPv6 = (PRTNETIPV6)bTmp;
-    }
+        case RT_H2N_U16_C(RTNET_ETHERTYPE_ARP):
+        {
+            uint16_t ar_oper;
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETARPHDR, ar_oper),
+                                    sizeof(ar_oper), &ar_oper))
+                return false;
 
-    /* Check IPv6 destination address if it is a multicast address. */
-    static uint8_t auSolicitedNodeMulticastPrefix[] =
-        {
-            0xFF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x01, 0xff
-        };
-    if (memcmp(pIPv6->ip6_dst.au8, auSolicitedNodeMulticastPrefix,
-               sizeof(auSolicitedNodeMulticastPrefix)) == 0)
-    {
-        /*
-         * The original must have been composed of 0x3333 followed by the last
-         * four bytes of the solicited-node multicast address.
-         */
-        if (pSG->aSegs[0].cb < sizeof(RTNETETHERHDR))
-        {
-            RTMAC DstMac;
-            DstMac.au16[0] = 0x3333;
-            DstMac.au16[1] = pIPv6->ip6_dst.au16[6];
-            DstMac.au16[2] = pIPv6->ip6_dst.au16[7];
-            return intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &DstMac);
+            if (ar_oper == RT_H2N_U16_C(RTNET_ARPOP_REQUEST))
+            {
+                /* change to broadcast */
+                pEthHdr->DstMac.au16[0] = 0xffff;
+                pEthHdr->DstMac.au16[1] = 0xffff;
+                pEthHdr->DstMac.au16[2] = 0xffff;
+            }
+            else
+                return false;
+            break;
         }
-        pEthHdr = (PRTNETETHERHDR)pSG->aSegs[0].pv;
-        pEthHdr->DstMac.au16[0] = 0x3333;
-        pEthHdr->DstMac.au16[1] = pIPv6->ip6_dst.au16[6];
-        pEthHdr->DstMac.au16[2] = pIPv6->ip6_dst.au16[7];
-        return true;
+
+        case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4):
+        {
+            RTNETADDRIPV4 ip_dst;
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_dst),
+                                    sizeof(ip_dst), &ip_dst))
+                return false;
+
+            if (ip_dst.u == 0xffffffff) /* 255.255.255.255? */
+            {
+                /* change to broadcast */
+                pEthHdr->DstMac.au16[0] = 0xffff;
+                pEthHdr->DstMac.au16[1] = 0xffff;
+                pEthHdr->DstMac.au16[2] = 0xffff;
+            }
+            else if ((ip_dst.au8[0] & 0xf0) == 0xe0) /* IPv4 multicast? */
+            {
+                /* change to 01:00:5e:xx:xx:xx multicast ... */
+                pEthHdr->DstMac.au8[0] = 0x01;
+                pEthHdr->DstMac.au8[1] = 0x00;
+                pEthHdr->DstMac.au8[2] = 0x5e;
+                /* ... with lower 23 bits from the multicast IP address */
+                pEthHdr->DstMac.au8[3] = ip_dst.au8[1] & 0x7f;
+                pEthHdr->DstMac.au8[4] = ip_dst.au8[2];
+                pEthHdr->DstMac.au8[5] = ip_dst.au8[3];
+            }
+            else
+                return false;
+            break;
+        }
+
+        case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV6):
+        {
+            RTNETADDRIPV6 ip6_dst;
+            if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst),
+                                    sizeof(ip6_dst), &ip6_dst))
+                return false;
+
+            if (ip6_dst.au8[0] == 0xff) /* IPv6 multicast? */
+            {
+                pEthHdr->DstMac.au16[0] = 0x3333;
+                pEthHdr->DstMac.au16[1] = ip6_dst.au16[6];
+                pEthHdr->DstMac.au16[2] = ip6_dst.au16[7];
+            }
+            else
+                return false;
+            break;
+        }
+
+        default:
+            return false;
     }
 
-    return false;
+
+    /*
+     * Update ethernet destination in the segment.
+     */
+    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(pEthHdr->DstMac), &pEthHdr->DstMac);
+
+    return true;
 }
 
 
@@ -3705,7 +3739,7 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
             enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, fSrc, pIfSender, pSG, &EthHdr, pDstTab);
         else if (fSrc & INTNETTRUNKDIR_WIRE)
         {
-            if (intnetR0NetworkDetectAndFixNdBroadcast(pNetwork, pSG, &EthHdr))
+            if (intnetR0NetworkSharedMacDetectAndFixBroadcast(pNetwork, pSG, &EthHdr))
                 enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, fSrc, pIfSender, pSG, &EthHdr, pDstTab);
             else
                 enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchUnicast(pNetwork, pSG, &EthHdr, pDstTab);
