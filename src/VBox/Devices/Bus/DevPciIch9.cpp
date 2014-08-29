@@ -607,22 +607,25 @@ static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciD
 static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev,
                                   int iIrq, int iLevel, uint32_t uTagSrc)
 {
-
-    if (PCIDevIsIntxDisabled(pPciDev))
+    /* If MSI or MSI-X is enabled, PCI INTx# signals are disabled regardless of the PCI command
+     * register interrupt bit state.
+     * PCI 3.0 (section 6.8) forbids MSI and MSI-X to be enabled at the same time and makes
+     * that undefined behavior. We check for MSI first, then MSI-X.
+     */
+    if (MsiIsEnabled(pPciDev))
     {
-        if (MsiIsEnabled(pPciDev))
-        {
-            LogFlowFunc(("PCI Dev %p : MSI\n", pPciDev));
-            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
-        }
+        Assert(!MsixIsEnabled(pPciDev));    /* Not allowed -- see note above. */
+        LogFlowFunc(("PCI Dev %p : MSI\n", pPciDev));
+        PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+        MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
+        return;
+    }
 
-        if (MsixIsEnabled(pPciDev))
-        {
-            LogFlowFunc(("PCI Dev %p : MSI-X\n", pPciDev));
-            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-            MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
-        }
+    if (MsixIsEnabled(pPciDev))
+    {
+        LogFlowFunc(("PCI Dev %p : MSI-X\n", pPciDev));
+        PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+        MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
         return;
     }
 
