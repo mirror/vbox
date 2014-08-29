@@ -39,6 +39,23 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def RTASN1_MAX_NESTING
+ * The maximum nesting depth we allow.  This limit is enforced to avoid running
+ * out of stack due to malformed ASN.1 input.
+ *
+ * For reference, 'RTSignTool verify-exe RTSignTool.exe', requires a value of 15
+ * to work without hitting the limit.
+ */
+#ifdef IN_RING3
+# define RTASN1_MAX_NESTING     64
+#else
+# define RTASN1_MAX_NESTING     32
+#endif
+
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static char const g_achDigits[11] = "0123456789";
@@ -49,52 +66,63 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
                                               PRTERRINFO pErrInfo, PCRTASN1ALLOCATORVTABLE pAllocator, uint32_t fFlags,
                                               const char *pszErrorTag)
 {
-    pPrimaryCursor->Cursor.pbCur        = (uint8_t const *)pvFirst;
-    pPrimaryCursor->Cursor.cbLeft       = cb;
-    pPrimaryCursor->Cursor.fFlags       = fFlags;
-    pPrimaryCursor->Cursor.pPrimary     = pPrimaryCursor;
-    pPrimaryCursor->Cursor.pUp          = NULL;
-    pPrimaryCursor->Cursor.pszErrorTag  = pszErrorTag;
-    pPrimaryCursor->pErrInfo            = pErrInfo;
-    pPrimaryCursor->pAllocator          = pAllocator;
+    pPrimaryCursor->Cursor.pbCur            = (uint8_t const *)pvFirst;
+    pPrimaryCursor->Cursor.cbLeft           = cb;
+    pPrimaryCursor->Cursor.fFlags           = fFlags;
+    pPrimaryCursor->Cursor.cDepth           = 0;
+    pPrimaryCursor->Cursor.abReserved[0]    = 0;
+    pPrimaryCursor->Cursor.abReserved[1]    = 0;
+    pPrimaryCursor->Cursor.pPrimary         = pPrimaryCursor;
+    pPrimaryCursor->Cursor.pUp              = NULL;
+    pPrimaryCursor->Cursor.pszErrorTag      = pszErrorTag;
+    pPrimaryCursor->pErrInfo                = pErrInfo;
+    pPrimaryCursor->pAllocator              = pAllocator;
     return &pPrimaryCursor->Cursor;
 }
 
 
-RTDECL(PRTASN1CURSOR) RTAsn1CursorInitSub(PRTASN1CURSOR pParent, uint32_t cb, PRTASN1CURSOR pChild, const char *pszErrorTag)
+RTDECL(int) RTAsn1CursorInitSub(PRTASN1CURSOR pParent, uint32_t cb, PRTASN1CURSOR pChild, const char *pszErrorTag)
 {
-    Assert(pParent->pPrimary);
-    Assert(pParent->pbCur);
+    AssertReturn(pParent->pPrimary, VERR_ASN1_INTERNAL_ERROR_1);
+    AssertReturn(pParent->pbCur, VERR_ASN1_INTERNAL_ERROR_2);
 
-    pChild->pbCur       = pParent->pbCur;
-    pChild->cbLeft      = cb;
-    pChild->fFlags      = pParent->fFlags;
-    pChild->pPrimary    = pParent->pPrimary;
-    pChild->pUp         = pParent;
-    pChild->pszErrorTag = pszErrorTag;
+    pChild->pbCur           = pParent->pbCur;
+    pChild->cbLeft          = cb;
+    pChild->fFlags          = pParent->fFlags;
+    pChild->cDepth          = pParent->cDepth + 1;
+    AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
+    pChild->abReserved[0]   = 0;
+    pChild->abReserved[1]   = 0;
+    pChild->pPrimary        = pParent->pPrimary;
+    pChild->pUp             = pParent;
+    pChild->pszErrorTag     = pszErrorTag;
 
-    AssertRelease(pParent->cbLeft >= cb);
+    AssertReturn(pParent->cbLeft >= cb, VERR_ASN1_INTERNAL_ERROR_3);
     pParent->pbCur  += cb;
     pParent->cbLeft -= cb;
 
-    return pChild;
+    return VINF_SUCCESS;
 }
 
 
-RTDECL(PRTASN1CURSOR) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1Core,
-                                                  PRTASN1CURSOR pChild, const char *pszErrorTag)
+RTDECL(int) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1Core,
+                                        PRTASN1CURSOR pChild, const char *pszErrorTag)
 {
-    Assert(pParent->pPrimary);
-    Assert(pParent->pbCur);
+    AssertReturn(pParent->pPrimary, VERR_ASN1_INTERNAL_ERROR_1);
+    AssertReturn(pParent->pbCur, VERR_ASN1_INTERNAL_ERROR_2);
 
-    pChild->pbCur       = pAsn1Core->uData.pu8;
-    pChild->cbLeft      = pAsn1Core->cb;
-    pChild->fFlags      = pParent->fFlags;
-    pChild->pPrimary    = pParent->pPrimary;
-    pChild->pUp         = pParent;
-    pChild->pszErrorTag = pszErrorTag;
+    pChild->pbCur           = pAsn1Core->uData.pu8;
+    pChild->cbLeft          = pAsn1Core->cb;
+    pChild->fFlags          = pParent->fFlags;
+    pChild->cDepth          = pParent->cDepth + 1;
+    AssertReturn(pChild->cDepth < RTASN1_MAX_NESTING, VERR_ASN1_TOO_DEEPLY_NESTED);
+    pChild->abReserved[0]   = 0;
+    pChild->abReserved[1]   = 0;
+    pChild->pPrimary        = pParent->pPrimary;
+    pChild->pUp             = pParent;
+    pChild->pszErrorTag     = pszErrorTag;
 
-    return pChild;
+    return VINF_SUCCESS;
 }
 
 
@@ -356,9 +384,12 @@ static int rtAsn1CursorGetXxxxCursor(PRTASN1CURSOR pCursor, uint32_t fFlags, uin
             return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_CURSOR_ILLEGAL_CONSTRUCTED_STRING,
                                        "%s: Unexpected %s type/flags: %#x/%#x (expected %#x/%#x)",
                                        pszErrorTag, pszWhat, pAsn1Core->uTag, pAsn1Core->fClass, uTag, fClass);
-        RTAsn1CursorInitSub(pCursor, pAsn1Core->cb, pRetCursor, pszErrorTag);
-        pAsn1Core->fFlags |= RTASN1CORE_F_PRIMITE_TAG_STRUCT;
-        return VINF_SUCCESS;
+        rc = RTAsn1CursorInitSub(pCursor, pAsn1Core->cb, pRetCursor, pszErrorTag);
+        if (RT_SUCCESS(rc))
+        {
+            pAsn1Core->fFlags |= RTASN1CORE_F_PRIMITE_TAG_STRUCT;
+            return VINF_SUCCESS;
+        }
     }
     return rc;
 }

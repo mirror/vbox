@@ -2081,6 +2081,8 @@ RT_C_DECLS_END
 #define VERR_ASN1_EXPECTED_PRIMITIVE                (-22853)
 /** Expected valid data pointer for ASN.1 object. */
 #define VERR_ASN1_INVALID_DATA_POINTER              (-22854)
+/** The ASN.1 encoding is too deeply nested for the decoder. */
+#define VERR_ASN1_TOO_DEEPLY_NESTED                 (-22855)
 
 /** ANS.1 internal error 1. */
 #define VERR_ASN1_INTERNAL_ERROR_1                  (-22895)
