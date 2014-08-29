@@ -1223,17 +1223,21 @@ int vusbDevDetach(PVUSBDEV pDev)
 
     /* Remove the configuration */
     pDev->pCurCfgDesc = NULL;
-    for (unsigned i = 0; i < VUSB_PIPE_MAX; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
     {
         vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
+        pDev->aPipes[i].pCtrl = NULL;
 
         if (pDev->aPipes[i].hReadAhead)
         {
             vusbReadAheadStop(pDev->aPipes[i].hReadAhead);
             pDev->aPipes[i].hReadAhead = NULL;
         }
+
+        RT_ZERO(pDev->aPipes[i].in);
+        RT_ZERO(pDev->aPipes[i].out);
+        pDev->aPipes[i].async = 0;
     }
-    memset(pDev->aPipes, 0, sizeof(pDev->aPipes));
     return VINF_SUCCESS;
 }
 
@@ -1262,7 +1266,7 @@ void vusbDevDestroy(PVUSBDEV pDev)
     RTMemFree(pDev->paIfStates);
     TMR3TimerDestroy(pDev->pResetTimer);
     pDev->pResetTimer = NULL;
-    for (unsigned i = 0; i < VUSB_PIPE_MAX; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
         RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
 
     /*
