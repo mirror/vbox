@@ -5651,7 +5651,7 @@ static void crPMgrPrimaryUpdateScreen(HCR_FRAMEBUFFER hFb, uint32_t idScreen, ui
     const VBVAINFOSCREEN *pScreen = CrFbGetScreenInfo(hFb);
 
     bool fDirtyEmpty = true;
-    RTRECT dirtyRect;
+    RTRECT dirtyRect = {0};
     cr_server.CrCmdClientInfo.pfnCltScrUpdateBegin(cr_server.CrCmdClientInfo.hCltScr, idScreen);
 
     VBVACMDHDR hdr;
