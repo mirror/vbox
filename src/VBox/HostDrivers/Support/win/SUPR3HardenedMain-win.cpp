@@ -2945,6 +2945,28 @@ static int supR3HardNtPuChScrewUpPebForInitialImageEvents(PSUPR3HARDNTPUCH pThis
 
 
 /**
+ * Unmaps a DLL from the child process that was previously mapped by
+ * supR3HardNtPuChMapDllIntoChild.
+ *
+ * @returns Pointer to the DLL mapping on success, NULL on failure.
+ * @param   pThis               The child purification instance data.
+ * @param   pvBase              The base address of the mapping.  Nothing done
+ *                              if NULL.
+ * @param   pszShort            The short name (for logging).
+ */
+static void supR3HardNtPuChUnmapDllFromChild(PSUPR3HARDNTPUCH pThis, PVOID pvBase, const char *pszShort)
+{
+    if (pvBase)
+    {
+        NTSTATUS rcNt = NtUnmapViewOfSection(pThis->hProcess, pvBase);
+        if (!NT_SUCCESS(!rcNt))
+            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on %s: %#x (%p)\n",
+                         pszShort, rcNt, pvBase));
+    }
+}
+
+
+/**
  * Maps a DLL into the child process.
  *
  * @returns Pointer to the DLL mapping on success, NULL on failure.
@@ -3054,6 +3076,16 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
         return rc;
 
     /*
+     * To further muddle the waters, we map the executable image and ntdll.dll
+     * a 2nd time into the process before we actually start executing the thread
+     * and trigger the genuine image load events.
+     */
+    PVOID pvExe2 = supR3HardNtPuChMapDllIntoChild(pThis, &g_SupLibHardenedExeNtPath.UniStr, "executable[2nd]");
+
+    UNICODE_STRING NtName1 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\ntdll.dll");
+    PVOID pvNtDll2 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName1, "ntdll.dll[2nd]");
+
+    /*
      * Create the thread, waiting 10 seconds for it to complete.
      */
     CLIENT_ID Thread2Id;
@@ -3082,12 +3114,12 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      * This triggers should image load events that may set of AV activities
      * that we'd rather see early than later.
      */
-    UNICODE_STRING NtName1 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\kernel32.dll");
-    PVOID pvKernel32 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName1, "kernel32.dll");
+    UNICODE_STRING NtName2 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\kernel32.dll");
+    PVOID pvKernel32 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName2, "kernel32.dll");
 
-    UNICODE_STRING NtName2 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\KernelBase.dll");
+    UNICODE_STRING NtName3 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\KernelBase.dll");
     PVOID pvKernelBase = g_uNtVerCombined >= SUP_NT_VER_VISTA
-                       ? supR3HardNtPuChMapDllIntoChild(pThis, &NtName2, "KernelBase.dll")
+                       ? supR3HardNtPuChMapDllIntoChild(pThis, &NtName3, "KernelBase.dll")
                        : NULL;
 
     /*
@@ -3102,25 +3134,20 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     NtDelayExecution(FALSE, &Time);
 
     NtYieldExecution();
+
+    Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+    NtDelayExecution(FALSE, &Time);
+
+    NtYieldExecution();
     SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n", GetTickCount() - dwStart));
 
     /*
-     * Unmap kernel32 & kernelbase. Wonder how the AV stuff is gonna react to this...
+     * Unmap the image we mapped into the guest above.
      */
-    if (pvKernel32)
-    {
-        rcNt = NtUnmapViewOfSection(pThis->hProcess, pvKernel32);
-        if (!NT_SUCCESS(!rcNt))
-            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on kernel32: %#x (%p)\n",
-                         rcNt, pvKernel32));
-    }
-    if (pvKernelBase)
-    {
-        rcNt = NtUnmapViewOfSection(pThis->hProcess, pvKernelBase);
-        if (!NT_SUCCESS(!rcNt))
-            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on KernelBase: %#x (%p)\n",
-                         rcNt, pvKernelBase));
-    }
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernel32, "kernel32.dll");
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvNtDll2, "ntdll.dll[2nd]");
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvExe2, "executable[2nd]");
 
     /*
      * Restore the original thunk code and protection.
