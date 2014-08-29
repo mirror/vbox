@@ -216,6 +216,31 @@ static void map_interface(PVUSBDEV pDev, PCVUSBDESCINTERFACEEX pIfDesc)
     }
 }
 
+
+/**
+ * Worker that resets the pipe data on select config and detach.
+ *
+ * This leaves the critical section unmolested
+ *
+ * @param   pPipe               The pipe which data should be reset.
+ */
+static void vusbDevResetPipeData(PVUSBPIPE pPipe)
+{
+    vusbMsgFreeExtraData(pPipe->pCtrl);
+    pPipe->pCtrl = NULL;
+
+    if (pPipe->hReadAhead)
+    {
+        vusbReadAheadStop(pPipe->hReadAhead);
+        pPipe->hReadAhead = NULL;
+    }
+
+    RT_ZERO(pPipe->in);
+    RT_ZERO(pPipe->out);
+    pPipe->async = 0;
+}
+
+
 bool vusbDevDoSelectConfig(PVUSBDEV pDev, PCVUSBDESCCONFIGEX pCfgDesc)
 {
     LogFlow(("vusbDevDoSelectConfig: pDev=%p[%s] pCfgDesc=%p:{.iConfiguration=%d}\n",
@@ -226,13 +251,8 @@ bool vusbDevDoSelectConfig(PVUSBDEV pDev, PCVUSBDESCCONFIGEX pCfgDesc)
      */
     unsigned i;
     for (i = 0; i < VUSB_PIPE_MAX; i++)
-    {
         if (i != VUSB_PIPE_DEFAULT)
-        {
-            vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
-            memset(&pDev->aPipes[i], 0, sizeof(pDev->aPipes[i]));
-        }
-    }
+            vusbDevResetPipeData(&pDev->aPipes[i]);
     memset(pDev->paIfStates, 0, pCfgDesc->Core.bNumInterfaces * sizeof(pDev->paIfStates[0]));
 
     /*
@@ -1224,20 +1244,7 @@ int vusbDevDetach(PVUSBDEV pDev)
     /* Remove the configuration */
     pDev->pCurCfgDesc = NULL;
     for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
-    {
-        vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
-        pDev->aPipes[i].pCtrl = NULL;
-
-        if (pDev->aPipes[i].hReadAhead)
-        {
-            vusbReadAheadStop(pDev->aPipes[i].hReadAhead);
-            pDev->aPipes[i].hReadAhead = NULL;
-        }
-
-        RT_ZERO(pDev->aPipes[i].in);
-        RT_ZERO(pDev->aPipes[i].out);
-        pDev->aPipes[i].async = 0;
-    }
+        vusbDevResetPipeData(&pDev->aPipes[i]);
     return VINF_SUCCESS;
 }
 
@@ -1267,7 +1274,10 @@ void vusbDevDestroy(PVUSBDEV pDev)
     TMR3TimerDestroy(pDev->pResetTimer);
     pDev->pResetTimer = NULL;
     for (unsigned i = 0; i < RT_ELEMENTS(pDev->aPipes); i++)
+    {
+        Assert(pDev->aPipes[i].pCtrl == NULL);
         RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
+    }
 
     /*
      * Destroy I/O thread and request queue last because they might still be used
