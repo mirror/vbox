@@ -663,10 +663,10 @@ static void ReadCachedStringDesc(PCPDMUSBDESCCACHESTRING pString, uint8_t *pbBuf
     }
 
     VUSBDESCSTRING  StringDesc;
-    StringDesc.bLength          = sizeof(StringDesc) + cwc * sizeof(RTUTF16);
+    StringDesc.bLength          = (uint8_t)(sizeof(StringDesc) + cwc * sizeof(RTUTF16));
     StringDesc.bDescriptorType  = VUSB_DT_STRING;
     COPY_DATA(pbBuf, cbLeft, &StringDesc, sizeof(StringDesc));
-    COPY_DATA(pbBuf, cbLeft, wsz, cwc * sizeof(RTUTF16));
+    COPY_DATA(pbBuf, cbLeft, wsz, (uint32_t)cwc * sizeof(RTUTF16));
 
     /* updated the size of the output buffer. */
     *pcbBuf -= cbLeft;
@@ -683,7 +683,7 @@ static void ReadCachedLangIdDesc(PCPDMUSBDESCCACHELANG paLanguages, unsigned cLa
 
     VUSBDESCLANGID  LangIdDesc;
     size_t          cbDesc      = sizeof(LangIdDesc) + cLanguages * sizeof(paLanguages[0].idLang);
-    LangIdDesc.bLength          = RT_MIN(0xff, cbDesc);
+    LangIdDesc.bLength          = (uint8_t)RT_MIN(0xff, cbDesc);
     LangIdDesc.bDescriptorType  = VUSB_DT_STRING;
     COPY_DATA(pbBuf, cbLeft, &LangIdDesc, sizeof(LangIdDesc));
 
@@ -1226,7 +1226,6 @@ int vusbDevDetach(PVUSBDEV pDev)
     for (unsigned i = 0; i < VUSB_PIPE_MAX; i++)
     {
         vusbMsgFreeExtraData(pDev->aPipes[i].pCtrl);
-        RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
 
         if (pDev->aPipes[i].hReadAhead)
         {
@@ -1263,6 +1262,8 @@ void vusbDevDestroy(PVUSBDEV pDev)
     RTMemFree(pDev->paIfStates);
     TMR3TimerDestroy(pDev->pResetTimer);
     pDev->pResetTimer = NULL;
+    for (unsigned i = 0; i < VUSB_PIPE_MAX; i++)
+        RTCritSectDelete(&pDev->aPipes[i].CritSectCtrl);
 
     /*
      * Destroy I/O thread and request queue last because they might still be used
