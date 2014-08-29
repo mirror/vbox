@@ -92,6 +92,10 @@
 #endif
 
 #ifdef DEBUG_misha
+#define DEBUG_INFO(text) do { \
+        crWarning text ; \
+        Assert(0); \
+    } while (0)
 # define DEBUG_MSG(text) \
     printf text
 # define DEBUG_WARN(text) do { \
@@ -99,6 +103,9 @@
         Assert(0); \
     } while (0)
 #else
+#define DEBUG_INFO(text) do { \
+        crInfo text ; \
+    } while (0)
 # define DEBUG_MSG(text) \
     do {} while (0)
 # define DEBUG_WARN(text) do { \
@@ -1821,6 +1828,19 @@ static DECLCALLBACK(void) vboxRcdReparent(void *pvCb)
 {
     DEBUG_MSG(("My[%p]: DrawUI\n", self));
     const VBOXVR_SCR_COMPOSITOR *pCompositor;
+    
+    if ([self isHidden])
+    {
+        DEBUG_INFO(("request to draw on a hidden view"));
+        return;
+    }
+
+    if ([[self overlayWin] parentWindow] == nil)
+    {
+        DEBUG_INFO(("request to draw a view w/o a parent"));
+        return;
+    }
+    
     int rc = renderspuVBoxCompositorLock(m_pWinInfo, &pCompositor);
     if (RT_FAILURE(rc))
     {
