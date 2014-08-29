@@ -1558,6 +1558,7 @@ static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgNa
      * Open it and resolve the symbol.
      */
 #if defined(RT_OS_WINDOWS)
+    supR3HardenedWinEnableThreadCreation();
     HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/);
     if (!hMod)
         return NULL;
