@@ -50,7 +50,7 @@ RTASN1TMPL_END_SEQCORE();
 #define RTASN1TMPL_INT_NAME     rtCrX509AlgorithmIdentifier
 RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              Algorithm,          RTASN1OBJID,                    RTAsn1ObjId);
-RTASN1TMPL_MEMBER(              Parameters,         RTASN1DYNTYPE,                  RTAsn1DynType);
+RTASN1TMPL_MEMBER_OPT_ANY(      Parameters,         RTASN1DYNTYPE,                  RTAsn1DynType);
 RTASN1TMPL_END_SEQCORE();
 #undef RTASN1TMPL_TYPE
 #undef RTASN1TMPL_EXT_NAME
