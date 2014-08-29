@@ -1494,7 +1494,11 @@ typedef struct RTASN1CURSOR
     /** Number of bytes left to decode. */
     uint32_t                    cbLeft;
     /** RTASN1CURSOR_FLAGS_XXX.  */
-    uint32_t                    fFlags;
+    uint8_t                     fFlags;
+    /** The cursor depth. */
+    uint8_t                     cDepth;
+    /** Two bytes reserved for future tricks. */
+    uint8_t                     abReserved[2];
     /** Pointer to the primary cursor. */
     struct RTASN1CURSORPRIMARY *pPrimary;
     /** Pointer to the parent cursor. */
@@ -1550,15 +1554,15 @@ RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCurso
 /**
  * Initialize a sub-cursor for traversing the content of an ASN.1 object.
  *
- * @returns @a pChild
+ * @returns IPRT status code.
  * @param   pParent             The parent cursor.
  * @param   pAsn1Core           The ASN.1 object which content we should
  *                              traverse with the sub-cursor.
  * @param   pChild              The sub-cursor to initialize.
  * @param   pszErrorTag         The error tag of the sub-cursor.
  */
-RTDECL(PRTASN1CURSOR) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1Core,
-                                                  PRTASN1CURSOR pChild, const char *pszErrorTag);
+RTDECL(int) RTAsn1CursorInitSubFromCore(PRTASN1CURSOR pParent, PRTASN1CORE pAsn1Core,
+                                        PRTASN1CURSOR pChild, const char *pszErrorTag);
 
 /**
  * Initalizes the an allocation structure prior to making an allocation.

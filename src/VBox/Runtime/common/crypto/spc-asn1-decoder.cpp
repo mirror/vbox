@@ -57,8 +57,9 @@ static int rtCrSpcSerializedObject_DecodeMore(PRTASN1CURSOR pCursor, uint32_t fF
             pThis->SerializedData.pEncapsulated = (PRTASN1CORE)pThis->u.pData;
             pThis->enmType = RTCRSPCSERIALIZEDOBJECTTYPE_ATTRIBUTES;
 
-            RTAsn1CursorInitSubFromCore(pCursor, &pThis->SerializedData.Asn1Core, &SubCursor, "SerializedData");
-            rc = RTCrSpcSerializedObjectAttributes_DecodeAsn1(&SubCursor, 0, pThis->u.pData, "SD");
+            rc = RTAsn1CursorInitSubFromCore(pCursor, &pThis->SerializedData.Asn1Core, &SubCursor, "SerializedData");
+            if (RT_SUCCESS(rc))
+                rc = RTCrSpcSerializedObjectAttributes_DecodeAsn1(&SubCursor, 0, pThis->u.pData, "SD");
         }
     }
     else

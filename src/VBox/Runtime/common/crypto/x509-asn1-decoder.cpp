@@ -49,10 +49,11 @@ RTDECL(int) RTCrX509Extension_ExtnValue_DecodeAsn1(PRTASN1CURSOR pCursor, uint32
      * Decode the encapsulated extension bytes if know the format.
      */
     RTASN1CURSOR ValueCursor;
-    RTAsn1CursorInitSubFromCore(pCursor, &pThis->ExtnValue.Asn1Core, &ValueCursor, "ExtnValue");
+    int rc = RTAsn1CursorInitSubFromCore(pCursor, &pThis->ExtnValue.Asn1Core, &ValueCursor, "ExtnValue");
+    if (RT_FAILURE(rc))
+        return rc;
     pCursor = &ValueCursor;
 
-    int rc;
     if (RTAsn1ObjId_CompareWithString(&pThis->ExtnId, RTCRX509_ID_CE_AUTHORITY_KEY_IDENTIFIER_OID) == 0)
     {
         /* 4.2.1.1 Authority Key Identifier */
