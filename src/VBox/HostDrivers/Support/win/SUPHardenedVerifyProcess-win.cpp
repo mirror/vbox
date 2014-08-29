@@ -130,6 +130,9 @@ typedef struct SUPHNTVPSTATE
     SUPHARDNTVPKIND         enmKind;
     /** The result. */
     int                     rcResult;
+    /** Number of fixes we've done.
+     * Only applicable in the purification modes.  */
+    uint32_t                cFixes;
     /** Number of images in aImages. */
     uint32_t                cImages;
     /** The index of the last image we looked up. */
@@ -140,6 +143,9 @@ typedef struct SUPHNTVPSTATE
      * The array is large enough to hold the executable, all allowed DLLs, and one
      * more so we can get the image name of the first unwanted DLL. */
     SUPHNTVPIMAGE           aImages[1 + 6 + 1
+#ifdef VBOX_PERMIT_VERIFIER_DLL
+                                    + 1
+#endif
 #ifdef VBOX_PERMIT_MORE
                                     + 5
 #endif
@@ -174,6 +180,9 @@ static const char *g_apszSupNtVpAllowedDlls[] =
     "kernelbase.dll",
     "apphelp.dll",
     "apisetschema.dll",
+#ifdef VBOX_PERMIT_VERIFIER_DLL
+    "verifier.dll",
+#endif
 #ifdef VBOX_PERMIT_MORE
 # define VBOX_PERMIT_MORE_FIRST_IDX 5
     "sfc.dll",
@@ -350,6 +359,7 @@ static NTSTATUS supHardNtVpFileMemRestore(PSUPHNTVPSTATE pThis, PVOID pvRestoreA
         if (NT_SUCCESS(rcNt))
             rcNt = rcNt2;
     }
+    pThis->cFixes++;
     return rcNt;
 }
 #endif /* IN_RING3 */
@@ -1219,6 +1229,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
             NTSTATUS rcNt = NtUnmapViewOfSection(pThis->hProcess, pMemInfo->AllocationBase);
             if (NT_SUCCESS(rcNt))
                 return VINF_OBJECT_DESTROYED;
+            pThis->cFixes++;
             SUP_DPRINTF(("supHardNtVpScanVirtualMemory: NtUnmapViewOfSection(,%p) failed: %#x\n", pMemInfo->AllocationBase, rcNt));
         }
 #endif
@@ -1361,7 +1372,11 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
     uint32_t    cXpExceptions = 0;
     uintptr_t   cbAdvance = 0;
     uintptr_t   uPtrWhere = 0;
+#ifdef VBOX_PERMIT_VERIFIER_DLL
+    for (uint32_t i = 0; i < 10240; i++)
+#else
     for (uint32_t i = 0; i < 1024; i++)
+#endif
     {
         SIZE_T                      cbActual = 0;
         MEMORY_BASIC_INFORMATION    MemInfo  = { 0, 0, 0, 0, 0, 0, 0 };
@@ -1510,6 +1525,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                     supHardNtVpSetInfo2(pThis, VERR_SUP_VP_UNKOWN_MEM_TYPE,
                                         "Unknown executable memory type %#x at %p/%p LB %#zx",
                                         MemInfo.Type, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize);
+                pThis->cFixes++;
             }
             else
 # endif /* IN_RING3 */
@@ -2056,9 +2072,15 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis, HANDLE hProcess)
  * @param   hThread             A thread in the process (the caller).
  * @param   enmKind             The kind of process verification to perform.
  * @param   pErrInfo            Pointer to error info structure. Optional.
+ * @param   pcFixes             Where to return the number of fixes made during
+ *                              purification.  Optional.
  */
-DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind,
+                                            uint32_t *pcFixes, PRTERRINFO pErrInfo)
 {
+    if (pcFixes)
+        *pcFixes = 0;
+
     /*
      * Some basic checks regarding threads and debuggers. We don't need
      * allocate any state memory for these.
@@ -2093,6 +2115,9 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
                 rc = supHardNtVpCheckExe(pThis, hProcess);
             if (RT_SUCCESS(rc))
                 rc = supHardNtVpCheckDlls(pThis, hProcess);
+
+            if (pcFixes)
+                *pcFixes = pThis->cFixes;
 
             /*
              * Clean up the state.

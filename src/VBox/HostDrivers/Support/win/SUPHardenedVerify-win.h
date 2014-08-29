@@ -53,7 +53,8 @@ typedef enum SUPHARDNTVPKIND
     SUPHARDNTVPKIND_SELF_PURIFICATION,
     SUPHARDNTVPKIND_32BIT_HACK = 0x7fffffff
 } SUPHARDNTVPKIND;
-DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind,
+                                                uint32_t *pcFixes, PRTERRINFO pErrInfo);
 
 DECLHIDDEN(bool)    supHardViUniStrPathStartsWithUniStr(UNICODE_STRING const *pUniStrLeft,
                                                         UNICODE_STRING const *pUniStrRight, bool fCheckSlash);

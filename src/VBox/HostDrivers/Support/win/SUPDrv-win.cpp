@@ -3492,7 +3492,8 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
         RTERRINFO ErrInfo;
         RTErrInfoInit(&ErrInfo, szErr, sizeof(szErr));
 
-        rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_VERIFY_ONLY, &ErrInfo);
+        rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_VERIFY_ONLY,
+                                         NULL /*pcFixes*/, &ErrInfo);
         if (RT_FAILURE(rc))
             RTLogWriteDebugger(szErr, strlen(szErr));
     }

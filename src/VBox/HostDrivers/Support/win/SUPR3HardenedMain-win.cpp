@@ -2413,7 +2413,7 @@ DECLHIDDEN(void) supR3HardenedWinVerifyProcess(void)
 {
     RTErrInfoInitStatic(&g_ErrInfoStatic);
     int rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(),
-                                         SUPHARDNTVPKIND_VERIFY_ONLY, &g_ErrInfoStatic.Core);
+                                         SUPHARDNTVPKIND_VERIFY_ONLY, NULL /*pcFixes*/, &g_ErrInfoStatic.Core);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedWinVerifyProcess", kSupInitOp_Integrity, rc,
                               "Failed to verify process integrity: %s", g_ErrInfoStatic.szMsg);
@@ -3375,7 +3375,7 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
     if (RT_SUCCESS(rc))
         rc = supR3HardNtPuChSanitizePeb(&This);
     if (RT_SUCCESS(rc))
-        rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, pErrInfo);
+        rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, NULL /*pcFixes*/, pErrInfo);
 
     return rc;
 }
@@ -3927,22 +3927,35 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
          *
          * We have to resort to kludge doing yield and sleep fudging for a
          * number of milliseconds and schedulings before we can hope that avast
-         * and similar products have done what they need to do.  Pretty fragile...
+         * and similar products have done what they need to do.  If we do any
+         * fixes, we wait for a while again and redo it until we're clean.
+         *
+         * This is unfortunately kind of fragile.
          */
-        uint32_t    cSleeps = 0;
-        DWORD       dwStart = GetTickCount();
+        uint32_t iLoop = 0;
+        uint32_t cFixes;
         do
         {
-            NtYieldExecution();
-            LARGE_INTEGER Time;
-            Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
-            NtDelayExecution(FALSE, &Time);
-            cSleeps++;
-        } while (   GetTickCount() - dwStart <= 80
-                 || cSleeps < 8);
-        SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2: %u ms, %u sleeps\n", GetTickCount() - dwStart, cSleeps));
+            uint32_t    cSleeps = 0;
+            DWORD       dwStart = GetTickCount();
+            do
+            {
+                NtYieldExecution();
+                LARGE_INTEGER Time;
+                Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+                NtDelayExecution(FALSE, &Time);
+                cSleeps++;
+            } while (   GetTickCount() - dwStart <= 80
+                     || cSleeps < 8);
+            SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
+                         iLoop, GetTickCount() - dwStart, cSleeps));
 
-        supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION, NULL);
+            cFixes = 0;
+            rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
+                                             &cFixes, NULL /*pErrInfo*/);
+        } while (   RT_SUCCESS(rc)
+                 && cFixes > 0
+                 && ++iLoop < 8);
 
         /*
          * Install the hooks.
