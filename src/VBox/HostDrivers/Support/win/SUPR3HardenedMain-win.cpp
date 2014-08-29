@@ -136,6 +136,8 @@ typedef struct VERIFIERCACHEENTRY
     uint32_t                uHash;
     /** The verification result. */
     int                     rc;
+    /** Used for shutting up errors after a while. */
+    uint32_t volatile       cErrorHits;
     /** The validation flags (for WinVerifyTrust retry). */
     uint32_t                fFlags;
     /** Whether IndexNumber is valid  */
@@ -230,7 +232,8 @@ static uint8_t              g_abLdrInitThunkSelfBackup[16];
 *   Internal Functions                                                         *
 *******************************************************************************/
 static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
-                                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust);
+                                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
+                                         bool *pfQuietFailure);
 
 #ifdef RT_ARCH_AMD64
 # define SYSCALL(a_Num) DECLASM(void) RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num)(void)
@@ -513,9 +516,10 @@ static void supR3HardenedWinVerifyCacheInsert(PCUNICODE_STRING pUniStr, HANDLE h
         pEntry->pNext           = NULL;
         pEntry->pNextTodoWvt    = NULL;
         pEntry->hFile           = hFile;
-        pEntry->rc              = rc;
         pEntry->uHash           = supR3HardenedWinVerifyCacheHashPath(pUniStr);
+        pEntry->rc              = rc;
         pEntry->fFlags          = fFlags;
+        pEntry->cErrorHits      = 0;
         pEntry->fWinVerifyTrust = fWinVerifyTrust;
         pEntry->cbPath          = pUniStr->Length;
         memcpy(pEntry->wszPath, pUniStr->Buffer, pUniStr->Length);
@@ -873,7 +877,7 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                     ULONG fProtect = 0;
                     bool  fCallRealApi = false;
                     rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
-                                                    "Imports", false /*fAvoidWinVerifyTrust*/);
+                                                    "Imports", false /*fAvoidWinVerifyTrust*/, NULL /*pfQuietFailure*/);
                     NtClose(hFile);
                 }
                 else
@@ -1096,9 +1100,12 @@ static void supR3HardenedWinFix8dot3Path(HANDLE hFile, PUNICODE_STRING pUniStr)
 
 
 static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
-                                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust)
+                                         bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
+                                         bool *pfQuietFailure)
 {
     *pfCallRealApi = false;
+    if (pfQuietFailure)
+        *pfQuietFailure = false;
 
     /*
      * Query the name of the file, making sure to zero terminator the
@@ -1160,7 +1167,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
                 SUP_DPRINTF(("supR3HardenedScreenImage/%s: cache hit (%Rrc) on %ls [avoiding WinVerifyTrust]\n",
                              pszCaller, pCacheHit->rc, pCacheHit->wszPath));
         }
-        else
+        else if (pCacheHit->cErrorHits < 16)
             SUP_DPRINTF(("supR3HardenedScreenImage/%s: cache hit (%Rrc) on %ls%s\n",
                          pszCaller, pCacheHit->rc, pCacheHit->wszPath, pCacheHit->fWinVerifyTrust ? "" : " [lacks WinVerifyTrust]"));
 
@@ -1170,9 +1177,16 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
             *pfCallRealApi = true;
             return STATUS_SUCCESS;
         }
-        supR3HardenedError(VINF_SUCCESS, false,
-                           "supR3HardenedScreenImage/%s: cached rc=%Rrc fImage=%d fProtect=%#x fAccess=%#x %ls\n",
-                           pszCaller, pCacheHit->rc, fImage, *pfProtect, *pfAccess, uBuf.UniStr.Buffer);
+
+        uint32_t cErrorHits = ASMAtomicIncU32(&pCacheHit->cErrorHits);
+        if (   cErrorHits < 8
+            || RT_IS_POWER_OF_TWO(cErrorHits))
+            supR3HardenedError(VINF_SUCCESS, false,
+                               "supR3HardenedScreenImage/%s: cached rc=%Rrc fImage=%d fProtect=%#x fAccess=%#x cErrorHits=%u %ls\n",
+                               pszCaller, pCacheHit->rc, fImage, *pfProtect, *pfAccess, cErrorHits, uBuf.UniStr.Buffer);
+        else if (pfQuietFailure)
+            *pfQuietFailure = true;
+
         return STATUS_TRUST_FAILURE;
     }
 
@@ -1420,7 +1434,8 @@ DECLHIDDEN(void) supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName)
     ULONG fProtect = 0;
     bool  fCallRealApi;
     //SUP_DPRINTF(("supR3HardenedWinVerifyCachePreload: scanning %ls\n", pwszName));
-    supR3HardenedScreenImage(hFile, false, &fAccess, &fProtect, &fCallRealApi, "preload", false /*fAvoidWinVerifyTrust*/);
+    supR3HardenedScreenImage(hFile, false, &fAccess, &fProtect, &fCallRealApi, "preload", false /*fAvoidWinVerifyTrust*/,
+                             NULL /*pfQuietFailure*/);
     //SUP_DPRINTF(("supR3HardenedWinVerifyCachePreload: done %ls\n", pwszName));
 
     NtClose(hFile);
@@ -1458,7 +1473,7 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
             bool fCallRealApi;
             //SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: 1\n"));
             NTSTATUS rcNt = supR3HardenedScreenImage(hFile, fImage, &fAccess, &fProtect, &fCallRealApi,
-                                                     "NtCreateSection", true /*fAvoidWinVerifyTrust*/);
+                                                     "NtCreateSection", true /*fAvoidWinVerifyTrust*/, NULL /*pfQuietFailure*/);
             //SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: 2 rcNt=%#x fCallRealApi=%#x\n", rcNt, fCallRealApi));
 
             SetLastError(dwSavedLastError);
@@ -1652,13 +1667,18 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             ULONG fAccess = 0;
             ULONG fProtect = 0;
             bool  fCallRealApi = false;
+            bool  fQuietFailure = false;
             rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
-                                            "LdrLoadDll", false /*fAvoidWinVerifyTrust*/);
+                                            "LdrLoadDll", false /*fAvoidWinVerifyTrust*/, &fQuietFailure);
             NtClose(hFile);
             if (!NT_SUCCESS(rcNt))
             {
-                supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x\n", wszPath, rcNt);
-                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
+                if (!fQuietFailure)
+                {
+                    supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x\n",
+                                       wszPath, rcNt);
+                    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
+                }
                 return rcNt;
             }
 
