@@ -1749,6 +1749,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     /*
      * Windows: Enable the use of windows APIs to verify images at load time.
      */
+    supR3HardenedWinEnableThreadCreation();
     supR3HardenedWinFlushLoaderCache();
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(g_pszSupLibHardenedProgName);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_VERIFY_TRUST_READY;

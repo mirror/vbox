@@ -218,6 +218,13 @@ static RTERRINFOSTATIC      g_ErrInfoStatic;
 /** In the assembly file. */
 extern "C" uint8_t          g_abSupHardReadWriteExecPage[PAGE_SIZE];
 
+/** Whether we've patched our own LdrInitializeThunk or not.  We do this to
+ * disable thread creation. */
+static bool                 g_fSupInitThunkSelfPatched;
+/** The backup of our own LdrInitializeThunk code, for enabling and disabling
+ * thread creation in this process. */
+static uint8_t              g_abLdrInitThunkSelfBackup[16];
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -2703,6 +2710,180 @@ static bool supR3HardNtIsNamedSystem32Dll(PUNICODE_STRING pUniStr, const char *p
 }
 
 
+/**
+ * Common code used for child and parent to make new threads exit immediately.
+ *
+ * This patches the LdrInitializeThunk code to call NtTerminateThread with
+ * STATUS_SUCCESS instead of doing the NTDLL initialization.
+ *
+ * @returns VBox status code.
+ * @param   hProcess            The process to do this to.
+ * @param   pvLdrInitThunk      The address of the LdrInitializeThunk code to
+ *                              override.
+ * @param   pvNtTerminateThread The address of the NtTerminateThread function in
+ *                              the NTDLL instance we're patching.  (Must be +/-
+ *                              2GB from the thunk code.)
+ * @param   pabBackup           Where to back up the original instruction bytes
+ *                              at pvLdrInitThunk.
+ * @param   cbBackup            The size of the backup area. Must be 16 bytes.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
+ */
+static int supR3HardNtDisableThreadCreationEx(HANDLE hProcess, void *pvLdrInitThunk, void *pvNtTerminateThread,
+                                              uint8_t *pabBackup, size_t cbBackup, PRTERRINFO pErrInfo)
+{
+    SUP_DPRINTF(("supR3HardNtDisableThreadCreation: pvLdrInitThunk=%p pvNtTerminateThread=%p\n", pvLdrInitThunk, pvNtTerminateThread));
+    SUPR3HARDENED_ASSERT(cbBackup == 16);
+    SUPR3HARDENED_ASSERT(RT_ABS((intptr_t)pvLdrInitThunk - (intptr_t)pvNtTerminateThread) < 16*_1M);
+
+    /*
+     * Back up the thunk code.
+     */
+    SIZE_T  cbIgnored;
+    NTSTATUS rcNt = NtReadVirtualMemory(hProcess, pvLdrInitThunk, pabBackup, cbBackup, &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtDisableThreadCreation: NtReadVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    /*
+     * Cook up replacement code that calls NtTerminateThread.
+     */
+    uint8_t abReplacement[16];
+    memcpy(abReplacement, pabBackup, sizeof(abReplacement));
+
+#ifdef RT_ARCH_AMD64
+    abReplacement[0] = 0x31;    /* xor ecx, ecx */
+    abReplacement[1] = 0xc9;
+    abReplacement[2] = 0x31;    /* xor edx, edx */
+    abReplacement[3] = 0xd2;
+    abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
+    *(int32_t *)&abReplacement[5] = (int32_t)((uintptr_t)pvNtTerminateThread - ((uintptr_t)pvLdrInitThunk + 9));
+    abReplacement[9] = 0xcc;    /* int3 */
+#elif defined(RT_ARCH_X86)
+    abReplacement[0] = 0x6a;    /* push 0 */
+    abReplacement[1] = 0x00;
+    abReplacement[2] = 0x6a;    /* push 0 */
+    abReplacement[3] = 0x00;
+    abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
+    *(int32_t *)&abReplacement[5] = (int32_t)((uintptr_t)pvNtTerminateThread - ((uintptr_t)pvLdrInitThunk + 9));
+    abReplacement[9] = 0xcc;    /* int3 */
+#else
+# error "Unsupported arch."
+#endif
+
+    /*
+     * Install the replacment code.
+     */
+    PVOID  pvProt   = pvLdrInitThunk;
+    SIZE_T cbProt   = cbBackup;
+    ULONG  fOldProt = 0;
+    rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, PAGE_EXECUTE_READWRITE, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtDisableThreadCreationEx: NtProtectVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    rcNt = NtWriteVirtualMemory(hProcess, pvLdrInitThunk, abReplacement, sizeof(abReplacement), &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtDisableThreadCreationEx: NtWriteVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    pvProt   = pvLdrInitThunk;
+    cbProt   = cbBackup;
+    rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, fOldProt, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtDisableThreadCreationEx: NtProtectVirtualMemory/LdrInitializeThunk/2 failed: %#x", rcNt);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Undo the effects of supR3HardNtDisableThreadCreationEx.
+ *
+ * @returns VBox status code.
+ * @param   hProcess            The process to do this to.
+ * @param   pvLdrInitThunk      The address of the LdrInitializeThunk code to
+ *                              override.
+ * @param   pabBackup           Where to back up the original instruction bytes
+ *                              at pvLdrInitThunk.
+ * @param   cbBackup            The size of the backup area. Must be 16 bytes.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
+ */
+static int supR3HardNtEnableThreadCreationEx(HANDLE hProcess, void *pvLdrInitThunk, uint8_t const *pabBackup, size_t cbBackup,
+                                             PRTERRINFO pErrInfo)
+{
+    SUP_DPRINTF(("supR3HardNtEnableThreadCreation:\n"));
+    SUPR3HARDENED_ASSERT(cbBackup == 16);
+
+    PVOID  pvProt   = pvLdrInitThunk;
+    SIZE_T cbProt   = cbBackup;
+    ULONG  fOldProt = 0;
+    NTSTATUS rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, PAGE_EXECUTE_READWRITE, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtDisableThreadCreationEx: NtProtectVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    SIZE_T cbIgnored;
+    rcNt = NtWriteVirtualMemory(hProcess, pvLdrInitThunk, pabBackup, cbBackup, &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtEnableThreadCreation: NtWriteVirtualMemory/LdrInitializeThunk[restore] failed: %#x",
+                             rcNt);
+
+    pvProt   = pvLdrInitThunk;
+    cbProt   = cbBackup;
+    rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, fOldProt, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE,
+                             "supR3HardNtEnableThreadCreation: NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x",
+                             rcNt);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Disable thread creation for the current process.
+ *
+ * @remarks Doesn't really disables it, just makes the threads exit immediately
+ *          without executing any real code.
+ */
+static void supR3HardenedWinDisableThreadCreation(void)
+{
+    /* Cannot use the imported NtTerminateThread as it's pointing to our own
+       syscall assembly code. */
+    FARPROC pfnNtTerminateThread = GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtTerminateThread");
+    SUPR3HARDENED_ASSERT(pfnNtTerminateThread);
+
+    int rc = supR3HardNtDisableThreadCreationEx(NtCurrentProcess(),
+                                                (void *)(uintptr_t)&LdrInitializeThunk,
+                                                (void *)(uintptr_t)pfnNtTerminateThread,
+                                                g_abLdrInitThunkSelfBackup, sizeof(g_abLdrInitThunkSelfBackup),
+                                                NULL /* pErrInfo*/);
+    g_fSupInitThunkSelfPatched = RT_SUCCESS(rc);
+}
+
+
+/**
+ * Undoes the effects of supR3HardenedWinDisableThreadCreation.
+ */
+DECLHIDDEN(void) supR3HardenedWinEnableThreadCreation(void)
+{
+    if (g_fSupInitThunkSelfPatched)
+    {
+        int rc = supR3HardNtEnableThreadCreationEx(NtCurrentProcess(),
+                                                   (void *)(uintptr_t)&LdrInitializeThunk,
+                                                   g_abLdrInitThunkSelfBackup, sizeof(g_abLdrInitThunkSelfBackup),
+                                                   RTErrInfoInitStatic(&g_ErrInfoStatic));
+        if (RT_FAILURE(rc))
+            supR3HardenedError(rc, true /*fFatal*/, "%s", g_ErrInfoStatic.szMsg);
+        g_fSupInitThunkSelfPatched = false;
+    }
+}
+
+
 
 /*
  * Child-Process Purification - release it from dubious influences. 
@@ -2763,6 +2944,14 @@ static int supR3HardNtPuChScrewUpPebForInitialImageEvents(PSUPR3HARDNTPUCH pThis
 }
 
 
+/**
+ * Maps a DLL into the child process.
+ *
+ * @returns Pointer to the DLL mapping on success, NULL on failure.
+ * @param   pThis               The child purification instance data.
+ * @param   pNtName             The path to the DLL.
+ * @param   pszShort            The short name (for logging).
+ */
 static PVOID supR3HardNtPuChMapDllIntoChild(PSUPR3HARDNTPUCH pThis, PUNICODE_STRING pNtName, const char *pszShort)
 {
     HANDLE              hFile  = RTNT_INVALID_HANDLE_VALUE;
@@ -2856,72 +3045,29 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
                  (uintptr_t)uLdrInitThunk, (uintptr_t)uNtTerminateThread));
 
     /*
-     * Back up the thunk code.
+     * Patch the child's LdrInitializeThunk to exit the thread immediately.
      */
     uint8_t abBackup[16];
-    SIZE_T  cbIgnored;
-    NTSTATUS rcNt = NtReadVirtualMemory(pThis->hProcess, pvLdrInitThunk, abBackup, sizeof(abBackup), &cbIgnored);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtReadVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
-
-    /*
-     * Cook up replacement code that calls NtTerminateThread.
-     */
-    uint8_t abReplacement[sizeof(abBackup)] ;
-    memcpy(abReplacement, abBackup, sizeof(abReplacement));
-
-#ifdef RT_ARCH_AMD64
-    abReplacement[0] = 0x31;    /* xor ecx, ecx */
-    abReplacement[1] = 0xc9;
-    abReplacement[2] = 0x31;    /* xor edx, edx */
-    abReplacement[3] = 0xd2;
-    abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
-    *(int32_t *)&abReplacement[5] = (int32_t)(uNtTerminateThread - (uLdrInitThunk + 9));
-    abReplacement[9] = 0xcc;    /* int3 */
-#elif defined(RT_ARCH_X86)
-    abReplacement[0] = 0x6a;    /* push 0 */
-    abReplacement[1] = 0x00;
-    abReplacement[2] = 0x6a;    /* push 0 */
-    abReplacement[3] = 0x00;
-    abReplacement[4] = 0xe8;    /* call near NtTerminateThread */
-    *(int32_t *)&abReplacement[5] = (int32_t)(uNtTerminateThread - (uLdrInitThunk + 9));
-    abReplacement[9] = 0xcc;    /* int3 */
-#else
-# error "Unsupported arch."
-#endif
-
-    /*
-     * Install the replacment code.
-     */
-    PVOID  pvProt   = pvLdrInitThunk;
-    SIZE_T cbProt   = 16;
-    ULONG  fOldProt = 0;
-    rcNt = NtProtectVirtualMemory(pThis->hProcess, &pvProt, &cbProt, PAGE_EXECUTE_READWRITE, &fOldProt);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtProtectVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
-
-    rcNt = NtWriteVirtualMemory(pThis->hProcess, pvLdrInitThunk, abReplacement, sizeof(abReplacement), &cbIgnored);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtWriteVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+    rc = supR3HardNtDisableThreadCreationEx(pThis->hProcess, pvLdrInitThunk, (void *)(uintptr_t)uNtTerminateThread,
+                                            abBackup, sizeof(abBackup), pThis->pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Create the thread, waiting 10 seconds for it to complete.
      */
     CLIENT_ID Thread2Id;
     HANDLE hThread2;
-    rcNt = RtlCreateUserThread(pThis->hProcess,
-                               NULL /* SecurityAttribs */,
-                               FALSE /* CreateSuspended */,
-                               0 /* ZeroBits */,
-                               0 /* MaximumStackSize */,
-                               0 /* CommittedStackSize */,
-                               (PFNRT)2 /* StartAddress */,
-                               NULL /*Parameter*/ ,
-                               &hThread2,
-                               &Thread2Id);
+    NTSTATUS rcNt = RtlCreateUserThread(pThis->hProcess,
+                                        NULL /* SecurityAttribs */,
+                                        FALSE /* CreateSuspended */,
+                                        0 /* ZeroBits */,
+                                        0 /* MaximumStackSize */,
+                                        0 /* CommittedStackSize */,
+                                        (PFNRT)2 /* StartAddress */,
+                                        NULL /*Parameter*/ ,
+                                        &hThread2,
+                                        &Thread2Id);
     if (NT_SUCCESS(rcNt))
     {
         LARGE_INTEGER Timeout;
@@ -2930,21 +3076,6 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
         NtTerminateThread(hThread2, DBG_TERMINATE_THREAD);
         NtClose(hThread2);
     }
-
-    /*
-     * Restore the original thunk code and protection.
-     */
-    rcNt = NtWriteVirtualMemory(pThis->hProcess, pvLdrInitThunk, abBackup, sizeof(abBackup), &cbIgnored);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtWriteVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
-
-    pvProt   = pvLdrInitThunk;
-    cbProt   = 16;
-    rcNt = NtProtectVirtualMemory(pThis->hProcess, &pvProt, &cbProt, fOldProt, &fOldProt);
-    if (!NT_SUCCESS(rcNt))
-        return RTErrInfoSetF(pThis->pErrInfo, VERR_GENERAL_FAILURE,
-                             "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
 
     /*
      * Map kernel32.dll and kernelbase.dll (if applicable) into the process.
@@ -2990,6 +3121,15 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
             SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on KernelBase: %#x (%p)\n",
                          rcNt, pvKernelBase));
     }
+
+    /*
+     * Restore the original thunk code and protection.
+     * We do this after waiting as anyone trying to kick of threads in the
+     * process will get nothing done as long as our patch is in place.
+     */
+    rc = supR3HardNtEnableThreadCreationEx(pThis->hProcess, pvLdrInitThunk, abBackup, sizeof(abBackup), pThis->pErrInfo);
+    if (RT_FAILURE(rc))
+        return rc;
 
     return VINF_SUCCESS;
 }
@@ -3249,6 +3389,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
      */
     PRTUTF16 pwszCmdLine = supR3HardenedWinConstructCmdLine(NULL, iWhich);
 
+    supR3HardenedWinEnableThreadCreation();
     PROCESS_INFORMATION ProcessInfoW32;
     if (!CreateProcessW(g_wszSupLibHardenedExePath,
                         pwszCmdLine,
@@ -3264,6 +3405,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                               "Error relaunching VirtualBox VM process: %u\n"
                               "Command line: '%ls'",
                               GetLastError(), pwszCmdLine);
+    supR3HardenedWinDisableThreadCreation();
 
     SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): New child %x.%x [kernel32].\n",
                  iWhich, ProcessInfoW32.dwProcessId, ProcessInfoW32.dwThreadId));
@@ -3884,6 +4026,13 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      * in all the processes leading up the VM process.
      */
     supR3HardenedWinInitImports();
+
+    /*
+     * After having resolved imports we patch the LdrInitializeThunk code so
+     * that it's more difficult to invade our privacy by CreateRemoteThread.
+     * We'll re-enable this after opening the driver or temporarily while respawning.
+     */
+    supR3HardenedWinDisableThreadCreation();
 
     /*
      * Init g_uNtVerCombined. (The code is shared with SUPR3.lib and lives in
