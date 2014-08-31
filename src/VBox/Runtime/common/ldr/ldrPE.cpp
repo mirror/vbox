@@ -3448,7 +3448,7 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
 
         if (u.Cfg64.Size != Dir.Size)
         {
-            /* Kludge, seen ati shipping 32-bit DLLs and EXEs with Dir.Size=0x40
+            /* Kludge #1, seen ati shipping 32-bit DLLs and EXEs with Dir.Size=0x40
                and Cfg64.Size=0x5c or 0x48.  Windows seems to deal with it, so
                lets do so as well. */
             if (   Dir.Size < u.Cfg64.Size
@@ -3464,6 +3464,14 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                     return rc;
                 rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
             }
+
+            /* Kludge #2, ntdll.dll from XP seen with Dir.Size=0x40 and Cfg64.Size=0x00. */
+            if (Dir.Size == 0x40 && u.Cfg64.Size == 0x00 && !pModPe->f64Bit)
+            {
+                u.Cfg64.Size = 0x40;
+                rtldrPEConvert32BitLoadConfigTo64Bit(&u.Cfg64);
+            }
+
             if (u.Cfg64.Size != Dir.Size)
             {
                 Log(("rtldrPEOpen: %s: load cfg dir: unexpected header size of %d bytes, expected %d.\n",
