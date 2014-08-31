@@ -38,6 +38,95 @@
 
 
 /*
+ * PCKS #7 SignerInfo
+ */
+
+RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7SIGNERINFO *ppSignerInfo)
+{
+    /*
+     * Check the immediate level, unless we're continuing a previous search.
+     * Note! We ASSUME a single signing time attribute, which simplifies the interface.
+     */
+    uint32_t                cAttrsLeft;
+    PCRTCRPKCS7ATTRIBUTE    pAttr;
+    if (!ppSignerInfo || *ppSignerInfo == NULL)
+    {
+        cAttrsLeft = pThis->AuthenticatedAttributes.cItems;
+        pAttr      = pThis->AuthenticatedAttributes.paItems;
+        while (cAttrsLeft-- > 0)
+        {
+            if (   pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME
+                && pAttr->uValues.pSigningTime->cItems > 0)
+            {
+                if (ppSignerInfo)
+                    *ppSignerInfo = pThis;
+                return &pAttr->uValues.pSigningTime->paItems[0];
+            }
+            pAttr++;
+        }
+    }
+    else if (*ppSignerInfo == pThis)
+        *ppSignerInfo = NULL;
+
+    /*
+     * Check counter signatures.
+     */
+    cAttrsLeft = pThis->UnauthenticatedAttributes.cItems;
+    pAttr      = pThis->UnauthenticatedAttributes.paItems;
+    while (cAttrsLeft-- > 0)
+    {
+        if (pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES)
+        {
+            uint32_t              cSignatures = pAttr->uValues.pCounterSignatures->cItems;
+            PCRTCRPKCS7SIGNERINFO pSignature  = pAttr->uValues.pCounterSignatures->paItems;
+
+            /* Skip past the previous counter signature. */
+            if (ppSignerInfo && *ppSignerInfo != NULL)
+                while (cSignatures > 0)
+                {
+                    cSignatures--;
+                    if (pSignature == *ppSignerInfo)
+                    {
+                        *ppSignerInfo = NULL;
+                        pSignature++;
+                        break;
+                    }
+                    pSignature++;
+                }
+
+            /* Search the counter signatures (if any remaining). */
+            while (cSignatures-- > 0)
+            {
+                uint32_t                cCounterAttrsLeft = pSignature->AuthenticatedAttributes.cItems;
+                PCRTCRPKCS7ATTRIBUTE    pCounterAttr      = pSignature->AuthenticatedAttributes.paItems;
+                while (cCounterAttrsLeft-- > 0)
+                {
+                    if (   pCounterAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME
+                        && pCounterAttr->uValues.pSigningTime->cItems > 0)
+                    {
+                        if (ppSignerInfo)
+                            *ppSignerInfo = pSignature;
+                        return &pCounterAttr->uValues.pSigningTime->paItems[0];
+                    }
+                    pCounterAttr++;
+                }
+                pSignature++;
+            }
+        }
+        pAttr++;
+    }
+
+    /*
+     * No signing timestamp found.
+     */
+    if (ppSignerInfo)
+        *ppSignerInfo = NULL;
+
+    return NULL;
+}
+
+
+/*
  * PCKS #7 ContentInfo.
  */
 

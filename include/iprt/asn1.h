@@ -1251,10 +1251,8 @@ RTASN1CONTEXTTAG_DO_TYPEDEF_AND_INLINE(7);
  */
 typedef enum RTASN1TYPE
 {
-    /** Invalid zero value. */
-    RTASN1TYPE_INVALID = 0,
     /** Not present. */
-    RTASN1TYPE_NOT_PRESENT,
+    RTASN1TYPE_NOT_PRESENT = 0,
     /** Generic ASN.1 for unknown tag/class. */
     RTASN1TYPE_CORE,
     /** ASN.1 NULL. */
