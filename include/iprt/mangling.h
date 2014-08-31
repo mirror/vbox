@@ -2395,6 +2395,7 @@
 # define RTCrPkcs7SignerInfo_Compare                    RT_MANGLER(RTCrPkcs7SignerInfo_Compare)
 # define RTCrPkcs7SignerInfo_Delete                     RT_MANGLER(RTCrPkcs7SignerInfo_Delete)
 # define RTCrPkcs7SignerInfo_Enum                       RT_MANGLER(RTCrPkcs7SignerInfo_Enum)
+# define RTCrPkcs7SignerInfo_GetSigningTime             RT_MANGLER(RTCrPkcs7SignerInfo_GetSigningTime)
 # define RTCrPkcs7SignerInfos_Compare                   RT_MANGLER(RTCrPkcs7SignerInfos_Compare)
 # define RTCrPkcs7SignerInfos_Delete                    RT_MANGLER(RTCrPkcs7SignerInfos_Delete)
 # define RTCrPkcs7SignerInfos_Enum                      RT_MANGLER(RTCrPkcs7SignerInfos_Enum)
