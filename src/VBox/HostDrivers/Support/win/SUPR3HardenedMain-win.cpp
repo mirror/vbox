@@ -549,7 +549,7 @@ static void supR3HardenedWinVerifyCacheInsert(PCUNICODE_STRING pUniStr, HANDLE h
                 continue;
             if (   pOther->uHash  == pEntry->uHash
                 && pOther->cbPath == pEntry->cbPath
-                && supR3HardenedWinVerifyCacheIsMatch(pOther->wszPath, pEntry->wszPath, pEntry->cbPath))
+                && supR3HardenedWinVerifyCacheIsMatch(pOther->wszPath, pEntry->wszPath, pEntry->cbPath / sizeof(RTUTF16)))
                 break;
             ppEntry = &pOther->pNext;
         }
