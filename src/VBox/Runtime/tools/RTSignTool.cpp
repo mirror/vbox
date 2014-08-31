@@ -274,10 +274,10 @@ struct STSTORESET
 #endif
 
 /**
- * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
+ * @callback_method_impl{FNRTCRPKCS7VERIFYCERTCALLBACK,
  * Standard code signing.  Use this for Microsoft SPC.}
  */
-static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                       void *pvUser, PRTERRINFO pErrInfo)
 {
     VERIFYEXESTATE *pState = (VERIFYEXESTATE *)pvUser;
@@ -314,8 +314,9 @@ static DECLCALLBACK(int) VerifyExecCertVerifyCallback(PCRTCRX509CERTIFICATE pCer
     /*
      * Standard code signing capabilites required.
      */
-    int rc = RTCrPkcs7VerifyCertCallbackCodeSigning(pCert, hCertPaths, NULL, pErrInfo);
-    if (RT_SUCCESS(rc))
+    int rc = RTCrPkcs7VerifyCertCallbackCodeSigning(pCert, hCertPaths, fFlags, NULL, pErrInfo);
+    if (   RT_SUCCESS(rc)
+        && (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA))
     {
         /*
          * If kernel signing, a valid certificate path must be anchored by the
@@ -400,7 +401,10 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
              * Do the actual verification.  Will have to modify this so it takes
              * the authenticode policies into account.
              */
-            return RTCrPkcs7VerifySignedData(pContentInfo, 0, pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
+            return RTCrPkcs7VerifySignedData(pContentInfo,
+                                             RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
+                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT,
+                                             pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
                                              VerifyExecCertVerifyCallback, pState, pErrInfo);
         }
 
