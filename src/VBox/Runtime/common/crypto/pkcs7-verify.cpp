@@ -344,7 +344,7 @@ static int rtCrPkcs7VerifyFindDigest(PRTCRDIGEST phDigest, PCRTCRPKCS7SIGNEDDATA
             *phDigest = hDigest;
             return VINF_SUCCESS;
         }
-
+    *phDigest = NIL_RTCRDIGEST; /* Make gcc happy. */
     return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_ALGO_NOT_FOUND_IN_LIST,
                          "SignerInfo.DigestAlgorithm %s not found.",
                          pSignerInfo->DigestAlgorithm.Algorithm.szObjId);
@@ -642,8 +642,8 @@ RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint3
             rc = VERR_CR_PKCS7_NO_SIGNER_INFOS;
             for (i = 0; i < pSignedData->SignerInfos.cItems; i++)
             {
-                PCRTCRPKCS7SIGNERINFO   pSignerInfo       = &pSignedData->SignerInfos.paItems[i];
-                RTCRDIGEST              hThisDigest       = NIL_RTCRDIGEST;
+                PCRTCRPKCS7SIGNERINFO   pSignerInfo = &pSignedData->SignerInfos.paItems[i];
+                RTCRDIGEST              hThisDigest;
                 rc = rtCrPkcs7VerifyFindDigest(&hThisDigest, pSignedData, pSignerInfo, ahDigests, pErrInfo);
                 if (RT_FAILURE(rc))
                     break;
