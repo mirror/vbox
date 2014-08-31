@@ -504,17 +504,22 @@ RTDECL(int) RTAsn1ObjId_Enum(PRTASN1OBJID pThis, PFNRTASN1ENUMCALLBACK pfnCallba
 
 RTDECL(int) RTAsn1ObjId_Compare(PCRTASN1OBJID pLeft, PCRTASN1OBJID pRight)
 {
-    if (!RTAsn1ObjId_IsPresent(pLeft) || RTAsn1ObjId_IsPresent(pRight))
-        return (int)RTAsn1ObjId_IsPresent(pLeft) - (int)RTAsn1ObjId_IsPresent(pRight);
+    if (RTAsn1ObjId_IsPresent(pLeft))
+    {
+        if (RTAsn1ObjId_IsPresent(pRight))
+        {
+            uint8_t cComponents = RT_MIN(pLeft->cComponents, pRight->cComponents);
+            for (uint32_t i = 0; i < cComponents; i++)
+                if (pLeft->pauComponents[i] != pRight->pauComponents[i])
+                    return pLeft->pauComponents[i] < pRight->pauComponents[i] ? -1 : 1;
 
-    uint8_t cComponents = RT_MIN(pLeft->cComponents, pRight->cComponents);
-    for (uint32_t i = 0; i < cComponents; i++)
-        if (pLeft->pauComponents[i] != pRight->pauComponents[i])
-            return pLeft->pauComponents[i] < pRight->pauComponents[i] ? -1 : 1;
-
-    if (pLeft->cComponents == pRight->cComponents)
-        return 0;
-    return pLeft->cComponents < pRight->cComponents ? -1 : 1;
+            if (pLeft->cComponents == pRight->cComponents)
+                return 0;
+            return pLeft->cComponents < pRight->cComponents ? -1 : 1;
+        }
+        return 1;
+    }
+    return 0 - (int)RTAsn1ObjId_IsPresent(pRight);
 }
 
 
