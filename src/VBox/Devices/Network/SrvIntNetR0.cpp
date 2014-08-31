@@ -2808,6 +2808,104 @@ static uint16_t computeIPv6FullChecksum(PCRTNETIPV6 pIpHdr)
     return (uint16_t) ~sum;
 }
 
+
+/**
+ * Rewrite VM MAC address with shared host MAC address inside IPv6
+ * Neighbor Discovery datagrams.
+ */
+static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTNETIF pIfSender,
+						     PRTNETETHERHDR pEthHdr, uint32_t cb)
+{
+    if (RT_UNLIKELY(cb < sizeof(*pEthHdr)))
+        return;
+
+    /* have IPv6 header */
+    PRTNETIPV6 pIPv6 = (PRTNETIPV6)(pEthHdr + 1);
+    cb -= sizeof(*pEthHdr);
+    if (RT_UNLIKELY(cb < sizeof(*pIPv6)))
+        return;
+
+    if (   pIPv6->ip6_nxt  != RTNETIPV6_PROT_ICMPV6
+        || pIPv6->ip6_hlim != 0xff)
+        return;
+
+    PRTNETICMPV6HDR pICMPv6 = (PRTNETICMPV6HDR)(pIPv6 + 1);
+    cb -= sizeof(*pIPv6);
+    if (RT_UNLIKELY(cb < sizeof(*pICMPv6)))
+        return;
+
+    size_t hdrlen = 0;
+    uint8_t llaopt = RTNETIPV6_ICMP_ND_SLLA_OPT;
+
+    uint8_t type = pICMPv6->icmp6_type;
+    switch (type)
+    {
+        case RTNETIPV6_ICMP_TYPE_RS:
+	    hdrlen = 8;
+	    break;
+
+        case RTNETIPV6_ICMP_TYPE_RA:
+	    hdrlen = 16;
+	    break;
+
+        case RTNETIPV6_ICMP_TYPE_NS:
+	    hdrlen = 24;
+	    break;
+
+        case RTNETIPV6_ICMP_TYPE_NA:
+	    hdrlen = 24;
+	    llaopt = RTNETIPV6_ICMP_ND_TLLA_OPT;
+	    break;
+
+        default:
+	    return;
+    }
+
+    AssertReturnVoid(hdrlen > 0);
+    if (RT_UNLIKELY(cb < hdrlen))
+        return;
+
+    if (RT_UNLIKELY(pICMPv6->icmp6_code != 0))
+	return;
+
+    PRTNETNDP_LLA_OPT pLLAOpt = NULL;
+    char *pOpt = (char *)pICMPv6 + hdrlen;
+    cb -= hdrlen;
+
+    while (cb >= 8)
+    {
+        uint8_t opt = ((uint8_t *)pOpt)[0];
+        size_t optlen = (size_t)((uint8_t *)pOpt)[1] * 8;
+        if (RT_UNLIKELY(cb < optlen))
+            return;
+
+        if (opt == llaopt)
+        {
+	    if (RT_UNLIKELY(optlen != 8))
+		return;
+            pLLAOpt = (PRTNETNDP_LLA_OPT)pOpt;
+            break;
+        }
+
+        pOpt += optlen;
+        cb -= optlen;
+    }
+
+    if (pLLAOpt == NULL)
+        return;
+
+    if (memcmp(&pLLAOpt->lla, &pIfSender->MacAddr, sizeof(RTMAC)) != 0)
+        return;
+
+    /* overwrite VM's MAC with host's MAC */
+    pLLAOpt->lla = pThis->MacAddr;
+
+    /* recompute the checksum */
+    pICMPv6->icmp6_cksum = 0;
+    pICMPv6->icmp6_cksum = computeIPv6FullChecksum(pIPv6);
+}
+
+
 /**
  * Sends a frame down the trunk.
  *
@@ -2887,57 +2985,16 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 pArp->ar_tha = pThis->MacAddr;
             }
         }
-        else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+        else if (pEthHdr->EtherType == RT_H2N_U16_C(RTNET_ETHERTYPE_IPV6))
         {
-            /*
-             * IPV6 ICMP Neighbor Discovery : replace
-             * 1) the advertised source mac address in outgoing neighbor sollicitations
-             *    with the HW MAC address of the trunk interface,
-             * 2) the advertised target mac address in outgoing neighbor advertisements
-             *    with the HW mac address of the trunk interface.
-             *
-             * Note that this only applies to traffic going out on the trunk. Incoming
-             * NS/NA will never advertise any VM mac address, so we do not need to touch
-             * them. Other VMs on this bridge as well as the host will see and use the VM's
-             * actual mac addresses.
-             *
-             */
-
-            PRTNETIPV6 pIPv6            = (PRTNETIPV6)(pEthHdr + 1);
-            PRTNETNDP pNd               = (PRTNETNDP)(pIPv6 + 1);
-            PRTNETNDP_SLLA_OPT pLLAOpt  = (PRTNETNDP_SLLA_OPT)(pNd + 1);
-
-            /* make sure we have enough bytes to work with */
-            if(pSG->cbTotal >= (RTNETIPV6_MIN_LEN + RTNETIPV6_ICMPV6_ND_WITH_LLA_OPT_MIN_LEN) &&
-               /* ensure the packet came from our LAN (not gone through any router) */
-               pIPv6->ip6_hlim == 0xff &&
-               /* protocol has to be icmpv6 */
-                pIPv6->ip6_nxt == RTNETIPV6_PROT_ICMPV6 &&
-               /* we either have a sollicitation with source link layer addr. opt, or */
-                ((pNd->icmp6_type == RTNETIPV6_ICMP_NS_TYPE &&
-                            pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0 &&
-                            pLLAOpt->type == RTNETIPV6_ICMP_ND_SLLA_OPT) ||
-                 /* an advertisement with target link layer addr. option */
-                ((pNd->icmp6_type == RTNETIPV6_ICMP_NA_TYPE &&
-                            pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0 &&
-                            pLLAOpt->type == RTNETIPV6_ICMP_ND_TLLA_OPT)) ) &&
-                pLLAOpt->len == RTNETIPV6_ICMP_ND_LLA_LEN)
-            {
-                /* swap the advertised VM MAC address with the trunk's */
-                pLLAOpt->slla   = pThis->MacAddr;
-
-                /* recompute the checksum since we changed the packet */
-                pNd->icmp6_cksum = 0;
-                pNd->icmp6_cksum = computeIPv6FullChecksum(pIPv6);
-            }
-
+            intnetR0TrunkSharedMacEditIPv6FromIntNet(pThis, pIfSender, pEthHdr, pSG->cbTotal);
         }
     }
 
     /*
-     * Send the frame, handling the GSO fallback                                                                                           .
-     *                                                                                                                                     .
-     * Note! The trunk implementation will re-check that the trunk is active                                                               .
+     * Send the frame, handling the GSO fallback.
+     *
+     * Note! The trunk implementation will re-check that the trunk is active
      *       before sending, so we don't have to duplicate that effort here.
      */
     STAM_REL_PROFILE_START(&pIfSender->pIntBuf->StatSend2, a);
@@ -3098,8 +3155,8 @@ static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
      */
     if (    pIPv6->ip6_hlim == 0xff
         &&  pIPv6->ip6_nxt  == RTNETIPV6_PROT_ICMPV6
-        &&  pNd->icmp6_type == RTNETIPV6_ICMP_NS_TYPE
-        &&  pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0
+        &&  pNd->Hdr.icmp6_type == RTNETIPV6_ICMP_TYPE_NS
+        &&  pNd->Hdr.icmp6_code == 0
         &&  pIPv6->ip6_src.QWords.qw0 == 0
         &&  pIPv6->ip6_src.QWords.qw1 == 0)
     {

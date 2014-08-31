@@ -800,10 +800,27 @@ typedef RTNETICMPV4 *PRTNETICMPV4;
 typedef RTNETICMPV4 const *PCRTNETICMPV4;
 
 
-/** @todo add ICMPv6 when needed. */
+/**
+ * IPv6 ICMP packet header.
+ */
+#pragma pack(1)
+typedef struct RTNETICMPV6HDR
+{
+    /** 00 - The ICMPv6 message type. */
+    uint8_t         icmp6_type;
+    /** 01 - Type specific code that further qualifies the message. */
+    uint8_t         icmp6_code;
+    /** 02 - Checksum of the ICMPv6 message. */
+    uint16_t        icmp6_cksum;
+} RTNETICMPV6HDR;
+#pragma pack()
+AssertCompileSize(RTNETICMPV6HDR, 4);
+/** Pointer to an ICMPv6 packet header. */
+typedef RTNETICMPV6HDR *PRTNETICMPV6HDR;
+/** Pointer to a const ICMP packet header. */
+typedef RTNETICMPV6HDR const *PCRTNETICMPV6HDR;
 
 #define RTNETIPV6_PROT_ICMPV6       (58)
-#define RTNETIPV6_ICMPV6_CODE_0     (0)
 
 /** @name Internet Control Message Protocol version 6 (ICMPv6) message types.
  * @{ */
@@ -814,47 +831,40 @@ typedef RTNETICMPV4 const *PCRTNETICMPV4;
 #define RTNETIPV6_ICMP_TYPE_RDR     137
 /** @} */
 
-/** @deprecated */
-#define RTNETIPV6_ICMP_NS_TYPE      (RTNETIPV6_ICMP_TYPE_NS)
-/** @deprecated */
-#define RTNETIPV6_ICMP_NA_TYPE      (RTNETIPV6_ICMP_TYPE_NA)
-
+/** @name Neighbor Discovery option types
+ * @{ */
 #define RTNETIPV6_ICMP_ND_SLLA_OPT  (1)
 #define RTNETIPV6_ICMP_ND_TLLA_OPT  (2)
-#define RTNETIPV6_ICMP_ND_LLA_LEN   (1)
+/** @} */
 
-/** ICMPv6 ND Source Link Layer Address option */
+/** ICMPv6 ND Source/Target Link Layer Address option */
 #pragma pack(1)
-typedef struct RTNETNDP_SLLA_OPT
+typedef struct RTNETNDP_LLA_OPT
 {
     uint8_t type;
     uint8_t len;
-    RTMAC slla;
-} RTNETNDP_SLLA_OPT;
+    RTMAC lla;
+} RTNETNDP_LLA_OPT;
 #pragma pack()
 
-AssertCompileSize(RTNETNDP_SLLA_OPT, 1+1+6);
+AssertCompileSize(RTNETNDP_LLA_OPT, 1+1+6);
 
-typedef RTNETNDP_SLLA_OPT *PRTNETNDP_SLLA_OPT;
-typedef RTNETNDP_SLLA_OPT const *PCRTNETNDP_SLLA_OPT;
+typedef RTNETNDP_LLA_OPT *PRTNETNDP_LLA_OPT;
+typedef RTNETNDP_LLA_OPT const *PCRTNETNDP_LLA_OPT;
 
 /** ICMPv6 ND Neighbor Sollicitation */
 #pragma pack(1)
 typedef struct RTNETNDP
 {
-    /** ICMPv6 type. */
-    uint8_t icmp6_type;
-    /** ICMPv6 code. */
-    uint8_t icmp6_code;
-    /** ICMPv6 checksum */
-    uint16_t icmp6_cksum;
-    /** reserved */
+    /** 00 - The ICMPv6 header. */
+    RTNETICMPV6HDR Hdr;
+    /** 04 - reserved */
     uint32_t reserved;
-    /** target address */
+    /** 08 - target address */
     RTNETADDRIPV6 target_address;
 } RTNETNDP;
 #pragma pack()
-AssertCompileSize(RTNETNDP, 1+1+2+4+16);
+AssertCompileSize(RTNETNDP, 4+4+16);
 /** Pointer to a NDP ND packet. */
 typedef RTNETNDP *PRTNETNDP;
 /** Pointer to a const NDP NS packet. */
