@@ -226,8 +226,15 @@ static DECLCALLBACK(void) rtCrPkixSignatureRsa_Delete(PCRTCRPKIXSIGNATUREDESC pD
  * @param   pThis           The RSA signature provider instance.
  * @param   hDigest         The digest which hash to turn into a signature.
  * @param   cbEncodedMsg    The desired encoded message length.
+ * @param   fNoDigestInfo   If true, skip the DigestInfo and encode the digest
+ *                          without any prefix like described in v1.5 (RFC-2313)
+ *                          and observed with RSA+MD5 signed timestamps.  If
+ *                          false, include the prefix like v2.0 (RFC-2437)
+ *                          describes in step in section 9.2.1
+ *                          (EMSA-PKCS1-v1_5)
  */
-static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, RTCRDIGEST hDigest, size_t cbEncodedMsg)
+static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, RTCRDIGEST hDigest, size_t cbEncodedMsg,
+                                                   bool fNoDigestInfo)
 {
     AssertReturn(cbEncodedMsg * 2 <= sizeof(pThis->Scratch), VERR_CR_PKIX_INTERNAL_ERROR);
 
@@ -256,6 +263,9 @@ static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, 
     AssertReturn(cbHash > 0 && cbHash < _16K, VERR_OUT_OF_RANGE);
     AssertReturn(cbHash == pbDigestInfoStart[cbDigestInfoStart - 1], VERR_CR_PKIX_INTERNAL_ERROR);
 
+    if (fNoDigestInfo)
+        cbDigestInfoStart = 0;
+
     if (cbDigestInfoStart + cbHash + 11 > cbEncodedMsg)
         return VERR_CR_PKIX_HASH_TOO_LONG_FOR_KEY;
 
@@ -264,7 +274,7 @@ static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, 
      */
     uint8_t *pbDst = &pThis->Scratch.abSignature[0];
     pbDst[0] = 0x00;
-    pbDst[1] = 0x01;
+    pbDst[1] = 0x01;    /* BT - block type, see RFC-2313. */
     size_t cbFFs = cbEncodedMsg - cbHash - cbDigestInfoStart - 3;
     memset(&pbDst[2], 0xff, cbFFs);
     pbDst += cbFFs + 2;
@@ -278,6 +288,7 @@ static int rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(PRTCRPKIXSIGNATURERSA pThis, 
     Assert((size_t)(pbDst - &pThis->Scratch.abSignature[0]) == cbEncodedMsg);
     return VINF_SUCCESS;
 }
+
 
 
 /** @impl_interface_method{RTCRPKIXSIGNATUREDESC,pfnVerify}  */
@@ -326,7 +337,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Verify(PCRTCRPKIXSIGNATUREDESC pDe
                             /*
                              * 8.2.2.3 - Build a hopefully identical signature using hDigest.
                              */
-                            rc = rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(pThis, hDigest, cbDecrypted);
+                            rc = rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(pThis, hDigest, cbDecrypted, false /* fNoDigestInfo */);
                             if (RT_SUCCESS(rc))
                             {
                                 /*
@@ -335,7 +346,21 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Verify(PCRTCRPKIXSIGNATUREDESC pDe
                                 if (memcmp(&pThis->Scratch.abSignature[0], pbDecrypted, cbDecrypted) == 0)
                                     rc = VINF_SUCCESS;
                                 else
-                                    rc = VERR_CR_PKIX_SIGNATURE_MISMATCH;
+                                {
+                                    /*
+                                     * Try again without digestinfo.  This style signing has been
+                                     * observed in Vista timestamp counter signatures (Thawte).
+                                     */
+                                    rc = rtCrPkixSignatureRsa_EmsaPkcs1V15Encode(pThis, hDigest, cbDecrypted,
+                                                                                 true /* fNoDigestInfo */);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        if (memcmp(&pThis->Scratch.abSignature[0], pbDecrypted, cbDecrypted) == 0)
+                                            rc = VINF_SUCCESS;
+                                        else
+                                            rc = VERR_CR_PKIX_SIGNATURE_MISMATCH;
+                                    }
+                                }
                             }
                         }
                     }

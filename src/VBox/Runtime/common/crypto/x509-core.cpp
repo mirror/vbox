@@ -1277,7 +1277,7 @@ static void rtCrx509TbsCertificate_AddExtKeyUsageFlags(PRTCRX509TBSCERTIFICATE p
                     case  5: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_IPSEC_END_SYSTEM; break;
                     case  6: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_IPSEC_TUNNEL; break;
                     case  7: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_IPSEC_USER; break;
-                    case  8: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_TIME_STAMPING; break;
+                    case  8: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_TIMESTAMPING; break;
                     case  9: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_OCSP_SIGNING; break;
                     case 10: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_DVCS; break;
                     case 11: pThis->T3.fExtKeyUsage |= RTCRX509CERT_EKU_F_SBGP_CERT_AA_SERVICE_AUTH; break;

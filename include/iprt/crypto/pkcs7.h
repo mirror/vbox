@@ -174,6 +174,26 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo,
 #define RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID "1.2.840.113549.1.9.6"
 /** @} */
 
+/**
+ * Get the (next) signing time attribute from the specfied SignerInfo or one of
+ * the immediate counter signatures.
+ *
+ * @returns Pointer to the signing time if found, NULL if not.
+ * @param   pThis               The SignerInfo to search.
+ * @param   ppSignerInfo        Pointer to variable keeping track of the
+ *                              enumeration, optional.
+ *
+ *                              If specified the input value is taken to the be
+ *                              SignerInfo of the previously returned signing
+ *                              time.  The value pointed to is NULL, the
+ *                              search/enum restarts.
+ *
+ *                              On successful return this is set to the
+ *                              SignerInfo which we found the signing time in.
+ */
+RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7SIGNERINFO *ppSignerInfo);
+
+
 
 /**
  * PKCS \#7 ContentInfo (IPRT representation).
@@ -301,26 +321,35 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7DIGESTINFO, RTDECL, RTCrPkcs7DigestInfo,
  *                              policy checks and whatnot.
  *                              This is NIL_RTCRX509CERTPATHS if the certificate
  *                              is directly trusted.
+ * @param   fFlags              Mix of the RTCRPKCS7VCC_F_XXX flags.
  * @param   pvUser              The user argument.
  * @param   pErrInfo            Optional error info buffer.
  */
-typedef DECLCALLBACK(int) RTCRPKCS7VERIFYCERTCALLBACK(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
-                                                      void *pvUser, PRTERRINFO pErrInfo);
-/** Pointer to a RTCRPKCS7VERIFYCERTCALLBACK callback. */
-typedef RTCRPKCS7VERIFYCERTCALLBACK *PRTCRPKCS7VERIFYCERTCALLBACK;
+typedef DECLCALLBACK(int) FNRTCRPKCS7VERIFYCERTCALLBACK(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+                                                        uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo);
+/** Pointer to a FNRTCRPKCS7VERIFYCERTCALLBACK callback. */
+typedef FNRTCRPKCS7VERIFYCERTCALLBACK *PFNRTCRPKCS7VERIFYCERTCALLBACK;
+
+/** @name RTCRPKCS7VCC_F_XXX - Flags for FNRTCRPKCS7VERIFYCERTCALLBACK.
+ * @{ */
+/** Normal callback for a direct signatory of the signed data. */
+#define RTCRPKCS7VCC_F_SIGNED_DATA                      RT_BIT_32(0)
+/** Check that the signatory can be trusted for timestamps. */
+#define RTCRPKCS7VCC_F_TIMESTAMP                        RT_BIT_32(1)
+/** @} */
 
 /**
  * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
  *  Default implementation that checks for the DigitalSignature KeyUsage bit.}
  */
-RTDECL(int) RTCrPkcs7VerifyCertCallbackDefault(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+RTDECL(int) RTCrPkcs7VerifyCertCallbackDefault(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                void *pvUser, PRTERRINFO pErrInfo);
 
 /**
  * @callback_method_impl{RTCRPKCS7VERIFYCERTCALLBACK,
  * Standard code signing.  Use this for Microsoft SPC.}
  */
-RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
+RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths, uint32_t fFlags,
                                                    void *pvUser, PRTERRINFO pErrInfo);
 
 /**
@@ -336,7 +365,8 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, 
  *                              supplement those mentioned in the signed data.
  * @param   hTrustedCerts       Store containing trusted certificates.
  * @param   pValidationTime     The time we're supposed to validate the
- *                              certificates chains at.
+ *                              certificates chains at.  Ignored for signatures
+ *                              with valid signing time attributes.
  * @param   pfnVerifyCert       Callback for checking that a certificate used
  *                              for signing the data is suitable.
  * @param   pvUser              User argument for the callback.
@@ -344,11 +374,25 @@ RTDECL(int) RTCrPkcs7VerifyCertCallbackCodeSigning(PCRTCRX509CERTIFICATE pCert, 
  */
 RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint32_t fFlags,
                                       RTCRSTORE hAdditionalCerts, RTCRSTORE hTrustedCerts,
-                                      PCRTTIMESPEC pValidationTime, PRTCRPKCS7VERIFYCERTCALLBACK pfnVerifyCert, void *pvUser,
+                                      PCRTTIMESPEC pValidationTime, PFNRTCRPKCS7VERIFYCERTCALLBACK pfnVerifyCert, void *pvUser,
                                       PRTERRINFO pErrInfo);
 
 /** @name RTCRPKCS7VERIFY_SD_F_XXX - Flags for RTCrPkcs7VerifySignedData
  * @{ */
+/** Always use the signing time attribute if present, requiring it to be
+ * verified as valid.  The default behavior is to ignore unverifiable
+ * signing time attributes and use the @a pValidationTime instead. */
+#define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT     RT_BIT_32(0)
+/** Only use signging time attributes from counter signatures. */
+#define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY    RT_BIT_32(1)
+/** Don't validate the counter signature containing the signing time, just use
+ * it unverified.  This is useful if we don't necessarily have the root
+ * certificates for the timestamp server handy, but use with great care. */
+#define RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED            RT_BIT_32(2)
+/** Indicates internally that we're validating a counter signature and should
+ * use different rules when checking out the authenticated attributes.
+ * @internal  */
+#define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE                      RT_BIT_32(31)
 /** @} */
 
 /** @} */

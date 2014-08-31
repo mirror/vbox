@@ -873,7 +873,7 @@ static int supHardNtViCheckIfNotSignedOk(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, u
  * Standard code signing.  Use this for Microsoft SPC.}
  */
 static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCert, RTCRX509CERTPATHS hCertPaths,
-                                                       void *pvUser, PRTERRINFO pErrInfo)
+                                                       uint32_t fFlags, void *pvUser, PRTERRINFO pErrInfo)
 {
     PSUPHNTVIRDR pNtViRdr = (PSUPHNTVIRDR)pvUser;
     Assert(pNtViRdr->Core.uMagic == RTLDRREADER_MAGIC);
@@ -893,8 +893,9 @@ static DECLCALLBACK(int) supHardNtViCertVerifyCallback(PCRTCRX509CERTIFICATE pCe
     /*
      * Standard code signing capabilites required.
      */
-    int rc = RTCrPkcs7VerifyCertCallbackCodeSigning(pCert, hCertPaths, NULL, pErrInfo);
-    if (RT_SUCCESS(rc))
+    int rc = RTCrPkcs7VerifyCertCallbackCodeSigning(pCert, hCertPaths, fFlags, NULL, pErrInfo);
+    if (   RT_SUCCESS(rc)
+        && (fFlags & RTCRPKCS7VCC_F_SIGNED_DATA))
     {
         /*
          * If kernel signing, a valid certificate path must be anchored by the
@@ -991,13 +992,22 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
     }
 
     /*
-     * Verify the signature.
+     * Verify the signature.  We instruct the verifier to use the signing time
+     * counter signature present when present, falling back on the timestamp
+     * planted by the linker when absent.  In ring-0 we don't have all the
+     * necessary timestamp server root certificate info, so we have to allow
+     * using counter signatures unverified there.
      */
     RTTIMESPEC ValidationTime;
     RTTimeSpecSetSeconds(&ValidationTime, pNtViRdr->uTimestamp);
 
-    return RTCrPkcs7VerifySignedData(pContentInfo, 0, g_hSpcAndNtKernelSuppStore, g_hSpcAndNtKernelRootStore, &ValidationTime,
-                                     supHardNtViCertVerifyCallback, pNtViRdr, pErrInfo);
+    uint32_t fFlags = RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                    | RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY;
+#ifdef IN_RING0
+    fFlags |= RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED;
+#endif
+    return RTCrPkcs7VerifySignedData(pContentInfo, fFlags, g_hSpcAndNtKernelSuppStore, g_hSpcAndNtKernelRootStore,
+                                     &ValidationTime, supHardNtViCertVerifyCallback, pNtViRdr, pErrInfo);
 }
 
 

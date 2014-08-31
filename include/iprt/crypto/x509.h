@@ -800,7 +800,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509TBSCERTIFICATE, RTDECL, RTCrX509TbsCertif
 #define RTCRX509CERT_EKU_F_IPSEC_END_SYSTEM                 RT_BIT_64(5)
 #define RTCRX509CERT_EKU_F_IPSEC_TUNNEL                     RT_BIT_64(6)
 #define RTCRX509CERT_EKU_F_IPSEC_USER                       RT_BIT_64(7)
-#define RTCRX509CERT_EKU_F_TIME_STAMPING                    RT_BIT_64(8)
+#define RTCRX509CERT_EKU_F_TIMESTAMPING                     RT_BIT_64(8)
 #define RTCRX509CERT_EKU_F_OCSP_SIGNING                     RT_BIT_64(9)
 #define RTCRX509CERT_EKU_F_DVCS                             RT_BIT_64(10)
 #define RTCRX509CERT_EKU_F_SBGP_CERT_AA_SERVICE_AUTH        RT_BIT_64(11)
@@ -834,7 +834,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509TBSCERTIFICATE, RTDECL, RTCrX509TbsCertif
 #define RTCRX509_ID_KP_IPSEC_END_SYSTEM_OID                 "1.3.6.1.5.5.7.3.5"
 #define RTCRX509_ID_KP_IPSEC_TUNNEL_OID                     "1.3.6.1.5.5.7.3.6"
 #define RTCRX509_ID_KP_IPSEC_USER_OID                       "1.3.6.1.5.5.7.3.7"
-#define RTCRX509_ID_KP_TIME_STAMPING_OID                    "1.3.6.1.5.5.7.3.8"
+#define RTCRX509_ID_KP_TIMESTAMPING_OID                     "1.3.6.1.5.5.7.3.8"
 #define RTCRX509_ID_KP_OCSP_SIGNING_OID                     "1.3.6.1.5.5.7.3.9"
 #define RTCRX509_ID_KP_DVCS_OID                             "1.3.6.1.5.5.7.3.10"
 #define RTCRX509_ID_KP_SBGP_CERT_AA_SERVICE_AUTH_OID        "1.3.6.1.5.5.7.3.11"
@@ -875,7 +875,7 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509TBSCERTIFICATE, RTDECL, RTCrX509TbsCertif
 #define RTCRX509_MS_EKU_KERNEL_MODE_CODE_SIGNING_OID        "1.3.6.1.4.1.311.61.1.1"
 /** @} */
 
-/** @name Microsoft extended key usage OIDs
+/** @name Apple extended key usage OIDs
  * @{ */
 #define RTCRX509_APPLE_EKU_APPLE_EXTENDED_KEY_USAGE_OID     "1.2.840.113635.100.4"
 #define RTCRX509_APPLE_EKU_CODE_SIGNING_OID                 "1.2.840.113635.100.4.1"
