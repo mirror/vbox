@@ -315,22 +315,107 @@ renderspuDestroyContext( GLint ctx )
     renderspuContextMarkDeletedAndRelease(context);
 }
 
+WindowInfo* renderspuWinCreate(GLint visBits, GLint id)
+{
+    WindowInfo* window = (WindowInfo *)crAlloc(sizeof (*window));
+    if (!window)
+    {
+        crWarning("crAlloc failed");
+        return NULL;
+    }
+
+    if (!renderspuWinInit(window, NULL, visBits, id))
+    {
+        crWarning("renderspuWinInit failed");
+        crFree(window);
+        return NULL;
+    }
+
+    return window;
+}
+
+void renderspuWinTermOnShutdown(WindowInfo *window)
+{
+    renderspuVBoxCompositorSet(window, NULL);
+    renderspuVBoxPresentBlitterCleanup(window);
+    renderspu_SystemDestroyWindow( window );
+    window->BltInfo.Base.id = -1;
+}
+
+static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *pCtx = (ContextInfo *) data1;
+    WindowInfo *pWindow = data2;
+    (void) key;
+
+    if (pCtx->currentWindow==pWindow)
+    {
+        WindowInfo* pDummy = renderspuGetDummyWindow(pCtx->BltInfo.Base.visualBits);
+        if (pDummy)
+        {
+            renderspuPerformMakeCurrent(pDummy, 0, pCtx);
+        }
+        else
+        {
+            crWarning("failed to get dummy window");
+            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, pCtx->BltInfo.Base.id);
+        }
+    }
+}
+
+void renderspuWinTerm( WindowInfo *window )
+{
+    if (!renderspuWinIsTermed(window))
+    {
+
+    GET_CONTEXT(pOldCtx);
+    WindowInfo * pOldWindow = pOldCtx ? pOldCtx->currentWindow : NULL;
+    CRASSERT(!pOldCtx == !pOldWindow);
+    /* ensure no concurrent draws can take place */
+    renderspuWinTermOnShutdown(window);
+    /* check if this window is bound to some ctx. Note: window pointer is already freed here */
+    crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
+    /* restore current context */
+    {
+        GET_CONTEXT(pNewCtx);
+        WindowInfo * pNewWindow = pNewCtx ? pNewCtx->currentWindow : NULL;
+        CRASSERT(!pNewCtx == !pNewWindow);
+
+        if (pOldWindow == window)
+            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+        else if (pNewCtx != pOldCtx || pOldWindow != pNewWindow)
+        {
+            if (pOldCtx)
+                renderspuPerformMakeCurrent(pOldWindow, 0, pOldCtx);
+            else
+                renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+        }
+    }
+
+    }
+}
+
+void renderspuWinCleanup(WindowInfo *window)
+{
+    renderspuWinTerm( window );
+    RTCritSectDelete(&window->CompositorLock);
+}
+
+void renderspuWinDestroy(WindowInfo *window)
+{
+    renderspuWinCleanup(window);
+    crFree(window);
+}
+
 WindowInfo* renderspuGetDummyWindow(GLint visBits)
 {
     WindowInfo *window = (WindowInfo *) crHashtableSearch(render_spu.dummyWindowTable, visBits);
     if (!window)
     {
-        window = (WindowInfo *)crAlloc(sizeof (*window));
+        window = renderspuWinCreate(visBits, -1);
         if (!window)
         {
-            crWarning("crAlloc failed");
-            return NULL;
-        }
-
-        if (!renderspuWindowInit(window, NULL, visBits, -1))
-        {
-            crWarning("renderspuWindowInit failed");
-            crFree(window);
+            WARN(("renderspuWinCreate failed"));
             return NULL;
         }
 
@@ -445,7 +530,7 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
     renderspuPerformMakeCurrent(window, nativeWindow, context);
 }
 
-GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
+GLboolean renderspuWinInitWithVisual( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
 {
     crMemset(window, 0, sizeof (*window));
     RTCritSectInit(&window->CompositorLock);
@@ -493,6 +578,8 @@ GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual,
     
     window->visible = !!showIt;
 
+    window->cRefs = 1;
+
     CRASSERT(window->visual == visual);
     return GL_TRUE;
 }
@@ -500,7 +587,7 @@ GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual,
 /*
  * Window functions
  */
-GLboolean renderspuWindowInit(WindowInfo *pWindow, const char *dpyName, GLint visBits, GLint id)
+GLboolean renderspuWinInit(WindowInfo *pWindow, const char *dpyName, GLint visBits, GLint id)
 {
     VisualInfo *visual;
 
@@ -520,7 +607,7 @@ GLboolean renderspuWindowInit(WindowInfo *pWindow, const char *dpyName, GLint vi
     crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
     */
     /* Have GLX/WGL/AGL create the window */
-    if (!renderspuWindowInitWithVisual( pWindow, visual, 0, id ))
+    if (!renderspuWinInitWithVisual( pWindow, visual, 0, id ))
     {
         crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
         return GL_FALSE;
@@ -552,16 +639,11 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
     }
 
     /* Allocate WindowInfo */
-    window = (WindowInfo *) crCalloc(sizeof(WindowInfo));
+    window = renderspuWinCreate(visBits, id);
+
     if (!window)
     {
-        crWarning( "Render SPU: Couldn't create a window" );
-        return -1;
-    }
-    
-    if (!renderspuWindowInit(window, dpyName, visBits, id))
-    {
-        crWarning("renderspuWindowInit failed");
+        crWarning("renderspuWinCreate failed");
         crFree(window);
         return -1;
     }
@@ -576,60 +658,9 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
     return renderspuWindowCreateEx( dpyName, visBits, 0 );
 }
 
-static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
+void renderspuWinReleaseCb(void*pvWindow)
 {
-    ContextInfo *pCtx = (ContextInfo *) data1;
-    WindowInfo *pWindow = data2;
-    (void) key;
-
-    if (pCtx->currentWindow==pWindow)
-    {
-        WindowInfo* pDummy = renderspuGetDummyWindow(pCtx->BltInfo.Base.visualBits);
-        if (pDummy)
-        {
-            renderspuPerformMakeCurrent(pDummy, 0, pCtx);
-        }
-        else
-        {
-            crWarning("failed to get dummy window");
-            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, pCtx->BltInfo.Base.id);
-        }
-    }
-}
-
-void renderspuWindowTermBase( WindowInfo *window )
-{
-    renderspuVBoxCompositorSet(window, NULL);
-    renderspuVBoxPresentBlitterCleanup(window);
-    renderspu_SystemDestroyWindow( window );
-    RTCritSectDelete(&window->CompositorLock);
-}
-
-void renderspuWindowTerm( WindowInfo *window )
-{
-    GET_CONTEXT(pOldCtx);
-    WindowInfo * pOldWindow = pOldCtx ? pOldCtx->currentWindow : NULL;
-    CRASSERT(!pOldCtx == !pOldWindow);
-    /* ensure no concurrent draws can take place */
-    renderspuWindowTermBase(window);
-    /* check if this window is bound to some ctx. Note: window pointer is already freed here */
-    crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
-    /* restore current context */
-    {
-        GET_CONTEXT(pNewCtx);
-        WindowInfo * pNewWindow = pNewCtx ? pNewCtx->currentWindow : NULL;
-        CRASSERT(!pNewCtx == !pNewWindow);
-
-        if (pOldWindow == window)
-            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
-        else if (pNewCtx != pOldCtx || pOldWindow != pNewWindow)
-        {
-            if (pOldCtx)
-                renderspuPerformMakeCurrent(pOldWindow, 0, pOldCtx);
-            else
-                renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
-        }
-    }
+    renderspuWinRelease((WindowInfo*)pvWindow);
 }
 
 void
@@ -646,10 +677,14 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         crDebug("Render SPU: Destroy window (%d)", win);
-        renderspuWindowTerm( window );
+        /* since os-specific backend can hold its own reference to the window object (e.g. on OSX),
+         * we need to explicitly issue a window destroy command
+         * this ensures the backend will eventually release the reference,
+         * the window object itself will remain valid until its ref count reaches zero */
+        renderspuWinTerm( window );
 
         /* remove window info from hash table, and free it */
-        crHashtableDelete(render_spu.windowTable, win, crFree);
+        crHashtableDelete(render_spu.windowTable, win, renderspuWinReleaseCb);
 
     }
     else {

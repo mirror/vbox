@@ -1412,6 +1412,9 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
            We need to avoid concurrency though, so we cleanup some data right away via a cleanupData call */
         [self performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];
     }
+    
+    renderspuWinRelease(m_pWinInfo);
+    
     DEBUG_FUNC_LEAVE();
 }
 
@@ -2478,6 +2481,8 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
     VBoxMainThreadTaskRunner *pRunner = [VBoxMainThreadTaskRunner globalInstance];
     /* make sure all tasks are run, to preserve the order */
     [pRunner runTasksSyncIfPossible];
+    
+    renderspuWinRetain(pWinInfo);
 
     if (renderspuCalloutAvailable())
     {
@@ -2500,6 +2505,9 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
         });
 #endif
     }
+    
+    if (!*ppView)
+        renderspuWinRelease(pWinInfo);
     
     [pPool release];
     

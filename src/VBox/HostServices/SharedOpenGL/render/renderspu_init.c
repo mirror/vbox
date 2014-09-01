@@ -427,8 +427,8 @@ static void DeleteContextCallback( void *data )
 static void DeleteWindowCallback( void *data )
 {
     WindowInfo *window = (WindowInfo *) data;
-    renderspuWindowTermBase(window);
-    crFree(window);
+    renderspuWinTermOnShutdown(window);
+    renderspuWinRelease(window);
 }
 
 static void DeleteBlitterCallback( void *data )
