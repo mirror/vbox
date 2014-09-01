@@ -57,7 +57,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Machine_S_Save,
     UIActionIndexRT_M_Machine_S_Shutdown,
     UIActionIndexRT_M_Machine_S_PowerOff,
+#ifndef RT_OS_DARWIN
     UIActionIndexRT_M_Machine_S_Close,
+#endif /* !RT_OS_DARWIN */
 
     /* 'View' menu actions: */
     UIActionIndexRT_M_View,
