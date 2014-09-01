@@ -513,9 +513,9 @@ public:
         copyFrom(that.raw());
     }
 
-    Utf8Str(CBSTR that)
+    Utf8Str(CBSTR that, size_t a_cchSize = RTSTR_MAX)
     {
-        copyFrom(that);
+        copyFrom(that, a_cchSize);
     }
 
     Utf8Str(const char *a_pszSrc, size_t a_cchSrc)
@@ -717,7 +717,7 @@ public:
     static const Utf8Str Empty;
 protected:
 
-    void copyFrom(CBSTR a_pbstr);
+    void copyFrom(CBSTR a_pbstr, size_t a_cchSize = RTSTR_MAX);
     HRESULT copyFromEx(CBSTR a_pbstr);
     HRESULT copyFromExNComRC(const char *a_pcszSrc, size_t a_offSrc, size_t a_cchSrc);
 
