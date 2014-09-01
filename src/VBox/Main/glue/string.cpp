@@ -178,17 +178,17 @@ size_t Utf8Str::parseKeyValue(Utf8Str &key, Utf8Str &value, size_t pos, const Ut
  *
  * @param   a_pbstr         The source string.  The caller guarantees that this
  *                          is valid UTF-16.
- * @param   a_cbSize        The number of characters to be copied. If set to RTSTR_MAX,
+ * @param   a_cwcMax        The number of characters to be copied. If set to RTSTR_MAX,
  *                          the entire string will be copied.
  *
  * @sa      RTCString::copyFromN
  */
-void Utf8Str::copyFrom(CBSTR a_pbstr, size_t a_cchSize)
+void Utf8Str::copyFrom(CBSTR a_pbstr, size_t a_cwcMax)
 {
     if (a_pbstr && *a_pbstr)
     {
         int vrc = RTUtf16ToUtf8Ex((PCRTUTF16)a_pbstr,
-                                  a_cchSize,        // size_t cwcString: translate entire string
+                                  a_cwcMax,        // size_t cwcString: translate entire string
                                   &m_psz,           // char **ppsz: output buffer
                                   0,                // size_t cch: if 0, func allocates buffer in *ppsz
                                   &m_cch);          // size_t *pcch: receives the size of the output string, excluding the terminator.
