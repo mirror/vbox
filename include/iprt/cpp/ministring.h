@@ -32,7 +32,7 @@
 #include <iprt/cpp/list.h>
 
 #include <new>
-#include <utility>
+#include <algorithm>
 
 
 /** @defgroup grp_rt_cpp_string     C++ String support
