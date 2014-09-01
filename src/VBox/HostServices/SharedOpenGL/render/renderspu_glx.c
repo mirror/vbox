@@ -447,7 +447,7 @@ static int renderspuWinCmdInit()
             GLboolean bRc = renderspuInitVisual(&render_spu.WinCmdVisual, dpyName, render_spu.default_visual);
             if (bRc)
             {
-                bRc = renderspuWindowInitWithVisual(&render_spu.WinCmdWindow, &render_spu.WinCmdVisual, GL_FALSE, CR_RENDER_WINCMD_ID);
+                bRc = renderspuWinInitWithVisual(&render_spu.WinCmdWindow, &render_spu.WinCmdVisual, GL_FALSE, CR_RENDER_WINCMD_ID);
                 if (bRc)
                 {
                     XSelectInput(render_spu.WinCmdVisual.dpy, render_spu.WinCmdWindow.window, StructureNotifyMask);
@@ -457,7 +457,7 @@ static int renderspuWinCmdInit()
                 }
                 else
                 {
-                    crError("renderspuWindowInitWithVisual failed");
+                    crError("renderspuWinInitWithVisual failed");
                 }
                 /* there is no visual destroy impl currently
                  * @todo: implement */
@@ -485,7 +485,7 @@ static void renderspuWinCmdTerm()
 {
     /* the window is not in the table, this will just ensure the key is freed */
     crHashtableDelete(render_spu.windowTable, CR_RENDER_WINCMD_ID, NULL);
-    renderspuWindowTerm(&render_spu.WinCmdWindow);
+    renderspuWinCleanup(&render_spu.WinCmdWindow);
     crFreeHashtable(render_spu.pWinToInfoTable, NULL);
     /* we do not have visual destroy functionality 
      * @todo implement */
