@@ -4220,6 +4220,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (iVerbosity && cExtMax >= 7)
     {
         uint32_t uEDX = pVM->cpum.s.aGuestCpuIdExt[7].edx;
+
         pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n", fSupportsInvariantTsc);
         pHlp->pfnPrintf(pHlp, "APM Features:                   ");
         if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " TS");
