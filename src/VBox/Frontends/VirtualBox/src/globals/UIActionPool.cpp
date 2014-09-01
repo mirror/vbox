@@ -58,6 +58,10 @@ private:
 
 UIMenu::UIMenu()
     : m_fShowToolTip(false)
+#ifdef Q_WS_MAC
+    , m_fConsumable(false)
+    , m_fConsumed(false)
+#endif /* Q_WS_MAC */
 {
 }
 
@@ -96,6 +100,11 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     /* By default there is no specific menu role.
      * It will be set explicitly later. */
     setMenuRole(QAction::NoRole);
+}
+
+UIMenu* UIAction::menu() const
+{
+    return qobject_cast<UIMenu*>(QAction::menu());
 }
 
 UIActionPolymorphic* UIAction::toActionPolymorphic()

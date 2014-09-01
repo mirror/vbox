@@ -79,8 +79,7 @@ enum UIActionRestrictionLevel
 };
 
 
-/** QMenu extension
-  * allowing to show tool-tips. */
+/** QMenu extension. */
 class UIMenu : public QMenu
 {
     Q_OBJECT;
@@ -93,6 +92,18 @@ public:
     /** Defines whether tool-tip should be shown. */
     void setShowToolTip(bool fShowToolTips) { m_fShowToolTip = fShowToolTips; }
 
+#ifdef Q_WS_MAC
+    /** Mac OS X: Returns whether this menu is consumable by the menu-bar. */
+    bool isConsumable() const { return m_fConsumable; }
+    /** Mac OS X: Defines whether this menu is @a fConsumable by the menu-bar. */
+    void setConsumable(bool fConsumable) { m_fConsumable = fConsumable; }
+
+    /** Mac OS X: Returns whether this menu is consumed by the menu-bar. */
+    bool isConsumed() const { return m_fConsumed; }
+    /** Mac OS X: Defines whether this menu is @a fConsumed by the menu-bar. */
+    void setConsumed(bool fConsumed) { m_fConsumed = fConsumed; }
+#endif /* Q_WS_MAC */
+
 protected:
 
     /** General event handler. */
@@ -102,6 +113,13 @@ private:
 
     /** Holds whether tool-tip should be shown. */
     bool m_fShowToolTip;
+
+#ifdef Q_WS_MAC
+    /** Mac OS X: Holds whether this menu can be consumed by the menu-bar. */
+    bool m_fConsumable;
+    /** Mac OS X: Holds whether this menu is consumed by the menu-bar. */
+    bool m_fConsumed;
+#endif /* Q_WS_MAC */
 };
 
 
@@ -114,6 +132,9 @@ public:
 
     /** Returns action type. */
     UIActionType type() const { return m_type; }
+
+    /** Returns menu contained by this action. */
+    UIMenu* menu() const;
 
     /** Returns action-pool this action belongs to. */
     UIActionPool* actionPool() const { return m_pActionPool; }
