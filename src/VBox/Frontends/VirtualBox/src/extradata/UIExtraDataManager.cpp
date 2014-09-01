@@ -2551,7 +2551,7 @@ UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRun
     return result;
 }
 
-void UIExtraDataManager::setRestrictedMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID)
+void UIExtraDataManager::setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID)
 {
     /* We have MenuApplicationActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
