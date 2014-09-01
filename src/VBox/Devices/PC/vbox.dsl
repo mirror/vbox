@@ -919,7 +919,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         "layout-id",                                                                                                                               
                         Buffer (0x04)                                                                                                                              
                         {                                                                                                                                          
-                            /* 0000 */    0x07, 0x00, 0x00, 0x00                                                                                                   
+                            /* 04 */    0x04, 0x00, 0x00, 0x00                                                                                                   
                         },                                                                                                                                         
                                                                                                                                                                    
                         "PinConfigurations",                                                                                                                       
