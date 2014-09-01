@@ -138,7 +138,9 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
-    RT_ASSERT_PREEMPTIBLE();
+    /* This can be called as part of IPRT init, in which case we have no thread preempt information yet. */
+    if (g_frtSolInitDone)
+        RT_ASSERT_PREEMPTIBLE();
 
     *phKrnlInfo = NIL_RTDBGKRNLINFO;
     PRTDBGKRNLINFOINT pThis = (PRTDBGKRNLINFOINT)RTMemAllocZ(sizeof(*pThis));
@@ -181,7 +183,8 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
         return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
-    RT_ASSERT_PREEMPTIBLE();
+    if (g_frtSolInitDone)
+        RT_ASSERT_PREEMPTIBLE();
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     if (cRefs == 0)
@@ -203,7 +206,8 @@ RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *ps
     AssertPtrReturn(pszMember, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszStructure, VERR_INVALID_PARAMETER);
     AssertPtrReturn(poffMember, VERR_INVALID_PARAMETER);
-    RT_ASSERT_PREEMPTIBLE();
+    if (g_frtSolInitDone)
+        RT_ASSERT_PREEMPTIBLE();
 
     int rc = VERR_NOT_FOUND;
     ctf_id_t TypeIdent = ctf_lookup_by_name(pThis->pGenUnixCTF, pszStructure);
@@ -231,7 +235,8 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
     AssertPtrReturn(pszSymbol, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(ppvSymbol, VERR_INVALID_PARAMETER);
     AssertReturn(!pszModule, VERR_MODULE_NOT_FOUND);
-    RT_ASSERT_PREEMPTIBLE();
+    if (g_frtSolInitDone)
+        RT_ASSERT_PREEMPTIBLE();
 
     uintptr_t uValue = kobj_getsymvalue((char *)pszSymbol, 1 /* only kernel */);
     if (ppvSymbol)
