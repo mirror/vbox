@@ -3963,11 +3963,17 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     "\n"
                     "         RAW Extended CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
+    bool fSupportsInvariantTsc = false;
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdExt[i];
         ASMCpuIdExSlow(0x80000000 | i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
+        if (   i == 7
+            && (Host.edx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR))
+        {
+            fSupportsInvariantTsc = true;
+        }
         pHlp->pfnPrintf(pHlp,
                         "Gst: %08x  %08x %08x %08x %08x%s\n"
                         "Hst:           %08x %08x %08x %08x\n",
@@ -4214,7 +4220,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (iVerbosity && cExtMax >= 7)
     {
         uint32_t uEDX = pVM->cpum.s.aGuestCpuIdExt[7].edx;
-
+        pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n", fSupportsInvariantTsc);
         pHlp->pfnPrintf(pHlp, "APM Features:                   ");
         if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " TS");
         if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " FID");
@@ -4223,8 +4229,12 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TM");
         if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " STC");
         for (unsigned iBit = 6; iBit < 32; iBit++)
-            if (uEDX & RT_BIT(iBit))
+        {
+            if (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
+                pHlp->pfnPrintf(pHlp, " TSCINVARIANT");
+            else if (uEDX & RT_BIT(iBit))
                 pHlp->pfnPrintf(pHlp, " %d", iBit);
+        }
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
