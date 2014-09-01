@@ -32,6 +32,7 @@
 #include <iprt/cpp/list.h>
 
 #include <new>
+#include <utility>
 
 
 /** @defgroup grp_rt_cpp_string     C++ String support
@@ -875,6 +876,18 @@ public:
      */
     static RTCString join(const RTCList<RTCString, RTCString *> &a_rList,
                           const RTCString &a_rstrSep = "");
+
+    /* Swaps the values of the two strings.
+     * Used instead of copying when the string which
+     * is copied will no longer be needed after copying
+     * Both of two strings remain valid.
+     * The method is exception-safe */
+    inline void swap(RTCString &that) throw()
+    {
+        std::swap(m_psz, that.m_psz);
+        std::swap(m_cch, that.m_cch);
+        std::swap(m_cbAllocated, that.m_cbAllocated);
+    }
 
 protected:
 

@@ -77,6 +77,8 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <QMTranslator.h>
+
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
 # include "win/VBoxComEvents.h"
