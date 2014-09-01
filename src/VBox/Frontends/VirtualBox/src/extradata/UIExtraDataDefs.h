@@ -314,15 +314,18 @@ public:
     /** Runtime UI: Menu types. */
     enum RuntimeMenuType
     {
-        RuntimeMenuType_Invalid = 0,
-        RuntimeMenuType_Machine = RT_BIT(0),
-        RuntimeMenuType_View    = RT_BIT(1),
-        RuntimeMenuType_Devices = RT_BIT(2),
+        RuntimeMenuType_Invalid     = 0,
+#ifdef RT_OS_DARWIN
+        RuntimeMenuType_Application = RT_BIT(0),
+#endif /* RT_OS_DARWIN */
+        RuntimeMenuType_Machine     = RT_BIT(1),
+        RuntimeMenuType_View        = RT_BIT(2),
+        RuntimeMenuType_Devices     = RT_BIT(3),
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        RuntimeMenuType_Debug   = RT_BIT(3),
+        RuntimeMenuType_Debug       = RT_BIT(4),
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        RuntimeMenuType_Help    = RT_BIT(4),
-        RuntimeMenuType_All     = 0xFF
+        RuntimeMenuType_Help        = RT_BIT(5),
+        RuntimeMenuType_All         = 0xFF
     };
 
     /** Runtime UI: Menu "Machine": Action types. */

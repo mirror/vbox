@@ -68,6 +68,7 @@ private:
 
     /** Prepare routine. */
     void prepare();
+
 #ifdef Q_WS_MAC
     /** Prepare named menu routine. */
     QMenu* prepareNamedMenu(const QString &strName);
@@ -80,6 +81,7 @@ private:
 #endif
     /** Prepare copied action routine. */
     QAction* prepareCopiedAction(QMenu *pMenu, const UIAction *pAction);
+
     /** Prepare menus routine. */
     void prepareMenus();
 #ifdef Q_WS_MAC
@@ -101,6 +103,10 @@ private:
 
     /** Updates menus routine. */
     void updateMenus();
+#ifdef Q_WS_MAC
+    /** Mac OS X: Updates 'Application' menu routine. */
+    void updateMenuApplication();
+#endif /* Q_WS_MAC */
     /** Updates 'Machine' menu routine. */
     void updateMenuMachine();
     /** Updates 'View' menu routine. */
@@ -178,6 +184,21 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, vboxGlobal().managedVMUuid());
             break;
         }
+#ifdef Q_WS_MAC
+        case UIExtraDataMetaDefs::RuntimeMenuType_Application:
+        {
+            /* Get sender type: */
+            const UIExtraDataMetaDefs::MenuApplicationActionType type =
+                static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(pAction->property("type").toInt());
+            /* Load current menu-bar restrictions: */
+            UIExtraDataMetaDefs::MenuApplicationActionType restrictions = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid());
+            /* Invert restriction for sender type: */
+            restrictions = (UIExtraDataMetaDefs::MenuApplicationActionType)(restrictions ^ type);
+            /* Save updated menu-bar restrictions: */
+            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            break;
+        }
+#endif /* Q_WS_MAC */
         case UIExtraDataMetaDefs::RuntimeMenuType_Machine:
         {
             /* Get sender type: */
@@ -328,7 +349,7 @@ QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
     AssertPtrReturn(pNamedMenu, 0);
     {
         /* Configure named menu: */
-        pNamedMenu->setProperty("class", UIExtraDataMetaDefs::RuntimeMenuType_Help);
+        pNamedMenu->setProperty("class", UIExtraDataMetaDefs::RuntimeMenuType_Application);
         /* Get named menu action: */
         QAction *pNamedMenuAction = pNamedMenu->menuAction();
         AssertPtrReturn(pNamedMenuAction, 0);
@@ -595,6 +616,9 @@ void UIMenuBarEditorWidget::updateMenus()
     }
 
     /* Update known menu-bar menus: */
+#ifdef Q_WS_MAC
+    updateMenuApplication();
+#endif /* Q_WS_MAC */
     updateMenuMachine();
     updateMenuView();
     updateMenuDevices();
@@ -603,6 +627,37 @@ void UIMenuBarEditorWidget::updateMenus()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
     updateMenuHelp();
 }
+
+#ifdef Q_WS_MAC
+void UIMenuBarEditorWidget::updateMenuApplication()
+{
+    /* Recache menu-bar configuration: */
+    const UIExtraDataMetaDefs::MenuApplicationActionType restrictionsMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid());
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuApplicationActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuApplicationActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuApplicationActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuApplicationActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuApplicationActionType_Invalid & MenuApplicationActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuApplicationActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(restrictionsMenuApplication & enumValue));
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMenuBarEditorWidget::updateMenuMachine()
 {

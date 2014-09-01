@@ -452,14 +452,17 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuType &
     QString strResult;
     switch (runtimeMenuType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuType_Machine: strResult = "Machine"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_View:    strResult = "View"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_Devices: strResult = "Devices"; break;
+#ifdef RT_OS_DARWIN
+        case UIExtraDataMetaDefs::RuntimeMenuType_Application: strResult = "Application"; break;
+#endif /* RT_OS_DARWIN */
+        case UIExtraDataMetaDefs::RuntimeMenuType_Machine:     strResult = "Machine"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_View:        strResult = "View"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Devices:     strResult = "Devices"; break;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        case UIExtraDataMetaDefs::RuntimeMenuType_Debug:   strResult = "Debug"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Debug:       strResult = "Debug"; break;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        case UIExtraDataMetaDefs::RuntimeMenuType_Help:    strResult = "Help"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_All:     strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_Help:        strResult = "Help"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuType_All:         strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", runtimeMenuType));
@@ -474,15 +477,18 @@ template<> UIExtraDataMetaDefs::RuntimeMenuType fromInternalString<UIExtraDataMe
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;  QList<UIExtraDataMetaDefs::RuntimeMenuType> values;
-    keys << "Machine"; values << UIExtraDataMetaDefs::RuntimeMenuType_Machine;
-    keys << "View";    values << UIExtraDataMetaDefs::RuntimeMenuType_View;
-    keys << "Devices"; values << UIExtraDataMetaDefs::RuntimeMenuType_Devices;
+    QStringList keys;      QList<UIExtraDataMetaDefs::RuntimeMenuType> values;
+#ifdef RT_OS_DARWIN
+    keys << "Application"; values << UIExtraDataMetaDefs::RuntimeMenuType_Application;
+#endif /* RT_OS_DARWIN */
+    keys << "Machine";     values << UIExtraDataMetaDefs::RuntimeMenuType_Machine;
+    keys << "View";        values << UIExtraDataMetaDefs::RuntimeMenuType_View;
+    keys << "Devices";     values << UIExtraDataMetaDefs::RuntimeMenuType_Devices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    keys << "Debug";   values << UIExtraDataMetaDefs::RuntimeMenuType_Debug;
+    keys << "Debug";       values << UIExtraDataMetaDefs::RuntimeMenuType_Debug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-    keys << "Help";    values << UIExtraDataMetaDefs::RuntimeMenuType_Help;
-    keys << "All";     values << UIExtraDataMetaDefs::RuntimeMenuType_All;
+    keys << "Help";        values << UIExtraDataMetaDefs::RuntimeMenuType_Help;
+    keys << "All";         values << UIExtraDataMetaDefs::RuntimeMenuType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::RuntimeMenuType_Invalid;
