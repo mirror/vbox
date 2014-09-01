@@ -877,11 +877,11 @@ public:
     static RTCString join(const RTCList<RTCString, RTCString *> &a_rList,
                           const RTCString &a_rstrSep = "");
 
-    /* Swaps the values of the two strings.
-     * Used instead of copying when the string which
-     * is copied will no longer be needed after copying
-     * Both of two strings remain valid.
-     * The method is exception-safe */
+    /**
+     * Swaps two strings in a fast way.
+     * Exception safe.
+     * 
+     * @param   that  the string to swap for */
     inline void swap(RTCString &that) throw()
     {
         std::swap(m_psz, that.m_psz);
