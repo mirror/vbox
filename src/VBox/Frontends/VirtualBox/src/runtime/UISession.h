@@ -31,7 +31,6 @@
 
 /* Forward declarations: */
 class QMenu;
-class QMenuBar;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
@@ -40,9 +39,10 @@ class CSession;
 class CUSBDevice;
 class CNetworkAdapter;
 class CMediumAttachment;
-#ifndef Q_WS_MAC
-class QIcon;
+#ifdef Q_WS_MAC
 class QMenuBar;
+#else /* !Q_WS_MAC */
+class QIcon;
 #endif /* !Q_WS_MAC */
 
 /* CConsole callback event types: */

@@ -924,8 +924,13 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltShutdown()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff), SIGNAL(triggered()),
             this, SLOT(sltPowerOff()));
+#ifdef RT_OS_DARWIN
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Close), SIGNAL(triggered()),
+            this, SLOT(sltClose()));
+#else /* !RT_OS_DARWIN */
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Close), SIGNAL(triggered()),
             this, SLOT(sltClose()));
+#endif /* !RT_OS_DARWIN */
 
     /* 'View' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
@@ -965,8 +970,13 @@ void UIMachineLogic::prepareActionConnections()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* 'Help' actions connections: */
+#ifdef RT_OS_DARWIN
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()),
+            this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
+#else /* !RT_OS_DARWIN */
     connect(actionPool()->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
             this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
+#endif /* !RT_OS_DARWIN */
 }
 
 void UIMachineLogic::prepareHandlers()
@@ -2238,11 +2248,19 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
     if (!isMachineWindowsCreated())
         return;
 
+#ifdef RT_OS_DARWIN
+    /* Check that we do NOT handling that already: */
+    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
+#else /* !RT_OS_DARWIN */
     /* Check that we do NOT handling that already: */
     if (actionPool()->action(UIActionIndex_Simple_Preferences)->data().toBool())
         return;
     /* Remember that we handling that already: */
     actionPool()->action(UIActionIndex_Simple_Preferences)->setData(true);
+#endif /* !RT_OS_DARWIN */
 
     /* Create and execute global settings window: */
     QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
@@ -2251,8 +2269,13 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
     if (pDialog)
         delete pDialog;
 
+#ifdef RT_OS_DARWIN
+    /* Remember that we do NOT handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
+#else /* !RT_OS_DARWIN */
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndex_Simple_Preferences)->setData(false);
+#endif /* !RT_OS_DARWIN */
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,

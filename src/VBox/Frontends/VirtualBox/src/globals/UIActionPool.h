@@ -52,8 +52,15 @@ enum UIActionType
 enum UIActionIndex
 {
     /* Various actions: */
-    UIActionIndex_Simple_Preferences,
     UIActionIndex_Simple_LogDialog,
+
+#ifdef RT_OS_DARWIN
+    /* 'Application' menu actions: */
+    UIActionIndex_M_Application,
+    UIActionIndex_M_Application_S_About,
+    UIActionIndex_M_Application_S_Preferences,
+    UIActionIndex_M_Application_S_Close,
+#endif /* RT_OS_DARWIN */
 
     /* 'Help' menu actions: */
     UIActionIndex_Menu_Help,
@@ -64,7 +71,10 @@ enum UIActionIndex
     UIActionIndex_Simple_NetworkAccessManager,
     UIActionIndex_Simple_CheckForUpdates,
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef RT_OS_DARWIN
     UIActionIndex_Simple_About,
+    UIActionIndex_Simple_Preferences,
+#endif /* !RT_OS_DARWIN */
 
     /* Maximum index: */
     UIActionIndex_Max
@@ -401,6 +411,10 @@ protected:
     virtual void updateMenu(int iIndex);
     /** Update menus routine. */
     virtual void updateMenus() = 0;
+#ifdef RT_OS_DARWIN
+    /** Update 'Application' menu routine. */
+    virtual void updateMenuApplication();
+#endif /* RT_OS_DARWIN */
     /** Update 'Help' menu routine. */
     virtual void updateMenuHelp();
 

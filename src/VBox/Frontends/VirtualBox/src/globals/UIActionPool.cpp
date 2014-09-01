@@ -421,6 +421,70 @@ protected:
     }
 };
 
+#ifdef RT_OS_DARWIN
+class UIActionMenuApplication : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuApplication(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {
+        menu()->setConsumable(true);
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Application; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Application); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&VirtualBox"));
+    }
+};
+
+class UIActionSimplePerformClose : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformClose(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/exit_16px.png")
+    {
+        setMenuRole(QAction::QuitRole);
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_Close; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Close");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("Q");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Close..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
+    }
+};
+#endif /* RT_OS_DARWIN */
+
 class UIActionMenuHelp : public UIActionMenu
 {
     Q_OBJECT;
@@ -742,7 +806,7 @@ bool UIActionPool::isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicati
 void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction)
 {
     m_restrictedActionsMenuApplication[level] = restriction;
-    m_invalidations << UIActionIndex_Menu_Help;
+    m_invalidations << UIActionIndex_M_Application;
 }
 #endif /* Q_WS_MAC */
 
@@ -780,8 +844,15 @@ void UIActionPool::prepare()
 void UIActionPool::preparePool()
 {
     /* Create various actions: */
-    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
     m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
+
+#ifdef RT_OS_DARWIN
+    /* Create 'Application' actions: */
+    m_pool[UIActionIndex_M_Application] = new UIActionMenuApplication(this);
+    m_pool[UIActionIndex_M_Application_S_About] = new UIActionSimpleAbout(this);
+    m_pool[UIActionIndex_M_Application_S_Preferences] = new UIActionSimplePreferences(this);
+    m_pool[UIActionIndex_M_Application_S_Close] = new UIActionSimplePerformClose(this);
+#endif /* RT_OS_DARWIN */
 
     /* Create 'Help' actions: */
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
@@ -792,9 +863,15 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
     m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifndef RT_OS_DARWIN
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
+    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
+#endif /* !RT_OS_DARWIN */
 
     /* Prepare update-handlers for known menus: */
+#ifdef RT_OS_DARWIN
+    m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
+#endif /* RT_OS_DARWIN */
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
 
     /* Invalidate all known menus: */
@@ -877,6 +954,49 @@ void UIActionPool::updateMenu(int iIndex)
     if (m_invalidations.contains(iIndex) && m_menuUpdateHandlers.contains(iIndex))
         (this->*(m_menuUpdateHandlers.value(iIndex).ptf))();
 }
+
+#ifdef RT_OS_DARWIN
+void UIActionPool::updateMenuApplication()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_Application)->menu();
+    AssertReturnVoid(pMenu && pMenu->isConsumable());
+    /* Clear contents: */
+    if (!pMenu->isConsumed())
+        pMenu->clear();
+
+    /* 'About' action: */
+    const bool fAllowToShowActionAbout = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
+    action(UIActionIndex_M_Application_S_About)->setEnabled(fAllowToShowActionAbout);
+    action(UIActionIndex_M_Application_S_About)->setVisible(fAllowToShowActionAbout);
+    if (!pMenu->isConsumed())
+    {
+        pMenu->addAction(action(UIActionIndex_M_Application_S_About));
+        connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
+                &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+    }
+
+    /* Only for Runtime pool: */
+    if (type() == UIActionPoolType_Runtime)
+    {
+        /* 'Preferences' action: */
+        const bool fAllowToShowActionPreferences = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+        action(UIActionIndex_M_Application_S_Preferences)->setEnabled(fAllowToShowActionPreferences);
+        action(UIActionIndex_M_Application_S_Preferences)->setVisible(fAllowToShowActionPreferences);
+        if (!pMenu->isConsumed())
+            pMenu->addAction(action(UIActionIndex_M_Application_S_Preferences));
+    }
+
+    /* Close action: */
+    const bool fAllowToShowActionClose = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
+    action(UIActionIndex_M_Application_S_Close)->setEnabled(fAllowToShowActionClose);
+    if (!pMenu->isConsumed())
+        pMenu->addAction(action(UIActionIndex_M_Application_S_Close));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_Application);
+}
+#endif /* RT_OS_DARWIN */
 
 void UIActionPool::updateMenuHelp()
 {
@@ -980,13 +1100,9 @@ void UIActionPool::updateMenuHelp()
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
+#ifndef RT_OS_DARWIN
     /* 'About' action: */
-    const bool fAllowToShowActionAbout =
-#ifdef Q_WS_MAC
-        isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-#else /* !Q_WS_MAC */
-        isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
-#endif /* Q_WS_MAC */
+    const bool fAllowToShowActionAbout = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
     action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
     if (fAllowToShowActionAbout)
     {
@@ -999,16 +1115,12 @@ void UIActionPool::updateMenuHelp()
     if (type() == UIActionPoolType_Runtime)
     {
         /* 'Preferences' action: */
-        const bool fAllowToShowActionPreferences =
-#ifdef Q_WS_MAC
-            isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
-#else /* !Q_WS_MAC */
-            isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
-#endif /* Q_WS_MAC */
+        const bool fAllowToShowActionPreferences = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
         action(UIActionIndex_Simple_Preferences)->setEnabled(fAllowToShowActionPreferences);
         if (fAllowToShowActionPreferences)
             pMenu->addAction(action(UIActionIndex_Simple_Preferences));
     }
+#endif /* !RT_OS_DARWIN */
 
 
     /* Mark menu as valid: */

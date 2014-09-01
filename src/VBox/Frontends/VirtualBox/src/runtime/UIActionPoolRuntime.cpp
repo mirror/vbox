@@ -523,6 +523,7 @@ protected:
     }
 };
 
+#ifndef RT_OS_DARWIN
 class UIActionSimplePerformClose : public UIActionSimple
 {
     Q_OBJECT;
@@ -538,23 +539,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const
-    {
-#ifdef Q_WS_MAC
-        return UIExtraDataMetaDefs::MenuApplicationActionType_Close;
-#else /* !Q_WS_MAC */
-        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;
-#endif /* !Q_WS_MAC */
-    }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;}
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const
-    {
-#ifdef Q_WS_MAC
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
-#else /* !Q_WS_MAC */
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
-#endif /* !Q_WS_MAC */
-    }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);}
 
     QString shortcutExtraDataID() const
     {
@@ -572,6 +559,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
     }
 };
+#endif /* !RT_OS_DARWIN */
 
 class UIActionMenuView : public UIActionMenu
 {
@@ -1788,7 +1776,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_Save] = new UIActionSimplePerformSave(this);
     m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
     m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
+#ifndef RT_OS_DARWIN
     m_pool[UIActionIndexRT_M_Machine_S_Close] = new UIActionSimplePerformClose(this);
+#endif /* !RT_OS_DARWIN */
 
     /* 'View' actions: */
     m_pool[UIActionIndexRT_M_View] = new UIActionMenuView(this);
@@ -1978,6 +1968,13 @@ void UIActionPoolRuntime::updateMenus()
 {
     /* Clear menu list: */
     m_mainMenus.clear();
+
+#ifdef RT_OS_DARWIN
+    /* 'Application' menu: */
+    action(UIActionIndex_M_Application)->setVisible(false);
+    m_mainMenus << action(UIActionIndex_M_Application)->menu();
+    updateMenuApplication();
+#endif /* RT_OS_DARWIN */
 
     /* 'Machine' menu: */
     const bool fAllowToShowMenuMachine = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Machine);
@@ -2201,15 +2198,12 @@ void UIActionPoolRuntime::updateMenuMachine()
 #endif /* !Q_WS_MAC */
 
 
+#ifndef Q_WS_MAC
     /* Close action: */
-    const bool fAllowToShowActionClose =
-#ifdef Q_WS_MAC
-        isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
-#else /* !Q_WS_MAC */
-        isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
-#endif /* !Q_WS_MAC */
+    const bool fAllowToShowActionClose = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
     pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
     action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(fAllowToShowActionClose);
+#endif /* !Q_WS_MAC */
 
 
     /* Mark menu as valid: */

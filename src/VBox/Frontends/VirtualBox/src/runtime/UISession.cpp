@@ -1279,7 +1279,13 @@ void UISession::updateMenu()
     /* Rebuild Mac OS X menu-bar: */
     m_pMenuBar->clear();
     foreach (QMenu *pMenu, actionPool()->menus())
-        m_pMenuBar->addMenu(pMenu);
+    {
+        UIMenu *pMenuUI = qobject_cast<UIMenu*>(pMenu);
+        if (!pMenuUI->isConsumable() || !pMenuUI->isConsumed())
+            m_pMenuBar->addMenu(pMenuUI);
+        if (pMenuUI->isConsumable() && !pMenuUI->isConsumed())
+            pMenuUI->setConsumed(true);
+    }
 }
 #endif /* Q_WS_MAC */
 

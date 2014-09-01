@@ -473,8 +473,8 @@ void UIMenuBarEditorWidget::prepareMenuApplication()
     QMenu *pMenu = prepareNamedMenu("VirtualBox");
     AssertPtrReturnVoid(pMenu);
     {
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_Preferences));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_About));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
     }
 }
 #endif /* Q_WS_MAC */

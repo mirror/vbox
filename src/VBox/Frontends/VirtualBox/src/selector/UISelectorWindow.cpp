@@ -320,11 +320,19 @@ void UISelectorWindow::sltOpenExtraDataManagerWindow()
 
 void UISelectorWindow::sltShowPreferencesDialog()
 {
+#ifdef RT_OS_DARWIN
+    /* Check that we do NOT handling that already: */
+    if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
+#else /* !RT_OS_DARWIN */
     /* Check that we do NOT handling that already: */
     if (actionPool()->action(UIActionIndex_Simple_Preferences)->data().toBool())
         return;
     /* Remember that we handling that already: */
     actionPool()->action(UIActionIndex_Simple_Preferences)->setData(true);
+#endif /* !RT_OS_DARWIN */
 
     /* Don't show the inaccessible warning
      * if the user tries to open global settings: */
@@ -334,8 +342,13 @@ void UISelectorWindow::sltShowPreferencesDialog()
     UISettingsDialogGlobal dialog(this);
     dialog.execute();
 
+#ifdef RT_OS_DARWIN
+    /* Remember that we do NOT handling that already: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
+#else /* !RT_OS_DARWIN */
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndex_Simple_Preferences)->setData(false);
+#endif /* !RT_OS_DARWIN */
 }
 
 void UISelectorWindow::sltPerformExit()
@@ -1145,7 +1158,11 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 #ifdef DEBUG
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 #endif /* DEBUG */
+#ifdef RT_OS_DARWIN
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+#else /* !RT_OS_DARWIN */
     pMenu->addAction(actionPool()->action(UIActionIndex_Simple_Preferences));
+#endif /* !RT_OS_DARWIN */
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* Q_WS_MAC */
@@ -1366,7 +1383,11 @@ void UISelectorWindow::prepareConnections()
 #ifdef DEBUG
     connect(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager), SIGNAL(triggered()), this, SLOT(sltOpenExtraDataManagerWindow()));
 #endif /* DEBUG */
+#ifdef RT_OS_DARWIN
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()), this, SLOT(sltShowPreferencesDialog()));
+#else /* !RT_OS_DARWIN */
     connect(actionPool()->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()), this, SLOT(sltShowPreferencesDialog()));
+#endif /* !RT_OS_DARWIN */
     connect(actionPool()->action(UIActionIndexST_M_File_S_Close), SIGNAL(triggered()), this, SLOT(sltPerformExit()));
 
     /* 'Group' menu connections: */
