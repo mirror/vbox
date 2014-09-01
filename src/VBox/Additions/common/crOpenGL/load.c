@@ -484,6 +484,8 @@ static void stubSPUSafeTearDown(void)
 static void stubExitHandler(void)
 {
     stubSPUSafeTearDown();
+    signal(SIGTERM, SIG_DFL);
+    signal(SIGINT, SIG_DFL);
 }
 
 /**
