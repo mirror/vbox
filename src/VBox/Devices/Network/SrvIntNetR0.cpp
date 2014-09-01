@@ -2834,7 +2834,7 @@ static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTN
     if (RT_UNLIKELY(cb < sizeof(*pICMPv6)))
         return;
 
-    size_t hdrlen = 0;
+    uint32_t hdrlen = 0;
     uint8_t llaopt = RTNETIPV6_ICMP_ND_SLLA_OPT;
 
     uint8_t type = pICMPv6->icmp6_type;
@@ -2875,7 +2875,7 @@ static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTN
     while (cb >= 8)
     {
         uint8_t opt = ((uint8_t *)pOpt)[0];
-        size_t optlen = (size_t)((uint8_t *)pOpt)[1] * 8;
+        uint32_t optlen = (uint32_t)((uint8_t *)pOpt)[1] * 8;
         if (RT_UNLIKELY(cb < optlen))
             return;
 
