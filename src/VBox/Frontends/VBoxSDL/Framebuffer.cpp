@@ -393,6 +393,27 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(int64_t *winId)
     return S_OK;
 }
 
+STDMETHODIMP VBoxSDLFB::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities))
+{
+    if (ComSafeArrayOutIsNull(aCapabilities))
+        return E_POINTER;
+
+    com::SafeArray<FramebufferCapabilities_T> caps;
+
+    if (mfUpdateImage)
+    {
+        caps.resize(1);
+        caps[0] = FramebufferCapabilities_UpdateImage;
+    }
+    else
+    {
+        /* No caps to return. */
+    }
+
+    caps.detachTo(ComSafeArrayOutArg(aCapabilities));
+    return S_OK;
+}
+
 /**
  * Notify framebuffer of an update.
  *
@@ -665,11 +686,6 @@ void VBoxSDLFB::notifyChange(ULONG aScreenId)
     }
 
     resizeGuest();
-
-    if (mfUpdateImage)
-    {
-        gpDisplay->SetFramebufferUpdateMode(aScreenId, FramebufferUpdateMode_NotifyUpdateImage);
-    }
 
     gpDisplay->InvalidateAndUpdateScreen(aScreenId);
 }

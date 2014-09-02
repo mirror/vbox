@@ -594,7 +594,7 @@ HRESULT Display::init(Console *aParent)
         /* All secondary monitors are disabled at startup. */
         maFramebuffers[ul].fDisabled = ul > 0;
 
-        maFramebuffers[ul].enmFramebufferUpdateMode = FramebufferUpdateMode_NotifyUpdate;
+        maFramebuffers[ul].u32Caps = 0;
 
         maFramebuffers[ul].updateImage.pu8Address = NULL;
         maFramebuffers[ul].updateImage.cbLine = 0;
@@ -854,11 +854,15 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         return VINF_SUCCESS;
     }
 
-    SetFramebufferUpdateMode(uScreenId, FramebufferUpdateMode_NotifyUpdate);
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+    /* Reset the update mode. */
+    pFBInfo->updateImage.pSourceBitmap.setNull();
+    pFBInfo->updateImage.pu8Address = NULL;
+    pFBInfo->updateImage.cbLine = 0;
 
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
         pFBInfo->w = w;
         pFBInfo->h = h;
 
@@ -891,6 +895,35 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     }
 
     i_handleResizeCompletedEMT(uScreenId, TRUE);
+
+    bool fUpdateImage = RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_UpdateImage);
+    if (fUpdateImage && !pFBInfo->pFramebuffer.isNull())
+    {
+        ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+        HRESULT hr = QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+        if (SUCCEEDED(hr))
+        {
+            BYTE *pAddress = NULL;
+            ULONG ulWidth = 0;
+            ULONG ulHeight = 0;
+            ULONG ulBitsPerPixel = 0;
+            ULONG ulBytesPerLine = 0;
+            ULONG ulPixelFormat = 0;
+
+            hr = pSourceBitmap->QueryBitmapInfo(&pAddress,
+                                                &ulWidth,
+                                                &ulHeight,
+                                                &ulBitsPerPixel,
+                                                &ulBytesPerLine,
+                                                &ulPixelFormat);
+            if (SUCCEEDED(hr))
+            {
+                pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
+                pFBInfo->updateImage.pu8Address = pAddress;
+                pFBInfo->updateImage.cbLine = ulBytesPerLine;
+            }
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -1052,11 +1085,12 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
     {
         if (w != 0 && h != 0)
         {
-            if (RT_LIKELY(maFramebuffers[uScreenId].enmFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdate))
+            bool fUpdateImage = RT_BOOL(maFramebuffers[uScreenId].u32Caps & FramebufferCapabilities_UpdateImage);
+            if (RT_LIKELY(!fUpdateImage))
             {
                 pFramebuffer->NotifyUpdate(x, y, w, h);
             }
-            else if (maFramebuffers[uScreenId].enmFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
+            else
             {
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1194,7 +1228,8 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     {
         DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
-        if (!pFBInfo->pFramebuffer.isNull())
+        if (  !pFBInfo->pFramebuffer.isNull()
+            & RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_VisibleRegion))
         {
             /* Prepare a new array of rectangles which intersect with the framebuffer.
              */
@@ -2254,6 +2289,13 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
                         aScreenId);
 
     pFBInfo->pFramebuffer = aFramebuffer;
+
+    SafeArray<FramebufferCapabilities_T> caps;
+    pFBInfo->pFramebuffer->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(caps));
+    pFBInfo->u32Caps = 0;
+    size_t i;
+    for (i = 0; i < caps.size(); ++i)
+        pFBInfo->u32Caps |= caps[i];
 
     alock.release();
 
@@ -3437,64 +3479,6 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
     return hr;
 }
 
-HRESULT Display::setFramebufferUpdateMode(ULONG aScreenId, FramebufferUpdateMode_T aFramebufferUpdateMode)
-{
-    LogRelFlowFunc(("aScreenId %d, aFramebufferUpdateMode %d\n", aScreenId, aFramebufferUpdateMode));
-
-    HRESULT hr = S_OK;
-
-    /* Prepare without taking a lock. API has it's own locking. */
-    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-    if (aFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
-    {
-        /* A source bitmap will be needed. */
-        hr = QuerySourceBitmap(aScreenId, pSourceBitmap.asOutParam());
-    }
-
-    if (FAILED(hr))
-        return hr;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (aScreenId >= mcMonitors)
-        return setError(E_INVALIDARG, tr("SetFramebufferUpdateMode: Invalid screen %d (total %d)"),
-                        aScreenId, mcMonitors);
-
-    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
-
-    /* Reset the update mode. */
-    pFBInfo->updateImage.pSourceBitmap.setNull();
-    pFBInfo->updateImage.pu8Address = NULL;
-    pFBInfo->updateImage.cbLine = 0;
-
-    if (aFramebufferUpdateMode == FramebufferUpdateMode_NotifyUpdateImage)
-    {
-        BYTE *pAddress = NULL;
-        ULONG ulWidth = 0;
-        ULONG ulHeight = 0;
-        ULONG ulBitsPerPixel = 0;
-        ULONG ulBytesPerLine = 0;
-        ULONG ulPixelFormat = 0;
-
-        hr = pSourceBitmap->QueryBitmapInfo(&pAddress,
-                                            &ulWidth,
-                                            &ulHeight,
-                                            &ulBitsPerPixel,
-                                            &ulBytesPerLine,
-                                            &ulPixelFormat);
-        if (SUCCEEDED(hr))
-        {
-            pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
-            pFBInfo->updateImage.pu8Address = pAddress;
-            pFBInfo->updateImage.cbLine = ulBytesPerLine;
-        }
-    }
-
-    pFBInfo->enmFramebufferUpdateMode = aFramebufferUpdateMode;
-
-    return S_OK;
-}
-
 // wrapped IEventListener method
 HRESULT Display::handleEvent(const ComPtr<IEvent> &aEvent)
 {
@@ -4110,9 +4094,10 @@ int Display::i_handleVHWACommandProcess(PVBOXVHWACMD pCommand)
     ComPtr<IFramebuffer> pFramebuffer;
     AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
     pFramebuffer = maFramebuffers[id].pFramebuffer;
+    bool fVHWASupported = RT_BOOL(maFramebuffers[id].u32Caps & FramebufferCapabilities_VHWA);
     arlock.release();
 
-    if (pFramebuffer == NULL)
+    if (pFramebuffer == NULL || !fVHWASupported)
         return VERR_NOT_IMPLEMENTED; /* Implementation is not available. */
 
     HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);

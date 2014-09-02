@@ -46,7 +46,7 @@ typedef struct _DISPLAYFBINFO
     ComPtr<IDisplaySourceBitmap> pSourceBitmap;
     bool fDisabled;
 
-    FramebufferUpdateMode_T enmFramebufferUpdateMode;
+    uint32_t u32Caps;
 
     struct
     {
@@ -231,8 +231,6 @@ private:
                                     ULONG aHeight);
     virtual HRESULT querySourceBitmap(ULONG aScreenId,
                                       ComPtr<IDisplaySourceBitmap> &aDisplaySourceBitmap);
-    virtual HRESULT setFramebufferUpdateMode(ULONG aScreenId,
-                                             FramebufferUpdateMode_T aFramebufferUpdateMode);
 
     // Wrapped IEventListener properties
 
