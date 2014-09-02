@@ -2025,8 +2025,9 @@ void UIActionPoolRuntime::updateMenuMachine()
     pMenu->clear();
 
 
-    /* Separator #1? */
-    bool fSeparator1 = false;
+    /* Separator: */
+    bool fSeparator = false;
+
 
     /* 'Settings Dialog' action: */
     const bool fAllowToShowActionSettingsDialog = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
@@ -2034,7 +2035,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionSettingsDialog)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Settings));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Take Snapshot' action: */
@@ -2043,7 +2044,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionTakeSnapshot)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Take Screenshot' action: */
@@ -2052,7 +2053,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionTakeScreenshot)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Information Dialog' action: */
@@ -2061,16 +2062,17 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionInformationDialog)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_ShowInformation));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
-    /* Separator #1: */
-    if (fSeparator1)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #2? */
-    bool fSeparator2 = false;
 
     /* 'Keyboard' submenu: */
     const bool fAllowToShowActionKeyboard = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard);
@@ -2078,7 +2080,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionKeyboard)
     {
 //        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard));
-//        fSeparator2 = true;
+//        fSeparator = true;
     }
     updateMenuMachineKeyboard();
 
@@ -2088,7 +2090,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionKeyboardSettings)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
-        fSeparator2 = true;
+        fSeparator = true;
     }
 
     /* 'Mouse' submenu: */
@@ -2097,7 +2099,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionMouse)
     {
 //        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse));
-//        fSeparator2 = true;
+//        fSeparator = true;
     }
     updateMenuMachineMouse();
 
@@ -2107,16 +2109,17 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionMouseIntegration)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
-        fSeparator2 = true;
+        fSeparator = true;
     }
 
-    /* Separator #2: */
-    if (fSeparator2)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #3? */
-    bool fSeparator3 = false;
 
     /* 'Type CAD' action: */
     const bool fAllowToShowActionTypeCAD = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD);
@@ -2124,7 +2127,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionTypeCAD)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TypeCAD));
-        fSeparator3 = true;
+        fSeparator = true;
     }
 
 #ifdef Q_WS_X11
@@ -2134,17 +2137,18 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionTypeCABS)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TypeCABS));
-        fSeparator3 = true;
+        fSeparator = true;
     }
 #endif /* Q_WS_X11 */
 
-    /* Separator #3: */
-    if (fSeparator3)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #4? */
-    bool fSeparator4 = false;
 
     /* 'Pause' action: */
     const bool fAllowToShowActionPause = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause);
@@ -2152,7 +2156,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionPause)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_T_Pause));
-        fSeparator4 = true;
+        fSeparator = true;
     }
 
     /* 'Reset' action: */
@@ -2161,7 +2165,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionReset)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Reset));
-        fSeparator4 = true;
+        fSeparator = true;
     }
 
     /* 'Save' action: */
@@ -2170,7 +2174,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionSaveState)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Save));
-        fSeparator4 = true;
+        fSeparator = true;
     }
 
     /* 'Shutdown' action: */
@@ -2179,7 +2183,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionShutdown)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Shutdown));
-        fSeparator4 = true;
+        fSeparator = true;
     }
 
     /* 'PowerOff' action: */
@@ -2188,17 +2192,19 @@ void UIActionPoolRuntime::updateMenuMachine()
     if (fAllowToShowActionPowerOff)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Machine_S_PowerOff));
-        fSeparator4 = true;
+        fSeparator = true;
     }
 
+
 #ifndef Q_WS_MAC
-    /* Separator #4: */
-    if (fSeparator4)
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
-#endif /* !Q_WS_MAC */
+        fSeparator = false;
+    }
 
 
-#ifndef Q_WS_MAC
     /* Close action: */
     const bool fAllowToShowActionClose = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
     pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
@@ -2255,33 +2261,45 @@ void UIActionPoolRuntime::updateMenuView()
     pMenu->clear();
 
 
-    /* Visual representation mode flags: */
-    const bool fIsAllowToShowActionFullscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
-    const bool fIsAllowToShowActionSeamless   = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
-    const bool fIsAllowToShowActionScale      = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
+    /* Separator: */
+    bool fSeparator = false;
+
 
     /* 'Fullscreen' action: */
+    const bool fIsAllowToShowActionFullscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
     action(UIActionIndexRT_M_View_T_Fullscreen)->setEnabled(fIsAllowToShowActionFullscreen);
     if (fIsAllowToShowActionFullscreen)
+    {
         pMenu->addAction(action(UIActionIndexRT_M_View_T_Fullscreen));
+        fSeparator = true;
+    }
 
     /* 'Seamless' action: */
+    const bool fIsAllowToShowActionSeamless   = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
     action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(fIsAllowToShowActionSeamless);
     if (fIsAllowToShowActionSeamless)
+    {
         pMenu->addAction(action(UIActionIndexRT_M_View_T_Seamless));
+        fSeparator = true;
+    }
 
     /* 'Scale' action: */
+    const bool fIsAllowToShowActionScale      = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
     action(UIActionIndexRT_M_View_T_Scale)->setEnabled(fIsAllowToShowActionScale);
     if (fIsAllowToShowActionScale)
+    {
         pMenu->addAction(action(UIActionIndexRT_M_View_T_Scale));
+        fSeparator = true;
+    }
 
-    /* Visual representation mode separator: */
-    if (fIsAllowToShowActionFullscreen || fIsAllowToShowActionSeamless || fIsAllowToShowActionScale)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #1? */
-    bool fSeparator1 = false;
 
     /* 'Adjust Window' action: */
     const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
@@ -2289,7 +2307,7 @@ void UIActionPoolRuntime::updateMenuView()
     if (fAllowToShowActionAdjustWindow)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_S_AdjustWindow));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Guest Autoresize' action: */
@@ -2298,16 +2316,17 @@ void UIActionPoolRuntime::updateMenuView()
     if (fAllowToShowActionGuestAutoresize)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_T_GuestAutoresize));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
-    /* Separator #1: */
-    if (fSeparator1)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #2? */
-    bool fSeparator2 = false;
 
     /* 'Menu Bar' submenu: */
     const bool fAllowToShowActionMenuBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar);
@@ -2315,7 +2334,7 @@ void UIActionPoolRuntime::updateMenuView()
     if (fAllowToShowActionMenuBar)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_M_MenuBar));
-        fSeparator2 = true;
+        fSeparator = true;
     }
     updateMenuViewMenuBar();
 
@@ -2325,13 +2344,17 @@ void UIActionPoolRuntime::updateMenuView()
     if (fAllowToShowActionStatusBar)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar));
-        fSeparator2 = true;
+        fSeparator = true;
     }
     updateMenuViewStatusBar();
 
-    /* Separator #2: */
-    if (fSeparator2)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
 
     /* Do we have to show resize or multiscreen menu? */
@@ -2378,8 +2401,9 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     pMenu->clear();
 
 
-    /* Separator #1? */
-    bool fSeparator1 = false;
+    /* Separator: */
+    bool fSeparator = false;
+
 
     /* 'Adjust Window' action: */
     const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
@@ -2387,7 +2411,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     if (fAllowToShowActionAdjustWindow)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_S_AdjustWindow));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Guest Autoresize' action: */
@@ -2396,12 +2420,16 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     if (fAllowToShowActionGuestAutoresize)
     {
         pMenu->addAction(action(UIActionIndexRT_M_View_T_GuestAutoresize));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
-    /* Separator #1: */
-    if (fSeparator1)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
 
     /* Do we have to show resize menu? */
@@ -2593,8 +2621,9 @@ void UIActionPoolRuntime::updateMenuDevices()
     pMenu->clear();
 
 
-    /* Separator #1? */
-    bool fSeparator1 = false;
+    /* Separator: */
+    bool fSeparator = false;
+
 
     /* 'Hard Drives' submenu: */
     const bool fAllowToShowActionHardDrives = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
@@ -2602,7 +2631,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionHardDrives)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives));
-        fSeparator1 = true;
+        fSeparator = true;
     }
     updateMenuDevicesHardDrives();
 
@@ -2612,7 +2641,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionOpticalDevices)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_OpticalDevices));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Floppy Devices' submenu: */
@@ -2621,7 +2650,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionFloppyDevices)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_FloppyDevices));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Network' submenu: */
@@ -2630,7 +2659,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionNetwork)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network));
-        fSeparator1 = true;
+        fSeparator = true;
     }
     updateMenuDevicesNetwork();
 
@@ -2640,7 +2669,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionUSBDevices)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices));
-        fSeparator1 = true;
+        fSeparator = true;
     }
     updateMenuDevicesUSBDevices();
 
@@ -2650,7 +2679,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionWebCams)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_WebCams));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Shared Clipboard' submenu: */
@@ -2659,7 +2688,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionSharedClipboard)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedClipboard));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Drag&Drop' submenu: */
@@ -2668,7 +2697,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionDragAndDrop)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Shared Folders' submenu: */
@@ -2677,17 +2706,18 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionSharedFolders)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders));
-        fSeparator1 = true;
+        fSeparator = true;
     }
     updateMenuDevicesSharedFolders();
 
-    /* Separator #1: */
-    if (fSeparator1)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #2? */
-    bool fSeparator2 = false;
 
     /* 'VRDE Server' action: */
     const bool fAllowToShowActionVRDEServer = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer);
@@ -2695,7 +2725,7 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionVRDEServer)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_T_VRDEServer));
-        fSeparator2 = true;
+        fSeparator = true;
     }
 
     /* 'Video Capture' action: */
@@ -2704,13 +2734,17 @@ void UIActionPoolRuntime::updateMenuDevices()
     if (fAllowToShowActionVideoCapture)
     {
         pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
-        fSeparator2 = true;
+        fSeparator = true;
     }
     updateMenuDevicesVideoCapture();
 
-    /* Separator #2: */
-    if (fSeparator2)
+
+    /* Separator: */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
 
     /* Install Guest Tools action: */
