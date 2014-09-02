@@ -881,6 +881,30 @@ void UIActionPool::preparePool()
     retranslateUi();
 }
 
+void UIActionPool::prepareConnections()
+{
+    /* 'Help' menu connections: */
+    connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
+            gNetworkManager, SLOT(show()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()),
+            gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#ifdef RT_OS_DARWIN
+    connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+#else /* !RT_OS_DARWIN */
+    connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+#endif /* !RT_OS_DARWIN */
+}
+
 void UIActionPool::cleanupPool()
 {
     /* Cleanup pool: */
@@ -970,11 +994,7 @@ void UIActionPool::updateMenuApplication()
     action(UIActionIndex_M_Application_S_About)->setEnabled(fAllowToShowActionAbout);
     action(UIActionIndex_M_Application_S_About)->setVisible(fAllowToShowActionAbout);
     if (!pMenu->isConsumed())
-    {
         pMenu->addAction(action(UIActionIndex_M_Application_S_About));
-        connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
-                &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
-    }
 
     /* Only for Runtime pool: */
     if (type() == UIActionPoolType_Runtime)
@@ -1017,8 +1037,6 @@ void UIActionPool::updateMenuHelp()
     if (fAllowToShowActionContents)
     {
         pMenu->addAction(action(UIActionIndex_Simple_Contents));
-        connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
-                &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
         fSeparator = true;
     }
 
@@ -1028,8 +1046,6 @@ void UIActionPool::updateMenuHelp()
     if (fAllowToShowActionWebSite)
     {
         pMenu->addAction(action(UIActionIndex_Simple_WebSite));
-        connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
-                &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
         fSeparator = true;
     }
 
@@ -1048,8 +1064,6 @@ void UIActionPool::updateMenuHelp()
     if (fAllowToShowActionResetWarnings)
     {
         pMenu->addAction(action(UIActionIndex_Simple_ResetWarnings));
-        connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-                &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
         fSeparator = true;
     }
 
@@ -1069,8 +1083,6 @@ void UIActionPool::updateMenuHelp()
     if (fAllowToShowActionNetworkManager)
     {
         pMenu->addAction(action(UIActionIndex_Simple_NetworkAccessManager));
-        connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
-                gNetworkManager, SLOT(show()), Qt::UniqueConnection);
         fSeparator = true;
     }
 
@@ -1083,8 +1095,6 @@ void UIActionPool::updateMenuHelp()
         if (fAllowToShowActionCheckForUpdates)
         {
             pMenu->addAction(action(UIActionIndex_Simple_CheckForUpdates));
-            connect(action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()),
-                    gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
             fSeparator = true;
         }
     }
@@ -1104,11 +1114,7 @@ void UIActionPool::updateMenuHelp()
     const bool fAllowToShowActionAbout = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
     action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
     if (fAllowToShowActionAbout)
-    {
         pMenu->addAction(action(UIActionIndex_Simple_About));
-        connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-                &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
-    }
 
     /* Only for Runtime pool: */
     if (type() == UIActionPoolType_Runtime)
