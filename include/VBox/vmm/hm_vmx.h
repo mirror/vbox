@@ -208,9 +208,9 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_IGS_EFER_MSR_RESERVED                               13
 /** VMCS' EFER MSR.LMA does not match the IA32e mode guest control. */
 #define VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH                    14
-/** VMCS' EFER MSR.LMA does not match CR0.PG of the guest when not using
- *  unrestricted guest. */
-#define VMX_IGS_EFER_LMA_PG_MISMATCH                            15
+/** VMCS' EFER MSR.LMA does not match EFER.LME of the guest when using paging
+ *  without unrestricted guest. */
+#define VMX_IGS_EFER_LMA_LME_MISMATCH                            15
 /** CS.Attr.P bit invalid. */
 #define VMX_IGS_CS_ATTR_P_INVALID                               16
 /** CS.Attr reserved bits not set to 0.  */
