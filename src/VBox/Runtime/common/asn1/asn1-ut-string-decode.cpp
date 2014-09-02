@@ -162,6 +162,7 @@ static int rtAsn1XxxString_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, ui
                                      "%s: Constructed %s not implemented.", pszErrorTag, pszWhat);
         }
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 

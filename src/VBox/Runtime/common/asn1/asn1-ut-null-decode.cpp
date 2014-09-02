@@ -56,6 +56,7 @@ RTDECL(int) RTAsn1Null_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTASN
                                      "%s: Expected NULL object to have zero length: %#x", pszErrorTag, pThis->Asn1Core.cb);
         }
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 

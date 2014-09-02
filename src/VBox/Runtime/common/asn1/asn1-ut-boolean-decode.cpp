@@ -68,6 +68,7 @@ RTDECL(int) RTAsn1Boolean_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                                          pszErrorTag, pThis->Asn1Core.cb);
         }
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 

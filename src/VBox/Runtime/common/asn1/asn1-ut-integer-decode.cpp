@@ -66,6 +66,7 @@ RTDECL(int) RTAsn1Integer_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
             return VINF_SUCCESS;
         }
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 
