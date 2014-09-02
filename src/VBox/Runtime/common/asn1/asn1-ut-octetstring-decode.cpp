@@ -65,6 +65,7 @@ RTDECL(int) RTAsn1OctetString_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags,
             rc = RTAsn1CursorSetInfo(pCursor, rc, "%s: Not OCTET STRING: fClass=%#x / uTag=%#x",
                                      pszErrorTag, pThis->Asn1Core.fClass, pThis->Asn1Core.uTag);
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 

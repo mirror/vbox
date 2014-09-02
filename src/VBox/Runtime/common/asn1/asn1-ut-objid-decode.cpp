@@ -348,6 +348,7 @@ RTDECL(int) RTAsn1ObjId_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTAS
             }
         }
     }
+    RT_ZERO(*pThis);
     return rc;
 }
 

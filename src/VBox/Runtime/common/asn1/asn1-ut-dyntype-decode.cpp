@@ -76,8 +76,10 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                     pDynType->enmType = RTASN1TYPE_NULL;
                     break;
                 case ASN1_TAG_SEQUENCE:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 SEQUENCE shall be constructed.");
                 case ASN1_TAG_SET:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 SET shall be constructed.");
                 case ASN1_TAG_OID:
                     pDynType->enmType = RTASN1TYPE_OBJID;
@@ -107,6 +109,7 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                 //    break;
 
                 default:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_TAG_NOT_IMPL,
                                                "Primitive tag %u (%#x) not implemented.",
                                                pDynType->u.Core.uTag, pDynType->u.Core.uTag);
@@ -116,12 +119,16 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
             switch (pDynType->u.Core.uTag)
             {
                 case ASN1_TAG_BOOLEAN:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 BOOLEAN shall be primitive.");
                 case ASN1_TAG_INTEGER:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 BOOLEAN shall be primitive.");
                 case ASN1_TAG_ENUMERATED:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 ENUMERATED shall be primitive.");
                 case ASN1_TAG_REAL:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 REAL shall be primitive.");
                 case ASN1_TAG_BIT_STRING:
                     pDynType->enmType = RTASN1TYPE_BIT_STRING;
@@ -130,6 +137,7 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                     pDynType->enmType = RTASN1TYPE_OCTET_STRING;
                     break;
                 case ASN1_TAG_NULL:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 NULL shall be primitive.");
                 case ASN1_TAG_SEQUENCE:
 #if 0
@@ -152,8 +160,10 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
 #endif
                     break;
                 case ASN1_TAG_OID:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 OBJECT ID shall be primitive.");
                 case ASN1_TAG_RELATIVE_OID:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_BAD_TAG, "ASN.1 RELATIVE OID shall be primitive.");
 
                 case ASN1_TAG_UTF8_STRING:
@@ -174,6 +184,7 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                 //    break;
 
                 default:
+                    RT_ZERO(*pDynType);
                     return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_DYNTYPE_TAG_NOT_IMPL,
                                                "Constructed tag %u (%#x) not implemented.",
                                                pDynType->u.Core.uTag, pDynType->u.Core.uTag);
@@ -222,7 +233,10 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
             default:
                 AssertFailedReturn(VERR_INTERNAL_ERROR_4);
         }
+        if (RT_SUCCESS(rc))
+            return rc;
     }
+    RT_ZERO(*pDynType);
     return rc;
 }
 
