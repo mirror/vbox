@@ -1007,8 +1007,9 @@ void UIActionPool::updateMenuHelp()
     pMenu->clear();
 
 
-    /* Separator #1? */
-    bool fSeparator1 = false;
+    /* Separator? */
+    bool fSeparator = false;
+
 
     /* 'Contents' action: */
     const bool fAllowToShowActionContents = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
@@ -1018,7 +1019,7 @@ void UIActionPool::updateMenuHelp()
         pMenu->addAction(action(UIActionIndex_Simple_Contents));
         connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
                 &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
     /* 'Web Site' action: */
@@ -1029,16 +1030,17 @@ void UIActionPool::updateMenuHelp()
         pMenu->addAction(action(UIActionIndex_Simple_WebSite));
         connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
                 &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
-        fSeparator1 = true;
+        fSeparator = true;
     }
 
-    /* Separator #1: */
-    if (fSeparator1)
+
+    /* Separator? */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
-
-    /* Separator #2? */
-    bool fSeparator2 = false;
 
     /* 'Reset Warnings' action: */
     const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings);
@@ -1048,20 +1050,19 @@ void UIActionPool::updateMenuHelp()
         pMenu->addAction(action(UIActionIndex_Simple_ResetWarnings));
         connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
                 &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
-        fSeparator2 = true;
+        fSeparator = true;
     }
 
-    /* Separator #2: */
-    if (fSeparator2)
+
+    /* Separator? */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
+        fSeparator = false;
+    }
 
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# ifndef Q_WS_MAC
-    /* Separator #3? */
-    bool fSeparator3 = false;
-# endif /* !Q_WS_MAC */
-
     /* 'Network Manager' action: */
     const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager);
     action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionNetworkManager);
@@ -1070,9 +1071,7 @@ void UIActionPool::updateMenuHelp()
         pMenu->addAction(action(UIActionIndex_Simple_NetworkAccessManager));
         connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
                 gNetworkManager, SLOT(show()), Qt::UniqueConnection);
-# ifndef Q_WS_MAC
-        fSeparator3 = true;
-# endif /* !Q_WS_MAC */
+        fSeparator = true;
     }
 
     /* Only for Selector pool: */
@@ -1086,17 +1085,17 @@ void UIActionPool::updateMenuHelp()
             pMenu->addAction(action(UIActionIndex_Simple_CheckForUpdates));
             connect(action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()),
                     gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
-# ifndef Q_WS_MAC
-            fSeparator3 = true;
-# endif /* !Q_WS_MAC */
+            fSeparator = true;
         }
     }
 
-# ifndef Q_WS_MAC
-    /* Separator #3: */
-    if (fSeparator3)
+
+    /* Separator? */
+    if (fSeparator)
+    {
         pMenu->addSeparator();
-# endif /* !Q_WS_MAC */
+        fSeparator = false;
+    }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
