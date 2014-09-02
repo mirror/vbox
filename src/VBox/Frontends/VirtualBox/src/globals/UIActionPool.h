@@ -396,7 +396,7 @@ protected:
     /** Prepare pool routine. */
     virtual void preparePool();
     /** Prepare connections routine. */
-    virtual void prepareConnections() = 0;
+    virtual void prepareConnections();
     /** Cleanup connections routine. */
     virtual void cleanupConnections() {}
     /** Cleanup pool routine. */

@@ -1858,6 +1858,9 @@ void UIActionPoolRuntime::prepareConnections()
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
     connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()), this, SLOT(sltHandleConfigurationChange()));
+
+    /* Call to base-class: */
+    UIActionPool::prepareConnections();
 }
 
 void UIActionPoolRuntime::updateConfiguration()

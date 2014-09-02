@@ -951,6 +951,9 @@ void UIActionPoolSelector::prepareConnections()
 {
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
+
+    /* Call to base-class: */
+    UIActionPool::prepareConnections();
 }
 
 void UIActionPoolSelector::updateMenus()
