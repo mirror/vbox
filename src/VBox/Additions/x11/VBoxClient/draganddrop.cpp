@@ -440,7 +440,7 @@ protected:
  *
  ******************************************************************************/
 
-class DragAndDropService : public VBoxClient::Service
+class DragAndDropService
 {
 public:
     DragAndDropService(void)
@@ -452,15 +452,7 @@ public:
       , m_fSrvStopping(false)
     {}
 
-    virtual const char *getPidFilePath() { return ".vboxclient-draganddrop.pid"; }
-
-    virtual int run(bool fDaemonised = false);
-
-    virtual void cleanup(void)
-    {
-        /* Nothing to do, everything should be cleaned up automatically when the
-         * user process/X11 client exits. */
-    };
+    int run(bool fDaemonised = false);
 
 private:
     int x11DragAndDropInit(void);
@@ -2386,10 +2378,57 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
     return rc;
 }
 
-/* Static factory */
-VBoxClient::Service *VBoxClient::GetDragAndDropService(void)
+/** Drag and drop magic number, start of a UUID. */
+#define DRAGANDDROPSERVICE_MAGIC 0x67c97173
+
+/** VBoxClient service class wrapping the logic for the service while
+ *  the main VBoxClient code provides the daemon logic needed by all services.
+ */
+struct DRAGANDDROPSERVICE
 {
-    DragAndDropService *pService = new DragAndDropService();
-    return pService;
+    /** The service interface. */
+    struct VBCLSERVICE *pInterface;
+    /** Magic number for sanity checks. */
+    uint32_t magic;
+    /** Service object. */
+    DragAndDropService mDragAndDrop;
+};
+
+static const char *getPidFilePath()
+{
+    return ".vboxclient-draganddrop.pid";
+}
+
+static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
+{
+    struct DRAGANDDROPSERVICE *pSelf = (struct DRAGANDDROPSERVICE *)ppInterface;
+
+    if (pSelf->magic != DRAGANDDROPSERVICE_MAGIC)
+        VBClFatalError(("Bad display service object!\n"));
+    return pSelf->mDragAndDrop.run(fDaemonised);
+}
+
+struct VBCLSERVICE vbclDragAndDropInterface =
+{
+    getPidFilePath,
+    VBClServiceDefaultHandler, /* init */
+    run,
+    VBClServiceDefaultHandler, /* pause */
+    VBClServiceDefaultHandler, /* resume */
+    VBClServiceDefaultCleanup    
+};
+
+/* Static factory */
+struct VBCLSERVICE **VBClGetDragAndDropService(void)
+{
+    struct DRAGANDDROPSERVICE *pService =
+        (struct DRAGANDDROPSERVICE *)RTMemAlloc(sizeof(*pService));
+
+    if (!pService)
+        VBClFatalError(("Out of memory\n"));
+    pService->pInterface = &vbclDragAndDropInterface;
+    pService->magic = DRAGANDDROPSERVICE_MAGIC;
+    new(&pService->mDragAndDrop) DragAndDropService();
+    return &pService->pInterface;
 }
 

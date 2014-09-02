@@ -25,6 +25,13 @@
 
 static RTSEMEVENT eventSem;
 
+/** Exit with a fatal error. */
+void vbclFatalError(char *pszMessage)
+{
+    RTPrintf("Fatal error: %s", pszMessage);
+    exit(1);
+}
+
 int VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
 {
     RTPrintf("Received rectangle update (%u rectangles):\n", cRects);

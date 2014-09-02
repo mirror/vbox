@@ -63,14 +63,14 @@ static int disableEventsAndCaps()
 {
     int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to unset graphics capability, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to unset graphics capability, rc=%Rrc.\n", rc));
     rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to unset mouse status, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to unset mouse status, rc=%Rrc.\n", rc));
     rc = VbglR3CtlFilterMask(0,  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
                                 | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to unset filter mask, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to unset filter mask, rc=%Rrc.\n", rc));
     return VINF_SUCCESS;
 }
 
@@ -81,13 +81,13 @@ static int enableEventsAndCaps()
     int rc = VbglR3CtlFilterMask(  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
                                  | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to set filter mask, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to set filter mask, rc=%Rrc.\n", rc));
     rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to set graphics capability, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to set graphics capability, rc=%Rrc.\n", rc));
     rc = VbglR3SetMouseStatus(0);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to set mouse status, rc=%Rrc.\n", rc));
+        VBClFatalError(("Failed to set mouse status, rc=%Rrc.\n", rc));
     return VINF_SUCCESS;
 }
 
@@ -105,7 +105,7 @@ static int initX11(struct x11State *pState)
         pState->pcszXrandr = "/usr/X11/bin/xrandr";
     status = system(pState->pcszXrandr);
     if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
-        FatalError(("Failed to execute the xrandr utility.\n"));
+        VBClFatalError(("Failed to execute the xrandr utility.\n"));
     RTStrPrintf(szCommand, sizeof(szCommand), "%s --q12", pState->pcszXrandr);
     status = system(szCommand);
     if (WEXITSTATUS(status) == 0)
@@ -129,7 +129,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                                                   (iDisplay + 1)
                                                 * sizeof(*pState->paSizeHints));
         if (!pState->paSizeHints)
-            FatalError(("Failed to re-allocate size hint memory.\n"));
+            VBClFatalError(("Failed to re-allocate size hint memory.\n"));
         for (i = pState->cSizeHints; i < iDisplay + 1; ++i)
             pState->paSizeHints[i] = 0;
         pState->cSizeHints = iDisplay + 1;
@@ -150,7 +150,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                     "%s -s %ux%u", pState->pcszXrandr, cx, cy);
         status = system(szCommand);
         if (WEXITSTATUS(status) != 0)
-            FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+            VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
     }
     else
     {
@@ -163,7 +163,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                         pState->pcszXrandr, iDisplay, x, y);
             status = system(szCommand);
             if (WEXITSTATUS(status) != 0)
-                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
         }
         if ((!fSetPosition || fEnabled) && cx != 0 && cy != 0)
         {
@@ -172,7 +172,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                         pState->pcszXrandr, iDisplay);
             status = system(szCommand);
             if (WEXITSTATUS(status) != 0)
-                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
         }
         if (!fEnabled)
         {
@@ -182,7 +182,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                          pState->pcszXrandr, iDisplay);
             status = system(szCommand);
             if (WEXITSTATUS(status) != 0)
-                FatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
         }
     }
 }
@@ -205,7 +205,7 @@ static void runDisplay(struct x11State *pState)
     LogRelFlowFunc(("\n"));
     rc = VbglR3VideoModeGetHighestSavedScreen(&cScreens);
     if (RT_FAILURE(rc))
-        FatalError(("Failed to get the number of saved screen modes, rc=%Rrc\n",
+        VBClFatalError(("Failed to get the number of saved screen modes, rc=%Rrc\n",
                     rc));
     for (i = 0; i < RT_MAX(cScreens + 1, 8); ++i)
     {
@@ -215,7 +215,7 @@ static void runDisplay(struct x11State *pState)
         rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
                                      &fEnabled);
         if (RT_SUCCESS(rc) && i > cScreens) /* Sanity */
-            FatalError(("Internal error retrieving the number of saved screen modes.\n"));
+            VBClFatalError(("Internal error retrieving the number of saved screen modes.\n"));
         if (RT_SUCCESS(rc))
             setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
                        true);
@@ -229,7 +229,7 @@ static void runDisplay(struct x11State *pState)
                                  RT_INDEFINITE_WAIT, &fEvents);
         while(rc == VERR_INTERRUPTED);
         if (RT_FAILURE(rc))  /* VERR_NO_MEMORY? */
-            FatalError(("event wait failed, rc=%Rrc\n", rc));
+            VBClFatalError(("event wait failed, rc=%Rrc\n", rc));
         if (fEvents & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
         {
             /* Jiggle the mouse pointer to trigger a switch to a software
@@ -261,7 +261,7 @@ static void runDisplay(struct x11State *pState)
             if (RT_FAILURE(rc))
             {
                 if (rc != VERR_NOT_IMPLEMENTED)
-                    FatalError(("Failed to get display change request, rc=%Rrc\n",
+                    VBClFatalError(("Failed to get display change request, rc=%Rrc\n",
                                 rc));
                 fSetPosition = false;
                 rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBPP,
@@ -275,13 +275,13 @@ static void runDisplay(struct x11State *pState)
                                 cx, cy, cBPP, iDisplay, x, y,
                                 fEnabled));
             if (RT_FAILURE(rc))
-                FatalError(("Failed to retrieve size hint, rc=%Rrc\n", rc));
+                VBClFatalError(("Failed to retrieve size hint, rc=%Rrc\n", rc));
             if (iDisplay > INT32_MAX)
-                FatalError(("Received a size hint for too high display number %u\n",
+                VBClFatalError(("Received a size hint for too high display number %u\n",
                             (unsigned) iDisplay));
             rc = VbglR3SeamlessGetLastEvent(&Mode);
             if (RT_FAILURE(rc))
-                FatalError(("Failed to check seamless mode, rc=%Rrc\n", rc));
+                VBClFatalError(("Failed to check seamless mode, rc=%Rrc\n", rc));
             if (Mode == VMMDev_Seamless_Disabled)
             {
                 rc = VbglR3SaveVideoMode(iDisplay, cx, cy, cBPP, x, y,
@@ -289,7 +289,7 @@ static void runDisplay(struct x11State *pState)
                 if (   RT_FAILURE(rc)
                     && rc != VERR_HGCM_SERVICE_NOT_FOUND
                     && rc != VERR_NOT_IMPLEMENTED /* No HGCM */)
-                    FatalError(("Failed to save size hint, rc=%Rrc\n", rc));
+                    VBClFatalError(("Failed to save size hint, rc=%Rrc\n", rc));
             }
             setModeX11(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled,
                        fSetPosition);
@@ -297,56 +297,107 @@ static void runDisplay(struct x11State *pState)
     }
 }
 
-class DisplayService : public VBoxClient::Service
+/** Display magic number, start of a UUID. */
+#define DISPLAYSERVICE_MAGIC 0xf0029993
+
+/** VBoxClient service class wrapping the logic for the display service while
+ *  the main VBoxClient code provides the daemon logic needed by all services.
+ */
+struct DISPLAYSERVICE
 {
+    /** The service interface. */
+    struct VBCLSERVICE *pInterface;
+    /** Magic number for sanity checks. */
+    uint32_t magic;
+    /** State related to the X server. */
     struct x11State mState;
+    /** Are we initialised yet? */
     bool mfInit;
-public:
-    virtual const char *getPidFilePath()
-    {
-        return ".vboxclient-display.pid";
-    }
-    virtual int init()
-    {
-        int rc;
-        
-        if (mfInit)
-            return VERR_WRONG_ORDER;
-        rc = initX11(&mState);
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = enableEventsAndCaps();
-        if (RT_SUCCESS(rc))
-            mfInit = true;
-        return rc;
-    }
-    virtual int run(bool fDaemonised /* = false */)
-    {
-        if (!mfInit)
-            return VERR_WRONG_ORDER;
-        runDisplay(&mState);
-        return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
-    }
-    virtual int pause()
-    {
-        if (!mfInit)
-            return VERR_WRONG_ORDER;
-        return disableEventsAndCaps();
-    }
-    virtual int resume()
-    {
-        if (!mfInit)
-            return VERR_WRONG_ORDER;
-        return enableEventsAndCaps();
-    }
-    virtual void cleanup()
-    {
-        disableEventsAndCaps();
-    }
-    DisplayService() { mfInit = false; }
 };
 
-VBoxClient::Service *VBoxClient::GetDisplayService()
+static const char *getPidFilePath()
 {
-    return new DisplayService;
+    return ".vboxclient-display.pid";
+}
+
+static struct DISPLAYSERVICE *getClassFromInterface(struct VBCLSERVICE **
+                                                         ppInterface)
+{
+    struct DISPLAYSERVICE *pSelf = (struct DISPLAYSERVICE *)ppInterface;
+    if (pSelf->magic != DISPLAYSERVICE_MAGIC)
+        VBClFatalError(("Bad display service object!\n"));
+    return pSelf;
+}
+
+static int init(struct VBCLSERVICE **ppInterface)
+{
+    struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
+    int rc;
+    
+    if (pSelf->mfInit)
+        return VERR_WRONG_ORDER;
+    rc = initX11(&pSelf->mState);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = enableEventsAndCaps();
+    if (RT_SUCCESS(rc))
+        pSelf->mfInit = true;
+    return rc;
+}
+
+static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
+{
+    struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
+
+    if (!pSelf->mfInit)
+        return VERR_WRONG_ORDER;
+    runDisplay(&pSelf->mState);
+    return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
+}
+
+static int pause(struct VBCLSERVICE **ppInterface)
+{
+    struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
+
+    if (!pSelf->mfInit)
+        return VERR_WRONG_ORDER;
+    return disableEventsAndCaps();
+}
+
+static int resume(struct VBCLSERVICE **ppInterface)
+{
+    struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
+
+    if (!pSelf->mfInit)
+        return VERR_WRONG_ORDER;
+    return enableEventsAndCaps();
+}
+
+static void cleanup(struct VBCLSERVICE **ppInterface)
+{
+    NOREF(ppInterface);
+    disableEventsAndCaps();
+}
+
+struct VBCLSERVICE vbclDisplayInterface =
+{
+    getPidFilePath,
+    init,
+    run,
+    pause,
+    resume,
+    cleanup    
+};
+
+struct VBCLSERVICE **VBClGetDisplayService()
+{
+    struct DISPLAYSERVICE *pService =
+        (struct DISPLAYSERVICE *)RTMemAlloc(sizeof(*pService));
+
+    if (!pService)
+        VBClFatalError(("Out of memory\n"));
+    pService->pInterface = &vbclDisplayInterface;
+    pService->magic = DISPLAYSERVICE_MAGIC;
+    pService->mfInit = false;
+    return &pService->pInterface;
 }

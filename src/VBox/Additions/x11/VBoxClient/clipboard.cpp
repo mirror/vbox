@@ -277,29 +277,45 @@ int vboxClipboardMain(void)
     return rc;
 }
 
-class ClipboardService : public VBoxClient::Service
+static const char *getPidFilePath()
 {
-public:
-    virtual const char *getPidFilePath()
-    {
-        return ".vboxclient-clipboard.pid";
-    }
-    virtual int run(bool fDaemonised /* = false */)
-    {
-        int rc = vboxClipboardConnect();
-        if (RT_SUCCESS(rc))
-            rc = vboxClipboardMain();
-        if (RT_FAILURE(rc))
-            LogRelFunc(("guest clipboard service terminated abnormally: return code %Rrc\n", rc));
-        return rc;
-    }
-    virtual void cleanup()
-    {
-        /* Nothing to do. */
-    }
+    return ".vboxclient-clipboard.pid";
+}
+
+static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
+{
+    int rc = vboxClipboardConnect();
+
+    NOREF(ppInterface);
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardMain();
+    if (RT_FAILURE(rc))
+        LogRelFunc(("guest clipboard service terminated abnormally: return code %Rrc\n", rc));
+    return rc;
+}
+
+struct VBCLSERVICE vbclClipboardInterface =
+{
+    getPidFilePath,
+    VBClServiceDefaultHandler, /* init */
+    run,
+    VBClServiceDefaultHandler, /* pause */
+    VBClServiceDefaultHandler, /* resume */
+    VBClServiceDefaultCleanup    
 };
 
-VBoxClient::Service *VBoxClient::GetClipboardService()
+struct CLIPBOARDSERVICE
 {
-    return new ClipboardService;
+    struct VBCLSERVICE *pInterface;
+};
+
+struct VBCLSERVICE **VBClGetClipboardService()
+{
+    struct CLIPBOARDSERVICE *pService =
+        (struct CLIPBOARDSERVICE *)RTMemAlloc(sizeof(*pService));
+
+    if (!pService)
+        VBClFatalError(("Out of memory\n"));
+    pService->pInterface = &vbclClipboardInterface;
+    return &pService->pInterface;
 }

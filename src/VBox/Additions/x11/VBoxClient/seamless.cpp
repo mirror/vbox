@@ -26,9 +26,12 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
 
 #include "VBoxClient.h"
 #include "seamless.h"
+
+#include <new>
 
 SeamlessMain::SeamlessMain(void)
 {
@@ -315,56 +318,111 @@ int SeamlessMain::selfTest()
     return rc;
 }
 
+/** Service magic number, start of a UUID. */
+#define SEAMLESSSERVICE_MAGIC 0xd28ba727
+
 /** VBoxClient service class wrapping the logic for the seamless service while
  *  the main VBoxClient code provides the daemon logic needed by all services.
  */
-class SeamlessService : public VBoxClient::Service
+struct SEAMLESSSERVICE
 {
-private:
+    /** The service interface. */
+    struct VBCLSERVICE *pInterface;
+    /** Magic number for sanity checks. */
+    uint32_t magic;
+    /** Seamless service object. */
     SeamlessMain mSeamless;
+    /** Are we initialised yet? */
     bool mIsInitialised;
-public:
-    virtual const char *getPidFilePath()
-    {
-        return ".vboxclient-seamless.pid";
-    }
-    virtual int init()
-    {
-        int rc;
-
-        if (mIsInitialised)
-            return VERR_INTERNAL_ERROR;
-        rc = mSeamless.init();
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = mSeamless.selfTest();
-        if (RT_FAILURE(rc))
-        {
-            mSeamless.stop();
-            return rc;
-        }
-        mIsInitialised = true;
-        return VINF_SUCCESS;
-    }
-    virtual int run(bool fDaemonised /* = false */)
-    {
-        int rc;
-        if (!mIsInitialised)
-            return VERR_INTERNAL_ERROR;
-        /* This only exits on error. */
-        rc = mSeamless.run();
-        mIsInitialised = false;
-        return rc;
-    }
-    virtual int pause() { return mSeamless.pause(); }
-    virtual int resume() { return mSeamless.resume(); }
-    virtual void cleanup()
-    {
-        VbglR3SeamlessSetCap(false);
-    }
 };
 
-VBoxClient::Service *VBoxClient::GetSeamlessService()
+static const char *getPidFilePath(void)
 {
-    return new SeamlessService;
+    return ".vboxclient-seamless.pid";
+}
+
+static struct SEAMLESSSERVICE *getClassFromInterface(struct VBCLSERVICE **
+                                                         ppInterface)
+{
+    struct SEAMLESSSERVICE *pSelf = (struct SEAMLESSSERVICE *)ppInterface;
+    if (pSelf->magic != SEAMLESSSERVICE_MAGIC)
+        VBClFatalError(("Bad seamless service object!\n"));
+    return pSelf;
+}
+
+static int init(struct VBCLSERVICE **ppInterface)
+{
+    struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
+    int rc;
+
+    if (pSelf->mIsInitialised)
+        return VERR_INTERNAL_ERROR;
+    rc = pSelf->mSeamless.init();
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = pSelf->mSeamless.selfTest();
+    if (RT_FAILURE(rc))
+    {
+        pSelf->mSeamless.stop();
+        return rc;
+    }
+    pSelf->mIsInitialised = true;
+    return VINF_SUCCESS;
+}
+
+static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
+{
+    struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
+    int rc;
+
+    if (!pSelf->mIsInitialised)
+        return VERR_INTERNAL_ERROR;
+    /* This only exits on error. */
+    rc = pSelf->mSeamless.run();
+    pSelf->mIsInitialised = false;
+    return rc;
+}
+
+static int pause(struct VBCLSERVICE **ppInterface)
+{
+    struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
+
+    return pSelf->mSeamless.pause();
+}
+
+static int resume(struct VBCLSERVICE **ppInterface)
+{
+    struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
+
+    return pSelf->mSeamless.resume();
+}
+
+static void cleanup(struct VBCLSERVICE **ppInterface)
+{
+    NOREF(ppInterface);
+    VbglR3SeamlessSetCap(false);
+}
+
+struct VBCLSERVICE vbclSeamlessInterface =
+{
+    getPidFilePath,
+    init,
+    run,
+    pause,
+    resume,
+    cleanup    
+};
+
+struct VBCLSERVICE **VBClGetSeamlessService()
+{
+    struct SEAMLESSSERVICE *pService =
+        (struct SEAMLESSSERVICE *)RTMemAlloc(sizeof(*pService));
+
+    if (!pService)
+        VBClFatalError(("Out of memory\n"));
+    pService->pInterface = &vbclSeamlessInterface;
+    pService->magic = SEAMLESSSERVICE_MAGIC;
+    new(&pService->mSeamless) SeamlessMain();
+    pService->mIsInitialised = false;
+    return &pService->pInterface;
 }

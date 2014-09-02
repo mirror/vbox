@@ -23,60 +23,67 @@
 #include <iprt/string.h>
 
 /** Exit with a fatal error. */
-#define FatalError(format) \
+#define VBClFatalError(format) \
 do { \
     char *pszMessage = RTStrAPrintf2 format; \
     LogRel(format); \
-    doFatalError(pszMessage); \
+    vbclFatalError(pszMessage); \
 } while(0)
 
 /** Exit with a fatal error. */
-extern void doFatalError(char *pszMessage);
+extern void vbclFatalError(char *pszMessage);
 
-/** Namespace for VBoxClient-specific things */
-namespace VBoxClient {
+/** Call clean-up for the current service and exit. */
+extern void VBClCleanUp();
 
-/** A simple class describing a service.  VBoxClient will run exactly one
+/** A simple interface describing a service.  VBoxClient will run exactly one
  * service per invocation. */
-class Service : public RTCNonCopyable
+struct VBCLSERVICE
 {
-public:
     /** Get the services default path to pidfile, relative to $HOME */
     /** @todo Should this also have a component relative to the X server number?
      */
-    virtual const char *getPidFilePath() = 0;
+    const char *(*getPidFilePath)(void);
     /** Special initialisation, if needed.  @a pause and @a resume are
      * guaranteed not to be called until after this returns. */
-    virtual int init() { return VINF_SUCCESS; }
+    int (*init)(struct VBCLSERVICE **ppInterface);
     /** Run the service main loop */
-    virtual int run(bool fDaemonised = false) = 0;
+    int (*run)(struct VBCLSERVICE **ppInterface, bool fDaemonised);
     /** Pause the service loop.  This must be safe to call on a different thread
      * and potentially before @a run is or after it exits.
      * This is called by the VT monitoring thread to allow the service to disable
      * itself when the X server is switched out.  If the monitoring functionality
      * is available then @a pause or @a resume will be called as soon as it starts
      * up. */
-    virtual int pause() { return VINF_SUCCESS; }
+    int (*pause)(struct VBCLSERVICE **ppInterface);
     /** Resume after pausing.  The same applies here as for @a pause. */
-    virtual int resume() { return VINF_SUCCESS; }
+    int (*resume)(struct VBCLSERVICE **ppInterface);
     /** Clean up any global resources before we shut down hard.  The last calls
      * to @a pause and @a resume are guaranteed to finish before this is called.
      */
-    virtual void cleanup() = 0;
-    /** Virtual destructor.  Not used */
-    virtual ~Service() {}
+    void (*cleanup)(struct VBCLSERVICE **ppInterface);
 };
 
-extern Service *GetClipboardService();
-extern Service *GetSeamlessService();
-extern Service *GetDisplayService();
-extern Service *GetHostVersionService();
+/** Default handler for various struct VBCLSERVICE member functions. */
+static int VBClServiceDefaultHandler(struct VBCLSERVICE **pSelf)
+{
+    return VINF_SUCCESS;
+}
+
+/** Default handler for the struct VBCLSERVICE clean-up member function.
+ * Usually used because the service is cleaned up automatically when the user
+ * process/X11 exits. */
+static void VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
+{
+    NOREF(ppInterface);
+}
+
+extern struct VBCLSERVICE **VBClGetClipboardService();
+extern struct VBCLSERVICE **VBClGetSeamlessService();
+extern struct VBCLSERVICE **VBClGetDisplayService();
+extern struct VBCLSERVICE **VBClGetHostVersionService();
 #ifdef VBOX_WITH_DRAG_AND_DROP
-extern Service *GetDragAndDropService();
+extern struct VBCLSERVICE **VBClGetDragAndDropService();
 #endif /* VBOX_WITH_DRAG_AND_DROP */
-
-extern void CleanUp();
-
-} /* namespace VBoxClient */
 
 #endif /* !___vboxclient_vboxclient_h */
