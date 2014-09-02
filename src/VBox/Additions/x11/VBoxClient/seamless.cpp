@@ -49,6 +49,21 @@ SeamlessMain::~SeamlessMain()
 }
 
 /**
+ * Update the set of visible rectangles in the host.
+ */
+static void sendRegionUpdate(RTRECT *pRects, size_t cRects)
+{
+    LogRelFlowFunc(("\n"));
+    if (cRects && !pRects)  /* Assertion */
+    {
+        LogRelFunc(("ERROR: called with null pointer!\n"));
+        return;
+    }
+    VbglR3SeamlessSendRects(cRects, pRects);
+    LogRelFlowFunc(("returning\n"));
+}
+
+/**
  * initialise the service.
  */
 int SeamlessMain::init(void)
@@ -59,7 +74,7 @@ int SeamlessMain::init(void)
     LogRelFlowFunc(("\n"));
     do {
         pcszStage = "Connecting to the X server";
-        rc = mX11Monitor.init(this);
+        rc = mX11Monitor.init(sendRegionUpdate);
         if (RT_FAILURE(rc))
             break;
         pcszStage = "Setting guest IRQ filter mask";
@@ -172,22 +187,6 @@ int SeamlessMain::cancelEvent(void)
 {
     return VbglR3InterruptEventWaits();
 }
-
-/**
- * Update the set of visible rectangles in the host.
- */
-void SeamlessMain::sendRegionUpdate(RTRECT *pRects, size_t cRects)
-{
-    LogRelFlowFunc(("\n"));
-    if (cRects && !pRects)  /* Assertion */
-    {
-        LogRelThisFunc(("ERROR: called with null pointer!\n"));
-        return;
-    }
-    VbglR3SeamlessSendRects(cRects, pRects);
-    LogRelFlowFunc(("returning\n"));
-}
-
 
 /**
  * The actual X11 window configuration change monitor thread function.
