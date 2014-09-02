@@ -47,7 +47,7 @@ static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
 
 /** Object representing the service we are running.  This has to be global
  * so that the cleanup routine can access it. */
-VBoxClient::Service *g_pService;
+struct VBCLSERVICE **g_pService;
 /** The name of our pidfile.  It is global for the benefit of the cleanup
  * routine. */
 static char g_szPidFile[RTPATH_MAX];
@@ -61,7 +61,7 @@ static RTFILE g_hPidFile;
 RTCRITSECT g_critSect;
 
 /** Exit with a fatal error. */
-void doFatalError(char *pszMessage)
+void vbclFatalError(char *pszMessage)
 {
     char *pszCommand;
     if (pszMessage)
@@ -76,7 +76,7 @@ void doFatalError(char *pszMessage)
 
 /** Clean up if we get a signal or something.  This is extern so that we
  * can call it from other compilation units. */
-void VBoxClient::CleanUp()
+void VBClCleanUp()
 {
     /* We never release this, as we end up with a call to exit(3) which is not
      * async-safe.  Unless we fix this application properly, we should be sure
@@ -88,7 +88,7 @@ void VBoxClient::CleanUp()
         abort();
     }
     if (g_pService)
-        g_pService->cleanup();
+        (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
     VbglR3Term();
@@ -103,7 +103,7 @@ void vboxClientSignalHandler(int cSignal)
     LogRel(("VBoxClient: terminated with signal %d\n", cSignal));
     /** Disable seamless mode */
     RTPrintf(("VBoxClient: terminating...\n"));
-    VBoxClient::CleanUp();
+    VBClCleanUp();
 }
 
 /**
@@ -125,7 +125,7 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 static int vboxClientXLibIOErrorHandler(Display *pDisplay)
 {
     LogRel(("VBoxClient: a fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running.\n"));
-    VBoxClient::CleanUp();
+    VBClCleanUp();
     return 0;  /* We should never reach this. */
 }
 
@@ -199,9 +199,9 @@ static void checkVTSysfs(RTFILE hFile, uint32_t cVT)
             break;
         pcszStage = "asking service to pause or resume";
         if (cTTY == cVT)
-            rc = g_pService->resume();
+            rc = (*g_pService)->resume(g_pService);
         else
-            rc = g_pService->pause();
+            rc = (*g_pService)->pause(g_pService);
         if (RT_FAILURE(rc))
             break;
         pcszStage = "leaving critical section";
@@ -213,7 +213,7 @@ static void checkVTSysfs(RTFILE hFile, uint32_t cVT)
                     pcszStage, rc, (int) cVT, szTTY));
         if (RTCritSectIsOwner(&g_critSect))
             RTCritSectLeave(&g_critSect);
-        VBoxClient::CleanUp();
+        VBClCleanUp();
     }
 }
 
@@ -272,7 +272,7 @@ static void pollTTYAndXServer(Display *pDisplay, uint32_t cVT)
             || pollFD[1].revents & POLLNVAL)
         {
             LogRel(("Monitor thread: poll failed, stopping.\n"));
-            VBoxClient::CleanUp();
+            VBClCleanUp();
         }
     }
 }
@@ -396,32 +396,32 @@ int main(int argc, char *argv[])
         {
             if (g_pService)
                 break;
-            g_pService = VBoxClient::GetClipboardService();
+            g_pService = VBClGetClipboardService();
         }
         else if (!strcmp(argv[i], "--display"))
         {
             if (g_pService)
                 break;
-            g_pService = VBoxClient::GetDisplayService();
+            g_pService = VBClGetDisplayService();
         }
         else if (!strcmp(argv[i], "--seamless"))
         {
             if (g_pService)
                 break;
-            g_pService = VBoxClient::GetSeamlessService();
+            g_pService = VBClGetSeamlessService();
         }
         else if (!strcmp(argv[i], "--checkhostversion"))
         {
             if (g_pService)
                 break;
-            g_pService = VBoxClient::GetHostVersionService();
+            g_pService = VBClGetHostVersionService();
         }
 #ifdef VBOX_WITH_DRAG_AND_DROP
         else if (!strcmp(argv[i], "--draganddrop"))
         {
             if (g_pService)
                 break;
-            g_pService = VBoxClient::GetDragAndDropService();
+            g_pService = VBClGetDragAndDropService();
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
             break;
         pcszStage = "Creating pid-file path";
         rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
-                          g_pService->getPidFilePath());
+                          (*g_pService)->getPidFilePath());
         if (RT_FAILURE(rc))
             break;
         pcszStage = "Daemonising";
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
          * fatal errors. */
         XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
         pcszStage = "Initialising service";
-        rc = g_pService->init();
+        rc = (*g_pService)->init(g_pService);
     } while (0);
     if (RT_FAILURE(rc))
     {
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
         LogRel(("Failed to start the monitor thread (%Rrc).  Exiting.\n",
                  rc));
     else
-        g_pService->run(fDaemonise);  /* Should never return. */
-    VBoxClient::CleanUp();
+        (*g_pService)->run(g_pService, fDaemonise);  /* Should never return. */
+    VBClCleanUp();
     return 1;
 }
