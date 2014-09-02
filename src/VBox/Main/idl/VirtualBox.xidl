@@ -15295,26 +15295,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enum
-    name="FramebufferUpdateMode"
-    uuid="1268d8ab-dd2f-443c-bc56-d93d3ced5cde"
-    >
-    <desc>
-      How a framebuffer is notified about screen updates.
-    </desc>
-
-    <const name="NotifyUpdate"       value="0">
-      <desc>
-        IFramebuffer::NotifyUpdate is called.
-      </desc>
-    </const>
-    <const name="NotifyUpdateImage"  value="1">
-      <desc>
-        IFramebuffer::NotifyUpdateImage is called.
-      </desc>
-    </const>
-  </enum>
-
   <interface
     name="IDisplaySourceBitmap" extends="$unknown" wsmap="suppress"
     uuid="b00907f7-d85e-4dce-b1a6-16a2d91b0269"
@@ -15332,9 +15312,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
+  <enum
+    name="FramebufferCapabilities"
+    uuid="cc395839-30fa-4ca5-ae65-e6360e3edd7a"
+    >
+    <desc>
+      Framebuffer capability flags.
+    </desc>
+
+    <const name="UpdateImage" value="0x01">
+      <desc>
+        Requires NotifyUpdateImage. NotifyUpdate must not be called.
+      </desc>
+    </const>
+
+    <const name="VHWA" value="0x02">
+      <desc>
+        Supports VHWA interface. If set, then IFramebuffer::processVHWACommand can be called.
+      </desc>
+    </const>
+
+    <const name="VisibleRegion" value="0x04">
+      <desc>
+        Supports visible region. If set, then IFramebuffer::setVisibleRegion can be called.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="16d73cd3-da84-4a11-a607-ebab57d050d0"
+    uuid="735365aa-544d-415c-a25b-a5ea913d63f3"
     wsmap="managed"
     >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -15559,6 +15566,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <attribute name="capabilities" type="FramebufferCapabilities" safearray="yes" readonly="yes">
+      <desc>
+        Capabilities of the framebuffer instance.
+
+        For the meaning of individual capability flags see
+        <link to="FramebufferCapabilities"/>.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface
@@ -15609,7 +15625,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="1659de81-24f0-41a9-afd4-abd03dcfbcbc"
+    uuid="fb51010f-eefd-430d-8cd7-3c1bc14740eb"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -15908,12 +15924,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="displaySourceBitmap" type="IDisplaySourceBitmap" dir="out"/>
-    </method>
-
-    <method name="setFramebufferUpdateMode">
-      <desc>Select how the framebuffer is informed about screen updates.</desc>
-      <param name="screenId" type="unsigned long" dir="in"/>
-      <param name="framebufferUpdateMode" type="FramebufferUpdateMode" dir="in"/>
     </method>
 
   </interface>

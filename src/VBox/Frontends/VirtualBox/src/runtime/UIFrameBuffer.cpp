@@ -193,6 +193,20 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
     return S_OK;
 }
 
+STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities))
+{
+    if (ComSafeArrayOutIsNull(aCapabilities))
+        return E_POINTER;
+
+    com::SafeArray<FramebufferCapabilities_T> caps;
+    caps.resize(2);
+    caps[0] = FramebufferCapabilities_VHWA;
+    caps[1] = FramebufferCapabilities_VisibleRegion;
+
+    caps.detachTo(ComSafeArrayOutArg(aCapabilities));
+    return S_OK;
+}
+
 STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     CDisplaySourceBitmap sourceBitmap;

@@ -104,6 +104,7 @@ public:
     STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
     STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
     STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
+    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities));
 
     /** EMT callback: Notifies frame-buffer about guest-screen size change.
       * @param        uScreenId Guest screen number.
