@@ -70,12 +70,12 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
   *
   * @returns true if it can handle seamless, false otherwise
   */
-int SeamlessX11::init(SeamlessHostProxy *pHost)
+int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
 {
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
-    if (0 != mHost)  /* Assertion */
+    if (mHostCallback != NULL)  /* Assertion */
     {
         LogRel(("VBoxClient: ERROR: attempt to initialise seamless guest object twice!\n"));
         return VERR_INTERNAL_ERROR;
@@ -85,7 +85,7 @@ int SeamlessX11::init(SeamlessHostProxy *pHost)
         LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
         return VERR_ACCESS_DENIED;
     }
-    mHost = pHost;
+    mHostCallback = pHostCallback;
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -298,7 +298,7 @@ void SeamlessX11::nextConfigurationEvent(void)
     if (mChanged)
     {
         updateRects();
-        mHost->sendRegionUpdate(mpRects, mcRects);
+        mHostCallback(mpRects, mcRects);
     }
     mChanged = false;
     XNextEvent(mDisplay, &event);

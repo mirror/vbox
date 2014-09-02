@@ -33,16 +33,12 @@
 #define VBoxShapeNotify 64
 
 /**
- * Small virtual class which provides the interface for notifying the host of
- * changes to the X11 window configuration, mainly split out from
- * @a VBoxGuestSeamlessHost to simplify the unit test.
+ * Callback which provides the interface for notifying the host of changes to
+ * the X11 window configuration, mainly split out from @a VBoxGuestSeamlessHost
+ * to simplify the unit test.
  */
-class SeamlessHostProxy
-{
-public:
-    virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects) = 0;
-    virtual ~SeamlessHostProxy() {}
-};
+typedef void FNSENDREGIONUPDATE(RTRECT *pRects, size_t cRects);
+typedef FNSENDREGIONUPDATE *PFNSENDREGIONUPDATE;
 
 /** Structure containing information about a guest window's position and visible area.
     Used inside of VBoxGuestWindowList. */
@@ -163,8 +159,8 @@ private:
     SeamlessX11& operator=(const SeamlessX11&);
 
     // Private member variables
-    /** Pointer to the host class. */
-    SeamlessHostProxy *mHost;
+    /** Pointer to the host callback. */
+    PFNSENDREGIONUPDATE mHostCallback;
     /** Our connection to the X11 display we are running on. */
     Display *mDisplay;
     /** Class to keep track of visible guest windows. */
@@ -204,21 +200,21 @@ private:
 public:
     /**
      * Initialise the guest and ensure that it is capable of handling seamless mode
-     * @param   pHost Host interface class to notify of window configuration
+     * @param   pHost Host interface callback to notify of window configuration
      *                changes.
      *
      * @returns iprt status code
      */
-    int init(SeamlessHostProxy *pHost);
+    int init(PFNSENDREGIONUPDATE pHostCallback);
 
     /**
      * Shutdown seamless event monitoring.
      */
     void uninit(void)
     {
-        if (mHost)
+        if (mHostCallback)
             stop();
-        mHost = NULL;
+        mHostCallback = NULL;
         if (mDisplay)
             XCloseDisplay(mDisplay);
         mDisplay = NULL;
@@ -250,7 +246,7 @@ public:
     void doShapeEvent(Window hWin);
 
     SeamlessX11(void)
-        : mHost(0), mDisplay(NULL), mpRects(NULL), mcRects(0),
+        : mHostCallback(NULL), mDisplay(NULL), mpRects(NULL), mcRects(0),
           mSupportsShape(false), mEnabled(false), mChanged(false) {}
 
     ~SeamlessX11()

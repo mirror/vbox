@@ -28,7 +28,7 @@
 /**
  * Interface to the host
  */
-class SeamlessMain : public SeamlessHostProxy
+class SeamlessMain
 {
 private:
     // We don't want a copy constructor or assignment operator
@@ -107,11 +107,6 @@ public:
     int pause();
     /** Resume after pausing.  The same applies here as for @a pause. */
     int resume();
-
-    /**
-     * Update the set of visible rectangles in the host.
-     */
-    virtual void sendRegionUpdate(RTRECT *pRects, size_t cRects);
 
     /** Run a few tests to be sure everything is working as intended. */
     int selfTest();
