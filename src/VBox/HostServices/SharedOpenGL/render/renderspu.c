@@ -338,8 +338,8 @@ void renderspuWinTermOnShutdown(WindowInfo *window)
 {
     renderspuVBoxCompositorSet(window, NULL);
     renderspuVBoxPresentBlitterCleanup(window);
-    renderspu_SystemDestroyWindow( window );
     window->BltInfo.Base.id = -1;
+    renderspu_SystemDestroyWindow( window );
 }
 
 static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
