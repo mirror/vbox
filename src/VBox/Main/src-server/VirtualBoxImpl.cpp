@@ -2634,6 +2634,24 @@ struct MachineEvent : public VirtualBox::CallbackEvent
     BOOL mBool;
 };
 
+
+/**
+ * Extpack install notification
+ */
+void VirtualBox::i_extPackInstallNotify(const char *pszExtPackName)
+{
+    m->pSystemProperties->i_extPackInstallNotify(pszExtPackName);
+}
+
+/**
+ * Extpack uninstall notification
+ */
+void VirtualBox::i_extPackUninstallNotify(const char *pszExtPackName)
+{
+    m->pSystemProperties->i_extPackUninstallNotify(pszExtPackName);
+}
+
+
 /**
  *  @note Doesn't lock any object.
  */

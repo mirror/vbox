@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,11 @@
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
+
+// globals
+/////////////////////////////////////////////////////////////////////////////
+static const Utf8Str g_strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+static const char *g_pszVDPluginCrypt = "VDPluginCrypt";
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -112,24 +117,9 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
 
     HRESULT rc = S_OK;
 
-# ifdef VBOX_WITH_EXTPACK
     /* Load all VD plugins from all extension packs first. */
     /** @todo: Make generic for 4.4 (requires interface changes). */
-    static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
-    static const char *s_pszVDPlugin = "VDPluginCrypt";
-    if (mParent->i_getExtPackManager()->i_isExtPackUsable(strExtPackPuel.c_str()))
-    {
-        Utf8Str strPlugin;
-        rc = mParent->i_getExtPackManager()->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
-        if (SUCCEEDED(rc))
-        {
-            int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
-            NOREF(vrc); /** @todo: Don't ignore errors. */
-        }
-        else
-            rc = S_OK; /* ignore errors */
-    }
-# endif
+    rc = i_loadExtPackVDPluginCrypt();
 
     /* Fetch info of all available hd backends. */
 
@@ -1124,6 +1114,66 @@ ComObjPtr<MediumFormat> SystemProperties::i_mediumFormatFromExtension(const Utf8
     }
 
     return format;
+}
+
+
+/**
+ * Extension pack install notification
+ */
+void SystemProperties::i_extPackInstallNotify(const char *pszExtPackName)
+{
+    if (g_strExtPackPuel.equals(pszExtPackName))
+    {
+        i_loadExtPackVDPluginCrypt();
+    }
+}
+
+/**
+ * Extension pack uninstall notification
+ */
+void SystemProperties::i_extPackUninstallNotify(const char *pszExtPackName)
+{
+    if (g_strExtPackPuel.equals(pszExtPackName))
+    {
+        i_unloadExtPackVDPluginCrypt();
+    }
+}
+
+HRESULT SystemProperties::i_loadExtPackVDPluginCrypt()
+{
+    HRESULT rc = S_OK;
+#ifdef VBOX_WITH_EXTPACK
+    if (mParent->i_getExtPackManager()->i_isExtPackUsable(g_strExtPackPuel.c_str()))
+    {
+        Utf8Str strPlugin;
+        rc = mParent->i_getExtPackManager()->i_getLibraryPathForExtPack(g_pszVDPluginCrypt, &g_strExtPackPuel, &strPlugin);
+        if (SUCCEEDED(rc))
+        {
+            int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+            NOREF(vrc); /** @todo: don't ignore errors. */
+        }
+        else
+            rc = S_OK; /* ignore errors */
+    }
+# endif
+    return rc;
+}
+
+HRESULT SystemProperties::i_unloadExtPackVDPluginCrypt()
+{
+    HRESULT rc = S_OK;
+#ifdef VBOX_WITH_EXTPACK
+    Utf8Str strPlugin;
+    rc = mParent->i_getExtPackManager()->i_getLibraryPathForExtPack(g_pszVDPluginCrypt, &g_strExtPackPuel, &strPlugin);
+    if (SUCCEEDED(rc))
+    {
+        int vrc = VDPluginUnloadFromFilename(strPlugin.c_str());
+        NOREF(vrc); /** @todo: don't ignore errors. */
+    }
+    else
+        rc = S_OK; /* ignore errors */
+# endif
+    return rc;
 }
 
 // private methods

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -499,6 +499,22 @@ VBOXDDU_DECL(int) VDPluginLoadFromFilename(const char *pszFilename);
  * @param   pszPath         The path to load plugins from.
  */
 VBOXDDU_DECL(int) VDPluginLoadFromPath(const char *pszPath);
+
+/**
+ * Unloads a single plugin given by filename.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     The plugin filename to unload.
+ */
+VBOXDDU_DECL(int) VDPluginUnloadFromFilename(const char *pszFilename);
+
+/**
+ * Unload all plugins from a given path.
+ *
+ * @returns VBox statuse code.
+ * @param   pszPath         The path to unload plugins from.
+ */
+VBOXDDU_DECL(int) VDPluginUnloadFromPath(const char *pszPath);
 
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.

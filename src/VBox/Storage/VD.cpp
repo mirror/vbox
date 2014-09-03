@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -621,6 +621,8 @@ static RTLISTANCHOR g_ListPluginsLoaded;
 static unsigned g_cBackends = 0;
 /** Array of pointers to the image backends. */
 static PCVBOXHDDBACKEND *g_apBackends = NULL;
+/** Array of handles to the corresponding plugin. */
+static RTLDRMOD *g_ahBackendPlugins = NULL;
 /** Builtin image backends. */
 static PCVBOXHDDBACKEND aStaticBackends[] =
 {
@@ -640,6 +642,8 @@ static PCVBOXHDDBACKEND aStaticBackends[] =
 static unsigned g_cCacheBackends = 0;
 /** Array of pointers to the cache backends. */
 static PCVDCACHEBACKEND *g_apCacheBackends = NULL;
+/** Array of handles to the corresponding plugin. */
+static RTLDRMOD *g_ahCacheBackendPlugins = NULL;
 /** Builtin cache backends. */
 static PCVDCACHEBACKEND aStaticCacheBackends[] =
 {
@@ -650,6 +654,8 @@ static PCVDCACHEBACKEND aStaticCacheBackends[] =
 static unsigned g_cFilterBackends = 0;
 /** Array of pointers to the filters backends. */
 static PCVDFILTERBACKEND *g_apFilterBackends = NULL;
+/** Array of handles to the corresponding plugin. */
+static RTLDRMOD *g_ahFilterBackendPlugins = NULL;
 
 /** Forward declaration of the async discard helper. */
 static int vdDiscardHelperAsync(PVDIOCTX pIoCtx);
@@ -661,14 +667,21 @@ static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int 
 /**
  * internal: add several backends.
  */
-static int vdAddBackends(PCVBOXHDDBACKEND *ppBackends, unsigned cBackends)
+static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigned cBackends)
 {
     PCVBOXHDDBACKEND *pTmp = (PCVBOXHDDBACKEND*)RTMemRealloc(g_apBackends,
            (g_cBackends + cBackends) * sizeof(PCVBOXHDDBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahBackendPlugins,
+           (g_cBackends + cBackends) * sizeof(RTLDRMOD));
+    if (RT_UNLIKELY(!pTmpPlugins))
+        return VERR_NO_MEMORY;
     g_apBackends = pTmp;
+    g_ahBackendPlugins = pTmpPlugins;
     memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVBOXHDDBACKEND));
+    for (unsigned i = g_cBackends; i < g_cBackends + cBackends; i++)
+        g_ahBackendPlugins[i] = hPlugin;
     g_cBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -676,22 +689,29 @@ static int vdAddBackends(PCVBOXHDDBACKEND *ppBackends, unsigned cBackends)
 /**
  * internal: add single backend.
  */
-DECLINLINE(int) vdAddBackend(PCVBOXHDDBACKEND pBackend)
+DECLINLINE(int) vdAddBackend(RTLDRMOD hPlugin, PCVBOXHDDBACKEND pBackend)
 {
-    return vdAddBackends(&pBackend, 1);
+    return vdAddBackends(hPlugin, &pBackend, 1);
 }
 
 /**
  * internal: add several cache backends.
  */
-static int vdAddCacheBackends(PCVDCACHEBACKEND *ppBackends, unsigned cBackends)
+static int vdAddCacheBackends(RTLDRMOD hPlugin, PCVDCACHEBACKEND *ppBackends, unsigned cBackends)
 {
     PCVDCACHEBACKEND *pTmp = (PCVDCACHEBACKEND*)RTMemRealloc(g_apCacheBackends,
            (g_cCacheBackends + cBackends) * sizeof(PCVDCACHEBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahCacheBackendPlugins,
+           (g_cCacheBackends + cBackends) * sizeof(RTLDRMOD));
+    if (RT_UNLIKELY(!pTmpPlugins))
+        return VERR_NO_MEMORY;
     g_apCacheBackends = pTmp;
+    g_ahCacheBackendPlugins = pTmpPlugins;
     memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PCVDCACHEBACKEND));
+    for (unsigned i = g_cCacheBackends; i < g_cCacheBackends + cBackends; i++)
+        g_ahCacheBackendPlugins[i] = hPlugin;
     g_cCacheBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -699,26 +719,34 @@ static int vdAddCacheBackends(PCVDCACHEBACKEND *ppBackends, unsigned cBackends)
 /**
  * internal: add single cache backend.
  */
-DECLINLINE(int) vdAddCacheBackend(PCVDCACHEBACKEND pBackend)
+DECLINLINE(int) vdAddCacheBackend(RTLDRMOD hPlugin, PCVDCACHEBACKEND pBackend)
 {
-    return vdAddCacheBackends(&pBackend, 1);
+    return vdAddCacheBackends(hPlugin, &pBackend, 1);
 }
 
 /**
- * Add several filter bakends.
+ * Add several filter backends.
  *
  * @returns VBox status code.
+ * @param   hPlugin       Plugin handle to add.
  * @param   ppBackends    Array of filter backends to add.
  * @param   cBackends     Number of backends to add.
  */
-static int vdAddFilterBackends(PCVDFILTERBACKEND *ppBackends, unsigned cBackends)
+static int vdAddFilterBackends(RTLDRMOD hPlugin, PCVDFILTERBACKEND *ppBackends, unsigned cBackends)
 {
     PCVDFILTERBACKEND *pTmp = (PCVDFILTERBACKEND *)RTMemRealloc(g_apFilterBackends,
            (g_cFilterBackends + cBackends) * sizeof(PCVDFILTERBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
+    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahFilterBackendPlugins,
+           (g_cFilterBackends + cBackends) * sizeof(RTLDRMOD));
+    if (RT_UNLIKELY(!pTmpPlugins))
+        return VERR_NO_MEMORY;
     g_apFilterBackends = pTmp;
+    g_ahFilterBackendPlugins = pTmpPlugins;
     memcpy(&g_apFilterBackends[g_cFilterBackends], ppBackends, cBackends * sizeof(PCVDFILTERBACKEND));
+    for (unsigned i = g_cFilterBackends; i < g_cFilterBackends + cBackends; i++)
+        g_ahFilterBackendPlugins[i] = hPlugin;
     g_cFilterBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -727,11 +755,12 @@ static int vdAddFilterBackends(PCVDFILTERBACKEND *ppBackends, unsigned cBackends
  * Add a single filter backend to the list of supported filters.
  *
  * @returns VBox status code.
+ * @param   hPlugin     Plugin handle to add.
  * @param   pBackend    The backend to add.
  */
-DECLINLINE(int) vdAddFilterBackend(PCVDFILTERBACKEND pBackend)
+DECLINLINE(int) vdAddFilterBackend(RTLDRMOD hPlugin, PCVDFILTERBACKEND pBackend)
 {
-    return vdAddFilterBackends(&pBackend, 1);
+    return vdAddFilterBackends(hPlugin, &pBackend, 1);
 }
 
 /**
@@ -3491,7 +3520,7 @@ static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVBOXHDDBACKEND pB
     int rc = VINF_SUCCESS;
 
     if (pBackend->cbSize == sizeof(VBOXHDDBACKEND))
-        vdAddBackend(pBackend);
+        vdAddBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
         LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
@@ -3509,7 +3538,7 @@ static DECLCALLBACK(int) vdPluginRegisterCache(void *pvUser, PCVDCACHEBACKEND pB
     int rc = VINF_SUCCESS;
 
     if (pBackend->cbSize == sizeof(VDCACHEBACKEND))
-        vdAddCacheBackend(pBackend);
+        vdAddCacheBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
         LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
@@ -3527,7 +3556,7 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
     int rc = VINF_SUCCESS;
 
     if (pBackend->cbSize == sizeof(VDFILTERBACKEND))
-        vdAddFilterBackend(pBackend);
+        vdAddFilterBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
         LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize));
@@ -3561,7 +3590,7 @@ static bool vdPluginFind(const char *pszFilename)
  *
  * @returns VBox status code.
  * @param   hPlugin     Plugin handle to add.
- * @param   pszFilename The associated filename, sued for finding duplicates.
+ * @param   pszFilename The associated filename, used for finding duplicates.
  */
 static int vdAddPlugin(RTLDRMOD hPlugin, const char *pszFilename)
 {
@@ -3584,6 +3613,61 @@ static int vdAddPlugin(RTLDRMOD hPlugin, const char *pszFilename)
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+static int vdRemovePlugin(const char *pszFilename)
+{
+    /* Find plugin to be removed from the list. */
+    PVDPLUGIN pIt = NULL;
+    RTListForEach(&g_ListPluginsLoaded, pIt, VDPLUGIN, NodePlugin)
+    {
+        if (!RTStrCmp(pIt->pszFilename, pszFilename))
+            break;
+    }
+    if (!pIt)
+        return VINF_SUCCESS;
+
+    /** @todo r=klaus: need to add a plugin entry point for unregistering the
+     * backends. Only if this doesn't exist (or fails to work) we should fall
+     * back to the following uncoordinated backend cleanup. */
+    for (unsigned i = 0; i < g_cBackends; i++)
+    {
+        while (i < g_cBackends && g_ahBackendPlugins[i] == pIt->hPlugin)
+        {
+            memcpy(&g_apBackends[i], &g_apBackends[i + 1], (g_cBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_ahBackendPlugins[i], &g_ahBackendPlugins[i + 1], (g_cBackends - i - 1) * sizeof(RTLDRMOD));
+            /** @todo for now skip reallocating, doesn't save much */
+            g_cBackends--;
+        }
+    }
+    for (unsigned i = 0; i < g_cCacheBackends; i++)
+    {
+        while (i < g_cCacheBackends && g_ahCacheBackendPlugins[i] == pIt->hPlugin)
+        {
+            memcpy(&g_apCacheBackends[i], &g_apCacheBackends[i + 1], (g_cCacheBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_ahCacheBackendPlugins[i], &g_ahCacheBackendPlugins[i + 1], (g_cCacheBackends - i - 1) * sizeof(RTLDRMOD));
+            /** @todo for now skip reallocating, doesn't save much */
+            g_cCacheBackends--;
+        }
+    }
+    for (unsigned i = 0; i < g_cFilterBackends; i++)
+    {
+        while (i < g_cFilterBackends && g_ahFilterBackendPlugins[i] == pIt->hPlugin)
+        {
+            memcpy(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_ahFilterBackendPlugins[i], &g_ahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
+            /** @todo for now skip reallocating, doesn't save much */
+            g_cFilterBackends--;
+        }
+    }
+
+    /* Remove the plugin node now, all traces of it are gone. */
+    RTListNodeRemove(&pIt->NodePlugin);
+    RTLdrClose(pIt->hPlugin);
+    RTStrFree(pIt->pszFilename);
+    RTMemFree(pIt);
+
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -3623,7 +3707,7 @@ static int vdPluginLoadFromFilename(const char *pszFilename)
         if (RT_SUCCESS(rc))
         {
             /* Get the function table. */
-            rc = pfnVDPluginLoad(NULL, &BackendRegister);
+            rc = pfnVDPluginLoad(hPlugin, &BackendRegister);
         }
         else
             LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszFilename, rc));
@@ -3743,6 +3827,105 @@ static int vdLoadDynamicBackends()
     return vdPluginLoadFromPath(szPath);
 #else
     return VINF_SUCCESS;
+#endif
+}
+
+/**
+ * Worker for VDPluginUnloadFromFilename() and vdPluginUnloadFromPath().
+ *
+ * @returns VBox status code.
+ * @param   pszFilename    The plugin filename to unload.
+ */
+static int vdPluginUnloadFromFilename(const char *pszFilename)
+{
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    return vdRemovePlugin(pszFilename);
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * Worker for VDPluginUnloadFromPath().
+ *
+ * @returns VBox status code.
+ * @param   pszPath        The path to unload plugins from.
+ */
+static int vdPluginUnloadFromPath(const char *pszPath)
+{
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    /* To get all entries with VBoxHDD as prefix. */
+    char *pszPluginFilter = RTPathJoinA(pszPath, VD_PLUGIN_PREFIX "*");
+    if (!pszPluginFilter)
+        return VERR_NO_STR_MEMORY;
+
+    PRTDIRENTRYEX pPluginDirEntry = NULL;
+    PRTDIR pPluginDir = NULL;
+    size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
+    int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
+    if (RT_FAILURE(rc))
+    {
+        /* On Windows the above immediately signals that there are no
+         * files matching, while on other platforms enumerating the
+         * files below fails. Either way: no plugins. */
+        goto out;
+    }
+
+    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+    if (!pPluginDirEntry)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
+    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
+    {
+        char *pszPluginPath = NULL;
+
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            /* allocate new buffer. */
+            RTMemFree(pPluginDirEntry);
+            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
+            if (!pPluginDirEntry)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            /* Retry. */
+            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (RT_FAILURE(rc))
+            break;
+
+        /* We got the new entry. */
+        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
+            continue;
+
+        /* Prepend the path to the libraries. */
+        pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
+        if (!pszPluginPath)
+        {
+            rc = VERR_NO_STR_MEMORY;
+            break;
+        }
+
+        rc = vdPluginUnloadFromFilename(pszPluginPath);
+        RTStrFree(pszPluginPath);
+    }
+out:
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    RTStrFree(pszPluginFilter);
+    if (pPluginDirEntry)
+        RTMemFree(pPluginDirEntry);
+    if (pPluginDir)
+        RTDirClose(pPluginDir);
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
 #endif
 }
 
@@ -5488,10 +5671,10 @@ static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int 
  */
 VBOXDDU_DECL(int) VDInit(void)
 {
-    int rc = vdAddBackends(aStaticBackends, RT_ELEMENTS(aStaticBackends));
+    int rc = vdAddBackends(NIL_RTLDRMOD, aStaticBackends, RT_ELEMENTS(aStaticBackends));
     if (RT_SUCCESS(rc))
     {
-        rc = vdAddCacheBackends(aStaticCacheBackends, RT_ELEMENTS(aStaticCacheBackends));
+        rc = vdAddCacheBackends(NIL_RTLDRMOD, aStaticCacheBackends, RT_ELEMENTS(aStaticCacheBackends));
         if (RT_SUCCESS(rc))
         {
             RTListInit(&g_ListPluginsLoaded);
@@ -5576,6 +5759,42 @@ VBOXDDU_DECL(int) VDPluginLoadFromPath(const char *pszPath)
     }
 
     return vdPluginLoadFromPath(pszPath);
+}
+
+/**
+ * Unloads a single plugin given by filename.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     The plugin filename to unload.
+ */
+VBOXDDU_DECL(int) VDPluginUnloadFromFilename(const char *pszFilename)
+{
+    if (!g_apBackends)
+    {
+        int rc = VDInit();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return vdPluginUnloadFromFilename(pszFilename);
+}
+
+/**
+ * Unload all plugins from a given path.
+ *
+ * @returns VBox statuse code.
+ * @param   pszPath         The path to unload plugins from.
+ */
+VBOXDDU_DECL(int) VDPluginUnloadFromPath(const char *pszPath)
+{
+    if (!g_apBackends)
+    {
+        int rc = VDInit();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return vdPluginUnloadFromPath(pszPath);
 }
 
 /**
