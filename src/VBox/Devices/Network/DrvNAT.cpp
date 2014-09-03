@@ -969,17 +969,50 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
 
-    LogRel(("NAT: DNS servers changed, triggering reconnect\n"));
+    LogRel(("NAT: System configuration has changed\n"));
 
-    CFDictionaryRef hDnsDict = (CFDictionaryRef)SCDynamicStoreCopyValue(hDynStor, CFSTR("State:/Network/Global/DNS"));
-    if (hDnsDict)
+    /* Check if any of parameters we are interested in were actually changed. If the size
+     * of hChangedKeys is 0, it means that SCDynamicStore has been restarted. */
+    if (hChangedKeys && CFArrayGetCount(hChangedKeys) > 0)
     {
-        CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
-        if (hArrAddresses)
-            drvNATUpdateDNS(pThis, /* fFlapLink */ true);
+        /* Look to the updated parameters in particular. */
+        CFStringRef pDNSKey = CFSTR("State:/Network/Global/DNS");
 
-        CFRelease(hDnsDict);
+        if (CFArrayContainsValue(hChangedKeys, CFRangeMake(0, CFArrayGetCount(hChangedKeys)), pDNSKey))
+        {
+            LogRel(("NAT: DNS servers changed, triggering reconnect\n"));
+
+            CFDictionaryRef hDnsDict = (CFDictionaryRef)SCDynamicStoreCopyValue(hDynStor, pDNSKey);
+            if (hDnsDict)
+            {
+                CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
+                if (hArrAddresses && CFArrayGetCount(hArrAddresses) > 0)
+                {
+#if 1
+                    /* Dump DNS servers list. */
+                    for (int i = 0; i < CFArrayGetCount(hArrAddresses); i++)
+                    {
+                        CFStringRef pDNSAddrStr = (CFStringRef)CFArrayGetValueAtIndex(hArrAddresses, i);
+                        const char *pszDNSAddr  =  pDNSAddrStr ? CFStringGetCStringPtr(pDNSAddrStr, CFStringGetSystemEncoding()) : NULL;
+                        LogRel(("NAT: New DNS server#%d: %s\n", i, pszDNSAddr ? pszDNSAddr : "None"));
+                    }
+#endif
+                }
+                else
+                    LogRel(("NAT: DNS server list is empty (1)\n"));
+
+                CFRelease(hDnsDict);
+            }
+            else
+                LogRel(("NAT: DNS server list is empty (2)\n"));
+
+            drvNATUpdateDNS(pThis, /* fFlapLink */ true);
+        }
+        else
+            LogRel(("NAT: No DNS changes detected\n"));
     }
+    else
+        LogRel(("NAT: SCDynamicStore has been restarted\n"));
 }
 #endif
 
