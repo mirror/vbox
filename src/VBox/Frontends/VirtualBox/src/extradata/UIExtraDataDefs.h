@@ -267,11 +267,11 @@ namespace UIExtraDataDefs
 class UIExtraDataMetaDefs : public QObject
 {
     Q_OBJECT;
-    Q_ENUMS(MenuHelpActionType);
+    Q_ENUMS(MenuType);
 #ifdef RT_OS_DARWIN
     Q_ENUMS(MenuApplicationActionType);
 #endif /* RT_OS_DARWIN */
-    Q_ENUMS(RuntimeMenuType);
+    Q_ENUMS(MenuHelpActionType);
     Q_ENUMS(RuntimeMenuMachineActionType);
     Q_ENUMS(RuntimeMenuViewActionType);
     Q_ENUMS(RuntimeMenuDevicesActionType);
@@ -280,6 +280,35 @@ class UIExtraDataMetaDefs : public QObject
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 public:
+
+    /** Common UI: Menu types. */
+    enum MenuType
+    {
+        MenuType_Invalid     = 0,
+#ifdef RT_OS_DARWIN
+        MenuType_Application = RT_BIT(0),
+#endif /* RT_OS_DARWIN */
+        MenuType_Machine     = RT_BIT(1),
+        MenuType_View        = RT_BIT(2),
+        MenuType_Devices     = RT_BIT(3),
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        MenuType_Debug       = RT_BIT(4),
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+        MenuType_Help        = RT_BIT(5),
+        MenuType_All         = 0xFF
+    };
+
+#ifdef RT_OS_DARWIN
+    /** Menu "Application": Action types. */
+    enum MenuApplicationActionType
+    {
+        MenuApplicationActionType_Invalid     = 0,
+        MenuApplicationActionType_About       = RT_BIT(0),
+        MenuApplicationActionType_Preferences = RT_BIT(1),
+        MenuApplicationActionType_Close       = RT_BIT(2),
+        MenuApplicationActionType_All         = 0xFFFF
+    };
+#endif /* RT_OS_DARWIN */
 
     /** Menu "Help": Action types. */
     enum MenuHelpActionType
@@ -297,35 +326,6 @@ public:
         MenuHelpActionType_Preferences          = RT_BIT(6),
 #endif /* !RT_OS_DARWIN */
         MenuHelpActionType_All                  = 0xFFFF
-    };
-
-#ifdef RT_OS_DARWIN
-    /** Menu "Application": Action types. */
-    enum MenuApplicationActionType
-    {
-        MenuApplicationActionType_Invalid     = 0,
-        MenuApplicationActionType_About       = RT_BIT(0),
-        MenuApplicationActionType_Preferences = RT_BIT(1),
-        MenuApplicationActionType_Close       = RT_BIT(2),
-        MenuApplicationActionType_All         = 0xFFFF
-    };
-#endif /* RT_OS_DARWIN */
-
-    /** Runtime UI: Menu types. */
-    enum RuntimeMenuType
-    {
-        RuntimeMenuType_Invalid     = 0,
-#ifdef RT_OS_DARWIN
-        RuntimeMenuType_Application = RT_BIT(0),
-#endif /* RT_OS_DARWIN */
-        RuntimeMenuType_Machine     = RT_BIT(1),
-        RuntimeMenuType_View        = RT_BIT(2),
-        RuntimeMenuType_Devices     = RT_BIT(3),
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        RuntimeMenuType_Debug       = RT_BIT(4),
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-        RuntimeMenuType_Help        = RT_BIT(5),
-        RuntimeMenuType_All         = 0xFF
     };
 
     /** Runtime UI: Menu "Machine": Action types. */

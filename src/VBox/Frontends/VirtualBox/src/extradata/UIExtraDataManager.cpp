@@ -2488,32 +2488,32 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     setExtraDataStringList(strKey, data, strID);
 }
 
-UIExtraDataMetaDefs::RuntimeMenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
+UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
 {
     /* Prepare result: */
-    UIExtraDataMetaDefs::RuntimeMenuType result = UIExtraDataMetaDefs::RuntimeMenuType_Invalid;
+    UIExtraDataMetaDefs::MenuType result = UIExtraDataMetaDefs::MenuType_Invalid;
     /* Get restricted runtime-menu-types: */
     foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeMenus, strID))
     {
-        UIExtraDataMetaDefs::RuntimeMenuType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuType>(strValue);
-        if (value != UIExtraDataMetaDefs::RuntimeMenuType_Invalid)
-            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuType>(result | value);
+        UIExtraDataMetaDefs::MenuType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::MenuType>(strValue);
+        if (value != UIExtraDataMetaDefs::MenuType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::MenuType>(result | value);
     }
     /* Return result: */
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::RuntimeMenuType types, const QString &strID)
+void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QString &strID)
 {
-    /* We have RuntimeMenuType enum registered, so we can enumerate it: */
+    /* We have MenuType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuType");
+    const int iEnumIndex = smo.indexOfEnumerator("MenuType");
     QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
 
     /* Prepare result: */
     QStringList result;
-    /* Handle RuntimeMenuType_All enum-value: */
-    if (types == UIExtraDataMetaDefs::RuntimeMenuType_All)
+    /* Handle MenuType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::MenuType_All)
         result << gpConverter->toInternalString(types);
     else
     {
@@ -2521,11 +2521,11 @@ void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::Runt
         for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
         {
             /* Get iterated enum-value: */
-            const UIExtraDataMetaDefs::RuntimeMenuType enumValue =
-                static_cast<const UIExtraDataMetaDefs::RuntimeMenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            /* Skip RuntimeMenuType_Invalid & RuntimeMenuType_All enum-values: */
-            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuType_Invalid ||
-                enumValue == UIExtraDataMetaDefs::RuntimeMenuType_All)
+            const UIExtraDataMetaDefs::MenuType enumValue =
+                static_cast<const UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip MenuType_Invalid & MenuType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::MenuType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::MenuType_All)
                 continue;
             if (types & enumValue)
                 result << gpConverter->toInternalString(enumValue);

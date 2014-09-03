@@ -146,11 +146,6 @@ public:
     /** Returns UI multi-screen layout object reference. */
     UIMultiScreenLayout* multiScreenLayout() const { return m_pMultiScreenLayout; }
 
-    /** Returns whether the menu with passed @a type is allowed in menu-bar. */
-    bool isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType type) const;
-    /** Defines menu-bar @a restriction for passed @a level. */
-    void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuType restriction);
-
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
     bool isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const;
     /** Defines 'Machine' menu @a restriction for passed @a level. */
@@ -266,8 +261,6 @@ private:
     /** Holds the list of Runtime UI main menus. */
     QList<QMenu*> m_mainMenus;
 
-    /** Holds restricted menu types. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuType> m_restrictedMenus;
     /** Holds restricted action types of the Machine menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
     /** Holds restricted action types of the View menu. */

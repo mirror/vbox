@@ -286,9 +286,9 @@ public:
         void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strID);
 
         /** Returns restricted Runtime UI menu types. */
-        UIExtraDataMetaDefs::RuntimeMenuType restrictedRuntimeMenuTypes(const QString &strID);
+        UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QString &strID);
         /** Defines restricted Runtime UI menu types. */
-        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::RuntimeMenuType types, const QString &strID);
+        void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QString &strID);
 
 #ifdef Q_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
