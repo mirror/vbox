@@ -70,6 +70,22 @@ DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
 
 
 /**
+ * ANDs the given CPU set with another.
+ *
+ * @returns pSet.
+ * @param   pSet          Pointer to the set.
+ * @param   pAndMaskSet   Pointer to the AND-mask set.
+ */
+DECLINLINE(PRTCPUSET) RTCpuSetAnd(PRTCPUSET pSet, PRTCPUSET pAndMaskSet)
+{
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
+        ASMAtomicAndU64((volatile uint64_t *)&pSet->bmSet[i], pAndMaskSet->bmSet[i]);
+    return pSet;
+}
+
+
+/**
  * Adds a CPU given by its identifier to the set.
  *
  * @returns 0 on success, -1 if idCpu isn't valid.
@@ -184,6 +200,22 @@ DECLINLINE(bool) RTCpuSetIsEqual(PCRTCPUSET pSet1, PCRTCPUSET pSet2)
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(pSet1->bmSet); i++)
         if (pSet1->bmSet[i] != pSet2->bmSet[i])
+            return false;
+    return true;
+}
+
+
+/**
+ * Checks if the CPU set is empty or not.
+ *
+ * @returns true / false accordingly.
+ * @param   pSet    Pointer to the set.
+ */
+DECLINLINE(bool) RTCpuSetIsEmpty(PRTCPUSET pSet)
+{
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(pSet->bmSet); i++)
+        if (pSet->bmSet[i])
             return false;
     return true;
 }
