@@ -1008,7 +1008,7 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
                         /*
                          * Now call the common code to do the real work.
                          */
-                        rc = supdrvIOCtl(uCmd, pDevExt, pSession, pHdr);
+                        rc = supdrvIOCtl(uCmd, pDevExt, pSession, pHdr, cbBuf);
                         if (RT_SUCCESS(rc))
                         {
                             /*
@@ -1158,10 +1158,15 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
                 &&  pStack->Parameters.DeviceIoControl.InputBufferLength ==  pHdr->cbIn
                 &&  pStack->Parameters.DeviceIoControl.OutputBufferLength ==  pHdr->cbOut)
             {
+                /* Zero extra output bytes to make sure we don't leak anything. */
+                if (pHdr->cbIn < pHdr->cbOut)
+                    RtlZeroMemory((uint8_t *)pHdr + pHdr->cbIn, pHdr->cbOut - pHdr->cbIn);
+
                 /*
                  * Do the job.
                  */
-                rc = supdrvIOCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr);
+                rc = supdrvIOCtl(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr,
+                                 RT_MAX(pHdr->cbIn, pHdr->cbOut));
                 if (!rc)
                 {
                     rcNt = STATUS_SUCCESS;

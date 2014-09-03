@@ -718,7 +718,7 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
         Log(("VBoxDrvLinuxIOCtl: too big cbBuf=%#x; uCmd=%#x\n", cbBuf, uCmd));
         return -E2BIG;
     }
-    if (RT_UNLIKELY(cbBuf != _IOC_SIZE(uCmd) && _IOC_SIZE(uCmd)))
+    if (RT_UNLIKELY(_IOC_SIZE(uCmd) ? cbBuf != _IOC_SIZE(uCmd) : Hdr.cbIn < sizeof(Hdr)))
     {
         Log(("VBoxDrvLinuxIOCtl: bad ioctl cbBuf=%#x _IOC_SIZE=%#x; uCmd=%#x.\n", cbBuf, _IOC_SIZE(uCmd), uCmd));
         return -EINVAL;
@@ -735,11 +735,13 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
         RTMemFree(pHdr);
         return -EFAULT;
     }
+    if (Hdr.cbIn < cbBuf)
+        RT_BZERO((uint8_t *)pHdr + Hdr.cbIn, cbBuf - Hdr.cbIn)
 
     /*
      * Process the IOCtl.
      */
-    rc = supdrvIOCtl(uCmd, &g_DevExt, pSession, pHdr);
+    rc = supdrvIOCtl(uCmd, &g_DevExt, pSession, pHdr, cbBuf);
 
     /*
      * Copy ioctl data and output buffer back to user space.

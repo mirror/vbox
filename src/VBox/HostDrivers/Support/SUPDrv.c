@@ -2292,7 +2292,7 @@ static int supdrvIOCtlInnerRestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, P
  * @param   pSession    Session data.
  * @param   pReqHdr     The request header.
  */
-int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
+int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr, size_t cbReq)
 {
     int rc;
     VBOXDRV_IOCTL_ENTRY(pSession, uIOCtl, pReqHdr);
@@ -2300,10 +2300,17 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
     /*
      * Validate the request.
      */
-    /* this first check could probably be omitted as its also done by the OS specific code... */
+    if (RT_UNLIKELY(cbReq < sizeof(*pReqHdr)))
+    {
+        OSDBGPRINT(("vboxdrv: Bad ioctl request size; cbReq=%#lx\n", (long)cbReq));
+        VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
+        return VERR_INVALID_PARAMETER;
+    }
     if (RT_UNLIKELY(   (pReqHdr->fFlags & SUPREQHDR_FLAGS_MAGIC_MASK) != SUPREQHDR_FLAGS_MAGIC
                     || pReqHdr->cbIn < sizeof(*pReqHdr)
-                    || pReqHdr->cbOut < sizeof(*pReqHdr)))
+                    || pReqHdr->cbIn > cbReq
+                    || pReqHdr->cbOut < sizeof(*pReqHdr)
+                    || pReqHdr->cbOut > cbReq))
     {
         OSDBGPRINT(("vboxdrv: Bad ioctl request header; cbIn=%#lx cbOut=%#lx fFlags=%#lx\n",
                     (long)pReqHdr->cbIn, (long)pReqHdr->cbOut, (long)pReqHdr->fFlags));
@@ -4447,14 +4454,20 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (    pImage->szName[cchName] == '\0'
             &&  !memcmp(pImage->szName, pReq->u.In.szName, cchName))
         {
-            /** @todo check cbImageBits and cbImageWithTabs here, if they differs that indicates that the images are different. */
-            pImage->cUsage++;
-            pReq->u.Out.pvImageBase   = pImage->pvImage;
-            pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
-            pReq->u.Out.fNativeLoader = pImage->fNative;
-            supdrvLdrAddUsage(pSession, pImage);
+            if (RT_LIKELY(pImage->cUsage < UINT32_MAX / 2U))
+            {
+                /** @todo check cbImageBits and cbImageWithTabs here, if they differs that indicates that the images are different. */
+                pImage->cUsage++;
+                pReq->u.Out.pvImageBase   = pImage->pvImage;
+                pReq->u.Out.fNeedsLoading = pImage->uState == SUP_IOCTL_LDR_OPEN;
+                pReq->u.Out.fNativeLoader = pImage->fNative;
+                supdrvLdrAddUsage(pSession, pImage);
+                supdrvLdrUnlock(pDevExt);
+                return VINF_SUCCESS;
+            }
             supdrvLdrUnlock(pDevExt);
-            return VINF_SUCCESS;
+            Log(("supdrvIOCtl_LdrOpen: To many existing references to '%s'!\n", pReq->u.In.szName));
+            return VERR_INTERNAL_ERROR_3; /** @todo add VERR_TOO_MANY_REFERENCES */
         }
     }
     /* (not found - add it!) */
