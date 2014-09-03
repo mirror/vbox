@@ -158,6 +158,8 @@ public:
     virtual int extraDataID() const { return 0; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return QString(); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return true; }
 
     /** Returns extra-data ID to save keyboard shortcut under. */
     virtual QString shortcutExtraDataID() const { return QString(); }
@@ -428,6 +430,11 @@ protected:
 
     /** General event handler. */
     virtual bool event(QEvent *pEvent);
+
+    /** Adds action into corresponding menu. */
+    bool addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd = true);
+    /** Adds action's menu into corresponding menu list. */
+    bool addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd = true);
 
     /** Holds the action-pool type. */
     const UIActionPoolType m_type;

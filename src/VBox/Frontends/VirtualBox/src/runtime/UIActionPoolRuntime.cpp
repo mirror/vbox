@@ -48,6 +48,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Machine; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Machine); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Machine); }
 
     void retranslateUi()
     {
@@ -70,6 +72,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog); }
 
     QString shortcutExtraDataID() const
     {
@@ -103,6 +107,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot); }
 
     QString shortcutExtraDataID() const
     {
@@ -136,6 +142,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot); }
 
     QString shortcutExtraDataID() const
     {
@@ -169,6 +177,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog); }
 
     QString shortcutExtraDataID() const
     {
@@ -202,6 +212,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard); }
 
     void retranslateUi()
     {
@@ -224,6 +236,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -252,6 +266,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse); }
 
     void retranslateUi()
     {
@@ -276,6 +292,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration); }
 
     QString shortcutExtraDataID() const
     {
@@ -309,6 +327,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD); }
 
     QString shortcutExtraDataID() const
     {
@@ -343,6 +363,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS); }
 
     QString shortcutExtraDataID() const
     {
@@ -379,6 +401,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause); }
 
     QString shortcutExtraDataID() const
     {
@@ -412,6 +436,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset); }
 
     QString shortcutExtraDataID() const
     {
@@ -445,6 +471,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState); }
 
     QString shortcutExtraDataID() const
     {
@@ -473,6 +501,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown); }
 
     QString shortcutExtraDataID() const
     {
@@ -510,6 +540,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff); }
 
     QString shortcutExtraDataID() const
     {
@@ -542,6 +574,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;}
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);}
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close); }
 
     QString shortcutExtraDataID() const
     {
@@ -576,6 +610,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View); }
 
     void retranslateUi()
     {
@@ -598,6 +634,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View); }
 
     void retranslateUi() {}
 };
@@ -619,6 +657,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen); }
 
     QString shortcutExtraDataID() const
     {
@@ -654,6 +694,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless); }
 
     QString shortcutExtraDataID() const
     {
@@ -689,6 +731,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale); }
 
     QString shortcutExtraDataID() const
     {
@@ -724,6 +768,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize); }
 
     QString shortcutExtraDataID() const
     {
@@ -757,6 +803,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
 
     QString shortcutExtraDataID() const
     {
@@ -790,6 +838,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar); }
 
     void retranslateUi()
     {
@@ -812,6 +862,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -840,6 +892,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar); }
 
     void retranslateUi()
     {
@@ -862,6 +916,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -891,6 +947,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar); }
 
     QString shortcutExtraDataID() const
     {
@@ -919,6 +977,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Devices; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Devices); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Devices); }
 
     void retranslateUi()
     {
@@ -944,6 +1004,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives); }
 
     void retranslateUi()
     {
@@ -966,6 +1028,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -997,6 +1061,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices); }
 
     void retranslateUi()
     {
@@ -1022,6 +1088,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices); }
 
     void retranslateUi()
     {
@@ -1044,6 +1112,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network); }
 
     void retranslateUi()
     {
@@ -1066,6 +1136,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -1097,6 +1169,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices); }
 
     void retranslateUi()
     {
@@ -1119,6 +1193,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -1150,6 +1226,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams); }
 
     void retranslateUi()
     {
@@ -1172,6 +1250,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard); }
 
     void retranslateUi()
     {
@@ -1194,6 +1274,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop); }
 
     void retranslateUi()
     {
@@ -1216,6 +1298,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders); }
 
     void retranslateUi()
     {
@@ -1238,6 +1322,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -1268,6 +1354,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer); }
 
     QString shortcutExtraDataID() const
     {
@@ -1296,6 +1384,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture); }
 
     void retranslateUi()
     {
@@ -1320,6 +1410,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture); }
 
     QString shortcutExtraDataID() const
     {
@@ -1348,6 +1440,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings); }
 
     QString shortcutExtraDataID() const
     {
@@ -1376,6 +1470,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools); }
 
     QString shortcutExtraDataID() const
     {
@@ -1410,6 +1506,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Debug; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Debug); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Debug); }
 
     void retranslateUi()
     {
@@ -1432,6 +1530,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics); }
 
     QString shortcutExtraDataID() const
     {
@@ -1459,6 +1559,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine); }
 
     QString shortcutExtraDataID() const
     {
@@ -1486,6 +1588,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging); }
 
     QString shortcutExtraDataID() const
     {
@@ -1513,6 +1617,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
 
     QString shortcutExtraDataID() const
     {
@@ -1988,100 +2094,55 @@ void UIActionPoolRuntime::updateMenus()
 
 #ifdef RT_OS_DARWIN
     /* 'Application' menu: */
-    action(UIActionIndex_M_Application)->setVisible(false);
-    m_mainMenus << action(UIActionIndex_M_Application)->menu();
+    addMenu(m_mainMenus, action(UIActionIndex_M_Application));
     updateMenuApplication();
 #endif /* RT_OS_DARWIN */
 
     /* 'Machine' menu: */
-    const bool fAllowToShowMenuMachine = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Machine);
-    action(UIActionIndexRT_M_Machine)->setVisible(fAllowToShowMenuMachine);
-    if (fAllowToShowMenuMachine)
-        m_mainMenus << action(UIActionIndexRT_M_Machine)->menu();
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_Machine));
     updateMenuMachine();
 
     /* 'View' menu: */
-    const bool fAllowToShowMenuView = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View);
-    action(UIActionIndexRT_M_View)->setVisible(fAllowToShowMenuView);
-    action(UIActionIndexRT_M_ViewPopup)->setVisible(fAllowToShowMenuView);
-    if (fAllowToShowMenuView)
-        m_mainMenus << action(UIActionIndexRT_M_View)->menu();
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_View));
     updateMenuView();
+    /* 'View' popup menu: */
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_ViewPopup), false);
     updateMenuViewPopup();
 
     /* 'Devices' menu: */
-    const bool fAllowToShowMenuDevices = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Devices);
-    action(UIActionIndexRT_M_Devices)->setVisible(fAllowToShowMenuDevices);
-    if (fAllowToShowMenuDevices)
-        m_mainMenus << action(UIActionIndexRT_M_Devices)->menu();
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_Devices));
     updateMenuDevices();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    const bool fAllowToShowMenuDebug = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Debug);
-    action(UIActionIndexRT_M_Debug)->setVisible(fAllowToShowMenuDebug);
-    if (fAllowToShowMenuDebug)
-        m_mainMenus << action(UIActionIndexRT_M_Debug)->menu();
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug));
     updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* 'Help' menu: */
-    const bool fAllowToShowMenuHelp = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help);
-    action(UIActionIndex_Menu_Help)->setVisible(fAllowToShowMenuHelp);
-    if (fAllowToShowMenuHelp)
-        m_mainMenus << action(UIActionIndex_Menu_Help)->menu();
+    addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
     updateMenuHelp();
 }
 
 void UIActionPoolRuntime::updateMenuMachine()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Machine)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Machine)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-
     /* Separator: */
     bool fSeparator = false;
 
-
     /* 'Settings Dialog' action: */
-    const bool fAllowToShowActionSettingsDialog = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
-    action(UIActionIndexRT_M_Machine_S_Settings)->setEnabled(fAllowToShowActionSettingsDialog);
-    if (fAllowToShowActionSettingsDialog)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Settings));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Settings)) || fSeparator;
     /* 'Take Snapshot' action: */
-    const bool fAllowToShowActionTakeSnapshot = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot);
-    action(UIActionIndexRT_M_Machine_S_TakeSnapshot)->setEnabled(fAllowToShowActionTakeSnapshot);
-    if (fAllowToShowActionTakeSnapshot)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Take Screenshot' action: */
-    const bool fAllowToShowActionTakeScreenshot = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot);
-    action(UIActionIndexRT_M_Machine_S_TakeScreenshot)->setEnabled(fAllowToShowActionTakeScreenshot);
-    if (fAllowToShowActionTakeScreenshot)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeScreenshot)) || fSeparator;
     /* 'Information Dialog' action: */
-    const bool fAllowToShowActionInformationDialog = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog);
-    action(UIActionIndexRT_M_Machine_S_ShowInformation)->setEnabled(fAllowToShowActionInformationDialog);
-    if (fAllowToShowActionInformationDialog)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_ShowInformation));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2089,46 +2150,17 @@ void UIActionPoolRuntime::updateMenuMachine()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'Keyboard' submenu: */
-    const bool fAllowToShowActionKeyboard = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard);
-    action(UIActionIndexRT_M_Machine_M_Keyboard)->setEnabled(fAllowToShowActionKeyboard);
-    if (fAllowToShowActionKeyboard)
-    {
-//        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard));
-//        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard), false) || fSeparator;
     updateMenuMachineKeyboard();
-
     /* 'Keyboard Settings' action: */
-    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
-    action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
-    if (fAllowToShowActionKeyboardSettings)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)) || fSeparator;
     /* 'Mouse' submenu: */
-    const bool fAllowToShowActionMouse = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse);
-    action(UIActionIndexRT_M_Machine_M_Mouse)->setEnabled(fAllowToShowActionMouse);
-    if (fAllowToShowActionMouse)
-    {
-//        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse));
-//        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Mouse), false) || fSeparator;
     updateMenuMachineMouse();
-
     /* 'Mouse Integration' action: */
-    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration);
-    action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
-    if (fAllowToShowActionMouseIntegration)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2136,28 +2168,13 @@ void UIActionPoolRuntime::updateMenuMachine()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'Type CAD' action: */
-    const bool fAllowToShowActionTypeCAD = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD);
-    action(UIActionIndexRT_M_Machine_S_TypeCAD)->setEnabled(fAllowToShowActionTypeCAD);
-    if (fAllowToShowActionTypeCAD)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TypeCAD));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCAD)) || fSeparator;
 #ifdef Q_WS_X11
     /* 'Type CABS' action: */
-    const bool fAllowToShowActionTypeCABS = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS);
-    action(UIActionIndexRT_M_Machine_S_TypeCABS)->setEnabled(fAllowToShowActionTypeCABS);
-    if (fAllowToShowActionTypeCABS)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_TypeCABS));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCABS)) || fSeparator;
 #endif /* Q_WS_X11 */
-
 
     /* Separator: */
     if (fSeparator)
@@ -2166,52 +2183,16 @@ void UIActionPoolRuntime::updateMenuMachine()
         fSeparator = false;
     }
 
-
     /* 'Pause' action: */
-    const bool fAllowToShowActionPause = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause);
-    action(UIActionIndexRT_M_Machine_T_Pause)->setEnabled(fAllowToShowActionPause);
-    if (fAllowToShowActionPause)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_T_Pause));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_T_Pause)) || fSeparator;
     /* 'Reset' action: */
-    const bool fAllowToShowActionReset = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset);
-    action(UIActionIndexRT_M_Machine_S_Reset)->setEnabled(fAllowToShowActionReset);
-    if (fAllowToShowActionReset)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Reset));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Reset)) || fSeparator;
     /* 'Save' action: */
-    const bool fAllowToShowActionSaveState = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState);
-    action(UIActionIndexRT_M_Machine_S_Save)->setEnabled(fAllowToShowActionSaveState);
-    if (fAllowToShowActionSaveState)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Save));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Save)) || fSeparator;
     /* 'Shutdown' action: */
-    const bool fAllowToShowActionShutdown = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown);
-    action(UIActionIndexRT_M_Machine_S_Shutdown)->setEnabled(fAllowToShowActionShutdown);
-    if (fAllowToShowActionShutdown)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Shutdown));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Shutdown)) || fSeparator;
     /* 'PowerOff' action: */
-    const bool fAllowToShowActionPowerOff = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff);
-    action(UIActionIndexRT_M_Machine_S_PowerOff)->setEnabled(fAllowToShowActionPowerOff);
-    if (fAllowToShowActionPowerOff)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_S_PowerOff));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_PowerOff)) || fSeparator;
 
 #ifndef Q_WS_MAC
     /* Separator: */
@@ -2221,13 +2202,9 @@ void UIActionPoolRuntime::updateMenuMachine()
         fSeparator = false;
     }
 
-
-    /* Close action: */
-    const bool fAllowToShowActionClose = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
-    pMenu->addAction(action(UIActionIndexRT_M_Machine_S_Close));
-    action(UIActionIndexRT_M_Machine_S_Close)->setEnabled(fAllowToShowActionClose);
+    /* 'Close' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Close)) || fSeparator;
 #endif /* !Q_WS_MAC */
-
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Machine);
@@ -2236,16 +2213,13 @@ void UIActionPoolRuntime::updateMenuMachine()
 void UIActionPoolRuntime::updateMenuMachineKeyboard()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Keyboard)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Keyboard)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Keyboard Settings' action: */
-    const bool fAllowToShowActionKeyboardSettings = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
-    action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)->setEnabled(fAllowToShowActionKeyboardSettings);
-    if (fAllowToShowActionKeyboardSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Machine_M_Keyboard);
@@ -2254,16 +2228,13 @@ void UIActionPoolRuntime::updateMenuMachineKeyboard()
 void UIActionPoolRuntime::updateMenuMachineMouse()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Mouse)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Machine_M_Mouse)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Machine Integration' action: */
-    const bool fAllowToShowActionMouseIntegration = isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration);
-    action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)->setEnabled(fAllowToShowActionMouseIntegration);
-    if (fAllowToShowActionMouseIntegration)
-        pMenu->addAction(action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
+    addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Machine_M_Mouse);
@@ -2272,43 +2243,20 @@ void UIActionPoolRuntime::updateMenuMachineMouse()
 void UIActionPoolRuntime::updateMenuView()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_View)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_View)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-
     /* Separator: */
     bool fSeparator = false;
 
-
     /* 'Fullscreen' action: */
-    const bool fIsAllowToShowActionFullscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
-    action(UIActionIndexRT_M_View_T_Fullscreen)->setEnabled(fIsAllowToShowActionFullscreen);
-    if (fIsAllowToShowActionFullscreen)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_T_Fullscreen));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_Fullscreen)) || fSeparator;
     /* 'Seamless' action: */
-    const bool fIsAllowToShowActionSeamless   = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
-    action(UIActionIndexRT_M_View_T_Seamless)->setEnabled(fIsAllowToShowActionSeamless);
-    if (fIsAllowToShowActionSeamless)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_T_Seamless));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_Seamless)) || fSeparator;
     /* 'Scale' action: */
-    const bool fIsAllowToShowActionScale      = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
-    action(UIActionIndexRT_M_View_T_Scale)->setEnabled(fIsAllowToShowActionScale);
-    if (fIsAllowToShowActionScale)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_T_Scale));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_Scale)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2316,26 +2264,11 @@ void UIActionPoolRuntime::updateMenuView()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'Adjust Window' action: */
-    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
-    action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(fAllowToShowActionAdjustWindow);
-    if (fAllowToShowActionAdjustWindow)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_S_AdjustWindow));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_AdjustWindow)) || fSeparator;
     /* 'Guest Autoresize' action: */
-    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
-    action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(fAllowToShowActionGuestAutoresize);
-    if (fAllowToShowActionGuestAutoresize)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_T_GuestAutoresize));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_GuestAutoresize)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2343,28 +2276,13 @@ void UIActionPoolRuntime::updateMenuView()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'Menu Bar' submenu: */
-    const bool fAllowToShowActionMenuBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar);
-    action(UIActionIndexRT_M_View_M_MenuBar)->setEnabled(fAllowToShowActionMenuBar);
-    if (fAllowToShowActionMenuBar)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_M_MenuBar));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar)) || fSeparator;
     updateMenuViewMenuBar();
-
     /* 'Status Bar' submenu: */
-    const bool fAllowToShowActionStatusBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar);
-    action(UIActionIndexRT_M_View_M_StatusBar)->setEnabled(fAllowToShowActionStatusBar);
-    if (fAllowToShowActionStatusBar)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_StatusBar)) || fSeparator;
     updateMenuViewStatusBar();
-
 
     /* Separator: */
     if (fSeparator)
@@ -2372,7 +2290,6 @@ void UIActionPoolRuntime::updateMenuView()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* Do we have to show resize or multiscreen menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
@@ -2404,7 +2321,6 @@ void UIActionPoolRuntime::updateMenuView()
         }
     }
 
-
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View);
 }
@@ -2412,34 +2328,18 @@ void UIActionPoolRuntime::updateMenuView()
 void UIActionPoolRuntime::updateMenuViewPopup()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_ViewPopup)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_ViewPopup)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-
     /* Separator: */
     bool fSeparator = false;
 
-
     /* 'Adjust Window' action: */
-    const bool fAllowToShowActionAdjustWindow = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
-    action(UIActionIndexRT_M_View_S_AdjustWindow)->setEnabled(fAllowToShowActionAdjustWindow);
-    if (fAllowToShowActionAdjustWindow)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_S_AdjustWindow));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_AdjustWindow)) || fSeparator;
     /* 'Guest Autoresize' action: */
-    const bool fAllowToShowActionGuestAutoresize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
-    action(UIActionIndexRT_M_View_T_GuestAutoresize)->setEnabled(fAllowToShowActionGuestAutoresize);
-    if (fAllowToShowActionGuestAutoresize)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_View_T_GuestAutoresize));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_GuestAutoresize)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2447,7 +2347,6 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
@@ -2463,7 +2362,6 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         }
     }
 
-
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
 }
@@ -2471,16 +2369,13 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 void UIActionPoolRuntime::updateMenuViewMenuBar()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_View_M_MenuBar)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_MenuBar)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Menu Bar Settings' action: */
-    const bool fAllowToShowActionMenuBarSettings = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings);
-    action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(fAllowToShowActionMenuBarSettings);
-    if (fAllowToShowActionMenuBarSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_MenuBar);
@@ -2489,22 +2384,15 @@ void UIActionPoolRuntime::updateMenuViewMenuBar()
 void UIActionPoolRuntime::updateMenuViewStatusBar()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_View_M_StatusBar)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_StatusBar)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Status Bar Settings' action: */
-    const bool fAllowToShowActionStatusBarSettings = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings);
-    action(UIActionIndexRT_M_View_M_StatusBar_S_Settings)->setEnabled(fAllowToShowActionStatusBarSettings);
-    if (fAllowToShowActionStatusBarSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
-
+    addAction(pMenu, action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
     /* 'Toggle Status Bar' action: */
-    const bool fAllowToShowActionToggleStatusBar = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar);
-    action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->setEnabled(fAllowToShowActionToggleStatusBar);
-    if (fAllowToShowActionToggleStatusBar)
-        pMenu->addAction(action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
+    addAction(pMenu, action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_StatusBar);
@@ -2577,9 +2465,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
                 pAction->setCheckable(true);
                 if (screenSize.width() == size.width() &&
                     screenSize.height() == size.height())
-                {
                     pAction->setChecked(true);
-                }
             }
         }
         /* Insert group actions into menu: */
@@ -2632,129 +2518,51 @@ void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
 void UIActionPoolRuntime::updateMenuDevices()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-
     /* Separator: */
     bool fSeparator = false;
 
-
     /* 'Hard Drives' submenu: */
-    const bool fAllowToShowActionHardDrives = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
-    action(UIActionIndexRT_M_Devices_M_HardDrives)->setEnabled(fAllowToShowActionHardDrives);
-    if (fAllowToShowActionHardDrives)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_HardDrives)) || fSeparator;
     updateMenuDevicesHardDrives();
-
     /* 'Optical Devices' submenu: */
-    const bool fAllowToShowActionOpticalDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
-    action(UIActionIndexRT_M_Devices_M_OpticalDevices)->setEnabled(fAllowToShowActionOpticalDevices);
-    if (fAllowToShowActionOpticalDevices)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_OpticalDevices));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_OpticalDevices)) || fSeparator;
     /* 'Floppy Devices' submenu: */
-    const bool fAllowToShowActionFloppyDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
-    action(UIActionIndexRT_M_Devices_M_FloppyDevices)->setEnabled(fAllowToShowActionFloppyDevices);
-    if (fAllowToShowActionFloppyDevices)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_FloppyDevices));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_FloppyDevices)) || fSeparator;
     /* 'Network' submenu: */
-    const bool fAllowToShowActionNetwork = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
-    action(UIActionIndexRT_M_Devices_M_Network)->setEnabled(fAllowToShowActionNetwork);
-    if (fAllowToShowActionNetwork)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Network)) || fSeparator;
     updateMenuDevicesNetwork();
-
     /* 'USB Devices' submenu: */
-    const bool fAllowToShowActionUSBDevices = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
-    action(UIActionIndexRT_M_Devices_M_USBDevices)->setEnabled(fAllowToShowActionUSBDevices);
-    if (fAllowToShowActionUSBDevices)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_USBDevices)) || fSeparator;
     updateMenuDevicesUSBDevices();
-
     /* 'Web Cams' submenu: */
-    const bool fAllowToShowActionWebCams = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
-    action(UIActionIndexRT_M_Devices_M_WebCams)->setEnabled(fAllowToShowActionWebCams);
-    if (fAllowToShowActionWebCams)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_WebCams));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_WebCams)) || fSeparator;
     /* 'Shared Clipboard' submenu: */
-    const bool fAllowToShowActionSharedClipboard = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard);
-    action(UIActionIndexRT_M_Devices_M_SharedClipboard)->setEnabled(fAllowToShowActionSharedClipboard);
-    if (fAllowToShowActionSharedClipboard)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedClipboard));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedClipboard)) || fSeparator;
     /* 'Drag&Drop' submenu: */
-    const bool fAllowToShowActionDragAndDrop = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop);
-    action(UIActionIndexRT_M_Devices_M_DragAndDrop)->setEnabled(fAllowToShowActionDragAndDrop);
-    if (fAllowToShowActionDragAndDrop)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_DragAndDrop)) || fSeparator;
     /* 'Shared Folders' submenu: */
-    const bool fAllowToShowActionSharedFolders = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders);
-    action(UIActionIndexRT_M_Devices_M_SharedFolders)->setEnabled(fAllowToShowActionSharedFolders);
-    if (fAllowToShowActionSharedFolders)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
     updateMenuDevicesSharedFolders();
 
-
     /* Separator: */
     if (fSeparator)
     {
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'VRDE Server' action: */
-    const bool fAllowToShowActionVRDEServer = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer);
-    action(UIActionIndexRT_M_Devices_T_VRDEServer)->setEnabled(fAllowToShowActionVRDEServer);
-    if (fAllowToShowActionVRDEServer)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_T_VRDEServer));
-        fSeparator = true;
-    }
-
-    /* 'Video Capture' action: */
-    const bool fAllowToShowActionVideoCapture = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture);
-    action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setEnabled(fAllowToShowActionVideoCapture);
-    if (fAllowToShowActionVideoCapture)
-    {
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
-        fSeparator = true;
-    }
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_T_VRDEServer)) || fSeparator;
+    /* 'Video Capture' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture), false) || fSeparator;
     updateMenuDevicesVideoCapture();
-
+    /* 'Video Capture Start' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2763,13 +2571,8 @@ void UIActionPoolRuntime::updateMenuDevices()
         fSeparator = false;
     }
 
-
     /* Install Guest Tools action: */
-    const bool fAllowToShowActionInstallGuestTools = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
-    action(UIActionIndexRT_M_Devices_S_InstallGuestTools)->setEnabled(fAllowToShowActionInstallGuestTools);
-    if (fAllowToShowActionInstallGuestTools)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
-
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_S_InstallGuestTools)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices);
@@ -2778,16 +2581,13 @@ void UIActionPoolRuntime::updateMenuDevices()
 void UIActionPoolRuntime::updateMenuDevicesHardDrives()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_HardDrives)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_HardDrives)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Hard Drives Settings' action: */
-    const bool fAllowToShowActionHardDrivesSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings);
-    action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings)->setEnabled(fAllowToShowActionHardDrivesSettings);
-    if (fAllowToShowActionHardDrivesSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_HardDrives);
@@ -2796,46 +2596,41 @@ void UIActionPoolRuntime::updateMenuDevicesHardDrives()
 void UIActionPoolRuntime::updateMenuDevicesNetwork()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_Network)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_Network)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Network Settings' action: */
-    const bool fAllowToShowActionNetworkSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings);
-    action(UIActionIndexRT_M_Devices_M_Network_S_Settings)->setEnabled(fAllowToShowActionNetworkSettings);
-    if (fAllowToShowActionNetworkSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_USBDevices)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'USB Devices Settings' action: */
-    const bool fAllowToShowActionUSBDevicesSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
-    action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)->setEnabled(fAllowToShowActionUSBDevicesSettings);
-    if (fAllowToShowActionUSBDevicesSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
+
+    /* This menu always remains invalid.. */
 }
 
 void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_SharedFolders)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Shared Folders Settings' action: */
-    const bool fAllowToShowActionSharedFoldersSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
-    action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings)->setEnabled(fAllowToShowActionSharedFoldersSettings);
-    if (fAllowToShowActionSharedFoldersSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_SharedFolders);
@@ -2844,22 +2639,15 @@ void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
 void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Video Capture Settings' action: */
-    const bool fAllowToShowActionVideoCaptureSettings = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings);
-    action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionVideoCaptureSettings);
-    if (fAllowToShowActionVideoCaptureSettings)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
-
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
     /* 'Start Video Capture' action: */
-    const bool fAllowToShowActionStartVideoCapture = isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture);
-    action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)->setEnabled(fAllowToShowActionStartVideoCapture);
-    if (fAllowToShowActionStartVideoCapture)
-        pMenu->addAction(action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
+    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_VideoCapture);
@@ -2869,34 +2657,19 @@ void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
 void UIActionPoolRuntime::updateMenuDebug()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndexRT_M_Debug)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_Debug)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
     /* 'Statistics' action: */
-    const bool fAllowToShowActionStatistics = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics);
-    action(UIActionIndexRT_M_Debug_S_ShowStatistics)->setEnabled(fAllowToShowActionStatistics);
-    if (fAllowToShowActionStatistics)
-        pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowStatistics));
-
+    addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowStatistics));
     /* 'Command Line' action: */
-    const bool fAllowToShowActionCommandLine = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine);
-    action(UIActionIndexRT_M_Debug_S_ShowCommandLine)->setEnabled(fAllowToShowActionCommandLine);
-    if (fAllowToShowActionCommandLine)
-        pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
-
+    addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
     /* 'Logging' action: */
-    const bool fAllowToShowActionLogging = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging);
-    action(UIActionIndexRT_M_Debug_T_Logging)->setEnabled(fAllowToShowActionLogging);
-    if (fAllowToShowActionLogging)
-        pMenu->addAction(action(UIActionIndexRT_M_Debug_T_Logging));
-
+    addAction(pMenu, action(UIActionIndexRT_M_Debug_T_Logging));
     /* 'Log Dialog' action: */
-    const bool fAllowToShowActionLogDialog = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
-    action(UIActionIndexRT_M_Debug_S_ShowLogDialog)->setEnabled(fAllowToShowActionLogDialog);
-    if (fAllowToShowActionLogDialog)
-        pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
+    addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Debug);
