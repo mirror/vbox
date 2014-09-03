@@ -688,6 +688,8 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
                 RTMemTmpFree(pHdr);
             return rc;
         }
+        if (Hdr.cbIn < cbReq)
+            RT_BZERO((uint8_t *)pHdr + Hdr.cbIn, cbReq - Hdr.cbIn)
     }
     else
     {
@@ -698,7 +700,7 @@ static int VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t 
     /*
      * Process the IOCtl.
      */
-    int rc = supdrvIOCtl(iCmd, &g_DevExt, pSession, pHdr);
+    int rc = supdrvIOCtl(iCmd, &g_DevExt, pSession, pHdr, cbReq);
     if (RT_LIKELY(!rc))
     {
         /*
