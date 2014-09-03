@@ -32,7 +32,6 @@
 #include <iprt/cpp/list.h>
 
 #include <new>
-#include <algorithm>
 
 
 /** @defgroup grp_rt_cpp_string     C++ String support
@@ -879,14 +878,24 @@ public:
 
     /**
      * Swaps two strings in a fast way.
+     *
      * Exception safe.
      * 
-     * @param   that  the string to swap for */
-    inline void swap(RTCString &that) throw()
+     * @param   a_rThat  The string to swap with.
+     */
+    inline void swap(RTCString &a_rThat) throw()
     {
-        std::swap(m_psz, that.m_psz);
-        std::swap(m_cch, that.m_cch);
-        std::swap(m_cbAllocated, that.m_cbAllocated);
+        char   *pszTmp         = m_psz;
+        size_t  cchTmp         = m_cch;
+        size_t  cbAllocatedTmp = m_cbAllocated;
+
+        m_psz                  = a_rThat.m_psz;
+        m_cch                  = a_rThat.m_cch;
+        m_cbAllocated          = a_rThat.m_cbAllocated;
+
+        a_rThat.m_psz          = pszTmp;
+        a_rThat.m_cch          = cchTmp;
+        a_rThat.m_cbAllocated  = cbAllocatedTmp;
     }
 
 protected:
