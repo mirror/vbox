@@ -71,7 +71,7 @@ void vbclFatalError(char *pszMessage)
         if (pszCommand)
             system(pszCommand);
     }
-    exit(1);
+    _exit(1);
 }
 
 /** Clean up if we get a signal or something.  This is extern so that we
@@ -83,10 +83,7 @@ void VBClCleanUp()
      * never to exit from anywhere except from this method. */
     int rc = RTCritSectEnter(&g_critSect);
     if (RT_FAILURE(rc))
-    {
-        LogRel(("VBoxClient: Failure while acquiring the global critical section, rc=%Rrc\n", rc));
-        abort();
-    }
+        VBClFatalError(("VBoxClient: Failure while acquiring the global critical section, rc=%Rrc\n", rc));
     if (g_pService)
         (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
@@ -98,7 +95,7 @@ void VBClCleanUp()
 /**
  * A standard signal handler which cleans up and exits.
  */
-void vboxClientSignalHandler(int cSignal)
+static void vboxClientSignalHandler(int cSignal)
 {
     LogRel(("VBoxClient: terminated with signal %d\n", cSignal));
     /** Disable seamless mode */
@@ -109,7 +106,7 @@ void vboxClientSignalHandler(int cSignal)
 /**
  * Xlib error handler for certain errors that we can't avoid.
  */
-int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
+static int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 {
     char errorText[1024];
 
@@ -133,7 +130,7 @@ static int vboxClientXLibIOErrorHandler(Display *pDisplay)
  * Reset all standard termination signals to call our signal handler, which
  * cleans up and exits.
  */
-void vboxClientSetSignalHandlers(void)
+static void vboxClientSetSignalHandlers(void)
 {
     struct sigaction sigAction;
 
@@ -360,7 +357,7 @@ int main(int argc, char *argv[])
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
     if (!XInitThreads())
-        return 1;
+        VBClFatalError(("Failed to initialize X11 threads\n"));
     /* Get our file name for error output. */
     pcszFileName = RTPathFilename(argv[0]);
     if (!pcszFileName)
@@ -368,11 +365,8 @@ int main(int argc, char *argv[])
     /* Initialise the guest library. */
     rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
-    {
-        RTPrintf("%s: failed to connect to the VirtualBox kernel service, rc=%Rrc\n",
-                 pcszFileName, rc);
-        return 1;
-    }
+        VBClFatalError(("%s: failed to connect to the VirtualBox kernel service, rc=%Rrc\n",
+                 pcszFileName, rc));
 
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */
@@ -443,55 +437,41 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    do {
-        pcszStage = "Initialising critical section";
-        rc = RTCritSectInit(&g_critSect);
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "Getting home directory for pid-file";
-        rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "Creating pid-file path";
-        rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
-                          (*g_pService)->getPidFilePath());
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "Daemonising";
-        if (fDaemonise)
-            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "Creating pid-file";
-        if (g_szPidFile[0])
-            rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
-        if (RT_FAILURE(rc))
-            break;
-        /* Set signal handlers to clean up on exit. */
-        vboxClientSetSignalHandlers();
-        /* Set an X11 error handler, so that we don't die when we get unavoidable
-         * errors. */
-        XSetErrorHandler(vboxClientXLibErrorHandler);
-        /* Set an X11 I/O error handler, so that we can shutdown properly on
-         * fatal errors. */
-        XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
-        pcszStage = "Initialising service";
-        rc = (*g_pService)->init(g_pService);
-    } while (0);
+    rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
-    {
-        LogRelFunc(("VBoxClient: failed at stage: \"%s\" rc: %Rrc\n",
-                    pcszStage, rc));
-        VbglR3Term();
-        return 1;
-    }
-
+        VBClFatalError(("Initialising critical section: %Rrc\n", rc));
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Initialising critical section: %Rrc\n", rc));
+    rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Getting home directory for pid-file: %Rrc\n", rc));
+    rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
+                      (*g_pService)->getPidFilePath());
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
+    if (fDaemonise)
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Daemonizing: %Rrc\n", rc));
+    if (g_szPidFile[0])
+        rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Creating pid-file: %Rrc\n", rc));
+    /* Set signal handlers to clean up on exit. */
+    vboxClientSetSignalHandlers();
+    /* Set an X11 error handler, so that we don't die when we get unavoidable
+     * errors. */
+    XSetErrorHandler(vboxClientXLibErrorHandler);
+    /* Set an X11 I/O error handler, so that we can shutdown properly on
+     * fatal errors. */
+    XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
+    rc = (*g_pService)->init(g_pService);
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Initialising service: %Rrc\n", rc));
     rc = startMonitorThread();
     if (RT_FAILURE(rc))
-        LogRel(("Failed to start the monitor thread (%Rrc).  Exiting.\n",
-                 rc));
-    else
-        (*g_pService)->run(g_pService, fDaemonise);  /* Should never return. */
+        VBClFatalError(("Starting monitor thread: %Rrc\n", rc));
+    (*g_pService)->run(g_pService, fDaemonise);  /* Should never return. */
     VBClCleanUp();
     return 1;
 }
