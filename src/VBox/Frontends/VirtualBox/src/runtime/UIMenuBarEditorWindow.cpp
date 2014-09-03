@@ -171,21 +171,21 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
     /* Depending on triggered action class: */
     switch (pAction->property("class").toInt())
     {
-        case UIExtraDataMetaDefs::RuntimeMenuType_All:
+        case UIExtraDataMetaDefs::MenuType_All:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuType type =
-                static_cast<UIExtraDataMetaDefs::RuntimeMenuType>(pAction->property("type").toInt());
+            const UIExtraDataMetaDefs::MenuType type =
+                static_cast<UIExtraDataMetaDefs::MenuType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuType restrictions = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::MenuType restrictions = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
             /* Invert restriction for sender type: */
-            restrictions = (UIExtraDataMetaDefs::RuntimeMenuType)(restrictions ^ type);
+            restrictions = (UIExtraDataMetaDefs::MenuType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
             gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, vboxGlobal().managedVMUuid());
             break;
         }
 #ifdef Q_WS_MAC
-        case UIExtraDataMetaDefs::RuntimeMenuType_Application:
+        case UIExtraDataMetaDefs::MenuType_Application:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuApplicationActionType type =
@@ -199,7 +199,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             break;
         }
 #endif /* Q_WS_MAC */
-        case UIExtraDataMetaDefs::RuntimeMenuType_Machine:
+        case UIExtraDataMetaDefs::MenuType_Machine:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuMachineActionType type =
@@ -212,7 +212,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(restrictions, vboxGlobal().managedVMUuid());
             break;
         }
-        case UIExtraDataMetaDefs::RuntimeMenuType_View:
+        case UIExtraDataMetaDefs::MenuType_View:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuViewActionType type =
@@ -225,7 +225,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuViewActionTypes(restrictions, vboxGlobal().managedVMUuid());
             break;
         }
-        case UIExtraDataMetaDefs::RuntimeMenuType_Devices:
+        case UIExtraDataMetaDefs::MenuType_Devices:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type =
@@ -239,7 +239,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             break;
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        case UIExtraDataMetaDefs::RuntimeMenuType_Debug:
+        case UIExtraDataMetaDefs::MenuType_Debug:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type =
@@ -253,7 +253,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             break;
         }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        case UIExtraDataMetaDefs::RuntimeMenuType_Help:
+        case UIExtraDataMetaDefs::MenuType_Help:
         {
             /* Get sender type: */
             const UIExtraDataMetaDefs::MenuHelpActionType type =
@@ -349,7 +349,7 @@ QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
     AssertPtrReturn(pNamedMenu, 0);
     {
         /* Configure named menu: */
-        pNamedMenu->setProperty("class", UIExtraDataMetaDefs::RuntimeMenuType_Application);
+        pNamedMenu->setProperty("class", UIExtraDataMetaDefs::MenuType_Application);
         /* Get named menu action: */
         QAction *pNamedMenuAction = pNamedMenu->menuAction();
         AssertPtrReturn(pNamedMenuAction, 0);
@@ -394,7 +394,7 @@ QMenu* UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
         {
             /* Configure copied menu action: */
             pCopiedMenuAction->setCheckable(true);
-            pCopiedMenuAction->setProperty("class", UIExtraDataMetaDefs::RuntimeMenuType_All);
+            pCopiedMenuAction->setProperty("class", UIExtraDataMetaDefs::MenuType_All);
             pCopiedMenuAction->setProperty("type", pAction->extraDataID());
             connect(pCopiedMenuAction, SIGNAL(triggered(bool)), this, SLOT(sltHandleMenuBarMenuClick()));
             m_actions.insert(pAction->extraDataKey(), pCopiedMenuAction);
@@ -590,22 +590,22 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
 void UIMenuBarEditorWidget::updateMenus()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuType restrictionsMenuBar = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::MenuType restrictionsMenuBar = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
-    /* We have UIExtraDataMetaDefs::RuntimeMenuType enum registered, so we can enumerate it: */
-    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuType");
+    /* We have UIExtraDataMetaDefs::MenuType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuType");
     const QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
     /* Handle other enum-values: */
     for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
     {
         /* Get iterated enum-value: */
-        const UIExtraDataMetaDefs::RuntimeMenuType enumValue =
-            static_cast<const UIExtraDataMetaDefs::RuntimeMenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-        /* Skip RuntimeMenuType_Invalid & RuntimeMenuType_All enum-value: */
-        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuType_Invalid ||
-            enumValue == UIExtraDataMetaDefs::RuntimeMenuType_All)
+        const UIExtraDataMetaDefs::MenuType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuType_Invalid & MenuType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuType_All)
             continue;
         /* Which key required action registered under? */
         const QString strKey = gpConverter->toInternalString(enumValue);

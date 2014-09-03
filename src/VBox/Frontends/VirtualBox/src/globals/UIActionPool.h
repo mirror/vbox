@@ -354,10 +354,10 @@ public:
     /** Returns all the actions action-pool contains. */
     QList<UIAction*> actions() const { return m_pool.values(); }
 
-    /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
-    bool isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const;
-    /** Defines 'Help' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction);
+    /** Returns whether the menu with passed @a type is allowed in menu-bar. */
+    bool isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const;
+    /** Defines menu-bar @a restriction for passed @a level. */
+    void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType restriction);
 
 #ifdef Q_WS_MAC
     /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
@@ -365,6 +365,11 @@ public:
     /** Defines 'Application' menu @a restriction for passed @a level. */
     void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction);
 #endif /* Q_WS_MAC */
+
+    /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
+    bool isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const;
+    /** Defines 'Help' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction);
 
     /** Hot-key processing delegate. */
     bool processHotKey(const QKeySequence &key);
@@ -436,12 +441,14 @@ protected:
     /** Holds the set of invalidated action indexes. */
     QSet<int> m_invalidations;
 
-    /** Holds restricted action types of the Help menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType> m_restrictedActionsMenuHelp;
+    /** Holds restricted menu types. */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType> m_restrictedMenus;
 #ifdef Q_WS_MAC
     /** Holds restricted action types of the Application menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType> m_restrictedActionsMenuApplication;
 #endif /* Q_WS_MAC */
+    /** Holds restricted action types of the Help menu. */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType> m_restrictedActionsMenuHelp;
 };
 
 #endif /* !___UIActionPool_h___ */

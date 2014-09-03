@@ -33,11 +33,11 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
-template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::MenuType>() { return true; }
 #ifdef Q_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { return true; }
 #endif /* Q_WS_MAC */
-template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>() { return true; }
@@ -356,6 +356,94 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
     return result;
 }
 
+/* QString <= UIExtraDataMetaDefs::MenuType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuType)
+{
+    QString strResult;
+    switch (menuType)
+    {
+#ifdef RT_OS_DARWIN
+        case UIExtraDataMetaDefs::MenuType_Application: strResult = "Application"; break;
+#endif /* RT_OS_DARWIN */
+        case UIExtraDataMetaDefs::MenuType_Machine:     strResult = "Machine"; break;
+        case UIExtraDataMetaDefs::MenuType_View:        strResult = "View"; break;
+        case UIExtraDataMetaDefs::MenuType_Devices:     strResult = "Devices"; break;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        case UIExtraDataMetaDefs::MenuType_Debug:       strResult = "Debug"; break;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+        case UIExtraDataMetaDefs::MenuType_Help:        strResult = "Help"; break;
+        case UIExtraDataMetaDefs::MenuType_All:         strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", menuType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::MenuType <= QString: */
+template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs::MenuType>(const QString &strMenuType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<UIExtraDataMetaDefs::MenuType> values;
+#ifdef RT_OS_DARWIN
+    keys << "Application"; values << UIExtraDataMetaDefs::MenuType_Application;
+#endif /* RT_OS_DARWIN */
+    keys << "Machine";     values << UIExtraDataMetaDefs::MenuType_Machine;
+    keys << "View";        values << UIExtraDataMetaDefs::MenuType_View;
+    keys << "Devices";     values << UIExtraDataMetaDefs::MenuType_Devices;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    keys << "Debug";       values << UIExtraDataMetaDefs::MenuType_Debug;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+    keys << "Help";        values << UIExtraDataMetaDefs::MenuType_Help;
+    keys << "All";         values << UIExtraDataMetaDefs::MenuType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strMenuType, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::MenuType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strMenuType, Qt::CaseInsensitive)));
+}
+
+#ifdef Q_WS_MAC
+/* QString <= UIExtraDataMetaDefs::MenuApplicationActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &runtimeMenuApplicationActionType)
+{
+    QString strResult;
+    switch (runtimeMenuApplicationActionType)
+    {
+        case UIExtraDataMetaDefs::MenuApplicationActionType_About:       strResult = "About"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Close:       strResult = "Close"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_All:         strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::MenuApplicationActionType <= QString: */
+template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
+    keys << "About";       values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
+    keys << "Preferences"; values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+    keys << "Close";       values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+    keys << "All";         values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
+}
+#endif /* Q_WS_MAC */
+
 /* QString <= UIExtraDataMetaDefs::MenuHelpActionType: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionType &menuHelpActionType)
 {
@@ -406,94 +494,6 @@ template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDat
         return UIExtraDataMetaDefs::MenuHelpActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMenuHelpActionType, Qt::CaseInsensitive)));
-}
-
-#ifdef Q_WS_MAC
-/* QString <= UIExtraDataMetaDefs::MenuApplicationActionType: */
-template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &runtimeMenuApplicationActionType)
-{
-    QString strResult;
-    switch (runtimeMenuApplicationActionType)
-    {
-        case UIExtraDataMetaDefs::MenuApplicationActionType_About:       strResult = "About"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_Close:       strResult = "Close"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_All:         strResult = "All"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for action type=%d", runtimeMenuApplicationActionType));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* UIExtraDataMetaDefs::MenuApplicationActionType <= QString: */
-template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strRuntimeMenuApplicationActionType)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
-    keys << "About";       values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
-    keys << "Preferences"; values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
-    keys << "Close";       values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
-    keys << "All";         values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuApplicationActionType, Qt::CaseInsensitive)));
-}
-#endif /* Q_WS_MAC */
-
-/* QString <= UIExtraDataMetaDefs::RuntimeMenuType: */
-template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuType &runtimeMenuType)
-{
-    QString strResult;
-    switch (runtimeMenuType)
-    {
-#ifdef RT_OS_DARWIN
-        case UIExtraDataMetaDefs::RuntimeMenuType_Application: strResult = "Application"; break;
-#endif /* RT_OS_DARWIN */
-        case UIExtraDataMetaDefs::RuntimeMenuType_Machine:     strResult = "Machine"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_View:        strResult = "View"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_Devices:     strResult = "Devices"; break;
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        case UIExtraDataMetaDefs::RuntimeMenuType_Debug:       strResult = "Debug"; break;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-        case UIExtraDataMetaDefs::RuntimeMenuType_Help:        strResult = "Help"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuType_All:         strResult = "All"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for indicator type=%d", runtimeMenuType));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* UIExtraDataMetaDefs::RuntimeMenuType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuType>(const QString &strRuntimeMenuType)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::RuntimeMenuType> values;
-#ifdef RT_OS_DARWIN
-    keys << "Application"; values << UIExtraDataMetaDefs::RuntimeMenuType_Application;
-#endif /* RT_OS_DARWIN */
-    keys << "Machine";     values << UIExtraDataMetaDefs::RuntimeMenuType_Machine;
-    keys << "View";        values << UIExtraDataMetaDefs::RuntimeMenuType_View;
-    keys << "Devices";     values << UIExtraDataMetaDefs::RuntimeMenuType_Devices;
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    keys << "Debug";       values << UIExtraDataMetaDefs::RuntimeMenuType_Debug;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    keys << "Help";        values << UIExtraDataMetaDefs::RuntimeMenuType_Help;
-    keys << "All";         values << UIExtraDataMetaDefs::RuntimeMenuType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuMachineActionType: */

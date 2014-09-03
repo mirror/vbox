@@ -45,9 +45,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Machine; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Machine; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Machine); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Machine); }
 
     void retranslateUi()
     {
@@ -573,9 +573,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_View; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_View); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
 
     void retranslateUi()
     {
@@ -595,9 +595,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_View; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_View); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
 
     void retranslateUi() {}
 };
@@ -916,9 +916,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Devices; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Devices; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Devices); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Devices); }
 
     void retranslateUi()
     {
@@ -1407,9 +1407,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Debug; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Debug; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Debug); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Debug); }
 
     void retranslateUi()
     {
@@ -1642,20 +1642,6 @@ void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreen
 
     /* Invalidate View menu: */
     m_invalidations << UIActionIndexRT_M_View;
-}
-
-bool UIActionPoolRuntime::isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType type) const
-{
-    foreach (const UIExtraDataMetaDefs::RuntimeMenuType &restriction, m_restrictedMenus.values())
-        if (restriction & type)
-            return false;
-    return true;
-}
-
-void UIActionPoolRuntime::setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuType restriction)
-{
-    m_restrictedMenus[level] = restriction;
-    updateMenus();
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const
@@ -2008,14 +1994,14 @@ void UIActionPoolRuntime::updateMenus()
 #endif /* RT_OS_DARWIN */
 
     /* 'Machine' menu: */
-    const bool fAllowToShowMenuMachine = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Machine);
+    const bool fAllowToShowMenuMachine = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Machine);
     action(UIActionIndexRT_M_Machine)->setVisible(fAllowToShowMenuMachine);
     if (fAllowToShowMenuMachine)
         m_mainMenus << action(UIActionIndexRT_M_Machine)->menu();
     updateMenuMachine();
 
     /* 'View' menu: */
-    const bool fAllowToShowMenuView = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_View);
+    const bool fAllowToShowMenuView = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View);
     action(UIActionIndexRT_M_View)->setVisible(fAllowToShowMenuView);
     action(UIActionIndexRT_M_ViewPopup)->setVisible(fAllowToShowMenuView);
     if (fAllowToShowMenuView)
@@ -2024,7 +2010,7 @@ void UIActionPoolRuntime::updateMenus()
     updateMenuViewPopup();
 
     /* 'Devices' menu: */
-    const bool fAllowToShowMenuDevices = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Devices);
+    const bool fAllowToShowMenuDevices = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Devices);
     action(UIActionIndexRT_M_Devices)->setVisible(fAllowToShowMenuDevices);
     if (fAllowToShowMenuDevices)
         m_mainMenus << action(UIActionIndexRT_M_Devices)->menu();
@@ -2032,7 +2018,7 @@ void UIActionPoolRuntime::updateMenus()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    const bool fAllowToShowMenuDebug = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Debug);
+    const bool fAllowToShowMenuDebug = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Debug);
     action(UIActionIndexRT_M_Debug)->setVisible(fAllowToShowMenuDebug);
     if (fAllowToShowMenuDebug)
         m_mainMenus << action(UIActionIndexRT_M_Debug)->menu();
@@ -2040,7 +2026,7 @@ void UIActionPoolRuntime::updateMenus()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* 'Help' menu: */
-    const bool fAllowToShowMenuHelp = isAllowedInMenuBar(UIExtraDataMetaDefs::RuntimeMenuType_Help);
+    const bool fAllowToShowMenuHelp = isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help);
     action(UIActionIndex_Menu_Help)->setVisible(fAllowToShowMenuHelp);
     if (fAllowToShowMenuHelp)
         m_mainMenus << action(UIActionIndex_Menu_Help)->menu();

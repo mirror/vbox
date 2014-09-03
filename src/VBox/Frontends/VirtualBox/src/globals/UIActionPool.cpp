@@ -325,9 +325,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Application; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Application; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Application); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Application); }
 
     void retranslateUi()
     {
@@ -387,9 +387,9 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuType_Help; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Help; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuType_Help); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Help); }
 
     void retranslateUi()
     {
@@ -723,18 +723,18 @@ UIActionPoolSelector* UIActionPool::toSelector()
     return qobject_cast<UIActionPoolSelector*>(this);
 }
 
-bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
+bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const
 {
-    foreach (const UIExtraDataMetaDefs::MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
+    foreach (const UIExtraDataMetaDefs::MenuType &restriction, m_restrictedMenus.values())
         if (restriction & type)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction)
+void UIActionPool::setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType restriction)
 {
-    m_restrictedActionsMenuHelp[level] = restriction;
-    m_invalidations << UIActionIndex_Menu_Help;
+    m_restrictedMenus[level] = restriction;
+    updateMenus();
 }
 
 #ifdef Q_WS_MAC
@@ -752,6 +752,20 @@ void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel lev
     m_invalidations << UIActionIndex_M_Application;
 }
 #endif /* Q_WS_MAC */
+
+bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
+{
+    foreach (const UIExtraDataMetaDefs::MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
+        if (restriction & type)
+            return false;
+    return true;
+}
+
+void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction)
+{
+    m_restrictedActionsMenuHelp[level] = restriction;
+    m_invalidations << UIActionIndex_Menu_Help;
+}
 
 void UIActionPool::sltHandleMenuPrepare()
 {
