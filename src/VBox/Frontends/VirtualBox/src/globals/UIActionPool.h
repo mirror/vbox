@@ -51,9 +51,6 @@ enum UIActionType
 /** Action indexes. */
 enum UIActionIndex
 {
-    /* Various actions: */
-    UIActionIndex_Simple_LogDialog,
-
 #ifdef RT_OS_DARWIN
     /* 'Application' menu actions: */
     UIActionIndex_M_Application,

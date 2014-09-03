@@ -759,7 +759,7 @@ void UISelectorWindow::sltShowLogDialog()
     foreach (UIVMItem *pItem, items)
     {
         /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndex_Simple_LogDialog, QList<UIVMItem*>() << pItem))
+        if (!isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, QList<UIVMItem*>() << pItem))
             continue;
 
         /* Show VM Log Viewer: */
@@ -1188,6 +1188,7 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
     pMenu->addSeparator();
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
     pMenu->addSeparator();
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
@@ -1204,6 +1205,7 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
                    << actionPool()->action(UIActionIndexST_M_Group_T_Pause)
                    << actionPool()->action(UIActionIndexST_M_Group_S_Reset)
                    << actionPool()->action(UIActionIndexST_M_Group_S_Discard)
+                   << actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog)
                    << actionPool()->action(UIActionIndexST_M_Group_S_Refresh)
                    << actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager)
                    << actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut)
@@ -1230,7 +1232,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
     pMenu->addSeparator();
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    pMenu->addAction(actionPool()->action(UIActionIndex_Simple_LogDialog));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
     pMenu->addSeparator();
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
@@ -1249,7 +1251,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
                      << actionPool()->action(UIActionIndexST_M_Machine_T_Pause)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Reset)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Discard)
-                     << actionPool()->action(UIActionIndex_Simple_LogDialog)
+                     << actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Refresh)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut)
@@ -1396,6 +1398,7 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Group_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetAction()));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Discard), SIGNAL(triggered()), this, SLOT(sltPerformDiscardAction()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog), SIGNAL(triggered()), this, SLOT(sltShowLogDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager), SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut), SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 
@@ -1406,8 +1409,8 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_P_StartOrShow), SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowAction()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetAction()));
-    connect(actionPool()->action(UIActionIndex_Simple_LogDialog), SIGNAL(triggered()), this, SLOT(sltShowLogDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Discard), SIGNAL(triggered()), this, SLOT(sltPerformDiscardAction()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog), SIGNAL(triggered()), this, SLOT(sltShowLogDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager), SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 
@@ -1568,6 +1571,7 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Group_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_T_Pause, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Reset, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Discard, items));
+    actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Refresh, items));
     actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_ShowInFileManager, items));
     actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_CreateShortcut, items));
@@ -1582,7 +1586,7 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_T_Pause, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Reset)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Reset, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Discard)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Discard, items));
-    actionPool()->action(UIActionIndex_Simple_LogDialog)->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
+    actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ShowLogDialog, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Refresh)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Refresh, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ShowInFileManager, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_CreateShortcut, items));
@@ -1690,6 +1694,11 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
             return !m_pChooser->isGroupSavingInProgress() &&
                    isAtLeastOneItemDiscardable(items);
         }
+        case UIActionIndexST_M_Group_S_ShowLogDialog:
+        case UIActionIndexST_M_Machine_S_ShowLogDialog:
+        {
+            return isAtLeastOneItemAccessible(items);
+        }
         case UIActionIndexST_M_Group_T_Pause:
         case UIActionIndexST_M_Machine_T_Pause:
         {
@@ -1704,10 +1713,6 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexST_M_Machine_S_Refresh:
         {
             return isAtLeastOneItemInaccessible(items);
-        }
-        case UIActionIndex_Simple_LogDialog:
-        {
-            return items.size() == 1 && pItem->accessible();
         }
         case UIActionIndexST_M_Group_S_ShowInFileManager:
         case UIActionIndexST_M_Machine_S_ShowInFileManager:

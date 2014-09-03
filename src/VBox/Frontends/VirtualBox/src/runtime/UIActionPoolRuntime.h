@@ -102,6 +102,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Debug_S_ShowStatistics,
     UIActionIndexRT_M_Debug_S_ShowCommandLine,
     UIActionIndexRT_M_Debug_T_Logging,
+    UIActionIndexRT_M_Debug_S_ShowLogDialog,
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC

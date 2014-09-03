@@ -45,17 +45,18 @@ enum UIActionIndexST
     UIActionIndexST_M_Group_S_Add,
     UIActionIndexST_M_Group_S_Rename,
     UIActionIndexST_M_Group_S_Remove,
-    UIActionIndexST_M_Group_P_StartOrShow, //
-    UIActionIndexST_M_Group_T_Pause, //
-    UIActionIndexST_M_Group_S_Reset, //
+    UIActionIndexST_M_Group_P_StartOrShow,
+    UIActionIndexST_M_Group_T_Pause,
+    UIActionIndexST_M_Group_S_Reset,
     UIActionIndexST_M_Group_M_Close,
     UIActionIndexST_M_Group_M_Close_S_SaveState,
     UIActionIndexST_M_Group_M_Close_S_Shutdown,
     UIActionIndexST_M_Group_M_Close_S_PowerOff,
-    UIActionIndexST_M_Group_S_Discard, //
-    UIActionIndexST_M_Group_S_Refresh, //
-    UIActionIndexST_M_Group_S_ShowInFileManager, //
-    UIActionIndexST_M_Group_S_CreateShortcut, //
+    UIActionIndexST_M_Group_S_Discard,
+    UIActionIndexST_M_Group_S_ShowLogDialog,
+    UIActionIndexST_M_Group_S_Refresh,
+    UIActionIndexST_M_Group_S_ShowInFileManager,
+    UIActionIndexST_M_Group_S_CreateShortcut,
     UIActionIndexST_M_Group_S_Sort,
 
     /* 'Machine' menu actions: */
@@ -66,17 +67,18 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_S_Clone,
     UIActionIndexST_M_Machine_S_Remove,
     UIActionIndexST_M_Machine_S_AddGroup,
-    UIActionIndexST_M_Machine_P_StartOrShow, //
-    UIActionIndexST_M_Machine_T_Pause, //
-    UIActionIndexST_M_Machine_S_Reset, //
+    UIActionIndexST_M_Machine_P_StartOrShow,
+    UIActionIndexST_M_Machine_T_Pause,
+    UIActionIndexST_M_Machine_S_Reset,
     UIActionIndexST_M_Machine_M_Close,
     UIActionIndexST_M_Machine_M_Close_S_SaveState,
     UIActionIndexST_M_Machine_M_Close_S_Shutdown,
     UIActionIndexST_M_Machine_M_Close_S_PowerOff,
-    UIActionIndexST_M_Machine_S_Discard, //
-    UIActionIndexST_M_Machine_S_Refresh, //
-    UIActionIndexST_M_Machine_S_ShowInFileManager, //
-    UIActionIndexST_M_Machine_S_CreateShortcut, //
+    UIActionIndexST_M_Machine_S_Discard,
+    UIActionIndexST_M_Machine_S_ShowLogDialog,
+    UIActionIndexST_M_Machine_S_Refresh,
+    UIActionIndexST_M_Machine_S_ShowInFileManager,
+    UIActionIndexST_M_Machine_S_CreateShortcut,
     UIActionIndexST_M_Machine_S_SortParent,
 
     /* Maximum index: */

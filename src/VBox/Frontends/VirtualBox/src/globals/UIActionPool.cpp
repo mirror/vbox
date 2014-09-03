@@ -308,119 +308,6 @@ UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
 }
 
 
-class UIActionSimplePreferences : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimplePreferences(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/global_settings_16px.png")
-    {
-        setMenuRole(QAction::PreferencesRole);
-        retranslateUi();
-    }
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const
-    {
-#ifdef Q_WS_MAC
-        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
-#else /* !Q_WS_MAC */
-        return UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
-#endif /* !Q_WS_MAC */
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const
-    {
-#ifdef Q_WS_MAC
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
-#else /* !Q_WS_MAC */
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
-#endif /* !Q_WS_MAC */
-    }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("Preferences");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        switch (actionPool()->type())
-        {
-            case UIActionPoolType_Selector: return QKeySequence("Ctrl+G");
-            case UIActionPoolType_Runtime: break;
-        }
-        return QKeySequence();
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
-    }
-};
-
-class UIActionSimpleLogDialog : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimpleLogDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
-                         ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const
-    {
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
-#else /* !VBOX_WITH_DEBUGGER_GUI */
-        return 0;
-#endif /* !VBOX_WITH_DEBUGGER_GUI */
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const
-    {
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
-#else /* !VBOX_WITH_DEBUGGER_GUI */
-        return QString();
-#endif /* !VBOX_WITH_DEBUGGER_GUI */
-    }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("ShowVMLog");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const
-    {
-        switch (actionPoolType)
-        {
-            case UIActionPoolType_Selector: return QKeySequence("Ctrl+L");
-            case UIActionPoolType_Runtime: break;
-        }
-        return QKeySequence();
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
-    }
-};
-
 #ifdef RT_OS_DARWIN
 class UIActionMenuApplication : public UIActionMenu
 {
@@ -724,6 +611,62 @@ protected:
     }
 };
 
+class UIActionSimplePreferences : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePreferences(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/global_settings_16px.png")
+    {
+        setMenuRole(QAction::PreferencesRole);
+        retranslateUi();
+    }
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const
+    {
+#ifdef Q_WS_MAC
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+#else /* !Q_WS_MAC */
+        return UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
+#endif /* !Q_WS_MAC */
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const
+    {
+#ifdef Q_WS_MAC
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+#else /* !Q_WS_MAC */
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
+#endif /* !Q_WS_MAC */
+    }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Preferences");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        switch (actionPool()->type())
+        {
+            case UIActionPoolType_Selector: return QKeySequence("Ctrl+G");
+            case UIActionPoolType_Runtime: break;
+        }
+        return QKeySequence();
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
+    }
+};
+
 
 /* static */
 UIActionPool* UIActionPool::create(UIActionPoolType type)
@@ -843,9 +786,6 @@ void UIActionPool::prepare()
 
 void UIActionPool::preparePool()
 {
-    /* Create various actions: */
-    m_pool[UIActionIndex_Simple_LogDialog] = new UIActionSimpleLogDialog(this);
-
 #ifdef RT_OS_DARWIN
     /* Create 'Application' actions: */
     m_pool[UIActionIndex_M_Application] = new UIActionMenuApplication(this);

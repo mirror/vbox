@@ -1144,6 +1144,7 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuGroup->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
     m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
+    m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
     m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
     m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
@@ -1164,7 +1165,7 @@ void UIGChooserModel::prepareContextMenu()
     m_pContextMenuMachine->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndex_Simple_LogDialog));
+    m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
     m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
     m_pContextMenuMachine->addSeparator();
     m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));

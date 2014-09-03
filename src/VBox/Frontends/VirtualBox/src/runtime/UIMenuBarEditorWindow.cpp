@@ -560,7 +560,7 @@ void UIMenuBarEditorWidget::prepareMenuDebug()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Debug_T_Logging));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_LogDialog));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
     }
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
