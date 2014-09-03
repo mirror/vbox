@@ -575,7 +575,6 @@ typedef struct INTNETTRUNKSWPORT
      */
     DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
-#ifdef VBOX_WITH_INTNET_DISCONNECT
     /**
      * OS triggered trunk disconnect.
      *
@@ -597,18 +596,13 @@ typedef struct INTNETTRUNKSWPORT
      */
     DECLR0CALLBACKMEMBER(void, pfnDisconnect,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT pIfPort,
                                               PFNINTNETTRUNKIFPORTRELEASEBUSY pfnReleaseBusy));
-#endif /* VBOX_WITH_INTNET_DISCONNECT */
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
 } INTNETTRUNKSWPORT;
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
-#ifdef VBOX_WITH_INTNET_DISCONNECT
 # define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf003)
-#else
-# define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
-#endif
 
 
 /**

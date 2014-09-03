@@ -5172,20 +5172,48 @@ int Console::i_configNetwork(const char *pszDevice,
 
                 CoTaskMemFree(pswzBindName);
 
+                wchar_t * pswzHwId;
+                hrc = pAdaptorComponent->GetId(&pswzHwId);
+                Assert(hrc == S_OK);
+                if (hrc == S_OK)
+                {
+                    if (!_wcsnicmp(pswzHwId, L"sun_VBoxNetAdp6", sizeof(L"sun_VBoxNetAdp6")/2))
+                    {
+                        /*
+                         * This is NDIS 6.x miniport, it relies on NetLwf filter to
+                         * run actual traffic. We use netflt attachment instead of
+                         * netadp, which is used in case of NDIS 5.x.
+                         */
+                        InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
+                        trunkType = TRUNKTYPE_NETFLT;
+                    }
+                    else
+                    {
+                        InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
+                        trunkType = TRUNKTYPE_NETADP;
+                    }
+                }
+                else
+                {
+                    LogRel(("Console::i_configNetwork: INetCfgComponent::GetId(%s) failed, err (0x%x), "
+                            "falling back to NDIS5 attachment\n", pszTrunkName, hrc));
+                    InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
+                    trunkType = TRUNKTYPE_NETADP;
+                }
+                CoTaskMemFree(pswzHwId);
+
                 pAdaptorComponent.setNull();
                 /* release the pNc finally */
                 VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
 
                 const char *pszTrunk = szTrunkName;
 
-                InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigString(pCfg, "Network", szNetwork);
                 InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure); /** @todo why is this
                                                                                                         windows only?? */
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
-                trunkType   = TRUNKTYPE_NETADP;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
                 InsertConfigString(pCfg, "Trunk", pszHostOnlyName);

@@ -21,6 +21,11 @@
 
 #include <devguid.h>
 
+#ifdef NDIS60
+#define VBOX_NETADP_HWID L"sun_VBoxNetAdp6"
+#else /* !NDIS60 */
+#define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
+#endif /* !NDIS60 */
 
 static VOID winNetCfgLogger (LPCSTR szString)
 {
@@ -37,10 +42,10 @@ static int VBoxNetAdpUninstall()
     HRESULT hr = CoInitialize(NULL);
     if(hr == S_OK)
     {
-        hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(L"sun_VBoxNetAdp");
+        hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(VBOX_NETADP_HWID);
         if(hr == S_OK)
         {
-            hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", L"sun_VBoxNetAdp", 0/* could be SUOI_FORCEDELETE */);
+            hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if(hr == S_OK)
             {
                 printf("uninstalled successfully\n");
