@@ -2529,7 +2529,10 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
         if (SUCCEEDED(hrc))
         {
             if (pExtPack && a_fReplace)
+            {
+                m->pVirtualBox->i_extPackUninstallNotify(pStrName->c_str());
                 hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
+            }
             else if (pExtPack)
                 hrc = setError(E_FAIL,
                                tr("Extension pack '%s' is already installed."
@@ -2561,7 +2564,10 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                     RTErrInfoInitStatic(&ErrInfo);
                     pExtPack->i_callInstalledHook(m->pVirtualBox, &autoLock, &ErrInfo.Core);
                     if (RT_SUCCESS(ErrInfo.Core.rc))
+                    {
                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
+                        m->pVirtualBox->i_extPackInstallNotify(pStrName->c_str());
+                    }
                     else
                     {
                         LogRel(("ExtPackManager: Installed hook for '%s' failed: %Rrc - %s\n",
@@ -2664,6 +2670,7 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
                 /*
                  * Call the uninstall hook and unload the main dll.
                  */
+                m->pVirtualBox->i_extPackUninstallNotify(a_pstrName->c_str());
                 hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
                 if (SUCCEEDED(hrc))
                 {

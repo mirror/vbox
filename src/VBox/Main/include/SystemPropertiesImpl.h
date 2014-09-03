@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,6 +51,9 @@ public:
 
     ComObjPtr<MediumFormat> i_mediumFormat(const Utf8Str &aFormat);
     ComObjPtr<MediumFormat> i_mediumFormatFromExtension(const Utf8Str &aExt);
+
+    void i_extPackInstallNotify(const char *pszExtPackName);
+    void i_extPackUninstallNotify(const char *pszExtPackName);
 
 private:
 
@@ -124,6 +127,9 @@ private:
     HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
                                                USBControllerType_T aType,
                                                ULONG *aMaxInstances);
+
+    HRESULT i_loadExtPackVDPluginCrypt();
+    HRESULT i_unloadExtPackVDPluginCrypt();
 
     HRESULT i_getUserHomeDirectory(Utf8Str &strPath);
     HRESULT i_setDefaultMachineFolder(const Utf8Str &strPath);

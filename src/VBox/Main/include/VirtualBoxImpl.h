@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -126,6 +126,9 @@ public:
 
     void i_addProcessToReap(RTPROCESS pid);
     void i_updateClientWatcher();
+
+    void i_extPackInstallNotify(const char *pszExtPackName);
+    void i_extPackUninstallNotify(const char *pszExtPackName);
 
     void i_onMachineStateChange(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
