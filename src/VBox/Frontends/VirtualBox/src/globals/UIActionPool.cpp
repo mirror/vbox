@@ -328,6 +328,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Application; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Application); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Application); }
 
     void retranslateUi()
     {
@@ -353,6 +355,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_Close; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
 
     QString shortcutExtraDataID() const
     {
@@ -390,6 +394,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Help; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Help); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help); }
 
     void retranslateUi()
     {
@@ -415,6 +421,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Contents; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
 
     QString shortcutExtraDataID() const
     {
@@ -456,6 +464,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_WebSite; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
 
     QString shortcutExtraDataID() const
     {
@@ -487,6 +497,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings); }
 
     QString shortcutExtraDataID() const
     {
@@ -519,6 +531,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager); }
 
     QString shortcutExtraDataID() const
     {
@@ -551,6 +565,8 @@ protected:
     virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates; }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates); }
 
     QString shortcutExtraDataID() const
     {
@@ -598,6 +614,15 @@ protected:
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_About);
 #endif /* !Q_WS_MAC */
     }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const
+    {
+#ifdef Q_WS_MAC
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
+#else /* !Q_WS_MAC */
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
+#endif /* !Q_WS_MAC */
+    }
 
     QString shortcutExtraDataID() const
     {
@@ -642,6 +667,15 @@ protected:
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
 #else /* !Q_WS_MAC */
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
+#endif /* !Q_WS_MAC */
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const
+    {
+#ifdef Q_WS_MAC
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+#else /* !Q_WS_MAC */
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
 #endif /* !Q_WS_MAC */
     }
 
@@ -944,28 +978,12 @@ void UIActionPool::updateMenuApplication()
         pMenu->clear();
 
     /* 'About' action: */
-    const bool fAllowToShowActionAbout = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-    action(UIActionIndex_M_Application_S_About)->setEnabled(fAllowToShowActionAbout);
-    action(UIActionIndex_M_Application_S_About)->setVisible(fAllowToShowActionAbout);
-    if (!pMenu->isConsumed())
-        pMenu->addAction(action(UIActionIndex_M_Application_S_About));
-
-    /* Only for Runtime pool: */
+    addAction(pMenu, action(UIActionIndex_M_Application_S_About));
+    /* 'Preferences' action (only for Runtime pool): */
     if (type() == UIActionPoolType_Runtime)
-    {
-        /* 'Preferences' action: */
-        const bool fAllowToShowActionPreferences = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
-        action(UIActionIndex_M_Application_S_Preferences)->setEnabled(fAllowToShowActionPreferences);
-        action(UIActionIndex_M_Application_S_Preferences)->setVisible(fAllowToShowActionPreferences);
-        if (!pMenu->isConsumed())
-            pMenu->addAction(action(UIActionIndex_M_Application_S_Preferences));
-    }
-
-    /* Close action: */
-    const bool fAllowToShowActionClose = isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
-    action(UIActionIndex_M_Application_S_Close)->setEnabled(fAllowToShowActionClose);
-    if (!pMenu->isConsumed())
-        pMenu->addAction(action(UIActionIndex_M_Application_S_Close));
+        addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences));
+    /* 'Close' action: */
+    addAction(pMenu, action(UIActionIndex_M_Application_S_Close));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Application);
@@ -975,34 +993,18 @@ void UIActionPool::updateMenuApplication()
 void UIActionPool::updateMenuHelp()
 {
     /* Get corresponding menu: */
-    QMenu *pMenu = action(UIActionIndex_Menu_Help)->menu();
+    UIMenu *pMenu = action(UIActionIndex_Menu_Help)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
 
-
     /* Separator? */
     bool fSeparator = false;
 
-
     /* 'Contents' action: */
-    const bool fAllowToShowActionContents = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
-    action(UIActionIndex_Simple_Contents)->setEnabled(fAllowToShowActionContents);
-    if (fAllowToShowActionContents)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_Contents));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents));
     /* 'Web Site' action: */
-    const bool fAllowToShowActionWebSite = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
-    action(UIActionIndex_Simple_WebSite)->setEnabled(fAllowToShowActionWebSite);
-    if (fAllowToShowActionWebSite)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_WebSite));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite));
 
     /* Separator? */
     if (fSeparator)
@@ -1010,17 +1012,9 @@ void UIActionPool::updateMenuHelp()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
     /* 'Reset Warnings' action: */
-    const bool fAllowToShowActionResetWarnings = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings);
-    action(UIActionIndex_Simple_ResetWarnings)->setEnabled(fAllowToShowActionResetWarnings);
-    if (fAllowToShowActionResetWarnings)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_ResetWarnings));
-        fSeparator = true;
-    }
-
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_ResetWarnings));
 
     /* Separator? */
     if (fSeparator)
@@ -1028,31 +1022,13 @@ void UIActionPool::updateMenuHelp()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Manager' action: */
-    const bool fAllowToShowActionNetworkManager = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager);
-    action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionNetworkManager);
-    if (fAllowToShowActionNetworkManager)
-    {
-        pMenu->addAction(action(UIActionIndex_Simple_NetworkAccessManager));
-        fSeparator = true;
-    }
-
-    /* Only for Selector pool: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_NetworkAccessManager));
+    /* 'Check for Updates' action (only for Selector pool): */
     if (type() == UIActionPoolType_Selector)
-    {
-        /* 'Check for Updates' action: */
-        const bool fAllowToShowActionCheckForUpdates = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates);
-        action(UIActionIndex_Simple_NetworkAccessManager)->setEnabled(fAllowToShowActionCheckForUpdates);
-        if (fAllowToShowActionCheckForUpdates)
-        {
-            pMenu->addAction(action(UIActionIndex_Simple_CheckForUpdates));
-            fSeparator = true;
-        }
-    }
-
+        fSeparator = addAction(pMenu, action(UIActionIndex_Simple_CheckForUpdates));
 
     /* Separator? */
     if (fSeparator)
@@ -1062,25 +1038,13 @@ void UIActionPool::updateMenuHelp()
     }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-
 #ifndef RT_OS_DARWIN
     /* 'About' action: */
-    const bool fAllowToShowActionAbout = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
-    action(UIActionIndex_Simple_About)->setEnabled(fAllowToShowActionAbout);
-    if (fAllowToShowActionAbout)
-        pMenu->addAction(action(UIActionIndex_Simple_About));
-
-    /* Only for Runtime pool: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About));
+    /* 'Preferences' action (only for Runtime pool): */
     if (type() == UIActionPoolType_Runtime)
-    {
-        /* 'Preferences' action: */
-        const bool fAllowToShowActionPreferences = isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
-        action(UIActionIndex_Simple_Preferences)->setEnabled(fAllowToShowActionPreferences);
-        if (fAllowToShowActionPreferences)
-            pMenu->addAction(action(UIActionIndex_Simple_Preferences));
-    }
+        fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Preferences));
 #endif /* !RT_OS_DARWIN */
-
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_Menu_Help);
@@ -1113,6 +1077,93 @@ bool UIActionPool::event(QEvent *pEvent)
     }
     /* Pass to the base-class: */
     return QObject::event(pEvent);
+}
+
+bool UIActionPool::addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd /* = true */)
+{
+    /* Check if action is allowed: */
+    const bool fIsActionAllowed = pAction->isAllowed();
+
+#ifdef RT_OS_DARWIN
+    /* Check if menu is consumable: */
+    const bool fIsMenuConsumable = pMenu->isConsumable();
+    /* Check if menu is NOT yet consumed: */
+    const bool fIsMenuConsumed = pMenu->isConsumed();
+#endif /* RT_OS_DARWIN */
+
+    /* Make this action enabled/visible
+     * depending on clearance state. */
+    pAction->setEnabled(fIsActionAllowed);
+    pAction->setVisible(fIsActionAllowed);
+
+#ifdef RT_OS_DARWIN
+    /* If menu is consumable: */
+    if (fIsMenuConsumable)
+    {
+        /* Add action only if menu was not yet consumed: */
+        if (!fIsMenuConsumed)
+            pMenu->addAction(pAction);
+    }
+    /* If menu is NOT consumable: */
+    else
+#endif /* RT_OS_DARWIN */
+    {
+        /* Add action only if is allowed: */
+        if (fIsActionAllowed && fReallyAdd)
+            pMenu->addAction(pAction);
+    }
+
+    /* Return if action is allowed: */
+    return fIsActionAllowed;
+}
+
+bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd /* = true */)
+{
+    /* Check if action is allowed: */
+    const bool fIsActionAllowed = pAction->isAllowed();
+
+    /* Get action's menu: */
+    UIMenu *pMenu = pAction->menu();
+
+#ifdef RT_OS_DARWIN
+    /* Check if menu is consumable: */
+    const bool fIsMenuConsumable = pMenu->isConsumable();
+    /* Check if menu is NOT yet consumed: */
+    const bool fIsMenuConsumed = pMenu->isConsumed();
+#endif /* RT_OS_DARWIN */
+
+    /* Make this action enabled/visible
+     * depending on clearance state. */
+    pAction->setEnabled(   fIsActionAllowed
+#ifdef RT_OS_DARWIN
+                        && !fIsMenuConsumable
+#endif /* RT_OS_DARWIN */
+                        );
+    pAction->setVisible(   fIsActionAllowed
+#ifdef RT_OS_DARWIN
+                        && !fIsMenuConsumable
+#endif /* RT_OS_DARWIN */
+                        );
+
+#ifdef RT_OS_DARWIN
+    /* If menu is consumable: */
+    if (fIsMenuConsumable)
+    {
+        /* Add action's menu only if menu was not yet consumed: */
+        if (!fIsMenuConsumed)
+            menuList << pMenu;
+    }
+    /* If menu is NOT consumable: */
+    else
+#endif /* RT_OS_DARWIN */
+    {
+        /* Add action only if is allowed: */
+        if (fIsActionAllowed && fReallyAdd)
+            menuList << pMenu;
+    }
+
+    /* Return if action is allowed: */
+    return fIsActionAllowed;
 }
 
 #include "UIActionPool.moc"
