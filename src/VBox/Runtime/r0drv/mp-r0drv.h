@@ -53,6 +53,9 @@ typedef struct RTMPARGS
     void       *pvUser2;
     RTCPUID     idCpu;
     uint32_t volatile cHits;
+#ifdef RT_OS_LINUX
+    PRTCPUSET   pWorkerSet;
+#endif
 } RTMPARGS;
 /** Pointer to a RTMpOn* argument packet. */
 typedef RTMPARGS *PRTMPARGS;
