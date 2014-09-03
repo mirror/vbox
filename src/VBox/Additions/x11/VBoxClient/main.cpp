@@ -149,128 +149,53 @@ static void vboxClientSetSignalHandlers(void)
     LogRelFlowFunc(("returning\n"));
 }
 
-/** Connect to the X server and return the "XFree86_VT" root window property,
- * or 0 on failure. */
-static unsigned long getXOrgVT(Display *pDisplay)
+/** Check whether X.Org has acquired or lost the current virtual terminal and
+ * call the service @a pause() or @a resume() call-back if appropriate.
+ * The functionality is provided by the vboxvideo driver for pre-1.16 X servers
+ * and by 1.16 and later series servers.
+ * This can either be called directly from a service's event loop or the service
+ * can call VBClStartVTMonitor() to start an event loop in a separate thread.
+ * Property notification for the root window should be selected first.  Services
+ * are not required to check VT changes if they do not need the information.
+ * @param  pEvent an event received on a display connection which will be
+ *                checked to see if it is change to the XFree86_has_VT property
+ */
+void VBClCheckXOrgVT(union _XEvent *pEvent)
 {
     Atom actualType;
     int actualFormat;
-    unsigned long cItems, cbLeft, cVT = 0;
+    unsigned long cItems, cbLeft;
+    bool fHasVT = false;
     unsigned long *pValue;
+    int rc;
+    Display *pDisplay = pEvent->xany.display;
+    Atom hasVT = XInternAtom(pDisplay, "XFree86_has_VT", False);
 
-    XGetWindowProperty(pDisplay, DefaultRootWindow(pDisplay),
-                       XInternAtom(pDisplay, "XFree86_VT", False), 0, 1, False,
-                       XA_INTEGER, &actualType, &actualFormat, &cItems, &cbLeft,
-                       (unsigned char **)&pValue);
+    if (   pEvent->type != PropertyNotify
+        || pEvent->xproperty.window != DefaultRootWindow(pDisplay)
+        || pEvent->xproperty.atom != hasVT)
+        return;
+    XGetWindowProperty(pDisplay, DefaultRootWindow(pDisplay), hasVT, 0, 1,
+                       False, XA_INTEGER, &actualType, &actualFormat, &cItems,
+                       &cbLeft, (unsigned char **)&pValue);
     if (cItems && actualFormat == 32)
     {
-        cVT = *pValue;
+        fHasVT = *pValue != 0;
         XFree(pValue);
     }
-    return cVT;
-}
-
-/** Check whether the current virtual terminal is the one running the X server.
- */
-static void checkVTSysfs(RTFILE hFile, uint32_t cVT)
-{
-    char szTTY[7] = "";
-    uint32_t cTTY;
-    size_t cbRead;
-    int rc;
-    const char *pcszStage;
-
-    do {
-        pcszStage = "reading /sys/class/tty/tty0/active";
-        rc = RTFileReadAt(hFile, 0, (void *)szTTY, sizeof(szTTY), &cbRead);
-        if (RT_FAILURE(rc))
-            break;
-        szTTY[cbRead - 1] = '\0';
-        pcszStage = "getting VT number from sysfs file";
-        rc = RTStrToUInt32Full(&szTTY[3], 10, &cTTY);
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "entering critical section";
-        rc = RTCritSectEnter(&g_critSect);
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "asking service to pause or resume";
-        if (cTTY == cVT)
-            rc = (*g_pService)->resume(g_pService);
-        else
-            rc = (*g_pService)->pause(g_pService);
-        if (RT_FAILURE(rc))
-            break;
-        pcszStage = "leaving critical section";
-        rc = RTCritSectLeave(&g_critSect);
-    } while(false);
-    if (RT_FAILURE(rc))
+    else
+        return;
+    if (fHasVT)
     {
-        LogRelFunc(("VBoxClient: failed at stage: \"%s\" rc: %Rrc cVT: %d szTTY: %s.\n",
-                    pcszStage, rc, (int) cVT, szTTY));
-        if (RTCritSectIsOwner(&g_critSect))
-            RTCritSectLeave(&g_critSect);
-        VBClCleanUp();
+        rc = (*g_pService)->resume(g_pService);
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Error resuming the service: %Rrc\n"));
     }
-}
-
-/** Poll for TTY changes using sysfs and for X server disconnection.
- * Reading from the start of the pollable file "/sys/class/tty/tty0/active"
- * returns the currently active TTY as a string of the form "tty<n>", with n
- * greater than zero.  Polling for POLLPRI returns when the TTY changes.
- * @a cVT should be zero if we do not know the X server's VT. */
-static void pollTTYAndXServer(Display *pDisplay, uint32_t cVT)
-{
-    RTFILE hFile = NIL_RTFILE;
-    struct pollfd pollFD[2];
-    unsigned cPollFD = 1;
-    int rc;
-
-    pollFD[1].fd = -1;
-    pollFD[1].revents = 0;
-    /* This block could be Linux-only, but keeping it on Solaris too, where it
-     * should just fail gracefully, gives us more code path coverage. */
-    if (cVT)
+    if (!fHasVT)
     {
-        rc = RTFileOpen(&hFile, "/sys/class/tty/tty0/active",
-                        RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN);
-        if (RT_SUCCESS(rc))
-        {
-            pollFD[1].fd = RTFileToNative(hFile);
-            pollFD[1].events = POLLPRI;
-            cPollFD = 2;
-        }
-    }
-    AssertRelease(pollFD[1].fd >= 0 || cPollFD == 1);
-    pollFD[0].fd = ConnectionNumber(pDisplay);
-    pollFD[0].events = POLLIN;
-    while (true)
-    {
-        if (hFile != NIL_RTFILE)
-            checkVTSysfs(hFile, cVT);
-        /* The only point of this loop is to trigger the I/O error handler if
-         * appropriate. */
-        while (XPending(pDisplay))
-        {
-            XEvent ev;
-
-            XNextEvent(pDisplay, &ev);
-        }
-        /* If we get caught in a tight loop for some reason try to limit the
-         * damage. */
-        if (poll(pollFD, cPollFD, 0) > 0)
-        {
-            LogRel(("Monitor thread: unexpectedly fast event, revents=0x%x, 0x%x.\n",
-                    pollFD[0].revents, pollFD[1].revents));
-            RTThreadYield();
-        }
-        if (   (poll(pollFD, cPollFD, -1) < 0 && errno != EINTR)
-            || pollFD[0].revents & POLLNVAL
-            || pollFD[1].revents & POLLNVAL)
-        {
-            LogRel(("Monitor thread: poll failed, stopping.\n"));
-            VBClCleanUp();
-        }
+        rc = (*g_pService)->pause(g_pService);
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Error pausing the service: %Rrc\n"));
     }
 }
 
@@ -282,29 +207,28 @@ static void pollTTYAndXServer(Display *pDisplay, uint32_t cVT)
 static int pfnMonitorThread(RTTHREAD self, void *pvUser)
 {
     Display *pDisplay;
-    unsigned long cVT;
-    RTFILE hFile;
+    bool fHasVT = true;
     
     pDisplay = XOpenDisplay(NULL);
     if (!pDisplay)
-        return VINF_SUCCESS;
-    cVT = getXOrgVT(pDisplay);
-    /* Note: cVT will be 0 if we failed to get it.  This is valid. */
-    pollTTYAndXServer(pDisplay, (uint32_t) cVT);
-    /* Should never get here. */
-    return VINF_SUCCESS;
+        VBClFatalError(("Failed to open the X11 display\n"));
+    XSelectInput(pDisplay, DefaultRootWindow(pDisplay), PropertyChangeMask);
+    while (true)
+    {
+        XEvent event;
+
+        XNextEvent(pDisplay, &event);
+        VBClCheckXOrgVT(&event);
+    }
+    return VINF_SUCCESS;  /* Should never be reached. */
 }
 
 /**
- * Start the thread which notifies the service when we switch to a different
- * VT or back, and terminates us when the X server exits.  The first is best
- * effort functionality: XFree86 4.3 and older do not report their VT via the
- * "XFree86_VT" root window property at all, and pre-2.6.38 Linux does not
- * provide the interface in "sysfs" which we use.  If there is a need for this
- * to work with pre-2.6.38 Linux we can send the VT_GETSTATE ioctl to
- * /dev/console at regular intervals.
+ * Start a thread which notifies the service when we switch to a different
+ * VT or back, and terminates us when the X server exits.  This should be called
+ * by most services which do not regularly run an X11 event loop.
  */
-static int startMonitorThread()
+int VBClStartVTMonitor()
 {
     return RTThreadCreate(NULL, pfnMonitorThread, NULL, 0,
                           RTTHREADTYPE_INFREQUENT_POLLER, 0, "MONITOR");
@@ -440,8 +364,6 @@ int main(int argc, char *argv[])
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
         VBClFatalError(("Initialising critical section: %Rrc\n", rc));
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Initialising critical section: %Rrc\n", rc));
     rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
     if (RT_FAILURE(rc))
         VBClFatalError(("Getting home directory for pid-file: %Rrc\n", rc));
@@ -468,10 +390,9 @@ int main(int argc, char *argv[])
     rc = (*g_pService)->init(g_pService);
     if (RT_FAILURE(rc))
         VBClFatalError(("Initialising service: %Rrc\n", rc));
-    rc = startMonitorThread();
+    rc = (*g_pService)->run(g_pService, fDaemonise);
     if (RT_FAILURE(rc))
-        VBClFatalError(("Starting monitor thread: %Rrc\n", rc));
-    (*g_pService)->run(g_pService, fDaemonise);  /* Should never return. */
+        VBClFatalError(("Service main loop failed: %Rrc\n", rc));
     VBClCleanUp();
-    return 1;
+    return 0;
 }

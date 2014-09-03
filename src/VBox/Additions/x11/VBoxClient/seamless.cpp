@@ -376,6 +376,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
     if (!pSelf->mIsInitialised)
         return VERR_INTERNAL_ERROR;
+    rc = VBClStartVTMonitor();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to start the VT monitor thread: %Rrc\n", rc));
     /* This only exits on error. */
     rc = pSelf->mSeamless.run();
     pSelf->mIsInitialised = false;
