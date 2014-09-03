@@ -965,7 +965,7 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltShowDebugCommandLine()));
     connect(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging), SIGNAL(toggled(bool)),
             this, SLOT(sltLoggingToggled(bool)));
-    connect(actionPool()->action(UIActionIndex_Simple_LogDialog), SIGNAL(triggered()),
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog), SIGNAL(triggered()),
             this, SLOT(sltShowLogDialog()));
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 

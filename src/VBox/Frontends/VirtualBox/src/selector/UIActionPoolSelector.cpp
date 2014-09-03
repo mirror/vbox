@@ -676,6 +676,39 @@ protected:
     }
 };
 
+class UIActionSimpleCommonShowLogDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleCommonShowLogDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
+                         ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ShowVMLog");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("Ctrl+L");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Show &Log..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
+    }
+};
+
 class UIActionSimpleCommonRefresh : public UIActionSimple
 {
     Q_OBJECT;
@@ -917,6 +950,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Close_S_Shutdown] = new UIActionSimpleACPIShutdown(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_PowerOff] = new UIActionSimplePowerOff(this);
     m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleCommonDiscard(this);
+    m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleCommonShowLogDialog(this);
     m_pool[UIActionIndexST_M_Group_S_Refresh] = new UIActionSimpleCommonRefresh(this);
     m_pool[UIActionIndexST_M_Group_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Group_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
@@ -938,6 +972,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleACPIShutdown(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_PowerOff] = new UIActionSimplePowerOff(this);
     m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleCommonDiscard(this);
+    m_pool[UIActionIndexST_M_Machine_S_ShowLogDialog] = new UIActionSimpleCommonShowLogDialog(this);
     m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleCommonRefresh(this);
     m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);

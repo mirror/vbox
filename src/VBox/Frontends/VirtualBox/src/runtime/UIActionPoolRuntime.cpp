@@ -1497,6 +1497,33 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Logging...", "debug action"));
     }
 };
+
+class UIActionSimpleShowLogDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowLogDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent) {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("LogWindow");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Show &Log...", "debug action"));
+    }
+};
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN
@@ -1821,6 +1848,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Debug_S_ShowStatistics] = new UIActionSimpleShowStatistics(this);
     m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleShowCommandLine(this);
     m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleLogging(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowLogDialog] = new UIActionSimpleShowLogDialog(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
@@ -2880,9 +2908,9 @@ void UIActionPoolRuntime::updateMenuDebug()
 
     /* 'Log Dialog' action: */
     const bool fAllowToShowActionLogDialog = isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
-    action(UIActionIndex_Simple_LogDialog)->setEnabled(fAllowToShowActionLogDialog);
+    action(UIActionIndexRT_M_Debug_S_ShowLogDialog)->setEnabled(fAllowToShowActionLogDialog);
     if (fAllowToShowActionLogDialog)
-        pMenu->addAction(action(UIActionIndex_Simple_LogDialog));
+        pMenu->addAction(action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Debug);
