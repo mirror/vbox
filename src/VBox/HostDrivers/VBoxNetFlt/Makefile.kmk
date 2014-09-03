@@ -305,6 +305,21 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
 
 
  #
+ # NetAdp6Uninstall
+ #
+ PROGRAMS.win  += NetAdp6Uninstall
+ NetAdp6Uninstall_TEMPLATE = VBOXR3STATIC
+ NetAdp6Uninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ NetAdp6Uninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
+ NetAdp6Uninstall_DEFS    += NDIS60=1
+ NetAdp6Uninstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/WbemUuid.Lib
+
+ #
  # NetLwfInstall
  #
  PROGRAMS.win  += NetLwfInstall
@@ -436,7 +451,6 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 
  endif #  ifdef VBOX_SIGNING_MODE
 
- ifdef VBOX_WITH_NDIS6
  #
  # VBoxNetAdp6.sys - The VirtualBox Adapter miniport driver.
  #
@@ -493,8 +507,6 @@ $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
  endif #  ifdef VBOX_SIGNING_MODE
-
- endif #  ifdef VBOX_WITH_NDIS6
 
 endif #ifeq ($(KBUILD_TARGET), win)
 

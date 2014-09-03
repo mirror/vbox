@@ -2389,6 +2389,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection (LPWSTR pGuid, PCWSTR 
 }
 
 #define DRIVERHWID _T("sun_VBoxNetAdp")
+#define DRIVERHWID_NDIS6 _T("sun_VBoxNetAdp6")
 
 #define SetErrBreak(strAndArgs) \
     if (1) { \
@@ -2545,7 +2546,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
                      t && *t && t < &deviceHwid[size / sizeof(TCHAR)];
                      t += _tcslen (t) + 1)
                 {
-                    if (!_tcsicmp (DRIVERHWID, t))
+                    if (!_tcsicmp (DRIVERHWID, t) || !_tcsicmp (DRIVERHWID_NDIS6, t))
                     {
                           /* get the device instance ID */
                           TCHAR devId[MAX_DEVICE_ID_LEN];
@@ -2602,9 +2603,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
     return hrc;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pbRebootRequired)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pbRebootRequired, LPCWSTR pcsxwId)
 {
-    return VBoxDrvCfgDrvUpdate(DRIVERHWID, pcsxwInf, pbRebootRequired);
+    return VBoxDrvCfgDrvUpdate(pcsxwId, pcsxwInf, pbRebootRequired);
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
@@ -2765,7 +2766,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                 t = pDriverInfoDetail->HardwareID;
                 while (t && *t && t < (TCHAR *) &detailBuf [RT_ELEMENTS(detailBuf)])
                 {
-                    if (!_tcsicmp(t, DRIVERHWID))
+                    if (!_tcsicmp(t, DRIVERHWID) || !_tcsicmp(t, DRIVERHWID_NDIS6))
                         break;
 
                     t += _tcslen(t) + 1;

@@ -23,8 +23,10 @@
 
 #ifdef NDIS60
 #define VBOX_NETADP_INF L"VBoxNetAdp6.inf"
+#define VBOX_NETADP_HWID L"sun_VBoxNetAdp6"
 #else /* !NDIS60 */
 #define VBOX_NETADP_INF L"VBoxNetAdp.inf"
+#define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
 #endif /* !NDIS60 */
 
 static VOID winNetCfgLogger(LPCSTR szString)
@@ -105,10 +107,10 @@ static int VBoxNetAdpUninstall(void)
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
-        hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(L"sun_VBoxNetAdp");
+        hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(VBOX_NETADP_HWID);
         if (SUCCEEDED(hr))
         {
-            hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", L"sun_VBoxNetAdp", 0/* could be SUOI_FORCEDELETE */);
+            hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, L"Net", VBOX_NETADP_HWID, 0/* could be SUOI_FORCEDELETE */);
             if (SUCCEEDED(hr))
             {
                 printf("uninstallation successful\n");
@@ -138,7 +140,7 @@ static int VBoxNetAdpUpdate(void)
     if (SUCCEEDED(hr))
     {
         BOOL fRebootRequired = FALSE;
-        hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(VBOX_NETADP_INF, &fRebootRequired);
+        hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(VBOX_NETADP_INF, &fRebootRequired, VBOX_NETADP_HWID);
         if (SUCCEEDED(hr))
         {
             if (fRebootRequired)
@@ -167,7 +169,7 @@ static int VBoxNetAdpDisable(void)
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
-        hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(L"sun_VBoxNetAdp", VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
+        hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
         if (SUCCEEDED(hr))
         {
             printf("disabling successful\n");
@@ -194,7 +196,7 @@ static int VBoxNetAdpEnable(void)
     HRESULT hr = CoInitialize(NULL);
     if (SUCCEEDED(hr))
     {
-        hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(L"sun_VBoxNetAdp", VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE);
+        hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(VBOX_NETADP_HWID, VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE);
         if (SUCCEEDED(hr))
         {
             printf("enabling successful\n");
