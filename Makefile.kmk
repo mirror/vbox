@@ -897,9 +897,9 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 additions, build+pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing "
-	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 additions, build+pack)
 endif
 
 additions-build-win.x86:
@@ -907,9 +907,9 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 additions (build.pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 additions, build.pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_X86_IP) " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
-	$(call VBOX_BLD_VM_MSG_END__,Windows/x86 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Windows/x86 additions, build+pack)
 endif
 
 # ASSUMES the 64-bit edition are built first. This also serializes VM access.
@@ -932,12 +932,12 @@ additions-build-solaris.rsync-into-vm:
 		. $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm
-	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 additions, build+pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
-	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 additions (build+pack))
-	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/x86 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 additions, build+pack)
+	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/x86 additions, build+pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
-	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 additions, build+pack)
 
 additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
@@ -967,9 +967,9 @@ additions-build-os2.rsync-into-vm:
 		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-os2.build-it: additions-build-os2.rsync-into-vm
-	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 additions, build+pack)
 	$(VBOX_KMK_TIME) rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
-	$(call VBOX_BLD_VM_MSG_END__,OS/2 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,OS/2 additions, build+pack)
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
@@ -995,9 +995,9 @@ else
 	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) "echo $@ && dchroot -c ubuntu-11.10-amd64 \"cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux2.amd64/$(KBUILD_TYPE) VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter\""'
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions/greeter)
  endif
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions, build+pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING)"
-	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions, build+pack)
 endif
 
 additions-build-linux.x86:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
@@ -1010,9 +1010,9 @@ else
 	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) "echo $@ && dchroot -c ubuntu-11.10-i386 \"cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && BUILD_PLATFORM_ARCH=x86 tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux2.x86/$(KBUILD_TYPE) VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter\""'
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions/greeter)
  endif
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions, build+pack)
 	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_NEW_X86_IP) "echo $@ && dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING)\""'
-	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions (build+pack))
+	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions, build+pack)
 endif
 
 # Combined Linux Additions .run package.  This depends on the archives
@@ -1022,9 +1022,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1
 else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions (combine))
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions, combine)
 	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_NEW_X86_IP "echo $@ && dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1\""'
-	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions (combine))
+	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions, combine)
 endif
 
 
