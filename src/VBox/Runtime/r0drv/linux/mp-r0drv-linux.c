@@ -186,7 +186,7 @@ RT_EXPORT_SYMBOL(RTMpIsCpuWorkPending);
 
 
 /**
- * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER
+ * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER.
  *
  * @param   pvInfo      Pointer to the RTMPARGS package.
  */
@@ -198,33 +198,80 @@ static void rtmpLinuxWrapper(void *pvInfo)
 }
 
 
+/**
+ * Wrapper between the native linux all-cpu callbacks and PFNRTWORKER.
+ *
+ * @param   pvInfo      Pointer to the RTMPARGS package.
+ */
+static void rtmpLinuxAllWrapper(void *pvInfo)
+{
+    PRTMPARGS  pArgs      = (PRTMPARGS)pvInfo;
+    PRTCPUSET  pWorkerSet = pArgs->pWorkerSet;
+    RTCPUID    idCpu      = RTMpCpuId();
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    if (RTCpuSetIsMember(pWorkerSet, idCpu))
+    {
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+        RTCpuSetDel(pWorkerSet, idCpu);
+    }
+}
+
+
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     int rc;
     RTMPARGS Args;
+    RTCPUSET OnlineSet;
+    RTCPUID  idCpu;
+    uint32_t cLoops;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-#endif
-    Args.pfnWorker = pfnWorker;
-    Args.pvUser1 = pvUser1;
-    Args.pvUser2 = pvUser2;
-    Args.idCpu = NIL_RTCPUID;
-    Args.cHits = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-    rc = on_each_cpu(rtmpLinuxWrapper, &Args, 1 /* wait */);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    rc = on_each_cpu(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
-#else /* older kernels */
+    Args.pfnWorker  = pfnWorker;
+    Args.pvUser1    = pvUser1;
+    Args.pvUser2    = pvUser2;
+    Args.idCpu      = NIL_RTCPUID;
+    Args.cHits      = 0;
+
     RTThreadPreemptDisable(&PreemptState);
-    rc = smp_call_function(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
-    local_irq_disable();
-    rtmpLinuxWrapper(&Args);
-    local_irq_enable();
+    RTMpGetOnlineSet(&OnlineSet);
+    Args.pWorkerSet = &OnlineSet;
+    idCpu = RTMpCpuId();
+
+    if (RTCpuSetCount(&OnlineSet) > 1)
+    {
+        /* Fire the function on all other CPUs without waiting for completion. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        rc = smp_call_function(rtmpLinuxAllWrapper, &Args, 0 /* wait */);
+#else
+        rc = smp_call_function(rtmpLinuxAllWrapper, &Args, 0 /* retry */, 0 /* wait */);
+#endif
+        Assert(!rc); NOREF(rc);
+    }
+
+    /* Fire the function on this CPU. */
+    Args.pfnWorker(idCpu, Args.pvUser1, Args.pvUser2);
+    RTCpuSetDel(Args.pWorkerSet, idCpu);
+
+    /* Wait for all of them finish. */
+    cLoops = 64000;
+    while (!RTCpuSetIsEmpty(Args.pWorkerSet))
+    {
+        /* Periodically check if any CPU in the wait set has gone offline, if so update the wait set. */
+        if (!cLoops--)
+        {
+            RTCPUSET OnlineSetNow;
+            RTMpGetOnlineSet(&OnlineSetNow);
+            RTCpuSetAnd(Args.pWorkerSet, &OnlineSetNow);
+
+            cLoops = 64000;
+        }
+
+        ASMNopPause();
+    }
+
     RTThreadPreemptRestore(&PreemptState);
-#endif /* older kernels */
-    Assert(rc == 0); NOREF(rc);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTMpOnAll);
