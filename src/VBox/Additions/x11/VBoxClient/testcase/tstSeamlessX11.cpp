@@ -32,6 +32,11 @@ void vbclFatalError(char *pszMessage)
     exit(1);
 }
 
+int VBClStartVTMonitor()
+{
+    return VINF_SUCCESS;
+}
+
 int VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
 {
     RTPrintf("Received rectangle update (%u rectangles):\n", cRects);

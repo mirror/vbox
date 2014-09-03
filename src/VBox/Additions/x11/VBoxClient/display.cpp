@@ -348,9 +348,13 @@ static int init(struct VBCLSERVICE **ppInterface)
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
     struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
+    int rc;
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
+    rc = VBClStartVTMonitor();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to start the VT monitor thread: %Rrc\n", rc));
     runDisplay(&pSelf->mState);
     return VERR_INTERNAL_ERROR;  /* "Should never reach here." */
 }
