@@ -92,6 +92,8 @@ private:
     virtual void showEvent(QShowEvent *pEvent);
     /** Close event handler. */
     virtual void closeEvent(QCloseEvent *pEvent);
+    /** Common event handler. */
+    virtual bool event(QEvent *pEvent);
 
     /** Defines mdi-sub-window geometry. */
     void setWidgetGeometry(const QRect &rect);

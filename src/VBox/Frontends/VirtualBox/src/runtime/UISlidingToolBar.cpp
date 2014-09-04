@@ -263,6 +263,28 @@ void UISlidingToolBar::closeEvent(QCloseEvent *pEvent)
     }
 }
 
+bool UISlidingToolBar::event(QEvent *pEvent)
+{
+    /* Depending on event-type: */
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        case QEvent::WindowActivate:
+        {
+            /* By some strange reason
+             * cocoa resets NSWindow::setHasShadow option
+             * for frameless windows on every window resize/activation.
+             * So we have to make sure window still has no shadows. */
+            darwinSetWindowHasShadow(this, false);
+            break;
+        }
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    return QWidget::event(pEvent);
+}
+
 void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
 {
     /* Apply mdi-sub-window geometry: */

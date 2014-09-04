@@ -185,6 +185,14 @@ void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnable
     }
 }
 
+void darwinSetWindowHasShadow(NativeNSWindowRef pWindow, bool fEnabled)
+{
+    if (fEnabled)
+        [pWindow setHasShadow :YES];
+    else
+        [pWindow setHasShadow :NO];
+}
+
 void darwinMinaturizeWindow(NativeNSWindowRef pWindow)
 {
 //    [[NSApplication sharedApplication] miniaturizeAll];

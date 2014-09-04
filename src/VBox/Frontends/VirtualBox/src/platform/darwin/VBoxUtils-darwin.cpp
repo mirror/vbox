@@ -83,6 +83,11 @@ void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled)
     ::darwinSetShowsWindowTransparentImpl(::darwinToNativeWindow(pWidget), fEnabled);
 }
 
+void darwinSetWindowHasShadow(QWidget *pWidget, bool fEnabled)
+{
+    ::darwinSetWindowHasShadow(::darwinToNativeWindow(pWidget), fEnabled);
+}
+
 void darwinWindowAnimateResize(QWidget *pWidget, const QRect &aTarget)
 {
     ::darwinWindowAnimateResizeImpl(::darwinToNativeWindow(pWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
