@@ -33,7 +33,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
-#define IKDClient_InterfaceVersion 2
+#define IKDClient_InterfaceVersion 3
 
 
 /*******************************************************************************
@@ -59,8 +59,7 @@ AssertCompileSize(VKDREPLYHDR, 6);
 class IKDClient
 {
 public:
-    virtual unsigned OnRequest(const char *pRequest, unsigned RequestSize, char **ppReply)=0;
-    virtual unsigned GetRPCCommandHeaderSize()=0;
+    virtual unsigned OnRequest(const char *pRequestIncludingRpcHeader, unsigned RequestSizeWithRpcHeader, char **ppReply)=0;
     virtual ~IKDClient() {}
 };
 
@@ -72,7 +71,6 @@ typedef struct VIRTUALKD
     bool fChannelDetectSuccessful;
     RTLDRMOD hLib;
     IKDClient *pKDClient;
-    unsigned cbRPCCommandHeaderSize;
     char abCmdBody[262144];
 } VIRTUALKD;
 
@@ -103,7 +101,7 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
     if (Port == 0x5659)
     {
-        VKDREQUESTHDR RequestHeader;
+        VKDREQUESTHDR RequestHeader = {0, };
         int rc = PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &RequestHeader, sizeof(RequestHeader));
         if (!RT_SUCCESS(rc) || !RequestHeader.cbData)
             return VINF_SUCCESS;
@@ -113,8 +111,8 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
         char *pReply = NULL;
         unsigned cbReply;
-        cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody + pThis->cbRPCCommandHeaderSize,
-                                              RequestHeader.cbData - pThis->cbRPCCommandHeaderSize,
+        cbReply = pThis->pKDClient->OnRequest(pThis->abCmdBody,
+                                              RequestHeader.cbData,
                                               &pReply);
 
         if (!pReply)
@@ -157,7 +155,6 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->fChannelDetectSuccessful = false;
     pThis->hLib = NIL_RTLDRMOD;
     pThis->pKDClient = NULL;
-    pThis->cbRPCCommandHeaderSize = 0;
 
     if (!CFGMR3AreValuesValid(pCfg,
                               "Path\0"))
@@ -204,8 +201,6 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                    N_("Failed to initialize VirtualKD library '%s'. Fast kernel-mode debugging will not work"), szPath);
         return VINF_SUCCESS;
     }
-
-    pThis->cbRPCCommandHeaderSize = pThis->pKDClient->GetRPCCommandHeaderSize();
 
     PDMDevHlpIOPortRegister(pDevIns, 0x5658, 2, NULL, vkdPortWrite, vkdPortRead, NULL, NULL, "VirtualKD");
 
