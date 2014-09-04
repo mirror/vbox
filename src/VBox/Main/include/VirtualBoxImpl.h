@@ -127,8 +127,8 @@ public:
     void i_addProcessToReap(RTPROCESS pid);
     void i_updateClientWatcher();
 
-    void i_extPackInstallNotify(const char *pszExtPackName);
-    void i_extPackUninstallNotify(const char *pszExtPackName);
+    int i_loadVDPlugin(const char *pszPluginLibrary);
+    int i_unloadVDPlugin(const char *pszPluginLibrary);
 
     void i_onMachineStateChange(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
