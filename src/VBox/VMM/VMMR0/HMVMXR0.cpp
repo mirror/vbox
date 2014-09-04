@@ -10523,7 +10523,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     }
     AssertRCReturn(rc, rc);
-    Log4(("CS:RIP=%04x:%#RX64 ECX=%X\n", pMixedCtx->cs.Sel, pMixedCtx->rip, pMixedCtx->ecx));
+    Log4(("ecx=%#RX32\n", pMixedCtx->ecx));
 
 #ifdef VBOX_STRICT
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
@@ -10578,7 +10578,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     }
     AssertRCReturn(rc, rc);
-    Log4(("ecx=%#RX32\n", pMixedCtx->ecx));
+    Log4(("ecx=%#RX32 edx:eax=%#RX32:%#RX32\n", pMixedCtx->ecx, pMixedCtx->edx, pMixedCtx->eax));
 
     rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0VmxExitWrmsr: failed, invalid error code %Rrc\n", rc));
