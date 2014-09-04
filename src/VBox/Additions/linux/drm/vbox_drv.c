@@ -101,44 +101,26 @@ static struct drm_ioctl_desc vbox_ioctls[] =
                       DRM_UNLOCKED|DRM_ROOT_ONLY)
 };
 
-/* Intercept the old-style cursor IOCtl which does not pass the hot-spot to stop
- * the kernel from translating it to a new-style one with a zero hot-spot, which
- * we do not want. */
-static long vbox_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
-    if (cmd != DRM_IOCTL_MODE_CURSOR)
-        return drm_ioctl(filp, cmd, arg);
-    return -EINVAL;
-}
-
-#ifdef CONFIG_COMPAT
-static long vbox_compat_ioctl(struct file *filp, unsigned int cmd, 
-                              unsigned long arg)
-{
-    if (cmd != DRM_IOCTL_MODE_CURSOR)
-        return drm_compat_ioctl(filp, cmd, arg);
-    return -EINVAL;
-}
-#endif
-
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
     .open = drm_open,
     .release = drm_release,
-    .unlocked_ioctl = vbox_ioctl,
+    .unlocked_ioctl = drm_ioctl,
     .mmap = vbox_mmap,
     .poll = drm_poll,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
     .fasync = drm_fasync,
+#endif
 #ifdef CONFIG_COMPAT
-    .compat_ioctl = vbox_compat_ioctl,
+    .compat_ioctl = drm_compat_ioctl,
 #endif
     .read = drm_read,
 };
 
 static struct drm_driver driver =
 {
-    .driver_features = DRIVER_USE_MTRR | DRIVER_MODESET | DRIVER_GEM,
+    .driver_features = DRIVER_MODESET | DRIVER_GEM,
     .dev_priv_size = 0,
 
     .load = vbox_driver_load,
@@ -154,7 +136,6 @@ static struct drm_driver driver =
     .minor = DRIVER_MINOR,
     .patchlevel = DRIVER_PATCHLEVEL,
 
-    .gem_init_object = vbox_gem_init_object,
     .gem_free_object = vbox_gem_free_object,
     .dumb_create = vbox_dumb_create,
     .dumb_map_offset = vbox_dumb_mmap_offset,
