@@ -2441,6 +2441,7 @@
 # define RTCrPkcs7SetOfCerts_Delete                     RT_MANGLER(RTCrPkcs7SetOfCerts_Delete)
 # define RTCrPkcs7SetOfCerts_Enum                       RT_MANGLER(RTCrPkcs7SetOfCerts_Enum)
 # define RTCrPkcs7SetOfCerts_Init                       RT_MANGLER(RTCrPkcs7SetOfCerts_Init)
+# define RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber RT_MANGLER(RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber)
 # define RTCrPkcs7SetOfContentInfos_CheckSanity         RT_MANGLER(RTCrPkcs7SetOfContentInfos_CheckSanity)
 # define RTCrPkcs7SetOfContentInfos_Clone               RT_MANGLER(RTCrPkcs7SetOfContentInfos_Clone)
 # define RTCrPkcs7SetOfContentInfos_Compare             RT_MANGLER(RTCrPkcs7SetOfContentInfos_Compare)
