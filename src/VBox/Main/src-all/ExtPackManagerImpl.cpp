@@ -683,14 +683,14 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
         /* pfnGetFilePath       = */ ExtPack::i_hlpGetFilePath,
         /* pfnGetContext        = */ ExtPack::i_hlpGetContext,
         /* pfnLoadHGCMService   = */ ExtPack::i_hlpLoadHGCMService,
+        /* pfnLoadVDPlugin      = */ ExtPack::i_hlpLoadVDPlugin,
+        /* pfnUnloadVDPlugin    = */ ExtPack::i_hlpUnloadVDPlugin,
         /* pfnReserved1         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved2         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved3         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved4         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved5         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved6         = */ ExtPack::i_hlpReservedN,
-        /* pfnReserved7         = */ ExtPack::i_hlpReservedN,
-        /* pfnReserved8         = */ ExtPack::i_hlpReservedN,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -1559,6 +1559,56 @@ ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole)
     return pCon->i_hgcmLoadService(pszServiceLibrary, pszServiceName);
 #else
     NOREF(pHlp); NOREF(pConsole); NOREF(pszServiceLibrary); NOREF(pszServiceName);
+#endif
+    return VERR_INVALID_STATE;
+}
+
+/*static*/ DECLCALLBACK(int)
+ExtPack::i_hlpLoadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, const char *pszPluginLibrary)
+{
+#ifndef VBOX_COM_INPROC
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszPluginLibrary, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVirtualBox, VERR_INVALID_POINTER);
+
+    VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
+    return pVBox->i_loadVDPlugin(pszPluginLibrary);
+#else
+    NOREF(pHlp); NOREF(pVirtualBox);
+#endif
+    return VERR_INVALID_STATE;
+}
+
+/*static*/ DECLCALLBACK(int)
+ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, const char *pszPluginLibrary)
+{
+#ifndef VBOX_COM_INPROC
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszPluginLibrary, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVirtualBox, VERR_INVALID_POINTER);
+
+    VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
+    return pVBox->i_unloadVDPlugin(pszPluginLibrary);
+#else
+    NOREF(pHlp); NOREF(pVirtualBox);
 #endif
     return VERR_INVALID_STATE;
 }
@@ -2529,10 +2579,7 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
         if (SUCCEEDED(hrc))
         {
             if (pExtPack && a_fReplace)
-            {
-                m->pVirtualBox->i_extPackUninstallNotify(pStrName->c_str());
                 hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, false /*a_ForcedRemoval*/);
-            }
             else if (pExtPack)
                 hrc = setError(E_FAIL,
                                tr("Extension pack '%s' is already installed."
@@ -2564,10 +2611,7 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                     RTErrInfoInitStatic(&ErrInfo);
                     pExtPack->i_callInstalledHook(m->pVirtualBox, &autoLock, &ErrInfo.Core);
                     if (RT_SUCCESS(ErrInfo.Core.rc))
-                    {
                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
-                        m->pVirtualBox->i_extPackInstallNotify(pStrName->c_str());
-                    }
                     else
                     {
                         LogRel(("ExtPackManager: Installed hook for '%s' failed: %Rrc - %s\n",
@@ -2670,7 +2714,6 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
                 /*
                  * Call the uninstall hook and unload the main dll.
                  */
-                m->pVirtualBox->i_extPackUninstallNotify(a_pstrName->c_str());
                 hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
                 if (SUCCEEDED(hrc))
                 {

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -149,8 +149,46 @@ typedef struct VBOXEXTPACKHLP
      */
     DECLR3CALLBACKMEMBER(VBOXEXTPACKCTX, pfnGetContext,(PCVBOXEXTPACKHLP pHlp));
 
+    /**
+     * Loads a HGCM service provided by an extension pack.
+     *
+     * @returns VBox status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pConsole        Pointer to the VM's console object.
+     * @param   pszServiceLibrary Name of the library file containing the
+     *                          service implementation, without extension.
+     * @param   pszServiceName  Name of HGCM service.
+     */
     DECLR3CALLBACKMEMBER(int, pfnLoadHGCMService,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
                                                   const char *pszServiceLibrary, const char *pszServiceName));
+
+    /**
+     * Loads a VD plugin provided by an extension pack.
+     *
+     * This makes sense only in the context of the per-user service (VBoxSVC).
+     *
+     * @returns VBox status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pVirtualBox     Pointer to the VirtualBox object.
+     * @param   pszPluginLibrary Name of the library file containing the plugin
+     *                          implementation, without extension.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnLoadVDPlugin,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                               const char *pszPluginLibrary));
+
+    /**
+     * Unloads a VD plugin provided by an extension pack.
+     *
+     * This makes sense only in the context of the per-user service (VBoxSVC).
+     *
+     * @returns VBox status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pVirtualBox     Pointer to the VirtualBox object.
+     * @param   pszPluginLibrary Name of the library file containing the plugin
+     *                          implementation, without extension.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUnloadVDPlugin,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                                 const char *pszPluginLibrary));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
@@ -158,14 +196,12 @@ typedef struct VBOXEXTPACKHLP
     DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved7,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved8,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
 
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(1, 1)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(2, 1)
 
 
 /** Pointer to the extension pack callback table. */

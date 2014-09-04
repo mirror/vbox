@@ -1370,7 +1370,7 @@ void sanitiseMachineFilename(Utf8Str &strName)
         { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
           0xa0, 0xd7af, '\0' };
     char *pszName = strName.mutableRaw();
-    int cReplacements = RTStrPurgeComplementSet(pszName, aCpSet, '_');
+    ssize_t cReplacements = RTStrPurgeComplementSet(pszName, aCpSet, '_');
     Assert(cReplacements >= 0);
     NOREF(cReplacements);
     /* No leading dot or dash. */
@@ -2636,19 +2636,19 @@ struct MachineEvent : public VirtualBox::CallbackEvent
 
 
 /**
- * Extpack install notification
+ * VD plugin load
  */
-void VirtualBox::i_extPackInstallNotify(const char *pszExtPackName)
+int VirtualBox::i_loadVDPlugin(const char *pszPluginLibrary)
 {
-    m->pSystemProperties->i_extPackInstallNotify(pszExtPackName);
+    return m->pSystemProperties->i_loadVDPlugin(pszPluginLibrary);
 }
 
 /**
- * Extpack uninstall notification
+ * VD plugin unload
  */
-void VirtualBox::i_extPackUninstallNotify(const char *pszExtPackName)
+int VirtualBox::i_unloadVDPlugin(const char *pszPluginLibrary)
 {
-    m->pSystemProperties->i_extPackUninstallNotify(pszExtPackName);
+    return m->pSystemProperties->i_unloadVDPlugin(pszPluginLibrary);
 }
 
 
