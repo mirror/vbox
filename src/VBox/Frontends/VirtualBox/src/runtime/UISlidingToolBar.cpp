@@ -263,6 +263,7 @@ void UISlidingToolBar::closeEvent(QCloseEvent *pEvent)
     }
 }
 
+#ifdef Q_WS_MAC
 bool UISlidingToolBar::event(QEvent *pEvent)
 {
     /* Depending on event-type: */
@@ -284,6 +285,7 @@ bool UISlidingToolBar::event(QEvent *pEvent)
     /* Call to base-class: */
     return QWidget::event(pEvent);
 }
+#endif /* Q_WS_MAC */
 
 void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
 {
