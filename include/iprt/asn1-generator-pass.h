@@ -1038,6 +1038,18 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_CheckSanity)(RT_CONCAT(PC,RT
     } \
     { a_MoreConstraints }
 
+# define RTASN1TMPL_MEMBER_CONSTR_U64_MIN_MAX(a_Name, uMin, uMax, a_MoreConstraints) \
+    if (RT_SUCCESS(rc)) \
+    { \
+        if (RT_UNLIKELY(   RTAsn1Integer_UnsignedCompareWithU64(&pThis->a_Name, uMin) < 0 \
+                        || RTAsn1Integer_UnsignedCompareWithU64(&pThis->a_Name, uMax) > 0) ) \
+            rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, \
+                               "%s::" #a_Name ": Out of range: %#x not in {%#llx..%#llx}", \
+                               pszErrorTag, pThis->a_Name.Asn1Core.cb > 8 ? UINT64_MAX : pThis->a_Name.uValue.u, \
+                               (uint64_t)(uMin), (uint64_t)(uMax)); \
+    } \
+    { a_MoreConstraints }
+
 # define RTASN1TMPL_MEMBER_CONSTR_PRESENT(a_Name, a_Api, a_MoreConstraints) \
     if (RT_SUCCESS(rc) && RT_UNLIKELY(!RT_CONCAT(a_Api,_IsPresent)(&pThis->a_Name))) \
         rc = RTErrInfoSetF(pErrInfo, VERR_GENERAL_FAILURE, "%s::" #a_Name ": Missing.", pszErrorTag); \
@@ -1258,6 +1270,10 @@ RTASN1TMPL_DECL(void) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(RT_CONCAT(P,RTASN1T
 # define RTASN1TMPL_PCHOICE_ITAG_UP(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api) \
     RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, RTASN1TMPL_ITAG_F_UP, RT_NOTHING)
 #endif
+#ifndef RTASN1TMPL_PCHOICE_ITAG_UC
+# define RTASN1TMPL_PCHOICE_ITAG_UC(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api) \
+    RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, RTASN1TMPL_ITAG_F_UC, RT_NOTHING)
+#endif
 #ifndef RTASN1TMPL_PCHOICE_ITAG_CP
 # define RTASN1TMPL_PCHOICE_ITAG_CP(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api) \
     RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, RTASN1TMPL_ITAG_F_CP, RT_NOTHING)
@@ -1282,6 +1298,9 @@ RTASN1TMPL_DECL(void) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(RT_CONCAT(P,RTASN1T
 #endif
 #ifndef RTASN1TMPL_MEMBER_CONSTR_BITSTRING_MIN_MAX
 # define RTASN1TMPL_MEMBER_CONSTR_BITSTRING_MIN_MAX(a_Name, cMinBits, cMaxBits, a_MoreConstraints)
+#endif
+#ifndef RTASN1TMPL_MEMBER_CONSTR_U64_MIN_MAX
+# define RTASN1TMPL_MEMBER_CONSTR_U64_MIN_MAX(a_Name, uMin, uMax, a_MoreConstraints)
 #endif
 #ifndef RTASN1TMPL_MEMBER_CONSTR_PRESENT
 # define RTASN1TMPL_MEMBER_CONSTR_PRESENT(a_Name, a_Api, a_MoreConstraints)
@@ -1371,6 +1390,7 @@ RTASN1TMPL_DECL(void) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(RT_CONCAT(P,RTASN1T
 
 #undef RTASN1TMPL_MEMBER_CONSTR_MIN_MAX
 #undef RTASN1TMPL_MEMBER_CONSTR_BITSTRING_MIN_MAX
+#undef RTASN1TMPL_MEMBER_CONSTR_U64_MIN_MAX
 #undef RTASN1TMPL_MEMBER_CONSTR_PRESENT
 
 #undef RTASN1TMPL_SANITY_CHECK_EXPR

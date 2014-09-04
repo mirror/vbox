@@ -58,6 +58,8 @@ RTASN1TMPL_MEMBER_DYN(          uValues, pCounterSignatures, RTCRPKCS7SINGERINFO
     enmType, RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES, RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID) == 0);
 RTASN1TMPL_MEMBER_DYN(          uValues,    pSigningTime,   RTASN1SETOFTIMES,           RTAsn1SetOfTimes,           Allocation,
     enmType, RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,   RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_SIGNING_TIME_OID) == 0);
+RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
+    enmType, RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,   RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_MS_TIMESTAMP) == 0);
 RTASN1TMPL_MEMBER_DYN_DEFAULT(  uValues,    pCores,         RTASN1SETOFCORES,           RTAsn1SetOfCores,           Allocation,
     enmType, RTCRPKCS7ATTRIBUTETYPE_UNKNOWN);
 RTASN1TMPL_MEMBER_DYN_END(RTCRPKCS7ATTRIBUTETYPE, enmType, Allocation);
@@ -121,11 +123,23 @@ RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              Version,                    RTASN1INTEGER,                  RTAsn1Integer);
 RTASN1TMPL_MEMBER(              DigestAlgorithms,           RTCRX509ALGORITHMIDENTIFIERS,   RTCrX509AlgorithmIdentifiers);
 RTASN1TMPL_MEMBER(              ContentInfo,                RTCRPKCS7CONTENTINFO,           RTCrPkcs7ContentInfo);
-RTASN1TMPL_MEMBER_OPT_ITAG(     Certificates,               RTCRX509CERTIFICATES,           RTCrX509Certificates,   0);
+RTASN1TMPL_MEMBER_OPT_ITAG(     Certificates,               RTCRPKCS7SETOFCERTS,            RTCrPkcs7SetOfCerts,    0);
 RTASN1TMPL_MEMBER_OPT_ITAG(     Crls,                       RTASN1CORE,                     RTAsn1Core,             1);
 RTASN1TMPL_MEMBER(              SignerInfos,                RTCRPKCS7SIGNERINFOS,           RTCrPkcs7SignerInfos);
 RTASN1TMPL_EXEC_CHECK_SANITY(   rc = rtCrPkcs7SignedData_CheckSanityExtra(pThis, fFlags, pErrInfo, pszErrorTag) ) /* no ; */
 RTASN1TMPL_END_SEQCORE();
+#undef RTASN1TMPL_TYPE
+#undef RTASN1TMPL_EXT_NAME
+#undef RTASN1TMPL_INT_NAME
+
+
+/*
+ * Set of PCKS #7 SignedData.
+ */
+#define RTASN1TMPL_TYPE         RTCRPKCS7SETOFSIGNEDDATA
+#define RTASN1TMPL_EXT_NAME     RTCrPkcs7SetOfSignedData
+#define RTASN1TMPL_INT_NAME     rtCrPkcs7SetOfSignedData
+RTASN1TMPL_SET_OF(RTCRPKCS7SIGNEDDATA, RTCrPkcs7SignedData);
 #undef RTASN1TMPL_TYPE
 #undef RTASN1TMPL_EXT_NAME
 #undef RTASN1TMPL_INT_NAME
@@ -158,6 +172,48 @@ RTASN1TMPL_MEMBER_OPT_ITAG(     Content,                    RTASN1OCTETSTRING,  
 RTASN1TMPL_EXEC_DECODE(         rc = rtCrPkcs7ContentInfo_DecodeExtra(pCursor, fFlags, pThis, pszErrorTag)) /* no ; */
 RTASN1TMPL_EXEC_CLONE(          rc = rtCrPkcs7ContentInfo_CloneExtra(pThis) ) /* no ; */
 RTASN1TMPL_END_SEQCORE();
+#undef RTASN1TMPL_TYPE
+#undef RTASN1TMPL_EXT_NAME
+#undef RTASN1TMPL_INT_NAME
+
+
+/*
+ * Set of PCKS #7 ContentInfo.
+ */
+#define RTASN1TMPL_TYPE         RTCRPKCS7SETOFCONTENTINFOS
+#define RTASN1TMPL_EXT_NAME     RTCrPkcs7SetOfContentInfos
+#define RTASN1TMPL_INT_NAME     rtCrPkcs7SetOfContentInfos
+RTASN1TMPL_SET_OF(RTCRPKCS7CONTENTINFO, RTCrPkcs7ContentInfo);
+#undef RTASN1TMPL_TYPE
+#undef RTASN1TMPL_EXT_NAME
+#undef RTASN1TMPL_INT_NAME
+
+
+/*
+ * One PKCS #7 ExtendedCertificateOrCertificate or a CMS CertificateChoices (sic).
+ */
+#define RTASN1TMPL_TYPE         RTCRPKCS7CERT
+#define RTASN1TMPL_EXT_NAME     RTCrPkcs7Cert
+#define RTASN1TMPL_INT_NAME     rtCrPkcs7Cert
+RTASN1TMPL_BEGIN_PCHOICE();
+RTASN1TMPL_PCHOICE_ITAG_UC(     ASN1_TAG_SEQUENCE, RTCRPKCS7CERTCHOICE_X509, u.pX509Cert, X509Cert,     RTCRX509CERTIFICATE, RTCrX509Certificate);
+RTASN1TMPL_PCHOICE_ITAG(        0, RTCRPKCS7CERTCHOICE_EXTENDED_PKCS6, u.pExtendedCert,   ExtendedCert, RTASN1CORE, RTAsn1Core);
+RTASN1TMPL_PCHOICE_ITAG(        1, RTCRPKCS7CERTCHOICE_AC_V1,          u.pAcV1,           AcV1,         RTASN1CORE, RTAsn1Core);
+RTASN1TMPL_PCHOICE_ITAG(        2, RTCRPKCS7CERTCHOICE_AC_V2,          u.pAcV2,           AcV2,         RTASN1CORE, RTAsn1Core);
+RTASN1TMPL_PCHOICE_ITAG(        3, RTCRPKCS7CERTCHOICE_OTHER,          u.pOtherCert,      OtherCert,    RTASN1CORE, RTAsn1Core);
+RTASN1TMPL_END_PCHOICE();
+#undef RTASN1TMPL_TYPE
+#undef RTASN1TMPL_EXT_NAME
+#undef RTASN1TMPL_INT_NAME
+
+
+/*
+ * Set of PKCS #7 ExtendedCertificateOrCertificate or a CMS CertificateChoices.
+ */
+#define RTASN1TMPL_TYPE         RTCRPKCS7SETOFCERTS
+#define RTASN1TMPL_EXT_NAME     RTCrPkcs7SetOfCerts
+#define RTASN1TMPL_INT_NAME     rtCrPkcs7SetOfCerts
+RTASN1TMPL_SET_OF(RTCRPKCS7CERT, RTCrPkcs7Cert);
 #undef RTASN1TMPL_TYPE
 #undef RTASN1TMPL_EXT_NAME
 #undef RTASN1TMPL_INT_NAME

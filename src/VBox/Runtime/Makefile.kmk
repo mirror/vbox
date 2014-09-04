@@ -358,6 +358,10 @@ RuntimeR3_SOURCES       = \
 	common/crypto/taf-core.cpp \
 	common/crypto/taf-init.cpp \
 	common/crypto/taf-sanity.cpp \
+	common/crypto/tsp-asn1-decoder.cpp \
+	common/crypto/tsp-core.cpp \
+	common/crypto/tsp-init.cpp \
+	common/crypto/tsp-sanity.cpp \
 	common/crypto/store.cpp \
 	common/crypto/store-inmem.cpp \
 	common/crypto/RTCrStoreCertAddFromFile.cpp \
@@ -1919,6 +1923,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/taf-core.cpp \
 	common/crypto/taf-init.cpp \
 	common/crypto/taf-sanity.cpp \
+	common/crypto/tsp-asn1-decoder.cpp \
+	common/crypto/tsp-core.cpp \
+	common/crypto/tsp-init.cpp \
+	common/crypto/tsp-sanity.cpp \
 	common/checksum/alt-md2.cpp \
 	common/checksum/alt-sha1.cpp \
 	common/checksum/alt-sha256.cpp \
@@ -2733,6 +2741,7 @@ include $(FILE_KBUILD_SUB_FOOTER)
 rsa-template.o rsa-template.obj: rsa-core.o rsa-asn1-decoder.o rsa-sanity.o rsa-init.o
 spc-template.o spc-template.obj: spc-core.o spc-asn1-decoder.o spc-sanity.o spc-init.o
 taf-template.o taf-template.obj: taf-core.o taf-asn1-decoder.o taf-sanity.o taf-init.o
+tsp-template.o tsp-template.obj: tsp-core.o tsp-asn1-decoder.o tsp-sanity.o tsp-init.o
 x509-template.o x509-template.obj: x509-core.o x509-asn1-decoder.o x509-sanity.o x509-init.o
 pkcs7-template.o pkcs7-template.obj: pkcs7-core.o pkcs7-asn1-decoder.o pkcs7-sanity.o pkcs7-init.o
 

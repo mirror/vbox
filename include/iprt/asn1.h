@@ -396,7 +396,13 @@ typedef RTASN1COREVTABLE const *PCRTASN1COREVTABLE;
     RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm)
 
 
-/** Aliases two ASN.1 types. */
+/** Aliases two ASN.1 types, no method aliases. */
+#define RTASN1TYPE_ALIAS_TYPE_ONLY(a_TypeNm, a_AliasType) \
+    typedef a_AliasType a_TypeNm; \
+    typedef a_TypeNm *RT_CONCAT(P,a_TypeNm); \
+    typedef a_TypeNm const *RT_CONCAT(PC,a_TypeNm)
+
+/** Aliases two ASN.1 types and methods. */
 #define RTASN1TYPE_ALIAS(a_TypeNm, a_AliasType, a_ImplExtNm, a_AliasExtNm) \
     typedef a_AliasType a_TypeNm; \
     typedef a_TypeNm *RT_CONCAT(P,a_TypeNm); \

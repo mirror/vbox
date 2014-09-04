@@ -182,8 +182,8 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
                 {
                     PCRTCRPKCS7ISSUERANDSERIALNUMBER pISN = &pSd->SignerInfos.paItems[0].IssuerAndSerialNumber;
                     PCRTCRX509CERTIFICATE pCert;
-                    pCert = RTCrX509Certificates_FindByIssuerAndSerialNumber(&pSd->Certificates,
-                                                                            &pISN->Name, &pISN->SerialNumber);
+                    pCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSd->Certificates,
+                                                                                &pISN->Name, &pISN->SerialNumber);
                     if (pCert)
                     {
                         /*
@@ -403,7 +403,8 @@ static DECLCALLBACK(int) VerifyExeCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYPE 
              */
             return RTCrPkcs7VerifySignedData(pContentInfo,
                                              RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY
-                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT,
+                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT
+                                             | RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT,
                                              pState->hAdditionalStore, pState->hRootStore, &ValidationTime,
                                              VerifyExecCertVerifyCallback, pState, pErrInfo);
         }

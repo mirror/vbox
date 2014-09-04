@@ -1022,6 +1022,7 @@ RTDECL(uint32_t) RTCrX509CertPathsRelease(RTCRX509CERTPATHS hCertPaths);
 RTDECL(int) RTCrX509CertPathsSetTrustedStore(RTCRX509CERTPATHS hCertPaths, RTCRSTORE hTrustedStore);
 RTDECL(int) RTCrX509CertPathsSetUntrustedStore(RTCRX509CERTPATHS hCertPaths, RTCRSTORE hUntrustedStore);
 RTDECL(int) RTCrX509CertPathsSetUntrustedArray(RTCRX509CERTPATHS hCertPaths, PCRTCRX509CERTIFICATE paCerts, uint32_t cCerts);
+RTDECL(int) RTCrX509CertPathsSetUntrustedSet(RTCRX509CERTPATHS hCertPaths, struct RTCRPKCS7SETOFCERTS const *pSetOfCerts);
 RTDECL(int) RTCrX509CertPathsSetValidTime(RTCRX509CERTPATHS hCertPaths, PCRTTIME pTime);
 RTDECL(int) RTCrX509CertPathsSetValidTimeSpec(RTCRX509CERTPATHS hCertPaths, PCRTTIMESPEC pTimeSpec);
 RTDECL(int) RTCrX509CertPathsCreateEx(PRTCRX509CERTPATHS phCertPaths, PCRTCRX509CERTIFICATE pTarget, RTCRSTORE hTrustedStore,

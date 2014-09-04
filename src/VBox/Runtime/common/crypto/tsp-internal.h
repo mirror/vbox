@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * IPRT - ASN.1 Code Generator, the ASN1 Init, Clone and Modifier Passes.
+ * IPRT - Crypto - TSP, Internal Header.
  */
 
 /*
@@ -23,14 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <iprt/string.h>
 
-#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_INIT
-#include <iprt/asn1-generator-pass.h>
-#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_CLONE
-#include <iprt/asn1-generator-pass.h>
-#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_SETTERS_1
-#include <iprt/asn1-generator-pass.h>
-#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_SETTERS_2
-#include <iprt/asn1-generator-pass.h>
+#ifndef ___common_crypto_tsp_internal_h
+#define ___common_crypto_tsp_internal_h
+
+#define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/tsp-template.h"
+#include <iprt/asn1-generator-internal-header.h>
+
+#endif
 
