@@ -368,13 +368,18 @@ typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvCb);
 @implementation VBoxTaskPerformSelector
 - (id)initWithObject:(id)aObject selector:(SEL)aSelector arg:(id)aArg
 {
-    [aObject retain];
-    m_Object = aObject;
-    m_Selector = aSelector;
-    if (aArg != nil)
-        [aArg retain];
-    m_Arg = aArg;
-    
+    self = [super init];
+
+    if (self)
+    {
+        [aObject retain];
+        m_Object = aObject;
+        m_Selector = aSelector;
+        if (aArg != nil)
+            [aArg retain];
+        m_Arg = aArg;
+    }
+
     return self;
 }
 
@@ -388,28 +393,35 @@ typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvCb);
     [m_Object release];
     if (m_Arg != nil)
         [m_Arg release];
+
+    [super dealloc];
 }
 @end
 
 @implementation VBoxTaskComposite
 - (id)init
 {
-    int rc = RTCritSectInit(&m_Lock);
-    if (!RT_SUCCESS(rc))
+    self = [super init];
+
+    if (self)
     {
-        DEBUG_WARN(("RTCritSectInit failed %d\n", rc));
-        return nil;
+        int rc = RTCritSectInit(&m_Lock);
+        if (!RT_SUCCESS(rc))
+        {
+            DEBUG_WARN(("RTCritSectInit failed %d\n", rc));
+            return nil;
+        }
+
+        m_CurIndex = 0;
+
+        m_pArray = [[NSMutableArray alloc] init];
     }
 
-    m_CurIndex = 0;
-    
-    m_pArray = [[NSMutableArray alloc] init];
     return self;
 }
 
 - (void)add:(VBoxTask*)pTask
 {
-    [pTask retain];
     int rc = RTCritSectEnter(&m_Lock);
     if (RT_SUCCESS(rc))
     {
@@ -476,6 +488,8 @@ typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvCb);
     
     [m_pArray release];
     RTCritSectDelete(&m_Lock);
+
+    [super dealloc];
 }
 @end
 
@@ -547,7 +561,6 @@ static DECLCALLBACK(void) vboxRcdRun(void *pvCb)
 {
     VBoxTaskPerformSelector *pSelTask = [[VBoxTaskPerformSelector alloc] initWithObject:aObject selector:aSelector arg:aArg];
     [self add:pSelTask];
-    [pSelTask release];
 }
 
 - (void)runTasks
@@ -589,6 +602,7 @@ static DECLCALLBACK(void) vboxRcdRun(void *pvCb)
 - (void)dealloc
 {
     [m_pTasks release];
+    [super dealloc];
 }
 
 @end
