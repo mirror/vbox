@@ -179,6 +179,12 @@ extern void VBoxRefreshModes(struct drm_device *pDev);
 # define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)
+# define CRTC_FB(crtc) (crtc)->fb
+#else
+# define CRTC_FB(crtc) (crtc)->primary->fb
+#endif
+
 void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
                                        struct drm_clip_rect *pRects,
                                        unsigned cRects);
@@ -218,7 +224,6 @@ extern int vbox_dumb_destroy(struct drm_file *file,
                 struct drm_device *dev,
                 uint32_t handle);
 
-extern int vbox_gem_init_object(struct drm_gem_object *obj);
 extern void vbox_gem_free_object(struct drm_gem_object *obj);
 extern int vbox_dumb_mmap_offset(struct drm_file *file,
                 struct drm_device *dev,
