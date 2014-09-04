@@ -38,6 +38,7 @@
 #include <iprt/string.h>
 #include <iprt/list.h>
 #include <iprt/time.h>
+#include <iprt/crypto/pkcs7.h> /* PCRTCRPKCS7SETOFCERTS */
 #include <iprt/crypto/store.h>
 
 #include "x509-internal.h"
@@ -91,10 +92,11 @@ typedef RTCRX509CERTPATHNODE *PRTCRX509CERTPATHNODE;
  * @{ */
 #define RTCRX509CERTPATHNODE_SRC_NONE               0
 #define RTCRX509CERTPATHNODE_SRC_TARGET             1
-#define RTCRX509CERTPATHNODE_SRC_UNTRUSTED_ARRAY    2
-#define RTCRX509CERTPATHNODE_SRC_UNTRUSTED_STORE    3
-#define RTCRX509CERTPATHNODE_SRC_TRUSTED_STORE      4
-#define RTCRX509CERTPATHNODE_SRC_TRUSTED_CERT       5
+#define RTCRX509CERTPATHNODE_SRC_UNTRUSTED_SET      2
+#define RTCRX509CERTPATHNODE_SRC_UNTRUSTED_ARRAY    3
+#define RTCRX509CERTPATHNODE_SRC_UNTRUSTED_STORE    4
+#define RTCRX509CERTPATHNODE_SRC_TRUSTED_STORE      5
+#define RTCRX509CERTPATHNODE_SRC_TRUSTED_CERT       6
 #define RTCRX509CERTPATHNODE_SRC_IS_TRUSTED(uSrc)   ((uSrc) >= RTCRX509CERTPATHNODE_SRC_TRUSTED_STORE)
 /** @} */
 
@@ -163,11 +165,12 @@ typedef struct RTCRX509CERTPATHSINT
 
     /** Store of untrusted certificates. */
     RTCRSTORE                       hUntrustedStore;
-    /** Array of untrusted certificates, typically from the protocol (like the
-     *  certificates member of PKCS \#7 SignedData). */
+    /** Array of untrusted certificates, typically from the protocol. */
     PCRTCRX509CERTIFICATE           paUntrustedCerts;
     /** Number of entries in paUntrusted. */
     uint32_t                        cUntrustedCerts;
+    /** Set of untrusted PKCS \#7 / CMS certificatess. */
+    PCRTCRPKCS7SETOFCERTS           pUntrustedCertsSet;
 
     /** UTC time we're going to validate the path at, requires
      *  RTCRX509CERTPATHSINT_F_VALID_TIME to be set. */
@@ -363,6 +366,7 @@ RTDECL(uint32_t) RTCrX509CertPathsRelease(RTCRX509CERTPATHS hCertPaths)
             RTCrStoreRelease(pThis->hUntrustedStore);
             pThis->hUntrustedStore              = NIL_RTCRSTORE;
             pThis->paUntrustedCerts             = NULL; /* Referencing user memory. */
+            pThis->pUntrustedCertsSet           = NULL; /* Referencing user memory. */
             pThis->papInitialUserPolicySet      = NULL; /* Referencing user memory. */
             pThis->pInitialPermittedSubtrees    = NULL; /* Referencing user memory. */
             pThis->pInitialExcludedSubtrees     = NULL; /* Referencing user memory. */
@@ -437,6 +441,17 @@ RTDECL(int) RTCrX509CertPathsSetUntrustedArray(RTCRX509CERTPATHS hCertPaths, PCR
 
     pThis->paUntrustedCerts = paCerts;
     pThis->cUntrustedCerts  = cCerts;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTCrX509CertPathsSetUntrustedSet(RTCRX509CERTPATHS hCertPaths, PCRTCRPKCS7SETOFCERTS pSetOfCerts)
+{
+    PRTCRX509CERTPATHSINT pThis = hCertPaths;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRX509CERTPATHSINT_MAGIC, VERR_INVALID_HANDLE);
+
+    pThis->pUntrustedCertsSet = pSetOfCerts;
     return VINF_SUCCESS;
 }
 
@@ -693,7 +708,23 @@ static void rtCrX509CertPathsGetIssuers(PRTCRX509CERTPATHSINT pThis, PRTCRX509CE
         for (uint32_t i = 0; i < pThis->cUntrustedCerts; i++)
             if (RTCrX509Certificate_MatchSubjectOrAltSubjectByRfc5280(&pThis->paUntrustedCerts[i], pIssuer))
                 rtCrX509CertPathsAddIssuer(pThis, pNode, &pThis->paUntrustedCerts[i], NULL,
-                                                 RTCRX509CERTPATHNODE_SRC_UNTRUSTED_ARRAY);
+                                           RTCRX509CERTPATHNODE_SRC_UNTRUSTED_ARRAY);
+
+    /** @todo Rainy day: Should abstract the untrusted array and set so we don't get
+     *        unnecessary PKCS7/CMS header dependencies. */
+
+    /*
+     * Untrusted set.
+     */
+    if (pThis->pUntrustedCertsSet)
+    {
+        uint32_t const  cCerts  = pThis->pUntrustedCertsSet->cItems;
+        PCRTCRPKCS7CERT paCerts = pThis->pUntrustedCertsSet->paItems;
+        for (uint32_t i = 0; i < cCerts; i++)
+            if (   paCerts[i].enmChoice == RTCRPKCS7CERTCHOICE_X509
+                && RTCrX509Certificate_MatchSubjectOrAltSubjectByRfc5280(paCerts[i].u.pX509Cert, pIssuer))
+                rtCrX509CertPathsAddIssuer(pThis, pNode, paCerts[i].u.pX509Cert, NULL, RTCRX509CERTPATHNODE_SRC_UNTRUSTED_SET);
+    }
 }
 
 
@@ -1083,6 +1114,7 @@ static const char *rtCrX509CertPathsNodeGetSourceName(PRTCRX509CERTPATHNODE pNod
     switch (pNode->uSrc)
     {
         case RTCRX509CERTPATHNODE_SRC_TARGET:           return "target";
+        case RTCRX509CERTPATHNODE_SRC_UNTRUSTED_SET:    return "untrusted_set";
         case RTCRX509CERTPATHNODE_SRC_UNTRUSTED_ARRAY:  return "untrusted_array";
         case RTCRX509CERTPATHNODE_SRC_UNTRUSTED_STORE:  return "untrusted_store";
         case RTCRX509CERTPATHNODE_SRC_TRUSTED_STORE:    return "trusted_store";

@@ -34,6 +34,7 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/crypto/spc.h>
+#include <iprt/crypto/tsp.h>
 
 #include "pkcs7-internal.h"
 
@@ -41,45 +42,115 @@
 /*
  * PKCS #7 ContentInfo
  */
+typedef enum RTCRPKCS7CONTENTINFOCHOICE
+{
+    RTCRPKCS7CONTENTINFOCHOICE_INVALID = 0,
+    RTCRPKCS7CONTENTINFOCHOICE_UNKNOWN,
+    RTCRPKCS7CONTENTINFOCHOICE_SIGNED_DATA,
+    RTCRPKCS7CONTENTINFOCHOICE_SPC_INDIRECT_DATA_CONTENT,
+    RTCRPKCS7CONTENTINFOCHOICE_TSP_TST_INFO,
+    RTCRPKCS7CONTENTINFOCHOICE_END,
+    RTCRPKCS7CONTENTINFOCHOICE_32BIT_HACK = 0x7fffffff
+} RTCRPKCS7CONTENTINFOCHOICE;
 
 static int rtCrPkcs7ContentInfo_DecodeExtra(PRTASN1CURSOR pCursor, uint32_t fFlags, PRTCRPKCS7CONTENTINFO pThis,
                                             const char *pszErrorTag)
 {
     pThis->u.pCore = NULL;
 
-    int             rc;
-    RTASN1CURSOR    ContentCursor;
+    /*
+     * Figure the type.
+     */
+    RTCRPKCS7CONTENTINFOCHOICE  enmChoice;
+    size_t                      cbContent = 0;
     if (RTAsn1ObjId_CompareWithString(&pThis->ContentType, RTCRPKCS7SIGNEDDATA_OID) == 0)
     {
-        rc = RTAsn1MemAllocZ(&pThis->Content.EncapsulatedAllocation, (void **)&pThis->Content.pEncapsulated,
-                             sizeof(*pThis->u.pSignedData));
-        if (RT_SUCCESS(rc))
-        {
-            pThis->u.pCore = pThis->Content.pEncapsulated;
-            rc = RTAsn1CursorInitSubFromCore(pCursor, &pThis->Content.Asn1Core, &ContentCursor, "Content");
-            if (RT_SUCCESS(rc))
-                rc = RTCrPkcs7SignedData_DecodeAsn1(&ContentCursor, 0, pThis->u.pSignedData, "SignedData");
-        }
+        enmChoice = RTCRPKCS7CONTENTINFOCHOICE_SIGNED_DATA;
+        cbContent = sizeof(*pThis->u.pSignedData);
     }
     else if (RTAsn1ObjId_CompareWithString(&pThis->ContentType, RTCRSPCINDIRECTDATACONTENT_OID) == 0)
     {
-        rc = RTAsn1MemAllocZ(&pThis->Content.EncapsulatedAllocation, (void **)&pThis->Content.pEncapsulated,
-                             sizeof(*pThis->u.pIndirectDataContent));
-        if (RT_SUCCESS(rc))
-        {
-            pThis->u.pCore = pThis->Content.pEncapsulated;
-            rc = RTAsn1CursorInitSubFromCore(pCursor, &pThis->Content.Asn1Core, &ContentCursor, "Content");
-            if (RT_SUCCESS(rc))
-                rc = RTCrSpcIndirectDataContent_DecodeAsn1(&ContentCursor, 0, pThis->u.pIndirectDataContent, "IndirectDataContent");
-        }
+        enmChoice = RTCRPKCS7CONTENTINFOCHOICE_SPC_INDIRECT_DATA_CONTENT;
+        cbContent = sizeof(*pThis->u.pIndirectDataContent);
+    }
+    else if (RTAsn1ObjId_CompareWithString(&pThis->ContentType, RTCRTSPTSTINFO_OID) == 0)
+    {
+        enmChoice = RTCRPKCS7CONTENTINFOCHOICE_TSP_TST_INFO;
+        cbContent = sizeof(*pThis->u.pTstInfo);
     }
     else
-        return VINF_SUCCESS;
+    {
+        enmChoice = RTCRPKCS7CONTENTINFOCHOICE_UNKNOWN;
+        cbContent = 0;
+    }
 
-    if (RT_SUCCESS(rc))
-        rc = RTAsn1CursorCheckEnd(&ContentCursor);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    if (enmChoice != RTCRPKCS7CONTENTINFOCHOICE_UNKNOWN)
+    {
+        /*
+         * Detect CMS octet string and open the content cursor.
+         * Current we don't have work with any contet which is octet string,
+         * they're all sequences, which make detection so much simpler.
+         */
+        PRTASN1OCTETSTRING  pOctetString = &pThis->Content;
+        RTASN1CURSOR        ContentCursor;
+        rc = RTAsn1CursorInitSubFromCore(pCursor, &pThis->Content.Asn1Core, &ContentCursor, "Content");
+        if (   RT_SUCCESS(rc)
+            && RTAsn1CursorIsNextEx(&ContentCursor, ASN1_TAG_OCTET_STRING, ASN1_TAGFLAG_PRIMITIVE | ASN1_TAGCLASS_UNIVERSAL))
+        {
+            rc = RTAsn1MemAllocZ(&pThis->Content.EncapsulatedAllocation, (void **)&pThis->Content.pEncapsulated,
+                                 sizeof(*pOctetString));
+            if (RT_SUCCESS(rc))
+            {
+                pThis->pCmsContent = pOctetString = (PRTASN1OCTETSTRING)pThis->Content.pEncapsulated;
+                rc = RTAsn1OctetString_DecodeAsn1(&ContentCursor, 0, pOctetString, "CmsContent");
+                if (RT_SUCCESS(rc))
+                    rc = RTAsn1CursorCheckEnd(&ContentCursor);
+                if (RT_SUCCESS(rc))
+                    rc = RTAsn1CursorInitSubFromCore(pCursor, &pOctetString->Asn1Core, &ContentCursor, "CmsContent");
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Allocate memory for the decoded content.
+             */
+            rc = RTAsn1MemAllocZ(&pOctetString->EncapsulatedAllocation, (void **)&pOctetString->pEncapsulated, cbContent);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->u.pCore = pOctetString->pEncapsulated;
+
+                /*
+                 * Decode it.
+                 */
+                switch (enmChoice)
+                {
+                    case RTCRPKCS7CONTENTINFOCHOICE_SIGNED_DATA:
+                        rc = RTCrPkcs7SignedData_DecodeAsn1(&ContentCursor, 0, pThis->u.pSignedData, "SignedData");
+                        break;
+                    case RTCRPKCS7CONTENTINFOCHOICE_SPC_INDIRECT_DATA_CONTENT:
+                        rc = RTCrSpcIndirectDataContent_DecodeAsn1(&ContentCursor, 0, pThis->u.pIndirectDataContent,
+                                                                   "IndirectDataContent");
+                        break;
+                    case RTCRPKCS7CONTENTINFOCHOICE_TSP_TST_INFO:
+                        rc = RTCrTspTstInfo_DecodeAsn1(&ContentCursor, 0, pThis->u.pTstInfo, "TstInfo");
+                        break;
+                    default:
+                        AssertFailed();
+                        rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE;
+                        break;
+                }
+                if (RT_SUCCESS(rc))
+                    rc = RTAsn1CursorCheckEnd(&ContentCursor);
+                if (RT_SUCCESS(rc))
+                    return VINF_SUCCESS;
+
+                RTAsn1MemFree(&pOctetString->EncapsulatedAllocation, pOctetString->pEncapsulated);
+                pOctetString->pEncapsulated = NULL;
+                pThis->u.pCore = NULL;
+            }
+        }
+    }
     return rc;
 }
 

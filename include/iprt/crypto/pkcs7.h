@@ -84,6 +84,8 @@ typedef enum RTCRPKCS7ATTRIBUTETYPE
     RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES,
     /** Signing time (PKCS \#9), use pSigningTime. */
     RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,
+    /** Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */
+    RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,
     /** Blow the type up to 32-bits. */
     RTCRPKCS7ATTRIBUTETYPE_32BIT_HACK = 0x7fffffff
 } RTCRPKCS7ATTRIBUTETYPE;
@@ -114,6 +116,8 @@ typedef struct RTCRPKCS7ATTRIBUTE
         PRTCRPKCS7SIGNERINFOS           pCounterSignatures;
         /** Signing time(s) (RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME). */
         PRTASN1SETOFTIMES               pSigningTime;
+        /** Microsoft timestamp (RFC-3161 signed data). */
+        struct RTCRPKCS7SETOFCONTENTINFOS *pContentInfos;
     } uValues;
 } RTCRPKCS7ATTRIBUTE;
 /** Pointer to the IPRT representation of a PKCS \#7 Attribute. */
@@ -172,7 +176,12 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo,
 /** Counter signature (RFC-2630 11.4).
  * Value: SignerInfo. */
 #define RTCR_PKCS9_ID_COUNTER_SIGNATURE_OID "1.2.840.113549.1.9.6"
+/** Microsoft timestamp (RTF-3161) counter signature (SignedData).
+ * @remarks This isn't defined by PKCS \#9, but lumped in here for
+ *          convenience.  It's actually listed as SPC by MS. */
+#define RTCR_PKCS9_ID_MS_TIMESTAMP          "1.3.6.1.4.1.311.3.3.1"
 /** @} */
+
 
 /**
  * Get the (next) signing time attribute from the specfied SignerInfo or one of
@@ -192,6 +201,19 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNERINFO, RTDECL, RTCrPkcs7SignerInfo,
  *                              SignerInfo which we found the signing time in.
  */
 RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7SIGNERINFO *ppSignerInfo);
+
+
+/**
+ * Get the (first) timestamp from within a Microsoft timestamp server counter
+ * signature.
+ *
+ * @returns Pointer to the signing time if found, NULL if not.
+ * @param   pThis               The SignerInfo to search.
+ * @param   ppContentInfo       Where to return the pointer to the counter
+ *                              signature, optional.
+ */
+RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pThis,
+                                                        struct RTCRPKCS7CONTENTINFO const **ppContentInfo);
 
 
 
@@ -222,6 +244,16 @@ typedef struct RTCRPKCS7CONTENTINFO
      * @remarks What's signed and verified is Content.pEncapsulated->uData.pv.
      */
     RTASN1OCTETSTRING                   Content;
+    /** Pointer to the CMS octet string that's inside the Content, NULL if PKCS \#7.
+     *
+     * Hack alert! When transitioning from PKCS \#7 to CMS, the designers decided to
+     * change things and add another wrapper.  This time we're talking about a real
+     * octet string, not like the one above which is really an explicit content tag.
+     * When constructing or decoding CMS content, this will be the same pointer as
+     * Content.pEncapsulated, while the union below will be holding the same pointer
+     * as pCmsContent->pEncapsulated.
+     */
+    PRTASN1OCTETSTRING                  pCmsContent;
     /** Same as Content.pEncapsulated, except a choice of known types. */
     union
     {
@@ -229,6 +261,8 @@ typedef struct RTCRPKCS7CONTENTINFO
         struct RTCRPKCS7SIGNEDDATA         *pSignedData;
         /** ContentType is RTCRSPCINDIRECTDATACONTENT_OID. */
         struct RTCRSPCINDIRECTDATACONTENT  *pIndirectDataContent;
+        /** ContentType is RTCRTSPTSTINFO_OID. */
+        struct RTCRTSPTSTINFO              *pTstInfo;
         /** Generic / Unknown / User. */
         PRTASN1CORE                         pCore;
     } u;
@@ -237,10 +271,65 @@ typedef struct RTCRPKCS7CONTENTINFO
 typedef RTCRPKCS7CONTENTINFO *PRTCRPKCS7CONTENTINFO;
 /** Pointer to the const IPRT representation of a PKCS \#7 ContentInfo. */
 typedef RTCRPKCS7CONTENTINFO const *PCRTCRPKCS7CONTENTINFO;
-
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7CONTENTINFO, RTDECL, RTCrPkcs7ContentInfo, SeqCore.Asn1Core);
+RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SETOFCONTENTINFOS, RTCRPKCS7CONTENTINFO, RTDECL, RTCrPkcs7SetOfContentInfos);
 
 RTDECL(bool) RTCrPkcs7ContentInfo_IsSignedData(PCRTCRPKCS7CONTENTINFO pThis);
+
+
+/**
+ * PKCS \#7 Certificate choice.
+ */
+typedef enum RTCRPKCS7CERTCHOICE
+{
+    RTCRPKCS7CERTCHOICE_INVALID = 0,
+    RTCRPKCS7CERTCHOICE_X509,
+    RTCRPKCS7CERTCHOICE_EXTENDED_PKCS6,
+    RTCRPKCS7CERTCHOICE_AC_V1,
+    RTCRPKCS7CERTCHOICE_AC_V2,
+    RTCRPKCS7CERTCHOICE_OTHER,
+    RTCRPKCS7CERTCHOICE_END,
+    RTCRPKCS7CERTCHOICE_32BIT_HACK = 0x7fffffff
+} RTCRPKCS7CERTCHOICE;
+
+
+/**
+ * Common representation for PKCS \#7 ExtendedCertificateOrCertificate and the
+ * CMS CertificateChoices types.
+ */
+typedef struct RTCRPKCS7CERT
+{
+    /** Dummy ASN.1 record, not encoded. */
+    RTASN1DUMMY                         Dummy;
+    /** The value allocation. */
+    RTASN1ALLOCATION                    Allocation;
+    /** The choice of value.   */
+    RTCRPKCS7CERTCHOICE                 enmChoice;
+    /** The value union. */
+    union
+    {
+        /** Standard X.509 certificate (RTCRCMSCERTIFICATECHOICE_X509). */
+        PRTCRX509CERTIFICATE            pX509Cert;
+        /** Extended PKCS \#6 certificate (RTCRCMSCERTIFICATECHOICE_EXTENDED_PKCS6). */
+        PRTASN1CORE                     pExtendedCert;
+        /** Attribute certificate version 1 (RTCRCMSCERTIFICATECHOICE_AC_V1). */
+        PRTASN1CORE                     pAcV1;
+        /** Attribute certificate version 2 (RTCRCMSCERTIFICATECHOICE_AC_V2). */
+        PRTASN1CORE                     pAcV2;
+        /** Other certificate (RTCRCMSCERTIFICATECHOICE_OTHER). */
+        PRTASN1CORE                     pOtherCert;
+    } u;
+} RTCRPKCS7CERT;
+/** Pointer to the IPRT representation of PKCS \#7 or CMS certificate. */
+typedef RTCRPKCS7CERT *PRTCRPKCS7CERT;
+/** Pointer to the const IPRT representation of PKCS \#7 or CMS certificate. */
+typedef RTCRPKCS7CERT const *PCRTCRPKCS7CERT;
+RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7CERT, RTDECL, RTCrPkcs7Cert, Dummy.Asn1Core);
+RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SETOFCERTS, RTCRPKCS7CERT, RTDECL, RTCrPkcs7SetOfCerts);
+
+RTDECL(PCRTCRX509CERTIFICATE) RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(PCRTCRPKCS7SETOFCERTS pCertificates,
+                                                                                  PCRTCRX509NAME pIssuer,
+                                                                                  PCRTASN1INTEGER pSerialNumber);
 
 
 /**
@@ -257,7 +346,7 @@ typedef struct RTCRPKCS7SIGNEDDATA
     /** The content that's being signed. */
     RTCRPKCS7CONTENTINFO                ContentInfo;
     /** Certificates, optional, implicit tag 0. (Required by Authenticode.) */
-    RTCRX509CERTIFICATES                Certificates;
+    RTCRPKCS7SETOFCERTS                 Certificates;
     /** Certificate revocation lists, optional, implicit tag 1.
      * Not used by Authenticode, so currently stubbed. */
     RTASN1CORE                          Crls;
@@ -269,12 +358,27 @@ typedef RTCRPKCS7SIGNEDDATA *PRTCRPKCS7SIGNEDDATA;
 /** Pointer to the const IPRT representation of a PKCS \#7 SignedData. */
 typedef RTCRPKCS7SIGNEDDATA const *PCRTCRPKCS7SIGNEDDATA;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS7SIGNEDDATA, RTDECL, RTCrPkcs7SignedData, SeqCore.Asn1Core);
+RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRPKCS7SETOFSIGNEDDATA, RTCRPKCS7SIGNEDDATA, RTDECL, RTCrPkcs7SetOfSignedData);
 
 /** PKCS \#7 SignedData object ID.  */
 #define RTCRPKCS7SIGNEDDATA_OID "1.2.840.113549.1.7.2"
 
 /** PKCS \#7 SignedData version number 1.  */
 #define RTCRPKCS7SIGNEDDATA_V1    1
+/* No version 2 seems to exist. */
+/** CMS SignedData version number 3.
+ * This should only be used if there are version 1 attribute certificates
+ * present, or if there are version 3 SignerInfo items present, or if
+ * enmcCountInfo is not id-data (RFC-5652, section 5.1). */
+#define RTCRPKCS7SIGNEDDATA_V3    3
+/** CMS SignedData version number 4.
+ * This should only be used if there are version 2 attribute certificates
+ * present (RFC-5652, section 5.1). */
+#define RTCRPKCS7SIGNEDDATA_V4    4
+/** CMS SignedData version number 5.
+ * This should only be used if there are certificates or/and CRLs of the
+ * OTHER type present (RFC-5652, section 5.1). */
+#define RTCRPKCS7SIGNEDDATA_V5    5
 
 
 /** @name RTCRPKCS7SIGNEDDATA_SANITY_F_XXX - Flags for RTPkcs7SignedDataCheckSantiy.
@@ -383,12 +487,26 @@ RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint3
  * verified as valid.  The default behavior is to ignore unverifiable
  * signing time attributes and use the @a pValidationTime instead. */
 #define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT     RT_BIT_32(0)
+/** Same as RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_SIGNING_TIME_IF_PRESENT for the MS
+ *  timestamp counter sigantures. */
+#define RTCRPKCS7VERIFY_SD_F_ALWAYS_USE_MS_TIMESTAMP_IF_PRESENT     RT_BIT_32(1)
 /** Only use signging time attributes from counter signatures. */
-#define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY    RT_BIT_32(1)
+#define RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE_SIGNING_TIME_ONLY    RT_BIT_32(2)
 /** Don't validate the counter signature containing the signing time, just use
  * it unverified.  This is useful if we don't necessarily have the root
- * certificates for the timestamp server handy, but use with great care. */
-#define RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED            RT_BIT_32(2)
+ * certificates for the timestamp server handy, but use with great care.
+ * @sa RTCRPKCS7VERIFY_SD_F_USE_MS_TIMESTAMP_UNVERIFIED */
+#define RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED            RT_BIT_32(3)
+/** Don't validate the MS counter signature containing the signing timestamp.
+ * @sa RTCRPKCS7VERIFY_SD_F_USE_SIGNING_TIME_UNVERIFIED */
+#define RTCRPKCS7VERIFY_SD_F_USE_MS_TIMESTAMP_UNVERIFIED            RT_BIT_32(4)
+/** Do not consider timestamps in microsoft counter signatures. */
+#define RTCRPKCS7VERIFY_SD_F_IGNORE_MS_TIMESTAMP                    RT_BIT_32(5)
+/** The signed data requires certificates to have the timestamp extended
+ * usage bit present.  This is used for recursivly verifying MS timestamp
+ * signatures. */
+#define RTCRPKCS7VERIFY_SD_F_USAGE_TIMESTAMPING                     RT_BIT_32(6)
+
 /** Indicates internally that we're validating a counter signature and should
  * use different rules when checking out the authenticated attributes.
  * @internal  */

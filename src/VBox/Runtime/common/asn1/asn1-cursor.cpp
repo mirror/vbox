@@ -27,6 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RT_STRICT
 #include "internal/iprt.h"
 #include <iprt/asn1.h>
 
@@ -46,7 +47,8 @@
  * out of stack due to malformed ASN.1 input.
  *
  * For reference, 'RTSignTool verify-exe RTSignTool.exe', requires a value of 15
- * to work without hitting the limit.
+ * to work without hitting the limit for signatures with simple timestamps, and
+ * 23 (amd64/rel = ~3KB) for the new microsoft timestamp counter signatures.
  */
 #ifdef IN_RING3
 # define RTASN1_MAX_NESTING     64

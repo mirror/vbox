@@ -280,6 +280,10 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-core.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-init.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/taf-sanity.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/tsp-asn1-decoder.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/tsp-core.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/tsp-init.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/crypto/tsp-sanity.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-md2.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-md5.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/checksum/alt-sha1.cpp \

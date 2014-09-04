@@ -46,7 +46,10 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
 
     //RTAsn1Dump(&pSignedData->SeqCore.Asn1Core, 0, 0, RTAsn1DumpStrmPrintfV, g_pStdOut);
 
-    if (RTAsn1Integer_UnsignedCompareWithU32(&pSignedData->Version, RTCRPKCS7SIGNEDDATA_V1) != 0)
+    if (   RTAsn1Integer_UnsignedCompareWithU32(&pSignedData->Version, RTCRPKCS7SIGNEDDATA_V1) != 0
+        && RTAsn1Integer_UnsignedCompareWithU32(&pSignedData->Version, RTCRPKCS7SIGNEDDATA_V3) != 0
+        && RTAsn1Integer_UnsignedCompareWithU32(&pSignedData->Version, RTCRPKCS7SIGNEDDATA_V4) != 0
+        && RTAsn1Integer_UnsignedCompareWithU32(&pSignedData->Version, RTCRPKCS7SIGNEDDATA_V5) != 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNED_DATA_VERSION, "SignedData version is %llu, expected %u",
                              pSignedData->Version.uValue.u, RTCRPKCS7SIGNEDDATA_V1);
 
@@ -80,13 +83,6 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
         && pSignedData->Certificates.cItems == 0)
         return RTErrInfoSet(pErrInfo, VERR_CR_PKCS7_NO_CERTIFICATES,
                             "SignedData.Certifcates is empty, expected at least one certificate");
-
-    if (pSignedData->Certificates.cItems > 0)
-    {
-        int rc = RTCrX509Certificates_CheckSanity(&pSignedData->Certificates, 0, pErrInfo, "SignedData.T0.Certificates");
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
      * Crls.
@@ -126,9 +122,9 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                  "SignedData.SignerInfos[%u].IssuerAndSerialNumber.SerialNumber is missing (zero length)", i);
 
         PCRTCRX509CERTIFICATE pCert;
-        pCert = RTCrX509Certificates_FindByIssuerAndSerialNumber(&pSignedData->Certificates,
-                                                                 &pSignerInfo->IssuerAndSerialNumber.Name,
-                                                                 &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
+        pCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSignedData->Certificates,
+                                                                    &pSignerInfo->IssuerAndSerialNumber.Name,
+                                                                    &pSignerInfo->IssuerAndSerialNumber.SerialNumber);
         if (!pCert && (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT))
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNER_CERT_NOT_SHIPPED,
                                  "SignedData.SignerInfos[%u].IssuerAndSerialNumber not found in T0.Certificates", i);
@@ -145,6 +141,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                  i, pSignerInfo->DigestAlgorithm.Algorithm.szObjId);
 
         /* Digest encryption algorithm. */
+#if 0  /** @todo Unimportant: Seen timestamp signatures specifying pkcs1-Sha256WithRsaEncryption in SignerInfo and just RSA in the certificate.  Figure out how to compare the two. */
         if (   pCert
             && RTCrX509AlgorithmIdentifier_Compare(&pSignerInfo->DigestEncryptionAlgorithm,
                                                    &pCert->TbsCertificate.SubjectPublicKeyInfo.Algorithm) != 0)
@@ -152,6 +149,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
                                  "SignedData.SignerInfos[%u].DigestEncryptionAlgorithm (%s) mismatch with certificate (%s)",
                                  i, pSignerInfo->DigestEncryptionAlgorithm.Algorithm.szObjId,
                                  pCert->TbsCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm.szObjId);
+#endif
 
         /* Authenticated attributes we know. */
         if (RTCrPkcs7Attributes_IsPresent(&pSignerInfo->AuthenticatedAttributes))

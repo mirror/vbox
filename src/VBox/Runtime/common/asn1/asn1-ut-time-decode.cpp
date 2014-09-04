@@ -177,7 +177,7 @@ static int rtAsn1Time_ConvertGeneralizedTimeFraction(PRTASN1CURSOR pCursor, cons
     /*
      * Check the dot.
      */
-    if (*pchFraction == '.')
+    if (*pchFraction != '.')
         return RTAsn1CursorSetInfo(pCursor, VERR_ASN1_INVALID_GENERALIZED_TIME_ENCODING,
                                    "%s: Expected GeneralizedTime fraction dot, found: '%c' ('%.*s')",
                                    pszErrorTag, *pchFraction, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);

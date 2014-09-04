@@ -23,6 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#include <iprt/string.h>
+
 #define RTASN1TMPL_PASS RTASN1TMPL_PASS_DECODE
 #include <iprt/asn1-generator-pass.h>
 
