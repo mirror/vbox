@@ -5641,7 +5641,6 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
              * Measure the TSC deltas now that we have MP notifications.
              */
             unsigned cTries = 5;
-#if 0
             do
             {
                 rc = supdrvMeasureTscDeltas(pDevExt, pGip, NULL /* pidxMaster */);
@@ -5653,8 +5652,6 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 else
                     break;
             } while (cTries > 0);
-#endif
-
             if (RT_SUCCESS(rc))
             {
 #if 0
