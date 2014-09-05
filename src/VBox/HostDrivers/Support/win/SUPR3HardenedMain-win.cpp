@@ -46,6 +46,7 @@
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/thread.h>
 #include <iprt/zero.h>
 
 #include "SUPLibInternal.h"
@@ -74,7 +75,7 @@
 #define SUPR3HARDENED_ASSERT(a_Expr) \
     do { \
         if (!(a_Expr)) \
-            supR3HardenedFatal("%s: %s", __FUNCTION__, #a_Expr); \
+            supR3HardenedFatal("%s: %s\n", __FUNCTION__, #a_Expr); \
     } while (0)
 
 /** Unconditional assertion of NT_SUCCESS. */
@@ -82,7 +83,7 @@
     do { \
         NTSTATUS rcNtAssert = (a_Expr); \
         if (!NT_SUCCESS(rcNtAssert)) \
-            supR3HardenedFatal("%s: %s -> %#x", __FUNCTION__, #a_Expr, rcNtAssert); \
+            supR3HardenedFatal("%s: %s -> %#x\n", __FUNCTION__, #a_Expr, rcNtAssert); \
     } while (0)
 
 /** Unconditional assertion of a WIN32 API returning non-FALSE. */
@@ -90,7 +91,7 @@
     do { \
         BOOL fRcAssert = (a_Expr); \
         if (fRcAssert == FALSE) \
-            supR3HardenedFatal("%s: %s -> %#x", __FUNCTION__, #a_Expr, GetLastError()); \
+            supR3HardenedFatal("%s: %s -> %#x\n", __FUNCTION__, #a_Expr, GetLastError()); \
     } while (0)
 
 
@@ -819,7 +820,7 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                     UNICODE_STRING UniStrStatic;
                     UniStrStatic.Buffer = &wszPath[cwcName + 1];
                     UniStrStatic.Length = 0;
-                    UniStrStatic.MaximumLength = (USHORT)sizeof(wszPath) - UniStrStatic.MaximumLength - sizeof(WCHAR);
+                    UniStrStatic.MaximumLength = (USHORT)(sizeof(wszPath) - cwcName * sizeof(WCHAR) - sizeof(WCHAR));
 
                     static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
                     UNICODE_STRING  UniStrDynamic = { 0, 0, NULL };
@@ -1948,6 +1949,107 @@ static void supR3HardenedWinHookFailed(const char *pszWhich, uint8_t const *pbPr
                           pbPrologue[4],  pbPrologue[5],  pbPrologue[6],  pbPrologue[7],
                           pbPrologue[8],  pbPrologue[9],  pbPrologue[10], pbPrologue[11],
                           pbPrologue[12], pbPrologue[13], pbPrologue[14], pbPrologue[15]);
+}
+
+
+/**
+ * IPRT thread that waits for the parent process to terminate and reacts by
+ * exiting the current process.
+ *
+ * @returns VINF_SUCCESS
+ * @param   hSelf               The current thread.  Ignored.
+ * @param   pvUser              The handle of the parent process.
+ */
+static DECLCALLBACK(int) supR3HardenedWinParentWatcherThread(RTTHREAD hSelf, void *pvUser)
+{
+    HANDLE hProcWait = (HANDLE)pvUser;
+    NOREF(hSelf);
+
+    /*
+     * Wait for the parent to terminate.
+     */
+    NTSTATUS rcNt;
+    for (;;)
+    {
+        rcNt = NtWaitForSingleObject(hProcWait, TRUE /*Alertable*/, NULL /*pTimeout*/);
+        if (   rcNt == STATUS_WAIT_0
+            || rcNt == STATUS_ABANDONED_WAIT_0)
+            break;
+        if (   rcNt != STATUS_TIMEOUT
+            && rcNt != STATUS_USER_APC
+            && rcNt != STATUS_ALERTED)
+            supR3HardenedFatal("NtWaitForSingleObject returned %#x\n", rcNt);
+    }
+
+    /*
+     * Proxy the termination code of the child, if it exited already.
+     */
+    PROCESS_BASIC_INFORMATION BasicInfo;
+    NTSTATUS rcNt2 = NtQueryInformationProcess(hProcWait, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+    if (   !NT_SUCCESS(rcNt2)
+        || BasicInfo.ExitStatus == STATUS_PENDING)
+        BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
+
+    NtClose(hProcWait);
+    SUP_DPRINTF(("supR3HardenedWinParentWatcherThread: Quitting: ExitCode=%#x rcNt=%#x\n", BasicInfo.ExitStatus, rcNt));
+    suplibHardenedExit((RTEXITCODE)BasicInfo.ExitStatus);
+
+    return VINF_SUCCESS; /* won't be reached. */
+}
+
+
+/**
+ * Creates the parent watcher thread that will make sure this process exits when
+ * the parent does.
+ *
+ * This is a necessary evil to make VBoxNetDhcp and VBoxNetNat termination from
+ * Main work without too much new magic.  It also makes Ctrl-C or similar work
+ * in on the hardened processes in the windows console.
+ *
+ * @param   hVBoxRT             The VBoxRT.dll handle.  We use RTThreadCreate to
+ *                              spawn the thread to avoid duplicating thread
+ *                              creation and thread naming code from IPRT.
+ */
+DECLHIDDEN(void) supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT)
+{
+    /*
+     * Resolve runtime methods that we need.
+     */
+    PFNRTTHREADCREATE pfnRTThreadCreate = (PFNRTTHREADCREATE)GetProcAddress(hVBoxRT, "RTThreadCreate");
+    SUPR3HARDENED_ASSERT(pfnRTThreadCreate != NULL);
+
+    /*
+     * Find the parent process ID.
+     */
+    PROCESS_BASIC_INFORMATION BasicInfo;
+    NTSTATUS rcNt = NtQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatal("supR3HardenedWinCreateParentWatcherThread: NtQueryInformationProcess failed: %#x\n", rcNt);
+
+    /*
+     * Open the parent process for waiting and exitcode query.
+     */
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, NULL, 0, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+    CLIENT_ID ClientId;
+    ClientId.UniqueProcess = (HANDLE)BasicInfo.InheritedFromUniqueProcessId;
+    ClientId.UniqueThread  = NULL;
+#if 0 /** @todo fix me later. */
+    HANDLE hParent;
+    rcNt = NtOpenProcess(&hParent, SYNCHRONIZE | PROCESS_QUERY_INFORMATION, &ObjAttr, &ClientId);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatalMsg("supR3HardenedWinCreateParentWatcherThread", kSupInitOp_Misc, VERR_GENERAL_FAILUREps,
+                              "NtOpenProcess(%p.0) failed: %#x\n", ClientId.UniqueProcess, rcNt);
+
+    /*
+     * Create the thread that should do the waiting.
+     */
+    int rc = pfnRTThreadCreate(NULL, supR3HardenedWinParentWatcherThread, hParent, _64K /* stack */,
+                               RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ParentWatcher");
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("supR3HardenedWinCreateParentWatcherThread: RTThreadCreate failed: %Rrc\n", rc);
+#endif
 }
 
 
