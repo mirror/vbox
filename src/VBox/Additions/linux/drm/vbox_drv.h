@@ -121,8 +121,10 @@ struct vbox_gem_object;
 struct vbox_connector
 {
     struct drm_connector base;
-    /** Property for receiving mode hints from user space. */
-    struct drm_property *pModeHintProp;
+    char szName[32];
+    /** Device attribute for sysfs file used for receiving mode hints from user
+     * space. */
+    struct device_attribute deviceAttribute;
     struct
     {
         uint16_t cX;
