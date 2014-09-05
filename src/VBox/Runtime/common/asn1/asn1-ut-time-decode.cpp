@@ -192,7 +192,7 @@ static int rtAsn1Time_ConvertGeneralizedTimeFraction(PRTASN1CURSOR pCursor, cons
      * Do the conversion.
      */
     char chLastDigit;
-    uint32_t uMult = 1000000000;
+    uint32_t uMult = 100000000;
     do
     {
         char chDigit = chLastDigit = *pchFraction;
