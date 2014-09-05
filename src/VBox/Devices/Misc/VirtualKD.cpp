@@ -2,7 +2,7 @@
 /** @file
  * VirtualKD - Device stub/loader for fast Windows kernel-mode debugging.
  *
- * Contributed by: Igor Shcherbakov
+ * Contributed by: Ivan Shcherbakov
  * Heavily modified after the contribution.
  */
 
