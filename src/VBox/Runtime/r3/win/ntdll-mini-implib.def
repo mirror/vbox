@@ -92,11 +92,14 @@ EXPORTS
     RtlCreateUserProcess                  ;;= _RtlCreateUserProcess@40
     RtlCreateUserThread                   ;;= _RtlCreateUserThread@40
     RtlDestroyProcessParameters           ;;= _RtlDestroyProcessParameters@4
+    RtlDosApplyFileIsolationRedirection_Ustr ;;= _RtlDosApplyFileIsolationRedirection_Ustr@36
     RtlEqualSid                           ;;= _RtlEqualSid@8
     RtlExpandEnvironmentStrings_U         ;;= _RtlExpandEnvironmentStrings_U@16
+    RtlFreeUnicodeString                  ;;= _RtlFreeUnicodeString@4
     RtlGetVersion                         ;;= _RtlGetVersion@4
     RtlInitializeSid                      ;;= _RtlInitializeSid@12
     RtlNtStatusToDosError                 ;;= _RtlNtStatusToDosError@4
     RtlSetDaclSecurityDescriptor          ;;= _RtlSetDaclSecurityDescriptor@16
     RtlSubAuthoritySid                    ;;= _RtlSubAuthoritySid@8
+
 

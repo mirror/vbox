@@ -802,67 +802,132 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                 HANDLE      hFile = INVALID_HANDLE_VALUE;
                 RTUTF16     wszPath[260 + 260]; /* Assumes we've limited the import name length to 256. */
                 AssertCompile(sizeof(wszPath) > sizeof(g_System32NtPath));
-                struct
-                {
-                    PRTUTF16 pawcDir;
-                    uint32_t cwcDir;
-                } Tmp, aDirs[] =
-                {
-                    { g_System32NtPath.UniStr.Buffer,           g_System32NtPath.UniStr.Length / sizeof(WCHAR) },
-                    { g_SupLibHardenedExeNtPath.UniStr.Buffer,  g_offSupLibHardenedExeNtName - 1 },
-                    { pCur->pwszAltSearchDir,                   pCur->cwcAltSearchDir },
-                };
 
-                /* Search System32 first, unless it's a 'V*' or 'm*' name, the latter for msvcrt.  */
-                if (   pCur->szName[0] == 'v'
-                    || pCur->szName[0] == 'V'
-                    || pCur->szName[0] == 'm'
-                    || pCur->szName[0] == 'M')
+                /*
+                 * Check for DLL isolation / redirection / mapping.
+                 */
+                size_t      cwcName  = 260;
+                PRTUTF16    pwszName = &wszPath[0];
+                int rc = RTStrToUtf16Ex(pCur->szName, RTSTR_MAX, &pwszName, cwcName, &cwcName);
+                if (RT_SUCCESS(rc))
                 {
-                    Tmp      = aDirs[0];
-                    aDirs[0] = aDirs[1];
-                    aDirs[1] = Tmp;
-                }
+                    UNICODE_STRING UniStrName;
+                    UniStrName.Buffer = wszPath;
+                    UniStrName.Length = (USHORT)cwcName * sizeof(WCHAR);
+                    UniStrName.MaximumLength = UniStrName.Length + sizeof(WCHAR);
 
-                for (uint32_t i = 0; i < RT_ELEMENTS(aDirs); i++)
-                {
-                    if (aDirs[i].pawcDir && aDirs[i].cwcDir && aDirs[i].cwcDir < RT_ELEMENTS(wszPath) / 3 * 2)
+                    UNICODE_STRING UniStrStatic;
+                    UniStrStatic.Buffer = &wszPath[cwcName + 1];
+                    UniStrStatic.Length = 0;
+                    UniStrStatic.MaximumLength = (USHORT)sizeof(wszPath) - UniStrStatic.MaximumLength - sizeof(WCHAR);
+
+                    static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
+                    UNICODE_STRING  UniStrDynamic = { 0, 0, NULL };
+                    PUNICODE_STRING pUniStrResult = NULL;
+
+                    rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                                    &UniStrName,
+                                                                    (PUNICODE_STRING)&s_DefaultSuffix,
+                                                                    &UniStrStatic,
+                                                                    &UniStrDynamic,
+                                                                    &pUniStrResult,
+                                                                    NULL /*pNewFlags*/,
+                                                                    NULL /*pcbFilename*/,
+                                                                    NULL /*pcbNeeded*/);
+                    if (NT_SUCCESS(rcNt))
                     {
-                        memcpy(wszPath, aDirs[i].pawcDir, aDirs[i].cwcDir * sizeof(RTUTF16));
-                        uint32_t cwc = aDirs[i].cwcDir;
-                        wszPath[cwc++] = '\\';
-                        size_t   cwcName  = RT_ELEMENTS(wszPath) - cwc;
-                        PRTUTF16 pwszName = &wszPath[cwc];
-                        int rc = RTStrToUtf16Ex(pCur->szName, RTSTR_MAX, &pwszName, cwcName, &cwcName);
-                        if (RT_SUCCESS(rc))
-                        {
-                            IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-                            UNICODE_STRING      NtName;
-                            NtName.Buffer        = wszPath;
-                            NtName.Length        = (USHORT)((cwc + cwcName) * sizeof(WCHAR));
-                            NtName.MaximumLength = NtName.Length + sizeof(WCHAR);
-                            OBJECT_ATTRIBUTES   ObjAttr;
-                            InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-
-                            rcNt = NtCreateFile(&hFile,
-                                                FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
-                                                &ObjAttr,
-                                                &Ios,
-                                                NULL /* Allocation Size*/,
-                                                FILE_ATTRIBUTE_NORMAL,
-                                                FILE_SHARE_READ,
-                                                FILE_OPEN,
-                                                FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-                                                NULL /*EaBuffer*/,
-                                                0 /*EaLength*/);
-                            if (NT_SUCCESS(rcNt))
-                                rcNt = Ios.Status;
-                            if (NT_SUCCESS(rcNt))
-                                break;
+                        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                        OBJECT_ATTRIBUTES   ObjAttr;
+                        InitializeObjectAttributes(&ObjAttr, pUniStrResult,
+                                                   OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+                        rcNt = NtCreateFile(&hFile,
+                                            FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
+                                            &ObjAttr,
+                                            &Ios,
+                                            NULL /* Allocation Size*/,
+                                            FILE_ATTRIBUTE_NORMAL,
+                                            FILE_SHARE_READ,
+                                            FILE_OPEN,
+                                            FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                            NULL /*EaBuffer*/,
+                                            0 /*EaLength*/);
+                        if (NT_SUCCESS(rcNt))
+                            rcNt = Ios.Status;
+                        if (!NT_SUCCESS(rcNt))
                             hFile = INVALID_HANDLE_VALUE;
+                        RtlFreeUnicodeString(&UniStrDynamic);
+                    }
+                }
+                else
+                    SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: RTStrToUtf16Ex #1 failed: %Rrc\n", rc));
+
+                /*
+                 * If not something that gets remapped, do the half normal searching we need.
+                 */
+                if (hFile == INVALID_HANDLE_VALUE)
+                {
+                    struct
+                    {
+                        PRTUTF16 pawcDir;
+                        uint32_t cwcDir;
+                    } Tmp, aDirs[] =
+                    {
+                        { g_System32NtPath.UniStr.Buffer,           g_System32NtPath.UniStr.Length / sizeof(WCHAR) },
+                        { g_SupLibHardenedExeNtPath.UniStr.Buffer,  g_offSupLibHardenedExeNtName - 1 },
+                        { pCur->pwszAltSearchDir,                   pCur->cwcAltSearchDir },
+                    };
+
+                    /* Search System32 first, unless it's a 'V*' or 'm*' name, the latter for msvcrt.  */
+                    if (   pCur->szName[0] == 'v'
+                        || pCur->szName[0] == 'V'
+                        || pCur->szName[0] == 'm'
+                        || pCur->szName[0] == 'M')
+                    {
+                        Tmp      = aDirs[0];
+                        aDirs[0] = aDirs[1];
+                        aDirs[1] = Tmp;
+                    }
+
+                    for (uint32_t i = 0; i < RT_ELEMENTS(aDirs); i++)
+                    {
+                        if (aDirs[i].pawcDir && aDirs[i].cwcDir && aDirs[i].cwcDir < RT_ELEMENTS(wszPath) / 3 * 2)
+                        {
+                            memcpy(wszPath, aDirs[i].pawcDir, aDirs[i].cwcDir * sizeof(RTUTF16));
+                            uint32_t cwc = aDirs[i].cwcDir;
+                            wszPath[cwc++] = '\\';
+                            cwcName  = RT_ELEMENTS(wszPath) - cwc;
+                            pwszName = &wszPath[cwc];
+                            rc = RTStrToUtf16Ex(pCur->szName, RTSTR_MAX, &pwszName, cwcName, &cwcName);
+                            if (RT_SUCCESS(rc))
+                            {
+                                IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                                UNICODE_STRING      NtName;
+                                NtName.Buffer        = wszPath;
+                                NtName.Length        = (USHORT)((cwc + cwcName) * sizeof(WCHAR));
+                                NtName.MaximumLength = NtName.Length + sizeof(WCHAR);
+                                OBJECT_ATTRIBUTES   ObjAttr;
+                                InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+                                rcNt = NtCreateFile(&hFile,
+                                                    FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
+                                                    &ObjAttr,
+                                                    &Ios,
+                                                    NULL /* Allocation Size*/,
+                                                    FILE_ATTRIBUTE_NORMAL,
+                                                    FILE_SHARE_READ,
+                                                    FILE_OPEN,
+                                                    FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                                    NULL /*EaBuffer*/,
+                                                    0 /*EaLength*/);
+                                if (NT_SUCCESS(rcNt))
+                                    rcNt = Ios.Status;
+                                if (NT_SUCCESS(rcNt))
+                                    break;
+                                hFile = INVALID_HANDLE_VALUE;
+                            }
+                            else
+                                SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: RTStrToUtf16Ex #2 failed: %Rrc\n", rc));
                         }
-                        else
-                            SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: RTStrToUtf16Ex failed: %Rrc\n", rc));
                     }
                 }
 
@@ -1514,7 +1579,8 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
 static NTSTATUS NTAPI
 supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_STRING pName, PHANDLE phMod)
 {
-    DWORD dwSavedLastError = GetLastError();
+    DWORD    dwSavedLastError = GetLastError();
+    NTSTATUS rcNt;
 
     /*
      * Process WinVerifyTrust todo before and after.
@@ -1530,8 +1596,9 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_INVALID_PARAMETER));
         return STATUS_INVALID_PARAMETER;
     }
-    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%ls\n",
-                 (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath));
+    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls\n",
+                 (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
+                 !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
 
     /*
      * Reject long paths that's close to the 260 limit without looking.
@@ -1561,7 +1628,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         wszPath[pName->Length / sizeof(WCHAR)] = '\0';
     }
     /*
-     * Not an absolute path.  Check if it's one of those special API set DLLs.
+     * Not an absolute path.  Check if it's one of those special API set DLLs
+     * or something we're known to use but should be taken from WinSxS.
      */
     else if (supHardViUtf16PathStartsWithEx(pName->Buffer, pName->Length / sizeof(WCHAR),
                                             L"api-ms-win-", 11, false /*fCheckSlash*/))
@@ -1574,7 +1642,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      * Not an absolute path or special API set.  There are two alternatives
      * now, either there is no path at all or there is a relative path.  We
      * will resolve it to an absolute path in either case, failing the call
-     * if we can't. If there isn't a path.
+     * if we can't.
      */
     else
     {
@@ -1613,46 +1681,89 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         }
 
         /*
-         * Search for the DLL.  Only System32 is allowed as the target of
-         * a search on the API level, all VBox calls will have full paths.
+         * Perform dll redirection to WinSxS such.  We using an undocumented
+         * API here, which as always is a bit risky...  ASSUMES that the API
+         * returns a full DOS path.
          */
-        UINT cwc = GetSystemDirectoryW(wszPath, RT_ELEMENTS(wszPath) - 32);
-        if (!cwc)
+        UINT            cwc;
+        static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
+        UNICODE_STRING  UniStrStatic   = { 0, (USHORT)sizeof(wszPath) - sizeof(WCHAR), wszPath };
+        UNICODE_STRING  UniStrDynamic = { 0, 0, NULL };
+        PUNICODE_STRING pUniStrResult  = NULL;
+        rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                        pName,
+                                                        (PUNICODE_STRING)&s_DefaultSuffix,
+                                                        &UniStrStatic,
+                                                        &UniStrDynamic,
+                                                        &pUniStrResult,
+                                                        NULL /*pNewFlags*/,
+                                                        NULL /*pcbFilename*/,
+                                                        NULL /*pcbNeeded*/);
+        if (NT_SUCCESS(rcNt))
         {
-            supR3HardenedError(VINF_SUCCESS, false,
-                               "supR3HardenedMonitor_LdrLoadDll: GetSystemDirectoryW failed: %u\n", GetLastError());
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_UNEXPECTED_IO_ERROR));
-            return STATUS_UNEXPECTED_IO_ERROR;
+            cwc = pUniStrResult->Length / sizeof(WCHAR);
+            if (pUniStrResult != &UniStrDynamic)
+                wszPath[cwc] = '\0';
+            else
+            {
+                if (pUniStrResult->Length > sizeof(wszPath) - sizeof(WCHAR))
+                {
+                    supR3HardenedError(VINF_SUCCESS, false,
+                                       "supR3HardenedMonitor_LdrLoadDll: Name too long: %.*ls -> %.*ls (RtlDosApplyFileIoslationRedirection_Ustr)\n",
+                                       pName->Length / sizeof(WCHAR), pName->Buffer,
+                                       pUniStrResult->Length / sizeof(WCHAR), pUniStrResult->Buffer);
+                    RtlFreeUnicodeString(&UniStrDynamic);
+                    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
+                    return STATUS_NAME_TOO_LONG;
+                }
+                memcpy(&wszPath[0], pUniStrResult->Buffer, pUniStrResult->Length);
+                wszPath[cwc] = '\0';
+            }
+            RtlFreeUnicodeString(&UniStrDynamic);
         }
-        if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
-        {
-            supR3HardenedError(VINF_SUCCESS, false,
-                               "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcName, pawcName);
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
-            return STATUS_NAME_TOO_LONG;
-        }
-        wszPath[cwc++] = '\\';
-        memcpy(&wszPath[cwc], pawcName, cwcName * sizeof(WCHAR));
-        cwc += cwcName;
-        if (!fNeedDllSuffix)
-            wszPath[cwc] = '\0';
         else
         {
-            memcpy(&wszPath[cwc], L".dll", 5 * sizeof(WCHAR));
-            cwc += 4;
+            /*
+             * Search for the DLL.  Only System32 is allowed as the target of
+             * a search on the API level, all VBox calls will have full paths.
+             */
+            cwc = GetSystemDirectoryW(wszPath, RT_ELEMENTS(wszPath) - 32);
+            if (!cwc)
+            {
+                supR3HardenedError(VINF_SUCCESS, false,
+                                   "supR3HardenedMonitor_LdrLoadDll: GetSystemDirectoryW failed: %u\n", GetLastError());
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_UNEXPECTED_IO_ERROR));
+                return STATUS_UNEXPECTED_IO_ERROR;
+            }
+            if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
+            {
+                supR3HardenedError(VINF_SUCCESS, false,
+                                   "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcName, pawcName);
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
+                return STATUS_NAME_TOO_LONG;
+            }
+            wszPath[cwc++] = '\\';
+            memcpy(&wszPath[cwc], pawcName, cwcName * sizeof(WCHAR));
+            cwc += cwcName;
+            if (!fNeedDllSuffix)
+                wszPath[cwc] = '\0';
+            else
+            {
+                memcpy(&wszPath[cwc], L".dll", 5 * sizeof(WCHAR));
+                cwc += 4;
+            }
         }
 
         ResolvedName.Buffer = wszPath;
         ResolvedName.Length = (USHORT)(cwc * sizeof(WCHAR));
         ResolvedName.MaximumLength = ResolvedName.Length + sizeof(WCHAR);
 
-        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: '%.*ls' -> '%.*ls'\n",
+        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: '%.*ls' -> '%.*ls' [rcNt=%#x]\n",
                      (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer,
-                     ResolvedName.Length / sizeof(WCHAR), ResolvedName.Buffer));
+                     ResolvedName.Length / sizeof(WCHAR), ResolvedName.Buffer, rcNt));
         pName = &ResolvedName;
     }
 
-    NTSTATUS rcNt;
     if (!fSkipValidation)
     {
         /*
