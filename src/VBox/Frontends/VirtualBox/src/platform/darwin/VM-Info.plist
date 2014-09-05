@@ -15,5 +15,6 @@
     <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
     <key>LSCanProvideIMVideoDataSource</key>    <true/>
     <key>NSHighResolutionCapable</key>          <true/>
+    <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
 </dict>
 </plist>

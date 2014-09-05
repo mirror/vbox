@@ -15,6 +15,7 @@
     <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
     <key>LSUIElement</key>                      <true/>
     <key>NSHighResolutionCapable</key>          <true/>
+    <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
     <key>CFBundleDocumentTypes</key>
     <array>
      <dict>
