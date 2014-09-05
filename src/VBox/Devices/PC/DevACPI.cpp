@@ -65,7 +65,7 @@
 #define PM_TMR_FREQ     3579545
 /* Default base for PM PIIX4 device */
 #define PM_PORT_BASE    0x4000
-/* Port offsets in PM device */    
+/* Port offsets in PM device */
 enum
 {
     PM1a_EVT_OFFSET                     = 0x00,
@@ -874,7 +874,7 @@ static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
 
 /**
   * Used by acpiR3PMTimer & acpiPmTmrRead to update TMR_VAL and update TMR_STS
-  * 
+  *
   * The caller is expected to either hold the clock lock or to have made sure
   * the VM is resetting or loading state.
   *
@@ -1549,12 +1549,12 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     int rc = TMTimerLock(pThis->CTX_SUFF(pPmTimer), VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
-    
+
     rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
     {
-            TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
-            return rc;
+        TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
+        return rc;
     }
 
     uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pPmTimer));
