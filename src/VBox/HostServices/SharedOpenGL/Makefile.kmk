@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008-2012 Oracle Corporation
+# Copyright (C) 2008-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -263,6 +263,7 @@ VBoxOGLrenderspu_SOURCES.solaris = render/renderspu_glx.c
 VBoxOGLrenderspu_SOURCES.freebsd = render/renderspu_glx.c
 VBoxOGLrenderspu_OBJCFLAGS.darwin = -Wno-shadow
 VBoxOGLrenderspu_SOURCES.darwin  = \
+	OpenGLTest/OpenGLTestDarwin.cpp \
 	render/renderspu_cocoa.c \
 	render/renderspu_cocoa_helper.m
 ifdef VBOX_WITH_CRHGSMI
@@ -271,7 +272,7 @@ endif
 ifdef VBOX_WITH_VDMA
 VBoxOGLrenderspu_DEFS += VBOX_WITH_VDMA
 endif
-VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib
+VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib -framework IOKit
 VBoxOGLrenderspu_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
