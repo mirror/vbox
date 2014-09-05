@@ -810,7 +810,7 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 # VM IP addresses.
 #
 VBOX_BLD_VM_LNX_IP           := 192.168.27.2
-VBOX_BLD_VM_LNX_X86_IP       := 192.168.27.2
+VBOX_BLD_VM_LNX_X86_IP       := 192.168.27.11
 VBOX_BLD_VM_LNX_AMD64_IP     := 192.168.27.12
 VBOX_BLD_VM_OS2_IP           := 192.168.27.3
 VBOX_BLD_VM_SOLARIS_IP       := 192.168.27.4
