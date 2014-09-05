@@ -53,6 +53,7 @@
 /*
  * Hacks common to both base header sets.
  */
+#define RtlFreeUnicodeString       WrongLinkage_RtlFreeUnicodeString
 #define NtQueryObject              Incomplete_NtQueryObject
 #define ZwQueryObject              Incomplete_ZwQueryObject
 #define NtSetInformationObject     Incomplete_NtSetInformationObject
@@ -69,6 +70,7 @@
 #define _PEB_LDR_DATA              Incomplete__PEB_LDR_DATA
 #define PEB_LDR_DATA               Incomplete_PEB_LDR_DATA
 #define PPEB_LDR_DATA              Incomplete_PPEB_LDR_DATA
+
 
 
 #ifdef IPRT_NT_USE_WINTERNL
@@ -188,6 +190,7 @@
 # define IPRT_NT_NEED_API_GROUP_NTIFS
 #endif
 
+#undef RtlFreeUnicodeString
 #undef NtQueryObject
 #undef ZwQueryObject
 #undef NtSetInformationObject
@@ -1878,6 +1881,16 @@ NTSYSAPI NTSTATUS NTAPI CsrClientCallServer(PVOID, PVOID, ULONG, SIZE_T);
 #endif
 NTSYSAPI VOID NTAPI     LdrInitializeThunk(PVOID, PVOID, PVOID);
 NTSYSAPI NTSTATUS NTAPI RtlExpandEnvironmentStrings_U(PVOID, PUNICODE_STRING, PUNICODE_STRING, PULONG);
+NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags,
+                                                                 IN PCUNICODE_STRING pOrgName,
+                                                                 IN PUNICODE_STRING pDefaultSuffix,
+                                                                 IN OUT PUNICODE_STRING pStaticString,
+                                                                 IN OUT PUNICODE_STRING pDynamicString,
+                                                                 IN OUT PUNICODE_STRING *ppResultString,
+                                                                 IN PULONG pfNewFlags OPTIONAL,
+                                                                 IN PSIZE_T pcbFilename OPTIONAL,
+                                                                 IN PSIZE_T pcbNeeded OPTIONAL);
+NTSYSAPI VOID NTAPI     RtlFreeUnicodeString(PUNICODE_STRING);
 
 RT_C_DECLS_END
 /** @} */

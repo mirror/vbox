@@ -472,14 +472,21 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
  * Simple case insensitive UTF-16 / ASCII path compare.
  *
  * @returns true if equal, false if not.
- * @param   pwszLeft            The UTF-16 path string.
+ * @param   pawcLeft            The UTF-16 path string, not necessarily null
+ *                              terminated.
+ * @param   cwcLeft             The number of chars in the left string,
+ *                              RTSTR_MAX if unknown but terminated.
  * @param   pszRight            The ascii string.
  */
-static bool supHardViUtf16PathIsEqual(PCRTUTF16 pwszLeft, const char *pszRight)
+DECLHIDDEN(bool) supHardViUtf16PathIsEqualEx(PCRTUTF16 pawcLeft, size_t cwcLeft, const char *pszRight)
 {
     for (;;)
     {
-        RTUTF16 wc = *pwszLeft++;
+        RTUTF16 wc;
+        if (cwcLeft-- > 0)
+            wc =*pawcLeft++;
+        else
+            wc = 0;
         uint8_t b  = *pszRight++;
         if (b != wc)
         {
@@ -503,6 +510,19 @@ static bool supHardViUtf16PathIsEqual(PCRTUTF16 pwszLeft, const char *pszRight)
         if (!b)
             return true;
     }
+}
+
+
+/**
+ * Simple case insensitive UTF-16 / ASCII path compare.
+ *
+ * @returns true if equal, false if not.
+ * @param   pwszLeft            The UTF-16 path string.
+ * @param   pszRight            The ascii string.
+ */
+static bool supHardViUtf16PathIsEqual(PCRTUTF16 pwszLeft, const char *pszRight)
+{
+    return supHardViUtf16PathIsEqualEx(pwszLeft, RTSTR_MAX, pszRight);
 }
 
 
