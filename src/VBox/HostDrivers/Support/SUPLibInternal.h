@@ -442,6 +442,9 @@ DECLHIDDEN(void)    supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(c
 DECLHIDDEN(void)    supR3HardenedWinFlushLoaderCache();
 DECLHIDDEN(bool)    supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **papszArgs);
 DECLHIDDEN(int)     supR3HardenedWinReSpawn(int iWhich);
+# ifdef _WINDEF_
+DECLHIDDEN(void)    supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT);
+# endif
 DECLHIDDEN(void *)  supR3HardenedWinLoadLibrary(const char *pszName, bool fSystem32Only);
 extern RTUTF16      g_wszSupLibHardenedExePath[1024];
 # ifdef RTPATH_MAX
