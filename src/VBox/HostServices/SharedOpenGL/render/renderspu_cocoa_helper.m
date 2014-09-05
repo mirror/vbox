@@ -429,6 +429,7 @@ typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvCb);
 
 - (void)add:(VBoxTask*)pTask
 {
+    [pTask retain];
     int rc = RTCritSectEnter(&m_Lock);
     if (RT_SUCCESS(rc))
     {
@@ -568,6 +569,7 @@ static DECLCALLBACK(void) vboxRcdRun(void *pvCb)
 {
     VBoxTaskPerformSelector *pSelTask = [[VBoxTaskPerformSelector alloc] initWithObject:aObject selector:aSelector arg:aArg];
     [self add:pSelTask];
+    [pSelTask release];
 }
 
 - (void)runTasks
