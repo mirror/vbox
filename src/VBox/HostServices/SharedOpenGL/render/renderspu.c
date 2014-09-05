@@ -565,6 +565,7 @@ GLboolean renderspuWinInitWithVisual( WindowInfo *window, VisualInfo *visual, GL
         
     window->BltInfo.Base.visualBits = visual->visAttribs;
     
+    window->cRefs = 1;
     
     /*
     crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
@@ -577,8 +578,6 @@ GLboolean renderspuWinInitWithVisual( WindowInfo *window, VisualInfo *visual, GL
     }
     
     window->visible = !!showIt;
-
-    window->cRefs = 1;
 
     CRASSERT(window->visual == visual);
     return GL_TRUE;
