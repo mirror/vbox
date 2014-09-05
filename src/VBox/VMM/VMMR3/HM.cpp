@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -702,6 +702,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTaskSwitch,         "/HM/CPU%d/Exit/TaskSwitch", "Guest attempted a task switch.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag", "Monitor Trap Flag.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess", "APIC access. Guest attempted to access memory at a physical address on the APIC-access page.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccessToR3,     "/HM/CPU%d/Exit/ApicAccessToR3", "APIC access causing us to go to ring-3.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending", "PDMGetInterrupt() cleared behind our back!?!.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatPendingHostIrq,         "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
@@ -1231,12 +1232,11 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         }
         else
         {
-            /** @todo This cannot possibly work, there are other places which assumes
-             *        this allocation cannot fail (see HMR3CanExecuteGuest()). Make this
-             *        a failure case. */
             LogRel(("HM: No real mode VT-x support (PDMR3VMMDevHeapAlloc returned %Rrc)\n", rc));
             pVM->hm.s.vmx.pRealModeTSS = NULL;
             pVM->hm.s.vmx.pNonPagingModeEPTPageTable = NULL;
+            return VMSetError(pVM, rc, RT_SRC_POS,
+                              "HM failure: No real mode VT-x support (PDMR3VMMDevHeapAlloc returned %Rrc)", rc);
         }
     }
 
@@ -2465,7 +2465,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     {
         /*
          * The VMM device heap is a requirement for emulating real mode or protected mode without paging with the unrestricted
-         * guest execution feature i missing (VT-x only).
+         * guest execution feature is missing (VT-x only).
          */
         if (fSupportsRealMode)
         {
@@ -2665,7 +2665,7 @@ VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 
 
 /**
- * Checks if we are currently using hardware accelerated raw mode.
+ * Checks if we are currently using hardware acceleration.
  *
  * @returns true if hardware acceleration is being used, otherwise false.
  * @param   pVCpu        Pointer to the VMCPU.
@@ -2677,8 +2677,7 @@ VMMR3_INT_DECL(bool) HMR3IsActive(PVMCPU pVCpu)
 
 
 /**
- * External interface for querying whether hardware accelerated raw mode is
- * enabled.
+ * External interface for querying whether hardware acceleration is enabled.
  *
  * @returns true if VT-x or AMD-V is being used, otherwise false.
  * @param   pUVM        The user mode VM handle.

@@ -11219,6 +11219,8 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccess);
+    if (rc != VINF_SUCCESS)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccessToR3);
     return rc;
 }
 
