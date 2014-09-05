@@ -156,7 +156,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pNext = g_pTimerHead;
     g_pTimerHead = pTimer;
     g_cTimers++;
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -200,7 +200,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
             pPrev = pPrev->pNext;
             if (RT_UNLIKELY(!pPrev))
             {
-                RTSpinlockReleaseNoInts(g_Spinlock);
+                RTSpinlockRelease(g_Spinlock);
                 return VERR_INVALID_HANDLE;
             }
         }
@@ -215,7 +215,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         if (!g_cActiveTimers)
             rtTimerOs2Dearm();
     }
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
 
     /*
      * Free the associated resources.
@@ -245,7 +245,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         int rc = rtTimerOs2Arm();
         if (RT_FAILURE(rc))
         {
-            RTSpinlockReleaseNoInts(g_Spinlock);
+            RTSpinlockRelease(g_Spinlock);
             return rc;
         }
     }
@@ -255,7 +255,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     pTimer->iTick = 0;
     pTimer->u64StartTS = u64First;
     pTimer->u64NextTS = u64First;
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
 
     return VINF_SUCCESS;
 }
@@ -278,7 +278,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     g_cActiveTimers--;
     if (!g_cActiveTimers)
         rtTimerOs2Dearm();
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
 
     return VINF_SUCCESS;
 }
@@ -337,7 +337,7 @@ DECLASM(void) rtTimerOs2Tick(void)
             /* do the callout */
             PFNRTTIMER  pfnTimer = pTimer->pfnTimer;
             void       *pvUser   = pTimer->pvUser;
-            RTSpinlockReleaseNoInts(g_Spinlock);
+            RTSpinlockRelease(g_Spinlock);
             pfnTimer(pTimer, pvUser, pTimer->iTick);
 
             RTSpinlockAcquire(g_Spinlock);
@@ -354,7 +354,7 @@ DECLASM(void) rtTimerOs2Tick(void)
         pTimer = pNext;
     }
 
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
 }
 
 

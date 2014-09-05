@@ -504,7 +504,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         else
             rc = VERR_GENERAL_FAILURE;
 
-        RTSpinlockReleaseNoInts(g_Spinlock);
+        RTSpinlockRelease(g_Spinlock);
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         kauth_cred_unref(&pCred);
 #else  /* 10.4 */
@@ -570,7 +570,7 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
     if (RT_LIKELY(pSession))
         supdrvSessionRetain(pSession);
 
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
     if (RT_UNLIKELY(!pSession))
     {
         OSDBGPRINT(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#lx\n",
@@ -1477,7 +1477,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
                 else
                     rc = VERR_ALREADY_LOADED;
 
-                RTSpinlockReleaseNoInts(g_Spinlock);
+                RTSpinlockRelease(g_Spinlock);
                 if (RT_SUCCESS(rc))
                 {
                     Log(("org_virtualbox_SupDrvClient::start: created session %p for pid %d\n", m_pSession, (int)RTProcSelf()));
@@ -1540,7 +1540,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
             }
         }
     }
-    RTSpinlockReleaseNoInts(g_Spinlock);
+    RTSpinlockRelease(g_Spinlock);
     if (!pSession)
     {
         Log(("SupDrvClient::sessionClose: pSession == NULL, pid=%d; freed already?\n", (int)Process));

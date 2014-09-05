@@ -318,7 +318,7 @@ DECLINLINE(ifnet_t) vboxNetFltDarwinRetainIfNet(PVBOXNETFLTINS pThis)
         if (pIfNet)
             ifnet_reference(pIfNet);
     }
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     return pIfNet;
 }
@@ -748,7 +748,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     ASMAtomicUoWriteBool(&pThis->fRediscoveryPending, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
 
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     if (pIfNet)
         ifnet_release(pIfNet);
@@ -1030,7 +1030,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
 
     RTSpinlockAcquire(pThis->hSpinlock);
     ASMAtomicUoWritePtr(&pThis->u.s.pIfNet, pIfNet);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     /* Adjust g_offIfNetPCount as it varies for different versions of xnu. */
     vboxNetFltDarwinDetectPCountOffset(pIfNet);
@@ -1068,7 +1068,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             ASMAtomicUoWritePtr(&pThis->u.s.pIfFilter, pIfFilter);
             pIfNet = NULL; /* don't dereference it */
         }
-        RTSpinlockReleaseNoInts(pThis->hSpinlock);
+        RTSpinlockRelease(pThis->hSpinlock);
 
         /* Report capabilities. */
         if (   !pIfNet
@@ -1289,7 +1289,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     pIfFilter = ASMAtomicUoReadPtrT(&pThis->u.s.pIfFilter, interface_filter_t);
     if (pIfFilter)
         ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     if (pIfFilter)
         iflt_detach(pIfFilter);

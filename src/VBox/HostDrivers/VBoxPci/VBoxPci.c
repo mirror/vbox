@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,7 +89,7 @@ DECLINLINE(int) vboxPciDevLock(PVBOXRAWPCIINS pThis)
 DECLINLINE(void) vboxPciDevUnlock(PVBOXRAWPCIINS pThis)
 {
 #ifdef VBOX_WITH_SHARED_PCI_INTERRUPTS
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 #else
     RTSemFastMutexRelease(pThis->hFastMtx);
 #endif

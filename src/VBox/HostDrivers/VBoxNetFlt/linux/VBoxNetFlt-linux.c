@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -405,7 +405,7 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
     ASMAtomicXchgPtr((void * volatile *)&pDev->hard_start_xmit, vboxNetFltLinuxStartXmitFilter);
 # endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 }
 
 /**
@@ -441,7 +441,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
     }
     else
         pOverride = NULL;
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     if (pOverride)
     {
@@ -1464,7 +1464,7 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
         else
             fFeatures = 0;
 
-        RTSpinlockReleaseNoInts(pThis->hSpinlock);
+        RTSpinlockRelease(pThis->hSpinlock);
 
         if (pThis->pSwitchPort)
         {
@@ -1578,7 +1578,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
 
     RTSpinlockAcquire(pThis->hSpinlock);
     ASMAtomicUoWritePtr(&pThis->u.s.pDev, pDev);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) retained. ref=%d\n",
           pDev, pDev->name,
@@ -1628,7 +1628,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         ASMAtomicUoWriteBool(&pThis->u.s.fRegistered, true);
         pDev = NULL; /* don't dereference it */
     }
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     /*
      * If the above succeeded report GSO capabilities,  if not undo and
@@ -1653,7 +1653,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
 #endif
         RTSpinlockAcquire(pThis->hSpinlock);
         ASMAtomicUoWriteNullPtr(&pThis->u.s.pDev);
-        RTSpinlockReleaseNoInts(pThis->hSpinlock);
+        RTSpinlockRelease(pThis->hSpinlock);
         dev_put(pDev);
         Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n",
              pDev, pDev->name,
@@ -1692,7 +1692,7 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
         ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
         ASMAtomicUoWriteNullPtr(&pThis->u.s.pDev);
     }
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     if (fRegistered)
     {
@@ -2027,7 +2027,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     RTSpinlockAcquire(pThis->hSpinlock);
     pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     fRegistered = ASMAtomicXchgBool(&pThis->u.s.fRegistered, false);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     if (fRegistered)
     {

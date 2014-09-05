@@ -3,7 +3,7 @@
  * Internal networking - The ring 0 service.
  *
  * @remarks No lazy code changes.  If you don't understand exactly what you're
- *          doing, get an understand or forget it.
+ *          doing, get an understanding or forget it.
  *          All changes shall be reviewed by bird before commit.  If not around,
  *          email and let Frank and/or Klaus OK the changes before committing.
  */
@@ -1181,7 +1181,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNET
             intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i, pszMsg);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 }
 
 
@@ -1214,7 +1214,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
         }
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 }
 
 
@@ -1241,12 +1241,12 @@ DECLINLINE(PINTNETIF) intnetR0NetworkAddrCacheLookupIf(PINTNETNETWORK pNetwork, 
         if (i >= 0)
         {
             intnetR0BusyIncIf(pIf);
-            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+            RTSpinlockRelease(pNetwork->hAddrSpinlock);
             return pIf;
         }
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return NULL;
 }
 
@@ -1271,7 +1271,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     if (RT_UNLIKELY(!pCache->cEntriesAlloc))
     {
         /* This shouldn't happen*/
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
         return;
     }
 
@@ -1312,7 +1312,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     pCache->cEntries++;
     Assert(pCache->cEntries <= pCache->cEntriesAlloc);
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 }
 
 
@@ -1569,7 +1569,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return pDstTab->cIfs
          ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
          : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
@@ -1630,7 +1630,7 @@ static INTNETSWDECISION intnetR0NetworkPreSwitchUnicast(PINTNETNETWORK pNetwork,
         }
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return enmSwDecision;
 }
 
@@ -1743,7 +1743,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, ui
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return pDstTab->cIfs
          ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
          : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
@@ -1805,7 +1805,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchBroadcast(PINTNETNETWORK pNetwork, 
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return INTNETSWDECISION_BROADCAST;
 }
 
@@ -1866,7 +1866,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunkAndPromisc(PINTNETNETWORK pNet
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return !pDstTab->cIfs
         ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK)
         : (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST);
@@ -1908,7 +1908,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunk(PINTNETNETWORK pNetwork, uint
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     return pDstTab->fTrunkDst ? INTNETSWDECISION_TRUNK : INTNETSWDECISION_DROP;
 }
 
@@ -2002,7 +2002,7 @@ static int intnetR0NetworkEnsureTabSpace(PINTNETNETWORK pNetwork)
                         void *pvOld = *ppDstTab;
                         if (pvOld)
                             *ppDstTab = pNew;
-                        RTSpinlockReleaseNoInts(pTrunk->hDstTabSpinlock);
+                        RTSpinlockRelease(pTrunk->hDstTabSpinlock);
                         if (pvOld)
                         {
                             RTMemFree(pvOld);
@@ -2036,7 +2036,7 @@ static int intnetR0NetworkEnsureTabSpace(PINTNETNETWORK pNetwork)
                     pTab->paEntries         = paNew;
                     pTab->cEntriesAllocated = cAllocated;
 
-                    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+                    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
                     RTMemFree(paOld);
                 }
@@ -2149,7 +2149,7 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
                     }
                 }
 
-                RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+                RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
                 if (pMatchingIf)
                 {
@@ -2182,7 +2182,7 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
                 }
             }
 
-            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+            RTSpinlockRelease(pNetwork->hAddrSpinlock);
             break;
         }
     }
@@ -2645,7 +2645,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
      */
     RTSpinlockAcquire(pIf->hRecvInSpinlock);
     int rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
-    RTSpinlockReleaseNoInts(pIf->hRecvInSpinlock);
+    RTSpinlockRelease(pIf->hRecvInSpinlock);
     if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
@@ -2672,7 +2672,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
 
             RTSpinlockAcquire(pIf->hRecvInSpinlock);
             rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
-            RTSpinlockReleaseNoInts(pIf->hRecvInSpinlock);
+            RTSpinlockRelease(pIf->hRecvInSpinlock);
             if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
@@ -3222,7 +3222,7 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
         MacAddrTrunk = pNetwork->MacTab.pTrunk->MacAddr;
     else
         memset(&MacAddrTrunk, 0, sizeof(MacAddrTrunk));
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
     if (    ar_oper == RTNET_ARPOP_REPLY
         &&  !memcmp(&pArpIPv4->ar_tha, &MacAddrTrunk, sizeof(RTMAC)))
     {
@@ -3440,7 +3440,7 @@ DECLINLINE(bool) intnetR0NetworkIsContextOkForBroadcast(PINTNETNETWORK pNetwork,
             || (   (!pNetwork->MacTab.fHostActive || (pTrunk->fNoPreemptDsts & INTNETTRUNKDIR_HOST) )
                 && (!pNetwork->MacTab.fWireActive || (pTrunk->fNoPreemptDsts & INTNETTRUNKDIR_WIRE) ) );
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
     return fRc;
 }
@@ -3782,7 +3782,7 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
             pIfEntry->MacAddr = EthHdr.SrcMac;
         pIfSender->MacAddr    = EthHdr.SrcMac;
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
     }
 
     /*
@@ -4153,7 +4153,7 @@ INTNETR0DECL(int) IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSIO
             }
         }
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
     }
     else
         rc = VERR_WRONG_ORDER;
@@ -4237,7 +4237,7 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSe
                 intnetR0BusyIncTrunk(pTrunk);
         }
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
         if (pTrunk)
         {
@@ -4336,7 +4336,7 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
         }
     }
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
     /*
      * Tell the trunk if necessary.
@@ -4741,7 +4741,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
 
         PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
         /* Notify the trunk about the interface being destroyed. */
         if (pTrunk && pTrunk->pIfPort)
@@ -4753,7 +4753,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
         /* Release our reference to the network. */
         RTSpinlockAcquire(pNetwork->hAddrSpinlock);
         pIf->pNetwork = NULL;
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
         SUPR0ObjRelease(pNetwork->pvObj, pIf->pSession);
     }
@@ -4967,7 +4967,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                     if (pTrunk)
                         intnetR0BusyIncTrunk(pTrunk);
 
-                    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+                    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
                     if (pTrunk)
                     {
@@ -5040,7 +5040,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportMacAddress(PINTNETTRUNKSWPORT
         pNetwork->MacTab.HostMac = *pMacAddr;
         pThis->MacAddr           = *pMacAddr;
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
     }
     else
         pThis->MacAddr = *pMacAddr;
@@ -5068,7 +5068,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportPromiscuousMode(PINTNETTRUNKS
         pNetwork->MacTab.fHostPromiscuousEff  = pNetwork->MacTab.fHostPromiscuousReal
                                              && (pNetwork->fFlags & INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST);
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
     }
     intnetR0BusyDecTrunk(pThis);
 }
@@ -5147,7 +5147,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortDisconnect(PINTNETTRUNKSWPORT pSwit
 
             RTSpinlockAcquire(pNetwork->hAddrSpinlock);
             pNetwork->MacTab.pTrunk = NULL;
-            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+            RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
             intnetR0TrunkIfDestroy(pThis, pNetwork);
         }
@@ -5251,7 +5251,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
                     }
                 }
             }
-            RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock);
+            RTSpinlockRelease(pThis->hDstTabSpinlock);
             Assert(!pDstTab || iDstTab < pThis->cIntDstTabs);
         }
         else
@@ -5264,12 +5264,12 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
             if (pDstTab)
             {
                 pThis->apIntDstTabs[iDstTab] = NULL;
-                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock);
+                RTSpinlockRelease(pThis->hDstTabSpinlock);
                 Assert(iDstTab < RT_ELEMENTS(pThis->apTaskDstTabs));
             }
             else
             {
-                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock);
+                RTSpinlockRelease(pThis->hDstTabSpinlock);
                 intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, &pDstTab);
                 iDstTab = 65535;
             }
@@ -5308,7 +5308,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
                             break;
                         }
                 }
-                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock);
+                RTSpinlockRelease(pThis->hDstTabSpinlock);
                 Assert(iDstTab < RT_MAX(RT_ELEMENTS(pThis->apTaskDstTabs), pThis->cIntDstTabs));
             }
         }
@@ -5662,7 +5662,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     pNetwork->MacTab.fHostActive = false;
     pNetwork->MacTab.fWireActive = false;
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
     /* Wait for all the interfaces to quiesce.  (Interfaces cannot be
        removed / added since we're holding the big lock.) */
@@ -5698,7 +5698,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
      */
     pNetwork->MacTab.pTrunk = NULL;
 
-    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+    RTSpinlockRelease(pNetwork->hAddrSpinlock);
 
     if (pTrunk)
         intnetR0TrunkIfDestroy(pTrunk, pNetwork);
@@ -5890,7 +5890,7 @@ static int intnetR0AdaptOpenNetworkFlags(PINTNETNETWORK pNetwork, uint32_t fFlag
             }
         }
 
-        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock);
+        RTSpinlockRelease(pNetwork->hAddrSpinlock);
     }
 
     return VINF_SUCCESS;

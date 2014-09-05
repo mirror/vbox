@@ -1440,7 +1440,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         }
 
         if (pTimer->cCpus > 1)
-            RTSpinlockReleaseNoInts(pTimer->hSpinlock);
+            RTSpinlockRelease(pTimer->hSpinlock);
     }
 
     if (fCanDestroy)

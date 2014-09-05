@@ -235,6 +235,8 @@ typedef struct SUPGIPCPU
     volatile uint64_t   u64TSC;
     /** Current CPU Frequency. */
     volatile uint64_t   u64CpuHz;
+    /** The TSC delta with reference to the master TSC. */
+    volatile int64_t    i64TSCDelta;
     /** Number of errors during updating.
      * Typical errors are under/overflows. */
     volatile uint32_t   cErrors;
@@ -249,7 +251,13 @@ typedef struct SUPGIPCPU
     volatile uint32_t   u32PrevUpdateIntervalNS;
 
     /** Reserved for future per processor data. */
-    volatile uint32_t   au32Reserved[5+5];
+    volatile uint32_t   au32Reserved0[5];
+
+    /** The TSC value read while doing TSC delta measurements across CPUs. */
+    volatile uint64_t   u64TSCSample;
+
+    /** Reserved for future per processor data. */
+    volatile uint32_t   au32Reserved1[1];
 
     /** @todo Add topology/NUMA info. */
     /** The CPU state. */
@@ -349,7 +357,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00030000
+#define SUPGLOBALINFOPAGE_VERSION   0x00040000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.

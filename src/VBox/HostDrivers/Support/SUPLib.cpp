@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -473,7 +473,6 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTSpinlockAcquire",                      0xefef0030 },
         { "RTSpinlockRelease",                      0xefef0031 },
         { "RTSpinlockAcquireNoInts",                0xefef0032 },
-        { "RTSpinlockReleaseNoInts",                0xefef0033 },
         { "RTTimeNanoTS",                           0xefef0034 },
         { "RTTimeMillieTS",                         0xefef0035 },
         { "RTTimeSystemNanoTS",                     0xefef0036 },

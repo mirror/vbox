@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,8 +107,8 @@ int main(int argc, char **argv)
                      :                                                            "???",
                      g_pSUPGlobalInfoPage->u32Version);
             RTPrintf(fHex
-                     ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId           CpuHz TSC Interval History...\n"
-                     : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId           CpuHz TSC Interval History...\n");
+                     ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId           CpuHz         TSCDelta TSC Interval History...\n"
+                     : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId           CpuHz         TSCDelta TSC Interval History...\n");
             static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
@@ -125,8 +125,8 @@ int main(int argc, char **argv)
                         PSUPGIPCPU pPrevCpu = &s_aaCPUs[!(i & 1)][iCpu];
                         PSUPGIPCPU pCpu = &s_aaCPUs[i & 1][iCpu];
                         RTPrintf(fHex
-                                 ? "tstGIP-2: %4d/%d: %016llx %09llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n"
-                                 : "tstGIP-2: %4d/%d: %016llu %09llu %016llu %010u %d %010u %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
+                                 ? "tstGIP-2: %4d/%d: %016llx %09llx %016llx %08x %d %08x %15llu %016lld %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n"
+                                 : "tstGIP-2: %4d/%d: %016llu %09llu %016llu %010u %d %010u %15llu %016lld %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
                                  i, iCpu,
                                  pCpu->u64NanoTS,
                                  i ? pCpu->u64NanoTS - pPrevCpu->u64NanoTS : 0,
@@ -135,6 +135,7 @@ int main(int argc, char **argv)
                                  pCpu->iTSCHistoryHead,
                                  pCpu->u32TransactionId,
                                  pCpu->u64CpuHz,
+                                 pCpu->i64TSCDelta,
                                  pCpu->au32TSCHistory[0],
                                  pCpu->au32TSCHistory[1],
                                  pCpu->au32TSCHistory[2],
@@ -158,6 +159,11 @@ int main(int argc, char **argv)
                     while (u32TransactionId == *pu32TransactionId)
                         /* nop */;
             }
+
+            /* Display TSC deltas. */
+            RTPrintf("tstGIP-2: TSC deltas:\n");
+            for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
+                RTPrintf("tstGIP-2: %6d: %016lld\n", iCpu, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
         }
         else
         {

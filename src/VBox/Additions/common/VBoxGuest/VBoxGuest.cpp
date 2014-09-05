@@ -116,7 +116,7 @@ DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint3
         fResult = false;
     }
 
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
     if (pu32OtherVal)
         *pu32OtherVal = fNotVal;
@@ -286,7 +286,7 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
         if (enmFlags & HostFlags_MouseStatus)
             vboxGuestSetMouseStatus(pStatusReq, fMouseStatus);
     }
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     if (pFilterReq)
         VbglGRFree(&pFilterReq->header);
     if (pCapabilitiesReq)
@@ -1180,7 +1180,7 @@ int VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSe
     pSession->pDevExt = pDevExt;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
     LogFlow(("VBoxGuestCreateUserSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
@@ -1213,7 +1213,7 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
     pSession->pDevExt = pDevExt;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
     LogFlowFunc(("pSession=%p proc=%RTproc (%d) r0proc=%p\n",
@@ -1237,7 +1237,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListNodeRemove(&pSession->ListNode);
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX, VBOXGUESTCAPSACQUIRE_FLAGS_NONE);
 
     VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
@@ -1290,7 +1290,7 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
         if (pWait)
             RTListNodeRemove(&pWait->ListNode);
 
-        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
     }
     if (!pWait)
     {
@@ -1375,7 +1375,7 @@ static void VBoxGuestWaitFreeUnlocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT p
 {
     RTSpinlockAcquire(pDevExt->EventSpinlock);
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 }
 
 
@@ -1400,7 +1400,7 @@ void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt)
             if (!pWait)
                 break;
             pWait->fPendingWakeUp = true;
-            RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+            RTSpinlockRelease(pDevExt->EventSpinlock);
 
             rc = RTSemEventMultiSignal(pWait->Event);
             AssertRC(rc);
@@ -1418,7 +1418,7 @@ void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt)
                 VBoxGuestWaitFreeLocked(pDevExt, pWait);
             }
         }
-        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
     }
 }
 #endif /* VBOXGUEST_USE_DEFERRED_WAKE_UP */
@@ -1511,7 +1511,7 @@ int VBoxGuestCommonIOCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGu
 
     RTSpinlockAcquire(pDevExt->EventSpinlock);
     pDevExt->MouseNotifyCallback = *pNotify;
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
     return VINF_SUCCESS;
 }
 #endif
@@ -1530,7 +1530,7 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESS
     uint32_t fMatches = VBoxGuestCommonGetAndCleanPendingEventsLocked(pDevExt, pSession, fReqEvents);
     if (fMatches || pSession->fPendingCancelWaitEvents)
     {
-        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
 
         pInfo->u32EventFlagsOut = fMatches;
         pInfo->u32Result = VBOXGUEST_WAITEVENT_OK;
@@ -1542,7 +1542,7 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESS
         return VINF_SUCCESS;
     }
 
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
     return VERR_TIMEOUT;
 }
 
@@ -1626,7 +1626,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
     RTSpinlockAcquire(pDevExt->EventSpinlock);
     fResEvents = pWait->fResEvents;
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
     /*
      * Now deal with the return code.
@@ -1705,7 +1705,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     }
     if (!fCancelledOne)
         pSession->fPendingCancelWaitEvents = true;
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
     Assert(rc == 0);
     NOREF(rc);
 
@@ -1986,7 +1986,7 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fFilterMask |= pInfo->u32OrMask;
     pSession->fFilterMask &= ~pInfo->u32NotMask;
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_FilterMask);
     return rc;
 }
@@ -2004,7 +2004,7 @@ static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fCapabilities |= pInfo->u32OrMask;
     pSession->fCapabilities &= ~pInfo->u32NotMask;
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_Capabilities);
     return rc;
 }
@@ -2033,7 +2033,7 @@ static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt,
     fFeatures ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fMouseStatus = fFeatures;
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_MouseStatus);
     return rc;
 }
@@ -2061,10 +2061,10 @@ static int VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile
         RTSpinlockAcquire(pDevExt->EventSpinlock);
         if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
         {
-            RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+            RTSpinlockRelease(pDevExt->EventSpinlock);
             return VINF_SUCCESS;
         }
-        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
 
         pWait = VBoxGuestWaitAlloc(pDevExt, NULL);
         if (pWait)
@@ -2086,10 +2086,10 @@ static int VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile
     if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
     {
         VBoxGuestWaitFreeLocked(pDevExt, pWait);
-        RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
         return VINF_SUCCESS;
     }
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
     if (fInterruptible)
         rc = RTSemEventMultiWaitNoResume(pWait->Event, cMillies);
@@ -2179,7 +2179,7 @@ static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUEST
                     pSession->aHGCMClientIds[i] = pInfo->u32ClientID;
                     break;
                 }
-            RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+            RTSpinlockRelease(pDevExt->SessionSpinlock);
             if (i >= RT_ELEMENTS(pSession->aHGCMClientIds))
             {
                 static unsigned             s_cErrors = 0;
@@ -2217,7 +2217,7 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
             pSession->aHGCMClientIds[i] = UINT32_MAX;
             break;
         }
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     if (i >= RT_ELEMENTS(pSession->aHGCMClientIds))
     {
         static unsigned s_cErrors = 0;
@@ -2244,7 +2244,7 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     if (pSession->aHGCMClientIds[i] == UINT32_MAX)
         pSession->aHGCMClientIds[i] = RT_SUCCESS(rc) && RT_SUCCESS(pInfo->result) ? 0 : u32ClientId;
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
 
     return rc;
 }
@@ -2292,7 +2292,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
     for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
         if (pSession->aHGCMClientIds[i] == u32ClientId)
             break;
-    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock);
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
     if (RT_UNLIKELY(i >= RT_ELEMENTS(pSession->aHGCMClientIds)))
     {
         static unsigned s_cErrors = 0;
@@ -2578,7 +2578,7 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
     }
     ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
 
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
     VBoxGuestWaitDoWakeUps(pDevExt);
@@ -2654,7 +2654,7 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
         }
     }
 
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
     if (fOtherConflictingCaps)
     {
@@ -3072,7 +3072,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
         LogFlowFunc(("Not ours\n"));
 #endif
 
-    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+    RTSpinlockRelease(pDevExt->EventSpinlock);
 
 #if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS)
     /*
