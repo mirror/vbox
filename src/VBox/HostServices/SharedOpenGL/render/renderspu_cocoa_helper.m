@@ -91,35 +91,42 @@
 # define DEBUG_VERBOSE /* Define this to get some debug info about the messages flow. */
 #endif
 
-#ifdef DEBUG_misha
-#define DEBUG_INFO(text) do { \
+#ifdef DEBUG_VERBOSE
+# error "should be disabled!"
+# define DEBUG_INFO(text) do { \
         crWarning text ; \
         Assert(0); \
     } while (0)
+
 # define DEBUG_MSG(text) \
     printf text
+
 # define DEBUG_WARN(text) do { \
         crWarning text ; \
         Assert(0); \
     } while (0)
+
+# define DEBUG_MSG_1(text) \
+    DEBUG_MSG(text)
+
 #else
-#define DEBUG_INFO(text) do { \
+
+# define DEBUG_INFO(text) do { \
         crInfo text ; \
     } while (0)
+
 # define DEBUG_MSG(text) \
     do {} while (0)
+
 # define DEBUG_WARN(text) do { \
         crWarning text ; \
     } while (0)
-#endif
 
-#ifdef DEBUG_VERBOSE
-# define DEBUG_MSG_1(text) \
-    DEBUG_MSG(text)
-#else
 # define DEBUG_MSG_1(text) \
     do {} while (0)
+
 #endif
+
 
 #define DEBUG_FUNC_ENTER() do { \
         DEBUG_MSG(("==>%s\n", __PRETTY_FUNCTION__)); \
