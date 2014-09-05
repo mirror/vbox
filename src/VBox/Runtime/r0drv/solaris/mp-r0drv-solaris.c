@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -342,5 +342,11 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     return ASMAtomicUoReadU32(&Args.cHits) == 1
          ? VINF_SUCCESS
          : VERR_CPU_NOT_FOUND;
+}
+
+
+RTDECL(bool) RTMpOnAllIsConcurrentSafe(void)
+{
+    return true;
 }
 

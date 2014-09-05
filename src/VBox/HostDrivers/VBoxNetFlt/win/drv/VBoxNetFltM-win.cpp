@@ -4,7 +4,7 @@
  * Miniport edge
  */
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -142,7 +142,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PVBOXNETFLTINS pNetFlt
 
     vboxNetFltWinSetOpState(&pNetFlt->u.s.WinIf.MpState, kVBoxNetDevOpState_Deinitializing);
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
 
     vboxNetFltWinWaitDereference(&pNetFlt->u.s.WinIf.MpState);
 
@@ -517,7 +517,7 @@ static UINT vboxNetFltWinMpRequestStatePrep(PVBOXNETFLTINS pNetFlt, NDIS_STATUS 
     if (vboxNetFltWinGetOpState(&pNetFlt->u.s.WinIf.PtState) > kVBoxNetDevOpState_Initialized /* protocol unbind in progress */
             || vboxNetFltWinGetPowerState(&pNetFlt->u.s.WinIf.MpState) > NdisDeviceStateD0)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_FAILURE;
         return 0;
     }
@@ -526,21 +526,21 @@ static UINT vboxNetFltWinMpRequestStatePrep(PVBOXNETFLTINS pNetFlt, NDIS_STATUS 
             && !pNetFlt->u.s.WinIf.StateFlags.fStandBy)
     {
         pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS | VBOXNDISREQUEST_QUEUED;
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_PENDING;
         return VBOXNDISREQUEST_INPROGRESS | VBOXNDISREQUEST_QUEUED;
     }
 
     if (pNetFlt->u.s.WinIf.StateFlags.fStandBy)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_FAILURE;
         return 0;
     }
 
     pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS;
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
 
     *pStatus = NDIS_STATUS_SUCCESS;
     return VBOXNDISREQUEST_INPROGRESS;

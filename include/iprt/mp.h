@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -244,6 +244,18 @@ RTDECL(bool) RTMpIsCpuWorkPending(void);
 typedef DECLCALLBACK(void) FNRTMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 /** Pointer to a FNRTMPWORKER. */
 typedef FNRTMPWORKER *PFNRTMPWORKER;
+
+/**
+ * Checks if the RTMpOnAll() is safe with regards to all threads executing
+ * concurrently.
+ *
+ * If for instance, the RTMpOnAll() is implemented in a way where the threads
+ * might cause a classic deadlock, it is considered -not- concurrent safe.
+ * Windows currently is one such platform where it isn't safe.
+ *
+ * @returns true if RTMpOnAll() is concurrent safe, false otherwise.
+ */
+RTDECL(bool) RTMpOnAllIsConcurrentSafe(void);
 
 /**
  * Executes a function on each (online) CPU in the system.

@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -966,6 +966,7 @@
 # define RTMpNotificationDeregister                     RT_MANGLER(RTMpNotificationDeregister) /* r0drv */
 # define RTMpNotificationRegister                       RT_MANGLER(RTMpNotificationRegister)   /* r0drv */
 # define RTMpOnAll                                      RT_MANGLER(RTMpOnAll)                  /* r0drv */
+# define RTMpOnAllIsConcurrentSafe                      RT_MANGLER(RTMpOnAllIsConcurrentSafe)  /* r0drv */
 # define RTMpOnOthers                                   RT_MANGLER(RTMpOnOthers)               /* r0drv */
 # define RTMpOnSpecific                                 RT_MANGLER(RTMpOnSpecific)             /* r0drv */
 # define RTMpPokeCpu                                    RT_MANGLER(RTMpPokeCpu)                /* r0drv */
@@ -1397,7 +1398,6 @@
 # define RTSpinlockCreate                               RT_MANGLER(RTSpinlockCreate)
 # define RTSpinlockDestroy                              RT_MANGLER(RTSpinlockDestroy)
 # define RTSpinlockRelease                              RT_MANGLER(RTSpinlockRelease)
-# define RTSpinlockReleaseNoInts                        RT_MANGLER(RTSpinlockReleaseNoInts)
 # define RTStrAAppendExNVTag                            RT_MANGLER(RTStrAAppendExNVTag)
 # define RTStrAAppendNTag                               RT_MANGLER(RTStrAAppendNTag)
 # define RTStrAAppendTag                                RT_MANGLER(RTStrAAppendTag)

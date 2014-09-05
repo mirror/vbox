@@ -4,7 +4,7 @@
  * NetFlt Runtime API
  */
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -593,7 +593,7 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
     if(!vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
 #endif
     {
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
+        RTSpinlockRelease((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return false;
     }
@@ -601,14 +601,14 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
     if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinReferenceModePassThru(pNetFlt);
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
+        RTSpinlockRelease((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return true;
     }
 
     vboxNetFltRetain((pNetFlt), true /* fBusy */);
     vboxNetFltWinReferenceModeNetFlt(pNetFlt);
-    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
+    RTSpinlockRelease((pNetFlt)->hSpinlock);
 
     *pbNetFltActive = true;
     return true;
@@ -632,7 +632,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
     if(!vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         *pbNetFltActive = false;
         return false;
     }
@@ -641,7 +641,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
     {
         vboxNetFltWinIncReferenceModePassThru(pNetFlt, v);
 
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
+        RTSpinlockRelease((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return true;
     }
@@ -650,7 +650,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
 
     vboxNetFltWinIncReferenceModeNetFlt(pNetFlt, v);
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
 
     /* we have marked it as busy, so can do the res references outside the lock */
     for(i = 0; i < v-1; i++)
@@ -714,11 +714,11 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIf(PVBOXNETFLTINS pNetFlt, uint32_t
     if(vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         return true;
     }
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
     return false;
 }
 
@@ -731,11 +731,11 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIf(PVBOXNETFLTINS pNetFlt)
     if(vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         return true;
     }
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
     return false;
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -134,13 +134,5 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
 
     release_spinlock(&pSpinlockInt->hSpinLock);
     restore_interrupts(pSpinlockInt->fIntSaved);
-}
-
-
-RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock)
-{
-    if (!(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE))
-        RTAssertMsg2("RTSpinlockReleaseNoInts: p=%p (magic=%#x)\n", Spinlock, Spinlock->u32Magic);
-    RTSpinlockRelease(Spinlock);
 }
 

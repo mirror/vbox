@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -114,7 +114,7 @@ static DECLCALLBACK(bool) pcirawr0Isr(void* pContext, int32_t iHostIrq)
 
     RTSpinlockAcquire(pThis->hSpinlock);
     pThis->iPendingIrq = iHostIrq;
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     /**
      * @todo RTSemEventSignal() docs claims that it's platform-dependent
@@ -871,7 +871,7 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
     iPendingIrq = pDev->iPendingIrq;
     pDev->iPendingIrq = 0;
     fTerminate = pDev->fTerminate;
-    RTSpinlockReleaseNoInts(pDev->hSpinlock);
+    RTSpinlockRelease(pDev->hSpinlock);
 
     /* Block until new IRQs arrives */
     if (!fTerminate)
@@ -887,7 +887,7 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
                     RTSpinlockAcquire(pDev->hSpinlock);
                     iPendingIrq = pDev->iPendingIrq;
                     pDev->iPendingIrq = 0;
-                    RTSpinlockReleaseNoInts(pDev->hSpinlock);
+                    RTSpinlockRelease(pDev->hSpinlock);
                 }
                 else
                     rc = VERR_INTERRUPTED;

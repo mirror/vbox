@@ -4,7 +4,7 @@
  * Protocol edge
  */
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -175,12 +175,12 @@ static void vboxNetFltWinPtRequestsWaitComplete(PVBOXNETFLTINS pNetFlt)
     {
         /* mark the request as InProgress before posting it to RequestComplete */
         pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS;
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         vboxNetFltWinPtRequestComplete(pNetFlt, &pNetFlt->u.s.WinIf.PassDownRequest, NDIS_STATUS_FAILURE);
     }
     else
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
     }
 }
 
@@ -208,7 +208,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtDoUnbinding(PVBOXNETFLTINS pNetFlt, bool 
         vboxNetFltWinSetOpState(&pNetFlt->u.s.WinIf.MpState, kVBoxNetDevOpState_Deinitializing);
     }
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
 
     vboxNetFltWinPtRequestsWaitComplete(pNetFlt);
 
@@ -1400,19 +1400,19 @@ DECLHIDDEN(bool) vboxNetFltWinPtCloseInterface(PVBOXNETFLTINS pNetFlt, PNDIS_STA
 
     if (pNetFlt->u.s.WinIf.StateFlags.fInterfaceClosing)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         Assert(0);
         return false;
     }
     if (pNetFlt->u.s.WinIf.hBinding == NULL)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         Assert(0);
         return false;
     }
 
     pNetFlt->u.s.WinIf.StateFlags.fInterfaceClosing = TRUE;
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+    RTSpinlockRelease(pNetFlt->hSpinlock);
 
     NdisResetEvent(&pNetFlt->u.s.WinIf.OpenCloseEvent);
     NdisCloseAdapter(pStatus, pNetFlt->u.s.WinIf.hBinding);
@@ -1443,7 +1443,7 @@ static NDIS_STATUS vboxNetFltWinPtPnPSetPower(PVBOXNETFLTINS pNetFlt, NDIS_DEVIC
         {
             pNetFlt->u.s.WinIf.StateFlags.fStandBy = TRUE;
         }
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+        RTSpinlockRelease(pNetFlt->hSpinlock);
         vboxNetFltWinPtRequestsWaitComplete(pNetFlt);
         vboxNetFltWinWaitDereference(&pNetFlt->u.s.WinIf.MpState);
         vboxNetFltWinWaitDereference(&pNetFlt->u.s.WinIf.PtState);
@@ -1468,13 +1468,13 @@ static NDIS_STATUS vboxNetFltWinPtPnPSetPower(PVBOXNETFLTINS pNetFlt, NDIS_DEVIC
         if (pNetFlt->u.s.WinIf.StateFlags.fRequestInfo & VBOXNDISREQUEST_QUEUED)
         {
             pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS;
-            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+            RTSpinlockRelease(pNetFlt->hSpinlock);
 
             vboxNetFltWinMpRequestPost(pNetFlt);
         }
         else
         {
-            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
+            RTSpinlockRelease(pNetFlt->hSpinlock);
         }
     }
 

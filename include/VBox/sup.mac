@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2014 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -33,11 +33,14 @@ struc SUPGIPCPU
     .u64NanoTS                  resq 1
     .u64TSC                     resq 1
     .u64CpuHz                   resq 1
+    .i64TSCDelta                resq 1
     .cErrors                    resd 1
     .iTSCHistoryHead            resd 1
     .au32TSCHistory             resd 8
     .u32PrevUpdateIntervalNS    resd 1
-    .au32Reserved               resd (5+5)
+    .au32Reserved0              resd (5)
+    .u64TSCSample               resq 1
+    .au32Reserved1              resd (1)
     .enmState                   resd 1
     .idCpu                      resd 1
     .iCpuSet                    resw 1

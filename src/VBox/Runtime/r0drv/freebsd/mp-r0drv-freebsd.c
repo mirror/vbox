@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -287,4 +287,10 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     return VERR_NOT_SUPPORTED;
 }
 #endif /* < 7.0 */
+
+
+RTDECL(bool) RTMpOnAllIsConcurrentSafe(void)
+{
+    return true;
+}
 

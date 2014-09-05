@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -93,6 +93,34 @@
  * u32UpdateIntervalNS GIP members. The value must be a power of 2. */
 #define GIP_UPDATEHZ_RECALC_FREQ            0x800
 
+/** A reserved TSC value used for synchronization as well as measurement of
+ *  TSC deltas. */
+#define GIP_TSC_DELTA_RSVD                  UINT64_MAX
+/** The number of TSC delta measurement loops in total (includes primer and
+ *  read-time loops). */
+#define GIP_TSC_DELTA_LOOPS                 96
+/** The number of cache primer loops. */
+#define GIP_TSC_DELTA_PRIMER_LOOPS          4
+/** The number of loops until we keep computing the minumum read time. */
+#define GIP_TSC_DELTA_READ_TIME_LOOPS       24
+/** Stop measurement of TSC delta. */
+#define GIP_TSC_DELTA_SYNC_STOP             0
+/** Start measurement of TSC delta. */
+#define GIP_TSC_DELTA_SYNC_START            1
+/** Worker thread is ready for reading the TSC. */
+#define GIP_TSC_DELTA_SYNC_WORKER_READY     2
+/** Worker thread is done updating TSC delta info. */
+#define GIP_TSC_DELTA_SYNC_WORKER_DONE      3
+/** When IPRT is isn't concurrent safe: Master is ready and will wait for slave
+ *  with a timeout. */
+#define GIP_TSC_DELTA_SYNC_PRESTART_MASTER  4
+/** When IPRT is isn't concurrent safe: Worker is ready after waiting for
+ *  master with a timeout. */
+#define GIP_TSC_DELTA_SYNC_PRESTART_WORKER  5
+
+AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS < GIP_TSC_DELTA_READ_TIME_LOOPS);
+AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_TSC_DELTA_LOOPS);
+
 /** @def VBOX_SVN_REV
  * The makefile should define this if it can. */
 #ifndef VBOX_SVN_REV
@@ -138,6 +166,7 @@ static void                 supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64N
 static void                 supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS);
+static int                  supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, uint32_t *pidxMaster);
 static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 
 
@@ -145,6 +174,29 @@ static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 *   Global Variables                                                           *
 *******************************************************************************/
 DECLEXPORT(PSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage = NULL;
+
+/**
+ * The TSC delta synchronization struct. rounded to cache line size.
+ */
+typedef union SUPTSCDELTASYNC
+{
+    /** The synchronization variable, holds values GIP_TSC_DELTA_SYNC_*. */
+    volatile uint32_t   u;
+    /** Padding to cache line size. */
+    uint8_t             u8Padding[64];
+} SUPTSCDELTASYNC;
+AssertCompileSize(SUPTSCDELTASYNC, 64);
+typedef SUPTSCDELTASYNC *PSUPTSCDELTASYNC;
+
+/** Pointer to the TSC delta sync. struct. */
+static void                *g_pvTscDeltaSync;
+/** Aligned pointer to the TSC delta sync. struct. */
+static PSUPTSCDELTASYNC     g_pTscDeltaSync;
+/** The TSC delta measurement initiator Cpu Id. */
+static volatile RTCPUID     g_idTscDeltaInitiator = NIL_RTCPUID;
+/** Number of online/offline events, incremented each time a CPU goes online
+ *  or offline. */
+static volatile uint32_t    g_cMpOnOffEvents;
 
 /**
  * Array of the R0 SUP API.
@@ -353,7 +405,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTSpinlockCreate",                       (void *)RTSpinlockCreate },
     { "RTSpinlockDestroy",                      (void *)RTSpinlockDestroy },
     { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
-    { "RTSpinlockReleaseNoInts",                (void *)RTSpinlockReleaseNoInts },
     { "RTStrCopy",                              (void *)RTStrCopy },
     { "RTStrDupTag",                            (void *)RTStrDupTag },
     { "RTStrFormat",                            (void *)RTStrFormat },
@@ -3956,7 +4007,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
 
                 if (pGipR0->aCPUs[0].u32TransactionId != 2 /* not the first time */)
                 {
-                    for (i = 0; i < RT_ELEMENTS(pGipR0->aCPUs); i++)
+                    for (i = 0; i < pGipR0->cCpus; i++)
                         ASMAtomicUoWriteU32(&pGipR0->aCPUs[i].u32TransactionId,
                                             (pGipR0->aCPUs[i].u32TransactionId + GIP_UPDATEHZ_RECALC_FREQ * 2)
                                             & ~(GIP_UPDATEHZ_RECALC_FREQ * 2 - 1));
@@ -5580,49 +5631,80 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
-    /*
-     * Create the timer.
-     * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
-     */
-    if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
-    {
-        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, RTTIMER_FLAGS_CPU_ALL, supdrvGipAsyncTimer, pDevExt);
-        if (rc == VERR_NOT_SUPPORTED)
-        {
-            OSDBGPRINT(("supdrvGipCreate: omni timer not supported, falling back to synchronous mode\n"));
-            pGip->u32Mode = SUPGIPMODE_SYNC_TSC;
-        }
-    }
-    if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */, supdrvGipSyncTimer, pDevExt);
+    rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
     if (RT_SUCCESS(rc))
     {
-        rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
+        rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
         if (RT_SUCCESS(rc))
         {
-            rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
+            /*
+             * Measure the TSC deltas now that we have MP notifications.
+             */
+            unsigned cTries = 5;
+#if 0
+            do
+            {
+                rc = supdrvMeasureTscDeltas(pDevExt, pGip, NULL /* pidxMaster */);
+                if (rc == VERR_TRY_AGAIN)
+                {
+                    --cTries;
+                    continue;
+                }
+                else
+                    break;
+            } while (cTries > 0);
+#endif
+
             if (RT_SUCCESS(rc))
             {
+#if 0
+                unsigned iCpu;
+                SUPR0Printf("cTries=%u\n", cTries);
+                for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                    SUPR0Printf("Cpu[%3u].delta=%ld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta);
+#endif
+
                 /*
-                 * We're good.
+                 * Create the timer.
+                 * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
                  */
-                Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
-                g_pSUPGlobalInfoPage = pGip;
-                return VINF_SUCCESS;
+                if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
+                {
+                    rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, RTTIMER_FLAGS_CPU_ALL, supdrvGipAsyncTimer, pDevExt);
+                    if (rc == VERR_NOT_SUPPORTED)
+                    {
+                        OSDBGPRINT(("supdrvGipCreate: omni timer not supported, falling back to synchronous mode\n"));
+                        pGip->u32Mode = SUPGIPMODE_SYNC_TSC;
+                    }
+                }
+                if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+                    rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */, supdrvGipSyncTimer, pDevExt);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * We're good.
+                     */
+                    Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
+                    g_pSUPGlobalInfoPage = pGip;
+                    return VINF_SUCCESS;
+                }
+                else
+                {
+                    OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
+                    Assert(!pDevExt->pGipTimer);
+                }
             }
-
-            OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed with rc=%Rrc\n", rc));
-            RTMpNotificationDeregister(supdrvGipMpEvent, pDevExt);
-
+            else
+                OSDBGPRINT(("supdrvGipCreate: supdrvMeasureTscDeltas() failed with rc=%Rrc after %u tries!\n", rc, cTries));
         }
         else
-            OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
+            OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed with rc=%Rrc\n", rc));
+
+        RTMpNotificationDeregister(supdrvGipMpEvent, pDevExt);
     }
     else
-    {
-        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
-        Assert(!pDevExt->pGipTimer);
-    }
+        OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
+
     supdrvGipDestroy(pDevExt);
     return rc;
 }
@@ -5810,10 +5892,13 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
 
+    /* Update the Mp online/offline counter. */
+    ASMAtomicIncU32(&g_cMpOnOffEvents);
+
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 
-    RTSpinlockReleaseNoInts(pDevExt->hGipSpinlock);
+    RTSpinlockRelease(pDevExt->hGipSpinlock);
 }
 
 
@@ -5845,10 +5930,20 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
     RTCpuSetDelByIndex(&pGip->OnlineCpuSet, iCpuSet);
 
+    /* Update the Mp online/offline counter. */
+    ASMAtomicIncU32(&g_cMpOnOffEvents);
+
+    /* If we are the initiator going offline while measuring the TSC delta, unspin other waiting CPUs! */
+    if (ASMAtomicReadU32(&g_idTscDeltaInitiator) == idCpu)
+    {
+        ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_START);
+        ASMAtomicWriteU64(&pGip->aCPUs[i].u64TSCSample, ~GIP_TSC_DELTA_RSVD);
+    }
+
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 
-    RTSpinlockReleaseNoInts(pDevExt->hGipSpinlock);
+    RTSpinlockRelease(pDevExt->hGipSpinlock);
 }
 
 
@@ -5928,6 +6023,302 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 
 
 /**
+ * Callback used by supdrvMeasureTscDeltas() to read the TSC on two CPUs and
+ * compute the delta between them.
+ *
+ * @param   idCpu       The CPU we are current scheduled on.
+ * @param   pvUser1     Opaque pointer to the GIP.
+ * @param   pvUser2     Opaque pointer to the worker Cpu Id.
+ *
+ * @remarks Measuring TSC deltas between the CPUs is tricky because we need to
+ *     read the TSC at exactly the same time on both the master and the worker
+ *     CPUs. Due to DMA, bus arbitration, cache locality, contention etc. there
+ *     is no guaranteed way of doing this on x86 CPUs. We try to minimize the
+ *     measurement error by computing the minimum read time of the compare
+ *     statement in the slave by taking TSC measurements across it. We also
+ *     ignore the first few runs of the loop in order to prime the cache.
+ *
+ *     It must be noted that the computed minimum read time is mostly to
+ *     eliminate huge deltas when the slave is too early and doesn't by itself
+ *     help produce more accurate deltas. We allow two times the computed
+ *     minimum as an arbibtrary acceptable threshold. Therefore, it is still
+ *     possible to get negative deltas where there are none when the slave is
+ *     earlier.
+ */
+static DECLCALLBACK(void) supdrvDetermineTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPGLOBALINFOPAGE pGip      = (PSUPGLOBALINFOPAGE)pvUser1;
+    uint32_t          *pidWorker = (uint32_t *)pvUser2;
+    RTCPUID            idMaster  = ASMAtomicUoReadU32(&g_idTscDeltaInitiator);
+    unsigned           idxMaster = supdrvGipCpuIndexFromCpuId(pGip, idMaster);
+    unsigned           idxWorker = supdrvGipCpuIndexFromCpuId(pGip, *pidWorker);
+    PSUPGIPCPU         pGipCpuMaster = &pGip->aCPUs[idxMaster];
+    PSUPGIPCPU         pGipCpuWorker = &pGip->aCPUs[idxWorker];
+    uint64_t           uMinCmpReadTime = UINT64_MAX;
+    int                cTriesLeft = 8;
+
+    if (   idCpu != idMaster
+        && idCpu != *pidWorker)
+        return;
+
+    /* If the IPRT API isn't concurrent safe, the master and worker wait for each other
+       with a timeout to avoid deadlocking the entire system. */
+    if (!RTMpOnAllIsConcurrentSafe())
+    {
+        uint64_t       uTscNow;
+        uint64_t       uTscStart;
+        uint64_t const cWaitTicks = 130000;  /* Arbitrary value, can be tweaked later. */
+
+        ASMSerializeInstruction();
+        uTscStart = ASMReadTSC();
+        if (idCpu == idMaster)
+        {
+            ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_PRESTART_MASTER);
+            while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_PRESTART_WORKER)
+            {
+                ASMSerializeInstruction();
+                uTscNow = ASMReadTSC();
+                if (uTscNow - uTscStart > cWaitTicks)
+                {
+                    /* Set the worker delta to indicate failure, not the master. */
+                    ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
+                    return;
+                }
+
+                ASMNopPause();
+            }
+        }
+        else
+        {
+            while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_PRESTART_MASTER)
+            {
+                ASMSerializeInstruction();
+                uTscNow = ASMReadTSC();
+                if (uTscNow - uTscStart > cWaitTicks)
+                {
+                    ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
+                    return;
+                }
+
+                ASMNopPause();
+            }
+            ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_PRESTART_WORKER);
+        }
+    }
+
+    Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
+    while (cTriesLeft-- > 0)
+    {
+        unsigned i;
+        RTCCUINTREG uFlags = ASMIntDisableFlags();          /* Disable interrupts for the duration of a try. */
+        for (i = 0; i < GIP_TSC_DELTA_LOOPS; i++)
+        {
+            if (idCpu == idMaster)
+            {
+                /*
+                 * The master.
+                 */
+                Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
+                ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_START);
+                while (ASMAtomicReadU32(&g_pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_START)
+                    ;
+
+                do
+                {
+                    ASMSerializeInstruction();
+                    ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, ASMReadTSC());
+                } while (pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
+
+                while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_WORKER_DONE)
+                    ;
+
+                if (i > GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS)
+                {
+                    if (pGipCpuWorker->u64TSCSample != GIP_TSC_DELTA_RSVD)
+                    {
+                        int64_t iDelta = pGipCpuWorker->u64TSCSample - pGipCpuMaster->u64TSCSample;
+                        if (iDelta < pGipCpuWorker->i64TSCDelta)
+                            pGipCpuWorker->i64TSCDelta = iDelta;
+                    }
+                }
+
+                ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, GIP_TSC_DELTA_RSVD);
+                ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
+            }
+            else
+            {
+                /*
+                 * The worker.
+                 */
+                uint64_t uTscWorker;
+                uint64_t uTscWorkerFlushed;
+                uint64_t uCmpReadTime;
+
+                ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
+                while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_START)
+                    ;
+                ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_WORKER_READY);
+
+                /*
+                 * Keep reading the TSC until we notice that the master has read his. Reading
+                 * the TSC -after- the master has updated the memory is way too late. We thus
+                 * compensate by trying to measure how long it took for the slave to notice
+                 * the memory flushed from the master.
+                 */
+                do
+                {
+                    ASMSerializeInstruction();
+                    uTscWorker = ASMReadTSC();
+                } while (pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
+                ASMSerializeInstruction();
+                uTscWorkerFlushed = ASMReadTSC();
+
+                uCmpReadTime = uTscWorkerFlushed - uTscWorker;
+                if (i > GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS)
+                {
+                    /* This is totally arbitrary a.k.a I don't like it but I have no better ideas for now. */
+                    if (uCmpReadTime < (uMinCmpReadTime << 1))
+                    {
+                        ASMAtomicWriteU64(&pGipCpuWorker->u64TSCSample, uTscWorker);
+                        if (uCmpReadTime < uMinCmpReadTime)
+                            uMinCmpReadTime = uCmpReadTime;
+                    }
+                    else
+                        ASMAtomicWriteU64(&pGipCpuWorker->u64TSCSample, GIP_TSC_DELTA_RSVD);
+                }
+                else if (i > GIP_TSC_DELTA_PRIMER_LOOPS)
+                {
+                    if (uCmpReadTime < uMinCmpReadTime)
+                        uMinCmpReadTime = uCmpReadTime;
+                }
+
+                ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_WORKER_DONE);
+                while (ASMAtomicReadU32(&g_pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_WORKER_DONE)
+                    ASMNopPause();
+            }
+        }
+        ASMSetFlags(uFlags);
+
+        if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
+            break;
+    }
+}
+
+
+/**
+ * Clears all TSCs on the per-CPUs GIP struct. as well as the delta
+ * synchronization variable. Optionally also clears the deltas on the per-CPU
+ * GIP struct. as well.
+ *
+ * @param   pGip            Pointer to the GIP.
+ * @param   fClearDeltas    Whether the deltas are also to be cleared.
+ */
+DECLINLINE(void) supdrvClearTscSamples(PSUPGLOBALINFOPAGE pGip, bool fClearDeltas)
+{
+    unsigned iCpu;
+    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    {
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
+        ASMAtomicWriteU64(&pGipCpu->u64TSCSample, GIP_TSC_DELTA_RSVD);
+        if (fClearDeltas)
+            ASMAtomicWriteS64(&pGipCpu->i64TSCDelta, INT64_MAX);
+    }
+    ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
+}
+
+
+/**
+ * Measures the TSC deltas between CPUs.
+ *
+ * @param   pDevExt     Pointer to the device instance data.
+ * @param   pGip        Pointer to the GIP.
+ * @param   pidxMaster  Where to store the index of the chosen master TSC if we
+ *                      managed to determine the TSC deltas successfully.
+ *                      Optional, can be NULL.
+ *
+ * @returns VBox status code.
+ * @remarks Must be called only after supdrvGipInitOnCpu() as this function uses
+ *          idCpu, GIP's online CPU set which are populated in
+ *          supdrvGipInitOnCpu().
+ */
+static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, uint32_t *pidxMaster)
+{
+    PSUPGIPCPU pGipCpuMaster;
+    unsigned   iCpu;
+    uint32_t   cMpOnOffEvents = ASMAtomicReadU32(&g_cMpOnOffEvents);
+    uint32_t   cOnlineCpus    = pGip->cOnlineCpus;
+
+    /* Pick the first CPU which is online as the master TSC. */
+    uint32_t idxMaster = UINT32_MAX;
+    supdrvClearTscSamples(pGip, true /* fClearDeltas */);
+    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    {
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
+        if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpu->idCpu))
+        {
+            idxMaster = iCpu;
+            pGipCpu->i64TSCDelta = 0;
+            break;
+        }
+    }
+    AssertReturn(cOnlineCpus > 0, VERR_INTERNAL_ERROR_5);
+    AssertReturn(idxMaster != UINT32_MAX, VERR_CPU_NOT_FOUND);
+
+    if (pGip->cOnlineCpus <= 1)
+    {
+        if (pidxMaster)
+            *pidxMaster = idxMaster;
+        return VINF_SUCCESS;
+    }
+
+    /* Pick the master TSC as the initiator. */
+    pGipCpuMaster = &pGip->aCPUs[idxMaster];
+    ASMAtomicWriteU32(&g_idTscDeltaInitiator, pGipCpuMaster->idCpu);
+
+    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    {
+        PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
+        if (   iCpu != idxMaster
+            && RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpuWorker->idCpu))
+        {
+            int rc;
+
+            /* Fire TSC-read workers on all CPUs but only synchronize between master and one worker to memory contention. */
+            ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
+            rc = RTMpOnAll(supdrvDetermineTscDeltaCallback, pGip, &pGipCpuWorker->idCpu);
+            if (RT_FAILURE(rc))
+            {
+                SUPR0Printf("supdrvMeasureTscDeltas: RTMpOnAll failed. rc=%d\n", rc);
+                return rc;
+            }
+
+            if (RT_UNLIKELY(pGipCpuWorker->i64TSCDelta == INT64_MAX))
+            {
+                SUPR0Printf("Failed to measure TSC deltas for CPU[%u] idCpu=%u\n", iCpu, pGipCpuWorker->idCpu);
+                return VERR_UNRESOLVED_ERROR;
+            }
+
+            if (ASMAtomicReadU32(&g_cMpOnOffEvents) != cMpOnOffEvents)
+            {
+                SUPR0Printf("One or more CPUs transitioned between online & offline states. I are confused, retrying...\n");
+                return VERR_TRY_AGAIN;
+            }
+        }
+    }
+
+    ASMAtomicWriteU32(&g_idTscDeltaInitiator, NIL_RTCPUID);
+
+    if (RT_LIKELY(!pGipCpuMaster->i64TSCDelta))
+    {
+        if (pidxMaster)
+            *pidxMaster = idxMaster;
+        return VINF_SUCCESS;
+    }
+    return VERR_INTERNAL_ERROR_4;
+}
+
+
+/**
  * Callback used by supdrvDetermineAsyncTSC to read the TSC on a CPU.
  *
  * @param   idCpu       Ignored.
@@ -5936,11 +6327,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
  */
 static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-#if 1
     ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
-#else
-    *(uint64_t *)pvUser1 = ASMReadTSC();
-#endif
 }
 
 
@@ -6091,6 +6478,8 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
     pCpu->u32TransactionId   = 2;
     pCpu->u64NanoTS          = u64NanoTS;
     pCpu->u64TSC             = ASMReadTSC();
+    pCpu->u64TSCSample       = GIP_TSC_DELTA_RSVD;
+    pCpu->i64TSCDelta        = INT64_MAX;
 
     ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
     ASMAtomicWriteSize(&pCpu->idCpu,    NIL_RTCPUID);
@@ -6170,6 +6559,13 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pDevExt->pGip      = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
+
+    /*
+     * Allocate the TSC delta sync. struct. on a separate cache line.
+     */
+    g_pvTscDeltaSync = RTMemAllocZ(sizeof(SUPTSCDELTASYNC) + 63);
+    g_pTscDeltaSync  = RT_ALIGN_PT(g_pvTscDeltaSync, 64, PSUPTSCDELTASYNC);
+    Assert(RT_ALIGN_PT(g_pTscDeltaSync, 64, PSUPTSCDELTASYNC) == g_pTscDeltaSync);
 }
 
 
@@ -6197,11 +6593,20 @@ static void supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
 {
     unsigned i;
     pGip->u32Magic = 0;
-    for (i = 0; i < RT_ELEMENTS(pGip->aCPUs); i++)
+    for (i = 0; i < pGip->cCpus; i++)
     {
         pGip->aCPUs[i].u64NanoTS = 0;
         pGip->aCPUs[i].u64TSC = 0;
         pGip->aCPUs[i].iTSCHistoryHead = 0;
+        pGip->aCPUs[i].u64TSCSample = 0;
+        pGip->aCPUs[i].i64TSCDelta = INT64_MAX;
+    }
+
+    if (g_pvTscDeltaSync)
+    {
+        RTMemFree(g_pvTscDeltaSync);
+        g_pTscDeltaSync  = NULL;
+        g_pvTscDeltaSync = NULL;
     }
 }
 
