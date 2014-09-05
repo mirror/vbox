@@ -1365,8 +1365,8 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
 {
     DEBUG_FUNC_ENTER();
 
-    CR_RCD_SETPOS * pReparent = (CR_RCD_SETPOS*)pvCb;
-    [pReparent->pView vboxSetPosUI:pReparent->pos];
+    CR_RCD_SETPOS * pPos = (CR_RCD_SETPOS*)pvCb;
+    [pPos->pView vboxSetPosUI:pPos->pos];
 
     DEBUG_FUNC_LEAVE();
 }
