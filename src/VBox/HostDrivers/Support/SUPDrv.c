@@ -111,7 +111,7 @@
 #define GIP_TSC_DELTA_SYNC_WORKER_READY     2
 /** Worker thread is done updating TSC delta info. */
 #define GIP_TSC_DELTA_SYNC_WORKER_DONE      3
-/** When IPRT is isn't concurrent safe: Master is ready and will wait for slave
+/** When IPRT is isn't concurrent safe: Master is ready and will wait for worker
  *  with a timeout. */
 #define GIP_TSC_DELTA_SYNC_PRESTART_MASTER  4
 /** When IPRT is isn't concurrent safe: Worker is ready after waiting for
@@ -6035,14 +6035,14 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
  *     CPUs. Due to DMA, bus arbitration, cache locality, contention etc. there
  *     is no guaranteed way of doing this on x86 CPUs. We try to minimize the
  *     measurement error by computing the minimum read time of the compare
- *     statement in the slave by taking TSC measurements across it. We also
+ *     statement in the worker by taking TSC measurements across it. We also
  *     ignore the first few runs of the loop in order to prime the cache.
  *
  *     It must be noted that the computed minimum read time is mostly to
- *     eliminate huge deltas when the slave is too early and doesn't by itself
+ *     eliminate huge deltas when the worker is too early and doesn't by itself
  *     help produce more accurate deltas. We allow two times the computed
  *     minimum as an arbibtrary acceptable threshold. Therefore, it is still
- *     possible to get negative deltas where there are none when the slave is
+ *     possible to get negative deltas where there are none when the worker is
  *     earlier.
  */
 static DECLCALLBACK(void) supdrvDetermineTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
@@ -6162,7 +6162,7 @@ static DECLCALLBACK(void) supdrvDetermineTscDeltaCallback(RTCPUID idCpu, void *p
                 /*
                  * Keep reading the TSC until we notice that the master has read his. Reading
                  * the TSC -after- the master has updated the memory is way too late. We thus
-                 * compensate by trying to measure how long it took for the slave to notice
+                 * compensate by trying to measure how long it took for the worker to notice
                  * the memory flushed from the master.
                  */
                 do
