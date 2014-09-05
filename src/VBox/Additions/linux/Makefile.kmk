@@ -252,7 +252,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),\
 
 # pattern rule for stripping and copying vbox-greeter to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter): \
-		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(subst linux,linux2,$(PATH_STAGE_BIN))/additions/% \
+		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(subst linux.amd64/release,linux.amd64/release/greeter,$(subst linux.x86/release,linux.x86/release/greeter,$(PATH_STAGE_BIN)))/additions/% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $< $@
