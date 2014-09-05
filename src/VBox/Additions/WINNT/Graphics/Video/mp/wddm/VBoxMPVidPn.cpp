@@ -525,6 +525,7 @@ static NTSTATUS vboxVidPnSourceModeSetFromArray(D3DKMDT_HVIDPNSOURCEMODESET hVid
         if (!NT_SUCCESS(Status))
         {
             WARN(("pfnAddMode failed, Status 0x%x", Status));
+            VBoxVidPnDumpSourceMode("SourceMode: ", pVidPnModeInfo, "\n");
             NTSTATUS tmpStatus = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
             Assert(tmpStatus == STATUS_SUCCESS);
             return Status;
@@ -584,6 +585,7 @@ static NTSTATUS vboxVidPnTargetModeSetFromArray(D3DKMDT_HVIDPNTARGETMODESET hVid
         if (!NT_SUCCESS(Status))
         {
             WARN(("pfnAddMode failed, Status 0x%x", Status));
+            VBoxVidPnDumpTargetMode("TargetMode: ", pVidPnModeInfo, "\n");
             NTSTATUS tmpStatus = pVidPnModeSetInterface->pfnReleaseModeInfo(hVidPnModeSet, pVidPnModeInfo);
             Assert(tmpStatus == STATUS_SUCCESS);
             return Status;
@@ -849,6 +851,10 @@ static NTSTATUS vboxVidPnApplyInfoForPathTarget(PVBOXMP_DEVEXT pDevExt,
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxVidPnTargetModeSetFromArray failed Status(0x%x)", Status));
+        vboxVidPnDumpVidPn("\nVidPn: ---------\n", pDevExt, hVidPn, pVidPnInterface, "\n------\n");
+        VBoxVidPnDumpMonitorModeSet("MonModeSet: --------\n", pDevExt, VidPnTargetId, "\n------\n");
+        NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hVidPnModeSet);
+        Assert(tmpStatus == STATUS_SUCCESS);
         return Status;
     }
 
@@ -856,6 +862,8 @@ static NTSTATUS vboxVidPnApplyInfoForPathTarget(PVBOXMP_DEVEXT pDevExt,
     if (!NT_SUCCESS(Status))
     {
         WARN(("\n\n!!!!!!!\n\n pfnAssignTargetModeSet failed, Status(0x%x)", Status));
+        vboxVidPnDumpVidPn("\nVidPn: ---------\n", pDevExt, hVidPn, pVidPnInterface, "\n------\n");
+        VBoxVidPnDumpMonitorModeSet("MonModeSet: --------\n", pDevExt, VidPnTargetId, "\n------\n");
         NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hVidPnModeSet);
         Assert(tmpStatus == STATUS_SUCCESS);
         return Status;
@@ -907,6 +915,10 @@ static NTSTATUS vboxVidPnApplyInfoForPathSource(PVBOXMP_DEVEXT pDevExt,
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxVidPnSourceModeSetFromArray failed Status(0x%x)", Status));
+        vboxVidPnDumpVidPn("\nVidPn: ---------\n", pDevExt, hVidPn, pVidPnInterface, "\n------\n");
+        VBoxVidPnDumpMonitorModeSet("MonModeSet: --------\n", pDevExt, VidPnTargetId, "\n------\n");
+        NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hVidPnModeSet);
+        Assert(tmpStatus == STATUS_SUCCESS);
         return Status;
     }
 
@@ -914,6 +926,8 @@ static NTSTATUS vboxVidPnApplyInfoForPathSource(PVBOXMP_DEVEXT pDevExt,
     if (!NT_SUCCESS(Status))
     {
         WARN(("\n\n!!!!!!!\n\n pfnAssignSourceModeSet failed, Status(0x%x)", Status));
+        vboxVidPnDumpVidPn("\nVidPn: ---------\n", pDevExt, hVidPn, pVidPnInterface, "\n------\n");
+        VBoxVidPnDumpMonitorModeSet("MonModeSet: --------\n", pDevExt, VidPnTargetId, "\n------\n");
         NTSTATUS tmpStatus = pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hVidPnModeSet);
         Assert(tmpStatus == STATUS_SUCCESS);
         return Status;
@@ -1751,6 +1765,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
         if (!NT_SUCCESS(Status))
         {
             WARN(("vboxVidPnCollectInfoForPathTarget failed Status(0x%x\n", Status));
+            VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
             break;
         }
 
@@ -1766,6 +1781,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
         if (!NT_SUCCESS(Status))
         {
             WARN(("vboxVidPnCollectInfoForPathSource failed Status(0x%x\n", Status));
+            VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
             break;
         }
 
@@ -1781,6 +1797,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
     if (!NT_SUCCESS(Status))
     {
         WARN(("PathIter failed Status()0x%x\n", Status));
+        VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
         goto done;
     }
 
@@ -1823,6 +1840,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
             if (!NT_SUCCESS(Status))
             {
                 WARN(("pfnUpdatePathSupportInfo failed Status()0x%x\n", Status));
+                VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
                 goto done;
             }
         }
@@ -1839,6 +1857,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
         if (!NT_SUCCESS(Status))
         {
             WARN(("vboxVidPnApplyInfoForPathTarget failed Status(0x%x\n", Status));
+            VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
             break;
         }
 
@@ -1852,6 +1871,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
         if (!NT_SUCCESS(Status))
         {
             WARN(("vboxVidPnApplyInfoForPathSource failed Status(0x%x\n", Status));
+            VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
             break;
         }
     }
@@ -1865,6 +1885,7 @@ NTSTATUS VBoxVidPnCofuncModality(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, 
     if (!NT_SUCCESS(Status))
     {
         WARN(("PathIter failed Status()0x%x\n", Status));
+        VBoxVidPnDumpCofuncModalityInfo("Modality Info: ", enmPivot, pPivot, "\n");
         goto done;
     }
 
@@ -2479,6 +2500,20 @@ const char* vboxVidPnDumpStrColorBasis(const D3DKMDT_COLOR_BASIS ColorBasis)
     }
 }
 
+const char * vboxVidPnDumpStrMonCapabilitiesOrigin(D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin)
+{
+    switch (enmOrigin)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_DEFAULTMONITORPROFILE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_MONITORDESCRIPTOR);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_MONITORDESCRIPTOR_REGISTRYOVERRIDE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_SPECIFICCAP_REGISTRYOVERRIDE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MCO_DRIVER);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
 const char* vboxVidPnDumpStrPvam(D3DKMDT_PIXEL_VALUE_ACCESS_MODE PixelValueAccessMode)
 {
     switch (PixelValueAccessMode)
@@ -2737,7 +2772,7 @@ void vboxVidPnDumpGammaRamp(const char *pPrefix, const D3DKMDT_GAMMA_RAMP *pGamm
             pSuffix));
 }
 
-void vboxVidPnDumpSourceMode(const char *pPrefix, const D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, const char *pSuffix)
+void VBoxVidPnDumpSourceMode(const char *pPrefix, const D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, const char *pSuffix)
 {
     LOGREL_EXACT(("%sType(%s), ", pPrefix, vboxVidPnDumpStrSourceModeType(pVidPnSourceModeInfo->Type)));
     vboxVidPnDumpRegion("surf(", &pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize, "), ");
@@ -2757,11 +2792,82 @@ void vboxVidPnDumpSignalInfo(const char *pPrefix, const D3DKMDT_VIDEO_SIGNAL_INF
     LOGREL_EXACT(("PixelRate(%d), ScanLineOrdering(%s)%s", pVideoSignalInfo->PixelRate, vboxVidPnDumpStrScanLineOrdering(pVideoSignalInfo->ScanLineOrdering), pSuffix));
 }
 
-void vboxVidPnDumpTargetMode(const char *pPrefix, const D3DKMDT_VIDPN_TARGET_MODE* CONST  pVidPnTargetModeInfo, const char *pSuffix)
+void VBoxVidPnDumpTargetMode(const char *pPrefix, const D3DKMDT_VIDPN_TARGET_MODE* CONST  pVidPnTargetModeInfo, const char *pSuffix)
 {
     LOGREL_EXACT(("%s", pPrefix));
+    LOGREL_EXACT(("ID: %d, ", pVidPnTargetModeInfo->Id));
     vboxVidPnDumpSignalInfo("VSI: ", &pVidPnTargetModeInfo->VideoSignalInfo, ", ");
     LOGREL_EXACT(("Preference(%s)%s", vboxVidPnDumpStrModePreference(pVidPnTargetModeInfo->Preference), pSuffix));
+}
+
+void VBoxVidPnDumpMonitorMode(const char *pPrefix, const D3DKMDT_MONITOR_SOURCE_MODE *pVidPnModeInfo, const char *pSuffix)
+{
+    LOGREL_EXACT(("%s", pPrefix));
+
+    LOGREL_EXACT(("ID: %d, ", pVidPnModeInfo->Id));
+
+    vboxVidPnDumpSignalInfo("VSI: ", &pVidPnModeInfo->VideoSignalInfo, ", ");
+
+    LOGREL_EXACT(("ColorBasis: %s, ", vboxVidPnDumpStrColorBasis(pVidPnModeInfo->ColorBasis)));
+
+    vboxVidPnDumpRanges("Ranges: ", &pVidPnModeInfo->ColorCoeffDynamicRanges, ", ");
+
+    LOGREL_EXACT(("MonCapOr: %s, ", vboxVidPnDumpStrMonCapabilitiesOrigin(pVidPnModeInfo->Origin)));
+
+    LOGREL_EXACT(("Preference(%s)%s", vboxVidPnDumpStrModePreference(pVidPnModeInfo->Preference), pSuffix));
+}
+
+NTSTATUS VBoxVidPnDumpMonitorModeSet(const char *pPrefix, PVBOXMP_DEVEXT pDevExt, uint32_t u32Target, const char *pSuffix)
+{
+    LOGREL_EXACT(("%s Tgt[%d]\n", pPrefix, u32Target));
+
+    NTSTATUS Status;
+    CONST DXGK_MONITOR_INTERFACE *pMonitorInterface;
+    Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryMonitorInterface(pDevExt->u.primary.DxgkInterface.DeviceHandle, DXGK_MONITOR_INTERFACE_VERSION_V1, &pMonitorInterface);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("DxgkCbQueryMonitorInterface failed, Status()0x%x", Status));
+        return Status;
+    }
+
+    D3DKMDT_HMONITORSOURCEMODESET hVidPnModeSet;
+    CONST DXGK_MONITORSOURCEMODESET_INTERFACE *pVidPnModeSetInterface;
+
+    Status = pMonitorInterface->pfnAcquireMonitorSourceModeSet(pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                                        u32Target,
+                                        &hVidPnModeSet,
+                                        &pVidPnModeSetInterface);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("DxgkCbQueryMonitorInterface failed, Status()0x%x", Status));
+        return Status;
+    }
+
+    VBOXVIDPN_MONITORMODE_ITER Iter;
+    const D3DKMDT_MONITOR_SOURCE_MODE *pVidPnModeInfo;
+
+    VBoxVidPnMonitorModeIterInit(&Iter, hVidPnModeSet, pVidPnModeSetInterface);
+
+    while ((pVidPnModeInfo = VBoxVidPnMonitorModeIterNext(&Iter)) != NULL)
+    {
+        VBoxVidPnDumpMonitorMode("MonitorMode: ",pVidPnModeInfo, "\n");
+    }
+
+    VBoxVidPnMonitorModeIterTerm(&Iter);
+
+    Status = VBoxVidPnMonitorModeIterStatus(&Iter);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("iter status failed %#x", Status));
+    }
+
+    NTSTATUS tmpStatus = pMonitorInterface->pfnReleaseMonitorSourceModeSet(pDevExt->u.primary.DxgkInterface.DeviceHandle, hVidPnModeSet);
+    if (!NT_SUCCESS(tmpStatus))
+        WARN(("pfnReleaseMonitorSourceModeSet failed tmpStatus(0x%x)", tmpStatus));
+
+    LOGREL_EXACT(("%s", pSuffix));
+
+    return Status;
 }
 
 void vboxVidPnDumpPinnedSourceMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
@@ -2782,7 +2888,7 @@ void vboxVidPnDumpPinnedSourceMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
         Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_NOT_PINNED);
         if (Status == STATUS_SUCCESS)
         {
-            vboxVidPnDumpSourceMode("Source Pinned: ", pPinnedVidPnSourceModeInfo, "\n");
+            VBoxVidPnDumpSourceMode("Source Pinned: ", pPinnedVidPnSourceModeInfo, "\n");
             pCurVidPnSourceModeSetInterface->pfnReleaseModeInfo(hCurVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
         }
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
@@ -2805,7 +2911,7 @@ void vboxVidPnDumpPinnedSourceMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
 DECLCALLBACK(BOOLEAN) vboxVidPnDumpSourceModeSetEnum(D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
         const D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, PVOID pContext)
 {
-    vboxVidPnDumpSourceMode("SourceMode: ", pNewVidPnSourceModeInfo, "\n");
+    VBoxVidPnDumpSourceMode("SourceMode: ", pNewVidPnSourceModeInfo, "\n");
     return TRUE;
 }
 
@@ -2843,7 +2949,7 @@ void vboxVidPnDumpSourceModeSet(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hVi
 DECLCALLBACK(BOOLEAN) vboxVidPnDumpTargetModeSetEnum(D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
         const D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo, PVOID pContext)
 {
-    vboxVidPnDumpTargetMode("TargetMode: ", pNewVidPnTargetModeInfo, "\n");
+    VBoxVidPnDumpTargetMode("TargetMode: ", pNewVidPnTargetModeInfo, "\n");
     return TRUE;
 }
 
@@ -2897,7 +3003,7 @@ void vboxVidPnDumpPinnedTargetMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
         Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_NOT_PINNED);
         if (Status == STATUS_SUCCESS)
         {
-            vboxVidPnDumpTargetMode("Target Pinned: ", pPinnedVidPnTargetModeInfo, "\n");
+            VBoxVidPnDumpTargetMode("Target Pinned: ", pPinnedVidPnTargetModeInfo, "\n");
             pCurVidPnTargetModeSetInterface->pfnReleaseModeInfo(hCurVidPnTargetModeSet, pPinnedVidPnTargetModeInfo);
         }
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
@@ -2914,6 +3020,12 @@ void vboxVidPnDumpPinnedTargetMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
     {
         LOGREL_EXACT(("ERROR getting TargetModeSet(0x%x)\n", Status));
     }
+}
+
+void VBoxVidPnDumpCofuncModalityInfo(const char *pPrefix, D3DKMDT_ENUMCOFUNCMODALITY_PIVOT_TYPE enmEnumPivotType, const DXGK_ENUM_PIVOT *pPivot, const char *pSuffix)
+{
+    LOGREL_EXACT(("%sPivotType(%s), SourceId(0x%x), TargetId(0x%x),%s", pPrefix, vboxVidPnDumpStrCFMPivotType(enmEnumPivotType),
+            pPivot->VidPnSourceId, pPivot->VidPnTargetId, pSuffix));
 }
 
 void vboxVidPnDumpCofuncModalityArg(const char *pPrefix, CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* CONST  pEnumCofuncModalityArg, const char *pSuffix)
