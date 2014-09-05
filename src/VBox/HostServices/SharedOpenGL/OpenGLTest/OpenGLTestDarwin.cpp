@@ -50,10 +50,20 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
        let's cache the result and assume that renderers amount value is constant. Also prevent threads race
        on startup. */
 
-    static bool volatile fState = false;
-    if (!ASMAtomicCmpXchgBool(&fState, true, false))
+#define VBOX_OGL_CHECK_UNINITIALIZED    (0)
+#define VBOX_OGL_CHECK_INITIALIZING     (1)
+#define VBOX_OGL_CHECK_INITIALIZED      (2)
+
+    /* Transition VBOX_OGL_CHECK_UNINITIALIZED -> VBOX_OGL_CHECK_INITIALIZING means the current thread
+       is the first one who entered the routine. In this case, it should detect number of GPUs, cache result
+       and return it. If it's not TRUE, then fInitialized is VBOX_OGL_CHECK_INITIALIZING (another thread is performing
+       the check; current thread should wait till result will be cached and return it) or VBOX_OGL_CHECK_INITIALIZED
+       (result is already cached; just return it.) */
+
+    static uint8_t volatile fInitialized = VBOX_OGL_CHECK_UNINITIALIZED;
+    if (!ASMAtomicCmpXchgU8(&fInitialized, VBOX_OGL_CHECK_INITIALIZING, VBOX_OGL_CHECK_UNINITIALIZED))
     {
-        while (ASMAtomicReadBool(&fState) != true)
+        while (ASMAtomicReadU8(&fInitialized) != VBOX_OGL_CHECK_INITIALIZED)
             RTThreadSleep(5);
 
         return fAppropriate;
@@ -93,6 +103,8 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
     }
 
     LogRel(("OpenGL: Offline rendering support is %s (PID=%d)\n", fAppropriate ? "ON" : "OFF", (int)getpid()));
+
+    ASMAtomicWriteU8(&fInitialized, VBOX_OGL_CHECK_INITIALIZED);
 
     return fAppropriate;
 }
