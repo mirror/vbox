@@ -60,10 +60,10 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
        the check; current thread should wait till result will be cached and return it) or VBOX_OGL_CHECK_INITIALIZED
        (result is already cached; just return it.) */
 
-    static uint8_t volatile fInitialized = VBOX_OGL_CHECK_UNINITIALIZED;
-    if (!ASMAtomicCmpXchgU8(&fInitialized, VBOX_OGL_CHECK_INITIALIZING, VBOX_OGL_CHECK_UNINITIALIZED))
+    static uint32_t volatile fInitialized = VBOX_OGL_CHECK_UNINITIALIZED;
+    if (!ASMAtomicCmpXchgU32(&fInitialized, VBOX_OGL_CHECK_INITIALIZING, VBOX_OGL_CHECK_UNINITIALIZED))
     {
-        while (ASMAtomicReadU8(&fInitialized) != VBOX_OGL_CHECK_INITIALIZED)
+        while (ASMAtomicReadU32(&fInitialized) != VBOX_OGL_CHECK_INITIALIZED)
             RTThreadSleep(5);
 
         return fAppropriate;
@@ -104,7 +104,7 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
 
     LogRel(("OpenGL: Offline rendering support is %s (PID=%d)\n", fAppropriate ? "ON" : "OFF", (int)getpid()));
 
-    ASMAtomicWriteU8(&fInitialized, VBOX_OGL_CHECK_INITIALIZED);
+    ASMAtomicWriteU32(&fInitialized, VBOX_OGL_CHECK_INITIALIZED);
 
     return fAppropriate;
 }
