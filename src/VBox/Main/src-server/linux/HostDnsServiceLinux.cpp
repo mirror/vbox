@@ -145,6 +145,7 @@ int HostDnsServiceLinux::monitorWorker()
         {
             RT_ZERO(combo);
             ssize_t r = read(polls[0].fd, static_cast<void *>(&combo), sizeof(combo));
+            NOREF(r);
 
             if (combo.e.wd == wd[0])
             {

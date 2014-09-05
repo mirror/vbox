@@ -1400,6 +1400,7 @@ HRESULT SessionMachine::beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
                                             BOOL  aFTakingSnapshotOnline,
                                             com::Utf8Str &aStateFilePath)
 {
+    NOREF(aInitiator);
     LogFlowThisFuncEnter();
 
     LogFlowThisFunc(("aName='%s' aFTakingSnapshotOnline=%RTbool\n", aName.c_str(), aFTakingSnapshotOnline));
