@@ -1043,11 +1043,13 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
  *                              dealing with unsigned system dlls as well as for
  *                              error/logging.
  * @param   pNtViRdr            The reader instance /w flags.
+ * @param   fAvoidWinVerifyTrust Whether to avoid WinVerifyTrust because of
+ *                              deadlock or other loader related dangers.
  * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was used.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  */
 DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pwszName, PSUPHNTVIRDR pNtViRdr,
-                                                  bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
+                                                  bool fAvoidWinVerifyTrust, bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
 {
     if (pfWinVerifyTrust)
         *pfWinVerifyTrust = false;
@@ -1149,7 +1151,8 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
     /*
      * Pass it thru WinVerifyTrust when possible.
      */
-    rc = supHardenedWinVerifyImageTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, rc, pfWinVerifyTrust, pErrInfo);
+    if (!fAvoidWinVerifyTrust)
+        rc = supHardenedWinVerifyImageTrust(pNtViRdr->hFile, pwszName, pNtViRdr->fFlags, rc, pfWinVerifyTrust, pErrInfo);
 #endif
 
 #ifdef IN_SUP_HARDENED_R3
@@ -1173,10 +1176,12 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
  *                              dealing with unsigned system dlls as well as for
  *                              error/logging.
  * @param   fFlags              Flags, SUPHNTVI_F_XXX.
+ * @param   fAvoidWinVerifyTrust Whether to avoid WinVerifyTrust because of
+ *                              deadlock or other loader related dangers.
  * @param   pfWinVerifyTrust    Where to return whether WinVerifyTrust was used.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  */
-DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags,
+DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, bool fAvoidWinVerifyTrust,
                                                   bool *pfWinVerifyTrust, PRTERRINFO pErrInfo)
 {
     /*
@@ -1199,7 +1204,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
             /*
              * Verify it.
              */
-            rc = supHardenedWinVerifyImageByLdrMod(hLdrMod, pwszName, pNtViRdr, pfWinVerifyTrust, pErrInfo);
+            rc = supHardenedWinVerifyImageByLdrMod(hLdrMod, pwszName, pNtViRdr, fAvoidWinVerifyTrust, pfWinVerifyTrust, pErrInfo);
             int rc2 = RTLdrClose(hLdrMod); AssertRC(rc2);
         }
         else
@@ -1244,7 +1249,8 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandleNoName(HANDLE hFile, uint32_t f
     else
         uBuf.UniStr.Buffer = (WCHAR *)L"TODO3";
 
-    return supHardenedWinVerifyImageByHandle(hFile, uBuf.UniStr.Buffer, fFlags, NULL /*pfWinVerifyTrust*/, pErrInfo);
+    return supHardenedWinVerifyImageByHandle(hFile, uBuf.UniStr.Buffer, fFlags, false /*fAvoidWinVerifyTrust*/,
+                                             NULL /*pfWinVerifyTrust*/, pErrInfo);
 }
 #endif /* IN_RING3 */
 

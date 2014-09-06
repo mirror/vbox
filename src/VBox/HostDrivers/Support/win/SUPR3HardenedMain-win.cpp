@@ -1435,7 +1435,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
 
     int  rc;
     bool fWinVerifyTrust = false;
-    rc = supHardenedWinVerifyImageByHandle(hMyFile, uBuf.UniStr.Buffer, fFlags, &fWinVerifyTrust, &ErrInfo);
+    rc = supHardenedWinVerifyImageByHandle(hMyFile, uBuf.UniStr.Buffer, fFlags, fAvoidWinVerifyTrust, &fWinVerifyTrust, &ErrInfo);
     if (RT_FAILURE(rc))
     {
         supR3HardenedError(VINF_SUCCESS, false,
