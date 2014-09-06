@@ -1576,7 +1576,8 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUT
     int rc = VINF_SUCCESS;
     if (!pEntry->fVerified)
     {
-        rc = supHardenedWinVerifyImageByLdrMod(pEntry->hLdrMod, pwszName, pEntry->pNtViRdr, NULL /*pfWinVerifyTrust*/, pErrInfo);
+        rc = supHardenedWinVerifyImageByLdrMod(pEntry->hLdrMod, pwszName, pEntry->pNtViRdr,
+                                               false /*fAvoidWinVerifyTrust*/, NULL /*pfWinVerifyTrust*/, pErrInfo);
         pEntry->fVerified = RT_SUCCESS(rc);
     }
     return rc;
