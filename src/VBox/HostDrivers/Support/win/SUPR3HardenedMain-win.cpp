@@ -2035,11 +2035,11 @@ DECLHIDDEN(void) supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT)
     CLIENT_ID ClientId;
     ClientId.UniqueProcess = (HANDLE)BasicInfo.InheritedFromUniqueProcessId;
     ClientId.UniqueThread  = NULL;
-#if 0 /** @todo fix me later. */
+
     HANDLE hParent;
     rcNt = NtOpenProcess(&hParent, SYNCHRONIZE | PROCESS_QUERY_INFORMATION, &ObjAttr, &ClientId);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedFatalMsg("supR3HardenedWinCreateParentWatcherThread", kSupInitOp_Misc, VERR_GENERAL_FAILUREps,
+        supR3HardenedFatalMsg("supR3HardenedWinCreateParentWatcherThread", kSupInitOp_Misc, VERR_GENERAL_FAILURE,
                               "NtOpenProcess(%p.0) failed: %#x\n", ClientId.UniqueProcess, rcNt);
 
     /*
@@ -2049,7 +2049,6 @@ DECLHIDDEN(void) supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT)
                                RTTHREADTYPE_DEFAULT, 0 /*fFlags*/, "ParentWatcher");
     if (RT_FAILURE(rc))
         supR3HardenedFatal("supR3HardenedWinCreateParentWatcherThread: RTThreadCreate failed: %Rrc\n", rc);
-#endif
 }
 
 
@@ -2705,7 +2704,7 @@ static void supR3HardenedInitSecAttrs(PSECURITY_ATTRIBUTES pSecAttrs, PMYSECURIT
      */
     SUPR3HARDENED_ASSERT_NT_SUCCESS(RtlCreateAcl(&pCleanup->Acl.AclHdr, sizeof(pCleanup->Acl), ACL_REVISION));
 
-    ULONG fDeny  = DELETE | WRITE_DAC | WRITE_OWNER | GENERIC_WRITE | GENERIC_EXECUTE | GENERIC_ALL;
+    ULONG fDeny  = DELETE | WRITE_DAC | WRITE_OWNER;
     ULONG fAllow = SYNCHRONIZE | READ_CONTROL;
     ULONG fAllowLogin = SYNCHRONIZE | READ_CONTROL;
     if (fProcess)
