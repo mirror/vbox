@@ -721,8 +721,9 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi: $(PATH_ROOT)/src/VBox/Frontends/Virtual
 # Edit the version stored in the registry.
 #
 $(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi: $(PATH_SUB_CURRENT)/VBoxKey.wxi $(VBOX_VERSION_STAMP) | $$(dir $$@)
-	$(SED) -e 's/%VER%/$(VBOX_VERSION_STRING_RAW)/' --output $@ $<
-	$(SED) -e 's/%VER_EXT%/$(VBOX_VERSION_STRING)/' --output $@ $<
+	$(SED)	-e 's/%VER%/$(VBOX_VERSION_STRING_RAW)/' \
+		-e 's/%VER_EXT%/$(VBOX_VERSION_STRING)/' \
+		--output $@ $<
 
 #
 # Build the multi-language version of the .MSI installer (final installer).
