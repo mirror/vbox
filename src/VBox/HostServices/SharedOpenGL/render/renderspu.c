@@ -712,7 +712,7 @@ renderspuWindowSize( GLint win, GLint w, GLint h )
         }
     }
     else {
-        crDebug("Render SPU: Attempt to resize invalid window (%d)", win);
+        WARN(("Render SPU: Attempt to resize invalid window (%d)", win));
     }
 }
 

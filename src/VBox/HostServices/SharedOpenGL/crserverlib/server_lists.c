@@ -294,10 +294,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
         newTextures[i] = crStateGetTextureHWID(textures[i]);
     }
 
-    for (i = 0; i < n; ++i)
-    {
-        crDebug("DeleteTexture: %d, pid %d, ctx %d", textures[i], (uint32_t)cr_server.curClient->pid, cr_server.currentCtxInfo->pContext->id);
-    }
+//    for (i = 0; i < n; ++i)
+//    {
+//        crDebug("DeleteTexture: %d, pid %d, ctx %d", textures[i], (uint32_t)cr_server.curClient->pid, cr_server.currentCtxInfo->pContext->id);
+//    }
 
 
     crStateDeleteTextures(n, textures);
