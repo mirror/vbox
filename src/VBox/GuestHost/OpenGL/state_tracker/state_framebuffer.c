@@ -1096,7 +1096,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, id);
-#ifdef DEBUG_misha
+#if 0 //def DEBUG_misha
     crDebug("FB id(%d) hw(%d)", id, pFBO ? pFBO->hwid : 0);
 #endif
     return pFBO ? pFBO->hwid : 0;
