@@ -30,9 +30,7 @@
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
-#ifdef Q_WS_WIN
-# include "UIMachineView.h"
-#endif /* Q_WS_WIN */
+#include "UIMachineView.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
