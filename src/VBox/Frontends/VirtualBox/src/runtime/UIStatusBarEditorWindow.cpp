@@ -205,7 +205,10 @@ UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType type)
     /* Prepare icon for assigned type: */
     const QIcon icon = gpConverter->toIcon(m_type);
     /* Cache button size-hint: */
-    m_size = icon.availableSizes().first();
+    QStyleOptionButton option;
+    option.initFrom(this);
+    const QRect minRect = QApplication::style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option);
+    m_size = icon.availableSizes().first().expandedTo(minRect.size());
     /* Cache pixmap of same size: */
     m_pixmap = icon.pixmap(m_size);
 
@@ -232,15 +235,21 @@ void UIStatusBarEditorButton::paintEvent(QPaintEvent*)
 {
     /* Create style-painter: */
     QStylePainter painter(this);
-    QStyleOption option;
+    /* Prepare option set for check-box: */
+    QStyleOptionButton option;
     option.initFrom(this);
+    /* Use the size of 'this': */
     option.rect = QRect(0, 0, width(), height());
+    /* But do not use hover bit of 'this' since
+     * we already have another hovered-state representation: */
+    if (option.state & QStyle::State_MouseOver)
+        option.state &= ~QStyle::State_MouseOver;
     /* Remember checked-state: */
     if (m_fChecked)
         option.state |= QStyle::State_On;
     /* Draw check-box for hovered-state: */
     if (m_fHovered)
-        painter.drawPrimitive(QStyle::PE_IndicatorCheckBox, option);
+        painter.drawControl(QStyle::CE_CheckBox, option);
     /* Draw pixmap for unhovered-state: */
     else
         painter.drawItemPixmap(option.rect, Qt::AlignCenter, m_pixmap);
