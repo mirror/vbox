@@ -583,7 +583,7 @@ static DECLCALLBACK(int) renderspuWinCmdThreadProc(RTTHREAD ThreadSelf, void *pv
                         pCompositor = renderspuVBoxCompositorAcquire(pWindow);
                         if (pCompositor)
                         {
-                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 0, true);
+                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 0, false);
                             renderspuVBoxCompositorRelease(pWindow);
                         }
                     }
@@ -1996,7 +1996,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, const struct VB
         Status status;
         XEvent event;
         render_spu.self.Flush();
-        renderspuVBoxPresentBlitterEnsureCreated(window, 0);
+//        renderspuVBoxPresentBlitterEnsureCreated(window, 0);
 
         crMemset(&event, 0, sizeof (event));
         event.type = Expose;
