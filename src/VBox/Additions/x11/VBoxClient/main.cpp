@@ -377,16 +377,20 @@ int main(int argc, char *argv[])
         VBClFatalError(("Daemonizing: %Rrc\n", rc));
     if (g_szPidFile[0])
         rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
+    if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
+        return 0;
     if (RT_FAILURE(rc))
         VBClFatalError(("Creating pid-file: %Rrc\n", rc));
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
+#ifndef VBOXCLIENT_WITHOUT_X11
     /* Set an X11 error handler, so that we don't die when we get unavoidable
      * errors. */
     XSetErrorHandler(vboxClientXLibErrorHandler);
     /* Set an X11 I/O error handler, so that we can shutdown properly on
      * fatal errors. */
     XSetIOErrorHandler(vboxClientXLibIOErrorHandler);
+#endif
     rc = (*g_pService)->init(g_pService);
     if (RT_FAILURE(rc))
         VBClFatalError(("Initialising service: %Rrc\n", rc));
