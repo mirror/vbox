@@ -61,6 +61,8 @@ private slots:
 #ifndef RT_OS_DARWIN
     /** Handles menu-bar configuration-change. */
     void sltHandleMenuBarConfigurationChange();
+    /** Handles menu-bar context-menu-request. */
+    void sltHandleMenuBarContextMenuRequest(const QPoint &position);
 #endif /* !RT_OS_DARWIN */
 
     /** Handles status-bar configuration-change. */

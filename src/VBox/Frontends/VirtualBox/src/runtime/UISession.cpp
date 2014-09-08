@@ -1188,16 +1188,31 @@ void UISession::loadSessionSettings()
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
 
+        /* Menu-bar options: */
+        {
+            const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noMenuBar");
+            const bool fEnabledForMachine = gEDataManager->menuBarEnabled(strMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            QAction *pActionMenuBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings);
+            pActionMenuBarSettings->setEnabled(fEnabled);
+            QAction *pActionMenuBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility);
+            pActionMenuBarSwitch->blockSignals(true);
+            pActionMenuBarSwitch->setChecked(fEnabled);
+            pActionMenuBarSwitch->blockSignals(false);
+        }
+
         /* Status-bar options: */
-        const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
-        const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
-        const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
-        QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
-        pActionStatusBarSettings->setEnabled(fEnabled);
-        QAction *pActionStatusBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
-        pActionStatusBarSwitch->blockSignals(true);
-        pActionStatusBarSwitch->setChecked(fEnabled);
-        pActionStatusBarSwitch->blockSignals(false);
+        {
+            const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noStatusBar");
+            const bool fEnabledForMachine = gEDataManager->statusBarEnabled(strMachineID);
+            const bool fEnabled = fEnabledGlobally && fEnabledForMachine;
+            QAction *pActionStatusBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings);
+            pActionStatusBarSettings->setEnabled(fEnabled);
+            QAction *pActionStatusBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility);
+            pActionStatusBarSwitch->blockSignals(true);
+            pActionStatusBarSwitch->setChecked(fEnabled);
+            pActionStatusBarSwitch->blockSignals(false);
+        }
 
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(strMachineID);

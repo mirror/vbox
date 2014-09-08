@@ -80,8 +80,13 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
     /* Do not process if window(s) missed! */
     AssertReturnVoid(isMachineWindowsCreated());
 
-    /* Prevent user from opening another one editor: */
+    /* Make sure menu-bar is enabled: */
+    const bool fEnabled = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked();
+    AssertReturnVoid(fEnabled);
+
+    /* Prevent user from opening another one editor or toggle menu-bar: */
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(false);
+    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setEnabled(false);
     /* Create menu-bar editor: */
     UIMenuBarEditorWindow *pMenuBarEditor = new UIMenuBarEditorWindow(activeMachineWindow(), actionPool());
     AssertPtrReturnVoid(pMenuBarEditor);
@@ -100,8 +105,23 @@ void UIMachineLogicNormal::sltOpenMenuBarSettings()
 
 void UIMachineLogicNormal::sltMenuBarSettingsClosed()
 {
-    /* Allow user to open editor again: */
+    /* Make sure menu-bar is enabled: */
+    const bool fEnabled = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked();
+    AssertReturnVoid(fEnabled);
+
+    /* Allow user to open editor and toggle menu-bar again: */
     actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings)->setEnabled(true);
+    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->setEnabled(true);
+}
+
+void UIMachineLogicNormal::sltToggleMenuBar()
+{
+    /* Do not process if window(s) missed! */
+    AssertReturnVoid(isMachineWindowsCreated());
+
+    /* Invert menu-bar availability option: */
+    const bool fEnabled = gEDataManager->menuBarEnabled(vboxGlobal().managedVMUuid());
+    gEDataManager->setMenuBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
 }
 
 void UIMachineLogicNormal::sltOpenStatusBarSettings()
@@ -195,6 +215,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToScale()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenMenuBarSettings()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility), SIGNAL(triggered(bool)),
+            this, SLOT(sltToggleMenuBar()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
             this, SLOT(sltOpenStatusBarSettings()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),
@@ -261,6 +283,8 @@ void UIMachineLogicNormal::cleanupActionConnections()
                this, SLOT(sltChangeVisualStateToScale()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenMenuBarSettings()));
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility), SIGNAL(triggered(bool)),
+               this, SLOT(sltToggleMenuBar()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings), SIGNAL(triggered(bool)),
                this, SLOT(sltOpenStatusBarSettings()));
     disconnect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), SIGNAL(triggered(bool)),

@@ -41,13 +41,23 @@ private slots:
     /** Checks if some visual-state type was requested. */
     void sltCheckForRequestedVisualStateType();
 
-    /* View menu functionality: */
+    /** Opens menu-bar editor.*/
     void sltOpenMenuBarSettings();
+    /** Handles menu-bar editor closing.*/
     void sltMenuBarSettingsClosed();
+    /** Toggles menu-bar presence.*/
+    void sltToggleMenuBar();
+
+    /** Opens status-bar editor.*/
     void sltOpenStatusBarSettings();
+    /** Handles status-bar editor closing.*/
     void sltStatusBarSettingsClosed();
+    /** Toggles status-bar presence.*/
     void sltToggleStatusBar();
+
+    /** Handles guest-screen toggle requests. */
     void sltHandleActionTriggerViewScreenToggle(int iIndex, bool fEnabled);
+    /** Handles guest-screen resize requests. */
     void sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size);
 
 private:
