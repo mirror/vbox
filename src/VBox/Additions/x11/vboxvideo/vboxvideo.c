@@ -1339,7 +1339,7 @@ static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
         return TRUE;
     }
 #ifdef VBOXVIDEO_13
-    rc = xf86SetSingleMode(pScrn, pMode, 0);
+    rc = xf86SetSingleMode(pScrn, pMode, RR_Rotate_0);
 #else
     VBOXAdjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
     rc = VBOXSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay,
