@@ -867,6 +867,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));

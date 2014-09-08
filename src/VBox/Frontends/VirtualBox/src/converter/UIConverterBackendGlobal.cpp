@@ -581,6 +581,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:           strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:   strResult = "MenuBarSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:     strResult = "ToggleMenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
@@ -609,6 +610,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "AdjustWindow";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
     keys << "MenuBar";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
+    keys << "ToggleMenuBar";     values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
     keys << "StatusBar";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;

@@ -117,8 +117,30 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
 #ifndef RT_OS_DARWIN
 void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange()
 {
+    /* Check whether menu-bar is enabled: */
+    const bool fEnabled = gEDataManager->menuBarEnabled(vboxGlobal().managedVMUuid());
+    /* Update settings action 'enable' state: */
+    QAction *pActionMenuBarSettings = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings);
+    pActionMenuBarSettings->setEnabled(fEnabled);
+    /* Update switch action 'checked' state: */
+    QAction *pActionMenuBarSwitch = actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility);
+    pActionMenuBarSwitch->blockSignals(true);
+    pActionMenuBarSwitch->setChecked(fEnabled);
+    pActionMenuBarSwitch->blockSignals(false);
+
+    /* Update menu-bar visibility: */
+    menuBar()->setVisible(pActionMenuBarSwitch->isChecked());
     /* Update menu-bar: */
     updateMenu();
+
+    /* Normalize geometry without moving: */
+    normalizeGeometry(false /* adjust position */);
+}
+
+void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &position)
+{
+    /* Raise action's context-menu: */
+    actionPool()->action(UIActionIndexRT_M_View_M_MenuBar)->menu()->exec(menuBar()->mapToGlobal(position));
 }
 #endif /* !RT_OS_DARWIN */
 
@@ -137,6 +159,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
 
     /* Update status-bar visibility: */
     statusBar()->setVisible(pActionStatusBarSwitch->isChecked());
+    /* Update status-bar indicators-pool: */
     m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
 
     /* Normalize geometry without moving: */
@@ -213,7 +236,10 @@ void UIMachineWindowNormal::prepareMenu()
     setMenuBar(new UIMenuBar);
     AssertPtrReturnVoid(menuBar());
     {
-        /* Post-configure menu-bar: */
+        /* Configure menu-bar: */
+        menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
+                this, SLOT(sltHandleMenuBarContextMenuRequest(const QPoint&)));
         connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()),
                 this, SLOT(sltHandleMenuBarConfigurationChange()));
         /* Update menu-bar: */
@@ -283,7 +309,7 @@ void UIMachineWindowNormal::loadSettings()
     {
 #ifndef Q_WS_MAC
         /* Update menu-bar visibility: */
-        menuBar()->setHidden(vboxGlobal().settings().isFeatureActive("noMenuBar"));
+        menuBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility)->isChecked());
 #endif /* !Q_WS_MAC */
         /* Update status-bar visibility: */
         statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());

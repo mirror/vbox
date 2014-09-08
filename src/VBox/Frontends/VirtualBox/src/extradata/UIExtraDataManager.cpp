@@ -2488,6 +2488,18 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     setExtraDataStringList(strKey, data, strID);
 }
 
+bool UIExtraDataManager::menuBarEnabled(const QString &strID)
+{
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_MenuBar_Enabled, strID);
+}
+
+void UIExtraDataManager::setMenuBarEnabled(bool fEnabled, const QString &strID)
+{
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_MenuBar_Enabled, toFeatureRestricted(!fEnabled), strID);
+}
+
 UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
 {
     /* Prepare result: */
@@ -3440,7 +3452,8 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
              && strMachineID == vboxGlobal().managedVMUuid())
     {
         /* Status-bar configuration change: */
-        if (strKey == GUI_RestrictedRuntimeMenus ||
+        if (strKey == GUI_MenuBar_Enabled ||
+            strKey == GUI_RestrictedRuntimeMenus ||
 #ifdef Q_WS_MAC
             strKey == GUI_RestrictedRuntimeApplicationMenuActions ||
 #endif /* Q_WS_MAC */

@@ -77,6 +77,7 @@ const char* UIExtraDataDefs::GUI_MachineWindowNamePostfix = "GUI/MachineWindowNa
 const char* UIExtraDataDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
 const char* UIExtraDataDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";
 const char* UIExtraDataDefs::GUI_Geometry_State_Max = "max";
+const char* UIExtraDataDefs::GUI_MenuBar_Enabled = "GUI/MenuBar/Enabled";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 #ifdef Q_WS_MAC
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";

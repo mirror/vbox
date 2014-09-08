@@ -877,6 +877,37 @@ protected:
     }
 };
 
+class UIActionToggleMenuBar : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleMenuBar(UIActionPool *pParent)
+        : UIActionToggle(pParent, ":/menubar_on_16px.png", ":/menubar_16px.png",
+                                  ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("ToggleMenuBar");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Show Menu &Bar"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle menu-bar visibility for this machine"));
+    }
+};
+
 class UIActionMenuStatusBar : public UIActionMenu
 {
     Q_OBJECT;
@@ -1909,6 +1940,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
@@ -2376,6 +2408,8 @@ void UIActionPoolRuntime::updateMenuViewMenuBar()
 
     /* 'Menu Bar Settings' action: */
     addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
+    /* 'Toggle Menu Bar' action: */
+    addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_MenuBar);
