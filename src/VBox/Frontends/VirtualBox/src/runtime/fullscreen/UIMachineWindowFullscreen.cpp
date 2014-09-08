@@ -400,6 +400,9 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         m_pMiniToolBar->show();
         m_pMiniToolBar->adjustGeometry(iHostScreen);
     }
+
+    /* Make sure machine-view have focus: */
+    m_pMachineView->setFocus();
 }
 
 void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)

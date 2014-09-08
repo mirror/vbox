@@ -210,6 +210,9 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         m_pMiniToolBar->adjustGeometry();
     }
 #endif /* !Q_WS_MAC */
+
+    /* Make sure machine-view have focus: */
+    m_pMachineView->setFocus();
 }
 
 #ifndef Q_WS_MAC

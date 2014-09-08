@@ -410,6 +410,9 @@ void UIMachineWindowNormal::showInNecessaryMode()
 
     /* Show in normal mode: */
     show();
+
+    /* Make sure machine-view have focus: */
+    m_pMachineView->setFocus();
 }
 
 /**
