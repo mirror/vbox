@@ -154,6 +154,9 @@ void UIMachineWindowScale::showInNecessaryMode()
 
     /* Show in normal mode: */
     show();
+
+    /* Make sure machine-view have focus: */
+    m_pMachineView->setFocus();
 }
 
 bool UIMachineWindowScale::event(QEvent *pEvent)

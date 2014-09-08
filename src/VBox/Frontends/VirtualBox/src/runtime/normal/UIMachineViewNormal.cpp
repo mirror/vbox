@@ -87,26 +87,6 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         }
     }
 
-#ifdef Q_WS_WIN
-    else if (pWatched != 0 && pWatched == machineWindow()->menuBar())
-    {
-        /* Due to windows host uses separate 'focus set' to let menubar to
-         * operate while popped up (see UIMachineViewNormal::event() for details),
-         * it also requires backward processing: */
-        switch (pEvent->type())
-        {
-            /* If menubar gets the focus while not popped up => give it back: */
-            case QEvent::FocusIn:
-            {
-                if (!QApplication::activePopupWidget())
-                    setFocus();
-            }
-            default:
-                break;
-        }
-    }
-#endif /* Q_WS_WIN */
-
     return UIMachineView::eventFilter(pWatched, pEvent);
 }
 
