@@ -164,6 +164,13 @@ public:
     bool i_VideoAccelAllowed(void);
     void i_VideoAccelVRDP(bool fEnable);
 
+    /* Legacy video acceleration requests coming from the VGA refresh timer. */
+    int  VideoAccelEnableVGA(bool fEnable, VBVAMEMORY *pVbvaMemory);
+
+    /* Legacy video acceleration requests coming from VMMDev. */
+    int  VideoAccelEnableVMMDev(bool fEnable, VBVAMEMORY *pVbvaMemory);
+    void VideoAccelFlushVMMDev(void);
+
     int  i_VideoCaptureStart();
     void i_VideoCaptureStop();
     int  i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
@@ -374,19 +381,21 @@ private:
 
     void i_handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext);
 
-    /* Old guest additions (3.x?) use VMMDev for VBVA and the host VBVA code (VideoAccel*)
-     * can be executed concurrently by VGA refresh timer and the guest VMMDev request
-     * in SMP VMs. The lock serialized this.
+    /* Old guest additions (3.x and older) use both VMMDev and DevVGA refresh timer 
+     * to process the VBVABUFFER memory. Therefore the legacy VBVA (VideoAccel) host
+     * code can be executed concurrently by VGA refresh timer and the guest VMMDev
+     * request in SMP VMs. The semaphore serialized this.
      */
-    RTCRITSECT mVBVALock;
-    volatile uint32_t mfu32PendingVideoAccelDisable;
+    RTSEMXROADS mhXRoadsVideoAccel;
+    int videoAccelEnterVGA(void);
+    void videoAccelLeaveVGA(void);
+    int videoAccelEnterVMMDev(void);
+    void videoAccelLeaveVMMDev(void);
 
-    int  i_vbvaLock(void);
-    void i_vbvaUnlock(void);
+    /* Serializes access to mpVbvaMemory, etc between VRDP and Display. */
+    RTCRITSECT mVideoAccelLock;
 
 public:
-
-    bool i_vbvaLockIsOwner(void);
 
     static int i_displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData,
                                           uint32_t *pu32Width, uint32_t *pu32Height);
