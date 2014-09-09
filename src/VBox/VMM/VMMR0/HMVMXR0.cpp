@@ -278,6 +278,9 @@ typedef struct VMXTRANSIENT
     bool            fUpdateTscOffsettingAndPreemptTimer;
     /** Whether the VM-exit was caused by a page-fault during delivery of a
      *  contributory exception or a page-fault. */
+    bool            fVectoringDoublePF;
+    /** Whether the VM-exit was caused by a page-fault during delivery of an
+     *  external interrupt or NMI. */
     bool            fVectoringPF;
 } VMXTRANSIENT;
 AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,             sizeof(uint64_t));
@@ -5800,8 +5803,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 if (   uExitVector == X86_XCPT_PF
                     && uIdtVector == X86_XCPT_PF)
                 {
-                    pVmxTransient->fVectoringPF = true;
-                    Log4(("IDT: vcpu[%RU32] Vectoring #PF uCR2=%#RX64\n", pVCpu->idCpu, pMixedCtx->cr2));
+                    pVmxTransient->fVectoringDoublePF = true;
+                    Log4(("IDT: vcpu[%RU32] Vectoring Double #PF uCR2=%#RX64\n", pVCpu->idCpu, pMixedCtx->cr2));
                 }
                 else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & HMVMX_CONTRIBUTORY_XCPT_MASK)
                          && hmR0VmxIsContributoryXcpt(uExitVector)
@@ -5813,8 +5816,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 else if (uIdtVector == X86_XCPT_DF)
                     enmReflect = VMXREFLECTXCPT_TF;
             }
-            else if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                     || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+            else if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
                      || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
             {
                 /*
@@ -5822,6 +5824,12 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                  * privileged software exception (#DB from ICEBP) as they reoccur when restarting the instruction.
                  */
                 enmReflect = VMXREFLECTXCPT_XCPT;
+
+                if (uExitVector == X86_XCPT_PF)
+                {
+                    pVmxTransient->fVectoringPF = true;
+                    Log4(("IDT: vcpu[%RU32] Vectoring #PF due to Ext-Int/NMI. uCR2=%#RX64\n", pVCpu->idCpu, pMixedCtx->cr2));
+                }
             }
         }
         else if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
@@ -7186,10 +7194,16 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
+    /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
+       and if we're injecting an event we should have a TRPM trap pending. */
+    Assert(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu));
+    Assert(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu));
+
     /* Save guest state and restore host state bits. */
     int rc = hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+    /* Thread-context hooks are unregistered at this point!!! */
 
     /* Sync recompiler state. */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
@@ -8677,6 +8691,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     HMVMXCPU_GST_RESET_TO(pVCpu, 0);                            /* Exits/longjmps to ring-3 requires saving the guest state. */
     pVmxTransient->fVmcsFieldsRead     = 0;                     /* Transient fields need to be read from the VMCS. */
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */
+    pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
@@ -11962,7 +11977,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     if (pVM->hm.s.fNestedPaging)
     {
         pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory or vectoring #PF. */
-        if (RT_LIKELY(!pVmxTransient->fVectoringPF))
+        if (RT_LIKELY(!pVmxTransient->fVectoringDoublePF))
         {
             pMixedCtx->cr2 = pVmxTransient->uExitQualification;  /* Update here in case we go back to ring-3 before injection. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
@@ -11981,6 +11996,14 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     Assert(!pVM->hm.s.fNestedPaging);
     NOREF(pVM);
 #endif
+
+    /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
+       of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{}. */
+    if (pVmxTransient->fVectoringPF)
+    {
+        Assert(pVCpu->hm.s.Event.fPending);
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
+    }
 
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
@@ -12008,7 +12031,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     }
     else if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        if (!pVmxTransient->fVectoringPF)
+        if (!pVmxTransient->fVectoringDoublePF)
         {
             /* It's a guest page fault and needs to be reflected to the guest. */
             uint32_t uGstErrorCode = TRPMGetErrorCode(pVCpu);

@@ -217,6 +217,9 @@ typedef struct SVMTRANSIENT
     bool            fRestoreTscAuxMsr;
     /** Whether the #VMEXIT was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
+    bool            fVectoringDoublePF;
+    /** Whether the VM-exit was caused by a page-fault during delivery of an
+     *  external interrupt or NMI. */
     bool            fVectoringPF;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode,             sizeof(uint64_t));
@@ -2208,6 +2211,11 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
+    /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
+       and if we're injecting an event we should have a TRPM trap pending. */
+    Assert(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu));
+    Assert(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu));
+
     /* Sync. the necessary state for going back to ring-3. */
     hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
@@ -3219,6 +3227,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
 
     pSvmTransient->u64ExitCode  = pVmcb->ctrl.u64ExitCode;      /* Save the #VMEXIT reason. */
     HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmcb->ctrl.u64ExitCode);     /* Update the #VMEXIT history array. */
+    pSvmTransient->fVectoringDoublePF = false;                  /* Vectoring double page-fault needs to be determined later. */
     pSvmTransient->fVectoringPF = false;                        /* Vectoring page-fault needs to be determined later. */
 
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
@@ -4054,8 +4063,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 if (   uExitVector == X86_XCPT_PF
                     && uIdtVector  == X86_XCPT_PF)
                 {
-                    pSvmTransient->fVectoringPF = true;
-                    Log4(("IDT: Vectoring #PF uCR2=%#RX64\n", pCtx->cr2));
+                    pSvmTransient->fVectoringDoublePF = true;
+                    Log4(("IDT: Vectoring double #PF uCR2=%#RX64\n", pCtx->cr2));
                 }
                 else if (   (pVmcb->ctrl.u32InterceptException & HMSVM_CONTRIBUTORY_XCPT_MASK)
                          && hmR0SvmIsContributoryXcpt(uExitVector)
@@ -4084,12 +4093,23 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 enmReflect = SVMREFLECTXCPT_XCPT;
             }
         }
-        else if (pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT)
+        else if (   pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXTERNAL_IRQ
+                 || pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI)
         {
-            /* Ignore software interrupts (INT n) as they reoccur when restarting the instruction. */
             enmReflect = SVMREFLECTXCPT_XCPT;
             fReflectingNmi = RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI);
+
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
+            {
+                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+                if (uExitVector == X86_XCPT_PF)
+                {
+                    pSvmTransient->fVectoringPF = true;
+                    Log4(("IDT: Vectoring #PF due to Ext-Int/NMI. uCR2=%#RX64\n", pCtx->cr2));
+                }
+            }
         }
+        /* else: Ignore software interrupts (INT n) as they reoccur when restarting the instruction. */
 
         switch (enmReflect)
         {
@@ -5043,7 +5063,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     if (pVM->hm.s.fNestedPaging)
     {
         pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
-        if (!pSvmTransient->fVectoringPF)
+        if (!pSvmTransient->fVectoringDoublePF)
         {
             /* A genuine guest #PF, reflect it to the guest. */
             hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
@@ -5093,6 +5113,14 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Log4(("#PF: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
           pCtx->rip, u32ErrCode, pCtx->cr3));
 
+    /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
+       of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{}. */
+    if (pSvmTransient->fVectoringPF)
+    {
+        Assert(pVCpu->hm.s.Event.fPending);
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
+    }
+
     TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
     int rc = PGMTrap0eHandler(pVCpu, u32ErrCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
 
@@ -5110,7 +5138,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     {
         pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
 
-        if (!pSvmTransient->fVectoringPF)
+        if (!pSvmTransient->fVectoringDoublePF)
         {
             /* It's a guest page fault and needs to be reflected to the guest. */
             u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
