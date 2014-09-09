@@ -204,7 +204,7 @@ class UIActionMenuKeyboard : public UIActionMenu
 public:
 
     UIActionMenuKeyboard(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent, ":/keyboard_16px.png") {}
 
 protected:
 
@@ -2184,29 +2184,13 @@ void UIActionPoolRuntime::updateMenuMachine()
     }
 
     /* 'Keyboard' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard), false) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard)) || fSeparator;
     updateMenuMachineKeyboard();
-    /* 'Keyboard Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)) || fSeparator;
     /* 'Mouse' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Mouse), false) || fSeparator;
     updateMenuMachineMouse();
     /* 'Mouse Integration' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration)) || fSeparator;
-
-    /* Separator: */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-    /* 'Type CAD' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCAD)) || fSeparator;
-#ifdef Q_WS_X11
-    /* 'Type CABS' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCABS)) || fSeparator;
-#endif /* Q_WS_X11 */
 
     /* Separator: */
     if (fSeparator)
@@ -2250,8 +2234,25 @@ void UIActionPoolRuntime::updateMenuMachineKeyboard()
     /* Clear contents: */
     pMenu->clear();
 
+    /* Separator: */
+    bool fSeparator = false;
+
     /* 'Keyboard Settings' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Type CAD' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCAD)) || fSeparator;
+#ifdef Q_WS_X11
+    /* 'Type CABS' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TypeCABS)) || fSeparator;
+#endif /* Q_WS_X11 */
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Machine_M_Keyboard);
@@ -2575,13 +2576,13 @@ void UIActionPoolRuntime::updateMenuDevices()
     updateMenuDevicesUSBDevices();
     /* 'Web Cams' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_WebCams)) || fSeparator;
+    /* 'Shared Folders' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
+    updateMenuDevicesSharedFolders();
     /* 'Shared Clipboard' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedClipboard)) || fSeparator;
     /* 'Drag&Drop' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_DragAndDrop)) || fSeparator;
-    /* 'Shared Folders' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
-    updateMenuDevicesSharedFolders();
 
     /* Separator: */
     if (fSeparator)
@@ -2635,8 +2636,18 @@ void UIActionPoolRuntime::updateMenuDevicesNetwork()
     /* Clear contents: */
     pMenu->clear();
 
+    /* Separator: */
+    bool fSeparator = false;
+
     /* 'Network Settings' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Network_S_Settings));
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_Network_S_Settings)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
 
     /* This menu always remains invalid.. */
 }
@@ -2649,8 +2660,18 @@ void UIActionPoolRuntime::updateMenuDevicesUSBDevices()
     /* Clear contents: */
     pMenu->clear();
 
+    /* Separator: */
+    bool fSeparator = false;
+
     /* 'USB Devices Settings' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings));
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
 
     /* This menu always remains invalid.. */
 }
@@ -2678,10 +2699,21 @@ void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
     /* Clear contents: */
     pMenu->clear();
 
+    /* Separator: */
+    bool fSeparator = false;
+
     /* 'Video Capture Settings' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
     /* 'Start Video Capture' action: */
-    addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_VideoCapture);

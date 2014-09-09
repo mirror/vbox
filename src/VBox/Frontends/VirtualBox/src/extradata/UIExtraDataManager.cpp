@@ -2616,7 +2616,6 @@ UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restricted
     /* Defaults: */
     if (result == UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
     {
-        result = static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(result | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings);
         result = static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(result | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState);
         result = static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(result | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff);
     }
@@ -2728,7 +2727,6 @@ UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restricted
     if (result == UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid)
     {
         result = static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(result | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
-        result = static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(result | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders);
     }
     /* Return result: */
     return result;
