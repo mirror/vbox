@@ -966,6 +966,64 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 
         LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
 
+        if (so->so_state & SS_ISFCONNECTING)
+        {
+            bool reject = false;
+#if !defined(RT_OS_WINDOWS)
+            {
+                /*
+                 * Failed connect(2) is reported by poll(2) on
+                 * different OSes with different combinations of
+                 * POLLERR, POLLHUP, and POLLOUT.
+                 */
+                if (   CHECK_FD_SET(so, NetworkEvents, closefds) /* POLLHUP */
+                    || CHECK_FD_SET(so, NetworkEvents, rderr))   /* POLLERR */
+                {
+                    reject = true;
+                }
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
+                else if (CHECK_FD_SET(so, NetworkEvents, writefds)) /* POLLOUT */
+                {
+                    /* Solaris and NetBSD report plain POLLOUT even on error */
+                    int sockerr;
+                    socklen_t optlen = (socklen_t)sizeof(sockerr);
+                    ret = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &sockerr, &optlen);
+                    if (ret < 0)
+                        sockerr = ENETDOWN;
+                    if (sockerr != 0)
+                        reject = true;
+                }
+#endif
+            }
+#else  /* RT_OS_WINDOWS */
+            {
+                /*
+                 * XXX: CHECK_FD_SET is defined to return false when
+                 * there's an error pending, which makes it unusable
+                 * here.
+                 */
+                if (   (NetworkEvents.lNetworkEvents & FD_CONNECT)
+                    && NetworkEvents.iErrorCode[FD_CONNECT_BIT] != 0)
+                {
+                    reject = true;
+                }
+            }
+#endif
+            if (reject)
+            {
+                /* "continue" tcp_input() to reject connection from guest */
+                so->so_state = SS_NOFDREF;
+                TCP_INPUT(pData, NULL, 0, so);
+                ret = slirpVerifyAndFreeSocket(pData, so);
+                Assert(ret == 1); /* freed */
+                CONTINUE(tcp);
+            }
+
+            /*
+             * XXX: For now just fall through to the old code to
+             * handle successful connect(2).
+             */
+        }
 
         /*
          * Check for URG data
