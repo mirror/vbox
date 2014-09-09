@@ -3190,6 +3190,7 @@ static void supR3HardNtPuChUnmapDllFromChild(PSUPR3HARDNTPUCH pThis, PVOID pvBas
 {
     if (pvBase)
     {
+        /*SUP_DPRINTF(("supR3HardNtPuChUnmapDllFromChild: Calling NtUnmapViewOfSection on %p / %s\n", pvBase, pszShort));*/
         NTSTATUS rcNt = NtUnmapViewOfSection(pThis->hProcess, pvBase);
         if (!NT_SUCCESS(!rcNt))
             SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: NtUnmapViewOfSection failed on %s: %#x (%p)\n",
@@ -3236,6 +3237,7 @@ static PVOID supR3HardNtPuChMapDllIntoChild(PSUPR3HARDNTPUCH pThis, PUNICODE_STR
         if (NT_SUCCESS(rcNt))
         {
             SIZE_T cbView = 0;
+            SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: mapping view of %s\n", pszShort)); /* For SEP. */
             rcNt = NtMapViewOfSection(hSection, pThis->hProcess, &pvRet, 0 /*ZeroBits*/, 0 /*CommitSize*/,
                                       NULL /*pOffSect*/, &cbView, ViewShare, 0 /*AllocationType*/, PAGE_READWRITE);
             if (NT_SUCCESS(rcNt))
@@ -3311,9 +3313,20 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      * To further muddle the waters, we map the executable image and ntdll.dll
      * a 2nd time into the process before we actually start executing the thread
      * and trigger the genuine image load events.
+     *
+     * Update: Turns out Symantec Endpoint Protection deadlocks when we map the
+     *         executable into the process like this.  The system only works
+     *         halfways after that Powerbutton, impossible to shutdown without
+     *         using the power or reset button. The order of the two mappings
+     *         below doesn't matter. Haven't had time to look at stack yet.
+     *         Observed on W7/64, SEP v12.1.4112.4156.
+     *
      */
+#if 0
     PVOID pvExe2 = supR3HardNtPuChMapDllIntoChild(pThis, &g_SupLibHardenedExeNtPath.UniStr, "executable[2nd]");
-
+#else
+    PVOID pvExe2 = NULL;
+#endif
     UNICODE_STRING NtName1 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\ntdll.dll");
     PVOID pvNtDll2 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName1, "ntdll.dll[2nd]");
 
