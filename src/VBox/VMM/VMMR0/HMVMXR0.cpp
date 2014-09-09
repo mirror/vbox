@@ -11998,7 +11998,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 #endif
 
     /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
-       of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{}. */
+       of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{6607}. */
     if (pVmxTransient->fVectoringPF)
     {
         Assert(pVCpu->hm.s.Event.fPending);
