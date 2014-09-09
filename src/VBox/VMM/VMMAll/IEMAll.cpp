@@ -10951,8 +10951,10 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
     if (RT_FAILURE(rc))
         return rc;
 
-    TRPMResetTrap(pVCpu);
-    return IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
+    VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
+    if (rcStrict == VINF_SUCCESS)
+        TRPMResetTrap(pVCpu);
+    return rcStrict;
 #endif
 }
 
