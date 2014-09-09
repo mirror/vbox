@@ -1263,6 +1263,13 @@ void UIIndicatorsPool::cleanup()
     cleanupContents();
 }
 
+void UIIndicatorsPool::contextMenuEvent(QContextMenuEvent *pEvent)
+{
+    /* Do not pass-through context menu events,
+     * otherwise they will raise the underlying status-bar context-menu. */
+    pEvent->accept();
+}
+
 int UIIndicatorsPool::indicatorPosition(IndicatorType indicatorType) const
 {
     int iPosition = 0;
