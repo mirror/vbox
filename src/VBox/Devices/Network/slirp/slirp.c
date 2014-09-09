@@ -966,52 +966,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 
         LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
 
-        /*
-         * It's hard to hide error condition check behind existing
-         * macros without uglifying them further, so open-code it here
-         * instead.
-         */
-        {
-            int pollerr = 0;
-#if defined(RT_OS_WINDOWS)
-            {
-                int bit;
-                for (bit = 0; bit <= FD_CLOSE_BIT; ++bit)
-                {
-                    if (   NetworkEvents.lNetworkEvents & (1 << bit)
-                        && NetworkEvents.iErrorCode[bit] != 0)
-                    {
-                        pollerr = NetworkEvents.iErrorCode[bit];
-                        break;
-                    }
-                }
-            }
-#else
-            if (CHECK_FD_SET(so, NetworkEvents, rderr))
-            {
-                socklen_t optlen = (socklen_t)sizeof(int);
-                ret = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &pollerr, &optlen);
-                if (ret < 0)
-                    pollerr = ENETDOWN;
-            }
-#endif
-            if (pollerr)
-            {
-                if (so->so_state & SS_ISFCONNECTING)
-                {
-                    /* "continue" tcp_input() to reject connection from guest */
-                    so->so_state = SS_NOFDREF;
-                    TCP_INPUT(pData, NULL, 0, so);
-                }
-                else
-                {
-                    tcp_drop(pData, sototcpcb(so), pollerr);
-                }
-                ret = slirpVerifyAndFreeSocket(pData, so);
-                Assert(ret == 1); /* freed */
-                CONTINUE(tcp);
-            }
-        }
 
         /*
          * Check for URG data
@@ -1115,6 +1069,12 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             {
                 /* mark the socket for termination _after_ it was drained */
                 so->so_close = 1;
+                /* No idea about Windows but on Posix, POLLHUP means that we can't send more.
+                 * Actually in the specific error scenario, POLLERR is set as well. */
+#ifndef RT_OS_WINDOWS
+                if (CHECK_FD_SET(so, NetworkEvents, rderr))
+                    sofcantsendmore(so);
+#endif
             }
             if (so_next->so_prev == so)
                 so->fUnderPolling = 0;
