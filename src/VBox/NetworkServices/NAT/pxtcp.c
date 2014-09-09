@@ -1088,32 +1088,64 @@ pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
     pxtcp = (struct pxtcp *)handler->data;
     LWIP_ASSERT1(handler == &pxtcp->pmhdl);
     LWIP_ASSERT1(fd == pxtcp->sock);
+    LWIP_ASSERT1(pxtcp->sockerr == 0);
 
-    if (revents & (POLLNVAL | POLLHUP | POLLERR)) {
-        if (revents & POLLNVAL) {
-            pxtcp->sock = INVALID_SOCKET;
+    if (revents & POLLNVAL) {
+        pxtcp->sock = INVALID_SOCKET;
+        pxtcp->sockerr = ETIMEDOUT;
+        return pxtcp_schedule_reject(pxtcp);
+    }
+
+    /*
+     * Solaris and NetBSD don't report either POLLERR or POLLHUP when
+     * connect(2) fails, just POLLOUT.  In that case we always need to
+     * check SO_ERROR.
+     */
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
+# define CONNECT_CHECK_ERROR POLLOUT
+#else
+# define CONNECT_CHECK_ERROR (POLLERR | POLLHUP)
+#endif
+
+    /*
+     * Check the cause of the failure so that pxtcp_pcb_reject() may
+     * behave accordingly.
+     */
+    if (revents & CONNECT_CHECK_ERROR) {
+        socklen_t optlen = (socklen_t)sizeof(pxtcp->sockerr);
+        int status;
+        SOCKET s;
+
+        status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
+                            (char *)&pxtcp->sockerr, &optlen);
+        if (RT_UNLIKELY(status == SOCKET_ERROR)) { /* should not happen */
+            DPRINTF(("%s: sock %d: SO_ERROR failed: %R[sockerr]\n",
+                     __func__, fd, SOCKERRNO()));
             pxtcp->sockerr = ETIMEDOUT;
         }
         else {
-            socklen_t optlen = (socklen_t)sizeof(pxtcp->sockerr);
-            int status;
-            SOCKET s;
-
-            status = getsockopt(pxtcp->sock, SOL_SOCKET, SO_ERROR,
-                                (char *)&pxtcp->sockerr, &optlen);
-            if (status == SOCKET_ERROR) { /* should not happen */
-                DPRINTF(("%s: sock %d: SO_ERROR failed: %R[sockerr]\n",
-                         __func__, fd, SOCKERRNO()));
-            }
-            else {
+            /* don't spam this log on successful connect(2) */
+            if ((revents & (POLLERR | POLLHUP)) /* we were told it's failed */
+                || pxtcp->sockerr != 0)         /* we determined it's failed */
+            {
                 DPRINTF(("%s: sock %d: connect: %R[sockerr]\n",
                          __func__, fd, pxtcp->sockerr));
             }
+
+            if ((revents & (POLLERR | POLLHUP))
+                && RT_UNLIKELY(pxtcp->sockerr == 0))
+            {
+                /* if we're told it's failed, make sure it's marked as such */
+                pxtcp->sockerr = ETIMEDOUT;
+            }
+        }
+
+        if (pxtcp->sockerr != 0) {
             s = pxtcp->sock;
             pxtcp->sock = INVALID_SOCKET;
             closesocket(s);
+            return pxtcp_schedule_reject(pxtcp);
         }
-        return pxtcp_schedule_reject(pxtcp);
     }
 
     if (revents & POLLOUT) { /* connect is successful */
