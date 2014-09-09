@@ -94,6 +94,9 @@ private:
     /** Cleanup routine. */
     void cleanup();
 
+    /** Context-menu event handler. */
+    void contextMenuEvent(QContextMenuEvent *pEvent);
+
     /** Returns position for passed @a indicatorType. */
     int indicatorPosition(IndicatorType indicatorType) const;
 
