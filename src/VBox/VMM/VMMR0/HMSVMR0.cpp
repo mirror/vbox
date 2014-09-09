@@ -218,7 +218,7 @@ typedef struct SVMTRANSIENT
     /** Whether the #VMEXIT was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
     bool            fVectoringDoublePF;
-    /** Whether the VM-exit was caused by a page-fault during delivery of an
+    /** Whether the #VMEXIT was caused by a page-fault during delivery of an
      *  external interrupt or NMI. */
     bool            fVectoringPF;
 } SVMTRANSIENT, *PSVMTRANSIENT;
