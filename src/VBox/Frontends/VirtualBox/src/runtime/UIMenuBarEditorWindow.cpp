@@ -490,7 +490,7 @@ void UIMenuBarEditorWidget::prepareMenuMachine()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
         pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCAD));
@@ -539,9 +539,9 @@ void UIMenuBarEditorWidget::prepareMenuDevices()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_Network));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_WebCams));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
