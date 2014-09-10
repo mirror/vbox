@@ -153,6 +153,8 @@ static HANDLE           g_hStartupLog = NULL;
 #else
 static int              g_hStartupLog = -1;
 #endif
+/** The number of bytes we've written to the startup log. */
+static uint32_t volatile g_cbStartupLog = 0;
 
 /** The current SUPR3HardenedMain state / location. */
 SUPR3HARDENEDMAINSTATE  g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED;
@@ -993,7 +995,8 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
 {
 #ifdef RT_OS_WINDOWS
-    if (g_hStartupLog)
+    if (   g_hStartupLog != NULL
+        && g_cbStartupLog < 128*_1M)
     {
         char szBuf[5120];
         PCLIENT_ID pSelfId = &((PTEB)NtCurrentTeb())->ClientId;
@@ -1005,6 +1008,8 @@ DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
 
         if (!cch || szBuf[cch - 1] != '\n')
             szBuf[cch++] = '\n';
+
+        ASMAtomicAddU32(&g_cbStartupLog, (uint32_t)cch);
 
         IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         LARGE_INTEGER   Offset;
