@@ -107,10 +107,6 @@ HRESULT Display::FinalConstruct()
     mfu32SupportedOrders = 0;
     mcVideoAccelVRDPRefs = 0;
 
-    mpPendingVbvaMemory = NULL;
-    mfPendingVideoAccelEnable = false;
-
-    mfMachineRunning = false;
 #ifdef VBOX_WITH_CROGL
     mfCrOglDataHidden = false;
 #endif
@@ -1616,25 +1612,6 @@ int Display::i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory)
     if (!i_VideoAccelAllowed ())
         return VERR_NOT_SUPPORTED;
 
-    /*
-     * Verify that the VM is in running state. If it is not,
-     * then this must be postponed until it goes to running.
-     */
-    if (!mfMachineRunning)
-    {
-        Assert (!mfVideoAccelEnabled);
-
-        LogRelFlowFunc(("Machine is not yet running.\n"));
-
-        if (fEnable)
-        {
-            mfPendingVideoAccelEnable = fEnable;
-            mpPendingVbvaMemory = pVbvaMemory;
-        }
-
-        return rc;
-    }
-
     /* Check that current status is not being changed */
     if (mfVideoAccelEnabled == fEnable)
         return rc;
@@ -2170,47 +2147,19 @@ int Display::i_videoAccelRefreshProcess(void)
 
     videoAccelEnterVGA();
 
-    if (mfPendingVideoAccelEnable)
+    if (mfVideoAccelEnabled)
     {
-        /* Acceleration was enabled while machine was not yet running
-         * due to restoring from saved state. Actually enable acceleration.
-         */
-        Assert(mpPendingVbvaMemory);
-
-        /* Acceleration can not be yet enabled.*/
-        Assert(mpVbvaMemory == NULL);
-        Assert(!mfVideoAccelEnabled);
-
-        if (mfMachineRunning)
+        Assert(mpVbvaMemory);
+        rc = i_videoAccelFlush();
+        if (RT_FAILURE(rc))
         {
-            i_videoAccelEnable(mfPendingVideoAccelEnable,
-                               mpPendingVbvaMemory);
-
-            /* Reset the pending state. */
-            mfPendingVideoAccelEnable = false;
-            mpPendingVbvaMemory = NULL;
+            /* Disable on errors. */
+            i_videoAccelEnable(false, NULL);
+            rc = VWRN_INVALID_STATE; /* Do a display update in VGA device. */
         }
-
-        rc = VINF_TRY_AGAIN;
-    }
-    else
-    {
-        Assert(mpPendingVbvaMemory == NULL);
-
-        if (mfVideoAccelEnabled)
+        else
         {
-            Assert(mpVbvaMemory);
-            rc = i_videoAccelFlush();
-            if (RT_FAILURE(rc))
-            {
-                /* Disable on errors. */
-                i_videoAccelEnable(false, NULL);
-                rc = VWRN_INVALID_STATE; /* Do a display update in VGA device. */
-            }
-            else
-            {
-                rc = VINF_SUCCESS;
-            }
+            rc = VINF_SUCCESS;
         }
     }
 
@@ -3523,16 +3472,12 @@ HRESULT Display::handleEvent(const ComPtr<IEvent> &aEvent)
             {
                 LogRelFlowFunc(("Machine is running.\n"));
 
-                mfMachineRunning = true;
-
 #ifdef VBOX_WITH_CROGL
                 i_crOglWindowsShow(true);
 #endif
             }
             else
             {
-                mfMachineRunning = false;
-
 #ifdef VBOX_WITH_CROGL
                 if (machineState == MachineState_Paused)
                     i_crOglWindowsShow(false);

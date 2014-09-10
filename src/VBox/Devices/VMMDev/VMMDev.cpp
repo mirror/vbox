@@ -3443,13 +3443,6 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                                                /*pvShape=*/NULL);
     }
 
-    /* Reestablish the acceleration status. */
-    if (    pThis->u32VideoAccelEnabled
-        &&  pThis->pDrv)
-    {
-        pThis->pDrv->pfnVideoAccelEnable(pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMR3->vbvaMemory);
-    }
-
     if (pThis->fu32AdditionsOk)
     {
         LogRel(("Guest Additions information report: additionsVersion = 0x%08X, osType = 0x%08X\n",
@@ -3496,6 +3489,13 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     int rc = vmmdevHGCMLoadStateDone(pThis, pSSM);
     AssertLogRelRCReturn(rc, rc);
 #endif /* VBOX_WITH_HGCM */
+
+    /* Reestablish the acceleration status. */
+    if (    pThis->u32VideoAccelEnabled
+        &&  pThis->pDrv)
+    {
+        pThis->pDrv->pfnVideoAccelEnable(pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMR3->vbvaMemory);
+    }
 
     VMMDevNotifyGuest(pThis, VMMDEV_EVENT_RESTORED);
 
