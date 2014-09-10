@@ -81,7 +81,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInitFinalize(PVM pVM)
         RT_ZERO(HyperLeaf);
         HyperLeaf.uLeaf        = UINT32_C(0x40000010);
         HyperLeaf.uEax         = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
-        HyperLeaf.uEbx         = uApicFreq / UINT64_C(1000);
+        HyperLeaf.uEbx         = (uApicFreq + 500) / UINT64_C(1000);
         rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
         AssertLogRelRCReturn(rc, rc);
     }
