@@ -3841,6 +3841,11 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     HeapCompact(GetProcessHeap(), 0 /*dwFlags*/);
 
     /*
+     * Enable thread creation at this point so Ctrl-C and Ctrl-Break can be processed.
+     */
+    supR3HardenedWinEnableThreadCreation();
+
+    /*
      * If this is the middle process, wait for both parent and child to quit.
      */
     HANDLE hParent = NULL;
