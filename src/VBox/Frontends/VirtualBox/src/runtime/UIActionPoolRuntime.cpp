@@ -2147,7 +2147,7 @@ void UIActionPoolRuntime::updateMenus()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug));
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug), vboxGlobal().isDebuggerEnabled());
     updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
