@@ -24,9 +24,12 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/string.h>
 
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/tm.h>
+#include <VBox/vmm/pdmapi.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -41,6 +44,38 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
      * Enable the Hypervisor Present.
      */
     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
+
+    /*
+     * Expose a generic hypervisor-agnostic leaf (originally defined VMware).
+     * The leaves range from  0x40000010 to 0x400000FF.
+     */
+    CPUMCPUIDLEAF HyperLeaf;
+    int rc = CPUMR3CpuIdGetLeaf(pVM, &HyperLeaf, 0x40000000, 0 /* uSubLeaf */);
+    if (RT_SUCCESS(rc))
+    {
+        HyperLeaf.uEax         = UINT32_C(0x40000010);  /* Maximum leaf we implement. */
+        rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+        AssertLogRelRCReturn(rc, rc);
+
+        /*
+         * Add the timing information hypervisor leaf.
+         * MacOS X uses this to determine the TSC, bus frequency. See @bugref{7270}.
+         *
+         * EAX - TSC frequency in KHz.
+         * EBX - APIC frequency in KHz.
+         * ECX, EDX - Reserved.
+         */
+        uint64_t uApicFreq;
+        rc = PDMApicGetTimerFreq(pVM, &uApicFreq);
+        AssertLogRelRCReturn(rc, rc);
+
+        RT_ZERO(HyperLeaf);
+        HyperLeaf.uLeaf        = UINT32_C(0x40000010);
+        HyperLeaf.uEax         = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
+        HyperLeaf.uEbx         = uApicFreq / UINT64_C(1000);
+        rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+        AssertLogRelRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
