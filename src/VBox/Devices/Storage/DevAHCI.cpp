@@ -1076,6 +1076,23 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
     else
         pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
 
+    /* We received a COMINIT from the device. Tell the guest. */
+    ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PCS);
+    pAhciPort->regSERR |= AHCI_PORT_SERR_X;
+    pAhciPort->regTFD  |= ATA_STAT_BUSY;
+
+    if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
+    {
+        ahciPostFirstD2HFisIntoMemory(pAhciPort);
+        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
+
+        if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
+        {
+            int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
+    }
+
     pAhciPort->regSSTS = (0x01 << 8)  | /* Interface is active. */
                          (0x03 << 0);   /* Device detected and communication established. */
 
@@ -1093,23 +1110,6 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
         default:
             pAhciPort->regSSTS |= (0x02 << 4); /* Generation 2 (3.0GBps) speed. */
             break;
-    }
-
-    /* We received a COMINIT from the device. Tell the guest. */
-    ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PCS);
-    pAhciPort->regSERR |= AHCI_PORT_SERR_X;
-    pAhciPort->regTFD  |= ATA_STAT_BUSY;
-
-    if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
-    {
-        ahciPostFirstD2HFisIntoMemory(pAhciPort);
-        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
-
-        if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
-        {
-            int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
-            AssertRC(rc);
-        }
     }
 
     ASMAtomicXchgBool(&pAhciPort->fPortReset, false);
@@ -6937,6 +6937,7 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "PortATAPI=%RTbool\n", pThisPort->fATAPI);
         pHlp->pfnPrintf(pHlp, "PortTasksFinished=%#x\n", pThisPort->u32TasksFinished);
         pHlp->pfnPrintf(pHlp, "PortQueuedTasksFinished=%#x\n", pThisPort->u32QueuedTasksFinished);
+        pHlp->pfnPrintf(pHlp, "PortTasksNew=%#x\n", pThisPort->u32TasksNew);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 }
