@@ -64,7 +64,7 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_util.c,v 1.20.8.1 2009/04/15 
 #include "alias.h"
 #include "alias_local.h"
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
 # include <slirp.h>
 # include "alias.h"
 # include "alias_local.h"

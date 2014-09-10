@@ -172,7 +172,7 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_db.c,v 1.71.2.2.4.1 2009/04/1
 #include "alias_local.h"
 #include "alias_mod.h"
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
 # include <iprt/assert.h>
 # include "alias.h"
 # include "alias_local.h"
@@ -2395,7 +2395,7 @@ HouseKeeping(struct libalias *la)
     gettimeofday(&tv, &tz);
     la->timeStamp = tv.tv_sec;
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
     LIBALIAS_LOCK_ASSERT(la);
     la->timeStamp = la->curtime;
 #endif
@@ -2720,7 +2720,7 @@ LibAliasInit(PNATState pData, struct libalias *la)
         if (LIST_EMPTY(&instancehead))
             atexit(finishoff);
 #endif
-#endif /*!VBOX*/
+#endif /* !VBOX */
         LIST_INSERT_HEAD(&instancehead, la, instancelist);
 
 #ifndef VBOX
@@ -2732,7 +2732,7 @@ LibAliasInit(PNATState pData, struct libalias *la)
         la->timeStamp = tv.tv_sec;
         la->lastCleanupTime = tv.tv_sec;
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
         la->pData = pData;
         la->timeStamp = curtime;
         la->lastCleanupTime = curtime;

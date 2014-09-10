@@ -143,7 +143,7 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias.c,v 1.58.2.1.4.1 2009/04/15 0
 #include "alias_local.h"
 #include "alias_mod.h"
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
 # include <slirp.h>
 # include "alias.h"
 # include "alias_local.h"
@@ -1652,7 +1652,7 @@ LibAliasLoadModule(char *path)
     }
 
     LibAliasAttachHandlers(m);
-#else /* !VBOX */
+#else  /* VBOX */
     NOREF(path);
 #endif /* VBOX */
     return (0);
