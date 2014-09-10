@@ -2214,7 +2214,7 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
                  && (hardwareMachine            == c.hardwareMachine)       // this one's deep
                  && (storageMachine             == c.storageMachine)        // this one's deep
                  && (mediaRegistry              == c.mediaRegistry)         // this one's deep
-                 && (mapExtraDataItems          == c.mapExtraDataItems)     // this one's deep
+                 // skip mapExtraDataItems! there is no old state available as it's always forced
                  && (llFirstSnapshot            == c.llFirstSnapshot)       // this one's deep
                )
            );
