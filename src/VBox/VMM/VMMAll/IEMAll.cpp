@@ -10952,8 +10952,14 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
         return rc;
 
     VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
-    if (rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT)
+
+    /** @todo Are there any other codes that imply the event was successfully
+     *        delivered to the guest? See @bugref{6607}.  */
+    if (   rcStrict == VINF_SUCCESS
+        || rcStrict == VINF_IEM_RAISED_XCPT)
+    {
         TRPMResetTrap(pVCpu);
+    }
     return rcStrict;
 #endif
 }
