@@ -2382,6 +2382,7 @@ HouseKeeping(struct libalias *la)
     struct timeval tv;
     struct timezone tz;
 #endif
+#endif /* !VBOX */
 
     LIBALIAS_LOCK_ASSERT(la);
     /*
@@ -2389,6 +2390,7 @@ HouseKeeping(struct libalias *la)
      * by other functions. This is done so as not to unnecessarily
      * waste timeline by making system calls.
      */
+#ifndef VBOX
 #ifdef  _KERNEL
     la->timeStamp = time_uptime;
 #else
@@ -2396,7 +2398,6 @@ HouseKeeping(struct libalias *la)
     la->timeStamp = tv.tv_sec;
 #endif
 #else  /* VBOX */
-    LIBALIAS_LOCK_ASSERT(la);
     la->timeStamp = la->curtime;
 #endif
 
