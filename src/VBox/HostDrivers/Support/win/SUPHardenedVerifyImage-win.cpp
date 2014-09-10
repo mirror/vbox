@@ -1065,27 +1065,36 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      * Check the trusted installer bit first, if requested as it's somewhat
      * cheaper than the rest.
      *
-     * We relax this for system32, like we used to, as there are apparently
-     * some systems out there where the user, admin, or someone has changed the
-     * ownership of core windows DLLs like user32.dll.  Since we need user32.dll
-     * and will be checking it's digital signature, it's reasonably safe to let
-     * this thru. (The report was of SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS
+     * We relax this for system32 and a little for WinSxS, like we used to, as
+     * there are apparently  some systems out there where the user, admin, or
+     * someone has changed the ownership of core windows DLLs like user32.dll
+     * and comctl32.dll.  Since we need user32.dll  and will be checking it's
+     * digital signature, it's reasonably safe to let this thru. (The report
+     * was of SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS
      * owning user32.dll, see public ticket 13187, VBoxStartup.3.log.)
      *
      * We've also had problems with graphics driver components like ig75icd64.dll
      * and atig6pxx.dll not being owned by TrustedInstaller, with the result
      * that 3D got broken (mod by zero issue in test build 5).  These were also
      * SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS.
+     *
+     * In one report by 'thor' the WinSxS resident comctl32.dll was owned by
+     * SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS (with 4.3.16).
      */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))
     {
-        if (!supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
-                                            g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length / sizeof(WCHAR),
-                                            true /*fCheckSlash*/))
+        if (supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
+                                           g_System32NtPath.UniStr.Buffer, g_System32NtPath.UniStr.Length / sizeof(WCHAR),
+                                           true /*fCheckSlash*/))
+            SUP_DPRINTF(("%ls: Relaxing the TrustedInstaller requirement for this DLL (it's in system32).\n", pwszName));
+        else if (supHardViUtf16PathStartsWithEx(pwszName, (uint32_t)RTUtf16Len(pwszName),
+                                                g_WinSxSNtPath.UniStr.Buffer, g_WinSxSNtPath.UniStr.Length / sizeof(WCHAR),
+                                                true /*fCheckSlash*/))
+            SUP_DPRINTF(("%ls: Relaxing the TrustedInstaller requirement for this DLL (it's in WinSxS).\n", pwszName));
+        else
             return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_OWNED_BY_TRUSTED_INSTALLER,
                                  "supHardenedWinVerifyImageByHandle: TrustedInstaller is not the owner of '%ls'.", pwszName);
-        SUP_DPRINTF(("%ls: Relaxing the TrustedInstaller requirement for this DLL (it's in system32).\n", pwszName));
     }
 
     /*
