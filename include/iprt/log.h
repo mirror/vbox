@@ -705,6 +705,38 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
     do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
+/** @def Log2Func
+ * Level 2 logging inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define Log2Func(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define Log2Func(a) \
+    do { Log2((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log2(a); } while (0)
+#endif
+
+/** @def Log3Func
+ * Level 3 logging inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define Log3Func(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define Log3Func(a) \
+    do { Log3((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log3(a); } while (0)
+#endif
+
 /** @def Log4Func
  * Level 4 logging inside C/C++ functions.
  *
@@ -718,7 +750,39 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
     _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log4Func(a) \
-    do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
+    do { Log4((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log4(a); } while (0)
+#endif
+
+/** @def Log5Func
+ * Level 5 logging inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define Log5Func(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define Log5Func(a) \
+    do { Log5((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log5(a); } while (0)
+#endif
+
+/** @def Log6Func
+ * Level 6 logging inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define Log6Func(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define Log6Func(a) \
+    do { Log6((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log6(a); } while (0)
 #endif
 
 /** @def LogThisFunc
