@@ -59,7 +59,7 @@
 /* XXX: LibAliasSetTarget() uses this constant. */
 #define INADDR_NONE 0xffffffff
 #endif
-#else /* !VBOX */
+#else  /* VBOX */
 # include <slirp.h>
 #endif /* VBOX */
 

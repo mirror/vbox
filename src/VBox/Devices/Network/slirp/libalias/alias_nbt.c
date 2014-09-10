@@ -65,13 +65,13 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_nbt.c,v 1.20.8.1 2009/04/15 0
 #include "alias_local.h"
 #include "alias_mod.h"
 #endif
-#else /*VBOX*/
+#else  /* VBOX */
 # include <iprt/ctype.h>
 # include <slirp.h>
 # include "alias_local.h"
 # include "alias_mod.h"
 # define isprint RT_C_IS_PRINT
-#endif /*VBOX*/
+#endif /* VBOX */
 
 #define NETBIOS_NS_PORT_NUMBER 137
 #define NETBIOS_DGM_PORT_NUMBER 138
@@ -169,14 +169,14 @@ struct proto_handler handlers[] = {
     },
     { EOH }
 };
-#else /* !VBOX */
+#else  /* VBOX */
 #define handlers pData->nbt_module
-#endif /*VBOX*/
+#endif /* VBOX */
 
 #ifndef VBOX
 static int
 mod_handler(module_t mod, int type, void *data)
-#else /*!VBOX*/
+#else  /* VBOX */
 static int nbt_alias_handler(PNATState pData, int type);
 
 int
@@ -192,7 +192,7 @@ nbt_alias_unload(PNATState pData)
 }
 static int
 nbt_alias_handler(PNATState pData, int type)
-#endif /*VBOX*/
+#endif /* VBOX */
 {
     int error;
 #ifdef VBOX
@@ -219,7 +219,7 @@ nbt_alias_handler(PNATState pData, int type)
     handlers[2].protohandler = &protohandler2out;
 
     handlers[3].pri = EOH;
-#endif /*VBOX*/
+#endif /* VBOX */
 
     switch (type) {
     case MOD_LOAD:
@@ -253,7 +253,7 @@ static
 moduledata_t alias_mod = {
        "alias_nbt", mod_handler, NULL
 };
-#endif /*!VBOX*/
+#endif /* !VBOX */
 
 #ifdef  _KERNEL
 DECLARE_MODULE(alias_nbt, alias_mod, SI_SUB_DRIVERS, SI_ORDER_SECOND);

@@ -43,7 +43,7 @@ MALLOC_DECLARE(M_ALIAS);
 #define calloc(x, n)    malloc(x*n)
 #define free(x)     free(x, M_ALIAS)
 #endif
-#else /* !VBOX */
+#else /* VBOX */
 # ifdef RT_OS_WINDOWS
 #  undef IN
 #  undef OUT

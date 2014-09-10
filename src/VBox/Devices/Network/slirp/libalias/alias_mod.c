@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_mod.c,v 1.3.8.1 2009/04/15 03
 
 /* Protocol and userland module handlers chains. */
 LIST_HEAD(handler_chain, proto_handler) handler_chain = LIST_HEAD_INITIALIZER(foo);
-#else /* !VBOX */
+#else  /* VBOX */
 # include <slirp.h>
 # include "alias_local.h"
 # include "alias_mod.h"
