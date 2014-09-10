@@ -1011,6 +1011,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                                 rc = REMR3InitFinalize(pVM);
 #endif
                                                                             if (RT_SUCCESS(rc))
+                                                                                rc = GIMR3InitFinalize(pVM);
+                                                                            if (RT_SUCCESS(rc))
                                                                             {
                                                                                 PGMR3MemSetup(pVM, false /*fAtReset*/);
                                                                                 PDMR3MemSetup(pVM, false /*fAtReset*/);
