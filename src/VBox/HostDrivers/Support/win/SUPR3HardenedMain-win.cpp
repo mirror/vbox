@@ -1442,7 +1442,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
                            "supR3HardenedScreenImage/%s: rc=%Rrc fImage=%d fProtect=%#x fAccess=%#x %ls: %s\n",
                            pszCaller, rc, fImage, *pfAccess, *pfProtect, uBuf.UniStr.Buffer, ErrInfo.pszMsg);
         if (hMyFile != hFile)
-            NtClose(hMyFile);
+            supR3HardenedWinVerifyCacheInsert(&uBuf.UniStr, hMyFile, rc, fWinVerifyTrust, fFlags);
         return STATUS_TRUST_FAILURE;
     }
 
@@ -1594,12 +1594,12 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     if (!pName || pName->Length == 0)
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: name is NULL or have a zero length.\n");
-        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_INVALID_PARAMETER));
+        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x (pName=%p)\n", STATUS_INVALID_PARAMETER, pName));
         return STATUS_INVALID_PARAMETER;
     }
-    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls\n",
+    /*SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls\n",
                  (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
-                 !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
+                 !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));*/
 
     /*
      * Reject long paths that's close to the 260 limit without looking.
@@ -1806,6 +1806,9 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     /*
      * Screened successfully enough.  Call the real thing.
      */
+    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls [calling]\n",
+                 (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
+                 !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
     SetLastError(dwSavedLastError);
     rcNt = g_pfnLdrLoadDllReal(pwszSearchPath, pfFlags, pName, phMod);
 
