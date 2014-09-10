@@ -76,6 +76,8 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
         rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
         AssertLogRelRCReturn(rc, rc);
     }
+    else
+        LogRel(("GIM: Minimal: failed to get hypervisor leaf 0x40000000.\n"));
 
     return VINF_SUCCESS;
 }
