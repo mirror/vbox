@@ -431,7 +431,7 @@ typedef struct NATState
          (so) = (sonext))                                                \
     {                                                                    \
         (sonext) = (so)->so_next;                                        \
-         Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));
+         Log5(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));
 # define CONTINUE(label) continue
 # define CONTINUE_NO_UNLOCK(label) continue
 # define LOOP_LABEL(label, so, sonext) /* empty*/
