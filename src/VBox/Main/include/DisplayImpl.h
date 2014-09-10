@@ -354,9 +354,6 @@ private:
 
     int32_t volatile mcVideoAccelVRDPRefs;
 
-    VBVAMEMORY *mpPendingVbvaMemory;
-    bool        mfPendingVideoAccelEnable;
-    bool        mfMachineRunning;
 #ifdef VBOX_WITH_CROGL
     bool        mfCrOglDataHidden;
 #endif
