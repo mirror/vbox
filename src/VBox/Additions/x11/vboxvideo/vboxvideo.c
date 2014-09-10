@@ -491,52 +491,6 @@ vbox_output_get_modes (xf86OutputPtr output)
     return pModes;
 }
 
-#ifdef RANDR_12_INTERFACE
-static Atom
-vboxAtomVBoxMode(void)
-{
-    return MakeAtom("VBOX_MODE", sizeof("VBOX_MODE") - 1, TRUE);
-}
-
-static Atom
-vboxAtomEDID(void)
-{
-    return MakeAtom("EDID", sizeof("EDID") - 1, TRUE);
-}
-
-/** We use this for receiving information from clients for the purpose of
- * dynamic resizing, and later possibly other things too.
- */
-static Bool
-vbox_output_set_property(xf86OutputPtr output, Atom property,
-                         RRPropertyValuePtr value)
-{
-    ScrnInfoPtr pScrn = output->scrn;
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    TRACE_LOG("property=%d, value->type=%d, value->format=%d, value->size=%d\n",
-              (int)property, (int)value->type, (int)value->format, (int)value->size);
-    if (property == vboxAtomVBoxMode())
-    {
-        uint32_t cDisplay = (uintptr_t)output->driver_private;
-        int w, h;
-
-        if (   value->type != XA_INTEGER
-            || value->format != 32
-            || value->size != 1)
-            return FALSE;
-        w = (*(uint32_t *)value->data) >> 16;
-        h = (*(uint32_t *)value->data) & 0xffff;
-        TRACE_LOG("screen=%u, property value=%dx%d\n", cDisplay, w, h);
-        pVBox->pScreens[cDisplay].aPreferredSize.cx = w;
-        pVBox->pScreens[cDisplay].aPreferredSize.cy = h;
-        return TRUE;
-    }
-    if (property == vboxAtomEDID())
-        return TRUE;
-    return FALSE;
-}
-#endif
-
 static const xf86OutputFuncsRec VBOXOutputFuncs = {
     .create_resources = vbox_output_stub,
     .dpms = vbox_output_dpms,
@@ -550,7 +504,7 @@ static const xf86OutputFuncsRec VBOXOutputFuncs = {
     .detect = vbox_output_detect,
     .get_modes = vbox_output_get_modes,
 #ifdef RANDR_12_INTERFACE
-     .set_property = vbox_output_set_property,
+     .set_property = NULL,
 #endif
     .destroy = vbox_output_stub
 };
@@ -1131,21 +1085,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
      * framebuffer to something reasonable. */
     if (!xf86CrtcScreenInit(pScreen)) {
         return FALSE;
-    }
-
-    /* Create our VBOX_MODE display properties. */
-    {
-        uint32_t i;
-
-        for (i = 0; i < pVBox->cScreens; ++i)
-        {
-            INT32 value = 0;
-            RRChangeOutputProperty(pVBox->pScreens[i].paOutputs->randr_output,
-                                   vboxAtomVBoxMode(), XA_INTEGER, 32,
-                                   PropModeReplace, 1, &value, TRUE,
-                                   FALSE);
-
-        }
     }
 
     if (!xf86SetDesiredModes(pScrn)) {
