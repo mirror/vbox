@@ -397,6 +397,25 @@ VMM_INT_DECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_
 
 
 /**
+ * Gets the frequency of the APIC timer.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VM.
+ * @param   pu64Value       Where to store the frequency.
+ */
+VMM_INT_DECL(int) PDMApicGetTimerFreq(PVM pVM, uint64_t *pu64Value)
+{
+    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
+    {
+        AssertPtr(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTimerFreq));
+        *pu64Value = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTimerFreq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_NO_APIC_INSTANCE;
+}
+
+
+/**
  * Locks PDM.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
  *
