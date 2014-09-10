@@ -485,6 +485,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pdm.s.Apic.pfnBusDeliverRC     += offDelta;
         if (pVM->pdm.s.Apic.pfnLocalInterruptRC)
             pVM->pdm.s.Apic.pfnLocalInterruptRC += offDelta;
+        pVM->pdm.s.Apic.pfnGetTimerFreqRC   += offDelta;
         pVM->pdm.s.Apic.pfnWriteMSRRC       += offDelta;
         pVM->pdm.s.Apic.pfnReadMSRRC        += offDelta;
     }

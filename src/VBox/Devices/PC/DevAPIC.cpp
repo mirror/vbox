@@ -657,6 +657,16 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
 }
 
 
+PDMBOTHCBDECL(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
+{
+    APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    APICState *pApic = apicGetStateById(pDev, 0);
+    uint64_t uTimer = TMTimerGetFreq(pApic->CTX_SUFF(pTimer));
+    Log2(("apicGetTimerFreq: returns %#RX64\n", uTimer));
+    return uTimer;
+}
+
+
 /**
  * apicWriteRegister helper for dealing with invalid register access.
  *
@@ -2300,6 +2310,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     ApicReg.pfnReadMSRR3            = apicReadMSR;
     ApicReg.pfnBusDeliverR3         = apicBusDeliverCallback;
     ApicReg.pfnLocalInterruptR3     = apicLocalInterrupt;
+    ApicReg.pfnGetTimerFreqR3       = apicGetTimerFreq;
     if (fRZEnabled)
     {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
@@ -2312,6 +2323,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszReadMSRRC        = "apicReadMSR";
         ApicReg.pszBusDeliverRC     = "apicBusDeliverCallback";
         ApicReg.pszLocalInterruptRC = "apicLocalInterrupt";
+        ApicReg.pszGetTimerFreqRC   = "apicGetTimerFreq";
 
         ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
         ApicReg.pszHasPendingIrqR0  = "apicHasPendingIrq";
@@ -2323,6 +2335,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszReadMSRR0        = "apicReadMSR";
         ApicReg.pszBusDeliverR0     = "apicBusDeliverCallback";
         ApicReg.pszLocalInterruptR0 = "apicLocalInterrupt";
+        ApicReg.pszGetTimerFreqR0   = "apicGetTimerFreq";
     }
     else
     {
@@ -2336,6 +2349,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszReadMSRRC        = NULL;
         ApicReg.pszBusDeliverRC     = NULL;
         ApicReg.pszLocalInterruptRC = NULL;
+        ApicReg.pszGetTimerFreqRC   = NULL;
 
         ApicReg.pszGetInterruptR0   = NULL;
         ApicReg.pszHasPendingIrqR0  = NULL;
@@ -2347,6 +2361,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszReadMSRR0        = NULL;
         ApicReg.pszBusDeliverR0     = NULL;
         ApicReg.pszLocalInterruptR0 = NULL;
+        ApicReg.pszGetTimerFreqR0   = NULL;
     }
 
     rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pDev->pApicHlpR3);

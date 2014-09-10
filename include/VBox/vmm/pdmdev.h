@@ -1189,6 +1189,14 @@ typedef struct PDMAPICREG
      */
     DECLR3CALLBACKMEMBER(int,  pfnLocalInterruptR3,(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level));
 
+    /**
+     * Get the APIC timer frequency (in Hz).
+     *
+     * @returns The frequency of the APIC timer.
+     * @param   pDevIns         Device instance of the APIC.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetTimerFreqR3, (PPDMDEVINS pDevIns));
+
     /** The name of the RC GetInterrupt entry point. */
     const char         *pszGetInterruptRC;
     /** The name of the RC HasPendingIrq entry point. */
@@ -1209,6 +1217,8 @@ typedef struct PDMAPICREG
     const char         *pszBusDeliverRC;
     /** The name of the RC LocalInterrupt entry point. */
     const char         *pszLocalInterruptRC;
+    /** The name of the RC GetTimerFreq entry point. */
+    const char         *pszGetTimerFreqRC;
 
     /** The name of the R0 GetInterrupt entry point. */
     const char         *pszGetInterruptR0;
@@ -1230,7 +1240,8 @@ typedef struct PDMAPICREG
     const char         *pszBusDeliverR0;
     /** The name of the R0 LocalInterrupt entry point. */
     const char         *pszLocalInterruptR0;
-
+    /** The name of the R0 GetTimerFreq entry point. */
+    const char         *pszGetTimerFreqR0;
 } PDMAPICREG;
 /** Pointer to an APIC registration structure. */
 typedef PDMAPICREG *PPDMAPICREG;
