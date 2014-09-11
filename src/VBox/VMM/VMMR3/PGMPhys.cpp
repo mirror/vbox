@@ -3856,7 +3856,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     if (pVCpu->pgm.s.fA20Enabled != fEnable)
     {
         pVCpu->pgm.s.fA20Enabled = fEnable;
-        pVCpu->pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!fEnable << 20);
+        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
 #ifdef VBOX_WITH_REM
         REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
 #endif
