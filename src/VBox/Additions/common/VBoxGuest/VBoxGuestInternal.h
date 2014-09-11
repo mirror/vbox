@@ -251,6 +251,8 @@ typedef struct VBOXGUESTSESSION
      * in the current session.  In that case the next call will be interrupted
      * at once. */
     bool volatile               fPendingCancelWaitEvents;
+    /** Does this session belong to a root process or a user one? */
+    bool                        fUserSession;
 } VBOXGUESTSESSION;
 
 RT_C_DECLS_BEGIN

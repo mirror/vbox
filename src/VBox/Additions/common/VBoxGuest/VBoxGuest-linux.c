@@ -705,7 +705,11 @@ static int vboxguestLinuxOpen(struct inode *pInode, struct file *pFilp)
      */
     rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
+    {
         pFilp->private_data = pSession;
+        if (MINOR(pInode->i_rdev) == g_MiscDeviceUser.minor)
+            pSession->fUserSession = true;
+    }
 
     Log(("vboxguestLinuxOpen: g_DevExt=%p pSession=%p rc=%d/%d (pid=%d/%d %s)\n",
          &g_DevExt, pSession, rc, vboxguestLinuxConvertToNegErrno(rc),
