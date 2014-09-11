@@ -68,7 +68,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInitCompleted(PVM pVM)
      * Expose a generic hypervisor-agnostic leaf (originally defined VMware).
      * The leaves range from  0x40000010 to 0x400000FF.
      *
-     * This is done in the finalize routine as we need PDM to be
+     * This is done in the init. completed routine as we need PDM to be
      * initialized (otherwise PDMApicGetTimerFreq() would fail).
      */
     CPUMCPUIDLEAF HyperLeaf;
