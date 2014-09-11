@@ -3996,6 +3996,80 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 
 
 /**
+ * Logs the content of the given object directory.
+ *
+ * @returns true if it exists, false if not.
+ * @param   pszDir             The path of the directory to log (ASCII).
+ */
+static void supR3HardenedWinLogObjDir(const char *pszDir)
+{
+    /*
+     * Open the driver object directory.
+     */
+    RTUTF16 wszDir[128];
+    int rc = RTUtf16CopyAscii(wszDir, RT_ELEMENTS(wszDir), pszDir);
+    if (RT_FAILURE(rc))
+    {
+        SUP_DPRINTF(("supR3HardenedWinLogObjDir: RTUtf16CopyAscii -> %Rrc on '%s'\n", rc, pszDir));
+        return;
+    }
+
+    UNICODE_STRING NtDirName;
+    NtDirName.Buffer = (WCHAR *)wszDir;
+    NtDirName.Length = (USHORT)(RTUtf16Len(wszDir) * sizeof(WCHAR));
+    NtDirName.MaximumLength = NtDirName.Length + sizeof(WCHAR);
+
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &NtDirName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+    HANDLE hDir;
+    NTSTATUS rcNt = NtOpenDirectoryObject(&hDir, DIRECTORY_QUERY | FILE_LIST_DIRECTORY, &ObjAttr);
+    SUP_DPRINTF(("supR3HardenedWinLogObjDir: %ls => %#x\n", wszDir, rcNt));
+    if (!NT_SUCCESS(rcNt))
+        return;
+
+    /*
+     * Enumerate it, looking for the driver.
+     */
+    ULONG uObjDirCtx = 0;
+    for (;;)
+    {
+        uint32_t    abBuffer[_64K + _1K];
+        ULONG       cbActual;
+        rcNt = NtQueryDirectoryObject(hDir,
+                                      abBuffer,
+                                      sizeof(abBuffer) - 4, /* minus four for string terminator space. */
+                                      FALSE /*ReturnSingleEntry */,
+                                      FALSE /*RestartScan*/,
+                                      &uObjDirCtx,
+                                      &cbActual);
+        if (!NT_SUCCESS(rcNt) || cbActual < sizeof(OBJECT_DIRECTORY_INFORMATION))
+        {
+            SUP_DPRINTF(("supR3HardenedWinLogObjDir: NtQueryDirectoryObject => rcNt=%#x cbActual=%#x\n", rcNt, cbActual));
+            break;
+        }
+
+        POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
+        while (pObjDir->Name.Length != 0)
+        {
+            WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
+            SUP_DPRINTF(("  %.*ls  %.*ls\n",
+                         pObjDir->TypeName.Length / sizeof(WCHAR), pObjDir->TypeName.Buffer,
+                         pObjDir->Name.Length / sizeof(WCHAR), pObjDir->Name.Buffer));
+
+            /* Next directory entry. */
+            pObjDir++;
+        }
+    }
+
+    /*
+     * Clean up and return.
+     */
+    NtClose(hDir);
+}
+
+
+/**
  * Checks if the driver exists.
  *
  * This checks whether the driver is present in the /Driver object directory.
@@ -4134,9 +4208,53 @@ static void supR3HardenedWinOpenStubDevice(void)
 
     if (!NT_SUCCESS(rcNt))
     {
+        /*
+         * Report trouble (fatal).  For some errors codes we try gather some
+         * extra information that goes into VBoxStartup.log so that we stand a
+         * better chance resolving the issue.
+         */
         int rc = VERR_OPEN_FAILED;
         if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
+        {
             rc = SUP_NT_STATUS_TO_VBOX(rcNt);
+
+            /*
+             * \Windows\ApiPort open trouble.  So far only
+             * STATUS_OBJECT_TYPE_MISMATCH has been observed.
+             */
+            if (rc == VERR_SUPDRV_APIPORT_OPEN_ERROR)
+            {
+                SUP_DPRINTF(("Error opening VBoxDrvStub: VERR_SUPDRV_APIPORT_OPEN_ERROR\n"));
+
+                uint32_t uSessionId = NtCurrentPeb()->SessionId;
+                SUP_DPRINTF(("  SessionID=%#x\n", uSessionId));
+                char szDir[64];
+                if (uSessionId == 0)
+                    RTStrCopy(szDir, sizeof(szDir), "\\Windows");
+                else
+                {
+                    RTStrPrintf(szDir, sizeof(szDir), "\\Sessions\\%u\\Windows", uSessionId);
+                    supR3HardenedWinLogObjDir(szDir);
+                }
+                supR3HardenedWinLogObjDir("\\Windows");
+                supR3HardenedWinLogObjDir("\\Sessions");
+                supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, rc,
+                                      "NtCreateFile(%ls) failed: VERR_SUPDRV_APIPORT_OPEN_ERROR\n"
+                                      "\n"
+                                      "Error getting %s\\ApiPort in the driver from vboxdrv.\n"
+                                      "\n"
+                                      "Could be due to security software is redirecting access to it, so please include full "
+                                      "details of such software in a bug report. VBoxStartup.log may contain details important "
+                                      "to resolving the issue."
+                                      , s_wszName, szDir);
+            }
+
+            /*
+             * Generic VBox failure message.
+             */
+            supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, rc,
+                                  "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)\n", s_wszName, rc, rcNt);
+        }
         else
         {
             const char *pszDefine;
@@ -4148,11 +4266,36 @@ static void supR3HardenedWinOpenStubDevice(void)
                 case STATUS_TRUST_FAILURE:          pszDefine = " STATUS_TRUST_FAILURE"; break;
                 default:                            pszDefine = ""; break;
             }
+
+            /*
+             * Problems opening the device is generally due to driver load/
+             * unload issues.  Check whether the driver is loaded and make
+             * suggestions accordingly.
+             */
+            if (   rcNt == STATUS_NO_SUCH_DEVICE
+                || rcNt == STATUS_OBJECT_NAME_NOT_FOUND)
+            {
+                SUP_DPRINTF(("Error opening VBoxDrvStub: %s\n", pszDefine));
+                if (supR3HardenedWinDriverExists("VBoxDrv"))
+                    supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
+                                          "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
+                                          "\n"
+                                          "Driver is probably stuck stopping/starting. Try 'sc.exe query vboxdrv' to get more "
+                                          "information about its state. Rebooting may actually help.\n"
+                                          , s_wszName, rcNt, pszDefine, iTry);
+                else
+                    supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
+                                          "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
+                                          "\n"
+                                          "Driver is does not appear to be loaded. Try 'sc.exe start vboxdrv', reinstall "
+                                          "VirtualBox or reboot.\n"
+                                          , s_wszName, rcNt, pszDefine, iTry);
+            }
+
+            /* Generic NT failure message. */
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
                                   "NtCreateFile(%ls) failed: %#x%s (%u retries)\n", s_wszName, rcNt, pszDefine, iTry);
         }
-        supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, rc,
-                              "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)\n", s_wszName, rc, rcNt);
     }
 }
 
