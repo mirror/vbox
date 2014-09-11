@@ -209,6 +209,13 @@ CMachine UIMachineWindow::machine() const
     return session().GetMachine();
 }
 
+void UIMachineWindow::adjustMachineViewSize()
+{
+    /* By default, the only thing we need is to
+     * adjust guest-screen size if necessary: */
+    machineView()->adjustGuestScreenSize();
+}
+
 #ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 void UIMachineWindow::setMask(const QRegion &region)
 {

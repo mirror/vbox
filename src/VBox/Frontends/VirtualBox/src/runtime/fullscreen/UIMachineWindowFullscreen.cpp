@@ -346,9 +346,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     if (isMinimized())
         return;
 
-    /* Which host-screen should that machine-window located on? */
-    const int iHostScreen = pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId);
-
 #ifdef Q_WS_X11
     /* On X11 calling placeOnScreen() is only needed for legacy window managers
      * which we do not test, so this is 'best effort' code. With window managers which
@@ -380,7 +377,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         /* Tell recent window managers which screen this window should be mapped to.
          * Apparently some window managers will not respond to requests for
          * unmapped windows, so do this *after* the call to showFullScreen(). */
-        VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
+        VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
     }
     else
     {
@@ -391,18 +388,35 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     }
 #endif /* Q_WS_X11 */
 
-    /* Adjust guest-screen size if necessary: */
-    machineView()->maybeAdjustGuestScreenSize();
+    /* Adjust machine-view size if necessary: */
+    adjustMachineViewSize();
 
-    /* Show/Move mini-toolbar into appropriate place: */
+    /* Show mini-toolbar: */
     if (m_pMiniToolBar)
-    {
         m_pMiniToolBar->show();
-        m_pMiniToolBar->adjustGeometry(iHostScreen);
-    }
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
+}
+
+void UIMachineWindowFullscreen::adjustMachineViewSize()
+{
+    /* Call to base-class: */
+    UIMachineWindow::adjustMachineViewSize();
+
+    /* If mini-toolbar present: */
+    if (m_pMiniToolBar)
+    {
+        /* Make sure this window has fullscreen logic: */
+        UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
+        AssertPtrReturnVoid(pFullscreenLogic);
+
+        /* Which host-screen should that machine-window located on? */
+        const int iHostScreen = pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId);
+
+        /* Move mini-toolbar into appropriate place: */
+        m_pMiniToolBar->adjustGeometry(iHostScreen);
+    }
 }
 
 void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)

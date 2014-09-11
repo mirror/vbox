@@ -40,8 +40,10 @@ protected:
     /** Returns machine-window flags for 'Seamless' machine-logic and passed @a uScreenId. */
     virtual Qt::WindowFlags windowFlags(ulong uScreenId) const { Q_UNUSED(uScreenId); return Qt::FramelessWindowHint; }
 
+    /** Adjusts machine-window geometry if necessary for 'Seamless'. */
+    virtual void adjustMachineWindowsGeometry();
+
     /* Helpers: Multi-screen stuff: */
-    void maybeAdjustGuestScreenSize();
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
 

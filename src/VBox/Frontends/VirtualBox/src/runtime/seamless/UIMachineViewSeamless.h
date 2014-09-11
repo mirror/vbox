@@ -63,8 +63,10 @@ private:
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
+    /** Adjusts guest-screen size to correspond current <i>working area</i> size. */
+    void adjustGuestScreenSize();
+
     /* Helpers: Geometry stuff: */
-    void maybeAdjustGuestScreenSize();
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 

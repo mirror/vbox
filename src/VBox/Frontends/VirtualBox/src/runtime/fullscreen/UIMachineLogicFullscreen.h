@@ -61,8 +61,10 @@ protected:
     /** Returns machine-window flags for 'Fullscreen' machine-logic and passed @a uScreenId. */
     virtual Qt::WindowFlags windowFlags(ulong uScreenId) const;
 
+    /** Adjusts machine-window geometry if necessary for 'Fullscreen'. */
+    virtual void adjustMachineWindowsGeometry();
+
     /* Helpers: Multi-screen stuff: */
-    void maybeAdjustGuestScreenSize();
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
 

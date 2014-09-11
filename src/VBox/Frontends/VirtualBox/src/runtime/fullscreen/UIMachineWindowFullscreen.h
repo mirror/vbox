@@ -85,6 +85,9 @@ private:
     void placeOnScreen();
     void showInNecessaryMode();
 
+    /** Adjusts machine-view size to correspond current machine-window size. */
+    virtual void adjustMachineViewSize();
+
     /* Update stuff: */
     void updateAppearanceOf(int iElement);
 

@@ -62,7 +62,7 @@ UIMachineViewFullscreen::~UIMachineViewFullscreen()
 
 void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
-    maybeAdjustGuestScreenSize();
+    adjustGuestScreenSize();
 }
 
 bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -135,10 +135,9 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     }
 }
 
-/** Adjusts guest screen size to correspond current <i>working area</i> size. */
-void UIMachineViewFullscreen::maybeAdjustGuestScreenSize()
+void UIMachineViewFullscreen::adjustGuestScreenSize()
 {
-    /* Check if we should adjust guest to new size: */
+    /* Check if we should adjust guest-screen to new size: */
     if (frameBuffer()->isAutoEnabled() ||
         (int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())

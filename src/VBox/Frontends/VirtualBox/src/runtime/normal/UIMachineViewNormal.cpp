@@ -64,7 +64,7 @@ UIMachineViewNormal::~UIMachineViewNormal()
 
 void UIMachineViewNormal::sltAdditionsStateChanged()
 {
-    maybeAdjustGuestScreenSize();
+    adjustGuestScreenSize();
 }
 
 bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -160,11 +160,10 @@ void UIMachineViewNormal::maybeResendSizeHint()
     }
 }
 
-/** Adjusts guest screen size to correspond current machine-window size. */
-void UIMachineViewNormal::maybeAdjustGuestScreenSize()
+void UIMachineViewNormal::adjustGuestScreenSize()
 {
-    /* Check if we should adjust guest to new size: */
-    QSize centralWidgetSize = machineWindow()->centralWidget()->size();
+    /* Check if we should adjust guest-screen to new size: */
+    const QSize centralWidgetSize = machineWindow()->centralWidget()->size();
     if ((int)frameBuffer()->width() != centralWidgetSize.width() ||
         (int)frameBuffer()->height() != centralWidgetSize.height())
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())

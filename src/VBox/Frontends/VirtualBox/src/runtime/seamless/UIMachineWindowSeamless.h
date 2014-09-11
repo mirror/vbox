@@ -63,6 +63,9 @@ private:
     void placeOnScreen();
     void showInNecessaryMode();
 
+    /** Adjusts machine-view size to correspond current machine-window size. */
+    virtual void adjustMachineViewSize();
+
 #ifndef Q_WS_MAC
     /* Update routines: */
     void updateAppearanceOf(int iElement);

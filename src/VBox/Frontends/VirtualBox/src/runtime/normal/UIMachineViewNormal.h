@@ -66,8 +66,10 @@ private:
     /** Resends guest size-hint if necessary. */
     void maybeResendSizeHint();
 
+    /** Adjusts guest-screen size to correspond current <i>machine-window</i> size. */
+    void adjustGuestScreenSize();
+
     /* Private helpers: */
-    void maybeAdjustGuestScreenSize();
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 

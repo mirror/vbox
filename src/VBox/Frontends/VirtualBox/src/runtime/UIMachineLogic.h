@@ -90,8 +90,8 @@ public:
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
-    /* API: Guest screen size stuff: */
-    virtual void maybeAdjustGuestScreenSize();
+    /** Adjusts machine-window(s) geometry if necessary. */
+    virtual void adjustMachineWindowsGeometry();
 
     /* Wrapper to open Machine settings / Network page: */
     void openNetworkSettingsDialog() { sltOpenNetworkSettingsDialog(); }
