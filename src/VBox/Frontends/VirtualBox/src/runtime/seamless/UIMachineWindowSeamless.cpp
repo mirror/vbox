@@ -199,20 +199,39 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     /* Show in normal mode: */
     show();
 
-    /* Adjust guest screen size if necessary: */
-    machineView()->maybeAdjustGuestScreenSize();
+    /* Adjust machine-view size if necessary: */
+    adjustMachineViewSize();
 
 #ifndef Q_WS_MAC
-    /* Show/Move mini-toolbar into appropriate place: */
+    /* Show mini-toolbar: */
     if (m_pMiniToolBar)
-    {
         m_pMiniToolBar->show();
-        m_pMiniToolBar->adjustGeometry();
-    }
 #endif /* !Q_WS_MAC */
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
+}
+
+void UIMachineWindowSeamless::adjustMachineViewSize()
+{
+    /* Call to base-class: */
+    UIMachineWindow::adjustMachineViewSize();
+
+#ifndef Q_WS_MAC
+    /* If mini-toolbar present: */
+    if (m_pMiniToolBar)
+    {
+        /* Make sure this window has seamless logic: */
+        const UIMachineLogicFullscreen *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
+        AssertPtrReturnVoid(pSeamlessLogic);
+
+        /* Which host-screen should that machine-window located on? */
+        const int iHostScreen = pSeamlessLogic->hostScreenForGuestScreen(m_uScreenId);
+
+        /* Move mini-toolbar into appropriate place: */
+        m_pMiniToolBar->adjustGeometry(iHostScreen);
+    }
+#endif /* !Q_WS_MAC */
 }
 
 #ifndef Q_WS_MAC

@@ -84,9 +84,9 @@ public:
     /* Public setters: */
     virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
 
-    /** Adjusts guest screen size to correspond current machine-window size.
+    /** Adjusts guest-screen size to correspond current visual-style.
       * @note Reimplemented in sub-classes. Base implementation does nothing. */
-    virtual void maybeAdjustGuestScreenSize() {}
+    virtual void adjustGuestScreenSize() {}
 
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;

@@ -69,10 +69,13 @@ public:
     CSession& session() const;
     CMachine machine() const;
 
-    /** Adjusts machine-window size to correspond current guest screen size.
+    /** Adjusts machine-window size to correspond current machine-view size.
       * @param fAdjustPosition determines whether is it necessary to adjust position too.
       * @note  Reimplemented in sub-classes. Base implementation does nothing. */
     virtual void normalizeGeometry(bool fAdjustPosition) { Q_UNUSED(fAdjustPosition); }
+
+    /** Adjusts machine-view size to correspond current machine-window size. */
+    virtual void adjustMachineViewSize();
 
 #ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
     /* Virtual caller for base class setMask: */

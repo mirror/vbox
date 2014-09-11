@@ -97,10 +97,9 @@ Qt::WindowFlags UIMachineLogicFullscreen::windowFlags(ulong uScreenId) const
 #endif /* !Q_WS_MAC */
 }
 
-/** Adjusts guest screen count/size for the machine-logic we have. */
-void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
+void UIMachineLogicFullscreen::adjustMachineWindowsGeometry()
 {
-    LogRel(("UIMachineLogicFullscreen::maybeAdjustGuestScreenSize"));
+    LogRel(("UIMachineLogicFullscreen::adjustMachineWindowsGeometry\n"));
 
     /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
@@ -113,7 +112,7 @@ void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
             pMachineWindow->showInNecessaryMode();
     }
-    /* Revalidate native fullscreen for ML and next: */
+    /* For ML and next revalidate native fullscreen: */
     else revalidateNativeFullScreen();
 #else /* !Q_WS_MAC */
     /* Make sure all machine-window(s) have proper geometry: */
@@ -362,14 +361,14 @@ void UIMachineLogicFullscreen::sltMachineStateChanged()
     /* If machine-state changed from 'paused' to 'running': */
     if (uisession()->isRunning() && uisession()->wasPaused())
     {
-        LogRelFlow(("UIMachineLogicFullscreen: "
-                    "Machine-state changed from 'paused' to 'running': "
-                    "Updating screen-layout...\n"));
+        LogRel(("UIMachineLogicFullscreen::sltMachineStateChanged:"
+                "Machine-state changed from 'paused' to 'running': "
+                "Adjust machine-window geometry...\n"));
 
         /* Make sure further code will be called just once: */
         uisession()->forgetPreviousMachineState();
-        /* Adjust guest-screen size if necessary: */
-        maybeAdjustGuestScreenSize();
+        /* Adjust machine-window geometry if necessary: */
+        adjustMachineWindowsGeometry();
     }
 }
 
@@ -801,8 +800,8 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to adjust guest geometry.\n", (int)uScreenID));
 
-                /* Adjust guest screen size if necessary: */
-                pMachineWindow->machineView()->maybeAdjustGuestScreenSize();
+                /* Just adjust machine-view size if necessary: */
+                pMachineWindow->adjustMachineViewSize();
             }
         }
     }

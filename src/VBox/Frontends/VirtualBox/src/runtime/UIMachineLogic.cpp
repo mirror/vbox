@@ -270,11 +270,12 @@ UIMachineWindow* UIMachineLogic::activeMachineWindow() const
     return mainMachineWindow();
 }
 
-/** Adjusts guest screen size for each the machine-window we have. */
-void UIMachineLogic::maybeAdjustGuestScreenSize()
+void UIMachineLogic::adjustMachineWindowsGeometry()
 {
+    /* By default, the only thing we need is to
+     * adjust machine-view size(s) if necessary: */
     foreach(UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->machineView()->maybeAdjustGuestScreenSize();
+        pMachineWindow->adjustMachineViewSize();
 }
 
 #ifdef Q_WS_MAC
