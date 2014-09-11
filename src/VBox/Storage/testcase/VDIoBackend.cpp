@@ -281,3 +281,15 @@ int VDIoBackendStorageGetSize(PVDIOSTORAGE pIoStorage, uint64_t *pcbSize)
     return rc;
 }
 
+DECLHIDDEN(int) VDIoBackendDumpToFile(PVDIOSTORAGE pIoStorage, const char *pszPath)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pIoStorage->fMemory)
+        rc = VDMemDiskWriteToFile(pIoStorage->u.pMemDisk, pszPath);
+    else
+        rc = VERR_NOT_IMPLEMENTED;
+
+    return rc;
+}
+
