@@ -208,12 +208,6 @@ sofree(PNATState pData, struct socket *so)
     else if (so == udp_last_so)
         udp_last_so = &udb;
 
-#if 0 /* XXX: !defined(NO_USE_SOCKETS) */
-    /* libalias notification */
-    if (so->so_pvLnk)
-        slirpDeleteLinkSocket(so->so_pvLnk);
-#endif
-
     /* check if mbuf haven't been already freed  */
     if (so->so_m != NULL)
     {
