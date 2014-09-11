@@ -95,6 +95,8 @@ private:
     QSize m_size;
     /** Holds the button pixmap. */
     QPixmap m_pixmap;
+    /** Holds the button pixmap size. */
+    QSize m_pixmapSize;
     /** Holds whether button is checked. */
     bool m_fChecked;
     /** Holds whether button is hovered. */
@@ -204,13 +206,14 @@ UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType type)
 
     /* Prepare icon for assigned type: */
     const QIcon icon = gpConverter->toIcon(m_type);
+    m_pixmapSize = icon.availableSizes().first();
+    m_pixmap = icon.pixmap(m_pixmapSize);
+
     /* Cache button size-hint: */
     QStyleOptionButton option;
     option.initFrom(this);
     const QRect minRect = QApplication::style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option);
-    m_size = icon.availableSizes().first().expandedTo(minRect.size());
-    /* Cache pixmap of same size: */
-    m_pixmap = icon.pixmap(m_size);
+    m_size = m_pixmapSize.expandedTo(minRect.size());
 
     /* Translate finally: */
     retranslateUi();
@@ -252,7 +255,11 @@ void UIStatusBarEditorButton::paintEvent(QPaintEvent*)
         painter.drawControl(QStyle::CE_CheckBox, option);
     /* Draw pixmap for unhovered-state: */
     else
-        painter.drawItemPixmap(option.rect, Qt::AlignCenter, m_pixmap);
+    {
+        QRect pixmapRect = QRect(QPoint(0, 0), m_pixmapSize);
+        pixmapRect.moveCenter(option.rect.center());
+        painter.drawItemPixmap(pixmapRect, Qt::AlignCenter, m_pixmap);
+    }
 }
 
 void UIStatusBarEditorButton::mousePressEvent(QMouseEvent *pEvent)
