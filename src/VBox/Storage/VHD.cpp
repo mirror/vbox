@@ -2696,7 +2696,7 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
         {
             if (pImage->pBlockAllocationTable[idxBlock] != ~0U)
             {
-                uint64_t offStartBlock = pImage->pBlockAllocationTable[idxBlock] * VHD_SECTOR_SIZE;
+                uint64_t offStartBlock = (uint64_t)pImage->pBlockAllocationTable[idxBlock] * VHD_SECTOR_SIZE;
                 if (offStartBlock < offStartDataOld)
                     offStartDataOld = offStartBlock;
                 cBlocksAllocated++;
