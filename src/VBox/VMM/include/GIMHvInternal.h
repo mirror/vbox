@@ -506,6 +506,7 @@ VMMR0_INT_DECL(int)             GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Of
 
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)             GIMR3HvInit(PVM pVM);
+VMMR3_INT_DECL(int)             GIMR3HvInitCompleted(PVM pVM);
 VMMR3_INT_DECL(int)             GIMR3HvTerm(PVM pVM);
 VMMR3_INT_DECL(void)            GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(void)            GIMR3HvReset(PVM pVM);

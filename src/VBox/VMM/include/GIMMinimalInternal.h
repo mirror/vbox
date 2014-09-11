@@ -25,7 +25,7 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)         GIMR3MinimalInit(PVM pVM);
-VMMR3_INT_DECL(int)         GIMR3MinimalInitFinalize(PVM pVM);
+VMMR3_INT_DECL(int)         GIMR3MinimalInitCompleted(PVM pVM);
 VMMR3_INT_DECL(void)        GIMR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta);
 #endif /* IN_RING3 */
 

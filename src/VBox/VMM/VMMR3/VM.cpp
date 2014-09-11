@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1011,8 +1011,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                                 rc = REMR3InitFinalize(pVM);
 #endif
                                                                             if (RT_SUCCESS(rc))
-                                                                                rc = GIMR3InitFinalize(pVM);
-                                                                            if (RT_SUCCESS(rc))
                                                                             {
                                                                                 PGMR3MemSetup(pVM, false /*fAtReset*/);
                                                                                 PDMR3MemSetup(pVM, false /*fAtReset*/);
@@ -1175,7 +1173,7 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     if (RT_SUCCESS(rc))
         rc = HMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
-        rc = PGMR3InitCompleted(pVM, enmWhat);
+        rc = PGMR3InitCompleted(pVM, enmWhat);  /** @todo Why is this not inside VMMR3InitCompleted()? */
 #ifndef VBOX_WITH_RAW_MODE
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
