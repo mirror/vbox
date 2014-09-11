@@ -990,12 +990,7 @@ IncrementalCleanup(struct libalias *la)
     LIBALIAS_LOCK_ASSERT(la);
     LIST_FOREACH_SAFE(lnk, &la->linkTableOut[la->cleanupIndex++],
         list_out, lnk_tmp) {
-#ifndef VBOX
         if (la->timeStamp - lnk->timestamp > lnk->expire_time)
-#else
-        /* libalias counts time in seconds while slirp in millis */
-        if (la->timeStamp - lnk->timestamp > (1000 * lnk->expire_time))
-#endif
             DeleteLink(lnk);
     }
 
@@ -2398,15 +2393,11 @@ HouseKeeping(struct libalias *la)
     la->timeStamp = tv.tv_sec;
 #endif
 #else  /* VBOX */
-    la->timeStamp = la->curtime;
+    la->timeStamp = la->curtime / 1000; /* NB: la->pData->curtime (msec) */
 #endif
 
     /* Compute number of spokes (output table link chains) to cover */
-#ifndef VBOX
     n = LINK_TABLE_OUT_SIZE * (la->timeStamp - la->lastCleanupTime);
-#else
-    n = LINK_TABLE_OUT_SIZE * ((la->timeStamp - la->lastCleanupTime)/1000);
-#endif
     n /= ALIAS_CLEANUP_INTERVAL_SECS;
 
     /* Handle different cases */
@@ -2735,8 +2726,8 @@ LibAliasInit(PNATState pData, struct libalias *la)
 #endif
 #else  /* VBOX */
         la->pData = pData;
-        la->timeStamp = curtime;
-        la->lastCleanupTime = curtime;
+        la->timeStamp = la->curtime / 1000; /* NB: la->pData->curtime (msec) */
+        la->lastCleanupTime = la->timeStamp;
 #endif /* VBOX */
 
         for (i = 0; i < LINK_TABLE_OUT_SIZE; i++)
