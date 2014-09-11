@@ -1660,7 +1660,8 @@ static int cpumR3CpuIdInit(PVM pVM)
      *
      * We only return minimal information, primarily ensuring that the
      * 0x40000000 function returns 0x40000001 and identifying ourselves.
-     * Currently we do not support any hypervisor-specific interface.
+     * Hypervisor-specific interface is supported through GIM which will
+     * modify these leaves if required depending on the GIM provider.
      */
     NewLeaf.uLeaf        = UINT32_C(0x40000000);
     NewLeaf.uSubLeaf     = 0;
@@ -4256,6 +4257,72 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         (uECX >> 0) & 0xff);
     }
 
+
+    /*
+     * Hypervisor leaves.
+     *
+     * Unlike most of the other leaves reported, the guest hypervisor leaves
+     * aren't a subset of the host CPUID bits.
+     */
+    RT_ZERO(Host);
+    if (cStdHstMax >= 1)
+        ASMCpuIdExSlow(1, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+    bool fHostHvp  = RT_BOOL(Host.ecx & X86_CPUID_FEATURE_ECX_HVP);
+    bool fGuestHvp = false;
+    if (cStdMax >= 1)
+    {
+        Guest     = pVM->cpum.s.aGuestCpuIdStd[1];
+        fGuestHvp = RT_BOOL(Guest.ecx & X86_CPUID_FEATURE_ECX_HVP);
+    }
+
+    if (   fHostHvp
+        || fGuestHvp)
+    {
+        uint32_t const uHyperLeaf  = 0x40000000;
+        pHlp->pfnPrintf(pHlp,
+                        "\n"
+                        "         Hypervisor CPUIDs\n"
+                        "     Function  eax      ebx      ecx      edx\n");
+
+        PCCPUMCPUIDLEAF pHyperLeafGst = NULL;
+        if (fGuestHvp)
+        {
+            pHyperLeafGst = cpumR3CpuIdGetLeaf(pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, pVM->cpum.s.GuestInfo.cCpuIdLeaves,
+                                                       uHyperLeaf, 0 /* uSubLeaf */);
+        }
+
+        RT_ZERO(Host);
+        if (fHostHvp)
+            ASMCpuIdExSlow(uHyperLeaf, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+
+        CPUMCPUIDLEAF  GuestLeaf;
+        uint32_t const cHyperGstMax = pHyperLeafGst->uEax;
+        uint32_t const cHyperHstMax = Host.eax;
+        uint32_t const cHyperMax    = RT_MAX(cHyperHstMax, cHyperGstMax);
+        for (unsigned i = uHyperLeaf; i <= cHyperMax; i++)
+        {
+            RT_ZERO(Host);
+            RT_ZERO(GuestLeaf);
+            if (i <= cHyperHstMax)
+                ASMCpuIdExSlow(i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+            CPUMR3CpuIdGetLeaf(pVM, &GuestLeaf, i, 0 /* uSubLeaf */);
+            if (!fHostHvp)
+            {
+                pHlp->pfnPrintf(pHlp,
+                                "Gst: %08x  %08x %08x %08x %08x\n",
+                                i, GuestLeaf.uEax, GuestLeaf.uEbx, GuestLeaf.uEcx, GuestLeaf.uEdx);
+            }
+            else
+            {
+                pHlp->pfnPrintf(pHlp,
+                                "Gst: %08x  %08x %08x %08x %08x%s\n"
+                                "Hst:           %08x %08x %08x %08x%s\n",
+                                i, GuestLeaf.uEax, GuestLeaf.uEbx, GuestLeaf.uEcx, GuestLeaf.uEdx,
+                                i <= cHyperGstMax ? "" : "*",
+                                Host.eax, Host.ebx, Host.ecx, Host.edx, i <= cHyperHstMax ? "" : "*");
+            }
+        }
+    }
 
     /*
      * Centaur.
