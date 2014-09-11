@@ -222,7 +222,7 @@ void UIMachineWindowSeamless::adjustMachineViewSize()
     if (m_pMiniToolBar)
     {
         /* Make sure this window has seamless logic: */
-        const UIMachineLogicFullscreen *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
+        const UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
         AssertPtrReturnVoid(pSeamlessLogic);
 
         /* Which host-screen should that machine-window located on? */
