@@ -268,7 +268,7 @@ int VBoxServiceLogCreate(const char *pszLogFile)
                            "VBOXSERVICE_RELEASE_LOG",
 #endif
                            RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                           RTLOGDEST_STDOUT,
+                           RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            VBoxServiceLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            szError, sizeof(szError), pszLogFile);
     if (RT_SUCCESS(rc))
