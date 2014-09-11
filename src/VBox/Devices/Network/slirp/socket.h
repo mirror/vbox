@@ -132,10 +132,6 @@ struct socket
     int fShouldBeRemoved;
 };
 
-/* this function inform libalias about socket close */
-void slirpDeleteLinkSocket(void *pvLnk);
-
-
 # define SOCKET_LOCK(so) do {} while (0)
 # define SOCKET_UNLOCK(so) do {} while (0)
 # define SOCKET_LOCK_CREATE(so) do {} while (0)
