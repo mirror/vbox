@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
         <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
         <file alias="os_oraclesolaris_hidpi.png">images/hidpi/os_oraclesolaris_hidpi.png</file>
         <file alias="os_os2_other_hidpi.png">images/hidpi/os_os2_other_hidpi.png</file>

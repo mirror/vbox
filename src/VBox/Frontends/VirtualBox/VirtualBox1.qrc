@@ -194,6 +194,8 @@
         <file alias="meditation_32px.png">images/meditation_32px.png</file>
         <file alias="menubar_16px.png">images/menubar_16px.png</file>
         <file alias="menubar_disabled_16px.png">images/menubar_disabled_16px.png</file>
+        <file alias="menubar_on_16px.png">images/menubar_on_16px.png</file>
+        <file alias="menubar_on_disabled_16px.png">images/menubar_on_disabled_16px.png</file>
         <file alias="menubar_settings_16px.png">images/menubar_settings_16px.png</file>
         <file alias="menubar_settings_disabled_16px.png">images/menubar_settings_disabled_16px.png</file>
         <file alias="minimize_16px.png">images/minimize_16px.png</file>
@@ -271,8 +273,5 @@
         <file alias="os_solaris_64.png">images/os_solaris_64.png</file>
         <file alias="os_turbolinux.png">images/os_turbolinux.png</file>
         <file alias="os_turbolinux_64.png">images/os_turbolinux_64.png</file>
-        <file alias="os_type_16px.png">images/os_type_16px.png</file>
-        <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
-        <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
     </qresource>
 </RCC>

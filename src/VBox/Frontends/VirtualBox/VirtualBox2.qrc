@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_type_16px.png">images/os_type_16px.png</file>
+        <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
+        <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
         <file alias="os_win2k3.png">images/os_win2k3.png</file>

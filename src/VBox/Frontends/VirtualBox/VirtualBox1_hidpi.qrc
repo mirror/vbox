@@ -192,6 +192,8 @@
         <file alias="machine_abstract_16px_hidpi.png">images/hidpi/machine_abstract_16px_hidpi.png</file>
         <file alias="machine_warning_16px_hidpi.png">images/hidpi/machine_warning_16px_hidpi.png</file>
         <file alias="meditation_32px_hidpi.png">images/hidpi/meditation_32px_hidpi.png</file>
+        <file alias="menubar_on_16px_hidpi.png">images/hidpi/menubar_on_16px_hidpi.png</file>
+        <file alias="menubar_on_disabled_16px_hidpi.png">images/hidpi/menubar_on_disabled_16px_hidpi.png</file>
         <file alias="minimize_16px_hidpi.png">images/hidpi/minimize_16px_hidpi.png</file>
         <file alias="mouse_16px_hidpi.png">images/hidpi/mouse_16px_hidpi.png</file>
         <file alias="mouse_can_seamless_16px_hidpi.png">images/hidpi/mouse_can_seamless_16px_hidpi.png</file>
@@ -251,6 +253,5 @@
         <file alias="os_opensuse_64_hidpi.png">images/hidpi/os_opensuse_64_hidpi.png</file>
         <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
         <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
-        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
     </qresource>
 </RCC>
