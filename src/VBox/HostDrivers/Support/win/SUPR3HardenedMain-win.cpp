@@ -3317,21 +3317,32 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      * a 2nd time into the process before we actually start executing the thread
      * and trigger the genuine image load events.
      *
-     * Update: Turns out Symantec Endpoint Protection deadlocks when we map the
-     *         executable into the process like this.  The system only works
-     *         halfways after that Powerbutton, impossible to shutdown without
-     *         using the power or reset button. The order of the two mappings
-     *         below doesn't matter. Haven't had time to look at stack yet.
-     *         Observed on W7/64, SEP v12.1.4112.4156.
+     * Update #1 (after 4.3.15 build 7):
+     *      Turns out Symantec Endpoint Protection deadlocks when we map the
+     *      executable into the process like this.  The system only works
+     *      halfways after that Powerbutton, impossible to shutdown without
+     *      using the power or reset button. The order of the two mappings
+     *      below doesn't matter. Haven't had time to look at stack yet.
+     *      Observed on W7/64, SEP v12.1.4112.4156.
      *
+     * Update #2 (after 4.3.16):
+     *      Some avast! users complain about a deadlock mapping ntdll.dll
+     *      as well.  Unfortunately not reproducible, so there may possibly be
+     *      some other cause.  Sad as it's really a serious bug in whichever
+     *      software it is that is causing it, and we'd like to report it to
+     *      the responsible party.
      */
 #if 0
     PVOID pvExe2 = supR3HardNtPuChMapDllIntoChild(pThis, &g_SupLibHardenedExeNtPath.UniStr, "executable[2nd]");
 #else
     PVOID pvExe2 = NULL;
 #endif
+#if 0
     UNICODE_STRING NtName1 = RTNT_CONSTANT_UNISTR(L"\\SystemRoot\\System32\\ntdll.dll");
     PVOID pvNtDll2 = supR3HardNtPuChMapDllIntoChild(pThis, &NtName1, "ntdll.dll[2nd]");
+#else
+    PVOID pvNtDll2 = NULL;
+#endif
 
     /*
      * Create the thread, waiting 10 seconds for it to complete.
