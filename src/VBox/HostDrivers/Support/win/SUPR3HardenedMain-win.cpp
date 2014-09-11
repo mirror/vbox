@@ -1561,6 +1561,40 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
 
 
 /**
+ * Helper for supR3HardenedMonitor_LdrLoadDll.
+ *
+ * @returns NT status code.
+ * @param   pwszPath        The path destination buffer.
+ * @param   cwcPath         The size of the path buffer.
+ * @param   pUniStrResult   The result string.
+ * @param   pOrgName        The orignal name (for errors).
+ * @param   pcwc            Where to return the actual length.
+ */
+static NTSTATUS supR3HardenedCopyRedirectionResult(WCHAR *pwszPath, size_t cwcPath, PUNICODE_STRING pUniStrResult,
+                                                   PUNICODE_STRING pOrgName, UINT *pcwc)
+{
+    UINT cwc;
+    *pcwc = cwc = pUniStrResult->Length / sizeof(WCHAR);
+    if (pUniStrResult->Buffer == pwszPath)
+        pwszPath[cwc] = '\0';
+    else
+    {
+        if (cwc > cwcPath - 1)
+        {
+            supR3HardenedError(VINF_SUCCESS, false,
+                               "supR3HardenedMonitor_LdrLoadDll: Name too long: %.*ls -> %.*ls (RtlDosApplyFileIoslationRedirection_Ustr)\n",
+                               pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer,
+                               pUniStrResult->Length / sizeof(WCHAR), pUniStrResult->Buffer);
+            return STATUS_NAME_TOO_LONG;
+        }
+        memcpy(&pwszPath[0], pUniStrResult->Buffer, pUniStrResult->Length);
+        pwszPath[cwc] = '\0';
+    }
+    return STATUS_SUCCESS;
+}
+
+
+/**
  * Hooks that intercepts LdrLoadDll calls.
  *
  * Two purposes:
@@ -1595,6 +1629,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: name is NULL or have a zero length.\n");
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x (pName=%p)\n", STATUS_INVALID_PARAMETER, pName));
+        SetLastError(dwSavedLastError);
         return STATUS_INVALID_PARAMETER;
     }
     /*SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls\n",
@@ -1608,6 +1643,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     {
         supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: too long name: %#x bytes\n", pName->Length);
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
+        SetLastError(dwSavedLastError);
         return STATUS_NAME_TOO_LONG;
     }
 
@@ -1616,7 +1652,12 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      */
     bool            fSkipValidation = false;
     WCHAR           wszPath[260];
+    static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
+    UNICODE_STRING  UniStrStatic   = { 0, (USHORT)sizeof(wszPath) - sizeof(WCHAR), wszPath };
+    UNICODE_STRING  UniStrDynamic  = { 0, 0, NULL };
+    PUNICODE_STRING pUniStrResult  = NULL;
     UNICODE_STRING  ResolvedName;
+
     if (   (   pName->Length >= 4 * sizeof(WCHAR)
             && RT_C_IS_ALPHA(pName->Buffer[0])
             && pName->Buffer[1] == ':'
@@ -1625,8 +1666,41 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             && RTPATH_IS_SLASH(pName->Buffer[1]) )
        )
     {
-        memcpy(wszPath, pName->Buffer, pName->Length);
-        wszPath[pName->Length / sizeof(WCHAR)] = '\0';
+        rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                        pName,
+                                                        (PUNICODE_STRING)&s_DefaultSuffix,
+                                                        &UniStrStatic,
+                                                        &UniStrDynamic,
+                                                        &pUniStrResult,
+                                                        NULL /*pNewFlags*/,
+                                                        NULL /*pcbFilename*/,
+                                                        NULL /*pcbNeeded*/);
+        if (NT_SUCCESS(rcNt))
+        {
+            UINT cwc;
+            rcNt = supR3HardenedCopyRedirectionResult(wszPath, RT_ELEMENTS(wszPath), pUniStrResult, pName, &cwc);
+            RtlFreeUnicodeString(&UniStrDynamic);
+            if (!NT_SUCCESS(rcNt))
+            {
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", rcNt));
+                SetLastError(dwSavedLastError);
+                return rcNt;
+            }
+
+            ResolvedName.Buffer = wszPath;
+            ResolvedName.Length = (USHORT)(cwc * sizeof(WCHAR));
+            ResolvedName.MaximumLength = ResolvedName.Length + sizeof(WCHAR);
+
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: '%.*ls' -> '%.*ls' [redir]\n",
+                         (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer,
+                         ResolvedName.Length / sizeof(WCHAR), ResolvedName.Buffer, rcNt));
+            pName = &ResolvedName;
+        }
+        else
+        {
+            memcpy(wszPath, pName->Buffer, pName->Length);
+            wszPath[pName->Length / sizeof(WCHAR)] = '\0';
+        }
     }
     /*
      * Not an absolute path.  Check if it's one of those special API set DLLs
@@ -1678,6 +1752,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                                "supR3HardenedMonitor_LdrLoadDll: relative name not permitted: %.*ls\n",
                                cwcName, pawcName);
             SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_OBJECT_NAME_INVALID));
+            SetLastError(dwSavedLastError);
             return STATUS_OBJECT_NAME_INVALID;
         }
 
@@ -1686,11 +1761,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
          * API here, which as always is a bit risky...  ASSUMES that the API
          * returns a full DOS path.
          */
-        UINT            cwc;
-        static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
-        UNICODE_STRING  UniStrStatic   = { 0, (USHORT)sizeof(wszPath) - sizeof(WCHAR), wszPath };
-        UNICODE_STRING  UniStrDynamic = { 0, 0, NULL };
-        PUNICODE_STRING pUniStrResult  = NULL;
+        UINT cwc;
         rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
                                                         pName,
                                                         (PUNICODE_STRING)&s_DefaultSuffix,
@@ -1702,25 +1773,14 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                                                         NULL /*pcbNeeded*/);
         if (NT_SUCCESS(rcNt))
         {
-            cwc = pUniStrResult->Length / sizeof(WCHAR);
-            if (pUniStrResult != &UniStrDynamic)
-                wszPath[cwc] = '\0';
-            else
-            {
-                if (pUniStrResult->Length > sizeof(wszPath) - sizeof(WCHAR))
-                {
-                    supR3HardenedError(VINF_SUCCESS, false,
-                                       "supR3HardenedMonitor_LdrLoadDll: Name too long: %.*ls -> %.*ls (RtlDosApplyFileIoslationRedirection_Ustr)\n",
-                                       pName->Length / sizeof(WCHAR), pName->Buffer,
-                                       pUniStrResult->Length / sizeof(WCHAR), pUniStrResult->Buffer);
-                    RtlFreeUnicodeString(&UniStrDynamic);
-                    SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
-                    return STATUS_NAME_TOO_LONG;
-                }
-                memcpy(&wszPath[0], pUniStrResult->Buffer, pUniStrResult->Length);
-                wszPath[cwc] = '\0';
-            }
+            rcNt = supR3HardenedCopyRedirectionResult(wszPath, RT_ELEMENTS(wszPath), pUniStrResult, pName, &cwc);
             RtlFreeUnicodeString(&UniStrDynamic);
+            if (!NT_SUCCESS(rcNt))
+            {
+                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", rcNt));
+                SetLastError(dwSavedLastError);
+                return rcNt;
+            }
         }
         else
         {
@@ -1734,6 +1794,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 supR3HardenedError(VINF_SUCCESS, false,
                                    "supR3HardenedMonitor_LdrLoadDll: GetSystemDirectoryW failed: %u\n", GetLastError());
                 SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_UNEXPECTED_IO_ERROR));
+                SetLastError(dwSavedLastError);
                 return STATUS_UNEXPECTED_IO_ERROR;
             }
             if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
@@ -1741,6 +1802,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 supR3HardenedError(VINF_SUCCESS, false,
                                    "supR3HardenedMonitor_LdrLoadDll: Name too long (system32): %.*ls\n", cwcName, pawcName);
                 SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_NAME_TOO_LONG));
+                SetLastError(dwSavedLastError);
                 return STATUS_NAME_TOO_LONG;
             }
             wszPath[cwc++] = '\\';
@@ -1791,6 +1853,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                                        wszPath, rcNt);
                     SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
                 }
+                SetLastError(dwSavedLastError);
                 return rcNt;
             }
 
