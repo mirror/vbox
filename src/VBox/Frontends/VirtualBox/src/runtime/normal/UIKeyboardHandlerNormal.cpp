@@ -15,22 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef Q_WS_MAC
 /* Qt includes: */
+#ifndef Q_WS_MAC
 # include <QMainWindow>
 # include <QMenuBar>
 # include <QKeyEvent>
+# include <QTimer>
 #endif /* !Q_WS_MAC */
 
 /* GUI includes: */
 #include "UIKeyboardHandlerNormal.h"
 #ifndef Q_WS_MAC
+# include "UIMachineLogic.h"
 # include "UIMachineWindow.h"
 # include "UIShortcutPool.h"
 #endif /* !Q_WS_MAC */
 
-#ifndef Q_WS_MAC
 /* Namespaces: */
+#ifndef Q_WS_MAC
 using namespace UIExtraDataDefs;
 #endif /* !Q_WS_MAC */
 
@@ -69,23 +71,32 @@ bool UIKeyboardHandlerNormal::eventFilter(QObject *pWatchedObject, QEvent *pEven
                     /* If menu-bar is present and have actions: */
                     if (pMenuBar && !pMenuBar->actions().isEmpty())
                     {
-                        /* If 'active' action is NOT chosen: */
-                        if (!pMenuBar->activeAction())
-                            /* Set first menu-bar action as 'active': */
-                            pMenuBar->setActiveAction(pMenuBar->actions()[0]);
-                        /* If 'active' action is chosen: */
-                        if (pMenuBar->activeAction())
+                        /* Is menu-bar visible? */
+                        if (pMenuBar->isVisible())
                         {
-                            /* Activate 'active' menu-bar action: */
-                            pMenuBar->activeAction()->activate(QAction::Trigger);
+                            /* If 'active' action is NOT chosen: */
+                            if (!pMenuBar->activeAction())
+                                /* Set first menu-bar action as 'active': */
+                                pMenuBar->setActiveAction(pMenuBar->actions()[0]);
+                            /* If 'active' action is chosen: */
+                            if (pMenuBar->activeAction())
+                            {
+                                /* Activate 'active' menu-bar action: */
+                                pMenuBar->activeAction()->activate(QAction::Trigger);
 #ifdef Q_WS_WIN
-                            /* Windows host needs separate 'focus set'
-                             * to let menubar operate while popped up: */
-                            pMenuBar->setFocus();
+                                /* Windows host needs separate 'focus set'
+                                 * to let menubar operate while popped up: */
+                                pMenuBar->setFocus();
 #endif /* Q_WS_WIN */
-                            /* Filter-out this event: */
-                            return true;
+                            }
                         }
+                        else
+                        {
+                            /* Post request to show popup-menu: */
+                            QTimer::singleShot(0, m_pMachineLogic, SLOT(sltInvokePopupMenu()));
+                        }
+                        /* Filter-out this event: */
+                        return true;
                     }
                 }
                 break;
