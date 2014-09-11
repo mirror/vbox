@@ -4278,7 +4278,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (   fHostHvp
         || fGuestHvp)
     {
-        uint32_t const uHyperLeaf  = 0x40000000;
+        uint32_t const uHyperLeaf = 0x40000000;
         pHlp->pfnPrintf(pHlp,
                         "\n"
                         "         Hypervisor CPUIDs\n"
@@ -4299,7 +4299,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         uint32_t const cHyperGstMax = pHyperLeafGst->uEax;
         uint32_t const cHyperHstMax = Host.eax;
         uint32_t const cHyperMax    = RT_MAX(cHyperHstMax, cHyperGstMax);
-        for (unsigned i = uHyperLeaf; i <= cHyperMax; i++)
+        for (uint32_t i = uHyperLeaf; i <= cHyperMax; i++)
         {
             RT_ZERO(Host);
             RT_ZERO(GuestLeaf);
