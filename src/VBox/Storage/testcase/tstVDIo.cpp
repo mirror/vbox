@@ -1757,7 +1757,7 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDSCRIPTARG paScriptArgs, void
     if (fFound)
     {
         RTPrintf("Dumping memory file %s to %s, this might take some time\n", pcszFile, pcszPathToDump);
-        //rc = VDMemDiskWriteToFile(pIt->pIo, pcszPathToDump);
+        rc = VDIoBackendDumpToFile(pIt->pIoStorage, pcszPathToDump);
         rc = VERR_NOT_IMPLEMENTED;
     }
     else

@@ -71,6 +71,8 @@ int VDIoBackendStorageSetSize(PVDIOSTORAGE pIoStorage, uint64_t cbSize);
 
 int VDIoBackendStorageGetSize(PVDIOSTORAGE pIoStorage, uint64_t *pcbSize);
 
+DECLHIDDEN(int) VDIoBackendDumpToFile(PVDIOSTORAGE pIoStorage, const char *pszPath);
+
 /**
  * Enqueues a new I/O request.
  *
