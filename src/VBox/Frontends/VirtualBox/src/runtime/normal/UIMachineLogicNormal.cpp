@@ -16,7 +16,9 @@
  */
 
 /* Qt includes: */
-#include <QMenu>
+#ifndef Q_WS_MAC
+# include <QTimer>
+#endif /* !Q_WS_MAC */
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -29,7 +31,9 @@
 #include "UIStatusBarEditorWindow.h"
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
-#ifdef Q_WS_MAC
+#ifndef Q_WS_MAC
+# include "QIMenu.h"
+#else /* Q_WS_MAC */
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
@@ -39,6 +43,9 @@
 
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)
+#ifndef Q_WS_MAC
+    , m_pPopupMenu(0)
+#endif /* !Q_WS_MAC */
 {
 }
 
@@ -74,6 +81,18 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
             break;
     }
 }
+
+#ifndef RT_OS_DARWIN
+void UIMachineLogicNormal::sltInvokePopupMenu()
+{
+    /* Popup main-menu if present: */
+    if (m_pPopupMenu && !m_pPopupMenu->isEmpty())
+    {
+        m_pPopupMenu->popup(activeMachineWindow()->geometry().center());
+        QTimer::singleShot(0, m_pPopupMenu, SLOT(sltHighlightFirstAction()));
+    }
+}
+#endif /* RT_OS_DARWIN */
 
 void UIMachineLogicNormal::sltOpenMenuBarSettings()
 {
@@ -257,6 +276,29 @@ void UIMachineLogicNormal::prepareMachineWindows()
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
 }
+
+#ifndef Q_WS_MAC
+void UIMachineLogicNormal::prepareMenu()
+{
+    /* Prepare popup-menu: */
+    m_pPopupMenu = new QIMenu;
+    AssertPtrReturnVoid(m_pPopupMenu);
+    {
+        /* Prepare popup-menu: */
+        foreach (QMenu *pMenu, actionPool()->menus())
+            m_pPopupMenu->addMenu(pMenu);
+    }
+}
+#endif /* !Q_WS_MAC */
+
+#ifndef Q_WS_MAC
+void UIMachineLogicNormal::cleanupMenu()
+{
+    /* Cleanup popup-menu: */
+    delete m_pPopupMenu;
+    m_pPopupMenu = 0;
+}
+#endif /* !Q_WS_MAC */
 
 void UIMachineLogicNormal::cleanupMachineWindows()
 {
