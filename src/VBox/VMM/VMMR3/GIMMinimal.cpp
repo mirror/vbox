@@ -35,6 +35,12 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+/**
+ * Initializes the Minimal provider.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
 VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -49,7 +55,14 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
 }
 
 
-VMMR3_INT_DECL(int) GIMR3MinimalInitFinalize(PVM pVM)
+/**
+ * Initializes remaining bits of the Minimal provider.
+ * This is called after initializing HM and almost all other VMM components.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+VMMR3_INT_DECL(int) GIMR3MinimalInitCompleted(PVM pVM)
 {
     /*
      * Expose a generic hypervisor-agnostic leaf (originally defined VMware).
@@ -91,6 +104,15 @@ VMMR3_INT_DECL(int) GIMR3MinimalInitFinalize(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Applies relocations to data and code managed by this component. This function
+ * will be called at init and whenever the VMM need to relocate itself inside
+ * the GC.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   offDelta    Relocation delta relative to old location.
+ */
 VMMR3_INT_DECL(void) GIMR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
     NOREF(pVM); NOREF(offDelta);

@@ -148,26 +148,32 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
 }
 
 
-VMMR3_INT_DECL(int) GIMR3InitFinalize(PVM pVM)
+/**
+ * Initializes the remaining bits of the GIM provider.
+ * This is called after initializing HM and most other VMM components.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the VM.
+ * @param   enmWhat             What has been completed.
+ * @thread  EMT(0)
+ */
+VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
 {
-    LogFlow(("GIMR3InitFinalize\n"));
-
     if (!pVM->gim.s.fEnabled)
         return VINF_SUCCESS;
 
-    int rc = VINF_SUCCESS;
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_MINIMAL:
-        {
-            rc = GIMR3MinimalInitFinalize(pVM);
-            break;
-        }
+            return GIMR3MinimalInitCompleted(pVM);
+
+        case GIMPROVIDERID_HYPERV:
+            return GIMR3HvInitCompleted(pVM);
 
         default:
             break;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

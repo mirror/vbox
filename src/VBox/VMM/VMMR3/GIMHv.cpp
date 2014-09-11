@@ -110,12 +110,6 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
         /* Hypervisor recommendations to the guest. */
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET
                          | GIM_HV_HINT_RELAX_TIME_CHECKS;
-
-        /* Hypervisor capabilities; features used by the hypervisor. */
-        /** @todo This is currently busted as it's too early. See @bugref{7270}
-         *        comment 130. */
-        pHv->uHyperCaps  = HMIsNestedPagingActive(pVM)   ? GIM_HV_HOST_FEAT_NESTED_PAGING : 0;
-        pHv->uHyperCaps |= HMAreMsrBitmapsAvailable(pVM) ? GIM_HV_HOST_FEAT_MSR_BITMAP : 0;
     }
 
     /*
@@ -212,14 +206,6 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
     AssertLogRelRCReturn(rc, rc);
 
-    HyperLeaf.uLeaf        = UINT32_C(0x40000006);
-    HyperLeaf.uEax         = pHv->uHyperCaps;
-    HyperLeaf.uEbx         = 0;
-    HyperLeaf.uEcx         = 0;
-    HyperLeaf.uEdx         = 0;
-    rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
-    AssertLogRelRCReturn(rc, rc);
-
     /*
      * Insert all MSR ranges of Hyper-V.
      */
@@ -230,6 +216,41 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Initializes remaining bits of the Hyper-V provider.
+ * This is called after initializing HM and almost all other VMM components.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+VMMR3_INT_DECL(int) GIMR3HvInitCompleted(PVM pVM)
+{
+    PGIMHV pHv = &pVM->gim.s.u.Hv;
+
+    /*
+     * Determine interface capabilities based on the version.
+     */
+    if (!pVM->gim.s.u32Version)
+    {
+        /* Hypervisor capabilities; features used by the hypervisor. */
+        pHv->uHyperCaps  = HMIsNestedPagingActive(pVM)   ? GIM_HV_HOST_FEAT_NESTED_PAGING : 0;
+        pHv->uHyperCaps |= HMAreMsrBitmapsAvailable(pVM) ? GIM_HV_HOST_FEAT_MSR_BITMAP : 0;
+    }
+
+    CPUMCPUIDLEAF HyperLeaf;
+    RT_ZERO(HyperLeaf);
+    HyperLeaf.uLeaf        = UINT32_C(0x40000006);
+    HyperLeaf.uEax         = pHv->uHyperCaps;
+    HyperLeaf.uEbx         = 0;
+    HyperLeaf.uEcx         = 0;
+    HyperLeaf.uEdx         = 0;
+    int rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+    AssertLogRelRCReturn(rc, rc);
+
+    return rc;
 }
 
 
