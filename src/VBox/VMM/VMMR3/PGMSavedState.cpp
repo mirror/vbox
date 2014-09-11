@@ -3076,7 +3076,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVM->aCpus[i].pgm.s.fA20Enabled << 20);
+        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
     }
 
