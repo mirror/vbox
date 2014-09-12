@@ -909,86 +909,45 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 # Precompiled header - non-functional atm.
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
-VirtualBox_INCS          <= $(VirtualBox_0_OUTDIR)/include
-VirtualBox_DEFS          += VBOX_WITH_PRECOMPILED_HEADERS
-VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
-VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/precomp.h.gch
+ VirtualBox_DEFS          += VBOX_WITH_PRECOMPILED_HEADERS
+ if1of ($(KBUILD_TARGET),win)
+ # VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
+ # VirtualBox_INCS          <= $(VirtualBoxPch_0_OUTDIR)/src
+ # VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/precomp.h.gch
+ else
+  VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
+  VirtualBox_INCS          <= $(VirtualBoxPch_0_OUTDIR)/src
+  VirtualBox_INTERMEDIATES += $(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch
+ endif
 
-tstx: $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch
+ TOOL_VirtualBoxPchLinker = Linker for VirtualBoxPch
+ define TOOL_VirtualBoxPchLinker_LINK_MISCBIN_CMDS
+	$(APPEND) -t $(out)
+ endef
 
-$$(VirtualBox_0_OUTDIR)/include/precomp.h.gch: \
-		$(PATH_SUB_CURRENT)/src/precomp.h \
-		$$(VirtualBox_0_OUTDIR)/include/COMWrappers.h \
-		$$(filter %.gen.h, $$(VirtualBox_INTERMEDIATES) ) \
-		$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h \
-		| $$(dir $$@)
-	time 'g++-4.0' \
-		'-c' \
-		'-g' \
-		$(if-expr "$(KBUILD_TYPE)" == "debug", , -O2 ) \
-		'-pipe' \
-		'-Wall' \
-		'-Wextra' \
-		'-Wno-missing-field-initializers' \
-		'-Wno-trigraphs' \
-		'-frtti' \
-		'-fno-exceptions' \
-		'-Wno-non-virtual-dtor' \
-		'-Wno-long-long' \
-		\
-		'-fshort-wchar' \
-		'-fno-strict-aliasing' \
-		'-fvisibility=hidden' \
-		'-DVBOX_HAVE_VISIBILITY_HIDDEN' \
-		'-DRT_USE_VISIBILITY_DEFAULT' \
-		'-fvisibility-inlines-hidden' \
-		'-Winvalid-pch' \
-		'-fpch-preprocess' \
-		\
-		'-F$(PATH_SDK_QT4)/Frameworks' \
-		'-mmacosx-version-min=10.5' \
-		'-isysroot' \
-		'/Developer/SDKs/MacOSX10.5.sdk' \
-		'-m32' \
-		\
-		$(foreach inc,$(VirtualBox_INCS),\$(NL)$(TAB)-I$(inc)) \
-		'-I$(PATH_ROOT)/include' \
-		'-I$(PATH_OUT)' \
-		'-DVBOX' \
-		'-DVBOX_WITH_DEBUGGER' \
-		'-DVBOX_WITH_64_BITS_GUESTS' \
-		$(if-expr "$(KBUILD_TYPE)" == "debug", '-DDEBUG' '-DDEBUG_bird' '-DDEBUG_USERNAME=bird' '-DVBOX_CHECK_STATE' ,) \
-		'-DRT_OS_DARWIN' \
-		'-D__DARWIN__' \
-		'-DRT_ARCH_X86' \
-		'-D__X86__' \
-		'-DIN_RING3' \
-		'-DQT_NO_DEBUG' \
-		'-DQT_THREAD_SUPPORT' \
-		'-DQT_SHARED' \
-		'-DHAVE_CONFIG_H' \
-		'-DHC_ARCH_BITS=32' \
-		'-DGC_ARCH_BITS=64' \
-		'-DVBOX_WITH_XPCOM' \
-		'-DVBOX_WITH_UPDATE_REQUEST' \
-		'-DVBOX_WITH_ALSA' \
-		'-DVBOX_WITH_PULSE' \
-		'-DVBOX_WITH_E1000' \
-		'-DVBOX_WITH_NETFLT' \
-		'-DVBOX_WITH_DEBUGGER_GUI' \
-		$(if-expr "$(KBUILD_TYPE)" != "release", '-DVBOX_WITH_DEBUGGER_GUI_MENU', ) \
-		'-DVBOX_WITH_VIDEOHWACCEL' \
-		'-DVBOX_GUI_USE_QGL' \
-		'-DVBOX_WITH_VIRTIO' \
-		'-DVBOX_WITH_PRECOMPILED_HEADERS' \
-		'-DVBOX_DARWIN_USE_NATIVE_CONTROLS' \
-		'-DQT_CORE_LIB' \
-		'-DQT_GUI_LIB' \
-		'-DQT_NETWORK_LIB' \
-		'-DQT_OPENGL_LIB' \
-		'-DMAC_OS_X_VERSION_MIN_REQUIRED=1050' \
-		'-DMAC_OS_X_VERSION_MAX_ALLOWED=1050' \
-		'-o' $@ $<
+ MISCBINS += VirtualBoxPch
+ VirtualBoxPch_EXTENDS = VirtualBox
+ VirtualBoxPch_LDTOOL   = VirtualBoxPchLinker
+ VirtualBoxPch_INSTTYPE = none
+ VirtualBoxPch_INTERMEDIATES   = $(filter-out %.h.gch, $(VirtualBox_INTERMEDIATES))
+ VirtualBoxPch_NAME            = VirtualBoxPch
+ if1of ($(KBUILD_TARGET),win)
+  VirtualBoxPch_SOURCES        = src/precomp.cpp
+  VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS))
+ else
+  VirtualBoxPch_SOURCES        = src/precomp.h
+  VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS)) -x c++-header
+  VirtualBoxPch_CXXOBJSUFF     = .h.gch
+  VirtualBoxPch_SRC_HANDLERS   = .h:def_src_handler_cxx
+ endif
+ VirtualBoxPch_SOURCES.darwin  = $(NO_SUCH_VARIABLE)
+ VirtualBoxPch_SOURCES.solaris = $(NO_SUCH_VARIABLE)
+ VirtualBoxPch_SOURCES.freebsd = $(NO_SUCH_VARIABLE)
+ VirtualBoxPch_SOURCES.linux   = $(NO_SUCH_VARIABLE)
+ VirtualBoxPch_SOURCES.win     = $(NO_SUCH_VARIABLE)
+ VirtualBoxPch_QT_MODULES      = $(VirtualBox_QT_MODULES) # "bug" - not inherited.
+ VirtualBoxPch_INCS            = $(VirtualBox_INCS)       # "bug" - missing qtuic and qtmoc
+
 endif
 
 ifeq ($(KBUILD_TARGET),win)
