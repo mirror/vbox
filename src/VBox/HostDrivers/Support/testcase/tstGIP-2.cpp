@@ -162,7 +162,7 @@ int main(int argc, char **argv)
             /* Display TSC deltas. */
             RTPrintf("tstGIP-2: TSC deltas:\n");
             for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
-                RTPrintf("tstGIP-2: %6d: %016lld\n", iCpu, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
+                RTPrintf("tstGIP-2: %6d: %lld\n", iCpu, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
         }
         else
         {
