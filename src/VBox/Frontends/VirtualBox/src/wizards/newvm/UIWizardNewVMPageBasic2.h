@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIWizardNewVMPageBasic2 class declaration
+ * VBox Qt GUI - UIWizardNewVMPageBasic2 class declaration.
  */
 
 /*
