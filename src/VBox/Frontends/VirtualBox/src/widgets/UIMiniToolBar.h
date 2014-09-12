@@ -1,8 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMiniToolBar class declaration.
- * This is the toolbar shown in fullscreen/seamless modes.
+ * VBox Qt GUI - UIMiniToolBar class declaration (fullscreen/seamless).
  */
 
 /*

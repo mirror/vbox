@@ -86,7 +86,6 @@
 #include <QHostAddress>
 #include <QHttp>
 #include <QHttpResponseHeader>
-#include <QIWithRetranslateUI.h>
 #include <QIcon>
 #include <QImage>
 #include <QImageWriter>

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UILineTextEdit class definitions
+ * VBox Qt GUI - UILineTextEdit class definitions.
  */
 
 /*

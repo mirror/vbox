@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineWindowNormal class declaration
+ * VBox Qt GUI - UIMachineWindowNormal class declaration.
  */
 
 /*

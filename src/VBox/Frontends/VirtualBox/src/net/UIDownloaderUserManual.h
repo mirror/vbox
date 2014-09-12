@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDownloaderUserManual class declaration
+ * VBox Qt GUI - UIDownloaderUserManual class declaration.
  */
 
 /*

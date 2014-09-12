@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGChooserHandlerMouse class declaration
+ * VBox Qt GUI - UIGChooserHandlerMouse class declaration.
  */
 
 /*

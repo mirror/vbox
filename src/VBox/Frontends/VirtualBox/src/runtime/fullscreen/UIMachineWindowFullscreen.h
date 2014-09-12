@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineWindowFullscreen class declaration
+ * VBox Qt GUI - UIMachineWindowFullscreen class declaration.
  */
 
 /*

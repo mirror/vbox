@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Declarations of utility functions for handling Darwin Cocoa specific event
- * handling tasks
+ * VBox Qt GUI - Declarations of utility functions for handling Darwin Cocoa specific event handling tasks.
  */
 
 /*

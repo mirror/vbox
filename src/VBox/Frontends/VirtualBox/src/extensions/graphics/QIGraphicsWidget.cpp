@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * QIGraphicsWidget class definition
+ * VBox Qt GUI - QIGraphicsWidget class definition.
  */
 
 /*

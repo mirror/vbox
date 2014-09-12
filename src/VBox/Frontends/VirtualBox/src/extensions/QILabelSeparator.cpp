@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QILabelSeparator class implementation
+ * VBox Qt GUI - VirtualBox Qt extensions: QILabelSeparator class implementation.
  */
 
 /*

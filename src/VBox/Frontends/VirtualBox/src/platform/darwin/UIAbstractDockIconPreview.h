@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Abstract class for the dock icon preview
+ * VBox Qt GUI - Abstract class for the dock icon preview.
  */
 
 /*

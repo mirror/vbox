@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIMachineSettingsPortForwardingDlg class implementation
+ * VBox Qt GUI - UIMachineSettingsPortForwardingDlg class implementation.
  */
 
 /*

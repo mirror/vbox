@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: VBoxFilePathSelectorWidget class declaration
+ * VBox Qt GUI - VirtualBox Qt extensions: VBoxFilePathSelectorWidget class declaration.
  */
 
 /*

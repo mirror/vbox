@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UINetworkManagerIndicator stuff declaration
+ * VBox Qt GUI - UINetworkManagerIndicator stuff declaration.
  */
 
 /*

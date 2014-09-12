@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGraphicsToolBar class definition
+ * VBox Qt GUI - UIGraphicsToolBar class definition.
  */
 
 /*

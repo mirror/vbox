@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxSpecialButtons implementation
+ * VBox Qt GUI - VBoxSpecialButtons implementation.
  */
 
 /*

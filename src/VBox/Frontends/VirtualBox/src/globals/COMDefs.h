@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Various COM definitions and COM wrapper class declarations
+ * VBox Qt GUI - Various COM definitions and COM wrapper class declarations.
  *
  * This header is used in conjunction with the header generated from
  * XIDL expressed interface definitions to provide cross-platform Qt-based

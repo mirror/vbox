@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Qt GUI - Realtime Dock Icon Preview
+ * VBox Qt GUI - Realtime Dock Icon Preview
  */
 
 /*

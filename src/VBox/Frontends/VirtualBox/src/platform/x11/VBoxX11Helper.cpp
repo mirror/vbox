@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * X11 helpers.
+ * VBox Qt GUI - X11 helpers..
  */
 
 /*

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UINetworkRequest stuff implementation
+ * VBox Qt GUI - UINetworkRequest stuff implementation.
  */
 
 /*

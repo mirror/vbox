@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDDrag class implementation. This class implements the
+ * VBox Qt GUI - UIDnDDrag class implementation. This class implements the
  * IDataObject interface.
  */
 

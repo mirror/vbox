@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIAnimationFramework class declaration
+ * VBox Qt GUI - UIAnimationFramework class declaration.
  */
 
 /*

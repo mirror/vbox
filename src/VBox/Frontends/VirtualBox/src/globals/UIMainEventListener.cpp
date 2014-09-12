@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMainEventListener class implementation
+ * VBox Qt GUI - UIMainEventListener class implementation.
  */
 
 /*

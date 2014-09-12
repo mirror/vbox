@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIGlobalSettingsDisplay class implementation
+ * VBox Qt GUI - UIGlobalSettingsDisplay class implementation.
  */
 
 /*

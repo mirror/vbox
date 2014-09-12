@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIWindowMenuManager class declaration
+ * VBox Qt GUI - UIWindowMenuManager class declaration.
  */
 
 /*

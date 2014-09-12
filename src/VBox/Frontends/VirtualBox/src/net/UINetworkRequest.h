@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UINetworkRequest stuff declaration
+ * VBox Qt GUI - UINetworkRequest stuff declaration.
  */
 
 /*

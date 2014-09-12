@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIApplianceImportEditorWidget class declaration
+ * VBox Qt GUI - UIApplianceImportEditorWidget class declaration.
  */
 
 /*

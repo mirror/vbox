@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UISpacerWidgets declarations
+ * VBox Qt GUI - UISpacerWidgets declarations.
  */
 
 /*

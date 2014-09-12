@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UICocoaSpecialControls implementation
+ * VBox Qt GUI - UICocoaSpecialControls implementation.
  */
 
 /*

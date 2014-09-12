@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIGlobalSettingsNetworkDetailsNAT class implementation
+ * VBox Qt GUI - UIGlobalSettingsNetworkDetailsNAT class implementation.
  */
 
 /*

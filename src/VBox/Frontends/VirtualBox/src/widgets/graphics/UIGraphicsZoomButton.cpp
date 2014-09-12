@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGraphicsZoomButton class definition
+ * VBox Qt GUI - UIGraphicsZoomButton class definition.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UINetworkReply stuff declaration
+ * VBox Qt GUI - UINetworkReply stuff declaration.
  */
 
 /*

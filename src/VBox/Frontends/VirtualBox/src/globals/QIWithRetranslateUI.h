@@ -1,8 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Declarations of utility classes and functions
- * VirtualBox Qt extensions: QIWithRetranslateUI class declaration
+ * VBox Qt GUI - Qt extensions: QIWithRetranslateUI class declaration.
  */
 
 /*

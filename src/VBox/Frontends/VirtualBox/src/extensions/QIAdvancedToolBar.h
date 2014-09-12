@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * QIAdvancedToolBar class implementation
+ * VBox Qt GUI - QIAdvancedToolBar class implementation
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMultiScreenLayout class declaration
+ * VBox Qt GUI - UIMultiScreenLayout class declaration.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIKeyboardHandler class declaration
+ * VBox Qt GUI - UIKeyboardHandler class declaration.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxSnapshotsWgt class declaration
+ * VBox Qt GUI - VBoxSnapshotsWgt class declaration.
  */
 
 /*
