@@ -52,6 +52,8 @@ protected:
     void handleNativeNotification(const QString &strNativeNotificationName);
     /** Mac OS X: Returns whether window is in 'fullscreen' transition. */
     bool isInFullscreenTransition() const { return m_fIsInFullscreenTransition; }
+    /** Mac OS X: Defines whether mini-toolbar should be @a fVisible. */
+    void setMiniToolbarVisible(bool fVisible);
 #endif /* Q_WS_MAC */
 
 private slots:

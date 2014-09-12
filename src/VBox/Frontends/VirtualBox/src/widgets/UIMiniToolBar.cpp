@@ -287,9 +287,6 @@ void UIRuntimeMiniToolBar::prepare()
 
     /* Adjust geometry finally: */
     adjustGeometry();
-
-    /* Show: */
-    show();
 }
 
 void UIRuntimeMiniToolBar::cleanup()
