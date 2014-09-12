@@ -3123,19 +3123,32 @@ static VBOXSTRICTRC iemTaskSwitch(PIEMCPU         pIemCpu,
     {
         Assert(enmTaskSwitch == IEMTASKSWITCH_INT_XCPT);
         uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
-        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
-            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
+        uint8_t const cbStackFrame = fIsNewTSS386 ? 4 : 2;
 
         /* Check that there is sufficient space on the stack. */
-        uint8_t const cbStackFrame = fIsNewTSS386 ? 4 : 2;
-        if (   pCtx->esp - 1 > cbLimitSS
-            || pCtx->esp < cbStackFrame)
+        ///@todo: Factor out segment limit checking for normal/expand down segments into a separate function
+        if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN))
         {
-            /** @todo Intel says #SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
-            Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
-                 cbStackFrame));
-            return iemRaiseStackSelectorNotPresentWithErr(pIemCpu, uExt);
+            if (   pCtx->esp - 1 > cbLimitSS
+                || pCtx->esp < cbStackFrame)
+            {
+                /** @todo Intel says #SS(EXT) for INT/XCPT, I couldn't figure out AMD yet. */
+                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
+                     cbStackFrame));
+                return iemRaiseStackSelectorNotPresentWithErr(pIemCpu, uExt);
+            }
         }
+        else
+        {
+            if (   pCtx->esp - 1 > (DescSS.Legacy.Gen.u4Type & X86_DESC_DB ? UINT32_MAX : UINT32_C(0xffff))
+                || pCtx->esp - cbStackFrame < cbLimitSS + UINT32_C(1))
+            {
+                Log(("iemTaskSwitch: SS=%#x ESP=%#x cbStackFrame=%#x (expand down) is out of bounds -> #SS\n", pCtx->ss.Sel, pCtx->esp,
+                     cbStackFrame));
+                return iemRaiseStackSelectorNotPresentWithErr(pIemCpu, uExt);
+            }
+        }
+
 
         if (fIsNewTSS386)
             rcStrict = iemMemStackPushU32(pIemCpu, uErr);
@@ -3414,20 +3427,29 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         /* Check that there is sufficient space for the stack frame. */
         uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
-        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
-        {
-            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
-        }
-
         uint8_t const cbStackFrame = !(fEfl & X86_EFL_VM)
                                    ? (fFlags & IEM_XCPT_FLAGS_ERR ? 12 : 10) << f32BitGate
                                    : (fFlags & IEM_XCPT_FLAGS_ERR ? 20 : 18) << f32BitGate;
-        if (   uNewEsp - 1 > cbLimitSS
-            || uNewEsp < cbStackFrame)
+
+        if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN))
         {
-            Log(("RaiseXcptOrIntInProtMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #GP\n",
-                 u8Vector, NewSS, uNewEsp, cbStackFrame));
-            return iemRaiseSelectorBoundsBySelector(pIemCpu, NewSS);
+            if (   uNewEsp - 1 > cbLimitSS
+                || uNewEsp < cbStackFrame)
+            {
+                Log(("RaiseXcptOrIntInProtMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #GP\n",
+                     u8Vector, NewSS, uNewEsp, cbStackFrame));
+                return iemRaiseSelectorBoundsBySelector(pIemCpu, NewSS);
+            }
+        }
+        else
+        {
+            if (   uNewEsp - 1 > (DescSS.Legacy.Gen.u4Type & X86_DESC_DB ? UINT32_MAX : UINT32_C(0xffff))
+                || uNewEsp - cbStackFrame < cbLimitSS + UINT32_C(1))
+            {
+                Log(("RaiseXcptOrIntInProtMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x (expand down) is out of bounds -> #GP\n",
+                     u8Vector, NewSS, uNewEsp, cbStackFrame));
+                return iemRaiseSelectorBoundsBySelector(pIemCpu, NewSS);
+            }
         }
 
         /*
