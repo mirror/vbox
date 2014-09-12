@@ -244,7 +244,7 @@ void vscsiSenseInit(PVSCSISENSE pVScsiSense);
 int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq);
 
 /**
- * Sets a error sense code.
+ * Sets an error sense code.
  *
  * @returns SCSI status code.
  * @param   pVScsiSense   The SCSI sense state to use.
@@ -255,6 +255,20 @@ int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq);
  */
 int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey,
                           uint8_t uSCSIASC, uint8_t uSCSIASCQ);
+
+/**
+ * Sets an error sense code with additional information.
+ *
+ * @returns SCSI status code.
+ * @param   pVScsiSense   The SCSI sense state to use.
+ * @param   pVScsiReq     The SCSI request.
+ * @param   uSCSISenseKey The SCSI sense key to set.
+ * @param   uSCSIASC      The ASC value.
+ * @param   uSCSIASC      The ASCQ value. 
+ * @param   uInfo         The 32-bit sense information.
+ */
+int vscsiReqSenseErrorInfoSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey,
+                              uint8_t uSCSIASC, uint8_t uSCSIASCQ, uint32_t uInfo);
 
 /**
  * Process a request sense command.
@@ -434,6 +448,13 @@ DECLINLINE(int) vscsiLunReqSenseErrorSet(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pV
     return vscsiReqSenseErrorSet(&pVScsiLun->pVScsiDevice->VScsiSense, pVScsiReq, uSCSISenseKey, uSCSIASC, uSCSIASCQ);
 }
 
+/**
+ * Wrapper around vscsiReqSenseErrorInfoSet()
+ */
+DECLINLINE(int) vscsiLunReqSenseErrorInfoSet(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC, uint8_t uSCSIASCQ, uint32_t uInfo)
+{
+    return vscsiReqSenseErrorInfoSet(&pVScsiLun->pVScsiDevice->VScsiSense, pVScsiReq, uSCSISenseKey, uSCSIASC, uSCSIASCQ, uInfo);
+}
 
 #endif /* ___VSCSIInternal_h */
 
