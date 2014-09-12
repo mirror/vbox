@@ -112,7 +112,7 @@ UISearchField::UISearchField(QWidget *pParent /* = 0 */)
 
 #else /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
-# ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# ifndef VBOX_WITH_PRECOMPILED_HEADERS
 /* Qt includes */
 #  include <QPainter>
 #  include <QBitmap>
