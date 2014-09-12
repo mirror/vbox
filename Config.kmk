@@ -3042,7 +3042,7 @@ ifeq ($(KBUILD_TARGET),solaris)
   endif
 
   # OSS audio support for Solaris
- VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
+  VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
  endif
 
  # XPCOM namespace cleanup issue with Solaris GCC 4.5.2 and newer, see @bugref{5838}.
@@ -3778,7 +3778,6 @@ TEMPLATE_VBOXR3EXE_LIBPATH            += \
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
-
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
