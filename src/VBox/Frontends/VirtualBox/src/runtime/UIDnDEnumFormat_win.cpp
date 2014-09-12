@@ -16,17 +16,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#include <windows.h>
+#include <Windows.h>
 #include <new> /* For bad_alloc. */
 
 #include "UIDnDEnumFormat_win.h"
 #include "UIDnDDataObject_win.h"
+
 
 UIDnDEnumFormatEtc::UIDnDEnumFormatEtc(FORMATETC *pFormatEtc, ULONG cFormats)
     : m_lRefCount(1),

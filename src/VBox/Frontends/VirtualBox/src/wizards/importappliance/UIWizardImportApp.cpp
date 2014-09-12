@@ -15,21 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QDialogButtonBox>
-#include <QPrintDialog>
-#include <QPrinter>
-#include <QPushButton>
-#include <QTextStream>
+# include <QDialogButtonBox>
+# include <QPrintDialog>
+# include <QPrinter>
+# include <QPushButton>
+# include <QTextStream>
 
 /* Local includes: */
-#include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
-#include "UIWizardImportAppPageExpert.h"
-#include "VBoxGlobal.h"
-#include "QIDialog.h"
-#include "QIFileDialog.h"
+# include "UIWizardImportApp.h"
+# include "UIWizardImportAppPageBasic1.h"
+# include "UIWizardImportAppPageBasic2.h"
+# include "UIWizardImportAppPageExpert.h"
+# include "VBoxGlobal.h"
+# include "QIDialog.h"
+# include "QIFileDialog.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Import license viewer: */
 class UIImportLicenseViewer : public QIDialog

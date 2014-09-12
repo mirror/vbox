@@ -16,35 +16,36 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QDateTime>
-#include <QHeaderView>
-#include <QMenu>
-#include <QScrollBar>
-#include <QWindowsStyle>
-#include <QPointer>
-#include <QApplication>
+# include <QDateTime>
+# include <QHeaderView>
+# include <QMenu>
+# include <QScrollBar>
+# include <QWindowsStyle>
+# include <QPointer>
+# include <QApplication>
 
 /* GUI includes: */
-#include "UIIconPool.h"
-#include "UIMessageCenter.h"
-#include "VBoxSnapshotDetailsDlg.h"
-#include "VBoxSnapshotsWgt.h"
-#include "VBoxTakeSnapshotDlg.h"
-#include "UIWizardCloneVM.h"
-#include "UIToolBar.h"
-#include "UIVirtualBoxEventHandler.h"
-#include "UIConverter.h"
-#include "UIModalWindowManager.h"
-#include "UIExtraDataManager.h"
+# include "UIIconPool.h"
+# include "UIMessageCenter.h"
+# include "VBoxSnapshotDetailsDlg.h"
+# include "VBoxSnapshotsWgt.h"
+# include "VBoxTakeSnapshotDlg.h"
+# include "UIWizardCloneVM.h"
+# include "UIToolBar.h"
+# include "UIVirtualBoxEventHandler.h"
+# include "UIConverter.h"
+# include "UIModalWindowManager.h"
+# include "UIExtraDataManager.h"
 
 /* COM includes: */
-#include "CConsole.h"
+# include "CConsole.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /**
  *  QTreeWidgetItem subclass for snapshots items

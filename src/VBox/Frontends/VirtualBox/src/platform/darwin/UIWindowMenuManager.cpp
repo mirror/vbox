@@ -15,12 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes */
-#include "UIWindowMenuManager.h"
+# include "UIWindowMenuManager.h"
 
 /* Global includes */
-#include <QApplication>
-#include <QMenu>
+# include <QApplication>
+# include <QMenu>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 class UIMenuHelper: public QObject
 {

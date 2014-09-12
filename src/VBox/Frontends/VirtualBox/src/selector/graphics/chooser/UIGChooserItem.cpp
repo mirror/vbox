@@ -15,22 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QStyle>
-#include <QPainter>
-#include <QGraphicsScene>
-#include <QStyleOptionFocusRect>
-#include <QGraphicsSceneMouseEvent>
-#include <QStateMachine>
-#include <QPropertyAnimation>
-#include <QSignalTransition>
+# include <QApplication>
+# include <QStyle>
+# include <QPainter>
+# include <QGraphicsScene>
+# include <QStyleOptionFocusRect>
+# include <QGraphicsSceneMouseEvent>
+# include <QStateMachine>
+# include <QPropertyAnimation>
+# include <QSignalTransition>
 
 /* GUI includes: */
-#include "UIGChooserItem.h"
-#include "UIGChooserModel.h"
-#include "UIGChooserItemGroup.h"
-#include "UIGChooserItemMachine.h"
+# include "UIGChooserItem.h"
+# include "UIGChooserModel.h"
+# include "UIGChooserItemGroup.h"
+# include "UIGChooserItemMachine.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
     : m_fRoot(!pParent)

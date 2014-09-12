@@ -15,12 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* GUI includes: */
-#include "UIPopupStackViewport.h"
-#include "UIPopupPane.h"
+# include "UIPopupStackViewport.h"
+# include "UIPopupPane.h"
 
 /* Other VBox includes: */
-#include <VBox/sup.h>
+# include <VBox/sup.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIPopupStackViewport::UIPopupStackViewport()
     : m_iLayoutMargin(1)

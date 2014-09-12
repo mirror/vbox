@@ -15,32 +15,36 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QApplication>
-#include <QKeyEvent>
-#include <QStringList>
-#include <QTimer>
-#include <QUrl>
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/log.h>
+/* Qt includes: */
+# include <QApplication>
+# include <QKeyEvent>
+# include <QStringList>
+# include <QTimer>
+# include <QUrl>
 
 /* GUI includes: */
-#include "UIDnDHandler.h"
+# include "UIDnDHandler.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
 # include "CDnDSource.h"
 # include "UIDnDDrag.h"
 #endif
-#include "UIMessageCenter.h"
+# include "UIMessageCenter.h"
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CDnDTarget.h"
-#include "CGuest.h"
-#include "CSession.h"
+# include "CConsole.h"
+# include "CDnDTarget.h"
+# include "CGuest.h"
+# include "CSession.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#undef LOG_GROUP
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/log.h>
 
 
 

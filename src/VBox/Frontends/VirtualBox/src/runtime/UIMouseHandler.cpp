@@ -15,27 +15,44 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QMouseEvent>
-#include <QTouchEvent>
-#include <QTimer>
+# include <QDesktopWidget>
+# include <QMouseEvent>
+# include <QTouchEvent>
+# include <QTimer>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UIFrameBuffer.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
+# include "UISession.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
+# include "UIMachineView.h"
+# include "UIFrameBuffer.h"
 
-#ifdef Q_WS_WIN
-# include "VBoxUtils-win.h"
-#endif /* Q_WS_WIN */
+# ifdef Q_WS_WIN
+#  include "VBoxUtils-win.h"
+# endif /* Q_WS_WIN */
+
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+# endif /* Q_WS_MAC */
+
+/* COM includes: */
+# include "CConsole.h"
+# include "CMouse.h"
+# include "CDisplay.h"
+
+# include <iprt/time.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef Q_WS_X11
 # include <X11/XKBlib.h>
@@ -51,16 +68,6 @@ const int XKeyRelease = KeyRelease;
 # endif /* KeyPress */
 #endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
-
-/* COM includes: */
-#include "CConsole.h"
-#include "CMouse.h"
-#include "CDisplay.h"
-
-#include <iprt/time.h>
 
 /* Factory function to create mouse-handler: */
 UIMouseHandler* UIMouseHandler::create(UIMachineLogic *pMachineLogic,

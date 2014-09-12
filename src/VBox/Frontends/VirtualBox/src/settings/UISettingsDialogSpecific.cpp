@@ -15,49 +15,56 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QStackedWidget>
-#include <QThread>
-#include <QMutex>
-#include <QWaitCondition>
-#include <QTimer>
+# include <QStackedWidget>
+# include <QThread>
+# include <QMutex>
+# include <QWaitCondition>
+# include <QTimer>
 
 /* GUI includes: */
-#include "UISettingsDialogSpecific.h"
-#include "UISettingsDefs.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIExtraDataManager.h"
-#include "QIWidgetValidator.h"
-#include "VBoxSettingsSelector.h"
-#include "UIVirtualBoxEventHandler.h"
+# include "UISettingsDialogSpecific.h"
+# include "UISettingsDefs.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIExtraDataManager.h"
+# include "QIWidgetValidator.h"
+# include "VBoxSettingsSelector.h"
+# include "UIVirtualBoxEventHandler.h"
 
-#include "UIGlobalSettingsGeneral.h"
-#include "UIGlobalSettingsInput.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UIGlobalSettingsUpdate.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIGlobalSettingsLanguage.h"
-#include "UIGlobalSettingsDisplay.h"
-#include "UIGlobalSettingsNetwork.h"
-#include "UIGlobalSettingsExtension.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UIGlobalSettingsProxy.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIGlobalSettingsGeneral.h"
+# include "UIGlobalSettingsInput.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UIGlobalSettingsUpdate.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIGlobalSettingsLanguage.h"
+# include "UIGlobalSettingsDisplay.h"
+# include "UIGlobalSettingsNetwork.h"
+# include "UIGlobalSettingsExtension.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UIGlobalSettingsProxy.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
-#include "UIMachineSettingsGeneral.h"
-#include "UIMachineSettingsSystem.h"
-#include "UIMachineSettingsDisplay.h"
-#include "UIMachineSettingsStorage.h"
-#include "UIMachineSettingsAudio.h"
-#include "UIMachineSettingsNetwork.h"
-#include "UIMachineSettingsSerial.h"
-#include "UIMachineSettingsParallel.h"
-#include "UIMachineSettingsUSB.h"
-#include "UIMachineSettingsSF.h"
+# include "UIMachineSettingsGeneral.h"
+# include "UIMachineSettingsSystem.h"
+# include "UIMachineSettingsDisplay.h"
+# include "UIMachineSettingsStorage.h"
+# include "UIMachineSettingsAudio.h"
+# include "UIMachineSettingsNetwork.h"
+# include "UIMachineSettingsSerial.h"
+# include "UIMachineSettingsParallel.h"
+# include "UIMachineSettingsUSB.h"
+# include "UIMachineSettingsSF.h"
 
 /* COM includes: */
-#include "CUSBController.h"
+# include "CUSBController.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 #if 0 /* Global USB filters are DISABLED now: */
 # define ENABLE_GLOBAL_USB

@@ -15,76 +15,83 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QDir>
-#include <QFileInfo>
-#include <QImageWriter>
-#include <QPainter>
-#include <QTimer>
-#include <QDateTime>
-#ifdef Q_WS_MAC
-# include <QMenuBar>
-#endif /* Q_WS_MAC */
+# include <QDesktopWidget>
+# include <QDir>
+# include <QFileInfo>
+# include <QImageWriter>
+# include <QPainter>
+# include <QTimer>
+# include <QDateTime>
+# ifdef Q_WS_MAC
+#  include <QMenuBar>
+# endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "QIFileDialog.h"
-#include "UIActionPoolRuntime.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UIDownloaderAdditions.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIIconPool.h"
-#include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
-#include "UIMachineLogic.h"
-#include "UIMachineLogicFullscreen.h"
-#include "UIMachineLogicNormal.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineLogicScale.h"
-#include "UIFrameBuffer.h"
-#include "UIMachineView.h"
-#include "UIMachineWindow.h"
-#include "UISession.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "VBoxTakeSnapshotDlg.h"
-#include "UIVMInfoDialog.h"
-#include "UISettingsDialogSpecific.h"
-#include "UIVMLogViewer.h"
-#include "UIConverter.h"
-#include "UIModalWindowManager.h"
-#include "UIMedium.h"
-#include "UIExtraDataManager.h"
-#ifdef Q_WS_MAC
-# include "DockIconPreview.h"
+# include "QIFileDialog.h"
+# include "UIActionPoolRuntime.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UINetworkManager.h"
+#  include "UIDownloaderAdditions.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIIconPool.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
+# include "UIMachineLogic.h"
+# include "UIMachineLogicFullscreen.h"
+# include "UIMachineLogicNormal.h"
+# include "UIMachineLogicSeamless.h"
+# include "UIMachineLogicScale.h"
+# include "UIFrameBuffer.h"
+# include "UIMachineView.h"
+# include "UIMachineWindow.h"
+# include "UISession.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "VBoxTakeSnapshotDlg.h"
+# include "UIVMInfoDialog.h"
+# include "UISettingsDialogSpecific.h"
+# include "UIVMLogViewer.h"
+# include "UIConverter.h"
+# include "UIModalWindowManager.h"
+# include "UIMedium.h"
 # include "UIExtraDataManager.h"
-#endif /* Q_WS_MAC */
+# ifdef Q_WS_MAC
+#  include "DockIconPreview.h"
+#  include "UIExtraDataManager.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "CVirtualBoxErrorInfo.h"
-#include "CMachineDebugger.h"
-#include "CSnapshot.h"
-#include "CDisplay.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CHostUSBDevice.h"
-#include "CUSBDevice.h"
-#include "CVRDEServer.h"
-#include "CSystemProperties.h"
-#include "CHostVideoInputDevice.h"
-#include "CEmulatedUSB.h"
-#include "CNetworkAdapter.h"
-#ifdef Q_WS_MAC
-# include "CGuest.h"
-#endif /* Q_WS_MAC */
+# include "CVirtualBoxErrorInfo.h"
+# include "CMachineDebugger.h"
+# include "CSnapshot.h"
+# include "CDisplay.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
+# include "CHostUSBDevice.h"
+# include "CUSBDevice.h"
+# include "CVRDEServer.h"
+# include "CSystemProperties.h"
+# include "CHostVideoInputDevice.h"
+# include "CEmulatedUSB.h"
+# include "CNetworkAdapter.h"
+# ifdef Q_WS_MAC
+#  include "CGuest.h"
+# endif /* Q_WS_MAC */
 
 /* Other VBox includes: */
-#include <iprt/path.h>
-#ifdef VBOX_WITH_DEBUGGER_GUI
-# include <iprt/ldr.h>
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+# include <iprt/path.h>
+# ifdef VBOX_WITH_DEBUGGER_GUI
+#  include <iprt/ldr.h>
+# endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
 #endif

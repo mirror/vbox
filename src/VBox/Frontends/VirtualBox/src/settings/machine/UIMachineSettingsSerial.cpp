@@ -15,18 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDir>
+# include <QDir>
 
 /* GUI includes: */
-#include "UIMachineSettingsSerial.h"
-#include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
-#include "QITabWidget.h"
-#include "UIConverter.h"
+# include "UIMachineSettingsSerial.h"
+# include "QIWidgetValidator.h"
+# include "VBoxGlobal.h"
+# include "QITabWidget.h"
+# include "UIConverter.h"
 
 /* COM includes: */
-#include "CSerialPort.h"
+# include "CSerialPort.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* UIMachineSettingsSerial stuff */
 UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent)

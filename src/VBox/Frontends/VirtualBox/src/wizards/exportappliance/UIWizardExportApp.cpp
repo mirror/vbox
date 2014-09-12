@@ -15,23 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QVariant>
-#include <QFileInfo>
+# include <QVariant>
+# include <QFileInfo>
 
 /* GUI includes: */
-#include "UIWizardExportApp.h"
-#include "UIWizardExportAppDefs.h"
-#include "UIWizardExportAppPageBasic1.h"
-#include "UIWizardExportAppPageBasic2.h"
-#include "UIWizardExportAppPageBasic3.h"
-#include "UIWizardExportAppPageBasic4.h"
-#include "UIWizardExportAppPageExpert.h"
-#include "UIMessageCenter.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardExportAppDefs.h"
+# include "UIWizardExportAppPageBasic1.h"
+# include "UIWizardExportAppPageBasic2.h"
+# include "UIWizardExportAppPageBasic3.h"
+# include "UIWizardExportAppPageBasic4.h"
+# include "UIWizardExportAppPageExpert.h"
+# include "UIMessageCenter.h"
 
 /* COM includes: */
-#include "CAppliance.h"
-#include "CVFSExplorer.h"
+# include "CAppliance.h"
+# include "CVFSExplorer.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames)
     : UIWizard(pParent, WizardType_ExportAppliance)

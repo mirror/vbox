@@ -15,22 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "QIMainDialog.h"
-#include "VBoxUtils.h"
-#include "VBoxGlobal.h"
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <iprt/assert.h>
+# include "QIMainDialog.h"
+# include "VBoxUtils.h"
+# include "VBoxGlobal.h"
+
+# include <iprt/assert.h>
 
 /* Qt includes */
-#include <QProcess>
-#include <QEventLoop>
-#include <QApplication>
-#include <QDir>
-#include <QUrl>
-#include <QMenu>
-#include <QSizeGrip>
-#include <QPushButton>
-#include <QDialogButtonBox>
+# include <QProcess>
+# include <QEventLoop>
+# include <QApplication>
+# include <QDir>
+# include <QUrl>
+# include <QMenu>
+# include <QSizeGrip>
+# include <QPushButton>
+# include <QDialogButtonBox>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
                             Qt::WindowFlags aFlags /* = Qt::Dialog */)

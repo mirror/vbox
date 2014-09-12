@@ -15,19 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes */
-#include <QHeaderView>
-#include <QTabWidget>
-#include <QLayout>
-#include <QAction>
+# include <QHeaderView>
+# include <QTabWidget>
+# include <QLayout>
+# include <QAction>
 
 /* Local includes */
-#include "VBoxSettingsSelector.h"
-#include "UISettingsPage.h"
-#include "UIToolBar.h"
-#include "QITreeWidget.h"
-#include "QITabWidget.h"
-#include "UIIconPool.h"
+# include "VBoxSettingsSelector.h"
+# include "UISettingsPage.h"
+# include "UIToolBar.h"
+# include "QITreeWidget.h"
+# include "QITabWidget.h"
+# include "UIIconPool.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 enum
 {

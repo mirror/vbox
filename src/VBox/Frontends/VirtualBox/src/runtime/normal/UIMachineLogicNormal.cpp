@@ -15,31 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#ifndef Q_WS_MAC
-# include <QTimer>
-#endif /* !Q_WS_MAC */
+# ifndef Q_WS_MAC
+#  include <QTimer>
+# endif /* !Q_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogicNormal.h"
-#include "UIMachineWindow.h"
-#include "UIMenuBarEditorWindow.h"
-#include "UIStatusBarEditorWindow.h"
-#include "UIExtraDataManager.h"
-#include "UIFrameBuffer.h"
-#ifndef Q_WS_MAC
-# include "QIMenu.h"
-#else /* Q_WS_MAC */
-#include "VBoxUtils.h"
-#endif /* Q_WS_MAC */
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UISession.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogicNormal.h"
+# include "UIMachineWindow.h"
+# include "UIMenuBarEditorWindow.h"
+# include "UIStatusBarEditorWindow.h"
+# include "UIExtraDataManager.h"
+# include "UIFrameBuffer.h"
+# ifndef Q_WS_MAC
+#  include "QIMenu.h"
+# else  /* Q_WS_MAC */
+#  include "VBoxUtils.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CDisplay.h"
+# include "CConsole.h"
+# include "CDisplay.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)

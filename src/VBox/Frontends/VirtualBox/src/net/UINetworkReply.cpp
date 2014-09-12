@@ -15,23 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDir>
-#include <QFile>
-#include <QThread>
-#include <QRegExp>
+# include <QDir>
+# include <QFile>
+# include <QThread>
+# include <QRegExp>
 
 /* GUI includes: */
-#include "UINetworkReply.h"
-#include "UINetworkManager.h"
-#include "VBoxGlobal.h"
-#include "VBoxUtils.h"
+# include "UINetworkReply.h"
+# include "UINetworkManager.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
 
 /* Other VBox includes; */
-#include <iprt/initterm.h>
-#include <iprt/http.h>
-#include <iprt/err.h>
-#include <iprt/zip.h>
+# include <iprt/initterm.h>
+# include <iprt/http.h>
+# include <iprt/err.h>
+# include <iprt/zip.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Our network-reply thread: */
 class UINetworkReplyPrivateThread : public QThread

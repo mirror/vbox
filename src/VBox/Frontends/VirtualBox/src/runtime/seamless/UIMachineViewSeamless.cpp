@@ -15,31 +15,39 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QMainWindow>
-#include <QTimer>
-#ifdef Q_WS_MAC
-#include <QMenuBar>
-#endif /* Q_WS_MAC */
+# include <QApplication>
+# include <QDesktopWidget>
+# include <QMainWindow>
+# include <QTimer>
+# ifdef Q_WS_MAC
+#  include <QMenuBar>
+# endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UISession.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewSeamless.h"
-#include "UIFrameBuffer.h"
+# include "VBoxGlobal.h"
+# include "UISession.h"
+# include "UIMachineLogicSeamless.h"
+# include "UIMachineWindow.h"
+# include "UIMachineViewSeamless.h"
+# include "UIFrameBuffer.h"
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CDisplay.h"
+# include "CConsole.h"
+# include "CDisplay.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* External includes: */
 #ifdef Q_WS_X11
-#include <limits.h>
+# include <limits.h>
 #endif /* Q_WS_X11 */
+
+
 
 UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                                              , ulong uScreenId

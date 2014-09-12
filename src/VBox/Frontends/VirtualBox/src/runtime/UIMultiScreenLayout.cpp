@@ -15,28 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QMenu>
+# include <QApplication>
+# include <QDesktopWidget>
+# include <QMenu>
 
 /* GUI includes: */
-#include "UIDefs.h"
-#include "UIMultiScreenLayout.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogic.h"
-#include "UIFrameBuffer.h"
-#include "UISession.h"
-#include "UIMessageCenter.h"
-#include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+# include "UIDefs.h"
+# include "UIMultiScreenLayout.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogic.h"
+# include "UIFrameBuffer.h"
+# include "UISession.h"
+# include "UIMessageCenter.h"
+# include "UIExtraDataManager.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CSession.h"
-#include "CConsole.h"
-#include "CMachine.h"
-#include "CDisplay.h"
+# include "COMEnums.h"
+# include "CSession.h"
+# include "CConsole.h"
+# include "CMachine.h"
+# include "CDisplay.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)

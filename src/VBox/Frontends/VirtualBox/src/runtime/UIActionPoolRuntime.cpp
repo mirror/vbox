@@ -15,19 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIActionPoolRuntime.h"
-#include "UIMultiScreenLayout.h"
-#include "UIExtraDataManager.h"
-#include "UIShortcutPool.h"
-#include "UIFrameBuffer.h"
-#include "UIConverter.h"
-#include "UISession.h"
-#include "VBoxGlobal.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMultiScreenLayout.h"
+# include "UIExtraDataManager.h"
+# include "UIShortcutPool.h"
+# include "UIFrameBuffer.h"
+# include "UIConverter.h"
+# include "UISession.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
-#include "CExtPack.h"
-#include "CExtPackManager.h"
+# include "CExtPack.h"
+# include "CExtPackManager.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

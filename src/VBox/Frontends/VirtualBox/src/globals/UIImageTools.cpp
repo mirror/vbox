@@ -15,14 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local include */
-#include "UIImageTools.h"
+# include "UIImageTools.h"
 
 /* Qt includes */
-#include <QPainter>
+# include <QPainter>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* System includes */
 #include <math.h>
+
 
 /* Todo: Think about the naming convention and if the images should be
  * processed in place or return changed copies. Make it more uniform. Add

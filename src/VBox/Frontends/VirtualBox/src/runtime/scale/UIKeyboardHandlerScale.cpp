@@ -15,18 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef Q_WS_MAC
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-# include <QKeyEvent>
-# include <QTimer>
-#endif /* !Q_WS_MAC */
+# ifndef Q_WS_MAC
+#  include <QKeyEvent>
+#  include <QTimer>
+# endif /* !Q_WS_MAC */
 
 /* GUI includes: */
-#include "UIKeyboardHandlerScale.h"
-#ifndef Q_WS_MAC
-# include "UIMachineLogic.h"
-# include "UIShortcutPool.h"
-#endif /* !Q_WS_MAC */
+# include "UIKeyboardHandlerScale.h"
+# ifndef Q_WS_MAC
+#  include "UIMachineLogic.h"
+#  include "UIShortcutPool.h"
+# endif /* !Q_WS_MAC */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 #ifndef Q_WS_MAC
 /* Namespaces: */

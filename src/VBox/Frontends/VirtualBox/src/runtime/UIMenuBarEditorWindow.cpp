@@ -15,26 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QHBoxLayout>
-#include <QPaintEvent>
-#include <QMetaEnum>
-#include <QMenuBar>
-#include <QPainter>
-#include <QMenu>
-#include <QMap>
+# include <QHBoxLayout>
+# include <QPaintEvent>
+# include <QMetaEnum>
+# include <QMenuBar>
+# include <QPainter>
+# include <QMenu>
+# include <QMap>
 
 /* GUI includes: */
-#include "UIMenuBarEditorWindow.h"
-#include "UIActionPoolRuntime.h"
-#include "UIExtraDataManager.h"
-#include "UIMachineWindow.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
-#include "UIToolBar.h"
-#include "QIWithRetranslateUI.h"
-#include "QIToolButton.h"
-#include "VBoxGlobal.h"
+# include "UIMenuBarEditorWindow.h"
+# include "UIActionPoolRuntime.h"
+# include "UIExtraDataManager.h"
+# include "UIMachineWindow.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
+# include "UIToolBar.h"
+# include "QIWithRetranslateUI.h"
+# include "QIToolButton.h"
+# include "VBoxGlobal.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 
 /** QWidget reimplementation

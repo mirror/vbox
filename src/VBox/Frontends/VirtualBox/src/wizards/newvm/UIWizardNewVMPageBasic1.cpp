@@ -15,21 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDir>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLineEdit>
+# include <QDir>
+# include <QVBoxLayout>
+# include <QHBoxLayout>
+# include <QLineEdit>
 
 /* GUI includes: */
-#include "UIWizardNewVMPageBasic1.h"
-#include "UIWizardNewVM.h"
-#include "UIMessageCenter.h"
-#include "UINameAndSystemEditor.h"
-#include "QIRichTextLabel.h"
+# include "UIWizardNewVMPageBasic1.h"
+# include "UIWizardNewVM.h"
+# include "UIMessageCenter.h"
+# include "UINameAndSystemEditor.h"
+# include "QIRichTextLabel.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+# include "CSystemProperties.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Defines some patterns to guess the right OS type. Should be in sync with
  * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The

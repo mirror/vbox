@@ -15,25 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QApplication>
-#include <QFileInfo>
-#include <QKeyEvent>
-#include <QMimeData>
-#include <QStringList>
-#include <QTimer>
-#include <QUrl>
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
+/* Qt includes: */
+# include <QApplication>
+# include <QFileInfo>
+# include <QKeyEvent>
+# include <QMimeData>
+# include <QStringList>
+# include <QTimer>
+# include <QUrl>
+
+/* GUI includes: */
+# include "UIDnDMIMEData.h"
+# include "UIDnDDrag.h"
+# include "UIMessageCenter.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-/* GUI includes: */
-#include "UIDnDMIMEData.h"
-#include "UIDnDDrag.h"
-#include "UIMessageCenter.h"
 
 UIDnDMimeData::UIDnDMimeData(CSession &session,
                              CDnDSource &dndSource,

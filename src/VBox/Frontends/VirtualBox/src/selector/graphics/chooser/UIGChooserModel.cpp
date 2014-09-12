@@ -15,37 +15,44 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <QRegExp>
-#include <QGraphicsSceneMouseEvent>
-#include <QGraphicsSceneContextMenuEvent>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
-#include <QScrollBar>
-#include <QTimer>
+# include <QGraphicsScene>
+# include <QGraphicsView>
+# include <QRegExp>
+# include <QGraphicsSceneMouseEvent>
+# include <QGraphicsSceneContextMenuEvent>
+# include <QPropertyAnimation>
+# include <QParallelAnimationGroup>
+# include <QScrollBar>
+# include <QTimer>
 
 /* GUI includes: */
-#include "UIGChooser.h"
-#include "UIGChooserModel.h"
-#include "UIGChooserItemGroup.h"
-#include "UIGChooserItemMachine.h"
-#include "UIExtraDataDefs.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIExtraDataManager.h"
-#include "UIActionPoolSelector.h"
-#include "UIGChooserHandlerMouse.h"
-#include "UIGChooserHandlerKeyboard.h"
-#include "UIWizardNewVM.h"
-#include "UISelectorWindow.h"
-#include "UIVirtualBoxEventHandler.h"
+# include "UIGChooser.h"
+# include "UIGChooserModel.h"
+# include "UIGChooserItemGroup.h"
+# include "UIGChooserItemMachine.h"
+# include "UIExtraDataDefs.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIExtraDataManager.h"
+# include "UIActionPoolSelector.h"
+# include "UIGChooserHandlerMouse.h"
+# include "UIGChooserHandlerKeyboard.h"
+# include "UIWizardNewVM.h"
+# include "UISelectorWindow.h"
+# include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
-#include "CVirtualBox.h"
-#include "CMachine.h"
-#include "CMedium.h"
+# include "CVirtualBox.h"
+# include "CMachine.h"
+# include "CMedium.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;

@@ -15,23 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QGraphicsView>
-#include <QStateMachine>
-#include <QPropertyAnimation>
-#include <QSignalTransition>
-#include <QStyleOptionGraphicsItem>
-#include <QGraphicsSceneMouseEvent>
+# include <QGraphicsView>
+# include <QStateMachine>
+# include <QPropertyAnimation>
+# include <QSignalTransition>
+# include <QStyleOptionGraphicsItem>
+# include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
-#include "UIGDetailsElement.h"
-#include "UIGDetailsSet.h"
-#include "UIGDetailsModel.h"
-#include "UIGraphicsRotatorButton.h"
-#include "UIGraphicsTextPane.h"
-#include "UIIconPool.h"
-#include "UIConverter.h"
-#include "VBoxGlobal.h"
+# include "UIGDetailsElement.h"
+# include "UIGDetailsSet.h"
+# include "UIGDetailsModel.h"
+# include "UIGraphicsRotatorButton.h"
+# include "UIGraphicsTextPane.h"
+# include "UIIconPool.h"
+# include "UIConverter.h"
+# include "VBoxGlobal.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType type, bool fOpened)
     : UIGDetailsItem(pParent)

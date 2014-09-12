@@ -15,21 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QStyle>
-#include <QHBoxLayout>
-#include <QTextEdit>
+# include <QApplication>
+# include <QDesktopWidget>
+# include <QStyle>
+# include <QHBoxLayout>
+# include <QTextEdit>
 
 /* GUI includes: */
-#include "QIArrowSplitter.h"
-#include "QIArrowButtonSwitch.h"
-#include "QIArrowButtonPress.h"
-#include "UIIconPool.h"
+# include "QIArrowSplitter.h"
+# include "QIArrowButtonSwitch.h"
+# include "QIArrowButtonPress.h"
+# include "UIIconPool.h"
 
 /* Other VBox includes: */
-#include "iprt/assert.h"
+# include "iprt/assert.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 
 /** QTextEdit extension

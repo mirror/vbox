@@ -15,30 +15,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QHBoxLayout>
-#include <QMenu>
-#include <QAction>
-#include <QHeaderView>
-#include <QStyledItemDelegate>
-#include <QItemEditorFactory>
-#include <QComboBox>
-#include <QLineEdit>
-#include <QSpinBox>
+# include <QHBoxLayout>
+# include <QMenu>
+# include <QAction>
+# include <QHeaderView>
+# include <QStyledItemDelegate>
+# include <QItemEditorFactory>
+# include <QComboBox>
+# include <QLineEdit>
+# include <QSpinBox>
 
 /* GUI includes: */
-#include "UIPortForwardingTable.h"
-#include "UIMessageCenter.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
-#include "UIToolBar.h"
-#include "QITableView.h"
+# include "UIPortForwardingTable.h"
+# include "UIMessageCenter.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
+# include "UIToolBar.h"
+# include "QITableView.h"
 
 /* Other VBox includes: */
-#include <iprt/cidr.h>
+# include <iprt/cidr.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* External includes: */
 #include <math.h>
+
 
 /* IPv4 validator: */
 class IPv4Validator : public QValidator

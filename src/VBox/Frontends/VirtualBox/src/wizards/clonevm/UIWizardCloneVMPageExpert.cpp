@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QGridLayout>
-#include <QButtonGroup>
-#include <QGroupBox>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QRadioButton>
+# include <QGridLayout>
+# include <QButtonGroup>
+# include <QGroupBox>
+# include <QLineEdit>
+# include <QCheckBox>
+# include <QRadioButton>
 
 /* Local includes: */
-#include "UIWizardCloneVMPageExpert.h"
-#include "UIWizardCloneVM.h"
+# include "UIWizardCloneVMPageExpert.h"
+# include "UIWizardCloneVM.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalName, bool fAdditionalInfo, bool fShowChildsOption)
     : UIWizardCloneVMPage1(strOriginalName)

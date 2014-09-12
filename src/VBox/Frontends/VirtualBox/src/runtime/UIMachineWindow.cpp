@@ -15,38 +15,44 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QCloseEvent>
-#include <QTimer>
-#include <QProcess>
+# include <QCloseEvent>
+# include <QTimer>
+# include <QProcess>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIKeyboardHandler.h"
-#include "UIMachineWindow.h"
-#include "UIMachineLogic.h"
-#include "UIMachineView.h"
-#include "UIMachineWindowNormal.h"
-#include "UIMachineWindowFullscreen.h"
-#include "UIMachineWindowSeamless.h"
-#include "UIMachineWindowScale.h"
-#include "UIMouseHandler.h"
-#include "UISession.h"
-#include "UIVMCloseDialog.h"
-#include "UIConverter.h"
-#include "UIModalWindowManager.h"
-#include "UIExtraDataManager.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIKeyboardHandler.h"
+# include "UIMachineWindow.h"
+# include "UIMachineLogic.h"
+# include "UIMachineView.h"
+# include "UIMachineWindowNormal.h"
+# include "UIMachineWindowFullscreen.h"
+# include "UIMachineWindowSeamless.h"
+# include "UIMachineWindowScale.h"
+# include "UIMouseHandler.h"
+# include "UISession.h"
+# include "UIVMCloseDialog.h"
+# include "UIConverter.h"
+# include "UIModalWindowManager.h"
+# include "UIExtraDataManager.h"
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CSnapshot.h"
+# include "CConsole.h"
+# include "CSnapshot.h"
 
 /* Other VBox includes: */
-#include <VBox/version.h>
-#ifdef VBOX_BLEEDING_EDGE
-# include <iprt/buildconfig.h>
-#endif /* VBOX_BLEEDING_EDGE */
+# include <VBox/version.h>
+# ifdef VBOX_BLEEDING_EDGE
+#  include <iprt/buildconfig.h>
+# endif /* VBOX_BLEEDING_EDGE */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* External includes: */
 #ifdef Q_WS_X11

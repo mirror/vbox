@@ -15,26 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "QIWidgetValidator.h"
-#include "QIArrowButtonSwitch.h"
-#include "UIMachineSettingsNetwork.h"
-#include "QITabWidget.h"
-#include "VBoxGlobal.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
+# include "QIWidgetValidator.h"
+# include "QIArrowButtonSwitch.h"
+# include "UIMachineSettingsNetwork.h"
+# include "QITabWidget.h"
+# include "VBoxGlobal.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
 
 /* COM includes: */
-#include "CNetworkAdapter.h"
-#include "CNATEngine.h"
-#include "CHostNetworkInterface.h"
-#include "CNATNetwork.h"
+# include "CNetworkAdapter.h"
+# include "CNATEngine.h"
+# include "CHostNetworkInterface.h"
+# include "CNATNetwork.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
 #ifdef VBOX_WITH_VDE
 # include <iprt/ldr.h>
 # include <VBox/VDEPlug.h>
 #endif /* VBOX_WITH_VDE */
+
 
 /* Empty item extra-code: */
 const char *pEmptyItemCode = "#empty#";

@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIPopupCenter.h"
-#include "UIPopupStack.h"
-#include "UIMachineWindow.h"
-#include "QIMessageBox.h"
-#include "VBoxGlobal.h"
-#include "UIHostComboEditor.h"
-#include "UIExtraDataManager.h"
+# include "UIPopupCenter.h"
+# include "UIPopupStack.h"
+# include "UIMachineWindow.h"
+# include "QIMessageBox.h"
+# include "VBoxGlobal.h"
+# include "UIHostComboEditor.h"
+# include "UIExtraDataManager.h"
 
 /* Other VBox includes: */
-#include <VBox/sup.h>
+# include <VBox/sup.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 UIPopupCenter* UIPopupCenter::m_spInstance = 0;

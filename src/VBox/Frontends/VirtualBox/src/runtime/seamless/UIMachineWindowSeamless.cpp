@@ -15,29 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QMenu>
-#include <QTimer>
+# include <QDesktopWidget>
+# include <QMenu>
+# include <QTimer>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineWindowSeamless.h"
-#include "UIMachineView.h"
-#ifndef Q_WS_MAC
-# include "UIMachineDefs.h"
-# include "UIMiniToolBar.h"
-#endif /* !Q_WS_MAC */
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
-#endif /* Q_WS_MAC */
+# include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
+# include "UISession.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogicSeamless.h"
+# include "UIMachineWindowSeamless.h"
+# include "UIMachineView.h"
+# ifndef Q_WS_MAC
+#  include "UIMachineDefs.h"
+#  include "UIMiniToolBar.h"
+# else  /* Q_WS_MAC*/
+#  include "VBoxUtils.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "CSnapshot.h"
+# include "CSnapshot.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

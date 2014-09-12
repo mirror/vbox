@@ -15,53 +15,60 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QMutex>
-#include <QMetaEnum>
-#include <QDesktopWidget>
-#ifdef DEBUG
-# include <QMainWindow>
-# include <QMenuBar>
-# include <QListView>
-# include <QTableView>
-# include <QHeaderView>
-# include <QStandardItemModel>
-# include <QSortFilterProxyModel>
-# include <QStyledItemDelegate>
-# include <QPainter>
-# include <QLabel>
-# include <QLineEdit>
-# include <QComboBox>
-# include <QPushButton>
-# include <QXmlStreamWriter>
-# include <QXmlStreamReader>
-#endif /* DEBUG */
+# include <QMutex>
+# include <QMetaEnum>
+# include <QDesktopWidget>
+# ifdef DEBUG
+#  include <QMainWindow>
+#  include <QMenuBar>
+#  include <QListView>
+#  include <QTableView>
+#  include <QHeaderView>
+#  include <QStandardItemModel>
+#  include <QSortFilterProxyModel>
+#  include <QStyledItemDelegate>
+#  include <QPainter>
+#  include <QLabel>
+#  include <QLineEdit>
+#  include <QComboBox>
+#  include <QPushButton>
+#  include <QXmlStreamWriter>
+#  include <QXmlStreamReader>
+# endif /* DEBUG */
 
 /* GUI includes: */
-#include "UIExtraDataManager.h"
-#include "UIMainEventListener.h"
-#include "VBoxGlobalSettings.h"
-#include "VBoxGlobal.h"
-#include "UIActionPool.h"
-#include "UIConverter.h"
-#ifdef DEBUG
-# include "VBoxUtils.h"
-# include "UIMessageCenter.h"
-# include "UIVirtualBoxEventHandler.h"
-# include "UIIconPool.h"
-# include "UIToolBar.h"
-# include "QIWidgetValidator.h"
-# include "QIDialogButtonBox.h"
-# include "QIFileDialog.h"
-# include "QISplitter.h"
-# include "QIDialog.h"
-#endif /* DEBUG */
+# include "UIExtraDataManager.h"
+# include "UIMainEventListener.h"
+# include "VBoxGlobalSettings.h"
+# include "VBoxGlobal.h"
+# include "UIActionPool.h"
+# include "UIConverter.h"
+# ifdef DEBUG
+#  include "VBoxUtils.h"
+#  include "UIMessageCenter.h"
+#  include "UIVirtualBoxEventHandler.h"
+#  include "UIIconPool.h"
+#  include "UIToolBar.h"
+#  include "QIWidgetValidator.h"
+#  include "QIDialogButtonBox.h"
+#  include "QIFileDialog.h"
+#  include "QISplitter.h"
+#  include "QIDialog.h"
+# endif /* DEBUG */
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CEventSource.h"
-#include "CVirtualBox.h"
-#include "CMachine.h"
+# include "COMEnums.h"
+# include "CEventSource.h"
+# include "CVirtualBox.h"
+# include "CMachine.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

@@ -15,15 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QVBoxLayout>
-#include <QGroupBox>
-#include <QRadioButton>
+# include <QVBoxLayout>
+# include <QGroupBox>
+# include <QRadioButton>
 
 /* Local includes: */
-#include "UIWizardExportAppPageBasic2.h"
-#include "UIWizardExportApp.h"
-#include "QIRichTextLabel.h"
+# include "UIWizardExportAppPageBasic2.h"
+# include "UIWizardExportApp.h"
+# include "QIRichTextLabel.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIWizardExportAppPage2::UIWizardExportAppPage2()
 {

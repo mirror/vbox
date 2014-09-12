@@ -15,13 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QCoreApplication>
-#include <QStringList>
+# include <QCoreApplication>
+# include <QStringList>
 
 /* Local includes: */
-#include "UIUpdateDefs.h"
-#include "VBoxGlobal.h"
+# include "UIUpdateDefs.h"
+# include "VBoxGlobal.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static: */
 VBoxUpdateDayList VBoxUpdateData::m_dayList = VBoxUpdateDayList();

@@ -15,28 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QLabel>
-#include <QStackedLayout>
-#include <QStackedWidget>
-#include <QToolButton>
-#ifdef Q_WS_MAC
-# include <QTimer>
-#endif /* Q_WS_MAC */
+# include <QLabel>
+# include <QStackedLayout>
+# include <QStackedWidget>
+# include <QToolButton>
+# ifdef Q_WS_MAC
+#  include <QTimer>
+# endif /* Q_WS_MAC */
 
 /* GUI includes */
-#include "UIBar.h"
-#include "UIIconPool.h"
-#include "UISpacerWidgets.h"
-#include "UISpecialControls.h"
-#include "UIVMDesktop.h"
-#include "UIVMItem.h"
-#include "UIToolBar.h"
-#include "VBoxSnapshotsWgt.h"
-#include "VBoxUtils.h"
+# include "UIBar.h"
+# include "UIIconPool.h"
+# include "UISpacerWidgets.h"
+# include "UISpecialControls.h"
+# include "UIVMDesktop.h"
+# include "UIVMItem.h"
+# include "UIToolBar.h"
+# include "VBoxSnapshotsWgt.h"
+# include "VBoxUtils.h"
 
 /* Other VBox includes: */
-#include <iprt/assert.h>
+# include <iprt/assert.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 //#ifdef Q_WS_MAC
 # define USE_TOOLBAR

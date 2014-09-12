@@ -15,35 +15,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QGraphicsLinearLayout>
-#include <QTimer>
-#include <QDir>
+# include <QGraphicsLinearLayout>
+# include <QTimer>
+# include <QDir>
 
 /* GUI includes: */
-#include "UIGDetailsElements.h"
-#include "UIGDetailsModel.h"
-#include "UIGMachinePreview.h"
-#include "UIGraphicsRotatorButton.h"
-#include "VBoxGlobal.h"
-#include "UIIconPool.h"
-#include "UIConverter.h"
-#include "UIGraphicsTextPane.h"
+# include "UIGDetailsElements.h"
+# include "UIGDetailsModel.h"
+# include "UIGMachinePreview.h"
+# include "UIGraphicsRotatorButton.h"
+# include "VBoxGlobal.h"
+# include "UIIconPool.h"
+# include "UIConverter.h"
+# include "UIGraphicsTextPane.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
-#include "CVRDEServer.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CAudioAdapter.h"
-#include "CNetworkAdapter.h"
-#include "CSerialPort.h"
-#include "CParallelPort.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDeviceFilter.h"
-#include "CSharedFolder.h"
-#include "CMedium.h"
+# include "CSystemProperties.h"
+# include "CVRDEServer.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
+# include "CAudioAdapter.h"
+# include "CNetworkAdapter.h"
+# include "CSerialPort.h"
+# include "CParallelPort.h"
+# include "CUSBController.h"
+# include "CUSBDeviceFilters.h"
+# include "CUSBDeviceFilter.h"
+# include "CSharedFolder.h"
+# include "CMedium.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Constructor: */
 UIGDetailsUpdateThread::UIGDetailsUpdateThread(const CMachine &machine)

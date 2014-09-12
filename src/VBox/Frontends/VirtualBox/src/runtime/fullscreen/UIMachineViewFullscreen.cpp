@@ -15,26 +15,34 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes */
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QMainWindow>
-#include <QTimer>
-#ifdef Q_WS_MAC
-#include <QMenuBar>
-#endif
-#ifdef Q_WS_X11
-#include <limits.h>
-#endif
+# include <QApplication>
+# include <QDesktopWidget>
+# include <QMainWindow>
+# include <QTimer>
+# ifdef Q_WS_MAC
+#  include <QMenuBar>
+# endif
 
 /* Local includes */
-#include "VBoxGlobal.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogicFullscreen.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewFullscreen.h"
-#include "UIFrameBuffer.h"
+# include "VBoxGlobal.h"
+# include "UISession.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogicFullscreen.h"
+# include "UIMachineWindow.h"
+# include "UIMachineViewFullscreen.h"
+# include "UIFrameBuffer.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#ifdef Q_WS_X11
+# include <limits.h>
+#endif
+
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
                                                  , ulong uScreenId

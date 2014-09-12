@@ -16,18 +16,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <iprt/thread.h>
-
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
+#undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
+
+#include <iprt/thread.h>
 
 #include <windows.h>
 #include <new> /* For bad_alloc. */
 
 #include "UIDnDDropSource_win.h"
+
+
 
 UIDnDDropSource::UIDnDDropSource(QWidget *pParent)
     : mRefCount(1),

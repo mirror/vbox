@@ -15,20 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
+# include <QDesktopWidget>
 
 /* GUI includes: */
-#include "QIWidgetValidator.h"
-#include "UIMachineSettingsDisplay.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIConverter.h"
+# include "QIWidgetValidator.h"
+# include "UIMachineSettingsDisplay.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIConverter.h"
 
 /* COM includes: */
-#include "CVRDEServer.h"
-#include "CExtPackManager.h"
-#include "CExtPack.h"
+# include "CVRDEServer.h"
+# include "CExtPackManager.h"
+# include "CExtPack.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     : m_iMinVRAM(0)

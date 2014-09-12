@@ -15,28 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* VBox includes */
-#include "VBoxGlobal.h"
-#include "UIModalWindowManager.h"
-#include "UIMessageCenter.h"
-#include "QIFileDialog.h"
+# include "VBoxGlobal.h"
+# include "UIModalWindowManager.h"
+# include "UIMessageCenter.h"
+# include "QIFileDialog.h"
 
-#if defined Q_WS_WIN
-
-/// @todo bird: Use (U)INT_PTR, (U)LONG_PTR, DWORD_PTR, or (u)intptr_t.
-#if defined Q_OS_WIN64
-typedef unsigned __int64 Q_ULONG;   /* word up to 64 bit unsigned */
-#else
-typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
-#endif
-
+# ifdef Q_WS_WIN
 /* Qt includes */
-#include <QEvent>
-#include <QEventLoop>
-#include <QThread>
+#  include <QEvent>
+#  include <QEventLoop>
+#  include <QThread>
 
 /* WinAPI includes */
-#include "shlobj.h"
+#  include "shlobj.h"
+# endif /* !Q_WS_WIN */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+#ifdef Q_WS_WIN
 
 static QString extractFilter (const QString &aRawFilter)
 {
@@ -138,7 +140,7 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
         QString *initDir = (QString *)(lpData);
         if (!initDir->isEmpty())
         {
-            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, Q_ULONG (
+            SendMessage (hwnd, BFFM_SETSELECTION, TRUE, uintptr_t(
                 initDir->isNull() ? 0 : initDir->utf16()));
         }
     }
@@ -151,7 +153,7 @@ static int __stdcall winGetExistDirCallbackProc (HWND hwnd, UINT uMsg,
             SendMessage (hwnd, BFFM_ENABLEOK, 1, 1);
         else
             SendMessage (hwnd, BFFM_ENABLEOK, 0, 0);
-        SendMessage (hwnd, BFFM_SETSTATUSTEXT, 1, Q_ULONG (path));
+        SendMessage (hwnd, BFFM_SETSTATUSTEXT, 1, uintptr_t(path));
     }
     return 0;
 }
@@ -279,7 +281,7 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
             bi.pszDisplayName = initPath;
             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_NEWDIALOGSTYLE;
             bi.lpfn = winGetExistDirCallbackProc;
-            bi.lParam = Q_ULONG (&mDir);
+            bi.lParam = uintptr_t(&mDir);
 
             LPITEMIDLIST itemIdList = SHBrowseForFolder (&bi);
             if (itemIdList)

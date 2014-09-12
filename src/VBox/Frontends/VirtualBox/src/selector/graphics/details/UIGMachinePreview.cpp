@@ -15,24 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QGraphicsSceneContextMenuEvent>
-#include <QMenu>
-#include <QPainter>
-#include <QTimer>
+# include <QGraphicsSceneContextMenuEvent>
+# include <QMenu>
+# include <QPainter>
+# include <QTimer>
 
 /* GUI includes: */
-#include "UIGMachinePreview.h"
-#include "UIVirtualBoxEventHandler.h"
-#include "UIExtraDataManager.h"
-#include "UIImageTools.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
-#include "VBoxGlobal.h"
+# include "UIGMachinePreview.h"
+# include "UIVirtualBoxEventHandler.h"
+# include "UIExtraDataManager.h"
+# include "UIImageTools.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CDisplay.h"
+# include "CConsole.h"
+# include "CDisplay.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)

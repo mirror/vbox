@@ -15,163 +15,160 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QProgressDialog>
-#include <QLibraryInfo>
-#include <QFileDialog>
-#include <QToolTip>
-#include <QTranslator>
-#include <QDesktopWidget>
-#include <QDesktopServices>
-#include <QMutex>
-#include <QReadLocker>
-#include <QToolButton>
-#include <QProcess>
-#include <QThread>
-#include <QPainter>
-#include <QSettings>
-#include <QTimer>
-#include <QDir>
-#include <QLocale>
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include <QNetworkProxy>
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include <QSpinBox>
-#include <QStyleOptionSpinBox>
+# include <QProgressDialog>
+# include <QLibraryInfo>
+# include <QFileDialog>
+# include <QToolTip>
+# include <QTranslator>
+# include <QDesktopWidget>
+# include <QDesktopServices>
+# include <QMutex>
+# include <QReadLocker>
+# include <QToolButton>
+# include <QProcess>
+# include <QThread>
+# include <QPainter>
+# include <QSettings>
+# include <QTimer>
+# include <QDir>
+# include <QLocale>
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include <QNetworkProxy>
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include <QSpinBox>
+# include <QStyleOptionSpinBox>
 
-#ifdef Q_WS_WIN
-# include <QEventLoop>
-#endif /* Q_WS_WIN */
+# ifdef Q_WS_WIN
+#  include <QEventLoop>
+# endif /* Q_WS_WIN */
 
-#ifdef Q_WS_X11
-# include <QTextBrowser>
-# include <QScrollBar>
-# include <QX11Info>
-#endif /* Q_WS_X11 */
+# ifdef Q_WS_X11
+#  include <QTextBrowser>
+#  include <QScrollBar>
+#  include <QX11Info>
+# endif /* Q_WS_X11 */
 
-#ifdef VBOX_GUI_WITH_PIDFILE
-# include <QTextStream>
-#endif /* VBOX_GUI_WITH_PIDFILE */
+# ifdef VBOX_GUI_WITH_PIDFILE
+#  include <QTextStream>
+# endif /* VBOX_GUI_WITH_PIDFILE */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "VBoxUtils.h"
-#include "UISelectorWindow.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "QIMessageBox.h"
-#include "QIDialogButtonBox.h"
-#include "UIIconPool.h"
-#include "UIShortcutPool.h"
-#include "UIExtraDataManager.h"
-#include "QIFileDialog.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UIUpdateManager.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIMachine.h"
-#include "UISession.h"
-#include "UIConverter.h"
-#include "UIMediumEnumerator.h"
-#include "UIMedium.h"
-#include "UIModalWindowManager.h"
-#include "UIIconPool.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
+# include "UISelectorWindow.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "QIMessageBox.h"
+# include "QIDialogButtonBox.h"
+# include "UIIconPool.h"
+# include "UIShortcutPool.h"
+# include "UIExtraDataManager.h"
+# include "QIFileDialog.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UINetworkManager.h"
+#  include "UIUpdateManager.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIMachine.h"
+# include "UISession.h"
+# include "UIConverter.h"
+# include "UIMediumEnumerator.h"
+# include "UIMedium.h"
+# include "UIModalWindowManager.h"
+# include "UIIconPool.h"
 
-#ifdef Q_WS_X11
-# include "UIHostComboEditor.h"
-# ifndef VBOX_OSE
+# ifdef Q_WS_X11
+#  include "UIHostComboEditor.h"
+#  ifndef VBOX_OSE
 #  include "VBoxLicenseViewer.h"
-# endif /* VBOX_OSE */
-# include "VBoxX11Helper.h"
-#endif /* Q_WS_X11 */
+#  endif /* VBOX_OSE */
+# endif /* Q_WS_X11 */
 
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-# include "UIMachineWindowFullscreen.h"
-# include "UIMachineWindowSeamless.h"
-#endif /* Q_WS_MAC */
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+#  include "UIMachineWindowFullscreen.h"
+#  include "UIMachineWindowSeamless.h"
+# endif /* Q_WS_MAC */
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-# include "VBoxFBOverlay.h"
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#  include "VBoxFBOverlay.h"
+# endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* COM includes: */
-#include "CMachine.h"
-#include "CSystemProperties.h"
-#include "CUSBDevice.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDeviceFilter.h"
-#include "CBIOSSettings.h"
-#include "CVRDEServer.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CAudioAdapter.h"
-#include "CNetworkAdapter.h"
-#include "CSerialPort.h"
-#include "CParallelPort.h"
-#include "CUSBController.h"
-#include "CHostUSBDevice.h"
-#include "CHostVideoInputDevice.h"
-#include "CMediumFormat.h"
-#include "CSharedFolder.h"
-#include "CConsole.h"
-#include "CSnapshot.h"
+# include "CMachine.h"
+# include "CSystemProperties.h"
+# include "CUSBDevice.h"
+# include "CUSBDeviceFilters.h"
+# include "CUSBDeviceFilter.h"
+# include "CBIOSSettings.h"
+# include "CVRDEServer.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
+# include "CAudioAdapter.h"
+# include "CNetworkAdapter.h"
+# include "CSerialPort.h"
+# include "CParallelPort.h"
+# include "CUSBController.h"
+# include "CHostUSBDevice.h"
+# include "CHostVideoInputDevice.h"
+# include "CMediumFormat.h"
+# include "CSharedFolder.h"
+# include "CConsole.h"
+# include "CSnapshot.h"
 
 /* Other VBox includes: */
-#include <iprt/asm.h>
-#include <iprt/ctype.h>
-#include <iprt/err.h>
-#include <iprt/param.h>
-#include <iprt/path.h>
-#include <iprt/env.h>
-#include <iprt/file.h>
-#include <iprt/ldr.h>
-#include <iprt/system.h>
-#include <iprt/stream.h>
+# include <iprt/asm.h>
+# include <iprt/ctype.h>
+# include <iprt/err.h>
+# include <iprt/param.h>
+# include <iprt/path.h>
+# include <iprt/env.h>
+# include <iprt/file.h>
+# include <iprt/ldr.h>
+# include <iprt/system.h>
+# include <iprt/stream.h>
+# ifdef Q_WS_X11
+#  include <iprt/mem.h>
+# endif /* Q_WS_X11 */
 
-#include <VBox/vd.h>
-#include <VBox/sup.h>
-#include <VBox/com/Guid.h>
-#include <VBox/VBoxOGLTest.h>
+# include <VBox/vd.h>
+# include <VBox/sup.h>
+# include <VBox/com/Guid.h>
+# include <VBox/VBoxOGLTest.h>
 
-#ifdef Q_WS_X11
-#include <iprt/mem.h>
-#endif /* Q_WS_X11 */
+# ifdef Q_WS_WIN
+#  include "shlobj.h"
+# endif /* Q_WS_WIN */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef Q_WS_MAC
-#include <sys/utsname.h>
+# include <sys/utsname.h>
 #endif /* Q_WS_MAC */
 
 /* External includes: */
-#include <math.h>
-
-#ifdef Q_WS_WIN
-#include "shlobj.h"
-#endif /* Q_WS_WIN */
+# include <math.h>
 
 #ifdef Q_WS_X11
-#undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
-             * in COMDefs.h. A better fix would be to isolate X11-specific
-             * stuff by placing XX* helpers below to a separate source file. */
-#include <X11/X.h>
-#include <X11/Xmd.h>
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/Xinerama.h>
-#define BOOL PRBool
+# undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
+              * in COMDefs.h. A better fix would be to isolate X11-specific
+              * stuff by placing XX* helpers below to a separate source file. */
+# include <X11/X.h>
+# include <X11/Xmd.h>
+# include <X11/Xlib.h>
+# include <X11/Xatom.h>
+# include <X11/extensions/Xinerama.h>
+
+# define BOOL PRBool
+# include "VBoxX11Helper.h"
 #endif /* Q_WS_X11 */
 
-//#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 
-//#warning "port me: check this"
-/// @todo bird: Use (U)INT_PTR, (U)LONG_PTR, DWORD_PTR, or (u)intptr_t.
-#if defined(Q_OS_WIN64)
-typedef __int64 Q_LONG;             /* word up to 64 bit signed */
-typedef unsigned __int64 Q_ULONG;   /* word up to 64 bit unsigned */
-#else
-typedef long Q_LONG;                /* word up to 64 bit signed */
-typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
-#endif
+//#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
