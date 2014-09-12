@@ -1427,6 +1427,13 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
                 fMask |= MSR_K6_EFER_FFXSR;
 
+            /* #GP(0) If anything outside the allowed bits is set. */
+            if ((uValue | fMask) != fMask)
+            {
+                Log(("CPUM: Settings disallowed EFER bit. uValue=%#RX64 fAllowed=%#RX64 -> #GP(0)\n", uValue, fMask));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+
             /* Check for illegal MSR_K6_EFER_LME transitions: not allowed to change LME if
                paging is enabled. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
             if (    (uOldEFER & MSR_K6_EFER_LME) != (uValue & fMask & MSR_K6_EFER_LME)
@@ -1947,7 +1954,6 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
         else
         {
             *pEax = *pEbx = *pEcx = *pEdx = 0;
-            LogRel(("CPUM: CPUMGetGuestCpuId: failed to get CPUID leaf for iLeaf=%#RX32\n", iLeaf));
         }
         return;
     }
