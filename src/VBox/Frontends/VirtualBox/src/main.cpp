@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * The main() function
+ * VBox Qt GUI - The main() function.
  */
 
 /*
@@ -18,45 +16,47 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-#include "precomp.h"
-#ifdef Q_WS_MAC
-# include "UICocoaApplication.h"
-#endif /* Q_WS_MAC */
+# include <precomp.h>
+# ifdef Q_WS_MAC
+#  include "UICocoaApplication.h"
+# endif /* Q_WS_MAC */
 #else /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UISelectorWindow.h"
-#include "VBoxUtils.h"
-#include "UIModalWindowManager.h"
-#include "UIExtraDataManager.h"
-#ifdef Q_WS_MAC
-# include "UICocoaApplication.h"
-#endif
 
-#ifdef Q_WS_X11
-#include <QFontDatabase>
-#include <iprt/env.h>
-#endif
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UISelectorWindow.h"
+# include "VBoxUtils.h"
+# include "UIModalWindowManager.h"
+# include "UIExtraDataManager.h"
+# ifdef Q_WS_MAC
+#  include "UICocoaApplication.h"
+# endif
 
-#include <QCleanlooksStyle>
-#include <QPlastiqueStyle>
-#include <QMessageBox>
-#include <QLocale>
-#include <QTranslator>
+# ifdef Q_WS_X11
+#  include <QFontDatabase>
+#  include <iprt/env.h>
+# endif
+
+# include <QCleanlooksStyle>
+# include <QPlastiqueStyle>
+# include <QMessageBox>
+# include <QLocale>
+# include <QTranslator>
+
+# include <iprt/buildconfig.h>
+# include <iprt/err.h>
+# include <iprt/initterm.h>
+# include <iprt/process.h>
+# include <iprt/stream.h>
+# include <VBox/err.h>
+# include <VBox/version.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
 # include <dlfcn.h>
 #endif
-
-#include <iprt/buildconfig.h>
-#include <iprt/err.h>
-#include <iprt/initterm.h>
-#include <iprt/process.h>
-#include <iprt/stream.h>
-#include <VBox/err.h>
-#include <VBox/version.h>
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>
@@ -67,6 +67,7 @@
 #endif
 
 #include <cstdio>
+
 
 /* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(

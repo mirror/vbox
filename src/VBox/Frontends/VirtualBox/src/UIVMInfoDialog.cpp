@@ -16,7 +16,7 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
@@ -55,6 +55,7 @@
 #include <iprt/time.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 UIVMInfoDialog* UIVMInfoDialog::m_spInstance = 0;

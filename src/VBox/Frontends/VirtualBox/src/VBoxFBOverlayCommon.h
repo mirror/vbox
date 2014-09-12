@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxFrameBuffer Overly classes declarations
+ * VBox Qt GUI - VBoxFrameBuffer Overlay classes declarations.
  */
 
 /*
