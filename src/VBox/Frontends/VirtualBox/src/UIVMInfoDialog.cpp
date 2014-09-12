@@ -20,41 +20,42 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QTimer>
-#include <QScrollBar>
-#include <QPushButton>
+# include <QTimer>
+# include <QScrollBar>
+# include <QPushButton>
 
 /* GUI includes: */
-#include "UIVMInfoDialog.h"
-#include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
-#include "QITabWidget.h"
-#include "QIDialogButtonBox.h"
-#include "VBoxGlobal.h"
-#include "VBoxUtils.h"
+# include "UIVMInfoDialog.h"
+# include "UIExtraDataManager.h"
+# include "UISession.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
+# include "UIMachineView.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
+# include "QITabWidget.h"
+# include "QIDialogButtonBox.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-#include "CConsole.h"
-#include "CSystemProperties.h"
-#include "CMachineDebugger.h"
-#include "CDisplay.h"
-#include "CGuest.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CNetworkAdapter.h"
-#include "CVRDEServerInfo.h"
+# include "COMEnums.h"
+# include "CMachine.h"
+# include "CConsole.h"
+# include "CSystemProperties.h"
+# include "CMachineDebugger.h"
+# include "CDisplay.h"
+# include "CGuest.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
+# include "CNetworkAdapter.h"
 
 /* Other VBox includes: */
-#include <iprt/time.h>
+# include <iprt/time.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include "CVRDEServerInfo.h"
 
 
 /* static */

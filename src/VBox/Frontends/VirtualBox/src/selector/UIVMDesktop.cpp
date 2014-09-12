@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 # include <QLabel>
-# include <QStackedLayout>
 # include <QStackedWidget>
 # include <QToolButton>
 # ifdef Q_WS_MAC
@@ -43,6 +42,8 @@
 # include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QStackedLayout>
 
 
 //#ifdef Q_WS_MAC

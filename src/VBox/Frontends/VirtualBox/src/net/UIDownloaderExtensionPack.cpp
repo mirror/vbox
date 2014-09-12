@@ -22,7 +22,6 @@
 /* Global includes: */
 # include <QDir>
 # include <QFile>
-# include <iprt/sha.h>
 
 /* Local includes: */
 # include "UIDownloaderExtensionPack.h"
@@ -33,6 +32,8 @@
 # include "UIModalWindowManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <iprt/sha.h>
 
 
 /* static */

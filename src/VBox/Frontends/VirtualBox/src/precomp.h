@@ -15,8 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_GUI
+/* To get usage counts for the include files run the following from the src directory:
+  ( for inc in $(sed -e '/^# *include/!d' -e 's/^# *include *.//' -e 's/[">].*''//' precomp.h);
+    do
+        echo $( grep -rE "^ *# *include *.$inc." --exclude=precomp.h . | wc -l ) \
+            "/" $( grep -rE "^ *# *include *.$inc." --exclude="*.h" . | wc -l ) \
+            "- $inc";
+    done ) | sort -n
+ */
 
+
+#define LOG_GROUP LOG_GROUP_GUI
 
 /*
  * Qt
@@ -24,24 +33,20 @@
 #include <QAbstractButton>
 #include <QAbstractItemDelegate>
 #include <QAbstractItemView>
-#include <QAbstractListModel>
 #include <QAbstractScrollArea>
 #include <QAbstractTableModel>
 #include <QAction>
-#include <QActionGroup>
 #include <QApplication>
-#include <QBasicTimer>
 #include <QBitmap>
 #include <QBoxLayout>
 #include <QButtonGroup>
 #include <QCheckBox>
-#include <QCleanlooksStyle>
+//#include <QCleanlooksStyle> - only used once
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QColor>
 #include <QComboBox>
-#include <QCommonStyle>
-#include <QCompleter>
+//#include <QCommonStyle> -  only used once
 #include <QContextMenuEvent>
 #include <QCoreApplication>
 #include <QCursor>
@@ -53,8 +58,6 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDrag>
-#include <QDragEnterEvent>
-#include <QDropEvent>
 #include <QEvent>
 #include <QEventLoop>
 #include <QFile>
@@ -62,18 +65,17 @@
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QFocusEvent>
-#include <QFontDatabase>
-#include <QFontMetrics>
+//#include <QFontDatabase> - only used once
+//#include <QFontMetrics> - only used once
 #include <QFrame>
-#include <QGLContext>
+//#include <QGLContext> - only used once
 #include <QGLWidget>
-#include <QGlobalStatic>
-#include <QGraphicsLinearLayout>
-#include <QGraphicsProxyWidget>
+//#include <QGraphicsLinearLayout> - only used once
+//#include <QGraphicsProxyWidget> - only used once
 #include <QGraphicsScene>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneDragDropEvent>
-#include <QGraphicsSceneHoverEvent>
+//#include <QGraphicsSceneHoverEvent> - only used once
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QGraphicsWidget>
@@ -83,12 +85,10 @@
 #include <QHash>
 #include <QHeaderView>
 #include <QHelpEvent>
-#include <QHostAddress>
-#include <QHttp>
-#include <QHttpResponseHeader>
+//#include <QHostAddress> - only used once
 #include <QIcon>
 #include <QImage>
-#include <QImageWriter>
+//#include <QImageWriter> - only used once
 #include <QIntValidator>
 #include <QItemDelegate>
 #include <QItemEditorFactory>
@@ -96,15 +96,14 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLibrary>
-#include <QLibraryInfo>
+//#include <QLibraryInfo> - only used once
 #include <QLineEdit>
-#include <QLinkedList>
 #include <QList>
 #include <QListView>
 #include <QListWidget>
 #include <QLocale>
 #ifdef Q_WS_MAC
-# include <QMacCocoaViewContainer>
+//# include <QMacCocoaViewContainer> - only used once / only used in Objective C++
 #endif
 #include <QMainWindow>
 #include <QMap>
@@ -112,41 +111,38 @@
 #include <QMdiSubWindow>
 #include <QMenu>
 #include <QMenuBar>
-#include <QMenuItem>
 #include <QMessageBox>
 #include <QMetaEnum>
-#include <QMetaProperty>
+//#include <QMetaProperty> - only used once
 #include <QMetaType>
 #include <QMimeData>
 #include <QMouseEvent>
-#include <QMouseEventTransition>
-#include <QMoveEvent>
+//#include <QMouseEventTransition> - only used once
 #include <QMutex>
 #include <QNetworkAccessManager>
-#include <QNetworkProxy>
+//#include <QNetworkProxy> - only used once
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QObject>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPair>
-#include <QParallelAnimationGroup>
+//#include <QParallelAnimationGroup> - only used once
 #include <QPixmap>
 #include <QPixmapCache>
-#include <QPlastiqueStyle>
+//#include <QPlastiqueStyle> - only used once
 #include <QPoint>
 #include <QPointer>
-#include <QPolygon>
-#include <QPrintDialog>
-#include <QPrinter>
+//#include <QPrintDialog> - only used once
+//#include <QPrinter> - only used once
 #include <QProcess>
 #include <QProgressBar>
-#include <QProgressDialog>
+//#include <QProgressDialog> - only used once
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QQueue>
 #include <QRadioButton>
-#include <QReadLocker>
+//#include <QReadLocker> - only used once
 #include <QReadWriteLock>
 #include <QRect>
 #include <QRegExp>
@@ -156,20 +152,20 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSet>
-#include <QSettings>
-#include <QShortcut>
+//#include <QSettings> - only used once
+//#include <QShortcut> - only used once
 #include <QSignalMapper>
 #include <QSignalTransition>
-#include <QSizeGrip>
+//#include <QSizeGrip> - only used once
 #include <QSlider>
-#include <QSocketNotifier>
+//#include <QSocketNotifier> - only used once
 #include <QSortFilterProxyModel>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSplitter>
-#include <QStackedLayout>
+//#include <QStackedLayout> - only used once.
 #include <QStackedWidget>
-#include <QStandardItemModel>
+//#include <QStandardItemModel> - only used once
 #include <QStateMachine>
 #include <QStatusBar>
 #include <QString>
@@ -177,18 +173,17 @@
 #include <QStyle>
 #include <QStyleOption>
 #include <QStyleOptionFocusRect>
-#include <QStyleOptionFrame>
+//#include <QStyleOptionFrame> - only used once
 #include <QStyleOptionGraphicsItem>
-#include <QStyleOptionSlider>
-#include <QStyleOptionSpinBox>
+//#include <QStyleOptionSlider> - only used once
+//#include <QStyleOptionSpinBox> - only used once
 #include <QStylePainter>
 #include <QStyledItemDelegate>
-#include <QSystemTrayIcon>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTextBrowser>
 #include <QTextEdit>
-#include <QTextLayout>
+//#include <QTextLayout> - only used once
 #include <QTextStream>
 #include <QThread>
 #include <QTime>
@@ -196,7 +191,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QToolTip>
-#include <QTouchEvent>
+//#include <QTouchEvent> - only used once
 #include <QTransform>
 #include <QTranslator>
 #include <QTreeView>
@@ -211,14 +206,14 @@
 #include <QWaitCondition>
 #include <QWidget>
 #include <QWindowsStyle>
-#include <QWindowsVistaStyle>
+//#include <QWindowsVistaStyle> - only used once
 #include <QWizard>
 #include <QWizardPage>
 #ifdef Q_WS_X11
 # include <QX11Info>
 #endif
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
+//#include <QXmlStreamReader> - only used once
+//#include <QXmlStreamWriter> - only used once
 #include <QtGlobal>
 
 
@@ -231,7 +226,6 @@
 #endif
 
 
-
 /*
  * IPRT
  */
@@ -242,30 +236,30 @@
 #include <iprt/cidr.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/critsect.h>
-#include <iprt/ctype.h>
+//#include <iprt/ctype.h> - only used once
 #include <iprt/env.h>
-#include <iprt/err.h>
-#include <iprt/file.h>
-#include <iprt/http.h>
+//#include <iprt/err.h> - don't include err.h!
+//#include <iprt/file.h> - only used once
+//#include <iprt/http.h> - only used once
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
-#include <iprt/memcache.h>
+//#include <iprt/memcache.h> - only used once
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
-#include <iprt/sha.h>
+//#include <iprt/sha.h> - only used once
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/types.h>
-#include <iprt/uri.h>
-#include <iprt/zip.h>
+//#include <iprt/uri.h> - only used once
+//#include <iprt/zip.h> - only used once
 
 
 /*
@@ -280,31 +274,29 @@
 /*
  * VBox headers.
  */
+#include <VBox/cdefs.h>
+#include <VBox/types.h>
 #include <VBox/VBoxCocoa.h>
 #include <VBox/VBoxGL2D.h>
 //#include <VBox/VBoxKeyboard.h> - includes X11/X.h which causes trouble.
-#include <VBox/VBoxOGLTest.h>
-#include <VBox/VBoxVideo.h>
+//#include <VBox/VBoxOGLTest.h> - only used once
+//#include <VBox/VBoxVideo.h> - only used twice
 #ifdef VBOX_WITH_VIDEOHWACCEL
-# include <VBox/VBoxVideo3D.h>
+//# include <VBox/VBoxVideo3D.h> - only used once
 #endif
-#include <VBox/VMMDev.h>
-#include <VBox/cdefs.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/assert.h>
 #include <VBox/com/com.h>
 #include <VBox/com/listeners.h>
 #include <VBox/dbggui.h>
-#include <VBox/err.h>
+//#include <VBox/err.h> - don't include err.h!
 #include <VBox/log.h>
-#include <VBox/param.h>
 #include <VBox/sup.h>
-#include <VBox/types.h>
-#include <VBox/vd.h>
+//#include <VBox/vd.h> - only used once
 #include <VBox/version.h>
 #ifdef VBOX_WITH_VIDEOHWACCEL
-# include <VBox/vmm/ssm.h>
+//# include <VBox/vmm/ssm.h> - only used once
 #endif
 
 
@@ -312,7 +304,7 @@
  * VirtualBox Qt GUI - QI* headers.
  */
 #include "QIAdvancedSlider.h"
-#include "QIAdvancedToolBar.h"
+//#include "QIAdvancedToolBar.h" - only used once / not used at all
 #include "QIArrowButtonPress.h"
 #include "QIArrowButtonSwitch.h"
 #include "QIArrowSplitter.h"
@@ -323,7 +315,7 @@
 #include "QILabel.h"
 #include "QILabelSeparator.h"
 #include "QILineEdit.h"
-#include "QIListView.h"
+//#include "QIListView.h" - only used once / not used at all
 #include "QIMainDialog.h"
 #include "QIMenu.h"
 #include "QIMessageBox.h"
@@ -354,75 +346,75 @@
 #include "CAppliance.h"
 #include "CAudioAdapter.h"
 #include "CBIOSSettings.h"
-#include "CCanShowWindowEvent.h"
+//#include "CCanShowWindowEvent.h" - only used once
 #include "CConsole.h"
-#include "CDHCPServer.h"
+//#include "CDHCPServer.h" - only used once
 #include "CDisplay.h"
 #include "CDisplaySourceBitmap.h"
 #include "CDnDSource.h"
 #include "CDnDTarget.h"
 #include "CEmulatedUSB.h"
-#include "CEvent.h"
+//#include "CEvent.h" - only used once
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CExtPack.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
-#include "CExtraDataCanChangeEvent.h"
-#include "CExtraDataChangedEvent.h"
-#include "CFramebuffer.h"
+//#include "CExtraDataCanChangeEvent.h" - only used once
+//#include "CExtraDataChangedEvent.h" - only used once
+//#include "CFramebuffer.h" - only used once
 #include "CGuest.h"
-#include "CGuestDnDSource.h"
-#include "CGuestDnDTarget.h"
-#include "CGuestMonitorChangedEvent.h"
+//#include "CGuestDnDSource.h" - only used once
+//#include "CGuestDnDTarget.h" - only used once
+//#include "CGuestMonitorChangedEvent.h" - only used once
 #include "CGuestOSType.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
 #include "CHostUSBDevice.h"
-#include "CHostUSBDeviceFilter.h"
+//#include "CHostUSBDeviceFilter.h" - only used once
 #include "CHostVideoInputDevice.h"
 #include "CIShared.h"
 #include "CKeyboard.h"
-#include "CKeyboardLedsChangedEvent.h"
+//#include "CKeyboardLedsChangedEvent.h" - only used once
 #include "CMachine.h"
-#include "CMachineDataChangedEvent.h"
+//#include "CMachineDataChangedEvent.h" - only used once
 #include "CMachineDebugger.h"
-#include "CMachineRegisteredEvent.h"
-#include "CMachineStateChangedEvent.h"
+//#include "CMachineRegisteredEvent.h" - only used once
+//#include "CMachineStateChangedEvent.h" - only used once
 #include "CMedium.h"
 #include "CMediumAttachment.h"
-#include "CMediumChangedEvent.h"
+//#include "CMediumChangedEvent.h" - only used once
 #include "CMediumFormat.h"
-#include "CMouse.h"
-#include "CMouseCapabilityChangedEvent.h"
-#include "CMousePointerShapeChangedEvent.h"
-#include "CNATEngine.h"
+//#include "CMouse.h" - only used once
+//#include "CMouseCapabilityChangedEvent.h" - only used once
+//#include "CMousePointerShapeChangedEvent.h" - only used once
+//#include "CNATEngine.h" - only used once
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
-#include "CNetworkAdapterChangedEvent.h"
+//#include "CNetworkAdapterChangedEvent.h" - only used once
 #include "CParallelPort.h"
 #include "CProgress.h"
-#include "CRuntimeErrorEvent.h"
+//#include "CRuntimeErrorEvent.h" - only used once
 #include "CSerialPort.h"
 #include "CSession.h"
-#include "CSessionStateChangedEvent.h"
+//#include "CSessionStateChangedEvent.h" - only used once
 #include "CSharedFolder.h"
-#include "CShowWindowEvent.h"
+//#include "CShowWindowEvent.h" - only used once
 #include "CSnapshot.h"
-#include "CSnapshotChangedEvent.h"
-#include "CSnapshotDeletedEvent.h"
-#include "CSnapshotTakenEvent.h"
-#include "CStateChangedEvent.h"
+//#include "CSnapshotChangedEvent.h" - only used once
+//#include "CSnapshotDeletedEvent.h" - only used once
+//#include "CSnapshotTakenEvent.h" - only used once
+//#include "CStateChangedEvent.h" - only used once
 #include "CStorageController.h"
 #include "CSystemProperties.h"
 #include "CUSBController.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
-#include "CUSBDeviceStateChangedEvent.h"
-#include "CVFSExplorer.h"
+//#include "CUSBDeviceStateChangedEvent.h" - only used once
+//#include "CVFSExplorer.h" - only used once
 #include "CVRDEServer.h"
-#include "CVRDEServerInfo.h"
+//#include "CVRDEServerInfo.h" - only used once
 #include "CVirtualBox.h"
 #include "CVirtualBoxErrorInfo.h"
 #include "CVirtualSystemDescription.h"
@@ -690,7 +682,7 @@
  */
 #ifdef Q_WS_MAC
 # if MAC_LEOPARD_STYLE /* This is defined by UIDefs.h and must come after it was included */
-#  include <qmacstyle_mac.h>
+//#  include <qmacstyle_mac.h> - only used once
 # endif
 #endif
 

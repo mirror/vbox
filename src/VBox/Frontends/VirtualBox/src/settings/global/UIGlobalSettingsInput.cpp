@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QShortcut>
 # include <QHeaderView>
 # include <QAbstractItemDelegate>
 # include <QStyledItemDelegate>
@@ -36,6 +35,8 @@
 # include "VBoxGlobalSettings.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QShortcut>
 
 
 /* Namespaces: */

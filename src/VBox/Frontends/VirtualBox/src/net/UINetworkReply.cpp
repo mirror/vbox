@@ -33,11 +33,12 @@
 
 /* Other VBox includes; */
 # include <iprt/initterm.h>
-# include <iprt/http.h>
-# include <iprt/err.h>
-# include <iprt/zip.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <iprt/http.h>
+#include <iprt/err.h>
+#include <iprt/zip.h>
 
 
 /* Our network-reply thread: */

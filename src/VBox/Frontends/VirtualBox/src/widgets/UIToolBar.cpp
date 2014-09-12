@@ -23,7 +23,6 @@
 # include <QLayout>
 # include <QMainWindow>
 # include <QWindowsStyle>
-# include <QCleanlooksStyle>
 
 /* GUI includes: */
 # include "UIToolBar.h"
@@ -32,6 +31,9 @@
 # endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #endif /* Q_WS_MAC */
+
+#include <QCleanlooksStyle>
+
 
 UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
     : QToolBar(pParent)

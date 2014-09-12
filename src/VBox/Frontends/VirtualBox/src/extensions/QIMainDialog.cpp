@@ -32,11 +32,12 @@
 # include <QDir>
 # include <QUrl>
 # include <QMenu>
-# include <QSizeGrip>
 # include <QPushButton>
 # include <QDialogButtonBox>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QSizeGrip>
 
 
 QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,

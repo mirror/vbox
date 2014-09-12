@@ -22,12 +22,10 @@
 /* Qt includes: */
 # include <QHeaderView>
 # include <QItemEditorFactory>
-# include <QMetaProperty>
 # include <QMouseEvent>
 # include <QScrollBar>
 # include <QStylePainter>
 # include <QTimer>
-# include <QCommonStyle>
 
 /* GUI includes: */
 # include "QIWidgetValidator.h"
@@ -46,6 +44,9 @@
 # include "CMediumAttachment.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QCommonStyle>
+#include <QMetaProperty>
 
 
 QString compressText (const QString &aText)

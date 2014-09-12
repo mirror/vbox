@@ -21,8 +21,6 @@
 
 /* Global includes: */
 # include <QDialogButtonBox>
-# include <QPrintDialog>
-# include <QPrinter>
 # include <QPushButton>
 # include <QTextStream>
 
@@ -36,6 +34,9 @@
 # include "QIFileDialog.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QPrintDialog>
+#include <QPrinter>
 
 
 /* Import license viewer: */

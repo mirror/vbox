@@ -26,7 +26,6 @@
 # include <QGraphicsSceneMouseEvent>
 # include <QGraphicsSceneContextMenuEvent>
 # include <QPropertyAnimation>
-# include <QParallelAnimationGroup>
 # include <QScrollBar>
 # include <QTimer>
 
@@ -52,6 +51,8 @@
 # include "CMedium.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QParallelAnimationGroup>
 
 
 /* Type defs: */

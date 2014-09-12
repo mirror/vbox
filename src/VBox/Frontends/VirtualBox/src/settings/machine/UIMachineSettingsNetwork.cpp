@@ -30,11 +30,12 @@
 
 /* COM includes: */
 # include "CNetworkAdapter.h"
-# include "CNATEngine.h"
 # include "CHostNetworkInterface.h"
 # include "CNATNetwork.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include "CNATEngine.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WITH_VDE

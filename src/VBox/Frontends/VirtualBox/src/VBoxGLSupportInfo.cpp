@@ -21,7 +21,6 @@
 
 # include <iprt/assert.h>
 # include <iprt/log.h>
-# include <iprt/err.h>
 # include <iprt/env.h>
 # include <iprt/param.h>
 # include <iprt/path.h>
@@ -31,11 +30,14 @@
 # include <iprt/thread.h>
 
 # include <QGLWidget>
-# include <QGLContext>
 
 # include <VBox/VBoxGL2D.h>
 # include "VBoxFBOverlayCommon.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <iprt/err.h>
+
+#include <QGLContext>
 
 
 /*****************/
