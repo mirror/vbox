@@ -23,7 +23,6 @@
 # include <QDesktopWidget>
 # include <QDir>
 # include <QFileInfo>
-# include <QImageWriter>
 # include <QPainter>
 # include <QTimer>
 # include <QDateTime>
@@ -91,6 +90,8 @@
 # endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QImageWriter>
 
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"

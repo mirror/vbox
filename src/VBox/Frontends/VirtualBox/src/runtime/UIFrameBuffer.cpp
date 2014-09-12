@@ -34,10 +34,11 @@
 /* COM includes: */
 # include "CConsole.h"
 # include "CDisplay.h"
-/* Other VBox includes: */
-# include <VBox/VBoxVideo3D.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* Other VBox includes: */
+#include <VBox/VBoxVideo3D.h>
 
 
 /* COM stuff: */

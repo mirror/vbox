@@ -74,11 +74,12 @@
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
-# include <iprt/err.h>
 # include <iprt/param.h>
 # include <iprt/path.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <iprt/err.h>
 
 
 /* static */

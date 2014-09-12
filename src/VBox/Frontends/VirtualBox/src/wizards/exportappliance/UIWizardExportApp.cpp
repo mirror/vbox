@@ -35,9 +35,10 @@
 
 /* COM includes: */
 # include "CAppliance.h"
-# include "CVFSExplorer.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include "CVFSExplorer.h"
 
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames)

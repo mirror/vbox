@@ -24,7 +24,6 @@
 # include <QStyleOptionGraphicsItem>
 # include <QGraphicsSceneDragDropEvent>
 # include <QLineEdit>
-# include <QGraphicsProxyWidget>
 # include <QGraphicsScene>
 # include <QHBoxLayout>
 # include <QMenu>
@@ -38,6 +37,8 @@
 # include "UIGChooserView.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QGraphicsProxyWidget>
 
 
 /* static */

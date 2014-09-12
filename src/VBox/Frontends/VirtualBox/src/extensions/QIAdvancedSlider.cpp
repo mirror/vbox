@@ -25,9 +25,10 @@
 # include <QVBoxLayout>
 # include <QPainter>
 # include <QStyle>
-# include <QStyleOptionSlider>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QStyleOptionSlider>
 
 /* System includes */
 #include <math.h>

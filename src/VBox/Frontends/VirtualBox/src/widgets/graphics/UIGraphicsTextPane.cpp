@@ -21,15 +21,16 @@
 
 /* Qt includes: */
 # include <QApplication>
-# include <QFontMetrics>
-# include <QTextLayout>
 # include <QPainter>
-# include <QGraphicsSceneHoverEvent>
 
 /* GUI includes: */
 # include "UIGraphicsTextPane.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QFontMetrics>
+#include <QGraphicsSceneHoverEvent>
+#include <QTextLayout>
 
 
 UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *pPaintDevice)

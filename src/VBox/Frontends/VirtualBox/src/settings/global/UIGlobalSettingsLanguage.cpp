@@ -31,12 +31,13 @@
 # include "VBoxGlobal.h"
 
 /* Other VBox includes: */
-# include <iprt/err.h>
 # include <iprt/param.h>
 # include <iprt/path.h>
 # include <VBox/version.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <iprt/err.h>
 
 
 extern const char *gVBoxLangSubDir;

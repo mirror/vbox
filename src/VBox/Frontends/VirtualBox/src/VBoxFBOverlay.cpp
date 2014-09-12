@@ -43,19 +43,19 @@
 /* Other VBox includes: */
 # include <iprt/asm.h>
 # include <iprt/semaphore.h>
-# include <iprt/memcache.h>
 
 # include <VBox/VBoxGL2D.h>
-# include <VBox/err.h>
-
-# ifdef VBOX_WITH_VIDEOHWACCEL
-#  include <VBox/VBoxVideo.h>
-#  include <VBox/types.h>
-#  include <VBox/vmm/ssm.h>
-# endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#include <iprt/memcache.h>
+#include <VBox/err.h>
+
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include <VBox/VBoxVideo.h>
+# include <VBox/vmm/ssm.h>
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifdef VBOXQGL_PROF_BASE
 # ifdef VBOXQGL_DBG_SURF

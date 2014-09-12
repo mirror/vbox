@@ -20,28 +20,20 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QProgressDialog>
-# include <QLibraryInfo>
 # include <QFileDialog>
 # include <QToolTip>
 # include <QTranslator>
 # include <QDesktopWidget>
 # include <QDesktopServices>
 # include <QMutex>
-# include <QReadLocker>
 # include <QToolButton>
 # include <QProcess>
 # include <QThread>
 # include <QPainter>
-# include <QSettings>
 # include <QTimer>
 # include <QDir>
 # include <QLocale>
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include <QNetworkProxy>
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 # include <QSpinBox>
-# include <QStyleOptionSpinBox>
 
 # ifdef Q_WS_WIN
 #  include <QEventLoop>
@@ -122,12 +114,9 @@
 
 /* Other VBox includes: */
 # include <iprt/asm.h>
-# include <iprt/ctype.h>
-# include <iprt/err.h>
 # include <iprt/param.h>
 # include <iprt/path.h>
 # include <iprt/env.h>
-# include <iprt/file.h>
 # include <iprt/ldr.h>
 # include <iprt/system.h>
 # include <iprt/stream.h>
@@ -135,16 +124,30 @@
 #  include <iprt/mem.h>
 # endif /* Q_WS_X11 */
 
-# include <VBox/vd.h>
 # include <VBox/sup.h>
 # include <VBox/com/Guid.h>
-# include <VBox/VBoxOGLTest.h>
 
 # ifdef Q_WS_WIN
 #  include "shlobj.h"
 # endif /* Q_WS_WIN */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QLibraryInfo>
+#include <QProgressDialog>
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include <QNetworkProxy>
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#include <QReadLocker>
+#include <QSettings>
+#include <QStyleOptionSpinBox>
+
+#include <VBox/VBoxOGLTest.h>
+#include <VBox/vd.h>
+
+#include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
 
 #ifdef Q_WS_MAC
 # include <sys/utsname.h>

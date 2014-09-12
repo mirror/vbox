@@ -26,7 +26,6 @@
 # include <QPainter>
 # include <QScrollBar>
 # include <QMainWindow>
-# include <VBox/VBoxVideo.h>
 # include <iprt/asm.h>
 
 /* GUI includes: */
@@ -53,16 +52,22 @@
 # include "CSession.h"
 # include "CConsole.h"
 # include "CDisplay.h"
-# include "CFramebuffer.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CDnDSource.h"
 #  include "CDnDTarget.h"
 #  include "CGuest.h"
-#  include "CGuestDnDTarget.h"
-#  include "CGuestDnDSource.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <VBox/VBoxVideo.h>
+
+#include "CFramebuffer.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CGuestDnDTarget.h"
+# include "CGuestDnDSource.h"
+#endif
+
 
 /* Other VBox includes: */
 #ifdef Q_WS_X11

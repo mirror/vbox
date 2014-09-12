@@ -23,13 +23,14 @@
 # include <QStateMachine>
 # include <QPropertyAnimation>
 # include <QSignalTransition>
-# include <QMouseEventTransition>
 
 /* GUI includes: */
 # include "UIGraphicsRotatorButton.h"
 # include "UIIconPool.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QMouseEventTransition>
 
 
 UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,

@@ -24,10 +24,10 @@
 # include <QAction>
 # include <QToolButton>
 
-/* GUI includes: */
-# include "QIAdvancedToolBar.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* GUI includes: */
+#include "QIAdvancedToolBar.h"
 
 
 /* More configurable tool-button for QIAdvancedToolBar: */

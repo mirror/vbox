@@ -23,13 +23,16 @@
 # if MAC_LEOPARD_STYLE
 #  include <QPainter>
 #  include <QApplication>
-#  include <qmacstyle_mac.h>
 # endif /* MAC_LEOPARD_STYLE */
 
-/* GUI includes: */
-# include "QIListView.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#if MAC_LEOPARD_STYLE
+# include <qmacstyle_mac.h>
+#endif /* MAC_LEOPARD_STYLE */
+
+/* GUI includes: */
+#include "QIListView.h"
 
 
 QIListView::QIListView (QWidget *aParent /* = 0 */)

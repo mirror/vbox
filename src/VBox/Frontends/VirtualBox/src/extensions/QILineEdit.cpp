@@ -22,10 +22,7 @@
 # include "QILineEdit.h"
 
 /* Qt includes */
-# include <QStyleOptionFrame>
-
 # ifdef Q_WS_WIN32
-#  include <QWindowsVistaStyle>
 #  include <QLibrary>
 
 #  include <Windows.h>
@@ -33,6 +30,11 @@
 # endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QStyleOptionFrame>
+#ifdef Q_WS_WIN32
+# include <QWindowsVistaStyle>
+#endif
 
 
 void QILineEdit::setMinimumWidthByText (const QString &aText)

@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 # include <QObject>
-# include <QSocketNotifier>
 
 /* COM includes: */
 # include "COMDefs.h"
@@ -29,6 +28,8 @@
 # include "CVirtualBoxErrorInfo.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QSocketNotifier>
 
 #ifdef VBOX_WITH_XPCOM
 

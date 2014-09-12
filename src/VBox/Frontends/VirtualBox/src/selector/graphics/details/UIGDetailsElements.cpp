@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QGraphicsLinearLayout>
 # include <QTimer>
 # include <QDir>
 
@@ -50,6 +49,8 @@
 # include "CMedium.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include <QGraphicsLinearLayout>
 
 
 /* Constructor: */

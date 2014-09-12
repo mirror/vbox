@@ -41,11 +41,12 @@
 # include "CUSBDevice.h"
 # include "CUSBDeviceFilter.h"
 # include "CHostUSBDevice.h"
-# include "CHostUSBDeviceFilter.h"
 # include "CExtPackManager.h"
 # include "CExtPack.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+#include "CHostUSBDeviceFilter.h"
 
 
 /**
