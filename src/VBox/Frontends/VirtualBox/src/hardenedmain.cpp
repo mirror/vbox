@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox - Hardened main().
+ * VBox Qt GUI - Hardened main().
  */
 
 /*

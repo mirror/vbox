@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxGlobalSettingsData, VBoxGlobalSettings class declarations
+ * VBox Qt GUI - VBoxGlobalSettingsData, VBoxGlobalSettings class declarations.
  */
 
 /*

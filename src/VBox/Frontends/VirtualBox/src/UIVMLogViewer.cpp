@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIVMLogViewer class implementation
+ * VBox Qt GUI - UIVMLogViewer class implementation.
  */
 
 /*
@@ -18,33 +16,34 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QDateTime>
-#include <QDir>
-#include <QFileDialog>
-#include <QKeyEvent>
-#include <QLabel>
-#include <QScrollBar>
-#include <QTextEdit>
+# include <QCheckBox>
+# include <QDateTime>
+# include <QDir>
+# include <QFileDialog>
+# include <QKeyEvent>
+# include <QLabel>
+# include <QScrollBar>
+# include <QTextEdit>
 
 /* GUI includes: */
-#include "UIVMLogViewer.h"
-#include "QITabWidget.h"
-#include "UIIconPool.h"
-#include "UISpecialControls.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
+# include "UIVMLogViewer.h"
+# include "QITabWidget.h"
+# include "UIIconPool.h"
+# include "UISpecialControls.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "VBoxUtils.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CSystemProperties.h"
+# include "COMEnums.h"
+# include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* VM Log Viewer search panel: */
 class UIVMLogViewerSearchPanel : public QIWithRetranslateUI<QWidget>

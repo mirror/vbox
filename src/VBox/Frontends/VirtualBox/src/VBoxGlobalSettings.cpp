@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxGlobalSettingsData, VBoxGlobalSettings class implementation
+ * VBox Qt GUI - VBoxGlobalSettingsData, VBoxGlobalSettings class implementation.
  */
 
 /*
@@ -18,30 +16,31 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QString>
-#include <QRegExp>
-#include <QVariant>
+# include <QString>
+# include <QRegExp>
+# include <QVariant>
 
 /* GUI includes: */
-#include "UIDefs.h"
-#include "UIExtraDataDefs.h"
-#include "VBoxGlobalSettings.h"
-#include "UIHostComboEditor.h"
+# include "UIDefs.h"
+# include "UIExtraDataDefs.h"
+# include "VBoxGlobalSettings.h"
+# include "UIHostComboEditor.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CVirtualBox.h"
+# include "COMEnums.h"
+# include "CVirtualBox.h"
 
-#ifdef Q_WS_MAC
+# ifdef Q_WS_MAC
 /* Namespaces: */
 using namespace UIExtraDataDefs;
-#endif /* Q_WS_MAC */
+# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /** @class VBoxGlobalSettingsData
  *

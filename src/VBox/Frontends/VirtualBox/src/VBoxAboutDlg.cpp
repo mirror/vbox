@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxAboutDlg class implementation
+ * VBox Qt GUI - VBoxAboutDlg class implementation.
  */
 
 /*
@@ -18,8 +16,9 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes */
 # include <QDir>
 # include <QEvent>
@@ -33,7 +32,9 @@
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::CustomizeWindowHint | Qt::WindowTitleHint)

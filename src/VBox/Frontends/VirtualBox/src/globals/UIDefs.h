@@ -24,9 +24,11 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+#ifndef VBOX_WITH_PRECOMPILED_HEADERS
 /* Define GUI log group.
  * This define should go *before* VBox/log.h include: */
 #define LOG_GROUP LOG_GROUP_GUI
+#endif
 /* Other VBox includes: */
 #include <VBox/log.h>
 

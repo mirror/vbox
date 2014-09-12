@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxFBOverlay implementation
+ * VBox Qt GUI - VBoxFBOverlay implementation.
  */
 
 /*
@@ -14,47 +14,48 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#if defined (VBOX_GUI_USE_QGL)
+#if defined(VBOX_GUI_USE_QGL)
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#define LOG_GROUP LOG_GROUP_GUI
+# define LOG_GROUP LOG_GROUP_GUI
 
 /* Qt includes: */
-#include <QGLWidget>
-#include <QFile>
-#include <QTextStream>
+# include <QGLWidget>
+# include <QFile>
+# include <QTextStream>
 
 /* GUI includes: */
-#include "VBoxFBOverlay.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+# include "VBoxFBOverlay.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "UIExtraDataManager.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
-#include "CSession.h"
-#include "CConsole.h"
-#include "CMachine.h"
-#include "CDisplay.h"
+# include "CSession.h"
+# include "CConsole.h"
+# include "CMachine.h"
+# include "CDisplay.h"
 
 /* Other VBox includes: */
-#include <iprt/asm.h>
-#include <iprt/semaphore.h>
-#include <iprt/memcache.h>
+# include <iprt/asm.h>
+# include <iprt/semaphore.h>
+# include <iprt/memcache.h>
 
-#include <VBox/VBoxGL2D.h>
-#include <VBox/err.h>
+# include <VBox/VBoxGL2D.h>
+# include <VBox/err.h>
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-#include <VBox/VBoxVideo.h>
-#include <VBox/types.h>
-#include <VBox/vmm/ssm.h>
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#  include <VBox/VBoxVideo.h>
+#  include <VBox/types.h>
+#  include <VBox/vmm/ssm.h>
+# endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 #ifdef VBOXQGL_PROF_BASE
 # ifdef VBOXQGL_DBG_SURF
@@ -5837,5 +5838,5 @@ int VBoxVHWASettings::calcIntersection (int c1, const uint32_t *a1, int c2, cons
     return cMatch;
 }
 
-#endif
+#endif /* VBOX_GUI_USE_QGL */
 

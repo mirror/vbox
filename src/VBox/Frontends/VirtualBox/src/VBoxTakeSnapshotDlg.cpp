@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxTakeSnapshotDlg class implementation
+ * VBox Qt GUI - VBoxTakeSnapshotDlg class implementation.
  */
 
 /*
@@ -18,28 +16,29 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QPushButton>
+# include <QPushButton>
 
 /* GUI includes: */
-#include "VBoxTakeSnapshotDlg.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
-#ifdef Q_WS_MAC
-# include "UIMachineWindowNormal.h"
-# include "VBoxSnapshotsWgt.h"
-#endif /* Q_WS_MAC */
+# include "VBoxTakeSnapshotDlg.h"
+# include "UIMessageCenter.h"
+# include "VBoxUtils.h"
+# ifdef Q_WS_MAC
+#  include "UIMachineWindowNormal.h"
+#  include "VBoxSnapshotsWgt.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-#include "CMedium.h"
-#include "CMediumAttachment.h"
+# include "COMEnums.h"
+# include "CMachine.h"
+# include "CMedium.h"
+# include "CMediumAttachment.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QIDialog>(pParent)
