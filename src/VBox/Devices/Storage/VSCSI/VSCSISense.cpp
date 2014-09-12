@@ -63,6 +63,22 @@ int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8
     return SCSI_STATUS_CHECK_CONDITION;
 }
 
+int vscsiReqSenseErrorInfoSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC, uint8_t uSCSIASCQ, uint32_t uInfo)
+{
+    memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
+    pVScsiSense->abSenseBuf[0] = RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
+    pVScsiSense->abSenseBuf[2] = uSCSISenseKey;
+    vscsiH2BEU32(&pVScsiSense->abSenseBuf[3], uInfo);
+    pVScsiSense->abSenseBuf[7]  = 10;
+    pVScsiSense->abSenseBuf[12] = uSCSIASC;
+    pVScsiSense->abSenseBuf[13] = uSCSIASCQ;
+
+    if (pVScsiReq->pbSense && pVScsiReq->cbSense)
+        memcpy(pVScsiReq->pbSense, pVScsiSense->abSenseBuf, RT_MIN(sizeof(pVScsiSense->abSenseBuf), pVScsiReq->cbSense));
+
+    return SCSI_STATUS_CHECK_CONDITION;
+}
+
 int vscsiReqSenseCmd(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
 {
     /* Copy the current sense data to the buffer. */
