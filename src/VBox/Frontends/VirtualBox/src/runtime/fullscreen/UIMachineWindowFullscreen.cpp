@@ -184,8 +184,13 @@ void UIMachineWindowFullscreen::sltRevokeFocus()
     if (!isVisible())
         return;
 
+#ifndef RT_OS_DARWIN
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
+#else /* RT_OS_DARWIN */
+    /* Revoke stolen activation: */
+    activateWindow();
+#endif /* RT_OS_DARWIN */
 }
 
 void UIMachineWindowFullscreen::prepareVisualState()
@@ -243,6 +248,10 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
                                               gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
                                               gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()));
     m_pMiniToolBar->addMenus(actionPool()->menus());
+#ifdef RT_OS_DARWIN
+    connect(machineLogic(), SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+            m_pMiniToolBar, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
+#endif /* RT_OS_DARWIN */
 #ifndef RT_OS_DARWIN
     connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
 #endif /* !RT_OS_DARWIN */
@@ -255,7 +264,8 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             actionPool()->action(UIActionIndexRT_M_Machine_S_Close), SLOT(trigger()));
 #endif /* !RT_OS_DARWIN */
-    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
+    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()),
+            this, SLOT(sltRevokeFocus()), Qt::QueuedConnection);
 }
 
 void UIMachineWindowFullscreen::cleanupMiniToolbar()

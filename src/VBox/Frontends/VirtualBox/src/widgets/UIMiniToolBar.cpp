@@ -51,7 +51,13 @@ UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            GeometryType geometryType,
                                            Qt::Alignment alignment,
                                            bool fAutoHide /* = true */)
-    : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint)
+    : QWidget(pParent,
+#ifndef RT_OS_DARWIN
+              Qt::Tool | Qt::WindowStaysOnTopHint |
+#else /* RT_OS_DARWIN */
+              Qt::Window |
+#endif /* RT_OS_DARWIN */
+              Qt::FramelessWindowHint)
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
     , m_alignment(alignment)
@@ -203,6 +209,11 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 
 void UIRuntimeMiniToolBar::prepare()
 {
+#ifdef RT_OS_DARWIN
+    /* Install own event filter: */
+    installEventFilter(this);
+#endif /* RT_OS_DARWIN */
+
 #ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
     /* Make sure we have no background
      * until the first one paint-event: */
@@ -337,6 +348,7 @@ void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
 
 bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
+#ifndef RT_OS_DARWIN
     /* Due to Qt bug QMdiArea can
      * 1. steal focus from current application focus-widget
      * 3. and even request focus stealing if QMdiArea hidden yet.
@@ -344,6 +356,13 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (pWatched && m_pEmbeddedToolbar && pWatched == m_pEmbeddedToolbar &&
         pEvent->type() == QEvent::FocusIn)
         emit sigNotifyAboutFocusStolen();
+#else /* RT_OS_DARWIN */
+    /* Due to Qt bug on Mac OS X window will be activated
+     * even if has Qt::WA_ShowWithoutActivating attribute. */
+    if (pWatched == this &&
+        pEvent->type() == QEvent::WindowActivate)
+        emit sigNotifyAboutFocusStolen();
+#endif /* RT_OS_DARWIN */
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);
 }
