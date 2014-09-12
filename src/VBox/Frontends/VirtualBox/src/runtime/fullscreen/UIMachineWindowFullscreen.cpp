@@ -100,6 +100,15 @@ void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativ
         emit sigNotifyAboutNativeFullscreenFailToEnter();
     }
 }
+
+void UIMachineWindowFullscreen::setMiniToolbarVisible(bool fVisible)
+{
+    /* Make sure mini-toolbar exists: */
+    if (!m_pMiniToolBar)
+        return;
+    /* Set mini-toolbar visibility to passed one: */
+    m_pMiniToolBar->setVisible(fVisible);
+}
 #endif /* Q_WS_MAC */
 
 void UIMachineWindowFullscreen::sltMachineStateChanged()
@@ -328,12 +337,21 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
     AssertPtrReturnVoid(pFullscreenLogic);
 
+#ifdef Q_WS_MAC
+    /* ML and next using native stuff: */
+    const bool fSupportsNativeFullScreen = vboxGlobal().osRelease() > MacOSXRelease_Lion;
+#endif /* Q_WS_MAC */
+
     /* Make sure this window should be shown and mapped to some host-screen: */
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
         /* Hide mini-toolbar: */
-        if (m_pMiniToolBar)
+        if (   m_pMiniToolBar
+#ifdef Q_WS_MAC
+            && !fSupportsNativeFullScreen
+#endif /* Q_WS_MAC */
+            )
             m_pMiniToolBar->hide();
         /* Hide window: */
         hide();
@@ -359,7 +377,6 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
 #ifdef Q_WS_MAC
     /* ML and next using native stuff, so we can call for simple show(),
      * Lion and previous using Qt stuff, so we should call for showFullScreen(): */
-    const bool fSupportsNativeFullScreen = vboxGlobal().osRelease() > MacOSXRelease_Lion;
     if (fSupportsNativeFullScreen)
         show();
     else
@@ -390,7 +407,11 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     adjustMachineViewSize();
 
     /* Show mini-toolbar: */
-    if (m_pMiniToolBar)
+    if (   m_pMiniToolBar
+#ifdef Q_WS_MAC
+        && !fSupportsNativeFullScreen
+#endif /* Q_WS_MAC */
+        )
         m_pMiniToolBar->show();
 
     /* Make sure machine-view have focus: */
