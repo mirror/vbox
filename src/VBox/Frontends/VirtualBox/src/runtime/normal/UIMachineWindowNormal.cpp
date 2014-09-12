@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineWindowNormal class implementation
+ * VBox Qt GUI - UIMachineWindowNormal class implementation.
  */
 
 /*

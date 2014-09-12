@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGraphicsRotatorButton class definition
+ * VBox Qt GUI - UIGraphicsRotatorButton class definition.
  */
 
 /*

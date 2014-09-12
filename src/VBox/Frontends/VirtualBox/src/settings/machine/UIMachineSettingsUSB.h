@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIMachineSettingsUSB class declaration
+ * VBox Qt GUI - UIMachineSettingsUSB class declaration.
  */
 
 /*

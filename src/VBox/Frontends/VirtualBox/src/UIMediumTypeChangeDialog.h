@@ -1,5 +1,5 @@
 /** @file
- * VBox Qt GUI - UIMediumTypeChangeDialog class declaration
+ * VBox Qt GUI - UIMediumTypeChangeDialog class declaration.
  */
 
 /*

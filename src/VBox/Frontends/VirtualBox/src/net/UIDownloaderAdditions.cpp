@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDownloaderAdditions class implementation
+ * VBox Qt GUI - UIDownloaderAdditions class implementation.
  */
 
 /*

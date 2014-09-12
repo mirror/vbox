@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Qt GUI - Utility Classes and Functions specific to Darwin.
+ * VBox Qt GUI - Utility Classes and Functions specific to Darwin.
  */
 
 /*

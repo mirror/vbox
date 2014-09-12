@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGraphicsButton class declaration
+ * VBox Qt GUI - UIGraphicsButton class declaration.
  */
 
 /*

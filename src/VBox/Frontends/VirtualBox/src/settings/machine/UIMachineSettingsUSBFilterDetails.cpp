@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIMachineSettingsUSBFilterDetails class implementation
+ * VBox Qt GUI - UIMachineSettingsUSBFilterDetails class implementation.
  */
 
 /*

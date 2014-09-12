@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Helper application for starting vbox the right way when the user double
- * clicks on a file type association.
+ * VBox Qt GUI -  Helper application for starting vbox the right way when the user double clicks on a file type association.
  */
 
 /*

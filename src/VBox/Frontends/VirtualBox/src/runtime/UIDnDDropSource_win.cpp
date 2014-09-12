@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDDropSource class implementation for Windows. This implements
+ * VBox Qt GUI - UIDnDDropSource class implementation for Windows. This implements
  * the IDropSource interface.
  */
 

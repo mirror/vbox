@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QITreeView class declaration
+ * VBox Qt GUI - Qt extensions: QITreeView class declaration.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIRichTextLabel class declaration
+ * VBox Qt GUI - Qt extensions: QIRichTextLabel class declaration.
  */
 
 /*

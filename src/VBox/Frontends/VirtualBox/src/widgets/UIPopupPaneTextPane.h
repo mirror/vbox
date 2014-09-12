@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIPopupPaneTextPane class declaration
+ * VBox Qt GUI - UIPopupPaneTextPane class declaration.
  */
 
 /*

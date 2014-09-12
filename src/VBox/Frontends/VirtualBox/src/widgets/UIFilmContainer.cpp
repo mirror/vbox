@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIFilmContainer class implementation
+ * VBox Qt GUI - UIFilmContainer class implementation.
  */
 
 /*

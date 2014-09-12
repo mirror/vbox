@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGDetailsItem class declaration
+ * VBox Qt GUI - UIGDetailsItem class declaration.
  */
 
 /*

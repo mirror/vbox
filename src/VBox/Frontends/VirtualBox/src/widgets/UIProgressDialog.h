@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIProgressDialog class declaration
+ * VBox Qt GUI - UIProgressDialog class declaration.
  */
 
 /*

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Implementation of Linux-specific keyboard functions
+ * VBox Qt GUI - Implementation of Linux-specific keyboard functions.
  */
 
 /*

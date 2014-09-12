@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIUpdateManager class implementation
+ * VBox Qt GUI - UIUpdateManager class implementation.
  */
 
 /*

@@ -1,5 +1,5 @@
 /** @file
- * VBox Qt GUI - VBoxTakeSnapshotDlg class declaration
+ * VBox Qt GUI - VBoxTakeSnapshotDlg class declaration.
  */
 
 /*

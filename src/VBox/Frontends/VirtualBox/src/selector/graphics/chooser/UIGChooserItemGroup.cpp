@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGChooserItemGroup class implementation
+ * VBox Qt GUI - UIGChooserItemGroup class implementation.
  */
 
 /*

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Implementation of utility classes and functions for image manipulation
+ * VBox Qt GUI - Implementation of utility classes and functions for image manipulation.
  */
 
 /*

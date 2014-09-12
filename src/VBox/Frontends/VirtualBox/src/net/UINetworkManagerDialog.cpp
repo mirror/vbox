@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UINetworkManagerDialog stuff implementation
+ * VBox Qt GUI - UINetworkManagerDialog stuff implementation.
  */
 
 /*

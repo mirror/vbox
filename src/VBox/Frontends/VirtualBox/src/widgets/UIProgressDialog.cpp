@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIProgressDialog class implementation
+ * VBox Qt GUI - UIProgressDialog class implementation.
  */
 
 /*

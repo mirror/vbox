@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIGlobalSettingsNetworkDetailsHost class declaration
+ * VBox Qt GUI - UIGlobalSettingsNetworkDetailsHost class declaration.
  */
 
 /*

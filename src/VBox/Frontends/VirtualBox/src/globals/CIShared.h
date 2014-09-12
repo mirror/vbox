@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Common VirtualBox classes: CIShared class declaration
+ * VBox Qt GUI - Common VirtualBox classes: CIShared class declaration.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Defines for Virtual Machine classes
+ * VBox Qt GUI - Defines for Virtual Machine classes.
  */
 
 /*

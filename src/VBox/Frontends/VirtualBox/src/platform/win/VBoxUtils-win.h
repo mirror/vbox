@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * Declarations of utility classes and functions for handling Win specific tasks
+ * VBox Qt GUI - Declarations of utility classes and functions for handling Win specific tasks.
  */
 
 /*

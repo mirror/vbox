@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDDrag class implementation. This class acts as a wrapper
+ * VBox Qt GUI - UIDnDDrag class implementation. This class acts as a wrapper
  * for OS-dependent guest->host drag'n drop operations.
  */
 

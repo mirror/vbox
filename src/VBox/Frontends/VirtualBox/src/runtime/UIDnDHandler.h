@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDHandler class declaration.
+ * VBox Qt GUI - UIDnDHandler class declaration..
  */
 
 /*

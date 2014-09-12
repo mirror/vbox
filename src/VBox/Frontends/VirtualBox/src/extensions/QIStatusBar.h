@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QIStatusBar class declaration
+ * VBox Qt GUI - Qt extensions: QIStatusBar class declaration.
  */
 
 /*

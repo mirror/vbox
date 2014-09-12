@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIGlobalSettingsUpdate class declaration
+ * VBox Qt GUI - UIGlobalSettingsUpdate class declaration.
  */
 
 /*

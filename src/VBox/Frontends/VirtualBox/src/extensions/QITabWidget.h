@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QITabWidget class declaration/implementation
+ * VBox Qt GUI - Qt extensions: QITabWidget class declaration/implementation.
  */
 
 /*

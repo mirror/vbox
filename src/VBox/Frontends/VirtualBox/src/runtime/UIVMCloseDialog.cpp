@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIVMCloseDialog class implementation
+ * VBox Qt GUI - UIVMCloseDialog class implementation.
  */
 
 /*

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIConverterBackend declaration
+ * VBox Qt GUI - UIConverterBackend declaration.
  */
 
 /*

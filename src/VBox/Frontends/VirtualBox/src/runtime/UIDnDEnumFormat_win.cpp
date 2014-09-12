@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDnDEnumFormat class implementation. This class implements the
+ * VBox Qt GUI -  UIDnDEnumFormat class implementation. This class implements the
  * IEnumFORMATETC ("Format et cetera") interface.
  */
 

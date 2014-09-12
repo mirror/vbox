@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIShortcutPool class declaration
+ * VBox Qt GUI - UIShortcutPool class declaration.
  */
 
 /*

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * Update routine related implementations
+ * VBox Qt GUI - Update routine related implementations.
  */
 
 /*

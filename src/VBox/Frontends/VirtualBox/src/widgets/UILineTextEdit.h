@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UILineTextEdit class declaration
+ * VBox Qt GUI - UILineTextEdit class declaration.
  */
 
 /*

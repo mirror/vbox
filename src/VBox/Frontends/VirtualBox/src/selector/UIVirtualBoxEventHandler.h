@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIVirtualBoxEventHandler class declaration
+ * VBox Qt GUI - UIVirtualBoxEventHandler class declaration.
  */
 
 /*
