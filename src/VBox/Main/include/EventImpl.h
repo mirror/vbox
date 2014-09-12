@@ -52,7 +52,7 @@ private:
 
 
 class ATL_NO_VTABLE VBoxVetoEvent :
-    public virtual VetoEventWrap
+    public VetoEventWrap
 {
 public:
     DECLARE_EMPTY_CTOR_DTOR(VBoxVetoEvent)

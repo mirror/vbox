@@ -1366,7 +1366,6 @@ NS_DECL_CLASSINFO(ProxyEventListener)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProxyEventListener, IEventListener)
 NS_DECL_CLASSINFO(PassiveEventListener)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PassiveEventListener, IEventListener)
-NS_IMPL_ISUPPORTS_INHERITED1(VBoxVetoEvent, VBoxEvent, IVetoEvent)
 NS_DECL_CLASSINFO(EventSourceAggregator)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSourceAggregator, IEventSource)
 #endif
