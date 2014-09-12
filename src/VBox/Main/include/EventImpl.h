@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,26 +18,16 @@
 #ifndef ____H_EVENTIMPL
 #define ____H_EVENTIMPL
 
-#include "VirtualBoxBase.h"
+#include "EventWrap.h"
+#include "EventSourceWrap.h"
+#include "VetoEventWrap.h"
 
 
 class ATL_NO_VTABLE VBoxEvent :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IEvent)
+    public EventWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxEvent, IEvent)
-
-    DECLARE_NOT_AGGREGATABLE(VBoxEvent)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VBoxEvent)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IEvent)
-    END_COM_MAP()
-
-    VBoxEvent() {}
-    virtual ~VBoxEvent() {}
+    DECLARE_EMPTY_CTOR_DTOR(VBoxEvent)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -46,39 +36,26 @@ public:
     HRESULT init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable);
     void uninit();
 
-    // IEvent properties
-    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType);
-    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource);
-    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable);
-
-    // IEvent methods
-    STDMETHOD(SetProcessed)();
-    STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult);
-
 private:
-    struct Data;
+    // wrapped IEvent properties
+    HRESULT getType(VBoxEventType_T *aType);
+    HRESULT getSource(ComPtr<IEventSource> &aSource);
+    HRESULT getWaitable(BOOL *aWaitable);
 
+    // wrapped IEvent methods
+    HRESULT setProcessed();
+    HRESULT waitProcessed(LONG aTimeout, BOOL *aResult);
+
+    struct Data;
     Data* m;
 };
 
+
 class ATL_NO_VTABLE VBoxVetoEvent :
-    public VBoxEvent,
-    VBOX_SCRIPTABLE_IMPL(IVetoEvent)
+    public virtual VetoEventWrap
 {
 public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxVetoEvent, IVetoEvent)
-
-    DECLARE_NOT_AGGREGATABLE(VBoxVetoEvent)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(VBoxVetoEvent)
-        COM_INTERFACE_ENTRY2(IEvent, IVetoEvent)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IVetoEvent)
-    END_COM_MAP()
-
-    VBoxVetoEvent() {}
-    virtual ~VBoxVetoEvent() {}
+    DECLARE_EMPTY_CTOR_DTOR(VBoxVetoEvent)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -87,57 +64,29 @@ public:
     HRESULT init(IEventSource *aSource, VBoxEventType_T aType);
     void uninit();
 
-    // IEvent properties
-    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType)
-    {
-        return VBoxEvent::COMGETTER(Type)(aType);
-    }
-    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource)
-    {
-        return VBoxEvent::COMGETTER(Source)(aSource);
-    }
-    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable)
-    {
-        return VBoxEvent::COMGETTER(Waitable)(aWaitable);
-    }
-
-    // IEvent methods
-    STDMETHOD(SetProcessed)()
-    {
-        return VBoxEvent::SetProcessed();
-    }
-    STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult)
-    {
-        return VBoxEvent::WaitProcessed(aTimeout, aResult);
-    }
-
-     // IVetoEvent methods
-    STDMETHOD(AddVeto)(IN_BSTR aVeto);
-    STDMETHOD(IsVetoed)(BOOL *aResult);
-    STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos));
-
 private:
-    struct Data;
+    // wrapped IEvent properties
+    HRESULT getType(VBoxEventType_T *aType);
+    HRESULT getSource(ComPtr<IEventSource> &aSource);
+    HRESULT getWaitable(BOOL *aWaitable);
 
+    // wrapped IEvent methods
+    HRESULT setProcessed();
+    HRESULT waitProcessed(LONG aTimeout, BOOL *aResult);
+
+    // wrapped IVetoEvent methods
+    HRESULT addVeto(const com::Utf8Str &aReason);
+    HRESULT isVetoed(BOOL *aResult);
+    HRESULT getVetos(std::vector<com::Utf8Str> &aResult);
+
+    struct Data;
     Data* m;
 };
 
 class ATL_NO_VTABLE EventSource :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IEventSource)
+    public EventSourceWrap
 {
 public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(EventSource, IEventSource)
-
-    DECLARE_NOT_AGGREGATABLE(EventSource)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(EventSource)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IEventSource)
-    END_COM_MAP()
-
     DECLARE_EMPTY_CTOR_DTOR(EventSource)
 
     HRESULT FinalConstruct();
@@ -147,22 +96,26 @@ public:
     HRESULT init();
     void uninit();
 
-    // IEventSource methods
-    STDMETHOD(CreateListener)(IEventListener **aListener);
-    STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource *, aSubordinates),
-                                IEventSource **aAggregator);
-    STDMETHOD(RegisterListener)(IEventListener *aListener,
-                                ComSafeArrayIn(VBoxEventType_T, aInterested),
-                                BOOL aActive);
-    STDMETHOD(UnregisterListener)(IEventListener *aListener);
-    STDMETHOD(FireEvent)(IEvent *aEvent, LONG aTimeout, BOOL *aProcessed);
-    STDMETHOD(GetEvent)(IEventListener *aListener, LONG aTimeout,
-                        IEvent **aEvent);
-    STDMETHOD(EventProcessed)(IEventListener *aListener, IEvent *aEvent);
-
 private:
-    struct Data;
+    // wrapped IEventSource methods
+    HRESULT createListener(ComPtr<IEventListener> &aListener);
+    HRESULT createAggregator(const std::vector<ComPtr<IEventSource> > &aSubordinates,
+                             ComPtr<IEventSource> &aResult);
+    HRESULT registerListener(const ComPtr<IEventListener> &aListener,
+                             const std::vector<VBoxEventType_T> &aInteresting,
+                             BOOL aActive);
+    HRESULT unregisterListener(const ComPtr<IEventListener> &aListener);
+    HRESULT fireEvent(const ComPtr<IEvent> &aEvent,
+                      LONG aTimeout,
+                      BOOL *aResult);
+    HRESULT getEvent(const ComPtr<IEventListener> &aListener,
+                     LONG aTimeout,
+                     ComPtr<IEvent> &aEvent);
+    HRESULT eventProcessed(const ComPtr<IEventListener> &aListener,
+                           const ComPtr<IEvent> &aEvent);
 
+
+    struct Data;
     Data* m;
 
     friend class ListenerRecord;
@@ -218,5 +171,6 @@ private:
     ComPtr<IEvent>          mEvent;
     ComPtr<IEventSource>    mEventSource;
 };
+
 
 #endif // ____H_EVENTIMPL
