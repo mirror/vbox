@@ -13,7 +13,7 @@
         rather trivial container classes for their read-only attributes.
         Further extension to other interfaces is possible and anticipated.
 
-    Copyright (C) 2010-2013 Oracle Corporation
+    Copyright (C) 2010-2014 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -46,7 +46,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -495,25 +495,25 @@
         mEvent->FinalRelease();
         BaseFinalRelease();
     }
-    STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType)
+    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType)
     {
-        return ((VBoxEvent*)mEvent)->COMGETTER(Type) (aType);
+        return mEvent->COMGETTER(Type)(aType);
     }
-    STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource)
+    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource)
     {
-        return ((VBoxEvent*)mEvent)->COMGETTER(Source) (aSource);
+        return mEvent->COMGETTER(Source)(aSource);
     }
-    STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable)
+    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable)
     {
-        return ((VBoxEvent*)mEvent)->COMGETTER(Waitable) (aWaitable);
+        return mEvent->COMGETTER(Waitable)(aWaitable);
     }
     STDMETHOD(SetProcessed)()
     {
-       return ((VBoxEvent*)mEvent)->SetProcessed();
+       return mEvent->SetProcessed();
     }
     STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult)
     {
-        return ((VBoxEvent*)mEvent)->WaitProcessed(aTimeout, aResult);
+        return mEvent->WaitProcessed(aTimeout, aResult);
     }
     void uninit()
     {
@@ -556,12 +556,12 @@ private:
         mGeneration = 1;
         return mEvent->init(aSource, aType, aWaitable);
     }
-    STDMETHOD(COMGETTER(Generation)) (ULONG *aGeneration)
+    STDMETHOD(COMGETTER(Generation))(ULONG *aGeneration)
     {
       *aGeneration = mGeneration;
       return S_OK;
     }
-    STDMETHOD(Reuse) ()
+    STDMETHOD(Reuse)()
     {
        ASMAtomicIncU32((volatile uint32_t*)&mGeneration);
        return S_OK;
