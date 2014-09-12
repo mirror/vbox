@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIWizardCloneVDPageExpert class implementation
+ * VBox Qt GUI - UIWizardCloneVDPageExpert class implementation.
  */
 
 /*
