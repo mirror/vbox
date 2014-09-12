@@ -15,64 +15,71 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDir>
-#include <QDesktopWidget>
-#include <QFileInfo>
-#include <QLocale>
-#include <QThread>
-#include <QProcess>
-#ifdef Q_WS_MAC
-# include <QPushButton>
-#endif /* Q_WS_MAC */
+# include <QDir>
+# include <QDesktopWidget>
+# include <QFileInfo>
+# include <QLocale>
+# include <QThread>
+# include <QProcess>
+# ifdef Q_WS_MAC
+#  include <QPushButton>
+# endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIConverter.h"
-#include "UIMessageCenter.h"
-#include "UISelectorWindow.h"
-#include "UIProgressDialog.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UINetworkManagerDialog.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIModalWindowManager.h"
-#include "UIExtraDataManager.h"
-#include "UIMedium.h"
-#ifdef VBOX_OSE
-# include "UIDownloaderUserManual.h"
-#endif /* VBOX_OSE */
-#include "UIMachine.h"
-#include "VBoxAboutDlg.h"
-#include "UIHostComboEditor.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
-#ifdef Q_WS_WIN
-# include <Htmlhelp.h>
-#endif /* Q_WS_WIN */
+# include "VBoxGlobal.h"
+# include "UIConverter.h"
+# include "UIMessageCenter.h"
+# include "UISelectorWindow.h"
+# include "UIProgressDialog.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UINetworkManager.h"
+#  include "UINetworkManagerDialog.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIModalWindowManager.h"
+# include "UIExtraDataManager.h"
+# include "UIMedium.h"
+# ifdef VBOX_OSE
+#  include "UIDownloaderUserManual.h"
+# endif /* VBOX_OSE */
+# include "UIMachine.h"
+# include "VBoxAboutDlg.h"
+# include "UIHostComboEditor.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+# endif /* Q_WS_MAC */
+# ifdef Q_WS_WIN
+#  include <Htmlhelp.h>
+# endif /* Q_WS_WIN */
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CMachine.h"
-#include "CSystemProperties.h"
-#include "CVirtualBoxErrorInfo.h"
-#include "CMediumAttachment.h"
-#include "CMediumFormat.h"
-#include "CAppliance.h"
-#include "CExtPackManager.h"
-#include "CExtPackFile.h"
-#include "CHostNetworkInterface.h"
-#include "CVRDEServer.h"
-#include "CEmulatedUSB.h"
-#ifdef VBOX_WITH_DRAG_AND_DROP
-# include "CGuest.h"
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+# include "CConsole.h"
+# include "CMachine.h"
+# include "CSystemProperties.h"
+# include "CVirtualBoxErrorInfo.h"
+# include "CMediumAttachment.h"
+# include "CMediumFormat.h"
+# include "CAppliance.h"
+# include "CExtPackManager.h"
+# include "CExtPackFile.h"
+# include "CHostNetworkInterface.h"
+# include "CVRDEServer.h"
+# include "CEmulatedUSB.h"
+# ifdef VBOX_WITH_DRAG_AND_DROP
+#  include "CGuest.h"
+# endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
-#include <iprt/err.h>
-#include <iprt/param.h>
-#include <iprt/path.h>
+# include <iprt/err.h>
+# include <iprt/param.h>
+# include <iprt/path.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 UIMessageCenter* UIMessageCenter::m_spInstance = 0;

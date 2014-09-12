@@ -15,34 +15,41 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QTimer>
-#include <QDir>
-#include <QPointer>
-#include <VBox/version.h>
+# include <QTimer>
+# include <QDir>
+# include <QPointer>
+# include <VBox/version.h>
 
 /* GUI includes: */
-#include "UIUpdateDefs.h"
-#include "UIUpdateManager.h"
-#include "UINetworkManager.h"
-#include "UINetworkCustomer.h"
-#include "UINetworkRequest.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIExtraDataManager.h"
-#include "UIModalWindowManager.h"
-#include "VBoxUtils.h"
-#include "UIDownloaderExtensionPack.h"
-#include "UIGlobalSettingsExtension.h"
-#include "QIProcess.h"
+# include "UIUpdateDefs.h"
+# include "UIUpdateManager.h"
+# include "UINetworkManager.h"
+# include "UINetworkCustomer.h"
+# include "UINetworkRequest.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIExtraDataManager.h"
+# include "UIModalWindowManager.h"
+# include "VBoxUtils.h"
+# include "UIDownloaderExtensionPack.h"
+# include "UIGlobalSettingsExtension.h"
+# include "QIProcess.h"
 
 /* COM includes: */
-#include "CExtPack.h"
-#include "CExtPackManager.h"
+# include "CExtPack.h"
+# include "CExtPackManager.h"
 
 /* Other VBox includes: */
-#include <iprt/path.h>
-#include <iprt/system.h>
+# include <iprt/path.h>
+# include <iprt/system.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Forward declarations: */
 class UIUpdateStep;

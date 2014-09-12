@@ -15,16 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QVBoxLayout>
-#include <QStatusBar>
+# include <QVBoxLayout>
+# include <QStatusBar>
 
 /* GUI includes: */
-#include "UIGChooser.h"
-#include "UIGChooserModel.h"
-#include "UIGChooserView.h"
-#include "UISelectorWindow.h"
-#include "VBoxGlobal.h"
+# include "UIGChooser.h"
+# include "UIGChooserModel.h"
+# include "UIGChooserView.h"
+# include "UISelectorWindow.h"
+# include "VBoxGlobal.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGChooser::UIGChooser(UISelectorWindow *pParent)
     : QWidget(pParent)

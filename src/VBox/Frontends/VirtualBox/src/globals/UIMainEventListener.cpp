@@ -15,34 +15,41 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIMainEventListener.h"
+# include "UIMainEventListener.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CVirtualBoxErrorInfo.h"
-#include "CUSBDevice.h"
-#include "CEvent.h"
-#include "CMachineStateChangedEvent.h"
-#include "CMachineDataChangedEvent.h"
-#include "CExtraDataCanChangeEvent.h"
-#include "CExtraDataChangedEvent.h"
-#include "CMachineRegisteredEvent.h"
-#include "CSessionStateChangedEvent.h"
-#include "CSnapshotTakenEvent.h"
-#include "CSnapshotDeletedEvent.h"
-#include "CSnapshotChangedEvent.h"
-#include "CMousePointerShapeChangedEvent.h"
-#include "CMouseCapabilityChangedEvent.h"
-#include "CKeyboardLedsChangedEvent.h"
-#include "CStateChangedEvent.h"
-#include "CNetworkAdapterChangedEvent.h"
-#include "CMediumChangedEvent.h"
-#include "CUSBDeviceStateChangedEvent.h"
-#include "CRuntimeErrorEvent.h"
-#include "CCanShowWindowEvent.h"
-#include "CShowWindowEvent.h"
-#include "CGuestMonitorChangedEvent.h"
+# include "COMEnums.h"
+# include "CVirtualBoxErrorInfo.h"
+# include "CUSBDevice.h"
+# include "CEvent.h"
+# include "CMachineStateChangedEvent.h"
+# include "CMachineDataChangedEvent.h"
+# include "CExtraDataCanChangeEvent.h"
+# include "CExtraDataChangedEvent.h"
+# include "CMachineRegisteredEvent.h"
+# include "CSessionStateChangedEvent.h"
+# include "CSnapshotTakenEvent.h"
+# include "CSnapshotDeletedEvent.h"
+# include "CSnapshotChangedEvent.h"
+# include "CMousePointerShapeChangedEvent.h"
+# include "CMouseCapabilityChangedEvent.h"
+# include "CKeyboardLedsChangedEvent.h"
+# include "CStateChangedEvent.h"
+# include "CNetworkAdapterChangedEvent.h"
+# include "CMediumChangedEvent.h"
+# include "CUSBDeviceStateChangedEvent.h"
+# include "CRuntimeErrorEvent.h"
+# include "CCanShowWindowEvent.h"
+# include "CShowWindowEvent.h"
+# include "CGuestMonitorChangedEvent.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMainEventListener::UIMainEventListener()
   : QObject()

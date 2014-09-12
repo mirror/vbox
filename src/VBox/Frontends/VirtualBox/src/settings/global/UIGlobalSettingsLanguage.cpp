@@ -15,22 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDir>
-#include <QHeaderView>
-#include <QPainter>
-#include <QTranslator>
+# include <QDir>
+# include <QHeaderView>
+# include <QPainter>
+# include <QTranslator>
 
 /* GUI includes: */
-#include "UIGlobalSettingsLanguage.h"
-#include "VBoxGlobalSettings.h"
-#include "VBoxGlobal.h"
+# include "UIGlobalSettingsLanguage.h"
+# include "VBoxGlobalSettings.h"
+# include "VBoxGlobal.h"
 
 /* Other VBox includes: */
-#include <iprt/err.h>
-#include <iprt/param.h>
-#include <iprt/path.h>
-#include <VBox/version.h>
+# include <iprt/err.h>
+# include <iprt/param.h>
+# include <iprt/path.h>
+# include <VBox/version.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 extern const char *gVBoxLangSubDir;
 extern const char *gVBoxLangFileBase;

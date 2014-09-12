@@ -15,25 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QPainter>
-#include <QStyleOptionGraphicsItem>
-#include <QGraphicsSceneMouseEvent>
+# include <QPainter>
+# include <QStyleOptionGraphicsItem>
+# include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
-#include "UIGChooserItemMachine.h"
-#include "UIGChooserItemGroup.h"
-#include "UIGChooserModel.h"
-#include "UIGraphicsToolBar.h"
-#include "UIGraphicsZoomButton.h"
-#include "VBoxGlobal.h"
-#include "UIIconPool.h"
-#include "UIActionPoolSelector.h"
-#include "UIImageTools.h"
+# include "UIGChooserItemMachine.h"
+# include "UIGChooserItemGroup.h"
+# include "UIGChooserModel.h"
+# include "UIGraphicsToolBar.h"
+# include "UIGraphicsZoomButton.h"
+# include "VBoxGlobal.h"
+# include "UIIconPool.h"
+# include "UIActionPoolSelector.h"
+# include "UIImageTools.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
+# include "COMEnums.h"
+# include "CMachine.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 QString UIGChooserItemMachine::className() { return "UIGChooserItemMachine"; }

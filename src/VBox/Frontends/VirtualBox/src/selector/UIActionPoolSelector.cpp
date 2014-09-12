@@ -15,11 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes: */
-#include "UIActionPoolSelector.h"
-#include "UIExtraDataDefs.h"
-#include "UIShortcutPool.h"
-#include "UIDefs.h"
+# include "UIActionPoolSelector.h"
+# include "UIExtraDataDefs.h"
+# include "UIShortcutPool.h"
+# include "UIDefs.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

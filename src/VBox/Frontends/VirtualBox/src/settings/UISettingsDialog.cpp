@@ -15,31 +15,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes */
-#include <QProgressBar>
-#include <QPushButton>
-#include <QStackedWidget>
-#include <QTimer>
-#include <QCloseEvent>
+# include <QProgressBar>
+# include <QPushButton>
+# include <QStackedWidget>
+# include <QTimer>
+# include <QCloseEvent>
 
 /* Local includes */
-#include "UISettingsDialog.h"
-#include "UIWarningPane.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "QIWidgetValidator.h"
-#include "VBoxSettingsSelector.h"
-#include "UISettingsPage.h"
-#include "UIToolBar.h"
-#include "UIIconPool.h"
-#include "UIConverter.h"
+# include "UISettingsDialog.h"
+# include "UIWarningPane.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "QIWidgetValidator.h"
+# include "VBoxSettingsSelector.h"
+# include "UISettingsPage.h"
+# include "UIToolBar.h"
+# include "UIIconPool.h"
+# include "UIConverter.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
+# endif
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
 #ifdef Q_WS_MAC
-# include "VBoxUtils.h"
 # if MAC_LEOPARD_STYLE
 #  define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-# endif /* MAC_LEOPARD_STYLE */
-#endif /* Q_WS_MAC */
+# endif
+#endif
+
 
 /* Settings Dialog Constructor: */
 UISettingsDialog::UISettingsDialog(QWidget *pParent)

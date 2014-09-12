@@ -15,10 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIShortcutPool.h"
-#include "UIActionPool.h"
-#include "UIExtraDataManager.h"
+# include "UIShortcutPool.h"
+# include "UIActionPool.h"
+# include "UIExtraDataManager.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

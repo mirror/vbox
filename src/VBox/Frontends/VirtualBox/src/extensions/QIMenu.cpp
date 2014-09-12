@@ -15,8 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else
 /* GUI includes: */
-#include "QIMenu.h"
+# include "QIMenu.h"
+#endif
+
 
 QIMenu::QIMenu(QWidget *pParent /* = 0 */)
     : QMenu(pParent)

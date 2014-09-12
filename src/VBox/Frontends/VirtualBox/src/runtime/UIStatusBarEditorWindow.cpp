@@ -15,28 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QStylePainter>
-#include <QStyleOption>
-#include <QHBoxLayout>
-#include <QPaintEvent>
-#include <QMouseEvent>
-#include <QStatusBar>
-#include <QPainter>
-#include <QPixmap>
-#include <QDrag>
-#include <QList>
-#include <QMap>
+# include <QStylePainter>
+# include <QStyleOption>
+# include <QHBoxLayout>
+# include <QPaintEvent>
+# include <QMouseEvent>
+# include <QStatusBar>
+# include <QPainter>
+# include <QPixmap>
+# include <QDrag>
+# include <QList>
+# include <QMap>
 
 /* GUI includes: */
-#include "UIStatusBarEditorWindow.h"
-#include "UIExtraDataManager.h"
-#include "UIMachineWindow.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
-#include "QIWithRetranslateUI.h"
-#include "QIToolButton.h"
-#include "VBoxGlobal.h"
+# include "UIStatusBarEditorWindow.h"
+# include "UIExtraDataManager.h"
+# include "UIMachineWindow.h"
+# include "UIConverter.h"
+# include "UIIconPool.h"
+# include "QIWithRetranslateUI.h"
+# include "QIToolButton.h"
+# include "VBoxGlobal.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 
 /** QWidget extension

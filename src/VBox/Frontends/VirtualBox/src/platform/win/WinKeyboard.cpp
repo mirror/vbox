@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 
+
 /* Beautification of log output */
 #define VBOX_BOOL_TO_STR_STATE(x)   (x) ? "ON" : "OFF"
 #define VBOX_CONTROL_TO_STR_NAME(x) ((x == VK_CAPITAL) ? "CAPS" : (x == VK_SCROLL ? "SCROLL" : ((x == VK_NUMLOCK) ? "NUM" : "UNKNOWN")))

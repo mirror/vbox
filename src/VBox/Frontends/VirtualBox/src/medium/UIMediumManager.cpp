@@ -16,37 +16,37 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QFrame>
-#include <QLabel>
-#include <QMenuBar>
-#include <QHeaderView>
-#include <QPushButton>
-#include <QProgressBar>
+# include <QFrame>
+# include <QLabel>
+# include <QMenuBar>
+# include <QHeaderView>
+# include <QPushButton>
+# include <QProgressBar>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMediumManager.h"
-#include "UIWizardCloneVD.h"
-#include "UIMessageCenter.h"
-#include "QITabWidget.h"
-#include "QITreeWidget.h"
-#include "QILabel.h"
-#include "QIDialogButtonBox.h"
-#include "UIToolBar.h"
-#include "UIIconPool.h"
-#include "UIMediumTypeChangeDialog.h"
-#include "UIMedium.h"
+# include "VBoxGlobal.h"
+# include "UIMediumManager.h"
+# include "UIWizardCloneVD.h"
+# include "UIMessageCenter.h"
+# include "QITabWidget.h"
+# include "QITreeWidget.h"
+# include "QILabel.h"
+# include "QIDialogButtonBox.h"
+# include "UIToolBar.h"
+# include "UIIconPool.h"
+# include "UIMediumTypeChangeDialog.h"
+# include "UIMedium.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
-#include "CMediumFormat.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
+# include "COMEnums.h"
+# include "CMachine.h"
+# include "CMediumFormat.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
 
 # ifdef Q_WS_MAC
 #  include "UIWindowMenuManager.h"

@@ -15,27 +15,34 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#ifndef Q_WS_MAC
-# include <QTimer>
-#endif /* !Q_WS_MAC */
+# include <QDesktopWidget>
+# ifndef Q_WS_MAC
+#  include <QTimer>
+# endif /* !Q_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineWindowSeamless.h"
-#include "UIMultiScreenLayout.h"
-#include "UIShortcutPool.h"
-#ifndef Q_WS_MAC
-# include "QIMenu.h"
-#else /* Q_WS_MAC */
-# include "VBoxUtils.h"
-#endif /* Q_WS_MAC */
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIPopupCenter.h"
+# include "UISession.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogicSeamless.h"
+# include "UIMachineWindowSeamless.h"
+# include "UIMultiScreenLayout.h"
+# include "UIShortcutPool.h"
+# ifndef Q_WS_MAC
+#  include "QIMenu.h"
+# else  /* Q_WS_MAC */
+#  include "VBoxUtils.h"
+# endif /* Q_WS_MAC */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession)
     : UIMachineLogic(pParent, pSession, UIVisualStateType_Seamless)

@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QHash>
+# include <QApplication>
+# include <QHash>
 
 /* GUI includes: */
-#include "UIConverterBackend.h"
-#include "UIIconPool.h"
-#include "VBoxGlobal.h"
+# include "UIConverterBackend.h"
+# include "UIIconPool.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+# include "CSystemProperties.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */

@@ -15,24 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QMenu>
-#include <QTimer>
-#include <QSpacerItem>
-#include <QResizeEvent>
+# include <QDesktopWidget>
+# include <QMenu>
+# include <QTimer>
+# include <QSpacerItem>
+# include <QResizeEvent>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIExtraDataManager.h"
-#include "UISession.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindowScale.h"
-#include "UIMachineView.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
+# include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
+# include "UISession.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindowScale.h"
+# include "UIMachineView.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
+#  include "UIImageTools.h"
+# endif /* Q_WS_MAC */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

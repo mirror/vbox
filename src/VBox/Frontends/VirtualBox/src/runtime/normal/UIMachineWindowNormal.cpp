@@ -15,39 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QMenuBar>
-#include <QTimer>
-#include <QContextMenuEvent>
-#include <QResizeEvent>
+# include <QDesktopWidget>
+# include <QMenuBar>
+# include <QTimer>
+# include <QContextMenuEvent>
+# include <QResizeEvent>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMachineWindowNormal.h"
-#include "UIActionPoolRuntime.h"
-#include "UIExtraDataManager.h"
-#include "UIIndicatorsPool.h"
-#include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
-#include "UIMachineLogic.h"
-#include "UIMachineView.h"
-#include "UIIconPool.h"
-#include "UISession.h"
-#include "QIStatusBar.h"
-#include "QIStatusBarIndicator.h"
-#ifndef Q_WS_MAC
-# include "UIMenuBar.h"
-#else /* Q_WS_MAC */
-# include "VBoxUtils.h"
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
+# include "VBoxGlobal.h"
+# include "UIMachineWindowNormal.h"
+# include "UIActionPoolRuntime.h"
+# include "UIExtraDataManager.h"
+# include "UIIndicatorsPool.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
+# include "UIMachineLogic.h"
+# include "UIMachineView.h"
+# include "UIIconPool.h"
+# include "UISession.h"
+# include "QIStatusBar.h"
+# include "QIStatusBarIndicator.h"
+# ifndef Q_WS_MAC
+#  include "UIMenuBar.h"
+# else  /* Q_WS_MAC */
+#  include "VBoxUtils.h"
+#  include "UIImageTools.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CMediumAttachment.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
+# include "CConsole.h"
+# include "CMediumAttachment.h"
+# include "CUSBController.h"
+# include "CUSBDeviceFilters.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)

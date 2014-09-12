@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QIcon>
-#include <QPainter>
-#include <QHBoxLayout>
-#include <QLabel>
-#ifdef Q_WS_MAC
-# include <QContextMenuEvent>
-#endif /* Q_WS_MAC */
+# include <QIcon>
+# include <QPainter>
+# include <QHBoxLayout>
+# include <QLabel>
+# ifdef Q_WS_MAC
+#  include <QContextMenuEvent>
+# endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "QIStatusBarIndicator.h"
+# include "QIStatusBarIndicator.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 
 QIStatusBarIndicator::QIStatusBarIndicator(QWidget *pParent /* = 0 */)

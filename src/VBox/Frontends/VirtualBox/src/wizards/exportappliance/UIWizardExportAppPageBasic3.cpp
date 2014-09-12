@@ -15,22 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QDir>
-#include <QVBoxLayout>
-#include <QGridLayout>
-#include <QLabel>
-#include <QLineEdit>
-#include <QComboBox>
-#include <QCheckBox>
+# include <QDir>
+# include <QVBoxLayout>
+# include <QGridLayout>
+# include <QLabel>
+# include <QLineEdit>
+# include <QComboBox>
+# include <QCheckBox>
 
 /* Local includes: */
-#include "UIWizardExportAppPageBasic3.h"
-#include "UIWizardExportApp.h"
-#include "UIWizardExportAppDefs.h"
-#include "VBoxGlobal.h"
-#include "VBoxFilePathSelectorWidget.h"
-#include "QIRichTextLabel.h"
+# include "UIWizardExportAppPageBasic3.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardExportAppDefs.h"
+# include "VBoxGlobal.h"
+# include "VBoxFilePathSelectorWidget.h"
+# include "QIRichTextLabel.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
 {

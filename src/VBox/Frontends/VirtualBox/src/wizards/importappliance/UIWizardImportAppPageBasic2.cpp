@@ -15,13 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QVBoxLayout>
+# include <QVBoxLayout>
 
 /* Local includes: */
-#include "UIWizardImportAppPageBasic2.h"
-#include "UIWizardImportApp.h"
-#include "QIRichTextLabel.h"
+# include "UIWizardImportAppPageBasic2.h"
+# include "UIWizardImportApp.h"
+# include "QIRichTextLabel.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIWizardImportAppPage2::UIWizardImportAppPage2()
 {

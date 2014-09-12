@@ -15,8 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIDefs.h"
+# include "UIDefs.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Extension-pack definitions: */
 const char* UIDefs::GUI_ExtPackName = "Oracle VM VirtualBox Extension Pack";

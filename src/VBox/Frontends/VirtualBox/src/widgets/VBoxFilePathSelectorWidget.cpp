@@ -15,25 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes */
-#include "QIFileDialog.h"
-#include "QIToolButton.h"
-#include "QILabel.h"
-#include "QILineEdit.h"
-#include "UIIconPool.h"
-#include "VBoxFilePathSelectorWidget.h"
-#include "VBoxGlobal.h"
+# include "QIFileDialog.h"
+# include "QIToolButton.h"
+# include "QILabel.h"
+# include "QILineEdit.h"
+# include "UIIconPool.h"
+# include "VBoxFilePathSelectorWidget.h"
+# include "VBoxGlobal.h"
 
 /* Global includes */
-#include <iprt/assert.h>
-#include <QAction>
-#include <QApplication>
-#include <QClipboard>
-#include <QDir>
-#include <QFocusEvent>
-#include <QHBoxLayout>
-#include <QLineEdit>
-#include <QTimer>
+# include <iprt/assert.h>
+# include <QAction>
+# include <QApplication>
+# include <QClipboard>
+# include <QDir>
+# include <QFocusEvent>
+# include <QHBoxLayout>
+# include <QLineEdit>
+# include <QTimer>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxFilePathSelectorWidget

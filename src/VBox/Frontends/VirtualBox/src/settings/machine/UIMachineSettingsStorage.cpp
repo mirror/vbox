@@ -15,31 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QHeaderView>
-#include <QItemEditorFactory>
-#include <QMetaProperty>
-#include <QMouseEvent>
-#include <QScrollBar>
-#include <QStylePainter>
-#include <QTimer>
-#include <QCommonStyle>
+# include <QHeaderView>
+# include <QItemEditorFactory>
+# include <QMetaProperty>
+# include <QMouseEvent>
+# include <QScrollBar>
+# include <QStylePainter>
+# include <QTimer>
+# include <QCommonStyle>
 
 /* GUI includes: */
-#include "QIWidgetValidator.h"
-#include "UIIconPool.h"
-#include "UIWizardNewVD.h"
-#include "VBoxGlobal.h"
-#include "QIFileDialog.h"
-#include "UIMessageCenter.h"
-#include "UIMachineSettingsStorage.h"
-#include "UIConverter.h"
-#include "UIMedium.h"
-#include "UIExtraDataManager.h"
+# include "QIWidgetValidator.h"
+# include "UIIconPool.h"
+# include "UIWizardNewVD.h"
+# include "VBoxGlobal.h"
+# include "QIFileDialog.h"
+# include "UIMessageCenter.h"
+# include "UIMachineSettingsStorage.h"
+# include "UIConverter.h"
+# include "UIMedium.h"
+# include "UIExtraDataManager.h"
 
 /* COM includes: */
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
+# include "CStorageController.h"
+# include "CMediumAttachment.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 QString compressText (const QString &aText)
 {
@@ -3961,5 +3968,5 @@ void UIMachineSettingsStorage::polishPage()
     updateActionsState();
 }
 
-#include "UIMachineSettingsStorage.moc"
+# include "UIMachineSettingsStorage.moc"
 

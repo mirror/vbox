@@ -15,30 +15,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QTimer>
-#include <QMdiArea>
-#include <QMdiSubWindow>
-#include <QDesktopWidget>
-#include <QLabel>
-#include <QMenu>
-#include <QToolButton>
-#include <QStateMachine>
-#include <QPainter>
+# include <QApplication>
+# include <QTimer>
+# include <QMdiArea>
+# include <QMdiSubWindow>
+# include <QDesktopWidget>
+# include <QLabel>
+# include <QMenu>
+# include <QToolButton>
+# include <QStateMachine>
+# include <QPainter>
 
 /* GUI includes: */
-#include "UIMiniToolBar.h"
-#include "UIAnimationFramework.h"
-#include "UIIconPool.h"
-#include "VBoxGlobal.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* Q_WS_MAC */
+# include "UIMiniToolBar.h"
+# include "UIAnimationFramework.h"
+# include "UIIconPool.h"
+# include "VBoxGlobal.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+# endif
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifndef Q_WS_X11
 # define VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
 #endif /* !Q_WS_X11 */
+
 
 UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            GeometryType geometryType,

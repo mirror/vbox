@@ -15,18 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include "UIConsoleEventHandler.h"
-#include "UIMainEventListener.h"
-#include "VBoxGlobal.h"
-#include "UISession.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
-#endif /* Q_WS_MAC */
+# include "UIConsoleEventHandler.h"
+# include "UIMainEventListener.h"
+# include "VBoxGlobal.h"
+# include "UISession.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
+# endif /* Q_WS_MAC */
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CEventSource.h"
+# include "CConsole.h"
+# include "CEventSource.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 UIConsoleEventHandler *UIConsoleEventHandler::m_pInstance = 0;

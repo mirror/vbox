@@ -15,19 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QTimer>
-#include <QGridLayout>
-#include <QProgressBar>
+# include <QTimer>
+# include <QGridLayout>
+# include <QProgressBar>
 
 /* Local includes: */
-#include "UINetworkRequestWidget.h"
-#include "UINetworkRequest.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerDialog.h"
-#include "UIIconPool.h"
-#include "QIToolButton.h"
-#include "QIRichTextLabel.h"
+# include "UINetworkRequestWidget.h"
+# include "UINetworkRequest.h"
+# include "UINetworkManager.h"
+# include "UINetworkManagerDialog.h"
+# include "UIIconPool.h"
+# include "QIToolButton.h"
+# include "QIRichTextLabel.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UINetworkRequestWidget::UINetworkRequestWidget(UINetworkManagerDialog *pParent, UINetworkRequest *pNetworkRequest)
     : QIWithRetranslateUI<UIPopupBox>(pParent)

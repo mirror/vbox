@@ -15,18 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Global includes: */
-#include <QDir>
-#include <QFile>
-#include <iprt/sha.h>
+# include <QDir>
+# include <QFile>
+# include <iprt/sha.h>
 
 /* Local includes: */
-#include "UIDownloaderExtensionPack.h"
-#include "UINetworkReply.h"
-#include "QIFileDialog.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIModalWindowManager.h"
+# include "UIDownloaderExtensionPack.h"
+# include "UINetworkReply.h"
+# include "QIFileDialog.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIModalWindowManager.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_spInstance = 0;

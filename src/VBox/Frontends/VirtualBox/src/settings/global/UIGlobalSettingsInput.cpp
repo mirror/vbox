@@ -15,21 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QShortcut>
-#include <QHeaderView>
-#include <QAbstractItemDelegate>
-#include <QStyledItemDelegate>
-#include <QItemEditorFactory>
-#include <QTabWidget>
+# include <QShortcut>
+# include <QHeaderView>
+# include <QAbstractItemDelegate>
+# include <QStyledItemDelegate>
+# include <QItemEditorFactory>
+# include <QTabWidget>
 
 /* GUI includes: */
-#include "QIWidgetValidator.h"
-#include "UIGlobalSettingsInput.h"
-#include "UIShortcutPool.h"
-#include "UIHotKeyEditor.h"
-#include "UIHostComboEditor.h"
-#include "VBoxGlobalSettings.h"
+# include "QIWidgetValidator.h"
+# include "UIGlobalSettingsInput.h"
+# include "UIShortcutPool.h"
+# include "UIHotKeyEditor.h"
+# include "UIHostComboEditor.h"
+# include "VBoxGlobalSettings.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

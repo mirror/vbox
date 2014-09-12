@@ -15,16 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes */
-#include "UIBar.h"
-#include "UIImageTools.h"
-#include "VBoxGlobal.h"
+# include "UIBar.h"
+# include "UIImageTools.h"
+# include "VBoxGlobal.h"
 
 /* Global includes */
-#include <QPaintEvent>
-#include <QPainter>
-#include <QVBoxLayout>
-#include <QPixmapCache>
+# include <QPaintEvent>
+# include <QPainter>
+# include <QVBoxLayout>
+# include <QPixmapCache>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIBar::UIBar(QWidget *pParent /* = 0 */)
   : QWidget(pParent)

@@ -15,14 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes: */
-#include "VBoxGlobal.h"
-#include "UIExtraDataManager.h"
-#include "UIMachine.h"
-#include "UISession.h"
-#include "UIActionPoolRuntime.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
+# include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
+# include "UIMachine.h"
+# include "UISession.h"
+# include "UIActionPoolRuntime.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Visual state interface: */
 class UIVisualState : public QObject

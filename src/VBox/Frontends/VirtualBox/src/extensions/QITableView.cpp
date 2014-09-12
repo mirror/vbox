@@ -15,8 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes */
-#include "QITableView.h"
+# include "QITableView.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 QITableView::QITableView(QWidget *pParent)
     : QTableView(pParent)

@@ -15,26 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QItemDelegate>
-#include <QSortFilterProxyModel>
-#include <QHeaderView>
-#include <QLineEdit>
-#include <QTextEdit>
-#include <QSpinBox>
-#include <QComboBox>
-#include <QDir>
+# include <QItemDelegate>
+# include <QSortFilterProxyModel>
+# include <QHeaderView>
+# include <QLineEdit>
+# include <QTextEdit>
+# include <QSpinBox>
+# include <QComboBox>
+# include <QDir>
 
 /* GUI includes: */
-#include "UIApplianceEditorWidget.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxOSTypeSelectorButton.h"
-#include "UILineTextEdit.h"
-#include "UIConverter.h"
+# include "UIApplianceEditorWidget.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "VBoxOSTypeSelectorButton.h"
+# include "UILineTextEdit.h"
+# include "UIConverter.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+# include "CSystemProperties.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ModelItem

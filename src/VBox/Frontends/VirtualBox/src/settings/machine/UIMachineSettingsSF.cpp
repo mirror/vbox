@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Local includes */
-#include "UIIconPool.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
-#include "UIMachineSettingsSF.h"
-#include "UIMachineSettingsSFDetails.h"
+# include "UIIconPool.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "VBoxUtils.h"
+# include "UIMachineSettingsSF.h"
+# include "UIMachineSettingsSFDetails.h"
 
 /* Global includes */
-#include <QHeaderView>
-#include <QTimer>
+# include <QHeaderView>
+# include <QTimer>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 class SFTreeViewItem : public QTreeWidgetItem
 {
@@ -850,3 +857,4 @@ bool UIMachineSettingsSF::createSharedFolder(const UICacheSettingsSharedFolder &
     }
     return true;
 }
+

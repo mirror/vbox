@@ -15,55 +15,59 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QDesktopWidget>
-#include <QMainWindow>
-#include <QTimer>
-#include <QPainter>
-#include <QScrollBar>
-#include <QMainWindow>
-#include <VBox/VBoxVideo.h>
-#include <iprt/asm.h>
-#ifdef Q_WS_X11
-# include <QX11Info>
-#endif /* Q_WS_X11 */
+# include <QDesktopWidget>
+# include <QMainWindow>
+# include <QTimer>
+# include <QPainter>
+# include <QScrollBar>
+# include <QMainWindow>
+# include <VBox/VBoxVideo.h>
+# include <iprt/asm.h>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIFrameBuffer.h"
-#include "VBoxFBOverlay.h"
-#include "UISession.h"
-#include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineViewNormal.h"
-#include "UIMachineViewFullscreen.h"
-#include "UIMachineViewSeamless.h"
-#include "UIMachineViewScale.h"
-#include "UIExtraDataManager.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIFrameBuffer.h"
+# include "VBoxFBOverlay.h"
+# include "UISession.h"
+# include "UIKeyboardHandler.h"
+# include "UIMouseHandler.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
+# include "UIMachineViewNormal.h"
+# include "UIMachineViewFullscreen.h"
+# include "UIMachineViewSeamless.h"
+# include "UIMachineViewScale.h"
+# include "UIExtraDataManager.h"
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
-# include "UIDnDHandler.h"
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+# ifdef VBOX_WITH_DRAG_AND_DROP
+#  include "UIDnDHandler.h"
+# endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* COM includes: */
-#include "CSession.h"
-#include "CConsole.h"
-#include "CDisplay.h"
-#include "CFramebuffer.h"
-#ifdef VBOX_WITH_DRAG_AND_DROP
-# include "CDnDSource.h"
-# include "CDnDTarget.h"
-# include "CGuest.h"
-# include "CGuestDnDTarget.h"
-# include "CGuestDnDSource.h"
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+# include "CSession.h"
+# include "CConsole.h"
+# include "CDisplay.h"
+# include "CFramebuffer.h"
+# ifdef VBOX_WITH_DRAG_AND_DROP
+#  include "CDnDSource.h"
+#  include "CDnDTarget.h"
+#  include "CGuest.h"
+#  include "CGuestDnDTarget.h"
+#  include "CGuestDnDSource.h"
+# endif /* VBOX_WITH_DRAG_AND_DROP */
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
 #ifdef Q_WS_X11
 # include <X11/XKBlib.h>
+# include <QX11Info>
 # ifdef KeyPress
 const int XFocusOut = FocusOut;
 const int XFocusIn = FocusIn;
@@ -83,6 +87,7 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
+
 
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , ulong uScreenId

@@ -15,15 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes: */
-#include <QPainter>
+# include <QPainter>
 
 /* GUI includes: */
-#include "UIPopupPane.h"
-#include "UIPopupPaneTextPane.h"
-#include "UIPopupPaneButtonPane.h"
-#include "UIAnimationFramework.h"
-#include "QIMessageBox.h"
+# include "UIPopupPane.h"
+# include "UIPopupPaneTextPane.h"
+# include "UIPopupPaneButtonPane.h"
+# include "UIAnimationFramework.h"
+# include "QIMessageBox.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,

@@ -15,16 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QLayout>
-#include <QMainWindow>
-#include <QWindowsStyle>
-#include <QCleanlooksStyle>
+# include <QLayout>
+# include <QMainWindow>
+# include <QWindowsStyle>
+# include <QCleanlooksStyle>
 
 /* GUI includes: */
-#include "UIToolBar.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
+# include "UIToolBar.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
+# endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 #endif /* Q_WS_MAC */
 
 UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)

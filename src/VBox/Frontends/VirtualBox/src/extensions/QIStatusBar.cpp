@@ -15,7 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "QIStatusBar.h"
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else
+# include "QIStatusBar.h"
+#endif
+
 
 QIStatusBar::QIStatusBar (QWidget *aParent)
     : QStatusBar (aParent)

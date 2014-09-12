@@ -288,7 +288,6 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBox/VBoxVideo3D.h>
 #endif
-#include <VBox/VDEPlug.h>
 #include <VBox/VMMDev.h>
 #include <VBox/cdefs.h>
 #include <VBox/com/Guid.h>
@@ -467,10 +466,12 @@
 #endif
 #include "UIDnDHandler.h"
 #include "UIDnDMIMEData.h"
-#include "UIDownloader.h"
-#include "UIDownloaderAdditions.h"
-#include "UIDownloaderExtensionPack.h"
-#include "UIDownloaderUserManual.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIDownloader.h"
+# include "UIDownloaderAdditions.h"
+# include "UIDownloaderExtensionPack.h"
+# include "UIDownloaderUserManual.h"
+#endif
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIFilmContainer.h"
@@ -501,8 +502,10 @@
 #include "UIGlobalSettingsNetworkDetailsHost.h"
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
 #include "UIGlobalSettingsPortForwardingDlg.h"
-#include "UIGlobalSettingsProxy.h"
-#include "UIGlobalSettingsUpdate.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIGlobalSettingsProxy.h"
+# include "UIGlobalSettingsUpdate.h"
+#endif
 #include "UIGraphicsButton.h"
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsTextPane.h"
@@ -565,9 +568,11 @@
 #include "UINameAndSystemEditor.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkDefs.h"
-#include "UINetworkManager.h"
-#include "UINetworkManagerDialog.h"
-#include "UINetworkManagerIndicator.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UINetworkManagerDialog.h"
+# include "UINetworkManagerIndicator.h"
+#endif
 #include "UINetworkReply.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestWidget.h"
@@ -594,7 +599,9 @@
 #include "UIThreadPool.h"
 #include "UIToolBar.h"
 #include "UIUpdateDefs.h"
-#include "UIUpdateManager.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIUpdateManager.h"
+#endif
 #include "UIVMCloseDialog.h"
 #include "UIVMDesktop.h"
 #include "UIVMInfoDialog.h"
@@ -673,9 +680,9 @@
          the redefinitions, just prevent the inclusion of the header! */
 #include "VBoxUtils.h"
 #include "VBoxVersion.h"
-//#include "VBoxX11Helper.h"
-//#include "WinKeyboard.h"
-//#include "XKeyboard.h"
+#ifdef Q_WS_X11
+# include "VBoxX11Helper.h"
+#endif
 
 
 /*

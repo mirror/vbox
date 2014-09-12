@@ -21,13 +21,20 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/initterm.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <iprt/time.h>
-#include <iprt/assert.h>
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include "DarwinKeyboard.h"
+# include <iprt/initterm.h>
+# include <iprt/stream.h>
+# include <iprt/string.h>
+# include <iprt/time.h>
+# include <iprt/assert.h>
+
+# include "DarwinKeyboard.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 int main(int argc, char **argv)
 {

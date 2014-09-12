@@ -15,12 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* VBox includes */
-#include "UIIconPool.h"
-#include "UISpecialControls.h"
+# include "UIIconPool.h"
+# include "UISpecialControls.h"
 
 /* Global includes */
-#include <QHBoxLayout>
+# include <QHBoxLayout>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
@@ -105,11 +112,13 @@ UISearchField::UISearchField(QWidget *pParent /* = 0 */)
 
 #else /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
+# ifdef VBOX_WITH_PRECOMPILED_HEADERS
 /* Qt includes */
-#include <QPainter>
-#include <QBitmap>
-#include <QMouseEvent>
-#include <QSignalMapper>
+#  include <QPainter>
+#  include <QBitmap>
+#  include <QMouseEvent>
+#  include <QSignalMapper>
+# endif
 
 /********************************************************************************
  *

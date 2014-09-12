@@ -15,31 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QHeaderView>
-#include <QHelpEvent>
-#include <QToolTip>
+# include <QHeaderView>
+# include <QHelpEvent>
+# include <QToolTip>
 
 /* GUI includes: */
-#include "QIWidgetValidator.h"
-#include "UIIconPool.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "UIToolBar.h"
-#include "UIMachineSettingsUSB.h"
-#include "UIMachineSettingsUSBFilterDetails.h"
-#include "UIConverter.h"
+# include "QIWidgetValidator.h"
+# include "UIIconPool.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIToolBar.h"
+# include "UIMachineSettingsUSB.h"
+# include "UIMachineSettingsUSBFilterDetails.h"
+# include "UIConverter.h"
 
 /* COM includes: */
-#include "CConsole.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDevice.h"
-#include "CUSBDeviceFilter.h"
-#include "CHostUSBDevice.h"
-#include "CHostUSBDeviceFilter.h"
-#include "CExtPackManager.h"
-#include "CExtPack.h"
+# include "CConsole.h"
+# include "CUSBController.h"
+# include "CUSBDeviceFilters.h"
+# include "CUSBDevice.h"
+# include "CUSBDeviceFilter.h"
+# include "CHostUSBDevice.h"
+# include "CHostUSBDeviceFilter.h"
+# include "CExtPackManager.h"
+# include "CExtPack.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /**
  *  USB popup menu class.

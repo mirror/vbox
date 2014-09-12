@@ -15,17 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QApplication>
-#include <QPainter>
-#include <QGraphicsScene>
-#include <QStyleOptionGraphicsItem>
+# include <QApplication>
+# include <QPainter>
+# include <QGraphicsScene>
+# include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
-#include "UIGDetailsGroup.h"
-#include "UIGDetailsSet.h"
-#include "UIGDetailsElement.h"
-#include "UIGDetailsModel.h"
+# include "UIGDetailsGroup.h"
+# include "UIGDetailsSet.h"
+# include "UIGDetailsElement.h"
+# include "UIGDetailsModel.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGDetailsItem::UIGDetailsItem(UIGDetailsItem *pParent)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)

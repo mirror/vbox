@@ -15,24 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QClipboard>
-#include <QLabel>
-#include <QCheckBox>
-#include <QPushButton>
-#include <QStyle>
+# include <QVBoxLayout>
+# include <QHBoxLayout>
+# include <QClipboard>
+# include <QLabel>
+# include <QCheckBox>
+# include <QPushButton>
+# include <QStyle>
 
 /* GUI includes: */
-#include "QIMessageBox.h"
-#include "QILabel.h"
-#include "QIArrowSplitter.h"
-#include "QIDialogButtonBox.h"
-#include "UIIconPool.h"
+# include "QIMessageBox.h"
+# include "QILabel.h"
+# include "QIArrowSplitter.h"
+# include "QIDialogButtonBox.h"
+# include "UIIconPool.h"
 
 /* Other VBox includes: */
-#include <iprt/assert.h>
+# include <iprt/assert.h>
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 QIMessageBox::QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
                            int iButton1 /* = 0*/, int iButton2 /* = 0*/, int iButton3 /* = 0*/, QWidget *pParent /* = 0*/)

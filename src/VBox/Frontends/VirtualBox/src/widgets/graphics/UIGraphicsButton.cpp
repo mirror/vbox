@@ -15,12 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-#include <QPainter>
-#include <QGraphicsSceneMouseEvent>
+# include <QPainter>
+# include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
-#include "UIGraphicsButton.h"
+# include "UIGraphicsButton.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     : QIGraphicsWidget(pParent)

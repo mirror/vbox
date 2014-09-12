@@ -16,7 +16,7 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes: */
 # include <QPainter>
@@ -32,11 +32,13 @@
 #  include "UIMachineWindow.h"
 # endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 /* COM includes: */
-#include "CConsole.h"
-#include "CDisplay.h"
+# include "CConsole.h"
+# include "CDisplay.h"
 /* Other VBox includes: */
 # include <VBox/VBoxVideo3D.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* COM stuff: */
 #ifdef Q_WS_WIN

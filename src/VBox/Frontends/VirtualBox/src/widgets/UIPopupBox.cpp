@@ -15,17 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global includes: */
-#include <QLabel>
-#include <QPaintEvent>
-#include <QPainter>
-#include <QVBoxLayout>
+# include <QLabel>
+# include <QPaintEvent>
+# include <QPainter>
+# include <QVBoxLayout>
 
 /* Local includes: */
-#include "UIPopupBox.h"
-#ifdef Q_WS_MAC
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
+# include "UIPopupBox.h"
+# ifdef Q_WS_MAC
+#  include "UIImageTools.h"
+# endif
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIPopupBox::UIPopupBox(QWidget *pParent)
   : QWidget(pParent)

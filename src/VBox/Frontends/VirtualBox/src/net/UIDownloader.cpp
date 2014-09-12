@@ -15,12 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_WITH_PRECOMPILED_HEADERS
+# include <precomp.h>
+#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* GUI includes: */
-#include <UINetworkReply.h>
-#include "UIDownloader.h"
-#include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
-#include "VBoxUtils.h"
+# include <UINetworkReply.h>
+# include "UIDownloader.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "VBoxUtils.h"
+
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /* Starting routine: */
 void UIDownloader::start()

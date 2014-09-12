@@ -37,6 +37,7 @@
 #include "UIDnDDataObject_win.h"
 #include "UIDnDEnumFormat_win.h"
 
+
 UIDnDDataObject::UIDnDDataObject(CSession &session,
                                  CDnDSource &dndSource,
                                  const QStringList &lstFormats,

@@ -16,64 +16,65 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
+# include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-#include <QDesktopServices>
-#include <QMenuBar>
-#include <QStatusBar>
-#include <QResizeEvent>
-#include <QStackedWidget>
-#include <QTimer>
+# include <QDesktopServices>
+# include <QMenuBar>
+# include <QStatusBar>
+# include <QResizeEvent>
+# include <QStackedWidget>
+# include <QTimer>
 
 /* Local includes: */
-#include "QISplitter.h"
-#include "QIFileDialog.h"
-#include "UIBar.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkManager.h"
-# include "UINetworkManagerIndicator.h"
-# include "UIUpdateManager.h"
-# include "UIDownloaderUserManual.h"
-# include "UIDownloaderExtensionPack.h"
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#include "UIIconPool.h"
-#include "UIWizardCloneVM.h"
-#include "UIWizardExportApp.h"
-#include "UIWizardImportApp.h"
-#include "UIVMDesktop.h"
-#include "UIVirtualBoxEventHandler.h"
-#include "UIMediumManager.h"
-#include "UIMedium.h"
-#include "UIMessageCenter.h"
-#include "UISelectorWindow.h"
-#include "UISettingsDialogSpecific.h"
-#include "UIToolBar.h"
-#include "UIVMLogViewer.h"
-#include "UIDesktopServices.h"
-#include "UIGlobalSettingsExtension.h"
-#include "UIActionPoolSelector.h"
-#include "UIGChooser.h"
-#include "UIGDetails.h"
-#include "UIVMItem.h"
-#include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+# include "QISplitter.h"
+# include "QIFileDialog.h"
+# include "UIBar.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UINetworkManager.h"
+#  include "UINetworkManagerIndicator.h"
+#  include "UIUpdateManager.h"
+#  include "UIDownloaderUserManual.h"
+#  include "UIDownloaderExtensionPack.h"
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# include "UIIconPool.h"
+# include "UIWizardCloneVM.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardImportApp.h"
+# include "UIVMDesktop.h"
+# include "UIVirtualBoxEventHandler.h"
+# include "UIMediumManager.h"
+# include "UIMedium.h"
+# include "UIMessageCenter.h"
+# include "UISelectorWindow.h"
+# include "UISettingsDialogSpecific.h"
+# include "UIToolBar.h"
+# include "UIVMLogViewer.h"
+# include "UIDesktopServices.h"
+# include "UIGlobalSettingsExtension.h"
+# include "UIActionPoolSelector.h"
+# include "UIGChooser.h"
+# include "UIGDetails.h"
+# include "UIVMItem.h"
+# include "UIExtraDataManager.h"
+# include "VBoxGlobal.h"
 
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
-# include "UIWindowMenuManager.h"
-# include "UIImageTools.h"
-#endif /* Q_WS_MAC */
+# ifdef Q_WS_MAC
+#  include "VBoxUtils.h"
+#  include "UIWindowMenuManager.h"
+#  include "UIImageTools.h"
+# endif /* Q_WS_MAC */
 
 /* Other VBox stuff: */
-#include <iprt/buildconfig.h>
-#include <VBox/version.h>
-#ifdef Q_WS_X11
-# include <iprt/env.h>
-#endif /* Q_WS_X11 */
+# include <iprt/buildconfig.h>
+# include <VBox/version.h>
+# ifdef Q_WS_X11
+#  include <iprt/env.h>
+# endif /* Q_WS_X11 */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
                                    Qt::WindowFlags flags /* = Qt::Window */)
