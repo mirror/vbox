@@ -90,6 +90,11 @@ public:
 
 private slots:
 
+#ifdef RT_OS_DARWIN
+    /** Handle 3D overlay visibility change. */
+    void sltHandle3DOverlayVisibilityChange(bool fVisible) { if (fVisible) activateWindow(); }
+#endif /* RT_OS_DARWIN */
+
     /* Handlers: Toolbar stuff: */
     void sltHandleToolbarResize();
     void sltAutoHideToggled();
