@@ -3953,6 +3953,9 @@ static NTSTATUS supdrvNtProtectInit(void)
     }
 # endif
 
+    /* LPC object type. */
+    g_pAlpcPortObjectType1 = *LpcPortObjectType;
+
     /* The spinlock protecting our structures. */
     int rc = RTSpinlockCreate(&g_hNtProtectLock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "NtProtectLock");
     if (RT_FAILURE(rc))
