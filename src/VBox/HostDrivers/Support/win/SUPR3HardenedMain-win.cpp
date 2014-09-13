@@ -228,6 +228,18 @@ static bool                 g_fSupInitThunkSelfPatched;
  * thread creation in this process. */
 static uint8_t              g_abLdrInitThunkSelfBackup[16];
 
+/** Mask of adversaries that we've detected (SUPHARDNT_ADVERSARY_XXX). */
+static uint32_t             g_fSupAdversaries = 0;
+/** @name SUPHARDNT_ADVERSARY_XXX - Adversaries
+ * @{ */
+/** Symantec endpoint protection or similar including SysPlant.sys. */
+#define SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT       RT_BIT_32(0)
+/** Avast! */
+#define SUPHARDNT_ADVERSARY_AVAST                   RT_BIT_32(1)
+/** Unknown adversary detected while waiting on child. */
+#define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
+/** @} */
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -3448,26 +3460,26 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      * Fudge factor for letting kernel threads get a chance to mess up our
      * process asynchronously.
      */
-    DWORD dwStart = GetTickCount();
-    NtYieldExecution();
-
-    LARGE_INTEGER Time;
-    Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
-    NtDelayExecution(FALSE, &Time);
-
-    NtYieldExecution();
-
-    Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
-    NtDelayExecution(FALSE, &Time);
-
-    NtYieldExecution();
+    DWORD    dwStart = GetTickCount();
+    uint32_t cMsKludge = (g_fSupAdversaries & SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT) ? 256 : g_fSupAdversaries ? 64 : 16;
+    do
+    {
+        NtYieldExecution();
+        LARGE_INTEGER Time;
+        Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+        NtDelayExecution(FALSE, &Time);
+    } while (GetTickCount() - dwStart < cMsKludge);
     SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n", GetTickCount() - dwStart));
 
     /*
      * Unmap the image we mapped into the guest above.
+     * Experiment: Don't unmap for avast.
      */
-    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernel32, "kernel32.dll");
-    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
+    if (!(g_fSupAdversaries & SUPHARDNT_ADVERSARY_AVAST))
+    {
+        supR3HardNtPuChUnmapDllFromChild(pThis, pvKernel32, "kernel32.dll");
+        supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
+    }
     supR3HardNtPuChUnmapDllFromChild(pThis, pvNtDll2, "ntdll.dll[2nd]");
     supR3HardNtPuChUnmapDllFromChild(pThis, pvExe2, "executable[2nd]");
 
@@ -4385,9 +4397,9 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
          *
          * This is unfortunately kind of fragile.
          */
-        uint32_t iLoop = 0;
+        uint32_t cMsFudge = g_fSupAdversaries ? 512 : 128;
         uint32_t cFixes;
-        do
+        for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
         {
             uint32_t    cSleeps = 0;
             DWORD       dwStart = GetTickCount();
@@ -4398,7 +4410,7 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
                 Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
                 NtDelayExecution(FALSE, &Time);
                 cSleeps++;
-            } while (   GetTickCount() - dwStart <= 80
+            } while (   GetTickCount() - dwStart <= cMsFudge
                      || cSleeps < 8);
             SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
                          iLoop, GetTickCount() - dwStart, cSleeps));
@@ -4406,9 +4418,14 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
             cFixes = 0;
             rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
                                              &cFixes, NULL /*pErrInfo*/);
-        } while (   RT_SUCCESS(rc)
-                 && cFixes > 0
-                 && ++iLoop < 8);
+            if (RT_FAILURE(rc) || cFixes == 0)
+                break;
+
+            if (!g_fSupAdversaries)
+                g_fSupAdversaries |= SUPHARDNT_ADVERSARY_UNKNOWN;
+            cMsFudge = 512;
+            SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
+        }
 
         /*
          * Install the hooks.
@@ -4519,6 +4536,91 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdL
 }
 
 
+/**
+ * Scans the Driver directory for drivers which may invade our processes.
+ *
+ * @returns Mask of SUPHARDNT_ADVERSARY_XXX flags.
+ */
+static uint32_t supR3HardenedWinFindAdversaries(void)
+{
+    /*
+     * Open the driver object directory.
+     */
+    UNICODE_STRING NtDirName = RTNT_CONSTANT_UNISTR(L"\\Driver");
+
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &NtDirName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+    HANDLE hDir;
+    NTSTATUS rcNt = NtOpenDirectoryObject(&hDir, DIRECTORY_QUERY | FILE_LIST_DIRECTORY, &ObjAttr);
+#ifdef VBOX_STRICT
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
+#endif
+    if (!NT_SUCCESS(rcNt))
+        return 0;
+
+    /*
+     * Enumerate it, looking for the driver.
+     */
+    uint32_t fFound = 0;
+    ULONG    uObjDirCtx = 0;
+    for (;;)
+    {
+        uint32_t    abBuffer[_64K + _1K];
+        ULONG       cbActual;
+        rcNt = NtQueryDirectoryObject(hDir,
+                                      abBuffer,
+                                      sizeof(abBuffer) - 4, /* minus four for string terminator space. */
+                                      FALSE /*ReturnSingleEntry */,
+                                      FALSE /*RestartScan*/,
+                                      &uObjDirCtx,
+                                      &cbActual);
+        if (!NT_SUCCESS(rcNt) || cbActual < sizeof(OBJECT_DIRECTORY_INFORMATION))
+            break;
+
+        POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
+        while (pObjDir->Name.Length != 0)
+        {
+            WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
+            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = '\0';
+
+#define IS_MATCH(a_Str) (   pObjDir->Name.Length == sizeof(L##a_Str) - sizeof(WCHAR) \
+                         && RTUtf16ICmpAscii(pObjDir->Name.Buffer, a_Str) == 0)
+            if (IS_MATCH("sysplant"))
+                fFound |= SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT;
+            else if (IS_MATCH("aswHwid"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswMonFlt"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswRdr2"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswRvrt"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswSnx"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswsp"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswStm"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+            else if (IS_MATCH("aswVmm"))
+                fFound |= SUPHARDNT_ADVERSARY_AVAST;
+#undef IS_MATCH
+            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = wcSaved;
+
+            /* Next directory entry. */
+            pObjDir++;
+        }
+    }
+
+    /*
+     * Clean up and return.
+     */
+    NtClose(hDir);
+
+    return fFound;
+}
+
+
 extern "C" int main(int argc, char **argv, char **envp);
 
 /**
@@ -4562,6 +4664,12 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
 
     supR3HardenedOpenLog(&cArgs, papszArgs);
+
+    /*
+     * Scan the system for adversaries.
+     */
+    g_fSupAdversaries = supR3HardenedWinFindAdversaries();
+    SUP_DPRINTF(("g_fSupAdversaries=%#x\n", g_fSupAdversaries));
 
     /*
      * Get the executable name.
