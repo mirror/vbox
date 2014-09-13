@@ -2133,6 +2133,14 @@ static bool supdrvNtProtectIsCsrssByProcess(PEPROCESS pProcess)
 }
 
 
+/**
+ * Helper for supdrvNtProtectGetAlpcPortObjectType that tries out a name.
+ *
+ * @returns true if done, false if not.
+ * @param   pwszPortNm          The port path.
+ * @param   ppObjType           The object type return variable, updated when
+ *                              returning true.
+ */
 static bool supdrvNtProtectGetAlpcPortObjectType2(PCRTUTF16 pwszPortNm, POBJECT_TYPE *ppObjType)
 {
     bool fDone = false;
@@ -2169,6 +2177,26 @@ static bool supdrvNtProtectGetAlpcPortObjectType2(PCRTUTF16 pwszPortNm, POBJECT_
 }
 
 
+/**
+ * Attempts to retrieve the ALPC Port object type.
+ *
+ * We've had at least three reports that using LpcPortObjectType when trying to
+ * get at the ApiPort object results in STATUS_OBJECT_TYPE_MISMATCH errors.
+ * It's not known who has modified LpcPortObjectType or AlpcPortObjectType (not
+ * exported) so that it differs from the actual ApiPort type, or maybe this
+ * unknown entity is intercepting our attempt to reference the port and
+ * tries to mislead us.  The paranoid explanataion is of course that some evil
+ * root kit like software is messing with the OS, however, it's possible that
+ * this is valid kernel behavior that 99.8% of our users and 100% of the
+ * developers are not triggering for some reason.
+ *
+ * The code here creates an ALPC port object and gets it's type.  It will cache
+ * the result in g_pAlpcPortObjectType2 on success.
+ *
+ * @returns Object type.
+ * @param   uSessionId      The session id.
+ * @param   pszSessionId    The session id formatted as a string.
+ */
 static POBJECT_TYPE supdrvNtProtectGetAlpcPortObjectType(uint32_t uSessionId, const char *pszSessionId)
 {
     POBJECT_TYPE pObjType = *LpcPortObjectType;
