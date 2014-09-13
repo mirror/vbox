@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/power.h>
+#include <iprt/rand.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
@@ -207,6 +208,8 @@ typedef SUPDRVNTPROTECT *PSUPDRVNTPROTECT;
 /** The SUPDRVNTPROTECT::u32Magic value of a dead structure. */
 # define SUPDRVNTPROTECT_MAGIC_DEAD UINT32_C(0x19880508)
 
+/** Pointer to ObGetObjectType. */
+typedef POBJECT_TYPE (NTAPI *PFNOBGETOBJECTTYPE)(PVOID);
 /** Pointer to ObRegisterCallbacks. */
 typedef NTSTATUS (NTAPI *PFNOBREGISTERCALLBACKS)(POB_CALLBACK_REGISTRATION, PVOID *);
 /** Pointer to ObUnregisterCallbacks. */
@@ -217,6 +220,8 @@ typedef NTSTATUS (NTAPI *PFNPSSETCREATEPROCESSNOTIFYROUTINEEX)(PCREATE_PROCESS_N
 typedef NTSTATUS (NTAPI *PFNPSREFERENCEPROCESSFILEPOINTER)(PEPROCESS, PFILE_OBJECT *);
 /** Pointer to PsIsProtectedProcessLight. */
 typedef BOOLEAN  (NTAPI *PFNPSISPROTECTEDPROCESSLIGHT)(PEPROCESS);
+/** Pointer to ZwAlpcCreatePort. */
+typedef NTSTATUS (NTAPI *PFNZWALPCCREATEPORT)(PHANDLE, POBJECT_ATTRIBUTES, struct _ALPC_PORT_ATTRIBUTES *);
 
 #endif /* VBOX_WITH_HARDENINIG */
 
@@ -315,6 +320,8 @@ static AVLPVTREE                    g_NtProtectTree  = NULL;
 static PVOID                        g_pvObCallbacksCookie = NULL;
 /** Combined windows NT version number.  See SUP_MAKE_NT_VER_COMBINED. */
 uint32_t                            g_uNtVerCombined = 0;
+/** Pointer to ObGetObjectType if available.. */
+static PFNOBGETOBJECTTYPE           g_pfnObGetObjectType = NULL;
 /** Pointer to ObRegisterCallbacks if available.. */
 static PFNOBREGISTERCALLBACKS       g_pfnObRegisterCallbacks = NULL;
 /** Pointer to ObUnregisterCallbacks if available.. */
@@ -325,6 +332,8 @@ static PFNPSSETCREATEPROCESSNOTIFYROUTINEEX g_pfnPsSetCreateProcessNotifyRoutine
 static PFNPSREFERENCEPROCESSFILEPOINTER g_pfnPsReferenceProcessFilePointer = NULL;
 /** Pointer to PsIsProtectedProcessLight. */
 static PFNPSISPROTECTEDPROCESSLIGHT g_pfnPsIsProtectedProcessLight = NULL;
+/** Pointer to ZwAlpcCreatePort. */
+static PFNZWALPCCREATEPORT          g_pfnZwAlpcCreatePort = NULL;
 
 # ifdef RT_ARCH_AMD64
 extern "C" {
@@ -336,6 +345,11 @@ PFNRT                               g_pfnKiServiceLinkage  = NULL;
 PFNRT                               g_pfnKiServiceInternal = NULL;
 }
 # endif
+/** The primary ALPC port object type. (LpcPortObjectType at init time.) */
+static POBJECT_TYPE                 g_pAlpcPortObjectType1 = NULL;
+/** The secondary ALPC port object type. (Sampled at runtime.) */
+static POBJECT_TYPE volatile        g_pAlpcPortObjectType2 = NULL;
+
 #endif
 
 
@@ -2119,6 +2133,132 @@ static bool supdrvNtProtectIsCsrssByProcess(PEPROCESS pProcess)
 }
 
 
+static bool supdrvNtProtectGetAlpcPortObjectType2(PCRTUTF16 pwszPortNm, POBJECT_TYPE *ppObjType)
+{
+    bool fDone = false;
+
+    UNICODE_STRING UniStrPortNm;
+    UniStrPortNm.Buffer = (WCHAR *)pwszPortNm;
+    UniStrPortNm.Length = (USHORT)(RTUtf16Len(pwszPortNm) * sizeof(WCHAR));
+    UniStrPortNm.MaximumLength = UniStrPortNm.Length + sizeof(WCHAR);
+
+    OBJECT_ATTRIBUTES ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &UniStrPortNm, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    HANDLE hPort;
+SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: %ls\n", pwszPortNm);
+    NTSTATUS rcNt = g_pfnZwAlpcCreatePort(&hPort, &ObjAttr, NULL /*pPortAttribs*/);
+    if (NT_SUCCESS(rcNt))
+    {
+SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: Opened %p\n", hPort);
+        PVOID pvObject;
+        rcNt = ObReferenceObjectByHandle(hPort, 0 /*DesiredAccess*/, NULL /*pObjectType*/,
+                                         KernelMode, &pvObject, NULL /*pHandleInfo*/);
+        if (NT_SUCCESS(rcNt))
+        {
+SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: pvObject=%p\n", pvObject);
+            POBJECT_TYPE pObjType = g_pfnObGetObjectType(pvObject);
+SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: pObjType=%p (vs %p)\n", pObjType, *ppObjType);
+            if (pObjType)
+            {
+                *ppObjType = pObjType;
+                fDone = true;
+            }
+            ObDereferenceObject(pvObject);
+        }
+        NtClose(hPort);
+    }
+    return fDone;
+}
+
+
+static POBJECT_TYPE supdrvNtProtectGetAlpcPortObjectType(uint32_t uSessionId, const char *pszSessionId)
+{
+    POBJECT_TYPE pObjType = *LpcPortObjectType;
+
+    if (   g_pfnZwAlpcCreatePort
+        && g_pfnObGetObjectType)
+    {
+        int     rc;
+        ssize_t cchTmp; NOREF(cchTmp);
+        char    szTmp[16];
+        RTUTF16 wszPortNm[128];
+        size_t  offRand;
+
+        /*
+         * First attempt is in the session directory.
+         */
+        rc  = RTUtf16CopyAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "\\Sessions\\");
+        rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), pszSessionId);
+        rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "\\VBoxDrv-");
+        cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), (uint32_t)(uintptr_t)PsGetProcessId(PsGetCurrentProcess()), 16, 0, 0, 0);
+        Assert(cchTmp > 0);
+        rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+        rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "-");
+        offRand = RTUtf16Len(wszPortNm);
+        cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), RTRandU32(), 16, 0, 0, 0);
+        Assert(cchTmp > 0);
+        rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+        AssertRCSuccess(rc);
+
+        bool fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
+        if (!fDone)
+        {
+            wszPortNm[offRand] = '\0';
+            cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), RTRandU32(), 16, 0, 0, 0); Assert(cchTmp > 0);
+            rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+            AssertRCSuccess(rc);
+
+            fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
+        }
+        if (!fDone)
+        {
+            /*
+             * Try base names.
+             */
+            if (uSessionId == 0)
+                rc  = RTUtf16CopyAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "\\BaseNamedObjects\\VBoxDrv-");
+            else
+            {
+                rc  = RTUtf16CopyAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "\\Sessions\\");
+                rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), pszSessionId);
+                rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "\\BaseNamedObjects\\VBoxDrv-");
+            }
+            cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), (uint32_t)(uintptr_t)PsGetProcessId(PsGetCurrentProcess()), 16, 0, 0, 0);
+            Assert(cchTmp > 0);
+            rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+            rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), "-");
+            offRand = RTUtf16Len(wszPortNm);
+            cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), RTRandU32(), 16, 0, 0, 0);
+            Assert(cchTmp > 0);
+            rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+            AssertRCSuccess(rc);
+
+            bool fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
+            if (!fDone)
+            {
+                wszPortNm[offRand] = '\0';
+                cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), RTRandU32(), 16, 0, 0, 0);
+                Assert(cchTmp > 0);
+                rc |= RTUtf16CatAscii(wszPortNm, RT_ELEMENTS(wszPortNm), szTmp);
+                AssertRCSuccess(rc);
+
+                fDone = supdrvNtProtectGetAlpcPortObjectType2(wszPortNm, &pObjType);
+            }
+        }
+
+        /* Cache the result in g_pAlpcPortObjectType2. */
+        if (   g_pAlpcPortObjectType2 == NULL
+            && pObjType != g_pAlpcPortObjectType1
+            && fDone)
+            g_pAlpcPortObjectType2 = pObjType;
+
+    }
+
+    return pObjType;
+}
+
+
 /**
  * Called in the context of VBoxDrvNtCreate to determin the CSRSS for the
  * current process.
@@ -2141,19 +2281,23 @@ static int supdrvNtProtectFindAssociatedCsrss(PSUPDRVNTPROTECT pNtProtect)
      * We'll try use the ApiPort LPC object for the session we're in to track
      * down the CSRSS process. So, we start by constructing a path to it.
      */
-    int rc;
+    int         rc;
     uint32_t    uSessionId = PsGetProcessSessionId(PsGetCurrentProcess());
+    char        szSessionId[16];
     WCHAR       wszApiPort[48];
     if (uSessionId == 0)
+    {
+        szSessionId[0] = '0';
+        szSessionId[1] = '\0';
         rc = RTUtf16CopyAscii(wszApiPort, RT_ELEMENTS(wszApiPort), "\\Windows\\ApiPort");
+    }
     else
     {
-        char szTmp[64];
-        ssize_t cchTmp = RTStrFormatU32(szTmp, sizeof(szTmp), uSessionId, 10, 0, 0, 0);
+        ssize_t cchTmp = RTStrFormatU32(szSessionId, sizeof(szSessionId), uSessionId, 10, 0, 0, 0);
         AssertReturn(cchTmp > 0, (int)cchTmp);
         rc = RTUtf16CopyAscii(wszApiPort, RT_ELEMENTS(wszApiPort), "\\Sessions\\");
         if (RT_SUCCESS(rc))
-            rc = RTUtf16CatAscii(wszApiPort, RT_ELEMENTS(wszApiPort), szTmp);
+            rc = RTUtf16CatAscii(wszApiPort, RT_ELEMENTS(wszApiPort), szSessionId);
         if (RT_SUCCESS(rc))
             rc = RTUtf16CatAscii(wszApiPort, RT_ELEMENTS(wszApiPort), "\\Windows\\ApiPort");
     }
@@ -2172,14 +2316,35 @@ static int supdrvNtProtectFindAssociatedCsrss(PSUPDRVNTPROTECT pNtProtect)
                                             0,
                                             NULL /*pAccessState*/,
                                             STANDARD_RIGHTS_READ,
-                                            *LpcPortObjectType,
+                                            g_pAlpcPortObjectType1,
                                             KernelMode,
                                             NULL /*pvParseContext*/,
                                             &pvApiPortObj);
+    if (   rcNt == STATUS_OBJECT_TYPE_MISMATCH
+        && g_pAlpcPortObjectType2 != NULL)
+        rcNt = ObReferenceObjectByName(&ApiPortStr,
+                                       0,
+                                       NULL /*pAccessState*/,
+                                       STANDARD_RIGHTS_READ,
+                                       g_pAlpcPortObjectType2,
+                                       KernelMode,
+                                       NULL /*pvParseContext*/,
+                                       &pvApiPortObj);
+    if (   rcNt == STATUS_OBJECT_TYPE_MISMATCH
+        && g_pfnObGetObjectType
+        && g_pfnZwAlpcCreatePort)
+        rcNt = ObReferenceObjectByName(&ApiPortStr,
+                                       0,
+                                       NULL /*pAccessState*/,
+                                       STANDARD_RIGHTS_READ,
+                                       supdrvNtProtectGetAlpcPortObjectType(uSessionId, szSessionId),
+                                       KernelMode,
+                                       NULL /*pvParseContext*/,
+                                       &pvApiPortObj);
     if (!NT_SUCCESS(rcNt))
     {
         SUPR0Printf("vboxdrv: Error opening '%ls': %#x\n", wszApiPort, rcNt);
-        return VERR_SUPDRV_APIPORT_OPEN_ERROR;
+        return rcNt == STATUS_OBJECT_TYPE_MISMATCH ? VERR_SUPDRV_APIPORT_OPEN_ERROR_TYPE : VERR_SUPDRV_APIPORT_OPEN_ERROR;
     }
 
     /*
@@ -3652,6 +3817,9 @@ static NTSTATUS supdrvNtProtectInit(void)
     /* Resolve methods we want but isn't available everywhere. */
     UNICODE_STRING RoutineName;
 
+    RtlInitUnicodeString(&RoutineName, L"ObGetObjectType");
+    g_pfnObGetObjectType = (PFNOBGETOBJECTTYPE)MmGetSystemRoutineAddress(&RoutineName);
+
     RtlInitUnicodeString(&RoutineName, L"ObRegisterCallbacks");
     g_pfnObRegisterCallbacks   = (PFNOBREGISTERCALLBACKS)MmGetSystemRoutineAddress(&RoutineName);
 
@@ -3666,6 +3834,9 @@ static NTSTATUS supdrvNtProtectInit(void)
 
     RtlInitUnicodeString(&RoutineName, L"PsIsProtectedProcessLight");
     g_pfnPsIsProtectedProcessLight = (PFNPSISPROTECTEDPROCESSLIGHT)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"ZwAlpcCreatePort");
+    g_pfnZwAlpcCreatePort = (PFNZWALPCCREATEPORT)MmGetSystemRoutineAddress(&RoutineName);
 
     RtlInitUnicodeString(&RoutineName, L"ZwQueryVirtualMemory"); /* Yes, using Zw version here. */
     g_pfnNtQueryVirtualMemory = (PFNNTQUERYVIRTUALMEMORY)MmGetSystemRoutineAddress(&RoutineName);
@@ -3747,6 +3918,15 @@ static NTSTATUS supdrvNtProtectInit(void)
         return STATUS_PROCEDURE_NOT_FOUND;
     }
 
+# ifdef VBOX_STRICT
+    if (   g_uNtVerCombined >= SUP_NT_VER_W70
+        && (   g_pfnObGetObjectType == NULL
+            || g_pfnZwAlpcCreatePort == NULL) )
+    {
+        LogRel(("vboxdrv: g_pfnObGetObjectType=%p g_pfnZwAlpcCreatePort=%p.\n", g_pfnObGetObjectType, g_pfnZwAlpcCreatePort));
+        return STATUS_PROCEDURE_NOT_FOUND;
+    }
+# endif
 
     /* The spinlock protecting our structures. */
     int rc = RTSpinlockCreate(&g_hNtProtectLock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "NtProtectLock");
