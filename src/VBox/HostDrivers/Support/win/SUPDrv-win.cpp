@@ -2146,21 +2146,18 @@ static bool supdrvNtProtectGetAlpcPortObjectType2(PCRTUTF16 pwszPortNm, POBJECT_
     InitializeObjectAttributes(&ObjAttr, &UniStrPortNm, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
 
     HANDLE hPort;
-SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: %ls\n", pwszPortNm);
     NTSTATUS rcNt = g_pfnZwAlpcCreatePort(&hPort, &ObjAttr, NULL /*pPortAttribs*/);
     if (NT_SUCCESS(rcNt))
     {
-SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: Opened %p\n", hPort);
         PVOID pvObject;
         rcNt = ObReferenceObjectByHandle(hPort, 0 /*DesiredAccess*/, NULL /*pObjectType*/,
                                          KernelMode, &pvObject, NULL /*pHandleInfo*/);
         if (NT_SUCCESS(rcNt))
         {
-SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: pvObject=%p\n", pvObject);
             POBJECT_TYPE pObjType = g_pfnObGetObjectType(pvObject);
-SUPR0Printf("supdrvNtProtectGetAlpcPortObjectType2: pObjType=%p (vs %p)\n", pObjType, *ppObjType);
             if (pObjType)
             {
+                SUPR0Printf("vboxdrv: ALPC Port Object Type %p (vs %p)\n", pObjType, *ppObjType);
                 *ppObjType = pObjType;
                 fDone = true;
             }
