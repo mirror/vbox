@@ -1172,6 +1172,15 @@ typedef struct _FILE_BOTH_DIR_INFORMATION
     WCHAR           FileName[1];
 } FILE_BOTH_DIR_INFORMATION;
 typedef FILE_BOTH_DIR_INFORMATION *PFILE_BOTH_DIR_INFORMATION;
+typedef struct _FILE_BASIC_INFORMATION
+{
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    ULONG           FileAttributes;
+} FILE_BASIC_INFORMATION;
+typedef FILE_BASIC_INFORMATION *PFILE_BASIC_INFORMATION;
 typedef struct _FILE_STANDARD_INFORMATION
 {
     LARGE_INTEGER   AllocationSize;
