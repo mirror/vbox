@@ -234,8 +234,24 @@ static uint32_t             g_fSupAdversaries = 0;
  * @{ */
 /** Symantec endpoint protection or similar including SysPlant.sys. */
 #define SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT       RT_BIT_32(0)
+/** Symantec Norton 360. */
+#define SUPHARDNT_ADVERSARY_SYMANTEC_N360           RT_BIT_32(1)
 /** Avast! */
-#define SUPHARDNT_ADVERSARY_AVAST                   RT_BIT_32(1)
+#define SUPHARDNT_ADVERSARY_AVAST                   RT_BIT_32(2)
+/** TrendMicro OfficeScan and probably others. */
+#define SUPHARDNT_ADVERSARY_TRENDMICRO              RT_BIT_32(3)
+/** McAfee.  */
+#define SUPHARDNT_ADVERSARY_MCAFEE                  RT_BIT_32(4)
+/** Kaspersky.  */
+#define SUPHARDNT_ADVERSARY_KASPERSKY               RT_BIT_32(5)
+/** Malwarebytes Anti-Malware (MBAM). */
+#define SUPHARDNT_ADVERSARY_MBAM                    RT_BIT_32(6)
+/** AVG Internet Security. */
+#define SUPHARDNT_ADVERSARY_AVG                     RT_BIT_32(7)
+/** Panda Security. */
+#define SUPHARDNT_ADVERSARY_PANDA                   RT_BIT_32(8)
+/** Microsoft Security Essentials. */
+#define SUPHARDNT_ADVERSARY_MSE                     RT_BIT_32(9)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -812,6 +828,7 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                 SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: Processing '%s'...\n", pCur->szName));
 
                 NTSTATUS    rcNt;
+                NTSTATUS    rcNtRedir = 0x22222222;
                 HANDLE      hFile = INVALID_HANDLE_VALUE;
                 RTUTF16     wszPath[260 + 260]; /* Assumes we've limited the import name length to 256. */
                 AssertCompile(sizeof(wszPath) > sizeof(g_System32NtPath));
@@ -838,18 +855,18 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                     UNICODE_STRING  UniStrDynamic = { 0, 0, NULL };
                     PUNICODE_STRING pUniStrResult = NULL;
 
-                    rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
-                                                                    &UniStrName,
-                                                                    (PUNICODE_STRING)&s_DefaultSuffix,
-                                                                    &UniStrStatic,
-                                                                    &UniStrDynamic,
-                                                                    &pUniStrResult,
-                                                                    NULL /*pNewFlags*/,
-                                                                    NULL /*pcbFilename*/,
-                                                                    NULL /*pcbNeeded*/);
-                    if (NT_SUCCESS(rcNt))
+                    rcNtRedir = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                                         &UniStrName,
+                                                                         (PUNICODE_STRING)&s_DefaultSuffix,
+                                                                         &UniStrStatic,
+                                                                         &UniStrDynamic,
+                                                                         &pUniStrResult,
+                                                                         NULL /*pNewFlags*/,
+                                                                         NULL /*pcbFilename*/,
+                                                                         NULL /*pcbNeeded*/);
+                    if (NT_SUCCESS(rcNtRedir))
                     {
-                        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                        IO_STATUS_BLOCK     Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
                         OBJECT_ATTRIBUTES   ObjAttr;
                         InitializeObjectAttributes(&ObjAttr, pUniStrResult,
                                                    OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
@@ -866,7 +883,14 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                                             0 /*EaLength*/);
                         if (NT_SUCCESS(rcNt))
                             rcNt = Ios.Status;
-                        if (!NT_SUCCESS(rcNt))
+                        if (NT_SUCCESS(rcNt))
+                        {
+                            /* For accurate logging. */
+                            size_t cwcCopy = RT_MIN(pUniStrResult->Length / sizeof(RTUTF16), RT_ELEMENTS(wszPath) - 1);
+                            memcpy(wszPath, pUniStrResult->Buffer, cwcCopy * sizeof(RTUTF16));
+                            wszPath[cwcCopy] = '\0';
+                        }
+                        else
                             hFile = INVALID_HANDLE_VALUE;
                         RtlFreeUnicodeString(&UniStrDynamic);
                     }
@@ -949,7 +973,8 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                  */
                 if (hFile != INVALID_HANDLE_VALUE)
                 {
-                    SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: '%s' -> '%ls'\n", pCur->szName, wszPath));
+                    SUP_DPRINTF(("supR3HardenedWinVerifyCacheProcessImportTodos: '%s' -> '%ls' [rcNtRedir=%#x]\n",
+                                 pCur->szName, wszPath, rcNtRedir));
 
                     ULONG fAccess = 0;
                     ULONG fProtect = 0;
@@ -4537,12 +4562,395 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdL
 
 
 /**
+ * Logs information about a file from a protection product.
+ *
+ * The purpose here is to better see which version of the product is installed
+ * and not needing to depend on the user supplying the correct information.
+ *
+ * @param   pwszFile            The NT path to the file.
+ */
+static void supR3HardenedLogAdversarialFile(PCRTUTF16 pwszFile)
+{
+    /*
+     * Open the file.
+     */
+    HANDLE              hFile  = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK     Ios    = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    UNICODE_STRING      UniStrName;
+    UniStrName.Buffer = (WCHAR *)pwszFile;
+    UniStrName.Length = (USHORT)(RTUtf16Len(pwszFile) * sizeof(WCHAR));
+    UniStrName.MaximumLength = UniStrName.Length + sizeof(WCHAR);
+    OBJECT_ATTRIBUTES   ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &UniStrName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    NTSTATUS rcNt = NtCreateFile(&hFile,
+                                 GENERIC_READ,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* Allocation Size*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 FILE_SHARE_READ,
+                                 FILE_OPEN,
+                                 FILE_NON_DIRECTORY_FILE,
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+    if (NT_SUCCESS(rcNt))
+    {
+        SUP_DPRINTF(("%ls:\n", pwszFile));
+        union
+        {
+            uint64_t                    u64AlignmentInsurance;
+            FILE_BASIC_INFORMATION      BasicInfo;
+            FILE_STANDARD_INFORMATION   StdInfo;
+            uint8_t                     abBuf[32768];
+            RTUTF16                     awcBuf[16384];
+            IMAGE_DOS_HEADER            MzHdr;
+        } u;
+        RTTIMESPEC  TimeSpec;
+        char        szTmp[64];
+
+        /*
+         * Print basic file information available via NtQueryInformationFile.
+         */
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        rcNt = NtQueryInformationFile(hFile, &Ios, &u.BasicInfo, sizeof(u.BasicInfo), FileBasicInformation);
+        if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+        {
+            SUP_DPRINTF(("    CreationTime:    %s\n", RTTimeSpecToString(RTTimeSpecSetNtTime(&TimeSpec, u.BasicInfo.CreationTime.QuadPart), szTmp, sizeof(szTmp))));
+            /*SUP_DPRINTF(("    LastAccessTime:  %s\n", RTTimeSpecToString(RTTimeSpecSetNtTime(&TimeSpec, u.BasicInfo.LastAccessTime.QuadPart), szTmp, sizeof(szTmp))));*/
+            SUP_DPRINTF(("    LastWriteTime:   %s\n", RTTimeSpecToString(RTTimeSpecSetNtTime(&TimeSpec, u.BasicInfo.LastWriteTime.QuadPart), szTmp, sizeof(szTmp))));
+            SUP_DPRINTF(("    ChangeTime:      %s\n", RTTimeSpecToString(RTTimeSpecSetNtTime(&TimeSpec, u.BasicInfo.ChangeTime.QuadPart), szTmp, sizeof(szTmp))));
+            SUP_DPRINTF(("    FileAttributes:  %#x\n", u.BasicInfo.FileAttributes));
+        }
+        else
+            SUP_DPRINTF(("    FileBasicInformation -> %#x %#x\n", rcNt, Ios.Status));
+
+        rcNt = NtQueryInformationFile(hFile, &Ios, &u.StdInfo, sizeof(u.StdInfo), FileStandardInformation);
+        if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+            SUP_DPRINTF(("    Size:            %#llx\n", u.StdInfo.EndOfFile.QuadPart));
+        else
+            SUP_DPRINTF(("    FileStandardInformation -> %#x %#x\n", rcNt, Ios.Status));
+
+        /*
+         * Read the image header and extract the timestamp and other useful info.
+         */
+        RT_ZERO(u);
+        LARGE_INTEGER offRead;
+        offRead.QuadPart = 0;
+        rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
+                          &u, (ULONG)sizeof(u), &offRead, NULL);
+        if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+        {
+            uint32_t offNtHdrs = 0;
+            if (u.MzHdr.e_magic == IMAGE_DOS_SIGNATURE)
+                offNtHdrs = u.MzHdr.e_lfanew;
+            if (offNtHdrs < sizeof(u) - sizeof(IMAGE_NT_HEADERS))
+            {
+                PIMAGE_NT_HEADERS64 pNtHdrs64 = (PIMAGE_NT_HEADERS64)&u.abBuf[offNtHdrs];
+                PIMAGE_NT_HEADERS32 pNtHdrs32 = (PIMAGE_NT_HEADERS32)&u.abBuf[offNtHdrs];
+                if (pNtHdrs64->Signature == IMAGE_NT_SIGNATURE)
+                {
+                    SUP_DPRINTF(("    NT Headers:      %#x\n", offNtHdrs));
+                    SUP_DPRINTF(("    Timestamp:       %#x\n", pNtHdrs64->FileHeader.TimeDateStamp));
+                    SUP_DPRINTF(("    Machine:         %#x%s\n", pNtHdrs64->FileHeader.Machine,
+                                 pNtHdrs64->FileHeader.Machine == IMAGE_FILE_MACHINE_I386 ? " - i386"
+                                 : pNtHdrs64->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64 ? " - amd64" : ""));
+                    SUP_DPRINTF(("    Timestamp:       %#x\n", pNtHdrs64->FileHeader.TimeDateStamp));
+                    SUP_DPRINTF(("    Image Version:   %u.%u\n",
+                                 pNtHdrs64->OptionalHeader.MajorImageVersion, pNtHdrs64->OptionalHeader.MinorImageVersion));
+                    SUP_DPRINTF(("    SizeOfImage:     %#x (%u)\n", pNtHdrs64->OptionalHeader.SizeOfImage, pNtHdrs64->OptionalHeader.SizeOfImage));
+
+                    /*
+                     * Very crude way to extract info from the file version resource.
+                     */
+                    PIMAGE_SECTION_HEADER paSectHdrs = (PIMAGE_SECTION_HEADER)(  (uintptr_t)&pNtHdrs64->OptionalHeader
+                                                                               + pNtHdrs64->FileHeader.SizeOfOptionalHeader);
+                    IMAGE_DATA_DIRECTORY  RsrcDir = { 0, 0 };
+                    if (   pNtHdrs64->FileHeader.SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER64)
+                        && pNtHdrs64->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_RESOURCE)
+                        RsrcDir = pNtHdrs64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE];
+                    else if (   pNtHdrs64->FileHeader.SizeOfOptionalHeader == sizeof(IMAGE_OPTIONAL_HEADER32)
+                             && pNtHdrs32->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_RESOURCE)
+                        RsrcDir = pNtHdrs32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE];
+                    SUP_DPRINTF(("    Resource Dir:    %#x LB %#x\n", RsrcDir.VirtualAddress, RsrcDir.Size));
+                    if (   RsrcDir.VirtualAddress > offNtHdrs
+                        && RsrcDir.Size > 0
+                        &&    (uintptr_t)&u + sizeof(u) - (uintptr_t)paSectHdrs
+                           >= pNtHdrs64->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER) )
+                    {
+                        offRead.QuadPart = 0;
+                        for (uint32_t i = 0; i < pNtHdrs64->FileHeader.NumberOfSections; i++)
+                            if (   paSectHdrs[i].VirtualAddress - RsrcDir.VirtualAddress < paSectHdrs[i].SizeOfRawData
+                                && paSectHdrs[i].PointerToRawData > offNtHdrs)
+                            {
+                                offRead.QuadPart = paSectHdrs[i].PointerToRawData
+                                                 + (paSectHdrs[i].VirtualAddress - RsrcDir.VirtualAddress);
+                                break;
+                            }
+                        if (offRead.QuadPart > 0)
+                        {
+                            RT_ZERO(u);
+                            rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
+                                              &u, (ULONG)sizeof(u), &offRead, NULL);
+                            if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+                            {
+                                static const struct { PCRTUTF16 pwsz; size_t cb; } s_abFields[] =
+                                {
+#define MY_WIDE_STR_TUPLE(a_sz)     { L ## a_sz, sizeof(L ## a_sz) - sizeof(RTUTF16) }
+                                    MY_WIDE_STR_TUPLE("ProductName"),
+                                    MY_WIDE_STR_TUPLE("ProductVersion"),
+                                    MY_WIDE_STR_TUPLE("FileVersion"),
+                                    MY_WIDE_STR_TUPLE("SpecialBuild"),
+                                    MY_WIDE_STR_TUPLE("PrivateBuild"),
+                                    MY_WIDE_STR_TUPLE("FileDescription"),
+#undef MY_WIDE_STR_TUPLE
+                                };
+                                for (uint32_t i = 0; i < RT_ELEMENTS(s_abFields); i++)
+                                {
+                                    size_t          cwcLeft = (sizeof(u) - s_abFields[i].cb - 10) / sizeof(RTUTF16);
+                                    PCRTUTF16       pwc     = u.awcBuf;
+                                    RTUTF16 const   wcFirst = *s_abFields[i].pwsz;
+                                    while (cwcLeft-- > 0)
+                                    {
+                                        if (   pwc[0] == 1 /* wType == text */
+                                            && pwc[1] == wcFirst)
+                                        {
+                                            if (memcmp(pwc + 1, s_abFields[i].pwsz, s_abFields[i].cb + sizeof(RTUTF16)) == 0)
+                                            {
+                                                size_t cwcField = s_abFields[i].cb / sizeof(RTUTF16);
+                                                pwc     += cwcField + 2;
+                                                cwcLeft -= cwcField + 2;
+                                                for (uint32_t iPadding = 0; iPadding < 3; iPadding++, pwc++, cwcLeft--)
+                                                    if (*pwc)
+                                                        break;
+                                                int rc = RTUtf16ValidateEncodingEx(pwc, cwcLeft,
+                                                                                   RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                                                if (RT_SUCCESS(rc))
+                                                    SUP_DPRINTF(("    %ls:%*s %ls",
+                                                                 s_abFields[i].pwsz, cwcField < 15 ? 15 - cwcField : 0, "", pwc));
+                                                else
+                                                    SUP_DPRINTF(("    %ls:%*s rc=%Rrc",
+                                                                 s_abFields[i].pwsz, cwcField < 15 ? 15 - cwcField : 0, "", rc));
+
+                                                break;
+                                            }
+                                        }
+                                        pwc++;
+                                    }
+                                }
+                            }
+                            else
+                                SUP_DPRINTF(("    NtReadFile @%#llx -> %#x %#x\n", offRead.QuadPart, rcNt, Ios.Status));
+                        }
+                        else
+                            SUP_DPRINTF(("    Resource section not found.\n"));
+                    }
+                }
+                else
+                    SUP_DPRINTF(("    Nt Headers @%#x: Invalid signature\n", offNtHdrs));
+            }
+            else
+                SUP_DPRINTF(("    Nt Headers @%#x: out side buffer\n", offNtHdrs));
+        }
+        else
+            SUP_DPRINTF(("    NtReadFile @0 -> %#x %#x\n", rcNt, Ios.Status));
+        NtClose(hFile);
+    }
+}
+
+
+/**
  * Scans the Driver directory for drivers which may invade our processes.
  *
  * @returns Mask of SUPHARDNT_ADVERSARY_XXX flags.
+ *
+ * @remarks The enumeration of \Driver normally requires administrator
+ *          privileges.  So, the detection we're doing here isn't always gonna
+ *          work just based on that.
+ *
+ * @todo    Find drivers in \FileSystems as well, then we could detect VrNsdDrv
+ *          from ViRobot APT Shield 2.0.
  */
 static uint32_t supR3HardenedWinFindAdversaries(void)
 {
+    static const struct
+    {
+        uint32_t    fAdversary;
+        const char *pszDriver;
+    } s_aDrivers[] =
+    {
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SRTSPX" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymDS" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymEvent" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymIRON" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymNetS" },
+
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswHwid" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswMonFlt" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswRdr2" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswRvrt" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswSnx" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswsp" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswStm" },
+        { SUPHARDNT_ADVERSARY_AVAST,                "aswVmm" },
+
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmcomm" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmactmon" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmevtmgr" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmtdi" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmebc64" },  /* Titanium internet security, not officescan. */
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmeevw" },   /* Titanium internet security, not officescan. */
+        { SUPHARDNT_ADVERSARY_TRENDMICRO,           "tmciesc" },  /* Titanium internet security, not officescan. */
+
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "cfwids" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "McPvDrv" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfeapfk" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfeavfk" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfefirek" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfehidk" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfencbdc" },
+        { SUPHARDNT_ADVERSARY_MCAFEE,               "mfewfpk" },
+
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "kl1" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "klflt" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "klif" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "KLIM6" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "klkbdflt" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "klmouflt" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "kltdi" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY,            "kneps" },
+
+        { SUPHARDNT_ADVERSARY_MBAM,                 "MBAMWebAccessControl" },
+        { SUPHARDNT_ADVERSARY_MBAM,                 "mbam" },
+        { SUPHARDNT_ADVERSARY_MBAM,                 "mbamchameleon" },
+        { SUPHARDNT_ADVERSARY_MBAM,                 "mwav" },
+        { SUPHARDNT_ADVERSARY_MBAM,                 "mbamswissarmy" },
+
+        { SUPHARDNT_ADVERSARY_AVG,                  "avgfwfd" },
+        { SUPHARDNT_ADVERSARY_AVG,                  "avgtdia" },
+
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINAflt" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINFile" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINKNC" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINProc" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINProt" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSINReg" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "PSKMAD" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSAlpc" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSHttp" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNShttps" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSIds" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSNAHSL" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSpicc" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSPihsw" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSPop3" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSProt" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSPrv" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSSmtp" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNSStrm" },
+        { SUPHARDNT_ADVERSARY_PANDA,                "NNStlsc" },
+
+        { SUPHARDNT_ADVERSARY_MSE,                  "NisDrv" },
+    };
+
+    static const struct
+    {
+        uint32_t    fAdversary;
+        PCRTUTF16   pwszFile;
+    } s_aFiles[] =
+    {
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\SysPlant.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\sysfer.dll" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\sysferThunk.dll" },
+
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\ccsetx64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\ironx64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\srtsp64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\srtspx64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\symds64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\symefa64.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\symelam.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\symnets.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\symevent64x86.sys" },
+
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswHwid.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswMonFlt.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswRdr2.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswRvrt.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswSnx.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswsp.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswStm.sys" },
+        { SUPHARDNT_ADVERSARY_AVAST, L"\\SystemRoot\\System32\\drivers\\aswVmm.sys" },
+
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmcomm.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmactmon.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmevtmgr.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmtdi.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmebc64.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmeevw.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmciesc.sys" },
+
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\cfwids.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\McPvDrv.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfeapfk.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfeavfk.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfefirek.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfehidk.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfencbdc.sys" },
+        { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\mfewfpk.sys" },
+
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\kl1.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\klflt.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\klif.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\klim6.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\klkbdflt.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\klmouflt.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\kltdi.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\drivers\\kneps.sys" },
+        { SUPHARDNT_ADVERSARY_KASPERSKY, L"\\SystemRoot\\System32\\klfphc.dll" },
+
+        { SUPHARDNT_ADVERSARY_MBAM, L"\\SystemRoot\\System32\\drivers\\MBAMSwissArmy.sys" },
+        { SUPHARDNT_ADVERSARY_MBAM, L"\\SystemRoot\\System32\\drivers\\mwac.sys" },
+        { SUPHARDNT_ADVERSARY_MBAM, L"\\SystemRoot\\System32\\drivers\\mbamchameleon.sys" },
+        { SUPHARDNT_ADVERSARY_MBAM, L"\\SystemRoot\\System32\\drivers\\mbam.sys" },
+
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgrkx64.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgmfx64.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgidsdrivera.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgidsha.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgtdia.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgloga.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgldx64.sys" },
+        { SUPHARDNT_ADVERSARY_AVG, L"\\SystemRoot\\System32\\drivers\\avgdiska.sys" },
+
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINAflt.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINFile.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINKNC.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINProc.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINProt.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSINReg.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\PSKMAD.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSAlpc.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSHttp.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNShttps.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSIds.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSNAHSL.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSpicc.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSPihsw.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSPop3.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSProt.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSPrv.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSSmtp.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNSStrm.sys" },
+        { SUPHARDNT_ADVERSARY_PANDA, L"\\SystemRoot\\System32\\drivers\\NNStlsc.sys" },
+
+        { SUPHARDNT_ADVERSARY_MSE, L"\\SystemRoot\\System32\\drivers\\MpFilter.sys" },
+        { SUPHARDNT_ADVERSARY_MSE, L"\\SystemRoot\\System32\\drivers\\NisDrvWFP.sys" },
+    };
+
+    uint32_t fFound = 0;
+
     /*
      * Open the driver object directory.
      */
@@ -4556,66 +4964,80 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 #ifdef VBOX_STRICT
     SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
 #endif
-    if (!NT_SUCCESS(rcNt))
-        return 0;
+    if (NT_SUCCESS(rcNt))
+    {
+        /*
+         * Enumerate it, looking for the driver.
+         */
+        ULONG    uObjDirCtx = 0;
+        for (;;)
+        {
+            uint32_t    abBuffer[_64K + _1K];
+            ULONG       cbActual;
+            rcNt = NtQueryDirectoryObject(hDir,
+                                          abBuffer,
+                                          sizeof(abBuffer) - 4, /* minus four for string terminator space. */
+                                          FALSE /*ReturnSingleEntry */,
+                                          FALSE /*RestartScan*/,
+                                          &uObjDirCtx,
+                                          &cbActual);
+            if (!NT_SUCCESS(rcNt) || cbActual < sizeof(OBJECT_DIRECTORY_INFORMATION))
+                break;
+
+            POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
+            while (pObjDir->Name.Length != 0)
+            {
+                WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
+                pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = '\0';
+
+                for (uint32_t i = 0; i < RT_ELEMENTS(s_aDrivers); i++)
+                    if (RTUtf16ICmpAscii(pObjDir->Name.Buffer, s_aDrivers[i].pszDriver) == 0)
+                    {
+                        fFound |= s_aDrivers[i].fAdversary;
+                        SUP_DPRINTF(("Found driver %s (%#x)\n", s_aDrivers[i].pszDriver, s_aDrivers[i].fAdversary));
+                        break;
+                    }
+
+                pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = wcSaved;
+
+                /* Next directory entry. */
+                pObjDir++;
+            }
+        }
+
+        NtClose(hDir);
+    }
+    else
+        SUP_DPRINTF(("NtOpenDirectoryObject failed on \\Driver: %#x\n", rcNt));
 
     /*
-     * Enumerate it, looking for the driver.
+     * Look for files.
      */
-    uint32_t fFound = 0;
-    ULONG    uObjDirCtx = 0;
-    for (;;)
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFiles); i++)
     {
-        uint32_t    abBuffer[_64K + _1K];
-        ULONG       cbActual;
-        rcNt = NtQueryDirectoryObject(hDir,
-                                      abBuffer,
-                                      sizeof(abBuffer) - 4, /* minus four for string terminator space. */
-                                      FALSE /*ReturnSingleEntry */,
-                                      FALSE /*RestartScan*/,
-                                      &uObjDirCtx,
-                                      &cbActual);
-        if (!NT_SUCCESS(rcNt) || cbActual < sizeof(OBJECT_DIRECTORY_INFORMATION))
-            break;
-
-        POBJECT_DIRECTORY_INFORMATION pObjDir = (POBJECT_DIRECTORY_INFORMATION)abBuffer;
-        while (pObjDir->Name.Length != 0)
+        HANDLE              hFile  = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios    = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        UNICODE_STRING      UniStrName;
+        UniStrName.Buffer = (WCHAR *)s_aFiles[i].pwszFile;
+        UniStrName.Length = (USHORT)(RTUtf16Len(s_aFiles[i].pwszFile) * sizeof(WCHAR));
+        UniStrName.MaximumLength = UniStrName.Length + sizeof(WCHAR);
+        InitializeObjectAttributes(&ObjAttr, &UniStrName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+        rcNt = NtCreateFile(&hFile, GENERIC_READ, &ObjAttr, &Ios, NULL /* Allocation Size*/,  FILE_ATTRIBUTE_NORMAL,
+                            FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE, NULL /*EaBuffer*/, 0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
         {
-            WCHAR wcSaved = pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)];
-            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = '\0';
-
-#define IS_MATCH(a_Str) (   pObjDir->Name.Length == sizeof(L##a_Str) - sizeof(WCHAR) \
-                         && RTUtf16ICmpAscii(pObjDir->Name.Buffer, a_Str) == 0)
-            if (IS_MATCH("sysplant"))
-                fFound |= SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT;
-            else if (IS_MATCH("aswHwid"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswMonFlt"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswRdr2"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswRvrt"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswSnx"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswsp"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswStm"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-            else if (IS_MATCH("aswVmm"))
-                fFound |= SUPHARDNT_ADVERSARY_AVAST;
-#undef IS_MATCH
-            pObjDir->Name.Buffer[pObjDir->Name.Length / sizeof(WCHAR)] = wcSaved;
-
-            /* Next directory entry. */
-            pObjDir++;
+            fFound |= s_aFiles[i].fAdversary;
+            NtClose(hFile);
         }
     }
 
     /*
-     * Clean up and return.
+     * Log details.
      */
-    NtClose(hDir);
+    SUP_DPRINTF(("supR3HardenedWinFindAdversaries: %#x\n", fFound));
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFiles); i++)
+        if (fFound & s_aFiles[i].fAdversary)
+            supR3HardenedLogAdversarialFile(s_aFiles[i].pwszFile);
 
     return fFound;
 }
@@ -4669,7 +5091,6 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      * Scan the system for adversaries.
      */
     g_fSupAdversaries = supR3HardenedWinFindAdversaries();
-    SUP_DPRINTF(("g_fSupAdversaries=%#x\n", g_fSupAdversaries));
 
     /*
      * Get the executable name.
