@@ -1764,6 +1764,8 @@
 /** The CSRSS instance associated with the client process could not be
  * located. */
 #define VERR_SUPDRV_CSRSS_NOT_FOUND                 (-3741)
+/** Type error opening the ApiPort LPC object. */
+#define VERR_SUPDRV_APIPORT_OPEN_ERROR_TYPE         (-3742)
 /** @} */
 
 
