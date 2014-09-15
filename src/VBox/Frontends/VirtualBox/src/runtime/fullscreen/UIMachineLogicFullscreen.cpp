@@ -522,6 +522,8 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
         /* Register to native notifications: */
         UICocoaApplication::instance()->registerToNotificationOfWorkspace("NSWorkspaceDidActivateApplicationNotification", this,
                                                                           UIMachineLogicFullscreen::nativeHandlerForApplicationActivation);
+        UICocoaApplication::instance()->registerToNotificationOfWorkspace("NSWorkspaceActiveSpaceDidChangeNotification", this,
+                                                                          UIMachineLogicFullscreen::nativeHandlerForActiveSpaceChange);
     }
 
     /* We have to make sure that we are getting the front most process.
@@ -618,6 +620,7 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     {
         /* Unregister from native notifications: */
         UICocoaApplication::instance()->unregisterFromNotificationOfWorkspace("NSWorkspaceDidActivateApplicationNotification", this);
+        UICocoaApplication::instance()->unregisterFromNotificationOfWorkspace("NSWorkspaceActiveSpaceDidChangeNotification", this);
     }
 #endif/* Q_WS_MAC */
 
@@ -722,9 +725,9 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
     if (uScreenID != 0 && !screensHaveSeparateSpaces())
     {
         /* We are hiding transient window if:
-         * 1. application is inactive at all or
+         * 1. primary window is not on active user-space
          * 2. there is no fullscreen window or it's invalidated. */
-        if (   !UICocoaApplication::instance()->isActive()
+        if (   !darwinIsOnActiveSpace(machineWindows().first())
             || m_fullscreenMachineWindows.isEmpty() || !m_invalidFullscreenMachineWindows.isEmpty())
         {
             LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
@@ -859,36 +862,56 @@ void UIMachineLogicFullscreen::nativeHandlerForApplicationActivation(const QMap<
 {
     /* Make sure we have BundleIdentifier key: */
     AssertReturnVoid(userInfo.contains("BundleIdentifier"));
+    /* Skip other applications: */
+    if (userInfo.value("BundleIdentifier") != "org.virtualbox.app.VirtualBox")
+        return;
 
-    /* On VirtualBox activation: */
-    if (userInfo.value("BundleIdentifier") == "org.virtualbox.app.VirtualBox")
+    /* Skip if 'screen have separate spaces': */
+    if (screensHaveSeparateSpaces())
+        return;
+
+    /* Skip if there is another than needed user-space is active: */
+    if (!darwinIsOnActiveSpace(machineWindows().first()))
+        return;
+
+    LogRel(("UIMachineLogicFullscreen::nativeHandlerForApplicationActivation: "
+            "Full-screen application activated.\n"));
+
+    /* Revalidate full-screen mode for transient machine-window(s): */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        if (pMachineWindow->screenId() > 0)
+            revalidateNativeFullScreen(pMachineWindow);
+}
+
+/* static */
+void UIMachineLogicFullscreen::nativeHandlerForActiveSpaceChange(QObject *pObject, const QMap<QString, QString> &userInfo)
+{
+    /* Handle arrived notification: */
+    UIMachineLogicFullscreen *pLogic = qobject_cast<UIMachineLogicFullscreen*>(pObject);
+    AssertPtrReturnVoid(pLogic);
     {
-        LogRel(("UIMachineLogicFullscreen::nativeHandlerForApplicationActivation: BundleIdentifier = %s\n",
-                userInfo.value("BundleIdentifier").toAscii().constData()));
-
-        /* Make sure all the transient machine-windows updated: */
-        foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            if (pMachineWindow->screenId() != 0 && !screensHaveSeparateSpaces())
-            {
-                /* If there is no fullscreen window or it's invalidated: */
-                if (m_fullscreenMachineWindows.isEmpty() || !m_invalidFullscreenMachineWindows.isEmpty())
-                {
-                    LogRel(("UIMachineLogicFullscreen::nativeHandlerForApplicationActivation: "
-                            "Ask transient machine-window #%d to hide.\n", (int)pMachineWindow->screenId()));
-
-                    pMachineWindow->hide();
-                }
-                /* If there is valid fullscreen window: */
-                else
-                {
-                    LogRel(("UIMachineLogicFullscreen::nativeHandlerForApplicationActivation: "
-                            "Ask transient machine-window #%d to show/normalize.\n", (int)pMachineWindow->screenId()));
-
-                    /* Make sure window have proper geometry and shown: */
-                    pMachineWindow->showInNecessaryMode();
-                }
-            }
+        /* Redirect arrived notification: */
+        pLogic->nativeHandlerForActiveSpaceChange(userInfo);
     }
+}
+
+void UIMachineLogicFullscreen::nativeHandlerForActiveSpaceChange(const QMap<QString, QString>&)
+{
+    /* Skip if 'screen have separate spaces': */
+    if (screensHaveSeparateSpaces())
+        return;
+
+    /* Skip if there is another than needed user-space is active: */
+    if (!darwinIsOnActiveSpace(machineWindows().first()))
+        return;
+
+    LogRel(("UIMachineLogicFullscreen::nativeHandlerForActiveSpaceChange: "
+            "Full-screen user-space activated.\n"));
+
+    /* Revalidate full-screen mode for transient machine-window(s): */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        if (pMachineWindow->screenId() > 0)
+            revalidateNativeFullScreen(pMachineWindow);
 }
 #endif /* Q_WS_MAC */
 
