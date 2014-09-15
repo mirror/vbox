@@ -67,6 +67,8 @@ typedef enum USBDEVICESPEED
     USBDEVICESPEED_HIGH,
     /** Variable speed - USB 2.5 / wireless. */
     USBDEVICESPEED_VARIABLE,
+    /** Super speed - USB 3.0 (5Gbit/s). */
+    USBDEVICESPEED_SUPER,
     /** The usual 32-bit hack. */
     USBDEVICESPEED_32BIT_HACK = 0x7fffffff
 } USBDEVICESPEED;
