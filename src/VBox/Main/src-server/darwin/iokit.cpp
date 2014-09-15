@@ -972,8 +972,9 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR("PortNum"),                &pCur->bPort));
                 uint8_t bSpeed;
                 AssertBreak(darwinDictGetU8(PropsRef,  CFSTR(kUSBDevicePropertySpeed),  &bSpeed));
-                Assert(bSpeed <= 2);
-                pCur->enmSpeed = bSpeed == 2 ? USBDEVICESPEED_HIGH
+                Assert(bSpeed <= 3);
+                pCur->enmSpeed = bSpeed == 3 ? USBDEVICESPEED_SUPER
+                               : bSpeed == 2 ? USBDEVICESPEED_HIGH
                                : bSpeed == 1 ? USBDEVICESPEED_FULL
                                : bSpeed == 0 ? USBDEVICESPEED_LOW
                                              : USBDEVICESPEED_UNKNOWN;

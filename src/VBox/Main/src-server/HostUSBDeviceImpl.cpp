@@ -230,7 +230,25 @@ HRESULT HostUSBDevice::getPortVersion(USHORT *aPortVersion)
     if (mUsb->enmSpeed == USBDEVICESPEED_UNKNOWN)
         *aPortVersion = mUsb->bcdUSB >> 8;
     else
-        *aPortVersion = (mUsb->enmSpeed == USBDEVICESPEED_HIGH) ? 2 : 1;
+    {
+        switch (mUsb->enmSpeed)
+        {
+            case USBDEVICESPEED_SUPER:
+                *aPortVersion = 3;
+                break;
+            case USBDEVICESPEED_HIGH:
+                *aPortVersion = 2;
+                break;
+            case USBDEVICESPEED_FULL:
+            case USBDEVICESPEED_LOW:
+            case USBDEVICESPEED_VARIABLE:
+                *aPortVersion = 1;
+                break;
+            default:
+                AssertMsgFailed(("Invalid USB speed: %d\n", mUsb->enmSpeed));
+                *aPortVersion = 1;
+        }
+    }
 
     return S_OK;
 }
