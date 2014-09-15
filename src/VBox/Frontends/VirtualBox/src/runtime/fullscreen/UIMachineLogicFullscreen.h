@@ -141,10 +141,15 @@ private:
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */
     void revalidateNativeFullScreen();
 
-    /** Mac OS X: Proxies native notification about active space change. */
+    /** Mac OS X: Proxies native notification about application activation. */
     static void nativeHandlerForApplicationActivation(QObject *pObject, const QMap<QString, QString> &userInfo);
-    /** Mac OS X: Handles native notification about active space change. */
+    /** Mac OS X: Handles native notification about application activation. */
     void nativeHandlerForApplicationActivation(const QMap<QString, QString> &userInfo);
+
+    /** Mac OS X: Proxies native notification about active space change. */
+    static void nativeHandlerForActiveSpaceChange(QObject *pObject, const QMap<QString, QString> &userInfo);
+    /** Mac OS X: Handles native notification about active space change. */
+    void nativeHandlerForActiveSpaceChange(const QMap<QString, QString> &userInfo);
 #endif /* Q_WS_MAC */
 
     /** Holds the popup-menu instance. */
