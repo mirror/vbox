@@ -377,6 +377,8 @@ typedef const VUSBSETUP *PCVUSBSETUP;
 #define VUSB_STDVER_11              RT_BIT(1)
 /** Indicates USB 2.0 support. */
 #define VUSB_STDVER_20              RT_BIT(2)
+/** Indicates USB 3.0 support. */
+#define VUSB_STDVER_30              RT_BIT(3)
 /** @} */
 
 
