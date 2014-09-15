@@ -291,7 +291,6 @@ typedef struct NATState
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     int    i32AliasMode;
     struct libalias *proxy_alias;
-    struct libalias *dns_alias;
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
     /** Critical R/W section to protect the handler chain list. */
     RTCRITSECTRW CsRwHandlerChain;
