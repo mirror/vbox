@@ -222,6 +222,12 @@ bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow)
     return [pWindow styleMask] & NSFullScreenWindowMask;
 }
 
+bool darwinIsOnActiveSpace(NativeNSWindowRef pWindow)
+{
+    /* Check whether passed pWindow is on active space. */
+    return [pWindow isOnActiveSpace];
+}
+
 bool darwinScreensHaveSeparateSpaces()
 {
     /* Check whether screens have separate spaces.
