@@ -3498,13 +3498,9 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
 
     /*
      * Unmap the image we mapped into the guest above.
-     * Experiment: Don't unmap for avast.
      */
-    if (!(g_fSupAdversaries & SUPHARDNT_ADVERSARY_AVAST))
-    {
-        supR3HardNtPuChUnmapDllFromChild(pThis, pvKernel32, "kernel32.dll");
-        supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
-    }
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernel32, "kernel32.dll");
+    supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
     supR3HardNtPuChUnmapDllFromChild(pThis, pvNtDll2, "ntdll.dll[2nd]");
     supR3HardNtPuChUnmapDllFromChild(pThis, pvExe2, "executable[2nd]");
 
