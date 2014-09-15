@@ -100,8 +100,6 @@ struct socket
     /* storage of source ether address */
     unsigned char so_ethaddr[6];
 #endif
-    /* required for port-forwarding */
-    struct libalias *so_la;
 
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
     struct socket *so_cloneOf; /* pointer to master instance */

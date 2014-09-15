@@ -1527,13 +1527,9 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
     LIST_FOREACH_SAFE(rule, &pData->port_forward_rule_head, list, tmp)
     {
         struct socket *so;
-        struct alias_link *alias_link;
-        struct libalias *lib;
-        int flags;
         struct sockaddr sa;
         struct sockaddr_in *psin;
         socklen_t socketlen;
-        struct in_addr alias;
         int rc;
         uint32_t guest_addr; /* need to understand if we already give address to guest */
 
@@ -1588,23 +1584,6 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         if (rc < 0 || sa.sa_family != AF_INET)
             goto remove_port_forwarding;
 
-        psin = (struct sockaddr_in *)&sa;
-
-        lib = LibAliasInit(pData, NULL);
-        flags = LibAliasSetMode(lib, 0, 0);
-        flags |= pData->i32AliasMode;
-        flags |= PKT_ALIAS_REVERSE; /* set reverse  */
-        flags = LibAliasSetMode(lib, flags, ~0);
-
-        alias.s_addr = RT_H2N_U32(RT_N2H_U32(guest_addr) | CTL_ALIAS);
-        alias_link = LibAliasRedirectPort(lib, psin->sin_addr, RT_H2N_U16(rule->host_port),
-                                          alias, RT_H2N_U16(rule->guest_port),
-                                          pData->special_addr,  -1, /* not very clear for now */
-                                          rule->proto);
-        if (!alias_link)
-            goto remove_port_forwarding;
-
-        so->so_la = lib;
         rule->activated = 1;
         rule->so = so;
         pData->cRedirectionsActive++;
@@ -1687,7 +1666,6 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
                     rule->bind_ip.s_addr, rule->host_port,
                     guest_addr.s_addr, rule->guest_port));
 
-            LibAliasUninit(rule->so->so_la);
             if (is_udp)
                 udp_detach(pData, rule->so);
             else

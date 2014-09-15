@@ -175,13 +175,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         if (!(m->m_flags & M_SKIP_FIREWALL)){
             struct m_tag *t;
             STAM_PROFILE_START(&pData->StatALIAS_output, b);
-            if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
-                rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *),
-                                 m_length(m, NULL));
-            else
-                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *),
-                                 m_length(m, NULL));
-
+            rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), m_length(m, NULL));
             if (rc == PKT_ALIAS_IGNORED)
             {
                 Log(("NAT: packet was droppped\n"));
@@ -309,11 +303,8 @@ send_or_free:
              */
             struct m_tag *t;
             int rcLa;
-            if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
-                rcLa = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m->m_len);
-            else
-                rcLa = LibAliasOut(pData->proxy_alias, mtod(m, char *), m->m_len);
 
+            rcLa = LibAliasOut(pData->proxy_alias, mtod(m, char *), m->m_len);
             if (rcLa == PKT_ALIAS_IGNORED)
             {
                 Log(("NAT: packet was droppped\n"));
