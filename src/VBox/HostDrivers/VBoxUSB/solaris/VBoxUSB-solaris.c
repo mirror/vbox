@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -324,6 +324,7 @@ LOCAL void vboxUSBSolarisIsocOutXferCompleted(usb_pipe_handle_t pPipe, usb_isoc_
 LOCAL vboxusb_urb_t *vboxUSBSolarisGetIsocInURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq);
 LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq, mblk_t *pMsg);
 LOCAL inline void vboxUSBSolarisConcatMsg(vboxusb_urb_t *pUrb);
+LOCAL inline VUSBSTATUS vboxUSBSolarisGetUrbStatus(usb_cr_t Status);
 LOCAL inline void vboxUSBSolarisDeQueueURB(vboxusb_urb_t *pUrb, int URBStatus);
 LOCAL inline void vboxUSBSolarisNotifyComplete(vboxusb_state_t *pState);
 LOCAL int vboxUSBSolarisProcessIOCtl(int iFunction, void *pvState, int Mode, PVBOXUSBREQ pUSBReq, void *pvBuf,
@@ -1480,7 +1481,7 @@ LOCAL void vboxUSBSolarisDestroyPower(vboxusb_state_t *pState)
  *
  * @returns VBox USB URB status.
  */
-static inline VUSBSTATUS vboxUSBSolarisGetUrbStatus(usb_cr_t Status)
+LOCAL inline VUSBSTATUS vboxUSBSolarisGetUrbStatus(usb_cr_t Status)
 {
     switch (Status)
     {
