@@ -47,8 +47,10 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
         AssertBreakpoint();
 
     /* cmn_err() acquires adaptive mutexes. Not preemption safe, see @bugref{6657}. */
+#if 0
     if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
         return;
+#endif
 
     if (    !g_frtSolSplSetsEIF
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
