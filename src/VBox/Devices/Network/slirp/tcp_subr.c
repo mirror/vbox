@@ -505,7 +505,6 @@ tcp_connect(PNATState pData, struct socket *inso)
         }
         so->so_laddr = inso->so_laddr;
         so->so_lport = inso->so_lport;
-        so->so_la = inso->so_la;
     }
 
     (void) tcp_mss(pData, sototcpcb(so), 0);
