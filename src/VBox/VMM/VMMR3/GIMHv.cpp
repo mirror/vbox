@@ -232,6 +232,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
 
 /**
  * Initializes remaining bits of the Hyper-V provider.
+ *
  * This is called after initializing HM and almost all other VMM components.
  *
  * @returns VBox status code.
@@ -294,9 +295,10 @@ VMMR3_INT_DECL(int) GIMR3HvTerm(PVM pVM)
 
 
 /**
- * Applies relocations to data and code managed by this component. This function
- * will be called at init and whenever the VMM need to relocate itself inside
- * the GC.
+ * Applies relocations to data and code managed by this component.
+ *
+ * This function will be called at init and whenever the VMM need to relocate
+ * itself inside the GC.
  *
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
@@ -311,8 +313,10 @@ VMMR3_INT_DECL(void) GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
- * The VM is being reset. This resets Hyper-V provider MSRs and unmaps whatever
- * Hyper-V regions that the guest may have mapped.
+ * This resets Hyper-V provider MSRs and unmaps whatever Hyper-V regions that
+ * the guest may have mapped.
+ *
+ * This is called when the VM is being reset.
  *
  * @param   pVM     Pointer to the VM.
  */

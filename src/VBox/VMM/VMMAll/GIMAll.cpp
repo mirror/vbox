@@ -107,8 +107,10 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 /**
  * Returns whether the guest has configured and setup the use of paravirtualized
- * TSC. Paravirtualized TSCs are per-VM and the rest of the execution engine
- * logic relies on that.
+ * TSC.
+ *
+ * Paravirtualized TSCs are per-VM and the rest of the execution engine logic
+ * relies on that.
  *
  * @returns true if enabled and usable, false otherwise.
  * @param   pVM         Pointer to the VM.
