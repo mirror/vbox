@@ -44,6 +44,7 @@ RT_C_DECLS_BEGIN
 
 /**
  * GIM Provider Identifiers.
+ * @remarks Part of saved state!
  */
 typedef enum GIMPROVIDERID
 {
@@ -183,5 +184,5 @@ VMM_INT_DECL(int)           GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 
 RT_C_DECLS_END
 
-#endif  /* ___VBox_vmm_gim_h */
+#endif
 
