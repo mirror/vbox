@@ -917,8 +917,12 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
  else
   VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
   VirtualBox_INCS          <= $(VirtualBoxPch_0_OUTDIR)/src
-  VirtualBox_INTERMEDIATES += $(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch
- endif
+  $(foreach x,$(filter-out include/COMWrappers.cpp, $(filter %.cpp, \
+  	$(VirtualBox_SOURCES) \
+	$(VirtualBox_SOURCES.$(KBUILD_TARGET)) \
+	$(VirtualBox_SOURCES.$(KBUILD_TYPE)) \
+   )),$(eval $(abspath $(PATH_OBJ)/VirtualBox/$(basename $(x)).o): $$$$(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch))
+endif
 
  TOOL_VirtualBoxPchLinker = Linker for VirtualBoxPch
  define TOOL_VirtualBoxPchLinker_LINK_MISCBIN_CMDS
