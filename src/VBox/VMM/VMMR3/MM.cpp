@@ -308,7 +308,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
         AssertRCReturn(rc, rc);
     }
 
-    /** @cfgm{RamSize, uint64_t, 0, 16TB, 0}
+    /** @cfgm{/RamSize, uint64_t, 0, 16TB, 0}
      * Specifies the size of the base RAM that is to be set up during
      * VM initialization.
      */
@@ -323,7 +323,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     cbRam &= X86_PTE_PAE_PG_MASK;
     pVM->mm.s.cbRamBase = cbRam;
 
-    /** @cfgm{RamHoleSize, uint32_t, 0, 4032MB, 512MB}
+    /** @cfgm{/RamHoleSize, uint32_t, 0, 4032MB, 512MB}
      * Specifies the size of the memory hole. The memory hole is used
      * to avoid mapping RAM to the range normally used for PCI memory regions.
      * Must be aligned on a 4MB boundary. */
@@ -342,7 +342,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else
         Log(("MM: %RU64 bytes of RAM with a hole at %RU64 up to 4GB.\n", cbRam, offRamHole));
 
-    /** @cfgm{MM/Policy, string, no overcommitment}
+    /** @cfgm{/MM/Policy, string, no overcommitment}
      * Specifies the policy to use when reserving memory for this VM. The recognized
      * value is 'no overcommitment' (default). See GMMPOLICY.
      */
@@ -362,7 +362,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else
         AssertMsgFailedReturn(("Configuration error: Failed to query string \"MM/Policy\", rc=%Rrc.\n", rc), rc);
 
-    /** @cfgm{MM/Priority, string, normal}
+    /** @cfgm{/MM/Priority, string, normal}
      * Specifies the memory priority of this VM. The priority comes into play when the
      * system is overcommitted and the VMs needs to be milked for memory. The recognized
      * values are 'low', 'normal' (default) and 'high'. See GMMPRIORITY.

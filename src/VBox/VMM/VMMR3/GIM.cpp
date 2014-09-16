@@ -100,13 +100,13 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
      */
     PCFGMNODE pCfgNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "GIM/");
 
-    /** @cfgm{GIM/Provider, string}
+    /** @cfgm{/GIM/Provider, string}
      * The name of the GIM provider. The default is "none". */
     char szProvider[64];
     rc = CFGMR3QueryStringDef(pCfgNode, "Provider", szProvider, sizeof(szProvider), "None");
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{GIM/Version, uint32_t}
+    /** @cfgm{/GIM/Version, uint32_t}
      * The interface version. The default is 0, which means "provide the most
      * up-to-date implementation". */
     uint32_t uVersion;

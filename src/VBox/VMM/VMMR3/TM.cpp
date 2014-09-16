@@ -355,7 +355,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
     }
 
-    /** @cfgm{TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
+    /** @cfgm{/TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
      * The number of TSC ticks per second (i.e. the TSC frequency). This will
      * override TSCUseRealTSC, TSCVirtualized and MaybeUseOffsettedHostTSC.
      */
@@ -384,7 +384,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCVirtualized = true;
     }
 
-    /** @cfgm{TM/TSCTiedToExecution, bool, false}
+    /** @cfgm{/TM/TSCTiedToExecution, bool, false}
      * Whether the TSC should be tied to execution. This will exclude most of the
      * virtualization overhead, but will by default include the time spent in the
      * halt state (see TM/TSCNotTiedToHalt). This setting will override all other
@@ -403,7 +403,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
     }
 
-    /** @cfgm{TM/TSCNotTiedToHalt, bool, true}
+    /** @cfgm{/TM/TSCNotTiedToHalt, bool, true}
      * For overriding the default of TM/TSCTiedToExecution, i.e. set this to false
      * to make the TSC freeze during HLT. */
     rc = CFGMR3QueryBoolDef(pCfgHandle, "TSCNotTiedToHalt", &pVM->tm.s.fTSCNotTiedToHalt, false);
@@ -424,7 +424,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Configure the timer synchronous virtual time.
      */
-    /** @cfgm{TM/ScheduleSlack, uint32_t, ns, 0, UINT32_MAX, 100000}
+    /** @cfgm{/TM/ScheduleSlack, uint32_t, ns, 0, UINT32_MAX, 100000}
      * Scheduling slack when processing timers. */
     rc = CFGMR3QueryU32(pCfgHandle, "ScheduleSlack", &pVM->tm.s.u32VirtualSyncScheduleSlack);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -433,7 +433,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\""));
 
-    /** @cfgm{TM/CatchUpStopThreshold, uint64_t, ns, 0, UINT64_MAX, 500000}
+    /** @cfgm{/TM/CatchUpStopThreshold, uint64_t, ns, 0, UINT64_MAX, 500000}
      * When to stop a catch-up, considering it successful. */
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStopThreshold", &pVM->tm.s.u64VirtualSyncCatchUpStopThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -442,7 +442,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\""));
 
-    /** @cfgm{TM/CatchUpGiveUpThreshold, uint64_t, ns, 0, UINT64_MAX, 60000000000}
+    /** @cfgm{/TM/CatchUpGiveUpThreshold, uint64_t, ns, 0, UINT64_MAX, 60000000000}
      * When to give up a catch-up attempt. */
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpGiveUpThreshold", &pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -452,9 +452,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\""));
 
 
-    /** @cfgm{TM/CatchUpPrecentage[0..9], uint32_t, %, 1, 2000, various}
+    /** @cfgm{/TM/CatchUpPrecentage[0..9], uint32_t, %, 1, 2000, various}
      * The catch-up percent for a given period.  */
-    /** @cfgm{TM/CatchUpStartThreshold[0..9], uint64_t, ns, 0, UINT64_MAX}
+    /** @cfgm{/TM/CatchUpStartThreshold[0..9], uint64_t, ns, 0, UINT64_MAX}
      * The catch-up period threshold, or if you like, when a period starts.  */
 #define TM_CFG_PERIOD(iPeriod, DefStart, DefPct) \
     do \
@@ -492,7 +492,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Configure real world time (UTC).
      */
-    /** @cfgm{TM/UTCOffset, int64_t, ns, INT64_MIN, INT64_MAX, 0}
+    /** @cfgm{/TM/UTCOffset, int64_t, ns, INT64_MIN, INT64_MAX, 0}
      * The UTC offset. This is used to put the guest back or forwards in time.  */
     rc = CFGMR3QueryS64(pCfgHandle, "UTCOffset", &pVM->tm.s.offUTC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -504,7 +504,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Setup the warp drive.
      */
-    /** @cfgm{TM/WarpDrivePercentage, uint32_t, %, 0, 20000, 100}
+    /** @cfgm{/TM/WarpDrivePercentage, uint32_t, %, 0, 20000, 100}
      * The warp drive percentage, 100% is normal speed.  This is used to speed up
      * or slow down the virtual clock, which can be useful for fast forwarding
      * borring periods during tests. */
@@ -561,7 +561,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Start the timer (guard against REM not yielding).
      */
-    /** @cfgm{TM/TimerMillies, uint32_t, ms, 1, 1000, 10}
+    /** @cfgm{/TM/TimerMillies, uint32_t, ms, 1, 1000, 10}
      * The watchdog timer interval.  */
     uint32_t u32Millies;
     rc = CFGMR3QueryU32(pCfgHandle, "TimerMillies", &u32Millies);
