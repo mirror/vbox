@@ -39,8 +39,6 @@ RT_C_DECLS_BEGIN
  */
 typedef struct GIM
 {
-    /** Whether GIM is enabled for this VM or not. */
-    bool                             fEnabled;
     /** The provider that is active for this VM. */
     GIMPROVIDERID                    enmProviderId;
     /** The interface implementation version. */
