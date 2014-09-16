@@ -118,13 +118,9 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
      */
     LogRel(("GIM: Using provider \"%s\" (Implementation version: %u)\n", szProvider, uVersion));
     if (!RTStrCmp(szProvider, "None"))
-    {
-        Assert(!pVM->gim.s.fEnabled);
         pVM->gim.s.enmProviderId = GIMPROVIDERID_NONE;
-    }
     else
     {
-        pVM->gim.s.fEnabled = true;
         pVM->gim.s.u32Version = uVersion;
         /** @todo r=bird: Because u32Version is saved, it should be translated to the
          *        'most up-to-date implementation' version number when 0. Otherwise,
@@ -159,9 +155,6 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
  */
 VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
 {
-    if (!pVM->gim.s.fEnabled)
-        return VINF_SUCCESS;
-
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_MINIMAL:
@@ -190,7 +183,7 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("GIMR3Relocate\n"));
 
-    if (   !pVM->gim.s.fEnabled
+    if (   pVM->gim.s.enmProviderId == GIMPROVIDERID_NONE
         || HMIsEnabled(pVM))
     {
         return;
@@ -233,7 +226,7 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertReturn(pSSM, VERR_SSM_INVALID_STATE);
 
     /** @todo Save per-CPU data. */
-    int rc;
+    int rc = VINF_SUCCESS;
 #if 0
     SSMR3PutU32(pSSM, pVM->cCpus);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -245,26 +238,21 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save per-VM data.
      */
-    SSMR3PutBool(pSSM, pVM->gim.s.fEnabled);
     SSMR3PutU32(pSSM, pVM->gim.s.enmProviderId);
-    rc = SSMR3PutU32(pSSM, pVM->gim.s.u32Version);
-    AssertRCReturn(rc, rc);
+    SSMR3PutU32(pSSM, pVM->gim.s.u32Version);
 
     /*
      * Save provider-specific data.
      */
-    if (pVM->gim.s.fEnabled)
+    switch (pVM->gim.s.enmProviderId)
     {
-        switch (pVM->gim.s.enmProviderId)
-        {
-            case GIMPROVIDERID_HYPERV:
-                rc = GIMR3HvSave(pVM, pSSM);
-                AssertRCReturn(rc, rc);
-                break;
+        case GIMPROVIDERID_HYPERV:
+            rc = GIMR3HvSave(pVM, pSSM);
+            AssertRCReturn(rc, rc);
+            break;
 
-            default:
-                break;
-        }
+        default:
+            break;
     }
 
     return rc;
@@ -300,13 +288,11 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     /*
      * Load per-VM data.
      */
-    bool fEnabled;
-    SSMR3GetBool(pSSM, &fEnabled);
     uint32_t uProviderId;
-    SSMR3GetU32(pSSM, &uProviderId);
     uint32_t uProviderVersion;
-    rc = SSMR3GetU32(pSSM, &uProviderVersion);
-    AssertRCReturn(rc, rc);
+
+    rc = SSMR3GetU32(pSSM, &uProviderId);           AssertRCReturn(rc, rc);
+    rc = SSMR3GetU32(pSSM, &uProviderVersion);      AssertRCReturn(rc, rc);
 
     if ((GIMPROVIDERID)uProviderId != pVM->gim.s.enmProviderId)
         return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Saved GIM provider %u differs from the configured one (%u)."),
@@ -322,21 +308,18 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     /*
      * Load provider-specific data.
      */
-    if (pVM->gim.s.fEnabled)
+    switch (pVM->gim.s.enmProviderId)
     {
-        switch (pVM->gim.s.enmProviderId)
-        {
-            case GIMPROVIDERID_HYPERV:
-                rc = GIMR3HvLoad(pVM, pSSM, uVersion);
-                AssertRCReturn(rc, rc);
-                break;
+        case GIMPROVIDERID_HYPERV:
+            rc = GIMR3HvLoad(pVM, pSSM, uVersion);
+            AssertRCReturn(rc, rc);
+            break;
 
-            default:
-                break;
-        }
+        default:
+            break;
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -351,9 +334,6 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
  */
 VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
 {
-    if (!pVM->gim.s.fEnabled)
-        return VINF_SUCCESS;
-
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
@@ -377,9 +357,6 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
  */
 VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
 {
-    if (!pVM->gim.s.fEnabled)
-        return;
-
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
@@ -421,9 +398,6 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
     Assert(pcRegions);
 
     *pcRegions = 0;
-    if (!pVM->gim.s.fEnabled)
-        return NULL;
-
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
