@@ -34,10 +34,21 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/version.h>
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 //#define GIMHV_HYPERCALL                 "GIMHvHypercall"
+
+/**
+ * GIM Hyper-V saved-state version.
+ */
+#define GIM_HV_SAVED_STATE_VERSION          UINT32_C(1)
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 #ifdef VBOX_WITH_STATISTICS
 # define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
     { (a_uFirst), (a_uLast), kCpumMsrRdFn_Gim, kCpumMsrWrFn_Gim, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
@@ -359,46 +370,46 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save the Hyper-V SSM version.
      */
-    int rc = SSMR3PutU32(pSSM, GIM_HV_SSM_VERSION);         AssertRCReturn(rc, rc);
+    SSMR3PutU32(pSSM, GIM_HV_SAVED_STATE_VERSION);
 
     /** @todo Save per-VCPU data. */
 
     /*
      * Save per-VM MSRs.
      */
-    rc = SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
+    SSMR3PutU64(pSSM, pcHv->u64GuestOsIdMsr);
+    SSMR3PutU64(pSSM, pcHv->u64HypercallMsr);
+    SSMR3PutU64(pSSM, pcHv->u64TscPageMsr);
 
     /*
      * Save Hyper-V features / capabilities.
      */
-    rc = SSMR3PutU32(pSSM, pcHv->uBaseFeat);                AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uPartFlags);               AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uMiscFeat);                AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uHyperHints);              AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pcHv->uHyperCaps);               AssertRCReturn(rc, rc);
+    SSMR3PutU32(pSSM, pcHv->uBaseFeat);
+    SSMR3PutU32(pSSM, pcHv->uPartFlags);
+    SSMR3PutU32(pSSM, pcHv->uPowMgmtFeat);
+    SSMR3PutU32(pSSM, pcHv->uMiscFeat);
+    SSMR3PutU32(pSSM, pcHv->uHyperHints);
+    SSMR3PutU32(pSSM, pcHv->uHyperCaps);
 
     /*
      * Save the Hypercall region.
      */
     PCGIMMMIO2REGION pcRegion = &pcHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
-    rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
-    rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
-    rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-    rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+    SSMR3PutU8(pSSM,     pcRegion->iRegion);
+    SSMR3PutBool(pSSM,   pcRegion->fRCMapping);
+    SSMR3PutU32(pSSM,    pcRegion->cbRegion);
+    SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);
+    SSMR3PutStrZ(pSSM,   pcRegion->szDescription);
 
     /*
      * Save the reference TSC region.
      */
     pcRegion = &pcHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
-    rc = SSMR3PutU8(pSSM,     pcRegion->iRegion);           AssertRCReturn(rc, rc);
-    rc = SSMR3PutBool(pSSM,   pcRegion->fRCMapping);        AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM,    pcRegion->cbRegion);          AssertRCReturn(rc, rc);
-    rc = SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-    rc = SSMR3PutStrZ(pSSM,   pcRegion->szDescription);     AssertRCReturn(rc, rc);
+    SSMR3PutU8(pSSM,     pcRegion->iRegion);
+    SSMR3PutBool(pSSM,   pcRegion->fRCMapping);
+    SSMR3PutU32(pSSM,    pcRegion->cbRegion);
+    SSMR3PutGCPhys(pSSM, pcRegion->GCPhysPage);
+    SSMR3PutStrZ(pSSM,   pcRegion->szDescription);
     /* Save the TSC sequence so we can bump it on restore (as the CPU frequency/offset may change). */
     uint32_t uTscSequence = 0;
     if (   pcRegion->fMapped
@@ -407,9 +418,8 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
         PCGIMHVREFTSC pcRefTsc = (PCGIMHVREFTSC)pcRegion->pvPageR3;
         uTscSequence = pcRefTsc->u32TscSequence;
     }
-    rc = SSMR3PutU32(pSSM,    uTscSequence);                AssertRCReturn(rc, rc);
 
-    return VINF_SUCCESS;
+    return SSMR3PutU32(pSSM, uTscSequence);
 }
 
 
@@ -428,37 +438,43 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
     /*
      * Load the Hyper-V SSM version first.
      */
-    uint32_t uHvSSMVersion;
-    int rc = SSMR3GetU32(pSSM, &uHvSSMVersion);             AssertRCReturn(rc, rc);
+    uint32_t uHvSavedStatVersion;
+    int rc = SSMR3GetU32(pSSM, &uHvSavedStatVersion);
+    AssertRCReturn(rc, rc);
+    if (uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION)
+        return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
+                                 N_("Unsupported Hyper-V saved state version %u (expected %u)."),
+                                 uHvSavedStatVersion, GIM_HV_SAVED_STATE_VERSION);
+
 
     /** @todo Load per-VCPU data. */
 
     /*
      * Load per-VM MSRs.
      */
-    rc = SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);          AssertRCReturn(rc, rc);
-    rc = SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);            AssertRCReturn(rc, rc);
+    SSMR3GetU64(pSSM, &pHv->u64GuestOsIdMsr);
+    SSMR3GetU64(pSSM, &pHv->u64HypercallMsr);
+    SSMR3GetU64(pSSM, &pHv->u64TscPageMsr);
 
     /*
      * Load Hyper-V features / capabilities.
      */
-    rc = SSMR3GetU32(pSSM, &pHv->uBaseFeat);                AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uPartFlags);               AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);             AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uMiscFeat);                AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uHyperHints);              AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pHv->uHyperCaps);               AssertRCReturn(rc, rc);
+    SSMR3GetU32(pSSM, &pHv->uBaseFeat);
+    SSMR3GetU32(pSSM, &pHv->uPartFlags);
+    SSMR3GetU32(pSSM, &pHv->uPowMgmtFeat);
+    SSMR3GetU32(pSSM, &pHv->uMiscFeat);
+    SSMR3GetU32(pSSM, &pHv->uHyperHints);
+    SSMR3GetU32(pSSM, &pHv->uHyperCaps);
 
     /*
      * Load and enable the Hypercall region.
      */
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
-    rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
-    rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
-    rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-    rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
+    SSMR3GetU8(pSSM,     &pRegion->iRegion);
+    SSMR3GetBool(pSSM,   &pRegion->fRCMapping);
+    SSMR3GetU32(pSSM,    &pRegion->cbRegion);
+    SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);
+    rc = SSMR3GetStrZ(pSSM, pRegion->szDescription, sizeof(pRegion->szDescription));
     AssertRCReturn(rc, rc);
     if (MSR_GIM_HV_HYPERCALL_IS_ENABLED(pHv->u64HypercallMsr))
     {
@@ -479,12 +495,12 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
      */
     uint32_t uTscSequence;
     pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
-    rc = SSMR3GetU8(pSSM,     &pRegion->iRegion);           AssertRCReturn(rc, rc);
-    rc = SSMR3GetBool(pSSM,   &pRegion->fRCMapping);        AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM,    &pRegion->cbRegion);          AssertRCReturn(rc, rc);
-    rc = SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);        AssertRCReturn(rc, rc);
-    rc = SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
-    rc = SSMR3GetU32(pSSM,    &uTscSequence);               AssertRCReturn(rc, rc);
+    SSMR3GetU8(pSSM,     &pRegion->iRegion);
+    SSMR3GetBool(pSSM,   &pRegion->fRCMapping);
+    SSMR3GetU32(pSSM,    &pRegion->cbRegion);
+    SSMR3GetGCPhys(pSSM, &pRegion->GCPhysPage);
+    SSMR3GetStrZ(pSSM,    pRegion->szDescription, sizeof(pRegion->szDescription));
+    rc = SSMR3GetU32(pSSM, &uTscSequence);
     AssertRCReturn(rc, rc);
     if (MSR_GIM_HV_REF_TSC_IS_ENABLED(pHv->u64TscPageMsr))
     {
