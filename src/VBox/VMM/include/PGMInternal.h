@@ -3105,7 +3105,7 @@ typedef struct PGM
     /** Offset of the PGMCPU structure relative to VMCPU. */
     int32_t                         offVCpuPGM;
 
-    /** @cfgm{RamPreAlloc, boolean, false}
+    /** @cfgm{/RamPreAlloc, boolean, false}
      * Indicates whether the base RAM should all be allocated before starting
      * the VM (default), or if it should be allocated when first written to.
      */
@@ -3314,8 +3314,9 @@ typedef struct PGM
         PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
         uint32_t                    c;
-        /** The maximum number of mapped chunks.
-         * @cfgm    PGM/MaxRing3Chunks */
+        /** @cfgm{/PGM/MaxRing3Chunks, uint32_t, host dependent}
+         * The maximum number of mapped chunks.  On 64-bit this is unlimited by default,
+         * on 32-bit it defaults to 1 or 3 GB depending on the host. */
         uint32_t                    cMax;
         /** The current time.  This is incremented whenever a chunk is inserted. */
         uint32_t                    iNow;

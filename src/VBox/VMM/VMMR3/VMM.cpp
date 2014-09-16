@@ -170,7 +170,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     pVM->vmm.s.hEvtMulRendezvousDone            = NIL_RTSEMEVENTMULTI;
     pVM->vmm.s.hEvtRendezvousDoneCaller         = NIL_RTSEMEVENT;
 
-    /** @cfgm{YieldEMTInterval, uint32_t, 1, UINT32_MAX, 23, ms}
+    /** @cfgm{/YieldEMTInterval, uint32_t, 1, UINT32_MAX, 23, ms}
      * The EMT yield interval.  The EMT yielding is a hack we employ to play a
      * bit nicer with the rest of the system (like for instance the GUI).
      */
@@ -179,7 +179,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
 
 
-    /** @cfgm{VMM/UsePeriodicPreemptionTimers, boolean, true}
+    /** @cfgm{/VMM/UsePeriodicPreemptionTimers, boolean, true}
      * Controls whether we employ per-cpu preemption timers to limit the time
      * spent executing guest code.  This option is not available on all
      * platforms and we will silently ignore this setting then.  If we are

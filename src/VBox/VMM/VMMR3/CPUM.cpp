@@ -1067,7 +1067,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * Read the configuration.
      */
-    /** @cfgm{CPUM/SyntheticCpu, boolean, false}
+    /** @cfgm{/CPUM/SyntheticCpu, boolean, false}
      * Enables the Synthetic CPU.  The Vendor ID and Processor Name are
      * completely overridden by VirtualBox custom strings.  Some
      * CPUID information is withheld, like the cache info.
@@ -1077,7 +1077,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCpumCfg, "SyntheticCpu",  &fSyntheticCpu, false);
     AssertRCReturn(rc, rc);
 
-    /** @cfgm{CPUM/PortableCpuIdLevel, 8-bit, 0, 3, 0}
+    /** @cfgm{/CPUM/PortableCpuIdLevel, 8-bit, 0, 3, 0}
      * When non-zero CPUID features that could cause portability issues will be
      * stripped.  The higher the value the more features gets stripped.  Higher
      * values should only be used when older CPUs are involved since it may
@@ -1085,7 +1085,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pCPUM->u8PortableCpuIdLevel, fSyntheticCpu ? 1 : 0);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{CPUM/GuestCpuName, string}
+    /** @cfgm{/CPUM/GuestCpuName, string}
      * The name of the CPU we're to emulate.  The default is the host CPU.
      * Note! CPUs other than "host" one is currently unsupported. */
     char szCpuName[128];
@@ -1157,12 +1157,12 @@ static int cpumR3CpuIdInit(PVM pVM)
                           "Info on guest CPU '%s' could not be found. Please, select a different CPU.", szCpuName)
              : rc;
 
-    /** @cfgm{CPUM/MSRs/[Name]/[First|Last|Type|Value|...],}
+    /** @cfgm{/CPUM/MSRs/[Name]/[First|Last|Type|Value|...],}
      * Overrides the guest MSRs.
      */
     rc = cpumR3LoadMsrOverrides(pVM, CFGMR3GetChild(pCpumCfg, "MSRs"));
 
-    /** @cfgm{CPUM/HostCPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
+    /** @cfgm{/CPUM/HostCPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
      * Overrides the CPUID leaf values (from the host CPU usually) used for
      * calculating the guest CPUID leaves.  This can be used to preserve the CPUID
      * values when moving a VM to a different machine.  Another use is restricting
@@ -1711,7 +1711,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * MSR fudging.
      */
-    /** @cfgm{CPUM/FudgeMSRs, boolean, true}
+    /** @cfgm{/CPUM/FudgeMSRs, boolean, true}
      * Fudges some common MSRs if not present in the selected CPU database entry.
      * This is for trying to keep VMs running when moved between different hosts
      * and different CPU vendors. */

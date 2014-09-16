@@ -445,24 +445,24 @@ typedef struct TM
     bool volatile               fHzHintNeedsUpdating;
     /** Alignment */
     bool                        afAlignment2[3];
-    /** @cfgm{TM/HostHzMax, uint32_t, Hz, 0, UINT32_MAX, 20000}
+    /** @cfgm{/TM/HostHzMax, uint32_t, Hz, 0, UINT32_MAX, 20000}
      * The max host Hz frequency hint returned by TMCalcHostTimerFrequency.  */
     uint32_t                    cHostHzMax;
-    /** @cfgm{TM/HostHzFudgeFactorTimerCpu, uint32_t, Hz, 0, UINT32_MAX, 111}
+    /** @cfgm{/TM/HostHzFudgeFactorTimerCpu, uint32_t, Hz, 0, UINT32_MAX, 111}
      * The number of Hz TMCalcHostTimerFrequency adds for the timer CPU.  */
     uint32_t                    cPctHostHzFudgeFactorTimerCpu;
-    /** @cfgm{TM/HostHzFudgeFactorOtherCpu, uint32_t, Hz, 0, UINT32_MAX, 110}
+    /** @cfgm{/TM/HostHzFudgeFactorOtherCpu, uint32_t, Hz, 0, UINT32_MAX, 110}
      * The number of Hz TMCalcHostTimerFrequency adds for the other CPUs. */
     uint32_t                    cPctHostHzFudgeFactorOtherCpu;
-    /** @cfgm{TM/HostHzFudgeFactorCatchUp100, uint32_t, Hz, 0, UINT32_MAX, 300}
+    /** @cfgm{/TM/HostHzFudgeFactorCatchUp100, uint32_t, Hz, 0, UINT32_MAX, 300}
      *  The fudge factor (expressed in percent) that catch-up percentages below
      * 100% is multiplied by. */
     uint32_t                    cPctHostHzFudgeFactorCatchUp100;
-    /** @cfgm{TM/HostHzFudgeFactorCatchUp200, uint32_t, Hz, 0, UINT32_MAX, 250}
+    /** @cfgm{/TM/HostHzFudgeFactorCatchUp200, uint32_t, Hz, 0, UINT32_MAX, 250}
      * The fudge factor (expressed in percent) that catch-up percentages
      * 100%-199% is multiplied by. */
     uint32_t                    cPctHostHzFudgeFactorCatchUp200;
-    /** @cfgm{TM/HostHzFudgeFactorCatchUp400, uint32_t, Hz, 0, UINT32_MAX, 200}
+    /** @cfgm{/TM/HostHzFudgeFactorCatchUp400, uint32_t, Hz, 0, UINT32_MAX, 200}
      * The fudge factor (expressed in percent) that catch-up percentages
      * 200%-399% is multiplied by. */
     uint32_t                    cPctHostHzFudgeFactorCatchUp400;
