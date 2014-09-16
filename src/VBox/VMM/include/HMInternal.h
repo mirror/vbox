@@ -224,13 +224,13 @@ RT_C_DECLS_BEGIN
 /** HM SSM version
  */
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
-# define HM_SSM_VERSION                 5
-# define HM_SSM_VERSION_NO_PATCHING     4
+# define HM_SAVED_STATE_VERSION                 5
+# define HM_SAVED_STATE_VERSION_NO_PATCHING     4
 #else
-# define HM_SSM_VERSION                 4
-# define HM_SSM_VERSION_NO_PATCHING     4
+# define HM_SAVED_STATE_VERSION                 4
+# define HM_SAVED_STATE_VERSION_NO_PATCHING     4
 #endif
-#define HM_SSM_VERSION_2_0_X            3
+#define HM_SAVED_STATE_VERSION_2_0_X            3
 
 /**
  * Global per-cpu information. (host)

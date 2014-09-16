@@ -340,7 +340,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /*
      * Register the saved state data unit.
      */
-    int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HM_SSM_VERSION, sizeof(HM),
+    int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HM_SAVED_STATE_VERSION, sizeof(HM),
                                    NULL, NULL, NULL,
                                    NULL, hmR3Save, NULL,
                                    NULL, hmR3Load, NULL);
@@ -3079,9 +3079,9 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Validate version.
      */
-    if (   uVersion != HM_SSM_VERSION
-        && uVersion != HM_SSM_VERSION_NO_PATCHING
-        && uVersion != HM_SSM_VERSION_2_0_X)
+    if (   uVersion != HM_SAVED_STATE_VERSION
+        && uVersion != HM_SAVED_STATE_VERSION_NO_PATCHING
+        && uVersion != HM_SAVED_STATE_VERSION_2_0_X)
     {
         AssertMsgFailed(("hmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -3095,7 +3095,7 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
         rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hm.s.Event.u64IntInfo);
         AssertRCReturn(rc, rc);
 
-        if (uVersion >= HM_SSM_VERSION_NO_PATCHING)
+        if (uVersion >= HM_SAVED_STATE_VERSION_NO_PATCHING)
         {
             uint32_t val;
             /** @todo See note in hmR3Save(). */
@@ -3108,7 +3108,7 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
         }
     }
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
-    if (uVersion > HM_SSM_VERSION_NO_PATCHING)
+    if (uVersion > HM_SAVED_STATE_VERSION_NO_PATCHING)
     {
         rc = SSMR3GetGCPtr(pSSM, &pVM->hm.s.pGuestPatchMem);
         AssertRCReturn(rc, rc);
