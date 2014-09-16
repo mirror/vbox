@@ -31,5 +31,5 @@ VMMR3_INT_DECL(void)        GIMR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta);
 
 RT_C_DECLS_END
 
-#endif /* ___GIMMinimalInternal_h */
+#endif
 
