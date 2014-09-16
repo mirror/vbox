@@ -524,5 +524,5 @@ VMM_INT_DECL(int)               GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCP
 
 RT_C_DECLS_END
 
-#endif /* ___GIMHvInternal_h */
+#endif
 
