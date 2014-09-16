@@ -668,7 +668,7 @@ RTR3DECL(int) RTTimerDestroy(PRTTIMER pTimer)
         TimerSpec.it_value.tv_sec     = 0;
         TimerSpec.it_value.tv_nsec    = 0;
         int err = timer_settime(pTimer->NativeTimer, 0, &TimerSpec, NULL); NOREF(err);
-        AssertMsg(!err, ("%d\n", err));
+        AssertMsg(!err, ("%d / %d\n", err, errno));
     }
 #endif
 
@@ -765,7 +765,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     TimerSpec.it_interval.tv_sec  = pTimer->u64NanoInterval / 1000000000;
     TimerSpec.it_interval.tv_nsec = pTimer->u64NanoInterval % 1000000000;
     int err = timer_settime(pTimer->NativeTimer, 0, &TimerSpec, NULL);
-    int rc = RTErrConvertFromErrno(err);
+    int rc = err == 0 ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
 #endif /* IPRT_WITH_POSIX_TIMERS */
 
     if (RT_FAILURE(rc))
@@ -812,7 +812,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     TimerSpec.it_value.tv_sec     = 0;
     TimerSpec.it_value.tv_nsec    = 0;
     int err = timer_settime(pTimer->NativeTimer, 0, &TimerSpec, NULL);
-    int rc = RTErrConvertFromErrno(err);
+    int rc = err == 0 ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
 #endif /* IPRT_WITH_POSIX_TIMERS */
 
     return rc;
