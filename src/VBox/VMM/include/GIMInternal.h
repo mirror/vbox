@@ -103,5 +103,5 @@ VMMR3_INT_DECL(bool)          GIMR3IsOSXGuest(PVM pVM);
 
 RT_C_DECLS_END
 
-#endif /* ___GIMInternal_h */
+#endif
 
