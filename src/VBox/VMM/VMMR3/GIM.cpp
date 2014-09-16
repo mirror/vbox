@@ -88,11 +88,10 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     /*
      * Register the saved state data unit.
      */
-    int rc;
-    rc = SSMR3RegisterInternal(pVM, "GIM", 0 /* uInstance */, GIM_SSM_VERSION, sizeof(GIM),
-                                    NULL /* pfnLivePrep */, NULL /* pfnLiveExec */, NULL /* pfnLiveVote*/,
-                                    NULL /* pfnSavePrep */, gimR3Save,              NULL /* pfnSaveDone */,
-                                    NULL /* pfnLoadPrep */, gimR3Load,              NULL /* pfnLoadDone */);
+    int rc = SSMR3RegisterInternal(pVM, "GIM", 0 /* uInstance */, GIM_SAVED_STATE_VERSION, sizeof(GIM),
+                                   NULL /* pfnLivePrep */, NULL /* pfnLiveExec */, NULL /* pfnLiveVote*/,
+                                   NULL /* pfnSavePrep */, gimR3Save,              NULL /* pfnSaveDone */,
+                                   NULL /* pfnLoadPrep */, gimR3Load,              NULL /* pfnLoadDone */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -127,6 +126,9 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     {
         pVM->gim.s.fEnabled = true;
         pVM->gim.s.u32Version = uVersion;
+        /** @todo r=bird: Because u32Version is saved, it should be translated to the
+         *        'most up-to-date implementation' version number when 0. Otherwise,
+         *        we'll have abiguities when loading the state of older VMs. */
         if (!RTStrCmp(szProvider, "Minimal"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_MINIMAL;
@@ -139,10 +141,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         }
         /** @todo KVM and others. */
         else
-        {
-            LogRel(("GIM: Provider \"%s\" unknown.\n", szProvider));
-            rc = VERR_GIM_INVALID_PROVIDER;
-        }
+            rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider \"%s\" unknown.", szProvider);
     }
     return rc;
 }
@@ -150,6 +149,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
 
 /**
  * Initializes the remaining bits of the GIM provider.
+ *
  * This is called after initializing HM and most other VMM components.
  *
  * @returns VBox status code.
@@ -178,9 +178,10 @@ VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
 
 
 /**
- * Applies relocations to data and code managed by this component. This function
- * will be called at init and whenever the VMM need to relocate itself inside
- * the GC.
+ * Applies relocations to data and code managed by this component.
+ *
+ * This function will be called at init and whenever the VMM need to relocate
+ * itself inside the GC.
  *
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
@@ -234,6 +235,7 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     /** @todo Save per-CPU data. */
     int rc;
 #if 0
+    SSMR3PutU32(pSSM, pVM->cCpus);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
@@ -243,10 +245,8 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save per-VM data.
      */
-    rc = SSMR3PutBool(pSSM, pVM->gim.s.fEnabled);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pVM->gim.s.enmProviderId);
-    AssertRCReturn(rc, rc);
+    SSMR3PutBool(pSSM, pVM->gim.s.fEnabled);
+    SSMR3PutU32(pSSM, pVM->gim.s.enmProviderId);
     rc = SSMR3PutU32(pSSM, pVM->gim.s.u32Version);
     AssertRCReturn(rc, rc);
 
@@ -284,6 +284,9 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
 {
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
+    if (uVersion != GIM_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
 
     /** @todo Load per-CPU data. */
     int rc;
@@ -297,12 +300,24 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     /*
      * Load per-VM data.
      */
-    rc = SSMR3GetBool(pSSM, &pVM->gim.s.fEnabled);
+    bool fEnabled;
+    SSMR3GetBool(pSSM, &fEnabled);
+    uint32_t uProviderId;
+    SSMR3GetU32(pSSM, &uProviderId);
+    uint32_t uProviderVersion;
+    rc = SSMR3GetU32(pSSM, &uProviderVersion);
     AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, (uint32_t *)&pVM->gim.s.enmProviderId);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pVM->gim.s.u32Version);
-    AssertRCReturn(rc, rc);
+
+    if ((GIMPROVIDERID)uProviderId != pVM->gim.s.enmProviderId)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Saved GIM provider %u differs from the configured one (%u)."),
+                                uProviderId, pVM->gim.s.enmProviderId);
+#if 0 /** @todo r=bird: Figure out what you mean to do here with the version. */
+    if (uProviderVersion != pVM->gim.s.u32Version)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Saved GIM provider version %u differs from the configured one (%u)."),
+                                uProviderVersion, pVM->gim.s.u32Version);
+#else
+    pVM->gim.s.u32Version = uProviderVersion;
+#endif
 
     /*
      * Load provider-specific data.

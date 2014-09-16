@@ -31,7 +31,7 @@ RT_C_DECLS_BEGIN
  */
 
 /** The saved state version. */
-#define GIM_SSM_VERSION                          1
+#define GIM_SAVED_STATE_VERSION         1
 
 /**
  * GIM VM Instance data.
