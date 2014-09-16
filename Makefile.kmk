@@ -1451,9 +1451,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Validation Kit)
-	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
-	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Validation Kit)
 endif
 
@@ -1462,9 +1462,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Validation Kit)
-	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,x86) . $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,x86) . $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
-	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
+	$(VBOX_KMK_TIME) rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
 
