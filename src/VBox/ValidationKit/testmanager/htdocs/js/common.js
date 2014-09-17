@@ -1,0 +1,1019 @@
+/* $Id$ */
+/** @file
+ * Common JavaScript functions
+ */
+
+/*
+ *
+ * Copyright (C) 2012-2014 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+
+
+/**
+ * Checks if the given value is a decimal integer value.
+ *
+ * @returns true if it is, false if it's isn't.
+ * @param   sValue              The value to inspect.
+ */
+function isInteger(sValue)
+{
+    if (typeof sValue != 'undefined')
+    {
+        var intRegex = /^\d+$/;
+        if (intRegex.test(sValue))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Removes the element with the specified ID.
+ */
+function removeHtmlNode(sContainerId)
+{
+    var oElement = document.getElementById(sContainerId);
+    if (oElement)
+    {
+        oElement.parentNode.removeChild(oElement);
+    }
+}
+
+/**
+ * Sets the value of the element with id @a sInputId to the keys of aoItems
+ * (comma separated).
+ */
+function setElementValueToKeyList(sInputId, aoItems)
+{
+    var sKey;
+    var oElement = document.getElementById(sInputId);
+    oElement.value = '';
+
+    for (sKey in aoItems)
+    {
+        if (oElement.value.length > 0)
+        {
+            oElement.value += ',';
+        }
+
+        oElement.value += sKey;
+    }
+}
+
+/**
+ * Get the Window.devicePixelRatio in a safe way.
+ *
+ * @returns Floating point ratio. 1.0 means it's a 1:1 ratio.
+ */
+function getDevicePixelRatio()
+{
+    var fpRatio = 1.0;
+    if (window.devicePixelRatio)
+    {
+        fpRatio = window.devicePixelRatio;
+        if (fpRatio < 0.5 || fpRatio > 10.0)
+            fpRatio = 1.0;
+    }
+    return fpRatio;
+}
+
+/**
+ * Tries to figure out the DPI of the device in the X direction.
+ *
+ * @returns DPI on success, null on failure.
+ */
+function getDeviceXDotsPerInch()
+{
+    if (window.deviceXDPI && window.deviceXDPI > 48 && window.deviceXDPI < 2048)
+    {
+        return window.deviceXDPI;
+    }
+    else if (window.devicePixelRatio && window.devicePixelRatio >= 0.5 && window.devicePixelRatio <= 10.0)
+    {
+        cDotsPerInch = Math.round(96 * window.devicePixelRatio);
+    }
+    else
+    {
+        cDotsPerInch = null;
+    }
+    return cDotsPerInch;
+}
+
+/**
+ * Gets the width of the given element (downscaled).
+ *
+ * Useful when using the element to figure the size of a image
+ * or similar.
+ *
+ * @returns Number of pixels.  null if oElement is bad.
+ * @param   oElement        The element (not ID).
+ */
+function getElementWidth(oElement)
+{
+    if (oElement && oElement.offsetWidth)
+        return oElement.offsetWidth;
+    return null;
+}
+
+/** By element ID version of getElementWidth. */
+function getElementWidthById(sElementId)
+{
+    return getElementWidth(document.getElementById(sElementId));
+}
+
+/**
+ * Gets the real unscaled width of the given element.
+ *
+ * Useful when using the element to figure the size of a image
+ * or similar.
+ *
+ * @returns Number of screen pixels.  null if oElement is bad.
+ * @param   oElement        The element (not ID).
+ */
+function getUnscaledElementWidth(oElement)
+{
+    if (oElement && oElement.offsetWidth)
+        return Math.round(oElement.offsetWidth * getDevicePixelRatio());
+    return null;
+}
+
+/** By element ID version of getUnscaledElementWidth. */
+function getUnscaledElementWidthById(sElementId)
+{
+    return getUnscaledElementWidth(document.getElementById(sElementId));
+}
+
+
+/**
+ * Sets the value of an input field element (give by ID).
+ *
+ * @returns Returns success indicator (true/false).
+ * @param   sFieldId            The field ID (required for updating).
+ * @param   sValue              The field value.
+ */
+function setInputFieldValue(sFieldId, sValue)
+{
+    var oInputElement = document.getElementById(sFieldId);
+    if (oInputElement)
+    {
+        oInputElement.value = sValue;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Adds a hidden input field to a form.
+ *
+ * @returns The new input field element.
+ * @param   oFormElement        The form to append it to.
+ * @param   sName               The field name.
+ * @param   sValue              The field value.
+ * @param   sFieldId            The field ID (optional).
+ */
+function addHiddenInputFieldToForm(oFormElement, sName, sValue, sFieldId)
+{
+    var oNew = document.createElement('input');
+    oNew.type  = 'hidden';
+    oNew.name  = sName;
+    oNew.value = sValue;
+    if (sFieldId)
+        oNew.id = sFieldId;
+    oFormElement.appendChild(oNew);
+    return oNew;
+}
+
+/** By element ID version of addHiddenInputFieldToForm. */
+function addHiddenInputFieldToFormById(sFormId, sName, sValue, sFieldId)
+{
+    return addHiddenInputFieldToForm(document.getElementById(sFormId), sName, sValue, sFieldId);
+}
+
+/**
+ * Adds or updates a hidden input field to/on a form.
+ *
+ * @returns The new input field element.
+ * @param   sFormId             The ID of the form to amend.
+ * @param   sName               The field name.
+ * @param   sValue              The field value.
+ * @param   sFieldId            The field ID (required for updating).
+ */
+function addUpdateHiddenInputFieldToFormById(sFormId, sName, sValue, sFieldId)
+{
+    var oInputElement = null;
+    if (sFieldId)
+    {
+        oInputElement = document.getElementById(sFieldId);
+    }
+    if (oInputElement)
+    {
+        oInputElement.name  = sName;
+        oInputElement.value = sValue;
+    }
+    else
+    {
+        oInputElement = addHiddenInputFieldToFormById(sFormId, sName, sValue, sFieldId);
+    }
+    return oInputElement;
+}
+
+/**
+ * Adds a width and a dpi input to the given form element if possible to
+ * determine the values.
+ *
+ * This is normally employed in an onlick hook, but then you must specify IDs or
+ * the browser may end up adding it several times.
+ *
+ * @param   sFormId             The ID of the form to amend.
+ * @param   sWidthSrcId         The ID of the element to calculate the width
+ *                              value from.
+ * @param   sWidthName          The name of the width value.
+ * @param   sDpiName            The name of the dpi value.
+ */
+function addDynamicGraphInputs(sFormId, sWidthSrcId, sWidthName, sDpiName)
+{
+    var cx            = getUnscaledElementWidthById(sWidthSrcId);
+    var cDotsPerInch  = getDeviceXDotsPerInch();
+
+    if (cx)
+    {
+        addUpdateHiddenInputFieldToFormById(sFormId, sWidthName, cx, sFormId + '-' + sWidthName + '-id');
+    }
+
+    if (cDotsPerInch)
+    {
+        addUpdateHiddenInputFieldToFormById(sFormId, sDpiName, cDotsPerInch, sFormId + '-' + sDpiName + '-id');
+    }
+
+}
+
+
+/** @name Custom Tooltips
+ * @{
+ */
+
+/** Where we keep tooltip elements when not displayed. */
+var g_dTooltips          = {};
+var g_oCurrentTooltip    = null;
+var g_idTooltipShowTimer = null;
+var g_idTooltipHideTimer = null;
+var g_cTooltipSvnRevisions = 12;
+
+/**
+ * Cancel showing/replacing/repositing a tooltip.
+ */
+function tooltipResetShowTimer()
+{
+    if (g_idTooltipShowTimer)
+    {
+        clearTimeout(g_idTooltipShowTimer);
+        g_idTooltipShowTimer = null;
+    }
+}
+
+/**
+ * Cancel hiding of the current tooltip.
+ */
+function tooltipResetHideTimer()
+{
+    if (g_idTooltipHideTimer)
+    {
+        clearTimeout(g_idTooltipHideTimer);
+        g_idTooltipHideTimer = null;
+    }
+}
+
+/**
+ * Really hide the tooltip.
+ */
+function tooltipReallyHide()
+{
+    if (g_oCurrentTooltip)
+    {
+        //console.log('tooltipReallyHide: ' + g_oCurrentTooltip);
+        g_oCurrentTooltip.oElm.style.display = 'none';
+        g_oCurrentTooltip = null;
+    }
+}
+
+/**
+ * Schedule the tooltip for hiding.
+ */
+function tooltipHide()
+{
+    function tooltipDelayedHide()
+    {
+        tooltipResetHideTimer();
+        tooltipReallyHide();
+    }
+
+    /*
+     * Cancel any pending show and schedule hiding if necessary.
+     */
+    tooltipResetShowTimer();
+    if (g_oCurrentTooltip && !g_idTooltipHideTimer)
+    {
+        g_idTooltipHideTimer = setTimeout(tooltipDelayedHide, 700);
+    }
+
+    return true;
+}
+
+/**
+ * Function that is repositions the tooltip when it's shown.
+ *
+ * Used directly, via onload, and hackish timers to catch all browsers and
+ * whatnot.
+ *
+ * Will set several tooltip member variables related to position and space.
+ */
+function tooltipRepositionOnLoad()
+{
+    if (g_oCurrentTooltip)
+    {
+        var oRelToRect = g_oCurrentTooltip.oRelToRect;
+        var cxNeeded   = g_oCurrentTooltip.oElm.offsetWidth  + 8;
+        var cyNeeded   = g_oCurrentTooltip.oElm.offsetHeight + 8;
+
+        var yScroll         = window.pageYOffset || document.documentElement.scrollTop;
+        var yScrollBottom   = yScroll + window.innerHeight;
+        var xScroll         = window.pageXOffset || document.documentElement.scrollLeft;
+        var xScrollRight    = xScroll + window.innerWidth;
+
+        var cyAbove    = Math.max(oRelToRect.top  - yScroll, 0);
+        var cyBelow    = Math.max(yScrollBottom - oRelToRect.bottom, 0);
+        var cxLeft     = Math.max(oRelToRect.left - xScroll, 0);
+        var cxRight    = Math.max(xScrollRight  - oRelToRect.right, 0);
+
+        var xPos;
+        var yPos;
+
+        /*
+         * Decide where to put the thing.
+         */
+        if (cyNeeded < cyBelow)
+        {
+            yPos = oRelToRect.bottom;
+            g_oCurrentTooltip.cyMax = cyBelow;
+        }
+        else if (cyBelow >= cyAbove)
+        {
+            yPos = yScrollBottom - cyNeeded;
+            g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+        }
+        else
+        {
+            yPos = oRelToRect.top - cyNeeded;
+            g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+        }
+        if (yPos < yScroll)
+        {
+            yPos = yScroll;
+            g_oCurrentTooltip.cyMax = yScrollBottom - yPos;
+        }
+        g_oCurrentTooltip.yPos    = yPos;
+        g_oCurrentTooltip.yScroll = yScroll;
+        g_oCurrentTooltip.cyMaxUp = yPos - yScroll;
+
+        if (cxNeeded < cxRight || cxNeeded > cxRight)
+        {
+            xPos = oRelToRect.right;
+            g_oCurrentTooltip.cxMax = cxRight;
+        }
+        else
+        {
+            xPos = oRelToRect.left - cxNeeded;
+            g_oCurrentTooltip.cxMax = cxNeeded;
+        }
+        g_oCurrentTooltip.xPos    = xPos;
+        g_oCurrentTooltip.xScroll = xScroll;
+
+        g_oCurrentTooltip.oElm.style.top  = yPos + 'px';
+        g_oCurrentTooltip.oElm.style.left = xPos + 'px';
+    }
+    return true;
+}
+
+
+/**
+ * Really show the tooltip.
+ *
+ * @param   oTooltip            The tooltip object.
+ * @param   oRelTo              What to put the tooltip adjecent to.
+ */
+function tooltipReallyShow(oTooltip, oRelTo)
+{
+    var oRect;
+
+    tooltipResetShowTimer();
+    tooltipResetHideTimer();
+
+    if (g_oCurrentTooltip == oTooltip)
+    {
+        //console.log('moving tooltip');
+    }
+    else if (g_oCurrentTooltip)
+    {
+        //console.log('removing current tooltip and showing new');
+        tooltipReallyHide();
+    }
+    else
+    {
+        //console.log('showing tooltip');
+    }
+
+    oTooltip.oElm.style.display  = 'block';
+    oTooltip.oElm.style.position = 'absolute';
+    oRect = oRelTo.getBoundingClientRect();
+    oTooltip.oRelToRect = oRect;
+    oTooltip.oElm.style.left     = oRect.right + 'px';
+    oTooltip.oElm.style.top      = oRect.bottom + 'px';
+
+    g_oCurrentTooltip = oTooltip;
+
+    /*
+     * This function does the repositioning at some point.
+     */
+    tooltipRepositionOnLoad();
+    if (oTooltip.oElm.onload === null)
+    {
+        oTooltip.oElm.onload = function(){ tooltipRepositionOnLoad(); setTimeout(tooltipRepositionOnLoad, 0); };
+    }
+}
+
+/**
+ * Tooltip onmouseenter handler .
+ */
+function tooltipElementOnMouseEnter()
+{
+    //console.log('tooltipElementOnMouseEnter: arguments.length='+arguments.length+' [0]='+arguments[0]);
+    //console.log('ENT: currentTarget='+arguments[0].currentTarget);
+    tooltipResetShowTimer();
+    tooltipResetHideTimer();
+    return true;
+}
+
+/**
+ * Tooltip onmouseout handler.
+ *
+ * @remarks We only use this and onmouseenter for one tooltip element (iframe
+ *          for svn, because chrome is sending onmouseout events after
+ *          onmouseneter for the next element, which would confuse this simple
+ *          code.
+ */
+function tooltipElementOnMouseOut()
+{
+    //console.log('tooltipElementOnMouseOut: arguments.length='+arguments.length+' [0]='+arguments[0]);
+    //console.log('OUT: currentTarget='+arguments[0].currentTarget);
+    tooltipHide();
+    return true;
+}
+
+/**
+ * iframe.onload hook that repositions and resizes the tooltip.
+ *
+ * This is a little hacky and we're calling it one or three times too many to
+ * work around various browser differences too.
+ */
+function svnHistoryTooltipOnLoad()
+{
+    //console.log('svnHistoryTooltipOnLoad');
+
+    /*
+     * Resize the tooltip to better fit the content.
+     */
+    tooltipRepositionOnLoad(); /* Sets cxMax and cyMax. */
+    if (g_oCurrentTooltip && g_oCurrentTooltip.oIFrame.contentWindow)
+    {
+        var oSubElement = g_oCurrentTooltip.oIFrame;
+        var cxSpace  = Math.max(oSubElement.offsetLeft * 2, 0); /* simplified */
+        var cySpace  = Math.max(oSubElement.offsetTop  * 2, 0); /* simplified */
+        var cxNeeded = oSubElement.contentWindow.document.body.scrollWidth  + cxSpace;
+        var cyNeeded = oSubElement.contentWindow.document.body.scrollHeight + cySpace;
+        var cx = Math.min(cxNeeded, g_oCurrentTooltip.cxMax);
+        var cy;
+
+        g_oCurrentTooltip.oElm.width = cx + 'px';
+        oSubElement.width            = (cx - cxSpace) + 'px';
+        if (cx >= cxNeeded)
+        {
+            //console.log('svnHistoryTooltipOnLoad: overflowX -> hidden');
+            oSubElement.style.overflowX = 'hidden';
+        }
+        else
+        {
+            oSubElement.style.overflowX = 'scroll';
+        }
+
+        cy = Math.min(cyNeeded, g_oCurrentTooltip.cyMax);
+        if (cyNeeded > g_oCurrentTooltip.cyMax && g_oCurrentTooltip.cyMaxUp > 0)
+        {
+            var cyMove = Math.min(cyNeeded - g_oCurrentTooltip.cyMax, g_oCurrentTooltip.cyMaxUp);
+            g_oCurrentTooltip.cyMax += cyMove;
+            g_oCurrentTooltip.yPos  -= cyMove;
+            g_oCurrentTooltip.oElm.style.top = g_oCurrentTooltip.yPos + 'px';
+            cy = Math.min(cyNeeded, g_oCurrentTooltip.cyMax);
+        }
+
+        g_oCurrentTooltip.oElm.height = cy + 'px';
+        oSubElement.height            = (cy - cySpace) + 'px';
+        if (cy >= cyNeeded)
+        {
+            //console.log('svnHistoryTooltipOnLoad: overflowY -> hidden');
+            oSubElement.style.overflowY = 'hidden';
+        }
+        else
+        {
+            oSubElement.style.overflowY = 'scroll';
+        }
+
+        //console.log('cyNeeded='+cyNeeded+' cyMax='+g_oCurrentTooltip.cyMax+' cySpace='+cySpace+' cy='+cy);
+        //console.log('oSubElement.offsetTop='+oSubElement.offsetTop);
+        //console.log('svnHistoryTooltipOnLoad: cx='+cx+'cxMax='+g_oCurrentTooltip.cxMax+' cxNeeded='+cxNeeded+' cy='+cy+' cyMax='+g_oCurrentTooltip.cyMax);
+
+        tooltipRepositionOnLoad();
+    }
+    return true;
+}
+
+/**
+ * Calculates the last revision to get when showing a tooltip for @a iRevision.
+ *
+ * A tooltip covers several change log entries, both to limit the number of
+ * tooltips to load and to give context.  The exact number is defined by
+ * g_cTooltipSvnRevisions.
+ *
+ * @returns Last revision in a tooltip.
+ * @param   iRevision   The revision number.
+ */
+function svnHistoryTooltipCalcLastRevision(iRevision)
+{
+    var iFirstRev = Math.floor(iRevision / g_cTooltipSvnRevisions) * g_cTooltipSvnRevisions;
+    return iFirstRev + g_cTooltipSvnRevisions - 1;
+}
+
+/**
+ * Calculates a unique ID for the tooltip element.
+ *
+ * This is also used as dictionary index.
+ *
+ * @returns tooltip ID value (string).
+ * @param   sRepository The repository name.
+ * @param   iRevision   The revision number.
+ */
+function svnHistoryTooltipCalcId(sRepository, iRevision)
+{
+    return 'svnHistoryTooltip_' + sRepository + '_' + svnHistoryTooltipCalcLastRevision(iRevision);
+}
+
+/**
+ * The onmouseenter event handler for creating the tooltip.
+ *
+ * @param   oEvt        The event.
+ * @param   sRepository The repository name.
+ * @param   iRevision   The revision number.
+ *
+ * @remarks onmouseout must be set to call tooltipHide.
+ */
+function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
+{
+    var sKey        = svnHistoryTooltipCalcId(sRepository, iRevision);
+    var oTooltip    = g_dTooltips[sKey];
+    var oParent     = oEvt.currentTarget;
+    //console.log('svnHistoryTooltipShow ' + sRepository);
+
+    function svnHistoryTooltipDelayedShow()
+    {
+        var oSubElement;
+        var sSrc;
+
+        oTooltip = g_dTooltips[sKey];
+        //console.log('svnHistoryTooltipDelayedShow ' + sRepository + ' ' + oTooltip);
+        if (!oTooltip)
+        {
+            /*
+             * Create a new tooltip element.
+             */
+            //console.log('creating ' + sKey);
+            oTooltip = {};
+            oTooltip.oElm = document.createElement('div');
+            oTooltip.oElm.setAttribute('id', sKey);
+            oTooltip.oElm.setAttribute('class', 'tmvcstooltip');
+            oTooltip.oElm.style.position = 'absolute';
+            oTooltip.oElm.style.zIndex = 6001;
+            oTooltip.xPos    = 0;
+            oTooltip.yPos    = 0;
+            oTooltip.cxMax   = 0;
+            oTooltip.cyMax   = 0;
+            oTooltip.cyMaxUp = 0;
+            oTooltip.xScroll = 0;
+            oTooltip.yScroll = 0;
+
+            oSubElement = document.createElement('iframe');
+            oSubElement.setAttribute('id', sKey + '_iframe');
+            oSubElement.setAttribute('style', 'position: relative;"');
+            oSubElement.onload       = function() {svnHistoryTooltipOnLoad(); setTimeout(svnHistoryTooltipOnLoad,0);};
+            oSubElement.onmouseenter = tooltipElementOnMouseEnter;
+            oSubElement.onmouseout   = tooltipElementOnMouseOut;
+            oTooltip.oElm.appendChild(oSubElement);
+            oTooltip.oIFrame = oSubElement;
+            g_dTooltips[sKey] = oTooltip;
+
+            document.body.appendChild(oTooltip.oElm);
+        }
+        else
+        {
+            oSubElement = oTooltip.oIFrame;
+        }
+
+        oSubElement.setAttribute('src', 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
+                                 + '&rev=' + svnHistoryTooltipCalcLastRevision(iRevision)
+                                 + '&cEntries=' + g_cTooltipSvnRevisions
+                                 + '#r' + iRevision);
+        tooltipReallyShow(oTooltip, oParent);
+        /* Resize and repositioning hacks. */
+        svnHistoryTooltipOnLoad();
+        setTimeout(svnHistoryTooltipOnLoad, 0);
+    }
+
+    /*
+     * Delay the change.
+     */
+    tooltipResetShowTimer();
+    g_idTooltipShowTimer = setTimeout(svnHistoryTooltipDelayedShow, 512);
+}
+
+/** @} */
+
+
+/** @name Debugging and Introspection
+ * @{
+ */
+
+/**
+ * Python-like dir() implementation.
+ *
+ * @returns Array of names associated with oObj.
+ * @param   oObj        The object under inspection.  If not specified we'll
+ *                      look at the window object.
+ */
+function pythonlikeDir(oObj, fDeep)
+{
+    var aRet = [];
+    var dTmp = {};
+
+    if (!oObj)
+    {
+        oObj = window;
+    }
+
+    for (var oCur = oObj; oCur; oCur = Object.getPrototypeOf(oCur))
+    {
+        var aThis = Object.getOwnPropertyNames(oCur);
+        for (var i = 0; i < aThis.length; i++)
+        {
+            if (!(aThis[i] in dTmp))
+            {
+                dTmp[aThis[i]] = 1;
+                aRet.push(aThis[i]);
+            }
+        }
+    }
+
+    return aRet;
+}
+
+
+/**
+ * Python-like dir() implementation, shallow version.
+ *
+ * @returns Array of names associated with oObj.
+ * @param   oObj        The object under inspection.  If not specified we'll
+ *                      look at the window object.
+ */
+function pythonlikeShallowDir(oObj, fDeep)
+{
+    var aRet = [];
+    var dTmp = {};
+
+    if (oObj)
+    {
+        for (var i in oObj)
+        {
+            aRet.push(i);
+        }
+    }
+
+    return aRet;
+}
+
+
+
+function dbgGetObjType(oObj)
+{
+    var sType = typeof oObj;
+    if (sType == "object" && oObj !== null)
+    {
+        if (oObj.constructor && oObj.constructor.name)
+        {
+            sType = oObj.constructor.name;
+        }
+        else
+        {
+            var fnToString = Object.prototype.toString;
+            var sTmp = fnToString.call(oObj);
+            if (sTmp.indexOf('[object ') === 0)
+            {
+                sType = sTmp.substring(8, sTmp.length);
+            }
+        }
+    }
+    return sType;
+}
+
+
+/**
+ * Dumps the given object to the console.
+ *
+ * @param   oObj        The object under inspection.
+ * @param   sPrefix     What to prefix the log output with.
+ */
+function dbgDumpObj(oObj, sName, sPrefix)
+{
+    var aMembers;
+    var sType;
+
+    /*
+     * Defaults
+     */
+    if (!oObj)
+    {
+        oObj = window;
+    }
+
+    if (!sPrefix)
+    {
+        if (sName)
+        {
+            sPrefix = sName + ':';
+        }
+        else
+        {
+            sPrefix = 'dbgDumpObj:';
+        }
+    }
+
+    if (!sName)
+    {
+        sName = '';
+    }
+
+    /*
+     * The object itself.
+     */
+    sPrefix = sPrefix + ' ';
+    console.log(sPrefix + sName + ' ' + dbgGetObjType(oObj));
+
+    /*
+     * The members.
+     */
+    sPrefix = sPrefix + ' ';
+    aMembers = pythonlikeDir(oObj);
+    for (i = 0; i < aMembers.length; i++)
+    {
+        console.log(sPrefix + aMembers[i]);
+    }
+
+    return true;
+}
+
+function dbgDumpObjWorker(sType, sName, oObj, sPrefix)
+{
+    var sRet;
+    switch (sType)
+    {
+        case 'function':
+        {
+            sRet = sPrefix + 'function ' + sName + '()' + '\n';
+            break;
+        }
+
+        case 'object':
+        {
+            sRet = sPrefix + 'var ' + sName + '(' + dbgGetObjType(oObj) + ') =';
+            if (oObj !== null)
+            {
+                sRet += '\n';
+            }
+            else
+            {
+                sRet += ' null\n';
+            }
+            break;
+        }
+
+        case 'string':
+        {
+            sRet = sPrefix + 'var ' + sName + '(string, ' + oObj.length + ')';
+            if (oObj.length < 80)
+            {
+                sRet += ' = "' + oObj + '"\n';
+            }
+            else
+            {
+                sRet += '\n';
+            }
+            break;
+        }
+
+        case 'Oops!':
+            sRet = sPrefix + sName + '(??)\n';
+            break;
+
+        default:
+            sRet = sPrefix + 'var ' + sName + '(' + sType + ')\n';
+            break;
+    }
+    return sRet;
+}
+
+
+function dbgObjInArray(aoObjs, oObj)
+{
+    var i = aoObjs.length;
+    while (i > 0)
+    {
+        i--;
+        if (aoObjs[i] === oObj)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+function dbgDumpObjTreeWorker(oObj, sPrefix, aParentObjs, cMaxDepth)
+{
+    var sRet     = '';
+    var aMembers = pythonlikeShallowDir(oObj);
+    var i;
+
+    for (i = 0; i < aMembers.length; i++)
+    {
+        //var sName = i;
+        var sName = aMembers[i];
+        var oMember;
+        var sType;
+        var oEx;
+
+        try
+        {
+            oMember = oObj[sName];
+            sType = typeof oObj[sName];
+        }
+        catch (oEx)
+        {
+            oMember = null;
+            sType = 'Oops!';
+        }
+
+        //sRet += '[' + i + '/' + aMembers.length + ']';
+        sRet += dbgDumpObjWorker(sType, sName, oMember, sPrefix);
+
+        if (   sType == 'object'
+            && oObj !== null)
+        {
+
+            if (dbgObjInArray(aParentObjs, oMember))
+            {
+                sRet += sPrefix + '! parent recursion\n';
+            }
+            else if (   sName == 'previousSibling'
+                     || sName == 'previousElement'
+                     || sName == 'lastChild'
+                     || sName == 'firstElementChild'
+                     || sName == 'lastElementChild'
+                     || sName == 'nextElementSibling'
+                     || sName == 'prevElementSibling'
+                     || sName == 'parentElement'
+                     || sName == 'ownerDocument')
+            {
+                sRet += sPrefix + '! potentially dangerous element name\n';
+            }
+            else if (aParentObjs.length >= cMaxDepth)
+            {
+                sRet = sRet.substring(0, sRet.length - 1);
+                sRet += ' <too deep>!\n';
+            }
+            else
+            {
+
+                aParentObjs.push(oMember);
+                if (i + 1 < aMembers.length)
+                {
+                    sRet += dbgDumpObjTreeWorker(oMember, sPrefix + '| ', aParentObjs, cMaxDepth);
+                }
+                else
+                {
+                    sRet += dbgDumpObjTreeWorker(oMember, sPrefix.substring(0, sPrefix.length - 2) + '  | ', aParentObjs, cMaxDepth);
+                }
+                aParentObjs.pop();
+            }
+        }
+    }
+    return sRet;
+}
+
+/**
+ * Dumps the given object and all it's subobjects to the console.
+ *
+ * @returns String dump of the object.
+ * @param   oObj        The object under inspection.
+ * @param   sName       The object name (optional).
+ * @param   sPrefix     What to prefix the log output with (optional).
+ * @param   cMaxDepth   The max depth, optional.
+ */
+function dbgDumpObjTree(oObj, sName, sPrefix, cMaxDepth)
+{
+    var sType;
+    var sRet;
+    var oEx;
+
+    /*
+     * Defaults
+     */
+    if (!sPrefix)
+    {
+        sPrefix = '';
+    }
+
+    if (!sName)
+    {
+        sName = '??';
+    }
+
+    if (!cMaxDepth)
+    {
+        cMaxDepth = 2;
+    }
+
+    /*
+     * The object itself.
+     */
+    try
+    {
+        sType = typeof oObj;
+    }
+    catch (oEx)
+    {
+        sType = 'Oops!';
+    }
+    sRet = dbgDumpObjWorker(sType, sName, oObj, sPrefix);
+    if (sType == 'object' && oObj !== null)
+    {
+        var aParentObjs = Array();
+        aParentObjs.push(oObj);
+        sRet += dbgDumpObjTreeWorker(oObj, sPrefix + '| ', aParentObjs, cMaxDepth);
+    }
+
+    return sRet;
+}
+
+function dbgLogString(sLongString)
+{
+    var aStrings = sLongString.split("\n");
+    var i;
+    for (i = 0; i < aStrings.length; i++)
+    {
+        console.log(aStrings[i]);
+    }
+    console.log('dbgLogString - end - ' + aStrings.length + '/' + sLongString.length);
+    return true;
+}
+
+function dbgLogObjTree(oObj, sName, sPrefix, cMaxDepth)
+{
+    return dbgLogString(dbgDumpObjTree(oObj, sName, sPrefix, cMaxDepth));
+}
+
+/** @}  */
+
