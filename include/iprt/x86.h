@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1230,6 +1230,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define  MSR_K6_EFER_LMSLE                   RT_BIT(13)
 /** Bit 14 - FFXSR - Fast FXSAVE / FXRSTOR (skip XMM*). (R/W) */
 #define  MSR_K6_EFER_FFXSR                   RT_BIT(14)
+/** Bit 15 - TCE - Translation Cache Extension. (R/W) */
+#define  MSR_K6_EFER_TCE                     RT_BIT(15)
 /** K6 STAR - SYSCALL/RET targets. */
 #define MSR_K6_STAR                         UINT32_C(0xc0000081)
 /** Shift value for getting the SYSRET CS and SS value. */
