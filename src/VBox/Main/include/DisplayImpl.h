@@ -38,6 +38,10 @@ struct VIDEORECCONTEXT;
 
 typedef struct _DISPLAYFBINFO
 {
+    /* The following 3 fields (u32Offset, u32MaxFramebufferSize and u32InformationSize)
+     * are not used by the current HGSMI. They are needed for backward compatibility with
+     * pre-HGSMI additions.
+     */
     uint32_t u32Offset;
     uint32_t u32MaxFramebufferSize;
     uint32_t u32InformationSize;
@@ -72,15 +76,6 @@ typedef struct _DISPLAYFBINFO
     /** The framebuffer has default format and must be updates immediately. */
     bool fDefaultFormat;
 
-    struct
-    {
-        /* The rectangle that includes all dirty rectangles. */
-        int32_t xLeft;
-        int32_t xRight;
-        int32_t yTop;
-        int32_t yBottom;
-    } dirtyRect;
-
 #ifdef VBOX_WITH_HGSMI
     bool fVBVAEnabled;
     bool fVBVAForceResize;
@@ -99,6 +94,27 @@ typedef struct _DISPLAYFBINFO
     } pendingViewportInfo;
 #endif /* VBOX_WITH_CROGL */
 } DISPLAYFBINFO;
+
+/* The legacy VBVA (VideoAccel) data.
+ *
+ * Backward compatibility with the guest additions 3.x or older.
+ */
+typedef struct VIDEOACCEL
+{
+    VBVAMEMORY *pVbvaMemory;
+    bool        fVideoAccelEnabled;
+
+    uint8_t    *pu8VbvaPartial;
+    uint32_t    cbVbvaPartial;
+
+    /* Old guest additions (3.x and older) use both VMMDev and DevVGA refresh timer 
+     * to process the VBVABUFFER memory. Therefore the legacy VBVA (VideoAccel) host
+     * code can be executed concurrently by VGA refresh timer and the guest VMMDev
+     * request in SMP VMs. The semaphore serialized this.
+     */
+    RTSEMXROADS hXRoadsVideoAccel;
+
+} VIDEOACCEL;
 
 class DisplayMouseInterface
 {
@@ -130,7 +146,6 @@ public:
     // public methods only for internal purposes
     int  i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine,
                                uint32_t w, uint32_t h, uint16_t flags);
-    void i_handleDisplayUpdateLegacy(int x, int y, int cx, int cy);
     void i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int h);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     int  i_handleVHWACommandProcess(PVBOXVHWACMD pCommand);
@@ -159,9 +174,6 @@ public:
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect);
 
-    int  i_VideoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory);
-    void i_VideoAccelFlush(void);
-    bool i_VideoAccelAllowed(void);
     void i_VideoAccelVRDP(bool fEnable);
 
     /* Legacy video acceleration requests coming from the VGA refresh timer. */
@@ -347,19 +359,13 @@ private:
     bool mfSourceBitmapEnabled;
     bool volatile fVGAResizing;
 
-    VBVAMEMORY *mpVbvaMemory;
-    bool        mfVideoAccelEnabled;
     bool        mfVideoAccelVRDP;
     uint32_t    mfu32SupportedOrders;
-
     int32_t volatile mcVideoAccelVRDPRefs;
 
 #ifdef VBOX_WITH_CROGL
     bool        mfCrOglDataHidden;
 #endif
-
-    uint8_t    *mpu8VbvaPartial;
-    uint32_t    mcbVbvaPartial;
 
 #ifdef VBOX_WITH_CRHGSMI
     /* for fast host hgcm calls */
@@ -373,23 +379,24 @@ private:
     VBOXCRCMDCTL_HGCM mCrOglScreenshotCtl;
 #endif
 
-    bool i_vbvaFetchCmd(VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
-    void i_vbvaReleaseCmd(VBVACMDHDR *pHdr, int32_t cbCmd);
-
     void i_handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext);
 
-    /* Old guest additions (3.x and older) use both VMMDev and DevVGA refresh timer 
-     * to process the VBVABUFFER memory. Therefore the legacy VBVA (VideoAccel) host
-     * code can be executed concurrently by VGA refresh timer and the guest VMMDev
-     * request in SMP VMs. The semaphore serialized this.
-     */
-    RTSEMXROADS mhXRoadsVideoAccel;
-    int videoAccelEnterVGA(void);
-    void videoAccelLeaveVGA(void);
-    int videoAccelEnterVMMDev(void);
-    void videoAccelLeaveVMMDev(void);
+    /* The legacy VBVA data and methods. */
+    VIDEOACCEL mVideoAccelLegacy;
 
-    /* Serializes access to mpVbvaMemory, etc between VRDP and Display. */
+    int  i_VideoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISPLAYPORT pUpPort);
+    void i_VideoAccelFlush(PPDMIDISPLAYPORT pUpPort);
+    bool i_VideoAccelAllowed(void);
+
+    int  i_videoAccelRefreshProcess(PPDMIDISPLAYPORT pUpPort);
+    int  i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory, PPDMIDISPLAYPORT pUpPort);
+    int  i_videoAccelFlush(PPDMIDISPLAYPORT pUpPort);
+
+    /* Legacy pre-HGSMI handlers. */
+    void processAdapterData(void *pvVRAM, uint32_t u32VRAMSize);
+    void processDisplayData(void *pvVRAM, unsigned uScreenId);
+
+    /* Serializes access to mVideoAccelLegacy and mfVideoAccelVRDP, etc between VRDP and Display. */
     RTCRITSECT mVideoAccelLock;
 
 public:
@@ -419,12 +426,6 @@ private:
     static int i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
     static int i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
 
-    int  i_videoAccelRefreshProcess(void);
-
-    /* Functions run under VBVA lock. */
-    int  i_videoAccelEnable(bool fEnable, VBVAMEMORY *pVbvaMemory);
-    int  i_videoAccelFlush(void);
-
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     int i_crOglWindowsShow(bool fShow);
 #endif
@@ -438,6 +439,21 @@ private:
     bool maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 };
+
+/* The legacy VBVA helpers. */
+int videoAccelConstruct(VIDEOACCEL *pVideoAccel);
+void videoAccelDestroy(VIDEOACCEL *pVideoAccel);
+void i_vbvaSetMemoryFlags(VBVAMEMORY *pVbvaMemory,
+                          bool fVideoAccelEnabled,
+                          bool fVideoAccelVRDP,
+                          uint32_t fu32SupportedOrders,
+                          DISPLAYFBINFO *paFBInfos,
+                          unsigned cFBInfos);
+int videoAccelEnterVGA(VIDEOACCEL *pVideoAccel);
+void videoAccelLeaveVGA(VIDEOACCEL *pVideoAccel);
+int videoAccelEnterVMMDev(VIDEOACCEL *pVideoAccel);
+void videoAccelLeaveVMMDev(VIDEOACCEL *pVideoAccel);
+
 
 /* helper function, code in DisplayResampleImage.cpp */
 void gdImageCopyResampled(uint8_t *dst, uint8_t *src,
