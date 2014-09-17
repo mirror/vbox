@@ -158,6 +158,7 @@ static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+static bool                 supdrvIsInvariantTsc(void);
 static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
                                           uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus);
 static DECLCALLBACK(void)   supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
@@ -6037,6 +6038,32 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 
 
 /**
+ * Returns whether the host CPU sports an invariant TSC or not.
+ *
+ * @returns true if invariant TSC is supported, false otherwise.
+ */
+static bool supdrvIsInvariantTsc(void)
+{
+    static bool s_fQueried        = false;
+    static bool s_fIsInvariantTsc = false;
+    if (!s_fQueried)
+    {
+        uint32_t uEax, uEbx, uEcx, uEdx;
+        ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
+        if (uEax >= 0x80000007)
+        {
+            ASMCpuId(0x80000007, &uEax, &uEbx, &uEcx, &uEdx);
+            if (uEdx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
+                s_fIsInvariantTsc = true;
+        }
+        s_fQueried = true;
+    }
+
+    return s_fIsInvariantTsc;
+}
+
+
+/**
  * Callback used by supdrvMeasureTscDeltas() to read the TSC on two CPUs and
  * compute the delta between them.
  *
@@ -6057,7 +6084,9 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
  *     help produce more accurate deltas. We allow two times the computed
  *     minimum as an arbibtrary acceptable threshold. Therefore, it is still
  *     possible to get negative deltas where there are none when the worker is
- *     earlier.
+ *     earlier. As long as these occasional negative deltas are lower than the
+ *     time it takes to exit guest-context and the OS to reschedule EMT on a
+ *     different CPU we won't expose a TSC that jumped backwards.
  */
 static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
