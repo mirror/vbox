@@ -53,22 +53,6 @@ VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
 VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
 
 #
-# Use merge modules if we're not doing an official release.
-# This will increase the overall installer size significantly because
-# merge modules are not able to use a common .cab file to reduce their
-# size.
-#
-ifneq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
- VBOX_WITH_MSM_INSTALL := 1
- VBOX_INSTALLER_LANGUAGES = en_US
-endif
-
-ifeq ($(USERNAME),andy)
- VBOX_WITH_MSM_INSTALL := 1
- VBOX_INSTALLER_LANGUAGES = en_US
-endif
-
-#
 # List of merge modules to use.
 #
 VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python

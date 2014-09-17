@@ -647,6 +647,17 @@ endif
 ifeq ($(KBUILD_TARGET),win)
  VBOX_WITH_MMR = 1
 endif
+# Use merge modules if we're not doing an official release. This will increase
+# the overall installer size significantly because merge modules are not able
+# to use a common .cab file to reduce their size.
+ifneq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
+ VBOX_WITH_MSM_INSTALL := 1
+ VBOX_INSTALLER_LANGUAGES = en_US
+endif
+ifeq ($(USERNAME),andy)
+ VBOX_WITH_MSM_INSTALL := 1
+ VBOX_INSTALLER_LANGUAGES = en_US
+endif
 ## @}
 
 
