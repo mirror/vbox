@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.10: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
 <title>The VirtualBox Validation Kit</title>
 <style type="text/css">
 
@@ -313,6 +313,21 @@ table.docutils th.field-name, table.docinfo th.docinfo-name {
   white-space: nowrap ;
   padding-left: 0 }
 
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
 h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
 h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
   font-size: 100% }
@@ -323,15 +338,15 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="the-virtualbox-test-suite">
+<div class="document" id="the-virtualbox-validation-kit">
 <h1 class="title">The VirtualBox Validation Kit</h1>
 
 <div class="section" id="introduction">
 <h1>Introduction</h1>
-<p>The VirtualBox test suite is the new way we're doing automated testing of
-VirtualBox and is still rather incomplete, in fact it will probably always be
-incomplete as there will always be new features and guest OSes to test.</p>
-<p>We're warmly welcoming contributions, new ideas for good tests, and fixes.</p>
+<p>The VirtualBox Validation Kit is our new public tool for doing automated
+testing of VirtualBox.  We are continually working on adding new features
+and guest operating systems to our battery of tests.</p>
+<p>We warmly welcome contributions, new ideas for good tests and fixes.</p>
 </div>
 <div class="section" id="directory-layout">
 <h1>Directory Layout</h1>
