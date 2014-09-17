@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,7 +38,7 @@
 
 /** @} */
 
-#define CSAM_SSM_VERSION                        14
+#define CSAM_SAVED_STATE_VERSION                14
 
 #define CSAM_PGDIRBMP_CHUNKS                    1024
 
