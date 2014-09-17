@@ -1327,6 +1327,7 @@ static DECLCALLBACK(int) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idMsr, PCCPU
                                  ? pVM->cpum.s.aGuestCpuIdExt[1].edx
                                  : 0;
     uint64_t        fMask        = 0;
+    uint64_t        fIgnoreMask  = MSR_K6_EFER_LMA;
 
     /* Filter out those bits the guest is allowed to change. (e.g. LMA is read-only) */
     if (fExtFeatures & X86_CPUID_EXT_FEATURE_EDX_NX)
@@ -1339,7 +1340,7 @@ static DECLCALLBACK(int) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idMsr, PCCPU
         fMask |= MSR_K6_EFER_FFXSR;
 
     /* #GP(0) If anything outside the allowed bits is set. */
-    if ((uValue | fMask) != fMask)
+    if (uValue & ~(fIgnoreMask | fMask))
     {
         Log(("CPUM: Settings disallowed EFER bit. uValue=%#RX64 fAllowed=%#RX64 -> #GP(0)\n", uValue, fMask));
         return VERR_CPUM_RAISE_GP_0;
