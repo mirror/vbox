@@ -49,8 +49,10 @@ include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
 # Globals and targets.
 # Note: en_US *must* come first for the dependency file generation.
 #
+ifndef VBOX_INSTALLER_LANGUAGES
 VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
 VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
+endif
 
 #
 # List of merge modules to use.
