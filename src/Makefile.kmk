@@ -36,7 +36,7 @@ else if !defined(VBOX_ONLY_BUILD)
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
  endif
- ifdef VBOX_WITH_VALIDATIONKIT
+ if defined(VBOX_WITH_VALIDATIONKIT) && !defined(VBOX_OSE)
   include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
  endif
 endif # !VBOX_ONLY_BUILD
