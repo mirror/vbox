@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -816,16 +816,16 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
     PATM patmInfo;
     int  rc;
 
-    if (    uVersion != PATM_SSM_VERSION
-        &&  uVersion != PATM_SSM_VERSION_MEM
-        &&  uVersion != PATM_SSM_VERSION_FIXUP_HACK
-        &&  uVersion != PATM_SSM_VERSION_VER16
+    if (    uVersion != PATM_SAVED_STATE_VERSION
+        &&  uVersion != PATM_SAVED_STATE_VERSION_MEM
+        &&  uVersion != PATM_SAVED_STATE_VERSION_FIXUP_HACK
+        &&  uVersion != PATM_SAVED_STATE_VERSION_VER16
        )
     {
         AssertMsgFailed(("patmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    uint32_t const fStructRestoreFlags = uVersion <= PATM_SSM_VERSION_MEM ? SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED : 0;
+    uint32_t const fStructRestoreFlags = uVersion <= PATM_SAVED_STATE_VERSION_MEM ? SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED : 0;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     pVM->patm.s.savedstate.pSSM = pSSM;
@@ -834,7 +834,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      * Restore PATM structure
      */
     RT_ZERO(patmInfo);
-    if (   uVersion == PATM_SSM_VERSION_MEM
+    if (   uVersion == PATM_SAVED_STATE_VERSION_MEM
         && SSMR3HandleRevision(pSSM) >= 86139
         && SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(4, 2, 51))
         rc = SSMR3GetStructEx(pSSM, &patmInfo, sizeof(patmInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED,
@@ -897,7 +897,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      * Restore PATM stack page
      */
     uint32_t cbStack = PATM_STACK_TOTAL_SIZE;
-    if (uVersion > PATM_SSM_VERSION_MEM)
+    if (uVersion > PATM_SAVED_STATE_VERSION_MEM)
     {
         rc = SSMR3GetU32(pSSM, &cbStack);
         AssertRCReturn(rc, rc);
@@ -1136,7 +1136,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             LogFlow(("Changing absolute CPUMCTX at %RRv from %RRv to %RRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
 
             /* The CPUMCTX structure has completely changed, so correct the offsets too. */
-            if (ulSSMVersion == PATM_SSM_VERSION_VER16)
+            if (ulSSMVersion == PATM_SAVED_STATE_VERSION_VER16)
             {
                 unsigned uCPUMOffset = *pFixup - patmInfo.pCPUMCtxGC;
 
@@ -1267,14 +1267,14 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
          * 2. That the forced actions were in the first 32 bytes of the VM
          *    structure.
          * 3. That the CPUM leafs are less than 8KB into the structure. */
-        if (    ulSSMVersion <= PATM_SSM_VERSION_FIXUP_HACK
+        if (    ulSSMVersion <= PATM_SAVED_STATE_VERSION_FIXUP_HACK
             &&  *pFixup - (patmInfo.pCPUMCtxGC & UINT32_C(0xffc00000)) < UINT32_C(32))
         {
             LogFlow(("Changing fLocalForcedActions fixup from %RRv to %RRv\n", *pFixup, pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions)));
             *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
         }
         else
-        if (    ulSSMVersion <= PATM_SSM_VERSION_FIXUP_HACK
+        if (    ulSSMVersion <= PATM_SAVED_STATE_VERSION_FIXUP_HACK
             &&  *pFixup - (patmInfo.pCPUMCtxGC & UINT32_C(0xffc00000)) < UINT32_C(8192))
         {
             static int cCpuidFixup = 0;
@@ -1301,7 +1301,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             cCpuidFixup++;
         }
         else
-        if (ulSSMVersion >= PATM_SSM_VERSION_MEM)
+        if (ulSSMVersion >= PATM_SAVED_STATE_VERSION_MEM)
         {
 #ifdef LOG_ENABLED
             RTRCPTR oldFixup = *pFixup;

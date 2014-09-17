@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,12 +32,12 @@
 /** @name Saved state version numbers.
  * @{ */
 /** Uses normal structure serialization with markers and everything. */
-#define PATM_SSM_VERSION                    56
+#define PATM_SAVED_STATE_VERSION                    56
 /** Last version which saves structures as raw memory. */
-#define PATM_SSM_VERSION_MEM                55
-#define PATM_SSM_VERSION_FIXUP_HACK         54
-#define PATM_SSM_VERSION_FIXUP_HACK         54
-#define PATM_SSM_VERSION_VER16              53
+#define PATM_SAVED_STATE_VERSION_MEM                55
+#define PATM_SAVED_STATE_VERSION_FIXUP_HACK         54
+#define PATM_SAVED_STATE_VERSION_FIXUP_HACK         54
+#define PATM_SAVED_STATE_VERSION_VER16              53
 /** @}  */
 
 /* Enable for call patching. */

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -219,7 +219,7 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     /*
      * Register save and load state notifiers.
      */
-    rc = SSMR3RegisterInternal(pVM, "PATM", 0, PATM_SSM_VERSION, sizeof(pVM->patm.s) + PATCH_MEMORY_SIZE  + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE,
+    rc = SSMR3RegisterInternal(pVM, "PATM", 0, PATM_SAVED_STATE_VERSION, sizeof(pVM->patm.s) + PATCH_MEMORY_SIZE  + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE,
                                NULL, NULL, NULL,
                                NULL, patmR3Save, NULL,
                                NULL, patmR3Load, NULL);
