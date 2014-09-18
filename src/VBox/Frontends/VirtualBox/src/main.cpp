@@ -358,45 +358,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Install Qt console message handler: */
         qInstallMsgHandler(QtMessageOutput);
 
-#ifdef Q_WS_X11
-        /* Qt has a complex algorithm for selecting the right visual which
-         * doesn't always seem to work. So we naively choose a visual - the
-         * default one - ourselves and pass that to Qt. This means that we
-         * also have to open the display ourselves.
-         * We check the Qt parameter list and handle Qt's -display argument
-         * ourselves, since we open the display connection. We also check the
-         * to see if the user has passed Qt's -visual parameter, and if so we
-         * assume that the user wants Qt to handle visual selection after all,
-         * and don't supply a visual. */
-        char *pszDisplay = NULL;
-        bool useDefaultVisual = true;
-        for (int i = 0; i < argc; ++i)
-        {
-            if (!::strcmp(argv[i], "-display") && (i + 1 < argc))
-            /* What if it isn't? Rely on QApplication to complain? */
-            {
-                pszDisplay = argv[i + 1];
-                ++i;
-            }
-            else if (!::strcmp(argv[i], "-visual"))
-                useDefaultVisual = false;
-        }
-        Display *pDisplay = XOpenDisplay(pszDisplay);
-        if (!pDisplay)
-        {
-            RTPrintf(pszDisplay ? "Failed to open the X11 display \"%s\"!\n"
-                                : "Failed to open the X11 display!\n",
-                     pszDisplay);
-            break;
-        }
-        Visual *pVisual =   useDefaultVisual
-                          ? DefaultVisual(pDisplay, DefaultScreen(pDisplay))
-                          : NULL;
-        /* Now create the application object: */
-        QApplication a(pDisplay, argc, argv, (Qt::HANDLE)pVisual);
-#else /* Q_WS_X11 */
+        /* Create application: */
         QApplication a(argc, argv);
-#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
 # ifdef VBOX_GUI_WITH_HIDPI
