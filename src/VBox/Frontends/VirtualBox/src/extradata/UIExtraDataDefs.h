@@ -169,6 +169,10 @@ namespace UIExtraDataDefs
         extern const char* GUI_Seamless;
         /** Holds whether scaled visual-state is requested. */
         extern const char* GUI_Scale;
+#ifdef Q_WS_X11
+        /** Holds whether legacy full-screen mode is requested. */
+        extern const char* GUI_Fullscreen_LegacyMode;
+#endif /* Q_WS_X11 */
         /** Holds whether guest-screen auto-resize according machine-window size is enabled. */
         extern const char* GUI_AutoresizeGuest;
         /** Prefix used by composite extra-data keys,

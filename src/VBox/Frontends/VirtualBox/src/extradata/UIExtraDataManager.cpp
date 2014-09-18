@@ -1784,6 +1784,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RestrictedRuntimeHelpMenuActions
            << GUI_RestrictedVisualStates
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
+#ifdef Q_WS_X11
+           << GUI_Fullscreen_LegacyMode
+#endif /* Q_WS_X11 */
            << GUI_AutoresizeGuest << GUI_LastGuestSizeHint << GUI_LastGuestSizeHintWasFullscreen
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -2903,6 +2906,14 @@ void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, 
     setExtraDataString(GUI_Seamless, toFeatureAllowed(visualState == UIVisualStateType_Seamless), strID);
     setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), strID);
 }
+
+#ifdef Q_WS_X11
+bool UIExtraDataManager::legacyFullscreenModeRequested()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_Fullscreen_LegacyMode);
+}
+#endif /* Q_WS_X11 */
 
 bool UIExtraDataManager::guestScreenAutoResizeEnabled(const QString &strID)
 {
