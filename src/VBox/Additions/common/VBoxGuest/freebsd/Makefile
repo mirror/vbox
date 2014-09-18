@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -149,7 +149,8 @@ SRCS += \
 	spinlock-r0drv-freebsd.c \
 	thread-r0drv-freebsd.c \
 	thread2-r0drv-freebsd.c \
-	time-r0drv-freebsd.c
+	time-r0drv-freebsd.c \
+	timer-r0drv-freebsd.c
 
 .PATH:	${.CURDIR}/r0drv/generic
 SRCS += \

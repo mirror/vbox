@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -211,6 +211,8 @@ typedef enum
     VMMDevReq_DebugIsPageShared          = 216,
     VMMDevReq_GetSessionId               = 217, /* since version 3.2.8 */
     VMMDevReq_WriteCoreDump              = 218,
+    VMMDevReq_GuestHeartbeat             = 219,
+    VMMDevReq_HeartbeatConfigure         = 220,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1494,6 +1496,19 @@ typedef struct
 } VMMDevReqWriteCoreDump;
 AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 
+/** Heart beat check state structure.
+ *  Used by VMMDevReq_HeartbeatConfigure. */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** OUT: Guest heartbeat interval in nanosec. */
+    uint64_t    cNsInterval;
+    /** Heartbeat check flag. */
+    bool fEnabled;
+} VMMDevReqHeartbeat;
+AssertCompileSize(VMMDevReqHeartbeat, 24+12);
+
 
 
 #ifdef VBOX_WITH_HGCM
@@ -2013,6 +2028,10 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevPageIsSharedRequest);
         case VMMDevReq_GetSessionId:
             return sizeof(VMMDevReqSessionId);
+        case VMMDevReq_HeartbeatConfigure:
+            return sizeof(VMMDevReqHeartbeat);
+        case VMMDevReq_GuestHeartbeat:
+            return sizeof(VMMDevRequestHeader);
         default:
             break;
     }

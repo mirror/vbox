@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2012 Oracle Corporation
+# Copyright (C) 2007-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -51,6 +51,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/include/iprt/string.h=>include/iprt/string.h \
     ${PATH_ROOT}/include/iprt/thread.h=>include/iprt/thread.h \
     ${PATH_ROOT}/include/iprt/time.h=>include/iprt/time.h \
+    ${PATH_ROOT}/include/iprt/timer.h=>include/iprt/timer.h \
     ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
     ${PATH_ROOT}/include/iprt/uni.h=>include/iprt/uni.h \
     ${PATH_ROOT}/include/iprt/x86.h=>include/iprt/x86.h \
@@ -170,6 +171,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c=>r0drv/linux/thread-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread2-r0drv-linux.c=>r0drv/linux/thread2-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/time-r0drv-linux.c=>r0drv/linux/time-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/timer-r0drv-linux.c=>r0drv/linux/timer-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/waitqueue-r0drv-linux.h=>r0drv/linux/waitqueue-r0drv-linux.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/RTLogWriteDebugger-r0drv-linux.c=>r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/semspinmutex-r0drv-generic.c=>r0drv/generic/semspinmutex-r0drv-generic.c \
