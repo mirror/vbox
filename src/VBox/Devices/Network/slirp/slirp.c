@@ -968,9 +968,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 
         if (so->so_state & SS_ISFCONNECTING)
         {
-            bool reject = false;
+            int sockerr = 0;
 #if !defined(RT_OS_WINDOWS)
             {
+                int revents = 0;
+
                 /*
                  * Failed connect(2) is reported by poll(2) on
                  * different OSes with different combinations of
@@ -979,37 +981,34 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 if (   CHECK_FD_SET(so, NetworkEvents, closefds) /* POLLHUP */
                     || CHECK_FD_SET(so, NetworkEvents, rderr))   /* POLLERR */
                 {
-                    reject = true;
+                    revents = POLLHUP; /* squash to single "failed" flag */
                 }
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
+                /* Solaris and NetBSD report plain POLLOUT even on error */
                 else if (CHECK_FD_SET(so, NetworkEvents, writefds)) /* POLLOUT */
                 {
-                    /* Solaris and NetBSD report plain POLLOUT even on error */
-                    int sockerr;
-                    socklen_t optlen = (socklen_t)sizeof(sockerr);
-                    ret = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &sockerr, &optlen);
-                    if (ret < 0)
-                        sockerr = ENETDOWN;
-                    if (sockerr != 0)
-                        reject = true;
+                    revents = POLLOUT;
                 }
 #endif
+
+                if (revents != 0)
+                {
+                    socklen_t optlen = (socklen_t)sizeof(sockerr);
+                    ret = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &sockerr, &optlen);
+
+                    if (   RT_UNLIKELY(ret < 0)
+                        || (   (revents & POLLHUP)
+                            && RT_UNLIKELY(sockerr == 0)))
+                        sockerr = ETIMEDOUT;
+                }
             }
 #else  /* RT_OS_WINDOWS */
             {
-                /*
-                 * XXX: CHECK_FD_SET is defined to return false when
-                 * there's an error pending, which makes it unusable
-                 * here.
-                 */
-                if (   (NetworkEvents.lNetworkEvents & FD_CONNECT)
-                    && NetworkEvents.iErrorCode[FD_CONNECT_BIT] != 0)
-                {
-                    reject = true;
-                }
+                if (NetworkEvents.lNetworkEvents & FD_CONNECT)
+                    sockerr = NetworkEvents.iErrorCode[FD_CONNECT_BIT];
             }
 #endif
-            if (reject)
+            if (sockerr != 0)
             {
                 /* "continue" tcp_input() to reject connection from guest */
                 so->so_state = SS_NOFDREF;
