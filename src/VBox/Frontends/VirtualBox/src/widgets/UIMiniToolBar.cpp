@@ -42,22 +42,20 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifndef Q_WS_X11
-# define VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
-#endif /* !Q_WS_X11 */
-
 
 UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            GeometryType geometryType,
                                            Qt::Alignment alignment,
                                            bool fAutoHide /* = true */)
     : QWidget(pParent,
-#ifndef RT_OS_DARWIN
-              Qt::Tool | Qt::WindowStaysOnTopHint |
-#else /* RT_OS_DARWIN */
-              Qt::Window |
+#if   defined (Q_WS_WIN)
+              Qt::Tool | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint
+#elif defined (Q_WS_MAC)
+              Qt::Window | Qt::FramelessWindowHint
+#elif defined (Q_WS_X11)
+              Qt::Widget
 #endif /* RT_OS_DARWIN */
-              Qt::FramelessWindowHint)
+              )
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
     , m_alignment(alignment)
@@ -152,6 +150,11 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
         case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
         default: break;
     }
+#ifdef Q_WS_X11
+    /* Disregard origin under X11,
+     * because this is widget, not window: */
+    screenRect.moveTopLeft(QPoint(0, 0));
+#endif /* Q_WS_X11 */
     iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
     switch (m_alignment)
     {
@@ -214,7 +217,7 @@ void UIRuntimeMiniToolBar::prepare()
     installEventFilter(this);
 #endif /* RT_OS_DARWIN */
 
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
@@ -230,7 +233,7 @@ void UIRuntimeMiniToolBar::prepare()
      * - Under x11 host Qt has broken XComposite support (black background): */
     setAttribute(Qt::WA_TranslucentBackground);
 # endif /* Q_WS_WIN */
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
+#endif /* Q_WS_MAC || Q_WS_WIN */
 
     /* Make sure we have no focus: */
     setFocusPolicy(Qt::NoFocus);
@@ -565,10 +568,8 @@ void UIMiniToolBar::prepare()
     /* Configure toolbar: */
     setIconSize(QSize(16, 16));
 
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
     /* Left margin: */
     m_spacings << widgetForAction(addWidget(new QWidget));
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
 
     /* Prepare push-pin: */
     m_pAutoHideAction = new QAction(this);
@@ -619,10 +620,8 @@ void UIMiniToolBar::prepare()
     connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(sigCloseAction()));
     addAction(m_pCloseAction);
 
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
     /* Right margin: */
     m_spacings << widgetForAction(addWidget(new QWidget));
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
 
     /* Resize to sizehint: */
     resize(sizeHint());
@@ -630,7 +629,6 @@ void UIMiniToolBar::prepare()
 
 void UIMiniToolBar::rebuildShape()
 {
-#ifdef VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR
     /* Rebuild shape: */
     QPainterPath shape;
     switch (m_alignment)
@@ -664,6 +662,5 @@ void UIMiniToolBar::rebuildShape()
 
     /* Update: */
     update();
-#endif /* VBOX_RUNTIME_UI_WITH_SHAPED_MINI_TOOLBAR */
 }
 
