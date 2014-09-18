@@ -23,6 +23,9 @@
 # include <QMdiSubWindow>
 # include <QHBoxLayout>
 # include <QMdiArea>
+# ifdef Q_WS_X11
+#  include <QX11Info>
+# endif /* Q_WS_X11 */
 
 /* GUI includes: */
 # include "UISlidingToolBar.h"
@@ -69,13 +72,19 @@ void UISlidingToolBar::prepare()
     /* Delete window when closed: */
     setAttribute(Qt::WA_DeleteOnClose);
 
-#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
+#if   defined(Q_WS_MAC) || defined(Q_WS_WIN)
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
     /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#elif defined(Q_WS_X11)
+    if (QX11Info::isCompositingManagerRunning())
+    {
+        /* Use Qt API to enable translucency: */
+        setAttribute(Qt::WA_TranslucentBackground);
+    }
+#endif /* Q_WS_X11 */
 
     /* Prepare contents: */
     prepareContents();
@@ -147,8 +156,11 @@ void UISlidingToolBar::prepareGeometry()
     }
 
 #ifdef Q_WS_X11
-    /* Qt composition broken on X11 hosts: */
-    setMask(m_pEmbeddedWidget->geometry());
+    if (!QX11Info::isCompositingManagerRunning())
+    {
+        /* Use Xshape otherwise: */
+        setMask(m_pEmbeddedWidget->geometry());
+    }
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
@@ -201,8 +213,11 @@ void UISlidingToolBar::adjustGeometry()
     m_pEmbeddedWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
 #ifdef Q_WS_X11
-    /* Qt composition broken on X11 hosts: */
-    setMask(m_pEmbeddedWidget->geometry());
+    if (!QX11Info::isCompositingManagerRunning())
+    {
+        /* Use Xshape otherwise: */
+        setMask(m_pEmbeddedWidget->geometry());
+    }
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
@@ -290,8 +305,11 @@ void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
     m_pEmbeddedWidget->setGeometry(rect);
 
 #ifdef Q_WS_X11
-    /* Qt composition broken on X11 hosts: */
-    setMask(m_pEmbeddedWidget->geometry());
+    if (!QX11Info::isCompositingManagerRunning())
+    {
+        /* Use Xshape otherwise: */
+        setMask(m_pEmbeddedWidget->geometry());
+    }
 #endif /* Q_WS_X11 */
 }
 
