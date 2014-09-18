@@ -73,18 +73,8 @@ void UISlidingToolBar::prepare()
     /* Make sure we have no background
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
-# if defined(Q_WS_MAC)
-    /* Using native API to enable translucent background:
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1. */
-    ::darwinSetShowsWindowTransparent(this, true);
-# elif defined(Q_WS_WIN)
-    /* Using Qt API to enable translucent background:
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1.
-     * - Under x11 host Qt has broken XComposite support (black background): */
+    /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
-# endif /* Q_WS_WIN */
 #endif /* Q_WS_MAC || Q_WS_WIN */
 
     /* Prepare contents: */
