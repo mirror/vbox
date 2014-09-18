@@ -1419,7 +1419,8 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
 #endif
         if (fBad)
             return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
-                                          "The group is not a system group and it has write access to '", pszPath, "'");
+                                          "An unknown (and thus untrusted) group has write access to '", pszPath,
+                                          "' and we therefore cannot trust the directory content or that of any subdirectory");
     }
 
     /*
