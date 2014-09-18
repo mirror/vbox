@@ -2096,7 +2096,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:if test="not(@readonly='yes')">
     <!-- setter (COM compatible) -->
     <xsl:text>#define </xsl:text>
-    <xsl:value-of select="concat($iface, '_set_')"/>
+    <xsl:value-of select="concat($iface, '_put_')"/>
     <xsl:call-template name="capitalize">
       <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
