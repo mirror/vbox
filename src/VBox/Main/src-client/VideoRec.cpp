@@ -21,6 +21,7 @@
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/com.h>
@@ -442,9 +443,9 @@ int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
     pCtx->cScreens = cScreens;
     for (unsigned uScreen = 0; uScreen < cScreens; uScreen++)
     {
-        /* Since we allocate without using standard c++ new mechanism
+        /* Since we allocate without using standard C++ new mechanism
          * it is required to call placement new for correct initialization
-         * of some members */
+         * of the object. */
         new (&pCtx->Strm[uScreen] + RT_OFFSETOF(VIDEORECSTREAM, Ebml)) WebMWriter();
     }
 
@@ -620,7 +621,7 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
             RTMemFree(pStrm->pu8RgbBuf);
             pStrm->pu8RgbBuf = NULL;
         }
-        /* explicit deinitilization of Ebml object since it was create using placement new */
+        /* Explicitly deinitilize Ebml object since it was created using placement new. */
         pStrm->Ebml.~WebMWriter();
     }
 
