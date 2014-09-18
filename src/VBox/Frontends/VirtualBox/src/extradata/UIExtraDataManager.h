@@ -337,6 +337,11 @@ public:
         /** Defines requested Runtime UI visual-state as @a visualState. */
         void setRequestedVisualState(UIVisualStateType visualState, const QString &strID);
 
+#ifdef Q_WS_X11
+        /** Returns whether legacy full-screen mode is requested. */
+        bool legacyFullscreenModeRequested();
+#endif /* Q_WS_X11 */
+
         /** Returns whether guest-screen auto-resize according machine-window size is enabled. */
         bool guestScreenAutoResizeEnabled(const QString &strID);
         /** Defines whether guest-screen auto-resize according machine-window size is @a fEnabled. */
