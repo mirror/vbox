@@ -536,18 +536,12 @@ static void ps2kSaveQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
  */
 static int ps2kLoadQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
 {
-    int         rc;
-
     /* On load, always put the read pointer at zero. */
-    SSMR3GetU32(pSSM, &pQ->cUsed);
-
-    LogFlow(("Loading %d items to queue %p\n", pQ->cUsed, pQ));
-
-    if (pQ->cUsed > pQ->cSize)
-    {
-        AssertMsgFailed(("Saved size=%u, actual=%u\n", pQ->cUsed, pQ->cSize));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
+    int rc = SSMR3GetU32(pSSM, &pQ->cUsed);
+    AssertRCReturn(rc, rc);
+    LogFlow(("Loading %u items to queue %p\n", pQ->cUsed, pQ));
+    AssertMsgReturn(pQ->cUsed <= pQ->cSize, ("Saved size=%u, actual=%u\n", pQ->cUsed, pQ->cSize),
+                    VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     /* Recalculate queue positions and load data in one go. */
     pQ->rpos = 0;
