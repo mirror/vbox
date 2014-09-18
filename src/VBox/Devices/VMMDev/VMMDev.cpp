@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,6 +89,10 @@
 /** The saved state version used by VirtualBox 3.0.
  *  This doesn't have the config part. */
 #define VMMDEV_SAVED_STATE_VERSION_VBOX_30                      11
+/** Default interval in nanoseconds between guest heartbeats.
+ *  Used when no HeartbeatInterval is set in CFGM and for setting
+ *  HB check timer if the guest's heartbeat frequency is less than 1Hz. */
+#define HEARTBEAT_DEFAULT_INTERVAL            UINT64_C(2000000000)
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -349,6 +353,109 @@ static int vmmdevReqHandler_ReportGuestInfo(PVMMDEV pThis, VMMDevRequestHeader *
     PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Resets heartbeat timer.
+ *
+ * @param   pThis           The VMMDev state.
+ * @returns VBox status code.
+ */
+static int vmmDevHeartbeatTimerReset(PVMMDEV pThis)
+{
+    if (pThis->fHBCheckEnabled)
+        return TMTimerSetNano(pThis->pHBCheckTimer, pThis->u64HeartbeatTimeout);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles VMMDevReq_GuestHeartbeat.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis    The VMMDev instance data.
+ */
+static int vmmDevReqHandler_GuestHeartbeat(PVMMDEV pThis)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pThis->fHBCheckEnabled)
+    {
+        ASMAtomicWriteU64(&pThis->uLastHBTime, TMTimerGetNano(pThis->pHBCheckTimer));
+        if (pThis->fHasMissedHB)
+        {
+            LogRel(("vmmDevReqHandler_GuestHeartBeat: guest is alive\n"));
+            ASMAtomicWriteBool(&pThis->fHasMissedHB, false);
+        }
+        rc = vmmDevHeartbeatTimerReset(pThis);
+    }
+    return rc;
+}
+
+
+/**
+ * Guest heartbeat check timer. Fires if there are no heartbeats for certain time.
+ * Timer is set in vmmDevHeartbeatTimerReset.
+ */
+static DECLCALLBACK(void) vmmDevHeartBeatCheckTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    PVMMDEV pThis = (PVMMDEV) pvUser;
+    if (pThis->fHBCheckEnabled)
+    {
+        uint64_t interval = TMTimerGetNano(pTimer) - pThis->uLastHBTime;
+        if (!pThis->fHasMissedHB && interval >= pThis->u64HeartbeatInterval)
+        {
+            LogRel(("vmmDevHeartBeatCheckTimer: guest seems to be not responding, last heartbeat received %RU64 sec ago\n", interval / 1000000000));
+            ASMAtomicWriteBool(&pThis->fHasMissedHB, true);
+        }
+    }
+}
+
+
+/**
+ * Handles VMMDevReq_HeartbeatConfigure.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis     The VMMDev instance data.
+ * @param   pReqHdr   The header of the request to handle.
+ */
+static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+{
+    AssertMsgReturn(pReqHdr->size == sizeof(VMMDevReqHeartbeat), ("%u\n", pReqHdr->size), VERR_INVALID_PARAMETER);
+    VMMDevReqHeartbeat *pReq = (VMMDevReqHeartbeat *)pReqHdr;
+    int rc;
+
+    pReq->cNsInterval = pThis->u64HeartbeatInterval;
+
+    if (pReq->fEnabled != pThis->fHBCheckEnabled)
+    {
+        ASMAtomicWriteBool(&pThis->fHBCheckEnabled, pReq->fEnabled);
+        if (pReq->fEnabled)
+        {
+            /* set first timer explicitly */
+            rc = vmmDevHeartbeatTimerReset(pThis);
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("Heartbeat checking timer has been set to trigger every %RU64 sec\n", pThis->u64HeartbeatInterval / 500000000));
+            }
+            else
+                LogRel(("Cannot create heartbeat check timer, rc=%Rrc\n", rc));
+        }
+        else
+        {
+            rc = TMTimerStop(pThis->pHBCheckTimer);
+            LogRel(("Heartbeat checking timer has been stopped, rc=%Rrc\n", rc));
+        }
+    }
+    else
+    {
+        LogRel(("vmmDevReqHandler_HeartbeatConfigure: enabled=%d\n", pThis->fHBCheckEnabled));
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 
@@ -2516,6 +2623,14 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
             break;
         }
 
+        case VMMDevReq_GuestHeartbeat:
+            pReqHdr->rc = vmmDevReqHandler_GuestHeartbeat(pThis);
+            break;
+
+        case VMMDevReq_HeartbeatConfigure:
+            pReqHdr->rc = vmmDevReqHandler_HeartbeatConfigure(pThis, pReqHdr);
+            break;
+
         default:
         {
             pReqHdr->rc = VERR_NOT_IMPLEMENTED;
@@ -3822,6 +3937,16 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GuestCoreDumpCount\" as a 32-bit unsigned integer"));
 
+    rc = CFGMR3QueryU64Def(pCfg, "HeartbeatInterval", &pThis->u64HeartbeatInterval, HEARTBEAT_DEFAULT_INTERVAL);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"HeartbeatInterval\" as a 64-bit unsigned integer"));
+
+    rc = CFGMR3QueryU64Def(pCfg, "HeartbeatTimeout", &pThis->u64HeartbeatTimeout, pThis->u64HeartbeatInterval * 2);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"HeartbeatTimeout\" as a 64-bit unsigned integer"));
+
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);
     if (RT_FAILURE(rc))
@@ -3966,6 +4091,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 NULL, vmmdevLiveExec, NULL,
                                 NULL, vmmdevSaveExec, NULL,
                                 NULL, vmmdevLoadExec, vmmdevLoadStateDone);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Create heartbeat checking timer.
+     */
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vmmDevHeartBeatCheckTimer, pThis,
+                        TMTIMER_FLAGS_NO_CRIT_SECT, "HB Check Timer", &pThis->pHBCheckTimer);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM

@@ -42,6 +42,7 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
+#include <iprt/timer.h>
 #ifdef VBOX_WITH_HGCM
 # include <iprt/thread.h>
 #endif
@@ -685,6 +686,69 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
 
 
 /**
+ * Sends heartbeat to host.
+ *
+ * @returns VBox status code.
+ */
+static int VBoxGuestHeartbeatSend(void)
+{
+    VMMDevRequestHeader *pReq;
+    int rc = VbglGRAlloc(&pReq, sizeof(*pReq), VMMDevReq_GuestHeartbeat);
+    Log(("VBoxGuestHeartbeatSend: VbglGRAlloc VBoxGuestHeartbeatSend completed with rc=%Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglGRPerform(pReq);
+        Log(("VBoxGuestHeartbeatSend: VbglGRPerform VBoxGuestHeartbeatSend completed with rc=%Rrc\n", rc));
+        VbglGRFree(pReq);
+    }
+    return rc;
+}
+
+
+/**
+ * Configure the host to check guest's heartbeat
+ * and get heartbeat interval from the host.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         The device extension.
+ * @param   fEnabled        Set true to enable guest heartbeat checks on host.
+ */
+static int VBoxGuestHeartbeatHostConfigure(PVBOXGUESTDEVEXT pDevExt, bool fEnabled)
+{
+    VMMDevReqHeartbeat *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_HeartbeatConfigure);
+    Log(("VBoxGuestHeartbeatHostConfigure: VbglGRAlloc VBoxGuestHeartbeatHostConfigure completed with rc=%Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+    {
+        pReq->fEnabled = fEnabled;
+        pReq->cNsInterval = 0;
+        rc = VbglGRPerform(&pReq->header);
+        Log(("VBoxGuestHeartbeatHostConfigure: VbglGRPerform VBoxGuestHeartbeatHostConfigure completed with rc=%Rrc\n", rc));
+        pDevExt->cNsHeartbeatInterval = pReq->cNsInterval;
+        VbglGRFree(&pReq->header);
+    }
+    return rc;
+}
+
+
+/**
+ * Callback for heartbeat timer.
+ */
+static DECLCALLBACK(void) VBoxGuestHeartbeatTimerHandler(PRTTIMER p1, void *p2, uint64_t p3)
+{
+    NOREF(p1);
+    NOREF(p2);
+    NOREF(p3);
+
+    int rc = VBoxGuestHeartbeatSend();
+    if (RT_FAILURE(rc))
+    {
+        Log(("HB Timer: VBoxGuestHeartbeatSend terminated with rc=%Rrc\n", rc));
+    }
+}
+
+
+/**
  * Helper to reinit the VBoxVMM communication after hibernation.
  *
  * @returns VBox status code.
@@ -1046,6 +1110,33 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     if (RT_FAILURE(rc))
                         LogRelFunc(("VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
+                    /* Make sure that heartbeat checking is disabled. */
+                    rc = VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = VBoxGuestHeartbeatHostConfigure(pDevExt, true);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlowFunc(("Setting up heartbeat to trigger every %RU64 sec\n", pDevExt->cNsHeartbeatInterval / 1000000000));
+                            rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval,
+                                                 0, (PFNRTTIMER)VBoxGuestHeartbeatTimerHandler, NULL);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = RTTimerStart(pDevExt->pHeartbeatTimer, 0);
+                                if (RT_FAILURE(rc))
+                                    LogRelFunc(("Heartbeat timer failed to start, rc=%Rrc\n", rc));
+                            }
+                            if (RT_FAILURE(rc))
+                            {
+                                LogRelFunc(("Failed to set up the timer, guest heartbeat is disabled\n"));
+                                /* Disable host heartbeat check if we failed */
+                                VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+                            }
+                        }
+                        else
+                            LogRelFunc(("Failed to configure host for heartbeat checking, rc=%Rrc\n", rc));
+                    }
+
                     LogFlowFunc(("VBoxGuestInitDevExt: returns success\n"));
                     return VINF_SUCCESS;
                 }
@@ -1109,6 +1200,16 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
     int rc2;
     Log(("VBoxGuestDeleteDevExt:\n"));
     Log(("VBoxGuest: The additions driver is terminating.\n"));
+
+    /*
+     * Stop and destroy HB timer and
+     * disable host heartbeat checking.
+     */
+    if (pDevExt->pHeartbeatTimer)
+    {
+        RTTimerDestroy(pDevExt->pHeartbeatTimer);
+        VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+    }
 
     /*
      * Clean up the bits that involves the host first.

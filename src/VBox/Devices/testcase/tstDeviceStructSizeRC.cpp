@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1658,6 +1658,12 @@ int main()
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.u64Value);
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.u32Unit);
     GEN_CHECK_OFF(VMMDEV, TestingData.Value.szName);
+    GEN_CHECK_OFF(VMMDEV, uLastHBTime);
+    GEN_CHECK_OFF(VMMDEV, fHasMissedHB);
+    GEN_CHECK_OFF(VMMDEV, fHBCheckEnabled);
+    GEN_CHECK_OFF(VMMDEV, u64HeartbeatInterval);
+    GEN_CHECK_OFF(VMMDEV, u64HeartbeatTimeout);
+    GEN_CHECK_OFF(VMMDEV, pHBCheckTimer);
 
 #ifdef VBOX_WITH_BUSLOGIC
     GEN_CHECK_SIZE(BUSLOGICDEVICE);
