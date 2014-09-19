@@ -1786,9 +1786,9 @@ DECLHIDDEN(int) supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY 
      * Locate the dll.
      */
     uint32_t i = 0;
-    while (i < RT_ELEMENTS(g_apszSupNtVpAllowedDlls))
-        if (!strcmp(pszName, g_apszSupNtVpAllowedDlls[i]))
-            break;
+    while (   i < RT_ELEMENTS(g_apszSupNtVpAllowedDlls)
+           && strcmp(pszName, g_apszSupNtVpAllowedDlls[i]))
+        i++;
     if (i >= RT_ELEMENTS(g_apszSupNtVpAllowedDlls))
         return VERR_FILE_NOT_FOUND;
     pszName = g_apszSupNtVpAllowedDlls[i];

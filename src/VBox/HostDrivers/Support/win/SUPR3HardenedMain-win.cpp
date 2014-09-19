@@ -252,6 +252,8 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_PANDA                   RT_BIT_32(8)
 /** Microsoft Security Essentials. */
 #define SUPHARDNT_ADVERSARY_MSE                     RT_BIT_32(9)
+/** Comodo. */
+#define SUPHARDNT_ADVERSARY_COMODO                  RT_BIT_32(10)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -2206,14 +2208,11 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
     /*
      * Locate the routines first so we can allocate memory that's near enough.
      */
-    HMODULE hmodNtDll = GetModuleHandleW(L"NTDLL");
-    SUPR3HARDENED_ASSERT(hmodNtDll != NULL);
-
-    FARPROC pfnNtCreateSection = GetProcAddress(hmodNtDll, "NtCreateSection");
+    PFNRT pfnNtCreateSection = supR3HardenedWinGetRealDllSymbol("ntdll.dll", "NtCreateSection");
     SUPR3HARDENED_ASSERT(pfnNtCreateSection != NULL);
     //SUPR3HARDENED_ASSERT(pfnNtCreateSection == (FARPROC)NtCreateSection);
 
-    FARPROC pfnLdrLoadDll = GetProcAddress(hmodNtDll, "LdrLoadDll");
+    PFNRT pfnLdrLoadDll = supR3HardenedWinGetRealDllSymbol("ntdll.dll", "LdrLoadDll");
     SUPR3HARDENED_ASSERT(pfnLdrLoadDll != NULL);
     //SUPR3HARDENED_ASSERT(pfnLdrLoadDll == (FARPROC)LdrLoadDll);
 
@@ -3189,12 +3188,14 @@ static void supR3HardenedWinDisableThreadCreation(void)
 {
     /* Cannot use the imported NtTerminateThread as it's pointing to our own
        syscall assembly code. */
-    FARPROC pfnNtTerminateThread = GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtTerminateThread");
-    SUPR3HARDENED_ASSERT(pfnNtTerminateThread);
+    static PFNRT s_pfnNtTerminateThread = NULL;
+    if (s_pfnNtTerminateThread == NULL)
+        s_pfnNtTerminateThread = supR3HardenedWinGetRealDllSymbol("ntdll.dll", "NtTerminateThread");
+    SUPR3HARDENED_ASSERT(s_pfnNtTerminateThread);
 
     int rc = supR3HardNtDisableThreadCreationEx(NtCurrentProcess(),
                                                 (void *)(uintptr_t)&LdrInitializeThunk,
-                                                (void *)(uintptr_t)pfnNtTerminateThread,
+                                                (void *)(uintptr_t)s_pfnNtTerminateThread,
                                                 g_abLdrInitThunkSelfBackup, sizeof(g_abLdrInitThunkSelfBackup),
                                                 NULL /* pErrInfo*/);
     g_fSupInitThunkSelfPatched = RT_SUCCESS(rc);
@@ -4848,6 +4849,11 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_PANDA,                "NNStlsc" },
 
         { SUPHARDNT_ADVERSARY_MSE,                  "NisDrv" },
+
+        /*{ SUPHARDNT_ADVERSARY_COMODO, "cmdguard" }, file system */
+        { SUPHARDNT_ADVERSARY_COMODO, "inspect" },
+        { SUPHARDNT_ADVERSARY_COMODO, "cmdHlp" },
+
     };
 
     static const struct
@@ -4943,6 +4949,17 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_MSE, L"\\SystemRoot\\System32\\drivers\\MpFilter.sys" },
         { SUPHARDNT_ADVERSARY_MSE, L"\\SystemRoot\\System32\\drivers\\NisDrvWFP.sys" },
+
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\cmdguard.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\cmderd.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\inspect.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\cmdhlp.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\cfrmd.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\drivers\\hmd.sys" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\guard64.dll" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdvrt64.dll" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdkbd64.dll" },
+        { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdcsr.dll" },
     };
 
     uint32_t fFound = 0;
