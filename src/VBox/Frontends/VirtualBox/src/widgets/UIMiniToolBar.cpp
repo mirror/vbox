@@ -146,7 +146,7 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     int iX = 0, iY = 0;
     switch (m_geometryType)
     {
-        case GeometryType_Available: screenRect = vboxGlobal().availableGeometry(iHostScreen); break;
+        case GeometryType_Available: screenRect = QApplication::desktop()->availableGeometry(iHostScreen); break;
         case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
         default: break;
     }
