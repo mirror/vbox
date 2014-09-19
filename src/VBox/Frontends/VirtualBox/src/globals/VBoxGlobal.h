@@ -127,8 +127,6 @@ public:
 
     bool isKWinManaged() const { return mIsKWinManaged; }
 
-    const QRect availableGeometry(int iScreen = 0) const;
-
     bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
     bool isPatmDisabled() const { return mDisablePatm; }
     bool isCsamDisabled() const { return mDisableCsam; }

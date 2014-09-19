@@ -178,7 +178,7 @@ QRect UIMachineViewSeamless::workingArea() const
     /* Get corresponding screen: */
     int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(screenId());
     /* Return available geometry for that screen: */
-    return vboxGlobal().availableGeometry(iScreen);
+    return QApplication::desktop()->availableGeometry(iScreen);
 }
 
 QSize UIMachineViewSeamless::calculateMaxGuestSize() const
