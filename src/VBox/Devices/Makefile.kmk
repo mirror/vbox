@@ -1308,6 +1308,14 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
   endif
+
+  # Hacky but MSI support *must* be enabled
+  ifdef VBOX_WITH_MSI_DEVICES
+   VBoxEhciR3_DEFS += VBOX_WITH_MSI_DEVICES
+   VBoxEhciR0_DEFS += VBOX_WITH_MSI_DEVICES
+   VBoxEhciRC_DEFS += VBOX_WITH_MSI_DEVICES
+  endif
+
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH)
