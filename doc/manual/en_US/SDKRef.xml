@@ -1976,7 +1976,7 @@ g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
           their other functionality:<screen>SAFEARRAY *psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
 ULONG *pData;
 ULONG cElements;
-IArrayDemo_ReturnArray(pThis, ComSafeArrayAsOutParam(psa));
+IArrayDemo_ReturnArray(pThis, ComSafeArrayAsOutTypeParam(psa, ULONG));
 g_pVBoxFuncs->pfnSafeArrayCopyOutParamHelper((void **)&amp;pData, &amp;cElements, VT_I4, psa);
 g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
 
