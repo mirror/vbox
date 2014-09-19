@@ -2160,23 +2160,25 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
         const char *pszErrConst = NULL;
         switch (hrc)
         {
-            case TRUST_E_SYSTEM_ERROR:             pszErrConst = "TRUST_E_SYSTEM_ERROR";          break;
-            case TRUST_E_NO_SIGNER_CERT:           pszErrConst = "TRUST_E_NO_SIGNER_CERT";        break;
-            case TRUST_E_COUNTER_SIGNER:           pszErrConst = "TRUST_E_COUNTER_SIGNER";        break;
-            case TRUST_E_CERT_SIGNATURE:           pszErrConst = "TRUST_E_CERT_SIGNATURE";        break;
-            case TRUST_E_TIME_STAMP:               pszErrConst = "TRUST_E_TIME_STAMP";            break;
-            case TRUST_E_BAD_DIGEST:               pszErrConst = "TRUST_E_BAD_DIGEST";            break;
-            case TRUST_E_BASIC_CONSTRAINTS:        pszErrConst = "TRUST_E_BASIC_CONSTRAINTS";     break;
-            case TRUST_E_FINANCIAL_CRITERIA:       pszErrConst = "TRUST_E_FINANCIAL_CRITERIA";    break;
-            case TRUST_E_PROVIDER_UNKNOWN:         pszErrConst = "TRUST_E_PROVIDER_UNKNOWN";      break;
-            case TRUST_E_ACTION_UNKNOWN:           pszErrConst = "TRUST_E_ACTION_UNKNOWN";        break;
-            case TRUST_E_SUBJECT_FORM_UNKNOWN:     pszErrConst = "TRUST_E_SUBJECT_FORM_UNKNOWN";  break;
-            case TRUST_E_SUBJECT_NOT_TRUSTED:      pszErrConst = "TRUST_E_SUBJECT_NOT_TRUSTED";   break;
-            case TRUST_E_NOSIGNATURE:              pszErrConst = "TRUST_E_NOSIGNATURE";           break;
-            case TRUST_E_FAIL:                     pszErrConst = "TRUST_E_FAIL";                  break;
-            case TRUST_E_EXPLICIT_DISTRUST:        pszErrConst = "TRUST_E_EXPLICIT_DISTRUST";     break;
-            case CERT_E_CHAINING:                  pszErrConst = "CERT_E_CHAINING";               break;
-            case CERT_E_REVOCATION_FAILURE:        pszErrConst = "CERT_E_REVOCATION_FAILURE";     break;
+            case TRUST_E_SYSTEM_ERROR:            pszErrConst = "TRUST_E_SYSTEM_ERROR";         break;
+            case TRUST_E_NO_SIGNER_CERT:          pszErrConst = "TRUST_E_NO_SIGNER_CERT";       break;
+            case TRUST_E_COUNTER_SIGNER:          pszErrConst = "TRUST_E_COUNTER_SIGNER";       break;
+            case TRUST_E_CERT_SIGNATURE:          pszErrConst = "TRUST_E_CERT_SIGNATURE";       break;
+            case TRUST_E_TIME_STAMP:              pszErrConst = "TRUST_E_TIME_STAMP";           break;
+            case TRUST_E_BAD_DIGEST:              pszErrConst = "TRUST_E_BAD_DIGEST";           break;
+            case TRUST_E_BASIC_CONSTRAINTS:       pszErrConst = "TRUST_E_BASIC_CONSTRAINTS";    break;
+            case TRUST_E_FINANCIAL_CRITERIA:      pszErrConst = "TRUST_E_FINANCIAL_CRITERIA";   break;
+            case TRUST_E_PROVIDER_UNKNOWN:        pszErrConst = "TRUST_E_PROVIDER_UNKNOWN";     break;
+            case TRUST_E_ACTION_UNKNOWN:          pszErrConst = "TRUST_E_ACTION_UNKNOWN";       break;
+            case TRUST_E_SUBJECT_FORM_UNKNOWN:    pszErrConst = "TRUST_E_SUBJECT_FORM_UNKNOWN"; break;
+            case TRUST_E_SUBJECT_NOT_TRUSTED:     pszErrConst = "TRUST_E_SUBJECT_NOT_TRUSTED";  break;
+            case TRUST_E_NOSIGNATURE:             pszErrConst = "TRUST_E_NOSIGNATURE";          break;
+            case TRUST_E_FAIL:                    pszErrConst = "TRUST_E_FAIL";                 break;
+            case TRUST_E_EXPLICIT_DISTRUST:       pszErrConst = "TRUST_E_EXPLICIT_DISTRUST";    break;
+            case CERT_E_CHAINING:                 pszErrConst = "CERT_E_CHAINING";              break;
+            case CERT_E_REVOCATION_FAILURE:       pszErrConst = "CERT_E_REVOCATION_FAILURE";    break;
+            case CRYPT_E_FILE_ERROR:              pszErrConst = "CRYPT_E_FILE_ERROR";           break;
+            case CRYPT_E_REVOKED:                 pszErrConst = "CRYPT_E_REVOKED";              break;
         }
         if (pszErrConst)
             rc = RTErrInfoSetF(pErrInfo, VERR_LDRVI_UNSUPPORTED_ARCH,
