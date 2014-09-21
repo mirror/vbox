@@ -320,6 +320,7 @@ int ip_output0 (PNATState, struct socket *, struct mbuf *, int urg);
 /* tcp_input.c */
 int tcp_reass (PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *);
 void tcp_input (PNATState, register struct mbuf *, int, struct socket *);
+void tcp_fconnect_failed(PNATState, struct socket *, int);
 void tcp_dooptions (PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *);
 void tcp_xmit_timer (PNATState, register struct tcpcb *, int);
 int tcp_mss (PNATState, register struct tcpcb *, u_int);

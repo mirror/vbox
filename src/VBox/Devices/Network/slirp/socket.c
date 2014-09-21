@@ -215,6 +215,12 @@ sofree(PNATState pData, struct socket *so)
         so->so_m = NULL;
     }
 
+    if (so->so_ohdr != NULL)
+    {
+        RTMemFree(so->so_ohdr);
+        so->so_ohdr = NULL;
+    }
+
     if (so->so_next && so->so_prev)
     {
         remque(pData, so);  /* crashes if so is not in a queue */

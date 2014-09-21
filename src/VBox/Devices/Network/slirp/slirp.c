@@ -1010,9 +1010,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #endif
             if (sockerr != 0)
             {
-                /* "continue" tcp_input() to reject connection from guest */
-                so->so_state = SS_NOFDREF;
-                TCP_INPUT(pData, NULL, 0, so);
+                tcp_fconnect_failed(pData, so, sockerr);
                 ret = slirpVerifyAndFreeSocket(pData, so);
                 Assert(ret == 1); /* freed */
                 CONTINUE(tcp);
