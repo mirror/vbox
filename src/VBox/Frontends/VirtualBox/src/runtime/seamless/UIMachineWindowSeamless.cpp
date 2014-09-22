@@ -94,15 +94,16 @@ void UIMachineWindowSeamless::prepareVisualState()
     /* Using Qt API to enable translucent background:
      * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
      * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1 for now.
-     * - Under x11 host Qt has it broken with KDE 4.9 (black background): */
+     *   until version 4.8, but minimum supported version is 4.7.1 for now. */
     setAttribute(Qt::WA_TranslucentBackground);
 # endif /* !Q_WS_MAC */
-#else /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
+
+#ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Make sure we have no background
      * until the first one set-region-event: */
     setMask(m_maskRegion);
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
 #ifndef Q_WS_MAC
     /* Prepare mini-toolbar: */
@@ -277,7 +278,7 @@ void UIMachineWindowSeamless::showEvent(QShowEvent*)
 }
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindowSeamless::setMask(const QRegion &region)
 {
     /* Prepare mask-region: */
@@ -310,5 +311,5 @@ void UIMachineWindowSeamless::setMask(const QRegion &region)
         m_pMachineView->viewport()->update(toUpdate);
     }
 }
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 

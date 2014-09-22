@@ -74,20 +74,20 @@ private:
     void showEvent(QShowEvent *pEvent);
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Helper: Masking stuff: */
     void setMask(const QRegion &region);
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
     /* Widgets: */
 #ifndef Q_WS_MAC
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Variable: Masking stuff: */
     QRegion m_maskRegion;
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
     /* Factory support: */
     friend class UIMachineWindow;

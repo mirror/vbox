@@ -75,10 +75,10 @@ public:
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Virtual caller for base class setMask: */
     virtual void setMask(const QRegion &region);
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
 protected slots:
 
