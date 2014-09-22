@@ -51,7 +51,7 @@ class ModelItem
 public:
     ModelItem(int number, ModelItem_type type, ModelItem *pParent = NULL);
 
-    ~ModelItem();
+    virtual ~ModelItem();
 
     ModelItem *parent() const { return m_pParentItem; }
 

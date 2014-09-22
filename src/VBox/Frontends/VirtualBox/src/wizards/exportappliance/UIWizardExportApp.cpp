@@ -180,7 +180,7 @@ QString UIWizardExportApp::uri(bool fWithFile) const
                 uri = QString("%1%2").arg(uri).arg(field("username").toString());
             if (!field("password").toString().isEmpty())
                 uri = QString("%1:%2").arg(uri).arg(field("password").toString());
-            if (!field("username").toString().isEmpty() || !field("username").toString().isEmpty())
+            if (!field("username").toString().isEmpty() || !field("password").toString().isEmpty())
                 uri = QString("%1@").arg(uri);
             uri = QString("%1%2/%3/%4").arg(uri).arg("object.storage.network.com").arg(field("bucket").toString()).arg(path);
             return uri;
