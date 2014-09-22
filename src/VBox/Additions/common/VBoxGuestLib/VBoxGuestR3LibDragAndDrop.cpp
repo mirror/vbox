@@ -653,7 +653,9 @@ static int vbglR3DnDGHProcessRequestPendingMessage(uint32_t  uClientId,
     {
         rc = Msg.hdr.result;
         if (RT_SUCCESS(rc))
+        {
             rc = Msg.uScreenId.GetUInt32(puScreenId); AssertRC(rc);
+        }
     }
 
     return rc;
