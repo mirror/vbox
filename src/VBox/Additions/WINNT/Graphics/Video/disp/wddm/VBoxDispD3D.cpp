@@ -4467,7 +4467,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         }
                         else
                         {
-                            for (UINT j = 0; i < j; ++j)
+                            for (UINT j = 0; j < i; ++j)
                             {
                                 D3DDDI_ALLOCATIONINFO * pCur = &pDdiAllocIBase[i];
                                 D3DDDICB_DEALLOCATE Dealloc;
