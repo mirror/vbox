@@ -171,7 +171,7 @@ static PRTMEMHDR rtR0MemAllocExecVmArea(size_t cb)
     pVmArea->nr_pages = 0;    /* paranoia? */
     pVmArea->pages    = NULL; /* paranoia? */
 
-    papPages = (struct page **)kmalloc(cPages * sizeof(papPages[0]), GFP_KERNEL);
+    papPages = (struct page **)kmalloc(cPages * sizeof(papPages[0]), GFP_KERNEL | __GFP_NOWARN);
     if (!papPages)
     {
         vunmap(pVmArea->addr);
@@ -261,11 +261,11 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 
 # else  /* !RTMEMALLOC_EXEC_HEAP */
 # error "you don not want to go here..."
-        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, MY_PAGE_KERNEL_EXEC);
+        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM | __GFP_NOWARN, MY_PAGE_KERNEL_EXEC);
 # endif /* !RTMEMALLOC_EXEC_HEAP */
 
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
-        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, MY_PAGE_KERNEL_EXEC);
+        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM | __GFP_NOWARN, MY_PAGE_KERNEL_EXEC);
 #else
         pHdr = (PRTMEMHDR)vmalloc(cb + sizeof(*pHdr));
 #endif
@@ -283,7 +283,8 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
         {
             fFlags |= RTMEMHDR_FLAG_KMALLOC;
             pHdr = kmalloc(cb + sizeof(*pHdr),
-                           (fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC) ? GFP_ATOMIC : GFP_KERNEL);
+                           (fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC) ? (GFP_ATOMIC | __GFP_NOWARN)
+                                                                  : (GFP_KERNEL | __GFP_NOWARN));
             if (RT_UNLIKELY(   !pHdr
                             && cb > PAGE_SIZE
                             && !(fFlags & RTMEMHDR_FLAG_ANY_CTX) ))
