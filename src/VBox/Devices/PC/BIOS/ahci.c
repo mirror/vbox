@@ -728,7 +728,7 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 else
                     set_geom_lba(&lgeo, sectors);   /* Default EDD-style translated LBA geometry. */
 
-                BX_INFO("AHCI %d-P#%d: PCHS=%u/%d/%d LCHS=%u/%u/%u %ld sectors\n", devcount_ahci,
+                BX_INFO("AHCI %d-P#%d: PCHS=%u/%u/%u LCHS=%u/%u/%u %lu sectors\n", devcount_ahci,
                         u8Port, cylinders, heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt, sectors);
 
                 bios_dsk->devices[hd_index].lchs = lgeo;
