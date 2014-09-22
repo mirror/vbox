@@ -1444,7 +1444,7 @@ private:
     HRESULT i_setMachineState(MachineState_T aMachineState);
     HRESULT i_updateMachineStateOnClient();
 
-    HRESULT mRemoveSavedState;
+    bool mRemoveSavedState;
 
     ConsoleTaskData mConsoleTaskData;
 
