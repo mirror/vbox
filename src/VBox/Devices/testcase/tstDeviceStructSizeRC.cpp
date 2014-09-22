@@ -1148,11 +1148,7 @@ int main()
     GEN_CHECK_OFF(XHCIROOTHUB, IBase);
     GEN_CHECK_OFF(XHCIROOTHUB, IRhPort);
     GEN_CHECK_OFF(XHCIROOTHUB, Led);
-    GEN_CHECK_OFF(XHCIROOTHUB, ILeds);
-    GEN_CHECK_OFF(XHCIROOTHUB, pLedsConnector);
-    GEN_CHECK_OFF(XHCIROOTHUB, aPorts);
-    GEN_CHECK_OFF(XHCIROOTHUB, aPorts[1]);
-    GEN_CHECK_OFF(XHCIROOTHUB, aPorts[XHCI_NDP - 1]);
+    GEN_CHECK_OFF(XHCIROOTHUB, cPortsImpl);
     GEN_CHECK_OFF(XHCIROOTHUB, pXhci);
 
     GEN_CHECK_SIZE(XHCIINTRPTR);
@@ -1179,8 +1175,14 @@ int main()
     GEN_CHECK_OFF(XHCI, hEvtProcess);
     GEN_CHECK_OFF(XHCI, fWrkThreadSleeping);
     GEN_CHECK_OFF(XHCI, u32TasksNew);
+    GEN_CHECK_OFF(XHCI, ILeds);
+    GEN_CHECK_OFF(XHCI, pLedsConnector);
     GEN_CHECK_OFF(XHCI, MMIOBase);
-    GEN_CHECK_OFF(XHCI, RootHub);
+    GEN_CHECK_OFF(XHCI, RootHub2);
+    GEN_CHECK_OFF(XHCI, RootHub3);
+    GEN_CHECK_OFF(XHCI, aPorts);
+    GEN_CHECK_OFF(XHCI, aPorts[1]);
+    GEN_CHECK_OFF(XHCI, aPorts[XHCI_NDP - 1]);
     GEN_CHECK_OFF(XHCI, cap_length);
     GEN_CHECK_OFF(XHCI, hci_version);
     GEN_CHECK_OFF(XHCI, hcs_params3);
