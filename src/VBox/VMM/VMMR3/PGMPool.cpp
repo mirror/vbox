@@ -480,7 +480,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
         pPage->iModifiedNext  = NIL_PGMPOOL_IDX;
         pPage->iModifiedPrev  = NIL_PGMPOOL_IDX;
         pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
+        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
         pPage->iAgeNext  = NIL_PGMPOOL_IDX;
         pPage->iAgePrev  = NIL_PGMPOOL_IDX;
         /* commit it */
