@@ -977,7 +977,7 @@ void VBoxDispD3DGlobalTerm()
 
 static void vboxDispD3DGlobalD3DFormatsInit(PVBOXWDDMDISP_FORMATS pFormats)
 {
-    memset(pFormats, 0, sizeof (pFormats));
+    memset(pFormats, 0, sizeof (*pFormats));
     pFormats->paFormstOps = gVBoxFormatOps3D;
     pFormats->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
 }
