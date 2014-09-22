@@ -28,13 +28,12 @@
 # include "UIMachineView.h"
 # include "UIPopupCenter.h"
 # include "VBoxGlobal.h"
-# ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+# ifdef VBOX_WITH_MASKED_SEAMLESS
 #  include "UIMachineWindow.h"
-# endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+# endif /* VBOX_WITH_MASKED_SEAMLESS */
 /* COM includes: */
 # include "CConsole.h"
 # include "CDisplay.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
@@ -692,10 +691,10 @@ void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
     /* Remember last visible region: */
     m_asyncVisibleRegion = region;
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
     /* We have to use async visible-region to apply to [Q]Widget [set]Mask: */
     m_pMachineView->machineWindow()->setMask(m_asyncVisibleRegion);
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -786,13 +785,16 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
         /* Paint required region, slowly, rectangle-by-rectangle: */
         foreach (const QRect &rect, regionToPaint.rects())
         {
-#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
+#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
+# if defined(Q_WS_WIN) || defined(Q_WS_X11)
             /* Replace translucent background with black one,
-             * that is necessary for window with Qt::WA_TranslucentBackground: */
+             * that is necessary for window with Qt::WA_TranslucentBackground
+             * and no native backing store support like Mac OS X has: */
             painter.setCompositionMode(QPainter::CompositionMode_Source);
             painter.fillRect(rect, QColor(Qt::black));
             painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
+# endif /* Q_WS_WIN || Q_WS_X11 */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
             /* Draw image rectangle: */
             drawImageRect(painter, m_image, rect,

@@ -220,13 +220,13 @@ void UIMachineWindow::adjustMachineViewSize()
     machineView()->adjustGuestScreenSize();
 }
 
-#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+#ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindow::setMask(const QRegion &region)
 {
     /* Call to base-class: */
     QMainWindow::setMask(region);
 }
-#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
 void UIMachineWindow::retranslateUi()
 {
