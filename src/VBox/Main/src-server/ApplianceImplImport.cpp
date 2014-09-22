@@ -381,8 +381,9 @@ HRESULT Appliance::interpret()
                 }
             }
             /* else we use the ovf configuration. */
-            else if (size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size() >  0)
+            else if (vsysThis.llEthernetAdapters.size() >  0)
             {
+                size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
                 uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
 
                 /* Check for the constrains */
