@@ -512,8 +512,8 @@ void BIOSCALL ata_detect(void)
             else
                 set_geom_lba(&lgeo, sectors);   /* Default EDD-style translated LBA geometry. */
 
-            BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave,
-                    cylinders,heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt);
+            BX_INFO("ata%d-%d: PCHS=%u/%u/%u LCHS=%u/%u/%u\n", channel, slave,
+                    cylinders, heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt);
 
             bios_dsk->devices[device].device         = DSK_DEVICE_HD;
             bios_dsk->devices[device].removable      = removable;
