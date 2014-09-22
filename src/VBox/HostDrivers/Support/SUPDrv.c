@@ -6073,11 +6073,15 @@ static bool supdrvIsInvariantTsc(void)
  *
  * @remarks Measuring TSC deltas between the CPUs is tricky because we need to
  *     read the TSC at exactly the same time on both the master and the worker
- *     CPUs. Due to DMA, bus arbitration, cache locality, contention etc. there
- *     is no guaranteed way of doing this on x86 CPUs. We try to minimize the
- *     measurement error by computing the minimum read time of the compare
- *     statement in the worker by taking TSC measurements across it. We also
- *     ignore the first few runs of the loop in order to prime the cache.
+ *     CPUs. Due to DMA, bus arbitration, cache locality, contention, pipelining
+ *     etc. there is no guaranteed way of doing this on x86 CPUs. We try to
+ *     minimize the measurement error by computing the minimum read time of the
+ *     compare statement in the worker by taking TSC measurements across it.
+ *
+ *     We ignore the first few runs of the loop in order to prime the cache.
+ *     Also, be careful about using 'pause' instruction in critical busy-wait
+ *     loops in this code - it can cause undesired behaviour with
+ *     hyperthreading.
  *
  *     It must be noted that the computed minimum read time is mostly to
  *     eliminate huge deltas when the worker is too early and doesn't by itself
@@ -6086,7 +6090,10 @@ static bool supdrvIsInvariantTsc(void)
  *     possible to get negative deltas where there are none when the worker is
  *     earlier. As long as these occasional negative deltas are lower than the
  *     time it takes to exit guest-context and the OS to reschedule EMT on a
- *     different CPU we won't expose a TSC that jumped backwards.
+ *     different CPU we won't expose a TSC that jumped backwards. It is because
+ *     of the existence of the negative deltas we don't recompute the delta with
+ *     the master and worker interchanged to eliminate the remaining measurement
+ *     error.
  */
 static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
@@ -6303,12 +6310,13 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpuWorker->idCpu))
     {
         /* Fire TSC-read workers on all CPUs but only synchronize between master and one worker to ease memory contention. */
+        ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
         ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
         rc = RTMpOnAll(supdrvMeasureTscDeltaCallback, pGip, &pGipCpuWorker->idCpu);
         if (RT_SUCCESS(rc))
         {
             if (RT_UNLIKELY(pGipCpuWorker->i64TSCDelta == INT64_MAX))
-                rc = VERR_UNRESOLVED_ERROR;
+                rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
         }
     }
 
