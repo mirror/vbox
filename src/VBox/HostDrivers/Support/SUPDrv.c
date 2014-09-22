@@ -6349,9 +6349,15 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
     uint32_t   cOnlineCpus    = pGip->cOnlineCpus;
 
     /*
+     * If we determined the TSC is async., don't bother with measuring deltas.
+     */
+    if (RT_UNLIKELY(pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
+        return VINF_SUCCESS;
+
+    /*
      * Pick the first CPU online as the master TSC and make it the new GIP master.
-     *                                                                                                                                        .
-     * Technically we can simply use "idGipMaster" but doing this gives us master as CPU 0                                                    .
+     *
+     * Technically we can simply use "idGipMaster" but doing this gives us master as CPU 0
      * in most cases making it nicer/easier for comparisons. It is safe to update the GIP
      * master as this point since the sync/async timer isn't created yet.
      */
