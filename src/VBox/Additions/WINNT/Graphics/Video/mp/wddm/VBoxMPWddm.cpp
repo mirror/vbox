@@ -5726,7 +5726,6 @@ DxgkDdiRenderNew(
     __try
     {
         PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pInputHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)pRender->pCommand;
-        NTSTATUS Status = STATUS_SUCCESS;
 
         uint32_t cbBuffer = 0;
         uint32_t cbPrivateData = 0;
