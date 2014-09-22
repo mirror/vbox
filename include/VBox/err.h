@@ -1766,6 +1766,8 @@
 #define VERR_SUPDRV_CSRSS_NOT_FOUND                 (-3741)
 /** Type error opening the ApiPort LPC object. */
 #define VERR_SUPDRV_APIPORT_OPEN_ERROR_TYPE         (-3742)
+/** Failed to measure the TSC delta between two CPUs. */
+#define VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED    (-3743)
 /** @} */
 
 
