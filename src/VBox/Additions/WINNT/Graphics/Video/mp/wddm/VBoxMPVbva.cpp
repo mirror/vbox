@@ -994,7 +994,7 @@ VBOXCMDVBVA_HDR* VBoxCmdVbvaSubmitLock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbv
     if (VBoxVBVAExGetSize(&pVbva->Vbva) < cbCmd)
     {
         WARN(("buffer does not fit the vbva buffer, we do not support splitting buffers"));
-        NULL;
+        return NULL;
     }
 
     if (!VBoxVBVAExBufferBeginUpdate(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx))
