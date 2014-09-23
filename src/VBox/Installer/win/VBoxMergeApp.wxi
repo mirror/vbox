@@ -30,13 +30,13 @@
     <Directory Id="dir_VBoxAppDrivers" Name="drivers">
         <Directory Id="dir_VBoxAppVBoxDrv" Name="vboxdrv">
             <Component Id="cp_VBoxDrv" Guid="D3E2F2BB-569F-46A2-836C-BDF30FF1EDF8" Win64="$(var.Property_Win64)">
-                <difxapp:Driver AddRemovePrograms="no" ForceInstall="yes"
-                                Legacy="$(var.Property_DriverLegacy)" Sequence="2" PlugAndPlayPrompt="no"/>
+                <difxapp:Driver AddRemovePrograms="no" ForceInstall="yes" DeleteFiles="yes"
+                      Legacy="$(var.Property_DriverLegacy)" Sequence="2" PlugAndPlayPrompt="no"/>
                 <File Id="file_VBoxDrv.sys" Name="VBoxDrv.sys" KeyPath="yes"
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.sys"/>
                 <File Id="file_VBoxDrv.inf" Name="VBoxDrv.inf"
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.inf" />
-<?if $(env.VBOX_SIGNING_MODE) != none ?>
+<?if $(env.VBOX_SIGNING_MODE) ?>
                 <File Id="file_VBoxDrv.cat" Name="VBoxDrv.cat"
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.cat" />
 <?endif ?>
