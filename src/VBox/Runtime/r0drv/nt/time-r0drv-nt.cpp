@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -79,7 +79,7 @@ RTDECL(uint64_t) RTTimeNanoTS(void)
 
 RTDECL(uint64_t) RTTimeMilliTS(void)
 {
-    return rtTimeGetSystemNanoTS() / 1000000;
+    return rtTimeGetSystemNanoTS() / RT_NS_1MS;
 }
 
 
@@ -91,7 +91,7 @@ RTDECL(uint64_t) RTTimeSystemNanoTS(void)
 
 RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 {
-    return rtTimeGetSystemNanoTS() / 1000000;
+    return rtTimeGetSystemNanoTS() / RT_NS_1MS;
 }
 
 
