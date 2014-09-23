@@ -187,8 +187,7 @@
 <?endif ?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-        <Directory Id="$(var.Property_ProgramFiles)" Name="PFiles">
-            <Directory Id="INSTALLDIR" Name="$(env.VBOX_PRODUCT)">
+            <Directory Id="INSTALLDIR">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1" />
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
@@ -293,7 +292,6 @@
                 </Component>
 
             </Directory>
-        </Directory>
     </Directory> <!-- TARGETDIR -->
 
     <!-- Note: Feature IDs *must not* be renamed to use any prefixes or such,
