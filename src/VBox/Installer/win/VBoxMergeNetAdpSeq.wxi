@@ -40,6 +40,13 @@
     <Custom Action="ca_StopHostOnlyInterfaces" After="InstallInitialize" >
         <![CDATA[(UPGRADINGPRODUCTCODE) OR (REMOVE="ALL")]]>
     </Custom>
+    <Custom Action="ca_UninstallNetAdpArgs" Before="ca_UninstallNetAdp" >
+        <![CDATA[(Installed) AND (REMOVE="ALL")]]>
+    </Custom>
+    <Custom Action="ca_UninstallNetAdp" After="ca_RemoveHostOnlyInterfaces" >
+        <![CDATA[(Installed) AND (REMOVE="ALL")]]>
+        </Custom>
+    
 <?endif ?>
 
 </Include>

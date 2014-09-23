@@ -24,7 +24,8 @@ EXPORTS
     UninstallBranding
     InstallNetFlt
     UninstallNetFlt
-    InstallNetLwf
+	UninstallNetAdp
+	InstallNetLwf
     UninstallNetLwf
     UninstallTAPInstances
     CreateHostOnlyInterface
