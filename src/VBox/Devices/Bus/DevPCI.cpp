@@ -804,7 +804,6 @@ static void pciR3Piix3Reset(PIIX3State *d)
     pci_conf[0x80] = 0x00;
     pci_conf[0x82] = 0x02; /* Get rid of the Linux guest "Enabling Passive Release" PCI quirk warning. */
     pci_conf[0xa0] = 0x08;
-    pci_conf[0xa0] = 0x08;
     pci_conf[0xa2] = 0x00;
     pci_conf[0xa3] = 0x00;
     pci_conf[0xa4] = 0x00;
