@@ -3517,7 +3517,6 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
                                  ComPtr<IProgress> &aProgress)
 {
     Utf8Str strFrontend(aType);
-    Utf8Str strEnvironment(aEnvironment);
     /* "emergencystop" doesn't need the session, so skip the checks/interface
      * retrieval. This code doesn't quite fit in here, but introducing a
      * special API method would be even more effort, and would require explicit
@@ -3591,7 +3590,7 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
 
         if (SUCCEEDED(rc))
         {
-            rc = i_launchVMProcess(control, strFrontend, strEnvironment, progress);
+            rc = i_launchVMProcess(control, strFrontend, aEnvironment, progress);
             if (SUCCEEDED(rc))
             {
                 aProgress = progress;
@@ -12598,7 +12597,7 @@ HRESULT SessionMachine::setRemoveSavedStateFile(BOOL aRemove)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mRemoveSavedState = aRemove;
+    mRemoveSavedState = RT_BOOL(aRemove);
 
     return S_OK;
 }
