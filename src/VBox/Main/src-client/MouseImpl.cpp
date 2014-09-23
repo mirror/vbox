@@ -193,7 +193,6 @@ HRESULT Mouse::getAbsoluteSupported(BOOL *aAbsoluteSupported)
  */
 HRESULT Mouse::getRelativeSupported(BOOL *aRelativeSupported)
 {
-
     *aRelativeSupported = i_supportsRel();
     return S_OK;
 }
@@ -207,7 +206,6 @@ HRESULT Mouse::getRelativeSupported(BOOL *aRelativeSupported)
  */
 HRESULT Mouse::getMultiTouchSupported(BOOL *aMultiTouchSupported)
 {
-
     *aMultiTouchSupported = i_supportsMT();
     return S_OK;
 }
@@ -221,7 +219,6 @@ HRESULT Mouse::getMultiTouchSupported(BOOL *aMultiTouchSupported)
  */
 HRESULT Mouse::getNeedsHostCursor(BOOL *aNeedsHostCursor)
 {
-
     *aNeedsHostCursor = i_guestNeedsHostCursor();
     return S_OK;
 }
