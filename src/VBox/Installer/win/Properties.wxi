@@ -28,7 +28,7 @@
       <?define Property_Platform     = "x64" ?>
       <?define Property_Win64        = "yes" ?>
 
-      <?if $(env.VBOX_SIGNING_MODE) ?>
+      <?if $(env.VBOX_SIGNING_MODE)!= none ?>
           <?define Property_DriverLegacy = "no" ?>
       <?else ?>
           <?define Property_DriverLegacy = "yes" ?>
@@ -39,7 +39,7 @@
       <?define Property_Platform     = "x86" ?>
       <?define Property_Win64        = "no" ?>
 
-      <?if $(env.VBOX_SIGNING_MODE) ?>
+      <?if $(env.VBOX_SIGNING_MODE)!= none ?>
           <!-- Note: Settings this to 'no' breaks Windows 2000 installs (!) -->
           <?define Property_DriverLegacy = "yes" ?>
       <?else ?>

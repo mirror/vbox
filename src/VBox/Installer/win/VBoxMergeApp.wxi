@@ -36,7 +36,7 @@
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.sys"/>
                 <File Id="file_VBoxDrv.inf" Name="VBoxDrv.inf"
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.inf" />
-<?if $(env.VBOX_SIGNING_MODE) ?>
+<?if $(env.VBOX_SIGNING_MODE)!= none ?>
                 <File Id="file_VBoxDrv.cat" Name="VBoxDrv.cat"
                       Source="$(env.PATH_OUT)\bin\VBoxDrv.cat" />
 <?endif ?>

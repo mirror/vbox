@@ -24,7 +24,7 @@
                   Source="$(env.PATH_OUT)\bin\VBoxUSBMon.sys" />
             <File Id="file_VBoxUSBMon.inf" Name="VBoxUSBMon.inf"
                   Source="$(env.PATH_OUT)\bin\VBoxUSBMon.inf" />
-<?if $(env.VBOX_SIGNING_MODE)?>
+<?if $(env.VBOX_SIGNING_MODE)!= none ?>
             <File Id="file_VBoxUSBMon.cat" Name="VBoxUSBMon.cat"
                   Source="$(env.PATH_OUT)\bin\VBoxUSBMon.cat" />
 <?endif ?>
@@ -39,7 +39,7 @@
                   Source="$(env.PATH_OUT)\bin\VBoxUSB.sys" />
             <File Id="file_VBoxUSB.inf" Name="VBoxUSB.inf"
                   Source="$(env.PATH_OUT)\bin\VBoxUSB.inf" />
-<?if $(env.VBOX_SIGNING_MODE)?>
+<?if $(env.VBOX_SIGNING_MODE)!= none ?>
             <File Id="file_VBoxUSB.cat" Name="VBoxUSB.cat"
                   Source="$(env.PATH_OUT)\bin\VBoxUSB.cat" />
 <?endif ?>
