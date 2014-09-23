@@ -22,5 +22,7 @@
     <CustomAction Id="ca_StopHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="StopHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="ca_UpdateHostOnlyInterfacesArgs" Property="ca_UpdateHostOnlyInterfaces" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
     <CustomAction Id="ca_UpdateHostOnlyInterfaces" BinaryKey="VBoxInstallHelper" DllEntry="UpdateHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
+    <CustomAction Id="ca_UninstallNetAdp" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetAdp" Execute="deferred" Return="check" Impersonate="no"/>
+    <CustomAction Id="ca_UninstallNetAdpArgs" Property="ca_UninstallNetAdp" Value="[msm_VBoxNetworkAdpFolder]" Execute="immediate"/>
 
 </Include>
