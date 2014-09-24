@@ -70,6 +70,7 @@ RT_C_DECLS_BEGIN
 #define VD_IMAGE_CONTENT_UNKNOWN    0xffffffffU
 
 /** @name VBox HDD container image flags
+ * Same values as MediumVariant API enum.
  * @{
  */
 /** No flags. */
