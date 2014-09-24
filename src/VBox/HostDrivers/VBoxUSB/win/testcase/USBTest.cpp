@@ -188,7 +188,7 @@ int usbMonRemoveFilter (void *aID)
 
     Assert(g_hUSBMonitor);
 
-    printf("usblibRemoveFilter %x\n", aID);
+    printf("usblibRemoveFilter %p\n", aID);
 
     uId = (uintptr_t)aID;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_REMOVE_FILTER, &uId, sizeof(uId),  NULL, 0,&cbReturned, NULL))
