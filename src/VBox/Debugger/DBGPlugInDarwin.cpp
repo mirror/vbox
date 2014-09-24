@@ -554,7 +554,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
                     } uMod;
                     RT_ZERO(uMod);
                     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uMod,
-                                       f64Bit ? sizeof(uMod.Info64) : sizeof(uMod.Info64));
+                                       f64Bit ? sizeof(uMod.Info64) : sizeof(uMod.Info32));
                     if (RT_FAILURE(rc))
                     {
                         Log(("OSXDig: Error reading kmod_info structure at %RGv: %Rrc\n", AddrModInfo.FlatPtr, rc));
