@@ -522,6 +522,9 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
 
         pCtx->aViews[uScreenId].pVBVA = pVBVA;
         pCtx->aViews[uScreenId].u32VBVAOffset = u32Offset;
+
+        /* VBVA is working so disable the pause. */
+        pCtx->fPaused = false;
     }
 
     return rc;
