@@ -516,7 +516,7 @@ static void dbgDiggerSolarisProcessModCtl32(PUVM pUVM, PDBGDIGGERSOLARIS pThis, 
         return;
 
     /* Ignore modules without symbols. */
-    if (!Module.symtbl || !Module.strings || !Module.symspace || !Module.symspace)
+    if (!Module.symtbl || !Module.strings || !Module.symspace || !Module.symsize)
         return;
 
     /* Check that the symtbl and strings points inside the symspace. */
@@ -662,7 +662,7 @@ static void dbgDiggerSolarisProcessModCtl64(PUVM pUVM, PDBGDIGGERSOLARIS pThis, 
         return;
 
     /* Ignore modules without symbols. */
-    if (!Module.symtbl || !Module.strings || !Module.symspace || !Module.symspace)
+    if (!Module.symtbl || !Module.strings || !Module.symspace || !Module.symsize)
         return;
 
     /* Check that the symtbl and strings points inside the symspace. */
