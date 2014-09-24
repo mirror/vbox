@@ -1132,6 +1132,7 @@ static void stamR3LookupMaybeFree(PSTAMLOOKUP pLookup)
     if (!pParent)
         return;
 
+#if 0 /** @todo Asserts in stamR3LookupDestroyTree. */
     if (pParent->cDescsInTree == 0 && pParent->pParent)
     {
         pCur = pParent;
@@ -1155,6 +1156,7 @@ static void stamR3LookupMaybeFree(PSTAMLOOKUP pLookup)
      * Destroy pCur.
      */
     stamR3LookupDestroyTree(pCur);
+#endif
 }
 
 
