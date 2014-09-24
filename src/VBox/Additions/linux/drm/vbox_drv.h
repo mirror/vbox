@@ -240,13 +240,6 @@ void vbox_mm_fini(struct vbox_private *vbox);
 int vbox_bo_create(struct drm_device *dev, int size, int align,
           uint32_t flags, struct vbox_bo **pvboxbo);
 
-/** IOCtl handler to stop this driver using HGSMI so that user space can. */
-extern int VBoxDisableHGSMI(struct drm_device *dev, void *data,
-                            struct drm_file *file_priv);
-/** IOCtl handler to start this driver using HGSMI again. */
-extern int VBoxEnableHGSMI(struct drm_device *dev, void *data,
-                           struct drm_file *file_priv);
-
 int vbox_gem_create(struct drm_device *dev,
            u32 size, bool iskernel,
            struct drm_gem_object **obj);

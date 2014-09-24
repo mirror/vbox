@@ -93,14 +93,6 @@ static struct pci_driver vbox_pci_driver =
 };
 
 
-static struct drm_ioctl_desc vbox_ioctls[] =
-{
-    DRM_IOCTL_DEF_DRV(VBOX_DISABLE_HGSMI, VBoxDisableHGSMI,
-                      DRM_UNLOCKED|DRM_ROOT_ONLY),
-    DRM_IOCTL_DEF_DRV(VBOX_ENABLE_HGSMI, VBoxEnableHGSMI,
-                      DRM_UNLOCKED|DRM_ROOT_ONLY)
-};
-
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
@@ -126,8 +118,6 @@ static struct drm_driver driver =
     .load = vbox_driver_load,
     .unload = vbox_driver_unload,
 
-    .ioctls = vbox_ioctls,
-    .num_ioctls = RT_ELEMENTS(vbox_ioctls),
     .fops = &vbox_fops,
     .name = DRIVER_NAME,
     .desc = DRIVER_DESC,
