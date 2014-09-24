@@ -236,7 +236,7 @@ DECLINLINE(bool) scmDiffCompare(PSCMDIFFSTATE pState,
         || memcmp(pchLeft, pchRight, cchLeft))
     {
         if (   pState->fIgnoreTrailingWhite
-            || pState->fIgnoreTrailingWhite)
+            || pState->fIgnoreLeadingWhite)
             return scmDiffCompareSlow(pState,
                                       pchLeft, cchLeft, enmEolLeft,
                                       pchRight, cchRight, enmEolRight);
