@@ -266,7 +266,7 @@ int VBoxCGlueInit(void)
     if (tryLoadLibrary("/opt/VirtualBox/i386", 1) == 0)
         return 0;
 #elif defined(__APPLE__)
-    if (tryLoadLibrary("/Application/VirtualBox.app/Contents/MacOS", 1) == 0)
+    if (tryLoadLibrary("/Applications/VirtualBox.app/Contents/MacOS", 1) == 0)
         return 0;
 #elif defined(__FreeBSD__)
     if (tryLoadLibrary("/usr/local/lib/virtualbox", 1) == 0)
