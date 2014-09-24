@@ -2287,7 +2287,7 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,33,2)"/>
   <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,35,2)"/>
   <xsl:text> } \&#x0A;}&#x0A;</xsl:text>
-  <xsl:text>enum </xsl:text>
+  <xsl:text>typedef enum </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text>&#x0A;{&#x0A;</xsl:text>
   <xsl:variable name="this" select="."/>
@@ -2301,7 +2301,9 @@ typedef PCVBOXCAPI (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     </xsl:if>
     <xsl:text>&#x0A;</xsl:text>
   </xsl:for-each>
-  <xsl:text>};&#x0A;</xsl:text>
+  <xsl:text>} </xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>;&#x0A;</xsl:text>
   <xsl:text>/* End of enum </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> declaration */
