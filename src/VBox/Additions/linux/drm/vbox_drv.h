@@ -96,8 +96,6 @@ struct vbox_private
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
     uint32_t vram_size;
-    /** Is HGSMI currently disabled? */
-    bool fDisableHGSMI;
 
     struct vbox_fbdev *fbdev;
 
