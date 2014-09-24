@@ -1132,7 +1132,7 @@ static void vbcppProcessSkipWhiteAndEscapedEol(PSCMSTREAM pStrmInput)
         }
         else if (RT_C_IS_SPACE(ch))
         {
-            ch = chPrev;
+            chPrev = ch;
             ch = ScmStreamGetCh(pStrmInput);
             Assert(ch == chPrev);
         }
