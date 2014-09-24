@@ -364,6 +364,8 @@ static int suplibOsStopService(void)
         }
         CloseServiceHandle(hSMgr);
     }
+    else
+        rc = RTErrConvertFromWin32(dwErr);
     return rc;
 }
 
