@@ -452,7 +452,7 @@ static PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
         {
             unsigned cDaysInMonth = fLeapYear
                                   ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
-                                  : g_acDaysInMonthsLeap[pTime->u8Month - 1];
+                                  : g_acDaysInMonths[pTime->u8Month - 1];
             if (pTime->u8MonthDay <= cDaysInMonth)
                 break;
             pTime->u8MonthDay -= cDaysInMonth;
