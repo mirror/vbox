@@ -1508,15 +1508,10 @@ HRESULT Medium::getVariant(std::vector<MediumVariant_T> &aVariant)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeArray<MediumVariant_T> variants(sizeof(MediumVariant_T)*8);
-
-    aVariant.resize(variants.size());
-    for (ULONG i = 0; i < variants.size(); ++i)
-    {
-        ULONG temp = m->variant;
-        temp &= 1<<i;
-        aVariant[i] = (MediumVariant_T)temp;
-    }
+    const size_t cBits = sizeof(MediumVariant_T) * 8;
+    aVariant.resize(cBits);
+    for (size_t i = 0; i < cBits; ++i)
+        aVariant[i] = (MediumVariant_T)(m->variant & RT_BIT(i));
 
     return S_OK;
 }
