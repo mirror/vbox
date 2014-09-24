@@ -512,8 +512,8 @@ static bool supR3HardenedWinVerifyCacheIsMatch(PCRTUTF16 pawcLeft, PCRTUTF16 paw
         RTUTF16 wcRight = *pawcRight++;
         if (wcLeft != wcRight)
         {
-            wcLeft = wcLeft  != '/' ? RT_C_TO_LOWER(wcLeft)  : '\\';
-            wcLeft = wcRight != '/' ? RT_C_TO_LOWER(wcRight) : '\\';
+            wcLeft  = wcLeft  != '/' ? RT_C_TO_LOWER(wcLeft)  : '\\';
+            wcRight = wcRight != '/' ? RT_C_TO_LOWER(wcRight) : '\\';
             if (wcLeft != wcRight)
                 return false;
         }
@@ -1115,7 +1115,7 @@ static void supR3HardenedWinFix8dot3Path(HANDLE hFile, PUNICODE_STRING pUniStr)
 
         RTUTF16 wc;
         PRTUTF16 pwszFixEnd = pwszFix;
-        while ((wc = *pwszFixEnd) != '\0' && wc != '\\' && wc != '//')
+        while ((wc = *pwszFixEnd) != '\0' && wc != '\\' && wc != '/')
             pwszFixEnd++;
         if (wc == '\0')
             break;
