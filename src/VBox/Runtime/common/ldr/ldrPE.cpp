@@ -1595,7 +1595,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
         if (SegInfo.cchName >= sizeof(pSh->Name))
         {
             memcpy(szName, &pSh->Name[0], sizeof(pSh->Name));
-            szName[sizeof(sizeof(pSh->Name))] = '\0';
+            szName[sizeof(pSh->Name)] = '\0';
             SegInfo.pszName = szName;
         }
         else if (SegInfo.cchName == 0)
