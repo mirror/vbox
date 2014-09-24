@@ -13108,7 +13108,7 @@
 
   <enum
     name="MediumVariant"
-    uuid="80685b6b-e42f-497d-8271-e77bf3c61ada"
+    uuid="0282e97f-4ef3-4411-a8e0-47c384803cb6"
     >
     <desc>
       Virtual medium image variant. More than one flag may be set.
@@ -13139,6 +13139,11 @@
     <const name="VmdkESX"               value="0x08">
       <desc>
         VMDK format variant used on ESX products.
+      </desc>
+    </const>
+    <const name="VdiZeroExpand"         value="0x100">
+      <desc>
+        Fill new blocks with zeroes while expanding image file.
       </desc>
     </const>
     <const name="Fixed"                 value="0x10000">

@@ -276,6 +276,8 @@ template<> QString toString(const KMediumVariant &variant)
     {
         case KMediumVariant_Standard:
             return QApplication::translate("VBoxGlobal", "Dynamically allocated storage", "MediumVariant");
+        case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VdiZeroExpand):
+            return QApplication::translate("VBoxGlobal", "New dynamically allocated storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Diff):
             return QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed):
