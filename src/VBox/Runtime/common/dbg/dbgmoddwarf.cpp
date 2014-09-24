@@ -2938,6 +2938,7 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             if (   pRet != NULL
                 && uCurCode >= pThis->cCachedAbbrevsAlloced)
                 break;
+            uPrevCode = uCurCode;
         }
     }
     else
