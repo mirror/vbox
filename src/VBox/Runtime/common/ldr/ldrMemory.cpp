@@ -314,7 +314,7 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
         pReader->pfnDestroy(pReader);
     }
     else
-        pfnDtor(pvUser),
+        pfnDtor(pvUser);
     *phLdrMod = NIL_RTLDRMOD;
 
     LogFlow(("RTLdrOpen: return %Rrc\n", rc));
