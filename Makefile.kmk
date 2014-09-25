@@ -1420,7 +1420,7 @@ validationkit-build-linux.x86:
 validationkit-build-linux: validationkit-build-linux.x86 validationkit-build-linux.amd64
 else
 validationkit-build-linux.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,linux,*) \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
