@@ -1588,18 +1588,18 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         uint64_t uNewOuterRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
         {
-            uNewOuterRsp = uPtrFrame.pu16[0];
-            uNewOuterSs  = uPtrFrame.pu16[1];
+            uNewOuterRsp = uPtrStack.pu16[0];
+            uNewOuterSs  = uPtrStack.pu16[1];
         }
         else if (enmEffOpSize == IEMMODE_32BIT)
         {
-            uNewOuterRsp = uPtrFrame.pu32[0];
-            uNewOuterSs  = uPtrFrame.pu16[2];
+            uNewOuterRsp = uPtrStack.pu32[0];
+            uNewOuterSs  = uPtrStack.pu16[2];
         }
         else
         {
-            uNewOuterRsp = uPtrFrame.pu64[0];
-            uNewOuterSs  = uPtrFrame.pu16[4];
+            uNewOuterRsp = uPtrStack.pu64[0];
+            uNewOuterSs  = uPtrStack.pu16[4];
         }
 
         /* Check for NULL stack selector (invalid in ring-3 and non-long mode)
