@@ -872,6 +872,7 @@ additions-build-rsync-into-vms: \
 		additions-build-linux.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: additions-build-rsync-into-vms
+.PHONY:       additions-build-rsync-into-vms
 
 
 VBOX_ADDITIONS_BUILD.amd64 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
@@ -948,7 +949,6 @@ additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
-.NOTPARALLEL: additions-build-solaris.rsync-into-vm
 .PHONY:       additions-build-solaris.rsync-into-vm additions-build-solaris.rsync-out-of-vm additions-build-solaris.build-it
 
 additions-build-solaris.amd64: additions-build-solaris.rsync-out-of-vm
@@ -979,7 +979,6 @@ additions-build-os2.build-it: additions-build-os2.rsync-into-vm
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
-.NOTPARALLEL: additions-build-os2.rsync-into-vm
 .PHONY:       additions-build-os2.rsync-into-vm additions-build-os2.rsync-out-of-vm additions-build-os2.build-it
 
 additions-build-os2.x86: additions-build-os2.rsync-out-of-vm
@@ -1035,7 +1034,6 @@ additions-build-linux.rsync-out-of-vm: additions-build-linux.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86 out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
-.NOTPARALLEL: additions-build-linux.rsync-into-vm
 .PHONY:       additions-build-linux.rsync-into-vm additions-build-linux.rsync-out-of-vm additions-build-linux.build-it
 
 additions-build-linux: additions-build-linux.rsync-out-of-vm
@@ -1306,6 +1304,7 @@ validationkit-build-rsync-into-vms: \
 		validationkit-build-linux.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: validationkit-build-rsync-into-vms
+.PHONY:       validationkit-build-rsync-into-vms
 
 
 VBOX_VALIDATIONKIT_BUILD.amd64 = VBOX_ONLY_VALIDATIONKIT=1 \
@@ -1358,7 +1357,11 @@ validationkit-build-solaris.x86:
 
 else
 validationkit-build-solaris.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
+		'--exclude=src/VBox/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/VMM/**' \
+		. $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 
 validationkit-build-solaris.build-it: validationkit-build-solaris.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 Validation Kit)
@@ -1372,7 +1375,6 @@ validationkit-build-solaris.rsync-out-of-vm: validationkit-build-solaris.build-i
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.x86   out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
-.NOTPARALLEL: validationkit-build-solaris.rsync-into-vm
 .PHONY:       validationkit-build-solaris.rsync-out-of-vm validationkit-build-solaris.rsync-into-vm validationkit-build-solaris.build-it
 
 validationkit-build-solaris.amd64: validationkit-build-solaris.rsync-out-of-vm
@@ -1386,8 +1388,7 @@ validationkit-build-os2.rsync-into-vm:
 else # !OS/2
 validationkit-build-os2.rsync-into-vm:
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
-		'--exclude=src/VBox/Additions/x11/**' \
-		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Additions/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
 		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
@@ -1400,7 +1401,6 @@ validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
 validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
 	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
-.NOTPARALLEL: validationkit-build-os2.rsync-into-vm
 .PHONY:       validationkit-build-os2.rsync-into-vm validationkit-build-os2.rsync-out-of-vm validationkit-build-os2.build-it
 
 validationkit-build-os2.x86: validationkit-build-os2.rsync-out-of-vm
@@ -1416,7 +1416,11 @@ validationkit-build-linux.x86:
 validationkit-build-linux: validationkit-build-linux.x86 validationkit-build-linux.amd64
 else
 validationkit-build-linux.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
+		'--exclude=src/VBox/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/VMM/**' \
+		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 
 validationkit-build-linux.build-it: validationkit-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 Validation Kit)
@@ -1430,7 +1434,6 @@ validationkit-build-linux.rsync-out-of-vm: validationkit-build-linux.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.x86   out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
-.NOTPARALLEL: validationkit-build-linux.rsync-into-vm
 .PHONY:       validationkit-build-linux.rsync-out-of-vm validationkit-build-linux.rsync-into-vm validationkit-build-linux.build-it
 
 validationkit-build-linux: validationkit-build-linux.rsync-out-of-vm
