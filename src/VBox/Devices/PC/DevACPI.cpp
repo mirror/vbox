@@ -3199,34 +3199,34 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     char *pszOemId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pThis->pDevInsR3->pCfg, "AcpiOemId", &pszOemId, "VBOX  ");
+    rc = CFGMR3QueryStringAllocDef(pCfg, "AcpiOemId", &pszOemId, "VBOX  ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"AcpiOemId\" as string failed"));
     size_t cbOemId = strlen(pszOemId);
     if (cbOemId > 6)
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: \"AcpiOemId\" must contain not more than 6 characters"));
     memset(pThis->au8OemId, ' ', sizeof(pThis->au8OemId));
     memcpy(pThis->au8OemId, pszOemId, cbOemId);
     MMR3HeapFree(pszOemId);
 
     char *pszCreatorId = NULL;
-    rc = CFGMR3QueryStringAllocDef(pThis->pDevInsR3->pCfg, "AcpiCreatorId", &pszCreatorId, "ASL ");
+    rc = CFGMR3QueryStringAllocDef(pCfg, "AcpiCreatorId", &pszCreatorId, "ASL ");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"AcpiCreatorId\" as string failed"));
     size_t cbCreatorId = strlen(pszCreatorId);
     if (cbCreatorId > 4)
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: \"AcpiCreatorId\" must contain not more than 4 characters"));
     memset(pThis->au8CreatorId, ' ', sizeof(pThis->au8CreatorId));
     memcpy(pThis->au8CreatorId, pszCreatorId, cbCreatorId);
     MMR3HeapFree(pszCreatorId);
 
-    rc = CFGMR3QueryU32Def(pThis->pDevInsR3->pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
+    rc = CFGMR3QueryU32Def(pCfg, "AcpiCreatorRev", &pThis->u32CreatorRev, RT_H2LE_U32(0x61));
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"AcpiCreatorRev\" as integer failed"));
     pThis->u32OemRevision         = RT_H2LE_U32(0x1);
 
@@ -3234,16 +3234,16 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Get the custom table binary file name.
      */
     char *pszCustBinFile;
-    rc = CFGMR3QueryStringAlloc(pThis->pDevInsR3->pCfg, "CustomTable", &pszCustBinFile);
+    rc = CFGMR3QueryStringAlloc(pCfg, "CustomTable", &pszCustBinFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryStringAlloc(pThis->pDevInsR3->pCfg, "SLICTable", &pszCustBinFile);
+        rc = CFGMR3QueryStringAlloc(pCfg, "SLICTable", &pszCustBinFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pszCustBinFile = NULL;
         rc = VINF_SUCCESS;
     }
     else if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
+        return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"CustomTable\" as a string failed"));
     else if (!*pszCustBinFile)
     {
@@ -3272,7 +3272,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 /*
                  * Allocate buffer for the custom table binary data.
                  */
-                pThis->pu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevInsR3, pThis->cbCustBin);
+                pThis->pu8CustBin = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbCustBin);
                 if (pThis->pu8CustBin)
                 {
                     rc = RTFileRead(FileCUSTBin, pThis->pu8CustBin, pThis->cbCustBin, NULL);
