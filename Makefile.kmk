@@ -949,6 +949,7 @@ additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
+.NOTPARALLEL: additions-build-solaris.rsync-into-vm
 .PHONY:       additions-build-solaris.rsync-into-vm additions-build-solaris.rsync-out-of-vm additions-build-solaris.build-it
 
 additions-build-solaris.amd64: additions-build-solaris.rsync-out-of-vm
@@ -979,6 +980,7 @@ additions-build-os2.build-it: additions-build-os2.rsync-into-vm
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
+.NOTPARALLEL: additions-build-os2.rsync-into-vm
 .PHONY:       additions-build-os2.rsync-into-vm additions-build-os2.rsync-out-of-vm additions-build-os2.build-it
 
 additions-build-os2.x86: additions-build-os2.rsync-out-of-vm
@@ -1034,6 +1036,7 @@ additions-build-linux.rsync-out-of-vm: additions-build-linux.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86 out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
+.NOTPARALLEL: additions-build-linux.rsync-into-vm
 .PHONY:       additions-build-linux.rsync-into-vm additions-build-linux.rsync-out-of-vm additions-build-linux.build-it
 
 additions-build-linux: additions-build-linux.rsync-out-of-vm
