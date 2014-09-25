@@ -19,7 +19,6 @@
 #define ____H_MOUSEIMPL
 
 #include "MouseWrap.h"
-#include "ConsoleEvents.h"
 #include "ConsoleImpl.h"
 #include "EventImpl.h"
 #include <VBox/vmm/pdmdrv.h>

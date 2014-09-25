@@ -19,7 +19,6 @@
 #define ____H_KEYBOARDIMPL
 
 #include "KeyboardWrap.h"
-#include "ConsoleEvents.h"
 #include "EventImpl.h"
 
 #include <VBox/vmm/pdmdrv.h>
@@ -39,9 +38,6 @@ public:
     }
     int scan;
 };
-// template instantiation
-typedef ConsoleEventBuffer<KeyboardEvent> KeyboardEventBuffer;
-
 class Console;
 
 class ATL_NO_VTABLE Keyboard :
