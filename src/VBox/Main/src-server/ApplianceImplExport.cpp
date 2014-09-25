@@ -1058,21 +1058,17 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     pelmVirtualSystem->setAttribute("ovf:id", strVMName);
 
     // product info
-    std::list<VirtualSystemDescriptionEntry*> llProduct = vsdescThis->i_findByType(VirtualSystemDescriptionType_Product);
+    std::list<VirtualSystemDescriptionEntry*> llProduct    = vsdescThis->i_findByType(VirtualSystemDescriptionType_Product);
     std::list<VirtualSystemDescriptionEntry*> llProductUrl = vsdescThis->i_findByType(VirtualSystemDescriptionType_ProductUrl);
-    std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->i_findByType(VirtualSystemDescriptionType_Vendor);
-    std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->i_findByType(VirtualSystemDescriptionType_VendorUrl);
-    std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->i_findByType(VirtualSystemDescriptionType_Version);
-    bool fProduct = llProduct.size() && !llProduct.back()->strVBoxCurrent.isEmpty();
+    std::list<VirtualSystemDescriptionEntry*> llVendor     = vsdescThis->i_findByType(VirtualSystemDescriptionType_Vendor);
+    std::list<VirtualSystemDescriptionEntry*> llVendorUrl  = vsdescThis->i_findByType(VirtualSystemDescriptionType_VendorUrl);
+    std::list<VirtualSystemDescriptionEntry*> llVersion    = vsdescThis->i_findByType(VirtualSystemDescriptionType_Version);
+    bool fProduct    = llProduct.size()    && !llProduct.back()->strVBoxCurrent.isEmpty();
     bool fProductUrl = llProductUrl.size() && !llProductUrl.back()->strVBoxCurrent.isEmpty();
-    bool fVendor = llVendor.size() && !llVendor.back()->strVBoxCurrent.isEmpty();
-    bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.back()->strVBoxCurrent.isEmpty();
-    bool fVersion = llVersion.size() && !llVersion.back()->strVBoxCurrent.isEmpty();
-    if (fProduct ||
-        fProductUrl ||
-        fVersion ||
-        fVendorUrl ||
-        fVersion)
+    bool fVendor     = llVendor.size()     && !llVendor.back()->strVBoxCurrent.isEmpty();
+    bool fVendorUrl  = llVendorUrl.size()  && !llVendorUrl.back()->strVBoxCurrent.isEmpty();
+    bool fVersion    = llVersion.size()    && !llVersion.back()->strVBoxCurrent.isEmpty();
+    if (fProduct || fProductUrl || fVendor || fVendorUrl || fVersion)
     {
         /* <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
             <Info>Meta-information about the installed software</Info>
