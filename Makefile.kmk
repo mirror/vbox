@@ -810,8 +810,6 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 # VM IP addresses.
 #
 VBOX_BLD_VM_LNX_IP           := 192.168.27.2
-VBOX_BLD_VM_LNX_X86_IP       := 192.168.27.11
-VBOX_BLD_VM_LNX_AMD64_IP     := 192.168.27.12
 VBOX_BLD_VM_OS2_IP           := 192.168.27.3
 VBOX_BLD_VM_SOLARIS_IP       := 192.168.27.4
 VBOX_BLD_VM_DARWIN_X86_IP    := 192.168.27.5
@@ -1190,10 +1188,10 @@ extpacks-build-linux.rsync-into-vm: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 
 extpacks-build-linux.build-it: extpacks-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 extension packs)
-	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@ && dchroot -c debian-4.0-amd64 \"cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all\""'
+	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@/amd64 && dchroot -c debian-4.0-amd64 \"cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all\""'
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 extension packs)
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 extension packs)
-	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@ && linux32 dchroot -c debian-4.0-i386 \"cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all\""'
+	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@/x86 && linux32 dchroot -c debian-4.0-i386 \"cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all\""'
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 extension packs)
 
 extpacks-build-linux.rsync-out-of-vm: extpacks-build-linux.build-it
@@ -1296,8 +1294,7 @@ validationkit-build: \
 	validationkit-build-win.x86 \
 	validationkit-build-win.amd64 \
 	validationkit-build-os2.x86 \
-	validationkit-build-linux.amd64 \
-	validationkit-build-linux.x86 \
+	validationkit-build-linux \
 	validationkit-build-freebsd.amd64 \
 	validationkit-build-freebsd.x86 \
 	validationkit-build-darwin.amd64 \
@@ -1305,7 +1302,8 @@ validationkit-build: \
 
 validationkit-build-rsync-into-vms: \
 		validationkit-build-solaris.rsync-into-vm \
-		validationkit-build-os2.rsync-into-vm
+		validationkit-build-os2.rsync-into-vm \
+		validationkit-build-linux.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: validationkit-build-rsync-into-vms
 
@@ -1408,24 +1406,34 @@ validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
 validationkit-build-os2.x86: validationkit-build-os2.rsync-out-of-vm
 endif # !OS/2
 
-validationkit-build-linux.amd64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ifeq ($(KBUILD_TARGET),linux)
+validationkit-build-linux.amd64:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
-else
-	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 Validation Kit)
-	#$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && dchroot -c debian-4.0-amd64 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all\""'
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all"
-	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 Validation Kit)
-endif
 
-validationkit-build-linux.x86:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
+validationkit-build-linux.x86:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.x86)   all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
+
+validationkit-build-linux: validationkit-build-linux.x86 validationkit-build-linux.amd64
 else
+validationkit-build-linux.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
+
+validationkit-build-linux.build-it: validationkit-build-linux.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 Validation Kit)
+	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@/amd64 && dchroot -c debian-4.0-amd64 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all\""'
+	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 Validation Kit)
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 Validation Kit)
-	#$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_X86_IP) "echo $@ && linux32 dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all\""'
-	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_X86_IP) "echo $@ && dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all\""'
+	$(VBOX_KMK_TIME) ssh 'vbox@$(VBOX_BLD_VM_LNX_IP) " echo $@/x86 && linux32 dchroot -c rhel3-i386 \"cd /mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all\""'
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 Validation Kit)
+
+validationkit-build-linux.rsync-out-of-vm: validationkit-build-linux.build-it
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.x86   out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.amd64 out/
+
+.NOTPARALLEL: validationkit-build-linux.rsync-into-vm
+.PHONY:       validationkit-build-linux.rsync-out-of-vm validationkit-build-linux.rsync-into-vm validationkit-build-linux.build-it
+
+validationkit-build-linux: validationkit-build-linux.rsync-out-of-vm
 endif
 
 validationkit-build-freebsd.amd64:   $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
@@ -1492,6 +1500,7 @@ validationkit-packing:
 	validationkit-build-solaris.amd64 \
 	validationkit-build-solaris.x86 \
 	validationkit-build-os2.x86 \
+	validationkit-build-linux \
 	validationkit-build-linux.amd64 \
 	validationkit-build-linux.x86 \
 	validationkit-build-freebsd.amd64 \
