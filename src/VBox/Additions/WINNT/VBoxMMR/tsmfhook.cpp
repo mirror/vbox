@@ -1257,7 +1257,7 @@ ReadTSMF(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId, uint32_t u32SizeAv
         pChannel->PushBuffer(pBuffer);
     }
     else
-        delete pBuffer;
+        free(pBuffer);
 }
 
 DECLCALLBACK(int)
