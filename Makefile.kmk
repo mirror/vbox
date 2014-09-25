@@ -1361,7 +1361,7 @@ validationkit-build-solaris.x86:
 else
 validationkit-build-solaris.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
-		'--exclude=src/VBox/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
 		. $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
@@ -1391,7 +1391,8 @@ validationkit-build-os2.rsync-into-vm:
 else # !OS/2
 validationkit-build-os2.rsync-into-vm:
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
-		'--exclude=src/VBox/Additions/**' \
+		'--exclude=src/VBox/Additions/x11/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
 		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
@@ -1420,7 +1421,7 @@ validationkit-build-linux: validationkit-build-linux.x86 validationkit-build-lin
 else
 validationkit-build-linux.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
-		'--exclude=src/VBox/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
 		. $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
