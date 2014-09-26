@@ -6355,21 +6355,26 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
         return VINF_SUCCESS;
 
     /*
-     * Pick the first CPU online as the master TSC and make it the new GIP master.
+     * Pick the first CPU online as the master TSC and make it the new GIP master based
+     * on the APIC ID.
      *
      * Technically we can simply use "idGipMaster" but doing this gives us master as CPU 0
      * in most cases making it nicer/easier for comparisons. It is safe to update the GIP
      * master as this point since the sync/async timer isn't created yet.
      */
     supdrvClearTscSamples(pGip, true /* fClearDeltas */);
-    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    for (iCpu = 0; iCpu < RT_ELEMENTS(pGip->aiCpuFromApicId); iCpu++)
     {
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
-        if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpu->idCpu))
+        uint16_t idxCpu = pGip->aiCpuFromApicId[iCpu];
+        if (idxCpu != UINT16_MAX)
         {
-            idxMaster = iCpu;
-            pGipCpu->i64TSCDelta = 0;
-            break;
+            PSUPGIPCPU pGipCpu = &pGip->aCPUs[idxCpu];
+            if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpu->idCpu))
+            {
+                idxMaster = idxCpu;
+                pGipCpu->i64TSCDelta = 0;
+                break;
+            }
         }
     }
     AssertReturn(idxMaster != UINT32_MAX, VERR_CPU_NOT_FOUND);
@@ -6645,7 +6650,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cPossibleCpus         = RTMpGetCount();
     pGip->idCpuMax              = RTMpGetMaxCpuId();
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
-        pGip->aiCpuFromApicId[i]    = 0;
+        pGip->aiCpuFromApicId[i]    = UINT16_MAX;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
 
