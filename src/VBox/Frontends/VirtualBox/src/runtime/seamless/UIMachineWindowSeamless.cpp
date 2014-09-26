@@ -74,6 +74,22 @@ void UIMachineWindowSeamless::sltRevokeFocus()
     m_pMachineView->setFocus();
 }
 
+#ifdef VBOX_WITH_MASKED_SEAMLESS
+# ifdef Q_WS_X11
+void UIMachineWindowSeamless::sltUpdateMiniToolbarMask(const QRect &geo)
+{
+    /* Make sure mini-toolbar exists: */
+    AssertPtrReturnVoid(m_pMiniToolBar);
+
+    /* Remember mini-toolbar mask: */
+    m_maskMiniToolbar = geo;
+
+    /* Re-assign guest mask. */
+    setMask(m_maskGuest);
+}
+# endif /* Q_WS_X11 */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
+
 void UIMachineWindowSeamless::prepareVisualState()
 {
     /* Call to base-class: */
@@ -102,7 +118,7 @@ void UIMachineWindowSeamless::prepareVisualState()
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Make sure we have no background
      * until the first one set-region-event: */
-    setMask(m_maskRegion);
+    setMask(m_maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
 #ifndef Q_WS_MAC
@@ -131,6 +147,12 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             actionPool()->action(UIActionIndexRT_M_Machine_S_Close), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
+#ifdef VBOX_WITH_MASKED_SEAMLESS
+# ifdef Q_WS_X11
+    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutGeometryChange(const QRect&)),
+            this, SLOT(sltUpdateMiniToolbarMask(const QRect&)));
+# endif /* Q_WS_X11 */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
 }
 #endif /* !Q_WS_MAC */
 
@@ -279,34 +301,40 @@ void UIMachineWindowSeamless::showEvent(QShowEvent*)
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
-void UIMachineWindowSeamless::setMask(const QRegion &region)
+void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)
 {
-    /* Prepare mask-region: */
-    QRegion maskRegion(region);
+    /* Remember new guest mask: */
+    m_maskGuest = maskGuest;
 
-    /* Shift region if left spacer width is NOT zero or top spacer height is NOT zero: */
+    /* Prepare full mask: */
+    QRegion maskFull(m_maskGuest);
+
+    /* Shift full mask if left or top spacer width is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
-        maskRegion.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
+        maskFull.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
 
-    /* Seamless-window for empty region should be empty too,
+# ifdef Q_WS_X11
+    /* Take into account mini-toolbar mask if necessary: */
+    if (m_pMiniToolBar)
+        maskFull += m_maskMiniToolbar;
+# endif /* Q_WS_X11 */
+
+    /* Seamless-window for empty full mask should be empty too,
      * but the QWidget::setMask() wrapper doesn't allow this.
-     * Instead, we have a full painted screen of seamless-geometry size visible.
-     * Moreover, we can't just hide the empty seamless-window as 'hiding'
-     * 1. will collide with the multi-screen layout behavior and
-     * 2. will cause a task-bar flicker on moving window from one screen to another.
-     * As a *temporary* though quite a dirty workaround we have to make sure
-     * region have at least one pixel. */
-    if (maskRegion.isEmpty())
-        maskRegion += QRect(0, 0, 1, 1);
-    /* Make sure mask-region had changed: */
-    if (m_maskRegion != maskRegion)
+     * Instead, we see a full guest-screen of available-geometry size.
+     * So we have to make sure full mask have at least one pixel. */
+    if (maskFull.isEmpty())
+        maskFull += QRect(0, 0, 1, 1);
+
+    /* Make sure full mask had changed: */
+    if (m_maskFull != maskFull)
     {
         /* Compose viewport region to update: */
-        QRegion toUpdate = m_maskRegion + maskRegion;
-        /* Remember new mask-region: */
-        m_maskRegion = maskRegion;
-        /* Assign new mask-region: */
-        UIMachineWindow::setMask(m_maskRegion);
+        QRegion toUpdate = m_maskFull + maskFull;
+        /* Remember new full mask: */
+        m_maskFull = maskFull;
+        /* Assign new full mask: */
+        UIMachineWindow::setMask(m_maskFull);
         /* Update viewport region finally: */
         m_pMachineView->viewport()->update(toUpdate);
     }
