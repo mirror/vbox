@@ -881,7 +881,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
- * @param   pDesc           The descriptor corrsponding to @a uSel. The type is
+ * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          task gate.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
@@ -924,7 +924,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
- * @param   pDesc           The descriptor corrsponding to @a uSel. The type is
+ * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          task gate.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
@@ -993,7 +993,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
- * @param   pDesc           The descriptor corrsponding to @a uSel. The type is
+ * @param   pDesc           The descriptor corresponding to @a uSel. The type is
  *                          call gate.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
@@ -1009,7 +1009,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
  * @param   uSel            The selector.
  * @param   enmBranch       The kind of branching we're performing.
  * @param   enmEffOpSize    The effective operand size.
- * @param   pDesc           The descriptor corrsponding to @a uSel.
+ * @param   pDesc           The descriptor corresponding to @a uSel.
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchSysSel, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
