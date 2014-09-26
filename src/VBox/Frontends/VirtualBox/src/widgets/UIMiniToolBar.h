@@ -63,6 +63,13 @@ signals:
     /** Notifies listeners about we stole focus. */
     void sigNotifyAboutFocusStolen();
 
+#ifdef VBOX_WITH_MASKED_SEAMLESS
+# ifdef Q_WS_X11
+    /** Notifies about geometry change. */
+    void sigNotifyAboutGeometryChange(const QRect &geo);
+# endif /* Q_WS_X11 */
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
+
 public:
 
     /* Constructor/destructor: */

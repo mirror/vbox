@@ -415,6 +415,12 @@ void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
      * Mac host has native translucency support,
      * Win host allows to enable it through Qt::WA_TranslucentBackground: */
     setMask(m_pEmbeddedToolbar->geometry());
+
+# ifdef VBOX_WITH_MASKED_SEAMLESS
+    /* Notify listeners as well: */
+    const QRect windowGeo = geometry();
+    emit sigNotifyAboutGeometryChange(windowGeo.intersected(m_pEmbeddedToolbar->geometry().translated(windowGeo.topLeft())));
+# endif /* VBOX_WITH_MASKED_SEAMLESS */
 #endif /* Q_WS_X11 */
 }
 
