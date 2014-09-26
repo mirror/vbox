@@ -4446,7 +4446,16 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
             if (!g_fSupAdversaries)
                 g_fSupAdversaries |= SUPHARDNT_ADVERSARY_UNKNOWN;
             cMsFudge = 512;
-            SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
+
+            /* Log the KiOpPrefetchPatchCount value if available, hoping it might sched some light on spider38's case. */
+            ULONG cPatchCount = 0;
+            NTSTATUS rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
+                                                     &cPatchCount, sizeof(cPatchCount), NULL);
+            if (NT_SUCCESS(rcNt))
+                SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
+                             cFixes, g_fSupAdversaries, cPatchCount));
+            else
+                SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
         }
 
         /*
@@ -4559,14 +4568,16 @@ static char **suplibCommandLineToArgvWStub(PCRTUTF16 pawcCmdLine, size_t cwcCmdL
 
 
 /**
- * Logs information about a file from a protection product.
+ * Logs information about a file from a protection product or from Windows.
  *
  * The purpose here is to better see which version of the product is installed
  * and not needing to depend on the user supplying the correct information.
  *
  * @param   pwszFile            The NT path to the file.
+ * @param   fAdversarial        Set if from a protection product, false if
+ *                              system file.
  */
-static void supR3HardenedLogAdversarialFile(PCRTUTF16 pwszFile)
+static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
 {
     /*
      * Open the file.
@@ -5050,7 +5061,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
     SUP_DPRINTF(("supR3HardenedWinFindAdversaries: %#x\n", fFound));
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFiles); i++)
         if (fFound & s_aFiles[i].fAdversary)
-            supR3HardenedLogAdversarialFile(s_aFiles[i].pwszFile);
+            supR3HardenedLogFileInfo(s_aFiles[i].pwszFile, true /* fAdversarial */);
 
     return fFound;
 }
@@ -5101,7 +5112,15 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     supR3HardenedOpenLog(&cArgs, papszArgs);
 
     /*
-     * Scan the system for adversaries.
+     * Log information about important system files.
+     */
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\ntdll.dll", false /* fAdversarial */);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\kernel32.dll", false /* fAdversarial */);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\KernelBase.dll", false /* fAdversarial */);
+    supR3HardenedLogFileInfo(L"\\SystemRoot\\System32\\apisetschema.dll", false /* fAdversarial */);
+
+    /*
+     * Scan the system for adversaries, logging information about them.
      */
     g_fSupAdversaries = supR3HardenedWinFindAdversaries();
 
