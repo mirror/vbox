@@ -30,6 +30,9 @@
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
+# ifdef Q_WS_X11
+#  include <QX11Info>
+# endif /* Q_WS_X11 */
 
 /* GUI includes: */
 # include "UIMiniToolBar.h"
@@ -38,7 +41,7 @@
 # include "VBoxGlobal.h"
 # ifdef Q_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif
+# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -569,7 +572,12 @@ void UIMiniToolBar::prepare()
     setIconSize(QSize(16, 16));
 
     /* Left margin: */
+#ifdef Q_WS_X11
+    if (QX11Info::isCompositingManagerRunning())
+        m_spacings << widgetForAction(addWidget(new QWidget));
+#else /* !Q_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
+#endif /* !Q_WS_X11 */
 
     /* Prepare push-pin: */
     m_pAutoHideAction = new QAction(this);
@@ -621,7 +629,12 @@ void UIMiniToolBar::prepare()
     addAction(m_pCloseAction);
 
     /* Right margin: */
+#ifdef Q_WS_X11
+    if (QX11Info::isCompositingManagerRunning())
+        m_spacings << widgetForAction(addWidget(new QWidget));
+#else /* !Q_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
+#endif /* !Q_WS_X11 */
 
     /* Resize to sizehint: */
     resize(sizeHint());
@@ -629,6 +642,11 @@ void UIMiniToolBar::prepare()
 
 void UIMiniToolBar::rebuildShape()
 {
+#ifdef Q_WS_X11
+    if (!QX11Info::isCompositingManagerRunning())
+        return;
+#endif /* Q_WS_X11 */
+
     /* Rebuild shape: */
     QPainterPath shape;
     switch (m_alignment)
