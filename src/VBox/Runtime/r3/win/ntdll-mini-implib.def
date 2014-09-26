@@ -56,6 +56,7 @@ EXPORTS
     NtQueryInformationToken               ;;= _NtQueryInformationToken@20
     NtQueryObject                         ;;= _NtQueryObject@20
     NtQuerySecurityObject                 ;;= _NtQuerySecurityObject@20
+    NtQuerySystemInformation              ;;= _NtQuerySystemInformation@16
     NtQueryTimerResolution                ;;= _NtQueryTimerResolution@12
     NtQueryValueKey                       ;;= _NtQueryValueKey@24
     NtQueryVirtualMemory                  ;;= _NtQueryVirtualMemory@24
