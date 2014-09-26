@@ -1163,7 +1163,6 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     if (pVBox->drmFD >= 0)
     {
         /* Tell the kernel driver, if present, that we are taking over. */
-        drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_DISABLE_HGSMI, NULL);
         drmSetMaster(pVBox->drmFD);
     }
 #endif
@@ -1197,15 +1196,13 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
 #elif defined(VBOX_DRI)  /* DRI2 */
-    if (pVBox->drmFD >= 0)
-        drmDropMaster(pVBox->drmFD);
-    /* Tell the kernel driver, if present, that it can use the framebuffer
-     * driver again.  If not, or if that fails, restore the old mode ourselves.
-     */
-    if (   pVBox->drmFD < 0
-        || drmIoctl(pVBox->drmFD, VBOXVIDEO_IOCTL_ENABLE_HGSMI, NULL) < 0)
-#endif
+    /* Expected failure mode: KMS not supported, drmDropMaster() fails. */
+    if (pVBox->drmFD < 0 || drmDropMaster(pVBox->drmFD) < 0)
         VBOXRestoreMode(pScrn);
+#endif
+#if !defined(VBOX_DRI) || defined(VBOX_DRI_OLD)
+    VBOXRestoreMode(pScrn);
+#endif
 #ifdef SET_HAVE_VT_PROPERTY
     updateHasVTProperty(pScrn, FALSE);
 #endif
