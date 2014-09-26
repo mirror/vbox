@@ -117,6 +117,7 @@ static struct drm_driver driver =
 
     .load = vbox_driver_load,
     .unload = vbox_driver_unload,
+    .lastclose = vbox_driver_lastclose,
 
     .fops = &vbox_fops,
     .name = DRIVER_NAME,

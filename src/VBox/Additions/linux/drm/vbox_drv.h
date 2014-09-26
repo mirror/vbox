@@ -113,6 +113,7 @@ struct vbox_private
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
 int vbox_driver_unload(struct drm_device *dev);
+void vbox_driver_lastclose(struct drm_device *pDev);
 
 struct vbox_gem_object;
 
