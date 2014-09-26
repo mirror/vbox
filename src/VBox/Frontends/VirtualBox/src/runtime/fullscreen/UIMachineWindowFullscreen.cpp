@@ -184,13 +184,13 @@ void UIMachineWindowFullscreen::sltRevokeFocus()
     if (!isVisible())
         return;
 
-#ifndef RT_OS_DARWIN
+#if   defined(Q_WS_WIN)
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
-#else /* RT_OS_DARWIN */
+#elif defined(Q_WS_MAC)
     /* Revoke stolen activation: */
     activateWindow();
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowFullscreen::prepareVisualState()

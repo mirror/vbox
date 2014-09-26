@@ -225,10 +225,10 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 
 void UIRuntimeMiniToolBar::prepare()
 {
-#ifdef RT_OS_DARWIN
+#ifdef Q_WS_MAC
     /* Install own event filter: */
     installEventFilter(this);
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC */
 
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
     /* Make sure we have no background
@@ -295,7 +295,10 @@ void UIRuntimeMiniToolBar::prepare()
         m_pEmbeddedToolbar = m_pMdiArea->addSubWindow(m_pToolbar, Qt::Window | Qt::FramelessWindowHint);
         /* Make sure we have no focus: */
         m_pEmbeddedToolbar->setFocusPolicy(Qt::NoFocus);
+#ifdef Q_WS_WIN
+        /* Install embedded-toolbar event filter: */
         m_pEmbeddedToolbar->installEventFilter(this);
+#endif /* Q_WS_WIN */
     }
 
     /* Prepare hover-enter/leave timers: */
@@ -364,7 +367,7 @@ void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
 
 bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-#ifndef RT_OS_DARWIN
+#if   defined(Q_WS_WIN)
     /* Due to Qt bug QMdiArea can
      * 1. steal focus from current application focus-widget
      * 3. and even request focus stealing if QMdiArea hidden yet.
@@ -372,13 +375,14 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (pWatched && m_pEmbeddedToolbar && pWatched == m_pEmbeddedToolbar &&
         pEvent->type() == QEvent::FocusIn)
         emit sigNotifyAboutFocusStolen();
-#else /* RT_OS_DARWIN */
+#elif defined(Q_WS_MAC)
     /* Due to Qt bug on Mac OS X window will be activated
      * even if has Qt::WA_ShowWithoutActivating attribute. */
     if (pWatched == this &&
         pEvent->type() == QEvent::WindowActivate)
         emit sigNotifyAboutFocusStolen();
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC */
+
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);
 }

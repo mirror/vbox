@@ -70,8 +70,13 @@ void UIMachineWindowSeamless::sltRevokeFocus()
     if (!isVisible())
         return;
 
+#if   defined(Q_WS_WIN)
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
+#elif defined(Q_WS_MAC)
+    /* Revoke stolen activation: */
+    activateWindow();
+#endif /* Q_WS_MAC */
 }
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
