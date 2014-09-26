@@ -161,8 +161,16 @@ int main(int argc, char **argv)
 
             /* Display TSC deltas. */
             RTPrintf("tstGIP-2: TSC deltas:\n");
-            for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
-                RTPrintf("tstGIP-2: %6d: %lld\n", iCpu, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
+            RTPrintf("tstGIP-2: idApic: i64TSCDelta\n");
+            for (unsigned i = 0; i < RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId); i++)
+            {
+                uint16_t iCpu = g_pSUPGlobalInfoPage->aiCpuFromApicId[i];
+                if (iCpu != UINT16_MAX)
+                {
+                    RTPrintf("tstGIP-2: %6d: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic,
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
+                }
+            }
         }
         else
         {
