@@ -168,7 +168,17 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
     move(iX, iY);
 
     /* Recalculate auto-hide animation: */
-    updateAutoHideAnimationBounds();
+    m_shownToolbarPosition = m_pEmbeddedToolbar->pos();
+    switch (m_alignment)
+    {
+        case Qt::AlignTop:
+            m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3);
+            break;
+        case Qt::AlignBottom:
+            m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3);
+            break;
+    }
+    m_pAnimation->update();
 
     /* Update toolbar geometry if necessary: */
     const QString strAnimationState = property("AnimationState").toString();
@@ -245,7 +255,7 @@ void UIRuntimeMiniToolBar::prepare()
     m_pMdiArea = new QMdiArea;
     {
         /* Allow any MDI area size: */
-        m_pMdiArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+        m_pMdiArea->setMinimumSize(QSize(1, 1));
         /* Configure own background: */
         QPalette pal = m_pMdiArea->palette();
         pal.setColor(QPalette::Window, QColor(Qt::transparent));
@@ -373,22 +383,6 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QWidget::eventFilter(pWatched, pEvent);
 }
 
-void UIRuntimeMiniToolBar::updateAutoHideAnimationBounds()
-{
-    /* Update animation: */
-    m_shownToolbarPosition = m_pEmbeddedToolbar->pos();
-    switch (m_alignment)
-    {
-        case Qt::AlignTop:
-            m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3);
-            break;
-        case Qt::AlignBottom:
-            m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3);
-            break;
-    }
-    m_pAnimation->update();
-}
-
 void UIRuntimeMiniToolBar::simulateToolbarAutoHiding()
 {
     /* This simulation helps user to notice
@@ -410,10 +404,7 @@ void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
     m_pEmbeddedToolbar->move(point);
 
 #ifdef Q_WS_X11
-    /* The setMask functionality is excessive under Win/Mac hosts
-     * because there is a Qt composition works properly,
-     * Mac host has native translucency support,
-     * Win host allows to enable it through Qt::WA_TranslucentBackground: */
+    /* Update window mask: */
     setMask(m_pEmbeddedToolbar->geometry());
 
 # ifdef VBOX_WITH_MASKED_SEAMLESS

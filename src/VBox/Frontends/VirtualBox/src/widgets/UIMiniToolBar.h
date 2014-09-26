@@ -123,7 +123,6 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Helper: Hover stuff: */
-    void updateAutoHideAnimationBounds();
     void simulateToolbarAutoHiding();
 
     /* Property: Hover stuff: */
