@@ -535,8 +535,8 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 /** Stop using HGSMI in the kernel driver until it is re-enabled, so that a
  *  user-space driver can use it.  It must be re-enabled before the kernel
  *  driver can be used again in a sensible way. */
-/** @note These are only implemented on Linux currently and should fail
- *        silently on other platforms. */
+/** @note These IOCtls was removed from the code, but are left here as
+ * templates as we may need similar ones in future. */
 # define DRM_VBOX_DISABLE_HGSMI    0
 # define DRM_IOCTL_VBOX_DISABLE_HGSMI    VBOX_DRM_IOCTL(DISABLE_HGSMI)
 # define VBOXVIDEO_IOCTL_DISABLE_HGSMI   _IO('d', DRM_IOCTL_VBOX_DISABLE_HGSMI)
