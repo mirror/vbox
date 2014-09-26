@@ -85,6 +85,9 @@ UIRuntimeMiniToolBar::~UIRuntimeMiniToolBar()
 
 void UIRuntimeMiniToolBar::setAlignment(Qt::Alignment alignment)
 {
+    /* Make sure toolbar created: */
+    AssertPtrReturnVoid(m_pToolbar);
+
     /* Make sure alignment really changed: */
     if (m_alignment == alignment)
         return;
@@ -101,6 +104,9 @@ void UIRuntimeMiniToolBar::setAlignment(Qt::Alignment alignment)
 
 void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true */)
 {
+    /* Make sure toolbar created: */
+    AssertPtrReturnVoid(m_pToolbar);
+
     /* Make sure auto-hide really changed: */
     if (m_fAutoHide == fAutoHide)
         return;
@@ -118,12 +124,18 @@ void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /*
 
 void UIRuntimeMiniToolBar::setText(const QString &strText)
 {
+    /* Make sure toolbar created: */
+    AssertPtrReturnVoid(m_pToolbar);
+
     /* Propagate to child: */
     m_pToolbar->setText(strText);
 }
 
 void UIRuntimeMiniToolBar::addMenus(const QList<QMenu*> &menus)
 {
+    /* Make sure toolbar created: */
+    AssertPtrReturnVoid(m_pToolbar);
+
     /* Propagate to child: */
     m_pToolbar->addMenus(menus);
 }
@@ -329,9 +341,9 @@ void UIRuntimeMiniToolBar::prepare()
 void UIRuntimeMiniToolBar::cleanup()
 {
     /* Stop hover-enter/leave timers: */
-    if (m_pHoverEnterTimer->isActive())
+    if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
         m_pHoverEnterTimer->stop();
-    if (m_pHoverLeaveTimer->isActive())
+    if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
         m_pHoverLeaveTimer->stop();
 
     /* Destroy animation before mdi-toolbar: */
@@ -346,22 +358,22 @@ void UIRuntimeMiniToolBar::cleanup()
 void UIRuntimeMiniToolBar::enterEvent(QEvent*)
 {
     /* Stop the hover-leave timer if necessary: */
-    if (m_pHoverLeaveTimer->isActive())
+    if (m_pHoverLeaveTimer && m_pHoverLeaveTimer->isActive())
         m_pHoverLeaveTimer->stop();
 
     /* Start the hover-enter timer: */
-    if (m_fAutoHide)
+    if (m_fAutoHide && m_pHoverEnterTimer)
         m_pHoverEnterTimer->start();
 }
 
 void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
 {
     /* Stop the hover-enter timer if necessary: */
-    if (m_pHoverEnterTimer->isActive())
+    if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
         m_pHoverEnterTimer->stop();
 
     /* Start the hover-leave timer: */
-    if (m_fAutoHide)
+    if (m_fAutoHide && m_pHoverLeaveTimer)
         m_pHoverLeaveTimer->start();
 }
 
