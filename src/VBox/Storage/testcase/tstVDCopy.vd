@@ -52,9 +52,9 @@ void main()
     copy("source", "dest", 1, "VDI", "dest_diff1.vdi", false, 0, 0, 0);
 
     print("Copying other diffs optimized");
-    copy("source", "dest", 2, "VDI", "dest_diff1.vdi", false, 0, 1, 1);
-    copy("source", "dest", 3, "VDI", "dest_diff1.vdi", false, 0, 2, 2);
-    copy("source", "dest", 4, "VDI", "dest_diff1.vdi", false, 0, 3, 3);
+    copy("source", "dest", 2, "VDI", "dest_diff2.vdi", false, 0, 1, 1);
+    copy("source", "dest", 3, "VDI", "dest_diff3.vdi", false, 0, 2, 2);
+    copy("source", "dest", 4, "VDI", "dest_diff4.vdi", false, 0, 3, 3);
 
     print("Comparing disks");
     comparedisks("source", "dest");
