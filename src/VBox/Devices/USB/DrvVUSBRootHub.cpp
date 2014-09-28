@@ -608,8 +608,11 @@ static DECLCALLBACK(int) vusbRhCancelAllUrbsWorker(PVUSBDEV pDev)
 {
     /*
      * Cancel the URBS.
+     *
+     * Not using th CritAsyncUrbs critical section here is safe
+     * as the I/O thread is the only thread accessing this struture at the
+     * moment.
      */
-    RTCritSectEnter(&pDev->CritSectAsyncUrbs);
     PVUSBURB pUrb = pDev->pAsyncUrbHead;
 
     while (pUrb)
@@ -619,7 +622,6 @@ static DECLCALLBACK(int) vusbRhCancelAllUrbsWorker(PVUSBDEV pDev)
         vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
         pUrb = pNext;
     }
-    RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 
     return VINF_SUCCESS;
 }
