@@ -34,11 +34,6 @@
 #include "VUSBInternal.h"
 
 
-/** Asserts that the give device state is valid. */
-#define VUSBDEV_ASSERT_VALID_STATE(enmState) \
-    AssertMsg((enmState) > VUSB_DEVICE_STATE_INVALID && (enmState) < VUSB_DEVICE_STATE_DESTROYED, ("enmState=%#x\n", enmState));
-
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -312,7 +307,7 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
      * Check that the device is in a valid state.
      * (The caller has already checked that it's not being reset.)
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState == VUSB_DEVICE_STATE_DEFAULT)
     {
         LogFlow(("vusbDevStdReqSetConfig: %s: default dev state !!?\n", pDev->pUsbIns->pszName));
@@ -327,9 +322,9 @@ static bool vusbDevStdReqSetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
     }
 
     if (iCfg == 0)
-        pDev->enmState = VUSB_DEVICE_STATE_ADDRESS;
+        vusbDevSetState(pDev, VUSB_DEVICE_STATE_ADDRESS);
     else
-        pDev->enmState = VUSB_DEVICE_STATE_CONFIGURED;
+        vusbDevSetState(pDev, VUSB_DEVICE_STATE_CONFIGURED);
     if (pDev->pUsbIns->pReg->pfnUsbSetConfiguration)
     {
         int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)pDev->pUsbIns->pReg->pfnUsbSetConfiguration, 5,
@@ -362,7 +357,7 @@ static bool vusbDevStdReqGetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
      * Check that the device is in a valid state.
      * (The caller has already checked that it's not being reset.)
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (    enmState != VUSB_DEVICE_STATE_CONFIGURED
         &&  enmState != VUSB_DEVICE_STATE_ADDRESS)
     {
@@ -377,7 +372,7 @@ static bool vusbDevStdReqGetConfig(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, 
     }
 
     uint8_t iCfg;
-    if (pDev->enmState == VUSB_DEVICE_STATE_ADDRESS)
+    if (enmState == VUSB_DEVICE_STATE_ADDRESS)
         iCfg = 0;
     else
         iCfg = pDev->pCurCfgDesc->Core.bConfigurationValue;
@@ -404,7 +399,7 @@ static bool vusbDevStdReqGetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
      * Check that the device is in a valid state.
      * (The caller has already checked that it's not being reset.)
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState != VUSB_DEVICE_STATE_CONFIGURED)
     {
         LogFlow(("vusbDevStdReqGetInterface: error: %s: invalid device state %d!!!\n", pDev->pUsbIns->pszName, enmState));
@@ -450,7 +445,7 @@ static bool vusbDevStdReqSetInterface(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetu
      * Check that the device is in a valid state.
      * (The caller has already checked that it's not being reset.)
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState != VUSB_DEVICE_STATE_CONFIGURED)
     {
         LogFlow(("vusbDevStdReqSetInterface: error: %s: invalid device state %d !!!\n", pDev->pUsbIns->pszName, enmState));
@@ -512,7 +507,7 @@ static bool vusbDevStdReqSetAddress(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup,
      * Check that the device is in a valid state.
      * (The caller has already checked that it's not being reset.)
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (    enmState != VUSB_DEVICE_STATE_DEFAULT
         &&  enmState != VUSB_DEVICE_STATE_ADDRESS)
     {
@@ -909,8 +904,7 @@ bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPoint, PVUSBSETUP pSetup, void
     /*
      * Check that the device is in a valid state.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
-    VUSBDEV_ASSERT_VALID_STATE(enmState);
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState == VUSB_DEVICE_STATE_RESET)
     {
         LogRel(("VUSB: %s: standard control message ignored, the device is resetting\n", pDev->pUsbIns->pszName));
@@ -994,7 +988,7 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
     /*
      * Check that the device is in a valid state.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     VUSBDEV_ASSERT_VALID_STATE(enmState);
     if (    enmState == VUSB_DEVICE_STATE_ATTACHED
         ||  enmState == VUSB_DEVICE_STATE_DETACHED)
@@ -1026,15 +1020,15 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
         if (pRh->pDefaultAddress != NULL)
         {
             vusbDevAddressUnHash(pRh->pDefaultAddress);
-            pRh->pDefaultAddress->enmState = VUSB_DEVICE_STATE_POWERED;
+            vusbDevSetState(pRh->pDefaultAddress, VUSB_DEVICE_STATE_POWERED);
             Log(("2 DEFAULT ADDRS\n"));
         }
 
         pRh->pDefaultAddress = pDev;
-        pDev->enmState = VUSB_DEVICE_STATE_DEFAULT;
+        vusbDevSetState(pDev, VUSB_DEVICE_STATE_DEFAULT);
     }
     else
-        pDev->enmState = VUSB_DEVICE_STATE_ADDRESS;
+        vusbDevSetState(pDev, VUSB_DEVICE_STATE_ADDRESS);
 
     pDev->u8Address = u8Address;
     vusbDevAddressHash(pDev);
@@ -1150,7 +1144,7 @@ static DECLCALLBACK(int) vusbDevUrbIoThread(RTTHREAD hThread, void *pvUser)
 
     while (!ASMAtomicReadBool(&pDev->fTerminate))
     {
-        if (pDev->enmState != VUSB_DEVICE_STATE_RESET)
+        if (vusbDevGetState(pDev) != VUSB_DEVICE_STATE_RESET)
             vusbUrbDoReapAsyncDev(pDev, RT_INDEFINITE_WAIT);
 
         /* Process any URBs waiting to be cancelled first. */
@@ -1238,7 +1232,7 @@ int vusbDevDetach(PVUSBDEV pDev)
 
     pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
     pDev->i16Port = -1;
-    pDev->enmState = VUSB_DEVICE_STATE_DETACHED;
+    vusbDevSetState(pDev, VUSB_DEVICE_STATE_DETACHED);
     pDev->pHub = NULL;
 
     /* Remove the configuration */
@@ -1261,9 +1255,9 @@ void vusbDevDestroy(PVUSBDEV pDev)
 
     /*
      * Deal with pending async reset.
+     * (anything but reset)
      */
-    if (pDev->enmState == VUSB_DEVICE_STATE_RESET)
-        pDev->enmState = VUSB_DEVICE_STATE_DEFAULT; /* anything but reset */
+    vusbDevSetStateCmp(pDev, VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET);
 
     /*
      * Detach and free resources.
@@ -1289,6 +1283,7 @@ void vusbDevDestroy(PVUSBDEV pDev)
     AssertRC(rc);
 
     RTCritSectDelete(&pDev->CritSectAsyncUrbs);
+    /* Not using vusbDevSetState() deliberately here because it would assert on the state. */
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
 }
 
@@ -1327,7 +1322,7 @@ static void vusbDevResetDone(PVUSBDEV pDev, int rc, PFNVUSBRESETDONE pfnDone, vo
     /*
      * Switch to the default state.
      */
-    pDev->enmState = VUSB_DEVICE_STATE_DEFAULT;
+    vusbDevSetState(pDev, VUSB_DEVICE_STATE_DEFAULT);
     pDev->u16Status = 0;
     vusbDevDoSelectConfig(pDev, &g_Config0);
     if (!vusbDevIsRh(pDev))
@@ -1420,7 +1415,7 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
  *                          on the EMT thread.
  * @thread  EMT
  */
-DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
+DECLCALLBACK(int) vusbIDeviceReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
 {
     PVUSBDEV pDev = (PVUSBDEV)pDevice;
     Assert(!pfnDone || pVM);
@@ -1429,14 +1424,12 @@ DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSB
     /*
      * Only one reset operation at a time.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
-    VUSBDEV_ASSERT_VALID_STATE(enmState);
-    if (enmState == VUSB_DEVICE_STATE_RESET)
+    const VUSBDEVICESTATE enmStateOld = vusbDevSetState(pDev, VUSB_DEVICE_STATE_RESET);
+    if (enmStateOld == VUSB_DEVICE_STATE_RESET)
     {
         LogRel(("VUSB: %s: reset request is ignored, the device is already resetting!\n", pDev->pUsbIns->pszName));
         return VERR_VUSB_DEVICE_IS_RESETTING;
     }
-    pDev->enmState = VUSB_DEVICE_STATE_RESET;
 
     /*
      * First, cancel all async URBs.
@@ -1481,7 +1474,7 @@ DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSB
  * @returns VBox status code.
  * @param   pInterface      Pointer to the device interface structure.
  */
-DECLCALLBACK(int) vusbDevPowerOn(PVUSBIDEVICE pInterface)
+DECLCALLBACK(int) vusbIDevicePowerOn(PVUSBIDEVICE pInterface)
 {
     PVUSBDEV pDev = (PVUSBDEV)pInterface;
     LogFlow(("vusbDevPowerOn: pDev=%p[%s]\n", pDev, pDev->pUsbIns->pszName));
@@ -1489,8 +1482,7 @@ DECLCALLBACK(int) vusbDevPowerOn(PVUSBIDEVICE pInterface)
     /*
      * Check that the device is in a valid state.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
-    VUSBDEV_ASSERT_VALID_STATE(enmState);
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState == VUSB_DEVICE_STATE_DETACHED)
     {
         Log(("vusb: warning: attempt to power on detached device %p[%s]\n", pDev, pDev->pUsbIns->pszName));
@@ -1506,7 +1498,7 @@ DECLCALLBACK(int) vusbDevPowerOn(PVUSBIDEVICE pInterface)
      * Do the job.
      */
     if (enmState == VUSB_DEVICE_STATE_ATTACHED)
-        pDev->enmState = VUSB_DEVICE_STATE_POWERED;
+        vusbDevSetState(pDev, VUSB_DEVICE_STATE_POWERED);
 
     return VINF_SUCCESS;
 }
@@ -1518,7 +1510,7 @@ DECLCALLBACK(int) vusbDevPowerOn(PVUSBIDEVICE pInterface)
  * @returns VBox status code.
  * @param   pInterface      Pointer to the device interface structure.
  */
-DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface)
+DECLCALLBACK(int) vusbIDevicePowerOff(PVUSBIDEVICE pInterface)
 {
     PVUSBDEV pDev = (PVUSBDEV)pInterface;
     LogFlow(("vusbDevPowerOff: pDev=%p[%s]\n", pDev, pDev->pUsbIns->pszName));
@@ -1526,8 +1518,7 @@ DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface)
     /*
      * Check that the device is in a valid state.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
-    VUSBDEV_ASSERT_VALID_STATE(enmState);
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState == VUSB_DEVICE_STATE_DETACHED)
     {
         Log(("vusb: warning: attempt to power off detached device %p[%s]\n", pDev, pDev->pUsbIns->pszName));
@@ -1549,8 +1540,7 @@ DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface)
         VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, pInterface, 0);
     }
 
-    pDev->enmState = VUSB_DEVICE_STATE_ATTACHED;
-
+    vusbDevSetState(pDev, VUSB_DEVICE_STATE_ATTACHED);
     return VINF_SUCCESS;
 }
 
@@ -1561,16 +1551,16 @@ DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface)
  * @returns Device state.
  * @param   pInterface      Pointer to the device interface structure.
  */
-DECLCALLBACK(VUSBDEVICESTATE) vusbDevGetState(PVUSBIDEVICE pInterface)
+DECLCALLBACK(VUSBDEVICESTATE) vusbIDeviceGetState(PVUSBIDEVICE pInterface)
 {
-    return ((PVUSBDEV)pInterface)->enmState;
+    return vusbDevGetState((PVUSBDEV)pInterface);
 }
 
 
 /**
  * @interface_method_impl{VUSBIDEVICE,pfnIsEmulated}
  */
-DECLCALLBACK(bool) vusbDevIsEmulated(PVUSBIDEVICE pInterface)
+DECLCALLBACK(bool) vusbIDeviceIsEmulated(PVUSBIDEVICE pInterface)
 {
     PVUSBDEV pDev = (PVUSBDEV)pInterface;
     bool fEmulated = !!(pDev->pUsbIns->pReg->fFlags & PDM_USBREG_EMULATED_DEVICE);
@@ -1718,11 +1708,11 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     Assert(!pDev->IDevice.pfnGetState);
     Assert(!pDev->IDevice.pfnIsEmulated);
 
-    pDev->IDevice.pfnReset = vusbDevReset;
-    pDev->IDevice.pfnPowerOn = vusbDevPowerOn;
-    pDev->IDevice.pfnPowerOff = vusbDevPowerOff;
-    pDev->IDevice.pfnGetState = vusbDevGetState;
-    pDev->IDevice.pfnIsEmulated = vusbDevIsEmulated;
+    pDev->IDevice.pfnReset = vusbIDeviceReset;
+    pDev->IDevice.pfnPowerOn = vusbIDevicePowerOn;
+    pDev->IDevice.pfnPowerOff = vusbIDevicePowerOff;
+    pDev->IDevice.pfnGetState = vusbIDeviceGetState;
+    pDev->IDevice.pfnIsEmulated = vusbIDeviceIsEmulated;
     pDev->pUsbIns = pUsbIns;
     pDev->pNext = NULL;
     pDev->pNextHash = NULL;

@@ -1834,7 +1834,7 @@ int vusbUrbSubmit(PVUSBURB pUrb)
     /*
      * Check that the device is in a valid state.
      */
-    const VUSBDEVICESTATE enmState = pDev->enmState;
+    const VUSBDEVICESTATE enmState = vusbDevGetState(pDev);
     if (enmState == VUSB_DEVICE_STATE_RESET)
     {
         LogRel(("VUSB: %s: power off ignored, the device is resetting!\n", pDev->pUsbIns->pszName));
@@ -1970,7 +1970,7 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
         PVUSBDEV pDev = pUrb->VUsb.pDev;
 
         /* Don't touch resetting devices - paranoid safety precaution. */
-        if (pDev->enmState != VUSB_DEVICE_STATE_RESET)
+        if (vusbDevGetState(pDev) != VUSB_DEVICE_STATE_RESET)
         {
             /*
              * Reap most URBs pending on a single device.
