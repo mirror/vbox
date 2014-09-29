@@ -169,8 +169,7 @@ typedef struct VUSBDEV
     PVUSBDEV            pNextHash;
     /** Pointer to the hub this device is attached to. */
     PVUSBHUB            pHub;
-    /** The device state.
-     * Only EMT changes this value. */
+    /** The device state. */
     VUSBDEVICESTATE volatile enmState;
 
     /** The device address. */
@@ -263,10 +262,6 @@ int vusbDevDetach(PVUSBDEV pDev);
 DECLINLINE(PVUSBROOTHUB) vusbDevGetRh(PVUSBDEV pDev);
 size_t vusbDevMaxInterfaces(PVUSBDEV dev);
 
-DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM);
-DECLCALLBACK(int) vusbDevPowerOn(PVUSBIDEVICE pInterface);
-DECLCALLBACK(int) vusbDevPowerOff(PVUSBIDEVICE pInterface);
-DECLCALLBACK(VUSBDEVICESTATE) vusbDevGetState(PVUSBIDEVICE pInterface);
 void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address);
 bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, void *pvBuf, uint32_t *pcbBuf);
 
@@ -497,6 +492,13 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 # define vusbUrbAssert(pUrb) do {} while (0)
 #endif
 
+/**
+ * @def VUSBDEV_ASSERT_VALID_STATE
+ * Asserts that the give device state is valid.
+ */
+#define VUSBDEV_ASSERT_VALID_STATE(enmState) \
+    AssertMsg((enmState) > VUSB_DEVICE_STATE_INVALID && (enmState) < VUSB_DEVICE_STATE_DESTROYED, ("enmState=%#x\n", enmState));
+
 /** Executes a function synchronously. */
 #define VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC RT_BIT_32(0)
 
@@ -533,6 +535,51 @@ DECLINLINE(PVUSBROOTHUB) vusbDevGetRh(PVUSBDEV pDev)
 }
 
 
+/**
+ * Returns the state of the USB device.
+ *
+ * @returns State of the USB device.
+ * @param   pDev    Pointer to the device.
+ */
+DECLINLINE(VUSBDEVICESTATE) vusbDevGetState(PVUSBDEV pDev)
+{
+    VUSBDEVICESTATE enmState = (VUSBDEVICESTATE)ASMAtomicReadU32((volatile uint32_t *)&pDev->enmState);
+    VUSBDEV_ASSERT_VALID_STATE(enmState);
+    return enmState;
+}
+
+
+/**
+ * Sets the given state for the USB device.
+ *
+ * @returns The old state of the device.
+ * @param   pDev     Pointer to the device.
+ * @param   enmState The new state to set.
+ */
+DECLINLINE(VUSBDEVICESTATE) vusbDevSetState(PVUSBDEV pDev, VUSBDEVICESTATE enmState)
+{
+    VUSBDEV_ASSERT_VALID_STATE(enmState);
+    VUSBDEVICESTATE enmStateOld = (VUSBDEVICESTATE)ASMAtomicXchgU32((volatile uint32_t *)&pDev->enmState, enmState);
+    VUSBDEV_ASSERT_VALID_STATE(enmStateOld);
+    return enmStateOld;
+}
+
+
+/**
+ * Compare and exchange the states for the given USB device.
+ *
+ * @returns true if the state was changed.
+ * @returns false if the state wasn't changed.
+ * @param   pDev           Pointer to the device.
+ * @param   enmStateNew    The new state to set.
+ * @param   enmStateOld    The old state to compare with.
+ */
+DECLINLINE(bool) vusbDevSetStateCmp(PVUSBDEV pDev, VUSBDEVICESTATE enmStateNew, VUSBDEVICESTATE enmStateOld)
+{
+    VUSBDEV_ASSERT_VALID_STATE(enmStateNew);
+    VUSBDEV_ASSERT_VALID_STATE(enmStateOld);
+    return ASMAtomicCmpXchgU32((volatile uint32_t *)&pDev->enmState, enmStateNew, enmStateOld);
+}
 
 /** Strings for the CTLSTAGE enum values. */
 extern const char * const g_apszCtlStates[4];
