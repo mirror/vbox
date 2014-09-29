@@ -866,6 +866,7 @@ void UIMachineLogicFullscreen::nativeHandlerForApplicationActivation(const QMap<
     QStringList ourBundleIdentifiers;
     ourBundleIdentifiers << "org.virtualbox.app.VirtualBox";
     ourBundleIdentifiers << "org.virtualbox.app.VirtualBoxVM";
+    ourBundleIdentifiers << "com.citrix.DesktopPlayerVM";
     if (!ourBundleIdentifiers.contains(userInfo.value("BundleIdentifier")))
         return;
 
