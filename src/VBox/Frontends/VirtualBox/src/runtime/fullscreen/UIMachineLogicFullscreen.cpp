@@ -863,7 +863,10 @@ void UIMachineLogicFullscreen::nativeHandlerForApplicationActivation(const QMap<
     /* Make sure we have BundleIdentifier key: */
     AssertReturnVoid(userInfo.contains("BundleIdentifier"));
     /* Skip other applications: */
-    if (userInfo.value("BundleIdentifier") != "org.virtualbox.app.VirtualBox")
+    QStringList ourBundleIdentifiers;
+    ourBundleIdentifiers << "org.virtualbox.app.VirtualBox";
+    ourBundleIdentifiers << "org.virtualbox.app.VirtualBoxVM";
+    if (!ourBundleIdentifiers.contains(userInfo.value("BundleIdentifier")))
         return;
 
     /* Skip if 'screen have separate spaces': */
