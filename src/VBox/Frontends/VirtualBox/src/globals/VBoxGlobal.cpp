@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -221,6 +221,7 @@ VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL)
     , m_pVirtualMachine(0)
+    , mIsSeparate(false)
     , m_pMediumEnumerator(0)
     , mIsKWinManaged (false)
 #if defined(DEBUG_bird)
@@ -399,16 +400,8 @@ bool VBoxGlobal::startMachine(const QString &strMachineId)
         mRestoreCurrentSnapshot = false;
     }
 
-    /* Create VM session: */
-    CSession session = vboxGlobal().openSession(strMachineId, KLockType_VM);
-    if (session.isNull())
-        return false;
-
     /* Start virtual machine: */
-    UIMachine *pVirtualMachine = new UIMachine(&m_pVirtualMachine, session);
-    Assert(pVirtualMachine == m_pVirtualMachine);
-    Q_UNUSED(pVirtualMachine);
-    return true;
+    return UIMachine::create(&m_pVirtualMachine);
 }
 
 UIMachine* VBoxGlobal::virtualMachine()
@@ -3989,6 +3982,7 @@ void VBoxGlobal::prepare()
 
     mShowStartVMErrors = true;
     bool startVM = false;
+    bool fSeparate = false;
     QString vmNameOrUuid;
 
     int argc = qApp->argc();
@@ -4007,6 +4001,10 @@ void VBoxGlobal::prepare()
                 vmNameOrUuid = QString (qApp->argv() [i]);
                 startVM = true;
             }
+        }
+        else if (!::strcmp (arg, "-separate") || !::strcmp (arg, "--separate"))
+        {
+            fSeparate = true;
         }
 #ifdef VBOX_GUI_WITH_PIDFILE
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
@@ -4142,6 +4140,9 @@ void VBoxGlobal::prepare()
 
     if (startVM)
     {
+        /* mIsSeparate makes sense only if a VM is started. */
+        mIsSeparate = fSeparate;
+
         QUuid uuid = QUuid(vmNameOrUuid);
         if (!uuid.isNull())
         {
@@ -4556,19 +4557,22 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 #endif
 }
 
-bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
+bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = LaunchMode_Default */)
 {
-    /* Switch to machine window(s) if possible: */
-    if (machine.CanShowConsoleWindow())
-        return VBoxGlobal::switchToMachine(machine);
+    if (enmLaunchMode != LaunchMode_Separate)
+    {
+        /* Switch to machine window(s) if possible: */
+        if (machine.CanShowConsoleWindow())
+            return VBoxGlobal::switchToMachine(machine);
 
-    /* Make sure machine-state is one of required: */
-    KMachineState state = machine.GetState(); NOREF(state);
-    AssertMsg(   state == KMachineState_PoweredOff
-              || state == KMachineState_Saved
-              || state == KMachineState_Teleported
-              || state == KMachineState_Aborted
-              , ("Machine must be PoweredOff/Saved/Teleported/Aborted (%d)", state));
+        /* Make sure machine-state is one of required: */
+        KMachineState state = machine.GetState(); NOREF(state);
+        AssertMsg(   state == KMachineState_PoweredOff
+                  || state == KMachineState_Saved
+                  || state == KMachineState_Teleported
+                  || state == KMachineState_Aborted
+                  , ("Machine must be PoweredOff/Saved/Teleported/Aborted (%d)", state));
+    }
 
     /* Create empty session instance: */
     CSession session;
@@ -4594,20 +4598,42 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
     if (pXauth)
         strEnv.append(QString("XAUTHORITY=%1\n").arg(pXauth));
 #endif /* Q_WS_X11 */
-    const QString strType = fHeadless ? "headless" : "";
+    QString strType;
+    switch (enmLaunchMode)
+    {
+        case LaunchMode_Default:  strType = ""; break;
+        case LaunchMode_Separate:
+        case LaunchMode_Headless: strType = "headless"; break;
+    }
 
     /* Prepare "VM spawning" progress: */
     CProgress progress = machine.LaunchVMProcess(session, strType, strEnv);
     if (!machine.isOk())
     {
+        /* If the VM is started separately and the VM process is already running, then it is OK. */
+        if (enmLaunchMode == LaunchMode_Separate)
+        {
+            KMachineState s = machine.GetState();
+            if (   s >= KMachineState_FirstOnline
+                && s <= KMachineState_LastOnline)
+            {
+                /* Already running. */
+                return true;
+            }
+        }
+
         msgCenter().cannotOpenSession(machine);
         return false;
     }
 
     /* Postpone showing "VM spawning" progress.
      * Hope 1 minute will be enough to spawn any running VM silently,
-     * otherwise we better show the progress... */
-    int iSpawningDuration = 60000;
+     * otherwise we better show the progress...
+     * If starting separately, then show the progress now.
+     */
+    int iSpawningDuration = enmLaunchMode == LaunchMode_Separate?
+                                0:
+                                60000;
     msgCenter().showModalProgressDialog(progress, machine.GetName(),
                                         ":/progress_start_90px.png", 0, iSpawningDuration);
     if (!progress.isOk() || progress.GetResultCode() != 0)

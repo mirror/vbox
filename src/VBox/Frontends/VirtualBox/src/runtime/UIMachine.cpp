@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 # include "UIActionPoolRuntime.h"
 # include "UIMachineLogic.h"
 # include "UIMachineWindow.h"
+# include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -88,11 +89,20 @@ protected:
     UIMachineLogic *m_pMachineLogic;
 };
 
-UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
+/* static */
+bool UIMachine::create(UIMachine **ppSelf)
+{
+    UIMachine *pVirtualMachine = new UIMachine(ppSelf);
+    if (!pVirtualMachine)
+        return false;
+    return pVirtualMachine->prepare();
+}
+
+UIMachine::UIMachine(UIMachine **ppSelf)
     : QObject(0)
     , m_ppThis(ppSelf)
     , initialStateType(UIVisualStateType_Normal)
-    , m_session(session)
+    , m_session()
     , m_pSession(0)
     , m_pVisualState(0)
     , m_allowedVisualStates(UIVisualStateType_Invalid)
@@ -100,6 +110,36 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     /* Store self pointer: */
     if (m_ppThis)
         *m_ppThis = this;
+}
+
+bool UIMachine::prepare()
+{
+    KLockType lockType;
+    if (vboxGlobal().isSeparate())
+    {
+        /* Search for the corresponding machine: */
+        CVirtualBox virtualBox = vboxGlobal().virtualBox();
+        CMachine machine = virtualBox.FindMachine(vboxGlobal().managedVMUuid());
+        if (machine.isNull())
+        {
+            msgCenter().cannotFindMachineById(virtualBox, vboxGlobal().managedVMUuid());
+            return false;
+        }
+
+        if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
+            return false;
+
+        lockType = KLockType_Shared;
+    }
+    else
+    {
+        lockType = KLockType_VM;
+    }
+
+    /* Create VM session: */
+    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(), lockType);
+    if (m_session.isNull())
+        return false;
 
     /* Create UI session: */
     m_pSession = new UISession(this, m_session);
@@ -121,6 +161,19 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
 
     /* Enter default (normal) state */
     enterInitialVisualState();
+
+    /* Now power up the machine.
+     * Actually powerUp does more that just a power up,
+     * so call it regardless of isSeparate setting.
+     */
+    uisession()->powerUp();
+
+    /* Initialization of MachineLogic internals after the powerUp.
+     * This is a hack, maybe more generic approach can be used.
+     */
+    machineLogic()->initializePostPowerUp();
+
+    return true;
 }
 
 UIMachine::~UIMachine()

@@ -126,11 +126,11 @@ void UIMachineWindow::prepare()
     /* Retranslate window: */
     retranslateUi();
 
+    /* Show (must be done before updating the appearance): */
+    showInNecessaryMode();
+
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
-
-    /* Show: */
-    showInNecessaryMode();
 }
 
 void UIMachineWindow::cleanup()
@@ -269,6 +269,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 {
     /* Always ignore close-event first: */
     pEvent->ignore();
+
+    /* If VM process is running separately, then leave it alone and close UI: */
+    if (vboxGlobal().isSeparate())
+    {
+        uisession()->closeRuntimeUI();
+        return;
+    }
 
     /* Make sure machine is in one of the allowed states: */
     if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
