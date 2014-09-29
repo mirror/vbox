@@ -51,13 +51,11 @@ UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            Qt::Alignment alignment,
                                            bool fAutoHide /* = true */)
     : QWidget(pParent,
-#if   defined (Q_WS_WIN)
+#if   defined(Q_WS_WIN)
               Qt::Tool | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint
-#elif defined (Q_WS_MAC)
+#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
               Qt::Window | Qt::FramelessWindowHint
-#elif defined (Q_WS_X11)
-              Qt::Widget
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC || Q_WS_X11 */
               )
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
@@ -142,6 +140,7 @@ void UIRuntimeMiniToolBar::addMenus(const QList<QMenu*> &menus)
 
 void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 {
+#ifndef Q_WS_X11
     /* This method could be called before parent-widget
      * become visible, we should skip everything in that case: */
     if (QApplication::desktop()->screenNumber(parentWidget()) == -1)
@@ -165,11 +164,6 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
         case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
         default: break;
     }
-#ifdef Q_WS_X11
-    /* Disregard origin under X11,
-     * because this is widget, not window: */
-    screenRect.moveTopLeft(QPoint(0, 0));
-#endif /* Q_WS_X11 */
     iX = screenRect.x() + screenRect.width() / 2 - width() / 2;
     switch (m_alignment)
     {
@@ -201,6 +195,70 @@ void UIRuntimeMiniToolBar::adjustGeometry(int iHostScreen /* = -1 */)
 
     /* Simulate toolbar auto-hiding: */
     simulateToolbarAutoHiding();
+
+#else /* Q_WS_X11 */
+
+    /* This method could be called before parent-widget
+     * become visible, we should skip everything in that case: */
+    if (QApplication::desktop()->screenNumber(parentWidget()) == -1)
+        return;
+
+    /* Determine host-screen number if necessary: */
+    bool fMoveToHostScreen = true;
+    if (iHostScreen == -1)
+    {
+        fMoveToHostScreen = false;
+        iHostScreen = QApplication::desktop()->screenNumber(this);
+    }
+
+    /* Choose window geometry: */
+    QRect screenRect;
+    switch (m_geometryType)
+    {
+        case GeometryType_Available: screenRect = QApplication::desktop()->availableGeometry(iHostScreen); break;
+        case GeometryType_Full:      screenRect = QApplication::desktop()->screenGeometry(iHostScreen); break;
+        default: break;
+    }
+
+    /* Move to corresponding host-screen: */
+    if (fMoveToHostScreen)
+        move(screenRect.topLeft());
+
+    /* Resize embedded-toolbar to minimum size: */
+    m_pEmbeddedToolbar->resize(m_pEmbeddedToolbar->sizeHint());
+
+    /* Calculate embedded-toolbar position: */
+    int iX = 0, iY = 0;
+    iX = screenRect.width() / 2 - m_pEmbeddedToolbar->width() / 2;
+    switch (m_alignment)
+    {
+        case Qt::AlignTop:    iY = 0; break;
+        case Qt::AlignBottom: iY = screenRect.height() - m_pEmbeddedToolbar->height(); break;
+        default: break;
+    }
+
+    /* Update auto-hide animation: */
+    m_shownToolbarPosition = QPoint(iX, iY);
+    switch (m_alignment)
+    {
+        case Qt::AlignTop:    m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3); break;
+        case Qt::AlignBottom: m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3); break;
+    }
+    m_pAnimation->update();
+
+    /* Update embedded-toolbar geometry if known: */
+    const QString strAnimationState = property("AnimationState").toString();
+    if (strAnimationState == "Start")
+        m_pEmbeddedToolbar->move(m_hiddenToolbarPosition);
+    else if (strAnimationState == "Final")
+        m_pEmbeddedToolbar->move(m_shownToolbarPosition);
+
+    /* Adjust window mask: */
+    setMask(m_pEmbeddedToolbar->geometry());
+
+    /* Simulate toolbar auto-hiding: */
+    simulateToolbarAutoHiding();
+#endif /* Q_WS_X11 */
 }
 
 void UIRuntimeMiniToolBar::sltHandleToolbarResize()
@@ -237,10 +295,10 @@ void UIRuntimeMiniToolBar::sltHoverLeave()
 
 void UIRuntimeMiniToolBar::prepare()
 {
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) || defined (Q_WS_X11)
     /* Install own event filter: */
     installEventFilter(this);
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC || Q_WS_X11 */
 
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
     /* Make sure we have no background
@@ -258,7 +316,11 @@ void UIRuntimeMiniToolBar::prepare()
      * - Under x11 host Qt has broken XComposite support (black background): */
     setAttribute(Qt::WA_TranslucentBackground);
 # endif /* Q_WS_WIN */
-#endif /* Q_WS_MAC || Q_WS_WIN */
+#elif defined(Q_WS_X11)
+    /* Use Qt API to enable translucency if allowed: */
+    if (QX11Info::isCompositingManagerRunning())
+        setAttribute(Qt::WA_TranslucentBackground);
+#endif /* Q_WS_X11 */
 
     /* Make sure we have no focus: */
     setFocusPolicy(Qt::NoFocus);
@@ -377,6 +439,14 @@ void UIRuntimeMiniToolBar::leaveEvent(QEvent*)
         m_pHoverLeaveTimer->start();
 }
 
+#ifdef Q_WS_X11
+void UIRuntimeMiniToolBar::resizeEvent(QResizeEvent*)
+{
+    /* Adjust mini-toolbar on resize: */
+    adjustGeometry();
+}
+#endif /* Q_WS_X11 */
+
 bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
 #if   defined(Q_WS_WIN)
@@ -387,13 +457,12 @@ bool UIRuntimeMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (pWatched && m_pEmbeddedToolbar && pWatched == m_pEmbeddedToolbar &&
         pEvent->type() == QEvent::FocusIn)
         emit sigNotifyAboutFocusStolen();
-#elif defined(Q_WS_MAC)
-    /* Due to Qt bug on Mac OS X window will be activated
-     * even if has Qt::WA_ShowWithoutActivating attribute. */
+#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
+    /* Detect if we have window activation stolen. */
     if (pWatched == this &&
         pEvent->type() == QEvent::WindowActivate)
         emit sigNotifyAboutFocusStolen();
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC || Q_WS_X11 */
 
     /* Call to base-class: */
     return QWidget::eventFilter(pWatched, pEvent);
@@ -422,12 +491,6 @@ void UIRuntimeMiniToolBar::setToolbarPosition(QPoint point)
 #ifdef Q_WS_X11
     /* Update window mask: */
     setMask(m_pEmbeddedToolbar->geometry());
-
-# ifdef VBOX_WITH_MASKED_SEAMLESS
-    /* Notify listeners as well: */
-    const QRect windowGeo = geometry();
-    emit sigNotifyAboutGeometryChange(windowGeo.intersected(m_pEmbeddedToolbar->geometry().translated(windowGeo.topLeft())));
-# endif /* VBOX_WITH_MASKED_SEAMLESS */
 #endif /* Q_WS_X11 */
 }
 

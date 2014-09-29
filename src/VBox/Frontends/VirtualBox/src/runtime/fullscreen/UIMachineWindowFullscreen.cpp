@@ -187,10 +187,10 @@ void UIMachineWindowFullscreen::sltRevokeFocus()
 #if   defined(Q_WS_WIN)
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
-#elif defined(Q_WS_MAC)
+#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
     /* Revoke stolen activation: */
     activateWindow();
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC || Q_WS_X11 */
 }
 
 void UIMachineWindowFullscreen::prepareVisualState()
@@ -363,13 +363,21 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     if (!uisession()->isScreenVisible(m_uScreenId) ||
         !pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
-        /* Hide mini-toolbar: */
-        if (   m_pMiniToolBar
-#ifdef Q_WS_MAC
-            && !fSupportsNativeFullScreen
-#endif /* Q_WS_MAC */
-            )
+        /* If there is mini-toolbar: */
+        if (m_pMiniToolBar)
+        {
+#if   defined(Q_WS_WIN) || defined(Q_WS_X11)
+            /* Just hide mini-toolbar: */
             m_pMiniToolBar->hide();
+#elif defined(Q_WS_MAC)
+            /* If no native full-screen used: */
+            if (!fSupportsNativeFullScreen)
+            {
+                /* Just hide mini-toolbar: */
+                m_pMiniToolBar->hide();
+            }
+#endif /* Q_WS_MAC */
+        }
         /* Hide window: */
         hide();
         return;
@@ -424,13 +432,32 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
     /* Adjust machine-view size if necessary: */
     adjustMachineViewSize();
 
-    /* Show mini-toolbar: */
-    if (   m_pMiniToolBar
-#ifdef Q_WS_MAC
-        && !fSupportsNativeFullScreen
-#endif /* Q_WS_MAC */
-        )
+    /* If there is mini-toolbar: */
+    if (m_pMiniToolBar)
+    {
+#if   defined(Q_WS_WIN)
+        /* Just show mini-toolbar: */
         m_pMiniToolBar->show();
+#elif defined(Q_WS_MAC)
+        /* If no native full-screen used: */
+        if (!fSupportsNativeFullScreen)
+        {
+            /* Just show mini-toolbar: */
+            m_pMiniToolBar->show();
+        }
+#elif defined(Q_WS_X11)
+        /* Allow mini-toolbar to be located on full-screen area: */
+        m_pMiniToolBar->showFullScreen();
+        /* On modern window managers: */
+        if (fSupportsNativeFullScreen)
+        {
+            /* We also can map mini-toolbar directly on corresponding machine-window: */
+            VBoxGlobal::setFullScreenMonitorX11(m_pMiniToolBar, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+        }
+        /* Make sure mini-toolbar is always on top of machine-window: */
+        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
+#endif /* Q_WS_X11 */
+    }
 
     /* Make sure machine-view have focus: */
     m_pMachineView->setFocus();
@@ -451,8 +478,16 @@ void UIMachineWindowFullscreen::adjustMachineViewSize()
         /* Which host-screen should that machine-window located on? */
         const int iHostScreen = pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId);
 
+#ifndef Q_WS_X11
         /* Move mini-toolbar into appropriate place: */
         m_pMiniToolBar->adjustGeometry(iHostScreen);
+#else /* Q_WS_X11 */
+        /* On modern WMs we are mapping mini-toolbar to corresponding host-screen directly. */
+        const bool fSupportsNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+                                               !gEDataManager->legacyFullscreenModeRequested();
+        /* Adjust mini-toolbar and move into appropriate place if necessary: */
+        m_pMiniToolBar->adjustGeometry(fSupportsNativeFullScreen ? -1 : iHostScreen);
+#endif /* Q_WS_X11 */
     }
 }
 
