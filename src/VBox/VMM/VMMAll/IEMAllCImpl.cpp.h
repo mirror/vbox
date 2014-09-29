@@ -1579,11 +1579,14 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
      */
     if ((uNewCs & X86_SEL_RPL) != pIemCpu->uCpl)
     {
-        /* Read the return pointer, it comes before the parameters. */
+        /* Read the outer stack pointer stored *after* the parameters. */
         RTCPTRUNION uPtrStack;
         rcStrict = iemMemStackPopContinueSpecial(pIemCpu, cbPop + cbRetPtr, &uPtrStack.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+
+        uPtrStack.pu8 += cbPop; /* Skip the parameters. */
+
         uint16_t uNewOuterSs;
         uint64_t uNewOuterRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
@@ -1732,7 +1735,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCs.Legacy);
         pCtx->cs.u32Limit       = cbLimitCs;
         pCtx->cs.u64Base        = u64Base;
-        pCtx->rsp               = uNewRsp;
+        pCtx->rsp               = uNewOuterRsp;
         pCtx->ss.Sel            = uNewOuterSs;
         pCtx->ss.ValidSel       = uNewOuterSs;
         pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
