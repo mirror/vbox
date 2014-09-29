@@ -479,6 +479,14 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(struct VMMDevReqMousePointer *pReq)
 
 /** @name Display
  * @{ */
+/** The folder for the video mode hint unix domain socket on Unix-like guests.
+ */
+/** @note This can be safely changed as all users are rebuilt in lock-step. */
+#define VBGLR3HOSTDISPSOCKETPATH "/tmp/.VBoxService"
+/** The path to the video mode hint unix domain socket on Unix-like guests. */
+#define VBGLR3HOSTDISPSOCKET     VBGLR3VIDEOMODEHINTSOCKETPATH \
+    "/VideoModeHint"
+
 VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck);
 VBGLR3DECL(int)     VbglR3GetDisplayChangeRequestEx(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
                                                     uint32_t *piDisplay, uint32_t *pcOriginX, uint32_t *pcOriginY,
