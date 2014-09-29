@@ -475,7 +475,7 @@ class WebMWriter_Impl
 
 public:
 
-    WebMWriter_Impl::WebMWriter_Impl() :
+    WebMWriter_Impl() :
         m_bDebug(false),
         m_iLastPtsMs(-1),
         m_iInitialPtsMs(-1),
