@@ -2504,7 +2504,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         }
         else
         {
-            rcStrict = iemMemStackPopContinueSpecial(pIemCpu, 8, &uFrame.pv, &uNewRsp);
+            rcStrict = iemMemStackPopContinueSpecial(pIemCpu, 4, &uFrame.pv, &uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
             uNewESP = uFrame.pu16[0];
