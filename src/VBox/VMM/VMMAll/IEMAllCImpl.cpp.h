@@ -1185,6 +1185,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         if (offSeg > cbLimit)
         {
             Log(("jmpf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
+            /** @todo: Intel says this is #GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         u64Base = X86DESC_BASE(&Desc.Legacy);
@@ -1380,6 +1381,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         if (offSeg > cbLimit)
         {
             Log(("callf %04x:%08RX64 -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
+            /** @todo: Intel says this is #GP(0)! */
             return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         u64Base = X86DESC_BASE(&Desc.Legacy);
@@ -1692,6 +1694,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             {
                 Log(("retf %04x:%08RX64 %04x:%08RX64 - out of bounds (%#x)-> #GP(CS).\n",
                      uNewCs, uNewRip, uNewOuterSs, uNewOuterRsp, cbLimitCs));
+                /** @todo: Intel says this is #GP(0)! */
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
             }
             u64Base = X86DESC_BASE(&DescCs.Legacy);
@@ -1784,6 +1787,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             if (uNewRip > cbLimitCs)
             {
                 Log(("retf %04x:%08RX64 -> out of bounds (%#x)\n", uNewCs, uNewRip, cbLimitCs));
+                /** @todo: Intel says this is #GP(0)! */
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
             }
             u64Base = X86DESC_BASE(&DescCs.Legacy);
@@ -2571,6 +2575,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         {
             Log(("iret %04x:%08x/%04x:%08x -> EIP is out of bounds (%#x) -> #GP(0)\n",
                  uNewCs, uNewEip, uNewSS, uNewESP, cbLimitCS));
+            /** @todo: Which is it, #GP(0) or #GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pIemCpu, uNewCs);
         }
 
@@ -2647,6 +2652,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         if (uNewEip > cbLimitCS)
         {
             Log(("iret %04x:%08x - EIP is out of bounds (%#x) -> #GP(0)\n", uNewCs, uNewEip, cbLimitCS));
+            /** @todo: Which is it, #GP(0) or #GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pIemCpu, uNewCs);
         }
 
@@ -2900,6 +2906,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
         {
             Log(("iret %04x:%016RX64/%04x:%016RX64 -> EIP is out of bounds (%#x) -> #GP(0)\n",
                  uNewCs, uNewRip, uNewSs, uNewRsp, cbLimitCS));
+            /** @todo: Which is it, #GP(0) or #GP(sel)? */
             return iemRaiseSelectorBoundsBySelector(pIemCpu, uNewCs);
         }
     }
