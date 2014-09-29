@@ -137,6 +137,9 @@ static struct
 #ifdef VBOX_WITH_SHARED_FOLDERS
     { &g_AutoMount,     NIL_RTTHREAD, false, false, false, false, true },
 #endif
+#ifdef VBOXSERVICE_WITH_DISPLAY
+    { &g_Display,       NIL_RTTHREAD, false, false, false, false, true },
+#endif
 };
 
 /* Default call-backs for services which do not need special behaviour. */

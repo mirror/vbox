@@ -65,6 +65,11 @@ ifdef VBOX_WITH_SHARED_FOLDERS
   VBoxService_DEFS       += VBOX_WITH_SHARED_FOLDERS
  endif
 endif
+ifdef VBOXSERVICE_WITH_DISPLAY
+ if1of ($(KBUILD_TARGET), linux solaris freebsd)
+  VBoxService_DEFS       += VBOXSERVICE_WITH_DISPLAY
+ endif
+endif
 
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
