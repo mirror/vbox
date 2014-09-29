@@ -24,7 +24,6 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <VBox/com/array.h>
 #include "VBox/com/MultiResult.h"
 #include "VBox/com/ErrorInfo.h"
 
@@ -2361,9 +2360,8 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
 
         if (aVariant.size())
         {
-            com::SafeArray<MediumVariant_T> variants(aVariant);
-            for (size_t i = 0; i < variants.size(); i++)
-                mediumVariantFlags |= variants[i];
+            for (size_t i = 0; i < aVariant.size(); i++)
+                mediumVariantFlags |= (ULONG)aVariant[i];
         }
 
         mediumVariantFlags &= ((unsigned)~MediumVariant_Diff);
@@ -2501,9 +2499,8 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
 
     if (aVariant.size())
     {
-        com::SafeArray<MediumVariant_T> variants(aVariant);
-        for (size_t i = 0; i < variants.size(); i++)
-            mediumVariantFlags |= variants[i];
+        for (size_t i = 0; i < aVariant.size(); i++)
+            mediumVariantFlags |= (ULONG)aVariant[i];
     }
 
     rc = i_createDiffStorage(diff, (MediumVariant_T)mediumVariantFlags, pMediumLockList,
@@ -2666,9 +2663,8 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
 
         if (aVariant.size())
         {
-            com::SafeArray<MediumVariant_T> variants(aVariant);
-            for (size_t i = 0; i < variants.size(); i++)
-                mediumVariantFlags |= variants[i];
+            for (size_t i = 0; i < aVariant.size(); i++)
+                mediumVariantFlags |= (ULONG)aVariant[i];
         }
 
         /* setup task object to carry out the operation asynchronously */
