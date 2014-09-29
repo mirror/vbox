@@ -2140,7 +2140,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned w
     uint8_t *dest = s->pDrv->pu8Data      + offsetDest;
     uint8_t *src  = s->CTX_SUFF(vram_ptr) + offsetSource;
 
-    for(unsigned y = yStart; y < yStart + height; y++) 
+    for(unsigned y = yStart; y < yStart + height; y++)
     {
         vga_draw_line(s, dest, src, width);
 
@@ -2214,7 +2214,7 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
     d = pDrv->pu8Data;
     linesize = pDrv->cbScanline;
 
-    for(y = 0; y < height; y++) 
+    for(y = 0; y < height; y++)
     {
         addr = addr1 + y * bwidth;
 
@@ -4116,10 +4116,13 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         pHlp->pfnPrintf(pHlp, "vsync start : %d px, end: %d px\n", r->vs_start, r->vs_end);
         pHlp->pfnPrintf(pHlp, "cclks per frame: %d\n", r->frame_cclks);
         pHlp->pfnPrintf(pHlp, "cclk time (ns) : %d\n", r->cclk_ns);
-        vfreq_hz = 1000000000 / r->frame_ns;
-        hfreq_hz = 1000000000 / r->h_total_ns;
-        pHlp->pfnPrintf(pHlp, "vfreq: %d Hz, hfreq: %d.%03d kHz\n",
-                        vfreq_hz, hfreq_hz / 1000, hfreq_hz % 1000);
+        if (r->frame_ns && r->h_total_ns)   /* Careful in case state is temporarily invalid. */
+        {
+            vfreq_hz = 1000000000 / r->frame_ns;
+            hfreq_hz = 1000000000 / r->h_total_ns;
+            pHlp->pfnPrintf(pHlp, "vfreq: %d Hz, hfreq: %d.%03d kHz\n",
+                            vfreq_hz, hfreq_hz / 1000, hfreq_hz % 1000);
+        }
     }
     pHlp->pfnPrintf(pHlp, "display refresh interval: %u ms\n", pThis->cMilliesRefreshInterval);
 }
@@ -5327,7 +5330,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     LogFlow(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 #ifdef VBOX_WITH_VMSVGA
-    AssertReturn((iRegion == ((pThis->fVMSVGAEnabled) ? 1 : 0)) && (enmType == ((pThis->fVMSVGAEnabled) ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH)), VERR_INTERNAL_ERROR);    
+    AssertReturn((iRegion == ((pThis->fVMSVGAEnabled) ? 1 : 0)) && (enmType == ((pThis->fVMSVGAEnabled) ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH)), VERR_INTERNAL_ERROR);
 #else
     AssertReturn(iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
 #endif
