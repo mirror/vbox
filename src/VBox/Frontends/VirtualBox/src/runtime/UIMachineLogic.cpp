@@ -191,14 +191,6 @@ void UIMachineLogic::prepare()
     prepareDock();
 #endif /* Q_WS_MAC */
 
-    /* Power up machine: */
-    uisession()->powerUp();
-
-    /* Initialization: */
-    sltMachineStateChanged();
-    sltAdditionsStateChanged();
-    sltMouseCapabilityChanged();
-
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Prepare debugger: */
     prepareDebugger();
@@ -239,6 +231,13 @@ void UIMachineLogic::cleanup()
     cleanupActionConnections();
     /* Cleanup action groups: */
     cleanupActionGroups();
+}
+
+void UIMachineLogic::initializePostPowerUp()
+{
+    sltMachineStateChanged();
+    sltAdditionsStateChanged();
+    sltMouseCapabilityChanged();
 }
 
 UIActionPool* UIMachineLogic::actionPool() const

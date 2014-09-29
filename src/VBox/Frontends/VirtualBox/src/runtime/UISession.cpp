@@ -64,6 +64,7 @@
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
 # include "CDisplay.h"
+# include "CMouse.h"
 # include "CNetworkAdapter.h"
 # include "CHostNetworkInterface.h"
 # include "CVRDEServer.h"
@@ -232,10 +233,6 @@ UISession::~UISession()
 
 void UISession::powerUp()
 {
-    /* Do nothing if we had started already: */
-    if (isRunning() || isPaused())
-        return;
-
     /* Prepare powerup: */
     bool fPrepared = preparePowerUp();
     if (!fPrepared)
@@ -263,49 +260,63 @@ void UISession::powerUp()
             debugger.SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
-    /* Power UP machine: */
+    if (!vboxGlobal().isSeparate())
+    {
+        /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                         console.PowerUpPaused() : console.PowerUp();
+        CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+                             console.PowerUpPaused() : console.PowerUp();
 #else /* !VBOX_WITH_DEBUGGER_GUI */
-    CProgress progress = console.PowerUp();
+        CProgress progress = console.PowerUp();
 #endif /* !VBOX_WITH_DEBUGGER_GUI */
 
-    /* Check for immediate failure: */
-    if (!console.isOk())
-    {
-        if (vboxGlobal().showStartVMErrors())
-            msgCenter().cannotStartMachine(console, machine.GetName());
-        closeRuntimeUI();
-        return;
-    }
+        /* Check for immediate failure: */
+        if (!console.isOk())
+        {
+            if (vboxGlobal().showStartVMErrors())
+                msgCenter().cannotStartMachine(console, machine.GetName());
+            closeRuntimeUI();
+            return;
+        }
 
-    /* Guard progressbar warnings from auto-closing: */
-    if (uimachine()->machineLogic())
-        uimachine()->machineLogic()->setPreventAutoClose(true);
+        /* Guard progressbar warnings from auto-closing: */
+        if (uimachine()->machineLogic())
+            uimachine()->machineLogic()->setPreventAutoClose(true);
 
-    /* Show "Starting/Restoring" progress dialog: */
-    if (isSaved())
-    {
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", 0, 0);
-        /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
-        machineLogic()->adjustMachineWindowsGeometry();
+        /* Show "Starting/Restoring" progress dialog: */
+        if (isSaved())
+        {
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", 0, 0);
+            /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
+            machineLogic()->adjustMachineWindowsGeometry();
+        }
+        else
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png");
+
+        /* Check for a progress failure: */
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+        {
+            if (vboxGlobal().showStartVMErrors())
+                msgCenter().cannotStartMachine(progress, machine.GetName());
+            closeRuntimeUI();
+            return;
+        }
+
+        /* Allow further auto-closing: */
+        if (uimachine()->machineLogic())
+            uimachine()->machineLogic()->setPreventAutoClose(false);
     }
     else
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png");
-
-    /* Check for a progress failure: */
-    if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        if (vboxGlobal().showStartVMErrors())
-            msgCenter().cannotStartMachine(progress, machine.GetName());
-        closeRuntimeUI();
-        return;
-    }
+        /* Fetch the current state: */
+        CMouse mouse = console.GetMouse();
+        m_fIsMouseSupportsAbsolute = mouse.GetAbsoluteSupported();
+        m_fIsMouseSupportsRelative = mouse.GetRelativeSupported();
+        m_fIsMouseSupportsMultiTouch = mouse.GetMultiTouchSupported();
+        m_fIsMouseHostCursorNeeded = mouse.GetNeedsHostCursor();
 
-    /* Allow further auto-closing: */
-    if (uimachine()->machineLogic())
-        uimachine()->machineLogic()->setPreventAutoClose(false);
+        sltAdditionsChange();
+    }
 
     /* Check if we missed a really quick termination after successful startup, and process it if we did: */
     if (isTurnedOff())
@@ -464,14 +475,18 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     }
     else
     {
-        /* Failed in console: */
-        COMResult res(console);
-        /* This can happen if VBoxSVC is not running: */
-        if (FAILED_DEAD_INTERFACE(res.rc()))
-            fServerCrashed = true;
-        else
-            msgCenter().cannotPowerDownMachine(console);
-        return false;
+        /* Check the machine state, it might be already gone: */
+        if (!console.isNull())
+        {
+           /* Failed in console: */
+           COMResult res(console);
+           /* This can happen if VBoxSVC is not running: */
+           if (FAILED_DEAD_INTERFACE(res.rc()))
+               fServerCrashed = true;
+           else
+               msgCenter().cannotPowerDownMachine(console);
+           return false;
+        }
     }
     /* Passed: */
     return true;
@@ -506,6 +521,8 @@ void UISession::changeVisualState(UIVisualStateType visualStateType)
 bool UISession::setPause(bool fOn)
 {
     CConsole console = session().GetConsole();
+    if (console.isNull())
+        return true;
 
     if (fOn)
         console.Pause();
@@ -1262,7 +1279,8 @@ void UISession::cleanupFramebuffers()
             pFb->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
-            display.DetachFramebuffer(i);
+            if (!display.isNull())
+                display.DetachFramebuffer(i);
             /* Release framebuffer reference: */
             m_frameBufferVector[i].setNull();
         }

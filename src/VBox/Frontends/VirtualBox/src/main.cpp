@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -231,6 +231,7 @@ static void showHelp()
             "\n"
             "Usage:\n"
             "  --startvm <vmname|UUID>    start a VM by specifying its UUID or name\n"
+            "  --separate                 start a separate VM process\n"
             "  --seamless                 switch to seamless mode during startup\n"
             "  --fullscreen               switch to fullscreen mode during startup\n"
             "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
@@ -511,15 +512,17 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 int main(int argc, char **argv, char **envp)
 {
-    /* Initialize VBox Runtime.
-     * Initialize the SUPLib as well only if we are really about to start a VM.
-     * Don't do this if we are only starting the selector window. */
-    bool fInitSUPLib = false;
 #ifdef Q_WS_X11
     if (!VBoxXInitThreads())
         return 1;
 #endif
-    for (int i = 1; i < argc; ++i)
+    /* Initialize VBox Runtime.
+     * Initialize the SUPLib as well only if we are really about to start a VM.
+     * Don't do this if we are only starting the selector window
+     * or a separate VM process. */
+    bool fStartVM = false;
+    bool fSeparate = false;
+    for (int i = 1; i < argc && !(fStartVM && fSeparate); ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in hardenedmain.cpp and VBoxGlobal.cpp exactly,
@@ -527,11 +530,18 @@ int main(int argc, char **argv, char **envp)
         if (   !::strcmp(argv[i], "--startvm")
             || !::strcmp(argv[i], "-startvm"))
         {
-            fInitSUPLib = true;
-            break;
+            fStartVM = true;
+        }
+        else if (   !::strcmp(argv[i], "--separate")
+                 || !::strcmp(argv[i], "-separate"))
+        {
+            fSeparate = true;
         }
     }
-    int rc = RTR3InitExe(argc, &argv, fInitSUPLib ? RTR3INIT_FLAGS_SUPLIB : 0);
+
+    uint32_t fFlags = fStartVM && !fSeparate? RTR3INIT_FLAGS_SUPLIB: 0;
+
+    int rc = RTR3InitExe(argc, &argv, fFlags);
 
     /* Initialization failed: */
     if (RT_FAILURE(rc))

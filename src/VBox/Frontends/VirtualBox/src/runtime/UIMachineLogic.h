@@ -75,6 +75,8 @@ public:
     virtual void prepare();
     virtual void cleanup();
 
+    void initializePostPowerUp();
+
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
     UIActionPool* actionPool() const;

@@ -825,8 +825,12 @@ private:
             VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
             VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
 
+        const CMachine machine = console.GetMachine();
+        if (machine.isNull())
+            return;
+
         /* CPU Execution Cap feature: */
-        QString strCPUExecCap = QString::number(console.GetMachine().GetCPUExecutionCap());
+        QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
 
         /* Prepare tool-tip: */
         QString tip(QApplication::translate("UIIndicatorsPool",
@@ -842,7 +846,7 @@ private:
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
         /* CPU count: */
-        int cpuCount = console.GetMachine().GetCPUCount();
+        int cpuCount = machine.GetCPUCount();
         if (cpuCount > 1)
             tip += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
                       .arg(VBoxGlobal::tr("Processor(s)", "details report")).arg(cpuCount);
@@ -1065,8 +1069,11 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
 
     /* Acquire current states from the console: */
     CConsole console = m_session.GetConsole();
+    if (console.isNull())
+        return;
     const QVector<KDeviceActivity> states = console.GetDeviceActivity(deviceTypes);
-    AssertReturnVoid(console.isOk());
+    if (!console.isOk())
+        return;
 
     /* Update indicators with the acquired states: */
     for (int iIndicator = 0; iIndicator < states.size(); ++iIndicator)

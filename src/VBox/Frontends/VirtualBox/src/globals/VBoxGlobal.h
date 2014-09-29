@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,6 +86,8 @@ public:
     QString versionString() const { return mVerString; }
     bool isBeta() const;
 
+    bool isSeparate() const { return mIsSeparate; }
+
 #ifdef Q_WS_MAC
     static MacOSXRelease osRelease();
 #endif /* Q_WS_MAC */
@@ -118,7 +120,14 @@ public:
     bool processArgs();
 
     bool switchToMachine(CMachine &machine);
-    bool launchMachine(CMachine &machine, bool fHeadless = false);
+
+    enum LaunchMode
+    {
+        LaunchMode_Default,
+        LaunchMode_Headless,
+        LaunchMode_Separate
+    };
+    bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     bool showStartVMErrors() const { return mShowStartVMErrors; }
@@ -419,6 +428,8 @@ private:
 
     UISelectorWindow *mSelectorWnd;
     UIMachine *m_pVirtualMachine;
+
+    bool mIsSeparate;
 
     QString vmUuid;
     QList<QUrl> m_ArgUrlList;

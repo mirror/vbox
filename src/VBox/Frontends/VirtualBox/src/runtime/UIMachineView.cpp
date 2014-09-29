@@ -548,7 +548,8 @@ void UIMachineView::cleanupFrameBuffer()
      * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
     CDisplay display = session().GetConsole().GetDisplay();
-    display.DetachFramebuffer(m_uScreenId);
+    if (!display.isNull())
+        display.DetachFramebuffer(m_uScreenId);
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);
@@ -675,7 +676,16 @@ void UIMachineView::takePauseShotLive()
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
     CDisplay dsp = session().GetConsole().GetDisplay();
-    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+    if (vboxGlobal().isSeparate())
+    {
+        QVector<BYTE> screenData = dsp.TakeScreenShotToArray(screenId(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+
+        /* Make sure screen-data is OK: */
+        if (dsp.isOk() && !screenData.isEmpty())
+            memcpy(shot.bits(), screenData.data(), shot.width() * shot.height() * 4);
+    }
+    else
+        dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
     /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
      * after the machine execution was resumed. It's not fatal: */
     if (dsp.isOk())
@@ -1076,6 +1086,14 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         {
+            /* Can't do COM inter-process calls from a SendMessage handler,
+             * see http://support.microsoft.com/kb/131056 */
+            if (vboxGlobal().isSeparate() && InSendMessage())
+            {
+                PostMessage(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
+                fResult = true;
+                break;
+            }
             /* Filter using keyboard filter? */
             bool fKeyboardFilteringResult =
                 machineLogic()->keyboardHandler()->winEventFilter(pMsg, screenId());

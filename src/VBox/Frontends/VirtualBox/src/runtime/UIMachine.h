@@ -45,8 +45,10 @@ signals:
 
 public:
 
+    static bool create(UIMachine **ppSelf);
+
     /* Virtual Machine constructor/destructor: */
-    UIMachine(UIMachine **ppSelf, const CSession &session);
+    UIMachine(UIMachine **ppSelf);
     virtual ~UIMachine();
 
     /* Public getters: */
@@ -65,6 +67,8 @@ private slots:
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
 private:
+
+    bool prepare();
 
     /* Move VM to default (normal) state: */
     void enterInitialVisualState();

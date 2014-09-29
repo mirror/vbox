@@ -201,9 +201,17 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
         return E_POINTER;
 
     com::SafeArray<FramebufferCapabilities_T> caps;
-    caps.resize(2);
-    caps[0] = FramebufferCapabilities_VHWA;
-    caps[1] = FramebufferCapabilities_VisibleRegion;
+    if (vboxGlobal().isSeparate())
+    {
+       caps.resize(1);
+       caps[0] = FramebufferCapabilities_UpdateImage;
+    }
+    else
+    {
+       caps.resize(2);
+       caps[0] = FramebufferCapabilities_VHWA;
+       caps[1] = FramebufferCapabilities_VisibleRegion;
+    }
 
     caps.detachTo(ComSafeArrayOutArg(aCapabilities));
     return S_OK;
@@ -212,7 +220,8 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
 STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     CDisplaySourceBitmap sourceBitmap;
-    m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, sourceBitmap);
+    if (!vboxGlobal().isSeparate())
+        m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, sourceBitmap);
 
     /* Lock access to frame-buffer: */
     lock();
@@ -238,8 +247,11 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     /* While updates are disabled, visible region will be saved:  */
     m_pendingSyncVisibleRegion = QRegion();
 
-    /* Acquire new pending bitmap: */
-    m_pendingSourceBitmap = sourceBitmap;
+    if (!vboxGlobal().isSeparate())
+    {
+       /* Acquire new pending bitmap: */
+       m_pendingSourceBitmap = sourceBitmap;
+    }
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
@@ -304,16 +316,31 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
                                               ULONG uWidth, ULONG uHeight,
                                               ComSafeArrayIn(BYTE, image))
 {
-    Q_UNUSED(uX);
-    Q_UNUSED(uY);
-    Q_UNUSED(uWidth);
-    Q_UNUSED(uHeight);
-    Q_UNUSED(image); // by ComSafeArrayIn
-#ifdef VBOX_WITH_XPCOM
-    Q_UNUSED(imageSize); // by ComSafeArrayIn
-#endif /* VBOX_WITH_XPCOM */
+    com::SafeArray<BYTE> imageData(ComSafeArrayInArg(image));
 
-    return E_NOTIMPL;
+    lock();
+
+    if (m_fUpdatesAllowed)
+    {
+        /* Copy to m_image */
+        uchar *pu8Dst = m_image.bits() + uY * m_image.bytesPerLine() + uX * 4;
+        uchar *pu8Src = imageData.raw();
+        ULONG h;
+        for (h = 0; h < uHeight; ++h)
+        {
+            memcpy(pu8Dst, pu8Src, uWidth * 4);
+            pu8Dst += m_image.bytesPerLine();
+            pu8Src += uWidth * 4;
+        }
+        LogRel2(("UIFrameBuffer::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+                 (unsigned long)uX, (unsigned long)uY,
+                 (unsigned long)uWidth, (unsigned long)uHeight));
+        emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
+    }
+
+    unlock();
+    
+    return S_OK;
 }
 
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
@@ -517,7 +544,7 @@ void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
     lock();
 
     /* If there is NO pending source-bitmap: */
-    if (m_pendingSourceBitmap.isNull())
+    if (!vboxGlobal().isSeparate() && m_pendingSourceBitmap.isNull())
     {
         /* Do nothing, change-event already processed: */
         LogRel2(("UIFrameBuffer::notifyChange: Already processed.\n"));

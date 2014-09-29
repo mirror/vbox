@@ -1231,6 +1231,7 @@
 
   <xsl:text>#ifdef RT_OS_WINDOWS&#x0A;</xsl:text>
   <xsl:text>    Assert(mRC != RPC_E_WRONG_THREAD);&#x0A;</xsl:text>
+  <xsl:text>    Assert(mRC != RPC_E_CANTCALLOUT_ININPUTSYNCCALL);&#x0A;</xsl:text>
   <xsl:text>#endif&#x0A;</xsl:text>
 
   <!-- apply 'post-call' hooks -->

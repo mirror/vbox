@@ -167,8 +167,12 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
 UIConsoleEventHandler::~UIConsoleEventHandler()
 {
     const CConsole &console = m_pSession->session().GetConsole();
-    console.GetEventSource().UnregisterListener(m_mainEventListener);
-    AssertWrapperOk(console);
+    if (!console.isNull())
+    {
+        CEventSource eventSource = console.GetEventSource();
+        if (!eventSource.isNull())
+            eventSource.UnregisterListener(m_mainEventListener);
+    }
 }
 
 void UIConsoleEventHandler::sltCanShowWindow(bool & /* fVeto */, QString & /* strReason */)
