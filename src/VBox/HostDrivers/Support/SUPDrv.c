@@ -6405,7 +6405,7 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
 
             if (ASMAtomicReadU32(&g_cMpOnOffEvents) != cMpOnOffEvents)
             {
-                SUPR0Printf("One or more CPUs transitioned between online & offline states. I are confused, retrying...\n");
+                SUPR0Printf("One or more CPUs transitioned between online & offline states. I'm confused, retrying...\n");
                 rc = VERR_TRY_AGAIN;
                 break;
             }
