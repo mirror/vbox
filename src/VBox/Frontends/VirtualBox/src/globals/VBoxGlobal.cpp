@@ -3353,6 +3353,14 @@ bool VBoxGlobal::setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId)
                                uScreenId, uScreenId, uScreenId, uScreenId,
                                1 /* Source indication (1 = normal application) */);
 }
+
+/* static */
+void VBoxGlobal::setTransientFor(QWidget *pWidget, QWidget *pPropWidget)
+{
+    XSetTransientForHint(pWidget->x11Info().display(),
+                         pWidget->window()->winId(),
+                         pPropWidget->window()->winId());
+}
 #endif /* Q_WS_X11 */
 
 /**

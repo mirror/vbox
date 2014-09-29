@@ -73,27 +73,11 @@ void UIMachineWindowSeamless::sltRevokeFocus()
 #if   defined(Q_WS_WIN)
     /* Revoke stolen focus: */
     m_pMachineView->setFocus();
-#elif defined(Q_WS_MAC)
+#elif defined(Q_WS_MAC) || defined(Q_WS_X11)
     /* Revoke stolen activation: */
     activateWindow();
-#endif /* Q_WS_MAC */
+#endif /* Q_WS_MAC || Q_WS_X11 */
 }
-
-#ifdef VBOX_WITH_MASKED_SEAMLESS
-# ifdef Q_WS_X11
-void UIMachineWindowSeamless::sltUpdateMiniToolbarMask(const QRect &geo)
-{
-    /* Make sure mini-toolbar exists: */
-    AssertPtrReturnVoid(m_pMiniToolBar);
-
-    /* Remember mini-toolbar mask: */
-    m_maskMiniToolbar = geo;
-
-    /* Re-assign guest mask. */
-    setMask(m_maskGuest);
-}
-# endif /* Q_WS_X11 */
-#endif /* VBOX_WITH_MASKED_SEAMLESS */
 
 void UIMachineWindowSeamless::prepareVisualState()
 {
@@ -152,12 +136,6 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
     connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             actionPool()->action(UIActionIndexRT_M_Machine_S_Close), SLOT(trigger()));
     connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutFocusStolen()), this, SLOT(sltRevokeFocus()));
-#ifdef VBOX_WITH_MASKED_SEAMLESS
-# ifdef Q_WS_X11
-    connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutGeometryChange(const QRect&)),
-            this, SLOT(sltUpdateMiniToolbarMask(const QRect&)));
-# endif /* Q_WS_X11 */
-#endif /* VBOX_WITH_MASKED_SEAMLESS */
 }
 #endif /* !Q_WS_MAC */
 
@@ -212,9 +190,12 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         !pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
     {
 #ifndef Q_WS_MAC
-        /* Hide mini-toolbar: */
+        /* If there is mini-toolbar: */
         if (m_pMiniToolBar)
+        {
+            /* Just hide mini-toolbar: */
             m_pMiniToolBar->hide();
+        }
 #endif /* !Q_WS_MAC */
         /* Hide window: */
         hide();
@@ -235,9 +216,19 @@ void UIMachineWindowSeamless::showInNecessaryMode()
     adjustMachineViewSize();
 
 #ifndef Q_WS_MAC
-    /* Show mini-toolbar: */
+    /* If there is mini-toolbar: */
     if (m_pMiniToolBar)
+    {
+# if   defined(Q_WS_WIN)
+        /* Just show mini-toolbar: */
         m_pMiniToolBar->show();
+# elif defined(Q_WS_X11)
+        /* Allow mini-toolbar to be located on full-screen area: */
+        m_pMiniToolBar->showMaximized();
+        /* Make sure mini-toolbar is always on top of machine-window: */
+        VBoxGlobal::setTransientFor(m_pMiniToolBar, this);
+# endif /* Q_WS_X11 */
+    }
 #endif /* !Q_WS_MAC */
 
     /* Make sure machine-view have focus: */
@@ -317,12 +308,6 @@ void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)
     /* Shift full mask if left or top spacer width is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
         maskFull.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
-
-# ifdef Q_WS_X11
-    /* Take into account mini-toolbar mask if necessary: */
-    if (m_pMiniToolBar)
-        maskFull += m_maskMiniToolbar;
-# endif /* Q_WS_X11 */
 
     /* Seamless-window for empty full mask should be empty too,
      * but the QWidget::setMask() wrapper doesn't allow this.

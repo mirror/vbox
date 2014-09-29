@@ -43,13 +43,6 @@ private slots:
     /** Revokes keyboard-focus. */
     void sltRevokeFocus();
 
-#ifdef VBOX_WITH_MASKED_SEAMLESS
-# ifdef Q_WS_X11
-    /** Assigns mini-toolbar seamless mask. */
-    void sltUpdateMiniToolbarMask(const QRect &geo);
-# endif /* Q_WS_X11 */
-#endif /* VBOX_WITH_MASKED_SEAMLESS */
-
 private:
 
     /* Prepare helpers: */
@@ -96,10 +89,6 @@ private:
     QRegion m_maskFull;
     /** Holds the guest seamless mask. */
     QRegion m_maskGuest;
-# ifdef Q_WS_X11
-    /** Holds the mini-toolbar seamless mask. */
-    QRect m_maskMiniToolbar;
-# endif /* Q_WS_X11 */
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
     /* Factory support: */
