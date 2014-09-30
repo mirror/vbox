@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +42,10 @@ UIConsoleEventHandler *UIConsoleEventHandler::m_pInstance = 0;
 UIConsoleEventHandler* UIConsoleEventHandler::instance(UISession *pSession /* = 0 */)
 {
     if (!m_pInstance)
+    {
         m_pInstance = new UIConsoleEventHandler(pSession);
+        m_pInstance->prepare();
+    }
     return m_pInstance;
 }
 
@@ -51,127 +54,9 @@ void UIConsoleEventHandler::destroy()
 {
     if (m_pInstance)
     {
+        m_pInstance->cleanup();
         delete m_pInstance;
         m_pInstance = 0;
-    }
-}
-
-UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
-  : m_pSession(pSession)
-{
-    Assert(pSession);
-
-//    RTPrintf("Self add: %RTthrd\n", RTThreadSelf());
-    ComObjPtr<UIMainEventListenerImpl> pListener;
-    pListener.createObject();
-    pListener->init(new UIMainEventListener(), this);
-    m_mainEventListener = CEventListener(pListener);
-    QVector<KVBoxEventType> events;
-    events
-        << KVBoxEventType_OnMousePointerShapeChanged
-        << KVBoxEventType_OnMouseCapabilityChanged
-        << KVBoxEventType_OnKeyboardLedsChanged
-        << KVBoxEventType_OnStateChanged
-        << KVBoxEventType_OnAdditionsStateChanged
-        << KVBoxEventType_OnNetworkAdapterChanged
-        << KVBoxEventType_OnMediumChanged
-        << KVBoxEventType_OnVRDEServerChanged
-        << KVBoxEventType_OnVRDEServerInfoChanged
-        << KVBoxEventType_OnVideoCaptureChanged
-        << KVBoxEventType_OnUSBControllerChanged
-        << KVBoxEventType_OnUSBDeviceStateChanged
-        << KVBoxEventType_OnSharedFolderChanged
-        << KVBoxEventType_OnRuntimeError
-        << KVBoxEventType_OnCanShowWindow
-        << KVBoxEventType_OnShowWindow
-        << KVBoxEventType_OnCPUExecutionCapChanged
-        << KVBoxEventType_OnGuestMonitorChanged;
-
-    const CConsole &console = m_pSession->session().GetConsole();
-    console.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
-    AssertWrapperOk(console);
-
-    connect(pListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
-            this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
-            this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
-            this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigStateChange(KMachineState)),
-            this, SIGNAL(sigStateChange(KMachineState)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigAdditionsChange()),
-            this, SIGNAL(sigAdditionsChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
-            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
-            this, SIGNAL(sigMediumChange(CMediumAttachment)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigVRDEChange()),
-            this, SIGNAL(sigVRDEChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigVideoCaptureChange()),
-            this, SIGNAL(sigVideoCaptureChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
-            this, SIGNAL(sigUSBControllerChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
-            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigSharedFolderChange()),
-            this, SIGNAL(sigSharedFolderChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
-            this, SIGNAL(sigRuntimeError(bool, QString, QString)),
-            Qt::QueuedConnection);
-
-    /* This is a vetoable event, so we have to respond to the event and have to
-     * use a direct connection therefor. */
-    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool&, QString&)),
-            this, SLOT(sltCanShowWindow(bool&, QString&)),
-            Qt::DirectConnection);
-
-    /* This returns a winId, so we have to respond to the event and have to use
-     * a direct connection therefor. */
-    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(LONG64&)),
-            this, SLOT(sltShowWindow(LONG64&)),
-            Qt::DirectConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
-            this, SIGNAL(sigCPUExecutionCapChange()),
-            Qt::QueuedConnection);
-
-    connect(pListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            Qt::QueuedConnection);
-}
-
-UIConsoleEventHandler::~UIConsoleEventHandler()
-{
-    const CConsole &console = m_pSession->session().GetConsole();
-    if (!console.isNull())
-    {
-        CEventSource eventSource = console.GetEventSource();
-        if (!eventSource.isNull())
-            eventSource.UnregisterListener(m_mainEventListener);
     }
 }
 
@@ -200,5 +85,124 @@ void UIConsoleEventHandler::sltShowWindow(LONG64 &winId)
         /* Return the ID of the top-level console window. */
         winId = (ULONG64)m_pSession->winId();
 #endif /* !Q_WS_MAC */
+}
+
+UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
+    : m_pSession(pSession)
+{
+}
+
+void UIConsoleEventHandler::prepare()
+{
+    /* Make sure session is passed: */
+    AssertPtrReturnVoid(m_pSession);
+
+    /* Create Main-event listener instance: */
+    ComObjPtr<UIMainEventListenerImpl> pListener;
+    pListener.createObject();
+    pListener->init(new UIMainEventListener, this);
+    m_mainEventListener = CEventListener(pListener);
+
+    /* Get console: */
+    const CConsole console = m_pSession->session().GetConsole();
+    AssertReturnVoid(!console.isNull() && console.isOk());
+    /* Get event-source: */
+    CEventSource eventSource = console.GetEventSource();
+    AssertReturnVoid(!eventSource.isNull() && eventSource.isOk());
+    /* Register listener for expected event-types: */
+    QVector<KVBoxEventType> events;
+    events
+        << KVBoxEventType_OnMousePointerShapeChanged
+        << KVBoxEventType_OnMouseCapabilityChanged
+        << KVBoxEventType_OnKeyboardLedsChanged
+        << KVBoxEventType_OnStateChanged
+        << KVBoxEventType_OnAdditionsStateChanged
+        << KVBoxEventType_OnNetworkAdapterChanged
+        << KVBoxEventType_OnMediumChanged
+        << KVBoxEventType_OnVRDEServerChanged
+        << KVBoxEventType_OnVRDEServerInfoChanged
+        << KVBoxEventType_OnVideoCaptureChanged
+        << KVBoxEventType_OnUSBControllerChanged
+        << KVBoxEventType_OnUSBDeviceStateChanged
+        << KVBoxEventType_OnSharedFolderChanged
+        << KVBoxEventType_OnCPUExecutionCapChanged
+        << KVBoxEventType_OnGuestMonitorChanged
+        << KVBoxEventType_OnRuntimeError
+        << KVBoxEventType_OnCanShowWindow
+        << KVBoxEventType_OnShowWindow;
+    eventSource.RegisterListener(m_mainEventListener, events, TRUE);
+
+
+    /* Prepare connections: */
+    connect(pListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+            this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+            this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigStateChange(KMachineState)),
+            this, SIGNAL(sigStateChange(KMachineState)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigAdditionsChange()),
+            this, SIGNAL(sigAdditionsChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
+            this, SIGNAL(sigMediumChange(CMediumAttachment)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigVRDEChange()),
+            this, SIGNAL(sigVRDEChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigVideoCaptureChange()),
+            this, SIGNAL(sigVideoCaptureChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
+            this, SIGNAL(sigUSBControllerChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigSharedFolderChange()),
+            this, SIGNAL(sigSharedFolderChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
+            this, SIGNAL(sigCPUExecutionCapChange()),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            Qt::QueuedConnection);
+
+    connect(pListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
+            this, SIGNAL(sigRuntimeError(bool, QString, QString)),
+            Qt::QueuedConnection);
+
+    /* This is a vetoable event, so we have to respond to the event and have to
+     * use a direct connection therefor. */
+    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool&, QString&)),
+            this, SLOT(sltCanShowWindow(bool&, QString&)),
+            Qt::DirectConnection);
+    /* This returns a winId, so we have to respond to the event and have to use
+     * a direct connection therefor. */
+    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(LONG64&)),
+            this, SLOT(sltShowWindow(LONG64&)),
+            Qt::DirectConnection);
+}
+
+void UIConsoleEventHandler::cleanup()
+{
+    /* Get console: */
+    const CConsole console = m_pSession->session().GetConsole();
+    if (console.isNull() || !console.isOk())
+        return;
+    /* Get event-source: */
+    CEventSource eventSource = console.GetEventSource();
+    AssertReturnVoid(!eventSource.isNull() || eventSource.isOk());
+    /* Unregister listener: */
+    eventSource.UnregisterListener(m_mainEventListener);
 }
 
