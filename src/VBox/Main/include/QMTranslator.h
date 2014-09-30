@@ -20,14 +20,14 @@
 
 class QMTranslator_Impl;
 
-class QMTranslator 
+class QMTranslator
 {
 public:
     QMTranslator();
     virtual ~QMTranslator();
 
-    /* Gets translation from loaded QM file 
-     * 
+    /* Gets translation from loaded QM file
+     *
      * @param	context	  QM context to look for translation
      * @param   source    Source string in one-byte encoding
      * @param   disamb    Disambiguationg comment, empty by default

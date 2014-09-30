@@ -54,7 +54,7 @@ class QMBytesStream
     {
         return RT_BE2H_U16(value);
     }
-    
+
 public:
 
     QMBytesStream(const uint8_t *const dataStart, size_t cbSize) :
@@ -410,7 +410,7 @@ int QMTranslator::load(const char *pszFilename) throw()
         bool isSuccess() { return RT_SUCCESS(rc); }
     };
 
-    try 
+    try
     {
         FileLoader loader(pszFilename);
         if (loader.isSuccess())

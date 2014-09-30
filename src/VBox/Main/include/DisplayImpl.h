@@ -107,7 +107,7 @@ typedef struct VIDEOACCEL
     uint8_t    *pu8VbvaPartial;
     uint32_t    cbVbvaPartial;
 
-    /* Old guest additions (3.x and older) use both VMMDev and DevVGA refresh timer 
+    /* Old guest additions (3.x and older) use both VMMDev and DevVGA refresh timer
      * to process the VBVABUFFER memory. Therefore the legacy VBVA (VideoAccel) host
      * code can be executed concurrently by VGA refresh timer and the guest VMMDev
      * request in SMP VMs. The semaphore serialized this.
@@ -197,7 +197,7 @@ public:
     }
     virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                             int32_t *px2, int32_t *py2);
-    
+
     static const PDMDRVREG  DrvReg;
 
 private:
@@ -256,7 +256,7 @@ private:
     // Wrapped IEventListener methods
     virtual HRESULT handleEvent(const ComPtr<IEvent> &aEvent);
 
-    // other internal methods    
+    // other internal methods
     HRESULT takeScreenShotWorker(ULONG aScreenId,
                                  BYTE *aAddress,
                                  ULONG aWidth,

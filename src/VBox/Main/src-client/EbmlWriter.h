@@ -39,9 +39,9 @@ class WebMWriter
 public:
     WebMWriter();
     virtual ~WebMWriter();
-    
+
     /* Creates output file
-     * 
+     *
      * @param   a_pszFilename   Name of the file to create.
      *
      * @returns VBox status code. */
@@ -52,7 +52,7 @@ public:
 
     /* Writes WebM header to file.
      * Should be called before any writeBlock call.
-     * 
+     *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
      * @param a_pFps Framerate information (frames per second).
      *
@@ -61,7 +61,7 @@ public:
     int writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps);
 
     /* Writes a block of compressed data
-     * 
+     *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
      * @param a_pPkt VPX data packet.
      *
