@@ -316,17 +316,35 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
                                               ULONG uWidth, ULONG uHeight,
                                               ComSafeArrayIn(BYTE, image))
 {
-    // TODO: Retina handling..
+    /* Retina screens with physical-to-logical scaling requires
+     * odd/even pixel updates to be taken into account,
+     * otherwise we have artifacts on the borders of incoming rectangle. */
+    uX = qMax(0, (int)uX - 1);
+    uY = qMax(0, (int)uY - 1);
+    uWidth = qMin(m_iWidth, (int)uWidth + 2);
+    uHeight = qMin(m_iHeight, (int)uHeight + 2);
 
-    /* Copying received data (is it shallow?): */
+    /* Wrapping received data: */
     com::SafeArray<BYTE> imageData(ComSafeArrayInArg(image));
 
     /* Lock access to frame-buffer: */
     lock();
 
-    // TODO: Why does this handling so different from UIFrameBuffer::NotifyUpdate?
-    //       And where is the part about m_fUnused?
+    /* Make sure frame-buffer is used: */
+    if (m_fUnused)
+    {
+        LogRel2(("UIFrameBuffer::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+                 (unsigned long)uX, (unsigned long)uY,
+                 (unsigned long)uWidth, (unsigned long)uHeight));
 
+        /* Unlock access to frame-buffer: */
+        unlock();
+
+        /* Ignore NotifyUpdate: */
+        return E_FAIL;
+    }
+
+    /* Directly update m_image: */
     if (m_fUpdatesAllowed)
     {
         /* Copy to m_image: */
@@ -339,6 +357,9 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
             pu8Dst += m_image.bytesPerLine();
             pu8Src += uWidth * 4;
         }
+
+        /* Widget update is NOT thread-safe and *seems* never will be,
+         * We have to notify machine-view with the async-signal to perform update operation. */
         LogRel2(("UIFrameBuffer::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
