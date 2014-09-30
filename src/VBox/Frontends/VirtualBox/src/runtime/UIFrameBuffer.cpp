@@ -273,14 +273,6 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
 
 STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
-    /* Retina screens with physical-to-logical scaling requires
-     * odd/even pixel updates to be taken into account,
-     * otherwise we have artifacts on the borders of incoming rectangle. */
-    uX = qMax(0, (int)uX - 1);
-    uY = qMax(0, (int)uY - 1);
-    uWidth = qMin(m_iWidth, (int)uWidth + 2);
-    uHeight = qMin(m_iHeight, (int)uHeight + 2);
-
     /* Lock access to frame-buffer: */
     lock();
 
@@ -316,14 +308,6 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
                                               ULONG uWidth, ULONG uHeight,
                                               ComSafeArrayIn(BYTE, image))
 {
-    /* Retina screens with physical-to-logical scaling requires
-     * odd/even pixel updates to be taken into account,
-     * otherwise we have artifacts on the borders of incoming rectangle. */
-    uX = qMax(0, (int)uX - 1);
-    uY = qMax(0, (int)uY - 1);
-    uWidth = qMin(m_iWidth, (int)uWidth + 2);
-    uHeight = qMin(m_iHeight, (int)uHeight + 2);
-
     /* Wrapping received data: */
     com::SafeArray<BYTE> imageData(ComSafeArrayInArg(image));
 
