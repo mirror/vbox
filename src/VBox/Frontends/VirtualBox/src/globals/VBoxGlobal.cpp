@@ -221,7 +221,7 @@ VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL)
     , m_pVirtualMachine(0)
-    , mIsSeparate(false)
+    , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
     , mIsKWinManaged (false)
 #if defined(DEBUG_bird)
@@ -3982,7 +3982,7 @@ void VBoxGlobal::prepare()
 
     mShowStartVMErrors = true;
     bool startVM = false;
-    bool fSeparate = false;
+    bool fSeparateProcess = false;
     QString vmNameOrUuid;
 
     int argc = qApp->argc();
@@ -4004,7 +4004,7 @@ void VBoxGlobal::prepare()
         }
         else if (!::strcmp (arg, "-separate") || !::strcmp (arg, "--separate"))
         {
-            fSeparate = true;
+            fSeparateProcess = true;
         }
 #ifdef VBOX_GUI_WITH_PIDFILE
         else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
@@ -4140,8 +4140,8 @@ void VBoxGlobal::prepare()
 
     if (startVM)
     {
-        /* mIsSeparate makes sense only if a VM is started. */
-        mIsSeparate = fSeparate;
+        /* m_fSeparateProcess makes sense only if a VM is started. */
+        m_fSeparateProcess = fSeparateProcess;
 
         QUuid uuid = QUuid(vmNameOrUuid);
         if (!uuid.isNull())
@@ -4613,9 +4613,9 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
         /* If the VM is started separately and the VM process is already running, then it is OK. */
         if (enmLaunchMode == LaunchMode_Separate)
         {
-            KMachineState s = machine.GetState();
-            if (   s >= KMachineState_FirstOnline
-                && s <= KMachineState_LastOnline)
+            KMachineState state = machine.GetState();
+            if (   state >= KMachineState_FirstOnline
+                && state <= KMachineState_LastOnline)
             {
                 /* Already running. */
                 return true;
@@ -4629,11 +4629,8 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     /* Postpone showing "VM spawning" progress.
      * Hope 1 minute will be enough to spawn any running VM silently,
      * otherwise we better show the progress...
-     * If starting separately, then show the progress now.
-     */
-    int iSpawningDuration = enmLaunchMode == LaunchMode_Separate?
-                                0:
-                                60000;
+     * If starting separately, then show the progress now. */
+    int iSpawningDuration = enmLaunchMode == LaunchMode_Separate ? 0 : 60000;
     msgCenter().showModalProgressDialog(progress, machine.GetName(),
                                         ":/progress_start_90px.png", 0, iSpawningDuration);
     if (!progress.isOk() || progress.GetResultCode() != 0)

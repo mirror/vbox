@@ -475,9 +475,9 @@ void UISelectorWindow::sltPerformStartOrShowAction()
 
         /* Launch/show current VM: */
         CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier?
-                                                VBoxGlobal::LaunchMode_Headless:
-                                                VBoxGlobal::LaunchMode_Default);
+        vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier ?
+                                            VBoxGlobal::LaunchMode_Headless :
+                                            VBoxGlobal::LaunchMode_Default);
     }
 }
 

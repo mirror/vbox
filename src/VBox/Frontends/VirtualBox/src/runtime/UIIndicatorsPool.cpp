@@ -825,6 +825,7 @@ private:
             VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
             VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
 
+        /* Get machine: */
         const CMachine machine = console.GetMachine();
         if (machine.isNull())
             return;
@@ -1069,11 +1070,10 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
 
     /* Acquire current states from the console: */
     CConsole console = m_session.GetConsole();
-    if (console.isNull())
+    if (!m_session.isOk() || console.isNull())
         return;
     const QVector<KDeviceActivity> states = console.GetDeviceActivity(deviceTypes);
-    if (!console.isOk())
-        return;
+    AssertReturnVoid(console.isOk());
 
     /* Update indicators with the acquired states: */
     for (int iIndicator = 0; iIndicator < states.size(); ++iIndicator)

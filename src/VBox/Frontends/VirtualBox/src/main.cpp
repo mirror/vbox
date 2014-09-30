@@ -300,7 +300,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 #ifdef Q_WS_X11
     if (!VBoxXInitThreads())
         return 1;
-#endif
+#endif /* Q_WS_X11 */
 
     /* Simulate try-catch block: */
     do
@@ -515,14 +515,14 @@ int main(int argc, char **argv, char **envp)
 #ifdef Q_WS_X11
     if (!VBoxXInitThreads())
         return 1;
-#endif
+#endif /* Q_WS_X11 */
+
     /* Initialize VBox Runtime.
      * Initialize the SUPLib as well only if we are really about to start a VM.
-     * Don't do this if we are only starting the selector window
-     * or a separate VM process. */
+     * Don't do this if we are only starting the selector window or a separate VM process. */
     bool fStartVM = false;
-    bool fSeparate = false;
-    for (int i = 1; i < argc && !(fStartVM && fSeparate); ++i)
+    bool fSeparateProcess = false;
+    for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in hardenedmain.cpp and VBoxGlobal.cpp exactly,
@@ -535,11 +535,11 @@ int main(int argc, char **argv, char **envp)
         else if (   !::strcmp(argv[i], "--separate")
                  || !::strcmp(argv[i], "-separate"))
         {
-            fSeparate = true;
+            fSeparateProcess = true;
         }
     }
 
-    uint32_t fFlags = fStartVM && !fSeparate? RTR3INIT_FLAGS_SUPLIB: 0;
+    uint32_t fFlags = fStartVM && !fSeparateProcess ? RTR3INIT_FLAGS_SUPLIB : 0;
 
     int rc = RTR3InitExe(argc, &argv, fFlags);
 
@@ -549,6 +549,8 @@ int main(int argc, char **argv, char **envp)
         /* We have to create QApplication anyway
          * just to show the only one error-message: */
         QApplication a(argc, &argv[0]);
+        Q_UNUSED(a);
+
 #ifdef Q_OS_SOLARIS
         /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
         QApplication::setStyle(new QPlastiqueStyle);

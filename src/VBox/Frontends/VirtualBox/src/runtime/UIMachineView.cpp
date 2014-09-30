@@ -676,7 +676,7 @@ void UIMachineView::takePauseShotLive()
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
     CDisplay dsp = session().GetConsole().GetDisplay();
-    if (vboxGlobal().isSeparate())
+    if (vboxGlobal().isSeparateProcess())
     {
         QVector<BYTE> screenData = dsp.TakeScreenShotToArray(screenId(), shot.width(), shot.height(), KBitmapFormat_BGR0);
 
@@ -1088,7 +1088,7 @@ bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
         {
             /* Can't do COM inter-process calls from a SendMessage handler,
              * see http://support.microsoft.com/kb/131056 */
-            if (vboxGlobal().isSeparate() && InSendMessage())
+            if (vboxGlobal().isSeparateProcess() && InSendMessage())
             {
                 PostMessage(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
                 fResult = true;
