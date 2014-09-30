@@ -166,6 +166,9 @@ typedef struct SUPDRVNTPROTECT
     uint32_t volatile   cRefs;
     /** The kind of process we're protecting. */
     SUPDRVNTPROTECTKIND volatile enmProcessKind;
+    /** 7,: Hack to allow the supid themes service duplicate handle privileges to
+     *  our process. */
+    bool                fThemesFirstProcessCreateHandle : 1;
     /** Vista, 7 & 8: Hack to allow more rights to the handle returned by
      *  NtCreateUserProcess. Only applicable to VmProcessUnconfirmed. */
     bool                fFirstProcessCreateHandle : 1;
@@ -175,12 +178,11 @@ typedef struct SUPDRVNTPROTECT
     /** 8.1: Hack to allow more rights to the handle returned by
      *  NtCreateUserProcess. Only applicable to VmProcessUnconfirmed. */
     bool                fCsrssFirstProcessCreateHandle : 1;
-    /** Vista, 7 & 8: Hack to allow more rights to the handle duplicated by CSR
-     *  during process creation. Only applicable to VmProcessUnconfirmed. */
-    bool                fCsrssFirstProcessDuplicateHandle : 1;
-    /** 7,: Hack to allow the supid themes service duplicate handle privileges to
-     *  our process. */
-    bool                fThemesFirstProcessCreateHandle : 1;
+    /** Vista, 7 & 8: Hack to allow more rights to the handle duplicated by CSRSS
+     * during process creation. Only applicable to VmProcessUnconfirmed.  On
+     * 32-bit systems we allow two as ZoneAlarm's system call hooks has been
+     * observed to do some seemingly unnecessary duplication work. */
+    int32_t volatile    cCsrssFirstProcessDuplicateHandle;
 
     /** The parent PID for VM processes, otherwise NULL. */
     HANDLE              hParentPid;
@@ -2649,7 +2651,7 @@ static int supdrvNtProtectProtectNewStubChild(PSUPDRVNTPROTECT pNtParent, HANDLE
         pNtChild->fFirstProcessCreateHandle = true;
         pNtChild->fFirstThreadCreateHandle = true;
         pNtChild->fCsrssFirstProcessCreateHandle = true;
-        pNtChild->fCsrssFirstProcessDuplicateHandle = true;
+        pNtChild->cCsrssFirstProcessDuplicateHandle = ARCH_BITS == 32 ? 2 : 1;
         pNtChild->fThemesFirstProcessCreateHandle = true;
         pNtChild->hParentPid = pNtParent->AvlCore.Key;
         pNtChild->hCsrssPid = pNtParent->hCsrssPid;
@@ -3030,6 +3032,7 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fCsrssFirstProcessCreateHandle
                     && pOpInfo->KernelHandle == 0
+                    && ExGetPreviousMode() == UserMode
                     && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     pNtProtect->fCsrssFirstProcessCreateHandle = false;
@@ -3056,6 +3059,7 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                     && pOpInfo->Parameters->CreateHandleInformation.DesiredAccess == 0x1478 /* 6.1.7600.16385 (win7_rtm.090713-1255) */
                     && pNtProtect->fThemesFirstProcessCreateHandle
                     && pOpInfo->KernelHandle == 0
+                    && ExGetPreviousMode() == UserMode
                     && supdrvNtProtectIsFrigginThemesService(pNtProtect, PsGetCurrentProcess()) )
                 {
                     pNtProtect->fThemesFirstProcessCreateHandle = true; /* Only once! */
@@ -3096,15 +3100,16 @@ supdrvNtProtectCallback_ProcessHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMA
                    This is the CSRSS.EXE end of special case #1. */
                 if (   g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 3)
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
-                    && pNtProtect->fCsrssFirstProcessDuplicateHandle
+                    && pNtProtect->cCsrssFirstProcessDuplicateHandle > 0
                     && pOpInfo->KernelHandle == 0
+                    && pOpInfo->Parameters->DuplicateHandleInformation.DesiredAccess == s_fCsrssStupidDesires
                     &&    pNtProtect->hParentPid
                        == PsGetProcessId((PEPROCESS)pOpInfo->Parameters->DuplicateHandleInformation.SourceProcess)
                     && pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess == PsGetCurrentProcess()
-                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
+                    && ExGetPreviousMode() == UserMode
+                    && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()))
                 {
-                    pNtProtect->fCsrssFirstProcessDuplicateHandle = false;
-                    if (pOpInfo->Parameters->DuplicateHandleInformation.DesiredAccess == s_fCsrssStupidDesires)
+                    if (ASMAtomicDecS32(&pNtProtect->cCsrssFirstProcessDuplicateHandle) >= 0)
                     {
                         /* Not needed: PROCESS_CREATE_THREAD, PROCESS_SET_SESSIONID,
                            PROCESS_CREATE_PROCESS, PROCESS_DUP_HANDLE */
@@ -3248,6 +3253,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     && pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed
                     && pNtProtect->fFirstThreadCreateHandle
                     && pOpInfo->KernelHandle == 0
+                    && ExGetPreviousMode() == UserMode
                     && pNtProtect->hParentPid == PsGetProcessId(PsGetCurrentProcess()) )
                 {
                     if (   !pOpInfo->KernelHandle
@@ -3270,6 +3276,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                     && (   (enmProcessKind = pNtProtect->enmProcessKind) == kSupDrvNtProtectKind_VmProcessConfirmed
                         || enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
                     && pOpInfo->KernelHandle == 0
+                    && ExGetPreviousMode() == UserMode
                     && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     fAllowedRights |= THREAD_IMPERSONATE;
@@ -3314,6 +3321,7 @@ supdrvNtProtectCallback_ThreadHandlePre(PVOID pvUser, POB_PRE_OPERATION_INFORMAT
                         || enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
                     && pOpInfo->Parameters->DuplicateHandleInformation.TargetProcess == PsGetCurrentProcess()
                     && pOpInfo->KernelHandle == 0
+                    && ExGetPreviousMode() == UserMode
                     && supdrvNtProtectIsAssociatedCsrss(pNtProtect, PsGetCurrentProcess()) )
                 {
                     fAllowedRights |= THREAD_IMPERSONATE;
