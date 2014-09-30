@@ -135,7 +135,7 @@ void HostDnsServiceWin::releaseResources()
     /* Then release notification about tree structure changes. */
     if (m_aWarehouse.size() > VBOX_OFFSET_TREE_EVENT)
         releaseWarehouseItem(VBOX_OFFSET_TREE_EVENT);
-    
+
     /* Release shutdown event. */
     if (m_aWarehouse.size() > VBOX_OFFSET_SHUTDOWN_EVENT)
         releaseWarehouseItem(VBOX_OFFSET_SHUTDOWN_EVENT);
@@ -334,7 +334,7 @@ HRESULT HostDnsServiceWin::updateInfo(uint8_t *fWhatsChanged)
                     rc = RegEnumValue(m_aWarehouse[idxKey].hKey, idxValue, wcsValueName, &cbValueName, 0, NULL, (LPBYTE)wcsData, &cbData);
                     if (rc == ERROR_SUCCESS)
                     {
-                        
+
                         if ((   _tcscmp(wcsValueName, _T("Domain")) == 0
                              || _tcscmp(wcsValueName, _T("DhcpDomain")) == 0)
                             && _tcslen(wcsData) > 0)
@@ -358,7 +358,7 @@ HRESULT HostDnsServiceWin::updateInfo(uint8_t *fWhatsChanged)
                 }
             }
         }
-    
+
         uint8_t fChanged = VBOX_EVENT_NO_CHANGES;
         /* Compare cached network settings and newly obtained ones. */
         if (pHostDnsInfo.servers != m_hostInfoCache.servers)
@@ -371,7 +371,7 @@ HRESULT HostDnsServiceWin::updateInfo(uint8_t *fWhatsChanged)
 #endif /* DEBUG */
             fChanged |= VBOX_EVENT_SERVERS_CHANGED;
         }
-        
+
         if (pHostDnsInfo.domain != m_hostInfoCache.domain)
         {
 #ifdef DEBUG
@@ -381,7 +381,7 @@ HRESULT HostDnsServiceWin::updateInfo(uint8_t *fWhatsChanged)
 #endif /* DEBUG */
             fChanged |= VBOX_EVENT_DOMAIN_CHANGED;
         }
-        
+
         if (pHostDnsInfo.searchList != m_hostInfoCache.searchList)
         {
 #ifdef DEBUG
@@ -392,7 +392,7 @@ HRESULT HostDnsServiceWin::updateInfo(uint8_t *fWhatsChanged)
 #endif /* DEBUG */
             fChanged |= VBOX_EVENT_SEARCHLIST_CHANGED;
         }
-        
+
         /* Provide info about changes if requested. */
         if (fWhatsChanged)
             *fWhatsChanged = fChanged;
@@ -486,7 +486,7 @@ int HostDnsServiceWin::monitorWorker()
             }
             else
                 LogRel(("Monitor unstable: failed to unsubscribe from previous notifications.\n"));
-            
+
             /* If something went wrong, we break monitoring. */
             break;
 
@@ -496,7 +496,7 @@ int HostDnsServiceWin::monitorWorker()
                  rc <  (WAIT_OBJECT_0 + m_aWarehouse.size()))
         {
             Log2(("Network setting has changed at interface %ls.\n", m_aWarehouse[rc - WAIT_OBJECT_0].wcsInterface));
-            
+
             /* Drop previous notifications first. */
             if (dropSubTreeNotifications())
             {
