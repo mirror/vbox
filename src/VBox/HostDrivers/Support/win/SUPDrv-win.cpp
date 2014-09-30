@@ -3459,7 +3459,7 @@ static void supdrvNtProtectRelease(PSUPDRVNTPROTECT pNtProtect)
                 pNtProtect->u.pChild   = NULL;
                 pChild->u.pParent      = NULL;
                 pChild->enmProcessKind = kSupDrvNtProtectKind_VmProcessDead;
-                uint32_t cChildRefs = ASMAtomicIncU32(&pChild->cRefs);
+                uint32_t cChildRefs = ASMAtomicDecU32(&pChild->cRefs);
                 if (!cChildRefs)
                     pRemovedChild = (PSUPDRVNTPROTECT)RTAvlPVRemove(&g_NtProtectTree, pChild->AvlCore.Key);
                 else
