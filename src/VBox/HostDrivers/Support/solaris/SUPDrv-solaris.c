@@ -258,7 +258,7 @@ int _init(void)
         else
         {
             LogRel(("VBoxDrvSolarisAttach: supdrvInitDevExt failed\n"));
-            rc = RTErrConvertToErrno(rc);
+            rc = EINVAL;
         }
         RTR0TermForced();
     }
