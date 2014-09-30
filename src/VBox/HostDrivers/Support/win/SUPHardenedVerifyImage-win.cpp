@@ -144,7 +144,9 @@ static union
 /** The TrustedInstaller SID (Vista+). */
                             g_TrustedInstallerSid,
 /** Local system ID (S-1-5-21). */
-                            g_LocalSystemSid;
+                            g_LocalSystemSid,
+/** Builtin Administrators group alias (S-1-5-32-544). */
+                            g_AdminsGroupSid;
 
 
 /** Set after we've retrived other SPC root certificates from the system. */
@@ -451,9 +453,17 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
      * turned up owned by the local system user, and we cannot operate without
      * the plugin loaded once it's installed (WinVerityTrust fails).
      *
-     * Note! We cannot really allow Builtin\Administrators here it's the default
-     *       owner of anything an admin user creates. (We must, unforutnately,
-     *       allow that in system32 though.)
+     * We'd like to avoid allowing Builtin\Administrators here since it's the
+     * default owner of anything an admin user creates (at least when elevated).
+     * Seems windows update or someone ends up installing or modifying system
+     * DLL ownership to this group, so for system32 and winsxs it's unavoidable.
+     * And, not surprise, a bunch of products, including AV, firewalls and similar
+     * ends up with their files installed with this group as owner.  For instance
+     * if we wish to have NAT continue working, we need to allow this.
+     *
+     * Hopefully, we can limit the allowed files to these owners though, so
+     * we won't be subject to ordinary (non-admin, or not elevated) users
+     * downloading or be tricked into putting evil DLLs around the place...
      */
     PSID pOwner = uBuf.Rel.Control & SE_SELF_RELATIVE ? &uBuf.abView[uBuf.Rel.Owner] : uBuf.Abs.Owner;
     Assert((uintptr_t)pOwner - (uintptr_t)&uBuf < sizeof(uBuf) - sizeof(SID));
@@ -461,6 +471,11 @@ static bool supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(HANDLE hFile, PCR
         return true;
     if (RtlEqualSid(pOwner, &g_LocalSystemSid))
         return true;
+    if (RtlEqualSid(pOwner, &g_AdminsGroupSid))
+    {
+        SUP_DPRINTF(("%ls: Owner is administrators group.\n", pwszName));
+        return true;
+    }
 
     SUP_DPRINTF(("%ls: Owner is not trusted installer (%.*Rhxs)\n",
                  pwszName, ((uint8_t *)pOwner)[1] /*SubAuthorityCount*/ * sizeof(ULONG) + 8, pOwner));
@@ -1081,6 +1096,8 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      * In one report by 'thor' the WinSxS resident comctl32.dll was owned by
      * SECURITY_BUILTIN_DOMAIN_RID + DOMAIN_ALIAS_RID_ADMINS (with 4.3.16).
      */
+    /** @todo Since we're now allowing Builtin\Administrators after all, perhaps we
+     *        could drop these system32 + winsxs hacks?? */
     if (   (pNtViRdr->fFlags & SUPHNTVI_F_TRUSTED_INSTALLER_OWNER)
         && !supHardNtViCheckIsOwnedByTrustedInstallerOrSimilar(pNtViRdr->hFile, pwszName))
     {
@@ -1690,12 +1707,18 @@ DECLHIDDEN(int) supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo)
                 *RtlSubAuthoritySid(&g_TrustedInstallerSid, 4) = 1853292631;
                 *RtlSubAuthoritySid(&g_TrustedInstallerSid, 5) = 2271478464;
 
-                if (NT_SUCCESS(rcNt))
-                    rcNt = RtlInitializeSid(&g_LocalSystemSid, &s_NtAuth, 1);
+                rcNt = RtlInitializeSid(&g_LocalSystemSid, &s_NtAuth, 1);
                 if (NT_SUCCESS(rcNt))
                 {
                     *RtlSubAuthoritySid(&g_LocalSystemSid, 0) = SECURITY_LOCAL_SYSTEM_RID;
-                    return VINF_SUCCESS;
+
+                    rcNt = RtlInitializeSid(&g_AdminsGroupSid, &s_NtAuth, 2);
+                    if (NT_SUCCESS(rcNt))
+                    {
+                        *RtlSubAuthoritySid(&g_AdminsGroupSid, 0) = SECURITY_BUILTIN_DOMAIN_RID;
+                        *RtlSubAuthoritySid(&g_AdminsGroupSid, 1) = DOMAIN_ALIAS_RID_ADMINS;
+                        return VINF_SUCCESS;
+                    }
                 }
             }
             rc = RTErrConvertFromNtStatus(rcNt);
