@@ -242,7 +242,7 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_TRENDMICRO              RT_BIT_32(3)
 /** McAfee.  */
 #define SUPHARDNT_ADVERSARY_MCAFEE                  RT_BIT_32(4)
-/** Kaspersky.  */
+/** Kaspersky or OEMs of it.  */
 #define SUPHARDNT_ADVERSARY_KASPERSKY               RT_BIT_32(5)
 /** Malwarebytes Anti-Malware (MBAM). */
 #define SUPHARDNT_ADVERSARY_MBAM                    RT_BIT_32(6)
@@ -254,6 +254,8 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_MSE                     RT_BIT_32(9)
 /** Comodo. */
 #define SUPHARDNT_ADVERSARY_COMODO                  RT_BIT_32(10)
+/** Check Point's Zone Alarm (may include Kaspersky).  */
+#define SUPHARDNT_ADVERSARY_ZONE_ALARM              RT_BIT_32(11)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -4971,6 +4973,9 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdvrt64.dll" },
         { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdkbd64.dll" },
         { SUPHARDNT_ADVERSARY_COMODO, L"\\SystemRoot\\System32\\cmdcsr.dll" },
+
+        { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\drivers\\vsdatant.sys" },
+        { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\AntiTheftCredentialProvider.dll" },
     };
 
     uint32_t fFound = 0;
