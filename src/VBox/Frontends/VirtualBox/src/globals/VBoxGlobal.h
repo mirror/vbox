@@ -67,6 +67,14 @@ class VBoxGlobal : public QObject
 
 public:
 
+    /** VM launch modes. */
+    enum LaunchMode
+    {
+        LaunchMode_Default,
+        LaunchMode_Headless,
+        LaunchMode_Separate
+    };
+
     /* Static API: Create/destroy stuff: */
     static VBoxGlobal* instance();
     static void create();
@@ -86,7 +94,8 @@ public:
     QString versionString() const { return mVerString; }
     bool isBeta() const;
 
-    bool isSeparate() const { return mIsSeparate; }
+    /** Returns whether GUI is separate (from VM) process. */
+    bool isSeparateProcess() const { return m_fSeparateProcess; }
 
 #ifdef Q_WS_MAC
     static MacOSXRelease osRelease();
@@ -121,12 +130,6 @@ public:
 
     bool switchToMachine(CMachine &machine);
 
-    enum LaunchMode
-    {
-        LaunchMode_Default,
-        LaunchMode_Headless,
-        LaunchMode_Separate
-    };
     bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
@@ -429,7 +432,8 @@ private:
     UISelectorWindow *mSelectorWnd;
     UIMachine *m_pVirtualMachine;
 
-    bool mIsSeparate;
+    /** Holds whether GUI is separate (from VM) process. */
+    bool m_fSeparateProcess;
 
     QString vmUuid;
     QList<QUrl> m_ArgUrlList;

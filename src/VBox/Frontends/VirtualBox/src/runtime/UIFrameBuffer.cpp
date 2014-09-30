@@ -201,7 +201,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
         return E_POINTER;
 
     com::SafeArray<FramebufferCapabilities_T> caps;
-    if (vboxGlobal().isSeparate())
+    if (vboxGlobal().isSeparateProcess())
     {
        caps.resize(1);
        caps[0] = FramebufferCapabilities_UpdateImage;
@@ -220,7 +220,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
 STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     CDisplaySourceBitmap sourceBitmap;
-    if (!vboxGlobal().isSeparate())
+    if (!vboxGlobal().isSeparateProcess())
         m_pMachineView->session().GetConsole().GetDisplay().QuerySourceBitmap(uScreenId, sourceBitmap);
 
     /* Lock access to frame-buffer: */
@@ -247,7 +247,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     /* While updates are disabled, visible region will be saved:  */
     m_pendingSyncVisibleRegion = QRegion();
 
-    if (!vboxGlobal().isSeparate())
+    if (!vboxGlobal().isSeparateProcess())
     {
        /* Acquire new pending bitmap: */
        m_pendingSourceBitmap = sourceBitmap;
@@ -316,13 +316,20 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
                                               ULONG uWidth, ULONG uHeight,
                                               ComSafeArrayIn(BYTE, image))
 {
+    // TODO: Retina handling..
+
+    /* Copying received data (is it shallow?): */
     com::SafeArray<BYTE> imageData(ComSafeArrayInArg(image));
 
+    /* Lock access to frame-buffer: */
     lock();
+
+    // TODO: Why does this handling so different from UIFrameBuffer::NotifyUpdate?
+    //       And where is the part about m_fUnused?
 
     if (m_fUpdatesAllowed)
     {
-        /* Copy to m_image */
+        /* Copy to m_image: */
         uchar *pu8Dst = m_image.bits() + uY * m_image.bytesPerLine() + uX * 4;
         uchar *pu8Src = imageData.raw();
         ULONG h;
@@ -338,8 +345,10 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
         emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
     }
 
+    /* Unlock access to frame-buffer: */
     unlock();
-    
+
+    /* Confirm NotifyUpdateImage: */
     return S_OK;
 }
 
@@ -544,7 +553,7 @@ void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
     lock();
 
     /* If there is NO pending source-bitmap: */
-    if (!vboxGlobal().isSeparate() && m_pendingSourceBitmap.isNull())
+    if (!vboxGlobal().isSeparateProcess() && m_pendingSourceBitmap.isNull())
     {
         /* Do nothing, change-event already processed: */
         LogRel2(("UIFrameBuffer::notifyChange: Already processed.\n"));

@@ -92,17 +92,16 @@ protected:
 /* static */
 bool UIMachine::create(UIMachine **ppSelf)
 {
-    UIMachine *pVirtualMachine = new UIMachine(ppSelf);
-    if (!pVirtualMachine)
+    UIMachine *pMachine = new UIMachine(ppSelf);
+    if (!pMachine)
         return false;
-    return pVirtualMachine->prepare();
+    return pMachine->prepare();
 }
 
 UIMachine::UIMachine(UIMachine **ppSelf)
     : QObject(0)
     , m_ppThis(ppSelf)
     , initialStateType(UIVisualStateType_Normal)
-    , m_session()
     , m_pSession(0)
     , m_pVisualState(0)
     , m_allowedVisualStates(UIVisualStateType_Invalid)
@@ -115,9 +114,13 @@ UIMachine::UIMachine(UIMachine **ppSelf)
 bool UIMachine::prepare()
 {
     KLockType lockType;
-    if (vboxGlobal().isSeparate())
+    if (!vboxGlobal().isSeparateProcess())
     {
-        /* Search for the corresponding machine: */
+        lockType = KLockType_VM;
+    }
+    else
+    {
+        /* Try to find corresponding machine: */
         CVirtualBox virtualBox = vboxGlobal().virtualBox();
         CMachine machine = virtualBox.FindMachine(vboxGlobal().managedVMUuid());
         if (machine.isNull())
@@ -126,14 +129,11 @@ bool UIMachine::prepare()
             return false;
         }
 
+        /* Try to launch corresponding machine: */
         if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
             return false;
 
         lockType = KLockType_Shared;
-    }
-    else
-    {
-        lockType = KLockType_VM;
     }
 
     /* Create VM session: */
@@ -164,13 +164,11 @@ bool UIMachine::prepare()
 
     /* Now power up the machine.
      * Actually powerUp does more that just a power up,
-     * so call it regardless of isSeparate setting.
-     */
+     * so call it regardless of isSeparateProcess setting. */
     uisession()->powerUp();
 
     /* Initialization of MachineLogic internals after the powerUp.
-     * This is a hack, maybe more generic approach can be used.
-     */
+     * This is a hack, maybe more generic approach can be used. */
     machineLogic()->initializePostPowerUp();
 
     return true;

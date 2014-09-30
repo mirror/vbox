@@ -260,7 +260,7 @@ void UISession::powerUp()
             debugger.SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
-    if (!vboxGlobal().isSeparate())
+    if (!vboxGlobal().isSeparateProcess())
     {
         /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI

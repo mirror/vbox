@@ -124,7 +124,15 @@ public:
       * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
       * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
     STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
-    /** EMT callback which is not used in current implementation. */
+
+    /** EMT callback: Notifies frame-buffer about guest-screen update.
+      * @param        uX      Horizontal origin of the update rectangle, in pixels.
+      * @param        uY      Vertical origin of the update rectangle, in pixels.
+      * @param        uWidth  Width of the update rectangle, in pixels.
+      * @param        uHeight Height of the update rectangle, in pixels.
+      * @param        image   Brings image container which can be used to copy data from.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
     STDMETHOD(NotifyUpdateImage)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight, ComSafeArrayIn(BYTE, image));
 
     /** EMT callback: Returns whether the frame-buffer implementation is willing to support a given video-mode.

@@ -41,12 +41,11 @@ static int MyStrCmp(const char *psz1, const char *psz2)
 
 int main(int argc, char **argv, char **envp)
 {
-    /*
-     * First check whether we're about to start a VM.
-     */
+    /* First check whether we're about to start a VM: */
     bool fStartVM = false;
-    bool fSeparate = false;
-    for (int i = 1; i < argc && !(fStartVM && fSeparate); i++)
+    /* In separate process: */
+    bool fSeparateProcess = false;
+    for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in main.cpp and VBoxGlobal.cpp exactly,
@@ -59,11 +58,11 @@ int main(int argc, char **argv, char **envp)
         else if (   !MyStrCmp(argv[i], "--separate")
                  || !MyStrCmp(argv[i], "-separate"))
         {
-            fSeparate = true;
+            fSeparateProcess = true;
         }
     }
 
-    uint32_t fFlags = (fStartVM && !fSeparate)? 0: SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
+    uint32_t fFlags = (fStartVM && !fSeparateProcess) ? 0 : SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
 
     return SUPR3HardenedMain("VirtualBox", fFlags | SUPSECMAIN_FLAGS_TRUSTED_ERROR, argc, argv, envp);
 }
