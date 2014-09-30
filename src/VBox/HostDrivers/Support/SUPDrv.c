@@ -5656,6 +5656,11 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
             } while (cTries > 0);
             if (RT_SUCCESS(rc))
             {
+#ifdef DEBUG_ramshankar
+                for (unsigned iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                    OSDBGPRINT(("supdrvGipCreate: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
+#endif
+
                 /*
                  * Create the timer.
                  * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
@@ -6104,7 +6109,6 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
     unsigned           idxWorker = supdrvGipCpuIndexFromCpuId(pGip, *pidWorker);
     PSUPGIPCPU         pGipCpuMaster = &pGip->aCPUs[idxMaster];
     PSUPGIPCPU         pGipCpuWorker = &pGip->aCPUs[idxWorker];
-    uint64_t           uMinCmpReadTime = UINT64_MAX;
     int                cTriesLeft = 12;
 
     if (   idCpu != idMaster
@@ -6159,7 +6163,8 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
     Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
     while (cTriesLeft-- > 0)
     {
-        unsigned i;
+        unsigned    i;
+        uint64_t    uMinCmpReadTime = UINT64_MAX;
         RTCCUINTREG uFlags = ASMIntDisableFlags();          /* Disable interrupts for the duration of a try. */
         for (i = 0; i < GIP_TSC_DELTA_LOOPS; i++)
         {
@@ -6208,6 +6213,7 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                 ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
                 while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_START)
                     ;
+                Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
                 ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_WORKER_READY);
 
                 /*
