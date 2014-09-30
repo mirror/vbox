@@ -276,12 +276,12 @@ public:
 
     /* Creates EBML output file. */
     inline int create(const char *a_pszFilename)
-    { 
+    {
       return RTFileOpen(&m_File, a_pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     }
 
     /* Returns file size. */
-    inline uint64_t getFileSize() 
+    inline uint64_t getFileSize()
     {
         return RTFileTell(m_File);
     }
@@ -348,7 +348,7 @@ public:
         return *this;
     }
 
-    /* Serializes an UNSIGNED integer 
+    /* Serializes an UNSIGNED integer
      * If size is zero then it will be detected automatically. */
     inline Ebml &serializeUnsignedInteger(EbmlClassId classId, uint64_t parm, size_t size = 0)
     {
@@ -600,7 +600,7 @@ public:
                 .serializeUnsignedInteger(CueTrack, 1)
                 .serializeUnsignedInteger(CueClusterPosition, it->loc - m_uPositionReference, 8)
                 .subEnd(CueTrackPositions)
-                .subEnd(CuePoint);   
+                .subEnd(CuePoint);
         }
 
         m_Ebml.subEnd(Cues)

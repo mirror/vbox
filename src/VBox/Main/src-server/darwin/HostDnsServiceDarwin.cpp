@@ -61,7 +61,7 @@ HostDnsServiceDarwin::~HostDnsServiceDarwin()
     monitorThreadShutdown();
 
     CFRelease(m->m_RunLoopRef);
-    
+
     CFRelease(m->m_DnsWatcher);
 
     CFRelease(m->m_store);
@@ -122,7 +122,7 @@ void HostDnsServiceDarwin::monitorThreadShutdown()
     {
         CFRunLoopSourceSignal(m->m_Stopper);
         CFRunLoopWakeUp(m->m_RunLoopRef);
-        
+
         RTSemEventWait(m->m_evtStop, RT_INDEFINITE_WAIT);
     }
 }

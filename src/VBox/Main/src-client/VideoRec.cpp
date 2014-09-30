@@ -530,7 +530,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
             {
                 pStrm->uEncoderDeadline = VPX_DL_BEST_QUALITY;
             }
-            else 
+            else
             {
                 LogRel(("Settings quality deadline to = %s\n", value.c_str()));
                 pStrm->uEncoderDeadline = value.toUInt32();
@@ -554,7 +554,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
 
     pStrm->uDelay = 1000 / uFps;
 
-    struct vpx_rational arg_framerate = { uFps, 1 };
+    struct vpx_rational arg_framerate = { (int)uFps, 1 };
     rc = pStrm->Ebml.writeHeader(&pStrm->VpxConfig, &arg_framerate);
     AssertRCReturn(rc, rc);
 

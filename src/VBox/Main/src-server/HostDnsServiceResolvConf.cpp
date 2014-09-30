@@ -65,7 +65,7 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
     struct rcp_state st;
     wchar_t *pwczTmpStr;
 
-    st.rcps_flags = RCPSF_NO_STR2IPCONV; 
+    st.rcps_flags = RCPSF_NO_STR2IPCONV;
     int rc = rcp_parse(&st, m->resolvConfFilename.c_str());
     if (rc == -1)
         return S_OK;

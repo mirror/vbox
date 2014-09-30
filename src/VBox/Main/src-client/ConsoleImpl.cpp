@@ -1871,7 +1871,6 @@ HRESULT Console::i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
        ++cEntries;
     }
 
-    
     aNames.resize(cEntries);
     aValues.resize(cEntries);
     aTimestamps.resize(cEntries);
