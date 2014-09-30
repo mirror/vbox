@@ -492,8 +492,8 @@ int HostDnsServiceWin::monitorWorker()
 
         }
         /* DNS update events range. */
-        else if (rc > (WAIT_OBJECT_0 + VBOX_OFFSET_SUBTREE_EVENTS) &&
-                 rc < (WAIT_OBJECT_0 + m_aWarehouse.size() - VBOX_OFFSET_SUBTREE_EVENTS))
+        else if (rc >= (WAIT_OBJECT_0 + VBOX_OFFSET_SUBTREE_EVENTS) &&
+                 rc <  (WAIT_OBJECT_0 + m_aWarehouse.size()))
         {
             Log2(("Network setting has changed at interface %ls.\n", m_aWarehouse[rc - WAIT_OBJECT_0].wcsInterface));
             
@@ -523,7 +523,7 @@ int HostDnsServiceWin::monitorWorker()
             break;
         }
         else
-            AssertMsgFailedReturn(("WaitForMultipleObjects returns out of bound (%d) index %d. Please debug!", m_aWarehouse.size(), rc), VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("WaitForMultipleObjects returns out of bound (%d) index %d. Please debug!\n", m_aWarehouse.size(), rc), VERR_INTERNAL_ERROR);
     }
     LogRel(("Monitor thread exited.\n"));
     return VINF_SUCCESS;
