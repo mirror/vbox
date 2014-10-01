@@ -50,8 +50,12 @@ include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
 # Note: en_US *must* come first for the dependency file generation.
 #
 ifndef VBOX_INSTALLER_LANGUAGES
-VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
-VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
+ ifdef VBOX_WITH_MSM_INSTALL ## @todo Dunno why this has to be this way, ask Andy.
+  VBOX_INSTALLER_LANGUAGES = en_US
+ else
+  VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
+  VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
+ endif
 endif
 
 #
