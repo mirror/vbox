@@ -50,12 +50,8 @@ include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
 # Note: en_US *must* come first for the dependency file generation.
 #
 ifndef VBOX_INSTALLER_LANGUAGES
- ifdef VBOX_WITH_MSM_INSTALL ## @todo Dunno why this has to be this way, ask Andy.
-  VBOX_INSTALLER_LANGUAGES = en_US
- else
-  VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
-  VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
- endif
+ VBOX_INSTALLER_LANGUAGES  = en_US de_DE fr_FR it_IT zh_TW
+ VBOX_INSTALLER_LANGUAGES += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
 #
@@ -67,15 +63,18 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
 endif
 
 # We only ship the merge modules in locale en_US for the moment.
-VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
+ifdef VBOX_WITH_MSM_INSTALL
+ VBOX_INSTALLER_LANGUAGES := en_US
+ VBOX_INSTALLER_MERGE_LANGUAGES = $(VBOX_INSTALLER_LANGUAGES)
+endif
 
 #
 # We don't have the license text in another language than English yet,
 # so just define the branding targets to use the English one for now.
 # The installer generation assumes that there is a translation for each
-# of VBOX_LICENSE_ADD_LANGUAGES.
+# of VBOX_INSTALLER_LANGUAGES.
 #
-$(foreach lang,$(VBOX_LICENSE_ADD_LANGUAGES), \
+$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
 	$(eval VBOX_BRAND_$(lang)_LICENSE_RTF := $(VBOX_BRAND_LICENSE_RTF)))
 
 # Set the codepage for all languages to 1252, covers most cases.
