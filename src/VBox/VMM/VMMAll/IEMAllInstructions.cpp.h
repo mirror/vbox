@@ -13192,7 +13192,7 @@ FNIEMOP_DEF_1(iemOp_fnstcw, uint8_t, bRm)
 }
 
 
-/** Opcode 0xd9 0xc9, 0xd9 0xd8-0xdf, ++?.  */
+/** Opcode 0xd9 0xd0, 0xd9 0xd8-0xdf, ++?.  */
 FNIEMOP_DEF(iemOp_fnop)
 {
     IEMOP_MNEMONIC("fnop");
@@ -13762,7 +13762,7 @@ FNIEMOP_DEF(iemOp_EscF1)
             case 0: return FNIEMOP_CALL_1(iemOp_fld_stN, bRm);
             case 1: return FNIEMOP_CALL_1(iemOp_fxch_stN, bRm);
             case 2:
-                if (bRm == 0xc9)
+                if (bRm == 0xd0)
                     return FNIEMOP_CALL(iemOp_fnop);
                 return IEMOP_RAISE_INVALID_OPCODE();
             case 3: return FNIEMOP_CALL_1(iemOp_fstp_stN, bRm); /* Reserved. Intel behavior seems to be FSTP ST(i) though. */
