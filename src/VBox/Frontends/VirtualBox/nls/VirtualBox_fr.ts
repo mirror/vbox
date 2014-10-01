@@ -4405,7 +4405,7 @@
         <translation>Affiche le dossier dans lequel les instantanés de cette machine virtuelle seront sauvegardés. Sachez que les instantanés peuvent prendre beaucoup de place.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Simple</translation>
     </message>
     <message>
@@ -4417,7 +4417,7 @@
         <translation type="obsolete">Affiche le nom de la machine virtuelle.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avancé</translation>
     </message>
     <message>
@@ -4433,7 +4433,7 @@
         <translation>Dossier des i&amp;nstantanés :</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Description</translation>
     </message>
     <message>
@@ -4477,7 +4477,7 @@
         <translation type="obsolete">vous avez choisi un système de type 64 bit pour cette machine virtuelle. Comme la virtualisation matérielle de l&apos;hôte (VT-x/AMD-V) est nécessaire pour un tel invité, elle sera automatiquement activée.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Glisser-Déposer :</translation>
     </message>
     <message>
@@ -7538,7 +7538,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Nom : </translation>
     </message>
     <message>

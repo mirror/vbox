@@ -4887,7 +4887,7 @@ p, li { white-space: pre-wrap; }
         <translation>Mostra el camí on les captures d&apos;aquesta màquina virtual es desaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Bàsic</translation>
     </message>
     <message>
@@ -4939,7 +4939,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Controla la quantitat de memòria de vídeo amb què es proveeix a la màquina virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avançat</translation>
     </message>
     <message>
@@ -5035,7 +5035,7 @@ p, li { white-space: pre-wrap; }
         <translation>Carpeta de capture&amp;s:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descripció</translation>
     </message>
     <message>
@@ -5111,7 +5111,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">heu seleccionat un tipus de sistema client de 64 bits per a aquesta màquina virtual. Amb aquests tipus de clients es requereix maquinari de virtualització (VT-x/AMD-V), aquesta característica s&apos;activarà automàticament.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Arrosega i &amp;deixa anar:</translation>
     </message>
     <message>
@@ -8766,7 +8766,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Nom:</translation>
     </message>
     <message>

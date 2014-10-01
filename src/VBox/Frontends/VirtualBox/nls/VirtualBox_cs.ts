@@ -4844,7 +4844,7 @@ p, li { white-space: pre-wrap; }
         <translation>Zobrazuje cestu, kam jsou ukládány snímky virtuálního počítače. Snímky můžou zabrat velké množství diskového prostoru.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Základ</translation>
     </message>
     <message>
@@ -4896,7 +4896,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ovládá množství videopaměti poskytnuté virtuálnímu počítači.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Pokročilé</translation>
     </message>
     <message>
@@ -4992,7 +4992,7 @@ p, li { white-space: pre-wrap; }
         <translation>S&amp;ložka pro snímky:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>Pop&amp;is</translation>
     </message>
     <message>
@@ -5068,7 +5068,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">zvolili jste 64bitový OS pro tento virtuální počítač. Protože je nutná podpora hardwarové virtualizace (VT-x/AMD-V), byla tato volba automaticky nastavena.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Táhni a pusť:</translation>
     </message>
     <message>
@@ -8748,7 +8748,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Název:</translation>
     </message>
     <message>

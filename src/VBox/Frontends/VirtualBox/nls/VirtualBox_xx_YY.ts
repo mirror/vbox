@@ -2507,11 +2507,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2527,7 +2527,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2567,7 +2567,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4835,7 +4835,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -4795,7 +4795,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показывает путь к папке для сохранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жестком диске.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>О&amp;сновные</translation>
     </message>
     <message>
@@ -4839,7 +4839,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Регулирует количество видеопамяти, доступной для виртуальной машины.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Дополнительно</translation>
     </message>
     <message>
@@ -4923,7 +4923,7 @@ p, li { white-space: pre-wrap; }
         <translation>Папка для с&amp;нимков:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>О&amp;писание</translation>
     </message>
     <message>
@@ -5019,7 +5019,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">для этой машины выбран 64-битный тип гостевой ОС. В связи с тем, что такие гостевые ОС требуют активации функций аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Drag&apos;n&apos;Drop:</translation>
     </message>
     <message>
@@ -8512,7 +8512,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Имя:</translation>
     </message>
     <message>

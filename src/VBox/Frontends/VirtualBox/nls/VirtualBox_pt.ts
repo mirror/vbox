@@ -4277,7 +4277,7 @@
         <translation>Mostra a localização onde as capturas desta máquina virtual serão armazenadas. Note que estas capturas podem ocupar bastante espaço em disco.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Básico</translation>
     </message>
     <message>
@@ -4325,7 +4325,7 @@
         <translation type="obsolete">Controla a quantidade de memória gráfica alocada para a máquina virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avançado</translation>
     </message>
     <message>
@@ -4413,7 +4413,7 @@
         <translation>Pasta de &amp;Capturas:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descrição</translation>
     </message>
     <message>
@@ -4485,7 +4485,7 @@
         <translation type="obsolete">seleccionou um SO convidado 64 bit para esta MV. Como tal os convidados requerem virtualização de material (VT-x/AMD-V), esta opção será activada automaticamente.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7615,7 +7615,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nome:</translation>
     </message>
     <message>

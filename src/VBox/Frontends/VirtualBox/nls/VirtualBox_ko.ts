@@ -4831,7 +4831,7 @@ p, li { white-space: pre-wrap; }
         <translation>이 가상 머신의 스냅샷을 저장할 경로를 표시합니다. 스냅샷은 많은 디스크 공간을 차지할 수도 있습니다.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>기본(&amp;B)</translation>
     </message>
     <message>
@@ -4875,7 +4875,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">가상 머신에 할당할 비디오 메모리 크기를 설정합니다.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>고급(&amp;A)</translation>
     </message>
     <message>
@@ -4963,7 +4963,7 @@ p, li { white-space: pre-wrap; }
         <translation>스냅샷 폴더(&amp;N):</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>설명(&amp;D)</translation>
     </message>
     <message>
@@ -5051,7 +5051,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">이 가상 머신에 64비트 게스트 운영 체제를 사용하려면 하드웨어 가상화(VT-x/AMD-V)가 필요하므로, 이 기능은 자동으로 활성화됩니다.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>드래그 앤 드롭(&amp;D):</translation>
     </message>
     <message>
@@ -8459,7 +8459,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>이름(&amp;N):</translation>
     </message>
     <message>

@@ -4537,7 +4537,7 @@
         <translation>Určuje cestu, kam budú ukladané snímky tohto virtuálneho stroja. Uvedomte si, že snímky môžu zaberať veľkú časť miesta na disku.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Základné</translation>
     </message>
     <message>
@@ -4581,7 +4581,7 @@
         <translation type="obsolete">Ovláda množstvo videopamäte poskytnutej virtuálnemu stroju.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Rozšírené</translation>
     </message>
     <message>
@@ -4633,7 +4633,7 @@
         <translation>Priečinok pre s&amp;nímky:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Popis</translation>
     </message>
     <message>
@@ -4673,7 +4673,7 @@
         <translation>Z&amp;obraziť na vrchu obrazovky</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7487,7 +7487,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Názov:</translation>
     </message>
     <message>

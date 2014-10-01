@@ -4080,7 +4080,7 @@
         <translation>Geeft het pad weer waar snapshots van deze virtuele machine worden opgeslagen. Wees ervan bewust dat snapshots erg veel ruimte op de harde schijf kunnen innemen.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Basis</translation>
     </message>
     <message>
@@ -4092,7 +4092,7 @@
         <translation type="obsolete">Toont de naam van de virtuele machine.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Geavanceerd</translation>
     </message>
     <message>
@@ -4108,7 +4108,7 @@
         <translation>S&amp;napshotmap:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Beschrijving</translation>
     </message>
     <message>
@@ -4152,7 +4152,7 @@
         <translation type="obsolete">U hebt een 64-Bit gastbesturingssysteem voor deze VM geselecteerd. Daardoor is hardware-virtualisering (VT-x/AMD-V) voor de gast vereist, deze optie wordt automatisch ingeschakeld.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Drag&apos;n&apos;Drop:</translation>
     </message>
     <message>
@@ -7021,7 +7021,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Naam:</translation>
     </message>
     <message>

@@ -4578,7 +4578,7 @@
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Pagrindai</translation>
     </message>
     <message>
@@ -4590,7 +4590,7 @@
         <translation type="obsolete">Parodo virtualios mašinos pavadinimą.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Sudėtingiau</translation>
     </message>
     <message>
@@ -4638,7 +4638,7 @@
         <translation>Rodyti &amp;virš kitų langų</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Aprašas</translation>
     </message>
     <message>
@@ -4654,7 +4654,7 @@
         <translation type="obsolete">šiai mašinai pasirinkote 64 bitų svečio OS. Kadangi toks svečias reikalauja virtualizaciją palaikančio procesoriaus (VT-x/AMD-V), pastaroji parinktis bus įgalinta automatiškai.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7838,7 +7838,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Pavadinimas:</translation>
     </message>
     <message>

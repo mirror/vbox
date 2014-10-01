@@ -4956,7 +4956,7 @@ p, li { white-space: pre-wrap; }
         <translation>Visar sökvägen där ögonblicksbilder av den virtuella maskinen lagras. Observera att ögonblicksbilder kan ta upp en hel del diskutrymme.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Grundläggande</translation>
     </message>
     <message>
@@ -5008,7 +5008,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kontrollerar den mängd grafikminne som tilldelas den virtuella maskinen.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avancerat</translation>
     </message>
     <message>
@@ -5096,7 +5096,7 @@ p, li { white-space: pre-wrap; }
         <translation>Mapp för ö&amp;gonblicksbilder:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Beskrivning</translation>
     </message>
     <message>
@@ -5192,7 +5192,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8842,7 +8842,7 @@ serial ports</comment>
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Namn:</translation>
     </message>
     <message>

@@ -5237,7 +5237,7 @@ p, li { white-space: pre-wrap; }
         <translation>Visualizza il percorso dove saranno archiviate le istantanee di questa macchina virtuale. Nota che le istantanee possono occupare molto spazio.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Base</translation>
     </message>
     <message>
@@ -5249,7 +5249,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mostra il nome della macchina virtuale.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avanzate</translation>
     </message>
     <message>
@@ -5265,7 +5265,7 @@ p, li { white-space: pre-wrap; }
         <translation>Cartella ista&amp;ntanee:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descrizione</translation>
     </message>
     <message>
@@ -5473,7 +5473,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Abilita pa&amp;ginazione nidificata</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Trasci&amp;na e rilascia:</translation>
     </message>
     <message>
@@ -9168,7 +9168,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Nome:</translation>
     </message>
     <message>

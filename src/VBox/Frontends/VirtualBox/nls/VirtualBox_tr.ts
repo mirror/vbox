@@ -4069,7 +4069,7 @@
         <translation>Bu sanal makinenin anlık görüntülerinin saklanacağı yeri gösterir. Anlık görüntülerin oldukça disk alanı kaplayabileceğinden haberiniz olsun.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Temel</translation>
     </message>
     <message>
@@ -4117,7 +4117,7 @@
         <translation type="obsolete">Sanal makineye sağlanan video belleği miktarını kontrol eder.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Gelişmiş</translation>
     </message>
     <message>
@@ -4185,7 +4185,7 @@
         <translation>A&amp;nlık Görüntü Klasörü:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Açıklama</translation>
     </message>
     <message>
@@ -4245,7 +4245,7 @@
         <translation type="obsolete">bu VM için 64-bit misafir İS türü seçtiniz. Bu gibi misafirler donanım sanallaştırma (VT-x/AMD-V) gerektirir, bu özellik otomatik olarak etkinleştirilecektir.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Sürükle&apos;v&apos;Bırak:</translation>
     </message>
     <message>
@@ -7424,7 +7424,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Adı:</translation>
     </message>
     <message>
