@@ -998,8 +998,609 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work.  Clear RF. */
+#ifndef IEM_IMPLEMENTS_CALLGATE
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
+#else
+    /* NB: Far jumps can only do intra-privilege transfers. Far calls support
+     * inter-privilege calls and are much more complex.
+     *
+     * NB: 64-bit call gate has the same type as a 32-bit call gate! If
+     * EFER.LMA=1, the gate must be 64-bit. Conversely if EFER.LMA=0, the gate
+     * must be 16-bit or 32-bit.
+     */
+    /** @todo: effective operand size is probably irrelevant here, only the
+     *         call gate bitness matters??
+     */
+    VBOXSTRICTRC    rcStrict;
+    RTPTRUNION      uPtrRet;
+    uint64_t        uNewRsp;
+    uint64_t        uNewRip;
+    uint64_t        u64Base;
+    uint32_t        cbLimit;
+    RTSEL           uNewCS;
+    IEMSELDESC      DescCS;
+    PCPUMCTX        pCtx;
+
+    AssertCompile(X86_SEL_TYPE_SYS_386_CALL_GATE == AMD64_SEL_TYPE_SYS_CALL_GATE);
+    Assert(enmBranch == IEMBRANCH_JUMP || enmBranch == IEMBRANCH_CALL);
+    Assert(   pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE
+           || pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE);
+
+    /* Determine the new instruction pointer from the gate descriptor. */
+    uNewRip = pDesc->Legacy.Gate.u16OffsetLow
+            | ((uint32_t)pDesc->Legacy.Gate.u16OffsetHigh << 16)
+            | ((uint64_t)pDesc->Long.Gate.u32OffsetTop    << 32);
+
+    /* Perform DPL checks on the gate descriptor. */
+    if (   pDesc->Legacy.Gate.u2Dpl < pIemCpu->uCpl
+        || pDesc->Legacy.Gate.u2Dpl < (uSel & X86_SEL_RPL))
+    {
+        Log(("BranchCallGate invalid priv. uSel=%04x Gate DPL=%d CPL=%u Sel RPL=%u -> #GP\n", uSel, pDesc->Legacy.Gate.u2Dpl,
+             pIemCpu->uCpl, (uSel & X86_SEL_RPL)));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
+    }
+
+    /** @todo does this catch NULL selectors, too? */
+    if (!pDesc->Legacy.Gen.u1Present)
+    {
+        Log(("BranchCallGate Gate not present uSel=%04x -> #NP\n", uSel));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSel);
+    }
+
+    /*
+     * Fetch the target CS descriptor from the GDT or LDT.
+     */
+    uNewCS = pDesc->Legacy.Gate.u16Sel;
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCS, X86_XCPT_GP);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Target CS must be a code selector. */
+    if (   !DescCS.Legacy.Gen.u1DescType
+        || !(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE) )
+    {
+        Log(("BranchCallGate %04x:%08RX64 -> not a code selector (u1DescType=%u u4Type=%#x).\n",
+             uNewCS, uNewRip, DescCS.Legacy.Gen.u1DescType, DescCS.Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+    }
+
+    /* Privilege checks on target CS. */
+    if (enmBranch == IEMBRANCH_JUMP)
+    {
+        if (DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF)
+        {
+            if (DescCS.Legacy.Gen.u2Dpl > pIemCpu->uCpl)
+            {
+                Log(("BranchCallGate jump (conforming) bad DPL uNewCS=%04x Gate DPL=%d CPL=%u -> #GP\n",
+                     uNewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+        }
+        else
+        {
+            if (DescCS.Legacy.Gen.u2Dpl != pIemCpu->uCpl)
+            {
+                Log(("BranchCallGate jump (non-conforming) bad DPL uNewCS=%04x Gate DPL=%d CPL=%u -> #GP\n",
+                     uNewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+        }
+    }
+    else
+    {
+        Assert(enmBranch == IEMBRANCH_CALL);
+        if (DescCS.Legacy.Gen.u2Dpl > pIemCpu->uCpl)
+        {
+            Log(("BranchCallGate call invalid priv. uNewCS=%04x Gate DPL=%d CPL=%u -> #GP\n",
+                 uNewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS & X86_SEL_MASK_OFF_RPL);
+        }
+    }
+
+    /* Additional long mode checks. */
+    if (IEM_IS_LONG_MODE(pIemCpu))
+    {
+        if (!DescCS.Legacy.Gen.u1Long)
+        {
+            Log(("BranchCallGate uNewCS %04x -> not a 64-bit code segment.\n", uNewCS));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+        }
+
+        /* L vs D. */
+        if (   DescCS.Legacy.Gen.u1Long
+            && DescCS.Legacy.Gen.u1DefBig)
+        {
+            Log(("BranchCallGate uNewCS %04x -> both L and D are set.\n", uNewCS));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+        }
+    }
+
+    if (!DescCS.Legacy.Gate.u1Present)
+    {
+        Log(("BranchCallGate target CS is not present. uSel=%04x uNewCS=%04x -> #NP(CS)\n", uSel, uNewCS));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, uNewCS);
+    }
+
+    pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (enmBranch == IEMBRANCH_JUMP)
+    {
+        /** @todo: This is very similar to regular far jumps; merge! */
+        /* Jumps are fairly simple... */
+
+        /* Chop the high bits off if 16-bit gate (Intel says so). */
+        if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE)
+            uNewRip = (uint16_t)uNewRip;
+
+        /* Limit check for non-long segments. */
+        cbLimit = X86DESC_LIMIT_G(&DescCS.Legacy);
+        if (DescCS.Legacy.Gen.u1Long)
+            u64Base = 0;
+        else
+        {
+            if (uNewRip > cbLimit)
+            {
+                Log(("BranchCallGate jump %04x:%08RX64 -> out of bounds (%#x) -> #GP(0)\n", uNewCS, uNewRip, cbLimit));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, 0);
+            }
+            u64Base = X86DESC_BASE(&DescCS.Legacy);
+        }
+
+        /* Canonical address check. */
+        if (!IEM_IS_CANONICAL(uNewRip))
+        {
+            Log(("BranchCallGate jump %04x:%016RX64 - not canonical -> #GP\n", uNewCS, uNewRip));
+            return iemRaiseNotCanonical(pIemCpu);
+        }
+
+        /*
+         * Ok, everything checked out fine.  Now set the accessed bit before
+         * committing the result into CS, CSHID and RIP.
+         */
+        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            /** @todo check what VT-x and AMD-V does. */
+            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /* commit */
+        pCtx->rip         = uNewRip;
+        pCtx->cs.Sel      = uNewCS & X86_SEL_MASK_OFF_RPL;
+        pCtx->cs.Sel     |= pIemCpu->uCpl; /** @todo is this right for conforming segs? or in general? */
+        pCtx->cs.ValidSel = pCtx->cs.Sel;
+        pCtx->cs.fFlags   = CPUMSELREG_FLAGS_VALID;
+        pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+        pCtx->cs.u32Limit = cbLimit;
+        pCtx->cs.u64Base  = u64Base;
+    }
+    else
+    {
+        Assert(enmBranch == IEMBRANCH_CALL);
+        /* Calls are much more complicated. */
+
+        if (DescCS.Legacy.Gen.u2Dpl < pIemCpu->uCpl)
+        {
+            uint16_t    offNewStack;    /* Offset of new stack in TSS. */
+            uint16_t    cbNewStack;     /* Number of bytes the stack information takes up in TSS. */
+            uint8_t     uNewCSDpl;
+            uint8_t     cbWords;
+            RTSEL       uNewSS;
+            RTSEL       uOldSS;
+            uint64_t    uOldRsp;
+            IEMSELDESC  DescSS;
+            RTPTRUNION  uPtrTSS;
+            RTGCPTR     GCPtrTSS;
+            RTPTRUNION  uPtrParmWds;
+            RTGCPTR     GCPtrParmWds;
+
+            /* More privilege. This is the fun part. */
+            Assert(!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF));    /* Filtered out above. */
+
+            /*
+             * Determine new SS:rSP from the TSS.
+             */
+            Assert(!pCtx->tr.Attr.n.u1DescType);
+
+            /* Figure out where the new stack pointer is stored in the TSS. */
+            uNewCSDpl = uNewCS & X86_SEL_RPL;
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                {
+                    offNewStack = RT_OFFSETOF(X86TSS32, esp0) + uNewCSDpl * 8;
+                    cbNewStack  = RT_SIZEOFMEMB(X86TSS32, esp0) + RT_SIZEOFMEMB(X86TSS32, ss0);
+                }
+                else
+                {
+                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+                    offNewStack = RT_OFFSETOF(X86TSS16, sp0) + uNewCSDpl * 4;
+                    cbNewStack  = RT_SIZEOFMEMB(X86TSS16, sp0) + RT_SIZEOFMEMB(X86TSS16, ss0);
+                }
+            }
+            else
+            {
+                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                offNewStack = RT_OFFSETOF(X86TSS64, rsp0) + uNewCSDpl * RT_SIZEOFMEMB(X86TSS64, rsp0);
+                cbNewStack  = RT_SIZEOFMEMB(X86TSS64, rsp0);
+            }
+
+            /* Check against TSS limit. */
+            if ((uint16_t)(offNewStack + cbNewStack - 1) > pCtx->tr.u32Limit)
+            {
+                Log(("BranchCallGate inner stack past TSS limit - %u > %u -> #TS(TSS)\n", offNewStack + cbNewStack - 1, pCtx->tr.u32Limit));
+                return iemRaiseTaskSwitchFaultBySelector(pIemCpu, pCtx->tr.Sel);
+            }
+
+            GCPtrTSS = pCtx->tr.u64Base + offNewStack;
+            rcStrict = iemMemMap(pIemCpu, &uPtrTSS.pv, cbNewStack, UINT8_MAX, GCPtrTSS, IEM_ACCESS_SYS_R);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: TSS mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
+
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                {
+                    uNewRsp = uPtrTSS.pu32[0];
+                    uNewSS  = uPtrTSS.pu16[2];
+                }
+                else
+                {
+                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+                    uNewRsp = uPtrTSS.pu16[0];
+                    uNewSS  = uPtrTSS.pu16[1];
+                }
+            }
+            else
+            {
+                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                /* SS will be a NULL selector, but that's valid. */
+                uNewRsp = uPtrTSS.pu64[0];
+                uNewSS  = uNewCSDpl;
+            }
+
+            /* Done with the TSS now. */
+            rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtrTSS.pv, IEM_ACCESS_SYS_R);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: TSS unmapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
+
+            /* Only used outside of long mode. */
+            cbWords = pDesc->Legacy.Gate.u4ParmCount;
+
+            /* If EFER.LMA is 0, there's extra work to do. */
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if ((uNewSS & X86_SEL_MASK_OFF_RPL) == 0)
+                {
+                    Log(("BranchCallGate new SS NULL -> #TS(NewSS)\n"));
+                    return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uNewSS);
+                }
+
+                /* Grab the new SS descriptor. */
+                rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSS, X86_XCPT_SS);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+
+                /* Ensure that CS.DPL == SS.RPL == SS.DPL. */
+                if (   (DescCS.Legacy.Gen.u2Dpl != (uNewSS & X86_SEL_RPL))
+                    || (DescCS.Legacy.Gen.u2Dpl != DescSS.Legacy.Gen.u2Dpl))
+                {
+                    Log(("BranchCallGate call bad RPL/DPL uNewSS=%04x SS DPL=%d CS DPL=%u -> #TS(NewSS)\n",
+                         uNewSS, DescCS.Legacy.Gen.u2Dpl, DescCS.Legacy.Gen.u2Dpl));
+                    return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uNewSS);
+                }
+
+                /* Ensure new SS is a writable data segment. */
+                if ((DescSS.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE)) != X86_SEL_TYPE_WRITE)
+                {
+                    Log(("BranchCallGate call new SS -> not a writable data selector (u4Type=%#x)\n", DescSS.Legacy.Gen.u4Type));
+                    return iemRaiseTaskSwitchFaultBySelector(pIemCpu, uNewSS);
+                }
+
+                if (!DescSS.Legacy.Gen.u1Present)
+                {
+                    Log(("BranchCallGate New stack not present uSel=%04x -> #SS(NewSS)\n", uNewSS));
+                    return iemRaiseStackSelectorNotPresentBySelector(pIemCpu, uNewSS);
+                }
+                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                    cbNewStack = (uint16_t)sizeof(uint32_t) * (4 + cbWords);
+                else
+                    cbNewStack = (uint16_t)sizeof(uint16_t) * (4 + cbWords);
+            }
+            else
+            {
+                /* Just grab the new (NULL) SS descriptor. */
+                rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSS, X86_XCPT_SS);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+
+                cbNewStack = sizeof(uint64_t) * 4;
+            }
+
+            /** @todo: According to Intel, new stack is checked for enough space first,
+             *         then switched. According to AMD, the stack is switched first and
+             *         then pushes might fault!
+             */
+
+            /** @todo: According to AMD, CS is loaded first, then SS.
+             *         According to Intel, it's the other way around!?
+             */
+
+            /** @todo: Intel and AMD disagree on when exactly the CPL changes! */
+
+            /* Set the accessed bit before committing new SS. */
+            if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            {
+                rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewSS);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+                DescSS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+            }
+
+            /* Remember the old SS:rSP and their linear address. */
+            uOldSS  = pCtx->ss.Sel;
+            uOldRsp = pCtx->rsp;
+
+            GCPtrParmWds = pCtx->ss.u64Base + pCtx->rsp;
+
+            /* Commit new SS:rSP. */
+            pCtx->ss.Sel      = uNewSS;
+            pCtx->ss.ValidSel = uNewSS;
+            pCtx->ss.Attr.u   = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
+            pCtx->ss.u32Limit = X86DESC_LIMIT_G(&DescSS.Legacy);
+            pCtx->ss.u64Base  = X86DESC_BASE(&DescSS.Legacy);
+            pCtx->ss.fFlags   = CPUMSELREG_FLAGS_VALID;
+            pCtx->rsp         = uNewRsp;
+            pIemCpu->uCpl     = uNewCSDpl;
+            Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), &pCtx->ss));
+            CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
+
+            /* Check new stack - may #SS(NewSS). */
+            rcStrict = iemMemStackPushBeginSpecial(pIemCpu, cbNewStack,
+                                                   &uPtrRet.pv, &uNewRsp);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: New stack mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
+
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                {
+                    /* Push the old CS:rIP. */
+                    uPtrRet.pu32[0] = pCtx->eip + cbInstr;
+                    uPtrRet.pu32[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
+
+                    /* Map the relevant chunk of the old stack. */
+                    rcStrict = iemMemMap(pIemCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                    if (rcStrict != VINF_SUCCESS)
+                    {
+                        Log(("BranchCallGate: Old stack mapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        return rcStrict;
+                    }
+
+                    /* Copy the parameter (d)words. */
+                    for (int i = 0; i < cbWords; ++i)
+                        uPtrRet.pu32[2 + i] = uPtrParmWds.pu32[i];
+
+                    /* Unmap the old stack. */
+                    rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
+                    if (rcStrict != VINF_SUCCESS)
+                    {
+                        Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        return rcStrict;
+                    }
+
+                    /* Push the old SS:rSP. */
+                    uPtrRet.pu32[2 + cbWords + 0] = uOldRsp;
+                    uPtrRet.pu32[2 + cbWords + 1] = uOldSS;
+                }
+                else
+                {
+                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+
+                    /* Push the old CS:rIP. */
+                    uPtrRet.pu16[0] = pCtx->ip + cbInstr;
+                    uPtrRet.pu16[1] = pCtx->cs.Sel;
+
+                    /* Map the relevant chunk of the old stack. */
+                    rcStrict = iemMemMap(pIemCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                    if (rcStrict != VINF_SUCCESS)
+                    {
+                        Log(("BranchCallGate: Old stack mapping (16-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        return rcStrict;
+                    }
+
+                    /* Copy the parameter words. */
+                    for (int i = 0; i < cbWords; ++i)
+                        uPtrRet.pu16[2 + i] = uPtrParmWds.pu16[i];
+
+                    /* Unmap the old stack. */
+                    rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
+                    if (rcStrict != VINF_SUCCESS)
+                    {
+                        Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        return rcStrict;
+                    }
+
+                    /* Push the old SS:rSP. */
+                    uPtrRet.pu16[2 + cbWords + 0] = uOldRsp;
+                    uPtrRet.pu16[2 + cbWords + 1] = uOldSS;
+                }
+            }
+            else
+            {
+                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+
+                /* For 64-bit gates, no parameters are copied. Just push old SS:rSP and CS:rIP. */
+                uPtrRet.pu64[0] = pCtx->rip + cbInstr;
+                uPtrRet.pu64[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high words when pushing CS? */
+                uPtrRet.pu64[2] = uOldRsp;
+                uPtrRet.pu64[3] = uOldSS;       /** @todo Testcase: What is written to the high words when pushing SS? */
+            }
+
+            rcStrict = iemMemStackPushCommitSpecial(pIemCpu, uPtrRet.pv, uNewRsp);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: New stack unmapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
+
+            /* Chop the high bits off if 16-bit gate (Intel says so). */
+            if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE)
+                uNewRip = (uint16_t)uNewRip;
+
+            /* Limit / canonical check. */
+            cbLimit = X86DESC_LIMIT_G(&DescCS.Legacy);
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (uNewRip > cbLimit)
+                {
+                    Log(("BranchCallGate %04x:%08RX64 -> out of bounds (%#x)\n", uNewCS, uNewRip, cbLimit));
+                    return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, 0);
+                }
+                u64Base = X86DESC_BASE(&DescCS.Legacy);
+            }
+            else
+            {
+                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                if (!IEM_IS_CANONICAL(uNewRip))
+                {
+                    Log(("BranchCallGate call %04x:%016RX64 - not canonical -> #GP\n", uNewCS, uNewRip));
+                    return iemRaiseNotCanonical(pIemCpu);
+                }
+                u64Base = 0;
+            }
+
+            /*
+             * Now set the accessed bit before
+             * writing the return address to the stack and committing the result into
+             * CS, CSHID and RIP.
+             */
+            /** @todo Testcase: Need to check WHEN exactly the accessed bit is set. */
+            if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            {
+                rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCS);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+                /** @todo check what VT-x and AMD-V does. */
+                DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+            }
+
+            /* Commit new CS:rIP. */
+            pCtx->rip         = uNewRip;
+            pCtx->cs.Sel      = uNewCS & X86_SEL_MASK_OFF_RPL;
+            pCtx->cs.Sel     |= pIemCpu->uCpl;
+            pCtx->cs.ValidSel = pCtx->cs.Sel;
+            pCtx->cs.fFlags   = CPUMSELREG_FLAGS_VALID;
+            pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+            pCtx->cs.u32Limit = cbLimit;
+            pCtx->cs.u64Base  = u64Base;
+        }
+        else
+        {
+            /* Same privilege. */
+            /** @todo: This is very similar to regular far calls; merge! */
+
+            /* Check stack first - may #SS(0). */
+            /** @todo check how gate size affects pushing of CS! Does callf 16:32 in
+             *        16-bit code cause a two or four byte CS to be pushed? */
+            rcStrict = iemMemStackPushBeginSpecial(pIemCpu,
+                                                   IEM_IS_LONG_MODE(pIemCpu) ? 8+8
+                                                   : pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE ? 4+4 : 2+2,
+                                                   &uPtrRet.pv, &uNewRsp);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+
+            /* Chop the high bits off if 16-bit gate (Intel says so). */
+            if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE)
+                uNewRip = (uint16_t)uNewRip;
+
+            /* Limit / canonical check. */
+            cbLimit = X86DESC_LIMIT_G(&DescCS.Legacy);
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (uNewRip > cbLimit)
+                {
+                    Log(("BranchCallGate %04x:%08RX64 -> out of bounds (%#x)\n", uNewCS, uNewRip, cbLimit));
+                    return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, 0);
+                }
+                u64Base = X86DESC_BASE(&DescCS.Legacy);
+            }
+            else
+            {
+                if (!IEM_IS_CANONICAL(uNewRip))
+                {
+                    Log(("BranchCallGate call %04x:%016RX64 - not canonical -> #GP\n", uNewCS, uNewRip));
+                    return iemRaiseNotCanonical(pIemCpu);
+                }
+                u64Base = 0;
+            }
+
+            /*
+             * Now set the accessed bit before
+             * writing the return address to the stack and committing the result into
+             * CS, CSHID and RIP.
+             */
+            /** @todo Testcase: Need to check WHEN exactly the accessed bit is set. */
+            if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+            {
+                rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCS);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+                /** @todo check what VT-x and AMD-V does. */
+                DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+            }
+
+            /* stack */
+            if (!IEM_IS_LONG_MODE(pIemCpu))
+            {
+                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                {
+                    uPtrRet.pu32[0] = pCtx->eip + cbInstr;
+                    uPtrRet.pu32[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
+                }
+                else
+                {
+                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+                    uPtrRet.pu16[0] = pCtx->ip + cbInstr;
+                    uPtrRet.pu16[1] = pCtx->cs.Sel;
+                }
+            }
+            else
+            {
+                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                uPtrRet.pu64[0] = pCtx->rip + cbInstr;
+                uPtrRet.pu64[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high words when pushing CS? */
+            }
+
+            rcStrict = iemMemStackPushCommitSpecial(pIemCpu, uPtrRet.pv, uNewRsp);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+
+            /* commit */
+            pCtx->rip         = uNewRip;
+            pCtx->cs.Sel      = uNewCS & X86_SEL_MASK_OFF_RPL;
+            pCtx->cs.Sel     |= pIemCpu->uCpl;
+            pCtx->cs.ValidSel = pCtx->cs.Sel;
+            pCtx->cs.fFlags   = CPUMSELREG_FLAGS_VALID;
+            pCtx->cs.Attr.u   = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+            pCtx->cs.u32Limit = cbLimit;
+            pCtx->cs.u64Base  = u64Base;
+        }
+    }
+    pCtx->eflags.Bits.u1RF = 0;
+    return VINF_SUCCESS;
+#endif
 }
 
 
