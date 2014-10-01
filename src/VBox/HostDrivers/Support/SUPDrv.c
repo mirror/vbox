@@ -6165,10 +6165,9 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
     {
         unsigned    i;
         uint64_t    uMinCmpReadTime = UINT64_MAX;
-        RTCCUINTREG uFlags = ASMIntDisableFlags();          /* Disable interrupts for the duration of a try. */
         for (i = 0; i < GIP_TSC_DELTA_LOOPS; i++)
         {
-            ASMCompilerBarrier();
+            RTCCUINTREG uFlags = ASMIntDisableFlags();   /* Disable interrupts per-iteration, see @bugref{6710} comment #38. */
             if (idCpu == idMaster)
             {
                 /*
@@ -6253,8 +6252,9 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                 while (ASMAtomicReadU32(&g_pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_WORKER_DONE)
                     ASMNopPause();
             }
+
+            ASMSetFlags(uFlags);
         }
-        ASMSetFlags(uFlags);
 
         if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
             break;
