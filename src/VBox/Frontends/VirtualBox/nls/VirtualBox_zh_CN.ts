@@ -4038,7 +4038,7 @@
         <translation>指定用于存放备份的文件夹。需要注意的是备份会占用一定的磁盘空间.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>基本(&amp;B)</translation>
     </message>
     <message>
@@ -4050,7 +4050,7 @@
         <translation type="obsolete">显示虚拟电脑名称.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>高级(&amp;A)</translation>
     </message>
     <message>
@@ -4066,7 +4066,7 @@
         <translation>备份的位置(&amp;n):</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>说明(&amp;D)</translation>
     </message>
     <message>
@@ -4110,7 +4110,7 @@
         <translation type="obsolete">您已经为该虚拟电脑选择了一个64位的操作系统。该操作系统需要硬件虚拟指令 (VT-x/AMD-V) 的支持方能运行，因此该特性将被自动启用。</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>拖放(&amp;D):</translation>
     </message>
     <message>
@@ -6964,7 +6964,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>名称(&amp;N):</translation>
     </message>
     <message>

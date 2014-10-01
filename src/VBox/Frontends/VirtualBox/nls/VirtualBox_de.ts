@@ -2522,11 +2522,11 @@
         <translation>Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Basis</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Erweitert</translation>
     </message>
     <message>
@@ -2542,7 +2542,7 @@
         <translation>Ordner &amp;Sicherungspunkte:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Beschreibung</translation>
     </message>
     <message>
@@ -2582,7 +2582,7 @@
         <translation>Zeigt die Mini-Toolbar am oberen Rand des Bildschirms wenn ausgewählt, sonst am unteren Rand.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Drag&apos;n&apos;Drop:</translation>
     </message>
     <message>
@@ -4868,7 +4868,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Name:</translation>
     </message>
     <message>

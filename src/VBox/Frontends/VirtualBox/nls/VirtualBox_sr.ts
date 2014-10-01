@@ -4607,7 +4607,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показује путању где се налазе снимци машине. Снимци могу користити доста простора.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Класично</translation>
     </message>
     <message>
@@ -4651,7 +4651,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Контолише дату видео меморију машини.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Напредно</translation>
     </message>
     <message>
@@ -4739,7 +4739,7 @@ p, li { white-space: pre-wrap; }
         <translation>Фасцикла снимка:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Опис</translation>
     </message>
     <message>
@@ -4831,7 +4831,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">одабрали сте 64-битни ОС. Пошто је госту потребно хардверска виртуализација (VT-x/AMD-V), ова способност ће бити омоигучена.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8201,7 +8201,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">Име:</translation>
     </message>
     <message>

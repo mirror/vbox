@@ -5166,7 +5166,7 @@ p, li { white-space: pre-wrap; }
         <translation>Mostra o caminho onde os snapshots desta máquina virtual serão armazenados. Note que estes snapshots podem ocupar bastante espaço em disco.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Básico</translation>
     </message>
     <message>
@@ -5218,7 +5218,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Controla a quantidade de memória de vídeo alocada para a máquina virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avançado</translation>
     </message>
     <message>
@@ -5306,7 +5306,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pasta de S&amp;napshots:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descrição</translation>
     </message>
     <message>
@@ -5402,7 +5402,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">você selecionou um tipo de sistema operacional convidado de 64 bits para esta VM. Como tais sistemas convidados exigem virtualização de hardware (VT-x/AMD-V), este recurso será habilitado automaticamente.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Arrastar e Soltar (&amp;D):</translation>
     </message>
     <message>
@@ -9119,7 +9119,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Nome:</translation>
     </message>
     <message>

@@ -4148,7 +4148,7 @@ p, li { white-space: pre-wrap; }
         <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>មូលដ្ឋាន</translation>
     </message>
     <message>
@@ -4160,7 +4160,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">បង្ហាញ​ឈ្មោះ​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>កម្រិតខ្ពស់</translation>
     </message>
     <message>
@@ -4176,7 +4176,7 @@ p, li { white-space: pre-wrap; }
         <translation>ថត​រូបថត ៖</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>សេចក្ដី​ពិពណ៌នា</translation>
     </message>
     <message>
@@ -4220,7 +4220,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">អ្នក​បាន​​ជ្រើស​ប្រ​ភេទ​ប្រ​ព័ន្ធ​ប្រ​តិបត្តិ​​ការ​ម៉ាស៊ីន​ភ្ញៀវ​ ៦៤​-​ប៊ីត​ សម្រាប់​​ VM នេះ​ ។ ជាក់​ស្តែង​ ដូច​ម៉ាស៊ីន​ភ្ញៀវ​ទាមទារ​ថាសរឹង​ (VT-x/AMD-V) លក្ខណៈ​ពិសេស​នេះ​នឹង​ត្រូវ​បាន​បើក​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7199,7 +7199,7 @@ medium</comment>
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">ឈ្មោះ ៖</translation>
     </message>
     <message>

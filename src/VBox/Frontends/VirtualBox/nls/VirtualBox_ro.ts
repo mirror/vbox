@@ -4165,7 +4165,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Afișează calea unde vor fi stocate instantaneele acestei mașini virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe disc.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Elementar</translation>
     </message>
     <message>
@@ -4217,7 +4217,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Controlează cantitatea de memorie video oferită mașinii virtuale.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avansat</translation>
     </message>
     <message>
@@ -4305,7 +4305,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Director i&amp;nstantanee:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descriere</translation>
     </message>
     <message>
@@ -4377,7 +4377,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Poziționează &amp;sus</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7519,7 +7519,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nume:</translation>
     </message>
     <message>

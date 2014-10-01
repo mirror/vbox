@@ -161,7 +161,7 @@ CGuestOSType UINameAndSystemEditor::type() const
 
 void UINameAndSystemEditor::retranslateUi()
 {
-    m_pNameLabel->setText(tr("&Name:"));
+    m_pNameLabel->setText(tr("N&ame:"));
     m_pNameEditor->setWhatsThis(tr("Holds the name of the virtual machine."));
     m_pFamilyLabel->setText(tr("&Type:"));
     m_pFamilyCombo->setWhatsThis(tr("Selects the operating system family that "

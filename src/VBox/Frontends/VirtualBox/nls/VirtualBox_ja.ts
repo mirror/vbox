@@ -4785,7 +4785,7 @@ p, li { white-space: pre-wrap; }
         <translation>この仮想マシンのスナップショットの保存先パスを指定します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>基本(&amp;B)</translation>
     </message>
     <message>
@@ -4837,7 +4837,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想マシンに割り当てるビデオメモリーのサイズを指定します。</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>高度(&amp;A)</translation>
     </message>
     <message>
@@ -4925,7 +4925,7 @@ p, li { white-space: pre-wrap; }
         <translation>スナップショットの保存先(&amp;N):</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>ドラッグ＆ドロップ(&amp;D):</translation>
     </message>
     <message>
@@ -4933,7 +4933,7 @@ p, li { white-space: pre-wrap; }
         <translation>ドラッグ＆ドロップによって選択したデータをホストOSとゲストOS間でコピーします。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>説明(&amp;D)</translation>
     </message>
     <message>
@@ -8636,7 +8636,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>名前(&amp;N):</translation>
     </message>
     <message>

@@ -4076,7 +4076,7 @@ p, li { white-space: pre-wrap; }
         <translation>Näytä polku, jonne tämän virtuaalikoneen palautuspisteet tallennetaan. Huomaa, että palautuspisteet voivat viedä paljon levytilaa.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Perus</translation>
     </message>
     <message>
@@ -4120,7 +4120,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Säätää virtuaalikoneen videomuistin määrää.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Lisäasetukset</translation>
     </message>
     <message>
@@ -4216,7 +4216,7 @@ p, li { white-space: pre-wrap; }
         <translation>P&amp;alautuspisteiden kansio:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Kuvaus</translation>
     </message>
     <message>
@@ -4288,7 +4288,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7416,7 +7416,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nimi:</translation>
     </message>
     <message>

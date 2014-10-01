@@ -4633,7 +4633,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показує шлях, де будуть зберігатися зрізи цієї машини. Майте на увазі, зрізи можуть займати доволі чимало дискового простору.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Основне</translation>
     </message>
     <message>
@@ -4677,7 +4677,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Керує об&apos;ємом відеопам&apos;яті, котра забезпечує віртуальну машину.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Додатково</translation>
     </message>
     <message>
@@ -4765,7 +4765,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тека &amp;зрізів:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Опис</translation>
     </message>
     <message>
@@ -4841,7 +4841,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ви вибрали 64-ох бітну гостьову операційну систему для цієї віртуальної машини. Потрібна відповідна апаратна віртуалізація (VT-x/AMD-V), цю можливість буде автоматично ввімкнено.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Перегування:</translation>
     </message>
     <message>
@@ -8274,7 +8274,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Назва:</translation>
     </message>
     <message>

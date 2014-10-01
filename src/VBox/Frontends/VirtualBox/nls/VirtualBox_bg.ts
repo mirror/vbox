@@ -4802,7 +4802,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показва пътя, където да се пазят снимките на тази виртуална машина. Имайте предвид, че снимките могат да заемат много дисково пространство.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Начални</translation>
     </message>
     <message>
@@ -4846,7 +4846,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Контролира количеството видео памет, предоставено на тази виртуална машина.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Разширени</translation>
     </message>
     <message>
@@ -4934,7 +4934,7 @@ p, li { white-space: pre-wrap; }
         <translation>Папка за &amp;снимки:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Описание</translation>
     </message>
     <message>
@@ -5022,7 +5022,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Вла&amp;чене и пускане:</translation>
     </message>
     <message>
@@ -8333,7 +8333,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Име:</translation>
     </message>
     <message>

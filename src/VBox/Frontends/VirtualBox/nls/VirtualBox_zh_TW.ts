@@ -2530,11 +2530,11 @@
         <translation>將儲存這部虛擬機器快照所使用的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>基本(&amp;B)</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>進階(&amp;A)</translation>
     </message>
     <message>
@@ -2550,7 +2550,7 @@
         <translation>快照資料夾(&amp;N):</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>描述(&amp;D)</translation>
     </message>
     <message>
@@ -2590,7 +2590,7 @@
         <translation>顯示在螢幕上方(&amp;T)</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>拖放(&amp;D):</translation>
     </message>
     <message>
@@ -4875,7 +4875,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>名稱(&amp;N):</translation>
     </message>
     <message>

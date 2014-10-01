@@ -4239,7 +4239,7 @@ p, li { white-space: pre-wrap; }
         <translation>Mostra o camiño onde se almacenaran as instantáneas desta máquina virtual. Nota que as instantáneas poden ocupar bastante espazo en disco. </translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Básico</translation>
     </message>
     <message>
@@ -4251,7 +4251,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mostrar o nome da máquina virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avanzado</translation>
     </message>
     <message>
@@ -4267,7 +4267,7 @@ p, li { white-space: pre-wrap; }
         <translation>Cartafol da i&amp;nstantánea:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descrición</translation>
     </message>
     <message>
@@ -4311,7 +4311,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">seleccionou un sistema operativo convidado de tipo 64-bit para esta máquina virtual. Tales convidados requiren hardware de virtualización (VT-x/AMD-V) co que esta característica activarase automaticamente.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7259,7 +7259,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nome:</translation>
     </message>
     <message>

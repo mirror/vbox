@@ -4470,7 +4470,7 @@ p, li { white-space: pre-wrap; }
         <translation>Zawiera ścieżkę do katalogu, w którym będą zapisywane migawki maszyny wirtualnej. Uwaga: migawki mogą zająć sporo miejsca na dysku.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Podstawowe</translation>
     </message>
     <message>
@@ -4518,7 +4518,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kontroluje ilość pamięci wideo przydzielonej maszynie wirtualnej.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Zaawansowane</translation>
     </message>
     <message>
@@ -4606,7 +4606,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Katalog migawek:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>Opi&amp;s</translation>
     </message>
     <message>
@@ -4694,7 +4694,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">wybrano 64-bitowy system operacyjny dla tej maszyny wirtualnej. Ponieważ tego typu goszczone systemy wymagają wsparcia dla sprzętowej wirtualizacji (VT-x/AMD-V), funkcja ta zostanie włączona automatycznie.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8153,7 +8153,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nazwa:</translation>
     </message>
     <message>

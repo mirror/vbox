@@ -4914,7 +4914,7 @@ p, li { white-space: pre-wrap; }
         <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Alap</translation>
     </message>
     <message>
@@ -4954,7 +4954,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Megadhatod a virtuális gép videó-memóriájának méretét.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>H&amp;aladó</translation>
     </message>
     <message>
@@ -5038,7 +5038,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pilla&amp;natkép mappa:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>L&amp;eírás</translation>
     </message>
     <message>
@@ -5127,7 +5127,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">egy 64 bites vendégrendszert választottál ehhez a géphez. Ezek a rendszerek igényik a hardvervirtualizációt (VT-x/AMD-V), így ez a tulajdonság automatikusan engedélyezve lesz.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Fog&amp;d és vidd:</translation>
     </message>
     <message>
@@ -8572,7 +8572,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Név:</translation>
     </message>
     <message>

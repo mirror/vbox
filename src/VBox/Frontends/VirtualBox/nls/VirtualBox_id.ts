@@ -4410,7 +4410,7 @@
         <translation>Tampilkan path dimana snapshot dari mesin virtual akan disimpan. Sadari bahwa snapshot dapat menghabiskan banyak ruang disk.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Dasar</translation>
     </message>
     <message>
@@ -4454,7 +4454,7 @@
         <translation type="obsolete">Mengendalikan jumlah memori video yang tersedia bagi mesin virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>Tingkat L&amp;anjut</translation>
     </message>
     <message>
@@ -4506,7 +4506,7 @@
         <translation>Folder S&amp;napshot:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Deskripsi</translation>
     </message>
     <message>
@@ -4550,7 +4550,7 @@
         <translation type="obsolete">Anda telah memilih tipe OS guest 64-bit bagi VM ini. Karena guest seperti itu memerlukan virtualisasi hardware (VT-x/AMD-V), maka fitur ini akan otomatis diaktifkan.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7799,7 +7799,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation type="unfinished">&amp;Nama:</translation>
     </message>
     <message>

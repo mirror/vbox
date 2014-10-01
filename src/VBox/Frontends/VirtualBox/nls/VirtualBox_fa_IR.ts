@@ -3180,11 +3180,11 @@
         <translation>مسیری که ضبط وضعیت ماشین مجازی در آن ذخیره شده را نشان میدهد.آگاه باشید که ضبط وضعیت فضای دیسک بسیاری استفاده می کند.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;پایه ای</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>پی&amp;شرفته</translation>
     </message>
     <message>
@@ -3200,7 +3200,7 @@
         <translation>پوشه&amp; ضبط وضعیت:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>تو&amp;ضیحات</translation>
     </message>
     <message>
@@ -3244,7 +3244,7 @@
         <translation type="obsolete">شما سیستم عامل 64 بیتی مهمان برای این ماشین مجازی انتخاب کرده اید. همینطور مهمان به سخت افزار مجازی سازی نیاز دارد (VT-x/AMD-V)، این ویزگی خودکار فعال خواهد شد.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;کشیدن &apos;و&apos; رهاکردن:</translation>
     </message>
     <message>
@@ -5936,7 +5936,7 @@
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>نا&amp;م:</translation>
     </message>
     <message>

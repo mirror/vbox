@@ -5021,7 +5021,7 @@ p, li { white-space: pre-wrap; }
         <translation>Muestra la ruta donde serán almacenadas las instantáneas de esta máquina virtual. Tenga en cuenta que las instantáneas pueden ocupar mucho espacio en disco.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Básico</translation>
     </message>
     <message>
@@ -5065,7 +5065,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Controla la cantidad de memoria de video proveída a la máquina virtual.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avanzado</translation>
     </message>
     <message>
@@ -5121,7 +5121,7 @@ p, li { white-space: pre-wrap; }
         <translation>Carpeta &amp;instantáneas:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>&amp;Descripción</translation>
     </message>
     <message>
@@ -5165,7 +5165,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ha seleccionado un tipo de SO invitado de 64-bit para esta MV. Como estos invitados requieren hardware de virtualización (VT-x/AMD-V), esta característica se activará automáticamente.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>&amp;Arrastrar y soltar:</translation>
     </message>
     <message>
@@ -8857,7 +8857,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Nombre:</translation>
     </message>
     <message>

@@ -4809,7 +4809,7 @@ p, li { white-space: pre-wrap; }
         <translation>Viser stien, hvor øjebliksbilleder af den virtuelle maskine bliver gemt. Bemærk at øjebliksbilleder kan bruge en hel del lagerplads.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
+        <source>Basi&amp;c</source>
         <translation>&amp;Basal</translation>
     </message>
     <message>
@@ -4821,7 +4821,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Viser navnet på den virtuelle maskine.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
+        <source>A&amp;dvanced</source>
         <translation>&amp;Avanceret</translation>
     </message>
     <message>
@@ -4837,7 +4837,7 @@ p, li { white-space: pre-wrap; }
         <translation>Øjebliksbilleder:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
+        <source>D&amp;escription</source>
         <translation>Beskrivelse</translation>
     </message>
     <message>
@@ -4882,7 +4882,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Du har valgt et 64-bit gæsteoperativsystem til denne VM. Da denne type gæst kræver hardware-virtualisering (VT-x/AMD-V) er dette automatisk blevet slået til.</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
         <translation>Træk og slip:</translation>
     </message>
     <message>
@@ -8183,7 +8183,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
+        <source>N&amp;ame:</source>
         <translation>&amp;Navn:</translation>
     </message>
     <message>
