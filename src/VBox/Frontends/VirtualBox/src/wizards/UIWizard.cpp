@@ -102,8 +102,14 @@ void UIWizard::retranslateUi()
     /* Translate basic/expert button: */
     switch (m_mode)
     {
-        case WizardMode_Basic: setButtonText(QWizard::CustomButton1, tr("Hide Description")); break;
-        case WizardMode_Expert: setButtonText(QWizard::CustomButton1, tr("Show Description")); break;
+        case WizardMode_Basic:
+            setButtonText(QWizard::CustomButton1, tr("Expert Mode"));
+            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Expert Mode</b></nobr>, a one-page dialog for experienced users."));
+            break;
+        case WizardMode_Expert:
+            setButtonText(QWizard::CustomButton1, tr("Guided Mode"));
+            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Guided Mode</b></nobr>, a step-by-step dialog with detailed explanations."));
+            break;
         default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
     }
 }
