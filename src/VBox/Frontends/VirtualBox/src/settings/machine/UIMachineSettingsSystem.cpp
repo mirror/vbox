@@ -330,7 +330,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
-                "This is needed in order to support a chip set of type ICH9. "
+                "This is needed in order to support a chip set of type ICH9 you have enabled for this VM. "
                 "It will be done automatically if you confirm your changes.");
         }
 
@@ -339,7 +339,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "USB controller emulation is not currently enabled on the USB page. "
-                "This is needed to support an emulated USB input device. "
+                "This is needed to support an emulated USB input device you have enabled for this VM. "
                 "It will be done automatically if you confirm your changes.");
         }
 
@@ -377,7 +377,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
-                "This is needed in order to support more than one virtual processor. "
+                "This is needed in order to support more than one virtual processor you have chosen for this VM. "
                 "It will be done automatically if you confirm your changes.");
         }
 
@@ -386,7 +386,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "Hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                "This is needed in order to support more than one virtual processor. "
+                "This is needed in order to support more than one virtual processor you have chosen for this VM. "
                 "It will be done automatically if you confirm your changes.");
         }
 
