@@ -8424,18 +8424,18 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
                         cbOut,
                         DECODE_STR_MAX);
     com::SafeArray<BYTE> iconByte(cbOut);
-    HRESULT rc = RTBase64Decode(pszStr, iconByte.raw(), cbOut, NULL, NULL);
-    if (FAILED(rc))
+    int vrc = RTBase64Decode(pszStr, iconByte.raw(), cbOut, NULL, NULL);
+    if (RT_FAILURE(vrc))
         return setError(E_FAIL,
-                        tr("Failure to Decode Icon Data. '%s' (%d)"),
+                        tr("Failure to Decode Icon Data. '%s' (%Rrc)"),
                         pszStr,
-                        rc);
+                        vrc);
     mUserData->mIcon.resize(iconByte.size());
     memcpy(&mUserData->mIcon[0], iconByte.raw(), mUserData->mIcon.size());
 
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
-    rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
+    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
                                          guestOSType.asOutParam());
     if (FAILED(rc)) return rc;
 
@@ -8445,7 +8445,7 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     else
     {
         Utf8Str stateFilePathFull(config.strStateFile);
-        int vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
+        vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
         if (RT_FAILURE(vrc))
             return setError(E_FAIL,
                             tr("Invalid saved state file path '%s' (%Rrc)"),
