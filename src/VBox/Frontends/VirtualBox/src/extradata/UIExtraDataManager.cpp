@@ -1777,6 +1777,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* Q_WS_MAC */
            << GUI_RestrictedRuntimeMachineMenuActions
            << GUI_RestrictedRuntimeViewMenuActions
+           << GUI_RestrictedRuntimeInputMenuActions
            << GUI_RestrictedRuntimeDevicesMenuActions
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_RestrictedRuntimeDebuggerMenuActions
@@ -2719,6 +2720,53 @@ void UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMeta
     setExtraDataStringList(GUI_RestrictedRuntimeViewMenuActions, result, strID);
 }
 
+UIExtraDataMetaDefs::RuntimeMenuInputActionType UIExtraDataManager::restrictedRuntimeMenuInputActionTypes(const QString &strID)
+{
+    /* Prepare result: */
+    UIExtraDataMetaDefs::RuntimeMenuInputActionType result = UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid;
+    /* Get restricted runtime-machine-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeInputMenuActions, strID))
+    {
+        UIExtraDataMetaDefs::RuntimeMenuInputActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QString &strID)
+{
+    /* We have RuntimeMenuInputActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuInputActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle RuntimeMenuInputActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::RuntimeMenuInputActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip RuntimeMenuInputActionType_Invalid & RuntimeMenuInputActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeInputMenuActions, result, strID);
+}
+
 UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QString &strID)
 {
     /* Prepare result: */
@@ -3478,6 +3526,7 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
 #endif /* Q_WS_MAC */
             strKey == GUI_RestrictedRuntimeMachineMenuActions ||
             strKey == GUI_RestrictedRuntimeViewMenuActions ||
+            strKey == GUI_RestrictedRuntimeInputMenuActions ||
             strKey == GUI_RestrictedRuntimeDevicesMenuActions ||
 #ifdef VBOX_WITH_DEBUGGER_GUI
             strKey == GUI_RestrictedRuntimeDebuggerMenuActions ||

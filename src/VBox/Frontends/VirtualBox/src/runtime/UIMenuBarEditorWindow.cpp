@@ -99,6 +99,8 @@ private:
     void prepareMenuMachine();
     /** Prepare 'View' menu routine. */
     void prepareMenuView();
+    /** Prepare 'Input' menu routine. */
+    void prepareMenuInput();
     /** Prepare 'Devices' menu routine. */
     void prepareMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -118,6 +120,8 @@ private:
     void updateMenuMachine();
     /** Updates 'View' menu routine. */
     void updateMenuView();
+    /** Updates 'Input' menu routine. */
+    void updateMenuInput();
     /** Updates 'Devices' menu routine. */
     void updateMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -232,6 +236,19 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuViewActionTypes(restrictions, vboxGlobal().managedVMUuid());
             break;
         }
+        case UIExtraDataMetaDefs::MenuType_Input:
+        {
+            /* Get sender type: */
+            const UIExtraDataMetaDefs::RuntimeMenuInputActionType type =
+                static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(pAction->property("type").toInt());
+            /* Load current menu-bar restrictions: */
+            UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictions = gEDataManager->restrictedRuntimeMenuInputActionTypes(vboxGlobal().managedVMUuid());
+            /* Invert restriction for sender type: */
+            restrictions = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(restrictions ^ type);
+            /* Save updated menu-bar restrictions: */
+            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            break;
+        }
         case UIExtraDataMetaDefs::MenuType_Devices:
         {
             /* Get sender type: */
@@ -334,6 +351,7 @@ void UIMenuBarEditorWidget::prepareMenus()
 #endif /* Q_WS_MAC */
     prepareMenuMachine();
     prepareMenuView();
+    prepareMenuInput();
     prepareMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     prepareMenuDebug();
@@ -497,14 +515,6 @@ void UIMenuBarEditorWidget::prepareMenuMachine()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
         pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
-        pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCAD));
-#ifdef Q_WS_X11
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCABS));
-#endif /* Q_WS_X11 */
-        pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_Reset));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_Save));
@@ -531,6 +541,17 @@ void UIMenuBarEditorWidget::prepareMenuView()
         pMenu->addSeparator();
 //        prepareCopiedAction(pMenu, Resize);
 //        prepareCopiedAction(pMenu, MultiScreen);
+    }
+}
+
+void UIMenuBarEditorWidget::prepareMenuInput()
+{
+    /* Copy menu: */
+    QMenu *pMenu = prepareCopiedMenu(actionPool()->action(UIActionIndexRT_M_Input));
+    AssertPtrReturnVoid(pMenu);
+    {
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration));
     }
 }
 
@@ -628,6 +649,7 @@ void UIMenuBarEditorWidget::updateMenus()
 #endif /* Q_WS_MAC */
     updateMenuMachine();
     updateMenuView();
+    updateMenuInput();
     updateMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     updateMenuDebug();
@@ -721,6 +743,35 @@ void UIMenuBarEditorWidget::updateMenuView()
             continue;
         /* Update action 'checked' state: */
         m_actions.value(strKey)->setChecked(!(restrictionsMenuView & enumValue));
+    }
+}
+
+void UIMenuBarEditorWidget::updateMenuInput()
+{
+    /* Recache menu-bar configuration: */
+    const UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictionsMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(vboxGlobal().managedVMUuid());
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::RuntimeMenuInputActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("RuntimeMenuInputActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::RuntimeMenuInputActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::RuntimeMenuInputActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip RuntimeMenuInputActionType_Invalid & RuntimeMenuInputActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::RuntimeMenuInputActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(restrictionsMenuInput & enumValue));
     }
 }
 

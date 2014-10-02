@@ -312,6 +312,11 @@ public:
         /** Defines restricted Runtime UI action types for View menu. */
         void setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QString &strID);
 
+        /** Returns restricted Runtime UI action types for Input menu. */
+        UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictedRuntimeMenuInputActionTypes(const QString &strID);
+        /** Defines restricted Runtime UI action types for Input menu. */
+        void setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QString &strID);
+
         /** Returns restricted Runtime UI action types for Devices menu. */
         UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QString &strID);
         /** Defines restricted Runtime UI action types for Devices menu. */

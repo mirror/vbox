@@ -153,6 +153,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_RestrictedRuntimeMachineMenuActions;
         /** Holds restricted Runtime UI action types for View menu. */
         extern const char* GUI_RestrictedRuntimeViewMenuActions;
+        /** Holds restricted Runtime UI action types for Input menu. */
+        extern const char* GUI_RestrictedRuntimeInputMenuActions;
         /** Holds restricted Runtime UI action types for Devices menu. */
         extern const char* GUI_RestrictedRuntimeDevicesMenuActions;
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -280,6 +282,7 @@ class UIExtraDataMetaDefs : public QObject
     Q_ENUMS(MenuHelpActionType);
     Q_ENUMS(RuntimeMenuMachineActionType);
     Q_ENUMS(RuntimeMenuViewActionType);
+    Q_ENUMS(RuntimeMenuInputActionType);
     Q_ENUMS(RuntimeMenuDevicesActionType);
 #ifdef VBOX_WITH_DEBUGGER_GUI
     Q_ENUMS(RuntimeMenuDebuggerActionType);
@@ -296,11 +299,12 @@ public:
 #endif /* RT_OS_DARWIN */
         MenuType_Machine     = RT_BIT(1),
         MenuType_View        = RT_BIT(2),
-        MenuType_Devices     = RT_BIT(3),
+        MenuType_Input       = RT_BIT(3),
+        MenuType_Devices     = RT_BIT(4),
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        MenuType_Debug       = RT_BIT(4),
+        MenuType_Debug       = RT_BIT(5),
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        MenuType_Help        = RT_BIT(5),
+        MenuType_Help        = RT_BIT(6),
         MenuType_All         = 0xFF
     };
 
@@ -342,14 +346,6 @@ public:
         RuntimeMenuMachineActionType_TakeSnapshot      = RT_BIT(1),
         RuntimeMenuMachineActionType_TakeScreenshot    = RT_BIT(2),
         RuntimeMenuMachineActionType_InformationDialog = RT_BIT(3),
-        RuntimeMenuMachineActionType_Keyboard          = RT_BIT(4),
-        RuntimeMenuMachineActionType_KeyboardSettings  = RT_BIT(5),
-        RuntimeMenuMachineActionType_Mouse             = RT_BIT(6),
-        RuntimeMenuMachineActionType_MouseIntegration  = RT_BIT(7),
-        RuntimeMenuMachineActionType_TypeCAD           = RT_BIT(8),
-#ifdef Q_WS_X11
-        RuntimeMenuMachineActionType_TypeCABS          = RT_BIT(9),
-#endif /* Q_WS_X11 */
         RuntimeMenuMachineActionType_Pause             = RT_BIT(10),
         RuntimeMenuMachineActionType_Reset             = RT_BIT(11),
         RuntimeMenuMachineActionType_SaveState         = RT_BIT(12),
@@ -380,6 +376,21 @@ public:
         RuntimeMenuViewActionType_Resize            = RT_BIT(11),
         RuntimeMenuViewActionType_Multiscreen       = RT_BIT(12),
         RuntimeMenuViewActionType_All               = 0xFFFF
+    };
+
+    /** Runtime UI: Menu "Input": Action types. */
+    enum RuntimeMenuInputActionType
+    {
+        RuntimeMenuInputActionType_Invalid           = 0,
+        RuntimeMenuInputActionType_Keyboard          = RT_BIT(0),
+        RuntimeMenuInputActionType_KeyboardSettings  = RT_BIT(1),
+        RuntimeMenuInputActionType_Mouse             = RT_BIT(2),
+        RuntimeMenuInputActionType_MouseIntegration  = RT_BIT(3),
+        RuntimeMenuInputActionType_TypeCAD           = RT_BIT(4),
+#ifdef Q_WS_X11
+        RuntimeMenuInputActionType_TypeCABS          = RT_BIT(5),
+#endif /* Q_WS_X11 */
+        RuntimeMenuInputActionType_All               = 0xFFFF
     };
 
     /** Runtime UI: Menu "Devices": Action types. */

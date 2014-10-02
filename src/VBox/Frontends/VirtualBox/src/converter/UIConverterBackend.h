@@ -74,6 +74,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>();
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuInputActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>();
 #ifdef VBOX_WITH_DEBUGGER_GUI
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>();
@@ -132,6 +133,8 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
 template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType);
 template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewActionType &runtimeMenuViewActionType);
 template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType);
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputActionType &runtimeMenuInputActionType);
+template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(const QString &strRuntimeMenuInputActionType);
 template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType &runtimeMenuDevicesActionType);
 template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType);
 #ifdef VBOX_WITH_DEBUGGER_GUI
