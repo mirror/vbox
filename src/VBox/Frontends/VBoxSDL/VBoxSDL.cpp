@@ -2392,6 +2392,30 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gpMouse->COMGETTER(NeedsHostCursor)(&gfGuestNeedsHostCursor);
 
         HandleGuestCapsChanged();
+
+        ComPtr<IMousePointerShape> mps;
+        gpMouse->COMGETTER(PointerShape)(mps.asOutParam());
+        if (!mps.isNull())
+        {
+            BOOL  visible,  alpha;
+            ULONG hotX, hotY, width, height;
+            com::SafeArray <BYTE> shape;
+
+            mps->COMGETTER(Visible)(&visible);
+            mps->COMGETTER(Alpha)(&alpha);
+            mps->COMGETTER(HotX)(&hotX);
+            mps->COMGETTER(HotY)(&hotY);
+            mps->COMGETTER(Width)(&width);
+            mps->COMGETTER(Height)(&height);
+            mps->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
+
+            if (shape.size() > 0)
+            {
+                PointerShapeChangeData data(visible, alpha, hotX, hotY, width, height,
+                                            ComSafeArrayAsInParam(shape));
+                SetPointerShape(&data);
+            }
+        }
     }
 
     UpdateTitlebar(TITLEBAR_NORMAL);
