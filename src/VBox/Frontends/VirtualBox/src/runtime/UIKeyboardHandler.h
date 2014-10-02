@@ -29,6 +29,7 @@
 #endif /* Q_WS_MAC */
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CKeyboard.h"
 
 /* Forward declarations: */
