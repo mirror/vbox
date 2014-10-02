@@ -1000,55 +1000,6 @@ private:
      * operation before starting. */
     ComObjPtr<Progress> mptrCancelableProgress;
 
-    /* The purpose of caching of some events is probably in order to
-       automatically fire them at new event listeners.  However, there is no
-       (longer?) any code making use of this... */
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    struct
-    {
-        /** OnMousePointerShapeChange() cache */
-        struct
-        {
-            bool valid;
-            bool visible;
-            bool alpha;
-            uint32_t xHot;
-            uint32_t yHot;
-            uint32_t width;
-            uint32_t height;
-            com::SafeArray<BYTE> shape;
-        } mpsc;
-
-        /** OnMouseCapabilityChange() cache */
-        struct
-        {
-            bool valid;
-            BOOL supportsAbsolute;
-            BOOL supportsRelative;
-            BOOL needsHostCursor;
-        } mcc;
-
-        /** OnKeyboardLedsChange() cache */
-        struct
-        {
-            bool valid;
-            bool numLock;
-            bool capsLock;
-            bool scrollLock;
-        } klc;
-
-        void clear()
-        {
-            RT_ZERO(mcc);
-            RT_ZERO(klc);
-
-            /* We cannot RT_ZERO mpsc because of shape's vtable. */
-            mpsc.shape.setNull();
-            mpsc.valid = mpsc.visible = mpsc.alpha = false;
-            mpsc.xHot = mpsc.yHot = mpsc.width = mpsc.height = 0;
-        }
-    } mCallbackData;
-#endif
     ComPtr<IEventListener> mVmListener;
 
     friend struct VMTask;

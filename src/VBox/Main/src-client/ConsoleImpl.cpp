@@ -805,10 +805,6 @@ void Console::uninit()
     // we don't perform uninit() as it's possible that some pending event refers to this source
     unconst(mEventSource).setNull();
 
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    mCallbackData.clear();
-#endif
-
     LogFlowThisFuncLeave();
 }
 
@@ -6337,11 +6333,6 @@ HRESULT Console::i_updateMachineState(MachineState_T aMachineState)
     return i_setMachineStateLocally(aMachineState);
 }
 
-#ifdef CONSOLE_WITH_EVENT_CACHE
-/**
- * @note Locks this object for writing.
- */
-#endif
 void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                           uint32_t xHot, uint32_t yHot,
                                         uint32_t width, uint32_t height,
@@ -6356,31 +6347,6 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    {
-        /* We need a write lock because we alter the cached callback data */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        /* Save the callback arguments */
-        mCallbackData.mpsc.visible = fVisible;
-        mCallbackData.mpsc.alpha = fAlpha;
-        mCallbackData.mpsc.xHot = xHot;
-        mCallbackData.mpsc.yHot = yHot;
-        mCallbackData.mpsc.width = width;
-        mCallbackData.mpsc.height = height;
-
-        /* start with not valid */
-        bool wasValid = mCallbackData.mpsc.valid;
-        mCallbackData.mpsc.valid = false;
-
-        com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
-        if (aShape.size() != 0)
-            mCallbackData.mpsc.shape.initFrom(aShape);
-        else
-            mCallbackData.mpsc.shape.resize(0);
-        mCallbackData.mpsc.valid = true;
-    }
-#endif
     com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
     if (!mMouse.isNull())
        mMouse->updateMousePointerShape(fVisible, fAlpha, xHot, yHot, width, height,
@@ -6393,11 +6359,6 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
 #endif
 }
 
-#ifdef CONSOLE_WITH_EVENT_CACHE
-/**
- * @note Locks this object for writing.
- */
-#endif
 void Console::i_onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative,
                                         BOOL supportsMT, BOOL needsHostCursor)
 {
@@ -6406,19 +6367,6 @@ void Console::i_onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRela
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    {
-        /* We need a write lock because we alter the cached callback data */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        /* save the callback arguments */
-        mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
-        mCallbackData.mcc.supportsRelative = supportsRelative;
-        mCallbackData.mcc.needsHostCursor = needsHostCursor;
-        mCallbackData.mcc.valid = true;
-    }
-#endif
 
     fireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, supportsMT, needsHostCursor);
 }
@@ -6453,28 +6401,10 @@ void Console::i_onAdditionsOutdated()
     /** @todo implement this */
 }
 
-#ifdef CONSOLE_WITH_EVENT_CACHE
-/**
- * @note Locks this object for writing.
- */
-#endif
 void Console::i_onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    {
-        /* We need a write lock because we alter the cached callback data */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        /* save the callback arguments */
-        mCallbackData.klc.numLock = fNumLock;
-        mCallbackData.klc.capsLock = fCapsLock;
-        mCallbackData.klc.scrollLock = fScrollLock;
-        mCallbackData.klc.valid = true;
-    }
-#endif
 
     fireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
 }
@@ -7528,11 +7458,6 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         VMR3ReleaseUVM(pUVM);
     else
         mVMDestroying = false;
-
-#ifdef CONSOLE_WITH_EVENT_CACHE
-    if (SUCCEEDED(rc))
-        mCallbackData.clear();
-#endif
 
     LogFlowThisFuncLeave();
     return rc;
