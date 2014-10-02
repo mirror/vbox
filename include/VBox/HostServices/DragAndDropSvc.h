@@ -42,9 +42,9 @@
 #define DND_MOVE_ACTION       RT_BIT_32(1)
 #define DND_LINK_ACTION       RT_BIT_32(2)
 
-#define hasDnDCopyAction(a)   ((a) && DND_COPY_ACTION)
-#define hasDnDMoveAction(a)   ((a) && DND_MOVE_ACTION)
-#define hasDnDLinkAction(a)   ((a) && DND_LINK_ACTION)
+#define hasDnDCopyAction(a)   ((a) & DND_COPY_ACTION)
+#define hasDnDMoveAction(a)   ((a) & DND_MOVE_ACTION)
+#define hasDnDLinkAction(a)   ((a) & DND_LINK_ACTION)
 
 #define isDnDIgnoreAction(a)  ((a) == DND_IGNORE_ACTION)
 #define isDnDCopyAction(a)    ((a) == DND_COPY_ACTION)
