@@ -281,9 +281,9 @@ int netPfStrToPf(const char *pcszStrPortForward, int fIPv6, PPORTFORWARDRULE pPf
 
     cbRaw--;
 
-    if (     ((    fTcpProto = (RTStrNICmp(pszRaw, "tcp", 3) == 0)
-              ||  (RTStrNICmp(pszRaw, "udp", 3) == 0))
-          && (pszRaw[3] == PF_FIELD_SEPARATOR)))
+    if (  (  (fTcpProto = (RTStrNICmp(pszRaw, "tcp", 3) == 0))
+           ||              RTStrNICmp(pszRaw, "udp", 3) == 0)
+        && pszRaw[3] == PF_FIELD_SEPARATOR)
     {
         proto = (fTcpProto ? IPPROTO_TCP : IPPROTO_UDP);
         idxRaw = 3;
