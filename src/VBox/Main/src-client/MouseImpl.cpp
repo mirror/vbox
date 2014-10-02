@@ -20,6 +20,7 @@
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "VMMDev.h"
+#include "MousePointerShapeWrap.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -28,6 +29,154 @@
 #include <VBox/VMMDev.h>
 
 #include <iprt/asm.h>
+
+class ATL_NO_VTABLE MousePointerShape:
+    public MousePointerShapeWrap
+{
+public:
+
+    DECLARE_EMPTY_CTOR_DTOR(MousePointerShape)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    /* Public initializer/uninitializer for internal purposes only. */
+    HRESULT init(ComObjPtr<Mouse> pMouse,
+                 bool fVisible, bool fAlpha,
+                 uint32_t hotX, uint32_t hotY,
+                 uint32_t width, uint32_t height,
+                 const uint8_t *pu8Shape, uint32_t cbShape);
+    void uninit();
+
+private:
+    // wrapped IMousePointerShape properties
+    virtual HRESULT getVisible(BOOL *aVisible);
+    virtual HRESULT getAlpha(BOOL *aAlpha);
+    virtual HRESULT getHotX(ULONG *aHotX);
+    virtual HRESULT getHotY(ULONG *aHotY);
+    virtual HRESULT getWidth(ULONG *aWidth);
+    virtual HRESULT getHeight(ULONG *aHeight);
+    virtual HRESULT getShape(std::vector<BYTE> &aShape);
+
+    struct Data
+    {
+        ComObjPtr<Mouse> pMouse;
+        bool fVisible;
+        bool fAlpha;
+        uint32_t hotX;
+        uint32_t hotY;
+        uint32_t width;
+        uint32_t height;
+        std::vector<BYTE> shape;
+    };
+
+    Data m;
+};
+
+/*
+ * MousePointerShape implementation.
+ */
+DEFINE_EMPTY_CTOR_DTOR(MousePointerShape)
+
+HRESULT MousePointerShape::FinalConstruct()
+{
+    return BaseFinalConstruct();
+}
+
+void MousePointerShape::FinalRelease()
+{
+    uninit();
+
+    BaseFinalRelease();
+}
+
+HRESULT MousePointerShape::init(ComObjPtr<Mouse> pMouse,
+                                bool fVisible, bool fAlpha,
+                                uint32_t hotX, uint32_t hotY,
+                                uint32_t width, uint32_t height,
+                                const uint8_t *pu8Shape, uint32_t cbShape)
+{
+    LogFlowThisFunc(("v %d, a %d, h %d,%d, %dx%d, cb %d\n",
+                     fVisible, fAlpha, hotX, hotY, width, height, cbShape));
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    m.pMouse = pMouse;
+    m.fVisible = fVisible;
+    m.fAlpha   = fAlpha;
+    m.hotX     = hotX;
+    m.hotY     = hotY;
+    m.width    = width;
+    m.height   = height;
+    m.shape.resize(cbShape);
+    if (cbShape)
+    {
+        memcpy(&m.shape.front(), pu8Shape, cbShape);
+    }
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
+}
+
+void MousePointerShape::uninit()
+{
+    LogFlowThisFunc(("\n"));
+
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan(this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    m.pMouse.setNull();
+}
+
+HRESULT MousePointerShape::getVisible(BOOL *aVisible)
+{
+    *aVisible = m.fVisible;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getAlpha(BOOL *aAlpha)
+{
+    *aAlpha = m.fAlpha;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getHotX(ULONG *aHotX)
+{
+    *aHotX = m.hotX;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getHotY(ULONG *aHotY)
+{
+    *aHotY = m.hotY;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getWidth(ULONG *aWidth)
+{
+    *aWidth = m.width;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getHeight(ULONG *aHeight)
+{
+    *aHeight = m.height;
+    return S_OK;
+}
+
+HRESULT MousePointerShape::getShape(std::vector<BYTE> &aShape)
+{
+    aShape.resize(m.shape.size());
+    memcpy(&aShape.front(), &m.shape.front(), aShape.size());
+    return S_OK;
+}
+
 
 /** @name Mouse device capabilities bitfield
  * @{ */
@@ -77,6 +226,7 @@ Mouse::~Mouse()
 HRESULT Mouse::FinalConstruct()
 {
     RT_ZERO(mpDrv);
+    RT_ZERO(mPointerData);
     mcLastX = 0x8000;
     mcLastY = 0x8000;
     mfLastButtons = 0;
@@ -143,11 +293,45 @@ void Mouse::uninit()
         mpDrv[i] = NULL;
     }
 
+    mPointerShape.setNull();
+
+    RTMemFree(mPointerData.pu8Shape);
+    mPointerData.pu8Shape = NULL;
+    mPointerData.cbShape = 0;
+
     mMouseEvent.uninit();
     unconst(mEventSource).setNull();
     unconst(mParent) = NULL;
 }
 
+void Mouse::updateMousePointerShape(bool fVisible, bool fAlpha,
+                                    uint32_t hotX, uint32_t hotY,
+                                    uint32_t width, uint32_t height,
+                                    const uint8_t *pu8Shape, uint32_t cbShape)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    RTMemFree(mPointerData.pu8Shape);
+    mPointerData.pu8Shape = NULL;
+    mPointerData.cbShape = 0;
+
+    mPointerData.fVisible = fVisible;
+    mPointerData.fAlpha   = fAlpha;
+    mPointerData.hotX     = hotX;
+    mPointerData.hotY     = hotY;
+    mPointerData.width    = width;
+    mPointerData.height   = height;
+    if (cbShape)
+    {
+        mPointerData.pu8Shape = (uint8_t *)RTMemDup(pu8Shape, cbShape);
+        if (mPointerData.pu8Shape)
+        {
+            mPointerData.cbShape = cbShape;
+        }
+    }
+
+    mPointerShape.setNull();
+}
 
 // IMouse properties
 /////////////////////////////////////////////////////////////////////////////
@@ -221,6 +405,38 @@ HRESULT Mouse::getNeedsHostCursor(BOOL *aNeedsHostCursor)
 {
     *aNeedsHostCursor = i_guestNeedsHostCursor();
     return S_OK;
+}
+
+HRESULT Mouse::getPointerShape(ComPtr<IMousePointerShape> &aPointerShape)
+{
+    HRESULT hr = S_OK;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mPointerShape.isNull())
+    {
+        ComObjPtr<MousePointerShape> obj;
+        hr = obj.createObject();
+        if (SUCCEEDED(hr))
+        {
+            hr = obj->init(this, mPointerData.fVisible, mPointerData.fAlpha,
+                           mPointerData.hotX, mPointerData.hotY,
+                           mPointerData.width, mPointerData.height,
+                           mPointerData.pu8Shape, mPointerData.cbShape);
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            mPointerShape = obj;
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        aPointerShape = mPointerShape;
+    }
+
+    return hr;
 }
 
 // IMouse methods

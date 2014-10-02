@@ -15037,8 +15037,81 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
+    name="IMousePointerShape" extends="$unknown"
+    uuid="4609f3e1-839a-4edd-b57f-cc4584b39173"
+    wsmap="managed"
+    >
+    <desc>
+      The guest mouse pointer description.
+    </desc>
+
+    <attribute name="visible" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the pointer is visible.
+      </desc>
+    </attribute>
+    <attribute name="alpha" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the pointer has an alpha channel.
+      </desc>
+    </attribute>
+    <attribute name="hotX" type="unsigned long" readonly="yes">
+      <desc>
+        The pointer hot spot X coordinate.
+      </desc>
+    </attribute>
+    <attribute name="hotY" type="unsigned long" readonly="yes">
+      <desc>
+        The pointer hot spot Y coordinate.
+      </desc>
+    </attribute>
+    <attribute name="width" type="unsigned long" readonly="yes">
+      <desc>
+        Width of the pointer shape in pixels.
+      </desc>
+    </attribute>
+    <attribute name="height" type="unsigned long" readonly="yes">
+      <desc>
+        Height of the pointer shape in pixels.
+      </desc>
+    </attribute>
+    <attribute name="shape" type="octet" safearray="yes" readonly="yes">
+      <desc>
+        Shape bitmaps.
+
+        The @a shape buffer contains a 1bpp (bits per pixel) AND mask
+        followed by a 32bpp XOR (color) mask.
+
+        For pointers without alpha channel the XOR mask pixels are
+        32 bit values: (lsb)BGR0(msb). For pointers with alpha channel
+        the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
+
+        An AND mask is provided for pointers with alpha channel, so if the
+        client does not support alpha, the pointer could be
+        displayed as a normal color pointer.
+
+        The AND mask is a 1bpp bitmap with byte aligned scanlines. The
+        size of the AND mask therefore is <tt>cbAnd = (width + 7) / 8 *
+          height</tt>. The padding bits at the end of each scanline are
+        undefined.
+
+        The XOR mask follows the AND mask on the next 4-byte aligned
+        offset: <tt>uint8_t *pu8Xor = pu8And + (cbAnd + 3) &amp; ~3</tt>.
+        Bytes in the gap between the AND and the XOR mask are undefined.
+        The XOR mask scanlines have no gap between them and the size of
+        the XOR mask is: <tt>cbXor = width * 4 * height</tt>.
+
+        <note>
+          If @a shape size is 0, then the shape is not known or did not change.
+          This can happen if only the pointer visibility is changed.
+        </note>
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
     name="IMouse" extends="$unknown"
-    uuid="ee770393-415f-4421-b2d5-28b73cacf86a"
+    uuid="4c3fa51c-7b9a-4ecf-97f0-d75a945bd26c"
     wsmap="managed"
     >
     <desc>
@@ -15097,6 +15170,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           during virtual machine execution.
         </note>
         <see><link to="#putMouseEvent"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="pointerShape" type="IMousePointerShape" readonly="yes">
+      <desc>
+        The current mouse pointer used by the guest.
       </desc>
     </attribute>
 

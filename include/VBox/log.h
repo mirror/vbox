@@ -493,6 +493,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_MOUSE,
     /** Main group, IMouseCapabilityChangedEvent. */
     LOG_GROUP_MAIN_MOUSECAPABILITYCHANGEDEVENT,
+    /** Main group, IMousePointerShape. */
+    LOG_GROUP_MAIN_MOUSEPOINTERSHAPE,
     /** Main group, IMousePointerShapeChangedEvent. */
     LOG_GROUP_MAIN_MOUSEPOINTERSHAPECHANGEDEVENT,
     /** Main group, INATEngine. */
@@ -989,6 +991,7 @@ typedef enum LOGGROUP
     "MAIN_MEDIUMREGISTEREDEVENT", \
     "MAIN_MOUSE",   \
     "MAIN_MOUSECAPABILITYCHANGEDEVENT", \
+    "MAIN_MOUSEPOINTERSHAPE", \
     "MAIN_MOUSEPOINTERSHAPECHANGEDEVENT", \
     "MAIN_NATENGINE", \
     "MAIN_NATNETWORK", \
