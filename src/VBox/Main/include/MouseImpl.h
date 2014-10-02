@@ -107,7 +107,7 @@ private:
                              uint32_t fButtons, bool fUsesVMMDevEvent);
     HRESULT i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
                                  bool *pfValid);
-    HRESULT i_putEventMultiTouch(LONG aCount, LONG64 *paContacts, ULONG aScanTime);
+    HRESULT i_putEventMultiTouch(LONG aCount, const LONG64 *paContacts, ULONG aScanTime);
 
     void i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *fMT);
     void i_sendMouseCapsNotifications(void);

@@ -1658,17 +1658,16 @@ HRESULT Machine::getVideoCaptureScreens(std::vector<BOOL> &aVideoCaptureScreens)
 
 HRESULT Machine::setVideoCaptureScreens(const std::vector<BOOL> &aVideoCaptureScreens)
 {
-    SafeArray<BOOL> screens(aVideoCaptureScreens);
-    AssertReturn(screens.size() <= RT_ELEMENTS(mHWData->maVideoCaptureScreens), E_INVALIDARG);
+    AssertReturn(aVideoCaptureScreens.size() <= RT_ELEMENTS(mHWData->maVideoCaptureScreens), E_INVALIDARG);
     bool fChanged = false;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    for (unsigned i = 0; i < screens.size(); ++i)
+    for (unsigned i = 0; i < aVideoCaptureScreens.size(); ++i)
     {
-        if (mHWData->maVideoCaptureScreens[i] != RT_BOOL(screens[i]))
+        if (mHWData->maVideoCaptureScreens[i] != RT_BOOL(aVideoCaptureScreens[i]))
         {
-            mHWData->maVideoCaptureScreens[i] = RT_BOOL(screens[i]);
+            mHWData->maVideoCaptureScreens[i] = RT_BOOL(aVideoCaptureScreens[i]);
             fChanged = true;
         }
     }
@@ -4822,7 +4821,6 @@ HRESULT Machine::getExtraDataKeys(std::vector<com::Utf8Str> &aKeys)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> saKeys(mData->pMachineConfigFile->mapExtraDataItems.size());
     aKeys.resize(mData->pMachineConfigFile->mapExtraDataItems.size());
     size_t i = 0;
     for (settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.begin();
@@ -6330,17 +6328,17 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULONG *aW
     *aWidth = u32Width;
     *aHeight = u32Height;
 
-    com::SafeArray<BYTE> bitmap(cbData);
+    aData.resize(cbData);
     /* Convert pixels to format expected by the API caller. */
     if (aBGR)
     {
         /* [0] B, [1] G, [2] R, [3] A. */
         for (unsigned i = 0; i < cbData; i += 4)
         {
-            bitmap[i]     = pu8Data[i];
-            bitmap[i + 1] = pu8Data[i + 1];
-            bitmap[i + 2] = pu8Data[i + 2];
-            bitmap[i + 3] = 0xff;
+            aData[i]     = pu8Data[i];
+            aData[i + 1] = pu8Data[i + 1];
+            aData[i + 2] = pu8Data[i + 2];
+            aData[i + 3] = 0xff;
         }
     }
     else
@@ -6348,15 +6346,12 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULONG *aW
         /* [0] R, [1] G, [2] B, [3] A. */
         for (unsigned i = 0; i < cbData; i += 4)
         {
-            bitmap[i]     = pu8Data[i + 2];
-            bitmap[i + 1] = pu8Data[i + 1];
-            bitmap[i + 2] = pu8Data[i];
-            bitmap[i + 3] = 0xff;
+            aData[i]     = pu8Data[i + 2];
+            aData[i + 1] = pu8Data[i + 1];
+            aData[i + 2] = pu8Data[i];
+            aData[i + 3] = 0xff;
         }
     }
-    aData.resize(bitmap.size());
-    for (size_t i = 0; i < bitmap.size(); ++i)
-        aData[i] = bitmap[i];
 
     freeSavedDisplayScreenshot(pu8Data);
 
@@ -6395,13 +6390,11 @@ HRESULT Machine::readSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidth, UL
 
     if (RT_SUCCESS(vrc))
     {
-        com::SafeArray<BYTE> screenData(cbPNG);
-        screenData.initFrom(pu8PNG, cbPNG);
+        aData.resize(cbPNG);
+        if (cbPNG)
+            memcpy(&aData.front(), pu8PNG, cbPNG);
         if (pu8PNG)
             RTMemFree(pu8PNG);
-        aData.resize(screenData.size());
-        for (size_t i = 0; i < screenData.size(); ++i)
-            aData[i] = screenData[i];
     }
     else
     {
@@ -6467,11 +6460,9 @@ HRESULT Machine::readSavedScreenshotPNGToArray(ULONG aScreenId, ULONG *aWidth, U
     *aWidth = u32Width;
     *aHeight = u32Height;
 
-    com::SafeArray<BYTE> png(cbData);
-    png.initFrom(pu8Data, cbData);
-    aData.resize(png.size());
-    for (size_t i = 0; i < png.size(); ++i)
-        aData[i] = png[i];
+    aData.resize(cbData);
+    if (cbData)
+        memcpy(&aData.front(), pu8Data, cbData);
 
     freeSavedDisplayScreenshot(pu8Data);
 
@@ -6596,16 +6587,16 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
      * over (XP)COM, and keeps the SOAP reply size under 1M for the webservice.
      * One byte expands to approx. 25 bytes of breathtaking XML. */
     size_t cbData = (size_t)RT_MIN(aSize, 32768);
-    com::SafeArray<BYTE> logData(cbData);
+    aData.resize(cbData);
 
     RTFILE LogFile;
     int vrc = RTFileOpen(&LogFile, log.c_str(),
                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(vrc))
     {
-        vrc = RTFileReadAt(LogFile, aOffset, logData.raw(), cbData, &cbData);
+        vrc = RTFileReadAt(LogFile, aOffset, cbData? &aData.front(): NULL, cbData, &cbData);
         if (RT_SUCCESS(vrc))
-            logData.resize(cbData);
+            aData.resize(cbData);
         else
             rc = setError(VBOX_E_IPRT_ERROR,
                           tr("Could not read log file '%s' (%Rrc)"),
@@ -6618,11 +6609,7 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
                       log.c_str(), vrc);
 
     if (FAILED(rc))
-        logData.resize(0);
-
-    aData.resize(logData.size());
-    for (size_t i = 0; i < logData.size(); ++i)
-        aData[i] = logData[i];
+        aData.resize(0);
 
     return rc;
 }
@@ -6981,12 +6968,10 @@ HRESULT Machine::setDefaultFrontend(const com::Utf8Str &aDefaultFrontend)
 HRESULT Machine::getIcon(std::vector<BYTE> &aIcon)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    com::SafeArray<BYTE> icon(mUserData->mIcon.size());
-    aIcon.resize(mUserData->mIcon.size());
-    memcpy(icon.raw(), &mUserData->mIcon[0], mUserData->mIcon.size());
-    aIcon.resize(icon.size());
-    for (size_t i = 0; i < icon.size(); ++i)
-        aIcon[i] = icon[i];
+    size_t cbIcon = mUserData->mIcon.size();
+    aIcon.resize(cbIcon);
+    if (cbIcon)
+        memcpy(&aIcon.front(), &mUserData->mIcon[0], cbIcon);
     return S_OK;
 }
 
@@ -6998,16 +6983,16 @@ HRESULT Machine::setIcon(const std::vector<BYTE> &aIcon)
     {
         i_setModified(IsModified_MachineData);
         mUserData.backup();
-        com::SafeArray<BYTE> icon(aIcon);
-        mUserData->mIcon.resize(aIcon.size());
-        memcpy(&mUserData->mIcon[0], icon.raw(), mUserData->mIcon.size());
+        size_t cbIcon = aIcon.size();
+        mUserData->mIcon.resize(cbIcon);
+        if (cbIcon)
+            memcpy(&mUserData->mIcon[0], &aIcon.front(), cbIcon);
     }
     return hrc;
 }
 
 HRESULT Machine::getUSBProxyAvailable(BOOL *aUSBProxyAvailable)
 {
-
 #ifdef VBOX_WITH_USB
     *aUSBProxyAvailable = true;
 #else
@@ -8423,15 +8408,18 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
                         tr("Icon Data too long.'%d' > '%d'"),
                         cbOut,
                         DECODE_STR_MAX);
-    com::SafeArray<BYTE> iconByte(cbOut);
-    int vrc = RTBase64Decode(pszStr, iconByte.raw(), cbOut, NULL, NULL);
+    mUserData->mIcon.resize(cbOut);
+    int vrc = VINF_SUCCESS;
+    if (cbOut)
+        vrc = RTBase64Decode(pszStr, &mUserData->mIcon.front(), cbOut, NULL, NULL);
     if (RT_FAILURE(vrc))
+    {
+        mUserData->mIcon.resize(0);
         return setError(E_FAIL,
                         tr("Failure to Decode Icon Data. '%s' (%Rrc)"),
                         pszStr,
                         vrc);
-    mUserData->mIcon.resize(iconByte.size());
-    memcpy(&mUserData->mIcon[0], iconByte.raw(), mUserData->mIcon.size());
+    }
 
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
@@ -9820,15 +9808,15 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.machineUserData = mUserData->s;
 
     // Encode the Icon Override data from Machine and store on config userdata.
-    com::SafeArray<BYTE> iconByte;
-    COMGETTER(Icon)(ComSafeArrayAsOutParam(iconByte));
+    std::vector<BYTE> iconByte;
+    getIcon(iconByte);
     ssize_t cbData = iconByte.size();
     if (cbData > 0)
     {
         ssize_t cchOut = RTBase64EncodedLength(cbData);
         Utf8Str strIconData;
         strIconData.reserve(cchOut+1);
-        int vrc = RTBase64Encode(iconByte.raw(), cbData,
+        int vrc = RTBase64Encode(&iconByte.front(), cbData,
                                  strIconData.mutableRaw(), strIconData.capacity(),
                                  NULL);
         if (RT_FAILURE(vrc))

@@ -3797,21 +3797,16 @@ DECLCALLBACK(int) Display::i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
-    size_t cbShapeSize = 0;
-
+    uint32_t cbShape = 0;
     if (pvShape)
     {
-        cbShapeSize = (cx + 7) / 8 * cy; /* size of the AND mask */
-        cbShapeSize = ((cbShapeSize + 3) & ~3) + cx * 4 * cy; /* + gap + size of the XOR mask */
+        cbShape = (cx + 7) / 8 * cy; /* size of the AND mask */
+        cbShape = ((cbShape + 3) & ~3) + cx * 4 * cy; /* + gap + size of the XOR mask */
     }
-    com::SafeArray<BYTE> shapeData(cbShapeSize);
-
-    if (pvShape)
-        ::memcpy(shapeData.raw(), pvShape, cbShapeSize);
 
     /* Tell the console about it */
     pDrv->pDisplay->mParent->i_onMousePointerShapeChange(fVisible, fAlpha,
-                                                         xHot, yHot, cx, cy, ComSafeArrayAsInParam(shapeData));
+                                                         xHot, yHot, cx, cy, (uint8_t *)pvShape, cbShape);
 
     return VINF_SUCCESS;
 }

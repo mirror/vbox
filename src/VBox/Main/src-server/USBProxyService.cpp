@@ -132,15 +132,16 @@ RWLockHandle *USBProxyService::lockHandle() const
  *
  * @remarks The caller must own the write lock of the host object.
  */
-HRESULT USBProxyService::getDeviceCollection(ComSafeArrayOut(IHostUSBDevice *, aUSBDevices))
+HRESULT USBProxyService::getDeviceCollection(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 {
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
-    CheckComArgOutSafeArrayPointerValid(aUSBDevices);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IHostUSBDevice> Collection(mDevices);
-    Collection.detachTo(ComSafeArrayOutArg(aUSBDevices));
+    aUSBDevices.resize(mDevices.size());
+    size_t i = 0;
+    for (HostUSBDeviceList::const_iterator it = mDevices.begin(); it != mDevices.end(); ++it, ++i)
+        aUSBDevices[i] = *it;
 
     return S_OK;
 }

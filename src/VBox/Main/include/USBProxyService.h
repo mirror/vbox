@@ -57,7 +57,7 @@ public:
 
     /** @name Host Interfaces
      * @{ */
-    HRESULT getDeviceCollection(ComSafeArrayOut(IHostUSBDevice *, aUSBDevices));
+    HRESULT getDeviceCollection(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices);
     /** @} */
 
     /** @name SessionMachine Interfaces

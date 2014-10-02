@@ -111,9 +111,9 @@ class HostDnsMonitorProxy : public Lockee
     void init(const HostDnsMonitor *aMonitor, const VirtualBox *aParent);
     void notify() const;
 
-    HRESULT GetNameServers(ComSafeArrayOut(BSTR, aNameServers));
-    HRESULT GetDomainName(BSTR *aDomainName);
-    HRESULT GetSearchStrings(ComSafeArrayOut(BSTR, aSearchStrings));
+    HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);
+    HRESULT GetDomainName(com::Utf8Str *pDomainName);
+    HRESULT GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings);
 
     bool operator==(PCHostDnsMonitorProxy&);
 

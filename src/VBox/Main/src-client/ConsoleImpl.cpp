@@ -6335,8 +6335,9 @@ HRESULT Console::i_updateMachineState(MachineState_T aMachineState)
 
 void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                           uint32_t xHot, uint32_t yHot,
-                                        uint32_t width, uint32_t height,
-                                        ComSafeArrayIn(BYTE,pShape))
+                                          uint32_t width, uint32_t height,
+                                          const uint8_t *pu8Shape,
+                                          uint32_t cbShape)
 {
 #if 0
     LogFlowThisFuncEnter();
@@ -6347,12 +6348,14 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
     if (!mMouse.isNull())
        mMouse->updateMousePointerShape(fVisible, fAlpha, xHot, yHot, width, height,
-                                       aShape.raw(), aShape.size());
+                                       pu8Shape, cbShape);
 
-    fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
+    com::SafeArray<BYTE> shape(cbShape);
+    if (pu8Shape)
+        memcpy(shape.raw(), pu8Shape, cbShape);
+    fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
 
 #if 0
     LogFlowThisFuncLeave();
