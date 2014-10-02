@@ -9338,17 +9338,17 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0x707070707070707)), VMX_IGS_PAT_MSR_RESERVED);
             for (unsigned i = 0; i < 8; i++)
             {
-                uint8_t u8Val = (u64Val & 0x7);
+                uint8_t u8Val = (u64Val & 0xff);
                 if (   u8Val != 0 /* UC */
-                    || u8Val != 1 /* WC */
-                    || u8Val != 4 /* WT */
-                    || u8Val != 5 /* WP */
-                    || u8Val != 6 /* WB */
-                    || u8Val != 7 /* UC- */)
+                    && u8Val != 1 /* WC */
+                    && u8Val != 4 /* WT */
+                    && u8Val != 5 /* WP */
+                    && u8Val != 6 /* WB */
+                    && u8Val != 7 /* UC- */)
                 {
                     HMVMX_ERROR_BREAK(VMX_IGS_PAT_MSR_INVALID);
                 }
-                u64Val >>= 3;
+                u64Val >>= 8;
             }
         }
 
