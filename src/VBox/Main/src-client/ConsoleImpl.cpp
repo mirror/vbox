@@ -6381,6 +6381,10 @@ void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
         mCallbackData.mpsc.valid = true;
     }
 #endif
+    com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
+    if (!mMouse.isNull())
+       mMouse->updateMousePointerShape(fVisible, fAlpha, xHot, yHot, width, height,
+                                       aShape.raw(), aShape.size());
 
     fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
 

@@ -56,6 +56,10 @@ public:
         i_sendMouseCapsNotifications();
     }
 
+    void updateMousePointerShape(bool fVisible, bool fAlpha,
+                                 uint32_t hotX, uint32_t hotY,
+                                 uint32_t width, uint32_t height,
+                                 const uint8_t *pu8Shape, uint32_t cbShape);
 private:
 
     // Wrapped IMouse properties
@@ -63,6 +67,7 @@ private:
     HRESULT getRelativeSupported(BOOL *aRelativeSupported);
     HRESULT getMultiTouchSupported(BOOL *aMultiTouchSupported);
     HRESULT getNeedsHostCursor(BOOL *aNeedsHostCursor);
+    HRESULT getPointerShape(ComPtr<IMousePointerShape> &aPointerShape);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
 
     // Wrapped IMouse methods
@@ -121,6 +126,19 @@ private:
     int32_t mcLastX;
     int32_t mcLastY;
     uint32_t mfLastButtons;
+
+    ComPtr<IMousePointerShape> mPointerShape;
+    struct
+    {
+        bool fVisible;
+        bool fAlpha;
+        uint32_t hotX;
+        uint32_t hotY;
+        uint32_t width;
+        uint32_t height;
+        uint8_t *pu8Shape;
+        uint32_t cbShape;
+    } mPointerData;
 
     const ComObjPtr<EventSource> mEventSource;
     VBoxEventDesc                mMouseEvent;
