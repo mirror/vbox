@@ -3208,7 +3208,7 @@ HRESULT VirtualBox::i_validateMachineGroup(const Utf8Str &aGroup, bool fPrimary)
 /**
  * Takes a list of machine groups, and sanitizes/validates it.
  *
- * @param aMachineGroups    Safearray with the machine groups.
+ * @param aMachineGroups    Array with the machine groups.
  * @param pllMachineGroups  Pointer to list of strings for the result.
  *
  * @return S_OK or E_INVALIDARG

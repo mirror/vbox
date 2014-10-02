@@ -291,14 +291,7 @@ HRESULT GuestProcess::getArguments(std::vector<com::Utf8Str> &aArguments)
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> collection(mData.mProcess.mArguments.size());
-    size_t s = 0;
-    for (ProcessArguments::const_iterator it = mData.mProcess.mArguments.begin();
-         it != mData.mProcess.mArguments.end();
-         it++, s++)
-         aArguments[s] = (*it);
-
+    aArguments = mData.mProcess.mArguments;
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -311,11 +304,7 @@ HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> arguments(mData.mProcess.mEnvironment.Size());
-    for (size_t i = 0; i < arguments.size(); i++)
-        aEnvironment[i] = mData.mProcess.mEnvironment.Get(i);
-
+    mData.mProcess.mEnvironment.CopyTo(aEnvironment);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1750,22 +1739,21 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
 
-    com::SafeArray<BYTE> data((size_t)aToRead);
-    Assert(data.size() >= aToRead);
+    aData.resize(aToRead);
 
     HRESULT hr = S_OK;
 
     uint32_t cbRead; int guestRc;
-    int vrc = i_readData(aHandle, aToRead, aTimeoutMS, data.raw(), aToRead, &cbRead, &guestRc);
+    int vrc = i_readData(aHandle, aToRead, aTimeoutMS, &aData.front(), aToRead, &cbRead, &guestRc);
     if (RT_SUCCESS(vrc))
     {
-        if (data.size() != cbRead)
-            data.resize(cbRead);
-        for(size_t i = 0; i < data.size(); ++i)
-            aData[i] = data[i];
+        if (aData.size() != cbRead)
+            aData.resize(cbRead);
     }
     else
     {
+        aData.resize(0);
+
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
@@ -1902,11 +1890,11 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
-    com::SafeArray<BYTE> data;
-    for(size_t i = 0; i < aData.size(); ++i)
-        data[i] = aData[i];
+
     uint32_t cbWritten; int guestRc;
-    int vrc = i_writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, &cbWritten, &guestRc);
+    uint32_t cbData = (uint32_t)aData.size();
+    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    int vrc = i_writeData(aHandle, aFlags, pvData, cbData, aTimeoutMS, &cbWritten, &guestRc);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)

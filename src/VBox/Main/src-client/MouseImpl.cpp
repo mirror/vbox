@@ -860,16 +860,14 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
                                   const std::vector<LONG64> &aContacts,
                                   ULONG aScanTime)
 {
-    com::SafeArray <LONG64> arrayContacts(aContacts);
-
     LogRel3(("%s: aCount %d(actual %d), aScanTime %u\n",
-             __FUNCTION__, aCount, arrayContacts.size(), aScanTime));
+             __FUNCTION__, aCount, aContacts.size(), aScanTime));
 
     HRESULT rc = S_OK;
 
-    if ((LONG)arrayContacts.size() >= aCount)
+    if ((LONG)aContacts.size() >= aCount)
     {
-        LONG64* paContacts = arrayContacts.raw();
+        const LONG64 *paContacts = aCount > 0? &aContacts.front(): NULL;
 
         rc = i_putEventMultiTouch(aCount, paContacts, aScanTime);
     }
@@ -906,7 +904,7 @@ HRESULT Mouse::putEventMultiTouchString(LONG aCount,
 
 /* Used by PutEventMultiTouch and PutEventMultiTouchString. */
 HRESULT Mouse::i_putEventMultiTouch(LONG aCount,
-                                    LONG64 *paContacts,
+                                    const LONG64 *paContacts,
                                     ULONG aScanTime)
 {
     if (aCount >= 256)

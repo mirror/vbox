@@ -1272,25 +1272,23 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
 
-    com::SafeArray<BYTE> data((size_t)aToRead);
-    Assert(data.size() >= aToRead);
+    aData.resize(aToRead);
 
     HRESULT hr = S_OK;
 
     uint32_t cbRead;
     int vrc = i_readData(aToRead, aTimeoutMS,
-                         data.raw(), aToRead, &cbRead);
+                         &aData.front(), aToRead, &cbRead);
 
     if (RT_SUCCESS(vrc))
     {
-        if (data.size() != cbRead)
-            data.resize(cbRead);
-        aData.resize(data.size());
-        for(size_t i = 0; i < data.size(); ++i)
-            aData[i] = data[i];
+        if (aData.size() != cbRead)
+            aData.resize(cbRead);
     }
     else
     {
+        aData.resize(0);
+
         switch (vrc)
         {
             default:
@@ -1314,24 +1312,22 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
 
-    com::SafeArray<BYTE> data((size_t)aToRead);
-    Assert(data.size() >= aToRead);
+    aData.resize(aToRead);
 
     HRESULT hr = S_OK;
 
     size_t cbRead;
     int vrc = i_readDataAt(aOffset, aToRead, aTimeoutMS,
-                           data.raw(), aToRead, &cbRead);
+                           &aData.front(), aToRead, &cbRead);
     if (RT_SUCCESS(vrc))
     {
-        if (data.size() != cbRead)
-            data.resize(cbRead);
-        aData.resize(data.size());
-        for(size_t i = 0; i < data.size(); ++i)
-            aData[i] = data[i];
+        if (aData.size() != cbRead)
+            aData.resize(cbRead);
     }
     else
     {
+        aData.resize(0);
+
         switch (vrc)
         {
             default:
@@ -1409,8 +1405,9 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
 
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(aData);
-    int vrc = i_writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+    uint32_t cbData = (uint32_t)aData.size();
+    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    int vrc = i_writeData(aTimeoutMS, pvData, cbData,
                           (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
@@ -1419,7 +1416,7 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
-                              data.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
+                              aData.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
                 break;
         }
     }
@@ -1439,8 +1436,9 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
 
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(aData);
-    int vrc = i_writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+    uint32_t cbData = (uint32_t)aData.size();
+    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    int vrc = i_writeData(aTimeoutMS, pvData, cbData,
                           (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
@@ -1449,7 +1447,7 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
-                              data.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
+                              aData.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
                 break;
         }
     }

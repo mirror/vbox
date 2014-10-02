@@ -345,17 +345,13 @@ DECLCALLBACK(void) vmmdevUpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, boo
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* tell the console about it */
-    size_t cbShapeSize = 0;
-
+    uint32_t cbShape = 0;
     if (pShape)
     {
-        cbShapeSize = (width + 7) / 8 * height; /* size of the AND mask */
-        cbShapeSize = ((cbShapeSize + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
+        cbShape = (width + 7) / 8 * height; /* size of the AND mask */
+        cbShape = ((cbShape + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
     }
-    com::SafeArray<BYTE> shapeData(cbShapeSize);
-    if (pShape)
-        ::memcpy(shapeData.raw(), pShape, cbShapeSize);
-    pConsole->i_onMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shapeData));
+    pConsole->i_onMousePointerShapeChange(fVisible, fAlpha, xHot, yHot, width, height, (uint8_t *)pShape, cbShape);
 }
 
 DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool fEnable, VBVAMEMORY *pVbvaMemory)

@@ -775,8 +775,10 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
     }
 #  endif /* RT_OS_LINUX */
 
-    SafeIfaceArray<IHostNetworkInterface> networkInterfaces(list);
-    networkInterfaces.detachTo(ComSafeArrayOutArg(aNetworkInterfaces));
+    aNetworkInterfaces.resize(list.size());
+    size_t i = 0;
+    for (std::list<ComObjPtr<HostNetworkInterface> >::const_iterator it = list.begin(); it != list.end(); ++it, ++i)
+        aNetworkInterfaces[i] = *it;
 
     return S_OK;
 # endif
@@ -795,19 +797,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
     if (FAILED(rc))
         return rc;
 
-    SafeIfaceArray<IHostUSBDevice> resultArr;
-    rc = m->pUSBProxyService->getDeviceCollection(ComSafeArrayAsOutParam(resultArr));
-    if (FAILED(rc))
-        return rc;
-
-    aUSBDevices.resize(resultArr.size());
-    for (size_t i = 0; i < resultArr.size(); ++i)
-    {
-         ComPtr<IHostUSBDevice> iHu = resultArr[i];
-         iHu.queryInterfaceTo(aUSBDevices[i].asOutParam());
-    }
-
-    return rc;
+    return m->pUSBProxyService->getDeviceCollection(aUSBDevices);
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
@@ -826,17 +816,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
 HRESULT Host::getNameServers(std::vector<com::Utf8Str> &aNameServers)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> resultArr;
-    HRESULT rc = m->hostDnsMonitorProxy.GetNameServers(ComSafeArrayAsOutParam(resultArr));
-    if (FAILED(rc))
-        return rc;
-
-    aNameServers.resize(resultArr.size());
-    for (size_t i = 0; i < resultArr.size(); ++i)
-        aNameServers[i] = com::Utf8Str(resultArr[i]);
-
-    return S_OK;
+    return m->hostDnsMonitorProxy.GetNameServers(aNameServers);
 }
 
 
@@ -847,14 +827,7 @@ HRESULT Host::getDomainName(com::Utf8Str &aDomainName)
 {
     /* XXX: note here should be synchronization with thread polling state
      * changes in name resoving system on host */
-    Bstr tmpName;
-    HRESULT rc = m->hostDnsMonitorProxy.GetDomainName(tmpName.asOutParam());
-    if (FAILED(rc))
-        return rc;
-
-    aDomainName = com::Utf8Str(tmpName);
-
-    return S_OK;
+    return m->hostDnsMonitorProxy.GetDomainName(&aDomainName);
 }
 
 
@@ -864,17 +837,7 @@ HRESULT Host::getDomainName(com::Utf8Str &aDomainName)
 HRESULT Host::getSearchStrings(std::vector<com::Utf8Str> &aSearchStrings)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> resultArr;
-    HRESULT rc = m->hostDnsMonitorProxy.GetSearchStrings(ComSafeArrayAsOutParam(resultArr));
-    if (FAILED(rc))
-        return rc;
-
-    aSearchStrings.resize(resultArr.size());
-    for (size_t i = 0; i < resultArr.size(); ++i)
-        aSearchStrings[i] = com::Utf8Str(resultArr[i]);
-
-    return S_OK;
+    return m->hostDnsMonitorProxy.GetSearchStrings(aSearchStrings);
 }
 
 HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aUSBDeviceFilters)
