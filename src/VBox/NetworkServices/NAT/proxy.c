@@ -635,7 +635,7 @@ proxy_lwip_strerr(err_t error)
     static char buf[32];
     int e = -error;
 
-    if (0 < e || e < (int)__arraycount(lwiperr)) {
+    if (0 <= e && e < (int)__arraycount(lwiperr)) {
         return lwiperr[e];
     }
     else {
