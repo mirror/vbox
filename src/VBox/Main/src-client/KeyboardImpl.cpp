@@ -78,6 +78,7 @@ HRESULT Keyboard::FinalConstruct()
     RT_ZERO(mpDrv);
     mpVMMDev = NULL;
     mfVMMDevInited = false;
+    menmLeds = PDMKEYBLEDS_NONE;
     return BaseFinalConstruct();
 }
 
@@ -140,6 +141,8 @@ void Keyboard::uninit()
 
     mpVMMDev = NULL;
     mfVMMDevInited = true;
+
+    menmLeds = PDMKEYBLEDS_NONE;
 
     unconst(mParent) = NULL;
     unconst(mEventSource).setNull();
@@ -260,6 +263,18 @@ HRESULT Keyboard::releaseKeys()
     return putScancodes(scancodes, NULL);
 }
 
+HRESULT Keyboard::getKeyboardLEDs(std::vector<KeyboardLED_T> &aKeyboardLEDs)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aKeyboardLEDs.resize(0);
+
+    if (menmLeds & PDMKEYBLEDS_NUMLOCK)    aKeyboardLEDs.push_back(KeyboardLED_NumLock);
+    if (menmLeds & PDMKEYBLEDS_CAPSLOCK)   aKeyboardLEDs.push_back(KeyboardLED_CapsLock);
+    if (menmLeds & PDMKEYBLEDS_SCROLLLOCK) aKeyboardLEDs.push_back(KeyboardLED_ScrollLock);
+
+    return S_OK;
+}
 
 HRESULT Keyboard::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
@@ -272,12 +287,24 @@ HRESULT Keyboard::getEventSource(ComPtr<IEventSource> &aEventSource)
 //
 // private methods
 //
+void Keyboard::onKeyboardLedsChange(PDMKEYBLEDS enmLeds)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Save the current status. */
+    menmLeds = enmLeds;
+
+    alock.release();
+
+    i_getParent()->i_onKeyboardLedsChange(RT_BOOL(enmLeds & PDMKEYBLEDS_NUMLOCK),
+                                          RT_BOOL(enmLeds & PDMKEYBLEDS_CAPSLOCK),
+                                          RT_BOOL(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
+}
+
 DECLCALLBACK(void) Keyboard::i_keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds)
 {
     PDRVMAINKEYBOARD pDrv = RT_FROM_MEMBER(pInterface, DRVMAINKEYBOARD, IConnector);
-    pDrv->pKeyboard->i_getParent()->i_onKeyboardLedsChange(RT_BOOL(enmLeds & PDMKEYBLEDS_NUMLOCK),
-                                                           RT_BOOL(enmLeds & PDMKEYBLEDS_CAPSLOCK),
-                                                           RT_BOOL(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
+    pDrv->pKeyboard->onKeyboardLedsChange(enmLeds);
 }
 
 /**

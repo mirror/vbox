@@ -14922,9 +14922,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="KeyboardLED"
+    uuid="ef29ea38-409b-49c7-a817-c858d426dfba"
+    >
+    <desc>
+      Keyboard LED indicators.
+    </desc>
+
+    <const name="NumLock" value="0x01"/>
+    <const name="CapsLock" value="0x02"/>
+    <const name="ScrollLock" value="0x04"/>
+  </enum>
+
   <interface
     name="IKeyboard" extends="$unknown"
-    uuid="71aa2898-28bd-43fe-8c98-e53321451db7"
+    uuid="585cc5e8-349c-41c6-899d-d9a38e3f4126"
     wsmap="managed"
     >
     <desc>
@@ -14934,6 +14947,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Use this interface to send keystrokes or the Ctrl-Alt-Del sequence
       to the virtual machine.
     </desc>
+
+    <attribute name="keyboardLEDs" type="KeyboardLED" safearray="yes" readonly="yes">
+      <desc>
+        Current status of the guest keyboard LEDs.
+      </desc>
+    </attribute>
 
     <method name="putScancode">
       <desc>Sends a scancode to the keyboard.

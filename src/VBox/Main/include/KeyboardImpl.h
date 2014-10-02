@@ -65,11 +65,12 @@ private:
 
     // Wrapped Keyboard properties
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
+    HRESULT getKeyboardLEDs(std::vector<KeyboardLED_T> &aKeyboardLEDs);
+
+    // Wrapped Keyboard members
     HRESULT putScancode(LONG aScancode);
     HRESULT putScancodes(const std::vector<LONG> &aScancodes,
                          ULONG *aCodesStored);
-
-    // Wrapped Keyboard members
     HRESULT putCAD();
     HRESULT releaseKeys();
 
@@ -79,6 +80,8 @@ private:
     static DECLCALLBACK(int)    i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   i_drvDestruct(PPDMDRVINS pDrvIns);
 
+    void onKeyboardLedsChange(PDMKEYBLEDS enmLeds);
+
     Console * const         mParent;
     /** Pointer to the associated keyboard driver(s). */
     struct DRVMAINKEYBOARD *mpDrv[KEYBOARD_MAX_DEVICES];
@@ -86,6 +89,9 @@ private:
     PPDMDEVINS              mpVMMDev;
     /** Set after the first attempt to find the VMM Device. */
     bool                    mfVMMDevInited;
+
+    /* The current guest keyboard LED status. */
+    PDMKEYBLEDS menmLeds;
 
     const ComObjPtr<EventSource> mEventSource;
 };
