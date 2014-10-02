@@ -2269,7 +2269,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 # define ASMAtomicWriteNullPtr(ppv) \
     do \
     { \
-        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        __typeof__(*(ppv)) * const ppvTypeChecked = (ppv); \
         AssertCompile(sizeof(*ppv) == sizeof(void *)); \
         Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
         ASMAtomicWritePtrVoid((void * volatile *)(ppvTypeChecked), NULL); \
