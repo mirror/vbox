@@ -157,6 +157,9 @@ public:
 
     Console *getConsole(void) { return mConsole; }
 
+    void onMousePointerShapeChange(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                   ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape));
+
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object
      * is actually just a part of the Console.
@@ -192,6 +195,8 @@ private:
     static DECLCALLBACK(void) VRDPCallbackInput             (void *pvCallback, int type, const void *pvInput, unsigned cbInput);
     static DECLCALLBACK(void) VRDPCallbackVideoModeHint     (void *pvCallback, unsigned cWidth, unsigned cHeight,  unsigned cBitsPerPixel, unsigned uScreenId);
     static DECLCALLBACK(void) VRDECallbackAudioIn           (void *pvCallback, void *pvCtx, uint32_t u32ClientId, uint32_t u32Event, const void *pvData, uint32_t cbData);
+
+    void fetchCurrentState(void);
 
     bool m_fGuestWantsAbsolute;
     int m_mousex;

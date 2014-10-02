@@ -87,7 +87,7 @@ public:
                 mpscev->COMGETTER(Height)(&height);
                 mpscev->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
 
-                OnMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
+                m_server->onMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, ComSafeArrayAsInParam(shape));
                 break;
             }
             case VBoxEventType_OnMouseCapabilityChanged:
@@ -126,8 +126,6 @@ public:
     }
 
 private:
-    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape));
     ConsoleVRDPServer *m_server;
 };
 
@@ -357,176 +355,174 @@ static void mousePointerGenerateANDMask(uint8_t *pu8DstAndMask, int cbDstAndMask
     }
 }
 
-STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
-                                                            BOOL alpha,
-                                                            ULONG xHot,
-                                                            ULONG yHot,
-                                                            ULONG width,
-                                                            ULONG height,
-                                                            ComSafeArrayIn(BYTE,inShape))
+void ConsoleVRDPServer::onMousePointerShapeChange(BOOL visible,
+                                                  BOOL alpha,
+                                                  ULONG xHot,
+                                                  ULONG yHot,
+                                                  ULONG width,
+                                                  ULONG height,
+                                                  ComSafeArrayIn(BYTE,inShape))
 {
     LogSunlover(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n",
                  visible, alpha, width, height, xHot, yHot));
 
-    if (m_server)
+    com::SafeArray <BYTE> aShape(ComSafeArrayInArg(inShape));
+    if (aShape.size() == 0)
     {
-        com::SafeArray <BYTE> aShape(ComSafeArrayInArg(inShape));
-        if (aShape.size() == 0)
+        if (!visible)
         {
-            if (!visible)
-            {
-                m_server->MousePointerHide();
-            }
-        }
-        else if (width != 0 && height != 0)
-        {
-            uint8_t* shape = aShape.raw();
-
-            dumpPointer(shape, width, height, true);
-
-            if (m_server->MousePointer(alpha, xHot, yHot, width, height, shape) == VINF_SUCCESS)
-            {
-                return S_OK;
-            }
-
-            /* Pointer consists of 1 bpp AND and 24 BPP XOR masks.
-             * 'shape' AND mask followed by XOR mask.
-             * XOR mask contains 32 bit (lsb)BGR0(msb) values.
-             *
-             * We convert this to RDP color format which consist of
-             * one bpp AND mask and 24 BPP (BGR) color XOR image.
-             *
-             * RDP clients expect 8 aligned width and height of
-             * pointer (preferably 32x32).
-             *
-             * They even contain bugs which do not appear for
-             * 32x32 pointers but would appear for a 41x32 one.
-             *
-             * So set pointer size to 32x32. This can be done safely
-             * because most pointers are 32x32.
-             */
-
-            int cbDstAndMask = (((width + 7) / 8) * height + 3) & ~3;
-
-            uint8_t *pu8AndMask = shape;
-            uint8_t *pu8XorMask = shape + cbDstAndMask;
-
-            if (alpha)
-            {
-                pu8AndMask = (uint8_t*)alloca(cbDstAndMask);
-
-                mousePointerGenerateANDMask(pu8AndMask, cbDstAndMask, pu8XorMask, width, height);
-            }
-
-            /* Windows guest alpha pointers are wider than 32 pixels.
-             * Try to find out the top-left border of the pointer and
-             * then copy only meaningful bits. All complete top rows
-             * and all complete left columns where (AND == 1 && XOR == 0)
-             * are skipped. Hot spot is adjusted.
-             */
-            uint32_t ySkip = 0; /* How many rows to skip at the top. */
-            uint32_t xSkip = 0; /* How many columns to skip at the left. */
-
-            findTopLeftBorder(pu8AndMask, pu8XorMask, width, height, &xSkip, &ySkip);
-
-            /* Must not skip the hot spot. */
-            xSkip = RT_MIN(xSkip, xHot);
-            ySkip = RT_MIN(ySkip, yHot);
-
-            /*
-             * Compute size and allocate memory for the pointer.
-             */
-            const uint32_t dstwidth = 32;
-            const uint32_t dstheight = 32;
-
-            VRDECOLORPOINTER *pointer = NULL;
-
-            uint32_t dstmaskwidth = (dstwidth + 7) / 8;
-
-            uint32_t rdpmaskwidth = dstmaskwidth;
-            uint32_t rdpmasklen = dstheight * rdpmaskwidth;
-
-            uint32_t rdpdatawidth = dstwidth * 3;
-            uint32_t rdpdatalen = dstheight * rdpdatawidth;
-
-            pointer = (VRDECOLORPOINTER *)RTMemTmpAlloc(sizeof(VRDECOLORPOINTER) + rdpmasklen + rdpdatalen);
-
-            if (pointer)
-            {
-                uint8_t *maskarray = (uint8_t*)pointer + sizeof(VRDECOLORPOINTER);
-                uint8_t *dataarray = maskarray + rdpmasklen;
-
-                memset(maskarray, 0xFF, rdpmasklen);
-                memset(dataarray, 0x00, rdpdatalen);
-
-                uint32_t srcmaskwidth = (width + 7) / 8;
-                uint32_t srcdatawidth = width * 4;
-
-                /* Copy AND mask. */
-                uint8_t *src = pu8AndMask + ySkip * srcmaskwidth;
-                uint8_t *dst = maskarray + (dstheight - 1) * rdpmaskwidth;
-
-                uint32_t minheight = RT_MIN(height - ySkip, dstheight);
-                uint32_t minwidth = RT_MIN(width - xSkip, dstwidth);
-
-                unsigned x, y;
-
-                for (y = 0; y < minheight; y++)
-                {
-                    for (x = 0; x < minwidth; x++)
-                    {
-                        uint32_t byteIndex = (x + xSkip) / 8;
-                        uint32_t bitIndex = (x + xSkip) % 8;
-
-                        bool bit = (src[byteIndex] & (1 << (7 - bitIndex))) != 0;
-
-                        if (!bit)
-                        {
-                            byteIndex = x / 8;
-                            bitIndex = x % 8;
-
-                            dst[byteIndex] &= ~(1 << (7 - bitIndex));
-                        }
-                    }
-
-                    src += srcmaskwidth;
-                    dst -= rdpmaskwidth;
-                }
-
-                /* Point src to XOR mask */
-                src = pu8XorMask + ySkip * srcdatawidth;
-                dst = dataarray + (dstheight - 1) * rdpdatawidth;
-
-                for (y = 0; y < minheight ; y++)
-                {
-                    for (x = 0; x < minwidth; x++)
-                    {
-                        memcpy(dst + x * 3, &src[4 * (x + xSkip)], 3);
-                    }
-
-                    src += srcdatawidth;
-                    dst -= rdpdatawidth;
-                }
-
-                pointer->u16HotX = (uint16_t)(xHot - xSkip);
-                pointer->u16HotY = (uint16_t)(yHot - ySkip);
-
-                pointer->u16Width = (uint16_t)dstwidth;
-                pointer->u16Height = (uint16_t)dstheight;
-
-                pointer->u16MaskLen = (uint16_t)rdpmasklen;
-                pointer->u16DataLen = (uint16_t)rdpdatalen;
-
-                dumpPointer((uint8_t*)pointer + sizeof(*pointer), dstwidth, dstheight, false);
-
-                m_server->MousePointerUpdate(pointer);
-
-                RTMemTmpFree(pointer);
-            }
+            MousePointerHide();
         }
     }
+    else if (width != 0 && height != 0)
+    {
+        uint8_t* shape = aShape.raw();
 
-    return S_OK;
+        dumpPointer(shape, width, height, true);
+
+        /* Try the new interface. */
+        if (MousePointer(alpha, xHot, yHot, width, height, shape) == VINF_SUCCESS)
+        {
+            return;
+        }
+
+        /* Continue with the old interface. */
+
+        /* Pointer consists of 1 bpp AND and 24 BPP XOR masks.
+         * 'shape' AND mask followed by XOR mask.
+         * XOR mask contains 32 bit (lsb)BGR0(msb) values.
+         *
+         * We convert this to RDP color format which consist of
+         * one bpp AND mask and 24 BPP (BGR) color XOR image.
+         *
+         * RDP clients expect 8 aligned width and height of
+         * pointer (preferably 32x32).
+         *
+         * They even contain bugs which do not appear for
+         * 32x32 pointers but would appear for a 41x32 one.
+         *
+         * So set pointer size to 32x32. This can be done safely
+         * because most pointers are 32x32.
+         */
+
+        int cbDstAndMask = (((width + 7) / 8) * height + 3) & ~3;
+
+        uint8_t *pu8AndMask = shape;
+        uint8_t *pu8XorMask = shape + cbDstAndMask;
+
+        if (alpha)
+        {
+            pu8AndMask = (uint8_t*)alloca(cbDstAndMask);
+
+            mousePointerGenerateANDMask(pu8AndMask, cbDstAndMask, pu8XorMask, width, height);
+        }
+
+        /* Windows guest alpha pointers are wider than 32 pixels.
+         * Try to find out the top-left border of the pointer and
+         * then copy only meaningful bits. All complete top rows
+         * and all complete left columns where (AND == 1 && XOR == 0)
+         * are skipped. Hot spot is adjusted.
+         */
+        uint32_t ySkip = 0; /* How many rows to skip at the top. */
+        uint32_t xSkip = 0; /* How many columns to skip at the left. */
+
+        findTopLeftBorder(pu8AndMask, pu8XorMask, width, height, &xSkip, &ySkip);
+
+        /* Must not skip the hot spot. */
+        xSkip = RT_MIN(xSkip, xHot);
+        ySkip = RT_MIN(ySkip, yHot);
+
+        /*
+         * Compute size and allocate memory for the pointer.
+         */
+        const uint32_t dstwidth = 32;
+        const uint32_t dstheight = 32;
+
+        VRDECOLORPOINTER *pointer = NULL;
+
+        uint32_t dstmaskwidth = (dstwidth + 7) / 8;
+
+        uint32_t rdpmaskwidth = dstmaskwidth;
+        uint32_t rdpmasklen = dstheight * rdpmaskwidth;
+
+        uint32_t rdpdatawidth = dstwidth * 3;
+        uint32_t rdpdatalen = dstheight * rdpdatawidth;
+
+        pointer = (VRDECOLORPOINTER *)RTMemTmpAlloc(sizeof(VRDECOLORPOINTER) + rdpmasklen + rdpdatalen);
+
+        if (pointer)
+        {
+            uint8_t *maskarray = (uint8_t*)pointer + sizeof(VRDECOLORPOINTER);
+            uint8_t *dataarray = maskarray + rdpmasklen;
+
+            memset(maskarray, 0xFF, rdpmasklen);
+            memset(dataarray, 0x00, rdpdatalen);
+
+            uint32_t srcmaskwidth = (width + 7) / 8;
+            uint32_t srcdatawidth = width * 4;
+
+            /* Copy AND mask. */
+            uint8_t *src = pu8AndMask + ySkip * srcmaskwidth;
+            uint8_t *dst = maskarray + (dstheight - 1) * rdpmaskwidth;
+
+            uint32_t minheight = RT_MIN(height - ySkip, dstheight);
+            uint32_t minwidth = RT_MIN(width - xSkip, dstwidth);
+
+            unsigned x, y;
+
+            for (y = 0; y < minheight; y++)
+            {
+                for (x = 0; x < minwidth; x++)
+                {
+                    uint32_t byteIndex = (x + xSkip) / 8;
+                    uint32_t bitIndex = (x + xSkip) % 8;
+
+                    bool bit = (src[byteIndex] & (1 << (7 - bitIndex))) != 0;
+
+                    if (!bit)
+                    {
+                        byteIndex = x / 8;
+                        bitIndex = x % 8;
+
+                        dst[byteIndex] &= ~(1 << (7 - bitIndex));
+                    }
+                }
+
+                src += srcmaskwidth;
+                dst -= rdpmaskwidth;
+            }
+
+            /* Point src to XOR mask */
+            src = pu8XorMask + ySkip * srcdatawidth;
+            dst = dataarray + (dstheight - 1) * rdpdatawidth;
+
+            for (y = 0; y < minheight ; y++)
+            {
+                for (x = 0; x < minwidth; x++)
+                {
+                    memcpy(dst + x * 3, &src[4 * (x + xSkip)], 3);
+                }
+
+                src += srcdatawidth;
+                dst -= rdpdatawidth;
+            }
+
+            pointer->u16HotX = (uint16_t)(xHot - xSkip);
+            pointer->u16HotY = (uint16_t)(yHot - ySkip);
+
+            pointer->u16Width = (uint16_t)dstwidth;
+            pointer->u16Height = (uint16_t)dstheight;
+
+            pointer->u16MaskLen = (uint16_t)rdpmasklen;
+            pointer->u16DataLen = (uint16_t)rdpdatalen;
+
+            dumpPointer((uint8_t*)pointer + sizeof(*pointer), dstwidth, dstheight, false);
+
+            MousePointerUpdate(pointer);
+
+            RTMemTmpFree(pointer);
+        }
+    }
 }
 
 
@@ -1775,6 +1771,11 @@ int ConsoleVRDPServer::Launch(void)
 #ifdef VBOX_WITH_USB
                 remoteUSBThreadStart();
 #endif
+
+                /*
+                 * Re-init the server current state, which is usually obtained from events.
+                 */
+                fetchCurrentState();
             }
             else
             {
@@ -1787,6 +1788,28 @@ int ConsoleVRDPServer::Launch(void)
     }
 
     return vrc;
+}
+
+void ConsoleVRDPServer::fetchCurrentState(void)
+{
+    ComPtr<IMousePointerShape> mps;
+    mConsole->i_getMouse()->COMGETTER(PointerShape)(mps.asOutParam());
+    if (!mps.isNull())
+    {
+        BOOL  visible, alpha;
+        ULONG hotX, hotY, width, height;
+        com::SafeArray <BYTE> shape;
+
+        mps->COMGETTER(Visible)(&visible);
+        mps->COMGETTER(Alpha)(&alpha);
+        mps->COMGETTER(HotX)(&hotX);
+        mps->COMGETTER(HotY)(&hotY);
+        mps->COMGETTER(Width)(&width);
+        mps->COMGETTER(Height)(&height);
+        mps->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
+
+        onMousePointerShapeChange(visible, alpha, hotX, hotY, width, height, ComSafeArrayAsInParam(shape));
+    }
 }
 
 typedef struct H3DORInstance
