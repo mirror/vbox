@@ -45,6 +45,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { r
 template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuInputActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>() { return true; }
 #ifdef VBOX_WITH_DEBUGGER_GUI
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>() { return true; }
@@ -372,6 +373,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuTyp
 #endif /* RT_OS_DARWIN */
         case UIExtraDataMetaDefs::MenuType_Machine:     strResult = "Machine"; break;
         case UIExtraDataMetaDefs::MenuType_View:        strResult = "View"; break;
+        case UIExtraDataMetaDefs::MenuType_Input:       strResult = "Input"; break;
         case UIExtraDataMetaDefs::MenuType_Devices:     strResult = "Devices"; break;
 #ifdef VBOX_WITH_DEBUGGER_GUI
         case UIExtraDataMetaDefs::MenuType_Debug:       strResult = "Debug"; break;
@@ -398,6 +400,7 @@ template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs:
 #endif /* RT_OS_DARWIN */
     keys << "Machine";     values << UIExtraDataMetaDefs::MenuType_Machine;
     keys << "View";        values << UIExtraDataMetaDefs::MenuType_View;
+    keys << "Input";       values << UIExtraDataMetaDefs::MenuType_Input;
     keys << "Devices";     values << UIExtraDataMetaDefs::MenuType_Devices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
     keys << "Debug";       values << UIExtraDataMetaDefs::MenuType_Debug;
@@ -511,14 +514,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard:          strResult = "Keyboard"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse:             strResult = "Mouse"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD:           strResult = "TypeCAD"; break;
-#ifdef Q_WS_X11
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS:          strResult = "TypeCABS"; break;
-#endif /* Q_WS_X11 */
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
@@ -548,14 +543,6 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     keys << "TakeSnapshot";      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
     keys << "TakeScreenshot";    values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot;
     keys << "InformationDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
-    keys << "Keyboard";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Keyboard;
-    keys << "KeyboardSettings";  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_KeyboardSettings;
-    keys << "Mouse";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Mouse;
-    keys << "MouseIntegration";  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_MouseIntegration;
-    keys << "TypeCAD";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCAD;
-#ifdef Q_WS_X11
-    keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TypeCABS;
-#endif /* Q_WS_X11 */
     keys << "Pause";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
     keys << "Reset";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
     keys << "SaveState";         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
@@ -627,6 +614,52 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
         return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuViewActionType, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::RuntimeMenuInputActionType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputActionType &runtimeMenuInputActionType)
+{
+    QString strResult;
+    switch (runtimeMenuInputActionType)
+    {
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard:          strResult = "Keyboard"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse:             strResult = "Mouse"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD:           strResult = "TypeCAD"; break;
+#ifdef Q_WS_X11
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:          strResult = "TypeCABS"; break;
+#endif /* Q_WS_X11 */
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_All:               strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for action type=%d", runtimeMenuInputActionType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::RuntimeMenuInputActionType <= QString: */
+template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(const QString &strRuntimeMenuInputActionType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuInputActionType> values;
+    keys << "Keyboard";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
+    keys << "KeyboardSettings";  values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
+    keys << "Mouse";             values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
+    keys << "MouseIntegration";  values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
+    keys << "TypeCAD";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
+#ifdef Q_WS_X11
+    keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
+#endif /* Q_WS_X11 */
+    keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuInputActionType, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuInputActionType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuDevicesActionType: */

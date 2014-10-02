@@ -44,14 +44,6 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Machine_S_TakeSnapshot,
     UIActionIndexRT_M_Machine_S_TakeScreenshot,
     UIActionIndexRT_M_Machine_S_ShowInformation,
-    UIActionIndexRT_M_Machine_M_Keyboard,
-    UIActionIndexRT_M_Machine_M_Keyboard_S_Settings,
-    UIActionIndexRT_M_Machine_M_Mouse,
-    UIActionIndexRT_M_Machine_M_Mouse_T_Integration,
-    UIActionIndexRT_M_Machine_S_TypeCAD,
-#ifdef Q_WS_X11
-    UIActionIndexRT_M_Machine_S_TypeCABS,
-#endif /* Q_WS_X11 */
     UIActionIndexRT_M_Machine_T_Pause,
     UIActionIndexRT_M_Machine_S_Reset,
     UIActionIndexRT_M_Machine_S_Save,
@@ -75,6 +67,17 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_M_StatusBar,
     UIActionIndexRT_M_View_M_StatusBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar_T_Visibility,
+
+    /* 'Input' menu actions: */
+    UIActionIndexRT_M_Input,
+    UIActionIndexRT_M_Input_M_Keyboard,
+    UIActionIndexRT_M_Input_M_Keyboard_S_Settings,
+    UIActionIndexRT_M_Input_M_Mouse,
+    UIActionIndexRT_M_Input_M_Mouse_T_Integration,
+    UIActionIndexRT_M_Input_S_TypeCAD,
+#ifdef Q_WS_X11
+    UIActionIndexRT_M_Input_S_TypeCABS,
+#endif /* Q_WS_X11 */
 
     /* 'Devices' menu actions: */
     UIActionIndexRT_M_Devices,
@@ -157,6 +160,11 @@ public:
     /** Defines 'View' menu @a restriction for passed @a level. */
     void setRestrictionForMenuView(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuViewActionType restriction);
 
+    /** Returns whether the action with passed @a type is allowed in the 'Input' menu. */
+    bool isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType type) const;
+    /** Defines 'Input' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuInput(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuInputActionType restriction);
+
     /** Returns whether the action with passed @a type is allowed in the 'Devices' menu. */
     bool isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type) const;
     /** Defines 'Devices' menu @a restriction for passed @a level. */
@@ -210,10 +218,6 @@ protected:
     void updateMenus();
     /** Update 'Machine' menu routine. */
     void updateMenuMachine();
-    /** Update 'Machine' : 'Keyboard' menu routine. */
-    void updateMenuMachineKeyboard();
-    /** Update 'Machine' : 'Mouse' menu routine. */
-    void updateMenuMachineMouse();
     /** Update 'View' menu routine. */
     void updateMenuView();
     /** Update 'View' : 'Popup' menu routine. */
@@ -226,6 +230,12 @@ protected:
     void updateMenuViewScreen(QMenu *pMenu);
     /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Fullscreen, Seamless). */
     void updateMenuViewMultiscreen(QMenu *pMenu);
+    /** Update 'Input' menu routine. */
+    void updateMenuInput();
+    /** Update 'Input' : 'Keyboard' menu routine. */
+    void updateMenuInputKeyboard();
+    /** Update 'Input' : 'Mouse' menu routine. */
+    void updateMenuInputMouse();
     /** Update 'Devices' menu routine. */
     void updateMenuDevices();
     /** Update 'Devices' : 'Hard Drives' menu routine. */
@@ -266,6 +276,8 @@ private:
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
     /** Holds restricted action types of the View menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuViewActionType> m_restrictedActionsMenuView;
+    /** Holds restricted action types of the Input menu. */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuInputActionType> m_restrictedActionsMenuInput;
     /** Holds restricted action types of the Devices menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
 #ifdef VBOX_WITH_DEBUGGER_GUI

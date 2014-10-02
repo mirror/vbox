@@ -538,7 +538,7 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     Q_UNUSED(fIsMouseSupportsMultiTouch);
 
     /* Update action state: */
-    QAction *pAction = actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration);
+    QAction *pAction = actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration);
     pAction->setEnabled(fIsMouseSupportsAbsolute && fIsMouseSupportsRelative && !fIsMouseHostCursorNeeded);
     if (fIsMouseHostCursorNeeded)
         pAction->setChecked(false);
@@ -850,10 +850,6 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedOrStackedActions->setExclusive(false);
 
     /* Move actions into running actions group: */
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCAD));
-#ifdef Q_WS_X11
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCABS));
-#endif
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Shutdown));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen));
@@ -861,6 +857,10 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_Scale));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCAD));
+#ifdef Q_WS_X11
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS));
+#endif /* Q_WS_X11 */
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Save));
@@ -868,10 +868,6 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
@@ -879,6 +875,10 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices));
@@ -913,16 +913,6 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTakeScreenshot()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_M_Keyboard_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltShowKeyboardSettings()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleMouseIntegration(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCAD), SIGNAL(triggered()),
-            this, SLOT(sltTypeCAD()));
-#ifdef Q_WS_X11
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TypeCABS), SIGNAL(triggered()),
-            this, SLOT(sltTypeCABS()));
-#endif
     connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
             this, SLOT(sltPause(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
@@ -946,6 +936,18 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
             this, SLOT(sltAdjustWindow()));
+
+    /* 'Input' actions connections: */
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltShowKeyboardSettings()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleMouseIntegration(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCAD), SIGNAL(triggered()),
+            this, SLOT(sltTypeCAD()));
+#ifdef Q_WS_X11
+    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS), SIGNAL(triggered()),
+            this, SLOT(sltTypeCABS()));
+#endif /* Q_WS_X11 */
 
     /* 'Devices' actions connections: */
     connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));
