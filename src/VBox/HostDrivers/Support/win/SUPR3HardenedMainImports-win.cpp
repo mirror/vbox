@@ -68,6 +68,9 @@ typedef struct SUPHNTIMPFUNC
     const char         *pszName;
     /** Where to store the function address (think __imp_ApiName). */
     PFNRT              *ppfnImport;
+    /** Pointer to an early dummy function for imports that aren't available
+     * during early process initialization. */
+    PFNRT               pfnEarlyDummy;
 } SUPHNTIMPFUNC;
 /** Pointer to an import table entry.  */
 typedef SUPHNTIMPFUNC const *PCSUPHNTIMPFUNC;
@@ -150,13 +153,16 @@ typedef SUPHNTIMPDLL *PSUPHNTIMPDLL;
 /*
  * Declare assembly symbols.
  */
-#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
     extern PFNRT    RT_CONCAT(g_pfn, a_Name);
 #define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
-    SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+    SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
     extern uint32_t RT_CONCAT(g_uApiNo, a_Name); \
     extern FNRT     RT_CONCAT(a_Name, _SyscallType1); \
     extern FNRT     RT_CONCAT(a_Name, _SyscallType2);
+#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+    extern PFNRT    RT_CONCAT(g_pfn, a_Name); \
+    extern FNRT     RT_CONCAT(a_Name, _Early);
 
 RT_C_DECLS_BEGIN
 #include "import-template-ntdll.h"
@@ -167,9 +173,11 @@ RT_C_DECLS_END
  * Import functions.
  */
 #undef SUPHARNT_IMPORT_SYSCALL
+#undef SUPHARNT_IMPORT_STDCALL_EARLY
 #undef SUPHARNT_IMPORT_STDCALL
-#define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) { #a_Name, &RT_CONCAT(g_pfn, a_Name) },
-#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) { #a_Name, &RT_CONCAT(g_pfn, a_Name) },
+#define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)          { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL },
+#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)    { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL },
+#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)          { #a_Name, &RT_CONCAT(g_pfn, a_Name), RT_CONCAT(a_Name,_Early) },
 static const SUPHNTIMPFUNC g_aSupNtImpNtDllFunctions[] =
 {
 #include "import-template-ntdll.h"
@@ -187,6 +195,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
  */
 #undef SUPHARNT_IMPORT_SYSCALL
 #undef SUPHARNT_IMPORT_STDCALL
+#undef SUPHARNT_IMPORT_STDCALL_EARLY
 #ifdef RT_ARCH_AMD64
 # define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { NULL, NULL },
@@ -198,6 +207,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 # define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name,_SyscallType1), &RT_CONCAT(a_Name, _SyscallType2), a_cbParamsX86 },
 #endif
+#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
 {
 #include "import-template-ntdll.h"

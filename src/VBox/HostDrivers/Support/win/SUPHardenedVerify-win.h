@@ -213,9 +213,6 @@ extern uint32_t         g_uNtVerCombined;
 #  include <iprt/mem.h>
 #  include <iprt/string.h>
 
-#  define suplibHardenedAllocZ       RTMemAllocZ
-#  define suplibHardenedReAlloc      RTMemRealloc
-#  define suplibHardenedFree         RTMemFree
 #  define suplibHardenedMemComp      memcmp
 #  define suplibHardenedMemCopy      memcpy
 #  define suplibHardenedMemSet       memset
@@ -226,7 +223,7 @@ extern uint32_t         g_uNtVerCombined;
 #  define suplibHardenedStrNCmp      strncmp
 # else   /* IN_SUP_HARDENED_R3 */
 #  include <iprt/mem.h>
-#if 0
+#  if 0
 #  define memcmp                     suplibHardenedMemComp
 #  define memcpy                     suplibHardenedMemCopy
 #  define memset                     suplibHardenedMemSet
@@ -235,10 +232,7 @@ extern uint32_t         g_uNtVerCombined;
 #  define strcat                     suplibHardenedStrCat
 #  define strcmp                     suplibHardenedStrCmp
 #  define strncmp                    suplibHardenedStrNCmp
-#endif
-DECLHIDDEN(void *)  suplibHardenedAllocZ(size_t cb);
-DECLHIDDEN(void *)  suplibHardenedReAlloc(void *pvOld, size_t cbNew);
-DECLHIDDEN(void)    suplibHardenedFree(void *pv);
+#  endif
 # endif  /* IN_SUP_HARDENED_R3 */
 
 #endif /* SUP_CERTIFICATES_ONLY */

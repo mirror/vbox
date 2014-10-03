@@ -227,7 +227,7 @@ DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit)
 {
     for (;;)
 #ifdef RT_OS_WINDOWS
-        ExitProcess(rcExit);
+        RtlExitProcess(rcExit);
 #else
         _Exit(rcExit);
 #endif
@@ -1477,18 +1477,18 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     if (!hMod)
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_MODULE_NOT_FOUND,
                               "LoadLibrary \"%s\" failed (rc=%d)",
-                              szPath, GetLastError());
+                              szPath, RtlGetLastWin32Error());
     PFNRTR3INITEX pfnRTInitEx = (PFNRTR3INITEX)GetProcAddress(hMod, SUP_HARDENED_SYM("RTR3InitEx"));
     if (!pfnRTInitEx)
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
                               "Entrypoint \"RTR3InitEx\" not found in \"%s\" (rc=%d)",
-                              szPath, GetLastError());
+                              szPath, RtlGetLastWin32Error());
 
     PFNSUPR3PREINIT pfnSUPPreInit = (PFNSUPR3PREINIT)GetProcAddress(hMod, SUP_HARDENED_SYM("supR3PreInit"));
     if (!pfnSUPPreInit)
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
                               "Entrypoint \"supR3PreInit\" not found in \"%s\" (rc=%d)",
-                              szPath, GetLastError());
+                              szPath, RtlGetLastWin32Error());
 
 #else
     /* the dlopen crowd */
@@ -1619,11 +1619,11 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
     HMODULE hMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, false /*fSystem32Only*/);
     if (!hMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: LoadLibrary \"%s\" failed, rc=%d\n",
-                            szPath, GetLastError());
+                            szPath, RtlGetLastWin32Error());
     FARPROC pfn = GetProcAddress(hMod, SUP_HARDENED_SYM("TrustedMain"));
     if (!pfn)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"TrustedMain\" not found in \"%s\" (rc=%d)\n",
-                            szPath, GetLastError());
+                            szPath, RtlGetLastWin32Error());
     return (PFNSUPTRUSTEDMAIN)pfn;
 
 #else

@@ -410,7 +410,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal)
             }
             else
             {
-                int err = GetLastError();
+                int err = RtlGetLastWin32Error();
                 rc = supR3HardenedError(VERR_PATH_NOT_FOUND, fFatal,
                                         "supR3HardenedVerifyDir: Failed to open \"%s\": err=%d\n",
                                         szPath, err);
@@ -524,7 +524,7 @@ static int supR3HardenedVerifyFileOpen(PCSUPINSTFILE pFile, bool fFatal, intptr_
             }
             else
             {
-                int err = GetLastError();
+                int err = RtlGetLastWin32Error();
                 if (   !pFile->fOptional
                     || (    err != ERROR_FILE_NOT_FOUND
                         &&  (err != ERROR_PATH_NOT_FOUND || pFile->enmDir != kSupID_Testcase) ) )
@@ -602,7 +602,7 @@ static int supR3HardenedVerifyFileSignature(PCSUPINSTFILE pFile, PSUPVERIFIEDFIL
         if (fLeaveFileOpen && RT_SUCCESS(rc))
             pVerified->hFile = hFileOpened;
         else
-            CloseHandle((HANDLE)hFileOpened);
+            NtClose((HANDLE)hFileOpened);
     }
 
     return rc;
@@ -676,7 +676,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
                 pVerified->fValidated = true;
                 if (!fLeaveFileOpen)
                 {
-                    CloseHandle((HANDLE)pVerified->hFile);
+                    NtClose((HANDLE)pVerified->hFile);
                     pVerified->hFile = -1;
                 }
             }
@@ -1739,11 +1739,11 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
         rc = supHardenedWinVerifyImageByHandleNoName(hVerify, fFlags, pErrInfo);
 #  endif
 # endif
-        CloseHandle(hVerify);
+        NtClose(hVerify);
     }
     else if (RT_SUCCESS(rc))
-        rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
-                           "Error %u trying to open (or duplicate handle for) '%s'", GetLastError(), pszFilename);
+        rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(RtlGetLastWin32Error()),
+                           "Error %u trying to open (or duplicate handle for) '%s'", RtlGetLastWin32Error(), pszFilename);
     if (RT_FAILURE(rc))
         return rc;
 #endif

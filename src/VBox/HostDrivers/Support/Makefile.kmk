@@ -398,6 +398,7 @@ SUPR3HardenedMain.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 # VBoxSupLib - Windows DLL for catching thread creation and termination.
 #
 VBoxSupLib_TEMPLATE = $(if-expr "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING),VBOXR3HARDENEDLIB,VBOXR3)
+VBoxSupLib_SDKS.win = VBOX_NTDLL
 VBoxSupLib_LDFLAGS.win.amd64 = -Entry:DllMainEntrypoint
 VBoxSupLib_LDFLAGS.win.x86   = -Entry:DllMainEntrypoint
 VBoxSupLib_DEFS = \
