@@ -71,6 +71,9 @@ typedef struct SUPHNTIMPFUNC
     /** Pointer to an early dummy function for imports that aren't available
      * during early process initialization. */
     PFNRT               pfnEarlyDummy;
+    /** Indicates whether this is an optional import and failure to locate it
+     * should set it to NULL instead of freaking out. */
+    bool                fOptional;
 } SUPHNTIMPFUNC;
 /** Pointer to an import table entry.  */
 typedef SUPHNTIMPFUNC const *PCSUPHNTIMPFUNC;
@@ -155,6 +158,7 @@ typedef SUPHNTIMPDLL *PSUPHNTIMPDLL;
  */
 #define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
     extern PFNRT    RT_CONCAT(g_pfn, a_Name);
+#define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86)  SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)
 #define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
     extern uint32_t RT_CONCAT(g_uApiNo, a_Name); \
@@ -174,10 +178,16 @@ RT_C_DECLS_END
  */
 #undef SUPHARNT_IMPORT_SYSCALL
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
+#undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
 #undef SUPHARNT_IMPORT_STDCALL
-#define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)          { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL },
-#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)    { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL },
-#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)          { #a_Name, &RT_CONCAT(g_pfn, a_Name), RT_CONCAT(a_Name,_Early) },
+#define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
+    { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, false },
+#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) \
+    { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, false },
+#define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86) \
+    { #a_Name, &RT_CONCAT(g_pfn, a_Name), NULL, true },
+#define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
+    { #a_Name, &RT_CONCAT(g_pfn, a_Name), RT_CONCAT(a_Name,_Early), false },
 static const SUPHNTIMPFUNC g_aSupNtImpNtDllFunctions[] =
 {
 #include "import-template-ntdll.h"
@@ -196,6 +206,7 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 #undef SUPHARNT_IMPORT_SYSCALL
 #undef SUPHARNT_IMPORT_STDCALL
 #undef SUPHARNT_IMPORT_STDCALL_EARLY
+#undef SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL
 #ifdef RT_ARCH_AMD64
 # define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) \
     { NULL, NULL },
@@ -207,7 +218,8 @@ static const SUPHNTIMPFUNC g_aSupNtImpKernel32Functions[] =
 # define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) \
     { &RT_CONCAT(g_uApiNo, a_Name), &RT_CONCAT(a_Name,_SyscallType1), &RT_CONCAT(a_Name, _SyscallType2), a_cbParamsX86 },
 #endif
-#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
+#define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86)          SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
+#define SUPHARNT_IMPORT_STDCALL_EARLY_OPTIONAL(a_Name, a_cbParamsX86) SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)
 static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
 {
 #include "import-template-ntdll.h"
@@ -398,8 +410,10 @@ static const char *supR3HardenedResolveImport(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUN
         }
     }
 
-    SUPHNTIMP_ERROR(15, "supR3HardenedResolveImport", kSupInitOp_Misc, VERR_SYMBOL_NOT_FOUND,
-                    "%ls: Failed to resolve '%s'.", pDll->pwszName, pImport->pszName);
+    if (!pImport->fOptional)
+        SUPHNTIMP_ERROR(15, "supR3HardenedResolveImport", kSupInitOp_Misc, VERR_SYMBOL_NOT_FOUND,
+                        "%ls: Failed to resolve '%s'.", pDll->pwszName, pImport->pszName);
+    *pImport->ppfnImport = NULL;
     return NULL;
 }
 

@@ -1925,8 +1925,8 @@ NTSYSAPI NTSTATUS NTAPI CsrClientCallServer(PVOID, PVOID, ULONG, SIZE_T);
 #endif
 NTSYSAPI VOID NTAPI     LdrInitializeThunk(PVOID, PVOID, PVOID);
 NTSYSAPI NTSTATUS NTAPI RtlExpandEnvironmentStrings_U(PVOID, PUNICODE_STRING, PUNICODE_STRING, PULONG);
-NTSYSAPI VOID NTAPI     RtlExitProcess(NTSTATUS rcExitCode);
-NTSYSAPI VOID NTAPI     RtlExitThread(NTSTATUS rcExitCode);
+NTSYSAPI VOID NTAPI     RtlExitUserProcess(NTSTATUS rcExitCode); /**< Vista and later. */
+NTSYSAPI VOID NTAPI     RtlExitUserThread(NTSTATUS rcExitCode);
 NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags,
                                                                  IN PCUNICODE_STRING pOrgName,
                                                                  IN PUNICODE_STRING pDefaultSuffix,
@@ -1936,7 +1936,78 @@ NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags
                                                                  IN PULONG pfNewFlags OPTIONAL,
                                                                  IN PSIZE_T pcbFilename OPTIONAL,
                                                                  IN PSIZE_T pcbNeeded OPTIONAL);
+
 # ifdef IPRT_NT_USE_WINTERNL
+typedef NTSTATUS NTAPI RTL_HEAP_COMMIT_ROUTINE(PVOID, PVOID *, PSIZE_T);
+typedef RTL_HEAP_COMMIT_ROUTINE *PRTL_HEAP_COMMIT_ROUTINE;
+typedef struct _RTL_HEAP_PARAMETERS
+{
+    ULONG   Length;
+    SIZE_T  SegmentReserve;
+    SIZE_T  SegmentCommit;
+    SIZE_T  DeCommitFreeBlockThreshold;
+    SIZE_T  DeCommitTotalFreeThreshold;
+    SIZE_T  MaximumAllocationSize;
+    SIZE_T  VirtualMemoryThreshold;
+    SIZE_T  InitialCommit;
+    SIZE_T  InitialReserve;
+    PRTL_HEAP_COMMIT_ROUTINE  CommitRoutine;
+    SIZE_T  Reserved[2];
+} RTL_HEAP_PARAMETERS;
+typedef RTL_HEAP_PARAMETERS *PRTL_HEAP_PARAMETERS;
+NTSYSAPI PVOID NTAPI RtlCreateHeap(ULONG fFlags, PVOID pvHeapBase, SIZE_T cbReserve, SIZE_T cbCommit, PVOID pvLock,
+                                   PRTL_HEAP_PARAMETERS pParameters);
+/** @name Heap flags (for RtlCreateHeap).
+ * @{ */
+/*#  define HEAP_NO_SERIALIZE             UINT32_C(0x00000001)
+#  define HEAP_GROWABLE                 UINT32_C(0x00000002)
+#  define HEAP_GENERATE_EXCEPTIONS      UINT32_C(0x00000004)
+#  define HEAP_ZERO_MEMORY              UINT32_C(0x00000008)
+#  define HEAP_REALLOC_IN_PLACE_ONLY    UINT32_C(0x00000010)
+#  define HEAP_TAIL_CHECKING_ENABLED    UINT32_C(0x00000020)
+#  define HEAP_FREE_CHECKING_ENABLED    UINT32_C(0x00000040)
+#  define HEAP_DISABLE_COALESCE_ON_FREE UINT32_C(0x00000080)*/
+#  define HEAP_SETTABLE_USER_VALUE      UINT32_C(0x00000100)
+#  define HEAP_SETTABLE_USER_FLAG1      UINT32_C(0x00000200)
+#  define HEAP_SETTABLE_USER_FLAG2      UINT32_C(0x00000400)
+#  define HEAP_SETTABLE_USER_FLAG3      UINT32_C(0x00000800)
+#  define HEAP_SETTABLE_USER_FLAGS      UINT32_C(0x00000e00)
+#  define HEAP_CLASS_0                  UINT32_C(0x00000000)
+#  define HEAP_CLASS_1                  UINT32_C(0x00001000)
+#  define HEAP_CLASS_2                  UINT32_C(0x00002000)
+#  define HEAP_CLASS_3                  UINT32_C(0x00003000)
+#  define HEAP_CLASS_4                  UINT32_C(0x00004000)
+#  define HEAP_CLASS_5                  UINT32_C(0x00005000)
+#  define HEAP_CLASS_6                  UINT32_C(0x00006000)
+#  define HEAP_CLASS_7                  UINT32_C(0x00007000)
+#  define HEAP_CLASS_8                  UINT32_C(0x00008000)
+#  define HEAP_CLASS_MASK               UINT32_C(0x0000f000)
+# endif
+# define HEAP_CLASS_PROCESS             HEAP_CLASS_0
+# define HEAP_CLASS_PRIVATE             HEAP_CLASS_1
+# define HEAP_CLASS_KERNEL              HEAP_CLASS_2
+# define HEAP_CLASS_GDI                 HEAP_CLASS_3
+# define HEAP_CLASS_USER                HEAP_CLASS_4
+# define HEAP_CLASS_CONSOLE             HEAP_CLASS_5
+# define HEAP_CLASS_USER_DESKTOP        HEAP_CLASS_6
+# define HEAP_CLASS_CSRSS_SHARED        HEAP_CLASS_7
+# define HEAP_CLASS_CSRSS_PORT          HEAP_CLASS_8
+# ifdef IPRT_NT_USE_WINTERNL
+/*#  define HEAP_CREATE_ALIGN_16          UINT32_C(0x00010000)
+#  define HEAP_CREATE_ENABLE_TRACING    UINT32_C(0x00020000)
+#  define HEAP_CREATE_ENABLE_EXECUTE    UINT32_C(0x00040000)*/
+#  define HEAP_CREATE_VALID_MASK        UINT32_C(0x0007f0ff)
+# endif /* IPRT_NT_USE_WINTERNL */
+/** @} */
+# ifdef IPRT_NT_USE_WINTERNL
+/** @name Heap tagging constants
+ * @{ */
+#  define HEAP_GLOBAL_TAG               UINT32_C(0x00000800)
+/*#  define HEAP_MAXIMUM_TAG              UINT32_C(0x00000fff)
+#  define HEAP_PSEUDO_TAG_FLAG          UINT32_C(0x00008000)
+#  define HEAP_TAG_SHIFT                18 */
+#  define HEAP_TAG_MASK                 (HEAP_MAXIMUM_TAG << HEAP_TAG_SHIFT)
+/** @}  */
 NTSYSAPI PVOID NTAPI    RtlAllocateHeap(HANDLE hHeap, ULONG fFlags, SIZE_T cb);
 NTSYSAPI PVOID NTAPI    RtlReAllocateHeap(HANDLE hHeap, ULONG fFlags, PVOID pvOld, SIZE_T cbNew);
 NTSYSAPI BOOLEAN NTAPI  RtlFreeHeap(HANDLE hHeap, ULONG fFlags, PVOID pvMem);
