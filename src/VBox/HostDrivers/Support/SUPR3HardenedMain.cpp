@@ -226,11 +226,17 @@ static int suplibHardenedStrCopyEx(char *pszDst, size_t cbDst, ...)
 DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit)
 {
     for (;;)
+    {
 #ifdef RT_OS_WINDOWS
-        RtlExitProcess(rcExit);
+        if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+            ExitProcess(rcExit);
+        if (RtlExitUserProcess != NULL)
+            RtlExitUserProcess(rcExit);
+        NtTerminateProcess(NtCurrentProcess(), rcExit);
 #else
         _Exit(rcExit);
 #endif
+    }
 }
 
 

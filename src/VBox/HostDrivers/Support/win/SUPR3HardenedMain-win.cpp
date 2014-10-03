@@ -3915,7 +3915,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
      * Ditch the loader cache so we don't sit on too much memory while waiting.
      */
     supR3HardenedWinFlushLoaderCache();
-    RtlCompactHeap(GetProcessHeap(), 0 /*dwFlags*/);
+    supR3HardenedWinCompactHeaps();
 
     /*
      * Enable thread creation at this point so Ctrl-C and Ctrl-Break can be processed.
@@ -5050,12 +5050,14 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
 
     g_cSuplibHardenedWindowsMainCalls++;
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EP_CALLED;
 
     /*
      * Initialize the NTDLL API wrappers. This aims at bypassing patched NTDLL
      * in all the processes leading up the VM process.
      */
     supR3HardenedWinInitImports();
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED;
 
     /*
      * After having resolved imports we patch the LdrInitializeThunk code so
@@ -5069,6 +5071,7 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      * SUPHardenedVerfiyImage-win.cpp.)
      */
     supR3HardenedWinInitVersion();
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_VERSION_INITIALIZED;
 
     /*
      * Convert the arguments to UTF-8 and open the log file if specified.
