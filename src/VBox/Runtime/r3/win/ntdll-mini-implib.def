@@ -98,8 +98,8 @@ EXPORTS
     RtlDestroyProcessParameters           ;;= _RtlDestroyProcessParameters@4
     RtlDosApplyFileIsolationRedirection_Ustr ;;= _RtlDosApplyFileIsolationRedirection_Ustr@36
     RtlEqualSid                           ;;= _RtlEqualSid@8
-    RtlExitUserProcess                    ;;= _RtlExitProcess@4
-    RtlExitUserThread                     ;;= _RtlExitThread@4
+    RtlExitUserProcess                    ;;= _RtlExitUserProcess@4
+    RtlExitUserThread                     ;;= _RtlExitUserThread@4
     RtlExpandEnvironmentStrings_U         ;;= _RtlExpandEnvironmentStrings_U@16
     RtlFreeHeap                           ;;= _RtlFreeHeap@12
     RtlFreeUnicodeString                  ;;= _RtlFreeUnicodeString@4
