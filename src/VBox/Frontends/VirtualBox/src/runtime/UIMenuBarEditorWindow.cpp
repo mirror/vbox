@@ -86,6 +86,9 @@ private:
     /** Prepare copied sub-menu routine. */
     QMenu* prepareCopiedSubMenu(QMenu *pMenu, const UIAction *pAction);
 #endif
+    /** Prepare named action routine. */
+    QAction* prepareNamedAction(QMenu *pMenu, const QString &strName,
+                                int iExtraDataID, const QString &strExtraDataID);
     /** Prepare copied action routine. */
     QAction* prepareCopiedAction(QMenu *pMenu, const UIAction *pAction);
 
@@ -474,6 +477,24 @@ QMenu* UIMenuBarEditorWidget::prepareCopiedSubMenu(QMenu *pMenu, const UIAction 
 }
 #endif
 
+QAction* UIMenuBarEditorWidget::prepareNamedAction(QMenu *pMenu, const QString &strName,
+                                                   int iExtraDataID, const QString &strExtraDataID)
+{
+    /* Create copied action: */
+    QAction *pCopiedAction = pMenu->addAction(strName);
+    AssertPtrReturn(pCopiedAction, 0);
+    {
+        /* Configure copied action: */
+        pCopiedAction->setCheckable(true);
+        pCopiedAction->setProperty("class", pMenu->property("class"));
+        pCopiedAction->setProperty("type", iExtraDataID);
+        connect(pCopiedAction, SIGNAL(triggered(bool)), this, SLOT(sltHandleMenuBarMenuClick()));
+        m_actions.insert(strExtraDataID, pCopiedAction);
+    }
+    /* Return copied action: */
+    return pCopiedAction;
+}
+
 QAction* UIMenuBarEditorWidget::prepareCopiedAction(QMenu *pMenu, const UIAction *pAction)
 {
     /* Create copied action: */
@@ -539,8 +560,12 @@ void UIMenuBarEditorWidget::prepareMenuView()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_StatusBar));
         pMenu->addSeparator();
-//        prepareCopiedAction(pMenu, Resize);
-//        prepareCopiedAction(pMenu, MultiScreen);
+        prepareNamedAction(pMenu, tr("Virtual Screen Resize"),
+                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize,
+                           gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
+        prepareNamedAction(pMenu, tr("Virtual Screen Mapping"),
+                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen,
+                           gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen));
     }
 }
 
