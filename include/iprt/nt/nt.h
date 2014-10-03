@@ -1104,7 +1104,10 @@ typedef PPEB_COMMON PPEB;
 typedef TEB_COMMON  TEB;
 typedef PTEB_COMMON PTEB;
 
-#define NtCurrentPeb()  (((PTEB)NtCurrentTeb())->ProcessEnvironmentBlock)
+#define RTNtCurrentTeb()        ((PTEB)NtCurrentTeb())
+#define RTNtCurrentPeb()        (RTNtCurrentTeb()->ProcessEnvironmentBlock)
+#define NtCurrentPeb()          RTNtCurrentPeb()
+#define RTNtCurrentThreadId()   ((uint32_t)(uintptr_t)RTNtCurrentTeb()->ClientId.UniqueThread)
 
 /** @} */
 
@@ -1922,6 +1925,8 @@ NTSYSAPI NTSTATUS NTAPI CsrClientCallServer(PVOID, PVOID, ULONG, SIZE_T);
 #endif
 NTSYSAPI VOID NTAPI     LdrInitializeThunk(PVOID, PVOID, PVOID);
 NTSYSAPI NTSTATUS NTAPI RtlExpandEnvironmentStrings_U(PVOID, PUNICODE_STRING, PUNICODE_STRING, PULONG);
+NTSYSAPI VOID NTAPI     RtlExitProcess(NTSTATUS rcExitCode);
+NTSYSAPI VOID NTAPI     RtlExitThread(NTSTATUS rcExitCode);
 NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags,
                                                                  IN PCUNICODE_STRING pOrgName,
                                                                  IN PUNICODE_STRING pDefaultSuffix,
@@ -1931,7 +1936,19 @@ NTSYSAPI NTSTATUS NTAPI RtlDosApplyFileIsolationRedirection_Ustr(IN ULONG fFlags
                                                                  IN PULONG pfNewFlags OPTIONAL,
                                                                  IN PSIZE_T pcbFilename OPTIONAL,
                                                                  IN PSIZE_T pcbNeeded OPTIONAL);
+# ifdef IPRT_NT_USE_WINTERNL
+NTSYSAPI PVOID NTAPI    RtlAllocateHeap(HANDLE hHeap, ULONG fFlags, SIZE_T cb);
+NTSYSAPI PVOID NTAPI    RtlReAllocateHeap(HANDLE hHeap, ULONG fFlags, PVOID pvOld, SIZE_T cbNew);
+NTSYSAPI BOOLEAN NTAPI  RtlFreeHeap(HANDLE hHeap, ULONG fFlags, PVOID pvMem);
+# endif /* IPRT_NT_USE_WINTERNL */
+NTSYSAPI SIZE_T NTAPI   RtlCompactHeap(HANDLE hHeap, ULONG fFlags);
 NTSYSAPI VOID NTAPI     RtlFreeUnicodeString(PUNICODE_STRING);
+NTSYSAPI SIZE_T NTAPI   RtlSizeHeap(HANDLE hHeap, ULONG fFlags, PVOID pvMem);
+NTSYSAPI NTSTATUS NTAPI RtlGetLastNtStatus(VOID);
+NTSYSAPI ULONG NTAPI    RtlGetLastWin32Error(VOID);
+NTSYSAPI VOID NTAPI     RtlSetLastWin32Error(ULONG uError);
+NTSYSAPI VOID NTAPI     RtlSetLastWin32ErrorAndNtStatusFromNtStatus(NTSTATUS rcNt);
+NTSYSAPI VOID NTAPI     RtlRestoreLastWin32Error(ULONG uError);
 
 RT_C_DECLS_END
 /** @} */

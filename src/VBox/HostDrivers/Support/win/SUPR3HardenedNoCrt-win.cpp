@@ -116,13 +116,19 @@ RTDECL(void) RTMemTmpFree(void *pv) RT_NO_THROW
 
 RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return suplibHardenedAllocZ(cb);
+    void *pv = RtlAllocateHeap(GetProcessHeap(), 0 /*fFlags*/, cb);
+    if (!pv)
+        supR3HardenedFatal("RtlAllocateHeap failed to allocate %zu bytes.\n", cb);
+    return pv;
 }
 
 
 RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
-    return suplibHardenedAllocZ(cb);
+    void *pv = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, cb);
+    if (!pv)
+        supR3HardenedFatal("RtlAllocateHeap failed to allocate %zu bytes.\n", cb);
+    return pv;
 }
 
 
@@ -150,13 +156,20 @@ RTDECL(void *) RTMemAllocZVarTag(size_t cbUnaligned, const char *pszTag) RT_NO_T
 
 RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
 {
-    return suplibHardenedReAlloc(pvOld, cbNew);
+    if (!pvOld)
+        return RTMemAllocZTag(cbNew, pszTag);
+
+    void *pv = RtlReAllocateHeap(GetProcessHeap(), 0 /*dwFlags*/, pvOld, cbNew);
+    if (!pv)
+        supR3HardenedFatal("RtlReAllocateHeap failed to allocate %zu bytes.\n", cbNew);
+    return pv;
 }
 
 
 RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
-    suplibHardenedFree(pv);
+    if (pv)
+        RtlFreeHeap(GetProcessHeap(), 0 /* dwFlags*/, pv);
 }
 
 

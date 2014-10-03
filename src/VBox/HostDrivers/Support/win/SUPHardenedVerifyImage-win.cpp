@@ -1910,13 +1910,13 @@ DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName)
     if (   hMod == NULL
         && fFlags
         && g_uNtVerCombined < SUP_MAKE_NT_VER_SIMPLE(6, 2)
-        && GetLastError() == ERROR_INVALID_PARAMETER)
+        && RtlGetLastWin32Error() == ERROR_INVALID_PARAMETER)
     {
         fFlags = 0;
         hMod = LoadLibraryExW(wszName, NULL, fFlags);
     }
     if (hMod == NULL)
-        supR3HardenedFatal("Error loading '%s': %u [%ls]", pszName, GetLastError(), wszName);
+        supR3HardenedFatal("Error loading '%s': %u [%ls]", pszName, RtlGetLastWin32Error(), wszName);
     return hMod;
 }
 
@@ -1938,7 +1938,7 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(void)
 
 #define RESOLVE_CRYPT32_API(a_Name, a_pfnType) \
     a_pfnType pfn##a_Name = (a_pfnType)GetProcAddress(hCrypt32, #a_Name); \
-    if (pfn##a_Name == NULL) supR3HardenedFatal("Error locating '" #a_Name "' in 'crypt32.dll': %u", GetLastError())
+    if (pfn##a_Name == NULL) supR3HardenedFatal("Error locating '" #a_Name "' in 'crypt32.dll': %u", RtlGetLastWin32Error())
     RESOLVE_CRYPT32_API(CertOpenStore, PFNCERTOPENSTORE);
     RESOLVE_CRYPT32_API(CertCloseStore, PFNCERTCLOSESTORE);
     RESOLVE_CRYPT32_API(CertEnumCertificatesInStore, PFNCERTENUMCERTIFICATESINSTORE);
@@ -2025,7 +2025,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     suplibHardenedStrCat(szPath, "/VBoxSupLib.DLL");
     HMODULE hSupLibMod = (HMODULE)supR3HardenedWinLoadLibrary(szPath, true /*fSystem32Only*/);
     if (hSupLibMod == NULL)
-        supR3HardenedFatal("Error loading '%s': %u", szPath, GetLastError());
+        supR3HardenedFatal("Error loading '%s': %u", szPath, RtlGetLastWin32Error());
 # endif
 
     /*
@@ -2035,7 +2035,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     if (iTls != TLS_OUT_OF_INDEXES)
         g_iTlsWinVerifyTrustRecursion = iTls;
     else
-        supR3HardenedError(GetLastError(), false /*fFatal*/, "TlsAlloc failed");
+        supR3HardenedError(RtlGetLastWin32Error(), false /*fFatal*/, "TlsAlloc failed");
 
     /*
      * Resolve it.
@@ -2045,12 +2045,12 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     do { \
         g_pfn##a_Name = (a_pfnType)GetProcAddress(hWintrust, #a_Name); \
         if (g_pfn##a_Name == NULL && (a_uMinWinVer) < g_uNtVerCombined) \
-            supR3HardenedFatal("Error locating '" #a_Name "' in 'Wintrust.dll': %u", GetLastError()); \
+            supR3HardenedFatal("Error locating '" #a_Name "' in 'Wintrust.dll': %u", RtlGetLastWin32Error()); \
     } while (0)
 
     PFNWINVERIFYTRUST pfnWinVerifyTrust = (PFNWINVERIFYTRUST)GetProcAddress(hWintrust, "WinVerifyTrust");
     if (!pfnWinVerifyTrust)
-        supR3HardenedFatal("Error locating 'WinVerifyTrust' in 'Wintrust.dll': %u", GetLastError());
+        supR3HardenedFatal("Error locating 'WinVerifyTrust' in 'Wintrust.dll': %u", RtlGetLastWin32Error());
 
     RESOLVE_CRYPT_API(CryptCATAdminAcquireContext,           PFNCRYPTCATADMINACQUIRECONTEXT,          0);
     RESOLVE_CRYPT_API(CryptCATAdminCalcHashFromFileHandle,   PFNCRYPTCATADMINCALCHASHFROMFILEHANDLE,  0);
@@ -2373,14 +2373,14 @@ l_fresh_context:
                             {
                                 if (!fFreshContext)
                                 {
-                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: Retrying with fresh context (CryptCATAdminEnumCatalogFromHash -> %u; iCat=%#x)\n", GetLastError(), iCat));
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: Retrying with fresh context (CryptCATAdminEnumCatalogFromHash -> %u; iCat=%#x)\n", RtlGetLastWin32Error(), iCat));
                                     if (hCatInfoPrev != NULL)
                                         g_pfnCryptCATAdminReleaseCatalogContext(hCatAdmin, hCatInfoPrev, 0 /*dwFlags*/);
                                     g_pfnCryptCATAdminReleaseContext(hCatAdmin, 0 /*dwFlags*/);
                                     goto l_fresh_context;
                                 }
                                 if (iCat == 0)
-                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", GetLastError()));
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", RtlGetLastWin32Error()));
                                 break;
                             }
                             Assert(hCatInfoPrev == NULL);
@@ -2444,9 +2444,9 @@ l_fresh_context:
                             }
                             else
                             {
-                                rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
+                                rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(RtlGetLastWin32Error()),
                                                    "CryptCATCatalogInfoFromContext failed: %d [file=%s]",
-                                                   GetLastError(), pwszName);
+                                                   RtlGetLastWin32Error(), pwszName);
                                 SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATCatalogInfoFromContext failed\n"));
                             }
                             iCat++;
@@ -2460,16 +2460,16 @@ l_fresh_context:
                         rc = RTErrInfoSetF(pErrInfo, rc2, "RTUtf16PrintHexBytes failed: %Rrc", rc);
                 }
                 else
-                    rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
-                                       "CryptCATAdminCalcHashFromFileHandle[2] failed: %d [file=%s]", GetLastError(), pwszName);
+                    rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(RtlGetLastWin32Error()),
+                                       "CryptCATAdminCalcHashFromFileHandle[2] failed: %d [file=%s]", RtlGetLastWin32Error(), pwszName);
 
                 if (!ASMAtomicCmpXchgPtr(&s_aHashes[i].hCachedCatAdmin, hCatAdmin, NULL))
                     if (!g_pfnCryptCATAdminReleaseContext(hCatAdmin, 0 /*dwFlags*/))
                         AssertFailed();
             }
             else
-                rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(GetLastError()),
-                                   "CryptCATAdminAcquireContext[2] failed: %d [file=%s]", GetLastError(), pwszName);
+                rc = RTErrInfoSetF(pErrInfo, RTErrConvertFromWin32(RtlGetLastWin32Error()),
+                                   "CryptCATAdminAcquireContext[2] failed: %d [file=%s]", RtlGetLastWin32Error(), pwszName);
              iPolicy++;
         } while (   fTryNextPolicy
                  && iPolicy < RT_ELEMENTS(s_aPolicies));
@@ -2527,7 +2527,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
         }
         else
         {
-            uint32_t const idCurrentThread = GetCurrentThreadId();
+            uint32_t const idCurrentThread = RTNtCurrentThreadId();
             fNoRecursion = ASMAtomicCmpXchgU32(&g_idActiveThread, idCurrentThread, UINT32_MAX);
         }
         if (fNoRecursion)
@@ -2591,7 +2591,7 @@ DECLHIDDEN(bool) supHardenedWinIsWinVerifyTrustCallable(void)
     return g_pfnWinVerifyTrust != NULL
         && (   g_iTlsWinVerifyTrustRecursion != UINT32_MAX
             ?  (uintptr_t)TlsGetValue(g_iTlsWinVerifyTrustRecursion) == 0
-            : g_idActiveThread != GetCurrentThreadId() );
+            : g_idActiveThread != RTNtCurrentThreadId() );
 }
 
 

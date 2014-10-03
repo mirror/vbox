@@ -91,9 +91,10 @@ BEGINCODE
 ; @param 1  The plain API name.
 ; @param 2  The parameter frame size on x86. Multiple of dword.
 ; @param 3  Non-zero expression if system call.
+; @param 4  Non-zero expression if early available call
 ;
 %define SUPHNTIMP_SYSCALL 1
-%macro SupHardNtImport 3
+%macro SupHardNtImport 4
         ;
         ; The data.
         ;
@@ -145,11 +146,23 @@ BEGINPROC %1 %+ _SyscallType2
 ENDPROC %1 %+ _SyscallType2
   %endif
 %endif
+
+%if %4 == 0
+global SUPHNTIMP_STDCALL_NAME(%1, %2) %+ _Early
+SUPHNTIMP_STDCALL_NAME(%1, %2) %+ _Early:
+        int3
+ %ifdef RT_ARCH_AMD64
+        ret
+ %else
+        ret     %2
+ %endif
+%endif
 %endmacro
 
 %define SUPHARNT_COMMENT(a_Comment)
-%define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86) SupHardNtImport a_Name, a_cbParamsX86, SUPHNTIMP_SYSCALL
-%define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86) SupHardNtImport a_Name, a_cbParamsX86, 0
+%define SUPHARNT_IMPORT_SYSCALL(a_Name, a_cbParamsX86)       SupHardNtImport a_Name, a_cbParamsX86, SUPHNTIMP_SYSCALL, 1
+%define SUPHARNT_IMPORT_STDCALL(a_Name, a_cbParamsX86)       SupHardNtImport a_Name, a_cbParamsX86, 0,                 0
+%define SUPHARNT_IMPORT_STDCALL_EARLY(a_Name, a_cbParamsX86) SupHardNtImport a_Name, a_cbParamsX86, 0,                 1
 %include "import-template-ntdll.h"
 %include "import-template-kernel32.h"
 

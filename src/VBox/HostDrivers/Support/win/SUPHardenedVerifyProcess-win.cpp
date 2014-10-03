@@ -1605,7 +1605,7 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uin
             return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_IMAGE_TOO_BIG, "Image %s is too large: %zu bytes (%#zx).",
                                        pEntry->pszName, cbBits, cbBits);
 
-        pEntry->pbBits = (uint8_t *)suplibHardenedAllocZ(cbBits);
+        pEntry->pbBits = (uint8_t *)RTMemAllocZ(cbBits);
         if (!pEntry->pbBits)
             return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY, "Failed to allocate %zu bytes for image %s.",
                                        cbBits, pEntry->pszName);
@@ -1628,7 +1628,7 @@ static void supHardNTLdrCacheDeleteEntry(PSUPHNTLDRCACHEENTRY pEntry)
 {
     if (pEntry->pbBits)
     {
-        suplibHardenedFree(pEntry->pbBits);
+        RTMemFree(pEntry->pbBits);
         pEntry->pbBits = NULL;
     }
 
@@ -1925,7 +1925,7 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis, HANDLE hProcess)
      */
     int             rc;
     ULONG           cbUniStr = sizeof(UNICODE_STRING) + RTPATH_MAX * sizeof(RTUTF16);
-    PUNICODE_STRING pUniStr  = (PUNICODE_STRING)suplibHardenedAllocZ(cbUniStr);
+    PUNICODE_STRING pUniStr  = (PUNICODE_STRING)RTMemAllocZ(cbUniStr);
     if (!pUniStr)
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_MEMORY,
                                   "Error allocating %zu bytes for process name.", cbUniStr);
@@ -1946,7 +1946,7 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis, HANDLE hProcess)
     else
         rc = supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NT_QI_PROCESS_NM_ERROR,
                                  "NtQueryInformationProcess/ProcessImageFileName failed: %#x", rcNt);
-    suplibHardenedFree(pUniStr);
+    RTMemFree(pUniStr);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2107,7 +2107,7 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
         /*
          * Allocate and initialize memory for the state.
          */
-        PSUPHNTVPSTATE pThis = (PSUPHNTVPSTATE)suplibHardenedAllocZ(sizeof(*pThis));
+        PSUPHNTVPSTATE pThis = (PSUPHNTVPSTATE)RTMemAllocZ(sizeof(*pThis));
         if (pThis)
         {
             pThis->enmKind  = enmKind;
@@ -2136,7 +2136,7 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
             for (uint32_t i = 0; i < pThis->cImages; i++)
                 supHardNTLdrCacheDeleteEntry(&pThis->aImages[i].CacheEntry);
 #endif
-            suplibHardenedFree(pThis);
+            RTMemFree(pThis);
         }
         else
             rc = supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY_STATE,
