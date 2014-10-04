@@ -34,6 +34,9 @@
 ; External data.
 extern NAME(g_pfnNtCreateSectionJmpBack)
 
+; External code.
+extern NAME(supR3HardenedVmProcessInit)
+
 
 BEGINCODE
 
@@ -75,6 +78,75 @@ BEGINCODE
  %include "NtCreateSection-template-x86-syscall-type-1.h"
 
 %endif
+
+
+
+;;
+; Alternative code for LdrInitializeThunk that performs the VM process startup.
+;
+; This does not concern itself with any arguments on stack or in registers that
+; may be passed to the LdrIntializeThunk routine as we just save and restore
+; them all before we restart the restored LdrInitializeThunk routine.
+;
+BEGINPROC supR3HardenedVmProcessInitThunk
+        ;
+        ; Prologue.
+        ;
+
+        ; Reserve space for the "return" address.
+        push    0
+
+        ; Create a stack frame, saving xBP.
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0 ; probably wrong...
+
+        ; Save all volatile registers.
+        push    xAX
+        push    xCX
+        push    xDX
+%ifdef RT_ARCH_AMD64
+        push    r8
+        push    r9
+        push    r10
+        push    r11
+%endif
+
+        ; Reserve spill space and align the stack.
+        sub     xSP, 20h
+        and     xSP, ~0fh
+        SEH64_END_PROLOGUE
+
+        ;
+        ; Call the C/C++ code that does the actual work.  This returns the
+        ; resume address in xAX, which we put in the "return" stack position.
+        ;
+        call    NAME(supR3HardenedVmProcessInit)
+        mov     [xBP + xCB], xAX
+
+        ;
+        ; Restore volatile registers.
+        ;
+        mov     xAX, [xBP - xCB*1]
+        mov     xCX, [xBP - xCB*2]
+        mov     xDX, [xBP - xCB*3]
+%ifdef RT_ARCH_AMD64
+        mov     r8,  [xBP - xCB*4]
+        mov     r9,  [xBP - xCB*5]
+        mov     r10, [xBP - xCB*6]
+        mov     r11, [xBP - xCB*7]
+%endif
+        ;
+        ; Use the leave instruction to restore xBP and set up xSP to point at
+        ; the resume address. Then use the 'ret' instruction to resume process
+        ; initializaton.
+        ;
+        leave
+        ret
+ENDPROC   supR3HardenedVmProcessInitThunk
+
+
 
 ;;
 ; Composes a standard call name.

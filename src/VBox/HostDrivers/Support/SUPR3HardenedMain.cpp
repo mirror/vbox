@@ -158,6 +158,7 @@ static uint32_t volatile g_cbStartupLog = 0;
 
 /** The current SUPR3HardenedMain state / location. */
 SUPR3HARDENEDMAINSTATE  g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED;
+AssertCompileSize(g_enmSupR3HardenedMainState, sizeof(uint32_t));
 
 
 /*******************************************************************************
@@ -252,14 +253,18 @@ static void suplibHardenedPrintStrN(const char *pch, size_t cch)
     HANDLE hStdOut = NtCurrentPeb()->ProcessParameters->StandardOutput;
     if (hStdOut != NULL)
     {
-# if 0 /* Windows 7 and earlier uses fake handles, with the last two bits set ((hStdOut & 3) == 3). */
-        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-        NtWriteFile(hStdOut, NULL /*Event*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
-                    &Ios, (PVOID)pch, (ULONG)cch, NULL /*ByteOffset*/, NULL /*Key*/);
-# else
-        DWORD cbWritten;
-        WriteFile(hStdOut, pch, (DWORD)cch, &cbWritten, NULL);
-# endif
+        if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+        {
+            DWORD cbWritten;
+            WriteFile(hStdOut, pch, (DWORD)cch, &cbWritten, NULL);
+        }
+        /* Windows 7 and earlier uses fake handles, with the last two bits set ((hStdOut & 3) == 3). */
+        else if (NtWriteFile != NULL && ((uintptr_t)hStdOut & 3) == 0)
+        {
+            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            NtWriteFile(hStdOut, NULL /*Event*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                        &Ios, (PVOID)pch, (ULONG)cch, NULL /*ByteOffset*/, NULL /*Key*/);
+        }
     }
 #else
     (void)write(2, pch, cch);
@@ -1094,37 +1099,51 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
             break;
     }
 
-#ifdef SUP_HARDENED_SUID
     /*
-     * Drop any root privileges we might be holding, this won't return
-     * if it fails but end up calling supR3HardenedFatal[V].
+     * Don't call TrustedError if it's too early.
      */
-    supR3HardenedMainDropPrivileges();
-#endif /* SUP_HARDENED_SUID */
-
-    /*
-     * Now try resolve and call the TrustedError entry point if we can
-     * find it.  We'll fork before we attempt this because that way the
-     * session management in main will see us exiting immediately (if
-     * it's involved with us).
-     */
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-    int pid = fork();
-    if (pid <= 0)
-#endif
+    if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
     {
-        static volatile bool s_fRecursive = false; /* Loader hooks may cause recursion. */
-        if (!s_fRecursive)
+#ifdef SUP_HARDENED_SUID
+        /*
+         * Drop any root privileges we might be holding, this won't return
+         * if it fails but end up calling supR3HardenedFatal[V].
+         */
+        supR3HardenedMainDropPrivileges();
+#endif
+
+        /*
+         * Now try resolve and call the TrustedError entry point if we can
+         * find it.  We'll fork before we attempt this because that way the
+         * session management in main will see us exiting immediately (if
+         * it's involved with us).
+         */
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+        int pid = fork();
+        if (pid <= 0)
+#endif
         {
-            s_fRecursive = true;
+            static volatile bool s_fRecursive = false; /* Loader hooks may cause recursion. */
+            if (!s_fRecursive)
+            {
+                s_fRecursive = true;
 
-            PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
-            if (pfnTrustedError)
-                pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
+                PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
+                if (pfnTrustedError)
+                    pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
 
-            s_fRecursive = false;
+                s_fRecursive = false;
+            }
         }
     }
+#if defined(RT_OS_WINDOWS)
+    /*
+     * Report the error to the parent if this happens during early VM init.
+     */
+    else if (   g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED
+             && g_enmSupR3HardenedMainState != SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED)
+        supR3HardenedWinReportErrorToParent(rc, pszMsgFmt, va);
+#endif
 
     /*
      * Quit
@@ -1150,8 +1169,20 @@ DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
     supR3HardenedLogV(pszFormat, vaCopy);
     va_end(vaCopy);
 
-    suplibHardenedPrintPrefix();
-    suplibHardenedPrintFV(pszFormat, va);
+#if defined(RT_OS_WINDOWS)
+    /*
+     * Report the error to the parent if this happens during early VM init.
+     */
+    if (   g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED
+        && g_enmSupR3HardenedMainState != SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED)
+        supR3HardenedWinReportErrorToParent(VERR_INTERNAL_ERROR, pszFormat, va);
+    else
+#endif
+    {
+        suplibHardenedPrintPrefix();
+        suplibHardenedPrintFV(pszFormat, va);
+    }
+
     suplibHardenedExit(RTEXITCODE_FAILURE);
 }
 
@@ -1198,7 +1229,7 @@ DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, .
  *
  * @remarks This function will not return on failure.
  */
-static void supR3HardenedMainOpenDevice(void)
+DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
 {
     int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, true /*fUnrestricted*/);
     if (RT_SUCCESS(rc))
@@ -1670,6 +1701,7 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
 DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp)
 {
     SUP_DPRINTF(("SUPR3HardenedMain: pszProgName=%s fFlags=%#x\n", pszProgName, fFlags));
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_HARDENED_MAIN_CALLED;
 
     /*
      * Note! At this point there is no IPRT, so we will have to stick
@@ -1677,9 +1709,14 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      */
     g_pszSupLibHardenedProgName = pszProgName;
     g_fSupHardenedMain          = fFlags;
-    g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
-    g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
-    g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
+#ifdef RT_OS_WINDOWS
+    if (!g_fSupEarlyVmProcessInit)
+#endif
+    {
+        g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
+        g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
+        g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
+    }
 
 #ifdef SUP_HARDENED_SUID
 # ifdef RT_OS_LINUX
@@ -1688,7 +1725,6 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * *might* not be able to access /proc/self/exe after the seteuid call.
      */
     supR3HardenedGetFullExePath();
-
 # endif
 
     /*
@@ -1713,11 +1749,12 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * something we can put some kind of reliable trust in.  The first respawning aims
      * at dropping compatibility layers and process "security" solutions.
      */
-    if (   !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
+    if (   !g_fSupEarlyVmProcessInit
+        && !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
         && supR3HardenedWinIsReSpawnNeeded(1 /*iWhich*/, argc, argv))
     {
         SUP_DPRINTF(("SUPR3HardenedMain: Respawn #1\n"));
-        supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV);
+        supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV, true /*fAvastKludge*/);
         supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
         return supR3HardenedWinReSpawn(1 /*iWhich*/);
     }
@@ -1725,9 +1762,11 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     /*
      * Windows: Initialize the image verification global data so we can verify the
      * signature of the process image and hook the core of the DLL loader API so we
-     * can check the signature of all DLLs mapped into the process.
+     * can check the signature of all DLLs mapped into the process.  (Already done
+     * by early VM process init.)
      */
-    supR3HardenedWinInit(fFlags);
+    if (!g_fSupEarlyVmProcessInit)
+        supR3HardenedWinInit(fFlags, true /*fAvastKludge*/);
 #endif /* RT_OS_WINDOWS */
 
     /*
@@ -1737,34 +1776,37 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
     /*
      * The next steps are only taken if we actually need to access the support
-     * driver.
+     * driver.  (Already done by early VM process init.)
      */
-    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
-    {
 #ifdef RT_OS_WINDOWS
-        /*
-         * Windows: Verify the process (repeated by the kernel later.
-         */
-        supR3HardenedWinVerifyProcess();
-
-        /*
-         * Windows: The second respawn.  This time we make a special arrangement
-         * with vboxdrv to monitor access to the new process from its inception.
-         */
-        if (supR3HardenedWinIsReSpawnNeeded(2 /* iWhich*/, argc, argv))
+    if (!g_fSupEarlyVmProcessInit)
+#endif
+        if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
         {
-            SUP_DPRINTF(("SUPR3HardenedMain: Respawn #2\n"));
-            return supR3HardenedWinReSpawn(2 /* iWhich*/);
-        }
-        SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
-        supR3HardenedWinFlushLoaderCache();
+#ifdef RT_OS_WINDOWS
+            /*
+             * Windows: Verify the process (repeated by the kernel later.
+             */
+            supR3HardenedWinVerifyProcess();
+
+            /*
+             * Windows: The second respawn.  This time we make a special arrangement
+             * with vboxdrv to monitor access to the new process from its inception.
+             */
+            if (supR3HardenedWinIsReSpawnNeeded(2 /* iWhich*/, argc, argv))
+            {
+                SUP_DPRINTF(("SUPR3HardenedMain: Respawn #2\n"));
+                return supR3HardenedWinReSpawn(2 /* iWhich*/);
+            }
+            SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
+            supR3HardenedWinFlushLoaderCache();
 #endif /* RT_OS_WINDOWS */
 
-        /*
-         * Open the vboxdrv device.
-         */
-        supR3HardenedMainOpenDevice();
-    }
+            /*
+             * Open the vboxdrv device.
+             */
+            supR3HardenedMainOpenDevice();
+        }
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -1773,7 +1815,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     supR3HardenedWinEnableThreadCreation();
     supR3HardenedWinFlushLoaderCache();
     supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(g_pszSupLibHardenedProgName);
-    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_VERIFY_TRUST_READY;
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_VERIFY_TRUST_READY;
 #endif
 
 #ifdef SUP_HARDENED_SUID

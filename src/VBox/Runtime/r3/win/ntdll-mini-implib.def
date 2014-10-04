@@ -32,7 +32,9 @@ EXPORTS
     CsrClientCallServer                   ;;= _CsrClientCallServer@16
 
     NtAllocateVirtualMemory               ;;= _NtAllocateVirtualMemory@24
+    NtClearEvent                          ;;= _NtClearEvent@4
     NtClose                               ;;= _NtClose@4
+    NtCreateEvent                         ;;= _NtCreateEvent@20
     NtCreateFile                          ;;= _NtCreateFile@44
     NtCreateSection                       ;;= _NtCreateSection@28
     NtDelayExecution                      ;;= _NtDelayExecution@8
@@ -42,6 +44,7 @@ EXPORTS
     NtGetContextThread                    ;;= _NtGetContextThread@8
     NtMapViewOfSection                    ;;= _NtMapViewOfSection@40
     NtOpenDirectoryObject                 ;;= _NtOpenDirectoryObject@12
+    NtOpenEvent                           ;;= _NtOpenEvent@12
     NtOpenKey                             ;;= _NtOpenKey@12
     NtOpenProcess                         ;;= _NtOpenProcess@16
     NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
@@ -50,6 +53,7 @@ EXPORTS
     NtProtectVirtualMemory                ;;= _NtProtectVirtualMemory@20
     NtQueryDirectoryFile                  ;;= _NtQueryDirectoryFile@44
     NtQueryDirectoryObject                ;;= _NtQueryDirectoryObject@28
+    NtQueryEvent                          ;;= _NtQueryEvent@20
     NtQueryInformationFile                ;;= _NtQueryInformationFile@20
     NtQueryInformationProcess             ;;= _NtQueryInformationProcess@20
     NtQueryInformationThread              ;;= _NtQueryInformationThread@20
@@ -63,9 +67,11 @@ EXPORTS
     NtQueryVolumeInformationFile          ;;= _NtQueryVolumeInformationFile@20
     NtReadFile                            ;;= _NtReadFile@36
     NtReadVirtualMemory                   ;;= _NtReadVirtualMemory@20
+    NtResetEvent                          ;;= _NtResetEvent@8
     NtResumeProcess                       ;;= _NtResumeProcess@4
     NtResumeThread                        ;;= _NtResumeThread@8
     NtSetContextThread                    ;;= _NtSetContextThread@8
+    NtSetEvent                            ;;= _NtSetEvent@8
     NtSetInformationFile                  ;;= _NtSetInformationFile@20
     NtSetInformationObject                ;;= _NtSetInformationObject@16
     NtSetInformationProcess               ;;= _NtSetInformationProcess@16
@@ -76,8 +82,8 @@ EXPORTS
     NtTerminateProcess                    ;;= _NtTerminateProcess@8
     NtTerminateThread                     ;;= _NtTerminateThread@8
     NtUnmapViewOfSection                  ;;= _NtUnmapViewOfSection@8
-    NtWaitForSingleObject                 ;;= _NtWaitForSingleObject@12
     NtWaitForMultipleObjects              ;;= _NtWaitForMultipleObjects@20
+    NtWaitForSingleObject                 ;;= _NtWaitForSingleObject@12
     NtWriteFile                           ;;= _NtWriteFile@36
     NtWriteVirtualMemory                  ;;= _NtWriteVirtualMemory@20
     NtYieldExecution                      ;;= _NtYieldExecution@0
