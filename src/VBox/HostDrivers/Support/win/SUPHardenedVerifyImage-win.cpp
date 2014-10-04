@@ -121,7 +121,7 @@ static RTCRSTORE            g_hSpcAndNtKernelSuppStore = NIL_RTCRSTORE;
 SUPSYSROOTDIRBUF            g_System32NtPath;
 /** The full \\SystemRoot\\WinSxS path. */
 SUPSYSROOTDIRBUF            g_WinSxSNtPath;
-#ifdef IN_RING3
+#if defined(IN_RING3) && !defined(VBOX_PERMIT_EVEN_MORE)
 /** The full 'Program Files' path. */
 SUPSYSROOTDIRBUF            g_ProgramFilesNtPath;
 # ifdef RT_ARCH_AMD64
@@ -134,7 +134,7 @@ SUPSYSROOTDIRBUF            g_CommonFilesNtPath;
 /** The full 'Common Files (x86)' path. */
 SUPSYSROOTDIRBUF            g_CommonFilesX86NtPath;
 # endif
-#endif /* IN_RING3 */
+#endif /* IN_RING3 && !VBOX_PERMIT_MORE*/
 
 static union
 {
@@ -1442,8 +1442,7 @@ static int supHardNtViCertStoreInit(PRTCRSTORE phStore,
 }
 
 
-
-#ifdef IN_RING3
+#if defined(IN_RING3) && !defined(VBOX_PERMIT_EVEN_MORE)
 /**
  * Initializes the windows paths.
  */
@@ -1631,7 +1630,7 @@ static void supHardenedWinInitImageVerifierWinPaths(void)
         }
     }
 }
-#endif /* IN_RING3 */
+#endif /* IN_RING3 && !VBOX_PERMIT_EVEN_MORE */
 
 
 /**
@@ -1655,7 +1654,7 @@ DECLHIDDEN(int) supHardenedWinInitImageVerifier(PRTERRINFO pErrInfo)
     {
         SUP_DPRINTF(("System32:  %ls\n", g_System32NtPath.UniStr.Buffer));
         SUP_DPRINTF(("WinSxS:    %ls\n", g_WinSxSNtPath.UniStr.Buffer));
-#ifdef IN_RING3
+#if defined(IN_RING3) && !defined(VBOX_PERMIT_EVEN_MORE)
         supHardenedWinInitImageVerifierWinPaths();
 #endif
 

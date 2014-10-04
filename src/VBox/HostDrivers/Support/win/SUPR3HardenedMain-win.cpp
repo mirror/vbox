@@ -173,9 +173,35 @@ typedef struct VERIFIERCACHEIMPORT
 typedef VERIFIERCACHEIMPORT *PVERIFIERCACHEIMPORT;
 
 
+/**
+ * VM process parameters.
+ */
+typedef struct SUPR3WINPROCPARAMS
+{
+    /** The event semaphore the child will be waiting on. */
+    HANDLE          hEvtChild;
+    /** The event semaphore the parent will be waiting on. */
+    HANDLE          hEvtParent;
+
+    /** The address of the NTDLL. */
+    uintptr_t       uNtDllAddr;
+
+    /** The last status. */
+    int32_t         rc;
+    /** Error message / path name string space. */
+    char            szErrorMsg[4096];
+} SUPR3WINPROCPARAMS;
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** Process parameters.  Specified by parent if VM process, see
+ *  supR3HardenedVmProcessInit. */
+static SUPR3WINPROCPARAMS   g_ProcParams = { NULL, NULL, 0, 0 };
+/** Set if supR3HardenedVmProcessInit was invoked. */
+bool                        g_fSupEarlyVmProcessInit = false;
+
 /** @name Global variables initialized by suplibHardenedWindowsMain.
  * @{ */
 /** Combined windows NT version number.  See SUP_MAKE_NT_VER_COMBINED. */
@@ -4361,8 +4387,9 @@ DECLHIDDEN(bool) supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **p
 /**
  * Initializes the windows verficiation bits.
  * @param   fFlags          The main flags.
+ * @param   fAvastKludge    Whether to apply the avast kludge.
  */
-DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
+DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 {
     RTErrInfoInitStatic(&g_ErrInfoStatic);
     int rc = supHardenedWinInitImageVerifier(&g_ErrInfoStatic.Core);
@@ -4372,56 +4399,59 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags)
 
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
     {
-        /*
-         * Do a self purification to cure avast's weird NtOpenFile write-thru
-         * change in GetBinaryTypeW change in kernel32.  Unfortunately, avast
-         * uses a system thread to perform the process modifications, which
-         * means it's hard to make sure it had the chance to make them...
-         *
-         * We have to resort to kludge doing yield and sleep fudging for a
-         * number of milliseconds and schedulings before we can hope that avast
-         * and similar products have done what they need to do.  If we do any
-         * fixes, we wait for a while again and redo it until we're clean.
-         *
-         * This is unfortunately kind of fragile.
-         */
-        uint32_t cMsFudge = g_fSupAdversaries ? 512 : 128;
-        uint32_t cFixes;
-        for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
+        if (fAvastKludge)
         {
-            uint32_t    cSleeps = 0;
-            DWORD       dwStart = GetTickCount();
-            do
+            /*
+             * Do a self purification to cure avast's weird NtOpenFile write-thru
+             * change in GetBinaryTypeW change in kernel32.  Unfortunately, avast
+             * uses a system thread to perform the process modifications, which
+             * means it's hard to make sure it had the chance to make them...
+             *
+             * We have to resort to kludge doing yield and sleep fudging for a
+             * number of milliseconds and schedulings before we can hope that avast
+             * and similar products have done what they need to do.  If we do any
+             * fixes, we wait for a while again and redo it until we're clean.
+             *
+             * This is unfortunately kind of fragile.
+             */
+            uint32_t cMsFudge = g_fSupAdversaries ? 512 : 128;
+            uint32_t cFixes;
+            for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
             {
-                NtYieldExecution();
-                LARGE_INTEGER Time;
-                Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
-                NtDelayExecution(FALSE, &Time);
-                cSleeps++;
-            } while (   GetTickCount() - dwStart <= cMsFudge
-                     || cSleeps < 8);
-            SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
-                         iLoop, GetTickCount() - dwStart, cSleeps));
+                uint32_t    cSleeps = 0;
+                DWORD       dwStart = GetTickCount();
+                do
+                {
+                    NtYieldExecution();
+                    LARGE_INTEGER Time;
+                    Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
+                    NtDelayExecution(FALSE, &Time);
+                    cSleeps++;
+                } while (   GetTickCount() - dwStart <= cMsFudge
+                         || cSleeps < 8);
+                SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
+                             iLoop, GetTickCount() - dwStart, cSleeps));
 
-            cFixes = 0;
-            rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
-                                             &cFixes, NULL /*pErrInfo*/);
-            if (RT_FAILURE(rc) || cFixes == 0)
-                break;
+                cFixes = 0;
+                rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
+                                                 &cFixes, NULL /*pErrInfo*/);
+                if (RT_FAILURE(rc) || cFixes == 0)
+                    break;
 
-            if (!g_fSupAdversaries)
-                g_fSupAdversaries |= SUPHARDNT_ADVERSARY_UNKNOWN;
-            cMsFudge = 512;
+                if (!g_fSupAdversaries)
+                    g_fSupAdversaries |= SUPHARDNT_ADVERSARY_UNKNOWN;
+                cMsFudge = 512;
 
-            /* Log the KiOpPrefetchPatchCount value if available, hoping it might sched some light on spider38's case. */
-            ULONG cPatchCount = 0;
-            NTSTATUS rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
-                                                     &cPatchCount, sizeof(cPatchCount), NULL);
-            if (NT_SUCCESS(rcNt))
-                SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
-                             cFixes, g_fSupAdversaries, cPatchCount));
-            else
-                SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
+                /* Log the KiOpPrefetchPatchCount value if available, hoping it might sched some light on spider38's case. */
+                ULONG cPatchCount = 0;
+                NTSTATUS rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
+                                                         &cPatchCount, sizeof(cPatchCount), NULL);
+                if (NT_SUCCESS(rcNt))
+                    SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
+                                 cFixes, g_fSupAdversaries, cPatchCount));
+                else
+                    SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
+            }
         }
 
         /*
@@ -5060,6 +5090,22 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED;
 
     /*
+     * Notify the parent process that we're probably capable of reporting our
+     * own errors.
+     */
+    if (g_ProcParams.hEvtParent || g_ProcParams.hEvtChild)
+    {
+        SUPR3HARDENED_ASSERT(g_fSupEarlyVmProcessInit);
+        NtSetEvent(g_ProcParams.hEvtParent, NULL);
+        NtClose(g_ProcParams.hEvtParent);
+        NtClose(g_ProcParams.hEvtChild);
+        g_ProcParams.hEvtParent = NULL;
+        g_ProcParams.hEvtChild  = NULL;
+    }
+    else
+        SUPR3HARDENED_ASSERT(!g_fSupEarlyVmProcessInit);
+
+    /*
      * After having resolved imports we patch the LdrInitializeThunk code so
      * that it's more difficult to invade our privacy by CreateRemoteThread.
      * We'll re-enable this after opening the driver or temporarily while respawning.
@@ -5137,5 +5183,143 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      */
     SUP_DPRINTF(("Terminating the normal way: rcExit=%d\n", rcExit));
     suplibHardenedExit(rcExit);
+}
+
+
+/**
+ * Reports an error to the parent process via the process parameter structure.
+ *
+ * @param   rc                  The status code to report.
+ * @param   pszFormat           The format string.
+ * @param   va                  The format arguments.
+ */
+DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(int rc, const char *pszFormat, va_list va)
+{
+    RTStrPrintfV(g_ProcParams.szErrorMsg, sizeof(g_ProcParams.szErrorMsg), pszFormat, va);
+    g_ProcParams.rc = RT_SUCCESS(rc) ? VERR_INTERNAL_ERROR_2 : rc;
+
+    NTSTATUS rcNt = NtSetEvent(g_ProcParams.hEvtParent, NULL);
+    if (NT_SUCCESS(rcNt))
+    {
+        LARGE_INTEGER Timeout;
+        Timeout.QuadPart = -300000000; /* 30 second */
+        NTSTATUS rcNt = NtWaitForSingleObject(g_ProcParams.hEvtChild, FALSE /*Alertable*/, &Timeout);
+        NtClearEvent(g_ProcParams.hEvtChild);
+    }
+}
+
+
+/**
+ * Routine called by the supR3HardenedVmProcessInitThunk assembly routine when
+ * LdrInitializeThunk is executed in during process initialization.
+ *
+ * This initializes the VM process, hooking NTDLL APIs and opening the device
+ * driver before any other DLLs gets loaded into the process.  This greately
+ * reduces and controls the trusted code base of the process compared to the
+ * opening it from SUPR3HardenedMain, avoid issues with so call protection
+ * software that is in the habit of patching half of the ntdll and kernel32
+ * APIs in the process, making it almost indistinguishable from software that is
+ * up to no good.  Once we've opened vboxdrv, the process should be locked down
+ * so thighly that only kernel software and csrss can mess with the process.
+ */
+DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
+{
+    /*
+     * Only let the first thread thru.
+     */
+    if (!ASMAtomicCmpXchgU32((uint32_t volatile *)&g_enmSupR3HardenedMainState,
+                             SUPR3HARDENEDMAINSTATE_WIN_VM_INIT_CALLED,
+                             SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED))
+    {
+        NtTerminateThread(0, 0);
+        return 0x22;  /* crash */
+    }
+    g_fSupEarlyVmProcessInit = true;
+
+    /*
+     * Initialize the NTDLL imports that we consider usable before the
+     * process has been initialized.
+     */
+    supR3HardenedWinInitImportsEarly(g_ProcParams.uNtDllAddr);
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_IMPORTS_RESOLVED;
+
+    /*
+     * Init g_uNtVerCombined as well as we can at this point.
+     */
+    supR3HardenedWinInitVersion();
+
+    /*
+     * Wait on the parent process to dispose of the full access process handle.
+     */
+    LARGE_INTEGER Timeout;
+    Timeout.QuadPart = -600000000; /* 60 second */
+    NTSTATUS rcNt = NtWaitForSingleObject(g_ProcParams.hEvtChild, FALSE /*Alertable*/, &Timeout);
+    if (NT_SUCCESS(rcNt))
+        rcNt = NtClearEvent(g_ProcParams.hEvtChild);
+    if (!NT_SUCCESS(rcNt))
+    {
+        NtTerminateProcess(NtCurrentProcess(), 0x42);
+        return 0x42; /* crash */
+    }
+
+    /*
+     * Convert the arguments to UTF-8 so we can open the log file if specified.
+     * Note! This leaks memory at present.
+     */
+    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
+    int    cArgs;
+    char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
+    supR3HardenedOpenLog(&cArgs, papszArgs);
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p\n", g_ProcParams.uNtDllAddr));
+
+    /*
+     * Determine the executable path and name.  Will NOT determine the windows style
+     * executable path here as we don't need it.
+     */
+    SIZE_T cbActual = 0;
+    rcNt = NtQueryVirtualMemory(NtCurrentProcess(), &g_ProcParams, MemorySectionName, &g_SupLibHardenedExeNtPath,
+                                sizeof(g_SupLibHardenedExeNtPath) - sizeof(WCHAR), &cbActual);
+    if (   !NT_SUCCESS(rcNt)
+        || g_SupLibHardenedExeNtPath.UniStr.Length == 0
+        || g_SupLibHardenedExeNtPath.UniStr.Length & 1)
+        supR3HardenedFatal("NtQueryVirtualMemory/MemorySectionName failed in supR3HardenedVmProcessInit: %#x\n", rcNt);
+
+    /* The NT executable name offset / dir path length. */
+    g_offSupLibHardenedExeNtName = g_SupLibHardenedExeNtPath.UniStr.Length / sizeof(WCHAR);
+    while (   g_offSupLibHardenedExeNtName > 1
+           && g_SupLibHardenedExeNtPath.UniStr.Buffer[g_offSupLibHardenedExeNtName - 1] != '\\' )
+        g_offSupLibHardenedExeNtName--;
+
+    /*
+     * Initialize the image verification stuff (hooks LdrLoadDll and NtCreateSection).
+     */
+    supR3HardenedWinInit(0, false /*fAvastKludge*/);
+
+    /*
+     * Open the driver.
+     */
+    supR3HardenedMainOpenDevice();
+    g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_DEVICE_OPENED;
+
+    /*
+     * Restore the LdrInitializeThunk code so we can initialize the process
+     * normally when we return.
+     */
+    PSUPHNTLDRCACHEENTRY pLdrEntry;
+    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
+
+    RTLDRADDR uValue;
+    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pLdrEntry->pbBits, 0, UINT32_MAX, "LdrInitializeThunk", &uValue);
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("supR3HardenedVmProcessInit: Failed to find LdrInitializeThunk (%Rrc).\n", rc);
+
+    PVOID pvLdrInitThunk = (uint8_t *)g_ProcParams.uNtDllAddr + (uint32_t)uValue;
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pvLdrInitThunk, 16, PAGE_EXECUTE_READWRITE));
+    memcpy(pvLdrInitThunk, pLdrEntry->pbBits + (uint32_t)uValue, 16);
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pvLdrInitThunk, 16, PAGE_EXECUTE_READ));
+
+    return (uintptr_t)pvLdrInitThunk;
 }
 

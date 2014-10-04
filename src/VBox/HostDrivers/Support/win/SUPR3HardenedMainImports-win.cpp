@@ -228,6 +228,7 @@ static const SUPHNTIMPSYSCALL g_aSupNtImpNtDllSyscalls[] =
 
 /**
  * All the DLLs we import from.
+ * @remarks Code ASSUMES that ntdll is the first entry.
  */
 static SUPHNTIMPDLL g_aSupNtImpDlls[] =
 {
@@ -544,6 +545,40 @@ static void supR3HardenedDirectSyscall(PSUPHNTIMPDLL pDll, PCSUPHNTIMPFUNC pImpo
                     g_aSupNtImpDlls[iDll].pwszName, pImport->pszName, &abCopy[0]);
 }
 
+
+/**
+ * Resolves NtDll functions we can trust calling before process init.
+ *
+ * @param   uNtDllAddr          The address of the NTDLL.
+ */
+DECLHIDDEN(void) supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr)
+{
+    /*
+     * NTDLL is the first entry in the list.
+     */
+    g_aSupNtImpDlls[0].pbImageBase = (uint8_t const *)uNtDllAddr;
+    supR3HardenedParseModule(&g_aSupNtImpDlls[0]);
+    for (uint32_t i = 0; i < g_aSupNtImpDlls[0].cImports; i++)
+        if (!g_aSupNtImpDlls[0].paImports[i].pfnEarlyDummy)
+        {
+            const char *pszForwarder = supR3HardenedResolveImport(&g_aSupNtImpDlls[0], &g_aSupNtImpDlls[0].paImports[i]);
+            if (pszForwarder)
+                SUPHNTIMP_ERROR(32, "supR3HardenedWinInitImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
+                                "ntdll: Failed to resolve forwarder '%s'.", pszForwarder);
+        }
+        else
+            *g_aSupNtImpDlls[0].paImports[i].ppfnImport = g_aSupNtImpDlls[0].paImports[i].pfnEarlyDummy;
+
+    /*
+     * Pointer the other imports at the early init stubs.
+     */
+    for (uint32_t iDll = 1; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
+        for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
+            if (!g_aSupNtImpDlls[iDll].paImports[i].fOptional)
+                *g_aSupNtImpDlls[iDll].paImports[i].ppfnImport = g_aSupNtImpDlls[iDll].paImports[i].pfnEarlyDummy;
+            else
+                *g_aSupNtImpDlls[iDll].paImports[i].ppfnImport = NULL;
+}
 
 
 /**

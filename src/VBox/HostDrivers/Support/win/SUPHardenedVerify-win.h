@@ -164,14 +164,14 @@ typedef struct SUPSYSROOTDIRBUF
 } SUPSYSROOTDIRBUF;
 extern SUPSYSROOTDIRBUF g_System32NtPath;
 extern SUPSYSROOTDIRBUF g_WinSxSNtPath;
-#ifdef IN_RING3
+#if defined(IN_RING3) && !defined(VBOX_PERMIT_EVEN_MORE)
 extern SUPSYSROOTDIRBUF g_ProgramFilesNtPath;
 extern SUPSYSROOTDIRBUF g_CommonFilesNtPath;
 # if ARCH_BITS == 64
 extern SUPSYSROOTDIRBUF g_ProgramFilesX86NtPath;
 extern SUPSYSROOTDIRBUF g_CommonFilesX86NtPath;
 # endif
-#endif
+#endif /* IN_RING3 && !VBOX_PERMIT_EVEN_MORE */
 extern SUPSYSROOTDIRBUF g_SupLibHardenedExeNtPath;
 extern uint32_t         g_offSupLibHardenedExeNtName;
 
