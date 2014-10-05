@@ -156,6 +156,9 @@ ENDPROC   supR3HardenedVmProcessInitThunk
  %define SUPHNTIMP_STDCALL_NAME(a,b) NAME(a)
 %endif
 
+;; Concats two litterals.
+%define SUPHNTIMP_CONCAT(a,b) a %+ b
+
 
 ;;
 ; Import data and code for an API call.
@@ -220,8 +223,8 @@ ENDPROC %1 %+ _SyscallType2
 %endif
 
 %if %4 == 0
-global SUPHNTIMP_STDCALL_NAME(%1, %2) %+ _Early
-SUPHNTIMP_STDCALL_NAME(%1, %2) %+ _Early:
+global SUPHNTIMP_STDCALL_NAME(SUPHNTIMP_CONCAT(%1,_Early), %2)
+SUPHNTIMP_STDCALL_NAME(SUPHNTIMP_CONCAT(%1,_Early), %2):
         int3
  %ifdef RT_ARCH_AMD64
         ret
