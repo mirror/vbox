@@ -640,21 +640,17 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
-                rc = supHardNtLdrCacheEntryAllocBits(pLdrEntry, &pbBits, NULL);
+                rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
+                                                   NULL /*pErrInfo*/);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTLdrGetBits(pLdrEntry->hLdrMod, pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL);
-                    if (RT_SUCCESS(rc))
-                        for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
-                            supR3HardenedDirectSyscall(&g_aSupNtImpDlls[iDll], &g_aSupNtImpDlls[iDll].paImports[i],
-                                                       &g_aSupNtImpDlls[iDll].paSyscalls[i], pLdrEntry, pbBits);
-                    else
-                        SUPHNTIMP_ERROR(19, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                                        "%ls: RTLdrGetBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                    for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
+                        supR3HardenedDirectSyscall(&g_aSupNtImpDlls[iDll], &g_aSupNtImpDlls[iDll].paImports[i],
+                                                   &g_aSupNtImpDlls[iDll].paSyscalls[i], pLdrEntry, pbBits);
                 }
                 else
                     SUPHNTIMP_ERROR(20, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
-                                    "%ls: supHardNtLdrCacheEntryAllocBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
+                                    "%ls: supHardNtLdrCacheEntryGetBits failed: %Rrc '%s'.", g_aSupNtImpDlls[iDll].pwszName, rc);
             }
             else
                 SUPHNTIMP_ERROR(21, "supR3HardenedWinInitImports", kSupInitOp_Misc, rc,
@@ -673,7 +669,8 @@ DECLHIDDEN(void) supR3HardenedWinInitImports(void)
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
-                rc = supHardNtLdrCacheEntryAllocBits(pLdrEntry, &pbBits, NULL);
+                rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
+                                                   NULL /*pErrInfo*/);
                 if (RT_SUCCESS(rc))
                     for (uint32_t i = 0; i < g_aSupNtImpDlls[iDll].cImports; i++)
                     {
@@ -711,12 +708,14 @@ DECLHIDDEN(PFNRT) supR3HardenedWinGetRealDllSymbol(const char *pszDll, const cha
     for (uint32_t iDll = 0; iDll < RT_ELEMENTS(g_aSupNtImpDlls); iDll++)
         if (RTStrICmp(g_aSupNtImpDlls[iDll].pszName, pszDll) == 0)
         {
+
             PSUPHNTLDRCACHEENTRY pLdrEntry;
             int rc = supHardNtLdrCacheOpen(g_aSupNtImpDlls[iDll].pszName, &pLdrEntry);
             if (RT_SUCCESS(rc))
             {
                 uint8_t *pbBits;
-                rc = supHardNtLdrCacheEntryAllocBits(pLdrEntry, &pbBits, NULL);
+                rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, (uintptr_t)g_aSupNtImpDlls[iDll].pbImageBase, NULL, NULL,
+                                                   NULL /*pErrInfo*/);
                 if (RT_SUCCESS(rc))
                 {
                     RTLDRADDR uValue;
@@ -735,7 +734,9 @@ DECLHIDDEN(PFNRT) supR3HardenedWinGetRealDllSymbol(const char *pszDll, const cha
                              pszDll, rc));
 
             /* Complications, just call GetProcAddress. */
-            return (PFNRT)GetProcAddress(GetModuleHandleW(g_aSupNtImpDlls[iDll].pwszName), pszProcedure);
+            if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+                return (PFNRT)GetProcAddress(GetModuleHandleW(g_aSupNtImpDlls[iDll].pwszName), pszProcedure);
+            return NULL;
         }
 
     supR3HardenedFatal("supR3HardenedWinGetRealDllSymbol: Unknown DLL %s (proc: %s)\n", pszDll, pszProcedure);

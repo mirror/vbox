@@ -137,12 +137,17 @@ typedef struct SUPHNTLDRCACHEENTRY
     uint8_t            *pbBits;
     /** Set if verified. */
     bool                fVerified;
+    /** Whether we've got valid cacheable image bit.s */
+    bool                fValidBits;
+    /** The image base address. */
+    uintptr_t           uImageBase;
 } SUPHNTLDRCACHEENTRY;
 /** Pointer to a loader cache entry. */
 typedef SUPHNTLDRCACHEENTRY *PSUPHNTLDRCACHEENTRY;
 DECLHIDDEN(int)  supHardNtLdrCacheOpen(const char *pszName, PSUPHNTLDRCACHEENTRY *ppEntry);
 DECLHIDDEN(int)  supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUTF16 pwszName, PRTERRINFO pErrInfo);
-DECLHIDDEN(int)  supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)  supHardNtLdrCacheEntryGetBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, RTLDRADDR uBaseAddress,
+                                               PFNRTLDRIMPORT pfnGetImport, void *pvUser, PRTERRINFO pErrInfo);
 
 
 /** Which directory under the system root to get. */
