@@ -280,8 +280,9 @@ static void usbProxyLinuxSetConnected(PUSBPROXYDEV pProxyDev, int iIf, bool fCon
  */
 static void usbProxyLinuxUrbLinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURBLNX pUrbLnx)
 {
+    LogFlowFunc(("pDevLnx=%p pUrbLnx=%p\n", pDevLnx, pUrbLnx));
     Assert(RTCritSectIsOwner(&pDevLnx->CritSect));
-    Assert(!pUrbLnx->pSplitHead);
+    Assert(!pUrbLnx->pSplitHead || pUrbLnx->pSplitHead == pUrbLnx);
     RTListAppend(&pDevLnx->ListInFlight, &pUrbLnx->NodeList);
 }
 
@@ -293,6 +294,7 @@ static void usbProxyLinuxUrbLinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURBLN
  */
 static void usbProxyLinuxUrbUnlinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURBLNX pUrbLnx)
 {
+    LogFlowFunc(("pDevLnx=%p pUrbLnx=%p\n", pDevLnx, pUrbLnx));
     RTCritSectEnter(&pDevLnx->CritSect);
 
     /*
@@ -301,7 +303,6 @@ static void usbProxyLinuxUrbUnlinkInFlight(PUSBPROXYDEVLNX pDevLnx, PUSBPROXYURB
     Assert(!pUrbLnx->pSplitHead || pUrbLnx->pSplitHead == pUrbLnx);
 
     RTListNodeRemove(&pUrbLnx->NodeList);
-    pUrbLnx->pSplitHead = pUrbLnx->pSplitNext = NULL;
 
     RTCritSectLeave(&pDevLnx->CritSect);
 }
@@ -317,6 +318,8 @@ static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
 {
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
     PUSBPROXYURBLNX pUrbLnx;
+
+    LogFlowFunc(("pProxyDev=%p pSplitHead=%p\n", pProxyDev, pSplitHead));
 
     RTCritSectEnter(&pDevLnx->CritSect);
 
@@ -341,6 +344,7 @@ static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYUR
     pUrbLnx->pSplitNext = NULL;
     pUrbLnx->fCanceledBySubmit = false;
     pUrbLnx->fSplitElementReaped = false;
+    LogFlowFunc(("returns pUrbLnx=%p\n", pUrbLnx));
     return pUrbLnx;
 }
 
@@ -355,13 +359,13 @@ static void usbProxyLinuxUrbFree(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx
 {
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
 
-    RTCritSectEnter(&pDevLnx->CritSect);
+    LogFlowFunc(("pProxyDev=%p pUrbLnx=%p\n", pProxyDev, pUrbLnx));
 
     /*
      * Link it into the free list.
      */
+    RTCritSectEnter(&pDevLnx->CritSect);
     RTListAppend(&pDevLnx->ListFree, &pUrbLnx->NodeList);
-
     RTCritSectLeave(&pDevLnx->CritSect);
 }
 
@@ -375,6 +379,8 @@ static void usbProxyLinuxUrbFree(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx
 static void usbProxyLinuxUrbFreeSplitList(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx)
 {
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
+
+    LogFlowFunc(("pProxyDev=%p pUrbLnx=%p\n", pProxyDev, pUrbLnx));
 
     RTCritSectEnter(&pDevLnx->CritSect);
 
@@ -1305,6 +1311,8 @@ static PUSBPROXYURBLNX usbProxyLinuxSplitURBFragment(PUSBPROXYDEV pProxyDev, PUS
     uint32_t            cbLeft = pCur->cbSplitRemaining;
     uint8_t             *pb = (uint8_t *)pCur->KUrb.buffer;
 
+    LogFlowFunc(("pProxyDev=%p pHead=%p pCur=%p\n", pProxyDev, pHead, pCur));
+
     Assert(cbLeft != 0);
     pNew = pCur->pSplitNext = usbProxyLinuxUrbAlloc(pProxyDev, pHead);
     if (!pNew)
@@ -1323,6 +1331,7 @@ static PUSBPROXYURBLNX usbProxyLinuxSplitURBFragment(PUSBPROXYDEV pProxyDev, PUS
     cbLeft -= pNew->KUrb.buffer_length;
     Assert(cbLeft < INT32_MAX);
     pNew->cbSplitRemaining = cbLeft;
+    LogFlowFunc(("returns pNew=%p\n", pNew));
     return pNew;
 }
 
@@ -1522,6 +1531,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB 
             continue;
         if (errno == ENODEV)
         {
+            rc = RTErrConvertFromErrno(errno);
             Log(("usbProxyLinuxUrbQueue: ENODEV -> unplugged. pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
             if (pUrb->enmType == VUSBXFERTYPE_MSG)
                 usbProxyLinuxUrbSwapSetup((PVUSBSETUP)pUrb->abData);
@@ -1529,7 +1539,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB 
             RTCritSectLeave(&pDevLnx->CritSect);
             usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
             usbProxLinuxUrbUnplugged(pProxyDev);
-            return RTErrConvertFromErrno(errno);
+            return rc;
         }
 
         /*
@@ -1791,6 +1801,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
                     pUrb->enmStatus = vusbProxyLinuxUrbGetStatus(pCur);
             }
             pUrb->cbData = pbEnd - &pUrb->abData[0];
+            usbProxyLinuxUrbUnlinkInFlight(pDevLnx, pUrbLnx);
             usbProxyLinuxUrbFreeSplitList(pProxyDev, pUrbLnx);
         }
         else
