@@ -88,7 +88,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
     return rc;
 }
 
-
+#if 0
 /**
  * Get the absolute path (no symlinks, no . or .. components), doesn't have to exit.
  *
@@ -124,6 +124,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
         rc = RTUtf16ToUtf8Ex(&wsz[0], RTSTR_MAX, &pszAbsPath, cchAbsPath, &cch);
         if (RT_SUCCESS(rc))
         {
+# if 1 /** @todo This code is completely bonkers. */
             /*
              * Remove trailing slash if the path may be pointing to a directory.
              * (See posix variant.)
@@ -133,6 +134,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
                 &&  !RTPATH_IS_VOLSEP(pszAbsPath[cch - 2])
                 &&  !RTPATH_IS_SLASH(pszAbsPath[cch - 2]))
                 pszAbsPath[cch - 1] = '\0';
+# endif
         }
     }
     else if (rc <= 0)
@@ -143,6 +145,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     RTUtf16Free(pwszPath);
     return rc;
 }
+#endif
 
 
 /**
@@ -680,6 +683,23 @@ RTDECL(int) RTPathSetCurrent(const char *pszPath)
 
         RTUtf16Free(pwszPath);
     }
+    return rc;
+}
+
+
+RTDECL(int) RTPathGetCurrentOnDrive(char chDrive, char *pszPath, size_t cbPath)
+{
+    WCHAR wszInput[4];
+    wszInput[0] = chDrive;
+    wszInput[1] = ':';
+    wszInput[2] = '\0';
+
+    int rc;
+    RTUTF16 wszFullPath[RTPATH_MAX];
+    if (GetFullPathNameW(wszInput, RTPATH_MAX, wszFullPath, NULL))
+        rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cbPath, NULL);
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
     return rc;
 }
 

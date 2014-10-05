@@ -3219,6 +3219,52 @@ RTDECL(uint32_t)    RTStrHash1ExNV(size_t cPairs, va_list va);
  */
 
 /**
+ * Allocates memory for UTF-16 string storage (default tag).
+ *
+ * You should normally not use this function, except if there is some very
+ * custom string handling you need doing that isn't covered by any of the other
+ * APIs.
+ *
+ * @returns Pointer to the allocated UTF-16 string.  The first wide char is
+ *          always set to the string terminator char, the contents of the
+ *          remainder of the memory is undefined.  The string must be freed by
+ *          calling RTUtf16Free.
+ *
+ *          NULL is returned if the allocation failed.  Please translate this to
+ *          VERR_NO_UTF16_MEMORY and not VERR_NO_MEMORY.  Also consider
+ *          RTUtf16AllocEx if an IPRT status code is required.
+ *
+ * @param   cb                  How many bytes to allocate, will be rounded up
+ *                              to a multiple of two. If this is zero, we will
+ *                              allocate a terminator wide char anyway.
+ */
+#define RTUtf16Alloc(cb)                    RTUtf16AllocTag((cb), RTSTR_TAG)
+
+/**
+ * Allocates memory for UTF-16 string storage (custom tag).
+ *
+ * You should normally not use this function, except if there is some very
+ * custom string handling you need doing that isn't covered by any of the other
+ * APIs.
+ *
+ * @returns Pointer to the allocated UTF-16 string.  The first wide char is
+ *          always set to the string terminator char, the contents of the
+ *          remainder of the memory is undefined.  The string must be freed by
+ *          calling RTUtf16Free.
+ *
+ *          NULL is returned if the allocation failed.  Please translate this to
+ *          VERR_NO_UTF16_MEMORY and not VERR_NO_MEMORY.  Also consider
+ *          RTUtf16AllocExTag if an IPRT status code is required.
+ *
+ * @param   cb                  How many bytes to allocate, will be rounded up
+ *                              to a multiple of two. If this is zero, we will
+ *                              allocate a terminator wide char anyway.
+ * @param   pszTag              Allocation tag used for statistics and such.
+ */
+RTDECL(PRTUTF16) RTUtf16AllocTag(size_t cb, const char *pszTag);
+
+
+/**
  * Free a UTF-16 string allocated by RTStrToUtf16(), RTStrToUtf16Ex(),
  * RTLatin1ToUtf16(), RTLatin1ToUtf16Ex(), RTUtf16Dup() or RTUtf16DupEx().
  *
