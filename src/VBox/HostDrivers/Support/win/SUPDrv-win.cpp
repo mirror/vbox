@@ -3577,7 +3577,7 @@ static int supdrvNtProtectRestrictHandlesToProcessAndThread(PSUPDRVNTPROTECT pNt
         SYSTEM_HANDLE_ENTRY_INFO_EX const *pHandleInfo = &pInfo->Handles[i];
         if (pHandleInfo->Object == pProtectedProcess)
         {
-            /* Handles within the protected process is fine. */
+            /* Handles within the protected process are fine. */
             if (   !(pHandleInfo->GrantedAccess & SUPDRV_NT_EVIL_PROCESS_RIGHTS)
                 || pHandleInfo->UniqueProcessId == hProtectedPid)
             {

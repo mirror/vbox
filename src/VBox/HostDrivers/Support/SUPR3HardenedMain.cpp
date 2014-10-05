@@ -1712,7 +1712,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
     g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
 #ifdef RT_OS_WINDOWS
-    if (!g_fSupEarlyVmProcessInit)
+    if (!g_fSupEarlyProcessInit)
 #endif
         g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
 
@@ -1747,12 +1747,12 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * something we can put some kind of reliable trust in.  The first respawning aims
      * at dropping compatibility layers and process "security" solutions.
      */
-    if (   !g_fSupEarlyVmProcessInit
+    if (   !g_fSupEarlyProcessInit
         && !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
         && supR3HardenedWinIsReSpawnNeeded(1 /*iWhich*/, argc, argv))
     {
         SUP_DPRINTF(("SUPR3HardenedMain: Respawn #1\n"));
-        supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV, true /*fAvastKludge*/);
+        supR3HardenedWinInit(SUPSECMAIN_FLAGS_DONT_OPEN_DEV, false /*fAvastKludge*/);
         supR3HardenedVerifyAll(true /* fFatal */, pszProgName);
         return supR3HardenedWinReSpawn(1 /*iWhich*/);
     }
@@ -1763,7 +1763,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * can check the signature of all DLLs mapped into the process.  (Already done
      * by early VM process init.)
      */
-    if (!g_fSupEarlyVmProcessInit)
+    if (!g_fSupEarlyProcessInit)
         supR3HardenedWinInit(fFlags, true /*fAvastKludge*/);
 #endif /* RT_OS_WINDOWS */
 
@@ -1776,35 +1776,36 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * The next steps are only taken if we actually need to access the support
      * driver.  (Already done by early VM process init.)
      */
+    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
+    {
 #ifdef RT_OS_WINDOWS
-    if (!g_fSupEarlyVmProcessInit)
-#endif
-        if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
-        {
-#ifdef RT_OS_WINDOWS
-            /*
-             * Windows: Verify the process (repeated by the kernel later.
-             */
+        /*
+         * Windows: Verify the process (repeated by the kernel later).
+         */
+        if (!g_fSupEarlyProcessInit)
             supR3HardenedWinVerifyProcess();
 
-            /*
-             * Windows: The second respawn.  This time we make a special arrangement
-             * with vboxdrv to monitor access to the new process from its inception.
-             */
-            if (supR3HardenedWinIsReSpawnNeeded(2 /* iWhich*/, argc, argv))
-            {
-                SUP_DPRINTF(("SUPR3HardenedMain: Respawn #2\n"));
-                return supR3HardenedWinReSpawn(2 /* iWhich*/);
-            }
-            SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
-            supR3HardenedWinFlushLoaderCache();
+        /*
+         * Windows: The second respawn.  This time we make a special arrangement
+         * with vboxdrv to monitor access to the new process from its inception.
+         */
+        if (supR3HardenedWinIsReSpawnNeeded(2 /* iWhich*/, argc, argv))
+        {
+            SUP_DPRINTF(("SUPR3HardenedMain: Respawn #2\n"));
+            return supR3HardenedWinReSpawn(2 /* iWhich*/);
+        }
+        SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
+        supR3HardenedWinFlushLoaderCache();
 #endif /* RT_OS_WINDOWS */
 
-            /*
-             * Open the vboxdrv device.
-             */
+        /*
+         * Open the vboxdrv device.
+         */
+#ifdef RT_OS_WINDOWS
+        if (!g_fSupEarlyProcessInit)
+#endif
             supR3HardenedMainOpenDevice();
-        }
+    }
 
 #ifdef RT_OS_WINDOWS
     /*

@@ -390,6 +390,178 @@ typedef struct _CLIENT_ID
 typedef CLIENT_ID *PCLIENT_ID;
 #endif
 
+/** @name User Shared Data
+ * @{ */
+
+#ifdef IPRT_NT_USE_WINTERNL
+typedef struct _KSYSTEM_TIME
+{
+    ULONG                   LowPart;
+    LONG                    High1Time;
+    LONG                    High2Time;
+} KSYSTEM_TIME;
+typedef KSYSTEM_TIME *PKSYSTEM_TIME;
+
+typedef enum _NT_PRODUCT_TYPE
+{
+    NtProductWinNt = 1,
+    NtProductLanManNt,
+    NtProductServer
+} NT_PRODUCT_TYPE;
+
+#define PROCESSOR_FEATURE_MAX       64
+
+typedef enum _ALTERNATIVE_ARCHITECTURE_TYPE
+{
+    StandardDesign = 0,
+    NEC98x86,
+    EndAlternatives
+} ALTERNATIVE_ARCHITECTURE_TYPE;
+
+# if 0
+typedef struct _XSTATE_FEATURE
+{
+    ULONG                   Offset;
+    ULONG                   Size;
+} XSTATE_FEATURE;
+typedef XSTATE_FEATURE *PXSTATE_FEATURE;
+
+#define MAXIMUM_XSTATE_FEATURES     64
+
+typedef struct _XSTATE_CONFIGURATION
+{
+    ULONG64                 EnabledFeatures;
+    ULONG                   Size;
+    ULONG                   OptimizedSave  : 1;
+    XSTATE_FEATURE          Features[MAXIMUM_XSTATE_FEATURES];
+} XSTATE_CONFIGURATION;
+typedef XSTATE_CONFIGURATION *PXSTATE_CONFIGURATION;
+# endif
+
+typedef struct _KUSER_SHARED_DATA
+{
+    ULONG                   TickCountLowDeprecated;
+    ULONG                   TickCountMultiplier;
+    KSYSTEM_TIME volatile   InterruptTime;
+    KSYSTEM_TIME volatile   SystemTime;
+    KSYSTEM_TIME volatile   TimeZoneBias;
+    USHORT                  ImageNumberLow;
+    USHORT                  ImageNumberHigh;
+    WCHAR                   NtSystemRoot[260];
+    ULONG                   MaxStackTraceDepth;
+    ULONG                   CryptoExponent;
+    ULONG                   TimeZoneId;
+    ULONG                   LargePageMinimum;
+    ULONG                   AitSamplingValue;
+    ULONG                   AppCompatFlag;
+    ULONGLONG               RNGSeedVersion;
+    ULONG                   GlobalValidationRunlevel;
+    LONG volatile           TimeZoneBiasStamp;
+    ULONG                   Reserved2;
+    NT_PRODUCT_TYPE         NtProductType;
+    BOOLEAN                 ProductTypeIsValid;
+    BOOLEAN                 Reserved0[1];
+    USHORT                  NativeProcessorArchitecture;
+    ULONG                   NtMajorVersion;
+    ULONG                   NtMinorVersion;
+    BOOLEAN                 ProcessorFeatures[PROCESSOR_FEATURE_MAX];
+    ULONG                   Reserved1;
+    ULONG                   Reserved3;
+    ULONG volatile          TimeSlip;
+    ALTERNATIVE_ARCHITECTURE_TYPE AlternativeArchitecture;
+    ULONG                   AltArchitecturePad[1];
+    LARGE_INTEGER           SystemExpirationDate;
+    ULONG                   SuiteMask;
+    BOOLEAN                 KdDebuggerEnabled;
+    union
+    {
+        UCHAR               MitigationPolicies;
+        struct
+        {
+            UCHAR           NXSupportPolicy  : 2;
+            UCHAR           SEHValidationPolicy  : 2;
+            UCHAR           CurDirDevicesSkippedForDlls  : 2;
+            UCHAR           Reserved  : 2;
+        };
+    };
+    UCHAR                   Reserved6[2];
+    ULONG volatile          ActiveConsoleId;
+    ULONG volatile          DismountCount;
+    ULONG                   ComPlusPackage;
+    ULONG                   LastSystemRITEventTickCount;
+    ULONG                   NumberOfPhysicalPages;
+    BOOLEAN                 SafeBootMode;
+    UCHAR                   Reserved12[3];
+    union
+    {
+        ULONG               SharedDataFlags;
+        struct
+        {
+            ULONG           DbgErrorPortPresent  : 1;
+            ULONG           DbgElevationEnabled  : 1;
+            ULONG           DbgVirtEnabled  : 1;
+            ULONG           DbgInstallerDetectEnabled  : 1;
+            ULONG           DbgLkgEnabled  : 1;
+            ULONG           DbgDynProcessorEnabled  : 1;
+            ULONG           DbgConsoleBrokerEnabled  : 1;
+            ULONG           DbgSecureBootEnabled  : 1;
+            ULONG           SpareBits  : 24;
+        };
+    };
+    ULONG                   DataFlagsPad[1];
+    ULONGLONG               TestRetInstruction;
+    LONGLONG                QpcFrequency;
+    ULONGLONG               SystemCallPad[3];
+    union
+    {
+        ULONG64 volatile    TickCountQuad;
+        KSYSTEM_TIME volatile TickCount;
+        struct
+        {
+            ULONG           ReservedTickCountOverlay[3];
+            ULONG           TickCountPad[1];
+        };
+    };
+    ULONG                   Cookie;
+    ULONG                   CookiePad[1];
+    LONGLONG                ConsoleSessionForegroundProcessId;
+    ULONGLONG               TimeUpdateLock;
+    ULONGLONG               BaselineSystemTimeQpc;
+    ULONGLONG               BaselineInterruptTimeQpc;
+    ULONGLONG               QpcSystemTimeIncrement;
+    ULONGLONG               QpcInterruptTimeIncrement;
+    ULONG                   QpcSystemTimeIncrement32;
+    ULONG                   QpcInterruptTimeIncrement32;
+    UCHAR                   QpcSystemTimeIncrementShift;
+    UCHAR                   QpcInterruptTimeIncrementShift;
+    UCHAR                   Reserved8[14];
+    USHORT                  UserModeGlobalLogger[16];
+    ULONG                   ImageFileExecutionOptions;
+    ULONG                   LangGenerationCount;
+    ULONGLONG               Reserved4;
+    ULONGLONG volatile      InterruptTimeBias;
+    ULONGLONG volatile      QpcBias;
+    ULONG volatile          ActiveProcessorCount;
+    UCHAR volatile          ActiveGroupCount;
+    UCHAR                   Reserved9;
+    union
+    {
+        USHORT              QpcData;
+        struct
+        {
+            BOOLEAN volatile QpcBypassEnabled;
+            UCHAR           QpcShift;
+        };
+    };
+    LARGE_INTEGER           TimeZoneBiasEffectiveStart;
+    LARGE_INTEGER           TimeZoneBiasEffectiveEnd;
+    XSTATE_CONFIGURATION    XState;
+} KUSER_SHARED_DATA;
+typedef KUSER_SHARED_DATA *PKUSER_SHARED_DATA;
+#endif /* IPRT_NT_USE_WINTERNL */
+/** @} */
+
+
 /** @name Process And Thread Environment Blocks
  * @{ */
 
