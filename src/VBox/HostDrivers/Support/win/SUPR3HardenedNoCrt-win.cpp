@@ -38,9 +38,11 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/heap.h>
 #include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/mem.h>
 
 #include "SUPLibInternal.h"
@@ -96,8 +98,117 @@ RTDECL(void) RTAssertMsg2V(const char *pszFormat, va_list va)
  * Memory allocator.
  */
 
-/** The heap we're using. */
-static HANDLE g_hSupR3HardenedHeap = NULL;
+/** The handle of the heap we're using. */
+static HANDLE       g_hSupR3HardenedHeap = NULL;
+/** Number of heaps used during early process init. */
+static uint32_t     g_cSupR3HardenedEarlyHeaps = 0;
+/** Early process init heaps. */
+static struct
+{
+    /** The heap handle. */
+    RTHEAPSIMPLE    hHeap;
+    /** The heap block pointer. */
+    void           *pvBlock;
+    /** The size of the heap block. */
+    size_t          cbBlock;
+    /** Number of active allocations on this heap. */
+    size_t          cAllocations;
+} g_aSupR3HardenedEarlyHeaps[8];
+
+
+static uint32_t supR3HardenedEarlyFind(void *pv)
+{
+    uint32_t iHeap = g_cSupR3HardenedEarlyHeaps;
+    while (iHeap-- > 0)
+        if ((uintptr_t)pv - (uintptr_t)g_aSupR3HardenedEarlyHeaps[iHeap].pvBlock < g_aSupR3HardenedEarlyHeaps[iHeap].cbBlock)
+            return iHeap;
+    return UINT32_MAX;
+}
+
+
+static void supR3HardenedEarlyCompact(void)
+{
+    uint32_t iHeap = g_cSupR3HardenedEarlyHeaps;
+    while (iHeap-- > 0)
+        if (g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations == 0)
+        {
+            PVOID  pvMem = g_aSupR3HardenedEarlyHeaps[iHeap].pvBlock;
+            SIZE_T cbMem = g_aSupR3HardenedEarlyHeaps[iHeap].cbBlock;
+            if (iHeap + 1 < g_cSupR3HardenedEarlyHeaps)
+                g_aSupR3HardenedEarlyHeaps[iHeap] = g_aSupR3HardenedEarlyHeaps[g_cSupR3HardenedEarlyHeaps - 1];
+            g_cSupR3HardenedEarlyHeaps--;
+
+            NTSTATUS rcNt = NtFreeVirtualMemory(NtCurrentProcess(), &pvMem, &cbMem, MEM_RELEASE);
+            Assert(NT_SUCCESS(rcNt));
+            SUP_DPRINTF(("supR3HardenedEarlyCompact: Removed heap %#u (%#p LB %#zx)\n", iHeap, pvMem, cbMem));
+        }
+}
+
+
+static void *supR3HardenedEarlyAlloc(size_t cb, bool fZero)
+{
+    /*
+     * Try allocate on existing heaps.
+     */
+    void    *pv;
+    uint32_t iHeap = 0;
+    while (iHeap < g_cSupR3HardenedEarlyHeaps)
+    {
+        if (fZero)
+            pv = RTHeapSimpleAllocZ(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, cb, 0);
+        else
+            pv = RTHeapSimpleAlloc(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, cb, 0);
+        if (pv)
+        {
+            g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations++;
+#ifdef SUPR3HARDENED_EARLY_HEAP_TRACE
+            SUP_DPRINTF(("Early heap: %p LB %#zx - alloc\n", pv, cb));
+#endif
+            return pv;
+        }
+        iHeap++;
+    }
+
+    /*
+     * Add another heap.
+     */
+    if (iHeap == RT_ELEMENTS(g_aSupR3HardenedEarlyHeaps))
+        supR3HardenedFatal("Early heap table is full (cb=%#zx).\n", cb);
+    SIZE_T cbBlock = iHeap == 0 ? _1M : g_aSupR3HardenedEarlyHeaps[iHeap - 1].cbBlock * 2;
+    while (cbBlock <= cb * 2)
+        cbBlock *= 2;
+
+    PVOID pvBlock = NULL;
+    NTSTATUS rcNt = NtAllocateVirtualMemory(NtCurrentProcess(), &pvBlock, 0 /*ZeroBits*/, &cbBlock, MEM_COMMIT, PAGE_READWRITE);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatal("NtAllocateVirtualMemory(,,,%#zx,,) failed: rcNt=%#x\n", cbBlock, rcNt);
+    SUP_DPRINTF(("New simple heap: #%u %p LB %#zx (for %zu allocation)\n", iHeap, pvBlock, cbBlock, cb));
+
+    RTHEAPSIMPLE hHeap;
+    int rc = RTHeapSimpleInit(&hHeap, pvBlock, cbBlock);
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("RTHeapSimpleInit(,%p,%#zx) failed: rc=%#x\n", pvBlock, cbBlock, rc);
+
+    if (fZero)
+        pv = RTHeapSimpleAllocZ(hHeap, cb, 0);
+    else
+        pv = RTHeapSimpleAlloc(hHeap, cb, 0);
+    if (!pv)
+        supR3HardenedFatal("RTHeapSimpleAlloc[Z] failed allocating %#zx bytes on a %#zu heap.\n", cb, cbBlock);
+
+    g_aSupR3HardenedEarlyHeaps[iHeap].pvBlock      = pvBlock;
+    g_aSupR3HardenedEarlyHeaps[iHeap].cbBlock      = cbBlock;
+    g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations = 1;
+    g_aSupR3HardenedEarlyHeaps[iHeap].hHeap        = hHeap;
+
+    Assert(g_cSupR3HardenedEarlyHeaps == iHeap);
+    g_cSupR3HardenedEarlyHeaps                     = iHeap + 1;
+
+#ifdef SUPR3HARDENED_EARLY_HEAP_TRACE
+    SUP_DPRINTF(("Early heap: %p LB %#zx - alloc\n", pv, cb));
+#endif
+    return pv;
+}
 
 
 /**
@@ -107,6 +218,7 @@ static HANDLE g_hSupR3HardenedHeap = NULL;
  */
 static HANDLE supR3HardenedHeapInit(void)
 {
+    Assert(g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_EP_CALLED);
     HANDLE hHeap = RtlCreateHeap(HEAP_GROWABLE | HEAP_CLASS_PRIVATE, NULL /*HeapBase*/,
                                  0 /*ReserveSize*/, 0 /*CommitSize*/,  NULL /*Lock*/, NULL /*Parameters*/);
     if (hHeap)
@@ -128,6 +240,7 @@ DECLHIDDEN(void) supR3HardenedWinCompactHeaps(void)
     if (g_hSupR3HardenedHeap)
         RtlCompactHeap(g_hSupR3HardenedHeap, 0 /*dwFlags*/);
     RtlCompactHeap(GetProcessHeap(), 0 /*dwFlags*/);
+    supR3HardenedEarlyCompact();
 }
 
 
@@ -154,7 +267,13 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
+    {
+        if (   g_fSupEarlyVmProcessInit
+            && g_enmSupR3HardenedMainState <= SUPR3HARDENEDMAINSTATE_WIN_EP_CALLED)
+            return supR3HardenedEarlyAlloc(cb, false /*fZero*/);
         hHeap = supR3HardenedHeapInit();
+    }
+
     void *pv = RtlAllocateHeap(hHeap, 0 /*fFlags*/, cb);
     if (!pv)
         supR3HardenedFatal("RtlAllocateHeap failed to allocate %zu bytes.\n", cb);
@@ -166,7 +285,13 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 {
     HANDLE hHeap = g_hSupR3HardenedHeap;
     if (!hHeap)
+    {
+        if (   g_fSupEarlyVmProcessInit
+            && g_enmSupR3HardenedMainState <= SUPR3HARDENEDMAINSTATE_WIN_EP_CALLED)
+            return supR3HardenedEarlyAlloc(cb, true /*fZero*/);
         hHeap = supR3HardenedHeapInit();
+    }
+
     void *pv = RtlAllocateHeap(hHeap, HEAP_ZERO_MEMORY, cb);
     if (!pv)
         supR3HardenedFatal("RtlAllocateHeap failed to allocate %zu bytes.\n", cb);
@@ -201,9 +326,56 @@ RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT
     if (!pvOld)
         return RTMemAllocZTag(cbNew, pszTag);
 
+    void *pv;
+    if (g_fSupEarlyVmProcessInit)
+    {
+        uint32_t iHeap = supR3HardenedEarlyFind(pvOld);
+        if (iHeap != UINT32_MAX)
+        {
+#if 0 /* RTHeapSimpleRealloc is not implemented */
+            /* If this is before we can use a regular heap, we try resize
+               within the simple heap.  (There are a lot of array growing in
+               the ASN.1 code.) */
+            if (g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+            {
+                pv = RTHeapSimpleRealloc(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, pvOld, cbNew, 0);
+                if (pv)
+                {
+# ifdef SUPR3HARDENED_EARLY_HEAP_TRACE
+                    SUP_DPRINTF(("Early heap: %p LB %#zx, was %p - realloc\n", pvNew, cbNew, pvOld));
+# endif
+                    return pv;
+                }
+            }
+#endif
+
+            /* Either we can't reallocate it on the same simple heap, or we're
+               past hardened main and wish to migrate everything over on the
+               real heap. */
+            size_t cbOld = RTHeapSimpleSize(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, pvOld);
+            pv = RTMemAllocTag(cbNew, pszTag);
+            if (pv)
+            {
+                memcpy(pv, pvOld, RT_MIN(cbOld, cbNew));
+                RTHeapSimpleFree(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, pvOld);
+                if (g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations)
+                    g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations--;
+                if (   !g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations
+                    && g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+                    supR3HardenedEarlyCompact();
+            }
+# ifdef SUPR3HARDENED_EARLY_HEAP_TRACE
+            SUP_DPRINTF(("Early heap: %p LB %#zx, was %p %LB %#zx - realloc\n", pv, cbNew, pvOld, cbOld));
+# endif
+            return pv;
+        }
+        Assert(g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED);
+    }
+
+    /* Allocate from the regular heap. */
     HANDLE hHeap = g_hSupR3HardenedHeap;
     Assert(hHeap != NULL);
-    void *pv = RtlReAllocateHeap(hHeap, 0 /*dwFlags*/, pvOld, cbNew);
+    pv = RtlReAllocateHeap(hHeap, 0 /*dwFlags*/, pvOld, cbNew);
     if (!pv)
         supR3HardenedFatal("RtlReAllocateHeap failed to allocate %zu bytes.\n", cbNew);
     return pv;
@@ -214,6 +386,25 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
     if (pv)
     {
+        if (g_fSupEarlyVmProcessInit)
+        {
+            uint32_t iHeap = supR3HardenedEarlyFind(pv);
+            if (iHeap != UINT32_MAX)
+            {
+#ifdef SUPR3HARDENED_EARLY_HEAP_TRACE
+                SUP_DPRINTF(("Early heap: %p - free\n", pv));
+#endif
+                RTHeapSimpleFree(g_aSupR3HardenedEarlyHeaps[iHeap].hHeap, pv);
+                if (g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations)
+                    g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations--;
+                if (   !g_aSupR3HardenedEarlyHeaps[iHeap].cAllocations
+                    && g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+                    supR3HardenedEarlyCompact();
+                return;
+            }
+            Assert(g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED);
+        }
+
         HANDLE hHeap = g_hSupR3HardenedHeap;
         Assert(hHeap != NULL);
         RtlFreeHeap(hHeap, 0 /* dwFlags*/, pv);
@@ -248,5 +439,39 @@ RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_T
 
     memset(pv, 0xff, cb);
     ASMMemoryFence();
+}
+
+
+
+/*
+ * path-win.cpp
+ */
+
+RTDECL(int) RTPathGetCurrent(char *pszPath, size_t cbPath)
+{
+    int rc;
+    if (g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+/** @todo Rainy day: improve this by checking the process parameter block
+ *        (needs to be normalized). */
+        rc = RTStrCopy(pszPath, cbPath, "C:\\");
+    else
+    {
+        /*
+         * GetCurrentDirectory may in some cases omit the drive letter, according
+         * to MSDN, thus the GetFullPathName call.
+         */
+        RTUTF16 wszCurPath[RTPATH_MAX];
+        if (GetCurrentDirectoryW(RTPATH_MAX, wszCurPath))
+        {
+            RTUTF16 wszFullPath[RTPATH_MAX];
+            if (GetFullPathNameW(wszCurPath, RTPATH_MAX, wszFullPath, NULL))
+                rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cbPath, NULL);
+            else
+                rc = RTErrConvertFromWin32(RtlGetLastWin32Error());
+        }
+        else
+            rc = RTErrConvertFromWin32(RtlGetLastWin32Error());
+    }
+    return rc;
 }
 

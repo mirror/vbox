@@ -239,7 +239,12 @@ static PVERIFIERCACHEENTRY  volatile g_apVerifierCache[128];
 static PVERIFIERCACHEENTRY  volatile g_pVerifierCacheTodoWvt = NULL;
 /** Queue of cached images which needs their imports checked. */
 static PVERIFIERCACHEIMPORT volatile g_pVerifierCacheTodoImports = NULL;
+
+/** The windows path to dir \\SystemRoot\\System32 directory (technically
+ *  this whatever \KnownDlls\KnownDllPath points to). */
+SUPSYSROOTDIRBUF            g_System32WinPath;
 /** @ */
+
 
 /** Static error info structure used during init. */
 static RTERRINFOSTATIC      g_ErrInfoStatic;
@@ -304,6 +309,8 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
 # include "NtCreateSection-template-x86-syscall-type-1.h"
 # undef SYSCALL
 #endif
+
+DECLASM(void) supR3HardenedVmProcessInitThunk(void);
 
 
 
@@ -1806,15 +1813,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
              * Search for the DLL.  Only System32 is allowed as the target of
              * a search on the API level, all VBox calls will have full paths.
              */
-            cwc = GetSystemDirectoryW(wszPath, RT_ELEMENTS(wszPath) - 32);
-            if (!cwc)
-            {
-                supR3HardenedError(VINF_SUCCESS, false,
-                                   "supR3HardenedMonitor_LdrLoadDll: GetSystemDirectoryW failed: %u\n", RtlGetLastWin32Error());
-                SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_UNEXPECTED_IO_ERROR));
-                RtlRestoreLastWin32Error(dwSavedLastError);
-                return STATUS_UNEXPECTED_IO_ERROR;
-            }
+            AssertCompile(sizeof(g_System32WinPath.awcBuffer) <= sizeof(wszPath));
+            cwc = g_System32WinPath.UniStr.Length / sizeof(RTUTF16); Assert(cwc > 2);
             if (cwc + 1 + cwcName + fNeedDllSuffix * 4 >= RT_ELEMENTS(wszPath))
             {
                 supR3HardenedError(VINF_SUCCESS, false,
@@ -1823,6 +1823,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 RtlRestoreLastWin32Error(dwSavedLastError);
                 return STATUS_NAME_TOO_LONG;
             }
+            memcpy(wszPath, g_System32WinPath.UniStr.Buffer, cwc * sizeof(RTUTF16));
             wszPath[cwc++] = '\\';
             memcpy(&wszPath[cwc], pawcName, cwcName * sizeof(WCHAR));
             cwc += cwcName;
@@ -1852,9 +1853,37 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
          * the real API as we've replaced any searchable name with a full name
          * and the real API can come up with a fitting status code for it.
          */
-        HANDLE hFile = CreateFileW(wszPath, GENERIC_READ, FILE_SHARE_READ, NULL /*pSecurityAttributes*/,
-                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL /*hTemplateFile*/);
-        if (hFile != INVALID_HANDLE_VALUE)
+        HANDLE          hRootDir;
+        UNICODE_STRING  NtPathUniStr;
+        int rc = RTNtPathFromWinUtf16Ex(&NtPathUniStr, &hRootDir, wszPath, RTSTR_MAX);
+        if (RT_FAILURE(rc))
+        {
+            supR3HardenedError(rc, false,
+                               "supR3HardenedMonitor_LdrLoadDll: RTNtPathFromWinUtf16Ex failed on '%ls': %Rrc\n", wszPath, rc);
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x\n", STATUS_OBJECT_NAME_INVALID));
+            RtlRestoreLastWin32Error(dwSavedLastError);
+            return STATUS_OBJECT_NAME_INVALID;
+        }
+
+        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtPathUniStr, OBJ_CASE_INSENSITIVE, hRootDir, NULL /*pSecDesc*/);
+
+        rcNt = NtCreateFile(&hFile,
+                            FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
+                            &ObjAttr,
+                            &Ios,
+                            NULL /* Allocation Size*/,
+                            FILE_ATTRIBUTE_NORMAL,
+                            FILE_SHARE_READ,
+                            FILE_OPEN,
+                            FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                            NULL /*EaBuffer*/,
+                            0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+            rcNt = Ios.Status;
+        if (NT_SUCCESS(rcNt))
         {
             ULONG fAccess = 0;
             ULONG fProtect = 0;
@@ -1880,8 +1909,10 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         else
         {
             DWORD dwErr = RtlGetLastWin32Error();
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u\n", wszPath, dwErr));
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls)\n",
+                         wszPath, dwErr, NtPathUniStr.Length / sizeof(RTUTF16), NtPathUniStr.Buffer));
         }
+        RTNtPathFree(&NtPathUniStr, &hRootDir);
     }
 
     /*
@@ -3654,8 +3685,12 @@ static void supR3HardNtPuChFindNtdll(PSUPR3HARDNTPUCH pThis)
 
 
 
-static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo)
+static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, uintptr_t *puChildNtDllAddr, uintptr_t *puChildExeAddr,
+                                       PRTERRINFO pErrInfo)
 {
+    *puChildNtDllAddr = 0;
+    *puChildExeAddr = 0;
+
     /*
      * Initialize the purifier instance data.
      */
@@ -3694,6 +3729,9 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
 
     supR3HardNtPuChFindNtdll(&This);
 
+    *puChildNtDllAddr = This.uNtDllAddr;
+    *puChildExeAddr   = (uintptr_t)This.Peb.ImageBaseAddress;
+
     /*
      * Do the work, the last bit we tag along with the process verfication code.
      */
@@ -3706,6 +3744,221 @@ static int supR3HardenedWinPurifyChild(HANDLE hProcess, HANDLE hThread, PRTERRIN
         rc = supHardenedWinVerifyProcess(hProcess, hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION, NULL /*pcFixes*/, pErrInfo);
 
     return rc;
+}
+
+
+/**
+ * Terminates the child process.
+ *
+ * @param   hProcess            The process handle.
+ * @param   pszWhere            Who's having child rasing troubles.
+ * @param   rc                  The status code to report.
+ * @param   pszFormat           The message format string.
+ * @param   ...                 Message format arguments.
+ */
+static void supR3HardenedWinKillChild(HANDLE hProcess, const char *pszWhere, int rc, const char *pszFormat, ...)
+{
+    /*
+     * Terminate the process ASAP and display error.
+     */
+    NtTerminateProcess(hProcess, RTEXITCODE_FAILURE);
+
+    va_list va;
+    va_start(va, pszFormat);
+    supR3HardenedErrorV(rc, false /*fFatal*/, pszFormat, va);
+    va_end(va);
+
+    /*
+     * Wait for the process to really go away.
+     */
+    PROCESS_BASIC_INFORMATION BasicInfo;
+    NTSTATUS rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+    bool fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
+    if (!fExitOk)
+    {
+        NTSTATUS rcNtWait;
+        DWORD dwStartTick = GetTickCount();
+        do
+        {
+            NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
+
+            LARGE_INTEGER Timeout;
+            Timeout.QuadPart = -20000000; /* 2 second */
+            rcNtWait = NtWaitForSingleObject(hProcess, TRUE /*Alertable*/, &Timeout);
+
+            rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
+            fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
+        } while (   !fExitOk
+                 && (   rcNtWait == STATUS_TIMEOUT
+                     || rcNtWait == STATUS_USER_APC
+                     || rcNtWait == STATUS_ALERTED)
+                 && GetTickCount() - dwStartTick < 60 * 1000);
+        if (fExitOk)
+            supR3HardenedError(rc, false /*fFatal*/,
+                               "NtDuplicateObject failed and we failed to kill child: rc=%u (%#x) rcNtWait=%#x hProcess=%p\n",
+                               rc, rc, rcNtWait, hProcess);
+    }
+
+    /*
+     * Final error message.
+     */
+    va_start(va, pszFormat);
+    supR3HardenedFatalMsgV(pszWhere, kSupInitOp_Misc, rc, pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Checks the child process for error when the parent event semaphore is
+ * signaled.
+ *
+ * If there is an error pending, this function will not return.
+ *
+ * @param   hProcWait       The child process handle.
+ * @param   uChildExeAddr   The address of the executable in the child process.
+ * @param   phEvtParent     Pointer to the parent event semaphore handle.  We
+ *                          may close the event semaphore and set it to NULL.
+ * @param   phEvtChild      Pointer to the child event semaphore handle.  We may
+ *                          close the event semaphore and set it to NULL.
+ */
+static void supR3HardenedWinCheckVmChild(HANDLE hProcWait, uintptr_t uChildExeAddr, HANDLE *phEvtParent, HANDLE *phEvtChild)
+{
+    /*
+     * Read the process parameters from the child.
+     */
+    uintptr_t           uChildAddr = uChildExeAddr + ((uintptr_t)&g_ProcParams - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
+    SIZE_T              cbIgnored;
+    SUPR3WINPROCPARAMS  ChildProcParams;
+    RT_ZERO(ChildProcParams);
+    NTSTATUS rcNt = NtReadVirtualMemory(hProcWait, (PVOID)uChildAddr, &ChildProcParams, sizeof(ChildProcParams), &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt,
+                                  "NtReadVirtualMemory(,%p,) failed reading child process status: %#x\n", uChildAddr, rcNt);
+
+    /*
+     * Signal the child to get on with whatever it's doing.
+     */
+    rcNt = NtSetEvent(*phEvtChild, NULL);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt, "NtSetEvent failed: %#x\n", rcNt);
+
+    /*
+     * Close the event semaphore handles.
+     */
+    rcNt = NtClose(*phEvtParent);
+    if (NT_SUCCESS(rcNt))
+        rcNt = NtClose(*phEvtChild);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt, "NtClose failed on event sem: %#x\n", rcNt);
+    *phEvtChild = NULL;
+    *phEvtParent = NULL;
+
+    /*
+     * Process the information we read.
+     */
+    if (ChildProcParams.rc == VINF_SUCCESS)
+        return;
+
+    /* An error occurred, report it. */
+    ChildProcParams.szErrorMsg[sizeof(ChildProcParams.szErrorMsg) - 1] = '\0';
+    supR3HardenedFatalMsg("supR3HardenedWinCheckVmChild", kSupInitOp_Misc, ChildProcParams.rc, "%s", ChildProcParams.szErrorMsg);
+}
+
+
+static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr_t uChildNtDllAddr, uintptr_t uChildExeAddr,
+                                        HANDLE hEvtChild, HANDLE hEvtParent)
+{
+    /*
+     * Plant the process parameters.  This ASSUMES the handle inheritance is
+     * performed when creating the child process.
+     */
+    SUPR3WINPROCPARAMS ChildProcParams;
+    RT_ZERO(ChildProcParams);
+    ChildProcParams.hEvtChild  = hEvtChild;
+    ChildProcParams.hEvtParent = hEvtParent;
+    ChildProcParams.uNtDllAddr = uChildNtDllAddr;
+    ChildProcParams.rc         = VINF_SUCCESS;
+
+    uintptr_t uChildAddr = uChildExeAddr + ((uintptr_t)&g_ProcParams - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
+    SIZE_T    cbIgnored;
+    NTSTATUS  rcNt = NtWriteVirtualMemory(hProcess, (PVOID)uChildAddr, &ChildProcParams, sizeof(ChildProcParams), &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+                                  "NtWriteVirtualMemory(,%p,) failed writing child process parameters: %#x\n", uChildAddr, rcNt);
+
+    /*
+     * Locate the LdrInitializeThunk address in the child as well as pristine
+     * code bits for it.
+     */
+    PSUPHNTLDRCACHEENTRY pLdrEntry;
+    int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
+    if (RT_FAILURE(rc))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+                                  "supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
+
+    uint8_t *pbChildNtDllBits;
+    rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbChildNtDllBits, uChildNtDllAddr, NULL, NULL, NULL /*pErrInfo*/);
+    if (RT_FAILURE(rc))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+                                  "supHardNtLdrCacheEntryGetBits failed on NTDLL: %Rrc\n", rc);
+
+    RTLDRADDR uLdrInitThunk;
+    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbChildNtDllBits, uChildNtDllAddr, UINT32_MAX,
+                          "LdrInitializeThunk", &uLdrInitThunk);
+    if (RT_FAILURE(rc))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+                                  "Error locating LdrInitializeThunk in NTDLL: %Rrc", rc);
+    PVOID pvLdrInitThunk = (PVOID)(uintptr_t)uLdrInitThunk;
+    SUP_DPRINTF(("supR3HardenedWinInitVmChild: uLdrInitThunk=%p\n", (uintptr_t)uLdrInitThunk));
+
+    /*
+     * Calculate the address of our code in the child process.
+     */
+    uintptr_t uEarlyVmProcInitEP = uChildExeAddr + (  (uintptr_t)&supR3HardenedVmProcessInitThunk
+                                                    - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
+
+    /*
+     * Compose the LdrInitializeThunk replacement bytes.
+     */
+    uint8_t abNew[16];
+    memcpy(abNew, pbChildNtDllBits + ((uintptr_t)uLdrInitThunk - uChildNtDllAddr), sizeof(abNew));
+#ifdef RT_ARCH_AMD64
+    abNew[0] = 0xff;
+    abNew[1] = 0x25;
+    *(uint32_t *)&abNew[2] = 0;
+    *(uint64_t *)&abNew[6] = uEarlyVmProcInitEP;
+#elif defined(RT_ARCH_X86)
+    abNew[0] = 0xe9;
+    *(uint32_t *)&abNew[1] = uEarlyVmProcInitEP - ((uint32_t)uLdrInitThunk + 5);
+#else
+# error "Unsupported arch."
+#endif
+
+    /*
+     * Install the LdrInitializeThunk replacement code in the child process.
+     */
+    PVOID   pvProt = pvLdrInitThunk;
+    SIZE_T  cbProt = sizeof(abNew);
+    ULONG   fOldProt;
+    rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, PAGE_EXECUTE_READWRITE, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+                                  "NtProtectVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    rcNt = NtWriteVirtualMemory(hProcess, pvLdrInitThunk, abNew, sizeof(abNew), &cbIgnored);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+                                  "NtWriteVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
+
+    pvProt = pvLdrInitThunk;
+    cbProt = sizeof(abNew);
+    rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, fOldProt, &fOldProt);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+                                  "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
+
+    /* Caller starts child execution. */
+    SUP_DPRINTF(("supR3HardenedWinInitVmChild: Start child.\n"));
 }
 
 
@@ -3725,6 +3978,20 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     PRTL_USER_PROCESS_PARAMETERS    pParentProcParams = pPeb->ProcessParameters;
 
     SUPR3HARDENED_ASSERT(g_cSuplibHardenedWindowsMainCalls == 1);
+
+    /*
+     * Set up VM child communication event semaphores.
+     */
+    HANDLE hEvtChild = NULL;
+    HANDLE hEvtParent = NULL;
+    if (iWhich >= 2)
+    {
+        OBJECT_ATTRIBUTES ObjAttrs;
+        InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+        SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtChild, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
+        InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+        SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtParent, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
+    }
 
     /*
      * Set up security descriptors.
@@ -3853,27 +4120,28 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
      * Apply anti debugger notification trick to the thread.  (Also done in
      * supR3HardenedWinInstallHooks.)
      */
-    rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
+    rcNt = NtSetInformationThread(hThread, ThreadHideFromDebugger, NULL, 0);
     if (!NT_SUCCESS(rcNt))
-    {
-        NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
-        supR3HardenedError(rcNt, true /*fFatal*/, "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
-    }
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", rcNt,
+                                  "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
 #endif
 
     /*
      * Clean up the process.
      */
-    int rc = supR3HardenedWinPurifyChild(hProcess, hThread, RTErrInfoInitStatic(&g_ErrInfoStatic));
+    uintptr_t uChildNtDllAddr;
+    uintptr_t uChildExeAddr;
+    int rc = supR3HardenedWinPurifyChild(hProcess, hThread, &uChildNtDllAddr, &uChildExeAddr,
+                                         RTErrInfoInitStatic(&g_ErrInfoStatic));
     if (RT_FAILURE(rc))
-    {
-        NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
-        supR3HardenedError(rc, true /*fFatal*/, "%s", g_ErrInfoStatic.szMsg);
-    }
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", rc, "%s", g_ErrInfoStatic.szMsg);
 
     /*
      * Start the process execution.
      */
+    if (iWhich >= 2)
+        supR3HardenedWinInitVmChild(hProcess, hThread, uChildNtDllAddr, uChildExeAddr, hEvtChild, hEvtParent);
+
     ULONG cSuspendCount = 0;
     SUPR3HARDENED_ASSERT_NT_SUCCESS(NtResumeThread(hThread, &cSuspendCount));
 
@@ -3886,11 +4154,13 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 
     PROCESS_BASIC_INFORMATION BasicInfo;
     HANDLE hProcWait;
-    ULONG fRights = SYNCHRONIZE;
+    ULONG fRights = SYNCHRONIZE | PROCESS_TERMINATE;
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* Introduced in Vista. */
         fRights |= PROCESS_QUERY_LIMITED_INFORMATION;
     else
         fRights |= PROCESS_QUERY_INFORMATION;
+    if (iWhich == 2)
+        fRights |= PROCESS_VM_READ;
     rcNt = NtDuplicateObject(NtCurrentProcess(), hProcess,
                              NtCurrentProcess(), &hProcWait,
                              fRights, 0 /*HandleAttributes*/, 0);
@@ -3899,43 +4169,22 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
                                  NtCurrentProcess(), &hProcWait,
                                  SYNCHRONIZE, 0 /*HandleAttributes*/, 0);
     if (!NT_SUCCESS(rcNt))
-    {
-        /* Failure is unacceptable, kill the process. */
-        NtTerminateProcess(hProcess, RTEXITCODE_FAILURE);
-        supR3HardenedError(rcNt, false /*fFatal*/, "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
-
-        NTSTATUS rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
-        bool fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
-        if (!fExitOk)
-        {
-            NTSTATUS rcNtWait;
-            DWORD dwStartTick = GetTickCount();
-            do
-            {
-                NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
-
-                LARGE_INTEGER Timeout;
-                Timeout.QuadPart = -20000000; /* 2 second */
-                rcNtWait = NtWaitForSingleObject(hProcess, TRUE /*Alertable*/, &Timeout);
-
-                rcNtExit = NtQueryInformationProcess(hProcess, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
-                fExitOk = NT_SUCCESS(rcNtExit) && BasicInfo.ExitStatus != STATUS_PENDING;
-            } while (   !fExitOk
-                     && (   rcNtWait == STATUS_TIMEOUT
-                         || rcNtWait == STATUS_USER_APC
-                         || rcNtWait == STATUS_ALERTED)
-                     && GetTickCount() - dwStartTick < 60 * 1000);
-            if (fExitOk)
-                supR3HardenedError(rcNt, false /*fFatal*/,
-                                   "NtDuplicateObject failed and we failed to kill child: rcNt=%u rcNtWait=%u hProcess=%p\n",
-                                   rcNt, rcNtWait, hProcess);
-        }
-        supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, VERR_INVALID_NAME,
-                              "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
-    }
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", VERR_INVALID_NAME,
+                                  "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
 
     SUPR3HARDENED_ASSERT_NT_SUCCESS(NtClose(hProcess));
     hProcess = NULL;
+
+    /*
+     * Signal the VM child that we've closed the unrestricted handles.
+     */
+    if (iWhich >= 2)
+    {
+        rcNt = NtSetEvent(hEvtChild, NULL);
+        if (!NT_SUCCESS(rcNt))
+            supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", VERR_INVALID_NAME,
+                                      "NtSetEvent failed on child process handle: %#x\n", rcNt);
+    }
 
     /*
      * Ditch the loader cache so we don't sit on too much memory while waiting.
@@ -3971,49 +4220,43 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 #endif
     }
 
+    for (;;)
+    {
+        HANDLE ahHandles[3];
+        ULONG  cHandles = 1;
+        ahHandles[0] = hProcWait;
+        if (hEvtParent != NULL)
+            ahHandles[cHandles++] = hEvtParent;
+        if (hParent != NULL)
+            ahHandles[cHandles++] = hParent;
+
+        rcNt = NtWaitForMultipleObjects(cHandles, &ahHandles[0], WaitAnyObject, TRUE /*Alertable*/, NULL /*pTimeout*/);
+        if (rcNt == STATUS_WAIT_0 + 1 && hEvtParent != NULL)
+            supR3HardenedWinCheckVmChild(hProcWait, uChildExeAddr, &hEvtParent, &hEvtChild);
+        else if (   (ULONG)rcNt - (ULONG)STATUS_WAIT_0           < cHandles
+                 || (ULONG)rcNt - (ULONG)STATUS_ABANDONED_WAIT_0 < cHandles)
+            break;
+        else if (   rcNt != STATUS_TIMEOUT
+                 && rcNt != STATUS_USER_APC
+                 && rcNt != STATUS_ALERTED)
+            supR3HardenedFatal("NtWaitForMultipleObjects returned %#x\n", rcNt);
+    }
+
     if (hParent != NULL)
-    {
-        for (;;)
-        {
-            HANDLE ahHandles[2] = { hProcWait, hParent };
-            rcNt = NtWaitForMultipleObjects(2, &ahHandles[0], WaitAnyObject, TRUE /*Alertable*/, NULL /*pTimeout*/);
-            if (   rcNt == STATUS_WAIT_0
-                || rcNt == STATUS_WAIT_0 + 1
-                || rcNt == STATUS_ABANDONED_WAIT_0
-                || rcNt == STATUS_ABANDONED_WAIT_0 + 1)
-                break;
-            if (   rcNt != STATUS_TIMEOUT
-                && rcNt != STATUS_USER_APC
-                && rcNt != STATUS_ALERTED)
-                supR3HardenedFatal("NtWaitForMultipleObjects returned %#x\n", rcNt);
-        }
         NtClose(hParent);
-    }
-    else
-    {
-        /*
-         * Wait for the process to terminate.
-         */
-        for (;;)
-        {
-            rcNt = NtWaitForSingleObject(hProcWait, TRUE /*Alertable*/, NULL /*pTimeout*/);
-            if (   rcNt == STATUS_WAIT_0
-                || rcNt == STATUS_ABANDONED_WAIT_0)
-                break;
-            if (   rcNt != STATUS_TIMEOUT
-                && rcNt != STATUS_USER_APC
-                && rcNt != STATUS_ALERTED)
-                supR3HardenedFatal("NtWaitForSingleObject returned %#x\n", rcNt);
-        }
-    }
 
     /*
      * Proxy the termination code of the child, if it exited already.
      */
     NTSTATUS rcNt2 = NtQueryInformationProcess(hProcWait, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), NULL);
-    if (   !NT_SUCCESS(rcNt2)
-        || BasicInfo.ExitStatus == STATUS_PENDING)
+    if (!NT_SUCCESS(rcNt2))
         BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
+    else if (BasicInfo.ExitStatus == STATUS_PENDING)
+    {
+        if (hEvtParent)
+            NtTerminateProcess(hProcWait, RTEXITCODE_FAILURE);
+        BasicInfo.ExitStatus = RTEXITCODE_FAILURE;
+    }
 
     NtClose(hProcWait);
     SUP_DPRINTF(("supR3HardenedWinDoReSpawn(%d): Quitting: ExitCode=%#x rcNt=%#x\n", iWhich, BasicInfo.ExitStatus, rcNt));
@@ -4391,11 +4634,36 @@ DECLHIDDEN(bool) supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **p
  */
 DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 {
+    /*
+     * Init the verifier.
+     */
     RTErrInfoInitStatic(&g_ErrInfoStatic);
     int rc = supHardenedWinInitImageVerifier(&g_ErrInfoStatic.Core);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, rc,
                               "supHardenedWinInitImageVerifier failed: %s", g_ErrInfoStatic.szMsg);
+
+    /*
+     * Get the windows system directory from the KnownDlls dir.
+     */
+    HANDLE              hSymlink = INVALID_HANDLE_VALUE;
+    UNICODE_STRING      UniStr = RTNT_CONSTANT_UNISTR(L"\\KnownDlls\\KnownDllPath");
+    OBJECT_ATTRIBUTES   ObjAttrs;
+    InitializeObjectAttributes(&ObjAttrs, &UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    NTSTATUS rcNt = NtOpenSymbolicLinkObject(&hSymlink, SYMBOLIC_LINK_QUERY, &ObjAttrs);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, rcNt, "Error opening '%ls': %#x", UniStr.Buffer, rcNt);
+
+    g_System32WinPath.UniStr.Buffer = g_System32WinPath.awcBuffer;
+    g_System32WinPath.UniStr.Length = 0;
+    g_System32WinPath.UniStr.MaximumLength = sizeof(g_System32WinPath.awcBuffer) - sizeof(RTUTF16);
+    rcNt = NtQuerySymbolicLinkObject(hSymlink, &g_System32WinPath.UniStr, NULL);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, rcNt, "Error querying '%ls': %#x", UniStr.Buffer, rcNt);
+    g_System32WinPath.UniStr.Buffer[g_System32WinPath.UniStr.Length / sizeof(RTUTF16)] = '\0';
+
+    SUP_DPRINTF(("KnownDllPath: %ls\n", g_System32WinPath.UniStr.Buffer));
+    NtClose(hSymlink);
 
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
     {
@@ -4444,8 +4712,8 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 
                 /* Log the KiOpPrefetchPatchCount value if available, hoping it might sched some light on spider38's case. */
                 ULONG cPatchCount = 0;
-                NTSTATUS rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
-                                                         &cPatchCount, sizeof(cPatchCount), NULL);
+                rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
+                                                &cPatchCount, sizeof(cPatchCount), NULL);
                 if (NT_SUCCESS(rcNt))
                     SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
                                  cFixes, g_fSupAdversaries, cPatchCount));
@@ -5249,7 +5517,8 @@ DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
     supR3HardenedWinInitVersion();
 
     /*
-     * Wait on the parent process to dispose of the full access process handle.
+     * Wait on the parent process to dispose of the full access process and
+     * thread handles.
      */
     LARGE_INTEGER Timeout;
     Timeout.QuadPart = -600000000; /* 60 second */
@@ -5298,6 +5567,7 @@ DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
     /*
      * Open the driver.
      */
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv...\n"));
     supR3HardenedMainOpenDevice();
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_DEVICE_OPENED;
 
@@ -5305,21 +5575,28 @@ DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
      * Restore the LdrInitializeThunk code so we can initialize the process
      * normally when we return.
      */
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: Restoring LdrIntiailizeThunk...\n"));
     PSUPHNTLDRCACHEENTRY pLdrEntry;
     int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
     if (RT_FAILURE(rc))
         supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
 
+    uint8_t *pbBits;
+    rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbBits, g_ProcParams.uNtDllAddr, NULL, NULL, NULL /*pErrInfo*/);
+    if (RT_FAILURE(rc))
+        supR3HardenedFatal("supR3HardenedVmProcessInit: supHardNtLdrCacheEntryGetBits failed on NTDLL: %Rrc\n", rc);
+
     RTLDRADDR uValue;
-    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pLdrEntry->pbBits, 0, UINT32_MAX, "LdrInitializeThunk", &uValue);
+    rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbBits, g_ProcParams.uNtDllAddr, UINT32_MAX, "LdrInitializeThunk", &uValue);
     if (RT_FAILURE(rc))
         supR3HardenedFatal("supR3HardenedVmProcessInit: Failed to find LdrInitializeThunk (%Rrc).\n", rc);
 
-    PVOID pvLdrInitThunk = (uint8_t *)g_ProcParams.uNtDllAddr + (uint32_t)uValue;
+    PVOID pvLdrInitThunk = (PVOID)(uintptr_t)uValue;
     SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pvLdrInitThunk, 16, PAGE_EXECUTE_READWRITE));
-    memcpy(pvLdrInitThunk, pLdrEntry->pbBits + (uint32_t)uValue, 16);
+    memcpy(pvLdrInitThunk, pbBits + ((uintptr_t)uValue - g_ProcParams.uNtDllAddr), 16);
     SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pvLdrInitThunk, 16, PAGE_EXECUTE_READ));
 
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: Returning to LdrIntiailizeThunk...\n"));
     return (uintptr_t)pvLdrInitThunk;
 }
 

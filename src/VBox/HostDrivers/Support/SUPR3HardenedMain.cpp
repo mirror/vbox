@@ -403,7 +403,8 @@ static DECLCALLBACK(size_t) suplibHardenedOutput(void *pvArg, const char *pachCh
         {
             suplibHardenedPrintStrN(pBuf->szBuf, pBuf->off);
 # ifdef RT_OS_WINDOWS
-            OutputDebugString(pBuf->szBuf);
+            if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
+                OutputDebugString(pBuf->szBuf);
 # endif
             pBuf->off = 0;
             cbSpace = sizeof(pBuf->szBuf) - 1;
@@ -980,21 +981,20 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
 #ifdef RT_OS_WINDOWS
             if (g_hStartupLog == NULL)
             {
-                PRTUTF16 pwszPath;
-                int rc = RTStrToUtf16(pszLogFile, &pwszPath);
+                int rc = RTNtPathOpen(pszLogFile,
+                                      GENERIC_WRITE | SYNCHRONIZE,
+                                      FILE_ATTRIBUTE_NORMAL,
+                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                      FILE_OPEN_IF,
+                                      FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                      OBJ_CASE_INSENSITIVE,
+                                      &g_hStartupLog,
+                                      NULL);
                 if (RT_SUCCESS(rc))
-                {
-                    g_hStartupLog = CreateFileW(pwszPath,
-                                                GENERIC_WRITE,
-                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                NULL,
-                                                OPEN_ALWAYS,
-                                                FILE_ATTRIBUTE_NORMAL /*| FILE_FLAG_WRITE_THROUGH*/,
-                                                NULL);
-                    RTUtf16Free(pwszPath);
-                }
-                SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
-                             VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
+                    SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
+                                 VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
+                else
+                    g_hStartupLog = NULL;
             }
 #else
             //g_hStartupLog = open()
@@ -1707,16 +1707,14 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * Note! At this point there is no IPRT, so we will have to stick
      * to basic CRT functions that everyone agree upon.
      */
-    g_pszSupLibHardenedProgName = pszProgName;
-    g_fSupHardenedMain          = fFlags;
+    g_pszSupLibHardenedProgName   = pszProgName;
+    g_fSupHardenedMain            = fFlags;
+    g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
+    g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
 #ifdef RT_OS_WINDOWS
     if (!g_fSupEarlyVmProcessInit)
 #endif
-    {
-        g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
         g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
-        g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
-    }
 
 #ifdef SUP_HARDENED_SUID
 # ifdef RT_OS_LINUX

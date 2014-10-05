@@ -223,6 +223,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldr.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrEx.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/ldr/ldrPE.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/alloc/heapsimple.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-basics.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-cursor.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/asn1/asn1-default-allocator.cpp \
@@ -325,6 +326,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrCopy.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrNCmp.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTStrNLen.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/string/RTUtf16NLenEx.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strchr.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strcmp.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strcpy.asm \
@@ -344,6 +346,9 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/time/time.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathAbs-generic.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathGetCurrentDrive-generic.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathGetCurrentOnDrive-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/memsafer-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/uuid-generic.cpp \
        \
@@ -358,6 +363,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  SUPR3HardenedStatic_SOURCES.win += \
  	win/SUPR3HardenedNoCrt-win.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/nt/RTErrConvertFromNtStatus.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/r3/nt/pathint-nt.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/win/RTErrConvertFromWin32.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/win/errmsgwin.cpp
 

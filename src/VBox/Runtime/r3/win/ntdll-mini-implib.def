@@ -37,6 +37,7 @@ EXPORTS
     NtCreateEvent                         ;;= _NtCreateEvent@20
     NtCreateFile                          ;;= _NtCreateFile@44
     NtCreateSection                       ;;= _NtCreateSection@28
+    NtCreateSymbolicLinkObject            ;;= _NtCreateSymbolicLinkObject@16
     NtDelayExecution                      ;;= _NtDelayExecution@8
     NtDeviceIoControlFile                 ;;= _NtDeviceIoControlFile@40
     NtDuplicateObject                     ;;= _NtDuplicateObject@28
@@ -48,6 +49,7 @@ EXPORTS
     NtOpenKey                             ;;= _NtOpenKey@12
     NtOpenProcess                         ;;= _NtOpenProcess@16
     NtOpenProcessToken                    ;;= _NtOpenProcessToken@12
+    NtOpenSymbolicLinkObject              ;;= _NtOpenSymbolicLinkObject@12
     NtOpenThread                          ;;= _NtOpenThread@16
     NtOpenThreadToken                     ;;= _NtOpenThreadToken@16
     NtProtectVirtualMemory                ;;= _NtProtectVirtualMemory@20
@@ -60,6 +62,7 @@ EXPORTS
     NtQueryInformationToken               ;;= _NtQueryInformationToken@20
     NtQueryObject                         ;;= _NtQueryObject@20
     NtQuerySecurityObject                 ;;= _NtQuerySecurityObject@20
+    NtQuerySymbolicLinkObject             ;;= _NtQuerySymbolicLinkObject@12
     NtQuerySystemInformation              ;;= _NtQuerySystemInformation@16
     NtQueryTimerResolution                ;;= _NtQueryTimerResolution@12
     NtQueryValueKey                       ;;= _NtQueryValueKey@24

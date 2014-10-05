@@ -809,15 +809,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      * Get relocated bits.
      */
     uint8_t *pbBits;
-    rc = supHardNtLdrCacheEntryAllocBits(pImage->pCacheEntry, &pbBits, pThis->pErrInfo);
+    if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
+        rc = supHardNtLdrCacheEntryGetBits(pImage->pCacheEntry, &pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis,
+                                           pThis->pErrInfo);
+    else
+        rc = supHardNtLdrCacheEntryGetBits(pImage->pCacheEntry, &pbBits, pImage->uImageBase, supHardNtVpGetImport, pThis,
+                                           pThis->pErrInfo);
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
-        rc = RTLdrGetBits(pImage->pCacheEntry->hLdrMod, pbBits, pImage->uImageBase, NULL /*pfnGetImport*/, pThis);
-    else
-        rc = RTLdrGetBits(pImage->pCacheEntry->hLdrMod, pbBits, pImage->uImageBase, supHardNtVpGetImport, pThis);
-    if (RT_FAILURE(rc))
-        return supHardNtVpSetInfo2(pThis, rc, "%s: RTLdrGetBits failed: %Rrc", pImage->pszName, rc);
 
     /* XP SP3 does not set ImageBase to load address. It fixes up the image on load time though. */
     if (g_uNtVerCombined >= SUP_NT_VER_VISTA)
@@ -861,7 +860,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'LdrInitializeThunk': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = 10;
+            aSkipAreas[cSkipAreas++].cb = 14;
         }
 
         /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
@@ -1585,7 +1584,7 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUT
 
 
 /**
- * Allocates a image bits buffer for use with RTLdrGetBits.
+ * Allocates a image bits buffer and calls RTLdrGetBits on them.
  *
  * An assumption here is that there won't ever be concurrent use of the cache.
  * It's currently 104% single threaded, non-reentrant.  Thus, we can't reuse the
@@ -1594,10 +1593,20 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryVerify(PSUPHNTLDRCACHEENTRY pEntry, PCRTUT
  * @returns VBox status code
  * @param   pEntry              The loader cache entry.
  * @param   ppbBits             Where to return the pointer to the allocation.
- * @param   pErRInfo            Where to return extened error information.
+ * @param   uBaseAddress        The image base address, see RTLdrGetBits.
+ * @param   pfnGetImport        Import getter, see RTLdrGetBits.
+ * @param   pvUser              The user argument for @a pfnGetImport.
+ * @param   pErrInfo            Where to return extened error information.
  */
-DECLHIDDEN(int) supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) supHardNtLdrCacheEntryGetBits(PSUPHNTLDRCACHEENTRY pEntry, uint8_t **ppbBits,
+                                              RTLDRADDR uBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser,
+                                              PRTERRINFO pErrInfo)
 {
+    int rc;
+
+    /*
+     * First time around we have to allocate memory before we can get the image bits.
+     */
     if (!pEntry->pbBits)
     {
         size_t cbBits = RTLdrSize(pEntry->hLdrMod);
@@ -1609,9 +1618,37 @@ DECLHIDDEN(int) supHardNtLdrCacheEntryAllocBits(PSUPHNTLDRCACHEENTRY pEntry, uin
         if (!pEntry->pbBits)
             return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY, "Failed to allocate %zu bytes for image %s.",
                                        cbBits, pEntry->pszName);
-    }
 
-    /** @todo Try cache RTLdrGetBits calls too. */
+        pEntry->fValidBits = false; /* paranoia */
+
+        rc = RTLdrGetBits(pEntry->hLdrMod, pEntry->pbBits, uBaseAddress, pfnGetImport, pvUser);
+        if (RT_FAILURE(rc))
+            return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY, "RTLdrGetBits failed on image %s: %Rrc",
+                                       pEntry->pszName, rc);
+        pEntry->uImageBase = uBaseAddress;
+        pEntry->fValidBits = pfnGetImport == NULL;
+
+    }
+    /*
+     * Cache hit? No?
+     *
+     * Note! We cannot currently cache image bits for images with imports as we
+     *       don't control the way they're resolved.  Fortunately, NTDLL and
+     *       the VM process images all have no imports.
+     */
+    else if (   !pEntry->fValidBits
+             || pEntry->uImageBase != uBaseAddress
+             || pfnGetImport)
+    {
+        pEntry->fValidBits = false;
+
+        rc = RTLdrGetBits(pEntry->hLdrMod, pEntry->pbBits, uBaseAddress, pfnGetImport, pvUser);
+        if (RT_FAILURE(rc))
+            return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_NO_MEMORY, "RTLdrGetBits failed on image %s: %Rrc",
+                                       pEntry->pszName, rc);
+        pEntry->uImageBase = uBaseAddress;
+        pEntry->fValidBits = pfnGetImport == NULL;
+    }
 
     *ppbBits = pEntry->pbBits;
     return VINF_SUCCESS;
@@ -1650,8 +1687,10 @@ static void supHardNTLdrCacheDeleteEntry(PSUPHNTLDRCACHEENTRY pEntry)
         pEntry->hFile = NULL;
     }
 
-    pEntry->pszName   = NULL;
-    pEntry->fVerified = false;
+    pEntry->pszName    = NULL;
+    pEntry->fVerified  = false;
+    pEntry->fValidBits = false;
+    pEntry->uImageBase = 0;
 }
 
 #ifdef IN_RING3
@@ -1759,12 +1798,14 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
     /*
      * Fill in the cache entry.
      */
-    pEntry->pszName   = pszName;
-    pEntry->hLdrMod   = hLdrMod;
-    pEntry->pNtViRdr  = pNtViRdr;
-    pEntry->hFile     = hFile;
-    pEntry->pbBits    = NULL;
-    pEntry->fVerified = false;
+    pEntry->pszName    = pszName;
+    pEntry->hLdrMod    = hLdrMod;
+    pEntry->pNtViRdr   = pNtViRdr;
+    pEntry->hFile      = hFile;
+    pEntry->pbBits     = NULL;
+    pEntry->fVerified  = false;
+    pEntry->fValidBits = false;
+    pEntry->uImageBase = ~(uintptr_t)0;
 
 #ifdef IN_SUP_HARDENED_R3
     /*
@@ -2041,7 +2082,7 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis, HANDLE hProcess)
     if (iNtDll == UINT32_MAX)
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_NTDLL_MAPPING,
                                    "The process has no NTDLL.DLL.");
-    if (iKernel32 == UINT32_MAX && pThis->enmKind != SUPHARDNTVPKIND_CHILD_PURIFICATION)
+    if (iKernel32 == UINT32_MAX && pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION)
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_KERNEL32_MAPPING,
                                    "The process has no KERNEL32.DLL.");
     else if (iKernel32 != UINT32_MAX && pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
