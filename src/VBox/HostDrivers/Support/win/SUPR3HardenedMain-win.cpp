@@ -199,8 +199,10 @@ typedef struct SUPR3WINPROCPARAMS
 /** Process parameters.  Specified by parent if VM process, see
  *  supR3HardenedVmProcessInit. */
 static SUPR3WINPROCPARAMS   g_ProcParams = { NULL, NULL, 0, 0 };
-/** Set if supR3HardenedVmProcessInit was invoked. */
-bool                        g_fSupEarlyVmProcessInit = false;
+/** Set if supR3HardenedEarlyProcessInit was invoked. */
+bool                        g_fSupEarlyProcessInit = false;
+/** Set if the stub device has been opened (stub process only). */
+bool                        g_fSupStubOpened = false;
 
 /** @name Global variables initialized by suplibHardenedWindowsMain.
  * @{ */
@@ -310,7 +312,7 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
 # undef SYSCALL
 #endif
 
-DECLASM(void) supR3HardenedVmProcessInitThunk(void);
+DECLASM(void) supR3HardenedEarlyProcessInitThunk(void);
 
 
 
@@ -350,6 +352,27 @@ static size_t suplibHardenedWStrLen(PCRTUTF16 pwsz)
         pwszCur++;
     return pwszCur - pwsz;
 }
+
+
+/**
+ * Our version of GetTickCount.
+ * @returns Millisecond timestamp.
+ */
+static uint64_t supR3HardenedWinGetMilliTS(void)
+{
+    PKUSER_SHARED_DATA pUserSharedData = (PKUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
+
+    /* use interrupt time */
+    LARGE_INTEGER Time;
+    do
+    {
+        Time.HighPart = pUserSharedData->InterruptTime.High1Time;
+        Time.LowPart  = pUserSharedData->InterruptTime.LowPart;
+    } while (pUserSharedData->InterruptTime.High2Time != Time.HighPart);
+
+    return (uint64_t)Time.QuadPart / 10000;
+}
+
 
 
 /**
@@ -3509,7 +3532,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      * Fudge factor for letting kernel threads get a chance to mess up our
      * process asynchronously.
      */
-    DWORD    dwStart = GetTickCount();
+    uint64_t uMsTsStart = supR3HardenedWinGetMilliTS();
     uint32_t cMsKludge = (g_fSupAdversaries & SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT) ? 256 : g_fSupAdversaries ? 64 : 16;
     do
     {
@@ -3517,8 +3540,9 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
         LARGE_INTEGER Time;
         Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
         NtDelayExecution(FALSE, &Time);
-    } while (GetTickCount() - dwStart < cMsKludge);
-    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n", GetTickCount() - dwStart));
+    } while (supR3HardenedWinGetMilliTS() - uMsTsStart < cMsKludge);
+    SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n",
+                 supR3HardenedWinGetMilliTS() - uMsTsStart));
 
     /*
      * Unmap the image we mapped into the guest above.
@@ -3777,7 +3801,7 @@ static void supR3HardenedWinKillChild(HANDLE hProcess, const char *pszWhere, int
     if (!fExitOk)
     {
         NTSTATUS rcNtWait;
-        DWORD dwStartTick = GetTickCount();
+        uint64_t uMsTsStart = supR3HardenedWinGetMilliTS();
         do
         {
             NtTerminateProcess(hProcess, DBG_TERMINATE_PROCESS);
@@ -3792,7 +3816,7 @@ static void supR3HardenedWinKillChild(HANDLE hProcess, const char *pszWhere, int
                  && (   rcNtWait == STATUS_TIMEOUT
                      || rcNtWait == STATUS_USER_APC
                      || rcNtWait == STATUS_ALERTED)
-                 && GetTickCount() - dwStartTick < 60 * 1000);
+                 && supR3HardenedWinGetMilliTS() - uMsTsStart < 60 * 1000);
         if (fExitOk)
             supR3HardenedError(rc, false /*fFatal*/,
                                "NtDuplicateObject failed and we failed to kill child: rc=%u (%#x) rcNtWait=%#x hProcess=%p\n",
@@ -3821,18 +3845,18 @@ static void supR3HardenedWinKillChild(HANDLE hProcess, const char *pszWhere, int
  * @param   phEvtChild      Pointer to the child event semaphore handle.  We may
  *                          close the event semaphore and set it to NULL.
  */
-static void supR3HardenedWinCheckVmChild(HANDLE hProcWait, uintptr_t uChildExeAddr, HANDLE *phEvtParent, HANDLE *phEvtChild)
+static void supR3HardenedWinCheckChild(HANDLE hProcWait, uintptr_t uChildExeAddr, HANDLE *phEvtParent, HANDLE *phEvtChild)
 {
     /*
      * Read the process parameters from the child.
      */
     uintptr_t           uChildAddr = uChildExeAddr + ((uintptr_t)&g_ProcParams - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
-    SIZE_T              cbIgnored;
+    SIZE_T              cbIgnored = 0;
     SUPR3WINPROCPARAMS  ChildProcParams;
     RT_ZERO(ChildProcParams);
     NTSTATUS rcNt = NtReadVirtualMemory(hProcWait, (PVOID)uChildAddr, &ChildProcParams, sizeof(ChildProcParams), &cbIgnored);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt,
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckChild", rcNt,
                                   "NtReadVirtualMemory(,%p,) failed reading child process status: %#x\n", uChildAddr, rcNt);
 
     /*
@@ -3840,7 +3864,7 @@ static void supR3HardenedWinCheckVmChild(HANDLE hProcWait, uintptr_t uChildExeAd
      */
     rcNt = NtSetEvent(*phEvtChild, NULL);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt, "NtSetEvent failed: %#x\n", rcNt);
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckChild", rcNt, "NtSetEvent failed: %#x\n", rcNt);
 
     /*
      * Close the event semaphore handles.
@@ -3849,7 +3873,7 @@ static void supR3HardenedWinCheckVmChild(HANDLE hProcWait, uintptr_t uChildExeAd
     if (NT_SUCCESS(rcNt))
         rcNt = NtClose(*phEvtChild);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckVmChild", rcNt, "NtClose failed on event sem: %#x\n", rcNt);
+        supR3HardenedWinKillChild(hProcWait, "supR3HardenedWinCheckChild", rcNt, "NtClose failed on event sem: %#x\n", rcNt);
     *phEvtChild = NULL;
     *phEvtParent = NULL;
 
@@ -3861,12 +3885,12 @@ static void supR3HardenedWinCheckVmChild(HANDLE hProcWait, uintptr_t uChildExeAd
 
     /* An error occurred, report it. */
     ChildProcParams.szErrorMsg[sizeof(ChildProcParams.szErrorMsg) - 1] = '\0';
-    supR3HardenedFatalMsg("supR3HardenedWinCheckVmChild", kSupInitOp_Misc, ChildProcParams.rc, "%s", ChildProcParams.szErrorMsg);
+    supR3HardenedFatalMsg("supR3HardenedWinCheckChild", kSupInitOp_Misc, ChildProcParams.rc, "%s", ChildProcParams.szErrorMsg);
 }
 
 
-static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr_t uChildNtDllAddr, uintptr_t uChildExeAddr,
-                                        HANDLE hEvtChild, HANDLE hEvtParent)
+static void supR3HardenedWinSetupChildInit(HANDLE hProcess, HANDLE hThread, uintptr_t uChildNtDllAddr, uintptr_t uChildExeAddr,
+                                           HANDLE hEvtChild, HANDLE hEvtParent)
 {
     /*
      * Plant the process parameters.  This ASSUMES the handle inheritance is
@@ -3883,7 +3907,7 @@ static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr
     SIZE_T    cbIgnored;
     NTSTATUS  rcNt = NtWriteVirtualMemory(hProcess, (PVOID)uChildAddr, &ChildProcParams, sizeof(ChildProcParams), &cbIgnored);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rcNt,
                                   "NtWriteVirtualMemory(,%p,) failed writing child process parameters: %#x\n", uChildAddr, rcNt);
 
     /*
@@ -3893,32 +3917,34 @@ static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr
     PSUPHNTLDRCACHEENTRY pLdrEntry;
     int rc = supHardNtLdrCacheOpen("ntdll.dll", &pLdrEntry);
     if (RT_FAILURE(rc))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rc,
                                   "supHardNtLdrCacheOpen failed on NTDLL: %Rrc\n", rc);
 
     uint8_t *pbChildNtDllBits;
     rc = supHardNtLdrCacheEntryGetBits(pLdrEntry, &pbChildNtDllBits, uChildNtDllAddr, NULL, NULL, NULL /*pErrInfo*/);
     if (RT_FAILURE(rc))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rc,
                                   "supHardNtLdrCacheEntryGetBits failed on NTDLL: %Rrc\n", rc);
 
     RTLDRADDR uLdrInitThunk;
     rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbChildNtDllBits, uChildNtDllAddr, UINT32_MAX,
                           "LdrInitializeThunk", &uLdrInitThunk);
     if (RT_FAILURE(rc))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rc,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rc,
                                   "Error locating LdrInitializeThunk in NTDLL: %Rrc", rc);
     PVOID pvLdrInitThunk = (PVOID)(uintptr_t)uLdrInitThunk;
-    SUP_DPRINTF(("supR3HardenedWinInitVmChild: uLdrInitThunk=%p\n", (uintptr_t)uLdrInitThunk));
+    SUP_DPRINTF(("supR3HardenedWinSetupChildInit: uLdrInitThunk=%p\n", (uintptr_t)uLdrInitThunk));
 
     /*
      * Calculate the address of our code in the child process.
      */
-    uintptr_t uEarlyVmProcInitEP = uChildExeAddr + (  (uintptr_t)&supR3HardenedVmProcessInitThunk
-                                                    - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
+    uintptr_t uEarlyProcInitEP = uChildExeAddr + (  (uintptr_t)&supR3HardenedEarlyProcessInitThunk
+                                                  - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
 
     /*
      * Compose the LdrInitializeThunk replacement bytes.
+     * Note! The amount of code we replace here must be less or equal to what
+     *       the process verification code ignores.
      */
     uint8_t abNew[16];
     memcpy(abNew, pbChildNtDllBits + ((uintptr_t)uLdrInitThunk - uChildNtDllAddr), sizeof(abNew));
@@ -3926,10 +3952,10 @@ static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr
     abNew[0] = 0xff;
     abNew[1] = 0x25;
     *(uint32_t *)&abNew[2] = 0;
-    *(uint64_t *)&abNew[6] = uEarlyVmProcInitEP;
+    *(uint64_t *)&abNew[6] = uEarlyProcInitEP;
 #elif defined(RT_ARCH_X86)
     abNew[0] = 0xe9;
-    *(uint32_t *)&abNew[1] = uEarlyVmProcInitEP - ((uint32_t)uLdrInitThunk + 5);
+    *(uint32_t *)&abNew[1] = uEarlyProcInitEP - ((uint32_t)uLdrInitThunk + 5);
 #else
 # error "Unsupported arch."
 #endif
@@ -3942,23 +3968,23 @@ static void supR3HardenedWinInitVmChild(HANDLE hProcess, HANDLE hThread, uintptr
     ULONG   fOldProt;
     rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, PAGE_EXECUTE_READWRITE, &fOldProt);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rcNt,
                                   "NtProtectVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
 
     rcNt = NtWriteVirtualMemory(hProcess, pvLdrInitThunk, abNew, sizeof(abNew), &cbIgnored);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rcNt,
                                   "NtWriteVirtualMemory/LdrInitializeThunk failed: %#x", rcNt);
 
     pvProt = pvLdrInitThunk;
     cbProt = sizeof(abNew);
     rcNt = NtProtectVirtualMemory(hProcess, &pvProt, &cbProt, fOldProt, &fOldProt);
     if (!NT_SUCCESS(rcNt))
-        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinInitVmChild", rcNt,
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinSetupChildInit", rcNt,
                                   "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
 
     /* Caller starts child execution. */
-    SUP_DPRINTF(("supR3HardenedWinInitVmChild: Start child.\n"));
+    SUP_DPRINTF(("supR3HardenedWinSetupChildInit: Start child.\n"));
 }
 
 
@@ -3982,16 +4008,14 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     /*
      * Set up VM child communication event semaphores.
      */
+    OBJECT_ATTRIBUTES ObjAttrs;
     HANDLE hEvtChild = NULL;
+    InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtChild, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
+
     HANDLE hEvtParent = NULL;
-    if (iWhich >= 2)
-    {
-        OBJECT_ATTRIBUTES ObjAttrs;
-        InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-        SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtChild, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
-        InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-        SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtParent, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
-    }
+    InitializeObjectAttributes(&ObjAttrs, NULL /*pName*/, OBJ_INHERIT, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    SUPR3HARDENED_ASSERT_NT_SUCCESS(NtCreateEvent(&hEvtParent, EVENT_ALL_ACCESS, &ObjAttrs, NotificationEvent, FALSE));
 
     /*
      * Set up security descriptors.
@@ -4139,8 +4163,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     /*
      * Start the process execution.
      */
-    if (iWhich >= 2)
-        supR3HardenedWinInitVmChild(hProcess, hThread, uChildNtDllAddr, uChildExeAddr, hEvtChild, hEvtParent);
+    supR3HardenedWinSetupChildInit(hProcess, hThread, uChildNtDllAddr, uChildExeAddr, hEvtChild, hEvtParent);
 
     ULONG cSuspendCount = 0;
     SUPR3HARDENED_ASSERT_NT_SUCCESS(NtResumeThread(hThread, &cSuspendCount));
@@ -4154,20 +4177,23 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 
     PROCESS_BASIC_INFORMATION BasicInfo;
     HANDLE hProcWait;
-    ULONG fRights = SYNCHRONIZE | PROCESS_TERMINATE;
+    ULONG fRights = SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_VM_READ;
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* Introduced in Vista. */
         fRights |= PROCESS_QUERY_LIMITED_INFORMATION;
     else
         fRights |= PROCESS_QUERY_INFORMATION;
-    if (iWhich == 2)
-        fRights |= PROCESS_VM_READ;
     rcNt = NtDuplicateObject(NtCurrentProcess(), hProcess,
                              NtCurrentProcess(), &hProcWait,
                              fRights, 0 /*HandleAttributes*/, 0);
     if (rcNt == STATUS_ACCESS_DENIED)
+    {
+        supR3HardenedError(rcNt, false /*fFatal*/,
+                           "supR3HardenedWinDoReSpawn: NtDuplicateObject(,,,,%#x,,) -> %#x, retrying with only %#x...\n",
+                           fRights, rcNt, SYNCHRONIZE);
         rcNt = NtDuplicateObject(NtCurrentProcess(), hProcess,
                                  NtCurrentProcess(), &hProcWait,
                                  SYNCHRONIZE, 0 /*HandleAttributes*/, 0);
+    }
     if (!NT_SUCCESS(rcNt))
         supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", VERR_INVALID_NAME,
                                   "NtDuplicateObject failed on child process handle: %#x\n", rcNt);
@@ -4176,15 +4202,12 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
     hProcess = NULL;
 
     /*
-     * Signal the VM child that we've closed the unrestricted handles.
+     * Signal the child that we've closed the unrestricted handles.
      */
-    if (iWhich >= 2)
-    {
-        rcNt = NtSetEvent(hEvtChild, NULL);
-        if (!NT_SUCCESS(rcNt))
-            supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", VERR_INVALID_NAME,
-                                      "NtSetEvent failed on child process handle: %#x\n", rcNt);
-    }
+    rcNt = NtSetEvent(hEvtChild, NULL);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedWinKillChild(hProcess, "supR3HardenedWinReSpawn", VERR_INVALID_NAME,
+                                  "NtSetEvent failed on child process handle: %#x\n", rcNt);
 
     /*
      * Ditch the loader cache so we don't sit on too much memory while waiting.
@@ -4232,7 +4255,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 
         rcNt = NtWaitForMultipleObjects(cHandles, &ahHandles[0], WaitAnyObject, TRUE /*Alertable*/, NULL /*pTimeout*/);
         if (rcNt == STATUS_WAIT_0 + 1 && hEvtParent != NULL)
-            supR3HardenedWinCheckVmChild(hProcWait, uChildExeAddr, &hEvtParent, &hEvtChild);
+            supR3HardenedWinCheckChild(hProcWait, uChildExeAddr, &hEvtParent, &hEvtChild);
         else if (   (ULONG)rcNt - (ULONG)STATUS_WAIT_0           < cHandles
                  || (ULONG)rcNt - (ULONG)STATUS_ABANDONED_WAIT_0 < cHandles)
             break;
@@ -4417,11 +4440,14 @@ static bool supR3HardenedWinDriverExists(const char *pszDriver)
  */
 static void supR3HardenedWinOpenStubDevice(void)
 {
+    if (g_fSupStubOpened)
+        return;
+
     /*
      * Retry if we think driver might still be initializing (STATUS_NO_SUCH_DEVICE + \Drivers\VBoxDrv).
      */
     static const WCHAR  s_wszName[] = L"\\Device\\VBoxDrvStub";
-    DWORD const         uStartTick = GetTickCount();
+    uint64_t const      uMsTsStart = supR3HardenedWinGetMilliTS();
     NTSTATUS            rcNt;
     uint32_t            iTry;
 
@@ -4456,7 +4482,7 @@ static void supR3HardenedWinOpenStubDevice(void)
            completely initialized.  Delay a little bit and try again. */
         if (rcNt != STATUS_NO_SUCH_DEVICE)
             break;
-        if (iTry > 0 && GetTickCount() - uStartTick > 5000)  /* 5 sec, at least two tries */
+        if (iTry > 0 && supR3HardenedWinGetMilliTS() - uMsTsStart > 5000)  /* 5 sec, at least two tries */
             break;
         if (!supR3HardenedWinDriverExists("VBoxDrv"))
         {
@@ -4475,7 +4501,9 @@ static void supR3HardenedWinOpenStubDevice(void)
         NtDelayExecution(TRUE, &Time);
     }
 
-    if (!NT_SUCCESS(rcNt))
+    if (NT_SUCCESS(rcNt))
+        g_fSupStubOpened = true;
+    else
     {
         /*
          * Report trouble (fatal).  For some errors codes we try gather some
@@ -4541,6 +4569,7 @@ static void supR3HardenedWinOpenStubDevice(void)
              * unload issues.  Check whether the driver is loaded and make
              * suggestions accordingly.
              */
+/** @todo don't fail during early init, wait till later and try load the driver if missing or at least query the service manager for additional information. */
             if (   rcNt == STATUS_NO_SUCH_DEVICE
                 || rcNt == STATUS_OBJECT_NAME_NOT_FOUND)
             {
@@ -4578,7 +4607,10 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(int iWhich)
 {
     /*
      * Before the 2nd respawn we set up a child protection deal with the
-     * support driver via /Devices/VBoxDrvStub.
+     * support driver via /Devices/VBoxDrvStub.  (We tried to do this
+     * during the early init, but in case we had trouble accessing vboxdrv we
+     * retry it here where we have kernel32.dll and others to pull in for
+     * better diagnostics.)
      */
     if (iWhich == 2)
         supR3HardenedWinOpenStubDevice();
@@ -4686,8 +4718,8 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
             uint32_t cFixes;
             for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
             {
-                uint32_t    cSleeps = 0;
-                DWORD       dwStart = GetTickCount();
+                uint32_t cSleeps = 0;
+                uint64_t uMsTsStart = supR3HardenedWinGetMilliTS();
                 do
                 {
                     NtYieldExecution();
@@ -4695,10 +4727,10 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
                     Time.QuadPart = -8000000 / 100; /* 8ms in 100ns units, relative time. */
                     NtDelayExecution(FALSE, &Time);
                     cSleeps++;
-                } while (   GetTickCount() - dwStart <= cMsFudge
+                } while (   supR3HardenedWinGetMilliTS() - uMsTsStart <= cMsFudge
                          || cSleeps < 8);
                 SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
-                             iLoop, GetTickCount() - dwStart, cSleeps));
+                             iLoop, supR3HardenedWinGetMilliTS() - uMsTsStart, cSleeps));
 
                 cFixes = 0;
                 rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
@@ -5363,7 +5395,7 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
      */
     if (g_ProcParams.hEvtParent || g_ProcParams.hEvtChild)
     {
-        SUPR3HARDENED_ASSERT(g_fSupEarlyVmProcessInit);
+        SUPR3HARDENED_ASSERT(g_fSupEarlyProcessInit);
         NtSetEvent(g_ProcParams.hEvtParent, NULL);
         NtClose(g_ProcParams.hEvtParent);
         NtClose(g_ProcParams.hEvtChild);
@@ -5371,7 +5403,7 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
         g_ProcParams.hEvtChild  = NULL;
     }
     else
-        SUPR3HARDENED_ASSERT(!g_fSupEarlyVmProcessInit);
+        SUPR3HARDENED_ASSERT(!g_fSupEarlyProcessInit);
 
     /*
      * After having resolved imports we patch the LdrInitializeThunk code so
@@ -5478,31 +5510,32 @@ DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(int rc, const char *pszForm
 
 
 /**
- * Routine called by the supR3HardenedVmProcessInitThunk assembly routine when
- * LdrInitializeThunk is executed in during process initialization.
+ * Routine called by the supR3HardenedEarlyProcessInitThunk assembly routine
+ * when LdrInitializeThunk is executed in during process initialization.
  *
- * This initializes the VM process, hooking NTDLL APIs and opening the device
- * driver before any other DLLs gets loaded into the process.  This greately
- * reduces and controls the trusted code base of the process compared to the
- * opening it from SUPR3HardenedMain, avoid issues with so call protection
- * software that is in the habit of patching half of the ntdll and kernel32
- * APIs in the process, making it almost indistinguishable from software that is
- * up to no good.  Once we've opened vboxdrv, the process should be locked down
- * so thighly that only kernel software and csrss can mess with the process.
+ * This initializes the Stub and VM processes, hooking NTDLL APIs and opening
+ * the device driver before any other DLLs gets loaded into the process.  This
+ * greately reduces and controls the trusted code base of the process compared
+ * to opening the driver from SUPR3HardenedMain.  It also avoids issues with so
+ * call protection software that is in the habit of patching half of the ntdll
+ * and kernel32 APIs in the process, making it almost indistinguishable from
+ * software that is up to no good.  Once we've opened vboxdrv, the process
+ * should be locked down so thighly that only kernel software and csrss can mess
+ * with the process.
  */
-DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
+DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
 {
     /*
      * Only let the first thread thru.
      */
     if (!ASMAtomicCmpXchgU32((uint32_t volatile *)&g_enmSupR3HardenedMainState,
-                             SUPR3HARDENEDMAINSTATE_WIN_VM_INIT_CALLED,
+                             SUPR3HARDENEDMAINSTATE_WIN_EARLY_INIT_CALLED,
                              SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED))
     {
         NtTerminateThread(0, 0);
         return 0x22;  /* crash */
     }
-    g_fSupEarlyVmProcessInit = true;
+    g_fSupEarlyProcessInit = true;
 
     /*
      * Initialize the NTDLL imports that we consider usable before the
@@ -5523,7 +5556,7 @@ DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
     LARGE_INTEGER Timeout;
     Timeout.QuadPart = -600000000; /* 60 second */
     NTSTATUS rcNt = NtWaitForSingleObject(g_ProcParams.hEvtChild, FALSE /*Alertable*/, &Timeout);
-    if (NT_SUCCESS(rcNt))
+    if (rcNt != STATUS_SUCCESS)
         rcNt = NtClearEvent(g_ProcParams.hEvtChild);
     if (!NT_SUCCESS(rcNt))
     {
@@ -5567,8 +5600,18 @@ DECLASM(uintptr_t) supR3HardenedVmProcessInit(void)
     /*
      * Open the driver.
      */
-    SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv...\n"));
-    supR3HardenedMainOpenDevice();
+    if (cArgs >= 1 && suplibHardenedStrCmp(papszArgs[0], SUPR3_RESPAWN_1_ARG0) == 0)
+    {
+        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv stub...\n"));
+        supR3HardenedWinOpenStubDevice();
+    }
+    else if (cArgs >= 1 && suplibHardenedStrCmp(papszArgs[0], SUPR3_RESPAWN_2_ARG0) == 0)
+    {
+        SUP_DPRINTF(("supR3HardenedVmProcessInit: Opening vboxdrv...\n"));
+        supR3HardenedMainOpenDevice();
+    }
+    else
+        supR3HardenedFatal("Unexpected first argument '%s'!\n", papszArgs[0]);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_DEVICE_OPENED;
 
     /*

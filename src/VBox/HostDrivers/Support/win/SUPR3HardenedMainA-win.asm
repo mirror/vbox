@@ -35,7 +35,7 @@
 extern NAME(g_pfnNtCreateSectionJmpBack)
 
 ; External code.
-extern NAME(supR3HardenedVmProcessInit)
+extern NAME(supR3HardenedEarlyProcessInit)
 
 
 BEGINCODE
@@ -82,13 +82,16 @@ BEGINCODE
 
 
 ;;
-; Alternative code for LdrInitializeThunk that performs the VM process startup.
+; Alternative code for LdrInitializeThunk that performs the early process startup
+; for the Stub and VM processes.
 ;
 ; This does not concern itself with any arguments on stack or in registers that
 ; may be passed to the LdrIntializeThunk routine as we just save and restore
 ; them all before we restart the restored LdrInitializeThunk routine.
 ;
-BEGINPROC supR3HardenedVmProcessInitThunk
+; @sa supR3HardenedEarlyProcessInit
+;
+BEGINPROC supR3HardenedEarlyProcessInitThunk
         ;
         ; Prologue.
         ;
@@ -122,7 +125,7 @@ BEGINPROC supR3HardenedVmProcessInitThunk
         ; Call the C/C++ code that does the actual work.  This returns the
         ; resume address in xAX, which we put in the "return" stack position.
         ;
-        call    NAME(supR3HardenedVmProcessInit)
+        call    NAME(supR3HardenedEarlyProcessInit)
         mov     [xBP + xCB], xAX
 
         ;
@@ -144,7 +147,7 @@ BEGINPROC supR3HardenedVmProcessInitThunk
         ;
         leave
         ret
-ENDPROC   supR3HardenedVmProcessInitThunk
+ENDPROC   supR3HardenedEarlyProcessInitThunk
 
 
 
