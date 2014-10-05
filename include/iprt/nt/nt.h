@@ -237,6 +237,31 @@ RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULO
                             ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir);
 RTDECL(int) RTNtPathClose(HANDLE hHandle);
 
+/**
+ * Converts a UTF-16 windows-style path to NT format.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              RTNtPathFree.
+ * @param   phRootDir           Where to return the root handle, if applicable.
+ * @param   pwszPath            The UTF-16 windows-style path.
+ * @param   cwcPath             The max length of the windows-style path in
+ *                              RTUTF16 units.  Use RTSTR_MAX if unknown and @a
+ *                              pwszPath is correctly terminated.
+ */
+RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir, PCRTUTF16 pwszPath, size_t cwcPath);
+
+/**
+ * Frees the native path and root handle.
+ *
+ * @param   pNtName             The NT path after a successful
+ *                              RTNtPathFromWinUtf16Ex call.
+ * @param   phRootDir           The root handle variable after a successfull
+ *                              RTNtPathFromWinUtf16Ex call.
+ */
+RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir);
+
+
 RT_C_DECLS_END
 /** @} */
 

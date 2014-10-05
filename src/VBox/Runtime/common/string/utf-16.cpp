@@ -99,6 +99,20 @@ static int rtUtf16Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcuc, size_t *pcwcA
 }
 
 
+RTDECL(PRTUTF16) RTUtf16AllocTag(size_t cb, const char *pszTag)
+{
+    if (cb > sizeof(RTUTF16))
+        cb = RT_ALIGN_Z(cb, sizeof(RTUTF16));
+    else
+        cb = sizeof(RTUTF16);
+    PRTUTF16 pwsz = (PRTUTF16)RTMemAllocTag(cb, pszTag);
+    if (pwsz)
+        *pwsz = '\0';
+    return pwsz;
+}
+RT_EXPORT_SYMBOL(RTUtf16AllocTag);
+
+
 RTDECL(void)  RTUtf16Free(PRTUTF16 pwszString)
 {
     if (pwszString)

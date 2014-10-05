@@ -37,16 +37,22 @@
 #include <iprt/assert.h>
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static char const g_szPrefixUnc[] = "\\??\\UNC\\";
+static char const g_szPrefix[]    = "\\??\\";
+
 
 /**
- * Handles the pass thru case.
+ * Handles the pass thru case for UTF-8 input.
  *
  * @returns IPRT status code.
  * @param   pNtName             Where to return the NT name.
  * @param   phRootDir           Where to return the root handle, if applicable.
  * @param   pszPath             The UTF-8 path.
  */
-static int rtNtPathToNativePassThruWin(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
+static int rtNtPathFromWinUtf8PassThru(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
 {
     PRTUTF16 pwszPath = NULL;
     size_t   cwcLen;
@@ -60,7 +66,8 @@ static int rtNtPathToNativePassThruWin(struct _UNICODE_STRING *pNtName, PHANDLE 
             pwszPath[2] = '\\';
 
             pNtName->Buffer = pwszPath;
-            pNtName->MaximumLength = pNtName->Length = (uint16_t)(cwcLen * 2);
+            pNtName->Length = (uint16_t)(cwcLen * sizeof(RTUTF16));
+            pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
             *phRootDir = NULL;
             return VINF_SUCCESS;
         }
@@ -73,6 +80,56 @@ static int rtNtPathToNativePassThruWin(struct _UNICODE_STRING *pNtName, PHANDLE 
 
 
 /**
+ * Handles the pass thru case for UTF-16 input.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.
+ * @param   phRootDir           Stores NULL here, as we don't use it.
+ * @param   pwszWinPath         The UTF-16 windows-style path.
+ * @param   cwcWinPath          The length of the windows-style input path.
+ */
+static int rtNtPathFromWinUtf16PassThru(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir,
+                                        PCRTUTF16 pwszWinPath, size_t cwcWinPath)
+{
+    /* Drop a character because: \\?\ -> \.\ */
+    pwszWinPath++;
+    cwcWinPath--;
+
+    /* Check length and allocate memory for it. */
+    int rc;
+    if (cwcWinPath < _32K - 1)
+    {
+        PRTUTF16 pwszNtPath = (PRTUTF16)RTUtf16Alloc((cwcWinPath + 1) * sizeof(RTUTF16));
+        if (pwszNtPath)
+        {
+            /* Intialize the path. */
+            pwszNtPath[0] = '\\';
+            pwszNtPath[1] = '.';
+            pwszNtPath[2] = '\\';
+            memcpy(pwszNtPath + 3, pwszWinPath + 3, (cwcWinPath - 3) * sizeof(RTUTF16));
+            pwszNtPath[cwcWinPath] = '\0';
+
+            /* Initialize the return values. */
+            pNtName->Buffer = pwszNtPath;
+            pNtName->Length = (uint16_t)(cwcWinPath * sizeof(RTUTF16));
+            pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
+            *phRootDir = NULL;
+
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_UTF16_MEMORY;
+    }
+    else
+        rc = VERR_FILENAME_TOO_LONG;
+    return rc;
+}
+
+
+
+
+
+/**
  * Converts the path to UTF-16 and sets all the return values.
  *
  * @returns IPRT status code.
@@ -80,7 +137,7 @@ static int rtNtPathToNativePassThruWin(struct _UNICODE_STRING *pNtName, PHANDLE 
  * @param   phRootDir           Where to return the root handle, if applicable.
  * @param   pszPath             The UTF-8 path.
  */
-static int rtNtPathToNativeToUtf16(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
+static int rtNtPathUtf8ToUniStr(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
 {
     PRTUTF16 pwszPath = NULL;
     size_t   cwcLen;
@@ -90,7 +147,8 @@ static int rtNtPathToNativeToUtf16(struct _UNICODE_STRING *pNtName, PHANDLE phRo
         if (cwcLen < _32K - 1)
         {
             pNtName->Buffer = pwszPath;
-            pNtName->MaximumLength = pNtName->Length = (uint16_t)(cwcLen * 2);
+            pNtName->Length = (uint16_t)(cwcLen * sizeof(RTUTF16));
+            pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
             *phRootDir = NULL;
             return VINF_SUCCESS;
         }
@@ -112,14 +170,11 @@ static int rtNtPathToNativeToUtf16(struct _UNICODE_STRING *pNtName, PHANDLE phRo
  */
 static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, const char *pszPath)
 {
-    static char const s_szPrefixUnc[] = "\\??\\UNC\\";
-    static char const s_szPrefix[]    = "\\??\\";
-
     /*
      * Very simple conversion of a win32-like path into an NT path.
      */
-    const char *pszPrefix = s_szPrefix;
-    size_t      cchPrefix = sizeof(s_szPrefix) - 1;
+    const char *pszPrefix = g_szPrefix;
+    size_t      cchPrefix = sizeof(g_szPrefix) - 1;
     size_t      cchSkip   = 0;
 
     if (   RTPATH_IS_SLASH(pszPath[0])
@@ -129,13 +184,13 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
     {
         if (   pszPath[2] == '?'
             && RTPATH_IS_SLASH(pszPath[3]))
-            return rtNtPathToNativePassThruWin(pNtName, phRootDir, pszPath);
+            return rtNtPathFromWinUtf8PassThru(pNtName, phRootDir, pszPath);
 
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
         /* Special hack: The path starts with "\\\\!\\", we will skip past the bang and pass it thru. */
         if (   pszPath[2] == '!'
             && RTPATH_IS_SLASH(pszPath[3]))
-            return rtNtPathToNativeToUtf16(pNtName, phRootDir, pszPath + 3);
+            return rtNtPathUtf8ToUniStr(pNtName, phRootDir, pszPath + 3);
 #endif
 
         if (   pszPath[2] == '.'
@@ -150,8 +205,8 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
         else
         {
             /* UNC */
-            pszPrefix = s_szPrefixUnc;
-            cchPrefix = sizeof(s_szPrefixUnc) - 1;
+            pszPrefix = g_szPrefixUnc;
+            cchPrefix = sizeof(g_szPrefixUnc) - 1;
             cchSkip   = 2;
         }
     }
@@ -168,7 +223,118 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
      * Add prefix and convert it to UTF16.
      */
     memcpy(szPath, pszPrefix, cchPrefix);
-    return rtNtPathToNativeToUtf16(pNtName, phRootDir, szPath);
+    return rtNtPathUtf8ToUniStr(pNtName, phRootDir, szPath);
+}
+
+
+/**
+ * Converts a UTF-16 windows-style path to NT format.
+ *
+ * @returns IPRT status code.
+ * @param   pNtName             Where to return the NT name.  Free using
+ *                              RTNtPathFree.
+ * @param   phRootDir           Where to return the root handle, if applicable.
+ * @param   pwszWinPath         The UTF-16 windows-style path.
+ * @param   cwcWinPath          The max length of the windows-style path in
+ *                              RTUTF16 units.  Use RTSTR_MAX if unknown and @a
+ *                              pwszWinPath is correctly terminated.
+ */
+RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir, PCRTUTF16 pwszWinPath, size_t cwcWinPath)
+{
+    /*
+     * Validate the input, calculating the correct length.
+     */
+    if (cwcWinPath == 0 || *pwszWinPath == '\0')
+        return VERR_INVALID_NAME;
+
+    int rc = RTUtf16NLenEx(pwszWinPath, cwcWinPath, &cwcWinPath);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Very simple conversion of a win32-like path into an NT path.
+     */
+    const char *pszPrefix = g_szPrefix;
+    size_t      cchPrefix = sizeof(g_szPrefix) - 1;
+    size_t      cchSkip   = 0;
+
+    if (   RTPATH_IS_SLASH(pwszWinPath[0])
+        && cwcWinPath >= 3
+        && RTPATH_IS_SLASH(pwszWinPath[1])
+        && !RTPATH_IS_SLASH(pwszWinPath[2]) )
+    {
+        if (   pwszWinPath[2] == '?'
+            && cwcWinPath >= 4
+            && RTPATH_IS_SLASH(pwszWinPath[3]))
+            return rtNtPathFromWinUtf16PassThru(pNtName, phRootDir, pwszWinPath, cwcWinPath);
+
+#ifdef IPRT_WITH_NT_PATH_PASSTHRU
+        /* Special hack: The path starts with "\\\\!\\", we will skip past the bang and pass it thru. */
+        if (   pwszWinPath[2] == '!'
+            && cwcWinPath >= 4
+            && RTPATH_IS_SLASH(pwszWinPath[3]))
+        {
+            pwszWinPath += 3;
+            cwcWinPath  -= 3;
+            if (cwcWinPath < _32K - 1)
+            {
+                PRTUTF16 pwszNtPath = RTUtf16Alloc((cwcWinPath + 1) * sizeof(RTUTF16));
+                if (pwszNtPath)
+                {
+                    memcpy(pwszNtPath, pwszWinPath, cwcWinPath * sizeof(RTUTF16));
+                    pwszNtPath[cwcWinPath] = '\0';
+                    pNtName->Buffer = pwszNtPath;
+                    pNtName->Length = (uint16_t)(cwcWinPath * sizeof(RTUTF16));
+                    pNtName->MaximumLength = pNtName->Length + sizeof(RTUTF16);
+                    *phRootDir = NULL;
+                    return VINF_SUCCESS;
+                }
+                rc = VERR_NO_UTF16_MEMORY;
+            }
+            else
+                rc = VERR_FILENAME_TOO_LONG;
+            return rc;
+        }
+#endif
+
+        if (   pwszWinPath[2] == '.'
+            && cwcWinPath >= 4
+            && RTPATH_IS_SLASH(pwszWinPath[3]))
+        {
+            /*
+             * Device path.
+             * Note! I suspect \\.\stuff\..\otherstuff may be handled differently by windows.
+             */
+            cchSkip   = 4;
+        }
+        else
+        {
+            /* UNC */
+            pszPrefix = g_szPrefixUnc;
+            cchPrefix = sizeof(g_szPrefixUnc) - 1;
+            cchSkip   = 2;
+        }
+    }
+
+    /*
+     * Straighten out all .. and unnecessary . references and convert slashes.
+     */
+    char   szAbsPath[RTPATH_MAX];
+    char   szRelPath[RTPATH_MAX];
+    char  *pszRelPath = szRelPath;
+    size_t cchRelPath;
+    rc = RTUtf16ToUtf8Ex(pwszWinPath, cwcWinPath, &pszRelPath, sizeof(szRelPath), &cchRelPath);
+    if (RT_SUCCESS(rc))
+        rc = RTPathAbs(szRelPath, &szAbsPath[cchPrefix - cchSkip], sizeof(szAbsPath) - (cchPrefix - cchSkip));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Add prefix and convert it to UTF16.
+         */
+        memcpy(szAbsPath, pszPrefix, cchPrefix);
+        return rtNtPathUtf8ToUniStr(pNtName, phRootDir, szAbsPath);
+    }
+    return rc;
 }
 
 
@@ -180,10 +346,24 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
  * @param   phRootDir           The root handle variable after a
  *                              rtNtPathToNative.
  */
-void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
+static void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
 {
     RTUtf16Free(pNtName->Buffer);
     pNtName->Buffer = NULL;
+}
+
+
+/**
+ * Frees the native path and root handle.
+ *
+ * @param   pNtName             The NT path after a successful
+ *                              RTNtPathFromWinUtf16Ex call.
+ * @param   phRootDir           The root handle variable after a successfull
+ *                              RTNtPathFromWinUtf16Ex call.
+ */
+RTDECL(void) RTNtPathFree(struct _UNICODE_STRING *pNtName, HANDLE *phRootDir)
+{
+    rtNtPathFreeNative(pNtName, phRootDir);
 }
 
 

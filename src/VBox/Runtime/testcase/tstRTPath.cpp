@@ -314,7 +314,7 @@ int main()
     { "C:\\MustDie", "\\from_root/dir/..", VINF_SUCCESS, "C:\\from_root" },
     { "C:\\temp", "D:\\data", VINF_SUCCESS, "D:\\data" },
     { NULL, "\\\\server\\..\\share", VINF_SUCCESS, "\\\\server\\..\\share" /* kind of strange */ },
-    { NULL, "\\\\server/", VINF_SUCCESS, "\\\\server" },
+    { NULL, "\\\\server/", VINF_SUCCESS, "\\\\server\\" },
     { NULL, "\\\\", VINF_SUCCESS, "\\\\" },
     { NULL, "\\\\\\something", VINF_SUCCESS, "\\\\\\something" /* kind of strange */ },
     { "\\\\server\\share_as_base", "/from_root", VINF_SUCCESS, "\\\\server\\from_root" },

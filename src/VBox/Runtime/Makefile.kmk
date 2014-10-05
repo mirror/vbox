@@ -586,6 +586,7 @@ RuntimeR3_SOURCES       = \
 	generic/RTLogWriteStdErr-generic.cpp \
 	generic/RTLogWriteStdOut-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
+	generic/RTPathGetCurrentDrive-generic.cpp \
 	generic/RTPathIsSame-generic.cpp \
 	generic/RTProcessQueryUsernameA-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
@@ -701,6 +702,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTFileExists-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSemEventWait-generic.cpp \
@@ -767,6 +769,8 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
@@ -851,6 +855,8 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
@@ -923,6 +929,8 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinity-stub-generic.cpp \
@@ -990,6 +998,8 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
@@ -1059,6 +1069,8 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
@@ -1131,6 +1143,8 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathAbs-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \

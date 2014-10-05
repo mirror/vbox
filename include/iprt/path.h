@@ -239,6 +239,32 @@ RTDECL(int)  RTPathSetCurrent(const char *pszPath);
 RTDECL(int)  RTPathGetCurrent(char *pszPath, size_t cchPath);
 
 /**
+ * Gets the current working directory on the specified drive.
+ *
+ * On systems without drive letters, the root slash will be returned.
+ *
+ * @returns IPRT status code.
+ * @param   chDrive         The drive we're querying the driver letter on.
+ * @param   pszPath         Where to store the working directroy path.
+ * @param   cbPath          The size of the buffer pszPath points to.
+ */
+RTDECL(int) RTPathGetCurrentOnDrive(char chDrive, char *pszPath, size_t cbPath);
+
+/**
+ * Gets the current working drive of the process.
+ *
+ * Normally drive letter and colon will be returned, never trailing a root
+ * slash.  If the current directory is on a UNC share, the root of the share
+ * will be returned.  On systems without drive letters, an empty string is
+ * returned for consistency.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath         Where to store the working drive or UNC root.
+ * @param   cbPath          The size of the buffer pszPath points to.
+ */
+RTDECL(int) RTPathGetCurrentDrive(char *pszPath, size_t cbPath);
+
+/**
  * Get the real path (no symlinks, no . or .. components), must exist.
  *
  * @returns iprt status code.
