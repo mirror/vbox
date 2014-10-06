@@ -6742,7 +6742,11 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                         rc = ahciIoBufAllocate(pAhciPort, pAhciReq, pAhciReq->cbTransfer);
                         if (RT_FAILURE(rc))
+                        {
+                            /* In case we can't allocate enough memory fail the request with an overflow error. */
                             AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
+                            pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
+                        }
                     }
 
                     if (!(pAhciReq->fFlags & AHCI_REQ_OVERFLOW))
