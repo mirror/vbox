@@ -1032,7 +1032,7 @@ static int supHardNtVpVerifyImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, H
  * @param   hThread             The thread.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  */
-static int supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo)
 {
     /*
      * Use the ThreadAmILastThread request to check that there is only one
@@ -1055,7 +1055,6 @@ static int supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInf
 }
 
 
-#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
 /**
  * Verifies that there isn't a debugger attached to the process.
  *
@@ -1063,8 +1062,9 @@ static int supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInf
  * @param   hProcess            The process.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  */
-static int supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo)
 {
+#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
     /*
      * Use the ProcessDebugPort request to check there is no debugger
      * currently attached to the process.
@@ -1080,9 +1080,9 @@ static int supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo)
     if (uPtr != 0)
         return supHardNtVpSetInfo1(pErrInfo, VERR_SUP_VP_DEBUGGED,
                                    "Debugger attached (%#zx)", uPtr);
+#endif /* !VBOX_WITHOUT_DEBUGGER_CHECKS */
     return VINF_SUCCESS;
 }
-#endif /* !VBOX_WITHOUT_DEBUGGER_CHECKS */
 
 
 /**
@@ -2139,10 +2139,8 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
     int rc = VINF_SUCCESS;
     if (enmKind != SUPHARDNTVPKIND_CHILD_PURIFICATION)
        rc = supHardNtVpThread(hProcess, hThread, pErrInfo);
-#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
     if (RT_SUCCESS(rc))
         rc = supHardNtVpDebugger(hProcess, pErrInfo);
-#endif
     if (RT_SUCCESS(rc))
     {
         /*
