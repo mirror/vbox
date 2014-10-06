@@ -926,7 +926,9 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
                     break;
                 case IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE:
                     fProt = PAGE_READWRITE;
-                    if (!suplibHardenedMemComp(pThis->aSecHdrs[i].Name, ".mrdata", 8)) /* w8.1, ntdll */
+                    if (   pThis->enmKind != SUPHARDNTVPKIND_VERIFY_ONLY
+                        && pThis->enmKind != SUPHARDNTVPKIND_CHILD_PURIFICATION
+                        && !suplibHardenedMemComp(pThis->aSecHdrs[i].Name, ".mrdata", 8)) /* w8.1, ntdll. Changed by proc init. */
                         fProt = PAGE_READONLY;
                     break;
                 case IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE:
