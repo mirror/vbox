@@ -6305,11 +6305,18 @@ HRESULT Machine::querySavedThumbnailSize(ULONG aScreenId, ULONG *aSize, ULONG *a
     return S_OK;
 }
 
-
-HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULONG *aWidth, ULONG *aHeight, std::vector<BYTE> &aData)
+HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitmapFormat,
+                                           ULONG *aWidth, ULONG *aHeight, std::vector<BYTE> &aData)
 {
     if (aScreenId != 0)
         return E_NOTIMPL;
+
+    if (   aBitmapFormat != BitmapFormat_BGR0
+        && aBitmapFormat != BitmapFormat_BGRA
+        && aBitmapFormat != BitmapFormat_RGBA
+        && aBitmapFormat != BitmapFormat_PNG)
+        return setError(E_NOTIMPL,
+                        tr("Unsupported saved thumbnail format 0x%08X"), aBitmapFormat);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -6322,92 +6329,74 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BOOL aBGR, ULONG *aW
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot data is not available (%Rrc)"),
+                        tr("Saved thumbnail data is not available (%Rrc)"),
                         vrc);
+
+    HRESULT hr = S_OK;
 
     *aWidth = u32Width;
     *aHeight = u32Height;
 
-    aData.resize(cbData);
-    /* Convert pixels to format expected by the API caller. */
-    if (aBGR)
+    if (cbData > 0)
     {
-        /* [0] B, [1] G, [2] R, [3] A. */
-        for (unsigned i = 0; i < cbData; i += 4)
+        /* Convert pixels to the format expected by the API caller. */
+        if (aBitmapFormat == BitmapFormat_BGR0)
         {
-            aData[i]     = pu8Data[i];
-            aData[i + 1] = pu8Data[i + 1];
-            aData[i + 2] = pu8Data[i + 2];
-            aData[i + 3] = 0xff;
+            /* [0] B, [1] G, [2] R, [3] 0. */
+            aData.resize(cbData);
+            memcpy(&aData.front(), pu8Data, cbData);
         }
-    }
-    else
-    {
-        /* [0] R, [1] G, [2] B, [3] A. */
-        for (unsigned i = 0; i < cbData; i += 4)
+        else if (aBitmapFormat == BitmapFormat_BGRA)
         {
-            aData[i]     = pu8Data[i + 2];
-            aData[i + 1] = pu8Data[i + 1];
-            aData[i + 2] = pu8Data[i];
-            aData[i + 3] = 0xff;
+            /* [0] B, [1] G, [2] R, [3] A. */
+            aData.resize(cbData);
+            for (uint32_t i = 0; i < cbData; i += 4)
+            {
+                aData[i]     = pu8Data[i];
+                aData[i + 1] = pu8Data[i + 1];
+                aData[i + 2] = pu8Data[i + 2];
+                aData[i + 3] = 0xff;
+            }
+        }
+        else if (aBitmapFormat == BitmapFormat_RGBA)
+        {
+            /* [0] R, [1] G, [2] B, [3] A. */
+            aData.resize(cbData);
+            for (uint32_t i = 0; i < cbData; i += 4)
+            {
+                aData[i]     = pu8Data[i + 2];
+                aData[i + 1] = pu8Data[i + 1];
+                aData[i + 2] = pu8Data[i];
+                aData[i + 3] = 0xff;
+            }
+        }
+        else if (aBitmapFormat == BitmapFormat_PNG)
+        {
+            uint8_t *pu8PNG = NULL;
+            uint32_t cbPNG = 0;
+            uint32_t cxPNG = 0;
+            uint32_t cyPNG = 0;
+
+            vrc = DisplayMakePNG(pu8Data, u32Width, u32Height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
+
+            if (RT_SUCCESS(vrc))
+            {
+                aData.resize(cbPNG);
+                if (cbPNG)
+                    memcpy(&aData.front(), pu8PNG, cbPNG);
+            }
+            else
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Could not convert saved thumbnail to PNG (%Rrc)"),
+                              vrc);
+
+            RTMemFree(pu8PNG);
         }
     }
 
     freeSavedDisplayScreenshot(pu8Data);
 
-    return S_OK;
-}
-
-HRESULT Machine::readSavedThumbnailPNGToArray(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, std::vector<BYTE> &aData)
-{
-    if (aScreenId != 0)
-        return E_NOTIMPL;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    uint8_t *pu8Data = NULL;
-    uint32_t cbData = 0;
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-
-    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
-
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot data is not available (%Rrc)"),
-                        vrc);
-
-    *aWidth = u32Width;
-    *aHeight = u32Height;
-
-    HRESULT rc = S_OK;
-    uint8_t *pu8PNG = NULL;
-    uint32_t cbPNG = 0;
-    uint32_t cxPNG = 0;
-    uint32_t cyPNG = 0;
-
-    vrc = DisplayMakePNG(pu8Data, u32Width, u32Height, &pu8PNG, &cbPNG, &cxPNG, &cyPNG, 0);
-
-    if (RT_SUCCESS(vrc))
-    {
-        aData.resize(cbPNG);
-        if (cbPNG)
-            memcpy(&aData.front(), pu8PNG, cbPNG);
-        if (pu8PNG)
-            RTMemFree(pu8PNG);
-    }
-    else
-    {
-        if (pu8PNG)
-            RTMemFree(pu8PNG);
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Could not convert screenshot to PNG (%Rrc)"),
-                        vrc);
-    }
-
-    freeSavedDisplayScreenshot(pu8Data);
-
-    return rc;
+    return hr;
 }
 
 HRESULT Machine::querySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
