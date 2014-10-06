@@ -487,10 +487,19 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(struct VMMDevReqMousePointer *pReq)
 #define VBGLR3HOSTDISPSOCKET     VBGLR3VIDEOMODEHINTSOCKETPATH \
     "/VideoModeHint"
 
-VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck);
-VBGLR3DECL(int)     VbglR3GetDisplayChangeRequestEx(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
-                                                    uint32_t *piDisplay, uint32_t *pcOriginX, uint32_t *pcOriginY,
-                                                    bool *pfEnabled, bool fAck);
+/** The folder for saving video mode hints to between sessions. */
+#define VBGLR3HOSTDISPSAVEDMODEPATH "/var/lib/VBoxGuestAdditions"
+/** The path to the file for saving video mode hints to between sessions. */
+#define VBGLR3HOSTDISPSAVEDMODE     VBGLR3HOSTDISPSAVEDMODEPATH \
+    "/SavedVideoModes"
+
+VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
+                                                  uint32_t *pcBits,
+                                                  uint32_t *piDisplay,
+                                                  uint32_t *pdx, uint32_t *pdy,
+                                                  bool *pfEnabled,
+                                                  bool *pfChangeOrigin,
+                                                  bool fAck);
 VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
 VBGLR3DECL(int)     VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen);
 VBGLR3DECL(int)     VbglR3SaveVideoMode(unsigned cScreen, unsigned cx,
