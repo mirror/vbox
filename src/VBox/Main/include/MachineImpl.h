@@ -1102,14 +1102,10 @@ private:
                                     ULONG *aWidth,
                                     ULONG *aHeight);
     HRESULT readSavedThumbnailToArray(ULONG aScreenId,
-                                      BOOL aBGR,
+                                      BitmapFormat_T aBitmapFormat,
                                       ULONG *aWidth,
                                       ULONG *aHeight,
                                       std::vector<BYTE> &aData);
-    HRESULT readSavedThumbnailPNGToArray(ULONG aScreenId,
-                                         ULONG *aWidth,
-                                         ULONG *aHeight,
-                                         std::vector<BYTE> &aData);
     HRESULT querySavedScreenshotPNGSize(ULONG aScreenId,
                                         ULONG *aSize,
                                         ULONG *aWidth,

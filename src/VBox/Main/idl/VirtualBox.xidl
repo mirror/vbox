@@ -4248,7 +4248,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="96ae59d6-fecd-4a32-b051-23643eb4cd56"
+    uuid="2280b3f8-0c33-4641-8bd5-ccecd1071b49"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7127,17 +7127,16 @@
 
     <method name="readSavedThumbnailToArray">
       <desc>
-        Thumbnail is retrieved to an array of bytes in uncompressed 32-bit BGRA or RGBA format.
+        Thumbnail is retrieved to an array of bytes in the requested format.
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
           Saved guest screen to read from.
         </desc>
       </param>
-      <param name="BGR" type="boolean" dir="in">
+      <param name="bitmapFormat" type="BitmapFormat" dir="in">
         <desc>
-          How to order bytes in the pixel. A pixel consists of 4 bytes. If this parameter is true, then
-          bytes order is: B, G, R, 0xFF. If this parameter is false, then bytes order is: R, G, B, 0xFF.
+          The requested format.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="out">
@@ -7153,32 +7152,6 @@
       <param name="data" type="octet" safearray="yes" dir="return">
         <desc>
           Array with resulting bitmap data.
-        </desc>
-      </param>
-    </method>
-
-    <method name="readSavedThumbnailPNGToArray">
-      <desc>
-        Thumbnail in PNG format is retrieved to an array of bytes.
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>
-          Saved guest screen to read from.
-        </desc>
-      </param>
-      <param name="width" type="unsigned long" dir="out">
-        <desc>
-          Image width.
-        </desc>
-      </param>
-      <param name="height" type="unsigned long" dir="out">
-        <desc>
-          Image height.
-        </desc>
-      </param>
-      <param name="data" type="octet" dir="return" safearray="yes">
-        <desc>
-          Array with resulting PNG data.
         </desc>
       </param>
     </method>
