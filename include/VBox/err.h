@@ -2512,6 +2512,18 @@
 #define VERR_SUP_VP_NOT_OWNED_BY_TRUSTED_INSTALLER  (-5667)
 /** The image is outside the expected range. */
 #define VERR_SUP_VP_IMAGE_TOO_BIG                   (-5668)
+/** Stub process not found so it cannot be revalidated when vboxdrv is opened
+ * by the VM process. */
+#define VERR_SUP_VP_STUB_NOT_FOUND                  (-5669)
+/** Error openeing the stub process for revalidation when vboxdrv is opened by
+ *  the VM process. */
+#define VERR_SUP_VP_STUB_OPEN_ERROR                 (-5670)
+/** Stub process thread not found during revalidation upon vboxdrv opening by
+ * the VM process. */
+#define VERR_SUP_VP_STUB_THREAD_NOT_FOUND           (-5671)
+/** Error opening the stub process thread for revalidation when vboxdrv is
+ * opened by the VM process. */
+#define VERR_SUP_VP_STUB_THREAD_OPEN_ERROR          (-5672)
 
 /** @} */
 

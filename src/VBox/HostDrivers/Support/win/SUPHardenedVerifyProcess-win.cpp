@@ -952,11 +952,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
                                                pImage->pszName, i, pThis->aSecHdrs[i].Characteristics, uSectRva, cbMap);
             }
 
-            /* The section bits, only child purification verifies all bits . */
-            if (   pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION
-                || (   (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
+            /* The section bits. Child purification verifies all, normal
+               verification verifies all except where the executable is
+               concerned (due to opening vboxdrv during early process init). */
+            if (   (   (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
                     && !(pThis->aSecHdrs[i].Characteristics & IMAGE_SCN_MEM_WRITE))
-                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE)) == IMAGE_SCN_MEM_READ)
+                || (pThis->aSecHdrs[i].Characteristics & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE)) == IMAGE_SCN_MEM_READ
+                || (pThis->enmKind == SUPHARDNTVPKIND_VERIFY_ONLY && pImage->fDll)
+                || pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
             {
                 rc = VINF_SUCCESS;
                 if (uRva < uSectRva && !pImage->fApiSetSchemaOnlySection1) /* Any gap worth checking? */
