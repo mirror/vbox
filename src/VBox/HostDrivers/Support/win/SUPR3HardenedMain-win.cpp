@@ -228,6 +228,10 @@ extern "C" PFNRT            g_pfnNtCreateSectionJmpBack = NULL;
  *  NtCreateSection operation. */
 static NTSTATUS (NTAPI *    g_pfnNtCreateSectionReal)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES,
                                                       PLARGE_INTEGER, ULONG, ULONG, HANDLE);
+/** Pointer to the NtCreateSection function in NtDll (for patching purposes). */
+static uint8_t             *g_pbNtCreateSection;
+/** The patched NtCreateSection bytes (for restoring). */
+static uint8_t              g_abNtCreateSectionPatch[16];
 #if 0
 /** The jump back address of the patched LdrLoadDll. */
 extern "C" PFNRT            g_pfnLdrLoadDllJmpBack = NULL;
@@ -235,6 +239,11 @@ extern "C" PFNRT            g_pfnLdrLoadDllJmpBack = NULL;
 /** Pointer to the bit of assembly code that will perform the original
  *  LdrLoadDll operation. */
 static NTSTATUS (NTAPI *    g_pfnLdrLoadDllReal)(PWSTR, PULONG, PUNICODE_STRING, PHANDLE);
+/** Pointer to the LdrLoadDll function in NtDll (for patching purposes). */
+static uint8_t             *g_pbLdrLoadDll;
+/** The patched LdrLoadDll bytes (for restoring). */
+static uint8_t              g_abLdrLoadDllPatch[16];
+
 /** The hash table of verifier cache . */
 static PVERIFIERCACHEENTRY  volatile g_apVerifierCache[128];
 /** Queue of cached images which needs WinVerifyTrust to check them. */
@@ -247,6 +256,11 @@ static PVERIFIERCACHEIMPORT volatile g_pVerifierCacheTodoImports = NULL;
 SUPSYSROOTDIRBUF            g_System32WinPath;
 /** @ */
 
+/** Positive if the DLL notification callback has been registered, counts
+ * registration attempts as negative. */
+static int                  g_cDllNotificationRegistered = 0;
+/** The registration cookie of the DLL notification callback. */
+static PVOID                g_pvDllNotificationCookie = NULL;
 
 /** Static error info structure used during init. */
 static RTERRINFOSTATIC      g_ErrInfoStatic;
@@ -300,6 +314,9 @@ static uint32_t             g_fSupAdversaries = 0;
 static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
                                          bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
                                          bool *pfQuietFailure);
+static void supR3HardenedWinRegisterDllNotificationCallback(void);
+static void supR3HardenedWinReInstallHooks(bool fFirst);
+
 
 #ifdef RT_ARCH_AMD64
 # define SYSCALL(a_Num) DECLASM(void) RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num)(void)
@@ -1666,6 +1683,16 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     NTSTATUS rcNt;
 
     /*
+     * Make sure the DLL notification callback is registered.  If we could, we
+     * would've done this during early process init, but due to lack of heap
+     * and uninitialized loader lock, it's not possible that early on.
+     *
+     * The callback protects our NtDll hooks from getting unhooked by
+     * "friendly" fire from the AV crowd.
+     */
+    supR3HardenedWinRegisterDllNotificationCallback();
+
+    /*
      * Process WinVerifyTrust todo before and after.
      */
     supR3HardenedWinVerifyCacheProcessWvtTodos();
@@ -1964,6 +1991,155 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
 }
 
 
+/**
+ * DLL load and unload notification callback.
+ *
+ * This is a safety against our LdrLoadDll hook being replaced by protection
+ * software.  Though, we prefer the LdrLoadDll hook to this one as it allows us
+ * to call WinVerifyTrust more freely.
+ *
+ * @param   ulReason    The reason we're called, see
+ *                      LDR_DLL_NOTIFICATION_REASON_XXX.
+ * @param   pData       Reason specific data.  (Format is currently the same for
+ *                      both load and unload.)
+ * @param   pvUser      User parameter (ignored).
+ *
+ * @remarks Vista and later.
+ * @remarks The loader lock is held when we're called, at least on Windows 7.
+ */
+static VOID CALLBACK supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_DLL_NOTIFICATION_DATA pData, PVOID pvUser)
+{
+    NOREF(pvUser);
+
+    /*
+     * Screen the image on load.  We will normally get a verification cache
+     * hit here because of the LdrLoadDll and NtCreateSection hooks, so it
+     * should be relatively cheap to recheck.  In case our NtDll patches
+     * got re
+     *
+     * This ASSUMES that we get informed after the fact as indicated by the
+     * available documentation.
+     */
+    if (ulReason == LDR_DLL_NOTIFICATION_REASON_LOADED)
+    {
+        SUP_DPRINTF(("supR3HardenedDllNotificationCallback: load   %p LB %#010x %.*ls [fFlags=%#x]\n",
+                     pData->Loaded.DllBase, pData->Loaded.SizeOfImage,
+                     pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer,
+                     pData->Loaded.Flags));
+
+        /* Convert the windows path to an NT path and open it. */
+        HANDLE          hRootDir;
+        UNICODE_STRING  NtPathUniStr;
+        int rc = RTNtPathFromWinUtf16Ex(&NtPathUniStr, &hRootDir, pData->Loaded.FullDllName->Buffer,
+                                        pData->Loaded.FullDllName->Length / sizeof(WCHAR));
+        if (RT_FAILURE(rc))
+        {
+            supR3HardenedFatal("supR3HardenedDllNotificationCallback: RTNtPathFromWinUtf16Ex failed on '%.*ls': %Rrc\n",
+                               pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer, rc);
+            return;
+        }
+
+        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        OBJECT_ATTRIBUTES   ObjAttr;
+        InitializeObjectAttributes(&ObjAttr, &NtPathUniStr, OBJ_CASE_INSENSITIVE, hRootDir, NULL /*pSecDesc*/);
+
+        NTSTATUS rcNt = NtCreateFile(&hFile,
+                                     FILE_READ_DATA | READ_CONTROL | SYNCHRONIZE,
+                                     &ObjAttr,
+                                     &Ios,
+                                     NULL /* Allocation Size*/,
+                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_SHARE_READ,
+                                     FILE_OPEN,
+                                     FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                     NULL /*EaBuffer*/,
+                                     0 /*EaLength*/);
+        if (NT_SUCCESS(rcNt))
+            rcNt = Ios.Status;
+        if (!NT_SUCCESS(rcNt))
+        {
+            supR3HardenedFatal("supR3HardenedDllNotificationCallback: NtCreateFile failed on '%.*ls' / '%.*ls': %#x\n",
+                               pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer,
+                               NtPathUniStr.Length / sizeof(WCHAR), NtPathUniStr.Buffer, rcNt);
+            RTNtPathFree(&NtPathUniStr, &hRootDir);
+            return;
+        }
+
+        /* Do the screening. */
+        ULONG fAccess = 0;
+        ULONG fProtect = 0;
+        bool  fCallRealApi = false;
+        bool  fQuietFailure = false;
+        rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
+                                        "LdrLoadDll", true /*fAvoidWinVerifyTrust*/, &fQuietFailure);
+        NtClose(hFile);
+        if (!NT_SUCCESS(rcNt))
+        {
+            supR3HardenedFatal("supR3HardenedDllNotificationCallback: supR3HardenedScreenImage failed on '%.*ls' / '%.*ls': %#x\n",
+                               pData->Loaded.FullDllName->Length / sizeof(WCHAR), pData->Loaded.FullDllName->Buffer,
+                               NtPathUniStr.Length / sizeof(WCHAR), NtPathUniStr.Buffer, rcNt);
+            RTNtPathFree(&NtPathUniStr, &hRootDir);
+            return;
+        }
+        RTNtPathFree(&NtPathUniStr, &hRootDir);
+    }
+    /*
+     * Log the unload call.
+     */
+    else if (ulReason == LDR_DLL_NOTIFICATION_REASON_UNLOADED)
+    {
+        SUP_DPRINTF(("supR3HardenedDllNotificationCallback: Unload %p LB %#010x %.*ls [flags=%#x]\n",
+                     pData->Unloaded.DllBase, pData->Unloaded.SizeOfImage,
+                     pData->Unloaded.FullDllName->Length / sizeof(WCHAR), pData->Unloaded.FullDllName->Buffer,
+                     pData->Unloaded.Flags));
+    }
+    /*
+     * Just log things we don't know and then return without caching anything.
+     */
+    else
+    {
+        static uint32_t s_cLogEntries = 0;
+        if (s_cLogEntries++ < 32)
+            SUP_DPRINTF(("supR3HardenedDllNotificationCallback: ulReason=%u pData=%p\n", ulReason, pData));
+        return;
+    }
+
+    /*
+     * Use this opportunity to make sure our NtDll patches are still in place,
+     * since they may be replaced by indecent protection software solutions.
+     */
+    supR3HardenedWinReInstallHooks(false /*fFirstCall */);
+}
+
+
+/**
+ * Registers the DLL notification callback if it hasn't already been registered.
+ */
+static void supR3HardenedWinRegisterDllNotificationCallback(void)
+{
+    /*
+     * The notification API was added in Vista, so it's an optional (weak) import.
+     */
+    if (   LdrRegisterDllNotification != NULL
+        && g_cDllNotificationRegistered <= 0
+        && g_cDllNotificationRegistered > -32)
+    {
+        NTSTATUS rcNt = LdrRegisterDllNotification(0, supR3HardenedDllNotificationCallback, NULL, &g_pvDllNotificationCookie);
+        if (NT_SUCCESS(rcNt))
+        {
+            SUP_DPRINTF(("Registered Dll notification callback with NTDLL.\n"));
+            g_cDllNotificationRegistered = 1;
+        }
+        else
+        {
+            supR3HardenedError(rcNt, false /*fFatal*/, "LdrRegisterDllNotification failed: %#x\n", rcNt);
+            g_cDllNotificationRegistered--;
+        }
+    }
+}
+
+
 #ifdef RT_ARCH_AMD64
 /**
  * Tries to allocate memory between @a uStart and @a uEnd.
@@ -2209,6 +2385,91 @@ static NTSTATUS supR3HardenedWinProtectMemory(PVOID pvMem, SIZE_T cbMem, ULONG f
 
 
 /**
+ * Installs or reinstalls the NTDLL patches.
+ */
+static void supR3HardenedWinReInstallHooks(bool fFirstCall)
+{
+    struct
+    {
+        size_t          cbPatch;
+        uint8_t const  *pabPatch;
+        uint8_t       **ppbApi;
+        const char     *pszName;
+    } const s_aPatches[] =
+    {
+        { sizeof(g_abNtCreateSectionPatch), g_abNtCreateSectionPatch, &g_pbNtCreateSection, "NtCreateSection" },
+        { sizeof(g_abLdrLoadDllPatch),      g_abLdrLoadDllPatch,      &g_pbLdrLoadDll,      "LdrLoadDll"      },
+    };
+
+    ULONG fAmIAlone = ~(ULONG)0;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aPatches); i++)
+    {
+        uint8_t *pbApi = *s_aPatches[i].ppbApi;
+        if (memcmp(pbApi, s_aPatches[i].pabPatch, s_aPatches[i].cbPatch) != 0)
+        {
+            /*
+             * Log the incident if it's not the initial call.
+             */
+            static uint32_t volatile s_cTimes = 0;
+            if (!fFirstCall && s_cTimes < 128)
+            {
+                s_cTimes++;
+                SUP_DPRINTF(("supR3HardenedWinReInstallHooks: Reinstalling %s (%p: %.*Rhxs).\n",
+                             s_aPatches[i].pszName, pbApi, s_aPatches[i].cbPatch, pbApi));
+            }
+
+            Assert(s_aPatches[i].cbPatch >= 4);
+
+            SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbApi, s_aPatches[i].cbPatch, PAGE_EXECUTE_READWRITE));
+
+            /*
+             * If we're alone, just memcpy the patch in.
+             */
+
+#if 0 /* For testing purposes. */
+            if (fAmIAlone == ~(ULONG)0)
+            {
+                ULONG cbIgn = 0;
+                NTSTATUS rcNt = NtQueryInformationThread(NtCurrentThread(), ThreadAmILastThread,
+                                                         &fAmIAlone, sizeof(fAmIAlone), &cbIgn);
+                fAmIAlone = NT_SUCCESS(rcNt) && fAmIAlone != 0;
+            }
+#else
+            fAmIAlone = 0;
+#endif
+            if (fAmIAlone)
+                memcpy(pbApi, s_aPatches[i].pabPatch, s_aPatches[i].cbPatch);
+            else
+            {
+                /*
+                 * Not alone.  Start by injecting a JMP $-2, then waste some
+                 * CPU cycles to get the other threads a good chance of getting
+                 * out of the code before we replace it.
+                 */
+                RTUINT32U uJmpDollarMinus;
+                uJmpDollarMinus.au8[0] = 0xeb;
+                uJmpDollarMinus.au8[1] = 0xfe;
+                uJmpDollarMinus.au8[2] = pbApi[2];
+                uJmpDollarMinus.au8[3] = pbApi[3];
+                ASMAtomicXchgU32((uint32_t volatile *)pbApi, uJmpDollarMinus.u);
+
+                NtYieldExecution();
+                NtYieldExecution();
+
+                /* Copy in the tail bytes of the patch, then xchg the jmp $-2. */
+                if (s_aPatches[i].cbPatch > 4)
+                    memcpy(&pbApi[4], &s_aPatches[i].pabPatch[4], s_aPatches[i].cbPatch - 4);
+                ASMAtomicXchgU32((uint32_t volatile *)pbApi, *(uint32_t *)s_aPatches[i].pabPatch);
+            }
+
+            SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbApi, s_aPatches[i].cbPatch, PAGE_EXECUTE_READ));
+        }
+    }
+}
+
+
+/**
  * Install hooks for intercepting calls dealing with mapping shared libraries
  * into the process.
  *
@@ -2223,21 +2484,9 @@ static NTSTATUS supR3HardenedWinProtectMemory(PVOID pvMem, SIZE_T cbMem, ULONG f
  *          "copies".  This makes the non-system call patching a little tedious
  *            and inflexible.
  */
-DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
+static void supR3HardenedWinInstallHooks(void)
 {
     NTSTATUS rcNt;
-
-#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
-    /*
-     * Install a anti debugging hack before we continue.  This prevents most
-     * notifications from ending up in the debugger. (Also applied to the
-     * child process when respawning.)
-     */
-    rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
-    if (!NT_SUCCESS(rcNt))
-        supR3HardenedFatalMsg("supR3HardenedWinInstallHooks", kSupInitOp_Misc, VERR_GENERAL_FAILURE,
-                              "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
-#endif
 
     /*
      * Disable hard error popups so we can quietly refuse images to be loaded.
@@ -2293,6 +2542,10 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
      *          it's mapped and we still have a file handle to work with.
      */
     uint8_t * const pbNtCreateSection = (uint8_t *)(uintptr_t)pfnNtCreateSection;
+    g_pbNtCreateSection = pbNtCreateSection;
+    memcpy(g_abNtCreateSectionPatch, pbNtCreateSection, sizeof(g_abNtCreateSectionPatch));
+/** @todo This patch could be simplified iff we had our own syscall operational
+ *        from the get-go. */
 
 #ifdef RT_ARCH_AMD64
     /*
@@ -2320,8 +2573,6 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
         && pbNtCreateSection[ 8] == 0x0f /* syscall */
         && pbNtCreateSection[ 9] == 0x05
         && pbNtCreateSection[10] == 0xc3 /* ret */
-
-/* b8 22 35 ed 0 48 63 c0 ff e0 c3 f 1f 44 0 0 - necros2 - agnitum firewall? */
        )
     {
         offJmpBack = 8; /* the 3rd instruction (syscall). */
@@ -2337,15 +2588,13 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
 
     g_pfnNtCreateSectionJmpBack         = (PFNRT)(uintptr_t)(pbNtCreateSection + offJmpBack);
     *(PFNRT *)&g_pfnNtCreateSectionReal = pfnCallReal;
-    *puJmpTab                           = (uintptr_t)supR3HardenedMonitor_NtCreateSection;
 
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbNtCreateSection, 16, PAGE_EXECUTE_READWRITE));
+    /* Assemble the patch. */
+    g_abNtCreateSectionPatch[0] = 0xff;
+    g_abNtCreateSectionPatch[1] = 0x25;
+    *(uint32_t *)&g_abNtCreateSectionPatch[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbNtCreateSection[2+4]);
 
-    pbNtCreateSection[0] = 0xff;
-    pbNtCreateSection[1] = 0x25;
-    *(uint32_t *)&pbNtCreateSection[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbNtCreateSection[2+4]);
-
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbNtCreateSection, 16, PAGE_EXECUTE_READ));
+    *puJmpTab = (uintptr_t)supR3HardenedMonitor_NtCreateSection;
     puJmpTab++;
 
 #else
@@ -2414,15 +2663,17 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
     g_pfnNtCreateSectionJmpBack         = (PFNRT)(uintptr_t)(pbNtCreateSection + offJmpBack);
     *(PFNRT *)&g_pfnNtCreateSectionReal = pfnCallReal;
 
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbNtCreateSection, 16, PAGE_EXECUTE_READWRITE));
-
-    pbNtCreateSection[0] = 0xe9;
-    *(uint32_t *)&pbNtCreateSection[1] = (uintptr_t)supR3HardenedMonitor_NtCreateSection
-                                       - (uintptr_t)&pbNtCreateSection[1+4];
-
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbNtCreateSection, 16, PAGE_EXECUTE_READ));
-
+    /* Assemble the patch. */
+    g_abNtCreateSectionPatch[0] = 0xe9;
+    *(uint32_t *)&g_abNtCreateSectionPatch[1] = (uintptr_t)supR3HardenedMonitor_NtCreateSection
+                                              - (uintptr_t)&pbNtCreateSection[1+4];
 #endif
+
+    /*
+     * Exec page setup & management.
+     */
+    uint32_t offExecPage = 0;
+    memset(g_abSupHardReadWriteExecPage, 0xcc, PAGE_SIZE);
 
     /*
      * Hook #2 - LdrLoadDll
@@ -2434,160 +2685,13 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
      * we're at the mercy of the compiler.
      */
     uint8_t * const pbLdrLoadDll = (uint8_t *)(uintptr_t)pfnLdrLoadDll;
-    uint32_t        offExecPage  = 0;
-    memset(g_abSupHardReadWriteExecPage, 0xcc, PAGE_SIZE);
+    g_pbLdrLoadDll = pbLdrLoadDll;
+    memcpy(g_abLdrLoadDllPatch, pbLdrLoadDll, sizeof(g_abLdrLoadDllPatch));
 
 #ifdef RT_ARCH_AMD64
     /*
      * Patch 64-bit hosts.
      */
-# if 0
-    /* Pattern #1:
-         Windows 8.1:
-            0:000> u ntdll!LdrLoadDll
-            ntdll!LdrLoadDll:
-            00007ffa`814ccd44 488bc4          mov     rax,rsp
-            00007ffa`814ccd47 48895808        mov     qword ptr [rax+8],rbx
-            00007ffa`814ccd4b 48896810        mov     qword ptr [rax+10h],rbp
-            00007ffa`814ccd4f 48897018        mov     qword ptr [rax+18h],rsi
-            00007ffa`814ccd53 48897820        mov     qword ptr [rax+20h],rdi
-            00007ffa`814ccd57 4156            push    r14
-            00007ffa`814ccd59 4883ec70        sub     rsp,70h
-            00007ffa`814ccd5d f6059cd2100009  test    byte ptr [ntdll!LdrpDebugFlags (00007ffa`815da000)],9
-     */
-    if (   pbLdrLoadDll[0] == 0x48 /* mov rax,rsp */
-        && pbLdrLoadDll[1] == 0x8b
-        && pbLdrLoadDll[2] == 0xc4
-        && pbLdrLoadDll[3] == 0x48 /* mov qword ptr [rax+8],rbx */
-        && pbLdrLoadDll[4] == 0x89
-        && pbLdrLoadDll[5] == 0x58
-        && pbLdrLoadDll[6] == 0x08)
-    {
-        offJmpBack = 7; /* the 3rd instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type1;
-    }
-    /*
-       Pattern #2:
-         Windows 8.0:
-            0:000> u ntdll_w8_64!LdrLoadDll
-            ntdll_w8_64!LdrLoadDll:
-            00007ffa`52ffa7c0 48895c2408      mov     qword ptr [rsp+8],rbx
-            00007ffa`52ffa7c5 4889742410      mov     qword ptr [rsp+10h],rsi
-            00007ffa`52ffa7ca 48897c2418      mov     qword ptr [rsp+18h],rdi
-            00007ffa`52ffa7cf 55              push    rbp
-            00007ffa`52ffa7d0 4156            push    r14
-            00007ffa`52ffa7d2 4157            push    r15
-            00007ffa`52ffa7d4 488bec          mov     rbp,rsp
-            00007ffa`52ffa7d7 4883ec60        sub     rsp,60h
-            00007ffa`52ffa7db 8b05df321000    mov     eax,dword ptr [ntdll_w8_64!LdrpDebugFlags (00007ffa`530fdac0)]
-            00007ffa`52ffa7e1 4d8bf1          mov     r14,r9
-
-     */
-    else if (   pbLdrLoadDll[0] == 0x48 /* mov qword ptr [rsp+8],rbx */
-             && pbLdrLoadDll[1] == 0x89
-             && pbLdrLoadDll[2] == 0x5c
-             && pbLdrLoadDll[3] == 0x24
-             && pbLdrLoadDll[4] == 0x08
-             && pbLdrLoadDll[5] == 0x48 /* mov qword ptr [rsp+10h],rsi */
-             && pbLdrLoadDll[6] == 0x89
-             && pbLdrLoadDll[7] == 0x74
-             && pbLdrLoadDll[8] == 0x24
-             && pbLdrLoadDll[9] == 0x10)
-    {
-        offJmpBack = 10; /* the 3rd instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type2;
-    }
-    /*
-       Pattern #3:
-         Windows 7:
-            ntdll_w7_64!LdrLoadDll:
-            00000000`58be4a20 48895c2410      mov     qword ptr [rsp+10h],rbx
-            00000000`58be4a25 48896c2418      mov     qword ptr [rsp+18h],rbp
-            00000000`58be4a2a 56              push    rsi
-            00000000`58be4a2b 57              push    rdi
-            00000000`58be4a2c 4154            push    r12
-            00000000`58be4a2e 4883ec50        sub     rsp,50h
-            00000000`58be4a32 f605976e100009  test    byte ptr [ntdll_w7_64!ShowSnaps (00000000`58ceb8d0)],9
-            00000000`58be4a39 498bf1          mov     rsi,r9
-
-     */
-    else if (   pbLdrLoadDll[0] == 0x48 /* mov qword ptr [rsp+10h],rbx */
-             && pbLdrLoadDll[1] == 0x89
-             && pbLdrLoadDll[2] == 0x5c
-             && pbLdrLoadDll[3] == 0x24
-             && pbLdrLoadDll[4] == 0x10)
-    {
-        offJmpBack = 5; /* the 2nd instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type3;
-    }
-    /*
-       Pattern #4:
-         Windows Vista:
-            0:000> u ntdll_vista_64!LdrLoadDll
-            ntdll_vista_64!LdrLoadDll:
-            00000000`58c11f60 fff3            push    rbx
-            00000000`58c11f62 56              push    rsi
-            00000000`58c11f63 57              push    rdi
-            00000000`58c11f64 4154            push    r12
-            00000000`58c11f66 4155            push    r13
-            00000000`58c11f68 4156            push    r14
-            00000000`58c11f6a 4157            push    r15
-            00000000`58c11f6c 4881ecb0020000  sub     rsp,2B0h
-            00000000`58c11f73 488b05367b0e00  mov     rax,qword ptr [ntdll_vista_64!_security_cookie (00000000`58cf9ab0)]
-            00000000`58c11f7a 4833c4          xor     rax,rsp
-            00000000`58c11f7d 48898424a0020000 mov     qword ptr [rsp+2A0h],rax
-
-     */
-    else if (   pbLdrLoadDll[0] == 0xff /* push rbx */
-             && pbLdrLoadDll[1] == 0xf3
-             && pbLdrLoadDll[2] == 0x56 /* push rsi */
-             && pbLdrLoadDll[3] == 0x57 /* push rdi */
-             && pbLdrLoadDll[4] == 0x41 /* push r12 */
-             && pbLdrLoadDll[5] == 0x54)
-    {
-        offJmpBack = 6; /* the 5th instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type4;
-    }
-    /*
-       Pattern #5:
-         Windows XP64:
-            0:000> u ntdll!LdrLoadDll
-            ntdll!LdrLoadDll:
-            00000000`78efa580 4c8bdc          mov     r11,rsp
-            00000000`78efa583 4881ece8020000  sub     rsp,2E8h
-            00000000`78efa58a 49895bf8        mov     qword ptr [r11-8],rbx
-            00000000`78efa58e 498973f0        mov     qword ptr [r11-10h],rsi
-            00000000`78efa592 49897be8        mov     qword ptr [r11-18h],rdi
-            00000000`78efa596 4d8963e0        mov     qword ptr [r11-20h],r12
-            00000000`78efa59a 4d896bd8        mov     qword ptr [r11-28h],r13
-            00000000`78efa59e 4d8973d0        mov     qword ptr [r11-30h],r14
-            00000000`78efa5a2 4d897bc8        mov     qword ptr [r11-38h],r15
-            00000000`78efa5a6 488b051bd10a00  mov     rax,qword ptr [ntdll!_security_cookie (00000000`78fa76c8)]
-            00000000`78efa5ad 48898424a0020000 mov     qword ptr [rsp+2A0h],rax
-            00000000`78efa5b5 4d8bf9          mov     r15,r9
-            00000000`78efa5b8 4c8bf2          mov     r14,rdx
-            00000000`78efa5bb 4c8be9          mov     r13,rcx
-            00000000`78efa5be 4c89442458      mov     qword ptr [rsp+58h],r8
-            00000000`78efa5c3 66c74424680000  mov     word ptr [rsp+68h],0
-
-     */
-    else if (   pbLdrLoadDll[0] == 0x4c /* mov r11,rsp */
-             && pbLdrLoadDll[1] == 0x8b
-             && pbLdrLoadDll[2] == 0xdc
-             && pbLdrLoadDll[3] == 0x48 /* sub rsp,2e8h */
-             && pbLdrLoadDll[4] == 0x81
-             && pbLdrLoadDll[5] == 0xec
-             && pbLdrLoadDll[6] == 0xe8
-             && pbLdrLoadDll[7] == 0x02
-             && pbLdrLoadDll[8] == 0x00
-             && pbLdrLoadDll[9] == 0x00)
-    {
-        offJmpBack = 10; /* the 3rd instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type5;
-    }
-    else
-        supR3HardenedWinHookFailed("LdrLoadDll", pbLdrLoadDll);
-# else
     /* Just use the disassembler to skip 6 bytes or more. */
     DISSTATE Dis;
     uint32_t cbInstr;
@@ -2602,7 +2706,6 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
             supR3HardenedWinHookFailed("LdrLoadDll", pbLdrLoadDll);
         offJmpBack += cbInstr;
     }
-# endif
 
     /* Assemble the code for resuming the call.*/
     *(PFNRT *)&g_pfnLdrLoadDllReal = (PFNRT)(uintptr_t)&g_abSupHardReadWriteExecPage[offExecPage];
@@ -2617,112 +2720,19 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
     *(uint64_t *)&g_abSupHardReadWriteExecPage[offExecPage] = (uintptr_t)&pbLdrLoadDll[offJmpBack];
     offExecPage = RT_ALIGN_32(offJmpBack + 8, 16);
 
-    /* Patch the function. */
-    *puJmpTab = (uintptr_t)supR3HardenedMonitor_LdrLoadDll;
-
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbLdrLoadDll, 16, PAGE_EXECUTE_READWRITE));
-
+    /* Assemble the LdrLoadDll patch. */
     Assert(offJmpBack >= 6);
-    pbLdrLoadDll[0] = 0xff;
-    pbLdrLoadDll[1] = 0x25;
-    *(uint32_t *)&pbLdrLoadDll[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbLdrLoadDll[2+4]);
+    g_abLdrLoadDllPatch[0] = 0xff;
+    g_abLdrLoadDllPatch[1] = 0x25;
+    *(uint32_t *)&g_abLdrLoadDllPatch[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbLdrLoadDll[2+4]);
 
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbLdrLoadDll, 16, PAGE_EXECUTE_READ));
+    *puJmpTab = (uintptr_t)supR3HardenedMonitor_LdrLoadDll;
     puJmpTab++;
 
 #else
     /*
      * Patch 32-bit hosts.
      */
-# if 0
-    /* Pattern #1:
-          Windows 7:
-            0:000> u ntdll!LdrLoadDll
-            ntdll!LdrLoadDll:
-            77aff585 8bff            mov     edi,edi
-            77aff587 55              push    ebp
-            77aff588 8bec            mov     ebp,esp
-            77aff58a 51              push    ecx
-            77aff58b 51              push    ecx
-            77aff58c a1f8bdaf77      mov     eax,dword ptr [ntdll!LdrpLogLevelStateTable+0x24 (77afbdf8)]
-
-          Windows 8 rtm:
-            0:000:x86> u ntdll_67150000!LdrLoadDll
-            ntdll_67150000!LdrLoadDll:
-            67189f3f 8bff            mov     edi,edi
-            67189f41 55              push    ebp
-            67189f42 8bec            mov     ebp,esp
-            67189f44 8b0d10eb2467    mov     ecx,dword ptr [ntdll_67150000!LdrpDebugFlags (6724eb10)]
-
-          Windows 8.1:
-            0:000:x86> u ntdll_w81_32!LdrLoadDll
-            ntdll_w81_32!LdrLoadDll:
-            6718aade 8bff            mov     edi,edi
-            6718aae0 55              push    ebp
-            6718aae1 8bec            mov     ebp,esp
-            6718aae3 83ec14          sub     esp,14h
-            6718aae6 f6050040246709  test    byte ptr [ntdll_w81_32!LdrpDebugFlags (67244000)],9
-
-       Pattern #2:
-          Windows XP:
-            0:000:x86> u ntdll_xp!LdrLoadDll
-            ntdll_xp!LdrLoadDll:
-            77f569d2 6858020000      push    258h
-            77f569d7 68d866f777      push    offset ntdll_xp!`string'+0x12c (77f766d8)
-            77f569dc e83bb20200      call    ntdll_xp!_SEH_prolog (77f81c1c)
-            77f569e1 33db            xor     ebx,ebx
-            77f569e3 66895de0        mov     word ptr [ebp-20h],bx
-            77f569e7 33c0            xor     eax,eax
-            77f569e9 8d7de2          lea     edi,[ebp-1Eh]
-            77f569ec ab              stos    dword ptr es:[edi]
-
-          Windows Server 2003:
-            0:000:x86> u ntdll_w2k3_32!LdrLoadDll
-            ntdll_w2k3_32!LdrLoadDll:
-            7c833f63 6840020000      push    240h
-            7c833f68 68b040837c      push    offset ntdll_w2k3_32!`string'+0x12c (7c8340b0)
-            7c833f6d e8a942ffff      call    ntdll_w2k3_32!_SEH_prolog (7c82821b)
-            7c833f72 a13077887c      mov     eax,dword ptr [ntdll_w2k3_32!__security_cookie (7c887730)]
-            7c833f77 8945e4          mov     dword ptr [ebp-1Ch],eax
-            7c833f7a 8b4508          mov     eax,dword ptr [ebp+8]
-            7c833f7d 8985b0fdffff    mov     dword ptr [ebp-250h],eax
-            7c833f83 8b450c          mov     eax,dword ptr [ebp+0Ch]
-
-          Windows Vista SP0 & SP1:
-            0:000:x86> u ntdll_vista_sp0_32!LdrLoadDll
-            ntdll_vista_sp0_32!LdrLoadDll:
-            69b0eb00 6844020000      push    244h
-            69b0eb05 6838e9b269      push    offset ntdll_vista_sp0_32! ?? ::FNODOBFM::`string'+0x39e (69b2e938)
-            69b0eb0a e835420300      call    ntdll_vista_sp0_32!_SEH_prolog4_GS (69b42d44)
-            69b0eb0f 8b4508          mov     eax,dword ptr [ebp+8]
-            69b0eb12 8985acfdffff    mov     dword ptr [ebp-254h],eax
-            69b0eb18 8b450c          mov     eax,dword ptr [ebp+0Ch]
-            69b0eb1b 8985c0fdffff    mov     dword ptr [ebp-240h],eax
-            69b0eb21 8b4510          mov     eax,dword ptr [ebp+10h]
-         */
-
-    if (   pbLdrLoadDll[0] == 0x8b /* mov edi, edi - for hot patching */
-        && pbLdrLoadDll[1] == 0xff
-        && pbLdrLoadDll[2] == 0x55 /* push ebp */
-        && pbLdrLoadDll[3] == 0x8b /* mov  ebp,esp */
-        && pbLdrLoadDll[4] == 0xec)
-    {
-        offJmpBack = 5; /* the 3rd instruction. */
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type1;
-    }
-    else if (pbLdrLoadDll[0] == 0x68 /* push dword XXXXXXXX */)
-    {
-        offJmpBack = 5;
-        pfnCallReal = supR3HardenedJmpBack_LdrLoadDll_Type2;
-        g_supR3HardenedJmpBack_LdrLoadDll_Type2_PushDword = *(uint32_t const *)&pbLdrLoadDll[1];
-    }
-    else
-        supR3HardenedWinHookFailed("LdrLoadDll", pbLdrLoadDll);
-
-    g_pfnLdrLoadDllJmpBack = (PFNRT)(uintptr_t)(pbLdrLoadDll + offJmpBack);
-    *(PFNRT *)&g_pfnLdrLoadDllReal = pfnCallReal;
-
-# else
     /* Just use the disassembler to skip 6 bytes or more. */
     DISSTATE Dis;
     uint32_t cbInstr;
@@ -2748,21 +2758,22 @@ DECLHIDDEN(void) supR3HardenedWinInstallHooks(void)
                                                             - (uintptr_t)&g_abSupHardReadWriteExecPage[offExecPage + 4];
     offExecPage = RT_ALIGN_32(offJmpBack + 4, 16);
 
-# endif
-
-    /* Patch LdrLoadDLl. */
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbLdrLoadDll, 16, PAGE_EXECUTE_READWRITE));
+    /* Assemble the LdrLoadDll patch. */
+    memcpy(g_abLdrLoadDllPatch, pbLdrLoadDll, sizeof(g_abLdrLoadDllPatch));
     Assert(offJmpBack >= 5);
-    pbLdrLoadDll[0] = 0xe9;
-    *(uint32_t *)&pbLdrLoadDll[1] = (uintptr_t)supR3HardenedMonitor_LdrLoadDll - (uintptr_t)&pbLdrLoadDll[1+4];
-
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(pbLdrLoadDll, 16, PAGE_EXECUTE_READ));
+    g_abLdrLoadDllPatch[0] = 0xe9;
+    *(uint32_t *)&g_abLdrLoadDllPatch[1] = (uintptr_t)supR3HardenedMonitor_LdrLoadDll - (uintptr_t)&pbLdrLoadDll[1+4];
 #endif
 
     /*
      * Seal the rwx page.
      */
     SUPR3HARDENED_ASSERT_NT_SUCCESS(supR3HardenedWinProtectMemory(g_abSupHardReadWriteExecPage, PAGE_SIZE, PAGE_EXECUTE_READ));
+
+    /*
+     * Install the patches.
+     */
+    supR3HardenedWinReInstallHooks(true /*fFirstCall*/);
 }
 
 
@@ -4142,7 +4153,7 @@ static int supR3HardenedWinDoReSpawn(int iWhich)
 #ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
     /*
      * Apply anti debugger notification trick to the thread.  (Also done in
-     * supR3HardenedWinInstallHooks.)
+     * supR3HardenedWinInit.)
      */
     rcNt = NtSetInformationThread(hThread, ThreadHideFromDebugger, NULL, 0);
     if (!NT_SUCCESS(rcNt))
@@ -4660,12 +4671,26 @@ DECLHIDDEN(bool) supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **p
 
 
 /**
- * Initializes the windows verficiation bits.
+ * Initializes the windows verficiation bits and other things we're better off
+ * doing after main() has passed on it's data.
+ *
  * @param   fFlags          The main flags.
  * @param   fAvastKludge    Whether to apply the avast kludge.
  */
 DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 {
+#ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
+    /*
+     * Install a anti debugging hack before we continue.  This prevents most
+     * notifications from ending up in the debugger. (Also applied to the
+     * child process when respawning.)
+     */
+    rcNt = NtSetInformationThread(NtCurrentThread(), ThreadHideFromDebugger, NULL, 0);
+    if (!NT_SUCCESS(rcNt))
+        supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, VERR_GENERAL_FAILURE,
+                              "NtSetInformationThread/ThreadHideFromDebugger failed: %#x\n", rcNt);
+#endif
+
     /*
      * Init the verifier.
      */
@@ -5473,6 +5498,16 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
         g_offSupLibHardenedExeNtName--;
 
     /*
+     * If we've done early init already, register the DLL load notification
+     * callback and reinstall the NtDll patches.
+     */
+    if (g_fSupEarlyProcessInit)
+    {
+        supR3HardenedWinRegisterDllNotificationCallback();
+        supR3HardenedWinReInstallHooks(false /*fFirstCall */);
+    }
+
+    /*
      * Call the C/C++ main function.
      */
     SUP_DPRINTF(("Calling main()\n"));
@@ -5613,6 +5648,12 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     else
         supR3HardenedFatal("Unexpected first argument '%s'!\n", papszArgs[0]);
     g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_WIN_EARLY_DEVICE_OPENED;
+
+    /*
+     * Reinstall the NtDll patches since there is a slight possibility that
+     * someone undid them while we where busy opening the device.
+     */
+    supR3HardenedWinReInstallHooks(false /*fFirstCall */);
 
     /*
      * Restore the LdrInitializeThunk code so we can initialize the process
