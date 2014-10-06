@@ -188,6 +188,11 @@ typedef struct SUPR3WINPROCPARAMS
 
     /** The last status. */
     int32_t         rc;
+    /** The init operation the error relates to if message, kSupInitOp_Invalid if
+     *  not message. */
+    SUPINITOP       enmWhat;
+    /** Where if message. */
+    char            szWhere[80];
     /** Error message / path name string space. */
     char            szErrorMsg[4096];
 } SUPR3WINPROCPARAMS;
@@ -2784,20 +2789,6 @@ static void supR3HardenedWinInstallHooks(void)
 
 
 /**
- * Verifies the process integrity.
- */
-DECLHIDDEN(void) supR3HardenedWinVerifyProcess(void)
-{
-    RTErrInfoInitStatic(&g_ErrInfoStatic);
-    int rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(),
-                                         SUPHARDNTVPKIND_VERIFY_ONLY, NULL /*pcFixes*/, &g_ErrInfoStatic.Core);
-    if (RT_FAILURE(rc))
-        supR3HardenedFatalMsg("supR3HardenedWinVerifyProcess", kSupInitOp_Integrity, rc,
-                              "Failed to verify process integrity: %s", g_ErrInfoStatic.szMsg);
-}
-
-
-/**
  * Gets the SID of the user associated with the process.
  *
  * @returns @c true if we've got a login SID, @c false if not.
@@ -3902,7 +3893,16 @@ static void supR3HardenedWinCheckChild(HANDLE hProcWait, uintptr_t uChildExeAddr
 
     /* An error occurred, report it. */
     ChildProcParams.szErrorMsg[sizeof(ChildProcParams.szErrorMsg) - 1] = '\0';
-    supR3HardenedFatalMsg("supR3HardenedWinCheckChild", kSupInitOp_Misc, ChildProcParams.rc, "%s", ChildProcParams.szErrorMsg);
+    ChildProcParams.szWhere[sizeof(ChildProcParams.szWhere) - 1] = '\0';
+    SUP_DPRINTF(("supR3HardenedWinCheckChild: rc=%d enmWhat=%d %s: %s\n",
+                 ChildProcParams.rc, ChildProcParams.enmWhat, ChildProcParams.szWhere, ChildProcParams.szErrorMsg));
+
+    if (ChildProcParams.enmWhat == kSupInitOp_Invalid)
+        supR3HardenedFatalMsg("supR3HardenedWinCheckChild", kSupInitOp_Misc, ChildProcParams.rc,
+                              "%s", ChildProcParams.szErrorMsg);
+    else
+        supR3HardenedFatalMsg(ChildProcParams.szWhere, ChildProcParams.enmWhat, ChildProcParams.rc,
+                              "%s", ChildProcParams.szErrorMsg);
 }
 
 
@@ -5544,14 +5544,24 @@ extern "C" void __stdcall suplibHardenedWindowsMain(void)
 /**
  * Reports an error to the parent process via the process parameter structure.
  *
+ * @param   pszWhere            Where this error occured, if fatal message. NULL
+ *                              if not message.
+ * @param   enmWhat             Which init operation went wrong if fatal
+ *                              message. kSupInitOp_Invalid if not message.
  * @param   rc                  The status code to report.
  * @param   pszFormat           The format string.
  * @param   va                  The format arguments.
  */
-DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(int rc, const char *pszFormat, va_list va)
+DECLHIDDEN(void) supR3HardenedWinReportErrorToParent(const char *pszWhere, SUPINITOP enmWhat, int rc,
+                                                     const char *pszFormat, va_list va)
 {
+    if (pszWhere)
+        RTStrCopy(g_ProcParams.szWhere, sizeof(g_ProcParams.szWhere), pszWhere);
+    else
+        g_ProcParams.szWhere[0] = '\0';
     RTStrPrintfV(g_ProcParams.szErrorMsg, sizeof(g_ProcParams.szErrorMsg), pszFormat, va);
-    g_ProcParams.rc = RT_SUCCESS(rc) ? VERR_INTERNAL_ERROR_2 : rc;
+    g_ProcParams.enmWhat = enmWhat;
+    g_ProcParams.rc      = RT_SUCCESS(rc) ? VERR_INTERNAL_ERROR_2 : rc;
 
     NTSTATUS rcNt = NtSetEvent(g_ProcParams.hEvtParent, NULL);
     if (NT_SUCCESS(rcNt))

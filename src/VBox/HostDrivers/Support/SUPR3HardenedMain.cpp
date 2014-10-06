@@ -1142,7 +1142,7 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
      */
     else if (   g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED
              && g_enmSupR3HardenedMainState != SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED)
-        supR3HardenedWinReportErrorToParent(rc, pszMsgFmt, va);
+        supR3HardenedWinReportErrorToParent(pszWhere, enmWhat, rc, pszMsgFmt, va);
 #endif
 
     /*
@@ -1175,7 +1175,7 @@ DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
      */
     if (   g_enmSupR3HardenedMainState < SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED
         && g_enmSupR3HardenedMainState != SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED)
-        supR3HardenedWinReportErrorToParent(VERR_INTERNAL_ERROR, pszFormat, va);
+        supR3HardenedWinReportErrorToParent(NULL, kSupInitOp_Invalid, VERR_INTERNAL_ERROR, pszFormat, va);
     else
 #endif
     {
@@ -1780,12 +1780,6 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     {
 #ifdef RT_OS_WINDOWS
         /*
-         * Windows: Verify the process (repeated by the kernel later).
-         */
-        if (!g_fSupEarlyProcessInit)
-            supR3HardenedWinVerifyProcess();
-
-        /*
          * Windows: The second respawn.  This time we make a special arrangement
          * with vboxdrv to monitor access to the new process from its inception.
          */
@@ -1796,15 +1790,13 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
         }
         SUP_DPRINTF(("SUPR3HardenedMain: Final process, opening VBoxDrv...\n"));
         supR3HardenedWinFlushLoaderCache();
-#endif /* RT_OS_WINDOWS */
 
+#else
         /*
          * Open the vboxdrv device.
          */
-#ifdef RT_OS_WINDOWS
-        if (!g_fSupEarlyProcessInit)
-#endif
-            supR3HardenedMainOpenDevice();
+        supR3HardenedMainOpenDevice();
+#endif /* !RT_OS_WINDOWS */
     }
 
 #ifdef RT_OS_WINDOWS

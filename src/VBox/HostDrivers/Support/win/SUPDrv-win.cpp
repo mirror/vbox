@@ -186,6 +186,8 @@ typedef struct SUPDRVNTPROTECT
 
     /** The parent PID for VM processes, otherwise NULL. */
     HANDLE              hParentPid;
+    /** The TID of the thread opening VBoxDrv or VBoxDrvStub, NULL if not opened. */
+    HANDLE              hOpenTid;
     /** The PID of the CSRSS process associated with this process. */
     HANDLE              hCsrssPid;
     /** Pointer to the CSRSS process structure (referenced). */
@@ -199,7 +201,7 @@ typedef struct SUPDRVNTPROTECT
         struct SUPDRVNTPROTECT *pChild;
         /** A process in the VmProcessUnconfirmed state will keep a weak
          * reference to the parent's protection structure so it can clean up the pChild
-         * refernece the parent has to it. */
+         * reference the parent has to it. */
         struct SUPDRVNTPROTECT *pParent;
     } u;
 } SUPDRVNTPROTECT;
@@ -3400,6 +3402,7 @@ static int supdrvNtProtectCreate(PSUPDRVNTPROTECT *ppNtProtect, HANDLE hPid, SUP
     pNtProtect->cRefs                        = 1;
     pNtProtect->enmProcessKind               = enmProcessKind;
     pNtProtect->hParentPid                   = NULL;
+    pNtProtect->hOpenTid                     = NULL;
     pNtProtect->hCsrssPid                    = NULL;
     pNtProtect->pCsrssProcess                = NULL;
 
@@ -3501,6 +3504,105 @@ static PSUPDRVNTPROTECT supdrvNtProtectLookup(HANDLE hPid)
         ASMAtomicIncU32(&pFound->cRefs);
     RTSpinlockRelease(g_hNtProtectLock);
     return pFound;
+}
+
+
+/**
+ * Validates a few facts about the stub process when the VM process opens
+ * vboxdrv.
+ *
+ * This makes sure the stub process is still around and that it has neither
+ * debugger nor extra threads in it.
+ *
+ * @returns VBox status code.
+ * @param   pNtProtect          The unconfirmed VM process currently trying to
+ *                              open vboxdrv.
+ * @param   pErrInfo            Additional error information.
+ */
+static int supdrvNtProtectVerifyStubForVmProcess(PSUPDRVNTPROTECT pNtProtect, PRTERRINFO pErrInfo)
+{
+    /*
+     * Grab a reference to the parent stub process.
+     */
+    SUPDRVNTPROTECTKIND enmStub = kSupDrvNtProtectKind_Invalid;
+    PSUPDRVNTPROTECT    pNtStub = NULL;
+    RTSpinlockAcquire(g_hNtProtectLock);
+    if (pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
+    {
+        pNtStub = pNtProtect->u.pParent; /* weak reference. */
+        if (pNtStub)
+        {
+            enmStub = pNtStub->enmProcessKind;
+            if (enmStub == kSupDrvNtProtectKind_StubParent)
+            {
+                uint32_t cRefs = ASMAtomicIncU32(&pNtStub->cRefs);
+                Assert(cRefs > 0 && cRefs < 1024);
+            }
+            else
+                pNtStub = NULL;
+        }
+    }
+    RTSpinlockRelease(g_hNtProtectLock);
+
+    /*
+     * We require the stub process to be present.
+     */
+    if (!pNtStub)
+        return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_STUB_NOT_FOUND, "Missing stub process (enmStub=%d).", enmStub);
+
+    /*
+     * Open the parent process and thread so we can check for debuggers and unwanted threads.
+     */
+    int rc;
+    PEPROCESS pStubProcess;
+    NTSTATUS rcNt = PsLookupProcessByProcessId(pNtStub->AvlCore.Key, &pStubProcess);
+    if (NT_SUCCESS(rcNt))
+    {
+        HANDLE hStubProcess;
+        rcNt = ObOpenObjectByPointer(pStubProcess, OBJ_KERNEL_HANDLE, NULL /*PassedAccessState*/,
+                                     0 /*DesiredAccess*/, *PsProcessType, KernelMode, &hStubProcess);
+        if (NT_SUCCESS(rcNt))
+        {
+            PETHREAD pStubThread;
+            rcNt = PsLookupThreadByThreadId(pNtStub->hOpenTid, &pStubThread);
+            if (NT_SUCCESS(rcNt))
+            {
+                HANDLE hStubThread;
+                rcNt = ObOpenObjectByPointer(pStubThread, OBJ_KERNEL_HANDLE, NULL /*PassedAccessState*/,
+                                             0 /*DesiredAccess*/, *PsThreadType, KernelMode, &hStubThread);
+                if (NT_SUCCESS(rcNt))
+                {
+                    /*
+                     * Do some simple sanity checking.
+                     */
+                    rc = supHardNtVpDebugger(hStubProcess, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = supHardNtVpThread(hStubProcess, hStubThread, pErrInfo);
+
+                    /* Clean up. */
+                    rcNt = NtClose(hStubThread); AssertMsg(NT_SUCCESS(rcNt), ("%#x\n", rcNt));
+                }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_STUB_THREAD_OPEN_ERROR,
+                                       "Error opening stub thread %p (tid %p, pid %p): %#x",
+                                       pStubThread, pNtStub->hOpenTid, pNtStub->AvlCore.Key, rcNt);
+            }
+            else
+                rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_STUB_THREAD_NOT_FOUND,
+                                   "Failed to locate thread %p in %p: %#x", pNtStub->hOpenTid, pNtStub->AvlCore.Key, rcNt);
+            rcNt = NtClose(hStubProcess); AssertMsg(NT_SUCCESS(rcNt), ("%#x\n", rcNt));
+        }
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_STUB_OPEN_ERROR,
+                               "Error opening stub process %p (pid %p): %#x", pStubProcess, pNtStub->AvlCore.Key, rcNt);
+        ObDereferenceObject(pStubProcess);
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, VERR_SUP_VP_STUB_NOT_FOUND,
+                           "Failed to locate stub process %p: %#x", pNtStub->AvlCore.Key, rcNt);
+
+    supdrvNtProtectRelease(pNtStub);
+    return rc;
 }
 
 
@@ -3697,6 +3799,8 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
 
         rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_VERIFY_ONLY,
                                          NULL /*pcFixes*/, &ErrInfo);
+        if (RT_SUCCESS(rc) && pNtProtect->enmProcessKind >= kSupDrvNtProtectKind_VmProcessUnconfirmed)
+            rc = supdrvNtProtectVerifyStubForVmProcess(pNtProtect, &ErrInfo);
         if (RT_FAILURE(rc))
             RTLogWriteDebugger(szErr, strlen(szErr));
     }
@@ -3704,12 +3808,15 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
     /*
      * Upgrade and return.
      */
+    HANDLE hOpenTid = PsGetCurrentThreadId();
     RTSpinlockAcquire(g_hNtProtectLock);
 
     /* Stub process verficiation is pretty much straight forward. */
     if (pNtProtect->enmProcessKind == kSupDrvNtProtectKind_StubUnverified)
+    {
         pNtProtect->enmProcessKind = RT_SUCCESS(rc) ? kSupDrvNtProtectKind_StubSpawning : kSupDrvNtProtectKind_StubDead;
-
+        pNtProtect->hOpenTid       = hOpenTid;
+    }
     /* The VM process verification is a little bit more complicated
        because we need to drop the parent process reference as well. */
     else if (pNtProtect->enmProcessKind == kSupDrvNtProtectKind_VmProcessUnconfirmed)
@@ -3725,7 +3832,10 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
         ASMAtomicDecU32(&pNtProtect->cRefs);
 
         if (RT_SUCCESS(rc))
+        {
             pNtProtect->enmProcessKind = kSupDrvNtProtectKind_VmProcessConfirmed;
+            pNtProtect->hOpenTid       = hOpenTid;
+        }
         else
             pNtProtect->enmProcessKind = kSupDrvNtProtectKind_VmProcessDead;
     }
