@@ -227,8 +227,6 @@ uint32_t                    g_offSupLibHardenedExeNtName;
 
 /** @name Hook related variables.
  * @{ */
-/** The jump back address of the patched NtCreateSection. */
-extern "C" PFNRT            g_pfnNtCreateSectionJmpBack = NULL;
 /** Pointer to the bit of assembly code that will perform the original
  *  NtCreateSection operation. */
 static NTSTATUS (NTAPI *    g_pfnNtCreateSectionReal)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES,
@@ -237,10 +235,6 @@ static NTSTATUS (NTAPI *    g_pfnNtCreateSectionReal)(PHANDLE, ACCESS_MASK, POBJ
 static uint8_t             *g_pbNtCreateSection;
 /** The patched NtCreateSection bytes (for restoring). */
 static uint8_t              g_abNtCreateSectionPatch[16];
-#if 0
-/** The jump back address of the patched LdrLoadDll. */
-extern "C" PFNRT            g_pfnLdrLoadDllJmpBack = NULL;
-#endif
 /** Pointer to the bit of assembly code that will perform the original
  *  LdrLoadDll operation. */
 static NTSTATUS (NTAPI *    g_pfnLdrLoadDllReal)(PWSTR, PULONG, PUNICODE_STRING, PHANDLE);
@@ -319,22 +313,9 @@ static uint32_t             g_fSupAdversaries = 0;
 static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
                                          bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
                                          bool *pfQuietFailure);
-static void supR3HardenedWinRegisterDllNotificationCallback(void);
-static void supR3HardenedWinReInstallHooks(bool fFirst);
-
-
-#ifdef RT_ARCH_AMD64
-# define SYSCALL(a_Num) DECLASM(void) RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num)(void)
-# include "NtCreateSection-template-amd64-syscall-type-1.h"
-# undef SYSCALL
-#endif
-#ifdef RT_ARCH_X86
-# define SYSCALL(a_Num) DECLASM(void) RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num)(void)
-# include "NtCreateSection-template-x86-syscall-type-1.h"
-# undef SYSCALL
-#endif
-
-DECLASM(void) supR3HardenedEarlyProcessInitThunk(void);
+static void     supR3HardenedWinRegisterDllNotificationCallback(void);
+static void     supR3HardenedWinReInstallHooks(bool fFirst);
+DECLASM(void)   supR3HardenedEarlyProcessInitThunk(void);
 
 
 
@@ -1988,6 +1969,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x hMod=%p '%ls'\n", rcNt, *phMod, wszPath));
     else
         SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
+
     supR3HardenedWinVerifyCacheProcessWvtTodos();
 
     RtlRestoreLastWin32Error(dwSavedLastError);
@@ -2527,25 +2509,11 @@ static void supR3HardenedWinInstallHooks(void)
     SUPR3HARDENED_ASSERT(pfnLdrLoadDll != NULL);
     //SUPR3HARDENED_ASSERT(pfnLdrLoadDll == (FARPROC)LdrLoadDll);
 
-
-#ifdef RT_ARCH_AMD64
     /*
-     * For 64-bit hosts we need some memory within a +/-2GB range of the
-     * actual function to be able to patch it.
+     * Exec page setup & management.
      */
-    uintptr_t uStart = RT_MAX((uintptr_t)pfnNtCreateSection, (uintptr_t)pfnLdrLoadDll);
-    size_t    cbMem  = _4K;
-    void  *pvMem = supR3HardenedWinAllocHookMemory(uStart, uStart - _2G + PAGE_SIZE, -1, cbMem);
-    if (!pvMem)
-    {
-        uintptr_t uStart = RT_MIN((uintptr_t)pfnNtCreateSection, (uintptr_t)pfnLdrLoadDll);
-        pvMem = supR3HardenedWinAllocHookMemory(uStart, uStart + _2G - PAGE_SIZE, 1, cbMem);
-        if (!pvMem)
-            supR3HardenedFatalMsg("supR3HardenedWinInstallHooks", kSupInitOp_Misc, VERR_NO_MEMORY,
-                                  "Failed to allocate memory within the +/-2GB range from NTDLL.\n");
-    }
-    uintptr_t *puJmpTab = (uintptr_t *)pvMem;
-#endif
+    uint32_t offExecPage = 0;
+    memset(g_abSupHardReadWriteExecPage, 0xcc, PAGE_SIZE);
 
     /*
      * Hook #1 - NtCreateSection.
@@ -2555,16 +2523,13 @@ static void supR3HardenedWinInstallHooks(void)
     uint8_t * const pbNtCreateSection = (uint8_t *)(uintptr_t)pfnNtCreateSection;
     g_pbNtCreateSection = pbNtCreateSection;
     memcpy(g_abNtCreateSectionPatch, pbNtCreateSection, sizeof(g_abNtCreateSectionPatch));
-/** @todo This patch could be simplified iff we had our own syscall operational
- *        from the get-go. */
+
+    g_pfnNtCreateSectionReal = NtCreateSection; /* our direct syscall */
 
 #ifdef RT_ARCH_AMD64
     /*
      * Patch 64-bit hosts.
      */
-    PFNRT       pfnCallReal = NULL;
-    uint8_t     offJmpBack  = UINT8_MAX;
-
     /* Pattern #1: XP64/W2K3-64 thru Windows 8.1
        0:000> u ntdll!NtCreateSection
        ntdll!NtCreateSection:
@@ -2574,47 +2539,18 @@ static void supR3HardenedWinInstallHooks(void)
        00000000`779f175a c3              ret
        00000000`779f175b 0f1f440000      nop     dword ptr [rax+rax]
        The variant is the value loaded into eax: W2K3=??, Vista=47h?, W7=47h, W80=48h, W81=49h */
-    if (   pbNtCreateSection[ 0] == 0x4c /* mov r10, rcx */
-        && pbNtCreateSection[ 1] == 0x8b
-        && pbNtCreateSection[ 2] == 0xd1
-        && pbNtCreateSection[ 3] == 0xb8 /* mov eax, 000000xxh */
-        && pbNtCreateSection[ 5] == 0x00
-        && pbNtCreateSection[ 6] == 0x00
-        && pbNtCreateSection[ 7] == 0x00
-        && pbNtCreateSection[ 8] == 0x0f /* syscall */
-        && pbNtCreateSection[ 9] == 0x05
-        && pbNtCreateSection[10] == 0xc3 /* ret */
-       )
-    {
-        offJmpBack = 8; /* the 3rd instruction (syscall). */
-        switch (pbNtCreateSection[4])
-        {
-# define SYSCALL(a_Num) case a_Num: pfnCallReal = RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num); break;
-# include "NtCreateSection-template-amd64-syscall-type-1.h"
-# undef SYSCALL
-        }
-    }
-    if (!pfnCallReal)
-        supR3HardenedWinHookFailed("NtCreateSection", pbNtCreateSection);
-
-    g_pfnNtCreateSectionJmpBack         = (PFNRT)(uintptr_t)(pbNtCreateSection + offJmpBack);
-    *(PFNRT *)&g_pfnNtCreateSectionReal = pfnCallReal;
 
     /* Assemble the patch. */
-    g_abNtCreateSectionPatch[0] = 0xff;
-    g_abNtCreateSectionPatch[1] = 0x25;
-    *(uint32_t *)&g_abNtCreateSectionPatch[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbNtCreateSection[2+4]);
-
-    *puJmpTab = (uintptr_t)supR3HardenedMonitor_NtCreateSection;
-    puJmpTab++;
+    g_abNtCreateSectionPatch[0]  = 0x48; /* mov rax, qword */
+    g_abNtCreateSectionPatch[1]  = 0xb8;
+    *(uint64_t *)&g_abNtCreateSectionPatch[2] = (uint64_t)supR3HardenedMonitor_NtCreateSection;
+    g_abNtCreateSectionPatch[10] = 0xff; /* jmp rax */
+    g_abNtCreateSectionPatch[11] = 0xe0;
 
 #else
     /*
      * Patch 32-bit hosts.
      */
-    PFNRT       pfnCallReal = NULL;
-    uint8_t     offJmpBack  = UINT8_MAX;
-
     /* Pattern #1: XP thru Windows 7
             kd> u ntdll!NtCreateSection
             ntdll!NtCreateSection:
@@ -2634,57 +2570,14 @@ static void supR3HardenedWinInstallHooks(void)
             6a15eac9 8bd4            mov     edx,esp
             6a15eacb 0f34            sysenter
             6a15eacd c3              ret
-       The variable bit is the value loaded into eax: W81=154h
-       Note! One nice thing here is that we can share code pattern #1.  */
-
-    if (   pbNtCreateSection[ 0] == 0xb8 /* mov eax, 000000xxh*/
-        && pbNtCreateSection[ 2] <= 0x02
-        && pbNtCreateSection[ 3] == 0x00
-        && pbNtCreateSection[ 4] == 0x00
-        && (   (   pbNtCreateSection[ 5] == 0xba /* mov edx, offset SharedUserData!SystemCallStub */
-                && pbNtCreateSection[ 6] == 0x00
-                && pbNtCreateSection[ 7] == 0x03
-                && pbNtCreateSection[ 8] == 0xfe
-                && pbNtCreateSection[ 9] == 0x7f
-                && pbNtCreateSection[10] == 0xff /* call [edx] */
-                && pbNtCreateSection[11] == 0x12
-                && pbNtCreateSection[12] == 0xc2 /* ret 1ch */
-                && pbNtCreateSection[13] == 0x1c
-                && pbNtCreateSection[14] == 0x00)
-
-            || (   pbNtCreateSection[ 5] == 0xe8 /* call [$+3] */
-                && RT_ABS(*(int32_t *)&pbNtCreateSection[6]) < 0x10
-                && pbNtCreateSection[10] == 0xc2 /* ret 1ch */
-                && pbNtCreateSection[11] == 0x1c
-                && pbNtCreateSection[12] == 0x00 )
-          )
-       )
-    {
-        offJmpBack = 5; /* the 2nd instruction. */
-        switch (*(uint32_t const *)&pbNtCreateSection[1])
-        {
-# define SYSCALL(a_Num) case a_Num: pfnCallReal = RT_CONCAT(supR3HardenedJmpBack_NtCreateSection_,a_Num); break;
-# include "NtCreateSection-template-x86-syscall-type-1.h"
-# undef SYSCALL
-        }
-    }
-    if (!pfnCallReal)
-        supR3HardenedWinHookFailed("NtCreateSection", pbNtCreateSection);
-
-    g_pfnNtCreateSectionJmpBack         = (PFNRT)(uintptr_t)(pbNtCreateSection + offJmpBack);
-    *(PFNRT *)&g_pfnNtCreateSectionReal = pfnCallReal;
+       The variable bit is the value loaded into eax: W81=154h */
 
     /* Assemble the patch. */
-    g_abNtCreateSectionPatch[0] = 0xe9;
+    g_abNtCreateSectionPatch[0] = 0xe9;  /* jmp rel32 */
     *(uint32_t *)&g_abNtCreateSectionPatch[1] = (uintptr_t)supR3HardenedMonitor_NtCreateSection
                                               - (uintptr_t)&pbNtCreateSection[1+4];
-#endif
 
-    /*
-     * Exec page setup & management.
-     */
-    uint32_t offExecPage = 0;
-    memset(g_abSupHardReadWriteExecPage, 0xcc, PAGE_SIZE);
+#endif
 
     /*
      * Hook #2 - LdrLoadDll
@@ -2699,15 +2592,16 @@ static void supR3HardenedWinInstallHooks(void)
     g_pbLdrLoadDll = pbLdrLoadDll;
     memcpy(g_abLdrLoadDllPatch, pbLdrLoadDll, sizeof(g_abLdrLoadDllPatch));
 
+    DISSTATE Dis;
+    uint32_t cbInstr;
+    uint32_t offJmpBack = 0;
+
 #ifdef RT_ARCH_AMD64
     /*
      * Patch 64-bit hosts.
      */
-    /* Just use the disassembler to skip 6 bytes or more. */
-    DISSTATE Dis;
-    uint32_t cbInstr;
-    offJmpBack = 0;
-    while (offJmpBack < 6)
+    /* Just use the disassembler to skip 12 bytes or more. */
+    while (offJmpBack < 12)
     {
         cbInstr = 1;
         int rc = DISInstr(pbLdrLoadDll + offJmpBack, DISCPUMODE_64BIT, &Dis, &cbInstr);
@@ -2732,22 +2626,18 @@ static void supR3HardenedWinInstallHooks(void)
     offExecPage = RT_ALIGN_32(offJmpBack + 8, 16);
 
     /* Assemble the LdrLoadDll patch. */
-    Assert(offJmpBack >= 6);
-    g_abLdrLoadDllPatch[0] = 0xff;
-    g_abLdrLoadDllPatch[1] = 0x25;
-    *(uint32_t *)&g_abLdrLoadDllPatch[2] = (uint32_t)((uintptr_t)puJmpTab - (uintptr_t)&pbLdrLoadDll[2+4]);
-
-    *puJmpTab = (uintptr_t)supR3HardenedMonitor_LdrLoadDll;
-    puJmpTab++;
+    Assert(offJmpBack >= 12);
+    g_abLdrLoadDllPatch[0]  = 0x48; /* mov rax, qword */
+    g_abLdrLoadDllPatch[1]  = 0xb8;
+    *(uint64_t *)&g_abLdrLoadDllPatch[2] = (uint64_t)supR3HardenedMonitor_LdrLoadDll;
+    g_abLdrLoadDllPatch[10] = 0xff; /* jmp rax */
+    g_abLdrLoadDllPatch[11] = 0xe0;
 
 #else
     /*
      * Patch 32-bit hosts.
      */
-    /* Just use the disassembler to skip 6 bytes or more. */
-    DISSTATE Dis;
-    uint32_t cbInstr;
-    offJmpBack = 0;
+    /* Just use the disassembler to skip 5 bytes or more. */
     while (offJmpBack < 5)
     {
         cbInstr = 1;
@@ -2764,7 +2654,7 @@ static void supR3HardenedWinInstallHooks(void)
     memcpy(&g_abSupHardReadWriteExecPage[offExecPage], pbLdrLoadDll, offJmpBack);
     offExecPage += offJmpBack;
 
-    g_abSupHardReadWriteExecPage[offExecPage++] = 0xe9;
+    g_abSupHardReadWriteExecPage[offExecPage++] = 0xe9; /* jmp rel32 */
     *(uint32_t *)&g_abSupHardReadWriteExecPage[offExecPage] = (uintptr_t)&pbLdrLoadDll[offJmpBack]
                                                             - (uintptr_t)&g_abSupHardReadWriteExecPage[offExecPage + 4];
     offExecPage = RT_ALIGN_32(offJmpBack + 4, 16);
@@ -3523,6 +3413,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
         NtClose(hThread2);
     }
 
+#if 0
     /*
      * Map kernel32.dll and kernelbase.dll (if applicable) into the process.
      * This triggers should image load events that may set of AV activities
@@ -3535,6 +3426,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     PVOID pvKernelBase = g_uNtVerCombined >= SUP_NT_VER_VISTA
                        ? supR3HardNtPuChMapDllIntoChild(pThis, &NtName3, "KernelBase.dll")
                        : NULL;
+#endif
 
     /*
      * Fudge factor for letting kernel threads get a chance to mess up our
@@ -3542,6 +3434,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
      */
     uint64_t uMsTsStart = supR3HardenedWinGetMilliTS();
     uint32_t cMsKludge = (g_fSupAdversaries & SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT) ? 256 : g_fSupAdversaries ? 64 : 16;
+cMsKludge = 1024;
     do
     {
         NtYieldExecution();
@@ -3552,6 +3445,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     SUP_DPRINTF(("supR3HardNtPuChTriggerInitialImageEvents: Startup delay kludge #1: %u ms\n",
                  supR3HardenedWinGetMilliTS() - uMsTsStart));
 
+#if 0
     /*
      * Unmap the image we mapped into the guest above.
      */
@@ -3559,6 +3453,7 @@ static int supR3HardNtPuChTriggerInitialImageEvents(PSUPR3HARDNTPUCH pThis)
     supR3HardNtPuChUnmapDllFromChild(pThis, pvKernelBase, "KernelBase.dll");
     supR3HardNtPuChUnmapDllFromChild(pThis, pvNtDll2, "ntdll.dll[2nd]");
     supR3HardNtPuChUnmapDllFromChild(pThis, pvExe2, "executable[2nd]");
+#endif
 
     /*
      * Restore the original thunk code and protection.
@@ -5638,6 +5533,11 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
     supR3HardenedOpenLog(&cArgs, papszArgs);
     SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p\n", g_ProcParams.uNtDllAddr));
+
+    /*
+     * Set up the direct system calls so we can more easily hook NtCreateSection.
+     */
+    supR3HardenedWinInitSyscalls(true /*fReportErrors*/);
 
     /*
      * Determine the executable path and name.  Will NOT determine the windows style
