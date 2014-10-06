@@ -2367,6 +2367,21 @@ DECLHIDDEN(void) supR3HardenedWinCreateParentWatcherThread(HMODULE hVBoxRT)
 
 
 /**
+ * Checks if the calling thread is the only one in the process.
+ *
+ * @returns true if we're positive we're alone, false if not.
+ */
+static bool supR3HardenedWinAmIAlone(void)
+{
+    ULONG    fAmIAlone = 0;
+    ULONG    cbIgn     = 0;
+    NTSTATUS rcNt = NtQueryInformationThread(NtCurrentThread(), ThreadAmILastThread, &fAmIAlone, sizeof(fAmIAlone), &cbIgn);
+    Assert(NT_SUCCESS(rcNt));
+    return NT_SUCCESS(rcNt) && fAmIAlone != 0;
+}
+
+
+/**
  * Simplify NtProtectVirtualMemory interface.
  *
  * Modifies protection for the current process.  Caller must know the current
@@ -2427,17 +2442,8 @@ static void supR3HardenedWinReInstallHooks(bool fFirstCall)
              * If we're alone, just memcpy the patch in.
              */
 
-#if 0 /* For testing purposes. */
             if (fAmIAlone == ~(ULONG)0)
-            {
-                ULONG cbIgn = 0;
-                NTSTATUS rcNt = NtQueryInformationThread(NtCurrentThread(), ThreadAmILastThread,
-                                                         &fAmIAlone, sizeof(fAmIAlone), &cbIgn);
-                fAmIAlone = NT_SUCCESS(rcNt) && fAmIAlone != 0;
-            }
-#else
-            fAmIAlone = 0;
-#endif
+                fAmIAlone = supR3HardenedWinAmIAlone();
             if (fAmIAlone)
                 memcpy(pbApi, s_aPatches[i].pabPatch, s_aPatches[i].cbPatch);
             else
@@ -4625,6 +4631,20 @@ DECLHIDDEN(int) supR3HardenedWinReSpawn(int iWhich)
      */
     if (iWhich == 2)
         supR3HardenedWinOpenStubDevice();
+
+    /*
+     * Make sure we're alone in the stub process before creating the VM process
+     * and that there isn't any debuggers attached.
+     */
+    if (iWhich == 2)
+    {
+        int rc = supHardNtVpDebugger(NtCurrentProcess(), RTErrInfoInitStatic(&g_ErrInfoStatic));
+        if (RT_SUCCESS(rc))
+            rc = supHardNtVpThread(NtCurrentProcess(), NtCurrentThread(), RTErrInfoInitStatic(&g_ErrInfoStatic));
+        if (RT_FAILURE(rc))
+            supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Integrity, rc, "%s", g_ErrInfoStatic.szMsg);
+    }
+
 
     /*
      * Respawn the process with kernel protection for the new process.
