@@ -1774,11 +1774,18 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
     /*
      * The next steps are only taken if we actually need to access the support
-     * driver.  (Already done by early VM process init.)
+     * driver.  (Already done by early process init.)
      */
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
     {
 #ifdef RT_OS_WINDOWS
+        /*
+         * Windows: Must have done early process init if we get here.
+         */
+        if (!g_fSupEarlyProcessInit)
+            supR3HardenedFatalMsg("SUPR3HardenedMain", kSupInitOp_Integrity, VERR_WRONG_ORDER,
+                                  "Early process init was somehow skipped.");
+
         /*
          * Windows: The second respawn.  This time we make a special arrangement
          * with vboxdrv to monitor access to the new process from its inception.
