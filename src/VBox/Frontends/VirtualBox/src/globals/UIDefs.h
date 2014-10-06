@@ -97,7 +97,8 @@ enum MacOSXRelease
     MacOSXRelease_SnowLeopard,
     MacOSXRelease_Lion,
     MacOSXRelease_MountainLion,
-    MacOSXRelease_Mavericks
+    MacOSXRelease_Mavericks,
+    MacOSXRelease_Yosemite
 };
 #endif /* Q_WS_MAC */
 
