@@ -842,14 +842,14 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'NtCreateSection': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = 5 + (ARCH_BITS == 64);
+            aSkipAreas[cSkipAreas++].cb = ARCH_BITS == 32 ? 5 : 12;
 
             /* Ignore our LdrLoadDll hack. */
             rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrLoadDll", &uValue);
             if (RT_FAILURE(rc))
                 return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'LdrLoadDll': %Rrc", pImage->pszName, rc);
             aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
-            aSkipAreas[cSkipAreas++].cb = 5 + (ARCH_BITS == 64);
+            aSkipAreas[cSkipAreas++].cb = ARCH_BITS == 32 ? 5 : 12;
         }
 
         if (   pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION
