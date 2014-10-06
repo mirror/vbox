@@ -287,6 +287,9 @@ static int rtMemSaferSupR3AllocPages(PRTMEMSAFERNODE pThis)
         /*
          * Configure the guard pages.
          * SUPR3PageProtect isn't supported on all hosts, we ignore that.
+         * Additionally on darwin we cannot allocate pages without a R0 mapping and
+         * SUPR3PageAllocEx falls back to another method which is incompatible with
+         * the way SUPR3PageProtect works, it returns VERR_INVALID_PARAMETER. Ignore that case too.
          */
         rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
@@ -296,7 +299,7 @@ static int rtMemSaferSupR3AllocPages(PRTMEMSAFERNODE pThis)
                 return VINF_SUCCESS;
             SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         }
-        else if (rc == VERR_NOT_SUPPORTED)
+        else if (rc == VERR_NOT_SUPPORTED || rc == VERR_INVALID_PARAMETER)
             return VINF_SUCCESS;
 
         /* failed. */
