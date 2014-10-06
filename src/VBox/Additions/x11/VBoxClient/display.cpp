@@ -117,7 +117,7 @@ static int initX11(struct x11State *pState)
 
 static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                        unsigned cBPP, unsigned iDisplay, unsigned x,
-                       unsigned y, bool fEnabled, bool fSetPosition)
+                       unsigned y, bool fEnabled, bool fChangeOrigin)
 {
     char szCommand[256];
     int status;
@@ -134,7 +134,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
             pState->paSizeHints[i] = 0;
         pState->cSizeHints = iDisplay + 1;
     }
-    if ((!fSetPosition || fEnabled) && cx != 0 && cy != 0)
+    if ((!fChangeOrigin || fEnabled) && cx != 0 && cy != 0)
     {
         pState->paSizeHints[iDisplay] = (cx & 0xffff) << 16 | (cy & 0xffff);
         XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),
@@ -154,7 +154,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
     }
     else
     {
-        if (fSetPosition && fEnabled)
+        if (fChangeOrigin && fEnabled)
         {
             /* Extended Display support possible . Secondary monitor
              * position supported */
@@ -165,7 +165,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
             if (WEXITSTATUS(status) != 0)
                 VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
         }
-        if ((!fSetPosition || fEnabled) && cx != 0 && cy != 0)
+        if ((!fChangeOrigin || fEnabled) && cx != 0 && cy != 0)
         {
             RTStrPrintf(szCommand, sizeof(szCommand),
                         "%s --output VGA-%u --preferred",
@@ -251,25 +251,16 @@ static void runDisplay(struct x11State *pState)
         if (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
         {
             uint32_t cx = 0, cy = 0, cBPP = 0, iDisplay = 0, x = 0, y = 0;
-            bool fEnabled = true, fSetPosition = true;
+            bool fEnabled = true, fChangeOrigin = true;
             VMMDevSeamlessMode Mode;
 
-            rc = VbglR3GetDisplayChangeRequestEx(&cx, &cy, &cBPP, &iDisplay,
-                                                 &x, &y, &fEnabled,
-                                                 true);
+            rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBPP, &iDisplay,
+                                               &x, &y, &fEnabled,
+                                               &fChangeOrigin, true);
             /* Extended display version not supported on host */
             if (RT_FAILURE(rc))
-            {
-                if (rc != VERR_NOT_IMPLEMENTED)
-                    VBClFatalError(("Failed to get display change request, rc=%Rrc\n",
+                VBClFatalError(("Failed to get display change request, rc=%Rrc\n",
                                 rc));
-                fSetPosition = false;
-                rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBPP,
-                                                   &iDisplay, true);
-                if (RT_SUCCESS(rc))
-                    LogRelFlowFunc(("Got size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d\n",
-                                    cx, cy, cBPP, iDisplay));
-            }
             else
                 LogRelFlowFunc(("Got extended size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d, x=%d, y=%d fEnabled=%d\n",
                                 cx, cy, cBPP, iDisplay, x, y,
@@ -292,7 +283,7 @@ static void runDisplay(struct x11State *pState)
                     VBClFatalError(("Failed to save size hint, rc=%Rrc\n", rc));
             }
             setModeX11(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled,
-                       fSetPosition);
+                       fChangeOrigin);
         }
     }
 }

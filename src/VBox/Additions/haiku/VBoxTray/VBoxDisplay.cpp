@@ -129,7 +129,7 @@ status_t VBoxDisplayService::_ServiceThread()
         if (RT_SUCCESS(rc))
         {
             uint32_t cx, cy, cBits, iDisplay;
-            int rc2 = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, true);
+            int rc2 = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, NULL, NULL, NULL, NULL, true);
             LogFlow(("rc2=%d screen %d size changed (%d, %d, %d)\n", rc2, iDisplay, cx, cy, cBits));
 
             if (RT_SUCCESS(rc2))
