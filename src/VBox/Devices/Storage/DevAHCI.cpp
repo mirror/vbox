@@ -1703,6 +1703,9 @@ static int HbaInterruptStatus_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
     if (rc != VINF_SUCCESS)
         return rc;
 
+    /* Update interrupt status register first. */
+    ahci->regHbaIs |= ASMAtomicXchgU32(&ahci->u32PortsInterrupted, 0);
+
     if (u32Value > 0)
     {
         /*
