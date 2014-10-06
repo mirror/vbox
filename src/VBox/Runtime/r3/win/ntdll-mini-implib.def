@@ -92,6 +92,7 @@ EXPORTS
     NtYieldExecution                      ;;= _NtYieldExecution@0
 
     LdrInitializeThunk                    ;;= _LdrInitializeThunk@12
+    LdrRegisterDllNotification            ;;= _LdrRegisterDllNotification@16
 
     RtlAddAccessAllowedAce                ;;= _RtlAddAccessAllowedAce@16
     RtlAddAccessDeniedAce                 ;;= _RtlAddAccessDeniedAce@16
