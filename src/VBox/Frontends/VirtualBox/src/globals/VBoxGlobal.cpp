@@ -373,45 +373,6 @@ UISelectorWindow &VBoxGlobal::selectorWnd()
     return *mSelectorWnd;
 }
 
-bool VBoxGlobal::startMachine(const QString &strMachineId)
-{
-    /* Some restrictions: */
-    AssertMsg(mValid, ("VBoxGlobal is invalid"));
-    AssertMsg(!m_pVirtualMachine, ("Machine already started"));
-
-    /* Restore current snapshot if asked to do so: */
-    if (mRestoreCurrentSnapshot)
-    {
-        CSession session = vboxGlobal().openSession(strMachineId, KLockType_VM);
-        if (session.isNull())
-            return false;
-
-        CConsole  console  = session.GetConsole();
-        CMachine  machine  = session.GetMachine();
-        CSnapshot snapshot = machine.GetCurrentSnapshot();
-        CProgress progress = console.RestoreSnapshot(snapshot);
-        if (!console.isOk())
-            return msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
-
-        /* Show the snapshot-discard progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
-        if (progress.GetResultCode() != 0)
-            return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
-        session.UnlockMachine();
-
-        /* Clear the restore flag so media enum can be started, should be safe now. */
-        mRestoreCurrentSnapshot = false;
-    }
-
-    /* Start virtual machine: */
-    return UIMachine::create(&m_pVirtualMachine);
-}
-
-UIMachine* VBoxGlobal::virtualMachine()
-{
-    return m_pVirtualMachine;
-}
-
 QWidget* VBoxGlobal::activeMachineWindow()
 {
     /* Null if that is NOT console-process or machine not yet created: */

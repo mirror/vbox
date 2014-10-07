@@ -45,10 +45,13 @@ signals:
 
 public:
 
-    static bool create(UIMachine **ppSelf);
+    /** Static factory to start machine with passed @a strID.
+      * @return true if machine was started, false otherwise. */
+    static bool startMachine(const QString &strID);
 
-    /* Virtual Machine constructor/destructor: */
-    UIMachine(UIMachine **ppSelf);
+    /** Constructor. */
+    UIMachine();
+    /** Destructor. */
     virtual ~UIMachine();
 
     /* Public getters: */
@@ -83,7 +86,6 @@ private:
     void saveMachineSettings();
 
     /* Private variables: */
-    UIMachine **m_ppThis;
     UIVisualStateType initialStateType;
     CSession m_session;
     UISession *m_pSession;

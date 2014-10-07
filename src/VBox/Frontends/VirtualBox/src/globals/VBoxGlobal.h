@@ -109,9 +109,11 @@ public:
 
     UISelectorWindow &selectorWnd();
 
-    /* VM stuff: */
-    bool startMachine(const QString &strMachineId);
-    UIMachine* virtualMachine();
+    /** Returns current virtual machine. */
+    UIMachine* virtualMachine() const { return m_pVirtualMachine; }
+    /** Defines current virtual @a pMachine. */
+    void setVirtualMachine(UIMachine *pMachine) { m_pVirtualMachine = pMachine; }
+
     QWidget* activeMachineWindow();
 
     bool is3DAvailableWorker() const;
@@ -139,7 +141,11 @@ public:
 
     bool isKWinManaged() const { return mIsKWinManaged; }
 
+    /** Returns whether we should restore current snapshot before VM started. */
     bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
+    /** Defines whether we should fRestore current snapshot before VM started. */
+    void setShouldRestoreCurrentSnapshot(bool fRestore) { mRestoreCurrentSnapshot = fRestore; }
+
     bool isPatmDisabled() const { return mDisablePatm; }
     bool isCsamDisabled() const { return mDisableCsam; }
     bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }

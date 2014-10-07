@@ -29,6 +29,12 @@
 # include "UIMachineWindow.h"
 # include "UIMessageCenter.h"
 
+/* COM includes: */
+# include "CMachine.h"
+# include "CConsole.h"
+# include "CSnapshot.h"
+# include "CProgress.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -90,25 +96,60 @@ protected:
 };
 
 /* static */
-bool UIMachine::create(UIMachine **ppSelf)
+bool UIMachine::startMachine(const QString &strID)
 {
-    UIMachine *pMachine = new UIMachine(ppSelf);
-    if (!pMachine)
-        return false;
+    /* Some restrictions: */
+    AssertMsgReturn(vboxGlobal().isValid(), ("VBoxGlobal is invalid.."), false);
+    AssertMsgReturn(!vboxGlobal().virtualMachine(), ("Machine already started.."), false);
+
+    /* Restore current snapshot if requested: */
+    if (vboxGlobal().shouldRestoreCurrentSnapshot())
+    {
+        /* Create temporary session: */
+        CSession session = vboxGlobal().openSession(strID, KLockType_VM);
+        if (session.isNull())
+            return false;
+
+        /* Which VM we operate on? */
+        CMachine machine  = session.GetMachine();
+        /* Which snapshot we are restoring? */
+        CSnapshot snapshot = machine.GetCurrentSnapshot();
+
+        /* Open corresponding console: */
+        CConsole console  = session.GetConsole();
+        /* Prepare restore-snapshot progress: */
+        CProgress progress = console.RestoreSnapshot(snapshot);
+        if (!console.isOk())
+            return msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
+
+        /* Show the snapshot-discarding progress: */
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
+        if (progress.GetResultCode() != 0)
+            return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
+
+        /* Unlock session finally: */
+        session.UnlockMachine();
+
+        /* Clear snapshot-restoring request: */
+        vboxGlobal().setShouldRestoreCurrentSnapshot(false);
+    }
+
+    /* Create machine UI: */
+    UIMachine *pMachine = new UIMachine;
+
+    /* Prepare machine UI: */
     return pMachine->prepare();
 }
 
-UIMachine::UIMachine(UIMachine **ppSelf)
+UIMachine::UIMachine()
     : QObject(0)
-    , m_ppThis(ppSelf)
     , initialStateType(UIVisualStateType_Normal)
     , m_pSession(0)
     , m_pVisualState(0)
     , m_allowedVisualStates(UIVisualStateType_Invalid)
 {
-    /* Store self pointer: */
-    if (m_ppThis)
-        *m_ppThis = this;
+    /* Make sure VBoxGlobal is aware of VM creation: */
+    vboxGlobal().setVirtualMachine(this);
 }
 
 bool UIMachine::prepare()
@@ -191,8 +232,8 @@ UIMachine::~UIMachine()
     m_session.UnlockMachine();
     m_session.detach();
 
-    /* Clear self pointer: */
-    *m_ppThis = 0;
+    /* Make sure VBoxGlobal is aware of VM destruction: */
+    vboxGlobal().setVirtualMachine(0);
 
     /* Quit application: */
     QApplication::quit();
