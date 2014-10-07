@@ -4594,6 +4594,8 @@ DECLHIDDEN(bool) supR3HardenedWinIsReSpawnNeeded(int iWhich, int cArgs, char **p
  */
 DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 {
+    NTSTATUS rcNt;
+
 #ifndef VBOX_WITHOUT_DEBUGGER_CHECKS
     /*
      * Install a anti debugging hack before we continue.  This prevents most
@@ -4622,7 +4624,7 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
     UNICODE_STRING      UniStr = RTNT_CONSTANT_UNISTR(L"\\KnownDlls\\KnownDllPath");
     OBJECT_ATTRIBUTES   ObjAttrs;
     InitializeObjectAttributes(&ObjAttrs, &UniStr, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-    NTSTATUS rcNt = NtOpenSymbolicLinkObject(&hSymlink, SYMBOLIC_LINK_QUERY, &ObjAttrs);
+    rcNt = NtOpenSymbolicLinkObject(&hSymlink, SYMBOLIC_LINK_QUERY, &ObjAttrs);
     if (!NT_SUCCESS(rcNt))
         supR3HardenedFatalMsg("supR3HardenedWinInit", kSupInitOp_Misc, rcNt, "Error opening '%ls': %#x", UniStr.Buffer, rcNt);
 
