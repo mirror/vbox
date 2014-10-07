@@ -4035,7 +4035,7 @@ static void supR3HardenedWinDoReSpawn(int iWhich)
      */
     rcNt = NtSetInformationThread(This.hThread, ThreadHideFromDebugger, NULL, 0);
     if (!NT_SUCCESS(rcNt))
-        SUP_DPRINTF(("supR3HardenedWinReSpawn: NtSetInformationThread/ThreadHideFromDebugger failed: %#x (harmless)\n", rcNt);
+        SUP_DPRINTF(("supR3HardenedWinReSpawn: NtSetInformationThread/ThreadHideFromDebugger failed: %#x (harmless)\n", rcNt));
 #endif
 
     /*
