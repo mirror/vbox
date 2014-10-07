@@ -587,6 +587,48 @@ DECLHIDDEN(void) supR3HardenedWinInitSyscalls(bool fReportErrors)
 }
 
 
+/**
+ * Resolves a few NtDll functions we need before child purification is executed.
+ *
+ * We must not permanently modify any global data here.
+ *
+ * @param   uNtDllAddr          The address of the NTDLL.
+ */
+DECLHIDDEN(void) supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
+                                                     PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
+                                                     PFNNTSETEVENT *ppfnNtSetEvent)
+{
+    /*
+     * NTDLL is the first entry in the list.  Save it and do the parsing.
+     */
+    SUPHNTIMPDLL SavedDllEntry = g_aSupNtImpDlls[0];
+
+    g_aSupNtImpDlls[0].pbImageBase = (uint8_t const *)uNtDllAddr;
+    supR3HardenedParseModule(&g_aSupNtImpDlls[0]);
+
+    /*
+     * Create a temporary import table for the requested APIs and resolve them.
+     */
+    SUPHNTIMPFUNC aImports[] =
+    {
+        { "NtWaitForSingleObject",  (PFNRT *)ppfnNtWaitForSingleObject,     NULL, false },
+        { "NtSetEvent",             (PFNRT *)ppfnNtSetEvent,                NULL, false },
+    };
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(aImports); i++)
+        {
+            const char *pszForwarder = supR3HardenedResolveImport(&g_aSupNtImpDlls[0], &aImports[i], false);
+            if (pszForwarder)
+                SUPHNTIMP_ERROR(false, 31, "supR3HardenedWinGetVeryEarlyImports", kSupInitOp_Misc, VERR_MODULE_NOT_FOUND,
+                                "ntdll: Failed to resolve forwarder '%s'.", pszForwarder);
+        }
+
+    /*
+     * Restore the NtDll entry.
+     */
+    g_aSupNtImpDlls[0] = SavedDllEntry;
+}
+
 
 /**
  * Resolves NtDll functions we can trust calling before process init.

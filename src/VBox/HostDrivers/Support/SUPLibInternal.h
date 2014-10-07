@@ -447,6 +447,11 @@ DECLHIDDEN(int)     supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 DECLHIDDEN(void)    supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge);
 DECLHIDDEN(void)    supR3HardenedWinInitVersion(void);
 DECLHIDDEN(void)    supR3HardenedWinInitImports(void);
+# ifdef ___iprt_nt_nt_h___
+DECLHIDDEN(void)    supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
+                                                        PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
+                                                        PFNNTSETEVENT *ppfnNtSetEvent);
+# endif
 DECLHIDDEN(void)    supR3HardenedWinInitImportsEarly(uintptr_t uNtDllAddr);
 DECLHIDDEN(void)    supR3HardenedWinInitSyscalls(bool fReportErrors);
 DECLHIDDEN(PFNRT)   supR3HardenedWinGetRealDllSymbol(const char *pszDll, const char *pszProcedure);
