@@ -969,7 +969,7 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
 
-    LogRel(("NAT: System configuration has changed\n"));
+    Log2(("NAT: System configuration has changed\n"));
 
     /* Check if any of parameters we are interested in were actually changed. If the size
      * of hChangedKeys is 0, it means that SCDynamicStore has been restarted. */
@@ -981,14 +981,13 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
         if (CFArrayContainsValue(hChangedKeys, CFRangeMake(0, CFArrayGetCount(hChangedKeys)), pDNSKey))
         {
             LogRel(("NAT: DNS servers changed, triggering reconnect\n"));
-
+#if 0
             CFDictionaryRef hDnsDict = (CFDictionaryRef)SCDynamicStoreCopyValue(hDynStor, pDNSKey);
             if (hDnsDict)
             {
                 CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
                 if (hArrAddresses && CFArrayGetCount(hArrAddresses) > 0)
                 {
-#if 1
                     /* Dump DNS servers list. */
                     for (int i = 0; i < CFArrayGetCount(hArrAddresses); i++)
                     {
@@ -996,7 +995,6 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
                         const char *pszDNSAddr  =  pDNSAddrStr ? CFStringGetCStringPtr(pDNSAddrStr, CFStringGetSystemEncoding()) : NULL;
                         LogRel(("NAT: New DNS server#%d: %s\n", i, pszDNSAddr ? pszDNSAddr : "None"));
                     }
-#endif
                 }
                 else
                     LogRel(("NAT: DNS server list is empty (1)\n"));
@@ -1005,14 +1003,14 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
             }
             else
                 LogRel(("NAT: DNS server list is empty (2)\n"));
-
+#endif
             drvNATUpdateDNS(pThis, /* fFlapLink */ true);
         }
         else
-            LogRel(("NAT: No DNS changes detected\n"));
+            Log2(("NAT: No DNS changes detected\n"));
     }
     else
-        LogRel(("NAT: SCDynamicStore has been restarted\n"));
+        Log2(("NAT: SCDynamicStore has been restarted\n"));
 }
 #endif
 
