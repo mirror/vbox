@@ -25,6 +25,7 @@
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UISelectorWindow.h"
+# include "UIMachine.h"
 # include "VBoxUtils.h"
 # include "UIModalWindowManager.h"
 # include "UIExtraDataManager.h"
@@ -455,7 +456,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (vboxGlobal().isVMConsoleProcess())
             {
                 /* Make sure VM is started: */
-                if (!vboxGlobal().startMachine(vboxGlobal().managedVMUuid()))
+                if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
                     break;
 
                 /* Start application: */
