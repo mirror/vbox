@@ -3488,7 +3488,9 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
      * Fortunately, most AVs seems to either favor immediate action on initial
      * load events or (much better for us) later events like kernel32.
      */
-    uint32_t cMsFudge = g_fSupAdversaries ? 512 : 256;
+    uint64_t uMsTsOuterStart = supR3HardenedWinGetMilliTS();
+    uint32_t cMsFudge        = g_fSupAdversaries ? 512 : 256;
+    uint32_t cTotalFixes     = 0;
     uint32_t cFixes;
     for (uint32_t iLoop = 0; iLoop < 16; iLoop++)
     {
@@ -3506,7 +3508,7 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
             cSleeps++;
         } while (   supR3HardenedWinGetMilliTS() - uMsTsStart <= cMsFudge
                  || cSleeps < 8);
-        SUP_DPRINTF(("supR3HardenedWinInit: Startup delay kludge #2/%u: %u ms, %u sleeps\n",
+        SUP_DPRINTF(("supR3HardNtChildPurify: Startup delay kludge #1/%u: %u ms, %u sleeps\n",
                      iLoop, supR3HardenedWinGetMilliTS() - uMsTsStart, cSleeps));
 
         /*
@@ -3519,7 +3521,12 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
             supR3HardenedWinKillChild(pThis, "supR3HardNtChildPurify", rc,
                                       "supHardenedWinVerifyProcess failed with %Rrc: %s", g_ErrInfoStatic.szMsg);
         if (cFixes == 0)
+        {
+            SUP_DPRINTF(("supR3HardNtChildPurify: Done after %llu ms and %u fixes (loop #%u).\n",
+                         supR3HardenedWinGetMilliTS() - uMsTsOuterStart, cTotalFixes, iLoop));
             return; /* We're probably good. */
+        }
+        cTotalFixes += cFixes;
 
         if (!g_fSupAdversaries)
             g_fSupAdversaries |= SUPHARDNT_ADVERSARY_UNKNOWN;
@@ -3533,10 +3540,10 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
         NTSTATUS rcNt = NtQuerySystemInformation(SystemInformation_KiOpPrefetchPatchCount,
                                                  &cPatchCount, sizeof(cPatchCount), NULL);
         if (NT_SUCCESS(rcNt))
-            SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
+            SUP_DPRINTF(("supR3HardNtChildPurify: cFixes=%u g_fSupAdversaries=%#x cPatchCount=%#u\n",
                          cFixes, g_fSupAdversaries, cPatchCount));
         else
-            SUP_DPRINTF(("supR3HardenedWinInit: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
+            SUP_DPRINTF(("supR3HardNtChildPurify: cFixes=%u g_fSupAdversaries=%#x\n", cFixes, g_fSupAdversaries));
     }
 
     /*
@@ -3544,8 +3551,8 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
      * that monitors their patches or/and our activities.
      */
     supR3HardenedWinKillChild(pThis, "supR3HardNtChildPurify", VERR_TRY_AGAIN,
-                              "Unable to purify child process! After 16 tries, we still %u fix(es) in the last pass.",
-                              cFixes);
+                              "Unable to purify child process! After 16 tries over %llu ms, we still %u fix(es) in the last pass.",
+                              supR3HardenedWinGetMilliTS() - uMsTsOuterStart, cFixes);
 }
 
 
