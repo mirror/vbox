@@ -5488,11 +5488,16 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
 
     /*
      * Convert the arguments to UTF-8 so we can open the log file if specified.
+     * We may have to normalize the pointer on older windows version (not w7/64 +).
      * Note! This leaks memory at present.
      */
-    PUNICODE_STRING pCmdLineStr = &NtCurrentPeb()->ProcessParameters->CommandLine;
+    PRTL_USER_PROCESS_PARAMETERS pUserProcParams = NtCurrentPeb()->ProcessParameters;
+    UNICODE_STRING CmdLineStr = pUserProcParams->CommandLine;
+    if (   CmdLineStr.Buffer != NULL
+        && !(pUserProcParams->Flags & RTL_USER_PROCESS_PARAMS_FLAG_NORMALIZED) )
+        CmdLineStr.Buffer = (WCHAR *)((uintptr_t)CmdLineStr.Buffer + (uintptr_t)pUserProcParams);
     int    cArgs;
-    char **papszArgs = suplibCommandLineToArgvWStub(pCmdLineStr->Buffer, pCmdLineStr->Length / sizeof(WCHAR), &cArgs);
+    char **papszArgs = suplibCommandLineToArgvWStub(CmdLineStr.Buffer, CmdLineStr.Length / sizeof(WCHAR), &cArgs);
     supR3HardenedOpenLog(&cArgs, papszArgs);
     SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p\n", uNtDllAddr));
 
