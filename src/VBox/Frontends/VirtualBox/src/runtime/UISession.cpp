@@ -1026,7 +1026,10 @@ void UISession::prepareActions()
 {
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-    m_pActionPool->toRuntime()->setSession(this);
+    AssertPtrReturnVoid(actionPool());
+    {
+        /* Configure action-pool: */
+        actionPool()->toRuntime()->setSession(this);
 
         /* Get host/machine: */
         const CHost host = vboxGlobal().host();
@@ -1108,6 +1111,7 @@ void UISession::prepareActions()
             updateMenu();
         }
 #endif /* Q_WS_MAC */
+    }
 }
 
 void UISession::prepareConnections()
@@ -1257,7 +1261,11 @@ void UISession::saveSessionSettings()
         gEDataManager->setMachineFirstTimeStarted(false, vboxGlobal().managedVMUuid());
 
         /* Remember if guest should autoresize: */
-        gEDataManager->setGuestScreenAutoResizeEnabled(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize)->isChecked(), vboxGlobal().managedVMUuid());
+        if (actionPool())
+        {
+            const QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
+            gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), vboxGlobal().managedVMUuid());
+        }
 
 #ifndef Q_WS_MAC
         /* Cleanup user's machine-window icon: */
@@ -1272,11 +1280,11 @@ void UISession::cleanupFramebuffers()
     /* Cleanup framebuffers finally: */
     for (int i = m_frameBufferVector.size() - 1; i >= 0; --i)
     {
-        UIFrameBuffer *pFb = m_frameBufferVector[i];
-        if (pFb)
+        UIFrameBuffer *pFrameBuffer = m_frameBufferVector[i];
+        if (pFrameBuffer)
         {
             /* Mark framebuffer as unused: */
-            pFb->setMarkAsUnused(true);
+            pFrameBuffer->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
             if (!display.isNull())
@@ -1290,7 +1298,8 @@ void UISession::cleanupFramebuffers()
 
 void UISession::cleanupConsoleEventHandlers()
 {
-    /* Destroy console event-handler: */
+    /* Destroy console event-handler if necessary: */
+    if (gConsoleEvents)
         UIConsoleEventHandler::destroy();
 }
 
@@ -1305,12 +1314,14 @@ void UISession::cleanupConnections()
 void UISession::cleanupActions()
 {
 #ifdef Q_WS_MAC
+    /* Destroy Mac OS X menu-bar: */
     delete m_pMenuBar;
     m_pMenuBar = 0;
 #endif /* Q_WS_MAC */
 
-    /* Destroy action-pool: */
-    UIActionPool::destroy(m_pActionPool);
+    /* Destroy action-pool if necessary: */
+    if (actionPool())
+        UIActionPool::destroy(actionPool());
 }
 
 #ifdef Q_WS_MAC
