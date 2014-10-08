@@ -5352,6 +5352,11 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
                                      logFolder.c_str(), RTPATH_DELIMITER, i);
                     RTFileDelete(log.c_str());
                 }
+#if defined(RT_OS_WINDOWS)
+                log = Utf8StrFmt("%s%cVBoxStartup.log",
+                                 logFolder.c_str(), RTPATH_DELIMITER);
+                RTFileDelete(log.c_str());
+#endif
 
                 RTDirRemove(logFolder.c_str());
             }
