@@ -72,8 +72,10 @@ signals:
 
 public:
 
-    /** Static instance factory. */
-    static UIConsoleEventHandler* instance(UISession *pSession = 0);
+    /** Static instance wrapper. */
+    static UIConsoleEventHandler* instance() { return m_spInstance; }
+    /** Static instance constructor. */
+    static void create(UISession *pSession);
     /** Static instance destructor. */
     static void destroy();
 
@@ -95,7 +97,7 @@ private:
     void cleanup();
 
     /** Holds the static instance. */
-    static UIConsoleEventHandler *m_pInstance;
+    static UIConsoleEventHandler *m_spInstance;
 
     /** Holds the UI session reference. */
     UISession *m_pSession;

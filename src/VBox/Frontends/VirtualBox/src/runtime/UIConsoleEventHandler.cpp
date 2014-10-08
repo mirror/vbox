@@ -36,27 +36,26 @@
 
 
 /* static */
-UIConsoleEventHandler *UIConsoleEventHandler::m_pInstance = 0;
+UIConsoleEventHandler *UIConsoleEventHandler::m_spInstance = 0;
 
 /* static */
-UIConsoleEventHandler* UIConsoleEventHandler::instance(UISession *pSession /* = 0 */)
+void UIConsoleEventHandler::create(UISession *pSession)
 {
-    if (!m_pInstance)
+    if (!m_spInstance)
     {
-        m_pInstance = new UIConsoleEventHandler(pSession);
-        m_pInstance->prepare();
+        m_spInstance = new UIConsoleEventHandler(pSession);
+        m_spInstance->prepare();
     }
-    return m_pInstance;
 }
 
 /* static */
 void UIConsoleEventHandler::destroy()
 {
-    if (m_pInstance)
+    if (m_spInstance)
     {
-        m_pInstance->cleanup();
-        delete m_pInstance;
-        m_pInstance = 0;
+        m_spInstance->cleanup();
+        delete m_spInstance;
+        m_spInstance = 0;
     }
 }
 
