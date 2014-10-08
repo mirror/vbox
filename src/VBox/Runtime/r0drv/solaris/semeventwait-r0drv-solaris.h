@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,7 +56,7 @@ typedef struct RTR0SEMSOLWAIT
     /** The native timeout value. */
     union
     {
-        /** The timeout (abs lbolt) when fHighRes is false.  */
+        /** The timeout (in ticks) when fHighRes is false.  */
         clock_t     lTimeout;
     } u;
     /** Set if we use high resolution timeouts. */
@@ -107,8 +107,8 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
     if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
     {
         if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
-                     ? uTimeout * UINT32_C(1000000)
+            uTimeout = uTimeout < UINT64_MAX / RT_NS_1MS
+                     ? uTimeout * RT_NS_1MS
                      : UINT64_MAX;
         if (uTimeout == UINT64_MAX)
             fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
@@ -155,7 +155,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
             {
-                pWait->u.lTimeout = ddi_get_lbolt() + cTicks;
+                pWait->u.lTimeout = drv_usectohz(uTimeout / RT_NS_1US_64);
                 pWait->fHighRes = false;
             }
         }
