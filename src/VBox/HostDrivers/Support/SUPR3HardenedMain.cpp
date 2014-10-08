@@ -1231,34 +1231,33 @@ DECLHIDDEN(int) supR3HardenedError(int rc, bool fFatal, const char *pszFormat, .
  */
 DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
 {
-    int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, true /*fUnrestricted*/);
+    RTERRINFOSTATIC ErrInfo;
+    SUPINITOP       enmWhat = kSupInitOp_Driver;
+    int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, true /*fUnrestricted*/,
+                          &enmWhat, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
         return;
+
+    if (RTErrInfoIsSet(&ErrInfo.Core))
+        supR3HardenedFatalMsg("suplibOsInit", enmWhat, rc, "%s", ErrInfo.szMsg);
 
     switch (rc)
     {
         /** @todo better messages! */
         case VERR_VM_DRIVER_NOT_INSTALLED:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "Kernel driver not installed");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "Kernel driver not installed");
         case VERR_VM_DRIVER_NOT_ACCESSIBLE:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "Kernel driver not accessible");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "Kernel driver not accessible");
         case VERR_VM_DRIVER_LOAD_ERROR:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "VERR_VM_DRIVER_LOAD_ERROR");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "VERR_VM_DRIVER_LOAD_ERROR");
         case VERR_VM_DRIVER_OPEN_ERROR:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "VERR_VM_DRIVER_OPEN_ERROR");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "VERR_VM_DRIVER_OPEN_ERROR");
         case VERR_VM_DRIVER_VERSION_MISMATCH:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "Kernel driver version mismatch");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "Kernel driver version mismatch");
         case VERR_ACCESS_DENIED:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "VERR_ACCESS_DENIED");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "VERR_ACCESS_DENIED");
         case VERR_NO_MEMORY:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "Kernel memory allocation/mapping failed");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "Kernel memory allocation/mapping failed");
         case VERR_SUPDRV_HARDENING_EVIL_HANDLE:
             supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Integrity, rc, "VERR_SUPDRV_HARDENING_EVIL_HANDLE");
         case VERR_SUPLIB_NT_PROCESS_UNTRUSTED_0:
@@ -1268,8 +1267,7 @@ DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
         case VERR_SUPLIB_NT_PROCESS_UNTRUSTED_2:
             supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Integrity, rc, "VERR_SUPLIB_NT_PROCESS_UNTRUSTED_2");
         default:
-            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
-                                  "Unknown rc=%d", rc);
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc, "Unknown rc=%d (%Rrc)", rc, rc);
     }
 }
 

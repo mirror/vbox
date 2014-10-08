@@ -109,14 +109,14 @@ int suplibOsHardenedVerifyTerm(void)
 }
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
     /*
      * Make sure the image verifier is fully initialized.
      */
     int rc = suplibOsHardenedVerifyInit();
     if (RT_FAILURE(rc))
-        return rc;
+        return RTErrInfoSetF(pErrInfo, rc, "suplibOsHardenedVerifyInit failed: %Rrc", rc);
 
     /*
      * Done if of pre-inited.
@@ -169,58 +169,97 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
                                      0 /*EaLength*/);
         if (NT_SUCCESS(rcNt))
             rcNt = Ios.Status;
-        if (!NT_SUCCESS(rcNt))
+        if (NT_SUCCESS(rcNt))
         {
-#ifndef IN_SUP_HARDENED_R3
             /*
-             * Failed to open, try starting the service and reopen the device
-             * exactly once.
+             * We're good.
              */
-            if (cTry == 0 && !NT_SUCCESS(rcNt))
-            {
-                cTry++;
-                suplibOsStartService();
-                continue;
-            }
-#endif
-            switch (rcNt)
-            {
-                /** @todo someone must test what is actually returned. */
-                case STATUS_DEVICE_DOES_NOT_EXIST:
-                case STATUS_DEVICE_NOT_CONNECTED:
-                //case ERROR_BAD_DEVICE:
-                case STATUS_DEVICE_REMOVED:
-                //case ERROR_DEVICE_NOT_AVAILABLE:
-                    return VERR_VM_DRIVER_LOAD_ERROR;
-                case STATUS_OBJECT_PATH_NOT_FOUND:
-                case STATUS_NO_SUCH_DEVICE:
-                case STATUS_NO_SUCH_FILE:
-                case STATUS_OBJECT_NAME_NOT_FOUND:
-                    return VERR_VM_DRIVER_NOT_INSTALLED;
-                case STATUS_ACCESS_DENIED:
-                case STATUS_SHARING_VIOLATION:
-                    return VERR_VM_DRIVER_NOT_ACCESSIBLE;
-                case STATUS_UNSUCCESSFUL:
-                    return VERR_SUPLIB_NT_PROCESS_UNTRUSTED_0;
-                case STATUS_TRUST_FAILURE:
-                    return VERR_SUPLIB_NT_PROCESS_UNTRUSTED_1;
-                case STATUS_TOO_LATE:
-                    return VERR_SUPDRV_HARDENING_EVIL_HANDLE;
-                default:
-                    if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
-                        return SUP_NT_STATUS_TO_VBOX(rcNt);
-                    return VERR_VM_DRIVER_OPEN_ERROR;
-            }
+            pThis->hDevice       = hDevice;
+            pThis->fUnrestricted = fUnrestricted;
+            return VINF_SUCCESS;
         }
-        break;
-    }
 
-    /*
-     * We're done.
-     */
-    pThis->hDevice       = hDevice;
-    pThis->fUnrestricted = fUnrestricted;
-    return VINF_SUCCESS;
+#ifndef IN_SUP_HARDENED_R3
+        /*
+         * Failed to open, try starting the service and reopen the device
+         * exactly once.
+         */
+        if (cTry == 0 && !NT_SUCCESS(rcNt))
+        {
+            cTry++;
+            suplibOsStartService();
+            continue;
+        }
+#endif
+
+        /*
+         * Translate the error code.
+         */
+        switch (rcNt)
+        {
+            /** @todo someone must test what is actually returned. */
+            case STATUS_DEVICE_DOES_NOT_EXIST:
+            case STATUS_DEVICE_NOT_CONNECTED:
+            //case ERROR_BAD_DEVICE:
+            case STATUS_DEVICE_REMOVED:
+            //case ERROR_DEVICE_NOT_AVAILABLE:
+                rc = VERR_VM_DRIVER_LOAD_ERROR;
+                break;
+            case STATUS_OBJECT_PATH_NOT_FOUND:
+            case STATUS_NO_SUCH_DEVICE:
+            case STATUS_NO_SUCH_FILE:
+            case STATUS_OBJECT_NAME_NOT_FOUND:
+                rc = VERR_VM_DRIVER_NOT_INSTALLED;
+                break;
+            case STATUS_ACCESS_DENIED:
+            case STATUS_SHARING_VIOLATION:
+                rc = VERR_VM_DRIVER_NOT_ACCESSIBLE;
+                break;
+            case STATUS_UNSUCCESSFUL:
+                rc = VERR_SUPLIB_NT_PROCESS_UNTRUSTED_0;
+                break;
+            case STATUS_TRUST_FAILURE:
+                rc = VERR_SUPLIB_NT_PROCESS_UNTRUSTED_1;
+                break;
+            case STATUS_TOO_LATE:
+                rc = VERR_SUPDRV_HARDENING_EVIL_HANDLE;
+                break;
+            default:
+                if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
+                    rc = SUP_NT_STATUS_TO_VBOX(rcNt);
+                else
+                    rc = VERR_VM_DRIVER_OPEN_ERROR;
+                break;
+        }
+
+#ifdef IN_SUP_HARDENED_R3
+        /*
+         * Get more details from VBoxDrvErrorInfo if present.
+         */
+        if (pErrInfo && pErrInfo->cbMsg > 32)
+        {
+            /* Prefix. */
+            size_t      cchPrefix;
+            const char *pszDefine = RTErrGetDefine(rc);
+            if (strncmp(pszDefine, RT_STR_TUPLE("Unknown")))
+                cchPrefix = RTStrPrintf(pErrInfo->pszMsg, pErrInfo->cbMsg / 2, "Integrity error (%#x/%s): ", rcNt, pszDefine);
+            else
+                cchPrefix = RTStrPrintf(pErrInfo->pszMsg, pErrInfo->cbMsg / 2, "Integrity error (%#x/%d): ", rcNt, rc);
+
+            /* Get error info. */
+            supR3HardenedWinReadErrorInfoDevice(pErrInfo->pszMsg + cchPrefix, pErrInfo->cbMsg - cchPrefix, "");
+            if (pErrInfo->pszMsg[cchPrefix] != '\0')
+            {
+                pErrInfo->fFlags |= RTERRINFO_FLAGS_SET;
+                pErrInfo->rc      = rc;
+                *penmWhat = kSupInitOp_Integrity;
+            }
+            else
+                pErrInfo->pszMsg[0] = '\0';
+        }
+#endif
+        return rc;
+    }
 }
 
 
