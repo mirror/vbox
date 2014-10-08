@@ -84,7 +84,7 @@ private:
     bool prepare();
     /** Prepare routine: Loading stuff. */
     void loadSettings();
-    /** Prepare routine: Saving stuff. */
+    /** Cleanup routine: Saving stuff. */
     void saveSettings();
     /** Cleanup routine. */
     void cleanup();
