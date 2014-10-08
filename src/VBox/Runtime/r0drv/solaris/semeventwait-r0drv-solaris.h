@@ -155,7 +155,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
             {
-                pWait->u.lTimeout = drv_usectohz(uTimeout / RT_NS_1US_64);
+                pWait->u.lTimeout = cTicks;
                 pWait->fHighRes = false;
             }
         }
