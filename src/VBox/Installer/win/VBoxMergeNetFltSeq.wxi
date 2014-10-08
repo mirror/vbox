@@ -19,28 +19,28 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
     <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]>
+            <![CDATA[NOT Installed]]>
         <?else ?>
             <![CDATA[&VBoxNetworkFlt=3]]>
         <?endif ?>
     </Custom>
     <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]>
+            <![CDATA[NOT Installed]]>
         <?else ?>
             <![CDATA[&VBoxNetworkFlt=3]]>
         <?endif ?>
     </Custom>
     <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]>
+            <![CDATA[NOT Installed]]>
         <?else ?>
             <![CDATA[&VBoxNetworkFlt=3]]>
         <?endif ?>
     </Custom>
     <Custom Action="ca_InstallNetFlt" Before="InstallFinalize" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[UPGRADINGPRODUCTCODE OR (NOT Installed)]]>
+            <![CDATA[NOT Installed]]>
         <?else ?>
             <![CDATA[&VBoxNetworkFlt=3]]>
         <?endif ?>
