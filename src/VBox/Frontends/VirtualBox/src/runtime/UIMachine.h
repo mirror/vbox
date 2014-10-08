@@ -34,6 +34,8 @@ class UISession;
 class UIVisualState;
 class UIMachineLogic;
 
+/** Singleton QObject extension
+  * used as virtual machine (VM) singleton instance. */
 class UIMachine : public QObject
 {
     Q_OBJECT;
@@ -52,10 +54,11 @@ public:
     /** Constructor. */
     UIMachine();
     /** Destructor. */
-    virtual ~UIMachine();
+    ~UIMachine();
 
-    /* Public getters: */
+    /** Returns active machine-window reference (if possible). */
     QWidget* activeWindow() const;
+    /** Returns UI session instance. */
     UISession *uisession() const { return m_pSession; }
 
     /** Returns whether requested visual @a state allowed. */
@@ -66,23 +69,24 @@ public:
 
 private slots:
 
-    /* Visual state-change handler: */
+    /** Visual state-change handler. */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
 private:
 
+    /** Prepare routine. */
     bool prepare();
 
-    /* Move VM to default (normal) state: */
+    /** Moves VM to default (normal) state. */
     void enterInitialVisualState();
 
-    /* Private getters: */
+    /** Returns machine-logic reference (if possible). */
     UIMachineLogic* machineLogic() const;
 
-    /* Prepare helpers: */
+    /** Prepare routine: Loading stuff. */
     void loadMachineSettings();
 
-    /* Cleanup helpers: */
+    /** Prepare routine: Saving stuff. */
     void saveMachineSettings();
 
     /* Private variables: */
@@ -97,4 +101,3 @@ private:
 };
 
 #endif /* !___UIMachine_h___ */
-
