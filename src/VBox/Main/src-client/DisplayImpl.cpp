@@ -1458,7 +1458,7 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
     uint32_t u32BitsPerPixel = 0;
     int32_t xOrigin = 0;
     int32_t yOrigin = 0;
-    bool fEnabled = true;
+    GuestMonitorStatus_T guestMonitorStatus = GuestMonitorStatus_Enabled;
 
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
@@ -1483,7 +1483,8 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
         u32BitsPerPixel = pFBInfo->u16BitsPerPixel;
         xOrigin = pFBInfo->xOrigin;
         yOrigin = pFBInfo->yOrigin;
-        fEnabled = !RT_BOOL(pFBInfo->flags & VBVA_SCREEN_F_DISABLED);
+        if (pFBInfo->flags & VBVA_SCREEN_F_DISABLED)
+            guestMonitorStatus = GuestMonitorStatus_Disabled;
     }
     else
     {
@@ -1501,7 +1502,7 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
     if (aYOrigin)
         *aYOrigin = yOrigin;
     if (aGuestMonitorStatus)
-        *aGuestMonitorStatus = fEnabled? GuestMonitorStatus_Enabled: GuestMonitorStatus_Disabled;
+        *aGuestMonitorStatus = guestMonitorStatus;
 
     return S_OK;
 }
