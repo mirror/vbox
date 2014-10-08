@@ -1268,6 +1268,11 @@ GuestWaitEventBase::GuestWaitEventBase(void)
 
 GuestWaitEventBase::~GuestWaitEventBase(void)
 {
+    if (mEventSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(mEventSem);
+        mEventSem = NIL_RTSEMEVENT;
+    }
 }
 
 int GuestWaitEventBase::Init(uint32_t uCID)
