@@ -4185,6 +4185,70 @@ static void supR3HardenedWinLogObjDir(const char *pszDir)
 
 
 /**
+ * Tries to open VBoxDrvErrorInfo and read extra error info from it.
+ *
+ * @returns pszErrorInfo.
+ * @param   pszErrorInfo        The destination buffer.  Will always be
+ *                              terminated.
+ * @param   cbErrorInfo         The size of the destination buffer.
+ * @param   pszPrefix           What to prefix the error info with, if we got
+ *                              anything.
+ */
+DECLHIDDEN(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_t cbErrorInfo, const char *pszPrefix)
+{
+    RT_BZERO(pszErrorInfo, cbErrorInfo);
+
+    /*
+     * Try open the device.
+     */
+    HANDLE              hFile  = RTNT_INVALID_HANDLE_VALUE;
+    IO_STATUS_BLOCK     Ios    = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    UNICODE_STRING      NtName = RTNT_CONSTANT_UNISTR(SUPDRV_NT_DEVICE_NAME_ERROR_INFO);
+    OBJECT_ATTRIBUTES   ObjAttr;
+    InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+    NTSTATUS rcNt = NtCreateFile(&hFile,
+                                 GENERIC_READ,
+                                 &ObjAttr,
+                                 &Ios,
+                                 NULL /* Allocation Size*/,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                 FILE_OPEN,
+                                 FILE_NON_DIRECTORY_FILE,
+                                 NULL /*EaBuffer*/,
+                                 0 /*EaLength*/);
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+    if (NT_SUCCESS(rcNt))
+    {
+        /*
+         * Try read error info.
+         */
+        size_t cchPrefix = strlen(pszPrefix);
+        if (cchPrefix + 3 < cbErrorInfo)
+        {
+            LARGE_INTEGER offRead;
+            offRead.QuadPart = 0;
+            rcNt = NtReadFile(hFile, NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/, &Ios,
+                              &pszErrorInfo[cchPrefix], (ULONG)(cbErrorInfo - cchPrefix - 1), &offRead, NULL);
+            if (NT_SUCCESS(rcNt))
+            {
+                memcpy(pszErrorInfo, pszPrefix, cchPrefix);
+                pszErrorInfo[cbErrorInfo - 1] = '\0';
+            }
+            else
+                *pszErrorInfo = '\0';
+        }
+        else
+            RTStrCopy(pszErrorInfo, cbErrorInfo, "error info buffer too small");
+        NtClose(hFile);
+    }
+    return pszErrorInfo;
+}
+
+
+
+/**
  * Checks if the driver exists.
  *
  * This checks whether the driver is present in the /Driver object directory.
@@ -4269,7 +4333,7 @@ static void supR3HardenedWinOpenStubDevice(void)
     /*
      * Retry if we think driver might still be initializing (STATUS_NO_SUCH_DEVICE + \Drivers\VBoxDrv).
      */
-    static const WCHAR  s_wszName[] = L"\\Device\\VBoxDrvStub";
+    static const WCHAR  s_wszName[] = SUPDRV_NT_DEVICE_NAME_STUB;
     uint64_t const      uMsTsStart = supR3HardenedWinGetMilliTS();
     NTSTATUS            rcNt;
     uint32_t            iTry;
@@ -4333,6 +4397,7 @@ static void supR3HardenedWinOpenStubDevice(void)
          * extra information that goes into VBoxStartup.log so that we stand a
          * better chance resolving the issue.
          */
+        char szErrorInfo[_4K];
         int rc = VERR_OPEN_FAILED;
         if (SUP_NT_STATUS_IS_VBOX(rcNt)) /* See VBoxDrvNtErr2NtStatus. */
         {
@@ -4358,6 +4423,7 @@ static void supR3HardenedWinOpenStubDevice(void)
                 }
                 supR3HardenedWinLogObjDir("\\Windows");
                 supR3HardenedWinLogObjDir("\\Sessions");
+
                 supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Misc, rc,
                                       "NtCreateFile(%ls) failed: VERR_SUPDRV_APIPORT_OPEN_ERROR\n"
                                       "\n"
@@ -4365,15 +4431,19 @@ static void supR3HardenedWinOpenStubDevice(void)
                                       "\n"
                                       "Could be due to security software is redirecting access to it, so please include full "
                                       "details of such software in a bug report. VBoxStartup.log may contain details important "
-                                      "to resolving the issue."
-                                      , s_wszName, szDir);
+                                      "to resolving the issue.%s"
+                                      , s_wszName, szDir,
+                                      supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
+                                                                          "\n\nVBoxDrvStub error: "));
             }
 
             /*
              * Generic VBox failure message.
              */
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, rc,
-                                  "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)\n", s_wszName, rc, rcNt);
+                                  "NtCreateFile(%ls) failed: %Rrc (rcNt=%#x)%s", s_wszName, rc, rcNt,
+                                  supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
+                                                                    "\nVBoxDrvStub error: "));
         }
         else
         {
@@ -4402,20 +4472,27 @@ static void supR3HardenedWinOpenStubDevice(void)
                                           "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
                                           "\n"
                                           "Driver is probably stuck stopping/starting. Try 'sc.exe query vboxdrv' to get more "
-                                          "information about its state. Rebooting may actually help.\n"
-                                          , s_wszName, rcNt, pszDefine, iTry);
+                                          "information about its state. Rebooting may actually help.%s"
+                                          , s_wszName, rcNt, pszDefine, iTry,
+                                          supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
+                                                                              "\nVBoxDrvStub error: "));
                 else
                     supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
                                           "NtCreateFile(%ls) failed: %#x%s (%u retries)\n"
                                           "\n"
                                           "Driver is does not appear to be loaded. Try 'sc.exe start vboxdrv', reinstall "
-                                          "VirtualBox or reboot.\n"
-                                          , s_wszName, rcNt, pszDefine, iTry);
+                                          "VirtualBox or reboot.%s"
+                                          , s_wszName, rcNt, pszDefine, iTry,
+                                          supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
+                                                                              "\nVBoxDrvStub error: "));
             }
 
             /* Generic NT failure message. */
             supR3HardenedFatalMsg("supR3HardenedWinReSpawn", kSupInitOp_Driver, VERR_OPEN_FAILED,
-                                  "NtCreateFile(%ls) failed: %#x%s (%u retries)\n", s_wszName, rcNt, pszDefine, iTry);
+                                  "NtCreateFile(%ls) failed: %#x%s (%u retries)%s",
+                                  s_wszName, rcNt, pszDefine, iTry,
+                                  supR3HardenedWinReadErrorInfoDevice(szErrorInfo, sizeof(szErrorInfo),
+                                                                      "\nVBoxDrvStub error: "));
         }
     }
 }

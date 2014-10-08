@@ -61,6 +61,19 @@
 # define SUP_NT_STATUS_IS_VBOX(a_rcNt)          ( ((uint32_t)(a_rcNt) & 0xffff0000) == SUP_NT_STATUS_BASE )
 # define SUP_NT_STATUS_TO_VBOX(a_rcNt)          ( (int)((uint32_t)(a_rcNt) | UINT32_C(0xffff0000)) )
 
+/** NT device name for system access. */
+# define SUPDRV_NT_DEVICE_NAME_SYS              L"\\Device\\VBoxDrv"
+/** NT device name for user access. */
+# define SUPDRV_NT_DEVICE_NAME_USR              L"\\Device\\VBoxDrvU"
+# ifdef VBOX_WITH_HARDENING
+/** NT device name for hardened stub access. */
+#  define SUPDRV_NT_DEVICE_NAME_STUB            L"\\Device\\VBoxDrvStub"
+/** NT device name for getting error information for failed VBoxDrv or
+ * VBoxDrvStub open. */
+#  define SUPDRV_NT_DEVICE_NAME_ERROR_INFO      L"\\Device\\VBoxDrvErrorInfo"
+# endif
+
+
 #elif defined(RT_OS_SOLARIS)
   /* No automatic buffering, size limited to 255 bytes. */
 # include <sys/ioccom.h>
