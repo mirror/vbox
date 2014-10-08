@@ -642,9 +642,10 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
         ULONG ulGuestBitsPerPixel = 0;
         LONG xOrigin = 0;
         LONG yOrigin = 0;
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
         CDisplay display = m_pMachineView->uisession()->session().GetConsole().GetDisplay();
         display.GetScreenResolution(m_pMachineView->screenId(),
-                                    ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin);
+                                    ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
 
         /* Remind user if necessary, ignore text and VGA modes: */
         if (   ulGuestBitsPerPixel != ulBitsPerPixel

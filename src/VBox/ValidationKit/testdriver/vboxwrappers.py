@@ -2219,7 +2219,7 @@ class SessionWrapper(TdTaskBase):
         Returns False on failure.
         """
         try:
-            iWidth, iHeight, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
+            iWidth, iHeight, _, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
             if self.fpApiVer >= 4.4:
                 aPngData = self.o.console.display.takeScreenShotToArray(iScreenId, iWidth, iHeight,
                                                                         vboxcon.BitmapFormat_PNG)

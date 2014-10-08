@@ -2015,7 +2015,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         ULONG dummy;
         LONG xOrigin, yOrigin;
-        rc = gpDisplay->GetScreenResolution(i, &dummy, &dummy, &dummy, &xOrigin, &yOrigin);
+        GuestMonitorStatus_T monitorStatus;
+        rc = gpDisplay->GetScreenResolution(i, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
 
@@ -2294,7 +2295,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         gpFramebuffer[event.user.code]->notifyChange(event.user.code);
                         /* update xOrigin, yOrigin -> mouse */
                         ULONG dummy;
-                        rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin);
+                        GuestMonitorStatus_T monitorStatus;
+                        rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
                         gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                         break;
                     }
@@ -2813,7 +2815,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 gpFramebuffer[event.user.code]->notifyChange(event.user.code);
                 /* update xOrigin, yOrigin -> mouse */
                 ULONG dummy;
-                rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin);
+                GuestMonitorStatus_T monitorStatus;
+                rc = gpDisplay->GetScreenResolution(event.user.code, &dummy, &dummy, &dummy, &xOrigin, &yOrigin, &monitorStatus);
                 gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                 break;
             }

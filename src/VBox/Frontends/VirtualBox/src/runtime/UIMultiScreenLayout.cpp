@@ -316,7 +316,8 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
             screen = QApplication::desktop()->availableGeometry(screenLayout.value(iGuestScreen, 0));
         else
             screen = QApplication::desktop()->screenGeometry(screenLayout.value(iGuestScreen, 0));
-        display.GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin);
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+        display.GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin, monitorStatus);
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */

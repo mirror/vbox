@@ -1103,8 +1103,9 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
         if (SUCCEEDED(hr))
         {
             ULONG dummy;
+            GuestMonitorStatus_T monitorStatus;
             hr = server->mConsole->i_getDisplay()->GetScreenResolution(uScreenId, &dummy, &dummy, &dummy,
-                                                                     &xOrigin, &yOrigin);
+                                                                       &xOrigin, &yOrigin, &monitorStatus);
 
             if (SUCCEEDED(hr))
             {
