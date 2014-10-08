@@ -4235,14 +4235,22 @@ DECLHIDDEN(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_
             {
                 memcpy(pszErrorInfo, pszPrefix, cchPrefix);
                 pszErrorInfo[cbErrorInfo - 1] = '\0';
+                SUP_DPRINTF(("supR3HardenedWinReadErrorInfoDevice: '%s'", &pszErrorInfo[cchPrefix]));
             }
             else
+            {
                 *pszErrorInfo = '\0';
+                if (rcNt != STATUS_END_OF_FILE)
+                    SUP_DPRINTF(("supR3HardenedWinReadErrorInfoDevice: NtReadFile -> %#x\n", rcNt));
+            }
         }
         else
             RTStrCopy(pszErrorInfo, cbErrorInfo, "error info buffer too small");
         NtClose(hFile);
     }
+    else
+        SUP_DPRINTF(("supR3HardenedWinReadErrorInfoDevice: NtCreateFile -> %#x\n", rcNt));
+
     return pszErrorInfo;
 }
 
