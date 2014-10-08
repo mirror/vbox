@@ -93,7 +93,7 @@ static const unsigned g_aSize2Shift[] =
 static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void const *pvValue, unsigned cbValue)
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
-                 || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                 && (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
                  VERR_IOM_MMIO_IPE_1);
     AssertReturn(cbValue != 0 && cbValue <= 16, VERR_IOM_MMIO_IPE_2);
     RTGCPHYS const GCPhysStart  = GCPhys; NOREF(GCPhysStart);
