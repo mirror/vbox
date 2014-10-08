@@ -568,18 +568,29 @@ void UIVMInfoDialog::refreshStatistics()
         /* Get current console: */
         CConsole console = m_session.GetConsole();
 
-        /* Determine resolution: */
-        ULONG uWidth = 0;
-        ULONG uHeight = 0;
-        ULONG uBpp = 0;
-        LONG xOrigin = 0;
-        LONG yOrigin = 0;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        console.GetDisplay().GetScreenResolution(0, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
-        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
-        if (uBpp)
-            strResolution += QString("x%1").arg(uBpp);
-        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+        ULONG cGuestScreens = m.GetMonitorCount();
+        QVector<QString> aResolutions(cGuestScreens);
+        for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+        {
+            /* Determine resolution: */
+            ULONG uWidth = 0;
+            ULONG uHeight = 0;
+            ULONG uBpp = 0;
+            LONG xOrigin = 0;
+            LONG yOrigin = 0;
+            KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+            console.GetDisplay().GetScreenResolution(iScreen, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
+            QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
+            if (uBpp)
+                strResolution += QString("x%1").arg(uBpp);
+            strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+            if (monitorStatus == KGuestMonitorStatus_Disabled)
+            {
+                strResolution += QString(" ");
+                strResolution += QString(VBoxGlobal::tr("off", "guest monitor status"));
+            }
+            aResolutions[iScreen] = strResolution;
+        }
 
         /* Calculate uptime: */
         uint32_t uUpSecs = (RTTimeProgramSecTS() / 5) * 5;
@@ -637,7 +648,9 @@ void UIVMInfoDialog::refreshStatistics()
 
         /* Searching for longest string: */
         QStringList values;
-        values << strResolution << strUptime
+        for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+            values << aResolutions[iScreen];
+        values << strUptime
                << strVirtualization << strNestedPaging << strUnrestrictedExecution
                << strGAVersion << strOSType << strVRDEInfo;
         int iMaxLength = 0;
@@ -647,7 +660,12 @@ void UIVMInfoDialog::refreshStatistics()
 
         /* Summary: */
         strResult += strHeader.arg(":/state_running_16px.png").arg(tr("Runtime Attributes"));
-        strResult += formatValue(tr("Screen Resolution"), strResolution, iMaxLength);
+        for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+        {
+            QString strLabel(tr("Screen Resolution"));
+            strLabel += QString(" %1").arg(iScreen + 1);
+            strResult += formatValue(strLabel, aResolutions[iScreen], iMaxLength);
+        }
         strResult += formatValue(tr("VM Uptime"), strUptime, iMaxLength);
         strResult += formatValue(tr("Clipboard Mode"), strClipboardMode, iMaxLength);
         strResult += formatValue(tr("Drag'n'Drop Mode"), strDnDMode, iMaxLength);
