@@ -96,6 +96,9 @@ protected:
 };
 
 /* static */
+UIMachine* UIMachine::m_spInstance = 0;
+
+/* static */
 bool UIMachine::startMachine(const QString &strID)
 {
     /* Some restrictions: */
@@ -135,10 +138,19 @@ bool UIMachine::startMachine(const QString &strID)
     }
 
     /* Create machine UI: */
-    UIMachine *pMachine = new UIMachine;
-
+    new UIMachine;
     /* Prepare machine UI: */
-    return pMachine->prepare();
+    return m_spInstance->prepare();
+}
+
+/* static */
+void UIMachine::destroy()
+{
+    /* Cleanup machine UI: */
+    m_spInstance->cleanup();
+    /* Destroy machine UI: */
+    delete m_spInstance;
+    m_spInstance = 0;
 }
 
 UIMachineLogic* UIMachine::machineLogic() const
@@ -194,17 +206,12 @@ UIMachine::UIMachine()
     , m_initialStateType(UIVisualStateType_Normal)
     , m_pVisualState(0)
 {
-    /* Make sure VBoxGlobal is aware of VM creation: */
-    vboxGlobal().setVirtualMachine(this);
+    m_spInstance = this;
 }
 
 UIMachine::~UIMachine()
 {
-    /* Make sure VBoxGlobal is aware of VM destruction: */
-    vboxGlobal().setVirtualMachine(0);
-
-    /* Cleanup machine UI: */
-    cleanup();
+    m_spInstance = 0;
 }
 
 bool UIMachine::prepare()
@@ -333,9 +340,6 @@ void UIMachine::cleanup()
     /* Free session finally: */
     m_session.UnlockMachine();
     m_session.detach();
-
-    /* Make sure VBoxGlobal is aware of VM destruction: */
-    vboxGlobal().setVirtualMachine(0);
 
     /* Quit application: */
     QApplication::quit();

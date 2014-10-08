@@ -50,6 +50,10 @@ public:
     /** Static factory to start machine with passed @a strID.
       * @return true if machine was started, false otherwise. */
     static bool startMachine(const QString &strID);
+    /** Static destructor. */
+    static void destroy();
+    /** Static instance. */
+    static UIMachine* instance() { return m_spInstance; }
 
     /** Returns UI session instance. */
     UISession *uisession() const { return m_pSession; }
@@ -88,6 +92,9 @@ private:
     /** Moves VM to default (normal) state. */
     void enterInitialVisualState();
 
+    /** Static instance. */
+    static UIMachine* m_spInstance;
+
     /** Holds the session instance. */
     CSession m_session;
 
@@ -100,9 +107,8 @@ private:
     UIVisualStateType m_initialStateType;
     /** Holds current visual state. */
     UIVisualState *m_pVisualState;
-
-    /* Temporary access: */
-    friend class VBoxGlobal;
 };
+
+#define gpMachine UIMachine::instance()
 
 #endif /* !___UIMachine_h___ */

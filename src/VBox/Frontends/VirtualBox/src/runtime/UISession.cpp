@@ -677,13 +677,13 @@ void UISession::sltCloseRuntimeUI()
          * and unlock his event-loop if any: */
         if (!pWidget->isHidden())
             pWidget->hide();
-        /* Restart this slot asynchronously: */
+        /* Restart this slot: */
         emit sigCloseRuntimeUI();
         return;
     }
 
     /* Finally close the Runtime UI: */
-    m_pMachine->deleteLater();
+    UIMachine::destroy();
 }
 
 #ifdef RT_OS_DARWIN
