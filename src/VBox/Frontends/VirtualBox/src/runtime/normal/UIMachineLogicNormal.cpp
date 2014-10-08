@@ -204,8 +204,9 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bo
     /* Enable/disable guest keeping current size: */
     ULONG uWidth, uHeight, uBitsPerPixel;
     LONG uOriginX, uOriginY;
+    KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
     CDisplay display = session().GetConsole().GetDisplay();
-    display.GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY);
+    display.GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
     if (!fEnabled)
         display.SetVideoModeHint(iIndex, false, false, 0, 0, 0, 0, 0);
     else

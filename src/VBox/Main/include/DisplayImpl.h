@@ -193,7 +193,7 @@ public:
     virtual HRESULT i_getScreenResolution(ULONG cScreen, ULONG *pcx,
                                           ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin)
     {
-        return getScreenResolution(cScreen, pcx, pcy, pcBPP, pXOrigin, pYOrigin);
+        return getScreenResolution(cScreen, pcx, pcy, pcBPP, pXOrigin, pYOrigin, NULL);
     }
     virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                             int32_t *px2, int32_t *py2);
@@ -209,7 +209,8 @@ private:
                                         ULONG *aHeight,
                                         ULONG *aBitsPerPixel,
                                         LONG *aXOrigin,
-                                        LONG *aYOrigin);
+                                        LONG *aYOrigin,
+                                        GuestMonitorStatus_T *aGuestMonitorStatus);
     virtual HRESULT attachFramebuffer(ULONG aScreenId,
                                       const ComPtr<IFramebuffer> &aFramebuffer);
     virtual HRESULT detachFramebuffer(ULONG aScreenId);

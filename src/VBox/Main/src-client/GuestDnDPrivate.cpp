@@ -477,8 +477,9 @@ int GuestDnD::adjustScreenCoordinates(ULONG uScreenId, ULONG *puX, ULONG *puY) c
 
     ULONG dummy;
     LONG xShift, yShift;
+    GuestMonitorStatus_T monitorStatus;
     hr = pDisplay->GetScreenResolution(uScreenId, &dummy, &dummy, &dummy,
-                                       &xShift, &yShift);
+                                       &xShift, &yShift, &monitorStatus);
     if (FAILED(hr))
         return hr;
 

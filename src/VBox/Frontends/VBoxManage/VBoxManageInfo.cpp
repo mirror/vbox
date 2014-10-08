@@ -1681,7 +1681,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             }
             ULONG xRes, yRes, bpp;
             LONG xOrigin, yOrigin;
-            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp, &xOrigin, &yOrigin);
+            GuestMonitorStatus_T monitorStatus;
+            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp, &xOrigin, &yOrigin, &monitorStatus);
             if (rc == E_ACCESSDENIED)
                 break; /* VM not powered up */
             if (FAILED(rc))
@@ -1691,9 +1692,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 return rc;
             }
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("VideoMode=\"%d,%d,%d\"@%d,%d\n", xRes, yRes, bpp, xOrigin, yOrigin);
+                RTPrintf("VideoMode=\"%d,%d,%d\"@%d,%d %d\n", xRes, yRes, bpp, xOrigin, yOrigin, monitorStatus);
             else
-                RTPrintf("Video mode:      %dx%dx%d at %d,%d\n", xRes, yRes, bpp, xOrigin, yOrigin);
+            {
+                const char *pszMonitorStatus = "unknown status";
+                switch (monitorStatus)
+                {
+                    case GuestMonitorStatus_Enabled:  pszMonitorStatus = "enabled"; break;
+                    case GuestMonitorStatus_Disabled: pszMonitorStatus = "disabled"; break;
+                    default: break;
+                }
+                RTPrintf("Video mode:      %dx%dx%d at %d,%d %s\n", xRes, yRes, bpp, xOrigin, yOrigin, pszMonitorStatus);
+            }
         }
         while (0);
     }

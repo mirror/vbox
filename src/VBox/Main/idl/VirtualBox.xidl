@@ -15699,9 +15699,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
+  <enum
+    name="GuestMonitorStatus"
+    uuid="a0001cb1-97c9-496d-82bc-616c19a9e212"
+    >
+    <desc>
+      The current status of the guest display.
+    </desc>
+
+    <const name="Disabled" value="0">
+      <desc>
+        The guest monitor is disabled in the guest.
+      </desc>
+    </const>
+
+    <const name="Enabled" value="1">
+      <desc>
+        The guest monitor is enabled in the guest.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="fb51010f-eefd-430d-8cd7-3c1bc14740eb"
+    uuid="dc19253d-e6b8-4b2c-8923-c8ecf80d1909"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -15732,6 +15753,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="bitsPerPixel" type="unsigned long" dir="out"/>
       <param name="xOrigin" type="long" dir="out"/>
       <param name="yOrigin" type="long" dir="out"/>
+      <param name="guestMonitorStatus" type="GuestMonitorStatus" dir="out"/>
     </method>
 
     <method name="attachFramebuffer">
