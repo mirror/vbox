@@ -19,7 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes: */
+/* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UIExtraDataManager.h"
 # include "UIMachine.h"
@@ -141,103 +141,11 @@ bool UIMachine::startMachine(const QString &strID)
     return pMachine->prepare();
 }
 
-UIMachine::UIMachine()
-    : QObject(0)
-    , initialStateType(UIVisualStateType_Normal)
-    , m_pSession(0)
-    , m_pVisualState(0)
-    , m_allowedVisualStates(UIVisualStateType_Invalid)
+UIMachineLogic* UIMachine::machineLogic() const
 {
-    /* Make sure VBoxGlobal is aware of VM creation: */
-    vboxGlobal().setVirtualMachine(this);
-}
-
-bool UIMachine::prepare()
-{
-    KLockType lockType;
-    if (!vboxGlobal().isSeparateProcess())
-    {
-        lockType = KLockType_VM;
-    }
-    else
-    {
-        /* Try to find corresponding machine: */
-        CVirtualBox virtualBox = vboxGlobal().virtualBox();
-        CMachine machine = virtualBox.FindMachine(vboxGlobal().managedVMUuid());
-        if (machine.isNull())
-        {
-            msgCenter().cannotFindMachineById(virtualBox, vboxGlobal().managedVMUuid());
-            return false;
-        }
-
-        /* Try to launch corresponding machine: */
-        if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
-            return false;
-
-        lockType = KLockType_Shared;
-    }
-
-    /* Create VM session: */
-    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(), lockType);
-    if (m_session.isNull())
-        return false;
-
-    /* Create UI session: */
-    m_pSession = new UISession(this, m_session);
-
-    /* Preventing application from closing in case of window(s) closed: */
-    qApp->setQuitOnLastWindowClosed(false);
-
-    /* Cache medium data only if really necessary: */
-    vboxGlobal().startMediumEnumeration(false /* force start */);
-
-    /* Load machine settings: */
-    loadMachineSettings();
-
-    /* Prepare async visual-state change handler: */
-    qRegisterMetaType<UIVisualStateType>();
-    connect(this, SIGNAL(sigRequestAsyncVisualStateChange(UIVisualStateType)),
-            this, SLOT(sltChangeVisualState(UIVisualStateType)),
-            Qt::QueuedConnection);
-
-    /* Enter default (normal) state */
-    enterInitialVisualState();
-
-    /* Now power up the machine.
-     * Actually powerUp does more that just a power up,
-     * so call it regardless of isSeparateProcess setting. */
-    uisession()->powerUp();
-
-    /* Initialization of MachineLogic internals after the powerUp.
-     * This is a hack, maybe more generic approach can be used. */
-    machineLogic()->initializePostPowerUp();
-
-    /* True by default: */
-    return true;
-}
-
-UIMachine::~UIMachine()
-{
-    /* Save machine settings: */
-    saveMachineSettings();
-
-    /* Delete visual state: */
-    delete m_pVisualState;
-    m_pVisualState = 0;
-
-    /* Delete UI session: */
-    delete m_pSession;
-    m_pSession = 0;
-
-    /* Free session finally: */
-    m_session.UnlockMachine();
-    m_session.detach();
-
-    /* Make sure VBoxGlobal is aware of VM destruction: */
-    vboxGlobal().setVirtualMachine(0);
-
-    /* Quit application: */
-    QApplication::quit();
+    if (m_pVisualState && m_pVisualState->machineLogic())
+        return m_pVisualState->machineLogic();
+    return 0;
 }
 
 QWidget* UIMachine::activeWindow() const
@@ -279,19 +187,91 @@ void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
     }
 }
 
-void UIMachine::enterInitialVisualState()
+UIMachine::UIMachine()
+    : QObject(0)
+    , m_pSession(0)
+    , m_allowedVisualStates(UIVisualStateType_Invalid)
+    , m_initialStateType(UIVisualStateType_Normal)
+    , m_pVisualState(0)
 {
-    sltChangeVisualState(initialStateType);
+    /* Make sure VBoxGlobal is aware of VM creation: */
+    vboxGlobal().setVirtualMachine(this);
 }
 
-UIMachineLogic* UIMachine::machineLogic() const
+UIMachine::~UIMachine()
 {
-    if (m_pVisualState && m_pVisualState->machineLogic())
-        return m_pVisualState->machineLogic();
-    return 0;
+    /* Make sure VBoxGlobal is aware of VM destruction: */
+    vboxGlobal().setVirtualMachine(0);
+
+    /* Cleanup machine UI: */
+    cleanup();
 }
 
-void UIMachine::loadMachineSettings()
+bool UIMachine::prepare()
+{
+    KLockType lockType;
+    if (!vboxGlobal().isSeparateProcess())
+    {
+        lockType = KLockType_VM;
+    }
+    else
+    {
+        /* Try to find corresponding machine: */
+        CVirtualBox virtualBox = vboxGlobal().virtualBox();
+        CMachine machine = virtualBox.FindMachine(vboxGlobal().managedVMUuid());
+        if (machine.isNull())
+        {
+            msgCenter().cannotFindMachineById(virtualBox, vboxGlobal().managedVMUuid());
+            return false;
+        }
+
+        /* Try to launch corresponding machine: */
+        if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
+            return false;
+
+        lockType = KLockType_Shared;
+    }
+
+    /* Create VM session: */
+    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(), lockType);
+    if (m_session.isNull())
+        return false;
+
+    /* Create UI session: */
+    m_pSession = new UISession(this, m_session);
+
+    /* Preventing application from closing in case of window(s) closed: */
+    qApp->setQuitOnLastWindowClosed(false);
+
+    /* Cache medium data only if really necessary: */
+    vboxGlobal().startMediumEnumeration(false /* force start */);
+
+    /* Load settings: */
+    loadSettings();
+
+    /* Prepare async visual-state change handler: */
+    qRegisterMetaType<UIVisualStateType>();
+    connect(this, SIGNAL(sigRequestAsyncVisualStateChange(UIVisualStateType)),
+            this, SLOT(sltChangeVisualState(UIVisualStateType)),
+            Qt::QueuedConnection);
+
+    /* Enter default (normal) state */
+    enterInitialVisualState();
+
+    /* Now power up the machine.
+     * Actually powerUp does more that just a power up,
+     * so call it regardless of isSeparateProcess setting. */
+    uisession()->powerUp();
+
+    /* Initialization of MachineLogic internals after the powerUp.
+     * This is a hack, maybe more generic approach can be used. */
+    machineLogic()->initializePostPowerUp();
+
+    /* True by default: */
+    return true;
+}
+
+void UIMachine::loadSettings()
 {
     /* Load 'visual state' option: */
     {
@@ -308,8 +288,8 @@ void UIMachine::loadMachineSettings()
             switch (requestedVisualState)
             {
                 /* Direct transition to scale/fullscreen mode allowed: */
-                case UIVisualStateType_Scale: initialStateType = UIVisualStateType_Scale; break;
-                case UIVisualStateType_Fullscreen: initialStateType = UIVisualStateType_Fullscreen; break;
+                case UIVisualStateType_Scale: m_initialStateType = UIVisualStateType_Scale; break;
+                case UIVisualStateType_Fullscreen: m_initialStateType = UIVisualStateType_Fullscreen; break;
                 /* While to seamless is not, so we have to request transition on GA capability-change event: */
                 case UIVisualStateType_Seamless: uisession()->setRequestedVisualState(UIVisualStateType_Seamless); break;
                 default: break;
@@ -318,7 +298,7 @@ void UIMachine::loadMachineSettings()
     }
 }
 
-void UIMachine::saveMachineSettings()
+void UIMachine::saveSettings()
 {
     /* Save 'visual state' option: */
     {
@@ -335,6 +315,35 @@ void UIMachine::saveMachineSettings()
         /* Save requested visual state: */
         gEDataManager->setRequestedVisualState(requestedVisualState, vboxGlobal().managedVMUuid());
     }
+}
+
+void UIMachine::cleanup()
+{
+    /* Save settings: */
+    saveSettings();
+
+    /* Delete visual state: */
+    delete m_pVisualState;
+    m_pVisualState = 0;
+
+    /* Delete UI session: */
+    delete m_pSession;
+    m_pSession = 0;
+
+    /* Free session finally: */
+    m_session.UnlockMachine();
+    m_session.detach();
+
+    /* Make sure VBoxGlobal is aware of VM destruction: */
+    vboxGlobal().setVirtualMachine(0);
+
+    /* Quit application: */
+    QApplication::quit();
+}
+
+void UIMachine::enterInitialVisualState()
+{
+    sltChangeVisualState(m_initialStateType);
 }
 
 #include "UIMachine.moc"

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,15 +51,12 @@ public:
       * @return true if machine was started, false otherwise. */
     static bool startMachine(const QString &strID);
 
-    /** Constructor. */
-    UIMachine();
-    /** Destructor. */
-    ~UIMachine();
-
-    /** Returns active machine-window reference (if possible). */
-    QWidget* activeWindow() const;
     /** Returns UI session instance. */
     UISession *uisession() const { return m_pSession; }
+    /** Returns machine-logic reference (if possible). */
+    UIMachineLogic* machineLogic() const;
+    /** Returns active machine-window reference (if possible). */
+    QWidget* activeWindow() const;
 
     /** Returns whether requested visual @a state allowed. */
     bool isVisualStateAllowed(UIVisualStateType state) const { return m_allowedVisualStates & state; }
@@ -74,30 +71,38 @@ private slots:
 
 private:
 
+    /** Constructor. */
+    UIMachine();
+    /** Destructor. */
+    ~UIMachine();
+
     /** Prepare routine. */
     bool prepare();
+    /** Prepare routine: Loading stuff. */
+    void loadSettings();
+    /** Prepare routine: Saving stuff. */
+    void saveSettings();
+    /** Cleanup routine. */
+    void cleanup();
 
     /** Moves VM to default (normal) state. */
     void enterInitialVisualState();
 
-    /** Returns machine-logic reference (if possible). */
-    UIMachineLogic* machineLogic() const;
-
-    /** Prepare routine: Loading stuff. */
-    void loadMachineSettings();
-
-    /** Prepare routine: Saving stuff. */
-    void saveMachineSettings();
-
-    /* Private variables: */
-    UIVisualStateType initialStateType;
+    /** Holds the session instance. */
     CSession m_session;
-    UISession *m_pSession;
-    UIVisualState *m_pVisualState;
-    UIVisualStateType m_allowedVisualStates;
 
-    /* Friend classes: */
-    friend class UISession;
+    /** Holds the session UI instance. */
+    UISession *m_pSession;
+
+    /** Holds allowed visual state types. */
+    UIVisualStateType m_allowedVisualStates;
+    /** Holds initial visual state type. */
+    UIVisualStateType m_initialStateType;
+    /** Holds current visual state. */
+    UIVisualState *m_pVisualState;
+
+    /* Temporary access: */
+    friend class VBoxGlobal;
 };
 
 #endif /* !___UIMachine_h___ */
