@@ -160,127 +160,6 @@ void UISession::destroy(UISession *&pSession)
     pSession = 0;
 }
 
-UISession::UISession(UIMachine *pMachine)
-    : QObject(pMachine)
-    /* Base variables: */
-    , m_pMachine(pMachine)
-    , m_pActionPool(0)
-#ifdef Q_WS_MAC
-    , m_pMenuBar(0)
-#endif /* Q_WS_MAC */
-    /* Common variables: */
-    , m_machineStatePrevious(KMachineState_Null)
-    , m_machineState(KMachineState_Null)
-#ifndef Q_WS_MAC
-    , m_pMachineWindowIcon(0)
-#endif /* !Q_WS_MAC */
-    , m_mouseCapturePolicy(MouseCapturePolicy_Default)
-    , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
-    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
-    , m_requestedVisualStateType(UIVisualStateType_Invalid)
-#ifdef Q_WS_WIN
-    , m_alphaCursor(0)
-#endif /* Q_WS_WIN */
-#ifdef Q_WS_MAC
-    , m_pWatchdogDisplayChange(0)
-#endif /* Q_WS_MAC */
-    , m_defaultCloseAction(MachineCloseAction_Invalid)
-    , m_restrictedCloseActions(MachineCloseAction_Invalid)
-    , m_fAllCloseActionsRestricted(false)
-    /* Common flags: */
-    , m_fIsStarted(false)
-    , m_fIsFirstTimeStarted(false)
-    , m_fIsGuestResizeIgnored(false)
-    , m_fIsAutoCaptureDisabled(false)
-    /* Guest additions flags: */
-    , m_ulGuestAdditionsRunLevel(0)
-    , m_fIsGuestSupportsGraphics(false)
-    , m_fIsGuestSupportsSeamless(false)
-    /* Mouse flags: */
-    , m_fNumLock(false)
-    , m_fCapsLock(false)
-    , m_fScrollLock(false)
-    , m_uNumLockAdaptionCnt(2)
-    , m_uCapsLockAdaptionCnt(2)
-    /* Mouse flags: */
-    , m_fIsMouseSupportsAbsolute(false)
-    , m_fIsMouseSupportsRelative(false)
-    , m_fIsMouseSupportsMultiTouch(false)
-    , m_fIsMouseHostCursorNeeded(false)
-    , m_fIsMouseCaptured(false)
-    , m_fIsMouseIntegrated(true)
-    , m_fIsValidPointerShapePresent(false)
-    , m_fIsHidingHostPointer(true)
-{
-}
-
-bool UISession::prepare()
-{
-    /* Prepare session: */
-    if (!prepareSession())
-        return false;
-
-    /* Prepare actions: */
-    prepareActions();
-
-    /* Prepare connections: */
-    prepareConnections();
-
-    /* Prepare console event-handlers: */
-    prepareConsoleEventHandlers();
-
-    /* Prepare screens: */
-    prepareScreens();
-
-    /* Prepare framebuffers: */
-    prepareFramebuffers();
-
-    /* Load settings: */
-    loadSessionSettings();
-
-#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
-    struct sigaction sa;
-    sa.sa_sigaction = &signalHandlerSIGUSR1;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGUSR1, &sa, NULL);
-#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
-
-    /* True by default: */
-    return true;
-}
-
-UISession::~UISession()
-{
-}
-
-void UISession::cleanup()
-{
-#ifdef Q_WS_WIN
-    /* Destroy alpha cursor: */
-    if (m_alphaCursor)
-        DestroyIcon(m_alphaCursor);
-#endif /* Q_WS_WIN */
-
-    /* Save settings: */
-    saveSessionSettings();
-
-    /* Cleanup framebuffers: */
-    cleanupFramebuffers();
-
-    /* Cleanup console event-handlers: */
-    cleanupConsoleEventHandlers();
-
-    /* Cleanup connections: */
-    cleanupConnections();
-
-    /* Cleanup actions: */
-    cleanupActions();
-
-    /* Cleanup session: */
-    cleanupSession();
-}
-
 void UISession::powerUp()
 {
     /* Prepare powerup: */
@@ -1015,6 +894,100 @@ void UISession::sltAdditionsChange()
     }
 }
 
+UISession::UISession(UIMachine *pMachine)
+    : QObject(pMachine)
+    /* Base variables: */
+    , m_pMachine(pMachine)
+    , m_pActionPool(0)
+#ifdef Q_WS_MAC
+    , m_pMenuBar(0)
+#endif /* Q_WS_MAC */
+    /* Common variables: */
+    , m_machineStatePrevious(KMachineState_Null)
+    , m_machineState(KMachineState_Null)
+#ifndef Q_WS_MAC
+    , m_pMachineWindowIcon(0)
+#endif /* !Q_WS_MAC */
+    , m_mouseCapturePolicy(MouseCapturePolicy_Default)
+    , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
+    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
+    , m_requestedVisualStateType(UIVisualStateType_Invalid)
+#ifdef Q_WS_WIN
+    , m_alphaCursor(0)
+#endif /* Q_WS_WIN */
+#ifdef Q_WS_MAC
+    , m_pWatchdogDisplayChange(0)
+#endif /* Q_WS_MAC */
+    , m_defaultCloseAction(MachineCloseAction_Invalid)
+    , m_restrictedCloseActions(MachineCloseAction_Invalid)
+    , m_fAllCloseActionsRestricted(false)
+    /* Common flags: */
+    , m_fIsStarted(false)
+    , m_fIsFirstTimeStarted(false)
+    , m_fIsGuestResizeIgnored(false)
+    , m_fIsAutoCaptureDisabled(false)
+    /* Guest additions flags: */
+    , m_ulGuestAdditionsRunLevel(0)
+    , m_fIsGuestSupportsGraphics(false)
+    , m_fIsGuestSupportsSeamless(false)
+    /* Mouse flags: */
+    , m_fNumLock(false)
+    , m_fCapsLock(false)
+    , m_fScrollLock(false)
+    , m_uNumLockAdaptionCnt(2)
+    , m_uCapsLockAdaptionCnt(2)
+    /* Mouse flags: */
+    , m_fIsMouseSupportsAbsolute(false)
+    , m_fIsMouseSupportsRelative(false)
+    , m_fIsMouseSupportsMultiTouch(false)
+    , m_fIsMouseHostCursorNeeded(false)
+    , m_fIsMouseCaptured(false)
+    , m_fIsMouseIntegrated(true)
+    , m_fIsValidPointerShapePresent(false)
+    , m_fIsHidingHostPointer(true)
+{
+}
+
+UISession::~UISession()
+{
+}
+
+bool UISession::prepare()
+{
+    /* Prepare session: */
+    if (!prepareSession())
+        return false;
+
+    /* Prepare actions: */
+    prepareActions();
+
+    /* Prepare connections: */
+    prepareConnections();
+
+    /* Prepare console event-handlers: */
+    prepareConsoleEventHandlers();
+
+    /* Prepare screens: */
+    prepareScreens();
+
+    /* Prepare framebuffers: */
+    prepareFramebuffers();
+
+    /* Load settings: */
+    loadSessionSettings();
+
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+    struct sigaction sa;
+    sa.sa_sigaction = &signalHandlerSIGUSR1;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGUSR1, &sa, NULL);
+#endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
+    /* True by default: */
+    return true;
+}
+
 bool UISession::prepareSession()
 {
     /* Open session: */
@@ -1029,63 +1002,6 @@ bool UISession::prepareSession()
 
     /* True by default: */
     return true;
-}
-
-void UISession::prepareConsoleEventHandlers()
-{
-    /* Create console event-handler: */
-    UIConsoleEventHandler::create(this);
-
-    /* Add console event connections: */
-    connect(gConsoleEvents, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
-            this, SLOT(sltMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)));
-
-    connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
-            this, SLOT(sltMouseCapabilityChange(bool, bool, bool, bool)));
-
-    connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
-            this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
-
-    connect(gConsoleEvents, SIGNAL(sigStateChange(KMachineState)),
-            this, SLOT(sltStateChange(KMachineState)));
-
-    connect(gConsoleEvents, SIGNAL(sigAdditionsChange()),
-            this, SLOT(sltAdditionsChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
-            this, SLOT(sltVRDEChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigVideoCaptureChange()),
-            this, SLOT(sltVideoCaptureChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
-            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
-
-    connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
-            this, SIGNAL(sigMediumChange(CMediumAttachment)));
-
-    connect(gConsoleEvents, SIGNAL(sigUSBControllerChange()),
-            this, SIGNAL(sigUSBControllerChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
-            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
-
-    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
-            this, SIGNAL(sigSharedFolderChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
-            this, SIGNAL(sigRuntimeError(bool, QString, QString)));
-
-#ifdef Q_WS_MAC
-    connect(gConsoleEvents, SIGNAL(sigShowWindow()),
-            this, SIGNAL(sigShowWindows()), Qt::QueuedConnection);
-#endif /* Q_WS_MAC */
-
-    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
-            this, SIGNAL(sigCPUExecutionCapChange()));
-
-    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
 void UISession::prepareActions()
@@ -1197,6 +1113,63 @@ void UISession::prepareConnections()
     connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),
             this, SLOT(sltHandleHostScreenAvailableAreaChange()));
 #endif /* !Q_WS_MAC */
+}
+
+void UISession::prepareConsoleEventHandlers()
+{
+    /* Create console event-handler: */
+    UIConsoleEventHandler::create(this);
+
+    /* Add console event connections: */
+    connect(gConsoleEvents, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+            this, SLOT(sltMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)));
+
+    connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            this, SLOT(sltMouseCapabilityChange(bool, bool, bool, bool)));
+
+    connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+            this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
+
+    connect(gConsoleEvents, SIGNAL(sigStateChange(KMachineState)),
+            this, SLOT(sltStateChange(KMachineState)));
+
+    connect(gConsoleEvents, SIGNAL(sigAdditionsChange()),
+            this, SLOT(sltAdditionsChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
+            this, SLOT(sltVRDEChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigVideoCaptureChange()),
+            this, SLOT(sltVideoCaptureChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
+
+    connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
+            this, SIGNAL(sigMediumChange(CMediumAttachment)));
+
+    connect(gConsoleEvents, SIGNAL(sigUSBControllerChange()),
+            this, SIGNAL(sigUSBControllerChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
+
+    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
+            this, SIGNAL(sigSharedFolderChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
+            this, SIGNAL(sigRuntimeError(bool, QString, QString)));
+
+#ifdef Q_WS_MAC
+    connect(gConsoleEvents, SIGNAL(sigShowWindow()),
+            this, SIGNAL(sigShowWindows()), Qt::QueuedConnection);
+#endif /* Q_WS_MAC */
+
+    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
+            this, SIGNAL(sigCPUExecutionCapChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
+            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
 void UISession::prepareScreens()
@@ -1398,6 +1371,33 @@ void UISession::cleanupSession()
         m_session.UnlockMachine();
         m_session.detach();
     }
+}
+
+void UISession::cleanup()
+{
+#ifdef Q_WS_WIN
+    /* Destroy alpha cursor: */
+    if (m_alphaCursor)
+        DestroyIcon(m_alphaCursor);
+#endif /* Q_WS_WIN */
+
+    /* Save settings: */
+    saveSessionSettings();
+
+    /* Cleanup framebuffers: */
+    cleanupFramebuffers();
+
+    /* Cleanup console event-handlers: */
+    cleanupConsoleEventHandlers();
+
+    /* Cleanup connections: */
+    cleanupConnections();
+
+    /* Cleanup actions: */
+    cleanupActions();
+
+    /* Cleanup session: */
+    cleanupSession();
 }
 
 #ifdef Q_WS_MAC
