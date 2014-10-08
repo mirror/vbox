@@ -1849,10 +1849,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
                         InsertConfigNode(pLunL0,   "Config", &pCfg);
 
+                        InsertConfigNode(pInst,    "LUN#1", &pLunL1);
+                        InsertConfigString(pLunL1, "Driver",               "VUSBRootHub");
+                        InsertConfigNode(pLunL1,   "Config", &pCfg);
+
                         /*
                          * Attach the status driver.
                          */
-                        i_attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
+                        i_attachStatusDriver(pInst, &mapUSBLed[1], 0, 1, NULL, NULL, 0);
                     }
 # ifdef VBOX_WITH_EXTPACK
                     else
