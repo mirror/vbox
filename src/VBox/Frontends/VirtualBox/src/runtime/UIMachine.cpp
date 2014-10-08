@@ -114,7 +114,7 @@ bool UIMachine::startMachine(const QString &strID)
             return false;
 
         /* Which VM we operate on? */
-        CMachine machine  = session.GetMachine();
+        CMachine machine = session.GetMachine();
         /* Which snapshot we are restoring? */
         CSnapshot snapshot = machine.GetCurrentSnapshot();
 
@@ -135,6 +135,18 @@ bool UIMachine::startMachine(const QString &strID)
 
         /* Clear snapshot-restoring request: */
         vboxGlobal().setShouldRestoreCurrentSnapshot(false);
+    }
+
+    /* For separate process we should launch VM before UI: */
+    if (vboxGlobal().isSeparateProcess())
+    {
+        /* Get corresponding machine: */
+        CMachine machine = vboxGlobal().virtualBox().FindMachine(vboxGlobal().managedVMUuid());
+        AssertMsgReturn(!machine.isNull(), ("VBoxGlobal::managedVMUuid() should have filter that case before!\n"), false);
+
+        /* Try to launch corresponding machine: */
+        if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
+            return false;
     }
 
     /* Create machine UI: */
@@ -216,31 +228,9 @@ UIMachine::~UIMachine()
 
 bool UIMachine::prepare()
 {
-    KLockType lockType;
-    if (!vboxGlobal().isSeparateProcess())
-    {
-        lockType = KLockType_VM;
-    }
-    else
-    {
-        /* Try to find corresponding machine: */
-        CVirtualBox virtualBox = vboxGlobal().virtualBox();
-        CMachine machine = virtualBox.FindMachine(vboxGlobal().managedVMUuid());
-        if (machine.isNull())
-        {
-            msgCenter().cannotFindMachineById(virtualBox, vboxGlobal().managedVMUuid());
-            return false;
-        }
-
-        /* Try to launch corresponding machine: */
-        if (!vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate))
-            return false;
-
-        lockType = KLockType_Shared;
-    }
-
     /* Create VM session: */
-    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(), lockType);
+    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
+                                         vboxGlobal().isSeparateProcess() ? KLockType_Shared : KLockType_VM);
     if (m_session.isNull())
         return false;
 

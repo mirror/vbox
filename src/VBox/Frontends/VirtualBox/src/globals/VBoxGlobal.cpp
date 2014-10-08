@@ -4108,22 +4108,20 @@ void VBoxGlobal::prepare()
         /* m_fSeparateProcess makes sense only if a VM is started. */
         m_fSeparateProcess = fSeparateProcess;
 
+        /* Search for corresponding VM: */
         QUuid uuid = QUuid(vmNameOrUuid);
+        const CMachine machine = mVBox.FindMachine(vmNameOrUuid);
         if (!uuid.isNull())
         {
-            vmUuid = vmNameOrUuid;
+            if (machine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineById(mVBox, vmNameOrUuid);
         }
         else
         {
-            CMachine m = mVBox.FindMachine (vmNameOrUuid);
-            if (m.isNull())
-            {
-                if (showStartVMErrors())
-                    msgCenter().cannotFindMachineByName (mVBox, vmNameOrUuid);
-                return;
-            }
-            vmUuid = m.GetId();
+            if (machine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineByName(mVBox, vmNameOrUuid);
         }
+        vmUuid = machine.GetId();
     }
 
     /* After initializing *vmUuid* we already know if that is VM process or not: */
