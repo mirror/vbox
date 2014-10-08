@@ -110,11 +110,9 @@ public:
     UISelectorWindow &selectorWnd();
 
     /** Returns current virtual machine. */
-    UIMachine* virtualMachine() const { return m_pVirtualMachine; }
-    /** Defines current virtual @a pMachine. */
-    void setVirtualMachine(UIMachine *pMachine) { m_pVirtualMachine = pMachine; }
-
-    QWidget* activeMachineWindow();
+    UIMachine* virtualMachine() const;
+    /** Returns currently active virtual machine window. */
+    QWidget* activeMachineWindow() const;
 
     bool is3DAvailableWorker() const;
     bool is3DAvailable() const { if (m3DAvailable < 0) return is3DAvailableWorker(); return m3DAvailable != 0; }
@@ -436,7 +434,6 @@ private:
     VBoxGlobalSettings gset;
 
     UISelectorWindow *mSelectorWnd;
-    UIMachine *m_pVirtualMachine;
 
     /** Holds whether GUI is separate (from VM) process. */
     bool m_fSeparateProcess;
