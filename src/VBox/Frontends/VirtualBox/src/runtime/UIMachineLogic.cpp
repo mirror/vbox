@@ -494,6 +494,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
                 uisession()->closeRuntimeUI();
+                return;
             }
             break;
         }
@@ -1323,32 +1324,32 @@ void UIMachineLogic::sltTakeSnapshot()
     /* Exec the dialog: */
     bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
 
-    /* Is the dialog still valid? */
-    if (pDlg)
+    /* Make sure dialog still valid: */
+    if (!pDlg)
+        return;
+
+    /* Acquire variables: */
+    QString strSnapshotName = pDlg->mLeName->text().trimmed();
+    QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
+
+    /* Destroy dialog early: */
+    delete pDlg;
+
+    /* Was the dialog accepted? */
+    if (fDialogAccepted)
     {
-        /* Acquire variables: */
-        QString strSnapshotName = pDlg->mLeName->text().trimmed();
-        QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
-
-        /* Destroy dialog early: */
-        delete pDlg;
-
-        /* Was the dialog accepted? */
-        if (fDialogAccepted)
+        /* Prepare the take-snapshot progress: */
+        CConsole console = session().GetConsole();
+        CProgress progress = console.TakeSnapshot(strSnapshotName, strSnapshotDescription);
+        if (console.isOk())
         {
-            /* Prepare the take-snapshot progress: */
-            CConsole console = session().GetConsole();
-            CProgress progress = console.TakeSnapshot(strSnapshotName, strSnapshotDescription);
-            if (console.isOk())
-            {
-                /* Show the take-snapshot progress: */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png");
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                    msgCenter().cannotTakeSnapshot(progress, machine.GetName());
-            }
-            else
-                msgCenter().cannotTakeSnapshot(console, machine.GetName());
+            /* Show the take-snapshot progress: */
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png");
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+                msgCenter().cannotTakeSnapshot(progress, machine.GetName());
         }
+        else
+            msgCenter().cannotTakeSnapshot(console, machine.GetName());
     }
 
     /* Restore the running state if needed: */
