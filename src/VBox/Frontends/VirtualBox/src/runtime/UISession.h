@@ -28,6 +28,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CSession.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -35,7 +36,6 @@ class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
 class UIActionPool;
-class CSession;
 class CUSBDevice;
 class CNetworkAdapter;
 class CMediumAttachment;
@@ -76,9 +76,10 @@ class UISession : public QObject
 
 public:
 
-    /* Machine uisession constructor/destructor: */
-    UISession(UIMachine *pMachine, CSession &session);
-    virtual ~UISession();
+    /** Factory constructor. */
+    static bool create(UISession *&pSession, UIMachine *pMachine);
+    /** Factory destructor. */
+    static void destroy(UISession *&pSession);
 
     /* API: Runtime UI stuff: */
     void powerUp();
@@ -308,10 +309,17 @@ private slots:
 
 private:
 
+    /** Constructor. */
+    UISession(UIMachine *pMachine);
+    /** Destructor. */
+    ~UISession();
+
     /* Private getters: */
     UIMachine* uimachine() const { return m_pMachine; }
 
     /* Prepare helpers: */
+    bool prepare();
+    bool prepareSession();
     void prepareActions();
     void prepareConnections();
     void prepareConsoleEventHandlers();
@@ -326,6 +334,8 @@ private:
     void cleanupConsoleEventHandlers();
     void cleanupConnections();
     void cleanupActions();
+    void cleanupSession();
+    void cleanup();
 
 #ifdef Q_WS_MAC
     /** Mac OS X: Updates menu-bar content. */
@@ -343,7 +353,9 @@ private:
 
     /* Private variables: */
     UIMachine *m_pMachine;
-    CSession &m_session;
+
+    /** Holds the session instance. */
+    CSession m_session;
 
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;

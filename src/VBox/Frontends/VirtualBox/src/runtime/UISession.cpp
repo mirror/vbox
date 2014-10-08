@@ -127,18 +127,50 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
 }
 #endif /* Q_WS_MAC */
 
-UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
+/* static */
+bool UISession::create(UISession *&pSession, UIMachine *pMachine)
+{
+    /* Make sure null pointer passed: */
+    AssertReturn(pSession == 0, false);
+
+    /* Create session UI: */
+    pSession = new UISession(pMachine);
+    /* Make sure it's prepared: */
+    if (!pSession->prepare())
+    {
+        /* Destroy session UI otherwise: */
+        destroy(pSession);
+        /* False in that case: */
+        return false;
+    }
+    /* True by default: */
+    return true;
+}
+
+/* static */
+void UISession::destroy(UISession *&pSession)
+{
+    /* Make sure valid pointer passed: */
+    AssertReturnVoid(pSession != 0);
+
+    /* Cleanup session UI: */
+    pSession->cleanup();
+    /* Destroy session: */
+    delete pSession;
+    pSession = 0;
+}
+
+UISession::UISession(UIMachine *pMachine)
     : QObject(pMachine)
     /* Base variables: */
     , m_pMachine(pMachine)
-    , m_session(sessionReference)
     , m_pActionPool(0)
 #ifdef Q_WS_MAC
     , m_pMenuBar(0)
 #endif /* Q_WS_MAC */
     /* Common variables: */
     , m_machineStatePrevious(KMachineState_Null)
-    , m_machineState(session().GetMachine().GetState())
+    , m_machineState(KMachineState_Null)
 #ifndef Q_WS_MAC
     , m_pMachineWindowIcon(0)
 #endif /* !Q_WS_MAC */
@@ -180,6 +212,14 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsHidingHostPointer(true)
 {
+}
+
+bool UISession::prepare()
+{
+    /* Prepare session: */
+    if (!prepareSession())
+        return false;
+
     /* Prepare actions: */
     prepareActions();
 
@@ -205,9 +245,16 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction(SIGUSR1, &sa, NULL);
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
+    /* True by default: */
+    return true;
 }
 
 UISession::~UISession()
+{
+}
+
+void UISession::cleanup()
 {
 #ifdef Q_WS_WIN
     /* Destroy alpha cursor: */
@@ -229,6 +276,9 @@ UISession::~UISession()
 
     /* Cleanup actions: */
     cleanupActions();
+
+    /* Cleanup session: */
+    cleanupSession();
 }
 
 void UISession::powerUp()
@@ -965,6 +1015,22 @@ void UISession::sltAdditionsChange()
     }
 }
 
+bool UISession::prepareSession()
+{
+    /* Open session: */
+    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
+                                         vboxGlobal().isSeparateProcess()
+                                         ? KLockType_Shared : KLockType_VM);
+    if (m_session.isNull())
+        return false;
+
+    /* Update machine-state: */
+    m_machineState = m_session.GetMachine().GetState();
+
+    /* True by default: */
+    return true;
+}
+
 void UISession::prepareConsoleEventHandlers()
 {
     /* Create console event-handler: */
@@ -1322,6 +1388,16 @@ void UISession::cleanupActions()
     /* Destroy action-pool if necessary: */
     if (actionPool())
         UIActionPool::destroy(actionPool());
+}
+
+void UISession::cleanupSession()
+{
+    /* Close session: */
+    if (!m_session.isNull())
+    {
+        m_session.UnlockMachine();
+        m_session.detach();
+    }
 }
 
 #ifdef Q_WS_MAC

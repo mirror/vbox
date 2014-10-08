@@ -26,7 +26,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CSession.h"
 
 /* Forward declarations: */
 class QWidget;
@@ -50,6 +49,8 @@ public:
     /** Static factory to start machine with passed @a strID.
       * @return true if machine was started, false otherwise. */
     static bool startMachine(const QString &strID);
+    /** Static constructor. */
+    static bool create();
     /** Static destructor. */
     static void destroy();
     /** Static instance. */
@@ -94,9 +95,6 @@ private:
 
     /** Static instance. */
     static UIMachine* m_spInstance;
-
-    /** Holds the session instance. */
-    CSession m_session;
 
     /** Holds the session UI instance. */
     UISession *m_pSession;

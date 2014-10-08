@@ -31,6 +31,7 @@
 
 /* COM includes: */
 # include "CMachine.h"
+# include "CSession.h"
 # include "CConsole.h"
 # include "CSnapshot.h"
 # include "CProgress.h"
@@ -149,15 +150,36 @@ bool UIMachine::startMachine(const QString &strID)
             return false;
     }
 
+    /* Try to create machine UI: */
+    return create();
+}
+
+/* static */
+bool UIMachine::create()
+{
+    /* Make sure machine is null pointer: */
+    AssertReturn(m_spInstance == 0, false);
+
     /* Create machine UI: */
     new UIMachine;
-    /* Prepare machine UI: */
-    return m_spInstance->prepare();
+    /* Make sure it's prepared: */
+    if (!m_spInstance->prepare())
+    {
+        /* Destroy machine UI otherwise: */
+        destroy();
+        /* False in that case: */
+        return false;
+    }
+    /* True by default: */
+    return true;
 }
 
 /* static */
 void UIMachine::destroy()
 {
+    /* Make sure machine is valid pointer: */
+    AssertReturnVoid(m_spInstance != 0);
+
     /* Cleanup machine UI: */
     m_spInstance->cleanup();
     /* Destroy machine UI: */
@@ -228,14 +250,9 @@ UIMachine::~UIMachine()
 
 bool UIMachine::prepare()
 {
-    /* Create VM session: */
-    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
-                                         vboxGlobal().isSeparateProcess() ? KLockType_Shared : KLockType_VM);
-    if (m_session.isNull())
+    /* Try to create session UI: */
+    if (!UISession::create(m_pSession, this))
         return false;
-
-    /* Create UI session: */
-    m_pSession = new UISession(this, m_session);
 
     /* Preventing application from closing in case of window(s) closed: */
     qApp->setQuitOnLastWindowClosed(false);
@@ -271,6 +288,7 @@ bool UIMachine::prepare()
 void UIMachine::loadSettings()
 {
     /* Load 'visual state' option: */
+    if (uisession())
     {
         /* Load restricted visual states: */
         UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(vboxGlobal().managedVMUuid());
@@ -298,6 +316,7 @@ void UIMachine::loadSettings()
 void UIMachine::saveSettings()
 {
     /* Save 'visual state' option: */
+    if (uisession())
     {
         /* Get requested visual state: */
         UIVisualStateType requestedVisualState = uisession()->requestedVisualState();
@@ -323,13 +342,9 @@ void UIMachine::cleanup()
     delete m_pVisualState;
     m_pVisualState = 0;
 
-    /* Delete UI session: */
-    delete m_pSession;
-    m_pSession = 0;
-
-    /* Free session finally: */
-    m_session.UnlockMachine();
-    m_session.detach();
+    /* Destroy session UI if necessary: */
+    if (uisession())
+        UISession::destroy(m_pSession);
 
     /* Quit application: */
     QApplication::quit();
