@@ -2378,7 +2378,11 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-array_bounds      ?= $(call VBOX_GCC_CHECK_CC,-Wno-array-bounds,)'
 # -Wextra produces additional useful warnings but includes -Wno-missing-field-initializers (too noisy)
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wextra                ?= $(call VBOX_GCC_CHECK_CC,-Wextra,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wlogical-op           ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
+	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
+	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CC),40500),)'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wlogical-op           ?= $(call VBOX_GCC_CHECK_CC,-Wlogical-op,)'
+	$(QUIET)$(APPEND) '$@' ' endif'
+	$(QUIET)$(APPEND) '$@' 'endif'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-address           ?= $(call VBOX_GCC_CHECK_CXX,-Wno-address,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-delete-non-virtual-dtor    ?= $(call VBOX_GCC_CHECK_CXX,-Wno-delete-non-virtual-dtor,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-int-to-pointer-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-int-to-pointer-cast,)'
