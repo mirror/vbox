@@ -602,6 +602,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 switch (OP_PARM_VSUBTYPE(pParam->fParam)) \
                 { \
                     case OP_PARM_v: \
+                    case OP_PARM_y: \
                         switch (pDis->uOpMode) \
                         { \
                             case DISCPUMODE_16BIT: PUT_SZ("word "); break; \
@@ -616,7 +617,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case OP_PARM_q: PUT_SZ("qword "); break; \
                     case OP_PARM_dq: \
                         if (OP_PARM_VTYPE(pParam->fParam) != OP_PARM_W) /* these are 128 bit, pray they are all unambiguous.. */ \
-                            PUT_SZ("qword "); \
+                            PUT_SZ("dqword "); \
                         break; \
                     case OP_PARM_p: break; /* see PUT_FAR */ \
                     case OP_PARM_s: if (pParam->fUse & DISUSE_REG_FP) PUT_SZ("tword "); break; /* ?? */ \
