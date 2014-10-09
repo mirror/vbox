@@ -3555,6 +3555,7 @@ bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
            || strGuestOSTypeId.startsWith("Windows7")
            || strGuestOSTypeId.startsWith("Windows8")
            || strGuestOSTypeId.startsWith("Windows81")
+           || strGuestOSTypeId.startsWith("Windows10")
            || strGuestOSTypeId.startsWith("Windows2008")
            || strGuestOSTypeId.startsWith("Windows2012");
 }

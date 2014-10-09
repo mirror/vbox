@@ -995,9 +995,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /* Expose CMPXCHG16B. Currently a hack. */
         if (   osTypeId == "Windows81_64"
-            || osTypeId == "Windows2012_64")
+            || osTypeId == "Windows2012_64"
+            || osTypeId == "Windows10_64")
         {
-            LogRel(("Enabling CMPXCHG16B for Windows 8.1 / 2k12 guests\n"));
+            LogRel(("Enabling CMPXCHG16B for Windows 8.1 / 2k12 or newer guests\n"));
             InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
         }
 
