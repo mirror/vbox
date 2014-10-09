@@ -2485,6 +2485,33 @@ l_fresh_context:
     if (hFileClose != NULL)
         NtClose(hFileClose);
 
+    /*
+     * DLLs that are likely candidates for local modifications.
+     */
+    if (rc == VERR_LDRVI_NOT_SIGNED)
+    {
+        PCRTUTF16 pwsz;
+        uint32_t cwcName = (uint32_t)RTUtf16Len(pwszName);
+        uint32_t cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR);
+        if (supHardViUtf16PathStartsWithEx(pwszName, cwcName, g_System32NtPath.UniStr.Buffer, cwcOther, true /*fCheckSlash*/))
+        {
+            pwsz = pwszName + cwcOther + 1;
+            if (   supHardViUtf16PathIsEqual(pwsz, "uxtheme.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "user32.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "gdi32.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "kernel32.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "KernelBase.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "ntdll.dll")
+                || supHardViUtf16PathIsEqual(pwsz, "opengl32.dll")
+                )
+            {
+                if (RTErrInfoIsSet(pErrInfo))
+                    RTErrInfoAdd(pErrInfo, rc, "\n");
+                RTErrInfoAddF(pErrInfo, rc, "'%ls' is most likely modified.", pwszName);
+            }
+        }
+    }
+
     return rc;
 }
 
