@@ -276,6 +276,7 @@ RuntimeR3_SOURCES       = \
 	common/asn1/asn1-basics.cpp \
 	common/asn1/asn1-cursor.cpp \
 	common/asn1/asn1-default-allocator.cpp \
+	common/asn1/asn1-efence-allocator.cpp \
 	common/asn1/asn1-dump.cpp \
 	common/asn1/asn1-encode.cpp \
 	common/asn1/asn1-ut-bitstring.cpp \

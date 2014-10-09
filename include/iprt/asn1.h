@@ -109,6 +109,9 @@ typedef RTASN1ALLOCATORVTABLE const *PCRTASN1ALLOCATORVTABLE;
 /** The default ASN.1 allocator. */
 extern RTDATADECL(RTASN1ALLOCATORVTABLE const) g_RTAsn1DefaultAllocator;
 
+/** The Electric Fence ASN.1 allocator. */
+extern RTDATADECL(RTASN1ALLOCATORVTABLE const) g_RTAsn1EFenceAllocator;
+
 
 /**
  * Allocation information.
