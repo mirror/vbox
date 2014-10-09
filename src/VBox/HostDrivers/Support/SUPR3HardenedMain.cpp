@@ -118,6 +118,10 @@ typedef DECLCALLBACK(int) FNRTR3INITEX(uint32_t iVersion, uint32_t fFlags, int c
                                        char **papszArgs, const char *pszProgramPath);
 typedef FNRTR3INITEX *PFNRTR3INITEX;
 
+/** @see RTLogRelPrintf */
+typedef DECLCALLBACK(void) FNRTLOGRELPRINTF(const char *pszFormat, ...);
+typedef FNRTLOGRELPRINTF *PFNRTLOGRELPRINTF;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -159,6 +163,12 @@ static uint32_t volatile g_cbStartupLog = 0;
 /** The current SUPR3HardenedMain state / location. */
 SUPR3HARDENEDMAINSTATE  g_enmSupR3HardenedMainState = SUPR3HARDENEDMAINSTATE_NOT_YET_CALLED;
 AssertCompileSize(g_enmSupR3HardenedMainState, sizeof(uint32_t));
+
+#ifdef RT_OS_WINDOWS
+/** Pointer to VBoxRT's RTLogRelPrintf function so we can write errors to the
+ * release log at runtime. */
+static PFNRTLOGRELPRINTF g_pfnRTLogRelPrintf = NULL;
+#endif
 
 
 /*******************************************************************************
@@ -1065,6 +1075,19 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
     supR3HardenedLogV(pszMsgFmt, vaCopy);
     va_end(vaCopy);
 
+#ifdef RT_OS_WINDOWS
+    /*
+     * The release log.
+     */
+    if (g_pfnRTLogRelPrintf)
+    {
+        va_copy(vaCopy, va);
+        g_pfnRTLogRelPrintf("supR3HardenedFatalMsgV: %s enmWhat=%d rc=%Rrc (%#x)\n", pszWhere, enmWhat, rc);
+        g_pfnRTLogRelPrintf("supR3HardenedFatalMsgV: %N\n", pszMsgFmt, &vaCopy);
+        va_end(vaCopy);
+    }
+#endif
+
     /*
      * Then to the console.
      */
@@ -1100,7 +1123,7 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
     }
 
     /*
-     * Don't call TrustedError if it's too early.
+     * Finally, TrustedError if appropriate.
      */
     if (g_enmSupR3HardenedMainState >= SUPR3HARDENEDMAINSTATE_WIN_IMPORTS_RESOLVED)
     {
@@ -1179,6 +1202,15 @@ DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
     else
 #endif
     {
+#ifdef RT_OS_WINDOWS
+        if (g_pfnRTLogRelPrintf)
+        {
+            va_copy(vaCopy, va);
+            g_pfnRTLogRelPrintf("supR3HardenedFatalV: %N", pszFormat, &vaCopy);
+            va_end(vaCopy);
+        }
+#endif
+
         suplibHardenedPrintPrefix();
         suplibHardenedPrintFV(pszFormat, va);
     }
@@ -1207,8 +1239,18 @@ DECLHIDDEN(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, 
     supR3HardenedLogV(pszFormat, vaCopy);
     va_end(vaCopy);
 
+#ifdef RT_OS_WINDOWS
+    if (g_pfnRTLogRelPrintf)
+    {
+        va_copy(vaCopy, va);
+        g_pfnRTLogRelPrintf("supR3HardenedErrorV: %N", pszFormat, &vaCopy);
+        va_end(vaCopy);
+    }
+#endif
+
     suplibHardenedPrintPrefix();
     suplibHardenedPrintFV(pszFormat, va);
+
     return rc;
 }
 
@@ -1524,6 +1566,9 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
                               "Entrypoint \"supR3PreInit\" not found in \"%s\" (rc=%d)",
                               szPath, RtlGetLastWin32Error());
+
+    g_pfnRTLogRelPrintf = (PFNRTLOGRELPRINTF)GetProcAddress(hMod, SUP_HARDENED_SYM("RTLogRelPrintf"));
+    Assert(g_pfnRTLogRelPrintf);  /* Not fatal in non-strict builds. */
 
 #else
     /* the dlopen crowd */
