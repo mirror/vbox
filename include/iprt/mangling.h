@@ -2915,6 +2915,7 @@
 # define g_RTAsn1Boolean_Vtable                         RT_MANGLER(g_RTAsn1Boolean_Vtable)
 # define g_RTAsn1BitString_Vtable                       RT_MANGLER(g_RTAsn1BitString_Vtable)
 # define g_RTAsn1DefaultAllocator                       RT_MANGLER(g_RTAsn1DefaultAllocator)
+# define g_RTAsn1EFenceAllocator                        RT_MANGLER(g_RTAsn1EFenceAllocator)
 #if 0 /* Disabled for now as I'm not sure the assmbler supports mangling yet. */
 # define g_abRTZeroPage                                 RT_MANGLER(g_abRTZeroPage)
 # define g_abRTZero4K                                   RT_MANGLER(g_abRTZero4K)
