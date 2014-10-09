@@ -544,6 +544,7 @@ Function ${un}CheckForWDDMCapability
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
     StrCpy $g_bCapWDDM "true"
     ${LogVerbose} "OS is WDDM driver capable"
   ${EndIf}
@@ -551,6 +552,7 @@ Function ${un}CheckForWDDMCapability
   ; by default
   ${If}   $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
     StrCpy $g_bWithWDDM "true"
     ${LogVerbose} "OS needs WDDM driver by default"
   ${EndIf}
@@ -575,6 +577,7 @@ Function ${un}CheckForCapabilities
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
     StrCpy $g_bCapDllCache "true"
     ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}

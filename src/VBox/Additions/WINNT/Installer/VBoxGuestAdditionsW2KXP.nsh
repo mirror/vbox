@@ -121,6 +121,7 @@ change_res:
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
     StrCpy $reg_path_device "SYSTEM\CurrentControlSet\Control\Video\$dev_id\0000"
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\Control\VIDEO\$dev_id\0000\Mon00000001"
   ${Else}
@@ -234,6 +235,7 @@ Function W2K_CopyFiles
   !if $%VBOX_WITH_WDDM_W8% == "1"
     ${If} $g_strWinVersion == "8"
     ${OrIf} $g_strWinVersion == "8_1"
+    ${OrIf} $g_strWinVersion == "10"
       !ifdef VBOX_SIGN_ADDITIONS
         FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
       !endif
@@ -395,7 +397,8 @@ Function W2K_InstallFiles
   !if $%VBOX_WITH_WDDM_W8% == "1"
       ${If} $g_strWinVersion == "8"
       ${OrIf} $g_strWinVersion == "8_1"
-        ${LogVerbose} "Installing WDDM video driver for Windows 8..."
+      ${OrIf} $g_strWinVersion == "10"
+        ${LogVerbose} "Installing WDDM video driver for Windows 8 or newer..."
         ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideoW8.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
       ${Else}
   !endif
@@ -465,7 +468,8 @@ cropengl:
 !if $%BUILD_TARGET_ARCH% == "amd64"
     SetRegView 32
     ; Write additional keys required for Windows XP, Vista and 7 64-bit (but for 32-bit stuff)
-    ${If} $g_strWinVersion   == '8_1'
+    ${If} $g_strWinVersion   == '10'
+    ${OrIf} $g_strWinVersion == '8_1'
     ${OrIf} $g_strWinVersion == '8'
     ${OrIf} $g_strWinVersion == '7'
     ${OrIf} $g_strWinVersion == 'Vista'

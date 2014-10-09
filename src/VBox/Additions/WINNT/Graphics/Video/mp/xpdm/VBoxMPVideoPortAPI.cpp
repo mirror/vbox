@@ -88,7 +88,7 @@ void VBoxSetupVideoPortAPI(PVBOXMP_DEVEXT pExt, PVIDEO_PORT_CONFIG_INFO pConfigI
     VBOXVIDEOPORTPROCS *pAPI = &pExt->u.primary.VideoPortProcs;
     VideoPortZeroMemory(pAPI, sizeof(VBOXVIDEOPORTPROCS));
 
-    if (VBoxQueryWinVersion() <= WINNT4)
+    if (VBoxQueryWinVersion() <= WINVERSION_NT4)
     {
         /* VideoPortGetProcAddress is available for >= win2k */
         pAPI->pfnWaitForSingleObject = vboxWaitForSingleObjectVoid;

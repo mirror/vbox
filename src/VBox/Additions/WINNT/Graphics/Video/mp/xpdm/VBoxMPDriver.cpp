@@ -103,7 +103,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
 
         VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
 
-        if (VBoxQueryWinVersion() == WINNT4)
+        if (VBoxQueryWinVersion() == WINVERSION_NT4)
         {
             /* NT crashes if either of 'vendorId, 'deviceId' or 'slot' parameters is NULL,
              * and needs PCI ids for a successful VideoPortGetAccessRanges call.
@@ -757,12 +757,12 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
      */
     switch (VBoxQueryWinVersion())
     {
-        case WINNT4:
-            LOG(("WINNT4"));
+        case WINVERSION_NT4:
+            LOG(("WINVERSION_NT4"));
             vhwData.HwInitDataSize = SIZE_OF_NT4_VIDEO_HW_INITIALIZATION_DATA;
             break;
-        case WIN2K:
-            LOG(("WIN2K"));
+        case WINVERSION_2K:
+            LOG(("WINVERSION_2K"));
             vhwData.HwInitDataSize = SIZE_OF_W2K_VIDEO_HW_INITIALIZATION_DATA;
             break;
         default:

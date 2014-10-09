@@ -664,6 +664,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   StrCmp $g_strWinVersion "7" vista     ; Windows 7
   StrCmp $g_strWinVersion "8" vista     ; Windows 8
   StrCmp $g_strWinVersion "8_1" vista   ; Windows 8.1 / Windows 2012 Server R2
+  StrCmp $g_strWinVersion "10" vista    ; Windows 10
 
   ${If} $g_bForceInstall == "true"
     Goto vista ; Assume newer OS than we know of ...
@@ -761,6 +762,7 @@ install:
   ${OrIf} $R0 == '7'     ; Windows 7.
   ${OrIf} $R0 == '8'     ; Windows 8.
   ${OrIf} $R0 == '8_1'   ; Windows 8.1 / Windows Server 2012 R2.
+  ${OrIf} $R0 == '10'    ; Windows 10.
     ; Use VBoxCredProv on Vista and up.
     ${LogVerbose} "Installing VirtualBox credential provider ..."
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxCredProv.dll" "$g_strSystemDir\VBoxCredProv.dll" "$INSTDIR"
@@ -1025,6 +1027,7 @@ d3d_install:
 
     ${If}   $g_strWinVersion != "8"   ; On Windows 8 WDDM is mandatory
     ${AndIf} $g_strWinVersion != "8_1" ; ... also on Windows 8.1 / Windows 2012 Server R2
+    ${AndIf} $g_strWinVersion != "10" ; ... also on Windows 10
       StrCpy $g_bWithWDDM "false"
     ${EndIf}
 
@@ -1203,10 +1206,11 @@ Function .onInit
   ${If} $g_bWithWDDM == "true" ; D3D / WDDM support
     !insertmacro SelectSection ${SEC03}
   ${EndIf}
-  ; On Windows 8 / 8.1 / Windows Server 2012 R2 we always select the 3D
+  ; On Windows 8 / 8.1 / Windows Server 2012 R2 and newer we always select the 3D
   ; section and disable it so that it cannot be deselected again
   ${If}   $g_strWinVersion == "8"
   ${OrIf} $g_strWinVersion == "8_1"
+  ${OrIf} $g_strWinVersion == "10"
     IntOp $0 ${SF_SELECTED} | ${SF_RO}
     SectionSetFlags ${SEC03} $0
   ${EndIf}

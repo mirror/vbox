@@ -66,7 +66,8 @@ Function ${un}GetWindowsVersion
   StrCmp $R1 '6.0' lbl_winnt_vista
   StrCmp $R1 '6.1' lbl_winnt_7
   StrCmp $R1 '6.2' lbl_winnt_8
-  StrCmp $R1 '6.3' lbl_winnt_8_1 lbl_error
+  StrCmp $R1 '6.3' lbl_winnt_8_1
+  StrCmp $R1 '6.4' lbl_winnt_10 lbl_error
 
   lbl_winnt_x:
     StrCpy $R0 "NT $R0" 6
@@ -98,6 +99,10 @@ Function ${un}GetWindowsVersion
 
   lbl_winnt_8_1: ; Also includes Windows Server 2012 R2
     Strcpy $R0 '8_1'
+  Goto lbl_done
+
+  lbl_winnt_10:
+    Strcpy $R0 '10'
   Goto lbl_done
 
   lbl_error:
