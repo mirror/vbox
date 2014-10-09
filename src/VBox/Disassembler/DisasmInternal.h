@@ -29,49 +29,52 @@
 
 /** @name Index into g_apfnCalcSize and g_apfnFullDisasm.
  * @{ */
-#define IDX_ParseNop                0
-#define IDX_ParseModRM              1
-#define IDX_UseModRM                2
-#define IDX_ParseImmByte            3
-#define IDX_ParseImmBRel            4
-#define IDX_ParseImmUshort          5
-#define IDX_ParseImmV               6
-#define IDX_ParseImmVRel            7
-#define IDX_ParseImmAddr            8
-#define IDX_ParseFixedReg           9
-#define IDX_ParseImmUlong           10
-#define IDX_ParseImmQword           11
-#define IDX_ParseTwoByteEsc         12
-#define IDX_ParseImmGrpl            13
-#define IDX_ParseShiftGrp2          14
-#define IDX_ParseGrp3               15
-#define IDX_ParseGrp4               16
-#define IDX_ParseGrp5               17
-#define IDX_Parse3DNow              18
-#define IDX_ParseGrp6               19
-#define IDX_ParseGrp7               20
-#define IDX_ParseGrp8               21
-#define IDX_ParseGrp9               22
-#define IDX_ParseGrp10              23
-#define IDX_ParseGrp12              24
-#define IDX_ParseGrp13              25
-#define IDX_ParseGrp14              26
-#define IDX_ParseGrp15              27
-#define IDX_ParseGrp16              28
-#define IDX_ParseModFence           29
-#define IDX_ParseYv                 30
-#define IDX_ParseYb                 31
-#define IDX_ParseXv                 32
-#define IDX_ParseXb                 33
-#define IDX_ParseEscFP              34
-#define IDX_ParseNopPause           35
-#define IDX_ParseImmByteSX          36
-#define IDX_ParseImmZ               37
-#define IDX_ParseThreeByteEsc4      38
-#define IDX_ParseThreeByteEsc5      39
-#define IDX_ParseImmAddrF           40
-#define IDX_ParseInvOpModRM         41
-#define IDX_ParseMax                (IDX_ParseInvOpModRM+1)
+enum IDX_Parse
+{
+  IDX_ParseNop = 0,
+  IDX_ParseModRM,
+  IDX_UseModRM,
+  IDX_ParseImmByte,
+  IDX_ParseImmBRel,
+  IDX_ParseImmUshort,
+  IDX_ParseImmV,
+  IDX_ParseImmVRel,
+  IDX_ParseImmAddr,
+  IDX_ParseFixedReg,
+  IDX_ParseImmUlong,
+  IDX_ParseImmQword,
+  IDX_ParseTwoByteEsc,
+  IDX_ParseImmGrpl,
+  IDX_ParseShiftGrp2,
+  IDX_ParseGrp3,
+  IDX_ParseGrp4,
+  IDX_ParseGrp5,
+  IDX_Parse3DNow,
+  IDX_ParseGrp6,
+  IDX_ParseGrp7,
+  IDX_ParseGrp8,
+  IDX_ParseGrp9,
+  IDX_ParseGrp10,
+  IDX_ParseGrp12,
+  IDX_ParseGrp13,
+  IDX_ParseGrp14,
+  IDX_ParseGrp15,
+  IDX_ParseGrp16,
+  IDX_ParseModFence,
+  IDX_ParseYv,
+  IDX_ParseYb,
+  IDX_ParseXv,
+  IDX_ParseXb,
+  IDX_ParseEscFP,
+  IDX_ParseNopPause,
+  IDX_ParseImmByteSX,
+  IDX_ParseImmZ,
+  IDX_ParseThreeByteEsc4,
+  IDX_ParseThreeByteEsc5,
+  IDX_ParseImmAddrF,
+  IDX_ParseInvOpModRM,
+  IDX_ParseMax
+};
 /** @}  */
 
 
@@ -100,6 +103,9 @@ extern PCDISOPCODE const g_apThreeByteMapX86_660F38[16];
 
 /** Three byte opcode map with prefix 0xF2 (0xF 0x38) */
 extern PCDISOPCODE const g_apThreeByteMapX86_F20F38[16];
+
+/** Three byte opcode map with prefix 0xF3 (0xF 0x38) */
+extern PCDISOPCODE const g_apThreeByteMapX86_F30F38[16];
 
 /** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
 extern PCDISOPCODE const g_apThreeByteMapX86_660F3A[16];

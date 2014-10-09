@@ -812,7 +812,7 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
     if (fRegAddr)
         subtype = (pDis->uAddrMode == DISCPUMODE_64BIT) ? OP_PARM_q : OP_PARM_d;
     else
-    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE)
+    if (subtype == OP_PARM_v || subtype == OP_PARM_NONE || subtype == OP_PARM_y)
     {
         switch (pDis->uOpMode)
         {
@@ -823,7 +823,8 @@ static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOP
             subtype = OP_PARM_q;
             break;
         case DISCPUMODE_16BIT:
-            subtype = OP_PARM_w;
+            if (subtype != OP_PARM_y)
+                subtype = OP_PARM_w;
             break;
         default:
             /* make gcc happy */
@@ -1914,7 +1915,13 @@ static size_t ParseTwoByteEsc(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, 
 
                 /* Cancel prefix changes. */
                 pDis->fPrefix &= ~DISPREFIX_OPSIZE;
-                pDis->uOpMode  = pDis->uCpuMode;
+
+                if (pDis->uCpuMode == DISCPUMODE_64BIT)
+                {
+                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                }
+                else
+                    pDis->uOpMode  = pDis->uCpuMode;
             }
             break;
 
@@ -1980,7 +1987,13 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 
                 /* Cancel prefix changes. */
                 pDis->fPrefix &= ~DISPREFIX_OPSIZE;
-                pDis->uOpMode  = pDis->uCpuMode;
+                if (pDis->uCpuMode == DISCPUMODE_64BIT)
+                {
+                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                }
+                else
+                    pDis->uOpMode  = pDis->uCpuMode;
+
             }
         }
         break;
@@ -2000,6 +2013,21 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
             }
         }
         break;
+
+    case OP_REPE:    /* 0xF3 */
+        if (g_apThreeByteMapX86_F30F38[pDis->bOpCode >> 4])
+        {
+            pOpcode = g_apThreeByteMapX86_F30F38[pDis->bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+
+            if (pOpcode->uOpcode != OP_INVALID)
+            {
+                /* Table entry is valid, so use the extension table. */
+
+                /* Cancel prefix changes. */
+                pDis->fPrefix &= ~DISPREFIX_REP;
+            }
+        }
     }
 
     return disParseInstruction(offInstr, pOpcode, pDis);
@@ -2030,7 +2058,13 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 
             /* Cancel prefix changes. */
             pDis->fPrefix &= ~DISPREFIX_OPSIZE;
-            pDis->uOpMode  = pDis->uCpuMode;
+            if (pDis->uCpuMode == DISCPUMODE_64BIT)
+            {
+                pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+            }
+            else
+                pDis->uOpMode  = pDis->uCpuMode;
+
         }
     }
     else

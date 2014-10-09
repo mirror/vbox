@@ -50,9 +50,9 @@ BEGINPROC   TestProc32
         DB 0xF0, 0x0F, 0x22, 0xC0
         DB 0xF0, 0x0F, 0x20, 0xC0
         smsw  word [edx+16]
-        ;    invept      eax, qword [ecx]
+        ;    invept      eax, dqword [ecx]
         DB          0x66, 0x0F, 0x38, 0x80, 0x1
-        ;    invept      eax, qword [ecx]
+        ;    invept      eax, dqword [ecx]
         DB          0x66, 0x0F, 0x38, 0x81, 0x1
         mov   eax, dword [ecx]
         mov   word [edi], 0123ah
@@ -147,6 +147,49 @@ BEGINPROC   TestProc32
         cvtpi2pd    xmm0, mm3
         paddd       mm1, mm3
         paddd       xmm1, xmm3
+
+%if __YASM_VERSION_ID__ >= 001030000h ; Old yasm doesn't support the instructions below
+        adcx        eax, ebx
+        adcx        eax, [edi]
+
+        adox        eax, ebx
+        adox        eax, [edi]
+        adox        eax, [edi + 1000h]
+
+        tzcnt      ax, bx
+        tzcnt      eax, ebx
+        tzcnt      ax, [edi]
+        tzcnt      eax, [edi]
+        tzcnt      eax, [edi + 1000h]
+%endif
+
+        movbe       eax, [edi]
+        movbe       ebx, [edi + 1000h]
+        movbe       ax, [edi]
+        movbe       [edi], eax
+
+        crc32       eax, bl
+        ;crc32       eax, bx
+        crc32       eax, ebx
+        crc32       eax, byte [edi]
+        ;crc32       eax, word [edi]
+        crc32       eax, dword [edi]
+
+        popcnt      ax, bx
+        popcnt      eax, ebx
+        popcnt      ax, [edi]
+        popcnt      eax, [edi]
+        popcnt      eax, [edi + 1000h]
+
+        lzcnt      ax, bx
+        lzcnt      eax, ebx
+        lzcnt      ax, [edi]
+        lzcnt      eax, [edi]
+        lzcnt      eax, [edi + 1000h]
+
+        vmread     eax, ebx
+        vmwrite    eax, ebx
+
 ENDPROC   TestProc32
 
 
@@ -163,13 +206,13 @@ BEGINPROC TestProc64
         mov rax, [0xfffe0080]
         mov rbx, [0xfffe0080]
         divsd xmm1, xmm0
-        ;    invept      rdi, qword [rsi]
+        ;    invept      rdi, dqword [rsi]
         DB          0x66, 0x0F, 0x38, 0x80, 0x3E
-        ;    invept      rcx, qword [rdx]
+        ;    invept      rcx, dqword [rdx]
         DB          0x66, 0x0F, 0x38, 0x80, 0xA
-        ;invvpid     rdi, qword [rsi]
+        ;invvpid     rdi, dqword [rsi]
         DB          0x66, 0x0F, 0x38, 0x81, 0x3E
-        ;    invvpid     rcx, qword [rdx]
+        ;    invvpid     rcx, dqword [rdx]
         DB          0x66, 0x0F, 0x38, 0x81, 0xA
         mov   rdi, [rsi]
         mov   rcx, [rdx]
@@ -232,6 +275,67 @@ BEGINPROC TestProc64
 
         movss xmm0, xmm14
         movsd xmm6, xmm1
+
+        movbe   eax, [rdi]
+        movbe   ax, [rdi]
+        movbe   rax, [rdi]
+
+        crc32       eax, bl
+        ;crc32       eax, bx
+        crc32       eax, ebx
+        crc32       eax, byte [edi]
+        ;crc32       eax, word [edi]
+        crc32       eax, dword [edi]
+
+        crc32       rax, bl
+        crc32       rax, byte [rdi]
+        crc32       rax, qword [rdi]
+
+%if __YASM_VERSION_ID__ >= 001030000h ; Old yasm doesn't support the instructions below
+
+        adcx    eax, ebx
+        adcx    rax, rbx
+        adcx    r8, r11
+        adcx    r8d, edx
+
+        adox    eax, ebx
+        adox    eax, [edi]
+        adox    eax, [edi + 1000h]
+
+        adox    rax, rbx
+        adox    rax, [rdi]
+        adox    rax, [rdi + 1000h]
+        adox    rax, [edi + 1000h]
+
+        tzcnt      ax, bx
+        tzcnt      eax, ebx
+        tzcnt      rax, rbx
+        tzcnt      ax, [edi]
+        tzcnt      eax, [edi]
+        tzcnt      eax, [edi + 1000h]
+%endif
+
+        popcnt      ax, bx
+        popcnt      eax, ebx
+        popcnt      rax, rbx
+        popcnt      ax, [edi]
+        popcnt      eax, [edi]
+        popcnt      eax, [edi + 1000h]
+        popcnt      rax, [rdi + 1000h]
+
+        lzcnt      ax, bx
+        lzcnt      eax, ebx
+        lzcnt      rax, rbx
+        lzcnt      ax, [edi]
+        lzcnt      eax, [edi]
+        lzcnt      eax, [edi + 1000h]
+        lzcnt      eax, [rdi]
+        lzcnt      ax, [rdi]
+        lzcnt      rax, [rdi]
+        lzcnt      r8d, [rdi]
+
+        vmread     rax, rbx
+        vmwrite    rax, rbx
 
         ret
 ENDPROC   TestProc64
