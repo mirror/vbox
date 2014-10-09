@@ -663,7 +663,9 @@ void UIVMInfoDialog::refreshStatistics()
         for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
         {
             QString strLabel(tr("Screen Resolution"));
-            strLabel += QString(" %1").arg(iScreen + 1);
+            /* The screen number makes sense only if there are multiple monitors in the guest: */
+            if (cGuestScreens > 1)
+                strLabel += QString(" %1").arg(iScreen + 1);
             strResult += formatValue(strLabel, aResolutions[iScreen], iMaxLength);
         }
         strResult += formatValue(tr("VM Uptime"), strUptime, iMaxLength);
