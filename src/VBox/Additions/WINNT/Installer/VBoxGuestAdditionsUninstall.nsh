@@ -86,6 +86,7 @@ Function ${un}Uninstall
   StrCmp $g_strWinVersion "7" vista     ; Windows 7
   StrCmp $g_strWinVersion "8" vista     ; Windows 8
   StrCmp $g_strWinVersion "8_1" vista   ; Windows 8.1 / Windows Server 2012 R2
+  StrCmp $g_strWinVersion "10" vista    ; Windows 10
 
   ${If} $g_bForceInstall == "true"
     Goto vista ; Assume newer OS than we know of ...
@@ -145,6 +146,7 @@ Function ${un}UninstallInstDir
   StrCmp $g_strWinVersion "7" vista     ; Windows 7
   StrCmp $g_strWinVersion "8" vista     ; Windows 8
   StrCmp $g_strWinVersion "8_1" vista   ; Windows 8.1 / Windows Server 2012 R2
+  StrCmp $g_strWinVersion "10" vista    ; Windows 10
 
   ${If} $g_bForceInstall == "true"
     Goto vista ; Assume newer OS than we know of ...

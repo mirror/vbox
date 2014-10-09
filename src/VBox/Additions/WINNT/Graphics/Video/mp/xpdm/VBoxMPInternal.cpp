@@ -426,7 +426,7 @@ static int VBoxVbvaCreateChannelContexts(PVBOXMP_COMMON pCommon, VBVA_CHANNELCON
     VBVA_CHANNELCONTEXTS *pContext = (VBVA_CHANNELCONTEXTS*) VBoxMPMemAllocDriver(pCommon, size);
     if (pContext)
     {
-        VideoPortZeroMemory(pContext, size);
+        VideoPortZeroMemory(pContext, (ULONG)size);
         pContext->cContexts = cDisplays;
         pContext->pCommon = pCommon;
         *ppContext = pContext;

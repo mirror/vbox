@@ -87,14 +87,15 @@ RT_C_DECLS_END
 /*Windows version identifier*/
 typedef enum
 {
-    UNKNOWN_WINVERSION = 0,
-    WINNT4    = 1,
-    WIN2K     = 2,
-    WINXP     = 3,
-    WINVISTA  = 4,
-    WIN7      = 5,
-    WIN8      = 6,
-    WIN81     = 7
+    WINVERSION_UNKNOWN = 0,
+    WINVERSION_NT4     = 1,
+    WINVERSION_2K      = 2,
+    WINVERSION_XP      = 3,
+    WINVERSION_VISTA   = 4,
+    WINVERSION_7       = 5,
+    WINVERSION_8       = 6,
+    WINVERSION_81      = 7,
+    WINVERSION_10      = 8
 } vboxWinVersion_t;
 
 RT_C_DECLS_BEGIN

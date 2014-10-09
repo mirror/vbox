@@ -7430,7 +7430,7 @@ DriverEntry(
         }
         else if (major == 6)
         {
-            if (minor > 3)
+            if (minor > 4)
             {
                 WARN(("Unknow win version, newer minor release, assuming 3D check is required"));
                 f3DRequired = TRUE;

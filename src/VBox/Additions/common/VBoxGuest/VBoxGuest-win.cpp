@@ -130,6 +130,9 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 case 3:
                     g_enmVbgdNtVer = VBGDNTVER_WIN81;
                     break;
+                case 4:
+                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
+                    break;
                 default:
                     LogRelFunc(("Unknown version of Windows (%u.%u), refusing!\n", ulMajorVer, ulMinorVer));
                     rc = STATUS_DRIVER_UNABLE_TO_LOAD;
@@ -1307,6 +1310,14 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
             enmOsType = VBOXOSTYPE_Win81_x64;
 #else
             enmOsType = VBOXOSTYPE_Win81;
+#endif
+            break;
+
+        case VBGDNTVER_WIN10:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_Win10_x64;
+#else
+            enmOsType = VBOXOSTYPE_Win10;
 #endif
             break;
 
