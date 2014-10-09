@@ -216,6 +216,7 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
                 case kRTWinOSType_7:            strcpy(szTmp, "Windows 7"); break;
                 case kRTWinOSType_8:            strcpy(szTmp, "Windows 8"); break;
                 case kRTWinOSType_81:           strcpy(szTmp, "Windows 8.1"); break;
+                case kRTWinOSType_10:           strcpy(szTmp, "Windows 10"); break;
 
                 case kRTWinOSType_NT_UNKNOWN:
                     RTStrPrintf(szTmp, sizeof(szTmp), "Unknown NT v%u.%u",
