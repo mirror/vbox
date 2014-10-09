@@ -40,6 +40,7 @@ typedef enum RTWINOSTYPE
     kRTWinOSType_7,
     kRTWinOSType_8,
     kRTWinOSType_81,
+    kRTWinOSType_10,
     kRTWinOSType_NT_UNKNOWN = 199,
     kRTWinOSType_NT_LAST    = kRTWinOSType_UNKNOWN
 } RTWINOSTYPE;
