@@ -3522,7 +3522,7 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
         int rc = supHardenedWinVerifyProcess(pThis->hProcess, pThis->hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION,
                                              g_fSupAdversaries & (  SUPHARDNT_ADVERSARY_TRENDMICRO_SAKFILE
                                                                   | SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN)
-                                             ? SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO : 0,
+                                             ? SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW : 0,
                                              &cFixes, RTErrInfoInitStatic(&g_ErrInfoStatic));
         if (RT_FAILURE(rc))
             supR3HardenedWinKillChild(pThis, "supR3HardNtChildPurify", rc,
