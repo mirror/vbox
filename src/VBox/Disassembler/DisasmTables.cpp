@@ -1296,7 +1296,7 @@ const DISOPCODE g_aThreeByteMapX86_0F38_F[16] =
     /* F */
     OP("movbe %Gy,%My",          IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVBEGM,     OP_PARM_Gy,          OP_PARM_My,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movbe %My,%Gy",          IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVBEMG,     OP_PARM_My,          OP_PARM_Gy,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE,    
+    INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -1557,6 +1557,43 @@ PCDISOPCODE const g_apThreeByteMapX86_F20F38[16] =
     NULL,
     /* f */
     &g_aThreeByteMapX86_F20F38_F[0],
+};
+
+/** Three byte opcode map with prefixes 0x66 0xF2 (0xF 0x38) */
+PCDISOPCODE const g_apThreeByteMapX86_66F20F38[16] =
+{
+    /* 0 */
+    NULL,
+    /* 1 */
+    NULL,
+    /* 2 */
+    NULL,
+    /* 3 */
+    NULL,
+    /* 4 */
+    NULL,
+    /* 5 */
+    NULL,
+    /* 6 */
+    NULL,
+    /* 7 */
+    NULL,
+    /* 8 */
+    NULL,
+    /* 9 */
+    NULL,
+    /* a */
+    NULL,
+    /* b */
+    NULL,
+    /* c */
+    NULL,
+    /* d */
+    NULL,
+    /* e */
+    NULL,
+    /* f */
+    &g_aThreeByteMapX86_66F20F38_F[0],
 };
 
 const DISOPCODE g_aThreeByteMapX86_F30F38_F[16] =

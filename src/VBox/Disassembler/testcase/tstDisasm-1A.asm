@@ -169,10 +169,10 @@ BEGINPROC   TestProc32
         movbe       [edi], eax
 
         crc32       eax, bl
-        ;crc32       eax, bx
+        crc32       eax, bx
         crc32       eax, ebx
         crc32       eax, byte [edi]
-        ;crc32       eax, word [edi]
+        crc32       eax, word [edi]
         crc32       eax, dword [edi]
 
         popcnt      ax, bx
@@ -281,10 +281,10 @@ BEGINPROC TestProc64
         movbe   rax, [rdi]
 
         crc32       eax, bl
-        ;crc32       eax, bx
+        crc32       eax, bx
         crc32       eax, ebx
         crc32       eax, byte [edi]
-        ;crc32       eax, word [edi]
+        crc32       eax, word [edi]
         crc32       eax, dword [edi]
 
         crc32       rax, bl

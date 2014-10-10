@@ -1999,7 +1999,28 @@ static size_t ParseThreeByteEsc4(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
         break;
 
     case OP_REPNE:   /* 0xF2 */
-        if (g_apThreeByteMapX86_F20F38[pDis->bOpCode >> 4])
+        if ((pDis->fPrefix & DISPREFIX_OPSIZE) && g_apThreeByteMapX86_66F20F38[pDis->bOpCode >> 4])
+        {
+        /* 0x66F2 */
+            pOpcode = g_apThreeByteMapX86_66F20F38[pDis->bOpCode >> 4];
+            pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+
+            if (pOpcode->uOpcode != OP_INVALID)
+            {
+                /* Table entry is valid, so use the extension table. */
+
+                /* Cancel prefix changes. */
+                pDis->fPrefix &= ~DISPREFIX_REPNE;
+                pDis->fPrefix &= ~DISPREFIX_OPSIZE;
+                if (pDis->uCpuMode == DISCPUMODE_64BIT)
+                {
+                    pDis->uOpMode = (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W ? DISCPUMODE_64BIT : DISCPUMODE_32BIT);
+                }
+                else
+                    pDis->uOpMode  = pDis->uCpuMode;
+            }
+        }
+        else if (g_apThreeByteMapX86_F20F38[pDis->bOpCode >> 4])
         {
             pOpcode = g_apThreeByteMapX86_F20F38[pDis->bOpCode >> 4];
             pOpcode = &pOpcode[pDis->bOpCode & 0xf];
