@@ -39,6 +39,12 @@ class UIMachineView;
 class UIDockIconPreview;
 class CSession;
 class CMachine;
+class CConsole;
+class CDisplay;
+class CGuest;
+class CMouse;
+class CKeyboard;
+class CMachineDebugger;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
@@ -80,7 +86,27 @@ public:
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
     UIActionPool* actionPool() const;
+
+    /** Returns the session reference. */
     CSession& session() const;
+    /** Returns the session's machine reference. */
+    CMachine& machine() const;
+    /** Returns the session's console reference. */
+    CConsole& console() const;
+    /** Returns the console's display reference. */
+    CDisplay& display() const;
+    /** Returns the console's guest reference. */
+    CGuest& guest() const;
+    /** Returns the console's mouse reference. */
+    CMouse& mouse() const;
+    /** Returns the console's keyboard reference. */
+    CKeyboard& keyboard() const;
+    /** Returns the console's debugger reference. */
+    CMachineDebugger& debugger() const;
+
+    /** Returns the machine name. */
+    const QString& machineName() const;
+
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
     UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
