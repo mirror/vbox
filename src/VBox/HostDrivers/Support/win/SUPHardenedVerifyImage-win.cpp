@@ -2309,6 +2309,7 @@ static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszNa
     /*
      * On Windows 8.0 and later there are more than one digest choice.
      */
+    int fNoSignedCatalogFound = -1;
     rc = VERR_LDRVI_NOT_SIGNED;
     static struct
     {
@@ -2401,10 +2402,15 @@ l_fresh_context:
                                     g_pfnCryptCATAdminReleaseContext(hCatAdmin, 0 /*dwFlags*/);
                                     goto l_fresh_context;
                                 }
+                                ULONG ulErr = RtlGetLastWin32Error();
+                                fNoSignedCatalogFound = ulErr == ERROR_NOT_FOUND && fNoSignedCatalogFound != 0;
                                 if (iCat == 0)
-                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", RtlGetLastWin32Error()));
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed ERRROR_NOT_FOUND (%u)\n", ulErr));
+                                else if (iCat == 0)
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", ulErr));
                                 break;
                             }
+                            fNoSignedCatalogFound = 0;
                             Assert(hCatInfoPrev == NULL);
                             hCatInfoPrev = hCatInfo;
 
@@ -2513,25 +2519,37 @@ l_fresh_context:
      */
     if (rc == VERR_LDRVI_NOT_SIGNED)
     {
-        PCRTUTF16 pwsz;
-        uint32_t cwcName = (uint32_t)RTUtf16Len(pwszName);
-        uint32_t cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR);
+        bool        fCoreSystemDll = false;
+        PCRTUTF16   pwsz;
+        uint32_t    cwcName  = (uint32_t)RTUtf16Len(pwszName);
+        uint32_t    cwcOther = g_System32NtPath.UniStr.Length / sizeof(WCHAR);
         if (supHardViUtf16PathStartsWithEx(pwszName, cwcName, g_System32NtPath.UniStr.Buffer, cwcOther, true /*fCheckSlash*/))
         {
             pwsz = pwszName + cwcOther + 1;
             if (   supHardViUtf16PathIsEqual(pwsz, "uxtheme.dll")
                 || supHardViUtf16PathIsEqual(pwsz, "user32.dll")
                 || supHardViUtf16PathIsEqual(pwsz, "gdi32.dll")
-                || supHardViUtf16PathIsEqual(pwsz, "kernel32.dll")
-                || supHardViUtf16PathIsEqual(pwsz, "KernelBase.dll")
-                || supHardViUtf16PathIsEqual(pwsz, "ntdll.dll")
                 || supHardViUtf16PathIsEqual(pwsz, "opengl32.dll")
+                || (fCoreSystemDll = supHardViUtf16PathIsEqual(pwsz, "KernelBase.dll"))
+                || (fCoreSystemDll = supHardViUtf16PathIsEqual(pwsz, "kernel32.dll"))
+                || (fCoreSystemDll = supHardViUtf16PathIsEqual(pwsz, "ntdll.dll"))
                 )
             {
                 if (RTErrInfoIsSet(pErrInfo))
                     RTErrInfoAdd(pErrInfo, rc, "\n");
                 RTErrInfoAddF(pErrInfo, rc, "'%ls' is most likely modified.", pwszName);
             }
+        }
+
+        /* Kludge for ancient windows versions we don't want to support but
+           users still wants to use.  Keep things as safe as possible without
+           unnecessary effort.  Problem is that 3rd party catalog files cannot
+           easily be found.  Showstopper for ATI users. */
+        if (   fNoSignedCatalogFound == 1
+            && g_uNtVerCombined < SUP_NT_VER_VISTA
+            && !fCoreSystemDll)
+        {
+            rc = VINF_LDRVI_NOT_SIGNED;
         }
     }
 

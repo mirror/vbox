@@ -220,18 +220,23 @@ extern PFNNTQUERYVIRTUALMEMORY g_pfnNtQueryVirtualMemory;
 #define SUP_MAKE_NT_VER_SIMPLE(a_uMajor, a_uMinor) SUP_MAKE_NT_VER_COMBINED(a_uMajor, a_uMinor, 0, 0, 0)
 extern uint32_t         g_uNtVerCombined;
 
+/** @name NT version constants for less-than checks.
+ * @{ */
 /** Combined NT version number for XP. */
 #define SUP_NT_VER_XP       SUP_MAKE_NT_VER_SIMPLE(5,1)
 /** Combined NT version number for Windows server 2003 & XP64. */
 #define SUP_NT_VER_W2K3     SUP_MAKE_NT_VER_SIMPLE(5,2)
 /** Combined NT version number for Vista. */
 #define SUP_NT_VER_VISTA    SUP_MAKE_NT_VER_SIMPLE(6,0)
+/** Combined NT version number for Vista with SP1. */
+#define SUP_NT_VER_VISTA_SP1 SUP_MAKE_NT_VER_COMBINED(6,0,6001,1,0)
 /** Combined NT version number for Windows 7. */
 #define SUP_NT_VER_W70      SUP_MAKE_NT_VER_SIMPLE(6,1)
 /** Combined NT version number for Windows 8.0. */
 #define SUP_NT_VER_W80      SUP_MAKE_NT_VER_SIMPLE(6,2)
 /** Combined NT version number for Windows 8.1. */
 #define SUP_NT_VER_W81      SUP_MAKE_NT_VER_SIMPLE(6,3)
+/** @} */
 
 # endif
 
