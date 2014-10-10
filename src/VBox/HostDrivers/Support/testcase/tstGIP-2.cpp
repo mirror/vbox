@@ -159,18 +159,28 @@ int main(int argc, char **argv)
                         /* nop */;
             }
 
-            /* Display TSC deltas. */
+            /*
+             * Display TSC deltas.
+             *
+             * First iterative over the APIC ID array to get mostly consistent CPUID to APIC ID mapping.
+             * Then iterate over the offline CPUs. It is possible that there's a race between the online/offline
+             * states between the two iterations, but that cannot be helped from ring-3 anyway and not a biggie.
+             */
             RTPrintf("tstGIP-2: TSC deltas:\n");
-            RTPrintf("tstGIP-2: idApic: i64TSCDelta\n");
+            RTPrintf("tstGIP-2:  idApic: i64TSCDelta\n");
             for (unsigned i = 0; i < RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId); i++)
             {
                 uint16_t iCpu = g_pSUPGlobalInfoPage->aiCpuFromApicId[i];
                 if (iCpu != UINT16_MAX)
                 {
-                    RTPrintf("tstGIP-2: %6d: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic,
+                    RTPrintf("tstGIP-2: %7d: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic,
                              g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
                 }
             }
+
+            for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
+                if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
+                    RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
         }
         else
         {
