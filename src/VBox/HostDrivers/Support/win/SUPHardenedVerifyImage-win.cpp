@@ -1943,11 +1943,6 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(void)
     RESOLVE_CRYPT32_API(CertEnumCertificatesInStore, PFNCERTENUMCERTIFICATESINSTORE);
 #undef RESOLVE_CRYPT32_API
 
-#ifndef IN_SUP_HARDENED_R3 /** @todo don't ship this in the final build! */
-    volatile uint8_t abDebugHint1[4096] = { 0 };
-    volatile uint8_t abDebugHint2[4096] = { 0 };
-#endif
-
     /*
      * Open the root store and look for the certificates we wish to use.
      */
@@ -1969,16 +1964,6 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(void)
                 RTAsn1CursorInitPrimary(&PrimaryCursor, pCurCtx->pbCertEncoded, pCurCtx->cbCertEncoded,
                                         RTErrInfoInitStatic(&StaticErrInfo),
                                         &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, "CurCtx");
-#ifndef IN_SUP_HARDENED_R3 /** @todo don't ship this in the final build! */
-                memcpy((void *)&abDebugHint2[0], (void *)&abDebugHint2[0], sizeof(abDebugHint2));
-                memset((void *)&abDebugHint1[0], 0, sizeof(abDebugHint1));
-                memcpy((void *)&abDebugHint1[0], pCurCtx->pbCertEncoded, RT_MIN(pCurCtx->cbCertEncoded, sizeof(abDebugHint1)));
-                abDebugHint1[8] ^= 0x55; abDebugHint1[8] ^= 0x55; abDebugHint1[1999] ^= 0xcc; abDebugHint1[1999] ^= 0xcc;
-                abDebugHint2[8] ^= 0x55; abDebugHint2[8] ^= 0x55; abDebugHint2[1999] ^= 0xcc; abDebugHint2[1999] ^= 0xcc;
-                RTAsn1CursorInitPrimary(&PrimaryCursor, pCurCtx->pbCertEncoded, pCurCtx->cbCertEncoded,
-                                        RTErrInfoInitStatic(&StaticErrInfo),
-                                        &g_RTAsn1EFenceAllocator, RTASN1CURSOR_FLAGS_DER, "CurCtx");
-#endif
                 RTCRX509CERTIFICATE MyCert;
                 int rc = RTCrX509Certificate_DecodeAsn1(&PrimaryCursor.Cursor, 0, &MyCert, "Cert");
                 if (RT_SUCCESS(rc))
@@ -2002,19 +1987,11 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(void)
                    Ignore these failures and certificates. */
                 else if (rc != VERR_ASN1_INVALID_UTC_TIME_ENCODING)
                     AssertMsgFailed(("RTCrX509Certificate_DecodeAsn1 failed: rc=%#x: %s\n", rc, StaticErrInfo.szMsg));
-#ifndef IN_SUP_HARDENED_R3 /** @todo don't ship this in the final build! */
-                abDebugHint1[999] ^= 0x63; abDebugHint1[999] ^= 0x63;
-                abDebugHint2[999] ^= 0x63; abDebugHint2[999] ^= 0x63;
-#endif
             }
         }
         pfnCertCloseStore(hStore, CERT_CLOSE_STORE_CHECK_FLAG);
         g_fHaveOtherRoots = true;
     }
-#ifndef IN_SUP_HARDENED_R3 /** @todo don't ship this in the final build! */
-    abDebugHint1[2048] ^= 0x88; abDebugHint1[2048] ^= 0x88;
-    abDebugHint2[2048] ^= 0x88; abDebugHint2[2048] ^= 0x88;
-#endif
     SUP_DPRINTF(("supR3HardenedWinRetrieveTrustedRootCAs: cAdded=%u\n", cAdded));
 }
 
