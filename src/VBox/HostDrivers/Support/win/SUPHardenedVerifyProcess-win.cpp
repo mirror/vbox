@@ -1522,6 +1522,9 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                             rcNt = NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);
                             if (NT_SUCCESS(rcNt))
                             {
+                                pvFree = MemInfo.BaseAddress; cbFree = MemInfo.RegionSize;              /* fudge */
+                                NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);    /* fudge */
+
                                 pvFree = MemInfo.BaseAddress;
                                 cbFree = MemInfo.RegionSize;
                                 rcNt = NtAllocateVirtualMemory(pThis->hProcess, &pvFree, 0, &cbFree, MEM_COMMIT, PAGE_READWRITE);
