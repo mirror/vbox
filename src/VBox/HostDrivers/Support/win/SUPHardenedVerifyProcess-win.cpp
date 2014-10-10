@@ -1492,7 +1492,9 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                  */
                 if (MemInfo.Type == MEM_PRIVATE)
                 {
-                    SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Freeing exec mem at %p (%p LB %#zx)\n",
+                    SUP_DPRINTF((pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO
+                                 ? "supHardNtVpScanVirtualMemory: Replacing exec mem at %p (%p LB %#zx)\n"
+                                 : "supHardNtVpScanVirtualMemory: Freeing exec mem at %p (%p LB %#zx)\n",
                                  uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize));
                     PVOID   pvFree = MemInfo.BaseAddress;
                     SIZE_T  cbFree = MemInfo.RegionSize;
