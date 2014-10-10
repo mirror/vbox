@@ -32,8 +32,9 @@
 #include "CMachine.h"
 #include "CConsole.h"
 #include "CDisplay.h"
-#include "CMouse.h"
 #include "CGuest.h"
+#include "CMouse.h"
+#include "CKeyboard.h"
 #include "CMachineDebugger.h"
 
 /* Forward declarations: */
@@ -102,10 +103,12 @@ public:
     CConsole& console() { return m_console; }
     /** Returns the console's display instance. */
     CDisplay& display() { return m_display; }
-    /** Returns the console's mouse instance. */
-    CMouse& mouse() { return m_mouse; }
     /** Returns the console's guest instance. */
     CGuest& guest() { return m_guest; }
+    /** Returns the console's mouse instance. */
+    CMouse& mouse() { return m_mouse; }
+    /** Returns the console's keyboard instance. */
+    CKeyboard& keyboard() { return m_keyboard; }
     /** Returns the console's debugger instance. */
     CMachineDebugger& debugger() { return m_debugger; }
 
@@ -384,10 +387,12 @@ private:
     CConsole m_console;
     /** Holds the console's display instance. */
     CDisplay m_display;
-    /** Holds the console's mouse instance. */
-    CMouse m_mouse;
     /** Holds the console's guest instance. */
     CGuest m_guest;
+    /** Holds the console's mouse instance. */
+    CMouse m_mouse;
+    /** Holds the console's keyboard instance. */
+    CKeyboard m_keyboard;
     /** Holds the console's debugger instance. */
     CMachineDebugger m_debugger;
 

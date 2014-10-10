@@ -980,14 +980,19 @@ bool UISession::prepareSession()
     if (m_display.isNull())
         return false;
 
+    /* Get guest: */
+    m_guest = m_console.GetGuest();
+    if (m_guest.isNull())
+        return false;
+
     /* Get mouse: */
     m_mouse = m_console.GetMouse();
     if (m_mouse.isNull())
         return false;
 
-    /* Get guest: */
-    m_guest = m_console.GetGuest();
-    if (m_guest.isNull())
+    /* Get keyboard: */
+    m_keyboard = m_console.GetKeyboard();
+    if (m_keyboard.isNull())
         return false;
 
     /* Get debugger: */
@@ -1361,13 +1366,17 @@ void UISession::cleanupSession()
     if (!m_debugger.isNull())
         m_debugger.detach();
 
-    /* Detach guest: */
-    if (!m_guest.isNull())
-        m_guest.detach();
+    /* Detach keyboard: */
+    if (!m_keyboard.isNull())
+        m_keyboard.detach();
 
     /* Detach mouse: */
     if (!m_mouse.isNull())
         m_mouse.detach();
+
+    /* Detach guest: */
+    if (!m_guest.isNull())
+        m_guest.detach();
 
     /* Detach display: */
     if (!m_display.isNull())
