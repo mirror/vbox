@@ -128,6 +128,8 @@ typedef struct SUPHNTVPSTATE
 {
     /** Type of verification to perform. */
     SUPHARDNTVPKIND         enmKind;
+    /** Combination of SUPHARDNTVP_F_XXX. */
+    uint32_t                fFlags;
     /** The result. */
     int                     rcResult;
     /** Number of fixes we've done.
@@ -1499,6 +1501,23 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                         supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
                                             "NtFreeVirtualMemory (%p LB %#zx) failed: %#x",
                                             MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
+                    /* The Trend Micro sakfile.sys BSOD kludge. */
+                    if (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO)
+                    {
+                        pvFree = MemInfo.BaseAddress;
+                        cbFree = MemInfo.RegionSize;
+                        rcNt = NtAllocateVirtualMemory(pThis->hProcess, &pvFree, 0, &cbFree, MEM_COMMIT, PAGE_READWRITE);
+                        if (!NT_SUCCESS(rcNt))
+                            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
+                                                "NtAllocateVirtualMemory (%p LB %#zx) failed with rcNt=%#x allocating "
+                                                "replacement memory for working around buggy protection software. "
+                                                "See VBoxStartup.log for more details",
+                                                MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
+                        if (pvFree != MemInfo.BaseAddress)
+                            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
+                                                "We wanted NtAllocateVirtualMemory to get us %p LB %#zx, but it returned %p LB %#zx.",
+                                                MemInfo.BaseAddress, MemInfo.RegionSize, pvFree, cbFree, rcNt);
+                    }
                 }
                 /*
                  * Unmap mapped memory, failing that, drop exec privileges.
@@ -2123,11 +2142,12 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis, HANDLE hProcess)
  * @param   hProcess            The process to verify.
  * @param   hThread             A thread in the process (the caller).
  * @param   enmKind             The kind of process verification to perform.
+ * @param   fFlags              Valid combination of SUPHARDNTVP_F_XXX flags.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  * @param   pcFixes             Where to return the number of fixes made during
  *                              purification.  Optional.
  */
-DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind,
+DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, uint32_t fFlags,
                                             uint32_t *pcFixes, PRTERRINFO pErrInfo)
 {
     if (pcFixes)
@@ -2151,6 +2171,7 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
         if (pThis)
         {
             pThis->enmKind  = enmKind;
+            pThis->fFlags   = fFlags;
             pThis->rcResult = VINF_SUCCESS;
             pThis->hProcess = hProcess;
             pThis->pErrInfo = pErrInfo;

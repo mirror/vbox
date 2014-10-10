@@ -53,7 +53,25 @@ typedef enum SUPHARDNTVPKIND
     SUPHARDNTVPKIND_SELF_PURIFICATION,
     SUPHARDNTVPKIND_32BIT_HACK = 0x7fffffff
 } SUPHARDNTVPKIND;
-DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind,
+/** @name SUPHARDNTVP_F_XXX - Flags for supHardenedWinVerifyProcess
+ * @{ */
+/** Replace unwanted executable memory allocations with a new one that's filled
+ * with zeros (default is just to free it).
+ *
+ * This is one way we attempt to work around buggy protection software that
+ * either result in host BSOD or VBox application malfunction.  Here the current
+ * shit list:
+ *  - Trend Micro's data protection software includes a buggy driver called
+ *    sakfile.sys that has been observed crashing accessing user memory that we
+ *    probably freed.  I'd love to report this to Trend Micro, but unfortunately
+ *    they doesn't advertise (or have?) an email address for reporting security
+ *    vulnerabilities in the their software.  Having wasted time looking and not
+ *    very sorry for having to disclosing the bug here.
+ *  - Maybe one more.
+ */
+#define SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO          RT_BIT_32(0)
+/** @} */
+DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, uint32_t fFlags,
                                                 uint32_t *pcFixes, PRTERRINFO pErrInfo);
 DECLHIDDEN(int)     supHardNtVpThread(HANDLE hProcess, HANDLE hThread, PRTERRINFO pErrInfo);
 DECLHIDDEN(int)     supHardNtVpDebugger(HANDLE hProcess, PRTERRINFO pErrInfo);
