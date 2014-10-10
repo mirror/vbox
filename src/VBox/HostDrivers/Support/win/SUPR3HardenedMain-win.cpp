@@ -3829,22 +3829,28 @@ static void supR3HardNtChildGatherData(PSUPR3HARDNTCHILD pThis)
      */
     if (pThis->iWhich > 1)
     {
-        OBJECT_ATTRIBUTES ObjAttr;
-        InitializeObjectAttributes(&ObjAttr, NULL, 0, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-
-        CLIENT_ID ClientId;
-        ClientId.UniqueProcess = (HANDLE)pThis->BasicInfo.InheritedFromUniqueProcessId;
-        ClientId.UniqueThread  = NULL;
-
-        rcNt = NtOpenProcess(&pThis->hParent, SYNCHRONIZE | PROCESS_QUERY_INFORMATION, &ObjAttr, &ClientId);
-#ifdef DEBUG
-        SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
-#endif
-        if (!NT_SUCCESS(rcNt))
+        PROCESS_BASIC_INFORMATION SelfInfo;
+        rcNt = NtQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &SelfInfo, sizeof(SelfInfo), &cbActual);
+        if (NT_SUCCESS(rcNt))
         {
-            pThis->hParent = NULL;
-            SUP_DPRINTF(("supR3HardNtChildGatherData: Failed to open parent process (%#p): %#x\n", ClientId.UniqueProcess, rcNt));
+            OBJECT_ATTRIBUTES ObjAttr;
+            InitializeObjectAttributes(&ObjAttr, NULL, 0, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+
+            CLIENT_ID ClientId;
+            ClientId.UniqueProcess = (HANDLE)SelfInfo.InheritedFromUniqueProcessId;
+            ClientId.UniqueThread  = NULL;
+
+            rcNt = NtOpenProcess(&pThis->hParent, SYNCHRONIZE | PROCESS_QUERY_INFORMATION, &ObjAttr, &ClientId);
+#ifdef DEBUG
+            SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
+#endif
+            if (!NT_SUCCESS(rcNt))
+            {
+                pThis->hParent = NULL;
+                SUP_DPRINTF(("supR3HardNtChildGatherData: Failed to open parent process (%#p): %#x\n", ClientId.UniqueProcess, rcNt));
+            }
         }
+
     }
 
     /*
