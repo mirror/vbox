@@ -56,7 +56,7 @@ typedef enum SUPHARDNTVPKIND
 /** @name SUPHARDNTVP_F_XXX - Flags for supHardenedWinVerifyProcess
  * @{ */
 /** Replace unwanted executable memory allocations with a new one that's filled
- * with zeros (default is just to free it).
+ * with a safe read-write copy (default is just to free it).
  *
  * This is one way we attempt to work around buggy protection software that
  * either result in host BSOD or VBox application malfunction.  Here the current
@@ -69,7 +69,7 @@ typedef enum SUPHARDNTVPKIND
  *    very sorry for having to disclosing the bug here.
  *  - Maybe one more.
  */
-#define SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO          RT_BIT_32(0)
+#define SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW        RT_BIT_32(0)
 /** @} */
 DECLHIDDEN(int)     supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUPHARDNTVPKIND enmKind, uint32_t fFlags,
                                                 uint32_t *pcFixes, PRTERRINFO pErrInfo);
