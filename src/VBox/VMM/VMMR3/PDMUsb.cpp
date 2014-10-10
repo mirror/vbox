@@ -120,7 +120,7 @@ int pdmR3UsbRegisterHub(PVM pVM, PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_
         LogRel(("pdmR3UsbRegisterHub: fClass=%#x expected %#x to be set\n", pDrvIns->pReg->fClass, PDM_DRVREG_CLASS_USB));
         return VERR_INVALID_PARAMETER;
     }
-    AssertMsgReturn(!(fVersions & ~(VUSB_STDVER_11 | VUSB_STDVER_20)), ("%#x\n", fVersions), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fVersions & ~(VUSB_STDVER_11 | VUSB_STDVER_20 | VUSB_STDVER_30)), ("%#x\n", fVersions), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppUsbHubHlp, VERR_INVALID_POINTER);
     AssertPtrReturn(pUsbHubReg, VERR_INVALID_POINTER);
     AssertReturn(pUsbHubReg->u32Version == PDM_USBHUBREG_VERSION, VERR_INVALID_MAGIC);
@@ -962,7 +962,8 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
-    AssertReturn(    iUsbVersion == VUSB_STDVER_20
+    AssertReturn(    iUsbVersion == VUSB_STDVER_30
+                 ||  iUsbVersion == VUSB_STDVER_20
                  ||  iUsbVersion == VUSB_STDVER_11, VERR_INVALID_PARAMETER);
 
     /*
