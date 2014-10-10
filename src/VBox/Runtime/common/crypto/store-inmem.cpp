@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/store.h>
 
+#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -253,8 +254,9 @@ static DECLCALLBACK(PCRTCRCERTCTX) rtCrStoreInMem_CertSearchNext(void *pvProvide
     if (i < pThis->cCerts)
     {
         pSearch->auOpaque[1] = i + 1;
-        pThis->papCerts[i]->Core.cRefs++;
-        return &pThis->papCerts[i]->Core.Public;
+        PRTCRCERTCTXINT pCertCtx = &pThis->papCerts[i]->Core;
+        ASMAtomicIncU32(&pCertCtx->cRefs);
+        return &pCertCtx->Public;
     }
     return NULL;
 }
