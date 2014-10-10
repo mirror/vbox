@@ -363,6 +363,8 @@ static int usbReadSpeed(const char *pszValue, USBDEVICESPEED *pSpd, char **ppszN
         *pSpd = USBDEVICESPEED_FULL;
     else if (!strncmp(pszValue, RT_STR_TUPLE("480")))
         *pSpd = USBDEVICESPEED_HIGH;
+    else if (!strncmp(pszValue, RT_STR_TUPLE("5000")))
+        *pSpd = USBDEVICESPEED_SUPER;
     else
         *pSpd = USBDEVICESPEED_UNKNOWN;
     while (pszValue[0] != '\0' && !RT_C_IS_SPACE(pszValue[0]))
@@ -1177,6 +1179,7 @@ DECLINLINE(void) usbLogDevice(PUSBDEVICE pDev)
           : pDev->enmSpeed == USBDEVICESPEED_LOW      ? "1.5 MBit/s"
           : pDev->enmSpeed == USBDEVICESPEED_FULL     ? "12 MBit/s"
           : pDev->enmSpeed == USBDEVICESPEED_HIGH     ? "480 MBit/s"
+          : pDev->enmSpeed == USBDEVICESPEED_SUPER    ? "5.0 GBit/s"
           : pDev->enmSpeed == USBDEVICESPEED_VARIABLE ? "variable"
           :                                             "invalid"));
     Log3(("Number of configurations: %d\n", pDev->bNumConfigurations));
@@ -1263,9 +1266,10 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
     if (cchRead <= 0 || (size_t) cchRead == sizeof(szBuf))
         Dev->enmState = USBDEVICESTATE_UNSUPPORTED;
     else
-        Dev->enmSpeed =   !strcmp(szBuf, "1.5") ? USBDEVICESPEED_LOW
-                        : !strcmp(szBuf, "12")  ? USBDEVICESPEED_FULL
-                        : !strcmp(szBuf, "480") ? USBDEVICESPEED_HIGH
+        Dev->enmSpeed =   !strcmp(szBuf, "1.5")  ? USBDEVICESPEED_LOW
+                        : !strcmp(szBuf, "12")   ? USBDEVICESPEED_FULL
+                        : !strcmp(szBuf, "480")  ? USBDEVICESPEED_HIGH
+                        : !strcmp(szBuf, "5000") ? USBDEVICESPEED_SUPER
                         : USBDEVICESPEED_UNKNOWN;
 
     cchRead = RTLinuxSysFsReadStrFile(szBuf, sizeof(szBuf), "%s/version",

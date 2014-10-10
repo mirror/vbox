@@ -8358,10 +8358,10 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
             return E_INVALIDARG; /* The clientId is invalid then. */
     }
 
-    USHORT portVersion = 1;
+    USHORT portVersion = 0;
     hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
     AssertComRCReturnRC(hrc);
-    Assert(portVersion == 1 || portVersion == 2);
+    Assert(portVersion == 1 || portVersion == 2 || portVersion == 3);
 
     int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
                                (PFNRT)i_usbAttachCallback, 9,
@@ -8426,7 +8426,9 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, 
     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     int vrc = PDMR3UsbCreateProxyDevice(pUVM, aUuid, aRemote, aAddress, pvRemoteBackend,
-                                        aPortVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
+                                        aPortVersion == 3 ? VUSB_STDVER_30 :
+                                        aPortVersion == 2 ? VUSB_STDVER_11 : VUSB_STDVER_20,
+                                        aMaskedIfs);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
