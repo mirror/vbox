@@ -253,6 +253,11 @@ static DECLCALLBACK(int) supHardNtViRdrRead(PRTLDRREADER pReader, void *pvBuf, s
             return VERR_READ_ERROR;
         }
 
+/** @todo This nonsense is probably due to missing FILE_SYNCHRONOUS_IO_NONALERT
+ *        flags in early code stage.  Should clean this up, but leave code
+ *        for handling STATUS_PENDING as we don't know what callers of
+ *        NtCreateSection might've been passing to their NtCreateFile calls.
+ *        In ring-0, this code is mostly pointless, I think. */
         /*
          * Delay a little before we retry?
          */

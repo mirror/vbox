@@ -1817,7 +1817,7 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
                                  FILE_ATTRIBUTE_NORMAL,
                                  FILE_SHARE_READ,
                                  FILE_OPEN,
-                                 FILE_NON_DIRECTORY_FILE, /** @todo nonalert? */
+                                 FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
                                  NULL /*EaBuffer*/,
                                  0 /*EaLength*/);
     if (NT_SUCCESS(rcNt))
