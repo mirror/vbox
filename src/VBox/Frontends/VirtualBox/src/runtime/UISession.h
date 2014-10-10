@@ -29,6 +29,12 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CSession.h"
+#include "CMachine.h"
+#include "CConsole.h"
+#include "CDisplay.h"
+#include "CMouse.h"
+#include "CGuest.h"
+#include "CMachineDebugger.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -88,8 +94,24 @@ public:
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
     void closeRuntimeUI();
 
-    /* Common getters: */
+    /** Returns the session instance. */
     CSession& session() { return m_session; }
+    /** Returns the session's machine instance. */
+    CMachine& machine() { return m_machine; }
+    /** Returns the session's console instance. */
+    CConsole& console() { return m_console; }
+    /** Returns the console's display instance. */
+    CDisplay& display() { return m_display; }
+    /** Returns the console's mouse instance. */
+    CMouse& mouse() { return m_mouse; }
+    /** Returns the console's guest instance. */
+    CGuest& guest() { return m_guest; }
+    /** Returns the console's debugger instance. */
+    CMachineDebugger& debugger() { return m_debugger; }
+
+    /** Returns the machine name. */
+    const QString& machineName() const { return m_strMachineName; }
+
     UIActionPool* actionPool() const { return m_pActionPool; }
     KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
@@ -356,6 +378,21 @@ private:
 
     /** Holds the session instance. */
     CSession m_session;
+    /** Holds the session's machine instance. */
+    CMachine m_machine;
+    /** Holds the session's console instance. */
+    CConsole m_console;
+    /** Holds the console's display instance. */
+    CDisplay m_display;
+    /** Holds the console's mouse instance. */
+    CMouse m_mouse;
+    /** Holds the console's guest instance. */
+    CGuest m_guest;
+    /** Holds the console's debugger instance. */
+    CMachineDebugger m_debugger;
+
+    /** Holds the machine name. */
+    QString m_strMachineName;
 
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;

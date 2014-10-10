@@ -57,14 +57,9 @@
 # endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
 /* COM includes: */
-# include "CConsole.h"
 # include "CSystemProperties.h"
-# include "CMachineDebugger.h"
-# include "CGuest.h"
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
-# include "CDisplay.h"
-# include "CMouse.h"
 # include "CNetworkAdapter.h"
 # include "CHostNetworkInterface.h"
 # include "CVRDEServer.h"
@@ -167,26 +162,21 @@ void UISession::powerUp()
     if (!fPrepared)
         return;
 
-    /* Get current machine/console: */
-    CMachine machine = session().GetMachine();
-    CConsole console = session().GetConsole();
-
     /* Apply debug settings from the command line. */
-    CMachineDebugger debugger = console.GetDebugger();
-    if (debugger.isOk())
+    if (debugger().isOk())
     {
         if (vboxGlobal().isPatmDisabled())
-            debugger.SetPATMEnabled(false);
+            debugger().SetPATMEnabled(false);
         if (vboxGlobal().isCsamDisabled())
-            debugger.SetCSAMEnabled(false);
+            debugger().SetCSAMEnabled(false);
         if (vboxGlobal().isSupervisorCodeExecedRecompiled())
-            debugger.SetRecompileSupervisor(true);
+            debugger().SetRecompileSupervisor(true);
         if (vboxGlobal().isUserCodeExecedRecompiled())
-            debugger.SetRecompileUser(true);
+            debugger().SetRecompileUser(true);
         if (vboxGlobal().areWeToExecuteAllInIem())
-            debugger.SetExecuteAllInIEM(true);
+            debugger().SetExecuteAllInIEM(true);
         if (!vboxGlobal().isDefaultWarpPct())
-            debugger.SetVirtualTimeRate(vboxGlobal().getWarpPct());
+            debugger().SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
     if (!vboxGlobal().isSeparateProcess())
@@ -194,16 +184,16 @@ void UISession::powerUp()
         /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI
         CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                             console.PowerUpPaused() : console.PowerUp();
+                             console().PowerUpPaused() : console().PowerUp();
 #else /* !VBOX_WITH_DEBUGGER_GUI */
-        CProgress progress = console.PowerUp();
+        CProgress progress = console().PowerUp();
 #endif /* !VBOX_WITH_DEBUGGER_GUI */
 
         /* Check for immediate failure: */
-        if (!console.isOk())
+        if (!console().isOk())
         {
             if (vboxGlobal().showStartVMErrors())
-                msgCenter().cannotStartMachine(console, machine.GetName());
+                msgCenter().cannotStartMachine(console(), machineName());
             closeRuntimeUI();
             return;
         }
@@ -215,18 +205,18 @@ void UISession::powerUp()
         /* Show "Starting/Restoring" progress dialog: */
         if (isSaved())
         {
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", 0, 0);
+            msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
             /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
             machineLogic()->adjustMachineWindowsGeometry();
         }
         else
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png");
+            msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
 
         /* Check for a progress failure: */
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
             if (vboxGlobal().showStartVMErrors())
-                msgCenter().cannotStartMachine(progress, machine.GetName());
+                msgCenter().cannotStartMachine(progress, machineName());
             closeRuntimeUI();
             return;
         }
@@ -237,13 +227,12 @@ void UISession::powerUp()
     }
     else
     {
-        /* Fetch the current state: */
-        CMouse mouse = console.GetMouse();
-        m_fIsMouseSupportsAbsolute = mouse.GetAbsoluteSupported();
-        m_fIsMouseSupportsRelative = mouse.GetRelativeSupported();
-        m_fIsMouseSupportsMultiTouch = mouse.GetMultiTouchSupported();
-        m_fIsMouseHostCursorNeeded = mouse.GetNeedsHostCursor();
-
+        /* Fetch the current mouse state: */
+        m_fIsMouseSupportsAbsolute = mouse().GetAbsoluteSupported();
+        m_fIsMouseSupportsRelative = mouse().GetRelativeSupported();
+        m_fIsMouseSupportsMultiTouch = mouse().GetMultiTouchSupported();
+        m_fIsMouseHostCursorNeeded = mouse().GetNeedsHostCursor();
+        /* Fetch the current guest additions state: */
         sltAdditionsChange();
     }
 
@@ -254,12 +243,11 @@ void UISession::powerUp()
         return;
     }
 
-    /* Check if the required virtualization features are active. We get this
-     * info only when the session is active. */
-    bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
-    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
+    /* Check if the required virtualization features are active. We get this info only when the session is active. */
+    const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
+    const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
     AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool fIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
+    bool fIsVirtEnabled = debugger().GetHWVirtExEnabled();
     if (fRecommendVirtEx && !fIsVirtEnabled)
     {
         bool fShouldWeClose;
@@ -276,24 +264,24 @@ void UISession::powerUp()
 
         if (fShouldWeClose)
         {
-            /* At this point the console is powered up. So we have to close
-             * this session again. */
-            CProgress progress = console.PowerDown();
-            if (console.isOk())
+            /* At this point the console is powered up.
+             * So we have to close this session again. */
+            CProgress progress = console().PowerDown();
+            if (console().isOk())
             {
                 /* Guard progressbar warnings from auto-closing: */
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(true);
                 /* Show the power down progress dialog */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
+                msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_poweroff_90px.png");
                 if (!progress.isOk() || progress.GetResultCode() != 0)
-                    msgCenter().cannotPowerDownMachine(progress, machine.GetName());
+                    msgCenter().cannotPowerDownMachine(progress, machineName());
                 /* Allow further auto-closing: */
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(false);
             }
             else
-                msgCenter().cannotPowerDownMachine(console);
+                msgCenter().cannotPowerDownMachine(console());
             closeRuntimeUI();
             return;
         }
@@ -303,10 +291,10 @@ void UISession::powerUp()
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     LogRel(("2D video acceleration is %s.\n",
-           machine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable()
+           machine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable()
                  ? "enabled"
                  : "disabled"));
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Check if HID LEDs sync is enabled and add a log message about it. */
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
@@ -329,24 +317,22 @@ void UISession::powerUp()
 bool UISession::saveState()
 {
     /* Prepare the saving progress: */
-    CMachine machine = m_session.GetMachine();
-    CConsole console = m_session.GetConsole();
-    CProgress progress = console.SaveState();
-    if (console.isOk())
+    CProgress progress = console().SaveState();
+    if (console().isOk())
     {
         /* Show the saving progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png");
+        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_save_90px.png");
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
             /* Failed in progress: */
-            msgCenter().cannotSaveMachineState(progress, machine.GetName());
+            msgCenter().cannotSaveMachineState(progress, machineName());
             return false;
         }
     }
     else
     {
         /* Failed in console: */
-        msgCenter().cannotSaveMachineState(console);
+        msgCenter().cannotSaveMachineState(console());
         return false;
     }
     /* Passed: */
@@ -356,12 +342,11 @@ bool UISession::saveState()
 bool UISession::shutdown()
 {
     /* Send ACPI shutdown signal if possible: */
-    CConsole console = m_session.GetConsole();
-    console.PowerButton();
-    if (!console.isOk())
+    console().PowerButton();
+    if (!console().isOk())
     {
         /* Failed in console: */
-        msgCenter().cannotACPIShutdownMachine(console);
+        msgCenter().cannotACPIShutdownMachine(console());
         return false;
     }
     /* Passed: */
@@ -371,49 +356,47 @@ bool UISession::shutdown()
 bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
 {
     /* Prepare the power-off progress: */
-    CMachine machine = m_session.GetMachine();
-    CConsole console = m_session.GetConsole();
-    CProgress progress = console.PowerDown();
-    if (console.isOk())
+    CProgress progress = console().PowerDown();
+    if (console().isOk())
     {
         /* Show the power-off progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
+        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_poweroff_90px.png");
         if (progress.isOk() && progress.GetResultCode() == 0)
         {
             /* Discard the current state if requested: */
             if (fIncludingDiscard)
             {
                 /* Prepare the snapshot-discard progress: */
-                CSnapshot snapshot = machine.GetCurrentSnapshot();
-                CProgress progress = console.RestoreSnapshot(snapshot);
-                if (!console.isOk())
-                    return msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
+                CSnapshot snapshot = machine().GetCurrentSnapshot();
+                CProgress progress = console().RestoreSnapshot(snapshot);
+                if (!console().isOk())
+                    return msgCenter().cannotRestoreSnapshot(console(), snapshot.GetName(), machineName());
 
                 /* Show the snapshot-discard progress: */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
+                msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_discard_90px.png");
                 if (progress.GetResultCode() != 0)
-                    return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
+                    return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machineName());
             }
         }
         else
         {
             /* Failed in progress: */
-            msgCenter().cannotPowerDownMachine(progress, machine.GetName());
+            msgCenter().cannotPowerDownMachine(progress, machineName());
             return false;
         }
     }
     else
     {
         /* Check the machine state, it might be already gone: */
-        if (!console.isNull())
+        if (!console().isNull())
         {
            /* Failed in console: */
-           COMResult res(console);
+           COMResult res(console());
            /* This can happen if VBoxSVC is not running: */
            if (FAILED_DEAD_INTERFACE(res.rc()))
                fServerCrashed = true;
            else
-               msgCenter().cannotPowerDownMachine(console);
+               msgCenter().cannotPowerDownMachine(console());
            return false;
         }
     }
@@ -449,22 +432,18 @@ void UISession::changeVisualState(UIVisualStateType visualStateType)
 
 bool UISession::setPause(bool fOn)
 {
-    CConsole console = session().GetConsole();
-    if (console.isNull())
-        return true;
-
     if (fOn)
-        console.Pause();
+        console().Pause();
     else
-        console.Resume();
+        console().Resume();
 
-    bool ok = console.isOk();
+    bool ok = console().isOk();
     if (!ok)
     {
         if (fOn)
-            msgCenter().cannotPauseMachine(console);
+            msgCenter().cannotPauseMachine(console());
         else
-            msgCenter().cannotResumeMachine(console);
+            msgCenter().cannotResumeMachine(console());
     }
 
     return ok;
@@ -480,12 +459,11 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 #ifndef VBOX_WITH_ADDITIONS_AUTOUPDATE_UI
     fDoMount = true;
 #else /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
-    CGuest guest = session().GetConsole().GetGuest();
     QVector<KAdditionsUpdateFlag> aFlagsUpdate;
     QVector<QString> aArgs;
-    CProgress progressInstall = guest.UpdateGuestAdditions(strSource,
-                                                           aArgs, aFlagsUpdate);
-    bool fResult = guest.isOk();
+    CProgress progressInstall = guest().UpdateGuestAdditions(strSource,
+                                                             aArgs, aFlagsUpdate);
+    bool fResult = guest().isOk();
     if (fResult)
     {
         msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"),
@@ -534,15 +512,12 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     /* Make sure GA medium ID is valid: */
     AssertReturnVoid(!strMediumID.isNull());
 
-    /* Get machine: */
-    CMachine machine = session().GetMachine();
-
     /* Searching for the first suitable controller/slot: */
     QString strControllerName;
     LONG iCntPort = -1, iCntDevice = -1;
-    foreach (const CStorageController &controller, machine.GetStorageControllers())
+    foreach (const CStorageController &controller, machine().GetStorageControllers())
     {
-        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
+        foreach (const CMediumAttachment &attachment, machine().GetMediumAttachmentsOfController(controller.GetName()))
         {
             if (attachment.GetType() == KDeviceType_DVD)
             {
@@ -559,7 +534,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     /* Make sure suitable controller/slot were found: */
     if (strControllerName.isNull())
     {
-        msgCenter().cannotMountGuestAdditions(machine.GetName());
+        msgCenter().cannotMountGuestAdditions(machineName());
         return;
     }
 
@@ -573,17 +548,17 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     }
 
     /* Mount medium to corresponding controller/slot: */
-    machine.MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), false /* force */);
-    if (!machine.isOk())
+    machine().MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), false /* force */);
+    if (!machine().isOk())
     {
         /* Ask for force mounting: */
-        if (msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
+        if (msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
                                             true /* retry? */, mainMachineWindow()))
         {
             /* Force mount medium to the predefined port/device: */
-            machine.MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), true /* force */);
-            if (!machine.isOk())
-                msgCenter().cannotRemountMedium(machine, medium, true /* mount? */,
+            machine().MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), true /* force */);
+            if (!machine().isOk())
+                msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
                                                 false /* retry? */, mainMachineWindow());
         }
     }
@@ -721,10 +696,8 @@ void UISession::sltStateChange(KMachineState state)
 
 void UISession::sltVRDEChange()
 {
-    /* Get machine: */
-    const CMachine machine = session().GetMachine();
     /* Get VRDE server: */
-    const CVRDEServer &server = machine.GetVRDEServer();
+    const CVRDEServer &server = machine().GetVRDEServer();
     bool fIsVRDEServerAvailable = !server.isNull();
     /* Show/Hide VRDE action depending on VRDE server availability status: */
     // TODO: Is this status can be changed at runtime?
@@ -739,10 +712,8 @@ void UISession::sltVRDEChange()
 
 void UISession::sltVideoCaptureChange()
 {
-    /* Get machine: */
-    const CMachine machine = session().GetMachine();
     /* Check/Uncheck Video Capture action depending on feature status: */
-    actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine.GetVideoCaptureEnabled());
+    actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine().GetVideoCaptureEnabled());
     /* Notify listeners about Video Capture change: */
     emit sigVideoCaptureChange();
 }
@@ -869,15 +840,12 @@ void UISession::sltHandleHostScreenAvailableAreaChange()
 
 void UISession::sltAdditionsChange()
 {
-    /* Get our guest: */
-    CGuest guest = session().GetConsole().GetGuest();
-
     /* Variable flags: */
-    ULONG ulGuestAdditionsRunLevel = guest.GetAdditionsRunLevel();
+    ULONG ulGuestAdditionsRunLevel = guest().GetAdditionsRunLevel();
     LONG64 lLastUpdatedIgnored;
-    bool fIsGuestSupportsGraphics = guest.GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
+    bool fIsGuestSupportsGraphics = guest().GetFacilityStatus(KAdditionsFacilityType_Graphics, lLastUpdatedIgnored)
                                     == KAdditionsFacilityStatus_Active;
-    bool fIsGuestSupportsSeamless = guest.GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
+    bool fIsGuestSupportsSeamless = guest().GetFacilityStatus(KAdditionsFacilityType_Seamless, lLastUpdatedIgnored)
                                     == KAdditionsFacilityStatus_Active;
     /* Check if something had changed: */
     if (m_ulGuestAdditionsRunLevel != ulGuestAdditionsRunLevel ||
@@ -997,8 +965,38 @@ bool UISession::prepareSession()
     if (m_session.isNull())
         return false;
 
+    /* Get machine: */
+    m_machine = m_session.GetMachine();
+    if (m_machine.isNull())
+        return false;
+
+    /* Get console: */
+    m_console = m_session.GetConsole();
+    if (m_console.isNull())
+        return false;
+
+    /* Get display: */
+    m_display = m_console.GetDisplay();
+    if (m_display.isNull())
+        return false;
+
+    /* Get mouse: */
+    m_mouse = m_console.GetMouse();
+    if (m_mouse.isNull())
+        return false;
+
+    /* Get guest: */
+    m_guest = m_console.GetGuest();
+    if (m_guest.isNull())
+        return false;
+
+    /* Get debugger: */
+    m_debugger = m_console.GetDebugger();
+    if (m_debugger.isNull())
+        return false;
+
     /* Update machine-state: */
-    m_machineState = m_session.GetMachine().GetState();
+    m_machineState = machine().GetState();
 
     /* True by default: */
     return true;
@@ -1013,9 +1011,8 @@ void UISession::prepareActions()
         /* Configure action-pool: */
         actionPool()->toRuntime()->setSession(this);
 
-        /* Get host/machine: */
+        /* Get host: */
         const CHost host = vboxGlobal().host();
-        const CMachine machine = session().GetConsole().GetMachine();
         UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
 
         /* Storage stuff: */
@@ -1023,7 +1020,7 @@ void UISession::prepareActions()
             /* Initialize CD/FD menus: */
             int iDevicesCountCD = 0;
             int iDevicesCountFD = 0;
-            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
+            foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
             {
                 if (attachment.GetType() == KDeviceType_DVD)
                     ++iDevicesCountCD;
@@ -1044,11 +1041,11 @@ void UISession::prepareActions()
         {
             /* Initialize Network menu: */
             bool fAtLeastOneAdapterActive = false;
-            const KChipsetType chipsetType = machine.GetChipsetType();
+            const KChipsetType chipsetType = machine().GetChipsetType();
             ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
             for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
             {
-                const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
+                const CNetworkAdapter &adapter = machine().GetNetworkAdapter(uSlot);
                 if (adapter.GetEnabled())
                 {
                     fAtLeastOneAdapterActive = true;
@@ -1062,9 +1059,9 @@ void UISession::prepareActions()
         /* USB stuff: */
         {
             /* Check whether there is at least one USB controller with an available proxy. */
-            const bool fUSBEnabled =    !machine.GetUSBDeviceFilters().isNull()
-                                     && !machine.GetUSBControllers().isEmpty()
-                                     && machine.GetUSBProxyAvailable();
+            const bool fUSBEnabled =    !machine().GetUSBDeviceFilters().isNull()
+                                     && !machine().GetUSBControllers().isEmpty()
+                                     && machine().GetUSBProxyAvailable();
             if (!fUSBEnabled)
                 restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
         }
@@ -1073,7 +1070,7 @@ void UISession::prepareActions()
         {
             /* Check whether there is an accessible video input devices pool: */
             host.GetVideoInputDevices();
-            const bool fWebCamsEnabled = host.isOk() && !machine.GetUSBControllers().isEmpty();
+            const bool fWebCamsEnabled = host.isOk() && !machine().GetUSBControllers().isEmpty();
             if (!fWebCamsEnabled)
                 restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
         }
@@ -1188,11 +1185,8 @@ void UISession::prepareScreens()
     }
 #endif /* Q_WS_MAC */
 
-    /* Get machine: */
-    CMachine machine = m_session.GetMachine();
-
     /* Prepare initial screen visibility status: */
-    m_monitorVisibilityVector.resize(machine.GetMonitorCount());
+    m_monitorVisibilityVector.resize(machine().GetMonitorCount());
     m_monitorVisibilityVector.fill(false);
     m_monitorVisibilityVector[0] = true;
 
@@ -1204,7 +1198,7 @@ void UISession::prepareScreens()
         {
             BOOL fEnabled = true;
             ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-            machine.QuerySavedGuestScreenInfo(i, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+            machine().QuerySavedGuestScreenInfo(i, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
             m_monitorVisibilityVector[i] = fEnabled;
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
@@ -1216,7 +1210,7 @@ void UISession::prepareScreens()
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
-    m_frameBufferVector.resize(m_session.GetMachine().GetMonitorCount());
+    m_frameBufferVector.resize(machine().GetMonitorCount());
 }
 
 void UISession::loadSessionSettings()
@@ -1325,9 +1319,7 @@ void UISession::cleanupFramebuffers()
             /* Mark framebuffer as unused: */
             pFrameBuffer->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
-            CDisplay display = session().GetConsole().GetDisplay();
-            if (!display.isNull())
-                display.DetachFramebuffer(i);
+            display().DetachFramebuffer(i);
             /* Release framebuffer reference: */
             m_frameBufferVector[i].setNull();
         }
@@ -1365,6 +1357,30 @@ void UISession::cleanupActions()
 
 void UISession::cleanupSession()
 {
+    /* Detach debugger: */
+    if (!m_debugger.isNull())
+        m_debugger.detach();
+
+    /* Detach guest: */
+    if (!m_guest.isNull())
+        m_guest.detach();
+
+    /* Detach mouse: */
+    if (!m_mouse.isNull())
+        m_mouse.detach();
+
+    /* Detach display: */
+    if (!m_display.isNull())
+        m_display.detach();
+
+    /* Detach console: */
+    if (!m_console.isNull())
+        m_console.detach();
+
+    /* Detach machine: */
+    if (!m_machine.isNull())
+        m_machine.detach();
+
     /* Close session: */
     if (!m_session.isNull())
     {
@@ -1662,18 +1678,16 @@ bool UISession::preparePowerUp()
     if (vboxGlobal().settings().autoCapture())
         popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
 
-    /* Shows First Run wizard if necessary: */
-    const CMachine &machine = session().GetMachine();
     /* Check if we are in teleportation waiting mode.
      * In that case no first run wizard is necessary. */
-    m_machineState = machine.GetState();
+    m_machineState = machine().GetState();
     if (   isFirstTimeStarted()
         && !((   m_machineState == KMachineState_PoweredOff
               || m_machineState == KMachineState_Aborted
               || m_machineState == KMachineState_Teleported)
-             && machine.GetTeleporterEnabled()))
+             && machine().GetTeleporterEnabled()))
     {
-        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), session().GetMachine());
+        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), machine());
         pWizard->prepare();
         pWizard->exec();
         if (pWizard)
@@ -1681,7 +1695,6 @@ bool UISession::preparePowerUp()
     }
 
 #ifdef VBOX_WITH_NETFLT
-
     /* Skip further checks if VM in saved state */
     if (isSaved())
         return true;
@@ -1702,10 +1715,10 @@ bool UISession::preparePowerUp()
         availableInterfaceNames << iface.GetShortName();
     }
 
-    ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
+    ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
     for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
     {
-        CNetworkAdapter na = machine.GetNetworkAdapter(uAdapterIndex);
+        CNetworkAdapter na = machine().GetNetworkAdapter(uAdapterIndex);
 
         if (na.GetEnabled())
         {
@@ -1735,7 +1748,7 @@ bool UISession::preparePowerUp()
     /* Check if non-existent interfaces found */
     if (!failedInterfaceNames.isEmpty())
     {
-        if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machine.GetName(), failedInterfaceNames.join(", ")))
+        if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machineName(), failedInterfaceNames.join(", ")))
             machineLogic()->openNetworkSettingsDialog();
         else
         {
@@ -1743,8 +1756,7 @@ bool UISession::preparePowerUp()
             return false;
         }
     }
-
-#endif
+#endif /* VBOX_WITH_NETFLT */
 
     return true;
 }
