@@ -4062,7 +4062,7 @@ static int supdrvNtProtectVerifyProcess(PSUPDRVNTPROTECT pNtProtect)
             rc = supdrvNtProtectRestrictHandlesToProcessAndThread(pNtProtect, &ErrInfo);
         if (RT_SUCCESS(rc))
         {
-            rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_VERIFY_ONLY,
+            rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_VERIFY_ONLY, 0 /*fFlags*/,
                                              NULL /*pcFixes*/, &ErrInfo);
             if (RT_SUCCESS(rc) && pNtProtect->enmProcessKind >= kSupDrvNtProtectKind_VmProcessUnconfirmed)
                 rc = supdrvNtProtectVerifyStubForVmProcess(pNtProtect, &ErrInfo);

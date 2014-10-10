@@ -2524,6 +2524,11 @@
 /** Error opening the stub process thread for revalidation when vboxdrv is
  * opened by the VM process. */
 #define VERR_SUP_VP_STUB_THREAD_OPEN_ERROR          (-5672)
+/** Process Purification Failure: NtAllocateVirtualMemory failed to get us
+ * suitable replacement memory for a chunk of executable memory that
+ * shouldn't be present in our process.  (You will only see this message if you
+ * got potentially fatally buggy anti-virus software installed.) */
+#define VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED   (-5673)
 
 /** @} */
 

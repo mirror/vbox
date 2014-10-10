@@ -339,22 +339,26 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_AVAST                   RT_BIT_32(2)
 /** TrendMicro OfficeScan and probably others. */
 #define SUPHARDNT_ADVERSARY_TRENDMICRO              RT_BIT_32(3)
+/** TrendMicro potentially buggy sakfile.sys. */
+#define SUPHARDNT_ADVERSARY_TRENDMICRO_SAKFILE      RT_BIT_32(4)
 /** McAfee.  */
-#define SUPHARDNT_ADVERSARY_MCAFEE                  RT_BIT_32(4)
+#define SUPHARDNT_ADVERSARY_MCAFEE                  RT_BIT_32(5)
 /** Kaspersky or OEMs of it.  */
-#define SUPHARDNT_ADVERSARY_KASPERSKY               RT_BIT_32(5)
+#define SUPHARDNT_ADVERSARY_KASPERSKY               RT_BIT_32(6)
 /** Malwarebytes Anti-Malware (MBAM). */
-#define SUPHARDNT_ADVERSARY_MBAM                    RT_BIT_32(6)
+#define SUPHARDNT_ADVERSARY_MBAM                    RT_BIT_32(7)
 /** AVG Internet Security. */
-#define SUPHARDNT_ADVERSARY_AVG                     RT_BIT_32(7)
+#define SUPHARDNT_ADVERSARY_AVG                     RT_BIT_32(8)
 /** Panda Security. */
-#define SUPHARDNT_ADVERSARY_PANDA                   RT_BIT_32(8)
+#define SUPHARDNT_ADVERSARY_PANDA                   RT_BIT_32(9)
 /** Microsoft Security Essentials. */
-#define SUPHARDNT_ADVERSARY_MSE                     RT_BIT_32(9)
+#define SUPHARDNT_ADVERSARY_MSE                     RT_BIT_32(10)
 /** Comodo. */
-#define SUPHARDNT_ADVERSARY_COMODO                  RT_BIT_32(10)
+#define SUPHARDNT_ADVERSARY_COMODO                  RT_BIT_32(11)
 /** Check Point's Zone Alarm (may include Kaspersky).  */
-#define SUPHARDNT_ADVERSARY_ZONE_ALARM              RT_BIT_32(11)
+#define SUPHARDNT_ADVERSARY_ZONE_ALARM              RT_BIT_32(12)
+/** Digital guardian.  */
+#define SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN        RT_BIT_32(13)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -3516,6 +3520,9 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
          */
         cFixes = 0;
         int rc = supHardenedWinVerifyProcess(pThis->hProcess, pThis->hThread, SUPHARDNTVPKIND_CHILD_PURIFICATION,
+                                             g_fSupAdversaries & (  SUPHARDNT_ADVERSARY_TRENDMICRO_SAKFILE
+                                                                  | SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN)
+                                             ? SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_ZERO : 0,
                                              &cFixes, RTErrInfoInitStatic(&g_ErrInfoStatic));
         if (RT_FAILURE(rc))
             supR3HardenedWinKillChild(pThis, "supR3HardNtChildPurify", rc,
@@ -4674,7 +4681,7 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
 
                 cFixes = 0;
                 rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION,
-                                                 &cFixes, NULL /*pErrInfo*/);
+                                                 0 /*fFlags*/, &cFixes, NULL /*pErrInfo*/);
                 if (RT_FAILURE(rc) || cFixes == 0)
                     break;
 
@@ -5101,6 +5108,7 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_COMODO, "inspect" },
         { SUPHARDNT_ADVERSARY_COMODO, "cmdHlp" },
 
+        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN, "dgmaster" }, /* Not verified. */
     };
 
     static const struct
@@ -5139,6 +5147,9 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmebc64.sys" },
         { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmeevw.sys" },
         { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\tmciesc.sys" },
+        { SUPHARDNT_ADVERSARY_TRENDMICRO_SAKFILE, L"\\SystemRoot\\System32\\drivers\\sakfile.sys" },  /* Data Loss Prevention, not officescan. */
+        { SUPHARDNT_ADVERSARY_TRENDMICRO, L"\\SystemRoot\\System32\\drivers\\sakcd.sys" },  /* Data Loss Prevention, not officescan. */
+
 
         { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\cfwids.sys" },
         { SUPHARDNT_ADVERSARY_MCAFEE, L"\\SystemRoot\\System32\\drivers\\McPvDrv.sys" },
@@ -5210,6 +5221,8 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\drivers\\vsdatant.sys" },
         { SUPHARDNT_ADVERSARY_ZONE_ALARM, L"\\SystemRoot\\System32\\AntiTheftCredentialProvider.dll" },
+
+        { SUPHARDNT_ADVERSARY_DIGITAL_GUARDIAN, L"\\SystemRoot\\System32\\drivers\\dgmaster.sys" },
     };
 
     uint32_t fFound = 0;
