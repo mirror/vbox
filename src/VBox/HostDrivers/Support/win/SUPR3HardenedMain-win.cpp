@@ -3526,7 +3526,7 @@ static void supR3HardNtChildPurify(PSUPR3HARDNTCHILD pThis)
                                              &cFixes, RTErrInfoInitStatic(&g_ErrInfoStatic));
         if (RT_FAILURE(rc))
             supR3HardenedWinKillChild(pThis, "supR3HardNtChildPurify", rc,
-                                      "supHardenedWinVerifyProcess failed with %Rrc: %s", g_ErrInfoStatic.szMsg);
+                                      "supHardenedWinVerifyProcess failed with %Rrc: %s", rc, g_ErrInfoStatic.szMsg);
         if (cFixes == 0)
         {
             SUP_DPRINTF(("supR3HardNtChildPurify: Done after %llu ms and %u fixes (loop #%u).\n",
