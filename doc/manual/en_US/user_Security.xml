@@ -352,6 +352,13 @@
           IPsec), or use encrypted protocols in the guest network (such as
           SSH). The security properties are similar to bridged Ethernet.</para>
         </listitem>
+
+        <listitem>
+          <para>Because of shortcomings in older Windows versions, using
+          VirtualBox on Windows versions older than Vista with Service Pack 1
+          is not recommended.</para>
+        </listitem>
+
       </itemizedlist></para>
     </sect2>
 
