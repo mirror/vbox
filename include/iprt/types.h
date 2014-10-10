@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,7 +78,7 @@ RT_C_DECLS_END
      * Kludge for compiling 32-bit code on a 64-bit FreeBSD:
      *  FreeBSD declares uint64_t and int64_t wrong (long unsigned and long int
      *  though they need to be long long unsigned and long long int). These
-     *  defines conflict with our decleration in stdint.h. Adding the defines
+     *  defines conflict with our declaration in stdint.h. Adding the defines
      *  below omits the definitions in the system header.
      */
 #  include <stddef.h>
@@ -1580,14 +1580,14 @@ typedef RTCRDIGEST                                 *PRTCRDIGEST;
 typedef R3R0PTRTYPE(struct RTCRPKIXENCRYPTIONINT *) RTCRPKIXENCRYPTION;
 /** Pointer to a public key encryption schema handle. */
 typedef RTCRPKIXENCRYPTION                         *PRTCRPKIXENCRYPTION;
-/** NIL publick key encryption schema handle */
+/** NIL public key encryption schema handle */
 #define NIL_RTCRPKIXENCRYPTION                      (0)
 
 /** Public key signature schema handle. */
 typedef R3R0PTRTYPE(struct RTCRPKIXSIGNATUREINT *)  RTCRPKIXSIGNATURE;
 /** Pointer to a public key signature schema handle. */
 typedef RTCRPKIXSIGNATURE                          *PRTCRPKIXSIGNATURE;
-/** NIL publick key signature schema handle */
+/** NIL public key signature schema handle */
 #define NIL_RTCRPKIXSIGNATURE                       (0)
 
 /** X.509 certificate paths builder & validator handle. */
@@ -1787,7 +1787,7 @@ typedef RTTLS const                                *PCRTTLS;
  * @remarks This is not a R3/R0 type like most other handles!
  */
 typedef struct RTTRACEBUFINT                        *RTTRACEBUF;
-/** Poiner to a trace buffer handle. */
+/** Pointer to a trace buffer handle. */
 typedef RTTRACEBUF                                  *PRTTRACEBUF;
 /** Nil trace buffer handle. */
 #define NIL_RTTRACEBUF                              ((RTTRACEBUF)0)
@@ -1840,7 +1840,7 @@ typedef RTCPUID const                              *PCRTCPUID;
 #endif
 /** A CPU set.
  * @note    Treat this as an opaque type and always use RTCpuSet* for
- *          manupulating it. */
+ *          manipulating it. */
 typedef struct RTCPUSET
 {
     /** The bitmap.  */
@@ -1871,7 +1871,7 @@ typedef RTTIMERLR                                  *PRTTIMERLR;
 typedef R3R0PTRTYPE(struct RTRANDINT *)             RTRAND;
 /** Pointer to a random number generator handle. */
 typedef RTRAND                                     *PRTRAND;
-/** NIL random number genrator handle value. */
+/** NIL random number generator handle value. */
 #define NIL_RTRAND                                  ((RTRAND)0)
 
 /** Debug address space handle. */
@@ -2314,10 +2314,10 @@ typedef struct RTLOCKVALRECEXCL        *PRTLOCKVALRECEXCL;
 /** Pointer to a record of one ownership share.
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALRECSHRD        *PRTLOCKVALRECSHRD;
-/** Pointer to a lock validator source poisition.
+/** Pointer to a lock validator source position.
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALSRCPOS         *PRTLOCKVALSRCPOS;
-/** Pointer to a const lock validator source poisition.
+/** Pointer to a const lock validator source position.
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALSRCPOS const   *PCRTLOCKVALSRCPOS;
 
