@@ -4220,14 +4220,14 @@ DECLHIDDEN(char *) supR3HardenedWinReadErrorInfoDevice(char *pszErrorInfo, size_
     OBJECT_ATTRIBUTES   ObjAttr;
     InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
     NTSTATUS rcNt = NtCreateFile(&hFile,
-                                 GENERIC_READ,
+                                 GENERIC_READ, /* No SYNCHRONIZE. */
                                  &ObjAttr,
                                  &Ios,
                                  NULL /* Allocation Size*/,
                                  FILE_ATTRIBUTE_NORMAL,
                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
                                  FILE_OPEN,
-                                 FILE_NON_DIRECTORY_FILE,
+                                 FILE_NON_DIRECTORY_FILE, /* No FILE_SYNCHRONOUS_IO_NONALERT. */
                                  NULL /*EaBuffer*/,
                                  0 /*EaLength*/);
     if (NT_SUCCESS(rcNt))
@@ -4373,14 +4373,14 @@ static void supR3HardenedWinOpenStubDevice(void)
         InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
 
         rcNt = NtCreateFile(&hFile,
-                            GENERIC_READ | GENERIC_WRITE,
+                            GENERIC_READ | GENERIC_WRITE, /* No SYNCHRONIZE. */
                             &ObjAttr,
                             &Ios,
                             NULL /* Allocation Size*/,
                             FILE_ATTRIBUTE_NORMAL,
                             FILE_SHARE_READ | FILE_SHARE_WRITE,
                             FILE_OPEN,
-                            FILE_NON_DIRECTORY_FILE,
+                            FILE_NON_DIRECTORY_FILE, /* No FILE_SYNCHRONOUS_IO_NONALERT. */
                             NULL /*EaBuffer*/,
                             0 /*EaLength*/);
         if (NT_SUCCESS(rcNt))
@@ -4840,7 +4840,7 @@ static void supR3HardenedLogFileInfo(PCRTUTF16 pwszFile, bool fAdversarial)
     OBJECT_ATTRIBUTES   ObjAttr;
     InitializeObjectAttributes(&ObjAttr, &UniStrName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
     NTSTATUS rcNt = NtCreateFile(&hFile,
-                                 GENERIC_READ,
+                                 GENERIC_READ | SYNCHRONIZE,
                                  &ObjAttr,
                                  &Ios,
                                  NULL /* Allocation Size*/,
@@ -5304,9 +5304,9 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         UniStrName.Length = (USHORT)(RTUtf16Len(s_aFiles[i].pwszFile) * sizeof(WCHAR));
         UniStrName.MaximumLength = UniStrName.Length + sizeof(WCHAR);
         InitializeObjectAttributes(&ObjAttr, &UniStrName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
-        rcNt = NtCreateFile(&hFile, GENERIC_READ, &ObjAttr, &Ios, NULL /* Allocation Size*/,  FILE_ATTRIBUTE_NORMAL,
-                            FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-                            NULL /*EaBuffer*/, 0 /*EaLength*/);
+        rcNt = NtCreateFile(&hFile, GENERIC_READ | SYNCHRONIZE, &ObjAttr, &Ios, NULL /* Allocation Size*/,
+                            FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN,
+                            FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL /*EaBuffer*/, 0 /*EaLength*/);
         if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
         {
             fFound |= s_aFiles[i].fAdversary;

@@ -157,14 +157,14 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINIT
         hDevice = RTNT_INVALID_HANDLE_VALUE;
 
         NTSTATUS rcNt = NtCreateFile(&hDevice,
-                                     GENERIC_READ | GENERIC_WRITE,
+                                     GENERIC_READ | GENERIC_WRITE, /* No SYNCHRONIZE. */
                                      &ObjAttr,
                                      &Ios,
                                      NULL /* Allocation Size*/,
                                      FILE_ATTRIBUTE_NORMAL,
                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
                                      FILE_OPEN,
-                                     FILE_NON_DIRECTORY_FILE,
+                                     FILE_NON_DIRECTORY_FILE, /* No FILE_SYNCHRONOUS_IO_NONALERT! */
                                      NULL /*EaBuffer*/,
                                      0 /*EaLength*/);
         if (NT_SUCCESS(rcNt))
