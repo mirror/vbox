@@ -1810,7 +1810,7 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
 #endif
 
     NTSTATUS rcNt = NtCreateFile(&hFile,
-                                 GENERIC_READ,
+                                 GENERIC_READ | SYNCHRONIZE,
                                  &ObjAttr,
                                  &Ios,
                                  NULL /* Allocation Size*/,
