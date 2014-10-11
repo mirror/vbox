@@ -210,98 +210,67 @@ static DECLCALLBACK(int) supHardNtViRdrRead(PRTLDRREADER pReader, void *pvBuf, s
 {
     PSUPHNTVIRDR pNtViRdr = (PSUPHNTVIRDR)pReader;
     Assert(pNtViRdr->Core.uMagic == RTLDRREADER_MAGIC);
+    NTSTATUS rcNt;
 
+    /* Check for type overflow (paranoia). */
     if ((ULONG)cb != cb)
         return VERR_OUT_OF_RANGE;
 
-
-    /*
-     * For some reason I'm getting occational read error in an XP VM with
-     * STATUS_FAILED_DRIVER_ENTRY.  Redoing the call again works in the
-     * debugger, so try do that automatically.
-     */
-    for (uint32_t iTry = 0;; iTry++)
+#ifdef IN_RING3
+    /* Make sure the event semaphore is reset (normally we don't use one). */
+    if (pNtViRdr->hEvent)
     {
-        LARGE_INTEGER offNt;
-        offNt.QuadPart = off;
-
-        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-        NTSTATUS rcNt = NtReadFile(pNtViRdr->hFile,
-                                   NULL /*hEvent*/,
-                                   NULL /*ApcRoutine*/,
-                                   NULL /*ApcContext*/,
-                                   &Ios,
-                                   pvBuf,
-                                   (ULONG)cb,
-                                   &offNt,
-                                   NULL);
-        if (NT_SUCCESS(rcNt))
-            rcNt = Ios.Status;
-        if (NT_SUCCESS(rcNt))
-        {
-            if (Ios.Information == cb)
-            {
-                pNtViRdr->off = off + cb;
-                return VINF_SUCCESS;
-            }
-#ifdef IN_RING3
-            supR3HardenedError(VERR_READ_ERROR, false,
-                               "supHardNtViRdrRead: Only got %#zx bytes when requesting %#zx bytes at %#llx in '%s'.\n",
-                               Ios.Information, off, cb, pNtViRdr->szFilename);
-#endif
-            pNtViRdr->off = -1;
-            return VERR_READ_ERROR;
-        }
-
-/** @todo This nonsense is probably due to missing FILE_SYNCHRONOUS_IO_NONALERT
- *        flags in early code stage.  Should clean this up, but leave code
- *        for handling STATUS_PENDING as we don't know what callers of
- *        NtCreateSection might've been passing to their NtCreateFile calls.
- *        In ring-0, this code is mostly pointless, I think. */
-        /*
-         * Delay a little before we retry?
-         */
-#ifdef IN_RING3
-        if (iTry == 0)
-            NtYieldExecution();
-        else if (iTry >= 1)
-        {
-            LARGE_INTEGER Time;
-            Time.QuadPart = -1000000 / 100; /* 1ms in 100ns units, relative time. */
-            NtDelayExecution(TRUE, &Time);
-        }
-#endif
-        /*
-         * Before we give up, we'll try split up the request in case the
-         * kernel is low on memory or similar.  For simplicity reasons, we do
-         * this in a recursion fashion.
-         */
-        if (iTry >= 2)
-        {
-            if (cb >= _8K)
-            {
-                size_t const cbBlock = RT_ALIGN_Z(cb / 4, 512);
-                while (cb > 0)
-                {
-                    size_t cbThisRead = RT_MIN(cb, cbBlock);
-                    int rc = supHardNtViRdrRead(&pNtViRdr->Core, pvBuf, cbThisRead, off);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    off  += cbThisRead;
-                    cb   -= cbThisRead;
-                    pvBuf = (uint8_t *)pvBuf + cbThisRead;
-                }
-                return VINF_SUCCESS;
-            }
-
-#ifdef IN_RING3
-            supR3HardenedError(VERR_READ_ERROR, false, "supHardNtViRdrRead: Error %#x reading %#zx bytes at %#llx in '%s'.\n",
-                               rcNt, off, cb, pNtViRdr->szFilename);
-#endif
-            pNtViRdr->off = -1;
-            return VERR_READ_ERROR;
-        }
+        rcNt = NtClearEvent(pNtViRdr->hEvent);
+        if (!NT_SUCCESS(rcNt))
+            return RTErrConvertFromNtStatus(rcNt);
     }
+#endif
+
+    /* Perform the read. */
+    LARGE_INTEGER offNt;
+    offNt.QuadPart = off;
+
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    rcNt = NtReadFile(pNtViRdr->hFile,
+                      pNtViRdr->hEvent,
+                      NULL /*ApcRoutine*/,
+                      NULL /*ApcContext*/,
+                      &Ios,
+                      pvBuf,
+                      (ULONG)cb,
+                      &offNt,
+                      NULL);
+
+#ifdef IN_RING0
+    /* In ring-0 the handles shall be synchronized and not alertable. */
+    AssertMsg(rcNt == STATUS_SUCCESS || !NT_SUCCESS(rcNt), ("%#x\n", rcNt));
+#else
+    /* In ring-3 we like our handles synchronized and non-alertable, but we
+       sometimes have to take what we can get.  So, deal with pending I/O as
+       best we can. */
+    if (rcNt == STATUS_PENDING)
+        rcNt = NtWaitForSingleObject(pNtViRdr->hEvent ? pNtViRdr->hEvent : pNtViRdr->hFile, FALSE /*Alertable*/, NULL);
+#endif
+    if (NT_SUCCESS(rcNt))
+        rcNt = Ios.Status;
+    if (NT_SUCCESS(rcNt))
+    {
+        /* We require the caller to not read beyond the end of the file since
+           we don't have any way to communicate that we've read less that
+           requested. */
+        if (Ios.Information == cb)
+        {
+            pNtViRdr->off = off + cb; /* (just for show) */
+            return VINF_SUCCESS;
+        }
+#ifdef IN_RING3
+        supR3HardenedError(VERR_READ_ERROR, false,
+                           "supHardNtViRdrRead: Only got %#zx bytes when requesting %#zx bytes at %#llx in '%s'.\n",
+                           Ios.Information, off, cb, pNtViRdr->szFilename);
+#endif
+    }
+    pNtViRdr->off = -1;
+    return VERR_READ_ERROR;
 }
 
 
@@ -353,7 +322,13 @@ static DECLCALLBACK(int) supHardNtViRdrDestroy(PRTLDRREADER pReader)
 
     pNtViRdr->Core.uMagic = ~RTLDRREADER_MAGIC;
     pNtViRdr->hFile = NULL;
-
+#ifdef IN_RING3
+    if (pNtViRdr->hEvent)
+    {
+        NtClose(pNtViRdr->hEvent);
+        pNtViRdr->hEvent = NULL;
+    }
+#endif
     RTMemFree(pNtViRdr);
     return VINF_SUCCESS;
 }
@@ -380,6 +355,31 @@ DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t 
         return VERR_LDRVI_FILE_LENGTH_ERROR;
 
     /*
+     * Figure the file mode so we can see whether we'll be needing an event
+     * semaphore for waiting on reads.  This may happen in very unlikely
+     * NtCreateSection scenarios.
+     */
+#if defined(IN_RING3) || defined(VBOX_STRICT)
+    Ios.Status = STATUS_UNSUCCESSFUL;
+    ULONG fMode;
+    rcNt = NtQueryInformationFile(hFile, &Ios, &fMode, sizeof(fMode), FileModeInformation);
+    if (!NT_SUCCESS(rcNt) || !NT_SUCCESS(Ios.Status))
+        return VERR_SUP_VP_FILE_MODE_ERROR;
+#endif
+
+    HANDLE hEvent = NULL;
+#ifdef IN_RING3
+    if (!(fMode & (FILE_SYNCHRONOUS_IO_NONALERT | FILE_SYNCHRONOUS_IO_ALERT)))
+    {
+        rcNt = NtCreateEvent(&hEvent, EVENT_ALL_ACCESS, NULL, NotificationEvent, FALSE);
+        if (!NT_SUCCESS(rcNt))
+            return VERR_SUP_VP_CREATE_READ_EVT_SEM_FAILED;
+    }
+#else
+    Assert(fMode & FILE_SYNCHRONOUS_IO_NONALERT);
+#endif
+
+    /*
      * Calc the file name length and allocate memory for the reader instance.
      */
     size_t cchFilename = 0;
@@ -389,7 +389,13 @@ DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t 
     int rc = VERR_NO_MEMORY;
     PSUPHNTVIRDR pNtViRdr = (PSUPHNTVIRDR)RTMemAllocZ(sizeof(*pNtViRdr) + cchFilename);
     if (!pNtViRdr)
+    {
+#ifdef IN_RING3
+        if (hEvent != NULL)
+            NtClose(hEvent);
+#endif
         return VERR_NO_MEMORY;
+    }
 
     /*
      * Initialize the structure.
@@ -412,6 +418,7 @@ DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t 
     pNtViRdr->Core.pfnUnmap   = supHardNtViRdrUnmap;
     pNtViRdr->Core.pfnDestroy = supHardNtViRdrDestroy;
     pNtViRdr->hFile           = hFile;
+    pNtViRdr->hEvent          = hEvent;
     pNtViRdr->off             = 0;
     pNtViRdr->cbFile          = StdInfo.EndOfFile.QuadPart;
     pNtViRdr->fFlags          = fFlags;
