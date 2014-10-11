@@ -92,8 +92,11 @@ typedef struct SUPHNTVIRDR
 {
     /** The core reader structure. */
     RTLDRREADER Core;
-    /** The file handle . */
+    /** The file handle. */
     HANDLE      hFile;
+    /** Handle to event sempahore in case we're force to deal with asynchronous
+     * I/O. */
+    HANDLE      hEvent;
     /** Current file offset. */
     RTFOFF      off;
     /** The file size. */
