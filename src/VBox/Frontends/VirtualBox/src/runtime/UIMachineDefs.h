@@ -25,7 +25,7 @@ enum UIVisualElement
 {
     UIVisualElement_WindowTitle           = RT_BIT(0),
     UIVisualElement_MouseIntegrationStuff = RT_BIT(1),
-    UIVisualElement_PauseStuff            = RT_BIT(2),
+    UIVisualElement_IndicatorPoolStuff    = RT_BIT(2),
     UIVisualElement_HDStuff               = RT_BIT(3),
     UIVisualElement_CDStuff               = RT_BIT(4),
     UIVisualElement_FDStuff               = RT_BIT(5),
