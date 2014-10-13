@@ -38,64 +38,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
-/* Visual state interface: */
-class UIVisualState : public QObject
-{
-    Q_OBJECT;
-
-public:
-
-    /* Constructor: */
-    UIVisualState(QObject *pParent, UISession *pSession, UIVisualStateType type)
-        : QObject(pParent)
-        , m_type(type)
-        , m_pSession(pSession)
-        , m_pMachineLogic(0)
-    {
-    }
-
-    /* Destructor: */
-    ~UIVisualState()
-    {
-        /* Cleanup/delete machine logic if exists: */
-        if (m_pMachineLogic)
-        {
-            /* Cleanup the logic object: */
-            m_pMachineLogic->cleanup();
-            /* Destroy the logic object: */
-            UIMachineLogic::destroy(m_pMachineLogic);
-        }
-    }
-
-    /* Visual state type getter: */
-    UIVisualStateType visualStateType() const { return m_type; }
-
-    /* Machine logic getter: */
-    UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
-
-    /* Method to prepare change one visual state to another: */
-    bool prepareChange()
-    {
-        m_pMachineLogic = UIMachineLogic::create(this, m_pSession, visualStateType());
-        return m_pMachineLogic->checkAvailability();
-    }
-
-    /* Method to change one visual state to another: */
-    void change()
-    {
-        /* Prepare the logic object: */
-        m_pMachineLogic->prepare();
-    }
-
-protected:
-
-    /* Variables: */
-    UIVisualStateType m_type;
-    UISession *m_pSession;
-    UIMachineLogic *m_pMachineLogic;
-};
-
 /* static */
 UIMachine* UIMachine::m_spInstance = 0;
 
@@ -187,13 +129,6 @@ void UIMachine::destroy()
     m_spInstance = 0;
 }
 
-UIMachineLogic* UIMachine::machineLogic() const
-{
-    if (m_pVisualState && m_pVisualState->machineLogic())
-        return m_pVisualState->machineLogic();
-    return 0;
-}
-
 QWidget* UIMachine::activeWindow() const
 {
     if (machineLogic() &&  machineLogic()->activeMachineWindow())
@@ -201,35 +136,48 @@ QWidget* UIMachine::activeWindow() const
     return 0;
 }
 
-void UIMachine::asyncChangeVisualState(UIVisualStateType visualStateType)
+void UIMachine::asyncChangeVisualState(UIVisualStateType visualState)
 {
-    emit sigRequestAsyncVisualStateChange(visualStateType);
+    emit sigRequestAsyncVisualStateChange(visualState);
 }
 
-void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
+void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
 {
-    /* Create new state: */
-    UIVisualState *pNewVisualState = new UIVisualState(this, m_pSession, newVisualStateType);
+    /* Create new machine-logic: */
+    UIMachineLogic *pMachineLogic = UIMachineLogic::create(this, m_pSession, visualState);
 
-    /* First we have to check if the selected mode is available at all.
-     * Only then we delete the old mode and switch to the new mode. */
-    if (pNewVisualState->prepareChange())
+    /* First we have to check if the selected machine-logic is available at all.
+     * Only then we delete the old machine-logic and switch to the new one. */
+    if (pMachineLogic->checkAvailability())
     {
-        /* Delete previous state: */
-        delete m_pVisualState;
+        /* Delete previous machine-logic if exists: */
+        if (m_pMachineLogic)
+        {
+            m_pMachineLogic->cleanup();
+            UIMachineLogic::destroy(m_pMachineLogic);
+        }
 
-        /* Set the new mode as current mode: */
-        m_pVisualState = pNewVisualState;
-        m_pVisualState->change();
+        /* Set the new machine-logic as current one: */
+        m_pMachineLogic = pMachineLogic;
+        m_pMachineLogic->prepare();
+
+        /* Remember new visual state: */
+        m_visualState = visualState;
     }
     else
     {
-        /* Discard the temporary created new state: */
-        delete pNewVisualState;
+        /* Delete temporary created machine-logic: */
+        pMachineLogic->cleanup();
+        UIMachineLogic::destroy(pMachineLogic);
+    }
 
-        /* If there is no state currently created => we have to exit: */
-        if (!m_pVisualState)
-            deleteLater();
+    /* Make sure machine-logic exists: */
+    if (!m_pMachineLogic)
+    {
+        /* Reset initial visual state  to normal: */
+        m_initialVisualState = UIVisualStateType_Normal;
+        /* Enter initial visual state again: */
+        enterInitialVisualState();
     }
 }
 
@@ -237,8 +185,9 @@ UIMachine::UIMachine()
     : QObject(0)
     , m_pSession(0)
     , m_allowedVisualStates(UIVisualStateType_Invalid)
-    , m_initialStateType(UIVisualStateType_Normal)
-    , m_pVisualState(0)
+    , m_initialVisualState(UIVisualStateType_Normal)
+    , m_visualState(UIVisualStateType_Invalid)
+    , m_pMachineLogic(0)
 {
     m_spInstance = this;
 }
@@ -260,8 +209,8 @@ bool UIMachine::prepare()
     /* Cache medium data if necessary: */
     vboxGlobal().startMediumEnumeration(false /* force start */);
 
-    /* Prepare visual state: */
-    prepareVisualState();
+    /* Prepare machine-logic: */
+    prepareMachineLogic();
 
     /* Now power up the machine.
      * Actually powerUp does more that just a power up,
@@ -286,7 +235,7 @@ bool UIMachine::prepareSession()
     return true;
 }
 
-void UIMachine::prepareVisualState()
+void UIMachine::prepareMachineLogic()
 {
     /* Prepare async visual state type change handler: */
     qRegisterMetaType<UIVisualStateType>();
@@ -307,8 +256,8 @@ void UIMachine::prepareVisualState()
         switch (requestedVisualState)
         {
             /* Direct transition to scale/fullscreen mode allowed: */
-            case UIVisualStateType_Scale:      m_initialStateType = UIVisualStateType_Scale; break;
-            case UIVisualStateType_Fullscreen: m_initialStateType = UIVisualStateType_Fullscreen; break;
+            case UIVisualStateType_Scale:      m_initialVisualState = UIVisualStateType_Scale; break;
+            case UIVisualStateType_Fullscreen: m_initialVisualState = UIVisualStateType_Fullscreen; break;
             /* While to seamless is not, so we have to make request to do transition later: */
             case UIVisualStateType_Seamless:   uisession()->setRequestedVisualState(UIVisualStateType_Seamless); break;
             default: break;
@@ -319,40 +268,40 @@ void UIMachine::prepareVisualState()
     enterInitialVisualState();
 }
 
-void UIMachine::cleanupVisualState()
+void UIMachine::cleanupMachineLogic()
 {
     /* Session UI can have requested visual state: */
     if (uisession())
     {
         /* Get requested visual state: */
         UIVisualStateType requestedVisualState = uisession()->requestedVisualState();
-        /* If requested state is invalid: */
+        /* Or current visual state if requested is invalid: */
         if (requestedVisualState == UIVisualStateType_Invalid)
-        {
-            /* Get current if still exists or normal otherwise: */
-            requestedVisualState = m_pVisualState ? m_pVisualState->visualStateType() : UIVisualStateType_Normal;
-        }
+            requestedVisualState = m_visualState;
 
         /* Save requested visual state: */
         gEDataManager->setRequestedVisualState(requestedVisualState, vboxGlobal().managedVMUuid());
     }
 
-    /* Delete visual state: */
-    delete m_pVisualState;
-    m_pVisualState = 0;
+    /* Destroy machine-logic if exists: */
+    if (machineLogic())
+    {
+        m_pMachineLogic->cleanup();
+        UIMachineLogic::destroy(m_pMachineLogic);
+    }
 }
 
 void UIMachine::cleanupSession()
 {
-    /* Destroy session UI if necessary: */
+    /* Destroy session UI if exists: */
     if (uisession())
         UISession::destroy(m_pSession);
 }
 
 void UIMachine::cleanup()
 {
-    /* Cleanup visual state: */
-    cleanupVisualState();
+    /* Cleanup machine-logic: */
+    cleanupMachineLogic();
 
     /* Cleanup session UI: */
     cleanupSession();
@@ -363,7 +312,7 @@ void UIMachine::cleanup()
 
 void UIMachine::enterInitialVisualState()
 {
-    sltChangeVisualState(m_initialStateType);
+    sltChangeVisualState(m_initialVisualState);
 }
 
 #include "UIMachine.moc"
