@@ -197,7 +197,7 @@ static uint32_t volatile                g_idActiveThread = UINT32_MAX;
 *******************************************************************************/
 #ifdef IN_RING3
 static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PRTERRINFO pErrInfo,
-                                           PFNWINVERIFYTRUST pfnWinVerifyTrust);
+                                           PFNWINVERIFYTRUST pfnWinVerifyTrust, HRESULT *phrcWinVerifyTrust);
 static int supR3HardNtViCallWinVerifyTrustCatFile(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PRTERRINFO pErrInfo,
                                                   PFNWINVERIFYTRUST pfnWinVerifyTrust);
 #endif
@@ -2082,14 +2082,14 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     RTERRINFOSTATIC ErrInfoStatic;
     RTErrInfoInitStatic(&ErrInfoStatic);
     int rc = supR3HardNtViCallWinVerifyTrust(NULL, g_SupLibHardenedExeNtPath.UniStr.Buffer, 0,
-                                             &ErrInfoStatic.Core, pfnWinVerifyTrust);
+                                             &ErrInfoStatic.Core, pfnWinVerifyTrust, NULL);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg(pszProgName, kSupInitOp_Integrity, rc,
                               "WinVerifyTrust failed on stub executable: %s", ErrInfoStatic.szMsg);
 # endif
 
     if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(6, 0)) /* ntdll isn't signed on XP, assuming this is the case on W2K3 for now. */
-        supR3HardNtViCallWinVerifyTrust(NULL, L"\\SystemRoot\\System32\\ntdll.dll", 0, NULL, pfnWinVerifyTrust);
+        supR3HardNtViCallWinVerifyTrust(NULL, L"\\SystemRoot\\System32\\ntdll.dll", 0, NULL, pfnWinVerifyTrust, NULL);
     supR3HardNtViCallWinVerifyTrustCatFile(NULL, L"\\SystemRoot\\System32\\ntdll.dll", 0, NULL, pfnWinVerifyTrust);
 
     g_pfnWinVerifyTrust = pfnWinVerifyTrust;
@@ -2141,10 +2141,15 @@ static int supR3HardNtViNtToWinPath(PCRTUTF16 pwszNtName, PCRTUTF16 *ppwszWinPat
  * @param   fFlags              Flags, SUPHNTVI_F_XXX.
  * @param   pErrInfo            Pointer to error info structure. Optional.
  * @param   pfnWinVerifyTrust   Pointer to the API.
+ * @param   phrcWinVerifyTrust  Where to WinVerifyTrust error status on failure,
+ *                              optional.
  */
 static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uint32_t fFlags, PRTERRINFO pErrInfo,
-                                           PFNWINVERIFYTRUST pfnWinVerifyTrust)
+                                           PFNWINVERIFYTRUST pfnWinVerifyTrust, HRESULT *phrcWinVerifyTrust)
 {
+    if (phrcWinVerifyTrust)
+        *phrcWinVerifyTrust = S_OK;
+
     /*
      * Convert the name into a Windows name.
      */
@@ -2222,6 +2227,8 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
                                "WinVerifyTrust failed with hrc=%Rhrc on '%ls'", hrc, pwszName);
         SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrust: WinVerifyTrust failed with %#x (%s) on '%ls'\n",
                      hrc, pszErrConst, pwszName));
+        if (phrcWinVerifyTrust)
+            *phrcWinVerifyTrust = hrc;
     }
 
     /* clean up state data. */
@@ -2610,12 +2617,27 @@ DECLHIDDEN(int) supHardenedWinVerifyImageTrust(HANDLE hFile, PCRTUTF16 pwszName,
                 }
                 else if (RT_SUCCESS(rc))
                 {
-                    /** @todo having trouble with a 32-bit windows box when letting these calls thru */
-                    rc = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                    HRESULT hrcWinVerifyTrust;
+                    rc = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust,
+                                                         &hrcWinVerifyTrust);
+
+                    /* DLLs signed with special roots, like "Microsoft Digital Media Authority 2005",
+                       may fail here because the root cert is not in the normal certificate stores
+                       (if any).  Our verification code has the basics of these certificates included
+                       and can verify them, which is why we end up here instead of in the
+                       VINF_LDRVI_NOT_SIGNED case above.  Current workaround is to do as above.
+                       (Intel graphics driver DLLs, like igdusc64.dll. */
+                    if (   RT_FAILURE(rc)
+                        && hrcWinVerifyTrust == CERT_E_CHAINING
+                        && (fFlags & SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION))
+                    {
+                        rc = supR3HardNtViCallWinVerifyTrustCatFile(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                        SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile -> %d (was CERT_E_CHAINING)\n", rc));
+                    }
                 }
                 else
                 {
-                    int rc2 = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust);
+                    int rc2 = supR3HardNtViCallWinVerifyTrust(hFile, pwszName, fFlags, pErrInfo, g_pfnWinVerifyTrust, NULL);
                     AssertMsg(RT_FAILURE_NP(rc2),
                               ("rc=%Rrc, rc2=%Rrc %s", rc, rc2, pErrInfo ? pErrInfo->pszMsg : "<no-err-info>"));
                 }
