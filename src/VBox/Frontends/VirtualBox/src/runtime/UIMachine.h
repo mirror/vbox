@@ -30,7 +30,6 @@
 /* Forward declarations: */
 class QWidget;
 class UISession;
-class UIVisualState;
 class UIMachineLogic;
 
 /** Singleton QObject extension
@@ -56,10 +55,10 @@ public:
     /** Static instance. */
     static UIMachine* instance() { return m_spInstance; }
 
-    /** Returns UI session instance. */
+    /** Returns session UI instance. */
     UISession *uisession() const { return m_pSession; }
-    /** Returns machine-logic reference (if possible). */
-    UIMachineLogic* machineLogic() const;
+    /** Returns machine-logic instance. */
+    UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
     /** Returns active machine-window reference (if possible). */
     QWidget* activeWindow() const;
 
@@ -85,17 +84,17 @@ private:
     bool prepare();
     /** Prepare routine: Session stuff. */
     bool prepareSession();
-    /** Prepare routine: Visual state stuff. */
-    void prepareVisualState();
+    /** Prepare routine: Machine-logic stuff. */
+    void prepareMachineLogic();
 
-    /** Cleanup routine: Visual state stuff. */
-    void cleanupVisualState();
+    /** Cleanup routine: Machine-logic stuff. */
+    void cleanupMachineLogic();
     /** Cleanup routine: Session stuff. */
     void cleanupSession();
     /** Cleanup routine. */
     void cleanup();
 
-    /** Moves VM to default (normal) state. */
+    /** Moves VM to initial state. */
     void enterInitialVisualState();
 
     /** Static instance. */
@@ -104,12 +103,14 @@ private:
     /** Holds the session UI instance. */
     UISession *m_pSession;
 
-    /** Holds allowed visual state types. */
+    /** Holds allowed visual states. */
     UIVisualStateType m_allowedVisualStates;
-    /** Holds initial visual state type. */
-    UIVisualStateType m_initialStateType;
+    /** Holds initial visual state. */
+    UIVisualStateType m_initialVisualState;
     /** Holds current visual state. */
-    UIVisualState *m_pVisualState;
+    UIVisualStateType m_visualState;
+    /** Holds current machine-logic. */
+    UIMachineLogic *m_pMachineLogic;
 };
 
 #define gpMachine UIMachine::instance()
