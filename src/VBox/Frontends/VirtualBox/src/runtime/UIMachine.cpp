@@ -315,5 +315,3 @@ void UIMachine::enterInitialVisualState()
     sltChangeVisualState(m_initialVisualState);
 }
 
-#include "UIMachine.moc"
-
