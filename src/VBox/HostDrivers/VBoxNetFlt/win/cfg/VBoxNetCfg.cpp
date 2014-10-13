@@ -547,9 +547,11 @@ static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, 
     {
         case VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE:
             PcParams.StateChange = DICS_DISABLE;
+            NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: Change type (DICS_DISABLE): %d\n", pPc->enmPcType));
             break;
         case VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE:
             PcParams.StateChange = DICS_ENABLE;
+            NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: Change type (DICS_ENABLE): %d\n", pPc->enmPcType));
             break;
         default:
             NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback: Unexpected prop change type: %d\n", pPc->enmPcType));
@@ -683,6 +685,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pwszPnPId,
 
             if (cCurId >= cPnPId)
             {
+                NonStandardLogFlow(("!wcsnicmp(pCurId = (%S), pwszPnPId = (%S), cPnPId = (%d))", pCurId, pwszPnPId, cPnPId));
+
                 pCurId += cCurId - cPnPId;
                 if (!wcsnicmp(pCurId, pwszPnPId, cPnPId))
                 {
@@ -722,6 +726,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR 
     VBOXNECTFGWINPROPCHANGE Pc;
     Pc.enmPcType = enmPcType;
     Pc.hr = S_OK;
+    NonStandardLogFlow(("Calling VBoxNetCfgWinEnumNetDevices with lpszPnPId =(%S) and vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback", lpszPnPId));
+
     HRESULT hr = VBoxNetCfgWinEnumNetDevices(lpszPnPId, vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback, &Pc);
     if (!SUCCEEDED(hr))
     {
@@ -2068,34 +2074,17 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
 #define VBOXNETCFGWIN_NETADP_ID L"sun_VBoxNetAdp"
 static HRESULT vboxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
 {
-    INetCfgComponent *pNcc = NULL;
-    HRESULT hr = pNc->FindComponent(VBOXNETCFGWIN_NETADP_ID, &pNcc);
-    if (hr == S_OK)
-    {
-        NonStandardLog("NetAdp is installed currently, uninstalling ...\n");
-
-        hr = VBoxNetCfgWinUninstallComponent(pNc, pNcc);
-        NonStandardLogFlow(("NetAdp component uninstallation ended with hr (0x%x)\n", hr));
-
-        pNcc->Release();
-    }
-    else if (hr == S_FALSE)
-    {
-        NonStandardLog("NetAdp is not installed currently\n");
-    }
-    else
-    {
-        NonStandardLogFlow(("FindComponent failed, hr (0x%x)\n", hr));
-    }
+    HRESULT hr = S_OK;
+    NonStandardLog("Finding NetAdp driver package and trying to uninstall it ...\n");
 
     VBoxDrvCfgInfUninstallAllF(L"Net", VBOXNETCFGWIN_NETADP_ID, InfRmFlags);
-
+    NonStandardLog("NetAdp is not installed currently\n");
     return hr;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc)
 {
-    return vboxNetCfgWinNetAdpUninstall(pNc, 0);
+    return vboxNetCfgWinNetAdpUninstall(pNc, SUOI_FORCEDELETE);
 }
 
 /*
