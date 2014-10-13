@@ -250,27 +250,18 @@ UIMachine::~UIMachine()
 
 bool UIMachine::prepare()
 {
-    /* Try to create session UI: */
-    if (!UISession::create(m_pSession, this))
+    /* Try to prepare session UI: */
+    if (!prepareSession())
         return false;
 
-    /* Preventing application from closing in case of window(s) closed: */
+    /* Prevent application from closing when all window(s) closed: */
     qApp->setQuitOnLastWindowClosed(false);
 
-    /* Cache medium data only if really necessary: */
+    /* Cache medium data if necessary: */
     vboxGlobal().startMediumEnumeration(false /* force start */);
 
-    /* Load settings: */
-    loadSettings();
-
-    /* Prepare async visual-state change handler: */
-    qRegisterMetaType<UIVisualStateType>();
-    connect(this, SIGNAL(sigRequestAsyncVisualStateChange(UIVisualStateType)),
-            this, SLOT(sltChangeVisualState(UIVisualStateType)),
-            Qt::QueuedConnection);
-
-    /* Enter default (normal) state */
-    enterInitialVisualState();
+    /* Prepare visual state: */
+    prepareVisualState();
 
     /* Now power up the machine.
      * Actually powerUp does more that just a power up,
@@ -285,42 +276,56 @@ bool UIMachine::prepare()
     return true;
 }
 
-void UIMachine::loadSettings()
+bool UIMachine::prepareSession()
 {
-    /* Load 'visual state' option: */
-    if (uisession())
-    {
-        /* Load restricted visual states: */
-        UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(vboxGlobal().managedVMUuid());
-        /* Acquire allowed visual states: */
-        m_allowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStates);
+    /* Try to create session UI: */
+    if (!UISession::create(m_pSession, this))
+        return false;
 
-        /* Load requested visual state: */
-        UIVisualStateType requestedVisualState = gEDataManager->requestedVisualState(vboxGlobal().managedVMUuid());
-        /* Check if requested visual state type allowed: */
-        if (isVisualStateAllowed(requestedVisualState))
-        {
-            switch (requestedVisualState)
-            {
-                /* Direct transition to scale/fullscreen mode allowed: */
-                case UIVisualStateType_Scale: m_initialStateType = UIVisualStateType_Scale; break;
-                case UIVisualStateType_Fullscreen: m_initialStateType = UIVisualStateType_Fullscreen; break;
-                /* While to seamless is not, so we have to request transition on GA capability-change event: */
-                case UIVisualStateType_Seamless: uisession()->setRequestedVisualState(UIVisualStateType_Seamless); break;
-                default: break;
-            }
-        }
-    }
+    /* True by default: */
+    return true;
 }
 
-void UIMachine::saveSettings()
+void UIMachine::prepareVisualState()
 {
-    /* Save 'visual state' option: */
+    /* Prepare async visual state type change handler: */
+    qRegisterMetaType<UIVisualStateType>();
+    connect(this, SIGNAL(sigRequestAsyncVisualStateChange(UIVisualStateType)),
+            this, SLOT(sltChangeVisualState(UIVisualStateType)),
+            Qt::QueuedConnection);
+
+    /* Load restricted visual states: */
+    UIVisualStateType restrictedVisualStates = gEDataManager->restrictedVisualStates(vboxGlobal().managedVMUuid());
+    /* Acquire allowed visual states: */
+    m_allowedVisualStates = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStates);
+
+    /* Load requested visual state: */
+    UIVisualStateType requestedVisualState = gEDataManager->requestedVisualState(vboxGlobal().managedVMUuid());
+    /* Check if requested visual state is allowed: */
+    if (isVisualStateAllowed(requestedVisualState))
+    {
+        switch (requestedVisualState)
+        {
+            /* Direct transition to scale/fullscreen mode allowed: */
+            case UIVisualStateType_Scale:      m_initialStateType = UIVisualStateType_Scale; break;
+            case UIVisualStateType_Fullscreen: m_initialStateType = UIVisualStateType_Fullscreen; break;
+            /* While to seamless is not, so we have to make request to do transition later: */
+            case UIVisualStateType_Seamless:   uisession()->setRequestedVisualState(UIVisualStateType_Seamless); break;
+            default: break;
+        }
+    }
+
+    /* Enter initial visual state: */
+    enterInitialVisualState();
+}
+
+void UIMachine::cleanupVisualState()
+{
+    /* Session UI can have requested visual state: */
     if (uisession())
     {
         /* Get requested visual state: */
         UIVisualStateType requestedVisualState = uisession()->requestedVisualState();
-
         /* If requested state is invalid: */
         if (requestedVisualState == UIVisualStateType_Invalid)
         {
@@ -331,20 +336,26 @@ void UIMachine::saveSettings()
         /* Save requested visual state: */
         gEDataManager->setRequestedVisualState(requestedVisualState, vboxGlobal().managedVMUuid());
     }
-}
-
-void UIMachine::cleanup()
-{
-    /* Save settings: */
-    saveSettings();
 
     /* Delete visual state: */
     delete m_pVisualState;
     m_pVisualState = 0;
+}
 
+void UIMachine::cleanupSession()
+{
     /* Destroy session UI if necessary: */
     if (uisession())
         UISession::destroy(m_pSession);
+}
+
+void UIMachine::cleanup()
+{
+    /* Cleanup visual state: */
+    cleanupVisualState();
+
+    /* Cleanup session UI: */
+    cleanupSession();
 
     /* Quit application: */
     QApplication::quit();

@@ -83,10 +83,15 @@ private:
 
     /** Prepare routine. */
     bool prepare();
-    /** Prepare routine: Loading stuff. */
-    void loadSettings();
-    /** Cleanup routine: Saving stuff. */
-    void saveSettings();
+    /** Prepare routine: Session stuff. */
+    bool prepareSession();
+    /** Prepare routine: Visual state stuff. */
+    void prepareVisualState();
+
+    /** Cleanup routine: Visual state stuff. */
+    void cleanupVisualState();
+    /** Cleanup routine: Session stuff. */
+    void cleanupSession();
     /** Cleanup routine. */
     void cleanup();
 
