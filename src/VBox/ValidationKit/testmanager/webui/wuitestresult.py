@@ -653,12 +653,7 @@ class WuiGroupedResultList(WuiListContentBase):
                                    fBracketed = False);
 
 
-        if all(str(sMsg).lower().find('guru') == -1 for sMsg in oEntry.asMsgs) is True:
-            sStatus = oEntry.enmStatus
-        else:
-            sStatus = 'guru'
-
-        aoTestSetLinks = [ WuiTmLink(sStatus,
+        aoTestSetLinks = [ WuiTmLink(oEntry.enmStatus,
                                      WuiMain.ksScriptName,
                                      { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
                                        TestSetData.ksParam_idTestSet: oEntry.idTestSet },

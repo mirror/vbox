@@ -452,8 +452,6 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = None;
         self.iRevisionTestSuite      = None;
 
-        self.asMsgs                  = None;
-
     def initFromDbRow(self, aoRow):
         """
         Reinitialize from a database query.
@@ -498,8 +496,6 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
         self.idBuildTestSuite        = aoRow[28];
         self.iRevisionTestSuite      = aoRow[29];
 
-        self.asMsgs                  = aoRow[31];
-
         return self
 
 
@@ -523,12 +519,9 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     ksResultsGroupingTypeTestCase   = 'ResultsGroupingTypeTestCase'
     ksResultsGroupingTypeSchedGroup = 'ResultsGroupingTypeSchedGroup'
 
-    ksBaseTables = 'BuildCategories, Builds, TestBoxes, TestCases, TestCaseArgs,\n' \
-                   '       TestSets LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
-                   '                ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild,\n' \
-                   'TestResults LEFT OUTER JOIN TestResults as MsgTab ON TestResults.idTestResult=MsgTab.idTestResultParent\n' \
-                   '  LEFT OUTER JOIN TestResultMsgs as MsgTab1 ON MsgTab.idTestResult = MsgTab1.idTestResult\n' \
-                   '    LEFT OUTER JOIN TestResultStrTab as MsgTab2 ON MsgTab1.idStrMsg = MsgTab2.idStr\n'
+    ksBaseTables = 'BuildCategories, Builds, TestBoxes, TestResults, TestCases, TestCaseArgs,\n' \
+                 + '       TestSets LEFT OUTER JOIN Builds AS TestSuiteBits\n' \
+                   '                ON TestSets.idBuildTestSuite = TestSuiteBits.idBuild\n';
 
     ksBasePreCondition = 'TestSets.idTestSet         = TestResults.idTestSet\n' \
                 + '   AND TestResults.idTestResultParent is NULL\n' \
@@ -558,14 +551,6 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         ksResultsGroupingTypeSchedGroup: (ksBaseTables,
                                           ksBasePreCondition + '   AND TestBoxes.idSchedGroup',),
     }
-
-    ksGroupByPreCondition = 'TestResults.idTestResult, TestSets.idTestSet, TestResults.cErrors,\n' \
-                            'TestCases.idTestCase, TestCases.sName, TestSuiteBits.idBuild, TestSuiteBits.iRevision,\n' \
-                            'BuildCategories.idBuildCategory, Builds.idBuild, Builds.sVersion, Builds.iRevision,\n' \
-                            'TestBoxes.sOs, TestBoxes.sOsVersion, TestBoxes.sCpuArch, TestBoxes.sCpuVendor,\n' \
-                            'TestBoxes.sCpuName, TestBoxes.cCpus, TestBoxes.fCpuHwVirt, TestBoxes.fCpuNestedPaging,\n' \
-                            'TestBoxes.fCpu64BitGuest, TestBoxes.idTestBox, TestBoxes.sName, TestCases.sBaseCmd,\n' \
-                            'TestCaseArgs.sArgs'
 
     def _getTimePeriodQueryPart(self, tsNow, sInterval):
         """
@@ -620,7 +605,6 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         sQuery  = 'SELECT DISTINCT %s\n'  % sWhat
         sQuery += 'FROM   %s\n'  % sTables
         sQuery += 'WHERE  %s\n' % sCondition
-        sQuery += 'GROUP BY %s\n' % self.ksGroupByPreCondition
 
         return sQuery
 
@@ -670,8 +654,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                 '       TestCaseArgs.sArgs,\n' \
                 '       TestSuiteBits.idBuild AS idBuildTestSuite,\n' \
                 '       TestSuiteBits.iRevision AS iRevisionTestSuite,\n' \
-                '       (TestSets.tsDone IS NULL) SortRunningFirst,' \
-                '       array_agg(MsgTab2.sValue) AS asMsgs' \
+                '       (TestSets.tsDone IS NULL) SortRunningFirst' \
                 ;
 
         sSqlQuery = self._getSqlQueryForGroupSearch(sWhat, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue,

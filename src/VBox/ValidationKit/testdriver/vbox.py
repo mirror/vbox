@@ -2938,10 +2938,6 @@ class TestDriver(base.TestDriver):                                              
                     reporter.errorTimeout('txsDoConnectViaTcp: connect stage 1 timed out');
                 elif oTask is oSession:
                     oSession.reportPrematureTermination('txsDoConnectViaTcp: ');
-                    # Attempt to post VM termination state.
-                    (enmState, sStateNm) = oSession.getMachineStateWithName()
-                    if enmState is not None:
-                        reporter.testFailure("%s" % sStateNm)
                 else:
                     reporter.error('txsDoConnectViaTcp: unknown/wrong task %s' % (oTask,));
             if fRemoveVm:
