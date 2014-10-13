@@ -94,6 +94,7 @@ public:
     bool saveState();
     bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
+    bool restoreCurrentSnapshot();
     void closeRuntimeUI();
 
     /** Returns the session instance. */
