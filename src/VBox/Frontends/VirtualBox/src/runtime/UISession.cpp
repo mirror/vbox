@@ -348,18 +348,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
         {
             /* Discard the current state if requested: */
             if (fIncludingDiscard)
-            {
-                /* Prepare the snapshot-discard progress: */
-                CSnapshot snapshot = machine().GetCurrentSnapshot();
-                CProgress progress = console().RestoreSnapshot(snapshot);
-                if (!console().isOk())
-                    return msgCenter().cannotRestoreSnapshot(console(), snapshot.GetName(), machineName());
-
-                /* Show the snapshot-discard progress: */
-                msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_discard_90px.png");
-                if (progress.GetResultCode() != 0)
-                    return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machineName());
-            }
+                return restoreCurrentSnapshot();
         }
         else
         {
@@ -385,6 +374,60 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     }
     /* Passed: */
     return true;
+}
+
+bool UISession::restoreCurrentSnapshot()
+{
+    /* Search for corresponding VM: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    const QString strMachineID = vboxGlobal().managedVMUuid();
+    const CMachine mach = vbox.FindMachine(strMachineID);
+    if (vbox.isOk() && !mach.isNull())
+    {
+        /* Open a direct session to modify that VM: */
+        CSession sess = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
+                                                 vboxGlobal().isSeparateProcess()
+                                                 ? KLockType_Write : KLockType_Shared);
+        if (!sess.isNull())
+        {
+            /* Acquire console for this session: */
+            CConsole cons = sess.GetConsole();
+            if (!cons.isNull())
+            {
+                /* Prepare the snapshot-discard progress: */
+                const CSnapshot snap = mach.GetCurrentSnapshot();
+                CProgress prog = cons.RestoreSnapshot(snap);
+                if (cons.isOk())
+                {
+                    /* Show snapshot restoration progress: */
+                    msgCenter().showModalProgressDialog(prog, mach.GetName(), ":/progress_snapshot_discard_90px.png");
+                    if (prog.GetResultCode() != 0)
+                    {
+                        /* Unable to restore snapshot: */
+                        msgCenter().cannotRestoreSnapshot(prog, snap.GetName(), mach.GetName());
+                    }
+                }
+                else
+                {
+                    /* Unable to restore snapshot: */
+                    return msgCenter().cannotRestoreSnapshot(cons, snap.GetName(), machineName());
+                }
+            }
+            /* Unlock machine finally: */
+            sess.UnlockMachine();
+        }
+        else
+        {
+            /* Unable to open session to modify VM: */
+            return false;
+        }
+    }
+    else
+    {
+        /* Unable to find VM: */
+        msgCenter().cannotFindMachineById(vbox, strMachineID);
+        return false;
+    }
 }
 
 void UISession::closeRuntimeUI()
