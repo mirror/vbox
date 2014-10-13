@@ -1723,9 +1723,9 @@ static NTSTATUS supR3HardenedCopyRedirectionResult(WCHAR *pwszPath, size_t cwcPa
 static NTSTATUS NTAPI
 supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_STRING pName, PHANDLE phMod)
 {
-    DWORD    dwSavedLastError = RtlGetLastWin32Error();
-    bool     fQuiet = false;
-    NTSTATUS rcNt;
+    DWORD                   dwSavedLastError = RtlGetLastWin32Error();
+    PUNICODE_STRING const   pOrgName = pName;
+    NTSTATUS                rcNt;
 
     /*
      * Make sure the DLL notification callback is registered.  If we could, we
@@ -1770,6 +1770,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
     /*
      * Absolute path?
      */
+    NTSTATUS        rcNtResolve     = STATUS_SUCCESS;
     bool            fSkipValidation = false;
     WCHAR           wszPath[260];
     static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
@@ -1786,16 +1787,16 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             && RTPATH_IS_SLASH(pName->Buffer[1]) )
        )
     {
-        rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
-                                                        pName,
-                                                        (PUNICODE_STRING)&s_DefaultSuffix,
-                                                        &UniStrStatic,
-                                                        &UniStrDynamic,
-                                                        &pUniStrResult,
-                                                        NULL /*pNewFlags*/,
-                                                        NULL /*pcbFilename*/,
-                                                        NULL /*pcbNeeded*/);
-        if (NT_SUCCESS(rcNt))
+        rcNtResolve = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                               pName,
+                                                               (PUNICODE_STRING)&s_DefaultSuffix,
+                                                               &UniStrStatic,
+                                                               &UniStrDynamic,
+                                                               &pUniStrResult,
+                                                               NULL /*pNewFlags*/,
+                                                               NULL /*pcbFilename*/,
+                                                               NULL /*pcbNeeded*/);
+        if (NT_SUCCESS(rcNtResolve))
         {
             UINT cwc;
             rcNt = supR3HardenedCopyRedirectionResult(wszPath, RT_ELEMENTS(wszPath), pUniStrResult, pName, &cwc);
@@ -1882,16 +1883,16 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
          * returns a full DOS path.
          */
         UINT cwc;
-        rcNt = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
-                                                        pName,
-                                                        (PUNICODE_STRING)&s_DefaultSuffix,
-                                                        &UniStrStatic,
-                                                        &UniStrDynamic,
-                                                        &pUniStrResult,
-                                                        NULL /*pNewFlags*/,
-                                                        NULL /*pcbFilename*/,
-                                                        NULL /*pcbNeeded*/);
-        if (NT_SUCCESS(rcNt))
+        rcNtResolve = RtlDosApplyFileIsolationRedirection_Ustr(1 /*fFlags*/,
+                                                               pName,
+                                                               (PUNICODE_STRING)&s_DefaultSuffix,
+                                                               &UniStrStatic,
+                                                               &UniStrDynamic,
+                                                               &pUniStrResult,
+                                                               NULL /*pNewFlags*/,
+                                                               NULL /*pcbFilename*/,
+                                                               NULL /*pcbNeeded*/);
+        if (NT_SUCCESS(rcNtResolve))
         {
             rcNt = supR3HardenedCopyRedirectionResult(wszPath, RT_ELEMENTS(wszPath), pUniStrResult, pName, &cwc);
             RtlFreeUnicodeString(&UniStrDynamic);
@@ -1934,14 +1935,10 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         ResolvedName.Buffer = wszPath;
         ResolvedName.Length = (USHORT)(cwc * sizeof(WCHAR));
         ResolvedName.MaximumLength = ResolvedName.Length + sizeof(WCHAR);
-
-/** @todo need to cache the translation so we can get at fQuiet here! */
-        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: '%.*ls' -> '%.*ls' [rcNt=%#x]\n",
-                     (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer,
-                     ResolvedName.Length / sizeof(WCHAR), ResolvedName.Buffer, rcNt));
         pName = &ResolvedName;
     }
 
+    bool fQuiet = false;
     if (!fSkipValidation)
     {
         /*
@@ -1991,8 +1988,12 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             {
                 if (!fQuiet)
                 {
-                    supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x\n",
-                                       wszPath, rcNt);
+                    if (pOrgName != pName)
+                        supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls': rcNt=%#x\n",
+                                           wszPath, rcNt);
+                    else
+                        supR3HardenedError(VINF_SUCCESS, false, "supR3HardenedMonitor_LdrLoadDll: rejecting '%ls' (%.*ls): rcNt=%#x\n",
+                                           wszPath, pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer, rcNt);
                     SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: returns rcNt=%#x '%ls'\n", rcNt, wszPath));
                 }
                 RtlRestoreLastWin32Error(dwSavedLastError);
@@ -2004,8 +2005,9 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         else
         {
             DWORD dwErr = RtlGetLastWin32Error();
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls)\n",
-                         wszPath, dwErr, NtPathUniStr.Length / sizeof(RTUTF16), NtPathUniStr.Buffer));
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls; Input=%.*ls)\n",
+                         wszPath, dwErr, NtPathUniStr.Length / sizeof(RTUTF16), NtPathUniStr.Buffer,
+                         pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer));
         }
         RTNtPathFree(&NtPathUniStr, &hRootDir);
     }
@@ -2014,9 +2016,20 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      * Screened successfully enough.  Call the real thing.
      */
     if (!fQuiet)
-        SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls *pfFlags=%#x pwszSearchPath=%p:%ls [calling]\n",
-                     (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
-                     !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
+    {
+        if (pOrgName != pName)
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls (Input=%.*ls, rcNtResolve=%#x) *pfFlags=%#x pwszSearchPath=%p:%ls [calling]\n",
+                         (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer,
+                         (unsigned)pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer, rcNtResolve,
+                         pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
+                         !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
+        else
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: pName=%.*ls (rcNtResolve=%#x) *pfFlags=%#x pwszSearchPath=%p:%ls [calling]\n",
+                         (unsigned)pName->Length / sizeof(WCHAR), pName->Buffer, rcNtResolve,
+                         pfFlags ? *pfFlags : UINT32_MAX, pwszSearchPath,
+                         !((uintptr_t)pwszSearchPath & 1) && (uintptr_t)pwszSearchPath >= 0x2000U ? pwszSearchPath : L"<flags>"));
+    }
+
     RtlRestoreLastWin32Error(dwSavedLastError);
     rcNt = g_pfnLdrLoadDllReal(pwszSearchPath, pfFlags, pName, phMod);
 
