@@ -314,8 +314,9 @@ class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 public:
 
     /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorNetwork(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    UIIndicatorNetwork(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession->session())
+        , m_pSession(pSession)
         , m_pTimerAutoUpdate(0)
     {
         /* Assign state-icons: */
@@ -323,19 +324,36 @@ public:
         setStateIcon(KDeviceActivity_Reading, UIIconPool::iconSet(":/nw_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
+        /* Configure machine state-change listener: */
+        connect(m_pSession, SIGNAL(sigMachineStateChange()),
+                this, SLOT(sltHandleMachineStateChange()));
         /* Create auto-update timer: */
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
         {
             /* Configure auto-update timer: */
             connect(m_pTimerAutoUpdate, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
-            m_pTimerAutoUpdate->start(5000);
+            /* Start timer immediately if machine is running: */
+            sltHandleMachineStateChange();
         }
         /* Translate finally: */
         retranslateUi();
     }
 
 private slots:
+
+    /** Updates auto-update timer depending on machine state. */
+    void sltHandleMachineStateChange()
+    {
+        if (m_pSession->machineState() == KMachineState_Running)
+        {
+            /* Start auto-update timer otherwise: */
+            m_pTimerAutoUpdate->start(5000);
+            return;
+        }
+        /* Stop auto-update timer otherwise: */
+        m_pTimerAutoUpdate->stop();
+    }
 
     /** Updates network IP addresses. */
     void sltUpdateNetworkIPs()
@@ -424,6 +442,8 @@ private:
         setState(fAdaptersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 
+    /** Holds the session UI reference. */
+    UISession *m_pSession;
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
 };
@@ -1227,7 +1247,7 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_session);     break;
                 case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_session);  break;
                 case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_session);   break;
-                case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_session);       break;
+                case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_pSession);       break;
                 case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
                 case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_session);       break;

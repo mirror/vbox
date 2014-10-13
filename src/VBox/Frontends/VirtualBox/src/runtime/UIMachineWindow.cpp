@@ -270,13 +270,6 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     /* Always ignore close-event first: */
     pEvent->ignore();
 
-    /* If VM process is running separately, then leave it alone and close UI: */
-    if (vboxGlobal().isSeparateProcess())
-    {
-        uisession()->closeRuntimeUI();
-        return;
-    }
-
     /* Make sure machine is in one of the allowed states: */
     if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
         return;

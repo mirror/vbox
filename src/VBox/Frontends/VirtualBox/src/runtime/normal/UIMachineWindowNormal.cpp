@@ -67,8 +67,8 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     /* Call to base-class: */
     UIMachineWindow::sltMachineStateChanged();
 
-    /* Update pause and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_PauseStuff | UIVisualElement_FeaturesStuff);
+    /* Update indicator-pool and virtualization stuff: */
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -506,16 +506,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     UIMachineWindow::updateAppearanceOf(iElement);
 
     /* Update machine window content: */
-    if (iElement & UIVisualElement_PauseStuff)
-    {
-        if (!statusBar()->isHidden())
-        {
-            if (uisession()->isPaused())
-                m_pIndicatorsPool->setAutoUpdateIndicatorStates(false);
-            else if (uisession()->isRunning())
-                m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
-        }
-    }
+    if (iElement & UIVisualElement_IndicatorPoolStuff)
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
     if (iElement & UIVisualElement_HDStuff)
         m_pIndicatorsPool->updateAppearance(IndicatorType_HardDisks);
     if (iElement & UIVisualElement_CDStuff)
