@@ -89,7 +89,8 @@ public:
     static void destroy(UISession *&pSession);
 
     /* API: Runtime UI stuff: */
-    void powerUp();
+    bool initialize();
+    bool powerUp();
     bool saveState();
     bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
@@ -180,7 +181,7 @@ public:
     bool isStuck() const { return machineState() == KMachineState_Stuck; }
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
-    bool isStarted() const { return m_fIsStarted; }
+    bool isInitialized() const { return m_fInitialized; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
@@ -284,7 +285,7 @@ signals:
     void sigHostScreenAvailableAreaChange();
 
     /* Session signals: */
-    void sigStarted();
+    void sigInitialized();
 
 public slots:
 
@@ -299,7 +300,7 @@ public slots:
 private slots:
 
     /** Marks machine started. */
-    void sltMarkStarted() { m_fIsStarted = true; }
+    void sltMarkInitialized() { m_fInitialized = true; }
 
     /* Handler: Close Runtime UI stuff: */
     void sltCloseRuntimeUI();
@@ -370,7 +371,8 @@ private:
     /* Common helpers: */
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
-    bool preparePowerUp();
+    bool preprocessInitialization();
+    bool postprocessInitialization();
     int countOfVisibleWindows();
 
     /** Update host-screen data. */
@@ -469,7 +471,7 @@ private:
     /** @} */
 
     /* Common flags: */
-    bool m_fIsStarted : 1;
+    bool m_fInitialized : 1;
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;

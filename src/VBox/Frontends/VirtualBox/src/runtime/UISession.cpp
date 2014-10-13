@@ -155,15 +155,34 @@ void UISession::destroy(UISession *&pSession)
     pSession = 0;
 }
 
-void UISession::powerUp()
+bool UISession::initialize()
 {
-    /* Prepare powerup: */
-    bool fPrepared = preparePowerUp();
-    if (!fPrepared)
-        return;
+    /* Preprocess initialization: */
+    if (!preprocessInitialization())
+        return false;
+
+    /* Notify user about mouse&keyboard auto-capturing: */
+    if (vboxGlobal().settings().autoCapture())
+        popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
+
+    /* Check if we are in teleportation waiting mode.
+     * In that case no first run wizard is necessary. */
+    m_machineState = machine().GetState();
+    if (   isFirstTimeStarted()
+        && !((   m_machineState == KMachineState_PoweredOff
+              || m_machineState == KMachineState_Aborted
+              || m_machineState == KMachineState_Teleported)
+             && machine().GetTeleporterEnabled()))
+    {
+        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), machine());
+        pWizard->prepare();
+        pWizard->exec();
+        if (pWizard)
+            delete pWizard;
+    }
 
     /* Apply debug settings from the command line. */
-    if (debugger().isOk())
+    if (!debugger().isNull() && debugger().isOk())
     {
         if (vboxGlobal().isPatmDisabled())
             debugger().SetPATMEnabled(false);
@@ -179,139 +198,103 @@ void UISession::powerUp()
             debugger().SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
+    /* Power UP if this is NOT separate process: */
     if (!vboxGlobal().isSeparateProcess())
+        if (!powerUp())
+            return false;
+
+    /* Check if we missed a really quick termination after successful startup: */
+    if (isTurnedOff())
+        return false;
+
+    /* Postprocess initialization: */
+    if (!postprocessInitialization())
+        return false;
+
+    /* Fetch corresponding states: */
+    if (vboxGlobal().isSeparateProcess())
     {
-        /* Power UP machine: */
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                             console().PowerUpPaused() : console().PowerUp();
-#else /* !VBOX_WITH_DEBUGGER_GUI */
-        CProgress progress = console().PowerUp();
-#endif /* !VBOX_WITH_DEBUGGER_GUI */
-
-        /* Check for immediate failure: */
-        if (!console().isOk())
-        {
-            if (vboxGlobal().showStartVMErrors())
-                msgCenter().cannotStartMachine(console(), machineName());
-            closeRuntimeUI();
-            return;
-        }
-
-        /* Guard progressbar warnings from auto-closing: */
-        if (uimachine()->machineLogic())
-            uimachine()->machineLogic()->setPreventAutoClose(true);
-
-        /* Show "Starting/Restoring" progress dialog: */
-        if (isSaved())
-        {
-            msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
-            /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
-            machineLogic()->adjustMachineWindowsGeometry();
-        }
-        else
-            msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
-
-        /* Check for a progress failure: */
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-        {
-            if (vboxGlobal().showStartVMErrors())
-                msgCenter().cannotStartMachine(progress, machineName());
-            closeRuntimeUI();
-            return;
-        }
-
-        /* Allow further auto-closing: */
-        if (uimachine()->machineLogic())
-            uimachine()->machineLogic()->setPreventAutoClose(false);
-    }
-    else
-    {
-        /* Fetch the current mouse state: */
         m_fIsMouseSupportsAbsolute = mouse().GetAbsoluteSupported();
         m_fIsMouseSupportsRelative = mouse().GetRelativeSupported();
         m_fIsMouseSupportsMultiTouch = mouse().GetMultiTouchSupported();
         m_fIsMouseHostCursorNeeded = mouse().GetNeedsHostCursor();
-        /* Fetch the current guest additions state: */
         sltAdditionsChange();
     }
-
-    /* Check if we missed a really quick termination after successful startup, and process it if we did: */
-    if (isTurnedOff())
-    {
-        closeRuntimeUI();
-        return;
-    }
-
-    /* Check if the required virtualization features are active. We get this info only when the session is active. */
-    const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
-    const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
-    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool fIsVirtEnabled = debugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !fIsVirtEnabled)
-    {
-        bool fShouldWeClose;
-
-        bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-
-        QApplication::processEvents();
-        setPause(true);
-
-        if (fIs64BitsGuest)
-            fShouldWeClose = msgCenter().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
-        else
-            fShouldWeClose = msgCenter().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
-
-        if (fShouldWeClose)
-        {
-            /* At this point the console is powered up.
-             * So we have to close this session again. */
-            CProgress progress = console().PowerDown();
-            if (console().isOk())
-            {
-                /* Guard progressbar warnings from auto-closing: */
-                if (uimachine()->machineLogic())
-                    uimachine()->machineLogic()->setPreventAutoClose(true);
-                /* Show the power down progress dialog */
-                msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_poweroff_90px.png");
-                if (!progress.isOk() || progress.GetResultCode() != 0)
-                    msgCenter().cannotPowerDownMachine(progress, machineName());
-                /* Allow further auto-closing: */
-                if (uimachine()->machineLogic())
-                    uimachine()->machineLogic()->setPreventAutoClose(false);
-            }
-            else
-                msgCenter().cannotPowerDownMachine(console());
-            closeRuntimeUI();
-            return;
-        }
-
-        setPause(false);
-    }
+    machineLogic()->initializePostPowerUp();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    /* Log whether 2D video acceleration is enabled: */
     LogRel(("2D video acceleration is %s.\n",
            machine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable()
-                 ? "enabled"
-                 : "disabled"));
+           ? "enabled" : "disabled"));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-/* Check if HID LEDs sync is enabled and add a log message about it. */
+/* Log whether HID LEDs sync is enabled: */
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
-    if(uimachine()->machineLogic()->isHidLedsSyncEnabled())
-        LogRel(("HID LEDs sync is enabled.\n"));
-    else
-        LogRel(("HID LEDs sync is disabled.\n"));
-#else
+    LogRel(("HID LEDs sync is %s.\n",
+            uimachine()->machineLogic()->isHidLedsSyncEnabled()
+            ? "enabled" : "disabled"));
+#else /* !Q_WS_MAC && !Q_WS_WIN */
     LogRel(("HID LEDs sync is not supported on this platform.\n"));
-#endif
+#endif /* !Q_WS_MAC && !Q_WS_WIN */
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     vboxGlobal().createPidfile();
-#endif
+#endif /* VBOX_GUI_WITH_PIDFILE */
 
-    /* Warn listeners about machine was started: */
-    emit sigStarted();
+    /* Warn listeners about we are initialized: */
+    emit sigInitialized();
+
+    /* True by default: */
+    return true;
+}
+
+bool UISession::powerUp()
+{
+    /* Power UP machine: */
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+                         console().PowerUpPaused() : console().PowerUp();
+#else /* !VBOX_WITH_DEBUGGER_GUI */
+    CProgress progress = console().PowerUp();
+#endif /* !VBOX_WITH_DEBUGGER_GUI */
+
+    /* Check for immediate failure: */
+    if (!console().isOk() || progress.isNull())
+    {
+        if (vboxGlobal().showStartVMErrors())
+            msgCenter().cannotStartMachine(console(), machineName());
+        return false;
+    }
+
+    /* Guard progressbar warnings from auto-closing: */
+    if (uimachine()->machineLogic())
+        uimachine()->machineLogic()->setPreventAutoClose(true);
+
+    /* Show "Starting/Restoring" progress dialog: */
+    if (isSaved())
+    {
+        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_restore_90px.png", 0, 0);
+        /* After restoring from 'saved' state, machine-window(s) geometry should be adjusted: */
+        machineLogic()->adjustMachineWindowsGeometry();
+    }
+    else
+        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
+
+    /* Check for progress failure: */
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+    {
+        if (vboxGlobal().showStartVMErrors())
+            msgCenter().cannotStartMachine(progress, machineName());
+        return false;
+    }
+
+    /* Allow further auto-closing: */
+    if (uimachine()->machineLogic())
+        uimachine()->machineLogic()->setPreventAutoClose(false);
+
+    /* True by default: */
+    return true;
 }
 
 bool UISession::saveState()
@@ -890,7 +873,7 @@ UISession::UISession(UIMachine *pMachine)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
     , m_fAllCloseActionsRestricted(false)
     /* Common flags: */
-    , m_fIsStarted(false)
+    , m_fInitialized(false)
     , m_fIsFirstTimeStarted(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
@@ -1100,7 +1083,7 @@ void UISession::prepareActions()
 
 void UISession::prepareConnections()
 {
-    connect(this, SIGNAL(sigStarted()), this, SLOT(sltMarkStarted()));
+    connect(this, SIGNAL(sigInitialized()), this, SLOT(sltMarkInitialized()));
     connect(this, SIGNAL(sigCloseRuntimeUI()), this, SLOT(sltCloseRuntimeUI()));
 
 #ifdef Q_WS_MAC
@@ -1681,28 +1664,8 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 #endif
 }
 
-bool UISession::preparePowerUp()
+bool UISession::preprocessInitialization()
 {
-    /* Notify user about mouse&keyboard auto-capturing: */
-    if (vboxGlobal().settings().autoCapture())
-        popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
-
-    /* Check if we are in teleportation waiting mode.
-     * In that case no first run wizard is necessary. */
-    m_machineState = machine().GetState();
-    if (   isFirstTimeStarted()
-        && !((   m_machineState == KMachineState_PoweredOff
-              || m_machineState == KMachineState_Aborted
-              || m_machineState == KMachineState_Teleported)
-             && machine().GetTeleporterEnabled()))
-    {
-        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), machine());
-        pWizard->prepare();
-        pWizard->exec();
-        if (pWizard)
-            delete pWizard;
-    }
-
 #ifdef VBOX_WITH_NETFLT
     /* Skip further checks if VM in saved state */
     if (isSaved())
@@ -1757,16 +1720,55 @@ bool UISession::preparePowerUp()
     /* Check if non-existent interfaces found */
     if (!failedInterfaceNames.isEmpty())
     {
-        if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machineName(), failedInterfaceNames.join(", ")))
+        if (msgCenter().cannotStartWithoutNetworkIf(machineName(), failedInterfaceNames.join(", ")))
             machineLogic()->openNetworkSettingsDialog();
         else
-        {
-            closeRuntimeUI();
             return false;
-        }
     }
 #endif /* VBOX_WITH_NETFLT */
 
+    /* True by default: */
+    return true;
+}
+
+bool UISession::postprocessInitialization()
+{
+    /* Check if the required virtualization features are active. We get this info only when the session is active. */
+    const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
+    const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
+    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
+    bool fIsVirtEnabled = debugger().GetHWVirtExEnabled();
+    if (fRecommendVirtEx && !fIsVirtEnabled)
+    {
+        /* Check whether vt-x / amd-v supported: */
+        bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+
+        /* Pause VM: */
+        setPause(true);
+
+        /* Ask the user about further actions: */
+        bool fShouldWeClose;
+        if (fIs64BitsGuest)
+            fShouldWeClose = msgCenter().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
+        else
+            fShouldWeClose = msgCenter().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
+
+        /* If user asked to close VM: */
+        if (fShouldWeClose)
+        {
+            /* Prevent auto-closure during power off sequence: */
+            machineLogic()->setPreventAutoClose(true);
+            /* Power off VM: */
+            bool fServerCrashed = false;
+            powerOff(false, fServerCrashed);
+            return false;
+        }
+
+        /* Resume VM: */
+        setPause(false);
+    }
+
+    /* True by default: */
     return true;
 }
 
