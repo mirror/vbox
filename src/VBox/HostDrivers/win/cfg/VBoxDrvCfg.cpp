@@ -351,6 +351,7 @@ static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
     LPWSTR lpszModels;
     LPWSTR lpszPnPId;
     HRESULT hr = vboxDrvCfgInfQueryModelsSectionName(hInf, &lpszModels, NULL);
+    NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgInfQueryModelsSectionName returned lpszModels = (%S)", lpszModels));
     if (hr != S_OK)
     {
         NonStandardLogCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for Manufacturer failed, hr=0x%x\n", hr));
@@ -366,6 +367,8 @@ static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
     else
     {
         hr = vboxDrvCfgInfQueryKeyValue(&InfCtx, 2, &lpszPnPId, NULL);
+        NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) returned lpszPnPId (%S) \n", lpszModels, lpszPnPId));
+
         if (hr != S_OK)
         {
             NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) failed, hr=0x%x\n", lpszModels, hr));
@@ -487,6 +490,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                                 if (pDrvDetail->InfFileName)
                                 {
                                     list.add(pDrvDetail->InfFileName);
+                                    NonStandardLogRelCrap((__FUNCTION__": %S added to list", pDrvDetail->InfFileName));
                                 }
                             }
                         }
@@ -504,6 +508,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                     DWORD dwErr = GetLastError();
                     if (dwErr == ERROR_NO_MORE_ITEMS)
                     {
+                        NonStandardLogRelCrap((__FUNCTION__": dwErr == ERROR_NO_MORE_ITEMS -> search was finished "));
                         break;
                     }
 
@@ -556,6 +561,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidC
 {
     VBoxDrvCfgStringList list(128);
     HRESULT hr = vboxDrvCfgCollectInfsSetupDi(pGuidClass, lpszPnPId, list);
+    NonStandardLogRelCrap((__FUNCTION__": vboxDrvCfgCollectInfsSetupDi returned %d devices with PnPId %S and class name %S", list.size(), lpszPnPId, lpszClassName));
     if (hr == S_OK)
     {
         INFENUM_CONTEXT Context;
@@ -574,7 +580,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidC
                 pRel = pInf;
 
             vboxDrvCfgInfEnumerationCallback(pRel, &Context);
-//            NonStandardLogRelCrap(("inf : %S\n", list.get(i)));
+            NonStandardLogRelCrap((__FUNCTION__": inf = %S\n", list.get(i)));
         }
     }
     return hr;
@@ -632,8 +638,8 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
 {
     PINFENUM_CONTEXT pContext = (PINFENUM_CONTEXT)pCtxt;
     DWORD dwErr;
-//    NonStandardLogRelCrap(("vboxDrvCfgInfEnumerationCallback: pFileName (%S)\n", pFileName));
-
+    NonStandardLogRelCrap((__FUNCTION__": lpszFileName (%S)\n", lpszFileName));
+    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszClassName = (%S)", pContext->InfInfo.lpszClassName));
     HINF hInf = SetupOpenInfFileW(lpszFileName, pContext->InfInfo.lpszClassName, INF_STYLE_WIN4, NULL /*__in PUINT ErrorLine */);
     if (hInf == INVALID_HANDLE_VALUE)
     {
@@ -643,12 +649,17 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
         {
             NonStandardLogCrap((__FUNCTION__ ": SetupOpenInfFileW err dwErr=%ld\n", dwErr));
         }
-
+        else
+        {
+            NonStandardLogCrap((__FUNCTION__ ": dwErr == ERROR_CLASS_MISMATCH"));
+        }
         return true;
     }
 
     LPWSTR lpszPnPId;
     HRESULT hr = vboxDrvCfgInfQueryFirstPnPId(hInf, &lpszPnPId);
+    NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgInfQueryFirstPnPId returned lpszPnPId = (%S)", lpszPnPId));
+    NonStandardLogRelCrap((__FUNCTION__ ": pContext->InfInfo.lpszPnPId = (%S)", pContext->InfInfo.lpszPnPId));
     if (hr == S_OK)
     {
         if (!wcsicmp(pContext->InfInfo.lpszPnPId, lpszPnPId))
@@ -693,6 +704,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWS
         Context.InfInfo.lpszPnPId = lpszPnPId;
         Context.Flags = Flags;
         Context.hr = S_OK;
+        NonStandardLogRelCrap((__FUNCTION__": Calling vboxDrvCfgEnumFiles(wszInfDirPath, vboxDrvCfgInfEnumerationCallback, &Context)"));
         hr = vboxDrvCfgEnumFiles(wszInfDirPath, vboxDrvCfgInfEnumerationCallback, &Context);
         NonStandardAssert(hr == S_OK);
         if (hr == S_OK)
