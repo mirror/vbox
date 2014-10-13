@@ -1017,7 +1017,7 @@ DECLHIDDEN(void) supR3HardenedLogV(const char *pszFormat, va_list va)
 {
 #ifdef RT_OS_WINDOWS
     if (   g_hStartupLog != NULL
-        && g_cbStartupLog < 128*_1M)
+        && g_cbStartupLog < 16*_1M)
     {
         char szBuf[5120];
         PCLIENT_ID pSelfId = &((PTEB)NtCurrentTeb())->ClientId;
