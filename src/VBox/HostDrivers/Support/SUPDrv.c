@@ -5577,6 +5577,323 @@ static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
 }
 
 
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+/**
+ * Switches the TSC-delta measurement thread into the butchered state.
+ *
+ * @returns VBox status code.
+ * @param pDevExt           Pointer to the device instance data.
+ * @param fSpinlockHeld     Whether the TSC-delta spinlock is held or not.
+ * @param pszFailed         An error message to log.
+ * @param rcFailed          The error code to exit the thread with.
+ */
+static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHeld, const char *pszFailed, int rcFailed)
+{
+    if (!fSpinlockHeld)
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+
+    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Butchered;
+    RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+    OSDBGPRINT(("supdrvTscDeltaThreadButchered: %s. rc=%Rrc\n", rcFailed));
+    return rcFailed;
+}
+
+
+/**
+ * The TSC-delta measurement thread.
+ *
+ * @returns VBox status code.
+ * @param hThread   The thread handle.
+ * @param pvUser    Opaque pointer to the device instance data.
+ */
+static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
+{
+    PSUPDRVDEVEXT     pDevExt = (PSUPDRVDEVEXT)pvUser;
+    static uint32_t   cTimesMeasured = 0;
+    uint32_t          cConsecutiveTimeouts = 0;
+    int               rc = VERR_INTERNAL_ERROR_2;
+    for (;;)
+    {
+        /*
+         * Switch on the current state.
+         */
+        SUPDRVTSCDELTASTATE enmState;
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        enmState = pDevExt->enmTscDeltaState;
+        switch (enmState)
+        {
+            case kSupDrvTscDeltaState_Creating:
+            {
+                pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Listening;
+                rc = RTSemEventSignal(pDevExt->hTscDeltaEvent);
+                if (RT_FAILURE(rc))
+                    return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
+                /* fall thru */
+            }
+
+            case kSupDrvTscDeltaState_Listening:
+            {
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+
+                /* Simple adaptive timeout. */
+                if (cConsecutiveTimeouts++ == 10)
+                {
+                    if (pDevExt->cMsTscDeltaTimeout == 1)           /* 10 ms */
+                        pDevExt->cMsTscDeltaTimeout = 10;
+                    else if (pDevExt->cMsTscDeltaTimeout == 10)     /* +100 ms */
+                        pDevExt->cMsTscDeltaTimeout = 100;
+                    else if (pDevExt->cMsTscDeltaTimeout == 100)    /* +1000 ms */
+                        pDevExt->cMsTscDeltaTimeout = 500;
+                    cConsecutiveTimeouts = 0;
+                }
+                rc = RTThreadUserWait(pDevExt->hTscDeltaThread, pDevExt->cMsTscDeltaTimeout);
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_TIMEOUT)
+                    return supdrvTscDeltaThreadButchered(pDevExt, false /* fSpinlockHeld */, "RTThreadUserWait", rc);
+                break;
+            }
+
+            case kSupDrvTscDeltaState_WaitAndMeasure:
+            {
+                pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Measuring;
+                rc = RTSemEventSignal(pDevExt->hTscDeltaEvent);
+                if (RT_FAILURE(rc))
+                    return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+                pDevExt->cMsTscDeltaTimeout = 1;
+                RTThreadSleep(10);
+                /* fall thru */
+            }
+
+            case kSupDrvTscDeltaState_Measuring:
+            {
+                cConsecutiveTimeouts = 0;
+                if (!cTimesMeasured++)
+                    rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
+                else
+                {
+                    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+                    unsigned iCpu;
+
+                    if (cTimesMeasured == UINT32_MAX)
+                        cTimesMeasured = 1;
+
+                    /* Measure TSC-deltas only for the CPUs that are in the set. */
+                    rc = VINF_SUCCESS;
+                    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                    {
+                        PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
+                        if (   pGipCpuWorker->i64TSCDelta == INT64_MAX
+                            && RTCpuSetIsMember(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu))
+                        {
+                            rc |= supdrvMeasureTscDeltaOne(pDevExt, iCpu);
+                            RTCpuSetDel(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu);
+                        }
+                    }
+                }
+                RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+                if (pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+                    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Listening;
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+                pDevExt->rcTscDelta = rc;
+                break;
+            }
+
+            case kSupDrvTscDeltaState_Terminating:
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+                return VINF_SUCCESS;
+
+            case kSupDrvTscDeltaState_Butchered:
+            default:
+                return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "Invalid state", VERR_INVALID_STATE);
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Waits for the TSC-delta measurement thread to respond to a state change.
+ *
+ * @returns VINF_SUCCESS on success, VERR_TIMEOUT if it doesn't respond in time,
+ *        other error code on internal error.
+ *
+ * @param   pThis           Pointer to the grant service instance data.
+ * @param   enmCurState     The current state.
+ * @param   enmNewState     The new state we're waiting for it to enter.
+ */
+static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTASTATE enmCurState, SUPDRVTSCDELTASTATE enmNewState)
+{
+    /*
+     * Wait a short while for the expected state transition.
+     */
+    int rc;
+    RTSemEventWait(pDevExt->hTscDeltaEvent, RT_MS_1SEC);
+    RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+    if (pDevExt->enmTscDeltaState == enmNewState)
+    {
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        rc = VINF_SUCCESS;
+    }
+    else if (pDevExt->enmTscDeltaState == enmCurState)
+    {
+        /*
+         * Wait longer if the state has not yet transitioned to the one we want.
+         */
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        rc = RTSemEventWait(pDevExt->hTscDeltaEvent, 50 * RT_MS_1SEC);
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_TIMEOUT)
+        {
+            /*
+             * Check the state whether we've succeeded.
+             */
+            SUPDRVTSCDELTASTATE enmState;
+            RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+            enmState = pDevExt->enmTscDeltaState;
+            RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+            if (enmState == enmNewState)
+                rc = VINF_SUCCESS;
+            else if (enmState == enmCurState)
+            {
+                rc = VERR_TIMEOUT;
+                OSDBGPRINT(("supdrvTscDeltaThreadWait: timed out state transition. enmState=%d enmNewState=%d\n", enmState,
+                            enmNewState));
+            }
+            else
+            {
+                rc = VERR_INTERNAL_ERROR;
+                OSDBGPRINT(("supdrvTscDeltaThreadWait: invalid state transition from %d to %d, expected %d\n", enmCurState,
+                            enmState, enmNewState));
+            }
+        }
+        else
+            OSDBGPRINT(("supdrvTscDeltaThreadWait: RTSemEventWait failed. rc=%Rrc\n", rc));
+    }
+    else
+    {
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        OSDBGPRINT(("supdrvTscDeltaThreadWait: invalid state transition from %d to %d\n", enmCurState, enmNewState));
+        rc = VERR_INTERNAL_ERROR;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Terminates the TSC-delta measurement thread.
+ *
+ * @param   pDevExt   Pointer to the device instance data.
+ */
+static void supdrvTscDeltaThreadTerminate(PSUPDRVDEVEXT pDevExt)
+{
+    int rc;
+    RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Terminating;
+    RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+    RTThreadUserSignal(pDevExt->hTscDeltaThread);
+    rc = RTThreadWait(pDevExt->hTscDeltaThread, 50 * RT_MS_1SEC, NULL /* prc */);
+    if (RT_FAILURE(rc))
+    {
+        /* Signal a few more times before giving up. */
+        int cTries = 5;
+        while (--cTries > 0)
+        {
+            RTThreadUserSignal(pDevExt->hTscDeltaThread);
+            rc = RTThreadWait(pDevExt->hTscDeltaThread, 2 * RT_MS_1SEC, NULL /* prc */);
+            if (rc != VERR_TIMEOUT)
+                break;
+        }
+    }
+}
+
+
+/**
+ * Initializes and spawns the TSC-delta measurement thread.
+ *
+ * A thread is required for servicing re-measurement requests from events like
+ * CPUs coming online, suspend/resume etc. as it cannot be done synchronously
+ * under all contexts on all OSs.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt           Pointer to the device instance data.
+ *
+ * @remarks Must only be called -after- initializing GIP and setting up MP
+ *          notifications!
+ */
+static int supdrvTscDeltaInit(PSUPDRVDEVEXT pDevExt)
+{
+    int rc = RTSpinlockCreate(&pDevExt->hTscDeltaSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "VBoxTscSpnLck");
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTSemEventCreate(&pDevExt->hTscDeltaEvent);
+        if (RT_SUCCESS(rc))
+        {
+            pDevExt->enmTscDeltaState   = kSupDrvTscDeltaState_Creating;
+            pDevExt->cMsTscDeltaTimeout = 1;
+            RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
+            rc = RTThreadCreate(&pDevExt->hTscDeltaThread, supdrvTscDeltaThread, pDevExt, 0 /* cbStack */,
+                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxTscThread");
+            if (RT_SUCCESS(rc))
+            {
+                rc = supdrvTscDeltaThreadWait(pDevExt, kSupDrvTscDeltaState_Creating, kSupDrvTscDeltaState_Listening);
+                if (RT_SUCCESS(rc))
+                {
+                    pDevExt->rcTscDelta = VERR_NOT_AVAILABLE;
+                    return rc;
+                }
+
+                OSDBGPRINT(("supdrvTscDeltaInit: supdrvTscDeltaThreadWait failed. rc=%Rrc\n", rc));
+                supdrvTscDeltaThreadTerminate(pDevExt);
+            }
+            else
+                OSDBGPRINT(("supdrvTscDeltaInit: RTThreadCreate failed. rc=%Rrc\n", rc));
+            RTSemEventDestroy(pDevExt->hTscDeltaEvent);
+            pDevExt->hTscDeltaEvent = NIL_RTSEMEVENT;
+        }
+        else
+            OSDBGPRINT(("supdrvTscDeltaInit: RTSemEventCreate failed. rc=%Rrc\n", rc));
+        RTSpinlockDestroy(pDevExt->hTscDeltaSpinlock);
+        pDevExt->hTscDeltaSpinlock = NIL_RTSPINLOCK;
+    }
+    else
+        OSDBGPRINT(("supdrvTscDeltaInit: RTSpinlockCreate failed. rc=%Rrc\n", rc));
+
+    return rc;
+}
+
+
+/**
+ * Terminates the TSC-delta measurement thread and cleanup.
+ *
+ * @param   pDevExt         Pointer to the device instance data.
+ */
+static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
+{
+    if (   pDevExt->hTscDeltaSpinlock != NIL_RTSPINLOCK
+        && pDevExt->hTscDeltaEvent != NIL_RTSEMEVENT)
+    {
+        supdrvTscDeltaThreadTerminate(pDevExt);
+    }
+
+    if (pDevExt->hTscDeltaSpinlock != NIL_RTSPINLOCK)
+    {
+        RTSpinlockDestroy(pDevExt->hTscDeltaSpinlock);
+        pDevExt->hTscDeltaSpinlock = NIL_RTSPINLOCK;
+    }
+
+    if (pDevExt->hTscDeltaEvent != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pDevExt->hTscDeltaEvent);
+        pDevExt->hTscDeltaEvent = NIL_RTSEMEVENT;
+    }
+
+    pDevExt->rcTscDelta = VERR_NOT_AVAILABLE;
+}
+#endif /* SUPDRV_USE_TSC_DELTA_THREAD */
+
 
 /**
  * Creates the GIP.
@@ -5593,10 +5910,9 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     unsigned            cCpus;
     int                 rc;
 
-
     LogFlow(("supdrvGipCreate:\n"));
 
-    /* assert order */
+    /* Assert order. */
     Assert(pDevExt->u32SystemTimerGranularityGrant == 0);
     Assert(pDevExt->GipMemObj == NIL_RTR0MEMOBJ);
     Assert(!pDevExt->pGipTimer);
@@ -5633,32 +5949,32 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
-    rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /* Initialize TSC-delta measurement thread before executing any Mp event callbacks. */
+    rc = supdrvTscDeltaInit(pDevExt);
+#endif
     if (RT_SUCCESS(rc))
     {
-        rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
+        rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Measure the TSC deltas now that we have MP notifications.
-             */
-            unsigned cTries = 5;
-            do
-            {
-                rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
-                if (rc == VERR_TRY_AGAIN)
-                {
-                    --cTries;
-                    continue;
-                }
-                else
-                    break;
-            } while (cTries > 0);
+            rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
             if (RT_SUCCESS(rc))
             {
-#ifdef DEBUG_ramshankar
-                for (unsigned iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-                    OSDBGPRINT(("supdrvGipCreate: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
+#ifndef SUPDRV_USE_TSC_DELTA_THREAD
+                /*
+                 * Measure the TSC deltas now that we have MP notifications.
+                 */
+                int      cTries = 5;
+                uint16_t iCpu;
+                do
+                {
+                    rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
+                    if (rc != VERR_TRY_AGAIN)
+                        break;
+                } while (--cTries > 0);
+                for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                    Log(("supdrvTscDeltaInit: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
 #endif
 
                 /*
@@ -5692,15 +6008,13 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 }
             }
             else
-                OSDBGPRINT(("supdrvGipCreate: supdrvMeasureTscDeltas() failed with rc=%Rrc after %u tries!\n", rc, cTries));
+                OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed. rc=%Rrc\n", rc));
         }
         else
-            OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed with rc=%Rrc\n", rc));
-
-        RTMpNotificationDeregister(supdrvGipMpEvent, pDevExt);
+            OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
     }
     else
-        OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
+        OSDBGPRINT(("supdrvGipCreate: supdrvTscDeltaInit failed. rc=%Rrc\n", rc));
 
     supdrvGipDestroy(pDevExt);
     return rc;
@@ -5719,6 +6033,18 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     OSDBGPRINT(("supdrvGipDestroy: pDevExt=%p pGip=%p pGipTimer=%p GipMemObj=%p\n", pDevExt,
                 pDevExt->GipMemObj != NIL_RTR0MEMOBJ ? RTR0MemObjAddress(pDevExt->GipMemObj) : NULL,
                 pDevExt->pGipTimer, pDevExt->GipMemObj));
+#endif
+
+    /*
+     * Stop receiving MP notifications before tearing anything else down.
+     */
+    RTMpNotificationDeregister(supdrvGipMpEvent, pDevExt);
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /*
+     * Terminate the TSC-delta measurement thread and resources.
+     */
+    supdrvTscDeltaTerm(pDevExt);
 #endif
 
     /*
@@ -5891,6 +6217,23 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 
     /* Update the Mp online/offline counter. */
     ASMAtomicIncU32(&g_cMpOnOffEvents);
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /*
+     * Add this CPU to the set of CPUs that require their TSC delta to be measured.
+     *
+     * We cannot poke the TSC-delta measurement thread from this context (on all OSs), so we only
+     * update the state and it'll get serviced when the thread's listening interval times out.
+     */
+    RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
+    RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+    if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
+        || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+    {
+        pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+    }
+    RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+#endif
 
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);

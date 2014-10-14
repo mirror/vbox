@@ -230,6 +230,10 @@
 # undef SUPDRV_WITH_MSR_PROBER
 #endif
 
+#if 0
+/**  Use a dedicated kernel thread to service TSC-delta measurement requests. */
+#define SUPDRV_USE_TSC_DELTA_THREAD
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -237,6 +241,32 @@
 /** Pointer to the device extension. */
 typedef struct SUPDRVDEVEXT *PSUPDRVDEVEXT;
 
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+/**
+ * TSC-delta measurement thread state machine.
+ */
+typedef enum SUPDRVTSCDELTASTATE
+{
+    /** Uninitialized/invalid value. */
+    kSupDrvTscDeltaState_Invalid = 0,
+    /** The thread is being created. */
+    kSupDrvTscDeltaState_Creating,
+    /** The thread is listening for events. */
+    kSupDrvTscDeltaState_Listening,
+    /** The thread is sleeping before starting a measurement. */
+    kSupDrvTscDeltaState_WaitAndMeasure,
+    /** The thread is currently servicing a measurement request. */
+    kSupDrvTscDeltaState_Measuring,
+    /** The thread is terminating. */
+    kSupDrvTscDeltaState_Terminating,
+    /** The thread is butchered due to an unexpected error. */
+    kSupDrvTscDeltaState_Butchered,
+    /** The thread is destroyed. */
+    kSupDrvTscDeltaState_Destroyed,
+    /** The usual 32-bit blowup hack. */
+    kSupDrvTscDeltaState_32BitHack = 0x7fffffff
+} SUPDRVTSCDELTASTATE;
+#endif
 
 /**
  * Memory reference types.
@@ -646,6 +676,26 @@ typedef struct SUPDRVDEVEXT
     /** The number of open sessions. */
     int32_t                         cSessions;
     /** @} */
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /** @name TSC-delta measurement.
+     *  @{ */
+    /** Spinlock protecting enmTscDeltaState. */
+    RTSPINLOCK                      hTscDeltaSpinlock;
+    /** TSC-delta measurement thread. */
+    RTTHREAD                        hTscDeltaThread;
+    /** The event signalled during state changes to the TSC-delta thread. */
+    RTSEMEVENT                      hTscDeltaEvent;
+    /** The state of the TSC-delta measurement thread. */
+    SUPDRVTSCDELTASTATE             enmTscDeltaState;
+    /** Thread timeout time before rechecking state in ms. */
+    RTMSINTERVAL                    cMsTscDeltaTimeout;
+    /** The set of CPUs we need to take measurements for. */
+    RTCPUSET                        TscDeltaCpuSet;
+    /** Whether the TSC-delta measurement was successful. */
+    int                             rcTscDelta;
+    /** @} */
+#endif
 
     /*
      * Note! The non-agnostic bits must be at the very end of the structure!
