@@ -885,8 +885,6 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         NOREF(hr);
     }
 
-    i_handleResizeCompletedEMT(uScreenId, TRUE);
-
     bool fUpdateImage = RT_BOOL(pFBInfo->u32Caps & FramebufferCapabilities_UpdateImage);
     if (fUpdateImage && !pFBInfo->pFramebuffer.isNull())
     {
@@ -916,55 +914,13 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         }
     }
 
+    /* Inform the VRDP server about the change of display parameters. */
+    LogRelFlowFunc(("Calling VRDP\n"));
+    mParent->i_consoleVRDPServer()->SendResize();
+
+    LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
+
     return VINF_SUCCESS;
-}
-
-/**
- *  Framebuffer has been resized.
- *  Read the new display data and unlock the framebuffer.
- *
- *  @thread EMT
- */
-void Display::i_handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext)
-{
-    LogRelFlowFunc(("\n"));
-
-    do /* to use 'break' */
-    {
-        if (uScreenId >= mcMonitors)
-        {
-            break;
-        }
-
-        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
-
-        /* Inform VRDP server about the change of display parameters.
-         * Must be done before calling NotifyUpdate below.
-         */
-        LogRelFlowFunc(("Calling VRDP\n"));
-        mParent->i_consoleVRDPServer()->SendResize();
-
-        /* @todo Merge these two 'if's within one 'if (!pFBInfo->pFramebuffer.isNull())' */
-        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
-        {
-            /* If the screen resize was because of disabling, tell framebuffer to repaint.
-             * The framebuffer if now in default format so it will not use guest VRAM
-             * and will show usually black image which is there after framebuffer resize.
-             */
-            if (pFBInfo->fDisabled)
-                pFBInfo->pFramebuffer->NotifyUpdate(0, 0, mpDrv->IConnector.cx, mpDrv->IConnector.cy);
-        }
-        else if (!pFBInfo->pFramebuffer.isNull())
-        {
-            /* If the screen resize was because of disabling, tell framebuffer to repaint.
-             * The framebuffer if now in default format so it will not use guest VRAM
-             * and will show usually black image which is there after framebuffer resize.
-             */
-            if (pFBInfo->fDisabled)
-                pFBInfo->pFramebuffer->NotifyUpdate(0, 0, pFBInfo->w, pFBInfo->h);
-        }
-        LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
-    } while(0);
 }
 
 static void i_checkCoordBounds(int *px, int *py, int *pw, int *ph, int cx, int cy)

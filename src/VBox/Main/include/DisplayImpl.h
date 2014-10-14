@@ -380,8 +380,6 @@ private:
     VBOXCRCMDCTL_HGCM mCrOglScreenshotCtl;
 #endif
 
-    void i_handleResizeCompletedEMT(unsigned uScreenId, BOOL fResizeContext);
-
     /* The legacy VBVA data and methods. */
     VIDEOACCEL mVideoAccelLegacy;
 
