@@ -454,7 +454,7 @@ const DISOPCODE g_aTwoByteMapX86[256] =
     OP("sysenter",           0,              0,          0,          OP_SYSENTER,OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW),
     OP("sysexit",            0,              0,          0,          OP_SYSEXIT, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW),
     INVALID_OPCODE,
-    INVALID_OPCODE, /** 0x37 - GETSEC */
+    OP("getsec",             0,              0,          0,          OP_GETSEC,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("3 byte escape A4",   IDX_ParseThreeByteEsc4,0,              0,        OP_3B_ESC4,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE, /** 0x3A - 3-byte escape table A-5 */
@@ -894,7 +894,7 @@ const DISOPCODE g_aTwoByteMapX86_PFF2[256] =
     /* 1 */
     OP("movsd %Vsd,%Wsd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSD,   OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movsd %Wsd,%Vsd",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSD,   OP_PARM_Wpd,        OP_PARM_Vpd,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    OP("movddup %Vdq,%Wdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVDDUP, OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -1067,11 +1067,11 @@ const DISOPCODE g_aTwoByteMapX86_PFF3[256] =
     /* 1 */
     OP("movss %Vss,%Wss",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSS,   OP_PARM_Vss,        OP_PARM_Wss,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movss %Wss,%Vss",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSS,   OP_PARM_Wss,        OP_PARM_Vss,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("movsldup %Vdq,%Wdq", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSLDUP,OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
-    INVALID_OPCODE,
-    INVALID_OPCODE,
+    OP("movshdup %Vdq,%Wdq", IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVSHDUP,OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -1110,7 +1110,7 @@ const DISOPCODE g_aTwoByteMapX86_PFF3[256] =
     INVALID_OPCODE,
     OP("sqrtss %Vss,%Wss",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_SQRTSS,  OP_PARM_Vss,        OP_PARM_Wss,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("rsqrtss %Vss,%Wss",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_RSQRTSS, OP_PARM_Vss,        OP_PARM_Wss,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    INVALID_OPCODE,
+    OP("rcpss %Vss,%Wss",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_RCPSS,   OP_PARM_Vss,        OP_PARM_Wss,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
