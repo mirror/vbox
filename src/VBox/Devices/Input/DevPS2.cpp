@@ -500,7 +500,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         kbd_update_irq(s);
         break;
     case KBD_CCMD_READ_INPORT:
-        kbc_dbb_out(s, 0x00);
+        kbc_dbb_out(s, 0xBF);
         break;
     case KBD_CCMD_READ_OUTPORT:
         /* XXX: check that */
