@@ -925,7 +925,6 @@ sorecvfrom(PNATState pData, struct socket *so)
         else
         {
             m_freem(pData, m);
-            so->so_m = NULL;
 
             if (!soIgnorableErrorCode(errno))
             {
@@ -939,6 +938,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 
                 Log2((" rx error, tx icmp ICMP_UNREACH:%i\n", code));
                 icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
+                so->so_m = NULL;
             }
         }
 
