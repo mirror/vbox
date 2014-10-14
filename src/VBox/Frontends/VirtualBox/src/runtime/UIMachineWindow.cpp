@@ -265,10 +265,19 @@ bool UIMachineWindow::x11Event(XEvent *pEvent)
 }
 #endif /* Q_WS_X11 */
 
-void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
+void UIMachineWindow::showEvent(QShowEvent *pShowEvent)
+{
+    /* Call to base class: */
+    QMainWindow::showEvent(pShowEvent);
+
+    /* Update appearance for indicator-pool: */
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
+}
+
+void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 {
     /* Always ignore close-event first: */
-    pEvent->ignore();
+    pCloseEvent->ignore();
 
     /* Make sure machine is in one of the allowed states: */
     if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
