@@ -98,9 +98,15 @@ protected:
 
     /* Event handlers: */
 #ifdef Q_WS_X11
+    /** X11: Native event handler. */
     bool x11Event(XEvent *pEvent);
 #endif /* Q_WS_X11 */
-    void closeEvent(QCloseEvent *pEvent);
+
+    /** Show event handler. */
+    void showEvent(QShowEvent *pShowEvent);
+
+    /** Close event handler. */
+    void closeEvent(QCloseEvent *pCloseEvent);
 
 #ifdef Q_WS_MAC
     /** Mac OS X: Handles native notifications.

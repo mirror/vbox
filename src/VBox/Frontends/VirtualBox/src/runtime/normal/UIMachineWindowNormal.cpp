@@ -165,7 +165,7 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
     /* Update status-bar visibility: */
     statusBar()->setVisible(pActionStatusBarSwitch->isChecked());
     /* Update status-bar indicators-pool: */
-    m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
+    m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
 
     /* Normalize geometry without moving: */
     normalizeGeometry(false /* adjust position */);
@@ -327,7 +327,7 @@ void UIMachineWindowNormal::loadSettings()
 #endif /* !Q_WS_MAC */
         /* Update status-bar visibility: */
         statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
-        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible());
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
     }
 
     /* Load window geometry: */
