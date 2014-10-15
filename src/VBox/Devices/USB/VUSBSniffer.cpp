@@ -26,6 +26,7 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/semaphore.h>
+#include <iprt/time.h>
 
 #include "VUSBSniffer.h"
 
@@ -319,6 +320,29 @@ static int vusbSnifferBlockAddData(PVUSBSNIFFERINT pThis, const void *pvData, ui
 }
 
 /**
+ * Aligns the current block data to a 32bit boundary.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The VUSB sniffer instance.
+ */
+static int vusbSnifferBlockAlign(PVUSBSNIFFERINT pThis)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(pThis->cbBlockCur);
+
+    /* Pad to 32bits. */
+    uint8_t abPad[3] = { 0 };
+    uint32_t cbPad = RT_ALIGN_32(pThis->cbBlockCur, 4) - pThis->cbBlockCur;
+
+    Assert(cbPad <= 3);
+    if (cbPad)
+        rc = vusbSnifferBlockAddData(pThis, abPad, cbPad);
+
+    return rc;
+}
+
+/**
  * Commits the current block to the capture file.
  *
  * @returns VBox status code.
@@ -330,14 +354,7 @@ static int vusbSnifferBlockCommit(PVUSBSNIFFERINT pThis)
 
     AssertPtr(pThis->pBlockHdr);
 
-    /* Pad to 32bits. */
-    uint8_t abPad[3] = { 0 };
-    uint32_t cbPad = RT_ALIGN_32(pThis->cbBlockCur, 4) - pThis->cbBlockCur;
-
-    Assert(cbPad <= 3);
-    if (cbPad)
-        rc = vusbSnifferBlockAddData(pThis, abPad, cbPad);
-
+    rc = vusbSnifferBlockAlign(pThis);
     if (RT_SUCCESS(rc))
     {
         /* Update the block total length field. */
@@ -406,15 +423,7 @@ static int vusbSnifferAddOption(PVUSBSNIFFERINT pThis, uint16_t u16OptionCode, c
     {
         rc = vusbSnifferBlockAddData(pThis, pvOption, cbOption);
         if (RT_SUCCESS(rc))
-        {
-            /* Pad to 32bits. */
-            uint8_t abPad[3] = { 0 };
-            uint32_t cbPad = RT_ALIGN_32(cbOption, 4) - cbOption;
-
-            Assert(cbPad <= 3);
-            if (cbPad)
-                rc = vusbSnifferBlockAddData(pThis, abPad, cbPad);
-        }
+            rc = vusbSnifferBlockAlign(pThis);
     }
 
     return rc;
@@ -534,6 +543,7 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
                 RTFileDelete(pszCaptureFilename);
             }
             RTSemFastMutexDestroy(pThis->hMtx);
+            pThis->hMtx = NIL_RTSEMFASTMUTEX;
         }
         VUSBSnifferDestroy(pThis);
     }
@@ -581,7 +591,11 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     DumpFileEpb Epb;
     DumpFileUsbHeaderLnxMmapped UsbHdr;
     DumpFileUsbSetup UsbSetup;
-    uint64_t u64TimestampEvent = RTTimeNanoTS();
+    RTTIMESPEC TimeNow;
+    uint64_t u64TimestampEvent;
+
+    RTTimeNow(&TimeNow);
+    u64TimestampEvent = RTTimeSpecGetNano(&TimeNow);
 
     /* Start with the enhanced packet block. */
     Epb.Hdr.u32BlockType        = DUMPFILE_EPB_BLOCK_TYPE;
@@ -627,32 +641,32 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
 
     bool fRecordData = false;
     size_t cbUrbLength = 0;
+    uint32_t cbCapturedLength = sizeof(UsbHdr);
 
     if (   pUrb->cbData
-        && (    (   pUrb->enmDir == VUSBDIRECTION_OUT
+        && (    (   (   pUrb->enmDir == VUSBDIRECTION_OUT
+                     || pUrb->enmDir == VUSBDIRECTION_SETUP)
                  && pUrb->enmType != VUSBXFERTYPE_CTRL
                  && pUrb->enmType != VUSBXFERTYPE_MSG
                  && enmEvent == VUSBSNIFFEREVENT_SUBMIT)
-             || (   pUrb->enmDir == VUSBDIRECTION_IN
+             || (   (   pUrb->enmDir == VUSBDIRECTION_IN
+                     || pUrb->enmDir == VUSBDIRECTION_SETUP)
                  && enmEvent == VUSBSNIFFEREVENT_COMPLETE)))
     {
-        Epb.u32CapturedLen = sizeof(UsbHdr) + pUrb->cbData;
-        Epb.u32PacketLen   = sizeof(UsbHdr) + pUrb->cbData;
+        cbCapturedLength += pUrb->cbData;
         fRecordData = true;
-    }
-    else
-    {
-        Epb.u32CapturedLen = sizeof(UsbHdr);
-        Epb.u32PacketLen   = sizeof(UsbHdr);
     }
 
     if (pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL)
     {
         PVUSBSETUP pSetup = (PVUSBSETUP)pUrb->abData;
-        cbUrbLength = pSetup->wLength;
+        cbUrbLength = pSetup->wLength + sizeof(DumpFileUsbSetup);
     }
     else
         cbUrbLength = pUrb->cbData;
+
+    Epb.u32CapturedLen = cbCapturedLength;
+    Epb.u32PacketLen   = cbCapturedLength;
 
     UsbHdr.u8EndpointNumber = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0x00);
     UsbHdr.u8DeviceAddress  = pUrb->DstAddress;
