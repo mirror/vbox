@@ -3494,7 +3494,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="2d9ce4b7-0ab2-4931-ac4a-e45aa66465ef"
+    uuid="1470ff16-d7fa-448e-9c38-0352a36053bf"
     internal="yes"
     wsmap="suppress"
     >
@@ -3604,6 +3604,7 @@
         notification.
       </desc>
       <param name="id" type="uuid" mod="string" dir="in"/>
+      <param name="captureFilename" type="wstring" dir="in"/>
     </method>
 
     <method name="detachUSBDevice">
@@ -7491,7 +7492,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="d129b03e-037a-40b1-b288-a08ae73de535"
+    uuid="e51702d7-4f8f-4ebe-ac47-4b77defffd18"
     wsmap="managed"
     >
     <desc>
@@ -7939,6 +7940,9 @@
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the host USB device to attach.</desc>
+      </param>
+      <param name="captureFilename" type="wstring" dir="in">
+        <desc>Filename to capture the USB traffic to.</desc>
       </param>
     </method>
 
@@ -17879,7 +17883,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="b7c71040-2761-42c4-a44a-4e2c2d7e2820"
+    uuid="fdb5fa71-eddb-4e06-9844-277d22270fe0"
     internal="yes"
     wsmap="suppress"
     >
@@ -18220,6 +18224,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="device" type="IUSBDevice" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
       <param name="maskedInterfaces" type="unsigned long" dir="in"/>
+      <param name="captureFilename" type="wstring" dir="in"/>
     </method>
 
     <method name="onUSBDeviceDetach">

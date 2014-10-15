@@ -1143,7 +1143,7 @@ private:
     HRESULT runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
                                 BOOL *aMatched,
                                 ULONG *aMaskedInterfaces);
-    HRESULT captureUSBDevice(const com::Guid &aId);
+    HRESULT captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
     HRESULT detachUSBDevice(const com::Guid &aId,
                             BOOL aDone);
     HRESULT autoCaptureUSBDevices();
@@ -1284,7 +1284,8 @@ public:
     HRESULT i_onUSBControllerChange();
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,
-                                ULONG aMaskedIfs);
+                                ULONG aMaskedIfs,
+                                const com::Utf8Str &aCaptureFilename);
     HRESULT i_onUSBDeviceDetach(IN_BSTR aId,
                                 IVirtualBoxErrorInfo *aError);
     HRESULT i_onSharedFolderChange();
@@ -1314,7 +1315,7 @@ private:
     HRESULT runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
                                 BOOL *aMatched,
                                 ULONG *aMaskedInterfaces);
-    HRESULT captureUSBDevice(const com::Guid &aId);
+    HRESULT captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
     HRESULT detachUSBDevice(const com::Guid &aId,
                             BOOL aDone);
     HRESULT autoCaptureUSBDevices();

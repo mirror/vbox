@@ -507,12 +507,13 @@ typedef struct PDMUSBHUBREG
      * Request the hub to attach of the specified device.
      *
      * @returns VBox status code.
-     * @param   pDrvIns     The hub instance.
-     * @param   pUsbIns     The device to attach.
-     * @param   piPort      Where to store the port number the device was attached to.
+     * @param   pDrvIns            The hub instance.
+     * @param   pUsbIns            The device to attach.
+     * @param   pszCaptureFilename Path to the file for USB traffic capturing, optional.
+     * @param   piPort             Where to store the port number the device was attached to.
      * @thread EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t *piPort));
+    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, const char *pszCaptureFilename, uint32_t *piPort));
 
     /**
      * Request the hub to detach of the specified device.
@@ -536,7 +537,7 @@ typedef struct PDMUSBHUBREG
 typedef const PDMUSBHUBREG *PCPDMUSBHUBREG;
 
 /** Current PDMUSBHUBREG version number. */
-#define PDM_USBHUBREG_VERSION                   PDM_VERSION_MAKE(0xf0fd, 1, 0)
+#define PDM_USBHUBREG_VERSION                   PDM_VERSION_MAKE(0xf0fd, 2, 0)
 
 
 /**

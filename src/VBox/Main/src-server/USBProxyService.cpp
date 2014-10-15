@@ -165,7 +165,7 @@ HRESULT USBProxyService::getDeviceCollection(std::vector<ComPtr<IHostUSBDevice> 
  * @remarks This method may operate synchronously as well as asynchronously. In the
  *          former case it will temporarily abandon locks because of IPC.
  */
-HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aId)
+HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aId, const com::Utf8Str &aCaptureFilename)
 {
     ComAssertRet(aMachine, E_INVALIDARG);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -182,7 +182,7 @@ HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aI
      * Try to capture the device
      */
     alock.release();
-    return pHostDevice->i_requestCaptureForVM(aMachine, true /* aSetError */);
+    return pHostDevice->i_requestCaptureForVM(aMachine, true /* aSetError */, aCaptureFilename);
 }
 
 
@@ -527,7 +527,7 @@ bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<Host
     if (aMachine->i_hasMatchingUSBFilter(aDevice, &ulMaskedIfs))
     {
         /* try to capture the device */
-        HRESULT hrc = aDevice->i_requestCaptureForVM(aMachine, false /* aSetError */, ulMaskedIfs);
+        HRESULT hrc = aDevice->i_requestCaptureForVM(aMachine, false /* aSetError */, Utf8Str(), ulMaskedIfs);
         return SUCCEEDED(hrc)
             || hrc == E_UNEXPECTED /* bad device state, give up */;
     }

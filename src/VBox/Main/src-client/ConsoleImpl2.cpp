@@ -3954,7 +3954,7 @@ int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
                     USBStorageDevice UsbMsd = USBStorageDevice();
                     RTUuidCreate(&UsbMsd.mUuid);
                     UsbMsd.iPort = uInstance;
-                    rc = PDMR3UsbCreateEmulatedDevice(pUVM, pcszDevice, pCtlInst, &UsbMsd.mUuid);
+                    rc = PDMR3UsbCreateEmulatedDevice(pUVM, pcszDevice, pCtlInst, &UsbMsd.mUuid, NULL);
                     if (RT_SUCCESS(rc))
                         mUSBStorageDevices.push_back(UsbMsd);
                 }

@@ -33,6 +33,7 @@
 #include <iprt/asm.h>
 #include "VUSBInternal.h"
 
+#include "VUSBSniffer.h"
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -1282,6 +1283,9 @@ void vusbDevDestroy(PVUSBDEV pDev)
     int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
     AssertRC(rc);
 
+    if (pDev->hSniffer != VUSBSNIFFER_NIL)
+        VUSBSnifferDestroy(pDev->hSniffer);
+
     RTCritSectDelete(&pDev->CritSectAsyncUrbs);
     /* Not using vusbDevSetState() deliberately here because it would assert on the state. */
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
@@ -1696,7 +1700,7 @@ static DECLCALLBACK(int) vusbDevGetDescriptorCacheWorker(PPDMUSBINS pUsbIns, PCP
  * @param   pDev    The VUSB device to initialize.
  * @param   pUsbIns Pointer to the PDM USB Device instance.
  */
-int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
+int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilename)
 {
     /*
      * Initialize the device data members.
@@ -1732,6 +1736,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
         AssertRCReturn(rc, rc);
     }
     pDev->pResetTimer = NULL;
+    pDev->hSniffer = VUSBSNIFFER_NIL;
 
     int rc = RTCritSectInit(&pDev->CritSectAsyncUrbs);
     AssertRCReturn(rc, rc);
@@ -1750,6 +1755,12 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     rc = PDMUsbHlpTMTimerCreate(pDev->pUsbIns, TMCLOCK_VIRTUAL, vusbDevResetDoneTimer, pDev, 0 /*fFlags*/,
                                 "USB Device Reset Timer",  &pDev->pResetTimer);
     AssertRCReturn(rc, rc);
+
+    if (pszCaptureFilename)
+    {
+        rc = VUSBSnifferCreate(&pDev->hSniffer, 0, pszCaptureFilename, NULL);
+        AssertRCReturn(rc, rc);
+    }
 
     /*
      * Get the descriptor cache from the device. (shall cannot fail)

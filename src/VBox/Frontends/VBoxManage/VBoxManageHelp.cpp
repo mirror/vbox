@@ -371,7 +371,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
 #endif
                      "                            [--autostart-enabled on|off]\n"
                      "                            [--autostart-delay <seconds>]\n"
-#if 0 /* Disabled until the feature is implemented. */
+#if 0
                      "                            [--autostop-type disabled|savestate|poweroff|\n"
                      "                                             acpishutdown]\n"
 #endif
@@ -467,7 +467,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                                        <hostport>,[<guestip>],<guestport> |\n"
                      "                            natpf<1-N> delete <rulename> |\n"
                      "                            guestmemoryballoon <balloonsize in MB> |\n"
-                     "                            usbattach <uuid>|<address> |\n"
+                     "                            usbattach <uuid>|<address>\n"
+                     "                                      [--capturefile <filename>] |\n"
                      "                            usbdetach <uuid>|<address> |\n"
                      "                            clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                      bidirectional |\n"

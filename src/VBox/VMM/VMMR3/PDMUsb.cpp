@@ -457,20 +457,21 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
  * Creates the device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   pUsbDev         The USB device emulation.
- * @param   iInstance       -1 if not called by pdmR3UsbInstantiateDevices().
- * @param   pUuid           The UUID for this device.
- * @param   ppInstanceNode  Pointer to the device instance pointer. This is set to NULL if inserted
- *                          into the tree or cleaned up.
+ * @param   pVM                 Pointer to the VM.
+ * @param   pUsbDev             The USB device emulation.
+ * @param   iInstance           -1 if not called by pdmR3UsbInstantiateDevices().
+ * @param   pUuid               The UUID for this device.
+ * @param   ppInstanceNode      Pointer to the device instance pointer. This is set to NULL if inserted
+ *                              into the tree or cleaned up.
  *
- *                          In the pdmR3UsbInstantiateDevices() case (iInstance != -1) this is
- *                          the actual instance node and will not be cleaned up.
+ *                              In the pdmR3UsbInstantiateDevices() case (iInstance != -1) this is
+ *                              the actual instance node and will not be cleaned up.
  *
- * @parma   iUsbVersion     The USB version preferred by the device.
+ * @param   iUsbVersion         The USB version preferred by the device.
+ * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  */
 static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int iInstance, PCRTUUID pUuid,
-                                PCFGMNODE *ppInstanceNode, uint32_t iUsbVersion)
+                                PCFGMNODE *ppInstanceNode, uint32_t iUsbVersion, const char *pszCaptureFilename)
 {
     const bool fAtRuntime = iInstance == -1;
     int rc;
@@ -628,7 +629,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
          * Attach it to the hub.
          */
         Log(("PDM: Attaching it...\n"));
-        rc = pHub->Reg.pfnAttachDevice(pHub->pDrvIns, pUsbIns, &pUsbIns->Internal.s.iPort);
+        rc = pHub->Reg.pfnAttachDevice(pHub->pDrvIns, pUsbIns, pszCaptureFilename, &pUsbIns->Internal.s.iPort);
         if (RT_SUCCESS(rc))
         {
             pHub->cAvailablePorts--;
@@ -855,7 +856,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
          * Create and attach the device.
          */
         rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &paUsbDevs[i].Uuid,
-                                  &paUsbDevs[i].pNode, iUsbVersion);
+                                  &paUsbDevs[i].pNode, iUsbVersion, NULL);
         if (RT_FAILURE(rc))
             return rc;
     } /* for device instances */
@@ -871,14 +872,16 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
  * and try instantiate the emulated device.
  *
  * @returns VBox status code.
- * @param   pUVM            The user mode VM handle.
- * @param   pszDeviceName   The name of the PDM device to instantiate.
- * @param   pInstanceNode   The instance CFGM node.
- * @param   pUuid           The UUID to be associated with the device.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pszDeviceName       The name of the PDM device to instantiate.
+ * @param   pInstanceNode       The instance CFGM node.
+ * @param   pUuid               The UUID to be associated with the device.
+ * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  *
  * @thread EMT
  */
-VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName, PCFGMNODE pInstanceNode, PCRTUUID pUuid)
+VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName, PCFGMNODE pInstanceNode, PCRTUUID pUuid,
+                                            const char *pszCaptureFilename)
 {
     /*
      * Validate input.
@@ -928,7 +931,7 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
     /*
      * Create and attach the device.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, iUsbVersion);
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, iUsbVersion, pszCaptureFilename);
     AssertRCReturn(rc, rc);
 
     return rc;
@@ -942,16 +945,17 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
  * and try instantiate the proxy device.
  *
  * @returns VBox status code.
- * @param   pUVM            The user mode VM handle.
- * @param   pUuid           The UUID to be associated with the device.
- * @param   fRemote         Whether it's a remove or local device.
- * @param   pszAddress      The address string.
- * @param   pvBackend       Pointer to the backend.
- * @param   iUsbVersion     The preferred USB version.
- * @param   fMaskedIfs      The interfaces to hide from the guest.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pUuid               The UUID to be associated with the device.
+ * @param   fRemote             Whether it's a remove or local device.
+ * @param   pszAddress          The address string.
+ * @param   pvBackend           Pointer to the backend.
+ * @param   iUsbVersion         The preferred USB version.
+ * @param   fMaskedIfs          The interfaces to hide from the guest.
+ * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  */
 VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
-                                         uint32_t iUsbVersion, uint32_t fMaskedIfs)
+                                         uint32_t iUsbVersion, uint32_t fMaskedIfs, const char *pszCaptureFilename)
 {
     /*
      * Validate input.
@@ -1016,7 +1020,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     /*
      * Finally, try to create it.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstance, iUsbVersion);
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstance, iUsbVersion, pszCaptureFilename);
     if (RT_FAILURE(rc) && pInstance)
         CFGMR3RemoveNode(pInstance);
     return rc;

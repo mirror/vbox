@@ -311,16 +311,18 @@ com::Utf8Str HostUSBDevice::i_getName()
  * is already held by the proxy. Note that it will then perform IPC to the VM
  * process, which means it will temporarily release all locks. (Is this a good idea?)
  *
- * @param   aMachine    Machine this device should be attach to.
- * @param   aSetError   Whether to set full error message or not to bother.
- * @param   aMaskedIfs  The interfaces to hide from the guest.
+ * @param   aMachine         Machine this device should be attach to.
+ * @param   aSetError        Whether to set full error message or not to bother.
+ * @param   aCaptureFilename The filename to capture the USB traffic to.
+ * @param   aMaskedIfs       The interfaces to hide from the guest.
  *
  * @returns Status indicating whether it was successfully captured and/or attached.
  * @retval  S_OK on success.
  * @retval  E_UNEXPECTED if the device state doesn't permit for any attaching.
  * @retval  E_* as appropriate.
  */
-HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs /* = 0*/)
+HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError,
+                                             const com::Utf8Str &aCaptureFilename, ULONG aMaskedIfs /* = 0*/)
 {
     /*
      * Validate preconditions and input.
@@ -376,7 +378,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
     if (mUniState == kHostUSBDeviceState_HeldByProxy)
     {
         alock.release();
-        HRESULT hrc = i_attachToVM(aMachine, aMaskedIfs);
+        HRESULT hrc = i_attachToVM(aMachine, aCaptureFilename, aMaskedIfs);
         return SUCCEEDED(hrc);
     }
 
@@ -395,6 +397,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
 #endif
     mMachine = aMachine;
     mMaskedIfs = aMaskedIfs;
+    mCaptureFilename = aCaptureFilename;
     alock.release();
     int rc = mUSBProxyService->captureDevice(this);
     if (RT_FAILURE(rc))
@@ -429,7 +432,8 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
  * @param   aMachine        Machine this device should be attach to.
  * @param   aMaskedIfs      The interfaces to hide from the guest.
  */
-HRESULT HostUSBDevice::i_attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* = 0*/)
+HRESULT HostUSBDevice::i_attachToVM(SessionMachine *aMachine, const com::Utf8Str &aCaptureFilename,
+                                    ULONG aMaskedIfs /* = 0*/)
 {
     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -456,7 +460,7 @@ HRESULT HostUSBDevice::i_attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /
      */
     LogFlowThisFunc(("{%s} Calling machine->onUSBDeviceAttach()...\n", mName));
     alock.release();
-    HRESULT hrc = aMachine->i_onUSBDeviceAttach(d, NULL, aMaskedIfs);
+    HRESULT hrc = aMachine->i_onUSBDeviceAttach(d, NULL, aMaskedIfs, aCaptureFilename);
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceAttach()=%08X\n", mName, hrc));
 
     /*
@@ -1336,7 +1340,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
                         if (mUniState == kHostUSBDeviceState_AttachingToVM)
                         {
                             alock.release();
-                            i_attachToVM(mMachine, mMaskedIfs);
+                            i_attachToVM(mMachine, mCaptureFilename, mMaskedIfs);
                             alock.acquire();
                         }
                         break;
@@ -1474,7 +1478,7 @@ bool HostUSBDevice::i_updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, Sessi
             if (mUniState == kHostUSBDeviceState_AttachingToVM)
             {
                 alock.release();
-                i_attachToVM(mMachine, mMaskedIfs);
+                i_attachToVM(mMachine, mCaptureFilename, mMaskedIfs);
             }
             return true;
         }
