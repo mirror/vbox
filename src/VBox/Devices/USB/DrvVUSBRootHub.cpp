@@ -498,6 +498,14 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
     }
 #endif
 
+    /* If there is a sniffer on the roothub record the URB there. */
+    if (pRh->hSniffer != VUSBSNIFFER_NIL)
+    {
+        int rc = VUSBSnifferRecordEvent(pRh->hSniffer, pUrb, VUSBSNIFFEREVENT_SUBMIT);
+        if (RT_FAILURE(rc))
+            LogRel(("VUSB: Capturing URB submit event on the root hub failed with %Rrc\n", rc));
+    }
+
     /*
      * The device was resolved when we allocated the URB.
      * Submit it to the device if we found it, if not fail with device-not-ready.
@@ -887,6 +895,8 @@ static DECLCALLBACK(void) vusbRhDestruct(PPDMDRVINS pDrvIns)
         RTStrFree(pRh->Hub.pszName);
         pRh->Hub.pszName = NULL;
     }
+    if (pRh->hSniffer != VUSBSNIFFER_NIL)
+        VUSBSnifferDestroy(pRh->hSniffer);
     RTCritSectDelete(&pRh->CritSectDevices);
     RTCritSectDelete(&pRh->CritSectFreeUrbs);
 }
@@ -906,7 +916,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "CaptureFilename\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     /*
@@ -926,6 +936,13 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     rc = RTCritSectInit(&pThis->CritSectFreeUrbs);
     if (RT_FAILURE(rc))
         return rc;
+
+    char *pszCaptureFilename = NULL;
+    rc = CFGMR3QueryStringAlloc(pCfg, "CaptureFilename", &pszCaptureFilename);
+    if (   RT_FAILURE(rc)
+        && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Failed to query value of \"CaptureFilename\""));
 
     /*
      * Initialize the data members.
@@ -957,6 +974,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnCancelAllUrbs= vusbRhCancelAllUrbs;
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
+    pThis->hSniffer                     = VUSBSNIFFER_NIL;
     /*
      * Resolve interface(s).
      */
@@ -976,6 +994,16 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      */
     pThis->fHcVersions = pThis->pIRhPort->pfnGetUSBVersions(pThis->pIRhPort);
     Log(("vusbRhConstruct: fHcVersions=%u\n", pThis->fHcVersions));
+
+    if (pszCaptureFilename)
+    {
+        rc = VUSBSnifferCreate(&pThis->hSniffer, 0, pszCaptureFilename, NULL);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to create USB sniffer instance"));
+
+        MMR3HeapFree(pszCaptureFilename);
+    }
 
     /*
      * Register ourselves as a USB hub.
