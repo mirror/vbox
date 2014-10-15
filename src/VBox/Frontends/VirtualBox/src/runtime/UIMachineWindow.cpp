@@ -208,9 +208,19 @@ CSession& UIMachineWindow::session() const
     return uisession()->session();
 }
 
-CMachine UIMachineWindow::machine() const
+CMachine& UIMachineWindow::machine() const
 {
-    return session().GetMachine();
+    return uisession()->machine();
+}
+
+CConsole& UIMachineWindow::console() const
+{
+    return uisession()->console();
+}
+
+const QString& UIMachineWindow::machineName() const
+{
+    return uisession()->machineName();
 }
 
 void UIMachineWindow::adjustMachineViewSize()
@@ -283,15 +293,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
         return;
 
-    /* Get machine: */
-    CMachine m = machine();
-
     /* If there is a close hook script defined: */
     const QString strScript = gEDataManager->machineCloseHookScript(vboxGlobal().managedVMUuid());
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */
-        QProcess::startDetached(strScript, QStringList() << m.GetId());
+        QProcess::startDetached(strScript, QStringList() << machine().GetId());
         return;
     }
 
@@ -324,8 +331,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     {
         /* Prepare close-dialog: */
         QWidget *pParentDlg = windowManager().realParentWindow(this);
-        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, m,
-                                                                  session().GetConsole().GetGuestEnteredACPIMode(),
+        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(),
+                                                                  console().GetGuestEnteredACPIMode(),
                                                                   restrictedCloseActions);
 
         /* Make sure close-dialog is valid: */
@@ -480,18 +487,16 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     /* Update window title: */
     if (iElement & UIVisualElement_WindowTitle)
     {
-        /* Get machine: */
-        const CMachine &m = machine();
         /* Get machine state: */
         KMachineState state = uisession()->machineState();
         /* Prepare full name: */
         QString strSnapshotName;
-        if (m.GetSnapshotCount() > 0)
+        if (machine().GetSnapshotCount() > 0)
         {
-            CSnapshot snapshot = m.GetCurrentSnapshot();
+            CSnapshot snapshot = machine().GetCurrentSnapshot();
             strSnapshotName = " (" + snapshot.GetName() + ")";
         }
-        QString strMachineName = m.GetName() + strSnapshotName;
+        QString strMachineName = machineName() + strSnapshotName;
         if (state != KMachineState_Null)
             strMachineName += " [" + gpConverter->toString(state) + "]";
         /* Unusual on the Mac. */
@@ -499,7 +504,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         const QString strUserProductName = uisession()->machineWindowNamePostfix();
         strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
 #endif /* !Q_WS_MAC */
-        if (m.GetMonitorCount() > 1)
+        if (machine().GetMonitorCount() > 1)
             strMachineName += QString(" : %1").arg(m_uScreenId + 1);
         setWindowTitle(strMachineName);
     }

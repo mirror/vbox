@@ -64,8 +64,16 @@ public:
     UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
     UIActionPool* actionPool() const;
     UISession* uisession() const;
+
+    /** Returns the session reference. */
     CSession& session() const;
-    CMachine machine() const;
+    /** Returns the session's machine reference. */
+    CMachine& machine() const;
+    /** Returns the session's console reference. */
+    CConsole& console() const;
+
+    /** Returns the machine name. */
+    const QString& machineName() const;
 
     /** Adjusts machine-window size to correspond current machine-view size.
       * @param fAdjustPosition determines whether is it necessary to adjust position too.

@@ -80,9 +80,6 @@ void UIMachineWindowScale::loadSettings()
     /* Call to base-class: */
     UIMachineWindow::loadSettings();
 
-    /* Load scale window settings: */
-    CMachine m = machine();
-
     /* Load extra-data settings: */
     {
         /* Load extra-data: */
@@ -120,9 +117,6 @@ void UIMachineWindowScale::loadSettings()
 
 void UIMachineWindowScale::saveSettings()
 {
-    /* Get machine: */
-    CMachine m = machine();
-
     /* Save window geometry: */
     {
         gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
