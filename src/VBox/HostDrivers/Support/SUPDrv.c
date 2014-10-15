@@ -153,6 +153,7 @@ DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static int                  supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq);
+static int                  supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASURE pReq);
 static int                  supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -2238,6 +2239,16 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             REQ_CHECK_SIZES(SUP_IOCTL_RESUME_SUSPENDED_KBDS);
 
             pReqHdr->rc = supdrvIOCtl_ResumeSuspendedKbds();
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TSC_DELTA_MEASURE):
+        {
+            /* validate */
+            PSUPTSCDELTAMEASURE pReq = (PSUPTSCDELTAMEASURE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_TSC_DELTA_MEASURE);
+
+            pReqHdr->rc = supdrvIOCtl_TscDeltaMeasure(pDevExt, pReq);
             return 0;
         }
 
@@ -6641,13 +6652,19 @@ DECLINLINE(void) supdrvClearTscSamples(PSUPGLOBALINFOPAGE pGip, bool fClearDelta
  */
 static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 {
-    PSUPGLOBALINFOPAGE pGip  = pDevExt->pGip;
-    RTCPUID    idMaster      = pDevExt->idGipMaster;
-    uint32_t   idxMaster     = supdrvGipCpuIndexFromCpuId(pGip, idMaster);
-    PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[idxWorker];
-    int        rc            = VERR_CPU_OFFLINE;
+    int rc;
+    PSUPGLOBALINFOPAGE pGip;
+    PSUPGIPCPU pGipCpuWorker;
+    RTCPUID idMaster;
 
-    if (idxWorker == idxMaster)
+    AssertReturn(pDevExt, VERR_INVALID_PARAMETER);
+    AssertReturn(pDevExt->pGip, VERR_INVALID_PARAMETER);
+
+    pGip          = pDevExt->pGip;
+    idMaster      = pDevExt->idGipMaster;
+    pGipCpuWorker = &pGip->aCPUs[idxWorker];
+
+    if (pGipCpuWorker->idCpu == idMaster)
     {
         ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, 0);
         return VINF_SUCCESS;
@@ -6655,7 +6672,13 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 
     /* Set the master TSC as the initiator. */
     while (ASMAtomicCmpXchgU32(&g_idTscDeltaInitiator, idMaster, NIL_RTCPUID) == false)
-        ASMNopPause();
+    {
+        /*
+         * Sleep here rather than spin as there is a parallel measurement
+         * being executed and that can take a good while to be done.
+         */
+        RTThreadSleep(1);
+    }
 
     if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpuWorker->idCpu))
     {
@@ -6669,6 +6692,8 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
                 rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
         }
     }
+    else
+        rc = VERR_CPU_OFFLINE;
 
     ASMAtomicWriteU32(&g_idTscDeltaInitiator, NIL_RTCPUID);
     return rc;
@@ -7313,6 +7338,7 @@ static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uin
     }
 }
 
+
 /**
  * Resume built-in keyboard on MacBook Air and Pro hosts.
  * If there is no built-in keyboard device, return success anyway.
@@ -7326,5 +7352,82 @@ static int supdrvIOCtl_ResumeSuspendedKbds(void)
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif
+}
+
+
+/**
+ * Service a TSC-delta measurement request.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             Pointer to the device instance data.
+ * @param   pReq                Pointer to the TSC-delta measurement request.
+ */
+static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASURE pReq)
+{
+    PSUPGLOBALINFOPAGE pGip;
+    RTCPUID            idCpuWorker;
+    int                rc = VERR_CPU_NOT_FOUND;
+    int16_t            cTries;
+    RTMSINTERVAL       cMsWaitRetry;
+    uint16_t           iCpu;
+
+    /*
+     * Validate.
+     */
+    AssertReturn(pDevExt, VERR_INVALID_PARAMETER);
+    AssertReturn(pReq, VERR_INVALID_PARAMETER);
+    AssertReturn(pDevExt->pGip, VERR_INVALID_PARAMETER);
+    idCpuWorker = pReq->u.In.idCpu;
+    if (idCpuWorker == NIL_RTCPUID)
+        return VERR_INVALID_CPU_ID;
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    if (pReq->u.In.fAsync)
+    {
+        /** @todo Async. doesn't implement options like retries, waiting. We'll need
+         *        to pass those options to the thread somehow and implement it in the
+         *        thread. Check if anyone uses/needs fAsync before implementing this. */
+        RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
+            || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+        {
+            pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+        }
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        RTThreadUserSignal(pDevExt->hTscDeltaThread);
+        return VINF_SUCCESS;
+    }
+#endif
+
+    cTries       = RT_MAX(pReq->u.In.cRetries + 1, 10);
+    cMsWaitRetry = RT_MAX(pReq->u.In.cMsWaitRetry, 5);
+    pGip = pDevExt->pGip;
+    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    {
+        PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
+        if (pGipCpuWorker->idCpu == idCpuWorker)
+        {
+            if (   pGipCpuWorker->i64TSCDelta != INT64_MAX
+                && !pReq->u.In.fForce)
+                return VINF_SUCCESS;
+
+            while (!cTries--)
+            {
+                rc = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pGipCpuWorker->i64TSCDelta != INT64_MAX);
+                    break;
+                }
+
+                if (cMsWaitRetry)
+                    RTThreadSleep(cMsWaitRetry);
+            }
+
+            break;
+        }
+    }
+    return rc;
 }
 

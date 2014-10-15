@@ -279,7 +279,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x001b0000
-                                   ? 0x001b0000
+                                   ? 0x001b0001
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -2173,5 +2173,28 @@ SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void)
 #else /* !RT_OS_DARWIN */
     return VERR_NOT_SUPPORTED;
 #endif
+}
+
+
+SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries, uint8_t cMsWaitRetry)
+{
+    SUPTSCDELTAMEASURE Req;
+    Req.Hdr.u32Cookie        = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn             = SUP_IOCTL_TSC_DELTA_MEASURE_SIZE_IN;
+    Req.Hdr.cbOut            = SUP_IOCTL_TSC_DELTA_MEASURE_SIZE_OUT;
+    Req.Hdr.fFlags           = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc               = VERR_INTERNAL_ERROR;
+
+    Req.u.In.cRetries     = cRetries;
+    Req.u.In.fAsync       = fAsync;
+    Req.u.In.fForce       = fForce;
+    Req.u.In.idCpu        = idCpu;
+    Req.u.In.cMsWaitRetry = cMsWaitRetry;
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TSC_DELTA_MEASURE, &Req, SUP_IOCTL_TSC_DELTA_MEASURE_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
 }
 
