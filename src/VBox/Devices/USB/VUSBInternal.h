@@ -31,6 +31,8 @@
 #include <iprt/queueatomic.h>
 #include <iprt/req.h>
 
+#include "VUSBSniffer.h"
+
 RT_C_DECLS_BEGIN
 
 
@@ -215,13 +217,15 @@ typedef struct VUSBDEV
     /** Request queue for executing tasks on the I/O thread which should be done
      * synchronous and without any other thread accessing the USB device. */
     RTREQQUEUE          hReqQueueSync;
+    /** Sniffer instance for this device if configured. */
+    VUSBSNIFFER         hSniffer;
     /** Flag whether the URB I/O thread should terminate. */
     bool volatile       fTerminate;
     /** Flag whether the I/O thread was woken up. */
     bool volatile       fWokenUp;
 #if HC_ARCH_BITS == 32
     /** Align the size to a 8 byte boundary. */
-    bool                afAlignment0[2];
+    bool                afAlignment0[6];
 #endif
 } VUSBDEV;
 AssertCompileSizeAlignment(VUSBDEV, 8);
@@ -247,7 +251,7 @@ typedef struct vusb_dev_ops
 } VUSBDEVOPS;
 
 
-int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns);
+int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilename);
 int vusbDevCreateOld(const char *pszDeviceName, void *pvDriverInit, PCRTUUID pUuid, PVUSBDEV *ppDev);
 void vusbDevDestroy(PVUSBDEV pDev);
 

@@ -1639,7 +1639,7 @@ void UIMachineLogic::sltAttachUSBDevice()
     if (target.attach)
     {
         /* Try to attach corresponding device: */
-        console().AttachUSBDevice(target.id);
+        console().AttachUSBDevice(target.id, QString(""));
         /* Check if console is OK: */
         if (!console().isOk())
         {

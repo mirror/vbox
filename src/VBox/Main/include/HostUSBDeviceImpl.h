@@ -208,7 +208,8 @@ public:
 
     com::Utf8Str i_getName();
 
-    HRESULT i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs = 0);
+    HRESULT i_requestCaptureForVM(SessionMachine *aMachine, bool aSetError,
+                                  const com::Utf8Str &aCaptureFilename, ULONG aMaskedIfs = 0);
     HRESULT i_onDetachFromVM(SessionMachine *aMachine, bool aDone, bool *aRunFilters, bool aAbnormal = false);
     HRESULT i_requestReleaseToHost();
     HRESULT i_requestHold();
@@ -228,7 +229,7 @@ public:
 
 protected:
 
-    HRESULT i_attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs = 0);
+    HRESULT i_attachToVM(SessionMachine *aMachine, const com::Utf8Str &aCaptureFilename, ULONG aMaskedIfs = 0);
     void i_detachFromVM(HostUSBDeviceState aFinalState);
     void i_onPhysicalDetachedInternal();
     bool i_hasAsyncOperationTimedOut() const;
@@ -299,6 +300,8 @@ private:
     /** The name of this device (for logging purposes).
      * This points to the string in mNameObj. */
     const char *mName;
+    /** The filename to capture the USB traffic to. */
+    com::Utf8Str mCaptureFilename;
 
     friend class USBProxyService;
 #ifdef RT_OS_SOLARIS

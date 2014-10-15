@@ -170,7 +170,7 @@ static int emulatedWebcamInsertSettings(PCFGMNODE pConfig, EUSBSettingsMap *pSet
         return rc;
 
     /* pInstance will be used by PDM and deallocated on error. */
-    rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid);
+    rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid, NULL);
     LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
     return rc;
 }

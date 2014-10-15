@@ -12783,7 +12783,7 @@ HRESULT SessionMachine::runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
 /**
  *  @note Locks the same as Host::captureUSBDevice() does.
  */
-HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId)
+HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename)
 {
     LogFlowThisFunc(("\n"));
 
@@ -12795,7 +12795,7 @@ HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId)
 
     USBProxyService *service = mParent->i_host()->i_usbProxyService();
     AssertReturn(service, E_FAIL);
-    return service->captureDeviceForVM(this, aId.ref());
+    return service->captureDeviceForVM(this, aId.ref(), aCaptureFilename);
 #else
     NOREF(aId);
     return E_NOTIMPL;
@@ -13813,7 +13813,8 @@ bool SessionMachine::i_hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDev
  */
 HRESULT SessionMachine::i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                             IVirtualBoxErrorInfo *aError,
-                                            ULONG aMaskedIfs)
+                                            ULONG aMaskedIfs,
+                                            const com::Utf8Str &aCaptureFilename)
 {
     LogFlowThisFunc(("\n"));
 
@@ -13838,7 +13839,7 @@ HRESULT SessionMachine::i_onUSBDeviceAttach(IUSBDevice *aDevice,
     AssertMsg(RTLockValidatorWriteLockGetCount(RTThreadSelf()) == 0, ("%d\n", RTLockValidatorWriteLockGetCount(RTThreadSelf())));
     AssertMsg(RTLockValidatorReadLockGetCount(RTThreadSelf()) == 0, ("%d\n", RTLockValidatorReadLockGetCount(RTThreadSelf())));
 
-    return directControl->OnUSBDeviceAttach(aDevice, aError, aMaskedIfs);
+    return directControl->OnUSBDeviceAttach(aDevice, aError, aMaskedIfs, Bstr(aCaptureFilename).raw());
 }
 
 /**
@@ -14392,7 +14393,7 @@ HRESULT Machine::runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
 
 }
 
-HRESULT Machine::captureUSBDevice(const com::Guid &aId)
+HRESULT Machine::captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename)
 {
     NOREF(aId);
     ReturnComNotImplemented();

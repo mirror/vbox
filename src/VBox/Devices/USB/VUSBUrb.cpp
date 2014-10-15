@@ -1011,6 +1011,15 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
     AssertMsg(   pUrb->enmState == VUSBURBSTATE_REAPED
               || pUrb->enmState == VUSBURBSTATE_CANCELLED, ("%d\n", pUrb->enmState));
 
+    if (pUrb->VUsb.pDev->hSniffer)
+    {
+        int rc = VUSBSnifferRecordEvent(pUrb->VUsb.pDev->hSniffer, pUrb,
+                                          pUrb->enmStatus == VUSBSTATUS_OK
+                                        ? VUSBSNIFFEREVENT_COMPLETE
+                                        : VUSBSNIFFEREVENT_ERROR_COMPLETE);
+        if (RT_FAILURE(rc))
+            LogRel(("VUSB: Capturing URB completion event failed with %Rrc\n", rc));
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1894,6 +1903,13 @@ int vusbUrbSubmit(PVUSBURB pUrb)
      * If there's a URB in the read-ahead buffer, use it.
      */
     int rc;
+
+    if (pDev->hSniffer)
+    {
+        rc = VUSBSnifferRecordEvent(pDev->hSniffer, pUrb, VUSBSNIFFEREVENT_SUBMIT);
+        if (RT_FAILURE(rc))
+            LogRel(("VUSB: Capturing URB submit event failed with %Rrc\n", rc));
+    }
 
 #ifdef VBOX_WITH_USB
     if (pPipe && pPipe->hReadAhead)

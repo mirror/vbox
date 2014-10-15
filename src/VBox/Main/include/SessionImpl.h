@@ -96,7 +96,8 @@ private:
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(const ComPtr<IUSBDevice> &aDevice,
                               const ComPtr<IVirtualBoxErrorInfo> &aError,
-                              ULONG aMaskedInterfaces);
+                              ULONG aMaskedInterfaces,
+                              const com::Utf8Str &aCaptureFilename);
     HRESULT onUSBDeviceDetach(const com::Guid &aId,
                               const ComPtr<IVirtualBoxErrorInfo> &aError);
     HRESULT onShowWindow(BOOL aCheck,

@@ -2826,7 +2826,7 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType,
     return S_OK;
 }
 
-HRESULT Console::attachUSBDevice(const com::Guid &aId)
+HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename)
 {
 #ifdef VBOX_WITH_USB
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2852,7 +2852,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId)
     alock.release();
 
     /* Request the device capture */
-    return mControl->CaptureUSBDevice(Bstr(aId.toString()).raw());
+    return mControl->CaptureUSBDevice(Bstr(aId.toString()).raw(), Bstr(aCaptureFilename).raw());
 
 #else   /* !VBOX_WITH_USB */
     return setError(VBOX_E_PDM_ERROR,
@@ -5270,7 +5270,8 @@ HRESULT Console::i_onSharedFolderChange(BOOL aGlobal)
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs)
+HRESULT Console::i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,
+                                     const Utf8Str &aCaptureFilename)
 {
 #ifdef VBOX_WITH_USB
     LogFlowThisFunc(("aDevice=%p aError=%p\n", aDevice, aError));
@@ -5308,7 +5309,7 @@ HRESULT Console::i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *
     }
 
     alock.release();
-    HRESULT rc = i_attachUSBDevice(aDevice, aMaskedIfs);
+    HRESULT rc = i_attachUSBDevice(aDevice, aMaskedIfs, aCaptureFilename);
     if (FAILED(rc))
     {
         /* take the current error info */
@@ -8315,7 +8316,8 @@ int Console::i_changeDnDMode(DnDMode_T aDnDMode)
  *
  * @note Synchronously calls EMT.
  */
-HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
+HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs,
+                                   const Utf8Str &aCaptureFilename)
 {
     AssertReturn(aHostDevice, E_FAIL);
     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
@@ -8364,9 +8366,10 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     Assert(portVersion == 1 || portVersion == 2 || portVersion == 3);
 
     int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
-                               (PFNRT)i_usbAttachCallback, 9,
+                               (PFNRT)i_usbAttachCallback, 10,
                                this, ptrVM.rawUVM(), aHostDevice, uuid.raw(), fRemote,
-                               Address.c_str(), pvRemoteBackend, portVersion, aMaskedIfs);
+                               Address.c_str(), pvRemoteBackend, portVersion, aMaskedIfs,
+                               aCaptureFilename.isEmpty() ? NULL : aCaptureFilename.c_str());
     if (RT_SUCCESS(vrc))
     {
         /* Create a OUSBDevice and add it to the device list */
@@ -8417,7 +8420,8 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 //static
 DECLCALLBACK(int)
 Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PCRTUUID aUuid, bool aRemote,
-                             const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs)
+                             const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs,
+                             const char *pszCaptureFilename)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("that={%p} aUuid={%RTuuid}\n", that, aUuid));
@@ -8428,7 +8432,7 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, 
     int vrc = PDMR3UsbCreateProxyDevice(pUVM, aUuid, aRemote, aAddress, pvRemoteBackend,
                                         aPortVersion == 3 ? VUSB_STDVER_30 :
                                         aPortVersion == 2 ? VUSB_STDVER_11 : VUSB_STDVER_20,
-                                        aMaskedIfs);
+                                        aMaskedIfs, pszCaptureFilename);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
@@ -9052,7 +9056,7 @@ void Console::i_processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC 
             if (fMatched)
             {
                 alock.release();
-                hrc = i_onUSBDeviceAttach(pUSBDevice, NULL, fMaskedIfs);
+                hrc = i_onUSBDeviceAttach(pUSBDevice, NULL, fMaskedIfs, Utf8Str());
                 alock.acquire();
 
                 /// @todo (r=dmik) warning reporting subsystem

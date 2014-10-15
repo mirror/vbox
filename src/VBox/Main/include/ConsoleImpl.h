@@ -167,7 +167,8 @@ public:
     HRESULT i_onVideoCaptureChange();
     HRESULT i_onUSBControllerChange();
     HRESULT i_onSharedFolderChange(BOOL aGlobal);
-    HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
+    HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,
+                                const Utf8Str &aCaptureFilename);
     HRESULT i_onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
     HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
@@ -317,7 +318,7 @@ private:
     HRESULT discardSavedState(BOOL aFRemoveFile);
     HRESULT getDeviceActivity(const std::vector<DeviceType_T> &aType,
                               std::vector<DeviceActivity_T> &aActivity);
-    HRESULT attachUSBDevice(const com::Guid &aId);
+    HRESULT attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
     HRESULT detachUSBDevice(const com::Guid &aId,
                             ComPtr<IUSBDevice> &aDevice);
     HRESULT findUSBDeviceByAddress(const com::Utf8Str &aName,
@@ -742,12 +743,12 @@ private:
     int i_changeDnDMode(DnDMode_T aDnDMode);
 
 #ifdef VBOX_WITH_USB
-    HRESULT i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs);
+    HRESULT i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, const Utf8Str &aCaptureFilename);
     HRESULT i_detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice);
 
     static DECLCALLBACK(int) i_usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
                                                  bool aRemote, const char *aAddress, void *pvRemoteBackend,
-                                                 USHORT aPortVersion, ULONG aMaskedIfs);
+                                                 USHORT aPortVersion, ULONG aMaskedIfs, const char *pszCaptureFilename);
     static DECLCALLBACK(int) i_usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid);
 #endif
 
