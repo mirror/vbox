@@ -264,6 +264,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-debian7',      'Debian',           'debian-7.0.0-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-debian7-64',   'Debian_64',        'debian-7.0.0-x64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-w7-64',        'Windows7_64',      'win7-x64-txs.iso',         InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit),
+            InstallTestVm(oSet, 'tst-w7-32',        'Windows7',         'win7-x86-txs.iso',         InstallTestVm.ksSataController, 25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-w2k3',         'Windows2003',      'win2k3ent-txs.iso',        InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-w2k',          'Windows2000',      'win2ksp0-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit | InstallTestVm.kfIdeIrqDelay),
             InstallTestVm(oSet, 'tst-w2ksp4',       'Windows2000',      'win2ksp4-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit | InstallTestVm.kfIdeIrqDelay),
