@@ -7381,25 +7381,6 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASUR
     if (idCpuWorker == NIL_RTCPUID)
         return VERR_INVALID_CPU_ID;
 
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-    if (pReq->u.In.fAsync)
-    {
-        /** @todo Async. doesn't implement options like retries, waiting. We'll need
-         *        to pass those options to the thread somehow and implement it in the
-         *        thread. Check if anyone uses/needs fAsync before implementing this. */
-        RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
-        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-        if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
-            || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
-        {
-            pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
-        }
-        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-        RTThreadUserSignal(pDevExt->hTscDeltaThread);
-        return VINF_SUCCESS;
-    }
-#endif
-
     cTries       = RT_MAX(pReq->u.In.cRetries + 1, 10);
     cMsWaitRetry = RT_MAX(pReq->u.In.cMsWaitRetry, 5);
     pGip = pDevExt->pGip;
@@ -7411,6 +7392,25 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASUR
             if (   pGipCpuWorker->i64TSCDelta != INT64_MAX
                 && !pReq->u.In.fForce)
                 return VINF_SUCCESS;
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+            if (pReq->u.In.fAsync)
+            {
+                /** @todo Async. doesn't implement options like retries, waiting. We'll need
+                 *        to pass those options to the thread somehow and implement it in the
+                 *        thread. Check if anyone uses/needs fAsync before implementing this. */
+                RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
+                RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+                if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
+                    || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+                {
+                    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+                }
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+                RTThreadUserSignal(pDevExt->hTscDeltaThread);
+                return VINF_SUCCESS;
+            }
+#endif
 
             while (!cTries--)
             {
