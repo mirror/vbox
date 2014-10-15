@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - (none).
  */
-#define SUPDRV_IOC_VERSION                              0x001b0000
+#define SUPDRV_IOC_VERSION                              0x001b0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1467,6 +1467,44 @@ AssertCompileMembersSameSizeAndOffset(SUPMSRPROBER, u.In, SUPMSRPROBER, u.Out);
 #define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE            sizeof(SUPREQHDR)
 #define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE_IN         sizeof(SUPREQHDR)
 #define SUP_IOCTL_RESUME_SUSPENDED_KBDS_SIZE_OUT        sizeof(SUPREQHDR)
+/** @} */
+
+
+/** @name SUP_IOCTL_TSC_DELTA_MEASURE
+ * Measure the TSC-delta between the specified CPU and the master TSC.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TSC_DELTA_MEASURE                     SUP_CTL_CODE_SIZE(36, SUP_IOCTL_TSC_DELTA_MEASURE_SIZE)
+#define SUP_IOCTL_TSC_DELTA_MEASURE_SIZE                sizeof(SUPTSCDELTAMEASURE)
+#define SUP_IOCTL_TSC_DELTA_MEASURE_SIZE_IN             sizeof(SUPTSCDELTAMEASURE)
+#define SUP_IOCTL_TSC_DELTA_MEASURE_SIZE_OUT            sizeof(SUPREQHDR)
+typedef struct SUPTSCDELTAMEASURE
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+
+    /** Input/output union. */
+    union
+    {
+        struct
+        {
+            /** Which CPU to take the TSC-delta measurement for. */
+            RTCPUID         idCpu;
+            /** Number of times to retry on failure (specify 0 for default). */
+            uint8_t         cRetries;
+            /** Number of milliseconds to wait before each retry. */
+            uint8_t         cMsWaitRetry;
+            /** Whether to force taking a measurement if one exists already. */
+            bool            fForce;
+            /** Whether to do the measurement asynchronously (if possible). */
+            bool            fAsync;
+            /** Padding for future. */
+            uint64_t        auPadding[3];
+        } In;
+    } u;
+} SUPTSCDELTAMEASURE, *PSUPTSCDELTAMEASURE;
+AssertCompileMemberAlignment(SUPTSCDELTAMEASURE, u, 8);
 /** @} */
 
 

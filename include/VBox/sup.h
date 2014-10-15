@@ -1433,6 +1433,22 @@ SUPR3DECL(int) SUPR3MsrProberModifyEx(uint32_t uMsr, RTCPUID idCpu, uint64_t fAn
  */
 SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
 
+
+/**
+ * Measure the TSC-delta for the specified CPU.
+ *
+ * @returns VBox status code.
+ * @param   idCpu               The CPU to measure the TSC-delta for.
+ * @param   fAsync              Whether the measurement is asynchronous, returns
+ *                              immediately after signalling a measurement
+ *                              request.
+ * @param   fForce              Whether to perform a measurement even if the
+ *                              specified CPU has a (possibly) valid TSC delta.
+ * @param   cRetries            Number of times to retry failed delta
+ *                              measurements.
+ */
+SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries);
+
 /** @} */
 #endif /* IN_RING3 */
 
