@@ -382,14 +382,13 @@ typedef struct VUSBROOTHUB
     RTCRITSECT              CritSectFreeUrbs;
     /** Chain of free URBs. (Singly linked) */
     PVUSBURB                pFreeUrbs;
+    /** Sniffer instance for the root hub. */
+    VUSBSNIFFER             hSniffer;
     /** The number of URBs in the pool. */
     uint32_t                cUrbsInPool;
     /** Version of the attached Host Controller. */
     uint32_t                fHcVersions;
 #ifdef VBOX_WITH_STATISTICS
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignment2; /**< Counters must be 64-bit aligned. */
-#endif
     VUSBROOTHUBTYPESTATS    Total;
     VUSBROOTHUBTYPESTATS    aTypes[VUSBXFERTYPE_MSG];
     STAMCOUNTER             StatIsocReqPkts;

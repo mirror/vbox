@@ -1027,6 +1027,18 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
      */
     PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
     AssertPtrReturnVoid(pRh);
+
+    /* If there is a sniffer on the roothub record the completed URB there too. */
+    if (pRh->hSniffer != VUSBSNIFFER_NIL)
+    {
+        int rc = VUSBSnifferRecordEvent(pRh->hSniffer, pUrb,
+                                          pUrb->enmStatus == VUSBSTATUS_OK
+                                        ? VUSBSNIFFEREVENT_COMPLETE
+                                        : VUSBSNIFFEREVENT_ERROR_COMPLETE);
+        if (RT_FAILURE(rc))
+            LogRel(("VUSB: Capturing URB completion event on the root hub failed with %Rrc\n", rc));
+    }
+
     if (pUrb->enmType != VUSBXFERTYPE_MSG)
     {
         Assert(pUrb->enmType >= 0 && pUrb->enmType < (int)RT_ELEMENTS(pRh->aTypes));
