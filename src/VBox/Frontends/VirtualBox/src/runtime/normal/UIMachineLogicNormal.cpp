@@ -205,10 +205,9 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bo
     ULONG uWidth, uHeight, uBitsPerPixel;
     LONG uOriginX, uOriginY;
     KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-    CDisplay display = session().GetConsole().GetDisplay();
-    display.GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
+    display().GetScreenResolution(iIndex, uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
     if (!fEnabled)
-        display.SetVideoModeHint(iIndex, false, false, 0, 0, 0, 0, 0);
+        display().SetVideoModeHint(iIndex, false, false, 0, 0, 0, 0, 0);
     else
     {
         /* Defaults: */
@@ -216,15 +215,14 @@ void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bo
             uWidth = 800;
         if (!uHeight)
             uHeight = 600;
-        display.SetVideoModeHint(iIndex, true, false, 0, 0, uWidth, uHeight, 32);
+        display().SetVideoModeHint(iIndex, true, false, 0, 0, uWidth, uHeight, 32);
     }
 }
 
 void UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize(int iIndex, const QSize &size)
 {
     /* Resize guest to required size: */
-    CDisplay display = session().GetConsole().GetDisplay();
-    display.SetVideoModeHint(iIndex, uisession()->isScreenVisible(iIndex),
+    display().SetVideoModeHint(iIndex, uisession()->isScreenVisible(iIndex),
                              false, 0, 0, size.width(), size.height(), 0);
 }
 
@@ -267,7 +265,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
 #endif /* Q_WS_MAC */
 
     /* Get monitors count: */
-    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+    ulong uMonitorCount = machine().GetMonitorCount();
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, uScreenId));
