@@ -25,6 +25,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
+#include <iprt/semaphore.h>
 
 #include "VUSBSniffer.h"
 
@@ -253,6 +254,8 @@ typedef struct VUSBSNIFFERINT
     PDumpFileBlockHdr pBlockHdr;
     /** Pointer to the block data which will be written on commit. */
     uint8_t          *pbBlockData;
+    /** Fast Mutex protecting the state against concurrent access. */
+    RTSEMFASTMUTEX    hMtx;
 } VUSBSNIFFERINT;
 /** Pointer to the internal VUSB sniffer state. */
 typedef VUSBSNIFFERINT *PVUSBSNIFFERINT;
@@ -430,101 +433,107 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
         pThis->cbBlockCur  = 0;
         pThis->cbBlockMax  = 0;
         pThis->pbBlockData = NULL;
+        pThis->hMtx        = NIL_RTSEMFASTMUTEX;
 
-        rc = RTFileOpen(&pThis->hFile, pszCaptureFilename, RTFILE_O_DENY_NONE | RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_READ);
+        rc = RTSemFastMutexCreate(&pThis->hMtx);
         if (RT_SUCCESS(rc))
         {
-            /* Write header and link type blocks. */
-            DumpFileShb Shb;
-
-            Shb.Hdr.u32BlockType        = DUMPFILE_SHB_BLOCK_TYPE;
-            Shb.Hdr.u32BlockTotalLength = 0; /* Filled out by lower layer. */
-            Shb.u32ByteOrderMagic       = DUMPFILE_SHB_BYTE_ORDER_MAGIC;
-            Shb.u16VersionMajor         = DUMPFILE_SHB_VERSION_MAJOR;
-            Shb.u16VersionMinor         = DUMPFILE_SHB_VERSION_MINOR;
-            Shb.u64SectionLength        = UINT64_C(0xffffffffffffffff); /* -1 */
-
-            /* Write the blocks. */
-            rc = vusbSnifferBlockNew(pThis, &Shb.Hdr, sizeof(Shb));
+            rc = RTFileOpen(&pThis->hFile, pszCaptureFilename, RTFILE_O_DENY_NONE | RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_READ);
             if (RT_SUCCESS(rc))
             {
-                const char *pszOpt = RTBldCfgTargetDotArch();
-                rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_HARDWARE, pszOpt, strlen(pszOpt) + 1);
-            }
+                /* Write header and link type blocks. */
+                DumpFileShb Shb;
 
-            if (RT_SUCCESS(rc))
-            {
-                char szTmp[512];
-                size_t cbTmp = sizeof(szTmp);
+                Shb.Hdr.u32BlockType        = DUMPFILE_SHB_BLOCK_TYPE;
+                Shb.Hdr.u32BlockTotalLength = 0; /* Filled out by lower layer. */
+                Shb.u32ByteOrderMagic       = DUMPFILE_SHB_BYTE_ORDER_MAGIC;
+                Shb.u16VersionMajor         = DUMPFILE_SHB_VERSION_MAJOR;
+                Shb.u16VersionMinor         = DUMPFILE_SHB_VERSION_MINOR;
+                Shb.u64SectionLength        = UINT64_C(0xffffffffffffffff); /* -1 */
 
-                RT_ZERO(szTmp);
-
-                /* Build the OS code. */
-                rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, cbTmp);
+                /* Write the blocks. */
+                rc = vusbSnifferBlockNew(pThis, &Shb.Hdr, sizeof(Shb));
                 if (RT_SUCCESS(rc))
                 {
-                    size_t cb = strlen(szTmp);
+                    const char *pszOpt = RTBldCfgTargetDotArch();
+                    rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_HARDWARE, pszOpt, strlen(pszOpt) + 1);
+                }
 
-                    szTmp[cb] = ' ';
-                    rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, &szTmp[cb + 1], cbTmp - (cb + 1));
+                if (RT_SUCCESS(rc))
+                {
+                    char szTmp[512];
+                    size_t cbTmp = sizeof(szTmp);
+
+                    RT_ZERO(szTmp);
+
+                    /* Build the OS code. */
+                    rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, cbTmp);
                     if (RT_SUCCESS(rc))
                     {
-                        cb = strlen(szTmp);
+                        size_t cb = strlen(szTmp);
+
                         szTmp[cb] = ' ';
-                        rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, &szTmp[cb + 1], cbTmp - (cb + 1));
+                        rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, &szTmp[cb + 1], cbTmp - (cb + 1));
+                        if (RT_SUCCESS(rc))
+                        {
+                            cb = strlen(szTmp);
+                            szTmp[cb] = ' ';
+                            rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, &szTmp[cb + 1], cbTmp - (cb + 1));
+                        }
                     }
+
+                    if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
+                        rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_OS, szTmp, strlen(szTmp) + 1);
+                    else
+                        rc = VINF_SUCCESS; /* Skip OS code if building the string failed. */
                 }
 
-                if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
-                    rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_OS, szTmp, strlen(szTmp) + 1);
-                else
-                    rc = VINF_SUCCESS; /* Skip OS code if building the string failed. */
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /** @todo: Add product info. */
-            }
-
-            if (RT_SUCCESS(rc))
-                rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
-            if (RT_SUCCESS(rc))
-                rc = vusbSnifferBlockCommit(pThis);
-
-            /* Write Interface descriptor block. */
-            if (RT_SUCCESS(rc))
-            {
-                DumpFileIdb Idb;
-
-                Idb.Hdr.u32BlockType        = DUMPFILE_IDB_BLOCK_TYPE;
-                Idb.Hdr.u32BlockTotalLength = 0; /* Filled out by lower layer. */
-                Idb.u16LinkType             = DUMPFILE_IDB_LINK_TYPE_USB_LINUX_MMAPED;
-                Idb.u16Reserved             = 0;
-                Idb.u32SnapLen              = UINT32_C(0xffffffff);
-
-                rc = vusbSnifferBlockNew(pThis, &Idb.Hdr, sizeof(Idb));
                 if (RT_SUCCESS(rc))
                 {
-                    uint8_t u8TsResolution = 9; /* Nano second resolution. */
-                    /* Add timestamp resolution option. */
-                    rc = vusbSnifferAddOption(pThis, DUMPFILE_IDB_OPTION_TS_RESOLUTION,
-                                              &u8TsResolution, sizeof(u8TsResolution));
+                    /** @todo: Add product info. */
                 }
+
                 if (RT_SUCCESS(rc))
                     rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
                 if (RT_SUCCESS(rc))
                     rc = vusbSnifferBlockCommit(pThis);
-            }
 
-            if (RT_SUCCESS(rc))
-            {
-                *phSniffer = pThis;
-                return VINF_SUCCESS;
-            }
+                /* Write Interface descriptor block. */
+                if (RT_SUCCESS(rc))
+                {
+                    DumpFileIdb Idb;
 
-            RTFileClose(pThis->hFile);
-            pThis->hFile = NIL_RTFILE;
-            RTFileDelete(pszCaptureFilename);
+                    Idb.Hdr.u32BlockType        = DUMPFILE_IDB_BLOCK_TYPE;
+                    Idb.Hdr.u32BlockTotalLength = 0; /* Filled out by lower layer. */
+                    Idb.u16LinkType             = DUMPFILE_IDB_LINK_TYPE_USB_LINUX_MMAPED;
+                    Idb.u16Reserved             = 0;
+                    Idb.u32SnapLen              = UINT32_C(0xffffffff);
+
+                    rc = vusbSnifferBlockNew(pThis, &Idb.Hdr, sizeof(Idb));
+                    if (RT_SUCCESS(rc))
+                    {
+                        uint8_t u8TsResolution = 9; /* Nano second resolution. */
+                        /* Add timestamp resolution option. */
+                        rc = vusbSnifferAddOption(pThis, DUMPFILE_IDB_OPTION_TS_RESOLUTION,
+                                                  &u8TsResolution, sizeof(u8TsResolution));
+                    }
+                    if (RT_SUCCESS(rc))
+                        rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
+                    if (RT_SUCCESS(rc))
+                        rc = vusbSnifferBlockCommit(pThis);
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    *phSniffer = pThis;
+                    return VINF_SUCCESS;
+                }
+
+                RTFileClose(pThis->hFile);
+                pThis->hFile = NIL_RTFILE;
+                RTFileDelete(pszCaptureFilename);
+            }
+            RTSemFastMutexDestroy(pThis->hMtx);
         }
         VUSBSnifferDestroy(pThis);
     }
@@ -544,10 +553,16 @@ DECLHIDDEN(void) VUSBSnifferDestroy(VUSBSNIFFER hSniffer)
 {
     PVUSBSNIFFERINT pThis = hSniffer;
 
+    int rc = RTSemFastMutexRequest(pThis->hMtx);
+    AssertRC(rc);
+
     if (pThis->hFile != NIL_RTFILE)
         RTFileClose(pThis->hFile);
     if (pThis->pbBlockData)
         RTMemFree(pThis->pbBlockData);
+
+    RTSemFastMutexRelease(pThis->hMtx);
+    RTSemFastMutexDestroy(pThis->hMtx);
     RTMemFree(pThis);
 }
 
@@ -668,33 +683,40 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     else
         UsbHdr.u8SetupFlag  = '-'; /* Follow usbmon source here. */
 
-    rc = vusbSnifferBlockNew(pThis, &Epb.Hdr, sizeof(Epb));
+    /* Write the packet to the capture file. */
+    rc = RTSemFastMutexRequest(pThis->hMtx);
     if (RT_SUCCESS(rc))
-        rc = vusbSnifferBlockAddData(pThis, &UsbHdr, sizeof(UsbHdr));
-
-    if (pUrb->enmType == VUSBXFERTYPE_ISOC)
     {
-        /* Add Isochronous descriptors now. */
-        for (unsigned i = 0; i < pUrb->cIsocPkts && RT_SUCCESS(rc); i++)
+        rc = vusbSnifferBlockNew(pThis, &Epb.Hdr, sizeof(Epb));
+        if (RT_SUCCESS(rc))
+            rc = vusbSnifferBlockAddData(pThis, &UsbHdr, sizeof(UsbHdr));
+
+        if (pUrb->enmType == VUSBXFERTYPE_ISOC)
         {
-            DumpFileUsbIsoDesc IsoDesc;
-            IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
-            IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
-            IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
-            rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
+            /* Add Isochronous descriptors now. */
+            for (unsigned i = 0; i < pUrb->cIsocPkts && RT_SUCCESS(rc); i++)
+            {
+                DumpFileUsbIsoDesc IsoDesc;
+                IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
+                IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
+                IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
+                rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
+            }
         }
+
+        /* Record data. */
+        if (   RT_SUCCESS(rc)
+            && fRecordData)
+            rc = vusbSnifferBlockAddData(pThis, pUrb->abData, pUrb->cbData);
+
+        if (RT_SUCCESS(rc))
+            rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
+
+        if (RT_SUCCESS(rc))
+            rc = vusbSnifferBlockCommit(pThis);
+
+        RTSemFastMutexRelease(pThis->hMtx);
     }
-
-    /* Record data. */
-    if (   RT_SUCCESS(rc)
-        && fRecordData)
-        rc = vusbSnifferBlockAddData(pThis, pUrb->abData, pUrb->cbData);
-
-    if (RT_SUCCESS(rc))
-        rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
-
-    if (RT_SUCCESS(rc))
-        rc = vusbSnifferBlockCommit(pThis);
 
     return rc;
 }
