@@ -1152,7 +1152,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         if (CPUMIsGuestFPUStateActive(pVCpu))
         {
             /* Catch floating point exceptions if we need to report them to the guest in a different way. */
-            if (!(u64GuestCR0 & X86_CR0_NE))
+            if (!(pCtx->cr0 & X86_CR0_NE))
             {
                 Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
                 fInterceptMF = true;
