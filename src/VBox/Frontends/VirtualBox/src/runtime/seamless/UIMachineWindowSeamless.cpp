@@ -268,17 +268,15 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
     {
         if (m_pMiniToolBar)
         {
-            /* Get machine: */
-            const CMachine &m = machine();
             /* Get snapshot(s): */
             QString strSnapshotName;
-            if (m.GetSnapshotCount() > 0)
+            if (machine().GetSnapshotCount() > 0)
             {
-                CSnapshot snapshot = m.GetCurrentSnapshot();
+                CSnapshot snapshot = machine().GetCurrentSnapshot();
                 strSnapshotName = " (" + snapshot.GetName() + ")";
             }
             /* Update mini-toolbar text: */
-            m_pMiniToolBar->setText(m.GetName() + strSnapshotName);
+            m_pMiniToolBar->setText(machineName() + strSnapshotName);
         }
     }
 }
