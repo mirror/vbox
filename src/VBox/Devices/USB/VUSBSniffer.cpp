@@ -220,6 +220,8 @@ typedef struct DumpFileUsbHeaderLnxMmapped
 /** Pointer to a USB packet header. */
 typedef DumpFileUsbHeaderLnxMmapped *PDumpFileUsbHeaderLnxMmapped;
 
+AssertCompileSize(DumpFileUsbHeaderLnxMmapped, 64);
+
 /**
  * USB packet isochronous descriptor.
  */
@@ -290,6 +292,30 @@ static void *vusbSnifferBlockAllocSpace(PVUSBSNIFFERINT pThis, uint32_t cbAdditi
 }
 
 /**
+ * Adds new data to the current block.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The VUSB sniffer instance.
+ * @param   pvData          The data to add.
+ * @param   cbData          Amount of data to add.
+ */
+static int vusbSnifferBlockAddData(PVUSBSNIFFERINT pThis, const void *pvData, uint32_t cbData)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(pThis->cbBlockCur);
+    AssertPtr(pThis->pBlockHdr);
+
+    void *pv = vusbSnifferBlockAllocSpace(pThis, cbData);
+    if (pv)
+        memcpy(pv, pvData, cbData);
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/**
  * Commits the current block to the capture file.
  *
  * @returns VBox status code.
@@ -301,20 +327,31 @@ static int vusbSnifferBlockCommit(PVUSBSNIFFERINT pThis)
 
     AssertPtr(pThis->pBlockHdr);
 
-    /* Update the block total length field. */
-    uint32_t *pcbTotalLength = (uint32_t *)vusbSnifferBlockAllocSpace(pThis, 4);
-    if (pcbTotalLength)
-    {
-        *pcbTotalLength = pThis->cbBlockCur;
-        pThis->pBlockHdr->u32BlockTotalLength = pThis->cbBlockCur;
+    /* Pad to 32bits. */
+    uint8_t abPad[3] = { 0 };
+    uint32_t cbPad = RT_ALIGN_32(pThis->cbBlockCur, 4) - pThis->cbBlockCur;
 
-        /* Write the data. */
-        rc = RTFileWrite(pThis->hFile, pThis->pbBlockData, pThis->cbBlockCur, NULL);
-        pThis->cbBlockCur = 0;
-        pThis->pBlockHdr  = NULL;
+    Assert(cbPad <= 3);
+    if (cbPad)
+        rc = vusbSnifferBlockAddData(pThis, abPad, cbPad);
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Update the block total length field. */
+        uint32_t *pcbTotalLength = (uint32_t *)vusbSnifferBlockAllocSpace(pThis, 4);
+        if (pcbTotalLength)
+        {
+            *pcbTotalLength = pThis->cbBlockCur;
+            pThis->pBlockHdr->u32BlockTotalLength = pThis->cbBlockCur;
+
+            /* Write the data. */
+            rc = RTFileWrite(pThis->hFile, pThis->pbBlockData, pThis->cbBlockCur, NULL);
+            pThis->cbBlockCur = 0;
+            pThis->pBlockHdr  = NULL;
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -337,30 +374,6 @@ static int vusbSnifferBlockNew(PVUSBSNIFFERINT pThis, PDumpFileBlockHdr pBlockHd
     pThis->pBlockHdr = (PDumpFileBlockHdr)vusbSnifferBlockAllocSpace(pThis, cbData);
     if (pThis->pBlockHdr)
         memcpy(pThis->pBlockHdr, pBlockHdr, cbData);
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-/**
- * Adds new data to the current block.
- *
- * @returns VBox status code.
- * @param   pThis           The VUSB sniffer instance.
- * @param   pvData          The data to add.
- * @param   cbData          Amount of data to add.
- */
-static int vusbSnifferBlockAddData(PVUSBSNIFFERINT pThis, const void *pvData, uint32_t cbData)
-{
-    int rc = VINF_SUCCESS;
-
-    Assert(pThis->cbBlockCur);
-    AssertPtr(pThis->pBlockHdr);
-
-    void *pv = vusbSnifferBlockAllocSpace(pThis, cbData);
-    if (pv)
-        memcpy(pv, pvData, cbData);
     else
         rc = VERR_NO_MEMORY;
 
@@ -561,8 +574,6 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     Epb.u32InterfaceId          = 0;
     Epb.u32TimestampHigh        = (u64TimestampEvent >> 32) & UINT32_C(0xffffffff);
     Epb.u32TimestampLow         = u64TimestampEvent & UINT32_C(0xffffffff);
-    Epb.u32CapturedLen          = sizeof(UsbHdr) + pUrb->cbData;
-    Epb.u32PacketLen            = sizeof(UsbHdr) + pUrb->cbData;
 
     UsbHdr.u64Id = (uint64_t)pUrb; /** @todo: check whether the pointer is a good ID. */
     switch (enmEvent)
@@ -600,6 +611,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     }
 
     bool fRecordData = false;
+    size_t cbUrbLength = 0;
 
     if (   pUrb->cbData
         && (    (   pUrb->enmDir == VUSBDIRECTION_OUT
@@ -608,25 +620,41 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
                  && enmEvent == VUSBSNIFFEREVENT_SUBMIT)
              || (   pUrb->enmDir == VUSBDIRECTION_IN
                  && enmEvent == VUSBSNIFFEREVENT_COMPLETE)))
+    {
+        Epb.u32CapturedLen = sizeof(UsbHdr) + pUrb->cbData;
+        Epb.u32PacketLen   = sizeof(UsbHdr) + pUrb->cbData;
         fRecordData = true;
+    }
+    else
+    {
+        Epb.u32CapturedLen = sizeof(UsbHdr);
+        Epb.u32PacketLen   = sizeof(UsbHdr);
+    }
 
-    UsbHdr.u8EndpointNumber = pUrb->EndPt | pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0x00;
+    if (pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL)
+    {
+        PVUSBSETUP pSetup = (PVUSBSETUP)pUrb->abData;
+        cbUrbLength = pSetup->wLength;
+    }
+    else
+        cbUrbLength = pUrb->cbData;
+
+    UsbHdr.u8EndpointNumber = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0x00);
     UsbHdr.u8DeviceAddress  = pUrb->DstAddress;
     UsbHdr.u16BusId         = 0;
-    UsbHdr.u8SetupFlag      = pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL ? 0 : 1;
     UsbHdr.u8DataFlag       = fRecordData ? 0 : 1;
     UsbHdr.u64TimestampSec  = u64TimestampEvent / RT_NS_1SEC_64;;
     UsbHdr.u32TimestampUSec = u64TimestampEvent / RT_NS_1US_64 - UsbHdr.u64TimestampSec * RT_US_1SEC;
     UsbHdr.i32Status        = pUrb->enmStatus;
-    UsbHdr.u32UrbLength     = pUrb->cbData;
+    UsbHdr.u32UrbLength     = cbUrbLength;
     UsbHdr.u32DataLength    = fRecordData ? pUrb->cbData : 0;
     UsbHdr.i32Interval      = 0;
     UsbHdr.i32StartFrame    = 0;
     UsbHdr.u32XferFlags     = 0;
-    UsbHdr.u32NumDesc       = pUrb->enmType == VUSBXFERTYPE_ISOC ? : 0;
+    UsbHdr.u32NumDesc       = pUrb->enmType == VUSBXFERTYPE_ISOC ? pUrb->cIsocPkts : 0;
 
-    if (   pUrb->enmType == VUSBXFERTYPE_CTRL
-        || pUrb->enmType == VUSBXFERTYPE_MSG)
+    if (   (pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL)
+        && enmEvent == VUSBSNIFFEREVENT_SUBMIT)
     {
         PVUSBSETUP pSetup = (PVUSBSETUP)pUrb->abData;
 
@@ -635,26 +663,35 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
         UsbHdr.u.UsbSetup.wValue        = pSetup->wValue;
         UsbHdr.u.UsbSetup.wIndex        = pSetup->wIndex;
         UsbHdr.u.UsbSetup.wLength       = pSetup->wLength;
+        UsbHdr.u8SetupFlag              = 0;
     }
+    else
+        UsbHdr.u8SetupFlag  = '-'; /* Follow usbmon source here. */
 
     rc = vusbSnifferBlockNew(pThis, &Epb.Hdr, sizeof(Epb));
     if (RT_SUCCESS(rc))
         rc = vusbSnifferBlockAddData(pThis, &UsbHdr, sizeof(UsbHdr));
 
-    /* Add Isochronous descriptors now. */
-    for (unsigned i = 0; i < pUrb->cIsocPkts && RT_SUCCESS(rc); i++)
+    if (pUrb->enmType == VUSBXFERTYPE_ISOC)
     {
-        DumpFileUsbIsoDesc IsoDesc;
-        IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
-        IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
-        IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
-        rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
+        /* Add Isochronous descriptors now. */
+        for (unsigned i = 0; i < pUrb->cIsocPkts && RT_SUCCESS(rc); i++)
+        {
+            DumpFileUsbIsoDesc IsoDesc;
+            IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
+            IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
+            IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
+            rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
+        }
     }
 
     /* Record data. */
     if (   RT_SUCCESS(rc)
         && fRecordData)
         rc = vusbSnifferBlockAddData(pThis, pUrb->abData, pUrb->cbData);
+
+    if (RT_SUCCESS(rc))
+        rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
 
     if (RT_SUCCESS(rc))
         rc = vusbSnifferBlockCommit(pThis);
