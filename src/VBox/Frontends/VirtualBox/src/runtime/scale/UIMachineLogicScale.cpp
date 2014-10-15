@@ -125,7 +125,7 @@ void UIMachineLogicScale::prepareMachineWindows()
 #endif /* Q_WS_MAC */
 
     /* Get monitors count: */
-    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+    ulong uMonitorCount = machine().GetMonitorCount();
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, uScreenId));

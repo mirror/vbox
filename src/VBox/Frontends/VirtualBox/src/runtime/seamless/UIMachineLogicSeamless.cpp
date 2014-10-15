@@ -64,13 +64,10 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
 
 bool UIMachineLogicSeamless::checkAvailability()
 {
-    /* Temporary get a machine object: */
-    const CMachine &machine = uisession()->session().GetMachine();
-
     /* Check if there is enough physical memory to enter seamless: */
     if (uisession()->isGuestAdditionsActive())
     {
-        quint64 availBits = machine.GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
+        quint64 availBits = machine().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
@@ -260,7 +257,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     m_pScreenLayout->update();
 
     /* Create machine-window(s): */
-    for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
+    for (uint cScreenId = 0; cScreenId < machine().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Listen for frame-buffer resize: */
