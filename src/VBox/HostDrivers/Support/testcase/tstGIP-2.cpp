@@ -155,8 +155,15 @@ int main(int argc, char **argv)
                 if (!fSpin)
                     RTThreadSleep(9);
                 else
-                    while (u32TransactionId == *pu32TransactionId)
-                        /* nop */;
+                {
+                    if (pu32TransactionId)
+                    {
+                        while (u32TransactionId == *pu32TransactionId)
+                            ASMNopPause();
+                    }
+                    else
+                        RTThreadSleep(1);
+                }
             }
 
             /*
