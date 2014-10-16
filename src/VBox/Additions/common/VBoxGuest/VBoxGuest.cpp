@@ -690,17 +690,16 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
  *
  * @returns VBox status code.
  */
-static int VBoxGuestHeartbeatSend(void)
+static int VBoxGuestHeartbeatSend(PVBOXGUESTDEVEXT pDevExt)
 {
-    VMMDevRequestHeader *pReq;
-    int rc = VbglGRAlloc(&pReq, sizeof(*pReq), VMMDevReq_GuestHeartbeat);
-    Log(("VBoxGuestHeartbeatSend: VbglGRAlloc VBoxGuestHeartbeatSend completed with rc=%Rrc\n", rc));
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (pDevExt->pReqGuestHeartbeat)
     {
-        rc = VbglGRPerform(pReq);
+        rc = VbglGRPerform(pDevExt->pReqGuestHeartbeat);
         Log(("VBoxGuestHeartbeatSend: VbglGRPerform VBoxGuestHeartbeatSend completed with rc=%Rrc\n", rc));
-        VbglGRFree(pReq);
     }
+    else
+        rc = VERR_INVALID_STATE;
     return rc;
 }
 
@@ -734,13 +733,16 @@ static int VBoxGuestHeartbeatHostConfigure(PVBOXGUESTDEVEXT pDevExt, bool fEnabl
 /**
  * Callback for heartbeat timer.
  */
-static DECLCALLBACK(void) VBoxGuestHeartbeatTimerHandler(PRTTIMER p1, void *p2, uint64_t p3)
+static DECLCALLBACK(void) VBoxGuestHeartbeatTimerHandler(PRTTIMER p1, void *pvUser, uint64_t p3)
 {
     NOREF(p1);
-    NOREF(p2);
     NOREF(p3);
 
-    int rc = VBoxGuestHeartbeatSend();
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+    if (!pDevExt)
+        return;
+
+    int rc = VBoxGuestHeartbeatSend(pDevExt);
     if (RT_FAILURE(rc))
     {
         Log(("HB Timer: VBoxGuestHeartbeatSend terminated with rc=%Rrc\n", rc));
@@ -1031,6 +1033,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->MemBalloon.pOwner = NULL;
     pDevExt->MouseNotifyCallback.pfnNotify = NULL;
     pDevExt->MouseNotifyCallback.pvUser = NULL;
+    pDevExt->pReqGuestHeartbeat = NULL;
 
     /*
      * If there is an MMIO region validate the version and size.
@@ -1110,6 +1113,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     if (RT_FAILURE(rc))
                         LogRelFunc(("VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
+                    /** @todo Move heartbeat initialization into a separate function. */
                     /* Make sure that heartbeat checking is disabled. */
                     rc = VBoxGuestHeartbeatHostConfigure(pDevExt, false);
                     if (RT_SUCCESS(rc))
@@ -1117,9 +1121,22 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                         rc = VBoxGuestHeartbeatHostConfigure(pDevExt, true);
                         if (RT_SUCCESS(rc))
                         {
-                            LogFlowFunc(("Setting up heartbeat to trigger every %RU64 sec\n", pDevExt->cNsHeartbeatInterval / 1000000000));
-                            rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval,
-                                                 0, (PFNRTTIMER)VBoxGuestHeartbeatTimerHandler, NULL);
+                            /* Preallocate the request to use it from the timer callback because:
+                             *    1) on Windows VbglGRAlloc must be called at IRQL <= APC_LEVEL
+                             *       and the timer callback runs at DISPATCH_LEVEL;
+                             *    2) avoid repeated allocations.
+                             */
+                            rc = VbglGRAlloc(&pDevExt->pReqGuestHeartbeat, sizeof(*pDevExt->pReqGuestHeartbeat), VMMDevReq_GuestHeartbeat);
+                            if (RT_FAILURE(rc))
+                                LogRelFunc(("VbglGRAlloc(VMMDevReq_GuestHeartbeat) %Rrc\n", rc));
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogFlowFunc(("Setting up heartbeat to trigger every %RU64 sec\n", pDevExt->cNsHeartbeatInterval / 1000000000));
+                                rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval,
+                                                     0, (PFNRTTIMER)VBoxGuestHeartbeatTimerHandler, pDevExt);
+                            }
+
                             if (RT_SUCCESS(rc))
                             {
                                 rc = RTTimerStart(pDevExt->pHeartbeatTimer, 0);
@@ -1131,6 +1148,9 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                                 LogRelFunc(("Failed to set up the timer, guest heartbeat is disabled\n"));
                                 /* Disable host heartbeat check if we failed */
                                 VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+
+                                VbglGRFree(pDevExt->pReqGuestHeartbeat);
+                                pDevExt->pReqGuestHeartbeat = NULL;
                             }
                         }
                         else
@@ -1210,6 +1230,9 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
         RTTimerDestroy(pDevExt->pHeartbeatTimer);
         VBoxGuestHeartbeatHostConfigure(pDevExt, false);
     }
+
+    VbglGRFree(pDevExt->pReqGuestHeartbeat);
+    pDevExt->pReqGuestHeartbeat = NULL;
 
     /*
      * Clean up the bits that involves the host first.
