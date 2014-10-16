@@ -996,6 +996,7 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
     /* Set the callback which send the content */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_READFUNCTION, rtS3ReadFileCallback);
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_READDATA, &hFile);
+    curl_easy_setopt(pS3Int->pCurl, CURLOPT_SSLVERSION, (long)CURL_SSLVERSION_TLSv1);
 
     /* Start the request */
     rc = rtS3Perform(pS3Int);
