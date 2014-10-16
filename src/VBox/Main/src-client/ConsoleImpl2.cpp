@@ -1857,7 +1857,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         /*
                          * Attach the status driver.
                          */
-                        i_attachStatusDriver(pInst, &mapUSBLed[1], 0, 1, NULL, NULL, 0);
+                        i_attachStatusDriver(pInst, &mapUSBLed[0], 0, 1, NULL, NULL, 0);
                     }
 # ifdef VBOX_WITH_EXTPACK
                     else
