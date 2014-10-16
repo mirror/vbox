@@ -205,8 +205,7 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
 #endif /* !Q_WS_MAC */
 
         /* Switch guest mouse to the relative mode: */
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent(0, 0, 0, 0, 0);
+        mouse().PutMouseEvent(0, 0, 0, 0, 0);
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
@@ -337,8 +336,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
         /* Release the mouse: */
         releaseMouse();
         /* Also we should switch guest mouse to the absolute mode: */
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
+        mouse().PutMouseEventAbsolute(-1, -1, 0, 0, 0);
     }
 #if 0 /* current team's decision is NOT to capture mouse on mouse-absolute mode loosing! */
     /* If mouse-integration deactivated or mouse doesn't supports absolute pointing: */
@@ -367,8 +365,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
     else
     {
         /* Switch guest mouse to the relative mode: */
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent(0, 0, 0, 0, 0);
+        mouse().PutMouseEvent(0, 0, 0, 0, 0);
     }
 #endif
 
@@ -487,10 +484,14 @@ UISession* UIMouseHandler::uisession() const
     return machineLogic()->uisession();
 }
 
-/* Main Session getter: */
-CSession& UIMouseHandler::session() const
+CDisplay& UIMouseHandler::display() const
 {
-    return uisession()->session();
+    return uisession()->display();
+}
+
+CMouse& UIMouseHandler::mouse() const
+{
+    return uisession()->mouse();
 }
 
 /* Event handler for registered machine-view(s): */
@@ -841,10 +842,9 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         /* Send pending WM_PAINT events: */
         ::UpdateWindow(m_viewports[uScreenId]->winId());
 #endif
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent(globalPos.x() - m_lastMousePos.x(),
-                            globalPos.y() - m_lastMousePos.y(),
-                            iWheelVertical, iWheelHorizontal, iMouseButtonsState);
+        mouse().PutMouseEvent(globalPos.x() - m_lastMousePos.x(),
+                              globalPos.y() - m_lastMousePos.y(),
+                              iWheelVertical, iWheelHorizontal, iMouseButtonsState);
 
 #ifdef Q_WS_WIN
         /* Bringing mouse to the opposite side to simulate the endless moving: */
@@ -962,14 +962,13 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             LONG xShift = 0, yShift = 0;
             ULONG dummy;
             KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-            session().GetConsole().GetDisplay().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+            display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
             /* Set shifting: */
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
 
             /* Post absolute mouse-event into guest: */
-            CMouse mouse = session().GetConsole().GetMouse();
-            mouse.PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
+            mouse().PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
             return true;
         }
         else
@@ -1020,15 +1019,12 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     if (!m_views.contains(uScreenId) || !m_viewports.contains(uScreenId))
         return true;
 
-    /* Get mouse: */
-    CMouse mouse = session().GetConsole().GetMouse();
-
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
 
     LONG xShift = 0, yShift = 0;
     ULONG dummy;
     KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-    session().GetConsole().GetDisplay().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
+    display().GetScreenResolution(uScreenId, dummy, dummy, dummy, xShift, yShift, monitorStatus);
 
     /* Pass all multi-touch events into guest: */
     int iTouchPointIndex = 0;
@@ -1064,9 +1060,9 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         ++iTouchPointIndex;
     }
 
-    mouse.PutEventMultiTouch(pTouchEvent->touchPoints().size(),
-                             contacts,
-                             (ULONG)RTTimeMilliTS());
+    mouse().PutEventMultiTouch(pTouchEvent->touchPoints().size(),
+                               contacts,
+                               (ULONG)RTTimeMilliTS());
 
     /* Eat by default? */
     return true;

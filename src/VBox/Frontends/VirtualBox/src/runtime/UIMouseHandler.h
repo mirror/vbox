@@ -37,7 +37,8 @@ class UIMachineView;
 #ifdef Q_WS_X11
 typedef union  _XEvent XEvent;
 #endif /* Q_WS_X11 */
-class CSession;
+class CDisplay;
+class CMouse;
 
 /* Delegate to control VM mouse functionality: */
 class UIMouseHandler : public QObject
@@ -96,7 +97,11 @@ protected:
     /* Getters: */
     UIMachineLogic* machineLogic() const;
     UISession* uisession() const;
-    CSession& session() const;
+
+    /** Returns the console's display reference. */
+    CDisplay& display() const;
+    /** Returns the console's mouse reference. */
+    CMouse& mouse() const;
 
     /* Event handler for registered machine-view(s): */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);

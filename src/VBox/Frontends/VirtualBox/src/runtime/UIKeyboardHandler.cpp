@@ -296,7 +296,6 @@ void UIKeyboardHandler::releaseKeyboard()
 
 void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
 {
-    CKeyboard keyboard = session().GetConsole().GetKeyboard();
     bool fSentRESEND = false;
 
     /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
@@ -310,22 +309,22 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
         {
             if (!fSentRESEND)
             {
-                keyboard.PutScancode (0xFE);
+                keyboard().PutScancode(0xFE);
                 fSentRESEND = true;
             }
-            keyboard.PutScancode(i | 0x80);
+            keyboard().PutScancode(i | 0x80);
         }
         else if (m_pressedKeys[i] & IsExtKeyPressed)
         {
             if (!fSentRESEND)
             {
-                keyboard.PutScancode(0xFE);
+                keyboard().PutScancode(0xFE);
                 fSentRESEND = true;
             }
             QVector <LONG> codes(2);
             codes[0] = 0xE0;
             codes[1] = i | 0x80;
-            keyboard.PutScancodes(codes);
+            keyboard().PutScancodes(codes);
         }
         m_pressedKeys[i] = 0;
     }
@@ -868,10 +867,9 @@ UISession* UIKeyboardHandler::uisession() const
     return machineLogic()->uisession();
 }
 
-/* Main Session getter: */
-CSession& UIKeyboardHandler::session() const
+CKeyboard& UIKeyboardHandler::keyboard() const
 {
-    return uisession()->session();
+    return uisession()->keyboard();
 }
 
 /* Event handler for prepared listener(s): */
@@ -1021,8 +1019,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                             combo[2] = 0x57 + (pKeyEvent->key() - Qt::Key_F11); /* F11-F12 down */
                             combo[3] = 0xd7 + (pKeyEvent->key() - Qt::Key_F11); /* F11-F12 up   */
                         }
-                        CKeyboard keyboard = session().GetConsole().GetKeyboard();
-                        keyboard.PutScancodes(combo);
+                        keyboard().PutScancodes(combo);
                     }
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
                     actionPool()->processHotKey(QKeySequence(pKeyEvent->key()));
@@ -1563,22 +1560,18 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     /* If the VM is NOT paused: */
     if (!uisession()->isPaused())
     {
-        /* Get the VM keyboard: */
-        CKeyboard keyboard = session().GetConsole().GetKeyboard();
-        Assert(!keyboard.isNull());
-
         /* If there are scan-codes to send: */
         if (uCodesCount)
         {
             /* Send prepared scan-codes to the guest: */
             std::vector<LONG> scancodes(pCodes, &pCodes[uCodesCount]);
-            keyboard.PutScancodes(QVector<LONG>::fromStdVector(scancodes));
+            keyboard().PutScancodes(QVector<LONG>::fromStdVector(scancodes));
         }
 
         /* If full host-key sequence was just finalized: */
         if (isHostComboStateChanged && m_bIsHostComboPressed)
         {
-            keyEventReleaseHostComboKeys(keyboard);
+            keyEventReleaseHostComboKeys(keyboard());
         }
     }
 
@@ -1729,7 +1722,6 @@ void UIKeyboardHandler::saveKeyStates()
 void UIKeyboardHandler::sendChangedKeyStates()
 {
     QVector <LONG> codes(2);
-    CKeyboard keyboard = session().GetConsole().GetKeyboard();
     for (uint i = 0; i < SIZEOF_ARRAY(m_pressedKeys); ++ i)
     {
         uint8_t os = m_pressedKeysCopy[i];
@@ -1739,7 +1731,7 @@ void UIKeyboardHandler::sendChangedKeyStates()
             codes[0] = i;
             if (!(ns & IsKeyPressed))
                 codes[0] |= 0x80;
-            keyboard.PutScancode(codes[0]);
+            keyboard().PutScancode(codes[0]);
         }
         else if ((os & IsExtKeyPressed) != (ns & IsExtKeyPressed))
         {
@@ -1747,7 +1739,7 @@ void UIKeyboardHandler::sendChangedKeyStates()
             codes[1] = i;
             if (!(ns & IsExtKeyPressed))
                 codes[1] |= 0x80;
-            keyboard.PutScancodes(codes);
+            keyboard().PutScancodes(codes);
         }
     }
 }
