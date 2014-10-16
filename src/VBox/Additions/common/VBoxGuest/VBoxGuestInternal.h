@@ -185,6 +185,8 @@ typedef struct VBOXGUESTDEVEXT
     PRTTIMER                    pHeartbeatTimer;
     /** Heartbeat timer interval in nanoseconds. */
     uint64_t                    cNsHeartbeatInterval;
+    /** Preallocated VMMDevReq_GuestHeartbeat request. */
+    VMMDevRequestHeader *pReqGuestHeartbeat;
 } VBOXGUESTDEVEXT;
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
