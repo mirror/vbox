@@ -191,9 +191,10 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     LogRel(("UIMachineView::sltPerformGuestResize: "
             "Sending guest size-hint to screen %d as %dx%d\n",
             (int)screenId(), newSize.width(), newSize.height()));
-    session().GetConsole().GetDisplay().SetVideoModeHint(screenId(),
-                                                         uisession()->isScreenVisible(screenId()),
-                                                         false, 0, 0, newSize.width(), newSize.height(), 0);
+    display().SetVideoModeHint(screenId(),
+                               uisession()->isScreenVisible(screenId()),
+                               false, 0, 0, newSize.width(), newSize.height(), 0);
+
     /* And track whether we have a "normal" or "fullscreen"/"seamless" size-hint sent: */
     gEDataManager->markLastGuestSizeHintAsFullScreen(m_uScreenId, isFullscreenOrSeamless(), vboxGlobal().managedVMUuid());
 }
@@ -253,8 +254,9 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     /* Notify frame-buffer resize: */
     emit sigFrameBufferResize();
 
-    CDisplay dsp = session().GetConsole().GetDisplay();
-    dsp.InvalidateAndUpdateScreen(m_uScreenId);
+    /* Ask for just required guest display update (it will also update
+     * the viewport through IFramebuffer::NotifyUpdate): */
+    display().InvalidateAndUpdateScreen(m_uScreenId);
 
     LogRelFlow(("UIMachineView::ResizeHandled: Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
@@ -324,8 +326,7 @@ void UIMachineView::sltMachineStateChanged()
                     resetPauseShot();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
-                    CDisplay dsp = session().GetConsole().GetDisplay();
-                    dsp.InvalidateAndUpdate();
+                    display().InvalidateAndUpdate();
                 }
             }
             break;
@@ -420,13 +421,11 @@ void UIMachineView::prepareFrameBuffer()
     if (m_pFrameBuffer)
     {
         /* Prepare display: */
-        CDisplay display = session().GetConsole().GetDisplay();
-        Assert(!display.isNull());
-        CFramebuffer fb = display.QueryFramebuffer(m_uScreenId);
+        CFramebuffer fb = display().QueryFramebuffer(m_uScreenId);
         /* Always perform AttachFramebuffer to ensure 3D gets notified: */
         if (!fb.isNull())
-            display.DetachFramebuffer(m_uScreenId);
-        display.AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+            display().DetachFramebuffer(m_uScreenId);
+        display().AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 
     QSize size;
@@ -434,14 +433,13 @@ void UIMachineView::prepareFrameBuffer()
     /* Processing pseudo resize-event to synchronize frame-buffer with stored
      * framebuffer size. On X11 this will be additional done when the machine
      * state was 'saved'. */
-    if (session().GetMachine().GetState() == KMachineState_Saved)
+    if (machine().GetState() == KMachineState_Saved)
         size = guestSizeHint();
 #endif /* Q_WS_X11 */
     /* If there is a preview image saved, we will resize the framebuffer to the
      * size of that image. */
     ULONG buffer = 0, width = 0, height = 0;
-    CMachine machine = session().GetMachine();
-    machine.QuerySavedScreenshotPNGSize(0, buffer, width, height);
+    machine().QuerySavedScreenshotPNGSize(0, buffer, width, height);
     if (buffer > 0)
     {
         /* Init with the screenshot size */
@@ -449,7 +447,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Try to get the real guest dimensions from the save state */
         ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
         BOOL fEnabled = true;
-        machine.QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         if (   guestWidth  > 0
             && guestHeight > 0)
             size = QSize(guestWidth, guestHeight);
@@ -547,12 +545,41 @@ void UIMachineView::cleanupFrameBuffer()
      * from view in order to respect the thread synchonisation logic (see UIFrameBuffer.h).
      * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
-    CDisplay display = machineLogic()->console().GetDisplay();
-    if (machineLogic()->console().isOk() && !display.isNull())
-        display.DetachFramebuffer(m_uScreenId);
+    if (console().isOk() && !display().isNull())
+        display().DetachFramebuffer(m_uScreenId);
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);
+}
+
+UISession* UIMachineView::uisession() const
+{
+    return machineWindow()->uisession();
+}
+
+CSession& UIMachineView::session() const
+{
+    return uisession()->session();
+}
+
+CMachine& UIMachineView::machine() const
+{
+    return uisession()->machine();
+}
+
+CConsole& UIMachineView::console() const
+{
+    return uisession()->console();
+}
+
+CDisplay& UIMachineView::display() const
+{
+    return uisession()->display();
+}
+
+CGuest& UIMachineView::guest() const
+{
+    return uisession()->guest();
 }
 
 UIActionPool* UIMachineView::actionPool() const
@@ -563,16 +590,6 @@ UIActionPool* UIMachineView::actionPool() const
 UIMachineLogic* UIMachineView::machineLogic() const
 {
     return machineWindow()->machineLogic();
-}
-
-UISession* UIMachineView::uisession() const
-{
-    return machineLogic()->uisession();
-}
-
-CSession& UIMachineView::session()
-{
-    return uisession()->session();
 }
 
 QSize UIMachineView::sizeHint() const
@@ -675,34 +692,32 @@ void UIMachineView::takePauseShotLive()
     QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
-    CDisplay dsp = session().GetConsole().GetDisplay();
     if (vboxGlobal().isSeparateProcess())
     {
-        QVector<BYTE> screenData = dsp.TakeScreenShotToArray(screenId(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+        QVector<BYTE> screenData = display().TakeScreenShotToArray(screenId(), shot.width(), shot.height(), KBitmapFormat_BGR0);
 
         /* Make sure screen-data is OK: */
-        if (dsp.isOk() && !screenData.isEmpty())
+        if (display().isOk() && !screenData.isEmpty())
             memcpy(shot.bits(), screenData.data(), shot.width() * shot.height() * 4);
     }
     else
-        dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+        display().TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
     /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
      * after the machine execution was resumed. It's not fatal: */
-    if (dsp.isOk())
+    if (display().isOk())
         dimImage(shot);
     m_pauseShot = QPixmap::fromImage(shot);
 }
 
 void UIMachineView::takePauseShotSnapshot()
 {
-    CMachine machine = session().GetMachine();
     ULONG width = 0, height = 0;
-    QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
+    QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, width, height);
     if (screenData.size() != 0)
     {
         ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
         BOOL fEnabled = true;
-        machine.QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
         dimImage(shot);
         m_pauseShot = QPixmap::fromImage(shot);
@@ -779,11 +794,9 @@ void UIMachineView::scrollContentsBy(int dx, int dy)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     QAbstractScrollArea::scrollContentsBy(dx, dy);
 
-    session().GetConsole().GetDisplay().ViewportChanged(screenId(),
-                            contentsX(),
-                            contentsY(),
-                            visibleWidth(),
-                            visibleHeight());
+    display().ViewportChanged(screenId(),
+                              contentsX(), contentsY(),
+                              visibleWidth(), visibleHeight());
 }
 
 
@@ -882,11 +895,9 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (m_pFrameBuffer)
                     m_pFrameBuffer->viewportResized(pResizeEvent);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-                session().GetConsole().GetDisplay().ViewportChanged(screenId(),
-                        contentsX(),
-                        contentsY(),
-                        visibleWidth(),
-                        visibleHeight());
+                display().ViewportChanged(screenId(),
+                                          contentsX(), contentsY(),
+                                          visibleWidth(), visibleHeight());
                 break;
             }
             default:
@@ -976,8 +987,7 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CGuest guest = session().GetConsole().GetGuest();
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
 
     /* Ask the target for starting a DnD event. */
     Qt::DropAction result = DnDHandler()->dragEnter(dndTarget,
@@ -1000,8 +1010,7 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CGuest guest = session().GetConsole().GetGuest();
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
 
     /* Ask the guest for moving the drop cursor. */
     Qt::DropAction result = DnDHandler()->dragMove(dndTarget,
@@ -1021,8 +1030,7 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    CGuest guest = session().GetConsole().GetGuest();
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
 
     /* Ask the guest for stopping this DnD event. */
     DnDHandler()->dragLeave(dndTarget,
@@ -1035,8 +1043,7 @@ void UIMachineView::dragIsPending(void)
     /* At the moment we only support guest->host DnD. */
     /** @todo Add guest->guest DnD functionality here by getting
      *        the source of guest B (when copying from B to A). */
-    CGuest guest = session().GetConsole().GetGuest();
-    CDnDSource dndSource = static_cast<CDnDSource>(guest.GetDnDSource());
+    CDnDSource dndSource = static_cast<CDnDSource>(guest().GetDnDSource());
 
     /* Check for a pending DnD event within the guest and if so, handle all the
      * magic. */
@@ -1050,8 +1057,7 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CGuest guest = session().GetConsole().GetGuest();
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest.GetDnDTarget());
+    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
 
     /* Ask the guest for dropping data. */
     Qt::DropAction result = DnDHandler()->dragDrop(session(),
