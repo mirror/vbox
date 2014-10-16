@@ -148,15 +148,14 @@ void UIMachineViewSeamless::prepareConsoleConnections()
 void UIMachineViewSeamless::prepareSeamless()
 {
     /* Set seamless feature flag to the guest: */
-    session().GetConsole().GetDisplay().SetSeamlessMode(true);
+    display().SetSeamlessMode(true);
 }
 
 void UIMachineViewSeamless::cleanupSeamless()
 {
-    /* If machine still running: */
+    /* Reset seamless feature flag if possible: */
     if (uisession()->isRunning())
-        /* Reset seamless feature flag of the guest: */
-        session().GetConsole().GetDisplay().SetSeamlessMode(false);
+        display().SetSeamlessMode(false);
 }
 
 void UIMachineViewSeamless::adjustGuestScreenSize()

@@ -41,6 +41,10 @@ class UIFrameBuffer;
  class CDnDTarget;
 #endif
 class CSession;
+class CMachine;
+class CConsole;
+class CDisplay;
+class CGuest;
 
 class UIMachineView : public QAbstractScrollArea
 {
@@ -141,12 +145,24 @@ protected:
     virtual void cleanupFrameBuffer();
     //virtual void cleanupViewport();
 
+    /** Returns the session UI reference. */
+    UISession* uisession() const;
+
+    /** Returns the session reference. */
+    CSession& session() const;
+    /** Returns the session's machine reference. */
+    CMachine& machine() const;
+    /** Returns the session's console reference. */
+    CConsole& console() const;
+    /** Returns the display's display reference. */
+    CDisplay& display() const;
+    /** Returns the console's guest reference. */
+    CGuest& guest() const;
+
     /* Protected getters: */
     UIMachineWindow* machineWindow() const { return m_pMachineWindow; }
     UIActionPool* actionPool() const;
     UIMachineLogic* machineLogic() const;
-    UISession* uisession() const;
-    CSession& session();
     QSize sizeHint() const;
     int contentsX() const;
     int contentsY() const;

@@ -76,22 +76,20 @@ void UIMachineViewScale::takePauseShotLive()
     QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
     /* If TakeScreenShot fails or returns no image, just show a black image. */
     shot.fill(0);
-    CDisplay dsp = session().GetConsole().GetDisplay();
-    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
+    display().TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
     m_pPauseImage = new QImage(shot);
     scalePauseShot();
 }
 
 void UIMachineViewScale::takePauseShotSnapshot()
 {
-    CMachine machine = session().GetMachine();
     ULONG width = 0, height = 0;
-    QVector<BYTE> screenData = machine.ReadSavedScreenshotPNGToArray(0, width, height);
+    QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, width, height);
     if (screenData.size() != 0)
     {
         ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
         BOOL fEnabled = true;
-        machine.QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
+        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
         QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
         m_pPauseImage = new QImage(shot);
         scalePauseShot();
