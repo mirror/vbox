@@ -34,7 +34,6 @@
 
 /* Forward declarations: */
 class QWidget;
-class CSession;
 class UISession;
 class UIActionPool;
 class UIMachineLogic;
@@ -44,6 +43,7 @@ class VBoxGlobalSettings;
 #ifdef Q_WS_X11
 typedef union  _XEvent XEvent;
 #endif /* Q_WS_X11 */
+class CKeyboard;
 
 /* Delegate to control VM keyboard functionality: */
 class UIKeyboardHandler : public QObject
@@ -116,7 +116,9 @@ protected:
     UIMachineLogic* machineLogic() const;
     UIActionPool* actionPool() const;
     UISession* uisession() const;
-    CSession& session() const;
+
+    /** Returns the console's keyboard reference. */
+    CKeyboard& keyboard() const;
 
     /* Event handler for registered machine-view(s): */
     bool eventFilter(QObject *pWatchedObject, QEvent *pEvent);
