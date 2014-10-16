@@ -537,16 +537,6 @@ static int vbvaDisable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pC
 
     VBVAVIEW *pView = &pCtx->aViews[uScreenId];
 
-    if (uScreenId != 0)
-    {
-        /* Disable secondary screens. They only work in VBVA mode. */
-        VBVAINFOSCREEN screen;
-        RT_ZERO(screen);
-        screen.u16Flags = VBVA_SCREEN_F_DISABLED;
-        screen.u32ViewIndex = uScreenId;
-        vbvaResize(pVGAState, pView, &screen);
-    }
-
     if (pView->pVBVA)
     {
         pView->pVBVA->hostFlags.u32HostEvents = 0;
