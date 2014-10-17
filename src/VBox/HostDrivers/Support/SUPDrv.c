@@ -161,7 +161,7 @@ static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, u
 static DECLCALLBACK(void)   supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 static bool                 supdrvIsInvariantTsc(void);
 static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
-                                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus);
+                                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned uUpdateIntervalNS, unsigned cCpus);
 static DECLCALLBACK(void)   supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static void                 supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 static void                 supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick);
@@ -5918,6 +5918,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     RTHCPHYS            HCPhysGip;
     uint32_t            u32SystemResolution;
     uint32_t            u32Interval;
+    uint32_t            u32MinInterval;
+    uint32_t            uMod;
     unsigned            cCpus;
     int                 rc;
 
@@ -5953,12 +5955,18 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     /*
      * Find a reasonable update interval and initialize the structure.
+     *
+     * If we have an invariant TSC, use a larger update interval as then
+     * we get better accuracy along with lower host load.
      */
-    u32Interval = u32SystemResolution = RTTimerGetSystemGranularity();
-    while (u32Interval < 10000000 /* 10 ms */)
-        u32Interval += u32SystemResolution;
+    u32MinInterval      = supdrvIsInvariantTsc() ? RT_NS_100MS : RT_NS_10MS;
+    u32SystemResolution = RTTimerGetSystemGranularity();
+    u32Interval         = u32MinInterval;
+    uMod                = u32MinInterval % u32SystemResolution;
+    if (uMod)
+        u32Interval += u32SystemResolution - uMod;
 
-    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
+    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), RT_NS_1SEC / u32Interval /*=Hz*/, u32Interval, cCpus);
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
     /* Initialize TSC-delta measurement thread before executing any Mp event callbacks. */
@@ -6103,9 +6111,28 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
-    PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
+    PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
+
+    if (supdrvIsInvariantTsc())
+    {
+        PSUPGIPCPU         pGipCpu;
+        PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+        unsigned           iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
+        AssertReturnVoid(iCpu < pGip->cCpus);
+        pGipCpu = &pGip->aCPUs[iCpu];
+        AssertReturnVoid(pGipCpu->idCpu == RTMpCpuId());
+
+        /*
+         * The calculations in supdrvGipUpdate() is very timing sensitive and doesn't handle
+         * missed timer ticks. So for now it is better to use a delta of 0 and have the TSC rate
+         * affected a bit until we get proper TSC deltas than implementing options like
+         * rescheduling the tick to be delivered on the right CPU or missing the tick entirely.
+         */
+        if (pGipCpu->i64TSCDelta != INT64_MAX)
+            u64TSC += pGipCpu->i64TSCDelta;
+    }
 
     supdrvGipUpdate(pDevExt, NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
@@ -6897,6 +6924,9 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
+    if (supdrvIsInvariantTsc())
+        return SUPGIPMODE_SYNC_TSC;     /** @todo Switch to SUPGIPMODE_INVARIANT_TSC later. */
+
     /*
      * On SMP we're faced with two problems:
      *      (1) There might be a skew between the CPU, so that cpu0
@@ -6987,15 +7017,16 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
 /**
  * Initializes the GIP data.
  *
- * @param   pDevExt     Pointer to the device instance data.
- * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
- * @param   HCPhys      The physical address of the GIP.
- * @param   u64NanoTS   The current nanosecond timestamp.
- * @param   uUpdateHz   The update frequency.
- * @param   cCpus       The CPU count.
+ * @param   pDevExt             Pointer to the device instance data.
+ * @param   pGip                Pointer to the read-write kernel mapping of the GIP.
+ * @param   HCPhys              The physical address of the GIP.
+ * @param   u64NanoTS           The current nanosecond timestamp.
+ * @param   uUpdateHz           The update frequency.
+ * @param   uUpdateIntervalNS   The update interval in nanoseconds.
+ * @param   cCpus               The CPU count.
  */
 static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
-                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus)
+                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned uUpdateIntervalNS, unsigned cCpus)
 {
     size_t const    cbGip = RT_ALIGN_Z(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), PAGE_SIZE);
     unsigned        i;
@@ -7015,7 +7046,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cCpus                 = (uint16_t)cCpus;
     pGip->cPages                = (uint16_t)(cbGip / PAGE_SIZE);
     pGip->u32UpdateHz           = uUpdateHz;
-    pGip->u32UpdateIntervalNS   = 1000000000 / uUpdateHz;
+    pGip->u32UpdateIntervalNS   = uUpdateIntervalNS;
     pGip->u64NanoTSLastUpdateHz = u64NanoTS;
     RTCpuSetEmpty(&pGip->OnlineCpuSet);
     RTCpuSetEmpty(&pGip->PresentCpuSet);
@@ -7159,9 +7190,20 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     ASMAtomicWriteU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
 
     /*
+     * For invariant TSC support, we take only 1 interval as there is a problem on
+     * Windows where we have an occasional (but reccurring) sour value that messes up
+     * the history. Also, since the update interval is pretty long with the invariant
+     * TSC case this works accurately enough.
+     */
+    if (supdrvIsInvariantTsc())
+    {
+        u32UpdateIntervalTSC = (uint32_t)u64TSCDelta;
+        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
+    }
+    /*
      * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
      */
-    if (pGip->u32UpdateHz >= 1000)
+    else if (pGip->u32UpdateHz >= 1000)
     {
         uint32_t u32;
         u32  = pGipCpu->au32TSCHistory[0];
@@ -7201,7 +7243,8 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     /*
      * CpuHz.
      */
-    u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, pGip->u32UpdateHz);
+    u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, RT_NS_1SEC_64);
+    u64CpuHz /= pGip->u32UpdateIntervalNS;
     ASMAtomicWriteU64(&pGipCpu->u64CpuHz, u64CpuHz);
 }
 
@@ -7257,11 +7300,11 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
         {
 #ifdef RT_ARCH_AMD64 /** @todo fix 64-bit div here to work on x86 linux. */
             uint64_t u64Delta = u64NanoTS - pGip->u64NanoTSLastUpdateHz;
-            uint32_t u32UpdateHz = (uint32_t)((UINT64_C(1000000000) * GIP_UPDATEHZ_RECALC_FREQ) / u64Delta);
+            uint32_t u32UpdateHz = (uint32_t)((RT_NS_1SEC_64 * GIP_UPDATEHZ_RECALC_FREQ) / u64Delta);
             if (u32UpdateHz <= 2000 && u32UpdateHz >= 30)
             {
                 ASMAtomicWriteU32(&pGip->u32UpdateHz, u32UpdateHz);
-                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, 1000000000 / u32UpdateHz);
+                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, RT_NS_1SEC / u32UpdateHz);
             }
 #endif
         }
