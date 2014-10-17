@@ -1768,6 +1768,8 @@
 #define VERR_SUPDRV_APIPORT_OPEN_ERROR_TYPE         (-3742)
 /** Failed to measure the TSC delta between two CPUs. */
 #define VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED    (-3743)
+/** Failed to calculate the TSC frequency. */
+#define VERR_SUPDRV_TSC_FREQ_MEASUREMENT_FAILED     (-3744)
 /** @} */
 
 

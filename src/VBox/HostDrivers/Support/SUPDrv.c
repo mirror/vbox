@@ -5907,6 +5907,90 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
 
 
 /**
+ * Measures the nominal TSC frequency.
+ *
+ * Uses a busy-wait method for the async. case as it is intended to help push
+ * the CPU frequency up, while for the invariant cases using a sleeping method.
+ *
+ * @returns VBox status code.
+ * @param   pGip        Pointer to the GIP.
+ *
+ * @remarks Must be called only after measuring the TSC deltas.
+ */
+static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
+{
+    int cTriesLeft = 4;
+    AssertReturn(pGip, VERR_INVALID_PARAMETER);
+    AssertReturn(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC, VERR_WRONG_ORDER);
+
+    while (cTriesLeft-- > 0)
+    {
+        RTCCUINTREG uFlags;
+        uint64_t    u64NanoTS;
+        uint64_t    u64Before;
+        uint64_t    u64After;
+        uint8_t     idApicBefore;
+        uint8_t     idApicAfter;
+        PSUPGIPCPU  pGipCpuBefore;
+        PSUPGIPCPU  pGipCpuAfter;
+        uint16_t    iCpuBefore;
+        uint16_t    iCpuAfter;
+
+        uFlags = ASMIntDisableFlags();
+        idApicBefore = ASMGetApicId();
+        ASMSerializeInstruction();
+        u64Before = ASMReadTSC();
+        ASMSetFlags(uFlags);
+        u64NanoTS = RTTimeSystemNanoTS();
+
+        /** @todo change this to non-busy wait for invariant case. */
+        while (RTTimeSystemNanoTS() < RT_NS_10MS + u64NanoTS)
+            ;
+
+        uFlags = ASMIntDisableFlags();
+        u64After = ASMReadTSC();
+        idApicAfter = ASMGetApicId();
+        ASMSetFlags(uFlags);
+
+        iCpuBefore = pGip->aiCpuFromApicId[idApicBefore];
+        iCpuAfter  = pGip->aiCpuFromApicId[idApicAfter];
+        AssertMsg(iCpuBefore < pGip->cCpus, ("iCpuBefore=%u cCpus=%u\n", iCpuBefore, pGip->cCpus));
+        AssertMsg(iCpuAfter  < pGip->cCpus, ("iCpuAfter=%u cCpus=%u\n", iCpuAfter, pGip->cCpus));
+        pGipCpuBefore = &pGip->aCPUs[iCpuBefore];
+        pGipCpuAfter  = &pGip->aCPUs[iCpuAfter];
+
+        /** @todo replace with enum check. */
+        if (supdrvIsInvariantTsc())
+        {
+            if (   pGipCpuBefore->i64TSCDelta != INT64_MAX
+                && pGipCpuAfter->i64TSCDelta  != INT64_MAX)
+            {
+                u64Before += pGipCpuBefore->i64TSCDelta;
+                u64After  += pGipCpuAfter->i64TSCDelta;
+
+                SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
+                            (u64After - u64Before) * 100, RTTimerGetSystemGranularity());
+                return VINF_SUCCESS;
+            }
+            else
+            {
+                SUPR0Printf("vboxdrv: supdrvGipMeasureNominalTscFreq: iCpuBefore=%u iCpuAfter=%u cTriesLeft=%u\n", iCpuBefore,
+                            iCpuAfter, cTriesLeft);
+            }
+        }
+        else
+        {
+            SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
+                        (u64After - u64Before) * 100, RTTimerGetSystemGranularity());
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_SUPDRV_TSC_FREQ_MEASUREMENT_FAILED;
+}
+
+
+/**
  * Creates the GIP.
  *
  * @returns VBox status code.
@@ -5994,6 +6078,12 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 } while (--cTries > 0);
                 for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
                     Log(("supdrvTscDeltaInit: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
+#endif
+
+#if 0
+                /** @todo refactor later and use the nominal TSC rate for invariant case as
+                 *        the real and constant TSC rate. */
+                supdrvGipMeasureNominalTscFreq(pGip);
 #endif
 
                 /*
@@ -6129,6 +6219,9 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
          * missed timer ticks. So for now it is better to use a delta of 0 and have the TSC rate
          * affected a bit until we get proper TSC deltas than implementing options like
          * rescheduling the tick to be delivered on the right CPU or missing the tick entirely.
+         *
+         * The likely hood of this happening is really low. On Windows, Linux timers
+         * fire on the CPU they were registered/started on. Darwin, Solaris need verification.
          */
         if (pGipCpu->i64TSCDelta != INT64_MAX)
             u64TSC += pGipCpu->i64TSCDelta;
@@ -6263,14 +6356,17 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
      * We cannot poke the TSC-delta measurement thread from this context (on all OSs), so we only
      * update the state and it'll get serviced when the thread's listening interval times out.
      */
-    RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
-    RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-    if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
-        || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+    if (supdrvIsInvariantTsc())
     {
-        pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+        RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
+            || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+        {
+            pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+        }
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
     }
-    RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
 #endif
 
     /* commit it */
@@ -7455,7 +7551,7 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASUR
             }
 #endif
 
-            while (!cTries--)
+            while (cTries--)
             {
                 rc = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
                 if (RT_SUCCESS(rc))
