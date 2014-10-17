@@ -7305,7 +7305,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
-    Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3 pVCpu=%p idCpu=%RU32\n enmOperation=%d", pVCpu, pVCpu->idCpu,
+    Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3 pVCpu=%p idCpu=%RU32 enmOperation=%d\n", pVCpu, pVCpu->idCpu,
           enmOperation));
 
     int rc = hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
