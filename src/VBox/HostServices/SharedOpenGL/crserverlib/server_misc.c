@@ -1971,7 +1971,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
         GLint pid=-1;
 
         gl->GetIntegerv(GL_CURRENT_PROGRAM, &pid);
-        crDebug("pid %i, state: id %i, hwid %i", pid, ctx->glsl.activeProgram->id, ctx->glsl.activeProgram->hwid);
+        //crDebug("pid %i, state: id %i, hwid %i", pid, ctx->glsl.activeProgram->id, ctx->glsl.activeProgram->hwid);
         if (pid != ctx->glsl.activeProgram->hwid)
         {
             crWarning("pid(%d) != ctx->glsl.activeProgram->hwid(%d)", pid, ctx->glsl.activeProgram->hwid);

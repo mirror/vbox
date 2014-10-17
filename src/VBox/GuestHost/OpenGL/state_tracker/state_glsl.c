@@ -858,7 +858,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
     pCurrent += sizeof(GLsizei);
     cbRead = sizeof(GLsizei);
 
-    crDebug("crStateGLSLProgramCacheUniforms: %i active uniforms", pProgram->cUniforms);
+    //crDebug("crStateGLSLProgramCacheUniforms: %i active uniforms", pProgram->cUniforms);
 
     if (pProgram->cUniforms)
     {
@@ -895,7 +895,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
         pProgram->pUniforms[i].name = crStrndup(pCurrent, cbName);
         pCurrent += cbName;
 
-        crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%d, %s", i, pProgram->pUniforms[i].location, pProgram->pUniforms[i].name);
+        //crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%d, %s", i, pProgram->pUniforms[i].location, pProgram->pUniforms[i].name);
     }
 
     pProgram->bUniformsSynced = GL_TRUE;
@@ -978,7 +978,7 @@ crStateGLSLProgramCacheAttribs(GLuint program, GLsizei cbData, GLvoid *pData)
     CRASSERT((pCurrent-((char*)pData))==cbRead);
     CRASSERT(cbRead==cbData);
 }
-#else
+#else /* IN_GUEST */
 static GLboolean crStateGLSLProgramCacheOneUniform(GLuint location, GLsizei cbName, GLchar *pName, 
                                                    char **pCurrent, GLsizei *pcbWritten, GLsizei maxcbData)
 {
@@ -990,7 +990,7 @@ static GLboolean crStateGLSLProgramCacheOneUniform(GLuint location, GLsizei cbNa
         return GL_FALSE;
     }
 
-    crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%s.", location, pName);
+    //crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%s.", location, pName);
 
     ((GLint*)*pCurrent)[0] = location;
     *pCurrent += sizeof(GLint);
