@@ -31,13 +31,13 @@ DriverVer   = 07/18/2014,1.0.1.0
 [ControlFlags]
 
 [VBox]
-%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp6
+%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
 
 [VBox.NTx86]
-%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp6
+%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
 
 [VBox.NTamd64]
-%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp6
+%VBoxNetAdp6_Desc% = VBoxNetAdp6.ndi, sun_VBoxNetAdp
 
 [VBoxNetAdp6.ndi]
 AddReg             = VBoxNetAdp6.ndi.AddReg

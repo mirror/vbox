@@ -1536,11 +1536,11 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                                         Assert(hr == S_OK);
                                                         if (hr == S_OK)
                                                         {
-                                                            if (!_wcsnicmp(pId, L"sun_VBoxNetAdp6", sizeof(L"sun_VBoxNetAdp6")/2))
-                                                            {
-                                                                vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_HostOnly, -1);
-                                                            }
-                                                            else
+                                                            /*
+                                                             * Host-only interfaces are ignored here and included into the list
+                                                             * later in netIfListHostAdapters()
+                                                             */
+                                                            if (_wcsnicmp(pId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
                                                             {
                                                                 vboxNetWinAddComponent(&list, pMpNcc, HostNetworkInterfaceType_Bridged,
                                                                                        iDefault);
@@ -1576,13 +1576,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
 
-    /*
-     * There are two places where host-only adapters get added to the list.
-     * The following call adds NDIS5 miniports while NDIS6 miniports are
-     * added in the loop above. This is because NDIS6 miniports are in fact
-     * used as bridged adapters, they have netlwf filter installed in their
-     * stack and as a result they show up during bridged adapter enumeration.
-     */
+    /* Add host-only adapters to the list */
     netIfListHostAdapters(list);
 
     return VINF_SUCCESS;

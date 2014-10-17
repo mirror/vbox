@@ -200,8 +200,7 @@ static HRESULT vboxNetFltWinNotifyCheckNetAdp(IN INetCfgComponent *pComponent, O
     hr = pComponent->GetId(&pDevId);
     if (hr == S_OK)
     {
-        if (!_wcsnicmp(pDevId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2) ||
-            !_wcsnicmp(pDevId, L"sun_VBoxNetAdp6", sizeof(L"sun_VBoxNetAdp6")/2))
+        if (!_wcsnicmp(pDevId, L"sun_VBoxNetAdp", sizeof(L"sun_VBoxNetAdp")/2))
         {
             *pbShouldBind = false;
         }
