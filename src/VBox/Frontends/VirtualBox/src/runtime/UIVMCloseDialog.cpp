@@ -48,6 +48,11 @@
 UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine,
                                  bool fIsACPIEnabled, MachineCloseAction restictedCloseActions)
     : QIWithRetranslateUI<QIDialog>(pParent)
+    , m_pIcon(0), m_pLabel(0)
+    , m_pDetachIcon(0), m_pDetachRadio(0)
+    , m_pSaveIcon(0), m_pSaveRadio(0)
+    , m_pShutdownIcon(0), m_pShutdownRadio(0)
+    , m_pPowerOffIcon(0), m_pPowerOffRadio(0), m_pDiscardCheckBox(0)
     , m_machine(machine)
     , m_restictedCloseActions(restictedCloseActions)
     , m_fIsACPIEnabled(fIsACPIEnabled)
@@ -73,7 +78,9 @@ void UIVMCloseDialog::sltUpdateWidgetAvailability()
 void UIVMCloseDialog::accept()
 {
     /* Calculate result: */
-    if (m_pSaveRadio->isChecked())
+    if (m_pDetachRadio->isChecked())
+        setResult(MachineCloseAction_Detach);
+    else if (m_pSaveRadio->isChecked())
         setResult(MachineCloseAction_SaveState);
     else if (m_pShutdownRadio->isChecked())
         setResult(MachineCloseAction_Shutdown);
@@ -105,6 +112,18 @@ void UIVMCloseDialog::setPixmap(const QPixmap &pixmap)
 
     /* Assign new pixmap: */
     m_pIcon->setPixmap(pixmap);
+}
+
+void UIVMCloseDialog::setDetachButtonEnabled(bool fEnabled)
+{
+    m_pDetachIcon->setEnabled(fEnabled);
+    m_pDetachRadio->setEnabled(fEnabled);
+}
+
+void UIVMCloseDialog::setDetachButtonVisible(bool fVisible)
+{
+    m_pDetachIcon->setVisible(fVisible);
+    m_pDetachRadio->setVisible(fVisible);
 }
 
 void UIVMCloseDialog::setSaveButtonEnabled(bool fEnabled)
@@ -180,6 +199,20 @@ void UIVMCloseDialog::prepare()
                 /* Prepare 'choice' layout: */
                 QGridLayout *pChoiceLayout = new QGridLayout;
                 {
+                    /* Prepare 'detach' icon: */
+                    m_pDetachIcon = new QLabel(this);
+                    {
+                        /* Configure icon: */
+                        m_pDetachIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                        m_pDetachIcon->setPixmap(QPixmap(":/vm_create_shortcut_16px.png"));
+                    }
+                    /* Prepare 'detach' radio-button: */
+                    m_pDetachRadio = new QRadioButton(this);
+                    {
+                        /* Configure button: */
+                        m_pDetachRadio->installEventFilter(this);
+                        connect(m_pDetachRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
+                    }
                     /* Prepare 'save' icon: */
                     m_pSaveIcon = new QLabel(this);
                     {
@@ -231,13 +264,15 @@ void UIVMCloseDialog::prepare()
                     pChoiceLayout->setSpacing(6);
 #endif /* !Q_WS_MAC */
                     pChoiceLayout->setContentsMargins(0, 0, 0, 0);
-                    pChoiceLayout->addWidget(m_pSaveIcon, 0, 0);
-                    pChoiceLayout->addWidget(m_pSaveRadio, 0, 1);
-                    pChoiceLayout->addWidget(m_pShutdownIcon, 1, 0);
-                    pChoiceLayout->addWidget(m_pShutdownRadio, 1, 1);
-                    pChoiceLayout->addWidget(m_pPowerOffIcon, 2, 0);
-                    pChoiceLayout->addWidget(m_pPowerOffRadio, 2, 1);
-                    pChoiceLayout->addWidget(m_pDiscardCheckBox, 3, 1);
+                    pChoiceLayout->addWidget(m_pDetachIcon, 0, 0);
+                    pChoiceLayout->addWidget(m_pDetachRadio, 0, 1);
+                    pChoiceLayout->addWidget(m_pSaveIcon, 1, 0);
+                    pChoiceLayout->addWidget(m_pSaveRadio, 1, 1);
+                    pChoiceLayout->addWidget(m_pShutdownIcon, 2, 0);
+                    pChoiceLayout->addWidget(m_pShutdownRadio, 2, 1);
+                    pChoiceLayout->addWidget(m_pPowerOffIcon, 3, 0);
+                    pChoiceLayout->addWidget(m_pPowerOffRadio, 3, 1);
+                    pChoiceLayout->addWidget(m_pDiscardCheckBox, 4, 1);
                 }
                 /* Configure layout: */
 #ifdef Q_WS_MAC
@@ -285,18 +320,27 @@ void UIVMCloseDialog::configure()
     setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_machine.GetOSTypeId()));
 
     /* Check which close-actions are resticted: */
+    bool fIsDetachAllowed = vboxGlobal().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);
     bool fIsStateSavingAllowed = !(m_restictedCloseActions & MachineCloseAction_SaveState);
     bool fIsACPIShutdownAllowed = !(m_restictedCloseActions & MachineCloseAction_Shutdown);
     bool fIsPowerOffAllowed = !(m_restictedCloseActions & MachineCloseAction_PowerOff);
     bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !(m_restictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
 
+    /* Make 'Detach' button visible/hidden depending on restriction: */
+    setDetachButtonVisible(fIsDetachAllowed);
+    /* Make 'Detach' button enabled/disabled depending on machine-state: */
+    setDetachButtonEnabled(machineState != KMachineState_Stuck);
+
     /* Make 'Save state' button visible/hidden depending on restriction: */
     setSaveButtonVisible(fIsStateSavingAllowed);
     /* Make 'Save state' button enabled/disabled depending on machine-state: */
     setSaveButtonEnabled(machineState != KMachineState_Stuck);
-    /* Make 'Shutdown button' visible/hidden depending on restriction: */
+
+    /* Make 'Shutdown' button visible/hidden depending on restriction: */
     setShutdownButtonVisible(fIsACPIShutdownAllowed);
+    /* Make 'Shutdown' button enabled/disabled depending on console and machine-state: */
     setShutdownButtonEnabled(m_fIsACPIEnabled && machineState != KMachineState_Stuck);
+
     /* Make 'Power off' button visible/hidden depending on restriction: */
     setPowerOffButtonVisible(fIsPowerOffAllowed);
     /* Make the Restore Snapshot checkbox visible/hidden depending on snapshot count & restrictions: */
@@ -309,7 +353,11 @@ void UIVMCloseDialog::configure()
     QRadioButton *pRadioButtonToChoose = 0;
     /* If choosing 'last choice' is possible: */
     m_lastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
-    if (m_lastCloseAction == MachineCloseAction_SaveState && fIsStateSavingAllowed)
+    if (m_lastCloseAction == MachineCloseAction_Detach && fIsDetachAllowed)
+    {
+        pRadioButtonToChoose = m_pDetachRadio;
+    }
+    else if (m_lastCloseAction == MachineCloseAction_SaveState && fIsStateSavingAllowed)
     {
         pRadioButtonToChoose = m_pSaveRadio;
     }
@@ -329,7 +377,9 @@ void UIVMCloseDialog::configure()
     /* Else 'default choice' will be used: */
     else
     {
-        if (fIsStateSavingAllowed)
+        if (fIsDetachAllowed)
+            pRadioButtonToChoose = m_pDetachRadio;
+        else if (fIsStateSavingAllowed)
             pRadioButtonToChoose = m_pSaveRadio;
         else if (fIsACPIShutdownAllowed && m_fIsACPIEnabled)
             pRadioButtonToChoose = m_pShutdownRadio;
@@ -357,6 +407,9 @@ void UIVMCloseDialog::retranslateUi()
     m_pLabel->setText(tr("You want to:"));
 
     /* Translate radio-buttons: */
+    m_pDetachRadio->setText(tr("&Continue running in the background"));
+    m_pDetachRadio->setWhatsThis(tr("<p>Close the virtual machine windows but keep the virtual machine running.</p>"
+                                    "<p>You can use the VirtualBox Manager to return to running the virtual machine in a window.</p>"));
     m_pSaveRadio->setText(tr("&Save the machine state"));
     m_pSaveRadio->setWhatsThis(tr("<p>Saves the current execution state of the virtual machine to the physical hard disk of the host PC.</p>"
                                   "<p>Next time this machine is started, it will be restored from the saved state and continue execution "

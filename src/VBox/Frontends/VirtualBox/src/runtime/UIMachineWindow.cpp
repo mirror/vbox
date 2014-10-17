@@ -313,8 +313,9 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     {
         switch (defaultCloseAction)
         {
-            /* If VM is stuck, and the default close-action is 'save-state' or 'shutdown',
+            /* If VM is stuck, and the default close-action is 'detach', 'save-state' or 'shutdown',
              * we should ask the user about what to do: */
+            case MachineCloseAction_Detach:
             case MachineCloseAction_SaveState:
             case MachineCloseAction_Shutdown:
                 closeAction = uisession()->isStuck() ? MachineCloseAction_Invalid : defaultCloseAction;
@@ -354,6 +355,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
                  * we should resume it if user canceled dialog or chosen shutdown: */
                 if (!fWasPaused && uisession()->isPaused() &&
                     (closeAction == MachineCloseAction_Invalid ||
+                     closeAction == MachineCloseAction_Detach ||
                      closeAction == MachineCloseAction_Shutdown))
                 {
                     /* If we unable to resume VM, cancel closing: */
@@ -375,6 +377,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
     /* Depending on chosen result: */
     switch (closeAction)
     {
+        case MachineCloseAction_Detach:
+        {
+            /* Just close Runtime UI: */
+            uisession()->closeRuntimeUI();
+            break;
+        }
         case MachineCloseAction_SaveState:
         {
             /* Save VM state: */

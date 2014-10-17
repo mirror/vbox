@@ -2138,7 +2138,8 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache close related action restrictions: */
     MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(strMachineID);
-    bool fAllCloseActionsRestricted =    (restrictedCloseActions & MachineCloseAction_SaveState)
+    bool fAllCloseActionsRestricted =    (!vboxGlobal().isSeparateProcess() || (restrictedCloseActions & MachineCloseAction_Detach))
+                                      && (restrictedCloseActions & MachineCloseAction_SaveState)
                                       && (restrictedCloseActions & MachineCloseAction_Shutdown)
                                       && (restrictedCloseActions & MachineCloseAction_PowerOff);
                                       // Close VM Dialog hides PowerOff_RestoringSnapshot implicitly if PowerOff is hidden..
