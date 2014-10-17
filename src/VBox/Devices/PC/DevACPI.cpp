@@ -2935,6 +2935,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pPmTimerRC = TMTimerRCPtr(pThis->pPmTimerR3);
     NOREF(offDelta);
 }
