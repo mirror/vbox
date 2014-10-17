@@ -1244,12 +1244,31 @@ void UISession::prepareScreens()
     if (isSaved())
     {
         /* Update screen visibility status from saved-state: */
-        for (int i = 0; i < m_monitorVisibilityVector.size(); ++i)
+        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         {
             BOOL fEnabled = true;
-            ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-            machine().QuerySavedGuestScreenInfo(i, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-            m_monitorVisibilityVector[i] = fEnabled;
+            ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
+            machine().QuerySavedGuestScreenInfo(iScreenIndex,
+                                                uGuestOriginX, uGuestOriginY,
+                                                uGuestWidth, uGuestHeight, fEnabled);
+            m_monitorVisibilityVector[iScreenIndex] = fEnabled;
+        }
+        /* And make sure at least one of them is visible (primary if others are hidden): */
+        if (countOfVisibleWindows() < 1)
+            m_monitorVisibilityVector[0] = true;
+    }
+    else if (vboxGlobal().isSeparateProcess())
+    {
+        /* Update screen visibility status from display directly: */
+        for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        {
+            KGuestMonitorStatus enmStatus = KGuestMonitorStatus_Disabled;
+            ULONG uGuestWidth = 0, uGuestHeight = 0, uBpp = 0;
+            LONG iGuestOriginX = 0, iGuestOriginY = 0;
+            display().GetScreenResolution(iScreenIndex,
+                                          uGuestWidth, uGuestHeight, uBpp,
+                                          iGuestOriginX, iGuestOriginY, enmStatus);
+            m_monitorVisibilityVector[iScreenIndex] = (enmStatus == KGuestMonitorStatus_Enabled);
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
         if (countOfVisibleWindows() < 1)
