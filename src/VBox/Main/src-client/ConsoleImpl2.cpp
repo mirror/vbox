@@ -5177,35 +5177,38 @@ int Console::i_configNetwork(const char *pszDevice,
 
                 CoTaskMemFree(pswzBindName);
 
-                wchar_t * pswzHwId;
-                hrc = pAdaptorComponent->GetId(&pswzHwId);
+                /* Assume we should use the old NDIS5.1 version of driver which uses TRUNKTYPE_NETADP */
+                trunkType = TRUNKTYPE_NETADP;
+
+                HKEY hkParams;
+                hrc = pAdaptorComponent->OpenParamKey(&hkParams);
                 Assert(hrc == S_OK);
                 if (hrc == S_OK)
                 {
-                    if (!_wcsnicmp(pswzHwId, L"sun_VBoxNetAdp6", sizeof(L"sun_VBoxNetAdp6")/2))
+                    WCHAR swzInfSection[16];
+                    DWORD dwSize = sizeof(swzInfSection);
+                    hrc = RegQueryValueExW(hkParams, L"InfSection", NULL, NULL, (LPBYTE)swzInfSection, &dwSize);
+                    if (hrc == S_OK)
                     {
-                        /*
-                         * This is NDIS 6.x miniport, it relies on NetLwf filter to
-                         * run actual traffic. We use netflt attachment instead of
-                         * netadp, which is used in case of NDIS 5.x.
-                         */
-                        InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
-                        trunkType = TRUNKTYPE_NETFLT;
+                        if (!_wcsnicmp(swzInfSection, L"VBoxNetAdp6.ndi", sizeof(L"VBoxNetAdp6.ndi")/2))
+                        {
+                            /*
+                             * This is NDIS 6.x miniport, it relies on NetLwf filter to
+                             * run actual traffic. We use netflt attachment instead of
+                             * netadp, which is used in case of NDIS 5.x.
+                             */
+                            trunkType = TRUNKTYPE_NETFLT;
+                        }
                     }
-                    else
-                    {
-                        InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
-                        trunkType = TRUNKTYPE_NETADP;
-                    }
+                    RegCloseKey(hkParams);
                 }
                 else
                 {
                     LogRel(("Console::i_configNetwork: INetCfgComponent::GetId(%s) failed, err (0x%x), "
                             "falling back to NDIS5 attachment\n", pszTrunkName, hrc));
-                    InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
-                    trunkType = TRUNKTYPE_NETADP;
+                    /* Nothing to do here as the trunk type defaults to NETADP */
                 }
-                CoTaskMemFree(pswzHwId);
+                InsertConfigInteger(pCfg, "TrunkType", trunkType == TRUNKTYPE_NETFLT ? kIntNetTrunkType_NetFlt : kIntNetTrunkType_NetAdp);
 
                 pAdaptorComponent.setNull();
                 /* release the pNc finally */
