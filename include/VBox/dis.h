@@ -54,6 +54,16 @@ RT_C_DECLS_BEGIN
 #define DISPREFIX_REX                   UINT8_C(0x40)
 /** @} */
 
+/** @name VEX.Lvvvv prefix destination register flag.
+ *  @{
+ */
+#define VEX_LEN256                      UINT8_C(0x01)
+#define VEXREG_IS256B(x)                   ((x) & VEX_LEN256)
+/* Convert second byte of VEX prefix to internal format */
+#define VEX_2B2INT(x)                   ((((x) >> 2) & 0x1f))
+#define VEX_HAS_REX_R(x)                  (!((x) & 0x80))
+ /** @} */
+
 /** @name 64 bits prefix byte flags (DISSTATE::fRexPrefix).
  * Requires VBox/disopcode.h.
  * @{
@@ -129,33 +139,34 @@ AssertCompile(RT_IS_POWER_OF_TWO(DISPREFIX_REX_FLAGS_R));
 #define DISUSE_REG_FP                      RT_BIT_64(7)
 #define DISUSE_REG_MMX                     RT_BIT_64(8)
 #define DISUSE_REG_XMM                     RT_BIT_64(9)
-#define DISUSE_REG_CR                      RT_BIT_64(10)
-#define DISUSE_REG_DBG                     RT_BIT_64(11)
-#define DISUSE_REG_SEG                     RT_BIT_64(12)
-#define DISUSE_REG_TEST                    RT_BIT_64(13)
-#define DISUSE_DISPLACEMENT8               RT_BIT_64(14)
-#define DISUSE_DISPLACEMENT16              RT_BIT_64(15)
-#define DISUSE_DISPLACEMENT32              RT_BIT_64(16)
-#define DISUSE_DISPLACEMENT64              RT_BIT_64(17)
-#define DISUSE_RIPDISPLACEMENT32           RT_BIT_64(18)
-#define DISUSE_IMMEDIATE8                  RT_BIT_64(19)
-#define DISUSE_IMMEDIATE8_REL              RT_BIT_64(20)
-#define DISUSE_IMMEDIATE16                 RT_BIT_64(21)
-#define DISUSE_IMMEDIATE16_REL             RT_BIT_64(22)
-#define DISUSE_IMMEDIATE32                 RT_BIT_64(23)
-#define DISUSE_IMMEDIATE32_REL             RT_BIT_64(24)
-#define DISUSE_IMMEDIATE64                 RT_BIT_64(25)
-#define DISUSE_IMMEDIATE64_REL             RT_BIT_64(26)
-#define DISUSE_IMMEDIATE_ADDR_0_32         RT_BIT_64(27)
-#define DISUSE_IMMEDIATE_ADDR_16_32        RT_BIT_64(28)
-#define DISUSE_IMMEDIATE_ADDR_0_16         RT_BIT_64(29)
-#define DISUSE_IMMEDIATE_ADDR_16_16        RT_BIT_64(30)
+#define DISUSE_REG_YMM                     RT_BIT_64(10)
+#define DISUSE_REG_CR                      RT_BIT_64(11)
+#define DISUSE_REG_DBG                     RT_BIT_64(12)
+#define DISUSE_REG_SEG                     RT_BIT_64(13)
+#define DISUSE_REG_TEST                    RT_BIT_64(14)
+#define DISUSE_DISPLACEMENT8               RT_BIT_64(15)
+#define DISUSE_DISPLACEMENT16              RT_BIT_64(16)
+#define DISUSE_DISPLACEMENT32              RT_BIT_64(17)
+#define DISUSE_DISPLACEMENT64              RT_BIT_64(18)
+#define DISUSE_RIPDISPLACEMENT32           RT_BIT_64(19)
+#define DISUSE_IMMEDIATE8                  RT_BIT_64(20)
+#define DISUSE_IMMEDIATE8_REL              RT_BIT_64(21)
+#define DISUSE_IMMEDIATE16                 RT_BIT_64(22)
+#define DISUSE_IMMEDIATE16_REL             RT_BIT_64(23)
+#define DISUSE_IMMEDIATE32                 RT_BIT_64(24)
+#define DISUSE_IMMEDIATE32_REL             RT_BIT_64(25)
+#define DISUSE_IMMEDIATE64                 RT_BIT_64(26)
+#define DISUSE_IMMEDIATE64_REL             RT_BIT_64(27)
+#define DISUSE_IMMEDIATE_ADDR_0_32         RT_BIT_64(28)
+#define DISUSE_IMMEDIATE_ADDR_16_32        RT_BIT_64(29)
+#define DISUSE_IMMEDIATE_ADDR_0_16         RT_BIT_64(30)
+#define DISUSE_IMMEDIATE_ADDR_16_16        RT_BIT_64(31)
 /** DS:ESI */
-#define DISUSE_POINTER_DS_BASED            RT_BIT_64(31)
+#define DISUSE_POINTER_DS_BASED            RT_BIT_64(32)
 /** ES:EDI */
-#define DISUSE_POINTER_ES_BASED            RT_BIT_64(32)
-#define DISUSE_IMMEDIATE16_SX8             RT_BIT_64(33)
-#define DISUSE_IMMEDIATE32_SX8             RT_BIT_64(34)
+#define DISUSE_POINTER_ES_BASED            RT_BIT_64(33)
+#define DISUSE_IMMEDIATE16_SX8             RT_BIT_64(34)
+#define DISUSE_IMMEDIATE32_SX8             RT_BIT_64(35)
 #define DISUSE_IMMEDIATE64_SX8             RT_BIT_64(36)
 
 /** Mask of immediate use flags. */
@@ -421,6 +432,9 @@ typedef struct DISOPPARAM
         /** SSE register index (DISXREG_XXX), applicable if DISUSE_REG_XMM is
          * set in fUse.  1:1 indexes. */
         uint8_t     idxXmmReg;
+        /** SSE2 register index (DISYREG_XXX), applicable if DISUSE_REG_YMM is
+         * set in fUse.  1:1 indexes. */
+        uint8_t     idxYmmReg;
         /** Segment register index (DISSELREG_XXX), applicable if DISUSE_REG_SEG is
          * set in fUse. */
         uint8_t     idxSegReg;
@@ -471,8 +485,8 @@ typedef struct DISOPCODE
     uint8_t     idxParse2;
     /** Parameter \#3 parser index. */
     uint8_t     idxParse3;
-    /** Unused padding.  */
-    uint8_t     uUnused;
+    /** Parameter \#4 parser index.  */
+    uint8_t     idxParse4;
     /** The opcode identifier. This DIS specific, @see grp_dis_opcodes and
      * VBox/disopcode.h. */
     uint16_t    uOpcode;
@@ -482,6 +496,10 @@ typedef struct DISOPCODE
     uint16_t    fParam2;
     /** Parameter \#3 info, @see grp_dis_opparam. */
     uint16_t    fParam3;
+    /** Parameter \#4 info, @see grp_dis_opparam. */
+    uint16_t    fParam4;
+    /** padding unused */
+    uint16_t    uPadding;
     /** Operand type flags, DISOPTYPE_XXX. */
     uint32_t    fOpType;
 } DISOPCODE;
@@ -569,8 +587,10 @@ typedef struct DISSTATE
     uint8_t         cbPrefix;
     /** The instruction size. */
     uint8_t         cbInstr;
+    /** VEX presence flag, destination register and size */
+    uint8_t         bVexDestReg;
     /** Unused bytes. */
-    uint8_t         abUnused[3];
+    uint8_t         abUnused[2];
     /** Internal: instruction filter */
     uint32_t        fFilter;
     /** Internal: pointer to disassembly function table */
@@ -606,8 +626,9 @@ typedef struct DISSTATE
     DISOPPARAM      Param1;
     DISOPPARAM      Param2;
     DISOPPARAM      Param3;
+    DISOPPARAM      Param4;
 } DISSTATE;
-AssertCompileSize(DISSTATE, 0xb8);
+AssertCompileSize(DISSTATE, 0xd8);
 
 /** @deprecated  Use DISSTATE and change Cpu and DisState to Dis. */
 typedef DISSTATE DISCPUSTATE;

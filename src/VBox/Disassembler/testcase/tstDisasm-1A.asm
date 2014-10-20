@@ -190,6 +190,19 @@ BEGINPROC   TestProc32
         vmread     eax, ebx
         vmwrite    eax, ebx
 
+        movd       mm0, [edi]
+        movq       mm0, [edi]
+        movq       mm0, mm1
+
+        vmovups    xmm0, xmm1
+        vmovaps    ymm0, ymm1
+        vunpcklps  xmm0, xmm1, xmm2
+        vunpcklps  ymm0, ymm1, ymm2
+
+        lddqu      xmm1, [ds:ebp+edi*8+00f000001h]
+        vlddqu     xmm1, [ds:ebp+edi*8+00f000001h]
+        vlddqu      ymm1, [ds:ebp+edi*8+00f000001h]
+
 ENDPROC   TestProc32
 
 
@@ -313,6 +326,8 @@ BEGINPROC TestProc64
         tzcnt      ax, [edi]
         tzcnt      eax, [edi]
         tzcnt      eax, [edi + 1000h]
+
+        vpunpcklbw ymm1, ymm2, ymm3
 %endif
 
         popcnt      ax, bx
@@ -336,6 +351,26 @@ BEGINPROC TestProc64
 
         vmread     rax, rbx
         vmwrite    rax, rbx
+
+        getsec
+
+        movd       mm0, [rdi]
+        movq       mm0, [edi]
+        movq       mm0, mm1
+
+        vmovups    xmm0, xmm1
+        vmovaps    ymm0, ymm1
+        vunpcklps  xmm0, xmm1, xmm2
+        vunpcklps  ymm0, ymm1, ymm2
+        vunpcklps  ymm0, ymm10, ymm2
+
+        vmovups    xmm5, xmm9
+
+        vcmpps     xmm1, xmm2, xmm3, 12
+
+        lddqu      xmm1, [ebp+edi*8+00f000001h]
+        vlddqu     xmm1, [rbp+rdi*8+00f000001h]
+        vlddqu     ymm1, [rbp+rdi*8+00f000001h]
 
         ret
 ENDPROC   TestProc64

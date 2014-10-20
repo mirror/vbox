@@ -67,6 +67,10 @@ static const char g_aszYasmRegXMM[16][6] =
 {
     "xmm0\0", "xmm1\0", "xmm2\0", "xmm3\0", "xmm4\0", "xmm5\0", "xmm6\0", "xmm7\0", "xmm8\0", "xmm9\0", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"
 };
+static const char g_aszYasmRegYMM[16][6] =
+{
+    "ymm0\0", "ymm1\0", "ymm2\0", "ymm3\0", "ymm4\0", "ymm5\0", "ymm6\0", "ymm7\0", "ymm8\0", "ymm9\0", "ymm10", "ymm11", "ymm12", "ymm13", "ymm14", "ymm15"
+};
 static const char g_aszYasmRegCRx[16][5] =
 {
     "cr0\0",  "cr1\0",  "cr2\0",  "cr3\0",  "cr4\0",  "cr5\0",  "cr6\0",  "cr7\0",  "cr8\0",  "cr9\0",  "cr10",  "cr11",  "cr12",  "cr13",  "cr14",  "cr15"
@@ -93,8 +97,8 @@ static const char g_aszYasmRegTRx[16][5] =
 static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
     switch (pParam->fUse & (  DISUSE_REG_GEN8 | DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64
-                            | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_CR
-                            | DISUSE_REG_DBG  | DISUSE_REG_SEG   | DISUSE_REG_TEST))
+                            | DISUSE_REG_FP   | DISUSE_REG_MMX   | DISUSE_REG_XMM   | DISUSE_REG_YMM
+                            | DISUSE_REG_CR   | DISUSE_REG_DBG   | DISUSE_REG_SEG   | DISUSE_REG_TEST))
 
     {
         case DISUSE_REG_GEN8:
@@ -148,7 +152,15 @@ static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
         case DISUSE_REG_XMM:
         {
             Assert(pParam->Base.idxXmmReg < RT_ELEMENTS(g_aszYasmRegXMM));
-            const char *psz = g_aszYasmRegXMM[pParam->Base.idxMmxReg];
+            const char *psz = g_aszYasmRegXMM[pParam->Base.idxXmmReg];
+            *pcchReg = 4 + !!psz[4];
+            return psz;
+        }
+
+        case DISUSE_REG_YMM:
+        {
+            Assert(pParam->Base.idxYmmReg < RT_ELEMENTS(g_aszYasmRegYMM));
+            const char *psz = g_aszYasmRegYMM[pParam->Base.idxYmmReg];
             *pcchReg = 4 + !!psz[4];
             return psz;
         }
@@ -615,10 +627,12 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case OP_PARM_w: PUT_SZ("word "); break; \
                     case OP_PARM_d: PUT_SZ("dword "); break; \
                     case OP_PARM_q: PUT_SZ("qword "); break; \
-                    case OP_PARM_dq: \
-                        if (OP_PARM_VTYPE(pParam->fParam) != OP_PARM_W) /* these are 128 bit, pray they are all unambiguous.. */ \
-                            PUT_SZ("dqword "); \
-                        break; \
+                    case OP_PARM_ps: \
+                    case OP_PARM_pd: \
+                    case OP_PARM_x: if (VEXREG_IS256B(pDis->bVexDestReg)) { PUT_SZ("yword"); break; } \
+                    case OP_PARM_ss: \
+                    case OP_PARM_sd: \
+                    case OP_PARM_dq: PUT_SZ("oword "); break; \
                     case OP_PARM_p: break; /* see PUT_FAR */ \
                     case OP_PARM_s: if (pParam->fUse & DISUSE_REG_FP) PUT_SZ("tword "); break; /* ?? */ \
                     case OP_PARM_z: break; \
@@ -674,6 +688,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case 'T': /* ModRM byte selects a test register (ParseModRM / UseModRM). */
                     case 'V': /* ModRM byte selects an XMM/SSE register (ParseModRM / UseModRM). */
                     case 'P': /* ModRM byte selects MMX register (ParseModRM / UseModRM). */
+                    case 'H': /* The VEX.vvvv field of the VEX prefix selects a XMM/YMM register. */
                     {
                         pszFmt += RT_C_IS_ALPHA(pszFmt[0]) ? RT_C_IS_ALPHA(pszFmt[1]) ? 2 : 1 : 0;
                         Assert(!(pParam->fUse & (DISUSE_INDEX | DISUSE_SCALE) /* No SIB here... */));
@@ -737,6 +752,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                                    | DISUSE_REG_FP
                                                    | DISUSE_REG_MMX
                                                    | DISUSE_REG_XMM
+                                                   | DISUSE_REG_YMM
                                                    | DISUSE_REG_CR
                                                    | DISUSE_REG_DBG
                                                    | DISUSE_REG_SEG
@@ -1122,6 +1138,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     {
                         case 2: pParam = &pDis->Param2; break;
                         case 3: pParam = &pDis->Param3; break;
+                        case 4: pParam = &pDis->Param4; break;
                         default: pParam = NULL; break;
                     }
                 }

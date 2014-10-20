@@ -287,6 +287,8 @@ enum OPCODES {
 	OP_SHUFPS,
 	OP_GRP9,
 	OP_BSWAP,
+	OP_ADDSUBPS,
+	OP_ADDSUBPD,
 	OP_PSRLW,
 	OP_PSRLD,
 	OP_PSRLQ,
@@ -301,7 +303,7 @@ enum OPCODES {
 	OP_PADDUSW,
 	OP_PMAXUB,
 	OP_PANDN,
-	OP_PAVGN,
+	OP_PAVGB,
 	OP_PSRAW,
 	OP_PSRAD,
 	OP_PAVGW,
@@ -316,16 +318,18 @@ enum OPCODES {
 	OP_PADDSW,
 	OP_PMAXSW,
 	OP_PXOR,
+	OP_LDDQU,
 	OP_PSLLW,
 	OP_PSLLD,
 	OP_PSSQ,
 	OP_PMULUDQ,
-	OP_PADDWD,
-	OP_PADBW,
-	OP_PMASKMOVQ,
+	OP_PMADDWD,
+	OP_PSADBW,
+	OP_MASKMOVQ,
 	OP_PSUBB,
 	OP_PSUBW,
 	OP_PSUBD,
+	OP_PSUBQ,
 	OP_PADDB,
 	OP_PADDW,
 	OP_PADDD,
@@ -366,7 +370,7 @@ enum OPCODES {
 	OP_MMX_UD7C,
 	OP_MMX_UD7D,
 	OP_PUNPCKLQDQ,
-	OP_PUNPCKHQD,
+	OP_PUNPCKHQDQ,
 	OP_MOVDQA,
 	OP_PSHUFD,
 	OP_CMPPD,
@@ -377,10 +381,14 @@ enum OPCODES {
 	OP_PHADDW,
 	OP_PHADDD,
 	OP_PHADDSW,
+	OP_HADDPS,
+	OP_HADDPD,
 	OP_PMADDUBSW,
 	OP_PHSUBW,
 	OP_PHSUBD,
 	OP_PHSUBSW,
+	OP_HSUBPS,
+	OP_HSUBPD,
 	OP_PSIGNB,
 	OP_PSIGNW,
 	OP_PSIGND,
@@ -404,7 +412,7 @@ enum OPCODES {
 	OP_ANDN,
 	OP_BZHI,
 	OP_BEXTR,
-	OP_PMASKMOVDQU,
+	OP_MASKMOVDQU,
 	OP_MOVSD,
 	OP_CVTSI2SD,
 	OP_CVTTSD2SI,
@@ -428,6 +436,7 @@ enum OPCODES {
 	OP_CVTSI2SS,
 	OP_CVTTSS2SI,
 	OP_CVTSS2SI,
+	OP_CVTSS2SD,
 	OP_SQRTSS,
 	OP_RSQRTSS,
 	OP_RCPSS,
@@ -443,6 +452,8 @@ enum OPCODES {
 	OP_CMPSS,
 	OP_MOVQ2DQ,
 	OP_CVTDQ2PD,
+	OP_VEX3B,
+	OP_VEX2B,
 /** @} */
 
 /** @name Floating point ops
@@ -748,7 +759,7 @@ enum OP_PARM
 #define OP_PARM_Y               0x240
 
 /* Grouped rare parameters for optimization purposes */
-#define IS_OP_PARM_RARE(a)      ((a & 0xF00) == 0x300)
+#define IS_OP_PARM_RARE(a)      ((a & 0xF00) >= 0x300)
 #define OP_PARM_C               0x300       /* control register */
 #define OP_PARM_D               0x320       /* debug register */
 #define OP_PARM_S               0x340       /* segment register */
@@ -757,6 +768,9 @@ enum OP_PARM
 #define OP_PARM_P               0x3A0       /* mmx register */
 #define OP_PARM_W               0x3C0       /* xmm register */
 #define OP_PARM_V               0x3E0
+#define OP_PARM_U 				0x400       /* The R/M field of the ModR/M byte selects XMM/YMM register. */
+#define OP_PARM_B 				0x420       /* VEX.vvvv field select general purpose register. */
+#define OP_PARM_H               0x440
 
 #define OP_PARM_NONE            0
 #define OP_PARM_a               0x1
@@ -774,8 +788,9 @@ enum OP_PARM
 #define OP_PARM_ss              0xD
 #define OP_PARM_v               0xE
 #define OP_PARM_w               0xF
-#define OP_PARM_z               0x10
+#define OP_PARM_x               0x10
 #define OP_PARM_y 				0x11
+#define OP_PARM_z 				0x12
 
 
 #define OP_PARM_Ap              (OP_PARM_A+OP_PARM_p)
@@ -793,6 +808,13 @@ enum OP_PARM
 #define OP_PARM_Gv              (OP_PARM_G+OP_PARM_v)
 #define OP_PARM_Gw              (OP_PARM_G+OP_PARM_w)
 #define OP_PARM_Gy				(OP_PARM_G+OP_PARM_y)
+#define OP_PARM_Hq              (OP_PARM_H+OP_PARM_q)
+#define OP_PARM_Hps             (OP_PARM_H+OP_PARM_ps)
+#define OP_PARM_Hpd             (OP_PARM_H+OP_PARM_pd)
+#define OP_PARM_Hdq             (OP_PARM_H+OP_PARM_dq)
+#define OP_PARM_Hsd             (OP_PARM_H+OP_PARM_sd)
+#define OP_PARM_Hss             (OP_PARM_H+OP_PARM_ss)
+#define OP_PARM_Hx				(OP_PARM_H+OP_PARM_x)
 #define OP_PARM_Ib              (OP_PARM_I+OP_PARM_b)
 #define OP_PARM_Id              (OP_PARM_I+OP_PARM_d)
 #define OP_PARM_Iq              (OP_PARM_I+OP_PARM_q)
@@ -809,7 +831,10 @@ enum OP_PARM
 #define OP_PARM_Mq              (OP_PARM_M+OP_PARM_q)
 #define OP_PARM_Mdq             (OP_PARM_M+OP_PARM_dq)
 #define OP_PARM_Ms              (OP_PARM_M+OP_PARM_s)
+#define OP_PARM_Mx				(OP_PARM_M+OP_PARM_x)
 #define OP_PARM_My				(OP_PARM_M+OP_PARM_y)
+#define OP_PARM_Mps				(OP_PARM_M+OP_PARM_ps)
+#define OP_PARM_Mpd				(OP_PARM_M+OP_PARM_pd)
 #define OP_PARM_Ob              (OP_PARM_O+OP_PARM_b)
 #define OP_PARM_Ov              (OP_PARM_O+OP_PARM_v)
 #define OP_PARM_Pq              (OP_PARM_P+OP_PARM_q)
@@ -818,11 +843,16 @@ enum OP_PARM
 #define OP_PARM_Qq              (OP_PARM_Q+OP_PARM_q)
 #define OP_PARM_Rd              (OP_PARM_R+OP_PARM_d)
 #define OP_PARM_Rw              (OP_PARM_R+OP_PARM_w)
+#define OP_PARM_Ry				(OP_PARM_R+OP_PARM_y)
 #define OP_PARM_Sw              (OP_PARM_S+OP_PARM_w)
 #define OP_PARM_Td              (OP_PARM_T+OP_PARM_d)
+#define OP_PARM_Ux              (OP_PARM_U+OP_PARM_x)
 #define OP_PARM_Vq              (OP_PARM_V+OP_PARM_q)
+#define OP_PARM_Vx              (OP_PARM_V+OP_PARM_x)
+#define OP_PARM_Vy 			    (OP_PARM_V+OP_PARM_y)
 #define OP_PARM_Wq              (OP_PARM_W+OP_PARM_q)
 #define OP_PARM_Ws              (OP_PARM_W+OP_PARM_s)
+#define OP_PARM_Wx 				(OP_PARM_W+OP_PARM_x)
 #define OP_PARM_Xb              (OP_PARM_X+OP_PARM_b)
 #define OP_PARM_Xv              (OP_PARM_X+OP_PARM_v)
 #define OP_PARM_Yb              (OP_PARM_Y+OP_PARM_b)
@@ -843,6 +873,9 @@ enum OP_PARM
 #define OP_PARM_Wsd             (OP_PARM_W+OP_PARM_sd)
 #define OP_PARM_Vpq             (OP_PARM_V+OP_PARM_pq)
 #define OP_PARM_Pdq             (OP_PARM_P+OP_PARM_dq)
+#define OP_PARM_Ups				(OP_PARM_U+OP_PARM_ps)
+#define OP_PARM_Upd	 			(OP_PARM_U+OP_PARM_pd)
+#define OP_PARM_Udq				(OP_PARM_U+OP_PARM_dq)
 
 /** @} */
 
