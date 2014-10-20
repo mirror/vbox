@@ -33,7 +33,6 @@ EXPORTS
     UpdateHostOnlyInterfaces
     RemoveHostOnlyInterfaces
     Ndis6CreateHostOnlyInterface
-    Ndis6StopHostOnlyInterfaces
     Ndis6UpdateHostOnlyInterfaces
-    Ndis6RemoveHostOnlyInterfaces
+
 

@@ -20,16 +20,16 @@
     <!-- Create host-only interfaces on first-time install -->
     <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[NOT Installed]]>
+            <![CDATA[(NOT Installed) AND ($cp_NetAdpDriver=3)]]>
         <?else ?>
-            <![CDATA[&VBoxNetworkAdp=3]]>
+            <![CDATA[(NOT Installed) AND ($cp_NetAdpDriver=3)]]>
         <?endif ?>
     </Custom>
     <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" >
         <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-            <![CDATA[NOT Installed]]>
+            <![CDATA[(NOT Installed) AND ($cp_NetAdpDriver=3)]]>
         <?else ?>
-            <![CDATA[&VBoxNetworkAdp=3]]>
+            <![CDATA[(NOT Installed) AND ($cp_NetAdpDriver=3)]]>
         <?endif ?>
     </Custom>
     <!-- Don't remove the host-only interfaces on update, only on uninstall -->
@@ -46,7 +46,7 @@
     </Custom>
     <Custom Action="ca_UninstallNetAdp" After="ca_StopHostOnlyInterfaces" >
         <![CDATA[(UPGRADINGPRODUCTCODE) AND (REMOVE="ALL")]]>
-        </Custom>
+    </Custom>
 
 <?endif ?>
 

@@ -294,13 +294,68 @@
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
         <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg">1</Publish>
+                <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VersionNT < 600]]></Publish>
         <?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
         <?endif ?>
                 <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.ButtonText_Cancel)">
+                <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
+            </Control>
+
+            <!-- Build number text drawn left bottom -->
+            <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+            <Control Id="Build" Type="Text" X="20" Y="247" Width="220" Height="10" Transparent="yes" NoPrefix="yes">
+                <Text>[Version_text] $(var.Property_Version)</Text>
+            </Control>
+        </Dialog>
+
+        <!-- Dialog for selection network adapters type (NDIS5 or NDIS6) -->
+        <RadioButtonGroup Property="NETWORKTYPE">
+          <RadioButton Text="!(loc.SelectionNetworkTypeDlg_RadioButtonNDIS5)" Value="NDIS5" X="5" Y="0" Width="120" Height="20" />
+          <RadioButton Text="!(loc.SelectionNetworkTypeDlg_RadioButtonNDIS6)" Value="NDIS6" X="5" Y="20" Width="120" Height="20" />
+        </RadioButtonGroup>
+        <Dialog Id="VBoxSelectionNetworkTypeDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
+            <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="[BannerBitmap]" />
+            <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+            <Control Id="Title" Type="Text" X="15" Y="6" Width="220" Height="40" Transparent="yes" NoPrefix="yes">
+                <Text>[DlgTitleFont]!(loc.CustomizeDlg_CustomSetup)</Text>
+            </Control>
+            <Control Id="Description" Type="Text" X="25" Y="23" Width="220" Height="20" Transparent="yes" NoPrefix="yes">
+                <Text>!(loc.CustomizeDlg_SelFeatures)</Text>
+            </Control>
+
+            <Control Id="CommonDescription" Type="Text" X="25" Y="55" Width="325" Height="20" Transparent="yes" NoPrefix="yes">
+              <Text>!(loc.SelectionNetworkTypeDlg_CommonDescription)</Text>
+            </Control>
+
+            <!-- The radio button group used for choosing NDIS5 or NDIS6 network drivers -->
+            <Control Id="Buttons" Type="RadioButtonGroup" X="25" Y="100" Width="130" Height="60" Property="NETWORKTYPE" />
+
+            <!-- Description text -->
+            <Control Id="DescriptionNDIS5" Type="Text" X="200" Y="105" Width="150" Height="60" Transparent="yes" NoPrefix="yes">
+              <Text>!(loc.SelectionNetworkTypeDlg_DescriptionNDIS5)</Text>
+              <Condition Action="hide"> NETWORKTYPE = "NDIS6"</Condition>
+              <Condition Action="show"> NETWORKTYPE = "NDIS5"</Condition>
+            </Control>
+            <Control Id="DescriptionNDIS6" Type="Text" X="200" Y="105" Width="150" Height="60" Transparent="yes" NoPrefix="yes">
+              <Text>!(loc.SelectionNetworkTypeDlg_DescriptionNDIS6)</Text>
+              <Condition Action="hide"> NETWORKTYPE = "NDIS5"</Condition>
+              <Condition Action="show"> NETWORKTYPE = "NDIS6"</Condition>
+            </Control>
+
+            <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
+                Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
+                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg">1</Publish>
+            </Control>
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
+                Text="!(loc.ButtonText_Back)">
+                <Publish Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
+            </Control>
+            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
+                Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="SpawnDialog" Value="VBoxCancelDlg">1</Publish>
             </Control>
 
@@ -345,7 +400,7 @@
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
                 Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
             <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3) AND NOT(!VBoxNetworkFlt=3)]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3)]]></Publish>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
             <?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
@@ -353,7 +408,9 @@
             </Control>
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Back)">
-                <Publish Event="NewDialog" Value="VBoxCustomizeDlg">1</Publish>
+                <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[VersionNT < 600]]></Publish>
+                
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Cancel)">

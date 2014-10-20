@@ -50,8 +50,10 @@
     <String Id="VB_Network">[ProductName] 網路裝置驅動程式針對網路支援。</String>
     <String Id="VB_NetFltDriver">[ProductName] 驅動程式針對橋接網路。</String>
     <String Id="VB_NetAdpDriver">[ProductName] 虛擬網路介面卡針對「僅限主機」網路。</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
 
-    <String Id="VB_Python">VirtualBox 的 Python 支援。</String>
+  <String Id="VB_Python">VirtualBox 的 Python 支援。</String>
 
     <!---->
 
@@ -118,6 +120,20 @@
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
 
     <!---->
+
+  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
+    Default installation.
+    NDIS5 network adapters.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
+    NDIS6 network adapters.
+    If you don't sure in this feature you should not choose it.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
+
+  <!---->  
 
     <String Id="Customize2Dlg_Header">自訂</String>
     <String Id="Customize2Dlg_Desc">請選擇以下選項：</String>

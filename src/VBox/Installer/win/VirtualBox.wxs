@@ -29,6 +29,10 @@
         <?define Property_VBoxMergeNetworkFlt = "$(env.VBOX_WIN_INST_MERGE_NETFLT)" ?>
     <?endif ?>
     <?define Property_VBoxMergeNetworkAdp = "$(env.VBOX_WIN_INST_MERGE_NETADP)" ?>
+    <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+        <?define Property_VBoxMergeNetworkLwf = "$(env.VBOX_WIN_INST_MERGE_NETLWF)" ?>
+    <?endif ?>
+    <?define Property_VBoxMergeNetworkAdp6 = "$(env.VBOX_WIN_INST_MERGE_NETADP6)" ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <?define Property_VBoxMergePython = "$(env.VBOX_WIN_INST_MERGE_PYTHON)" ?>
     <?endif ?>
@@ -56,6 +60,9 @@
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
     <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
+
+    <!-- Default property for network adapter type -->
+    <Property Id="NETWORKTYPE" Value="NDIS5" Secure="yes"/>
 
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
@@ -178,8 +185,10 @@
     <?endif ?>
     <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
         <?include VBoxMergeNetFltCA.wxi ?>
+        <?include VBoxMergeNetLwfCA.wxi ?>
     <?endif ?>
     <?include VBoxMergeNetAdpCA.wxi ?>
+    <?include VBoxMergeNetAdp6CA.wxi ?>
     <?include VBoxMergeUSBCA.wxi ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <?include VBoxMergePythonCA.wxi ?>
@@ -229,6 +238,27 @@
 <?else ?>
                             <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
                                 <?include VBoxMergeNetAdp.wxi ?>
+                            </Directory>
+<?endif ?>
+                        </Directory>
+
+<?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
+                        <Directory Id="dir_NetLwf" Name="netlwf">
+    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+                            <Merge Id="msm_VBoxNetworkLwf" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkLwf)" DiskId="1" />
+    <?else ?>
+                            <Directory Id="msm_VBoxNetworkLwfFolder" FileSource=".">
+                                <?include VBoxMergeNetLwf.wxi ?>
+                            </Directory>
+    <?endif ?>
+                        </Directory>
+<?endif ?>
+                        <Directory Id="dir_NetAdp6" Name="netadp6">
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+                            <Merge Id="msm_VBoxNetworkAdp6" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp6)" DiskId="1" />
+<?else ?>
+                            <Directory Id="msm_VBoxNetworkAdp6Folder" FileSource=".">
+                                <?include VBoxMergeNetAdp6.wxi ?>
                             </Directory>
 <?endif ?>
                         </Directory>
@@ -371,6 +401,7 @@
                 <MergeRef Id="msm_VBoxNetworkFlt" />
     <?else ?>
                 <ComponentRef Id="cp_NetFltDriver" />
+                <ComponentRef Id="cp_NetLwfDriver" />
     <?endif ?>
             </Feature>
             <Feature Id="VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
@@ -381,8 +412,10 @@
                 <MergeRef Id="msm_VBoxNetworkAdp" />
     <?else ?>
                 <ComponentRef Id="cp_NetAdpDriver" />
+                <ComponentRef Id="cp_NetAdp6Driver" />
     <?endif ?>
             </Feature>
+
         </Feature>
 <?endif ?>
 
@@ -464,8 +497,10 @@
         <?endif ?>
         <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <?include VBoxMergeNetFltSeq.wxi ?>
+            <?include VBoxMergeNetLwfSeq.wxi ?>
         <?endif ?>
         <?include VBoxMergeNetAdpSeq.wxi ?>
+        <?include VBoxMergeNetAdp6Seq.wxi ?>
         <?include VBoxMergeUSBSeq.wxi ?>
         <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
             <?include VBoxMergePythonSeq.wxi ?>

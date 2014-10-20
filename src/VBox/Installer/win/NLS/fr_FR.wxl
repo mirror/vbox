@@ -50,7 +50,10 @@
     <String Id="VB_Network">Pilotes [ProductName] pour le support réseau.</String>
     <String Id="VB_NetFltDriver">Pilote [ProductName] pour l'accès réseau par pont.</String>
     <String Id="VB_NetAdpDriver">Pilote de carte réseau virtuelle [ProductName] pour l'accès réseau privé hôte.</String>
-    <String Id="VB_Python">Python support for VirtualBox.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
+
+  <String Id="VB_Python">Python support for VirtualBox.</String>
 
     <!---->
 
@@ -111,6 +114,20 @@
     <String Id="CustomizeDlg_SelItemSize">La taille de l'entrée sélectionnée.</String>
     <String Id="CustomizeDlg_SelItemPath">&lt;Chemin de l'entrée sélectionnée&gt;</String>
 
+    <!---->
+  
+  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
+    Default installation.
+    NDIS5 network adapters.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
+    NDIS6 network adapters.
+    If you don't sure in this feature you should not choose it.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
+ 
     <!---->
 
     <String Id="Customize2Dlg_Header">Personaliser</String>

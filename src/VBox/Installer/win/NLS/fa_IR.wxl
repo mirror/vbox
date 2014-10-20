@@ -45,7 +45,10 @@
     <String Id="VB_Network">درایور دستگاه شبکه [ProductName] برای پشتیبانی از شبکه.</String>
     <String Id="VB_NetFltDriver">درایور [ProductName] برای شبکه پل شده.</String>
     <String Id="VB_NetAdpDriver">درایور آداپتور شبکه مجازی [ProductName] برای شبکه فقط-میزبان.</String>
-    <String Id="VB_Python">پشتیبانی از پایتون برای ویرچوال باکس.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
+
+  <String Id="VB_Python">پشتیبانی از پایتون برای ویرچوال باکس.</String>
     <!---->
     <String Id="NeedAdmin">برای حذف [ProductName] شما نیاز به اجازه مدیر دارید! این راه انداز حالا لغو میشود.</String>
     <String Id="WrongOS">این برنامه فقط در ویندوز ایکس پی یا بالاتر اِجرا میشود.</String>
@@ -90,6 +93,18 @@
     <String Id="CustomizeDlg_SelItemDesc">CustomizeDlgItemDescription-CustomizeDlgItemDescription</String>
     <String Id="CustomizeDlg_SelItemSize">CustomizeDlgItemSize-CustomizeDlgItemSize</String>
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
+    <!---->
+  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
+    Default installation.
+    NDIS5 network adapters.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
+    NDIS6 network adapters.
+    If you don't sure in this feature you should not choose it.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
     <!---->
     <String Id="Customize2Dlg_Header">سفارشی</String>
     <String Id="Customize2Dlg_Desc">لطفاً از گزینه های زیر انتخاب کنید:</String>

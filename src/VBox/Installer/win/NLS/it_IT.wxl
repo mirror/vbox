@@ -45,7 +45,10 @@
     <String Id="VB_Network">Driver di [ProductName] per il supporto di rete.</String>
     <String Id="VB_NetFltDriver">Driver di [ProductName] per la rete con bridge.</String>
     <String Id="VB_NetAdpDriver">Driver per la scheda di rete virtuale di [ProductName] per la rete solo host.</String>
-    <String Id="VB_Python">Supporto Python per VirtualBox.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
+
+  <String Id="VB_Python">Supporto Python per VirtualBox.</String>
     <!---->
     <String Id="NeedAdmin">Devi avere diritti di amministrazione per (dis)installare [ProductName]! L'installazione sarà interrotta immediatamente.</String>
     <String Id="WrongOS">Questa applicazione può essere eseguita solo su Windows XP o superiori.</String>
@@ -91,6 +94,18 @@
     <String Id="CustomizeDlg_SelItemSize">CustomizeDlgItemSize-CustomizeDlgItemSize</String>
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
     <!---->
+  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
+    Default installation.
+    NDIS5 network adapters.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
+    NDIS6 network adapters.
+    If you don't sure in this feature you should not choose it.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
+  <!---->
     <String Id="Customize2Dlg_Header">Personalizza</String>
     <String Id="Customize2Dlg_Desc">Scegli dalle opzioni seguenti:</String>
     <String Id="Customize2Dlg_CreateShortcut">Crea una scorciatoia sul desktop</String>
