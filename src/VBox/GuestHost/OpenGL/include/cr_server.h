@@ -475,8 +475,6 @@ typedef struct {
 
     GLuint currentSerialNo;
 
-    PFNCRSERVERPRESENTFBO pfnPresentFBO;
-
     GLuint                fVisualBitsDefault;
     GLboolean             bUsePBOForReadback;       /*Use PBO's for data readback*/
 
@@ -551,8 +549,6 @@ extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fE
 struct VBVAINFOSCREEN;
 extern DECLEXPORT(int) crVBoxServerNotifyResize(const struct VBVAINFOSCREEN *pScreen, void *pvVRAM);
 extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects);
-
-extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);
 
 extern DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value);
 

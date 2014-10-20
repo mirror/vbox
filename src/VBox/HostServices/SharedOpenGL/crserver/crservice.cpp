@@ -72,160 +72,6 @@ typedef struct _CRVBOXSVCPRESENTFBOCMD_t {
     _CRVBOXSVCPRESENTFBOCMD_t *pNext;
 } CRVBOXSVCPRESENTFBOCMD_t, *PCRVBOXSVCPRESENTFBOCMD_t;
 
-typedef struct _CRVBOXSVCPRESENTFBO_t {
-    PCRVBOXSVCPRESENTFBOCMD_t pQueueHead, pQueueTail;   /* Head/Tail of FIFO cmds queue */
-    RTCRITSECT                hQueueLock;       /* Queue lock */
-    RTTHREAD                  hWorkerThread;    /* Worker thread */
-    bool volatile             bShutdownWorker;  /* Shutdown flag */
-    RTSEMEVENT                hEventProcess;    /* Signalled when worker thread should process data or exit */
-} CRVBOXSVCPRESENTFBO_t;
-
-static CRVBOXSVCPRESENTFBO_t g_SvcPresentFBO;
-
-/* Schedule a call to a separate worker thread to avoid deadlock on EMT thread when the screen configuration changes
-   and we're processing crServerPresentFBO caused by guest application command.
-   To avoid unnecessary memcpy, worker thread frees the data passed.
-*/
-static DECLCALLBACK(void) svcPresentFBO(void *data, int32_t screenId, int32_t x, int32_t y, uint32_t w, uint32_t h)
-{
-    PCRVBOXSVCPRESENTFBOCMD_t pCmd;
-
-    pCmd = (PCRVBOXSVCPRESENTFBOCMD_t) RTMemAlloc(sizeof(CRVBOXSVCPRESENTFBOCMD_t));
-    if (!pCmd)
-    {
-        LogRel(("SHARED_CROPENGL svcPresentFBO: not enough memory (%d)\n", sizeof(CRVBOXSVCPRESENTFBOCMD_t)));
-        return;
-    }
-    pCmd->pData = data;
-    pCmd->screenId = screenId;
-    pCmd->x = x;
-    pCmd->y = y;
-    pCmd->w = w;
-    pCmd->h = h;
-    pCmd->pNext = NULL;
-
-    RTCritSectEnter(&g_SvcPresentFBO.hQueueLock);
-
-    if (g_SvcPresentFBO.pQueueTail)
-    {
-        g_SvcPresentFBO.pQueueTail->pNext = pCmd;
-    }
-    else
-    {
-        Assert(!g_SvcPresentFBO.pQueueHead);
-        g_SvcPresentFBO.pQueueHead = pCmd;
-    }
-    g_SvcPresentFBO.pQueueTail = pCmd;
-
-    RTCritSectLeave(&g_SvcPresentFBO.hQueueLock);
-
-    RTSemEventSignal(g_SvcPresentFBO.hEventProcess);
-}
-
-static DECLCALLBACK(int) svcPresentFBOWorkerThreadProc(RTTHREAD ThreadSelf, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PCRVBOXSVCPRESENTFBOCMD_t pCmd;
-
-    Log(("SHARED_CROPENGL svcPresentFBOWorkerThreadProc started\n"));
-
-    for (;;)
-    {
-        rc = RTSemEventWait(g_SvcPresentFBO.hEventProcess, RT_INDEFINITE_WAIT);
-        AssertRCReturn(rc, rc);
-
-        if (g_SvcPresentFBO.bShutdownWorker)
-        {
-            break;
-        }
-
-        // @todo use critsect only to fetch the list and update the g_SvcPresentFBO's pQueueHead and pQueueTail.
-        rc = RTCritSectEnter(&g_SvcPresentFBO.hQueueLock);
-        AssertRCReturn(rc, rc);
-
-        pCmd = g_SvcPresentFBO.pQueueHead;
-        while (pCmd)
-        {
-            ComPtr<IDisplay> pDisplay;
-
-            /*remove from queue*/
-            g_SvcPresentFBO.pQueueHead = pCmd->pNext;
-            if (!g_SvcPresentFBO.pQueueHead)
-            {
-                g_SvcPresentFBO.pQueueTail = NULL;
-            }
-
-            CHECK_ERROR_RET(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), rc);
-
-            RTCritSectLeave(&g_SvcPresentFBO.hQueueLock);
-
-            CHECK_ERROR_RET(pDisplay, DrawToScreen(pCmd->screenId, (BYTE*)pCmd->pData, pCmd->x, pCmd->y, pCmd->w, pCmd->h), rc);
-
-            crFree(pCmd->pData);
-            RTMemFree(pCmd);
-
-            rc = RTCritSectEnter(&g_SvcPresentFBO.hQueueLock);
-            AssertRCReturn(rc, rc);
-            pCmd = g_SvcPresentFBO.pQueueHead;
-        }
-
-        RTCritSectLeave(&g_SvcPresentFBO.hQueueLock);
-    }
-
-    Log(("SHARED_CROPENGL svcPresentFBOWorkerThreadProc finished\n"));
-
-    return rc;
-}
-
-static int svcPresentFBOInit(void)
-{
-    int rc = VINF_SUCCESS;
-
-    g_SvcPresentFBO.pQueueHead = NULL;
-    g_SvcPresentFBO.pQueueTail = NULL;
-    g_SvcPresentFBO.bShutdownWorker = false;
-
-    rc = RTCritSectInit(&g_SvcPresentFBO.hQueueLock);
-    AssertRCReturn(rc, rc);
-
-    rc = RTSemEventCreate(&g_SvcPresentFBO.hEventProcess);
-    AssertRCReturn(rc, rc);
-
-    rc = RTThreadCreate(&g_SvcPresentFBO.hWorkerThread, svcPresentFBOWorkerThreadProc, NULL, 0,
-                        RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "OpenGLWorker");
-    AssertRCReturn(rc, rc);
-
-    crVBoxServerSetPresentFBOCB(svcPresentFBO);
-
-    return rc;
-}
-
-static int svcPresentFBOTearDown(void)
-{
-    int rc = VINF_SUCCESS;
-    PCRVBOXSVCPRESENTFBOCMD_t pQueue, pTmp;
-
-    ASMAtomicWriteBool(&g_SvcPresentFBO.bShutdownWorker, true);
-    RTSemEventSignal(g_SvcPresentFBO.hEventProcess);
-    rc = RTThreadWait(g_SvcPresentFBO.hWorkerThread, 5000, NULL);
-    AssertRCReturn(rc, rc);
-
-    RTCritSectDelete(&g_SvcPresentFBO.hQueueLock);
-    RTSemEventDestroy(g_SvcPresentFBO.hEventProcess);
-
-    pQueue = g_SvcPresentFBO.pQueueHead;
-    while (pQueue)
-    {
-        pTmp = pQueue->pNext;
-        crFree(pQueue->pData);
-        RTMemFree(pQueue);
-        pQueue = pTmp;
-    }
-    g_SvcPresentFBO.pQueueHead = NULL;
-    g_SvcPresentFBO.pQueueTail = NULL;
-
-    return rc;
-}
 
 static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, void* pvData, uint32_t cbData)
 {
@@ -260,8 +106,6 @@ static DECLCALLBACK(int) svcUnload (void *)
     Log(("SHARED_CROPENGL svcUnload\n"));
 
     crVBoxServerTearDown();
-
-    svcPresentFBOTearDown();
 
     return rc;
 }
@@ -1661,8 +1505,6 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
             if (!crVBoxServerInit())
                 return VERR_NOT_SUPPORTED;
-
-            rc = svcPresentFBOInit();
 
             crServerVBoxSetNotifyEventCB(svcNotifyEventCB);
         }
