@@ -57,6 +57,9 @@ RT_C_DECLS_BEGIN
 #define VUSB_DT_OTHER_SPEED_CFG         0x07
 #define VUSB_DT_INTERFACE_POWER         0x08
 #define VUSB_DT_INTERFACE_ASSOCIATION   0x0B
+#define VUSB_DT_BOS                     0x0F
+#define VUSB_DT_DEVICE_CAPABILITY       0x10
+#define VUSB_DT_SS_ENDPOINT_COMPANION   0x30
 /** @} */
 
 /** @name USB Descriptor minimum sizes (from spec)
@@ -221,6 +224,56 @@ typedef struct VUSBDESCENDPOINT
 typedef VUSBDESCENDPOINT *PVUSBDESCENDPOINT;
 /** Pointer to a const USB endpoint descriptor. */
 typedef const VUSBDESCENDPOINT *PCVUSBDESCENDPOINT;
+
+
+/**
+ * USB SuperSpeed endpoint companion descriptor (from USB3 spec)
+ */
+typedef struct VUSBDESCSSEPCOMPANION
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bMaxBurst;
+    uint8_t  bmAttributes;
+    uint16_t wBytesPerInterval;
+} VUSBDESCSSEPCOMPANION;
+/** Pointer to an USB endpoint companion descriptor. */
+typedef VUSBDESCSSEPCOMPANION *PVUSBDESCSSEPCOMPANION;
+/** Pointer to a const USB endpoint companion descriptor. */
+typedef const VUSBDESCSSEPCOMPANION *PCVUSBDESCSSEPCOMPANION;
+
+
+/**
+ * USB Binary Device Object Store, aka BOS (from USB3 spec)
+ */
+typedef struct VUSBDESCBOS
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint16_t wTotalLength;
+    uint8_t  bNumDeviceCaps;
+} VUSBDESCBOS;
+/** Pointer to an USB BOS descriptor. */
+typedef VUSBDESCBOS *PVUSBDESCBOS;
+/** Pointer to a const USB BOS descriptor. */
+typedef const VUSBDESCBOS *PCVUSBDESCBOS;
+
+
+/**
+ * USB Device Capabilty Descriptor within BOS (from USB3 spec)
+ */
+typedef struct VUSBDESCDEVICECAP
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bDevCapabilityType;
+    uint8_t  aCapSpecific[1];
+} VUSBDESCDEVICECAP;
+/** Pointer to an USB device capability descriptor. */
+typedef VUSBDESCDEVICECAP *PVUSBDESCDEVICECAP;
+/** Pointer to a const USB device capability descriptor. */
+typedef const VUSBDESCDEVICECAP *PCVUSBDESCDEVICECAP;
+
 
 #pragma pack() /* end of the byte packing. */
 
