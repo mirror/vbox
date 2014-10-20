@@ -5920,6 +5920,8 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
 static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
 {
     int cTriesLeft = 4;
+
+    /* Assert order. */
     AssertReturn(pGip, VERR_INVALID_PARAMETER);
     AssertReturn(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC, VERR_WRONG_ORDER);
 
@@ -5932,10 +5934,6 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         uint64_t    u64TscAfter;
         uint8_t     idApicBefore;
         uint8_t     idApicAfter;
-        PSUPGIPCPU  pGipCpuBefore;
-        PSUPGIPCPU  pGipCpuAfter;
-        uint16_t    iCpuBefore;
-        uint16_t    iCpuAfter;
 
         uFlags = ASMIntDisableFlags();
         idApicBefore = ASMGetApicId();
@@ -5988,23 +5986,26 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         idApicAfter = ASMGetApicId();
         ASMSetFlags(uFlags);
 
-        iCpuBefore = pGip->aiCpuFromApicId[idApicBefore];
-        iCpuAfter  = pGip->aiCpuFromApicId[idApicAfter];
-        AssertMsg(iCpuBefore < pGip->cCpus, ("iCpuBefore=%u cCpus=%u\n", iCpuBefore, pGip->cCpus));
-        AssertMsg(iCpuAfter  < pGip->cCpus, ("iCpuAfter=%u cCpus=%u\n", iCpuAfter, pGip->cCpus));
-        pGipCpuBefore = &pGip->aCPUs[iCpuBefore];
-        pGipCpuAfter  = &pGip->aCPUs[iCpuAfter];
-
         /** @todo replace with enum check. */
         if (supdrvIsInvariantTsc())
         {
+            PSUPGIPCPU pGipCpuBefore;
+            PSUPGIPCPU pGipCpuAfter;
+
+            uint16_t iCpuBefore = pGip->aiCpuFromApicId[idApicBefore];
+            uint16_t iCpuAfter  = pGip->aiCpuFromApicId[idApicAfter];
+            AssertMsgReturn(iCpuBefore < pGip->cCpus, ("iCpuBefore=%u cCpus=%u\n", iCpuBefore, pGip->cCpus), VERR_WRONG_ORDER);
+            AssertMsgReturn(iCpuAfter  < pGip->cCpus, ("iCpuAfter=%u cCpus=%u\n", iCpuAfter, pGip->cCpus), VERR_WRONG_ORDER);
+            pGipCpuBefore = &pGip->aCPUs[iCpuBefore];
+            pGipCpuAfter  = &pGip->aCPUs[iCpuAfter];
+
             if (   pGipCpuBefore->i64TSCDelta != INT64_MAX
                 && pGipCpuAfter->i64TSCDelta  != INT64_MAX)
             {
                 u64TscBefore += pGipCpuBefore->i64TSCDelta;
                 u64TscAfter  += pGipCpuAfter->i64TSCDelta;
 
-                SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
+                SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz - invariant, kernel timer granularity is (%RU32) Ns\n",
                             ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
                             RTTimerGetSystemGranularity());
                 return VINF_SUCCESS;
@@ -6017,7 +6018,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         }
         else
         {
-            SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
+            SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz - maybe variant, kernel timer granularity is (%RU32) Ns\n",
                         ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
                         RTTimerGetSystemGranularity());
             return VINF_SUCCESS;
