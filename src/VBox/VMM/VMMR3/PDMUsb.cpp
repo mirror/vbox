@@ -226,7 +226,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
                     &&  pdmR3IsValidName(pReg->szName),
                     ("Invalid name '%.s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
-    AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_EMULATED_DEVICE)) == 0,
+    AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_SUPERSPEED_CAPABLE | PDM_USBREG_EMULATED_DEVICE)) == 0,
                     ("fFlags=%#x\n", pReg->fFlags), VERR_PDM_INVALID_USB_REGISTRATION);
     AssertMsgReturn(pReg->cMaxInstances > 0,
                     ("Max instances %u! (USB Device %s)\n", pReg->cMaxInstances, pReg->szName),
@@ -439,13 +439,17 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
         return VERR_PDM_NO_USB_HUBS;
 
     for (PPDMUSBHUB pCur = pVM->pdm.s.pUsbHubs; pCur; pCur = pCur->pNext)
-        if (    pCur->cAvailablePorts > 0
-            &&  (   (pCur->fVersions & iUsbVersion)
-                 || pCur->fVersions == VUSB_STDVER_11))
+        if (pCur->cAvailablePorts > 0)
         {
-            *ppHub = pCur;
+            /* First check for an exact match. */
             if (pCur->fVersions & iUsbVersion)
+            {
+                *ppHub = pCur;
                 break;
+            }
+            /* For high-speed USB 2.0 devices only, allow USB 1.1 fallback. */
+            if ((iUsbVersion & VUSB_STDVER_20) && (pCur->fVersions == VUSB_STDVER_11))
+                *ppHub = pCur;
         }
     if (*ppHub)
         return VINF_SUCCESS;
@@ -827,13 +831,15 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
         CFGMR3SetRestrictedRoot(pConfigNode);
 
         /*
-         * Every device must support USB 1.x hubs; optionally, high-speed USB 2.0 hubs
+         * Every emulated device must support USB 1.x hubs; optionally, high-speed USB 2.0 hubs
          * might be also supported. This determines where to attach the device.
          */
         uint32_t iUsbVersion = VUSB_STDVER_11;
 
         if (paUsbDevs[i].pUsbDev->pReg->fFlags & PDM_USBREG_HIGHSPEED_CAPABLE)
             iUsbVersion |= VUSB_STDVER_20;
+        if (paUsbDevs[i].pUsbDev->pReg->fFlags & PDM_USBREG_SUPERSPEED_CAPABLE)
+            iUsbVersion |= VUSB_STDVER_30;
 
         /*
          * Find a suitable hub with free ports.
@@ -910,6 +916,8 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
     uint32_t iUsbVersion = VUSB_STDVER_11;
     if (pUsbDev->pReg->fFlags & PDM_USBREG_HIGHSPEED_CAPABLE)
         iUsbVersion |= VUSB_STDVER_20;
+    if (pUsbDev->pReg->fFlags & PDM_USBREG_SUPERSPEED_CAPABLE)
+        iUsbVersion |= VUSB_STDVER_30;
 
     /*
      * Find a suitable hub with free ports.
