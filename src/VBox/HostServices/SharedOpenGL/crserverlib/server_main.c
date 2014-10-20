@@ -2988,11 +2988,6 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT 
     return VINF_SUCCESS;
 }
 
-DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO)
-{
-    cr_server.pfnPresentFBO = pfnPresentFBO;
-}
-
 DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
 {
     return CrPMgrModeVrdp(value);
