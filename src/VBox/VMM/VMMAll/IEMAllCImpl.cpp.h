@@ -16,6 +16,7 @@
  */
 
 
+#define IEM_IMPLEMENTS_CALLGATE
 /** @name Misc Helpers
  * @{
  */
@@ -3224,7 +3225,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-        if (!pCtx->cs.Attr.n.u1DefBig)
+        if (!pCtx->ss.Attr.n.u1DefBig)
             pCtx->sp        = (uint16_t)uNewESP;
         else
             pCtx->rsp       = uNewESP;
