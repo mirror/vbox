@@ -120,6 +120,8 @@ typedef const PDMUSBDESCCACHE *PCPDMUSBDESCCACHE;
 /** Indicates that the device is fully emulated and is not used to pass through
  * a host device. */
 #define PDM_USBREG_EMULATED_DEVICE          RT_BIT(1)
+/** A SuperSpeed USB 3.0 device. */
+#define PDM_USBREG_SUPERSPEED_CAPABLE       RT_BIT(2)
 /** @} */
 
 /** PDM USB Device Registration Structure,
