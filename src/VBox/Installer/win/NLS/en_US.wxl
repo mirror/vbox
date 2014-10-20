@@ -50,6 +50,8 @@
     <String Id="VB_Network">[ProductName] network device drivers for networking support.</String>
     <String Id="VB_NetFltDriver">[ProductName] driver for Bridged Networking.</String>
     <String Id="VB_NetAdpDriver">[ProductName] virtual network adapter driver for Host-Only Networking.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
 
     <String Id="VB_Python">Python support for VirtualBox.</String>
 
@@ -124,6 +126,16 @@
     <String Id="Customize2Dlg_CreateShortcut">Create a shortcut on the desktop</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Create a shortcut in the Quick Launch Bar</String>
     <String Id="Customize2Dlg_RegisterFileExtensions">Register file associations</String>
+
+    <!---->
+
+    <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">Default installation. 
+NDIS5 network adapters.</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">NDIS6 network adapters. 
+If you don't sure in this feature you should not choose it.</String>
+    <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+    <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
 
     <!---->
 

@@ -25,6 +25,7 @@
               Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
 <?endif ?>
         <ServiceControl Id="VBoxNetAdpServiceControl" Stop="both" Remove="uninstall" Name="VBoxNetAdp" Wait="yes" />
+        <Condition><![CDATA[NETWORKTYPE="NDIS5"]]></Condition>
     </Component>
 
 </Include>

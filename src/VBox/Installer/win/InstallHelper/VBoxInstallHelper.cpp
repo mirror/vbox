@@ -1084,9 +1084,8 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
 
 UINT __stdcall Ndis6CreateHostOnlyInterface(MSIHANDLE hModule)
 {
-    return _createHostOnlyInterface(hModule, NETADP6_ID, L"VBoxNetAdp6.inf");
+    return _createHostOnlyInterface(hModule, NETADP_ID, L"VBoxNetAdp6.inf");
 }
-
 
 static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 {
@@ -1123,62 +1122,10 @@ static UINT _removeHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
     return ERROR_SUCCESS;
 }
 
-UINT __stdcall UninstallNetAdp(MSIHANDLE hModule)
-{
-#ifdef VBOX_WITH_NETFLT
-    INetCfg *pNetCfg;
-    UINT uErr;
-
-    netCfgLoggerEnable(hModule);
-
-    BOOL bOldIntMode = SetupSetNonInteractiveMode(FALSE);
-
-    __try
-    {
-        logStringW(hModule, L"Uninstalling NetAdp");
-
-        uErr = doNetCfgInit(hModule, &pNetCfg, TRUE);
-        if (uErr == ERROR_SUCCESS)
-        {
-            HRESULT hr = VBoxNetCfgWinNetAdpUninstall(pNetCfg);
-            if (hr != S_OK)
-                logStringW(hModule, L"UninstallNetAdp: VBoxNetCfgWinUninstallComponent failed, error = 0x%x", hr);
-
-            uErr = errorConvertFromHResult(hModule, hr);
-
-            VBoxNetCfgWinReleaseINetCfg(pNetCfg, TRUE);
-
-            logStringW(hModule, L"Uninstalling NetAdp done, error = 0x%x", uErr);
-        }
-        else
-            logStringW(hModule, L"UninstallNetAdp: doNetCfgInit failed, error = 0x%x", uErr);
-    }
-    __finally
-    {
-        if (bOldIntMode)
-        {
-            /* The prev mode != FALSE, i.e. non-interactive. */
-            SetupSetNonInteractiveMode(bOldIntMode);
-        }
-        netCfgLoggerDisable();
-    }
-#endif /* VBOX_WITH_NETFLT */
-
-    /* Never fail the install even if we did not succeed. */
-    return ERROR_SUCCESS;
-}
-
 UINT __stdcall RemoveHostOnlyInterfaces(MSIHANDLE hModule)
 {
     return _removeHostOnlyInterfaces(hModule, NETADP_ID);
 }
-
-UINT __stdcall Ndis6RemoveHostOnlyInterfaces(MSIHANDLE hModule)
-{
-    return _removeHostOnlyInterfaces(hModule, NETADP6_ID);
-}
-
-
 
 static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 {
@@ -1211,11 +1158,6 @@ static UINT _stopHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszId)
 UINT __stdcall StopHostOnlyInterfaces(MSIHANDLE hModule)
 {
     return _stopHostOnlyInterfaces(hModule, NETADP_ID);
-}
-
-UINT __stdcall Ndis6StopHostOnlyInterfaces(MSIHANDLE hModule)
-{
-    return _stopHostOnlyInterfaces(hModule, NETADP6_ID);
 }
 
 static UINT _updateHostOnlyInterfaces(MSIHANDLE hModule, LPCWSTR pwszInfName, LPCWSTR pwszId)
@@ -1301,7 +1243,57 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 
 UINT __stdcall Ndis6UpdateHostOnlyInterfaces(MSIHANDLE hModule)
 {
-    return _updateHostOnlyInterfaces(hModule, L"VBoxNetAdp6.inf", NETADP6_ID);
+    return _updateHostOnlyInterfaces(hModule, L"VBoxNetAdp6.inf", NETADP_ID);
+}
+
+static UINT _uninstallNetAdp(MSIHANDLE hModule, LPCWSTR pwszId)
+{
+#ifdef VBOX_WITH_NETFLT
+    INetCfg *pNetCfg;
+    UINT uErr;
+
+    netCfgLoggerEnable(hModule);
+
+    BOOL bOldIntMode = SetupSetNonInteractiveMode(FALSE);
+
+    __try
+    {
+        logStringW(hModule, L"Uninstalling NetAdp");
+
+        uErr = doNetCfgInit(hModule, &pNetCfg, TRUE);
+        if (uErr == ERROR_SUCCESS)
+        {
+            HRESULT hr = VBoxNetCfgWinNetAdpUninstall(pNetCfg, pwszId);
+            if (hr != S_OK)
+                logStringW(hModule, L"UninstallNetAdp: VBoxNetCfgWinUninstallComponent failed, error = 0x%x", hr);
+
+            uErr = errorConvertFromHResult(hModule, hr);
+
+            VBoxNetCfgWinReleaseINetCfg(pNetCfg, TRUE);
+
+            logStringW(hModule, L"Uninstalling NetAdp done, error = 0x%x", uErr);
+        }
+        else
+            logStringW(hModule, L"UninstallNetAdp: doNetCfgInit failed, error = 0x%x", uErr);
+    }
+    __finally
+    {
+        if (bOldIntMode)
+        {
+            /* The prev mode != FALSE, i.e. non-interactive. */
+            SetupSetNonInteractiveMode(bOldIntMode);
+        }
+        netCfgLoggerDisable();
+    }
+#endif /* VBOX_WITH_NETFLT */
+
+    /* Never fail the install even if we did not succeed. */
+    return ERROR_SUCCESS;
+}
+
+UINT __stdcall UninstallNetAdp(MSIHANDLE hModule)
+{
+    return _uninstallNetAdp(hModule, NETADP_ID);
 }
 
 static bool isTAPDevice(const WCHAR *pwszGUID)

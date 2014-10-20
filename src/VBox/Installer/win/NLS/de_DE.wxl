@@ -50,8 +50,10 @@
     <String Id="VB_Network">[ProductName] Treiber für Netzwerk-Unterstützung.</String>
     <String Id="VB_NetFltDriver">[ProductName] Treiber für Bridged Networking.</String>
     <String Id="VB_NetAdpDriver">[ProductName] Netzwerk-Adapter Treiber für Hostinterface-Networking.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
 
-    <String Id="VB_Python">Python-Support für VirtualBox.</String>
+  <String Id="VB_Python">Python-Support für VirtualBox.</String>
 
     <!---->
 
@@ -113,6 +115,20 @@
     <String Id="CustomizeDlg_SelItemSize">CustomizeDlgItemSize-CustomizeDlgItemSize</String>
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
 
+    <!---->
+  
+  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
+    Default installation.
+    NDIS5 network adapters.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
+    NDIS6 network adapters.
+    If you don't sure in this feature you should not choose it.
+  </String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
+  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
+  
     <!---->
 
     <String Id="Customize2Dlg_Header">Anpassen</String>

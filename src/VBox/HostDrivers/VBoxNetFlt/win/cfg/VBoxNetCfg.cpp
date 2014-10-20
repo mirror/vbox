@@ -2072,19 +2072,19 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
 }
 
 #define VBOXNETCFGWIN_NETADP_ID L"sun_VBoxNetAdp"
-static HRESULT vboxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
+static HRESULT vboxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, LPCWSTR pwszId, DWORD InfRmFlags)
 {
     HRESULT hr = S_OK;
     NonStandardLog("Finding NetAdp driver package and trying to uninstall it ...\n");
 
-    VBoxDrvCfgInfUninstallAllF(L"Net", VBOXNETCFGWIN_NETADP_ID, InfRmFlags);
+    VBoxDrvCfgInfUninstallAllF(L"Net", pwszId, InfRmFlags);
     NonStandardLog("NetAdp is not installed currently\n");
     return hr;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPCWSTR pwszId)
 {
-    return vboxNetCfgWinNetAdpUninstall(pNc, SUOI_FORCEDELETE);
+    return vboxNetCfgWinNetAdpUninstall(pNc, pwszId, SUOI_FORCEDELETE);
 }
 
 /*
