@@ -5926,9 +5926,10 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
     while (cTriesLeft-- > 0)
     {
         RTCCUINTREG uFlags;
-        uint64_t    u64NanoTS;
-        uint64_t    u64Before;
-        uint64_t    u64After;
+        uint64_t    u64NanoTs;
+        uint64_t    u64NanoTsAfter;
+        uint64_t    u64TscBefore;
+        uint64_t    u64TscAfter;
         uint8_t     idApicBefore;
         uint8_t     idApicAfter;
         PSUPGIPCPU  pGipCpuBefore;
@@ -5939,16 +5940,51 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         uFlags = ASMIntDisableFlags();
         idApicBefore = ASMGetApicId();
         ASMSerializeInstruction();
-        u64Before = ASMReadTSC();
+        u64TscBefore = ASMReadTSC();
         ASMSetFlags(uFlags);
-        u64NanoTS = RTTimeSystemNanoTS();
+        u64NanoTs = RTTimeSystemNanoTS();
 
-        /** @todo change this to non-busy wait for invariant case. */
-        while (RTTimeSystemNanoTS() < RT_NS_10MS + u64NanoTS)
-            ;
+        if (supdrvIsInvariantTsc())
+        {
+            /* Sleep wait, eases host load, since the TSC frequency is reported as constant. */
+            RTThreadSleep(9);
+            do
+            {
+                int64_t cNsDiff;
+                u64NanoTsAfter = RTTimeSystemNanoTS();
+                cNsDiff        = u64NanoTsAfter - u64NanoTs;
+                if (cNsDiff > 9 * RT_NS_1MS)
+                {
+                    uint64_t cNsWait = RT_NS_10MS;
+                    if (cNsDiff >= RT_NS_10MS)
+                        cNsWait += 2;
+                    for (;;)
+                    {
+                        u64NanoTsAfter = RTTimeSystemNanoTS();
+                        if (u64NanoTsAfter < cNsWait - cNsDiff + u64NanoTs)
+                            ASMNopPause();
+                        else
+                            break;
+                    }
+                    break;
+                }
+            } while (1);
+        }
+        else
+        {
+            /* Busy wait, ramps up the CPU frequency on async systems. */
+            for (;;)
+            {
+                u64NanoTsAfter = RTTimeSystemNanoTS();
+                if (u64NanoTsAfter < RT_NS_10MS + u64NanoTs)
+                    ASMNopPause();
+                else
+                    break;
+            }
+        }
 
-        uFlags = ASMIntDisableFlags();
-        u64After = ASMReadTSC();
+        uFlags      = ASMIntDisableFlags();
+        u64TscAfter = ASMReadTSC();
         idApicAfter = ASMGetApicId();
         ASMSetFlags(uFlags);
 
@@ -5965,11 +6001,12 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
             if (   pGipCpuBefore->i64TSCDelta != INT64_MAX
                 && pGipCpuAfter->i64TSCDelta  != INT64_MAX)
             {
-                u64Before += pGipCpuBefore->i64TSCDelta;
-                u64After  += pGipCpuAfter->i64TSCDelta;
+                u64TscBefore += pGipCpuBefore->i64TSCDelta;
+                u64TscAfter  += pGipCpuAfter->i64TSCDelta;
 
                 SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
-                            (u64After - u64Before) * 100, RTTimerGetSystemGranularity());
+                            ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
+                            RTTimerGetSystemGranularity());
                 return VINF_SUCCESS;
             }
             else
@@ -5981,7 +6018,8 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         else
         {
             SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz, kernel timer granularity is (%RU32) Ns\n",
-                        (u64After - u64Before) * 100, RTTimerGetSystemGranularity());
+                        ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
+                        RTTimerGetSystemGranularity());
             return VINF_SUCCESS;
         }
     }
