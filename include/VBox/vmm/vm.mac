@@ -134,8 +134,8 @@ struc VMCPU
     alignb 64
 
     .cpum                   resb 3584
-    .hm                     resb 5696
-    .em                     resb 1472
+    .hm                     resb 5760
+    .em                     resb 1408
     .iem                    resb 3072
     .trpm                   resb 128
     .tm                     resb 384

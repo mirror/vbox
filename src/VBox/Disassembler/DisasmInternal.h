@@ -73,6 +73,9 @@ enum IDX_Parse
   IDX_ParseThreeByteEsc5,
   IDX_ParseImmAddrF,
   IDX_ParseInvOpModRM,
+  IDX_ParseVex2b,
+  IDX_ParseVex3b,
+  IDX_ParseVexDest,
   IDX_ParseMax
 };
 /** @}  */
@@ -112,6 +115,20 @@ extern PCDISOPCODE const g_apThreeByteMapX86_660F3A[16];
 
 /** Three byte opcode map with prefixes 0x66 0xF2 (0xF 0x38) */
 extern PCDISOPCODE const g_apThreeByteMapX86_66F20F38[16];
+
+/** VEX opcodes table defined by [VEX.m-mmmm - 1].
+  * 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 00b */
+extern PCDISOPCODE const g_aVexOpcodesMap[3];
+
+/** VEX opcodes table defined by [VEX.m-mmmm - 1].
+  * 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 01b (66h) */
+extern PCDISOPCODE const g_aVexOpcodesMap_66H[3];
+
+/** 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 10b (F3h) */
+extern PCDISOPCODE const g_aVexOpcodesMap_F3H[3];
+
+/** 0Fh, 0F38h, 0F3Ah correspondingly, VEX.pp = 11b (F2h) */
+extern PCDISOPCODE const g_aVexOpcodesMap_F2H[3];
 /** @} */
 
 /** @name Opcode extensions (Group tables)
@@ -173,10 +190,14 @@ extern const PCDISOPCODE g_apMapX86_FP_High[8];
  */
 #ifndef DIS_CORE_ONLY
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, optype }
+    { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
+# define OPVEX(pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, optype) \
+    { pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, 0, optype }
 #else
 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
-    { idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, optype }
+    { idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
+# define OPVEX(pszOpcode, idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, optype) \
+    { idxParse1, idxParse2, idxParse3, idxParse4, opcode, param1, param2, param3, param4, 0, optype }
 #endif
 
 
