@@ -2752,6 +2752,12 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
+    /* If destination is a segment register, punt. We can't handle it here.
+     * NB: Source can be a register and still trigger a #PF!
+     */
+    if (RT_UNLIKELY(pDis->Param1.fUse == DISUSE_REG_SEG))
+        return VERR_EM_INTERPRETER;
+
     if (param1.type == DISQPV_TYPE_ADDRESS)
     {
         RTGCPTR pDest;
