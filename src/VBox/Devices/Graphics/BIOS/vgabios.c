@@ -181,8 +181,37 @@ void init_bios_area(void)
     bda[BIOSMEM_CURRENT_MSR] = 0x09;
 }
 
+struct dcc {
+    uint8_t     n_ent;
+    uint8_t     version;
+    uint8_t     max_code;
+    uint8_t     reserved;
+    uint16_t    dccs[16];
+} dcc_table = {
+    16,
+    1,
+    7,
+    0
+};
+
+struct ssa {
+    uint16_t    size;
+    void __far  *dcc;
+    void __far  *sacs;
+    void __far  *pal;
+    void __far  *resvd[3];
+
+} secondary_save_area = {
+    sizeof(struct ssa),
+    &dcc_table
+};
+
 void __far *video_save_pointer_table[7] = {
-    &video_param_table
+    &video_param_table,
+    0,
+    0,
+    0,
+    &secondary_save_area
 };
 
 // ============================================================================================
