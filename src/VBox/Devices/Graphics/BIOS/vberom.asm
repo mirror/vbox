@@ -57,6 +57,8 @@ VGAROM  segment public 'CODE'
 
 .386
 
+VBE_BYTEWISE_IO EQU 1
+
 ;; Bytewise in/out
 ifdef VBE_BYTEWISE_IO
 

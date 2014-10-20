@@ -53,7 +53,7 @@
 //#define VBE2_NO_VESA_CHECK
 
 // use bytewise i/o (Longhorn beta issue, not in released Vista)
-//#define VBE_BYTEWISE_IO
+#define VBE_BYTEWISE_IO
 
 #ifdef VBE_BYTEWISE_IO
     extern void do_out_dx_ax();
