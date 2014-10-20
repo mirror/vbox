@@ -5957,7 +5957,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
                 {
                     uint64_t cNsWait = RT_NS_10MS;
                     if (cNsDiff >= RT_NS_10MS)
-                        cNsWait += 2;
+                        cNsWait += 1;
                     for (;;)
                     {
                         u64NanoTsAfter = RTTimeSystemNanoTS();
