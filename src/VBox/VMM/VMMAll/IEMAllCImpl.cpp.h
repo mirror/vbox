@@ -1208,21 +1208,21 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             uNewCSDpl = uNewCS & X86_SEL_RPL;
             if (!IEM_IS_LONG_MODE(pIemCpu))
             {
-                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                if (pCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY)
                 {
                     offNewStack = RT_OFFSETOF(X86TSS32, esp0) + uNewCSDpl * 8;
                     cbNewStack  = RT_SIZEOFMEMB(X86TSS32, esp0) + RT_SIZEOFMEMB(X86TSS32, ss0);
                 }
                 else
                 {
-                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+                    Assert(pCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY);
                     offNewStack = RT_OFFSETOF(X86TSS16, sp0) + uNewCSDpl * 4;
                     cbNewStack  = RT_SIZEOFMEMB(X86TSS16, sp0) + RT_SIZEOFMEMB(X86TSS16, ss0);
                 }
             }
             else
             {
-                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                Assert(pCtx->tr.Attr.n.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY);
                 offNewStack = RT_OFFSETOF(X86TSS64, rsp0) + uNewCSDpl * RT_SIZEOFMEMB(X86TSS64, rsp0);
                 cbNewStack  = RT_SIZEOFMEMB(X86TSS64, rsp0);
             }
@@ -1244,21 +1244,21 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 
             if (!IEM_IS_LONG_MODE(pIemCpu))
             {
-                if (pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_386_CALL_GATE)
+                if (pCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_BUSY)
                 {
                     uNewRsp = uPtrTSS.pu32[0];
                     uNewSS  = uPtrTSS.pu16[2];
                 }
                 else
                 {
-                    Assert(pDesc->Legacy.Gate.u4Type == X86_SEL_TYPE_SYS_286_CALL_GATE);
+                    Assert(pCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_BUSY);
                     uNewRsp = uPtrTSS.pu16[0];
                     uNewSS  = uPtrTSS.pu16[1];
                 }
             }
             else
             {
-                Assert(pDesc->Legacy.Gate.u4Type == AMD64_SEL_TYPE_SYS_CALL_GATE);
+                Assert(pCtx->tr.Attr.n.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY);
                 /* SS will be a NULL selector, but that's valid. */
                 uNewRsp = uPtrTSS.pu64[0];
                 uNewSS  = uNewCSDpl;
