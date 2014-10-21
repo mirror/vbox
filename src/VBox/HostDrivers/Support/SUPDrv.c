@@ -5935,31 +5935,39 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         uint8_t     idApicBefore;
         uint8_t     idApicAfter;
 
-        uFlags = ASMIntDisableFlags();
-        idApicBefore = ASMGetApicId();
-        ASMSerializeInstruction();
-        u64TscBefore = ASMReadTSC();
-        ASMSetFlags(uFlags);
+        /*
+         * Synchronize with the host OS clock tick before reading the TSC.
+         * Especially important on Windows where the granularity is terrible.
+         */
         u64NanoTs = RTTimeSystemNanoTS();
+        while (RTTimeSystemNanoTS() == u64NanoTs)
+            ASMNopPause();
+
+        uFlags       = ASMIntDisableFlags();
+        idApicBefore = ASMGetApicId();
+        u64TscBefore = ASMReadTSC();
+        u64NanoTs    = RTTimeSystemNanoTS();
+        ASMSetFlags(uFlags);
 
         if (supdrvIsInvariantTsc())
         {
-            /* Sleep wait, eases host load, since the TSC frequency is reported as constant. */
-            RTThreadSleep(9);
+            /*
+             * Sleep wait since the TSC frequency is constant, eases host load.
+             */
+#if 0
+            RTThreadSleep(98);
             do
             {
-                int64_t cNsDiff;
+                int64_t cNsWaited;
                 u64NanoTsAfter = RTTimeSystemNanoTS();
-                cNsDiff        = u64NanoTsAfter - u64NanoTs;
-                if (cNsDiff > 9 * RT_NS_1MS)
+                cNsWaited      = u64NanoTsAfter - u64NanoTs;
+                if (cNsWaited > RT_NS_100MS)
                 {
-                    uint64_t cNsWait = RT_NS_10MS;
-                    if (cNsDiff >= RT_NS_10MS)
-                        cNsWait += 1;
+                    uint64_t cNsBusyWait = RT_NS_1MS;
                     for (;;)
                     {
                         u64NanoTsAfter = RTTimeSystemNanoTS();
-                        if (u64NanoTsAfter < cNsWait - cNsDiff + u64NanoTs)
+                        if (u64NanoTsAfter < cNsBusyWait + cNsWaited + u64NanoTs)
                             ASMNopPause();
                         else
                             break;
@@ -5967,6 +5975,13 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
                     break;
                 }
             } while (1);
+#else
+            RTThreadSleep(200);   /* Sleeping shorter produces a tad more variance in the frequency than I'd like. */
+            u64NanoTsAfter = RTTimeSystemNanoTS();
+            while (RTTimeSystemNanoTS() == u64NanoTsAfter)
+                ASMNopPause();
+            u64NanoTsAfter = RTTimeSystemNanoTS();
+#endif
         }
         else
         {
@@ -5974,7 +5989,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
             for (;;)
             {
                 u64NanoTsAfter = RTTimeSystemNanoTS();
-                if (u64NanoTsAfter < RT_NS_10MS + u64NanoTs)
+                if (u64NanoTsAfter < RT_NS_100MS + u64NanoTs)
                     ASMNopPause();
                 else
                     break;
@@ -6005,7 +6020,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
                 u64TscBefore += pGipCpuBefore->i64TSCDelta;
                 u64TscAfter  += pGipCpuAfter->i64TSCDelta;
 
-                SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz - invariant, kernel timer granularity is (%RU32) Ns\n",
+                SUPR0Printf("vboxdrv: TSC frequency is %lu Hz - invariant, kernel timer granularity is %lu Ns\n",
                             ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
                             RTTimerGetSystemGranularity());
                 return VINF_SUCCESS;
@@ -6018,7 +6033,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         }
         else
         {
-            SUPR0Printf("vboxdrv: TSC frequency is (%'RU64) Hz - maybe variant, kernel timer granularity is (%RU32) Ns\n",
+            SUPR0Printf("vboxdrv: TSC frequency is %lu Hz - maybe variant, kernel timer granularity is %lu Ns\n",
                         ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
                         RTTimerGetSystemGranularity());
             return VINF_SUCCESS;
