@@ -283,7 +283,9 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             if (di_prop_lookup_strings(DDI_DEV_T_ANY, Node, "usb-serialno", &pStr) > 0)
                 pCur->pszSerialNumber = RTStrDup(pStr);
 
-            if (di_prop_lookup_ints(DDI_DEV_T_ANY, Node, "low-speed", &pInt) >= 0)
+            if (pCur->bcdUSB == 0x300)
+                pCur->enmSpeed = USBDEVICESPEED_SUPER;
+            else if (di_prop_lookup_ints(DDI_DEV_T_ANY, Node, "low-speed", &pInt) >= 0)
                 pCur->enmSpeed = USBDEVICESPEED_LOW;
             else if (di_prop_lookup_ints(DDI_DEV_T_ANY, Node, "high-speed", &pInt) >= 0)
                 pCur->enmSpeed = USBDEVICESPEED_HIGH;
