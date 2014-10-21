@@ -14395,7 +14395,7 @@ HRESULT Machine::runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
 
 HRESULT Machine::captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename)
 {
-    NOREF(aId);
+    NOREF(aId); NOREF(aCaptureFilename);
     ReturnComNotImplemented();
 }
 
