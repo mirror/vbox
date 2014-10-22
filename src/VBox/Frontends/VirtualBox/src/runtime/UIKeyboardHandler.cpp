@@ -207,18 +207,29 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
                  * and after we will just ignore that issue: */
                 int cTriesLeft = 50;
-                XEvent dummy;
+
+                if (m_cMonitors > 1)
+                {
+                    /* Do this hack only for multimonitor VMs. */
+                    XEvent dummy;
+
+                    /* If a grab succeeds, X11 will insert a FocusIn event for this
+                     * window into the event queue.  If there is already a FocusOut
+                     * event pending we do not want this to happen (this can
+                     * actually cause two machine windows to fight for the focus).
+                     * It would be nicer to put the event back to the right place
+                     * in the queue, but X11 doesn't help us there, and even Qt
+                     * does it like this. */
+                    if (XCheckTypedWindowEvent(QX11Info::display(),
+                                m_windows[m_iKeyboardCaptureViewIndex]->winId(),
+                                XFocusOut, &dummy))
+                    {
+                        XPutBackEvent(QX11Info::display(), &dummy);
+                        break;
+                    }
+                }
+
                 while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
-                /* If the grab succeeds, X will insert a FocusIn event for this
-                 * window into the event queue.  If we have two windows they can
-                 * end up in an endless cycle of passing the focus back and
-                 * forward as there is always a pending FocusIn for each, and we
-                 * drop and re-take the grab each time the focus changes.  So we
-                 * remove the event again before Qt can see it. */
-                if (cTriesLeft > 0)
-                    XCheckTypedWindowEvent(QX11Info::display(),
-                            m_windows[m_iKeyboardCaptureViewIndex]->winId(),
-                            XFocusIn, &dummy);
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
@@ -790,6 +801,7 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_fKeyboardGrabbed(false)
     , m_iKeyboardGrabViewIndex(-1)
 #endif
+    , m_cMonitors(1)
 {
     /* Prepare: */
     prepareCommon();
@@ -815,6 +827,8 @@ void UIKeyboardHandler::prepareCommon()
 
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
+
+    m_cMonitors = uisession()->machine().GetMonitorCount();
 }
 
 void UIKeyboardHandler::loadSettings()

@@ -195,6 +195,8 @@ protected:
     bool m_fKeyboardGrabbed;
     int m_iKeyboardGrabViewIndex;
 #endif
+
+    ULONG m_cMonitors;
 };
 
 #endif // !___UIKeyboardHandler_h___
