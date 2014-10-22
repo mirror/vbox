@@ -341,6 +341,15 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsHS[2] =
     }
 };
 
+static const VUSBDESCSSEPCOMPANION g_aUsbMsdEpCompanionSS =
+{
+    /* .bLength = */            sizeof(VUSBDESCSSEPCOMPANION),
+    /* .bDescriptorType = */    VUSB_DT_SS_ENDPOINT_COMPANION,
+    /* .bMaxBurst = */          15  /* we can burst all the way */,
+    /* .bmAttributes = */       0   /* no streams */,
+    /* .wBytesPerInterval = */  0   /* not a periodic endpoint */
+};
+
 static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsSS[2] =
 {
     {
@@ -353,8 +362,8 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsSS[2] =
             /* .bInterval = */          0 /* no NAKs */
         },
         /* .pvMore = */     NULL,
-        /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .pvClass = */    &g_aUsbMsdEpCompanionSS,
+        /* .cbClass = */    sizeof(g_aUsbMsdEpCompanionSS)
     },
     {
         {
@@ -366,8 +375,8 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsSS[2] =
             /* .bInterval = */          0 /* no NAKs */
         },
         /* .pvMore = */     NULL,
-        /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .pvClass = */    &g_aUsbMsdEpCompanionSS,
+        /* .cbClass = */    sizeof(g_aUsbMsdEpCompanionSS)
     }
 };
 
@@ -547,6 +556,29 @@ static const VUSBDEVICEQUALIFIER g_UsbMsdDeviceQualifier =
     /* .bMaxPacketSize0 = */        64,
     /* .bNumConfigurations = */     1,
     /* .bReserved = */              0
+};
+
+static const struct {
+    VUSBDESCBOS         bos;
+    VUSBDESCSSDEVCAP    sscap;
+} g_UsbMsdBOS =
+{
+    {
+        /* .bLength = */                sizeof(g_UsbMsdBOS.bos),
+        /* .bDescriptorType = */        VUSB_DT_BOS,
+        /* .wTotalLength = */           sizeof(g_UsbMsdBOS),
+        /* .bNumDeviceCaps = */         1
+    },
+    {
+        /* .bLength = */                sizeof(VUSBDESCSSDEVCAP),
+        /* .bDescriptorType = */        VUSB_DT_DEVICE_CAPABILITY,
+        /* .bDevCapabilityType = */     VUSB_DCT_SUPERSPEED_USB,
+        /* .bmAttributes = */           0   /* No LTM. */,
+        /* .wSpeedsSupported = */       0xe /* Any speed is good. */,
+        /* .bFunctionalitySupport = */  2   /* Want HS at least. */,
+        /* .bU1DevExitLat = */          0,  /* We are blazingly fast. */
+        /* .wU2DevExitLat = */          0
+    }
 };
 
 static const PDMUSBDESCCACHE g_UsbMsdDescCacheFS =
@@ -1823,6 +1855,13 @@ static int usbMsdHandleDefaultPipe(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb)
                         cbCopy = pUrb->cbData - sizeof(*pSetup);
                         cbCopy = RT_MIN(cbCopy, sizeof(g_UsbMsdDeviceQualifier));
                         memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbMsdDeviceQualifier, cbCopy);
+                        return usbMsdCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
+                    case VUSB_DT_BOS:
+                        Log(("usbMsd: GET_DESCRIPTOR DT_BOS wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
+                        /* Returned data is written after the setup message. */
+                        cbCopy = pUrb->cbData - sizeof(*pSetup);
+                        cbCopy = RT_MIN(cbCopy, sizeof(g_UsbMsdBOS));
+                        memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbMsdBOS, cbCopy);
                         return usbMsdCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
                     default:
                         Log(("usbMsd: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));

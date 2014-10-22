@@ -71,6 +71,14 @@ RT_C_DECLS_BEGIN
 #define VUSB_DT_ENDPOINT_MIN_LEN        7
 /** @} */
 
+/** @name USB Device Capability Type Codes (from spec)
+ * @{ */
+#define VUSB_DCT_WIRELESS_USB           0x01
+#define VUSB_DCT_USB_20_EXTENSION       0x02
+#define VUSB_DCT_SUPERSPEED_USB         0x03
+#define VUSB_DCT_CONTAINER_ID           0x04
+/** @} */
+
 
 #pragma pack(1) /* ensure byte packing of the descriptors. */
 
@@ -202,7 +210,7 @@ typedef struct VUSBDESCINTERFACE
     uint8_t  bInterfaceProtocol;
     uint8_t  iInterface;
 } VUSBDESCINTERFACE;
-/** Pointer to an USB interface descriptor. */
+/** Pointer to a USB interface descriptor. */
 typedef VUSBDESCINTERFACE *PVUSBDESCINTERFACE;
 /** Pointer to a const USB interface descriptor. */
 typedef const VUSBDESCINTERFACE *PCVUSBDESCINTERFACE;
@@ -220,7 +228,7 @@ typedef struct VUSBDESCENDPOINT
     uint16_t wMaxPacketSize;
     uint8_t  bInterval;
 } VUSBDESCENDPOINT;
-/** Pointer to an USB endpoint descriptor. */
+/** Pointer to a USB endpoint descriptor. */
 typedef VUSBDESCENDPOINT *PVUSBDESCENDPOINT;
 /** Pointer to a const USB endpoint descriptor. */
 typedef const VUSBDESCENDPOINT *PCVUSBDESCENDPOINT;
@@ -237,7 +245,7 @@ typedef struct VUSBDESCSSEPCOMPANION
     uint8_t  bmAttributes;
     uint16_t wBytesPerInterval;
 } VUSBDESCSSEPCOMPANION;
-/** Pointer to an USB endpoint companion descriptor. */
+/** Pointer to a USB endpoint companion descriptor. */
 typedef VUSBDESCSSEPCOMPANION *PVUSBDESCSSEPCOMPANION;
 /** Pointer to a const USB endpoint companion descriptor. */
 typedef const VUSBDESCSSEPCOMPANION *PCVUSBDESCSSEPCOMPANION;
@@ -253,14 +261,14 @@ typedef struct VUSBDESCBOS
     uint16_t wTotalLength;
     uint8_t  bNumDeviceCaps;
 } VUSBDESCBOS;
-/** Pointer to an USB BOS descriptor. */
+/** Pointer to a USB BOS descriptor. */
 typedef VUSBDESCBOS *PVUSBDESCBOS;
 /** Pointer to a const USB BOS descriptor. */
 typedef const VUSBDESCBOS *PCVUSBDESCBOS;
 
 
 /**
- * USB Device Capabilty Descriptor within BOS (from USB3 spec)
+ * Generic USB Device Capability Descriptor within BOS (from USB3 spec)
  */
 typedef struct VUSBDESCDEVICECAP
 {
@@ -269,10 +277,46 @@ typedef struct VUSBDESCDEVICECAP
     uint8_t  bDevCapabilityType;
     uint8_t  aCapSpecific[1];
 } VUSBDESCDEVICECAP;
-/** Pointer to an USB device capability descriptor. */
+/** Pointer to a USB device capability descriptor. */
 typedef VUSBDESCDEVICECAP *PVUSBDESCDEVICECAP;
 /** Pointer to a const USB device capability descriptor. */
 typedef const VUSBDESCDEVICECAP *PCVUSBDESCDEVICECAP;
+
+
+/**
+ * SuperSpeed USB Device Capability Descriptor within BOS
+ */
+typedef struct VUSBDESCSSDEVCAP
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;       /* DEVICE CAPABILITY */
+    uint8_t  bDevCapabilityType;    /* SUPERSPEED_USB */
+    uint8_t  bmAttributes;
+    uint16_t wSpeedsSupported;
+    uint8_t  bFunctionalitySupport;
+    uint8_t  bU1DevExitLat;
+    uint16_t wU2DevExitLat;
+} VUSBDESCSSDEVCAP;
+/** Pointer to an SS USB device capability descriptor. */
+typedef VUSBDESCSSDEVCAP *PVUSBDESCSSDEVCAP;
+/** Pointer to a const SS USB device capability descriptor. */
+typedef const VUSBDESCSSDEVCAP *PCVUSBDESCSSDEVCAP;
+
+
+/**
+ * USB 2.0 Extension Descriptor within BOS
+ */
+typedef struct VUSBDESCUSB2EXT
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;       /* DEVICE CAPABILITY */
+    uint8_t  bDevCapabilityType;    /* USB 2.0 EXTENSION */
+    uint8_t  bmAttributes;
+} VUSBDESCUSB2EXT;
+/** Pointer to a USB 2.0 extension capability descriptor. */
+typedef VUSBDESCUSB2EXT *PVUSBDESCUSB2EXT;
+/** Pointer to a const USB 2.0 extension capability descriptor. */
+typedef const VUSBDESCUSB2EXT *PCVUSBDESCUSB2EXT;
 
 
 #pragma pack() /* end of the byte packing. */
