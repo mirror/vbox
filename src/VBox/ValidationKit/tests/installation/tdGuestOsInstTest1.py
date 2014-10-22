@@ -261,6 +261,8 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-ubuntu804-64', 'Ubuntu_64',        'ubuntu804-amd64-txs.iso',  InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-ubuntu904',    'Ubuntu',           'ubuntu904-txs.iso',        InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqPae),
             InstallTestVm(oSet, 'tst-ubuntu904-64', 'Ubuntu_64',        'ubuntu904-amd64-txs.iso',  InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
+            InstallTestVm(oSet, 'tst-ubuntu1404',   'Ubuntu',           'ubuntu1404-txs.iso',       InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqPae),
+            InstallTestVm(oSet, 'tst-ubuntu1404-64','Ubuntu_64',        'ubuntu1404-amd64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-debian7',      'Debian',           'debian-7.0.0-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-debian7-64',   'Debian_64',        'debian-7.0.0-x64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-w7-64',        'Windows7_64',      'win7-x64-txs.iso',         InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit),
