@@ -35,7 +35,7 @@
 static HostDnsMonitor *g_monitor;
 
 static void dumpHostDnsInformation(const HostDnsInformation&);
-static void dumpHostDnsStrVector(const std::string&, const std::vector<std::wstring>&);
+static void dumpHostDnsStrVector(const std::string&, const std::vector<std::string>&);
 
 /* Lockee */
 Lockee::Lockee()
@@ -65,12 +65,12 @@ ALock::~ALock()
     RTCritSectLeave(const_cast<PRTCRITSECT>(lockee->lock()));
 }
 
-inline static void detachVectorOfWString(const std::vector<std::wstring>& v,
-                                         std::vector<com::Utf8Str> &aArray)
+inline static void detachVectorOfString(const std::vector<std::string>& v,
+                                        std::vector<com::Utf8Str> &aArray)
 {
     aArray.resize(v.size());
     size_t i = 0;
-    for (std::vector<std::wstring>::const_iterator it = v.begin(); it != v.end(); ++it, ++i)
+    for (std::vector<std::string>::const_iterator it = v.begin(); it != v.end(); ++it, ++i)
         aArray[i] = Utf8Str(it->c_str());
 }
 
@@ -269,7 +269,7 @@ HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServ
     LogRel(("HostDnsMonitorProxy::GetNameServers:\n"));
     dumpHostDnsStrVector("Name Server", m->info->servers);
 
-    detachVectorOfWString(m->info->servers, aNameServers);
+    detachVectorOfString(m->info->servers, aNameServers);
 
     return S_OK;
 }
@@ -300,7 +300,7 @@ HRESULT HostDnsMonitorProxy::GetSearchStrings(std::vector<com::Utf8Str> &aSearch
     LogRel(("HostDnsMonitorProxy::GetSearchStrings:\n"));
     dumpHostDnsStrVector("Search String", m->info->searchList);
 
-    detachVectorOfWString(m->info->searchList, aSearchStrings);
+    detachVectorOfString(m->info->searchList, aSearchStrings);
 
     return S_OK;
 }
@@ -343,15 +343,15 @@ static void dumpHostDnsInformation(const HostDnsInformation& info)
     dumpHostDnsStrVector("SearchString", info.searchList);
 
     if (!info.domain.empty())
-        LogRel(("DNS domain: %ls\n", info.domain.data()));
+        LogRel(("DNS domain: %s\n", info.domain.c_str()));
 }
 
 
-static void dumpHostDnsStrVector(const std::string& prefix, const std::vector<std::wstring>& v)
+static void dumpHostDnsStrVector(const std::string& prefix, const std::vector<std::string>& v)
 {
     int i = 1;
-    for (std::vector<std::wstring>::const_iterator it = v.begin();
+    for (std::vector<std::string>::const_iterator it = v.begin();
          it != v.end();
          ++it, ++i)
-        LogRel(("%s %d: %ls\n", prefix.c_str(), i, it->data()));
+        LogRel(("%s %d: %s\n", prefix.c_str(), i, it->c_str()));
 }
