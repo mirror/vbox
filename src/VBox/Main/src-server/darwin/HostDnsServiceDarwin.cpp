@@ -17,7 +17,6 @@
 
 #include <VBox/com/string.h>
 #include <VBox/com/ptr.h>
-#include <VBox/log.h>
 
 
 #include <iprt/err.h>
@@ -165,40 +164,6 @@ int HostDnsServiceDarwin::monitorWorker()
 }
 
 
-static wchar_t *darwinCFStringToUtf16(CFStringRef pStringRef)
-{
-    /* Number of characters (UTF16 encoded, 2 bytes) in the pStringRef. */
-    CFIndex ccStringRef = CFStringGetLength(pStringRef);
-
-    if (ccStringRef > 0)
-    {
-        size_t  cbTmpBuf = (size_t)ccStringRef * sizeof(wchar_t) + 1 /* end of string */;
-        wchar_t *pTmpBuf = (wchar_t *)RTMemAlloc(cbTmpBuf);
-        if (pTmpBuf)
-        {
-            CFIndex ccConverted = CFStringGetBytes(pStringRef,
-                                                   CFRangeMake(0, ccStringRef),
-                                                   kCFStringEncodingUTF16,
-                                                   0,
-                                                   false,
-                                                   (UInt8 *)pTmpBuf,
-                                                   (CFIndex)cbTmpBuf - 1 /* w/o end of string */,
-                                                   NULL);
-            if (ccConverted > 0)
-            {
-                /* Set end of string. */
-                pTmpBuf[ccConverted] = 0;
-                return pTmpBuf;
-            }
-
-            RTMemFree(pTmpBuf);
-        }
-    }
-
-    return NULL;
-}
-
-
 HRESULT HostDnsServiceDarwin::updateInfo()
 {
     CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store,
@@ -229,12 +194,10 @@ HRESULT HostDnsServiceDarwin::updateInfo()
       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
     if (domainNameRef)
     {
-        wchar_t *pwszDomainName = darwinCFStringToUtf16(domainNameRef);
-        if (pwszDomainName)
-        {
-            info.domain = std::wstring(pwszDomainName);
-            RTMemFree(pwszDomainName);
-        }
+        const char *pszDomainName = CFStringGetCStringPtr(domainNameRef,
+                                                    CFStringGetSystemEncoding());
+        if (pszDomainName)
+            info.domain = pszDomainName;
     }
 
     int i, arrayCount;
@@ -249,12 +212,12 @@ HRESULT HostDnsServiceDarwin::updateInfo()
             if (!serverArrayRef)
                 continue;
 
-            wchar_t *pwszServerAddress = darwinCFStringToUtf16(serverAddressRef);
-            if (!pwszServerAddress)
+            const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef,
+                                                           CFStringGetSystemEncoding());
+            if (!pszServerAddress)
                 continue;
 
-            info.servers.push_back(std::wstring(pwszServerAddress));
-            RTMemFree(pwszServerAddress);
+            info.servers.push_back(std::string(pszServerAddress));
         }
     }
 
@@ -270,12 +233,12 @@ HRESULT HostDnsServiceDarwin::updateInfo()
             if (!searchArrayRef)
                 continue;
 
-            wchar_t *pwszSearchString = darwinCFStringToUtf16(searchStringRef);
-            if (!pwszSearchString)
+            const char *pszSearchString = CFStringGetCStringPtr(searchStringRef,
+                                                          CFStringGetSystemEncoding());
+            if (!pszSearchString)
                 continue;
 
-            info.searchList.push_back(std::wstring(pwszSearchString));
-            RTMemFree(pwszSearchString);
+            info.searchList.push_back(std::string(pszSearchString));
         }
     }
 

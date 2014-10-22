@@ -77,11 +77,11 @@ HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
     return S_OK;
 }
 
+
 HRESULT HostDnsServiceResolvConf::readResolvConf()
 {
     struct rcp_state st;
-    wchar_t *pwczTmpStr;
-
+    
     st.rcps_flags = RCPSF_NO_STR2IPCONV;
     int rc = rcp_parse(&st, m->resolvConfFilename.c_str());
     if (rc == -1)
@@ -91,37 +91,16 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
     for (unsigned i = 0; i != st.rcps_num_nameserver; ++i)
     {
         AssertBreak(st.rcps_str_nameserver[i]);
-
-        pwczTmpStr = NULL;
-        rc = RTStrToUtf16(st.rcps_str_nameserver[i], (RTUTF16 **)&pwczTmpStr);
-        if (RT_SUCCESS(rc) && pwczTmpStr)
-        {
-            info.servers.push_back(std::wstring(pwczTmpStr));
-            RTUtf16Free((RTUTF16 *)pwczTmpStr);
-        }
+        info.servers.push_back(st.rcps_str_nameserver[i]);
     }
-
+    
     if (st.rcps_domain)
-    {
-        pwczTmpStr = NULL;
-        rc = RTStrToUtf16(st.rcps_domain, (RTUTF16 **)&pwczTmpStr);
-        if (RT_SUCCESS(rc) && pwczTmpStr)
-        {
-            info.domain = std::wstring(pwczTmpStr);
-            RTUtf16Free((RTUTF16 *)pwczTmpStr);
-        }
-    }
+        info.domain = st.rcps_domain;
 
     for (unsigned i = 0; i != st.rcps_num_searchlist; ++i)
     {
         AssertBreak(st.rcps_searchlist[i]);
-        pwczTmpStr = NULL;
-        rc = RTStrToUtf16(st.rcps_searchlist[i], (RTUTF16 **)&pwczTmpStr);
-        if (RT_SUCCESS(rc) && pwczTmpStr)
-        {
-            info.searchList.push_back(std::wstring(pwczTmpStr));
-            RTUtf16Free((RTUTF16 *)pwczTmpStr);
-        }
+        info.searchList.push_back(st.rcps_searchlist[i]);
     }
     setInfo(info);
 

@@ -56,9 +56,9 @@ class ALock
 class HostDnsInformation
 {
   public:
-    std::vector<std::wstring> servers;
-    std::wstring domain;
-    std::vector<std::wstring> searchList;
+    std::vector<std::string> servers;
+    std::string domain;
+    std::vector<std::string> searchList;
 };
 
 /**
@@ -145,80 +145,24 @@ class HostDnsServiceDarwin : public HostDnsMonitor
 };
 # endif
 # ifdef RT_OS_WINDOWS
-/* Maximum size of Windows registry key (according to MSDN). */
-#define VBOX_KEY_NAME_LEN_MAX   (255)
-class HostDnsServiceWin: public HostDnsMonitor
+class HostDnsServiceWin : public HostDnsMonitor
 {
     public:
-
-        HostDnsServiceWin();
-        ~HostDnsServiceWin();
-
-        HRESULT init();
+    HostDnsServiceWin();
+    ~HostDnsServiceWin();
+    HRESULT init();
 
     protected:
-
-        virtual void monitorThreadShutdown();
-        virtual int monitorWorker();
+    virtual void monitorThreadShutdown();
+    virtual int monitorWorker();
 
     private:
+    void strList2List(std::vector<std::string>& lst, char *strLst);
+    HRESULT updateInfo();
 
-        /* This structure is used in order to link Windows registry key with
-         * an event which is generated once the key has been changed (when interface has updated its DNS setting)
-         * or one of the sub-keys has been deleted or added (when interface added or deleted). */
-        struct Item
-        {
-            HKEY    hKey;                                /** Key handle. */
-            HANDLE  hEvent;                              /** Event handle. */
-            TCHAR   wcsInterface[VBOX_KEY_NAME_LEN_MAX]; /** Path to key within Windows registry. */
-        };
-
-        /* Bit flags to determine what was exactly was changed when Windows triggered event notification. */
-        enum {
-            VBOX_EVENT_NO_CHANGES           = 0,
-            VBOX_EVENT_SERVERS_CHANGED      = RT_BIT(1),
-            VBOX_EVENT_DOMAIN_CHANGED       = RT_BIT(2),
-            VBOX_EVENT_SEARCHLIST_CHANGED   = RT_BIT(3),
-        };
-
-        /* Keys and events storage.
-         * Size of this vector should not be greater than MAXIMUM_WAIT_OBJECTS because
-         * this is exactly maximum amount of events which we allowed to wait for. */
-        std::vector<struct Item> m_aWarehouse;
-        /* Cached host network configuration. */
-        HostDnsInformation m_hostInfoCache;
-
-        /* TCHAR[] constants initialized outside of class definition. */
-        static const TCHAR m_pwcKeyRoot[];
-
-        /* m_aWarehouse array offsets. */
-        enum {
-            VBOX_OFFSET_SHUTDOWN_EVENT = 0,
-            VBOX_OFFSET_TREE_EVENT     = 1,
-            VBOX_OFFSET_SUBTREE_EVENTS = 2,
-        };
-
-        /* Do actual unsubscription for given item. */
-        bool releaseWarehouseItem(int idxItem);
-        /* Release all allocated resources and unsubscribe from everything. */
-        void releaseResources();
-        /* Remove subscription from DNS change notifications and release corresponding resources. */
-        bool dropSubTreeNotifications();
-
-        /* Create & add event into the list of events we monitor to. */
-        bool subscribeTo(TCHAR *wcsPath, TCHAR *wcsInterface, DWORD fFilter);
-        /* Subscribe to DNS changes. */
-        bool enumerateSubTree();
-
-        /* Get plain array of event handles. */
-        void getEventHandles(HANDLE *ahEvents);
-        void extendVectorWithStrings(std::vector<std::wstring>& pVectorToExtend, std::wstring &wcsParameter);
-        HRESULT updateInfo(uint8_t *fWhatsChanged);
-
-        /* This flag indicates whether constructor performed initialization correctly. If not set,
-         * monitorWorker() will not perform any action and will be terminated as soon as there will be
-         * an attempt to run it. */
-        bool m_fInitialized;
+    private:
+    struct Data;
+    Data *m;
 };
 # endif
 # if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
