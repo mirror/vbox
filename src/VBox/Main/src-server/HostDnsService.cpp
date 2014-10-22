@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Base class fo Host DNS & Co services.
+ * Base class for Host DNS & Co services.
  */
 
 /*
