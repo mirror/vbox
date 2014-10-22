@@ -79,6 +79,8 @@ g_aaNameToDetails = \
     [ 'Windows7_64',    'Windows7_64',           g_k64,    1,  64, ['w7-64',  'w7sp[0-9]-64', 'win7-64',]],  # max cpus/cores??
     [ 'Windows8',       'Windows8',              g_k32_64, 1,  32, ['w8',     'w8sp[0-9]', 'win8',]],        # max cpus/cores??
     [ 'Windows8_64',    'Windows8_64',           g_k64,    1,  64, ['w8-64',  'w8sp[0-9]-64', 'win8-64',]],  # max cpus/cores??
+    [ 'Windows81',      'Windows81',             g_k32_64, 1,  32, ['w81',    'w81sp[0-9]', 'win81',]],       # max cpus/cores??
+    [ 'Windows81_64',   'Windows81_64',          g_k64,    1,  64, ['w81-64', 'w81sp[0-9]-64', 'win81-64',]], # max cpus/cores??
     [ 'Linux',          'Debian',                g_k32_64, 1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
     [ 'Linux_64',       'Debian_64',             g_k64,    1, 256, ['deb[0-9]*-64', 'debian[0-9]*-64', ]],
     [ 'Linux',          'RedHat',                g_k32_64, 1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
