@@ -29,7 +29,6 @@
         <File Id="file_VBoxNetFlt.cat" Name="VBoxNetFlt.cat"
               Source="$(env.PATH_OUT)\bin\VBoxNetFlt.cat" />
 <?endif ?>
-        <ServiceControl Id="VBoxNetFltServiceControl" Stop="both" Remove="uninstall" Name="VBoxNetFlt" Wait="yes" />
         <Condition><![CDATA[NETWORKTYPE="NDIS5"]]></Condition>
     </Component>
 
