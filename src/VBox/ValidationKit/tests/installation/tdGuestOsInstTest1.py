@@ -271,6 +271,8 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-wxp',          'WindowsXP',        'winxppro-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-wxpsp2',       'WindowsXP',        'winxpsp2-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-wxp64',        'WindowsXP_64',     'winxp64-txs.iso',          InstallTestVm.ksIdeController,  25, InstallTestVm.kf64Bit),
+            InstallTestVm(oSet, 'tst-w81-32',       'Windows81',        'win81-x86-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf32Bit),
+            InstallTestVm(oSet, 'tst-w81-64',       'Windows81_64',     'win81-x64-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit),
             # pylint: enable=C0301
         ]);
         self.oTestVmSet = oSet;
