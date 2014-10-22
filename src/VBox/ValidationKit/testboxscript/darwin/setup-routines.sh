@@ -206,11 +206,14 @@ os_final_message() {
     cat <<EOF
 
 Additional things to do:"
-    1. Change the 'Energy Saver' options to never turn off the computer.
+    1. Change the 'Energy Saver' options to never turn off the computer:
+       $ systemsetup -setsleep Never
     2. Check 'Restart automatically if the computer freezes' if available in
        the 'Energy Saver' settings.
+       $ systemsetup -setrestartfreeze on
     3. In the 'Sharing' panel enable (VBox/Oracle):
          a) 'Remote Login' so ssh works.
+             $ systemsetup -setremotelogin on
          b) 'Remote Management, tick all the checkboxes in the sheet dialog.
             Open the 'Computer Settings' and check 'Show Remote Management
             status in nmenu bar', 'Anyone may request permission to control
@@ -223,9 +226,11 @@ Additional things to do:"
        with the URL containing 'http://wpad.oracle.com/wpad.dat'. (Make sure
        to hit OK to close the dialog.)
     5. Configure NTP to the nearest local time source. For VBox/Oracle this
-       means wei01-time.de.oracle.com.
+       means wei01-time.de.oracle.com:
+       $ systemsetup -setnetworktimeserver wei01-time.de.oracle.com
     6. Configure the vbox (pw:password) account for automatic login.
-    7. Configure the kernel to keep symbols: sudo nvram boot-args="keepsyms=1"
+    7. Configure the kernel to keep symbols:
+       $ sudo nvram boot-args="keepsyms=1"
 
 Enjoy!
 EOF
