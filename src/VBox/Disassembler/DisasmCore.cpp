@@ -994,7 +994,11 @@ static size_t UseModRM(size_t const offInstr, PCDISOPCODE pOp, PDISSTATE pDis, P
                 /* else no break */
 
             case OP_PARM_V: //XMM register
-                if (VEXREG_IS256B(pDis->bVexDestReg))
+                if (VEXREG_IS256B(pDis->bVexDestReg)
+                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_dq
+                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_q
+                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_d
+                    && OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_w)
                 {
                     // Use YMM register if VEX.L is set.
                     pParam->fUse |= DISUSE_REG_YMM;
@@ -1353,9 +1357,23 @@ static size_t ParseModFence(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 static size_t ParseImmByte(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     NOREF(pOp);
-    pParam->uValue = disReadByte(pDis, offInstr);
-    pParam->fUse  |= DISUSE_IMMEDIATE8;
-    pParam->cb     = sizeof(uint8_t);
+    uint8_t byte = disReadByte(pDis, offInstr);
+    if (pParam->fParam == OP_PARM_Lx)
+    {
+        pParam->fUse  |= (VEXREG_IS256B(pDis->bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
+
+        // Ignore MSB in 32-bit mode.
+        if (pDis->uCpuMode == DISCPUMODE_32BIT)
+            byte &= 0x7f;
+
+        pParam->Base.idxXmmReg = byte >> 4;
+    }
+    else
+    {
+        pParam->uValue = byte;
+        pParam->fUse  |= DISUSE_IMMEDIATE8;
+        pParam->cb     = sizeof(uint8_t);
+    }
     return offInstr + 1;
 }
 //*****************************************************************************
@@ -2453,7 +2471,7 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pDis->bVexDestReg = VEX_2B2INT(byte);
 
     // VEX.R (equivalent to REX.R)
-    if (!(byte & 0x80) && pDis->uCpuMode == DISCPUMODE_64BIT)
+    if (pDis->uCpuMode == DISCPUMODE_64BIT && !(byte & 0x80))
     {
         /* REX prefix byte */
         pDis->fPrefix   |= DISPREFIX_REX;
@@ -2498,7 +2516,7 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
 {
     NOREF(pOp); NOREF(pParam);
 
-    PCDISOPCODE pOpCode = &g_InvalidOpcode[0];
+    PCDISOPCODE pOpCode = NULL;
 
     uint8_t byte1 = disReadByte(pDis, offInstr++);
     uint8_t byte2 = disReadByte(pDis, offInstr++);
@@ -2507,20 +2525,23 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pDis->bVexDestReg = VEX_2B2INT(byte2);
     uint8_t implOpcode = (byte1 & 0x1f);
 
-    // REX.RXB
-    if (~(byte1 & 0xe0))
+    if (pDis->uCpuMode == DISCPUMODE_64BIT)
     {
-        Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
-        pDis->fPrefix |= DISPREFIX_REX;
-        pDis->fRexPrefix = ~(byte1 >> 5);
-    }
+        // REX.RXB
+        if (~(byte1 & 0xe0))
+        {
+            pDis->fRexPrefix = (byte1 >> 5) ^ 7;
+            if (pDis->fRexPrefix)
+                pDis->fPrefix |= DISPREFIX_REX;
+        }
 
-    // REX.W
-    if (!(byte2 & 0x80))
-    {
-        Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
-        pDis->fPrefix   |= DISPREFIX_REX;
-        pDis->fRexPrefix |= DISPREFIX_REX_FLAGS_W;
+        // REX.W
+        if (!(byte2 & 0x80))
+        {
+            pDis->fRexPrefix |= DISPREFIX_REX_FLAGS_W;
+            if (pDis->fRexPrefix)
+                 pDis->fPrefix |= DISPREFIX_REX;
+        }
     }
 
     switch(byte2 & 3)
@@ -2530,8 +2551,18 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
             {
                 pOpCode = g_aVexOpcodesMap[implOpcode - 1];
                 if (pOpCode != NULL)
-                    pOpCode = &pOpCode[pDis->bOpCode];
-                else pOpCode = &g_InvalidOpcode[0];
+                {
+                    switch (implOpcode)
+                    {
+                        case 2:
+                            if (pDis->bOpCode >= 0xf0)
+                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
+                            else pOpCode = g_InvalidOpcode;
+                            break;
+                        default:
+                        pOpCode = &pOpCode[pDis->bOpCode];
+                    }
+                }
             }
         break;
         // OPSIZE 0x66 prefix
@@ -2541,8 +2572,6 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
                 pOpCode = g_aVexOpcodesMap_66H[implOpcode - 1];
                 if (pOpCode != NULL)
                     pOpCode = &pOpCode[pDis->bOpCode];
-                else pOpCode = &g_InvalidOpcode[0];
-
                 /* TODO: check if we need to set this prefix */
                 pDis->fPrefix |= DISPREFIX_OPSIZE;
                 if (pDis->uCpuMode == DISCPUMODE_16BIT)
@@ -2558,8 +2587,19 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
             {
                 pOpCode = g_aVexOpcodesMap_F3H[implOpcode - 1];
                 if (pOpCode != NULL)
-                    pOpCode = &pOpCode[pDis->bOpCode];
-                else pOpCode = &g_InvalidOpcode[0];
+                {
+                    switch (implOpcode)
+                    {
+                        case 2:
+                            if (pDis->bOpCode >= 0xf0)
+                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
+                            else pOpCode = g_InvalidOpcode;
+                            break;
+                        default:
+                        pOpCode = &pOpCode[pDis->bOpCode];
+                    }
+                }
+
             }
         break;
 
@@ -2569,14 +2609,31 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
             {
                 pOpCode = g_aVexOpcodesMap_F2H[implOpcode - 1];
                 if (pOpCode != NULL)
-                    pOpCode = &pOpCode[pDis->bOpCode];
-                else pOpCode = &g_InvalidOpcode[0];
+                {
+                    switch (implOpcode)
+                    {
+                        case 2:
+                            if (pDis->bOpCode >= 0xf0)
+                                pOpCode = &pOpCode[pDis->bOpCode - 0xf0];
+                            else pOpCode = g_InvalidOpcode;
+                            break;
+                        case 3:
+                            if (pDis->bOpCode != 0xf0)
+                                pOpCode = g_InvalidOpcode;
+                            break;
+                        default:
+                        pOpCode = &pOpCode[pDis->bOpCode];
+                    }
+                }
             }
         break;
 
         default:
         break;
     }
+
+    if (pOpCode == NULL)
+        pOpCode = g_InvalidOpcode;
 
     return disParseInstruction(offInstr, pOpCode, pDis);
 }

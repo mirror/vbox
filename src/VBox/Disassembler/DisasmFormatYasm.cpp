@@ -624,15 +624,37 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         } \
                         break; \
                     case OP_PARM_b: PUT_SZ("byte "); break; \
-                    case OP_PARM_w: PUT_SZ("word "); break; \
-                    case OP_PARM_d: PUT_SZ("dword "); break; \
-                    case OP_PARM_q: PUT_SZ("qword "); break; \
+                    case OP_PARM_w: \
+                        if (OP_PARM_VTYPE(pParam->fParam) == OP_PARM_W || \
+                            OP_PARM_VTYPE(pParam->fParam) == OP_PARM_M) \
+                        { \
+                            if (VEXREG_IS256B(pDis->bVexDestReg)) PUT_SZ("dword "); \
+                                else PUT_SZ("word "); \
+                        } \
+                        break; \
+                    case OP_PARM_d: \
+                        if (OP_PARM_VTYPE(pParam->fParam) == OP_PARM_W || \
+                            OP_PARM_VTYPE(pParam->fParam) == OP_PARM_M) \
+                        { \
+                            if (VEXREG_IS256B(pDis->bVexDestReg)) PUT_SZ("qword "); \
+                                else PUT_SZ("dword "); \
+                        } \
+                        break; \
+                    case OP_PARM_q: \
+                        if (OP_PARM_VTYPE(pParam->fParam) == OP_PARM_W || \
+                            OP_PARM_VTYPE(pParam->fParam) == OP_PARM_M) \
+                        { \
+                            if (VEXREG_IS256B(pDis->bVexDestReg)) PUT_SZ("oword "); \
+                                else PUT_SZ("qword "); \
+                        } \
+                       break; \
                     case OP_PARM_ps: \
                     case OP_PARM_pd: \
-                    case OP_PARM_x: if (VEXREG_IS256B(pDis->bVexDestReg)) { PUT_SZ("yword"); break; } \
+                    case OP_PARM_x: if (VEXREG_IS256B(pDis->bVexDestReg)) { PUT_SZ("yword "); break; } \
                     case OP_PARM_ss: \
                     case OP_PARM_sd: \
                     case OP_PARM_dq: PUT_SZ("oword "); break; \
+                    case OP_PARM_qq: PUT_SZ("yword "); break; \
                     case OP_PARM_p: break; /* see PUT_FAR */ \
                     case OP_PARM_s: if (pParam->fUse & DISUSE_REG_FP) PUT_SZ("tword "); break; /* ?? */ \
                     case OP_PARM_z: break; \
@@ -689,6 +711,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case 'V': /* ModRM byte selects an XMM/SSE register (ParseModRM / UseModRM). */
                     case 'P': /* ModRM byte selects MMX register (ParseModRM / UseModRM). */
                     case 'H': /* The VEX.vvvv field of the VEX prefix selects a XMM/YMM register. */
+                    case 'L': /* The upper 4 bits of the 8-bit immediate selects a XMM/YMM register. */
                     {
                         pszFmt += RT_C_IS_ALPHA(pszFmt[0]) ? RT_C_IS_ALPHA(pszFmt[1]) ? 2 : 1 : 0;
                         Assert(!(pParam->fUse & (DISUSE_INDEX | DISUSE_SCALE) /* No SIB here... */));
