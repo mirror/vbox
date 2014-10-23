@@ -7463,8 +7463,19 @@ DriverEntry(
         {
 #ifdef VBOX_WDDM_WIN8
             Assert(f3DRequired);
-            LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
             g_VBoxDisplayOnly = 1;
+
+            /* Black list some builds. */
+            if (major == 6 && minor == 4 && build == 9841)
+            {
+                /* W10 Technical preview crashes with display-only driver. */
+                LOGREL(("3D is NOT supported by the host, fallback to the system video driver."));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
+            }
 #else
             if (f3DRequired)
             {
