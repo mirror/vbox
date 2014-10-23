@@ -145,7 +145,7 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 !ifdef _DEBUG
   BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING% (r$%VBOX_SVN_REV%) - Debug Build"
 !else
-  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING%"
+  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING% r$%VBOX_SVN_REV%"
 !endif
 
 !ifdef VBOX_WITH_LICENSE_DISPLAY
