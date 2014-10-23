@@ -203,6 +203,14 @@ def getHostOsVersion():
 
     elif sOs == 'darwin':
         sVersion = platform.mac_ver()[0];
+        codenames = {"4": "Tiger",
+                     "5": "Leopard",
+                     "6": "Snow Leopard",
+                     "7": "Lion",
+                     "8": "Mountain Lion",
+                     "9": "Mavericks",
+                     "10": "Yosemite"}
+        sVersion += ' (' + codenames[sVersion.split('.')[1]] + ')'
 
     return sVersion;
 
