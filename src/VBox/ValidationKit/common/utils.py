@@ -201,6 +201,9 @@ def getHostOsVersion():
             except:
                 pass;
 
+    elif sOs == 'darwin':
+        sVersion = platform.mac_ver()[0];
+
     return sVersion;
 
 #
