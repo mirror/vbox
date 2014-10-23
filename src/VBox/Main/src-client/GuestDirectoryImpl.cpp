@@ -89,7 +89,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
     {
         /* Start the directory process on the guest. */
         GuestProcessStartupInfo procInfo;
-        procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\"", openInfo.mPath.c_str()));
+        procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\""), openInfo.mPath.c_str());
         procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_LS);
         procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
         procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
