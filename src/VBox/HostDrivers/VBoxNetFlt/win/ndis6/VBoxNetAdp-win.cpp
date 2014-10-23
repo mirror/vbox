@@ -245,7 +245,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
         RAttrs.Header.Revision = NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
         RAttrs.MiniportAdapterContext = pAdapter;
         RAttrs.AttributeFlags = VBOXNETADPWIN_ATTR_FLAGS; // NDIS_MINIPORT_ATTRIBUTES_NDIS_WDM
-        RAttrs.CheckForHangTimeInSeconds = VBOXNETADPWIN_HANG_CHECK_TIME; //TODO 4
+        RAttrs.CheckForHangTimeInSeconds = VBOXNETADPWIN_HANG_CHECK_TIME;
         RAttrs.InterfaceType = NdisInterfaceInternal;
 
         Status = NdisMSetMiniportAttributes(NdisMiniportHandle,
@@ -408,8 +408,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
             break;
         }
         case OID_GEN_VENDOR_DESCRIPTION:
-            pInfo = "Oracle";
-            cbInfo = sizeof("Oracle"); //TODO
+            pInfo = VBOXNETADP_VENDOR_NAME;
+            cbInfo = sizeof(VBOXNETADP_VENDOR_NAME);
             break;
         case OID_GEN_VENDOR_DRIVER_VERSION:
             ulTmp = (VBOXNETADP_VERSION_NDIS_MAJOR << 16) | VBOXNETADP_VERSION_NDIS_MINOR;
