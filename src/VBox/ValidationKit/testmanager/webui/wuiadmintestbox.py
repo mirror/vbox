@@ -241,7 +241,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
 
             sVer1 = sOsVersion;
             sVer2 = None;
-            if oEntry.sOs == 'linux':
+            if oEntry.sOs == 'linux' or oEntry.sOs == 'darwin':
                 iSep = sOsVersion.find(' / ');
                 if iSep > 0:
                     sVer1 = sOsVersion[:iSep].strip();
