@@ -69,28 +69,28 @@ g_aaNameToDetails = \
 [
     [ 'WindowsNT4',     'WindowsNT4',            g_k32,    1,  32, ['nt4',    'nt4sp[0-9]']],                             # max cpus??
     [ 'Windows2000',    'Windows2000',           g_k32,    1,  32, ['w2k',    'w2ksp[0-9]', 'win2k', 'win2ksp[0-9]']],    # max cpus??
-    [ 'WindowsXP',      'WindowsXP',             g_k32_64, 1,  32, ['xp',     'xpsp[0-9]']],
+    [ 'WindowsXP',      'WindowsXP',             g_k32,    1,  32, ['xp',     'xpsp[0-9]']],
     [ 'WindowsXP_64',   'WindowsXP_64',          g_k64,    1,  32, ['xp64',   'xp64sp[0-9]']],
-    [ 'Windows2003',    'Windows2003',           g_k32_64, 1,  32, ['w2k3',   'w2k3sp[0-9]', 'win2k3', 'win2k3sp[0-9]']],
-    [ 'WindowsVista',   'WindowsVista',          g_k32_64, 1,  32, ['vista',  'vistasp[0-9]']],
-    [ 'Windows2008',    'Windows2008',           g_k32_64, 1,  64, ['w2k8',   'w2k8sp[0-9]', 'win2k8', 'win2k8sp[0-9]']],     # max cpus/cores??
+    [ 'Windows2003',    'Windows2003',           g_k32,    1,  32, ['w2k3',   'w2k3sp[0-9]', 'win2k3', 'win2k3sp[0-9]']],
+    [ 'WindowsVista',   'WindowsVista',          g_k32,    1,  32, ['vista',  'vistasp[0-9]']],
+    [ 'Windows2008',    'Windows2008',           g_k32,    1,  64, ['w2k8',   'w2k8sp[0-9]', 'win2k8', 'win2k8sp[0-9]']],     # max cpus/cores??
     [ 'Windows2008_64', 'Windows2008_64',        g_k64,    1,  64, ['w2k8r2', 'w2k8r2sp[0-9]', 'win2k8r2', 'win2k8r2sp[0-9]']], # max cpus/cores??
-    [ 'Windows7',       'Windows7',              g_k32_64, 1,  32, ['w7',     'w7sp[0-9]', 'win7',]],        # max cpus/cores??
+    [ 'Windows7',       'Windows7',              g_k32,    1,  32, ['w7',     'w7sp[0-9]', 'win7',]],        # max cpus/cores??
     [ 'Windows7_64',    'Windows7_64',           g_k64,    1,  64, ['w7-64',  'w7sp[0-9]-64', 'win7-64',]],  # max cpus/cores??
-    [ 'Windows8',       'Windows8',              g_k32_64, 1,  32, ['w8',     'w8sp[0-9]', 'win8',]],        # max cpus/cores??
+    [ 'Windows8',       'Windows8',              g_k32,    1,  32, ['w8',     'w8sp[0-9]', 'win8',]],        # max cpus/cores??
     [ 'Windows8_64',    'Windows8_64',           g_k64,    1,  64, ['w8-64',  'w8sp[0-9]-64', 'win8-64',]],  # max cpus/cores??
-    [ 'Windows81',      'Windows81',             g_k32_64, 1,  32, ['w81',    'w81sp[0-9]', 'win81',]],       # max cpus/cores??
+    [ 'Windows81',      'Windows81',             g_k32,    1,  32, ['w81',    'w81sp[0-9]', 'win81',]],       # max cpus/cores??
     [ 'Windows81_64',   'Windows81_64',          g_k64,    1,  64, ['w81-64', 'w81sp[0-9]-64', 'win81-64',]], # max cpus/cores??
-    [ 'Linux',          'Debian',                g_k32_64, 1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
+    [ 'Linux',          'Debian',                g_k32,    1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
     [ 'Linux_64',       'Debian_64',             g_k64,    1, 256, ['deb[0-9]*-64', 'debian[0-9]*-64', ]],
-    [ 'Linux',          'RedHat',                g_k32_64, 1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
-    [ 'Linux',          'Fedora',                g_k32_64, 1, 256, ['fedora', 'fedora[0-9]*', ]],
+    [ 'Linux',          'RedHat',                g_k32,    1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
+    [ 'Linux',          'Fedora',                g_k32,    1, 256, ['fedora', 'fedora[0-9]*', ]],
     [ 'Linux_64',       'Fedora_64',             g_k64,    1, 256, ['fedora-64', 'fedora[0-9]*-64', ]],
-    [ 'Linux',          'Oracle',                g_k32_64, 1, 256, ['ols[0-9]*', 'oel[0-9]*', ]],
+    [ 'Linux',          'Oracle',                g_k32,    1, 256, ['ols[0-9]*', 'oel[0-9]*', ]],
     [ 'Linux_64',       'Oracle_64',             g_k64,    1, 256, ['ols[0-9]*-64', 'oel[0-9]*-64', ]],
-    [ 'Linux',          'OpenSUSE',              g_k32_64, 1, 256, ['opensuse[0-9]*', 'suse[0-9]*', ]],
+    [ 'Linux',          'OpenSUSE',              g_k32,    1, 256, ['opensuse[0-9]*', 'suse[0-9]*', ]],
     [ 'Linux_64',       'OpenSUSE_64',           g_k64,    1, 256, ['opensuse[0-9]*-64', 'suse[0-9]*-64', ]],
-    [ 'Linux',          'Ubuntu',                g_k32_64, 1, 256, ['ubuntu[0-9]*', ]],
+    [ 'Linux',          'Ubuntu',                g_k32,    1, 256, ['ubuntu[0-9]*', ]],
     [ 'Linux_64',       'Ubuntu_64',             g_k64,    1, 256, ['ubuntu[0-9]*-64', ]],
     [ 'Solaris',        'Solaris',               g_k32,    1, 256, ['sol10',  'sol10u[0-9]']],
     [ 'Solaris_64',     'Solaris_64',            g_k64,    1, 256, ['sol10-64', 'sol10u-64[0-9]']],
