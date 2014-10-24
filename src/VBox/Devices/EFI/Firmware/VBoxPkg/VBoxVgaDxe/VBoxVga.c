@@ -897,8 +897,8 @@ DrawLogo (
   )
 {
   DEBUG((DEBUG_INFO, "UGA is %a GOP is %a\n",
-        FeaturePcdGet(PcdSupportGop) ? "on" : "off",
-        FeaturePcdGet(PcdSupportUga) ? "on" : "off"
+        FeaturePcdGet(PcdSupportUga) ? "on" : "off",
+        FeaturePcdGet(PcdSupportGop) ? "on" : "off"
   ));
 }
 
