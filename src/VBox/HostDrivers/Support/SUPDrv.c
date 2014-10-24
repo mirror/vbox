@@ -5953,35 +5953,13 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
         {
             /*
              * Sleep wait since the TSC frequency is constant, eases host load.
+             * Shorter interval produces more variance in the frequency (esp. Windows).
              */
-#if 0
-            RTThreadSleep(98);
-            do
-            {
-                int64_t cNsWaited;
-                u64NanoTsAfter = RTTimeSystemNanoTS();
-                cNsWaited      = u64NanoTsAfter - u64NanoTs;
-                if (cNsWaited > RT_NS_100MS)
-                {
-                    uint64_t cNsBusyWait = RT_NS_1MS;
-                    for (;;)
-                    {
-                        u64NanoTsAfter = RTTimeSystemNanoTS();
-                        if (u64NanoTsAfter < cNsBusyWait + cNsWaited + u64NanoTs)
-                            ASMNopPause();
-                        else
-                            break;
-                    }
-                    break;
-                }
-            } while (1);
-#else
             RTThreadSleep(200);   /* Sleeping shorter produces a tad more variance in the frequency than I'd like. */
             u64NanoTsAfter = RTTimeSystemNanoTS();
             while (RTTimeSystemNanoTS() == u64NanoTsAfter)
                 ASMNopPause();
             u64NanoTsAfter = RTTimeSystemNanoTS();
-#endif
         }
         else
         {
@@ -6017,8 +5995,8 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
             if (   pGipCpuBefore->i64TSCDelta != INT64_MAX
                 && pGipCpuAfter->i64TSCDelta  != INT64_MAX)
             {
-                u64TscBefore += pGipCpuBefore->i64TSCDelta;
-                u64TscAfter  += pGipCpuAfter->i64TSCDelta;
+                u64TscBefore -= pGipCpuBefore->i64TSCDelta;
+                u64TscAfter  -= pGipCpuAfter->i64TSCDelta;
 
                 SUPR0Printf("vboxdrv: TSC frequency is %lu Hz - invariant, kernel timer granularity is %lu Ns\n",
                             ((u64TscAfter - u64TscBefore) * RT_NS_1SEC_64) / (u64NanoTsAfter - u64NanoTs),
@@ -6093,11 +6071,10 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     /*
      * Find a reasonable update interval and initialize the structure.
-     *
-     * If we have an invariant TSC, use a larger update interval as then
-     * we get better accuracy along with lower host load.
      */
-    u32MinInterval      = supdrvIsInvariantTsc() ? RT_NS_100MS : RT_NS_10MS;
+    /** @todo figure out why using a 100Ms interval upsets timekeeping in VMs.
+     *        See @bugref{6710}. */
+    u32MinInterval      = RT_NS_10MS;
     u32SystemResolution = RTTimerGetSystemGranularity();
     u32Interval         = u32MinInterval;
     uMod                = u32MinInterval % u32SystemResolution;
@@ -6278,7 +6255,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
          * fire on the CPU they were registered/started on. Darwin, Solaris need verification.
          */
         if (pGipCpu->i64TSCDelta != INT64_MAX)
-            u64TSC += pGipCpu->i64TSCDelta;
+            u64TSC -= pGipCpu->i64TSCDelta;
     }
 
     supdrvGipUpdate(pDevExt, NanoTS, u64TSC, NIL_RTCPUID, iTick);
@@ -7074,8 +7051,10 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
  */
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 {
+#if 0
     if (supdrvIsInvariantTsc())
         return SUPGIPMODE_SYNC_TSC;     /** @todo Switch to SUPGIPMODE_INVARIANT_TSC later. */
+#endif
 
     /*
      * On SMP we're faced with two problems:
@@ -7340,20 +7319,14 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     ASMAtomicWriteU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
 
     /*
-     * For invariant TSC support, we take only 1 interval as there is a problem on
-     * Windows where we have an occasional (but reccurring) sour value that messes up
-     * the history. Also, since the update interval is pretty long with the invariant
-     * TSC case this works accurately enough.
-     */
-    if (supdrvIsInvariantTsc())
-    {
-        u32UpdateIntervalTSC = (uint32_t)u64TSCDelta;
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
-    }
-    /*
      * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
+     *
+     * On Windows, we have an occasional (but recurring) sour value that messed up
+     * the history but taking only 1 interval reduces the precision overall.
+     * However, this problem existed before the invariant mode was introduced.
      */
-    else if (pGip->u32UpdateHz >= 1000)
+    if (   supdrvIsInvariantTsc()
+        || pGip->u32UpdateHz >= 1000)
     {
         uint32_t u32;
         u32  = pGipCpu->au32TSCHistory[0];
