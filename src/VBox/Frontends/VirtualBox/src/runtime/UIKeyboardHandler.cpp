@@ -167,6 +167,40 @@ void UIKeyboardHandler::cleanupListener(ulong uIndex)
     }
 }
 
+#ifdef Q_WS_X11
+struct CHECKFORX11FOCUSEVENTSDATA
+{
+    Window hWindow;
+    bool fEventFound;
+};
+
+static Bool checkForX11FocusEventsWorker(Display *pDisplay, XEvent *pEvent,
+                                         XPointer pArg)
+{
+    NOREF(pDisplay);
+    struct CHECKFORX11FOCUSEVENTSDATA *pStruct;
+    
+    pStruct = (struct CHECKFORX11FOCUSEVENTSDATA *)pArg;
+    if (   pEvent->xany.type == XFocusIn
+        || pEvent->xany.type == XFocusOut)
+        if (pEvent->xany.window == pStruct->hWindow)
+            pStruct->fEventFound = true;
+    return false;
+}
+
+bool UIKeyboardHandler::checkForX11FocusEvents(Window hWindow)
+{
+    XEvent dummy;
+    struct CHECKFORX11FOCUSEVENTSDATA data;
+
+    data.hWindow = hWindow;
+    data.fEventFound = false;
+    XCheckIfEvent(QX11Info::display(), &dummy, checkForX11FocusEventsWorker,
+                  (XPointer)&data);
+    return data.fEventFound;
+}
+#endif /* Q_WS_X11 */
+
 void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 {
     /* Do NOT capture keyboard if its captured already: */
@@ -207,29 +241,17 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
                  * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
                  * and after we will just ignore that issue: */
                 int cTriesLeft = 50;
+                Window hWindow;
 
-                if (m_cMonitors > 1)
-                {
-                    /* Do this hack only for multimonitor VMs. */
-                    XEvent dummy;
-
-                    /* If a grab succeeds, X11 will insert a FocusIn event for this
-                     * window into the event queue.  If there is already a FocusOut
-                     * event pending we do not want this to happen (this can
-                     * actually cause two machine windows to fight for the focus).
-                     * It would be nicer to put the event back to the right place
-                     * in the queue, but X11 doesn't help us there, and even Qt
-                     * does it like this. */
-                    if (XCheckTypedWindowEvent(QX11Info::display(),
-                                m_windows[m_iKeyboardCaptureViewIndex]->winId(),
-                                XFocusOut, &dummy))
-                    {
-                        XPutBackEvent(QX11Info::display(), &dummy);
-                        break;
-                    }
-                }
-
-                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+                /* Only do our keyboard grab if there are no other focus events
+                 * for this window on the queue.  This can prevent problems
+                 * including two windows fighting to grab the keyboard. */
+                hWindow = m_windows[m_iKeyboardCaptureViewIndex]->winId();
+                if (!checkForX11FocusEvents(hWindow))
+                    while (cTriesLeft && XGrabKeyboard(QX11Info::display(),
+                           hWindow, False, GrabModeAsync, GrabModeAsync,
+                           CurrentTime))
+                        --cTriesLeft;
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
