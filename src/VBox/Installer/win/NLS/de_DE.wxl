@@ -48,10 +48,10 @@
     <String Id="VB_App">[ProductName] Hauptanwendung.</String>
     <String Id="VB_USBDriver">[ProductName] Treiber für USB Geräte-Unterstützung.</String>
     <String Id="VB_Network">[ProductName] Treiber für Netzwerk-Unterstützung.</String>
-    <String Id="VB_NetFltDriver">[ProductName] Treiber für Bridged Networking.</String>
-    <String Id="VB_NetAdpDriver">[ProductName] Netzwerk-Adapter Treiber für Hostinterface-Networking.</String>
-    <String Id="VB_NetLwfDriver">[ProductName] driver for NDIS6 Bridged Networking.</String>
-    <String Id="VB_NetAdp6Driver">[ProductName] virtual network adapter driver for NDIS6 Host-Only Networking.</String>
+    <String Id="VB_NetFltDriver">[ProductName] Treiber für Netzwerkbrücke.</String>
+    <String Id="VB_NetAdpDriver">[ProductName] Treiber für virtuellen Netzwerk-Adapter für Host-only Netzwerke.</String>
+    <String Id="VB_NetLwfDriver">[ProductName] Treiber für NDIS6-Netzwerkbrücke.</String>
+    <String Id="VB_NetAdp6Driver">[ProductName] Treiber für virtuellen Netzwerk-Adapter für NDIS6-Host-only-Netzwerke.</String>
 
   <String Id="VB_Python">Python-Support für VirtualBox.</String>
 
