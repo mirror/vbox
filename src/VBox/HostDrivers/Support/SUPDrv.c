@@ -1215,7 +1215,7 @@ int VBOXCALL supdrvSessionHashTabRemove(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pS
     pSession->pCommonNextHash = NULL;
     pSession->fInHashTable    = false;
 
-    ASMAtomicDecU32(&pDevExt->cSessions);
+    ASMAtomicDecS32(&pDevExt->cSessions);
 
     /*
      * Clear OS specific session pointer if available and do the OS callback.
