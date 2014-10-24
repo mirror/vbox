@@ -94,23 +94,18 @@
     <String Id="CustomizeDlg_SelItemSize">CustomizeDlgItemSize-CustomizeDlgItemSize</String>
     <String Id="CustomizeDlg_SelItemPath">CustomizeDlgLocation-CustomizeDlgLocation</String>
     <!---->
-  <String Id="SelectionNetworkTypeDlg_CommonDescription">Please, choose what kind of network adapters you will use:</String>
-  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">
-    Default installation.
-    NDIS5 network adapters.
-  </String>
-  <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">
-    NDIS6 network adapters.
-    If you don't sure in this feature you should not choose it.
-  </String>
-  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network adapters.</String>
-  <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network adapters.</String>
-    <!---->
     <String Id="Customize2Dlg_Header">سفارشی</String>
     <String Id="Customize2Dlg_Desc">لطفاً از گزینه های زیر انتخاب کنید:</String>
     <String Id="Customize2Dlg_CreateShortcut">ایجاد یک میانبر روی دسکتاپ</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">ایجاد یک میانبر در اِجرای سریع</String>
     <String Id="Customize2Dlg_RegisterFileExtensions">ثبت نام انجمن فایل</String>
+    <!---->
+    <String Id="SelectionNetworkTypeDlg_CommonDescription">Please choose which type of network drivers you will use:</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">NDIS5 network drivers (default).</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">NDIS6 network drivers. 
+This is an experimental feature not recommended for use in production systems.</String>
+    <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network drivers.</String>
+    <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network drivers.</String>
     <!---->
     <String Id="WarnDisconNetIfacesDlg_Title">هشدار:</String>
     <String Id="WarnDisconNetIfacesDlg_Title2">رابط های شبکه</String>
