@@ -66,6 +66,9 @@ public:
     void cleanupListener(ulong uIndex);
 
     /* Commands to capture/release keyboard: */
+#ifdef Q_WS_X11
+    bool checkForX11FocusEvents(unsigned long hWindow);
+#endif
     void captureKeyboard(ulong uScreenId);
     void releaseKeyboard();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
