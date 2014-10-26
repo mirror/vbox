@@ -545,7 +545,7 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
             RTSemFastMutexDestroy(pThis->hMtx);
             pThis->hMtx = NIL_RTSEMFASTMUTEX;
         }
-        VUSBSnifferDestroy(pThis);
+        RTMemFree(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -593,6 +593,10 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     DumpFileUsbSetup UsbSetup;
     RTTIMESPEC TimeNow;
     uint64_t u64TimestampEvent;
+    size_t cbUrbLength = 0;
+    uint32_t cbDataLength = 0;
+    uint32_t cbCapturedLength = sizeof(UsbHdr);
+    uint32_t cIsocPkts = 0;
 
     RTTimeNow(&TimeNow);
     u64TimestampEvent = RTTimeSpecGetNano(&TimeNow);
@@ -609,9 +613,11 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     {
         case VUSBSNIFFEREVENT_SUBMIT:
             UsbHdr.u8EventType = DUMPFILE_USB_EVENT_TYPE_SUBMIT;
+            cbUrbLength = pUrb->cbData;
             break;
         case VUSBSNIFFEREVENT_COMPLETE:
             UsbHdr.u8EventType = DUMPFILE_USB_EVENT_TYPE_COMPLETE;
+            cbUrbLength = pUrb->cbData;
             break;
         case VUSBSNIFFEREVENT_ERROR_SUBMIT:
         case VUSBSNIFFEREVENT_ERROR_COMPLETE:
@@ -620,11 +626,25 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
         default:
             AssertMsgFailed(("Invalid event type %d\n", enmEvent));
     }
+    cbDataLength = cbUrbLength;
+
     switch (pUrb->enmType)
     {
         case VUSBXFERTYPE_ISOC:
+        {
+                int32_t i32ErrorCount = 0;
+
                 UsbHdr.u8TransferType = 0;
+                cIsocPkts = pUrb->cIsocPkts;
+                for (unsigned i = 0; i < cIsocPkts; i++)
+                    if (pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_OK)
+                        i32ErrorCount++;
+
+                UsbHdr.u.IsoRec.i32ErrorCount = i32ErrorCount;
+                UsbHdr.u.IsoRec.i32NumDesc    = pUrb->cIsocPkts;
+                cbCapturedLength += cIsocPkts * sizeof(DumpFileUsbIsoDesc);
                 break;
+        }
         case VUSBXFERTYPE_BULK:
                 UsbHdr.u8TransferType = 3;
                 break;
@@ -639,48 +659,35 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
             AssertMsgFailed(("invalid transfer type %d\n", pUrb->enmType));
     }
 
-    bool fRecordData = false;
-    size_t cbUrbLength = 0;
-    uint32_t cbCapturedLength = sizeof(UsbHdr);
-
-    if (   pUrb->cbData
-        && (    (   (   pUrb->enmDir == VUSBDIRECTION_OUT
-                     || pUrb->enmDir == VUSBDIRECTION_SETUP)
-                 && pUrb->enmType != VUSBXFERTYPE_CTRL
-                 && pUrb->enmType != VUSBXFERTYPE_MSG
-                 && enmEvent == VUSBSNIFFEREVENT_SUBMIT)
-             || (   (   pUrb->enmDir == VUSBDIRECTION_IN
-                     || pUrb->enmDir == VUSBDIRECTION_SETUP)
-                 && enmEvent == VUSBSNIFFEREVENT_COMPLETE)))
+    if (pUrb->enmDir == VUSBDIRECTION_IN)
     {
-        cbCapturedLength += pUrb->cbData;
-        fRecordData = true;
+        if (enmEvent == VUSBSNIFFEREVENT_SUBMIT)
+            cbDataLength = 0;
+    }
+    else if (pUrb->enmDir == VUSBDIRECTION_IN)
+    {
+        if (   enmEvent == VUSBSNIFFEREVENT_COMPLETE
+            || pUrb->enmType == VUSBXFERTYPE_CTRL
+            || pUrb->enmType == VUSBXFERTYPE_MSG)
+            cbDataLength = 0;
     }
 
-    if (pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL)
-    {
-        PVUSBSETUP pSetup = (PVUSBSETUP)pUrb->abData;
-        cbUrbLength = pSetup->wLength + sizeof(DumpFileUsbSetup);
-    }
-    else
-        cbUrbLength = pUrb->cbData;
-
-    Epb.u32CapturedLen = cbCapturedLength;
-    Epb.u32PacketLen   = cbCapturedLength;
+    Epb.u32CapturedLen = cbCapturedLength + cbDataLength;
+    Epb.u32PacketLen   = cbCapturedLength + cbUrbLength;
 
     UsbHdr.u8EndpointNumber = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0x00);
     UsbHdr.u8DeviceAddress  = pUrb->DstAddress;
     UsbHdr.u16BusId         = 0;
-    UsbHdr.u8DataFlag       = fRecordData ? 0 : 1;
+    UsbHdr.u8DataFlag       = cbDataLength ? 0 : 1;
     UsbHdr.u64TimestampSec  = u64TimestampEvent / RT_NS_1SEC_64;;
     UsbHdr.u32TimestampUSec = u64TimestampEvent / RT_NS_1US_64 - UsbHdr.u64TimestampSec * RT_US_1SEC;
     UsbHdr.i32Status        = pUrb->enmStatus;
     UsbHdr.u32UrbLength     = cbUrbLength;
-    UsbHdr.u32DataLength    = fRecordData ? pUrb->cbData : 0;
+    UsbHdr.u32DataLength    = cbDataLength + cIsocPkts * sizeof(DumpFileUsbIsoDesc);
     UsbHdr.i32Interval      = 0;
     UsbHdr.i32StartFrame    = 0;
     UsbHdr.u32XferFlags     = 0;
-    UsbHdr.u32NumDesc       = pUrb->enmType == VUSBXFERTYPE_ISOC ? pUrb->cIsocPkts : 0;
+    UsbHdr.u32NumDesc       = cIsocPkts;
 
     if (   (pUrb->enmType == VUSBXFERTYPE_MSG || pUrb->enmType == VUSBXFERTYPE_CTRL)
         && enmEvent == VUSBSNIFFEREVENT_SUBMIT)
@@ -705,22 +712,19 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
         if (RT_SUCCESS(rc))
             rc = vusbSnifferBlockAddData(pThis, &UsbHdr, sizeof(UsbHdr));
 
-        if (pUrb->enmType == VUSBXFERTYPE_ISOC)
+        /* Add Isochronous descriptors now. */
+        for (unsigned i = 0; i < cIsocPkts && RT_SUCCESS(rc); i++)
         {
-            /* Add Isochronous descriptors now. */
-            for (unsigned i = 0; i < pUrb->cIsocPkts && RT_SUCCESS(rc); i++)
-            {
-                DumpFileUsbIsoDesc IsoDesc;
-                IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
-                IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
-                IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
-                rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
-            }
+            DumpFileUsbIsoDesc IsoDesc;
+            IsoDesc.i32Status = pUrb->aIsocPkts[i].enmStatus;
+            IsoDesc.u32Offset = pUrb->aIsocPkts[i].off;
+            IsoDesc.u32Len    = pUrb->aIsocPkts[i].cb;
+            rc = vusbSnifferBlockAddData(pThis, &IsoDesc, sizeof(IsoDesc));
         }
 
         /* Record data. */
         if (   RT_SUCCESS(rc)
-            && fRecordData)
+            && cbDataLength)
             rc = vusbSnifferBlockAddData(pThis, pUrb->abData, pUrb->cbData);
 
         if (RT_SUCCESS(rc))
