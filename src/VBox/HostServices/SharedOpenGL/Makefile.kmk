@@ -134,7 +134,13 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_glsl.c \
 	crserverlib/server_muralfbo.cpp \
 	crserverlib/server_texture.c \
-	crserverlib/server_presenter.cpp \
+	crserverlib/presenter/server_presenter.cpp \
+	crserverlib/presenter/display_base.cpp \
+	crserverlib/presenter/display_composite.cpp \
+	crserverlib/presenter/window.cpp \
+	crserverlib/presenter/display_window.cpp \
+	crserverlib/presenter/display_window_rootvr.cpp \
+	crserverlib/presenter/display_vrdp.cpp \
 	crserverlib/server_rpw.cpp \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \
