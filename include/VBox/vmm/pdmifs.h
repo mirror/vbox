@@ -1030,6 +1030,21 @@ typedef struct PDMIBLOCK
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead));
 
     /**
+     * Read bits - version for DevPcBios.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start reading from. The offset must be aligned to a sector boundary.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
+     * @thread  Any thread.
+     *
+     * @note: Special version of pfnRead which doesn't try to suspend the VM when the DEKs for encrypted disks
+     *        are missing but just returns an error.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadPcBios,(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead));
+
+    /**
      * Write bits.
      *
      * @returns VBox status code.
@@ -1365,6 +1380,21 @@ typedef struct PDMIMEDIA
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead));
+
+    /**
+     * Read bits - version for DevPcBios.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   off             Offset to start reading from. The offset must be aligned to a sector boundary.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
+     * @thread  Any thread.
+     *
+     * @note: Special version of pfnRead which doesn't try to suspend the VM when the DEKs for encrypted disks
+     *        are missing but just returns an error.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadPcBios,(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead));
 
     /**
      * Write bits.
