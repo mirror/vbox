@@ -297,7 +297,7 @@ static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
 
     if (!pBlock)
         return VERR_INVALID_PARAMETER;
-    rc = pBlock->pfnRead(pBlock, 0, aMBR, sizeof(aMBR));
+    rc = pBlock->pfnReadPcBios(pBlock, 0, aMBR, sizeof(aMBR));
     if (RT_FAILURE(rc))
         return rc;
     /* Test MBR magic number. */

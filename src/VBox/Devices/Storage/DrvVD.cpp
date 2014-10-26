@@ -1600,6 +1600,61 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     return rc;
 }
 
+/** @copydoc PDMIMEDIA::pfnRead */
+static DECLCALLBACK(int) drvvdReadPcBios(PPDMIMEDIA pInterface,
+                                         uint64_t off, void *pvBuf, size_t cbRead)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    if (   pThis->pCfgCrypto
+        && !pThis->pIfSecKey)
+        return VERR_VD_DEK_MISSING;
+
+    if (!pThis->fBootAccelActive)
+        rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
+    else
+    {
+        /* Can we serve the request from the buffer? */
+        if (   off >= pThis->offDisk
+            && off - pThis->offDisk < pThis->cbDataValid)
+        {
+            size_t cbToCopy = RT_MIN(cbRead, pThis->offDisk + pThis->cbDataValid - off);
+
+            memcpy(pvBuf, pThis->pbData + (off - pThis->offDisk), cbToCopy);
+            cbRead -= cbToCopy;
+            off    += cbToCopy;
+            pvBuf   = (char *)pvBuf + cbToCopy;
+        }
+
+        if (   cbRead > 0
+            && cbRead < pThis->cbBootAccelBuffer)
+        {
+            /* Increase request to the buffer size and read. */
+            pThis->cbDataValid = RT_MIN(pThis->cbDisk - off, pThis->cbBootAccelBuffer);
+            pThis->offDisk = off;
+            rc = VDRead(pThis->pDisk, off, pThis->pbData, pThis->cbDataValid);
+            if (RT_FAILURE(rc))
+                pThis->cbDataValid = 0;
+            else
+                memcpy(pvBuf, pThis->pbData, cbRead);
+        }
+        else if (cbRead >= pThis->cbBootAccelBuffer)
+        {
+            pThis->fBootAccelActive = false; /* Deactiviate */
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        Log2(("%s: off=%#llx pvBuf=%p cbRead=%d\n%.*Rhxd\n", __FUNCTION__,
+              off, pvBuf, cbRead, cbRead, pvBuf));
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+
 /** @copydoc PDMIMEDIA::pfnWrite */
 static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
                                     uint64_t off, const void *pvBuf,
@@ -2421,6 +2476,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
     /* IMedia */
     pThis->IMedia.pfnRead               = drvvdRead;
+    pThis->IMedia.pfnReadPcBios         = drvvdReadPcBios;
     pThis->IMedia.pfnWrite              = drvvdWrite;
     pThis->IMedia.pfnFlush              = drvvdFlush;
     pThis->IMedia.pfnMerge              = drvvdMerge;

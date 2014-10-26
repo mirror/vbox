@@ -147,6 +147,25 @@ static DECLCALLBACK(int) drvblockRead(PPDMIBLOCK pInterface, uint64_t off, void 
 }
 
 
+/** @copydoc PDMIBLOCK::pfnReadPcBios */
+static DECLCALLBACK(int) drvblockReadPcBios(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead)
+{
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface); 
+
+    /*
+     * Check the state.
+     */
+    if (!pThis->pDrvMedia)
+    {
+        AssertMsgFailed(("Invalid state! Not mounted!\n"));
+        return VERR_PDM_MEDIA_NOT_MOUNTED;
+    }
+
+    int rc = pThis->pDrvMedia->pfnReadPcBios(pThis->pDrvMedia, off, pvBuf, cbRead);
+    return rc;
+}
+
+
 /** @copydoc PDMIBLOCK::pfnWrite */
 static DECLCALLBACK(int) drvblockWrite(PPDMIBLOCK pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
@@ -880,6 +899,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
     /* IBlock. */
     pThis->IBlock.pfnRead                   = drvblockRead;
+    pThis->IBlock.pfnReadPcBios             = drvblockReadPcBios;
     pThis->IBlock.pfnWrite                  = drvblockWrite;
     pThis->IBlock.pfnFlush                  = drvblockFlush;
     pThis->IBlock.pfnMerge                  = drvblockMerge;
