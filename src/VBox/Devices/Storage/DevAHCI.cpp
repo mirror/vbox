@@ -942,6 +942,7 @@ static size_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
 static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                                 void *pvBuf, size_t cbBuf);
 static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept);
+static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFree);
 #endif
 RT_C_DECLS_END
 
@@ -4634,6 +4635,17 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                     /* This must be done from EMT. */
                     PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
                     PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
+
+                    /*
+                     * Free the I/O memory of all cached tasks of this port
+                     * because the driver providing I/O memory allocation interface
+                     * is about to be destroyed.
+                     */
+                    for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
+                    {
+                        if (pAhciPort->aCachedTasks[i])
+                            ahciReqMemFree(pAhciPort, pAhciPort->aCachedTasks[i], true /* fForceFree */);
+                    }
 
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
