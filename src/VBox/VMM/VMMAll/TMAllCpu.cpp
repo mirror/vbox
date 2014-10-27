@@ -185,7 +185,6 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
  */
 DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
 {
-
     /* Sample the reason for refusing. */
     if (!pVM->tm.s.fMaybeUseOffsettedHostTSC)
        STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
