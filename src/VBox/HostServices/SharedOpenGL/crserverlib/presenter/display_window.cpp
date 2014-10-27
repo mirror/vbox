@@ -24,6 +24,7 @@ CrFbDisplayWindow::CrFbDisplayWindow(const RTRECT *pViewportRect, uint64_t paren
     mu32Screen(~0),
     mParentId(parentId)
 {
+    crDebug("CrFbDisplayWindow: created with parentID %p.", parentId);
     mFlags.u32Value = 0;
 }
 
@@ -77,11 +78,14 @@ int CrFbDisplayWindow::RegionsChanged(struct CR_FRAMEBUFFER *pFb)
 
     if (mpWindow && mpWindow->GetParentId())
     {
-        rc = mpWindow->Create();
-        if (!RT_SUCCESS(rc))
+        if (!mpWindow->IsCreated())
         {
-            WARN(("err"));
-            return rc;
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
         }
     }
 
@@ -100,11 +104,14 @@ int CrFbDisplayWindow::EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_
 
     if (mpWindow && mpWindow->GetParentId())
     {
-        rc = mpWindow->Create();
-        if (!RT_SUCCESS(rc))
+        if (!mpWindow->IsCreated())
         {
-            WARN(("err"));
-            return rc;
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
         }
     }
 
@@ -123,11 +130,14 @@ int CrFbDisplayWindow::EntryReplaced(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER
 
     if (mpWindow && mpWindow->GetParentId())
     {
-        rc = mpWindow->Create();
-        if (!RT_SUCCESS(rc))
+        if (!mpWindow->IsCreated())
         {
-            WARN(("err"));
-            return rc;
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
+                return rc;
+            }
         }
     }
 
@@ -146,11 +156,14 @@ int CrFbDisplayWindow::EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFF
 
     if (mpWindow && mpWindow->GetParentId())
     {
-        rc = mpWindow->Create();
-        if (!RT_SUCCESS(rc))
+        if (!mpWindow->IsCreated())
         {
-            WARN(("err"));
+            rc = mpWindow->Create();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("err"));
             return rc;
+            }
         }
     }
 
@@ -250,6 +263,8 @@ int CrFbDisplayWindow::reparent(uint64_t parentId)
         WARN(("not updating!"));
         return VERR_INVALID_STATE;
     }
+
+    crDebug("CrFbDisplayWindow: change parent from %p to %p.", mParentId, parentId);
 
     mParentId = parentId;
     int rc = VINF_SUCCESS;
@@ -423,6 +438,11 @@ int CrFbDisplayWindow::windowDimensionsSync(bool fForceCleanup)
 {
     int rc = VINF_SUCCESS;
 
+    crDebug("CrFbDisplayWindow: sync window dimentions: fForceCleanup=%s, mpWindow=%p, isActive()=%s",
+        fForceCleanup ? "yes" : "no",
+        mpWindow,
+        isActive() ? "yes" : "no");
+
     if (!mpWindow)
         return VINF_SUCCESS;
 
@@ -544,6 +564,9 @@ int CrFbDisplayWindow::fbSync()
     {
         if (mpWindow && mpWindow->GetParentId())
         {
+            if (mpWindow->IsCreated())
+                mpWindow->Destroy();
+
             rc = mpWindow->Create();
             if (!RT_SUCCESS(rc))
             {

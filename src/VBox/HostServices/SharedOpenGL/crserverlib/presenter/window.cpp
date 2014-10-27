@@ -60,6 +60,9 @@ void CrFbWindow::Destroy()
 
 int CrFbWindow::Reparent(uint64_t parentId)
 {
+    crDebug("CrFbWindow: reparent to %p (current mxPos=%d, myPos=%d, mWidth=%u, mHeight=%u)",
+        parentId, mxPos, myPos, mWidth, mHeight);
+
     if (!checkInitedUpdating())
     {
         WARN(("err"));
@@ -77,7 +80,6 @@ int CrFbWindow::Reparent(uint64_t parentId)
 
         renderspuSetWindowId(mParentId);
         renderspuReparentWindow(mSpuWindow);
-        renderspuSetWindowId(cr_server.screen[0].winID);
 
         if (parentId)
         {
@@ -99,7 +101,7 @@ int CrFbWindow::SetVisible(bool fVisible)
         return VERR_INVALID_STATE;
     }
 
-    LOG(("CrWIN: Vidible [%d]", fVisible));
+    LOG(("CrWIN: Visible [%d]", fVisible));
 
     if (!fVisible != !mFlags.fVisible)
     {
@@ -264,7 +266,7 @@ int CrFbWindow::Create()
 {
     if (mSpuWindow)
     {
-        //WARN(("window already created"));
+        WARN(("window already created"));
         return VINF_ALREADY_INITIALIZED;
     }
 
@@ -284,6 +286,9 @@ int CrFbWindow::Create()
 
     if (mParentId && mFlags.fVisible)
         cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, true);
+
+    crDebug("CrFbWindow: create window with parent %p (mxPos=%d, myPos=%d, mWidth=%u, mHeight=%u)",
+        mParentId, mxPos, myPos, mWidth, mHeight);
 
     return VINF_SUCCESS;
 }
