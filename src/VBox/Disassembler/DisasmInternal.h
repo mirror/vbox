@@ -110,6 +110,8 @@ extern PCDISOPCODE const g_apThreeByteMapX86_F20F38[16];
 /** Three byte opcode map with prefix 0xF3 (0xF 0x38) */
 extern PCDISOPCODE const g_apThreeByteMapX86_F30F38[16];
 
+extern PCDISOPCODE const g_apThreeByteMapX86_0F3A[16];
+
 /** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
 extern PCDISOPCODE const g_apThreeByteMapX86_660F3A[16];
 

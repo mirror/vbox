@@ -2141,12 +2141,18 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
     pDis->bOpCode = disReadByte(pDis, offInstr);
     offInstr++;
 
-    /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
-    Assert(pDis->bLastPrefix == OP_OPSIZE);
-
     /* default to the non-prefixed table. */
     PCDISOPCODE pOpcode;
-    if (g_apThreeByteMapX86_660F3A[pDis->bOpCode >> 4])
+    if (g_apThreeByteMapX86_0F3A[pDis->bOpCode >> 4])
+    {
+        pOpcode = g_apThreeByteMapX86_0F3A[pDis->bOpCode >> 4];
+        pOpcode = &pOpcode[pDis->bOpCode & 0xf];
+    }
+    else
+        pOpcode = &g_InvalidOpcode[0];
+
+    /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
+    if (pDis->bLastPrefix == OP_OPSIZE && g_apThreeByteMapX86_660F3A[pDis->bOpCode >> 4])
     {
         pOpcode = g_apThreeByteMapX86_660F3A[pDis->bOpCode >> 4];
         pOpcode = &pOpcode[pDis->bOpCode & 0xf];
@@ -2166,8 +2172,6 @@ static size_t ParseThreeByteEsc5(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDi
 
         }
     }
-    else
-        pOpcode = &g_InvalidOpcode[0];
 
     return disParseInstruction(offInstr, pOpcode, pDis);
 }
