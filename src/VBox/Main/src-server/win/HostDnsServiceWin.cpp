@@ -426,7 +426,7 @@ int HostDnsServiceWin::monitorWorker()
 {
     monitorThreadInitializationDone();
 
-    uint8_t fWhatsChabged = VBOX_EVENT_NO_CHANGES;
+    uint8_t fWhatsChanged = VBOX_EVENT_NO_CHANGES;
 
     if (!m_fInitialized)
     {
@@ -468,9 +468,9 @@ int HostDnsServiceWin::monitorWorker()
                         if (enumerateSubTree())
                         {
                             Log2(("Monitor restarted successfully.\n"));
-                            fWhatsChabged = VBOX_EVENT_NO_CHANGES;
-                            updateInfo(&fWhatsChabged);
-                            if (fWhatsChabged & VBOX_EVENT_SERVERS_CHANGED)
+                            fWhatsChanged = VBOX_EVENT_NO_CHANGES;
+                            updateInfo(&fWhatsChanged);
+                            if (fWhatsChanged & VBOX_EVENT_SERVERS_CHANGED)
                             {
                                 LogRel(("Notification sent (1).\n"));
                                 notifyAll();
@@ -506,9 +506,9 @@ int HostDnsServiceWin::monitorWorker()
                 if (enumerateSubTree())
                 {
                     Log2(("Restart monitoring.\n"));
-                    fWhatsChabged = VBOX_EVENT_NO_CHANGES;
-                    updateInfo(&fWhatsChabged);
-                    if (fWhatsChabged & VBOX_EVENT_SERVERS_CHANGED)
+                    fWhatsChanged = VBOX_EVENT_NO_CHANGES;
+                    updateInfo(&fWhatsChanged);
+                    if (fWhatsChanged & VBOX_EVENT_SERVERS_CHANGED)
                     {
                         LogRel(("Notification sent (2).\n"));
                         notifyAll();
