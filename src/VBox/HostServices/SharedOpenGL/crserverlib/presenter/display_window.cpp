@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * Presenter API: display window class implementation.
+ * Presenter API: CrFbDisplayWindow class implementation -- display content into host GUI window.
  */
 
 /*
@@ -18,12 +18,11 @@
 
 #include "server_presenter.h"
 
-CrFbDisplayWindow::CrFbDisplayWindow(const RTRECT *pViewportRect, uint64_t parentId, uint64_t defaultParentId) :
+CrFbDisplayWindow::CrFbDisplayWindow(const RTRECT *pViewportRect, uint64_t parentId) :
     mpWindow(NULL),
     mViewportRect(*pViewportRect),
     mu32Screen(~0),
-    mParentId(parentId),
-    mDefaultParentId(defaultParentId)
+    mParentId(parentId)
 {
     mFlags.u32Value = 0;
 }
@@ -241,24 +240,6 @@ CrFbWindow * CrFbDisplayWindow::windowAttach(CrFbWindow * pNewWindow)
         windowSync();
 
     return mpWindow;
-}
-
-
-int CrFbDisplayWindow::setDefaultParent(uint64_t parentId)
-{
-    mDefaultParentId = parentId;
-
-    if (!isActive() && mpWindow)
-    {
-        int rc = mpWindow->Reparent(parentId);
-        if (!RT_SUCCESS(rc))
-        {
-            WARN(("window reparent failed"));
-            return rc;
-        }
-    }
-
-    return VINF_SUCCESS;
 }
 
 

@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * Presenter API: display window root class implementation.
+ * Presenter API: CrFbDisplayVrdp class implementation -- display content over VRDP.
  */
 
 /*
