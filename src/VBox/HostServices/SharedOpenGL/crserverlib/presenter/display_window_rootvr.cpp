@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * Presenter API: display window root class implementation.
+ * Presenter API: CrFbDisplayWindowRootVr class implementation -- display seamless content.
  */
 
 /*
@@ -19,8 +19,8 @@
 #include "server_presenter.h"
 
 
-CrFbDisplayWindowRootVr::CrFbDisplayWindowRootVr(const RTRECT *pViewportRect, uint64_t parentId, uint64_t defaultParentId) :
-    CrFbDisplayWindow(pViewportRect, parentId, defaultParentId)
+CrFbDisplayWindowRootVr::CrFbDisplayWindowRootVr(const RTRECT *pViewportRect, uint64_t parentId) :
+    CrFbDisplayWindow(pViewportRect, parentId)
 {
     CrVrScrCompositorInit(&mCompositor, NULL);
 }

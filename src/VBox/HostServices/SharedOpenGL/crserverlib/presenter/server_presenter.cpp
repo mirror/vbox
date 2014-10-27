@@ -2154,7 +2154,7 @@ static void crPMgrDpWinRootVrCreate(CR_FBDISPLAY_INFO *pDpInfo)
             pDpInfo->pWindow = new CrFbWindow(0);
         }
 
-        pDpInfo->pDpWinRootVr = new CrFbDisplayWindowRootVr(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID, /*cr_server.screen[0].winID*/ 0);
+        pDpInfo->pDpWinRootVr = new CrFbDisplayWindowRootVr(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID);
         pDpInfo->pDpWin = pDpInfo->pDpWinRootVr;
         pDpInfo->pDpWinRootVr->windowAttach(pDpInfo->pWindow);
     }
@@ -2178,7 +2178,7 @@ static void crPMgrDpWinCreate(CR_FBDISPLAY_INFO *pDpInfo)
         if (!pDpInfo->pWindow)
             pDpInfo->pWindow = new CrFbWindow(0);
 
-        pDpInfo->pDpWin = new CrFbDisplayWindow(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID, /*cr_server.screen[0].winID*/ 0);
+        pDpInfo->pDpWin = new CrFbDisplayWindow(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID);
         pDpInfo->pDpWin->windowAttach(pDpInfo->pWindow);
     }
 }
