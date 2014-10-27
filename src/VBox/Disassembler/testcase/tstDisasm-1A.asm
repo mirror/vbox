@@ -382,6 +382,10 @@ BEGINPROC TestProc64
 
         vblendvpd xmm0, xmm1, [100h], xmm3
 
+        dpps xmm0, xmm1, 1
+
+        extractps eax, xmm2, 3
+
         ret
 ENDPROC   TestProc64
 %endif ; !OS2
