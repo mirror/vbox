@@ -62,10 +62,9 @@
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
 
     <!-- Default property for network adapter type -->
-    <Property Id="NETWORKTYPE" Secure="yes"/>
-    <!-- Use NDIS6 on Vista and later -->
-    <SetProperty Action="SET_NETWORKTYPE_PRE_VISTA" Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[NETWORKTYPE = "" AND VersionNT < 600]]></SetProperty>
-    <SetProperty Action="SET_NETWORKTYPE_VISTA_PLUS" Id="NETWORKTYPE" After="CostFinalize" Value="NDIS6"><![CDATA[NETWORKTYPE = "" AND VersionNT >= 600]]></SetProperty>
+    <Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
+    <!-- Force NDIS5 on pre-Vista -->
+    <SetProperty Id="NETWORKTYPE" After="CostFinalize" Value="NDIS5"><![CDATA[VersionNT < 600]]></SetProperty>
 
     <!-- Install the product for all users on the system -->
     <Property Id="ALLUSERS"><![CDATA[1]]></Property>
