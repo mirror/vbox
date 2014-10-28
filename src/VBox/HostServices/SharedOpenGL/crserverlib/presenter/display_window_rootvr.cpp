@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * Presenter API: CrFbDisplayWindowRootVr class implementation -- display seamless content.
+ * Presenter API: CrFbDisplayWindowRootVr class implementation -- display seamless content (visible regions).
  */
 
 /*
