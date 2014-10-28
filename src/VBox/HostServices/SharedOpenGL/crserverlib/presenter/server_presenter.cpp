@@ -1837,59 +1837,14 @@ int CrPMgrScreenChanged(uint32_t idScreen)
     }
 
     int rc = VINF_SUCCESS;
-    CR_FBDISPLAY_INFO *pDpInfo;
-#if 0
-    bool fDefaultParentChange = (idScreen == 0);
-    if (fDefaultParentChange)
-    {
-        for (int i = 0; i < cr_server.screenCount; ++i)
-        {
-            pDpInfo = &g_CrPresenter.aDisplayInfos[i];
-            if (pDpInfo->pDpWin)
-            {
-                HCR_FRAMEBUFFER hFb = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
-                rc = pDpInfo->pDpWin->UpdateBegin(hFb);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = pDpInfo->pDpWin->setDefaultParent(cr_server.screen[idScreen].winID);
-                    if (RT_FAILURE(rc))
-                    {
-                        WARN(("setDefaultParent failed %d", rc));
-                        pDpInfo->pDpWin->UpdateEnd(hFb);
-                    }
-                }
-                else
-                    WARN(("UpdateBegin failed %d", rc));
 
-                if (RT_FAILURE(rc))
-                {
-                    WARN(("err"));
-                    for (int j = 0; j < i - 1; ++j)
-                    {
-                        pDpInfo = &g_CrPresenter.aDisplayInfos[j];
-                        if (pDpInfo->pDpWin)
-                        {
-                            HCR_FRAMEBUFFER hFb = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
-                            pDpInfo->pDpWin->UpdateEnd(hFb);
-                        }
-                    }
+    CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[idScreen];
+    HCR_FRAMEBUFFER    hFb     = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
 
-                    Assert(RT_FAILURE(rc));
-                    return rc;
-                }
-            }
-        }
-    }
-#endif
-
-    pDpInfo = &g_CrPresenter.aDisplayInfos[idScreen];
-
-    HCR_FRAMEBUFFER hFb = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
     if (hFb && CrFbIsUpdating(hFb))
     {
         WARN(("trying to update viewport while framebuffer is being updated"));
-        rc = VERR_INVALID_STATE;
-        goto end;
+        return VERR_INVALID_STATE;
     }
 
     if (pDpInfo->pDpWin)
@@ -1900,64 +1855,30 @@ int CrPMgrScreenChanged(uint32_t idScreen)
         if (RT_SUCCESS(rc))
         {
             pDpInfo->pDpWin->reparent(cr_server.screen[idScreen].winID);
-
             pDpInfo->pDpWin->UpdateEnd(hFb);
         }
-        else
-            WARN(("UpdateBegin failed %d", rc));
     }
     else
     {
         if (pDpInfo->pWindow)
         {
             rc = pDpInfo->pWindow->UpdateBegin();
-            if (RT_FAILURE(rc))
+            if (RT_SUCCESS(rc))
             {
-                WARN(("UpdateBegin failed %d", rc));
-                goto end;
-            }
+                rc = pDpInfo->pWindow->SetVisible(false);
+                if (RT_SUCCESS(rc))
+                    rc = pDpInfo->pWindow->Reparent(cr_server.screen[idScreen].winID);
 
-            rc = pDpInfo->pWindow->SetVisible(false);
-            if (RT_FAILURE(rc))
-            {
-                WARN(("SetVisible failed %d", rc));
                 pDpInfo->pWindow->UpdateEnd();
-                goto end;
             }
-
-            rc = pDpInfo->pWindow->Reparent(cr_server.screen[idScreen].winID);
-            if (RT_FAILURE(rc))
-            {
-                WARN(("Reparent failed %d", rc));
-                pDpInfo->pWindow->UpdateEnd();
-                goto end;
-            }
-
-            pDpInfo->pWindow->UpdateEnd();
         }
 
-        rc = crPMgrCheckInitWindowDisplays(idScreen);
-        if (RT_FAILURE(rc))
-        {
-            WARN(("crPMgrFbConnectTargetDisplays failed %d", rc));
-            goto end;
-        }
+        if (RT_SUCCESS(rc))
+            rc = crPMgrCheckInitWindowDisplays(idScreen);
     }
-end:
-#if 0
-    if (fDefaultParentChange)
-    {
-        for (int i = 0; i < cr_server.screenCount; ++i)
-        {
-            pDpInfo = &g_CrPresenter.aDisplayInfos[i];
-            if (pDpInfo->pDpWin)
-            {
-                HCR_FRAMEBUFFER hFb = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
-                pDpInfo->pDpWin->UpdateEnd(hFb);
-            }
-        }
-    }
-#endif
+
+    CRASSERT(!rc);
+
     return rc;
 }
 

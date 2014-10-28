@@ -198,7 +198,6 @@ int CrFbWindow::UpdateBegin()
         return VINF_SUCCESS;
 
     Assert(!mFlags.fForcePresentOnReenable);
-//        Assert(!mFlags.fCompositoEntriesModified);
 
     if (mFlags.fDataPresented)
     {
