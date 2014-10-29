@@ -1000,7 +1000,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         rc = VUSBSnifferCreate(&pThis->hSniffer, 0, pszCaptureFilename, NULL);
         if (RT_FAILURE(rc))
             return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Failed to create USB sniffer instance (does the file already exist?)"));
+                                       N_("VUSBSniffer cannot open '%s' for writing. The directory must exist and it must be writable for the current user"),
+                                       pszCaptureFilename);
 
         MMR3HeapFree(pszCaptureFilename);
     }

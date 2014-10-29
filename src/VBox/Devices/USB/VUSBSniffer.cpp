@@ -447,7 +447,7 @@ DECLHIDDEN(int) VUSBSnifferCreate(PVUSBSNIFFER phSniffer, uint32_t fFlags,
         rc = RTSemFastMutexCreate(&pThis->hMtx);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileOpen(&pThis->hFile, pszCaptureFilename, RTFILE_O_DENY_NONE | RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_READ);
+            rc = RTFileOpen(&pThis->hFile, pszCaptureFilename, RTFILE_O_DENY_NONE | RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_READ);
             if (RT_SUCCESS(rc))
             {
                 /* Write header and link type blocks. */
