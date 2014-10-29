@@ -157,7 +157,6 @@ class HostDnsServiceWin : public HostDnsMonitor
     virtual int monitorWorker();
 
     private:
-    void strList2List(std::vector<std::string>& lst, char *strLst);
     HRESULT updateInfo();
 
     private:
