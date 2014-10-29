@@ -741,6 +741,7 @@ enum OPCODES {
     OP_VMPTRST,
     OP_INVEPT,
     OP_INVVPID,
+    OP_INVPCID,
 /** @}  */
 /** @name 64 bits instruction
  * @{ */

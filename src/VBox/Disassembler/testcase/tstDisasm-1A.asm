@@ -162,6 +162,7 @@ BEGINPROC   TestProc32
         tzcnt      eax, [edi]
         tzcnt      eax, [edi + 1000h]
         vpmovsxbw  ymm0, xmm1
+        vpmovzxbq  ymm1, [100h]
 %endif
 
         movbe       eax, [edi]
@@ -215,6 +216,11 @@ BEGINPROC   TestProc32
 
         vblendvps xmm0, xmm1, xmm2, xmm3
         vblendvps ymm0, ymm1, ymm2, ymm3
+
+        aesimc xmm0, xmm1
+
+        pmovzxbq xmm0, xmm1
+        pmovzxbq xmm1, [100h]
 
 ENDPROC   TestProc32
 
