@@ -637,7 +637,8 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
                 UsbHdr.u8TransferType = 0;
                 cIsocPkts = pUrb->cIsocPkts;
                 for (unsigned i = 0; i < cIsocPkts; i++)
-                    if (pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_OK)
+                    if (   pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_OK
+                        && pUrb->aIsocPkts[i].enmStatus != VUSBSTATUS_NOT_ACCESSED)
                         i32ErrorCount++;
 
                 UsbHdr.u.IsoRec.i32ErrorCount = i32ErrorCount;
@@ -664,7 +665,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
         if (enmEvent == VUSBSNIFFEREVENT_SUBMIT)
             cbDataLength = 0;
     }
-    else if (pUrb->enmDir == VUSBDIRECTION_IN)
+    else if (pUrb->enmDir == VUSBDIRECTION_OUT)
     {
         if (   enmEvent == VUSBSNIFFEREVENT_COMPLETE
             || pUrb->enmType == VUSBXFERTYPE_CTRL
@@ -679,7 +680,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     UsbHdr.u8DeviceAddress  = pUrb->DstAddress;
     UsbHdr.u16BusId         = 0;
     UsbHdr.u8DataFlag       = cbDataLength ? 0 : 1;
-    UsbHdr.u64TimestampSec  = u64TimestampEvent / RT_NS_1SEC_64;;
+    UsbHdr.u64TimestampSec  = u64TimestampEvent / RT_NS_1SEC_64;
     UsbHdr.u32TimestampUSec = u64TimestampEvent / RT_NS_1US_64 - UsbHdr.u64TimestampSec * RT_US_1SEC;
     UsbHdr.i32Status        = pUrb->enmStatus;
     UsbHdr.u32UrbLength     = cbUrbLength;

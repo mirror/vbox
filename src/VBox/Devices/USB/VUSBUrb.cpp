@@ -1021,10 +1021,6 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
             LogRel(("VUSB: Capturing URB completion event failed with %Rrc\n", rc));
     }
 
-#ifdef VBOX_WITH_STATISTICS
-    /*
-     * Total and per-type submit statistics.
-     */
     PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
     AssertPtrReturnVoid(pRh);
 
@@ -1039,6 +1035,10 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
             LogRel(("VUSB: Capturing URB completion event on the root hub failed with %Rrc\n", rc));
     }
 
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Total and per-type submit statistics.
+     */
     if (pUrb->enmType != VUSBXFERTYPE_MSG)
     {
         Assert(pUrb->enmType >= 0 && pUrb->enmType < (int)RT_ELEMENTS(pRh->aTypes));
