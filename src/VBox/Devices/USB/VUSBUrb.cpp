@@ -1140,10 +1140,6 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
 #ifdef LOG_ENABLED
     vusbUrbTrace(pUrb, "vusbUrbCompletionRh", true);
 #endif
-#ifndef VBOX_WITH_STATISTICS
-    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->VUsb.pDev);
-    AssertPtrReturnVoid(pRh);
-#endif
 
     pRh->pIRhPort->pfnXferCompletion(pRh->pIRhPort, pUrb);
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
