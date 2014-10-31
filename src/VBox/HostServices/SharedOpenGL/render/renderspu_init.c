@@ -618,5 +618,5 @@ int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
 DECLEXPORT(void) renderspuSetWindowId(uint64_t winId)
 {
     render_spu_parent_window_id = winId;
-    crDebug("X11: set new parent window %p (no actual reparent performed)", winId);
+    crDebug("Set new parent window %p (no actual reparent performed)", winId);
 }
