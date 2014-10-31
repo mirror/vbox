@@ -217,11 +217,11 @@ class CrFbWindow
         int UpdateBegin();
         void UpdateEnd();
         uint64_t GetParentId();
-        int Create();
         ~CrFbWindow();
 
     protected:
 
+        int Create();
         void checkRegions();
         bool isPresentNeeded();
         bool checkInitedUpdating();
