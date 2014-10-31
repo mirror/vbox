@@ -30,6 +30,7 @@ CrFbWindow::CrFbWindow(uint64_t parentId) :
     mParentId(parentId)
 {
     mFlags.Value = 0;
+    Create();
 }
 
 
@@ -37,6 +38,7 @@ bool CrFbWindow::IsCreated() const
 {
     return !!mSpuWindow;
 }
+
 
 bool CrFbWindow::IsVisivle() const
 {
