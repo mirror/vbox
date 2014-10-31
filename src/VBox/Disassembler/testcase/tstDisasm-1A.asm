@@ -163,6 +163,8 @@ BEGINPROC   TestProc32
         tzcnt      eax, [edi + 1000h]
         vpmovsxbw  ymm0, xmm1
         vpmovzxbq  ymm1, [100h]
+        vgatherqps xmm0,dword [eax+xmm0*2],xmm0
+        vgatherqpd xmm0,qword [eax+xmm0*2],xmm0
 %endif
 
         movbe       eax, [edi]
@@ -221,6 +223,8 @@ BEGINPROC   TestProc32
 
         pmovzxbq xmm0, xmm1
         pmovzxbq xmm1, [100h]
+
+        vfmaddsub132pd ymm1, ymm2, ymm3
 
 ENDPROC   TestProc32
 
@@ -348,6 +352,7 @@ BEGINPROC TestProc64
 
         vpunpcklbw ymm1, ymm2, ymm3
         vpmovsxbw  ymm4,[0x100]
+        vgatherqpd xmm0,qword [rbx+xmm11*2],xmm2
 %endif
 
         popcnt      ax, bx
@@ -394,12 +399,22 @@ BEGINPROC TestProc64
 
         vbroadcastf128 ymm0,oword [0x100]
         vmovlps   xmm0, xmm1, [100h]
+        vmovlps   xmm0, xmm1, [eax + ebx]
+        vmovlps   xmm0, xmm1, [rax + rbx]
+        vmovlps   xmm10, xmm1, [rax]
 
         vblendvpd xmm0, xmm1, [100h], xmm3
 
         dpps xmm0, xmm1, 1
 
         extractps eax, xmm2, 3
+        vzeroupper
+        vzeroall
+
+        movlps xmm0, [100h]
+        movlps xmm0, [eax + ebx]
+        movlps xmm10, [rax + rbx]
+        movhlps xmm0, xmm1
 
         ret
 ENDPROC   TestProc64
