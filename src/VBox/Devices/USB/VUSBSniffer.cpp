@@ -597,6 +597,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
     uint32_t cbDataLength = 0;
     uint32_t cbCapturedLength = sizeof(UsbHdr);
     uint32_t cIsocPkts = 0;
+    uint8_t *pbData = NULL;
 
     RTTimeNow(&TimeNow);
     u64TimestampEvent = RTTimeSpecGetNano(&TimeNow);
@@ -627,6 +628,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
             AssertMsgFailed(("Invalid event type %d\n", enmEvent));
     }
     cbDataLength = cbUrbLength;
+    pbData = &pUrb->abData[0];
 
     switch (pUrb->enmType)
     {
@@ -672,6 +674,8 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
             || pUrb->enmType == VUSBXFERTYPE_MSG)
             cbDataLength = 0;
     }
+    else if (pUrb->enmDir == VUSBDIRECTION_SETUP)
+        cbDataLength -= sizeof(VUSBSETUP);
 
     Epb.u32CapturedLen = cbCapturedLength + cbDataLength;
     Epb.u32PacketLen   = cbCapturedLength + cbUrbLength;
@@ -726,7 +730,7 @@ DECLHIDDEN(int) VUSBSnifferRecordEvent(VUSBSNIFFER hSniffer, PVUSBURB pUrb, VUSB
         /* Record data. */
         if (   RT_SUCCESS(rc)
             && cbDataLength)
-            rc = vusbSnifferBlockAddData(pThis, pUrb->abData, pUrb->cbData);
+            rc = vusbSnifferBlockAddData(pThis, pbData, cbDataLength);
 
         if (RT_SUCCESS(rc))
             rc = vusbSnifferAddOption(pThis, DUMPFILE_OPTION_CODE_END, NULL, 0);
