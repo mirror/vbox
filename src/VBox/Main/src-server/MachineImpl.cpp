@@ -14272,7 +14272,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
         BOOL fNeedsSaving = mData->mGuestPropertiesModified;
 
         settings::GuestPropertiesList &llGuestProperties = mData->pMachineConfigFile->hardwareMachine.llGuestProperties;
-        settings::GuestPropertiesList::const_iterator it = llGuestProperties.begin();
+        settings::GuestPropertiesList::iterator it = llGuestProperties.begin();
         while (it != llGuestProperties.end())
         {
             const settings::GuestProperty &prop = *it;
