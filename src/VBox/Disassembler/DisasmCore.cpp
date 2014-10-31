@@ -708,22 +708,30 @@ static void UseSIB(PDISSTATE pDis, PDISOPPARAM pParam)
     unsigned base  = pDis->SIB.Bits.Base;
     unsigned index = pDis->SIB.Bits.Index;
 
-    unsigned regtype;
-    if (pDis->uAddrMode == DISCPUMODE_32BIT)
-        regtype    = DISUSE_REG_GEN32;
+    unsigned regtype, vregtype;
+    /* There's no way to distinguish between SIB and VSIB
+     * and having special parameter to parse explicitly VSIB
+     * is not an options since only one instruction (gather)
+     * supports it currently. May be changed in the future. */
+        if (pDis->uAddrMode == DISCPUMODE_32BIT)
+            regtype    = DISUSE_REG_GEN32;
+        else
+            regtype    = DISUSE_REG_GEN64;
+    if (pDis->pCurInstr->uOpcode == OP_GATHER)
+        vregtype = (VEXREG_IS256B(pDis->bVexDestReg) ? DISUSE_REG_YMM : DISUSE_REG_XMM);
     else
-        regtype    = DISUSE_REG_GEN64;
+        vregtype = regtype;
 
     if (index != 4)
     {
-         pParam->fUse |= DISUSE_INDEX | regtype;
-         pParam->Index.idxGenReg = index;
+        pParam->fUse |= DISUSE_INDEX | vregtype;
+        pParam->Index.idxGenReg = index;
 
-         if (scale != 0)
-         {
-             pParam->fUse  |= DISUSE_SCALE;
-             pParam->uScale = (1<<scale);
-         }
+        if (scale != 0)
+        {
+            pParam->fUse  |= DISUSE_SCALE;
+            pParam->uScale = (1<<scale);
+        }
     }
 
     if (base == 5 && pDis->ModRM.Bits.Mod == 0)
@@ -2487,24 +2495,18 @@ static size_t ParseVex2b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
         case 0:
             pOpCode = g_aVexOpcodesMap[0] + pDis->bOpCode;
         break;
-        // OPSIZE 0x66 prefix
+        // 0x66 prefix
         case 1:
             pOpCode = g_aVexOpcodesMap_66H[0] + pDis->bOpCode;
 
-            /* TODO: Check if we need to set this prefix */
-            pDis->fPrefix |= DISPREFIX_OPSIZE;
-            if (pDis->uCpuMode == DISCPUMODE_16BIT)
-                pDis->uOpMode = DISCPUMODE_32BIT;
-            else
-                pDis->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
         break;
 
-        // REPE 0xF3 prefix
+        // 0xF3 prefix
         case 2:
             pOpCode = g_aVexOpcodesMap_F3H[0] + pDis->bOpCode;
         break;
 
-        // REPNE 0xF2 prefix
+        // 0xF2 prefix
         case 3:
             pOpCode = g_aVexOpcodesMap_F2H[0] + pDis->bOpCode;
         break;
@@ -2529,24 +2531,15 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
     pDis->bVexDestReg = VEX_2B2INT(byte2);
     uint8_t implOpcode = (byte1 & 0x1f);
 
-    if (pDis->uCpuMode == DISCPUMODE_64BIT)
-    {
-        // REX.RXB
-        if (~(byte1 & 0xe0))
-        {
-            pDis->fRexPrefix = (byte1 >> 5) ^ 7;
-            if (pDis->fRexPrefix)
-                pDis->fPrefix |= DISPREFIX_REX;
-        }
+    // REX.RXB
+    if (pDis->uCpuMode == DISCPUMODE_64BIT && ~(byte1 & 0xe0))
+        pDis->fRexPrefix |= (byte1 >> 5) ^ 7;
 
-        // REX.W
-        if (!(byte2 & 0x80))
-        {
-            pDis->fRexPrefix |= DISPREFIX_REX_FLAGS_W;
-            if (pDis->fRexPrefix)
-                 pDis->fPrefix |= DISPREFIX_REX;
-        }
-    }
+    // VEX.W
+    pDis->bVexWFlag = !(byte2 & 0x80);
+
+    if (pDis->fRexPrefix)
+        pDis->fPrefix |= DISPREFIX_REX;
 
     switch(byte2 & 3)
     {
@@ -2569,23 +2562,17 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
                 }
             }
         break;
-        // OPSIZE 0x66 prefix
+        // 0x66 prefix
         case 1:
             if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
             {
                 pOpCode = g_aVexOpcodesMap_66H[implOpcode - 1];
                 if (pOpCode != NULL)
                     pOpCode = &pOpCode[pDis->bOpCode];
-                /* TODO: check if we need to set this prefix */
-                pDis->fPrefix |= DISPREFIX_OPSIZE;
-                if (pDis->uCpuMode == DISCPUMODE_16BIT)
-                    pDis->uOpMode = DISCPUMODE_32BIT;
-                else
-                    pDis->uOpMode = DISCPUMODE_16BIT;  /* for 32 and 64 bits mode (there is no 32 bits operand size override prefix) */
             }
         break;
 
-        // REPE 0xF3 prefix
+        // 0xF3 prefix
         case 2:
             if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
             {
@@ -2607,7 +2594,7 @@ static size_t ParseVex3b(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISO
             }
         break;
 
-        // REPNE 0xF2 prefix
+        // 0xF2 prefix
         case 3:
             if (implOpcode >= 1 && implOpcode <= 3) // Other values are #UD.
             {
@@ -2823,9 +2810,9 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
         }
 
         /* Check if this is a VEX prefix. Not for 32-bit mode. */
-        if ((opcode == OP_LES || opcode == OP_LDS)
-            && (disReadByte(pDis, offInstr) & 0xc0) == 0xc0
-            && (opcode != OP_LES || pDis->uCpuMode == DISCPUMODE_64BIT || !(disReadByte(pDis, offInstr + 1) & 0x80)))
+        if (pDis->uCpuMode != DISCPUMODE_64BIT
+            && (opcode == OP_LES || opcode == OP_LDS)
+            && (disReadByte(pDis, offInstr) & 0xc0) == 0xc0)
         {
             paOneByteMap = g_aOneByteMapX64;
         }

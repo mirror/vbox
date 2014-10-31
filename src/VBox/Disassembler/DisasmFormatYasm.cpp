@@ -117,6 +117,9 @@ static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
             return psz;
         }
 
+        // VSIB
+        case DISUSE_REG_XMM | DISUSE_REG_GEN32:
+        case DISUSE_REG_YMM | DISUSE_REG_GEN32:
         case DISUSE_REG_GEN32:
         {
             Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen32));
@@ -125,6 +128,9 @@ static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
             return psz;
         }
 
+        // VSIB
+        case DISUSE_REG_XMM | DISUSE_REG_GEN64:
+        case DISUSE_REG_YMM | DISUSE_REG_GEN64:
         case DISUSE_REG_GEN64:
         {
             Assert(pParam->Base.idxGenReg < RT_ELEMENTS(g_aszYasmRegGen64));
@@ -215,6 +221,22 @@ static const char *disasmFormatYasmBaseReg(PCDISSTATE pDis, PCDISOPPARAM pParam,
  */
 static const char *disasmFormatYasmIndexReg(PCDISSTATE pDis, PCDISOPPARAM pParam, size_t *pcchReg)
 {
+    if (pParam->fUse & DISUSE_REG_XMM)
+    {
+        Assert(pParam->Index.idxXmmReg < RT_ELEMENTS(g_aszYasmRegXMM));
+        const char *psz = g_aszYasmRegXMM[pParam->Index.idxXmmReg];
+        *pcchReg = 4 + !!psz[4];
+        return psz;
+    }
+    else if (pParam->fUse & DISUSE_REG_YMM)
+    {
+        Assert(pParam->Index.idxYmmReg < RT_ELEMENTS(g_aszYasmRegYMM));
+        const char *psz = g_aszYasmRegYMM[pParam->Index.idxYmmReg];
+        *pcchReg = 4 + !!psz[4];
+        return psz;
+
+    }
+    else
     switch (pDis->uAddrMode)
     {
         case DISCPUMODE_16BIT:
@@ -576,6 +598,33 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     } while (ch != '\0');
                     pszFmt = szTmpFmt;
                 }
+                if (strchr ("#@&", *pszFmt))
+                {
+                    const char *pszDelim = strchr(pszFmt, '/');
+                    const char *pszSpace = (pszDelim ? strchr(pszDelim, ' ') : NULL);
+                    if (pszDelim != NULL)
+                    {
+                        char *pszFmtDst = szTmpFmt;
+                        if (pszSpace == NULL) pszSpace = strchr(pszDelim, 0);
+                        if (   (*pszFmt == '#' && pDis->bVexWFlag)
+                            || (*pszFmt == '@' && !VEXREG_IS256B(pDis->bVexDestReg))
+                            || (*pszFmt == '&' && (   DISUSE_IS_EFFECTIVE_ADDR(pDis->Param1.fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param2.fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param3.fUse)
+                                                   || DISUSE_IS_EFFECTIVE_ADDR(pDis->Param4.fUse))))
+                        {
+                            strncpy(pszFmtDst, pszFmt + 1, pszDelim - pszFmt - 1);
+                            pszFmtDst += pszDelim - pszFmt - 1;
+                        }
+                        else
+                        {
+                            strncpy(pszFmtDst, pszDelim + 1, pszSpace - pszDelim - 1);
+                            pszFmtDst += pszSpace - pszDelim - 1;
+                        }
+                        strcpy (pszFmtDst, pszSpace);
+                        pszFmt = szTmpFmt;
+                    }
+                }
                 break;
 
             /*
@@ -617,8 +666,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     case OP_PARM_y: \
                         switch (pDis->uOpMode) \
                         { \
-                            case DISCPUMODE_16BIT: PUT_SZ("word "); break; \
-                            case DISCPUMODE_32BIT: PUT_SZ("dword "); break; \
+                            case DISCPUMODE_16BIT: if (OP_PARM_VSUBTYPE(pParam->fParam) != OP_PARM_y) PUT_SZ("word "); break; \
+                            case DISCPUMODE_32BIT: \
+                                if (pDis->pCurInstr->uOpcode != OP_GATHER || pDis->bVexWFlag) { PUT_SZ("dword "); break; } \
                             case DISCPUMODE_64BIT: PUT_SZ("qword "); break; \
                             default: break; \
                         } \

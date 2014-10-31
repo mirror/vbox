@@ -62,6 +62,8 @@ RT_C_DECLS_BEGIN
 /* Convert second byte of VEX prefix to internal format */
 #define VEX_2B2INT(x)                   ((((x) >> 2) & 0x1f))
 #define VEX_HAS_REX_R(x)                  (!((x) & 0x80))
+
+#define DISPREFIX_VEX_FLAG_W            UINT8_C(0x01)
  /** @} */
 
 /** @name 64 bits prefix byte flags (DISSTATE::fRexPrefix).
@@ -455,6 +457,12 @@ typedef struct DISOPPARAM
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN8,
          * DISUSE_REG_GEN16, DISUSE_REG_GEN32 or DISUSE_REG_GEN64 is set in fUse. */
         uint8_t     idxGenReg;
+        /** XMM register index (DISXREG_XXX), applicable if DISUSE_REG_XMM
+         *  is set in fUse. */
+        uint8_t     idxXmmReg;
+        /** YMM register index (DISXREG_XXX), applicable if DISUSE_REG_YMM
+         *  is set in fUse. */
+        uint8_t     idxYmmReg;
     } Index;
     /** 2, 4 or 8, if DISUSE_SCALE is set in fUse. */
     uint8_t         uScale;
@@ -589,8 +597,10 @@ typedef struct DISSTATE
     uint8_t         cbInstr;
     /** VEX presence flag, destination register and size */
     uint8_t         bVexDestReg;
+    /** VEX.W flag */
+    uint8_t         bVexWFlag;
     /** Unused bytes. */
-    uint8_t         abUnused[2];
+    uint8_t         abUnused[1];
     /** Internal: instruction filter */
     uint32_t        fFilter;
     /** Internal: pointer to disassembly function table */
