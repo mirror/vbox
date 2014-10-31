@@ -14269,25 +14269,32 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
     {
         /* Make sure any transient guest properties get removed from the
          * property store on shutdown. */
-
-        HWData::GuestPropertyMap::const_iterator it;
         BOOL fNeedsSaving = mData->mGuestPropertiesModified;
-        if (!fNeedsSaving)
-            for (it = mHWData->mGuestProperties.begin();
-                 it != mHWData->mGuestProperties.end(); ++it)
-                if (   (it->second.mFlags & guestProp::TRANSIENT)
-                    || (it->second.mFlags & guestProp::TRANSRESET))
-                {
-                    fNeedsSaving = true;
-                    break;
-                }
+
+        settings::GuestPropertiesList &llGuestProperties = mData->pMachineConfigFile->hardwareMachine.llGuestProperties;
+        settings::GuestPropertiesList::const_iterator it = llGuestProperties.begin();
+        while (it != llGuestProperties.end())
+        {
+            const settings::GuestProperty &prop = *it;
+            if (   prop.strFlags.contains("TRANSRESET", Utf8Str::CaseInsensitive)
+                || prop.strFlags.contains("TRANSIENT", Utf8Str::CaseInsensitive))
+            {
+                it = llGuestProperties.erase(it);
+                fNeedsSaving = true;
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
         if (fNeedsSaving)
         {
             mData->mCurrentStateModified = TRUE;
             stsFlags |= SaveSTS_CurStateModified;
         }
     }
-#endif
+#endif /* VBOX_WITH_GUEST_PROPS */
 
     rc = i_saveStateSettings(stsFlags);
 
