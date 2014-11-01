@@ -255,7 +255,7 @@ typedef FNRTLOGPREFIX *PFNRTLOGPREFIX;
 
 
 /**
- * Logger instance structure for GC.
+ * Logger instance structure for raw-mode context (RC).
  */
 struct RTLOGGERRC
 {
@@ -457,6 +457,8 @@ typedef enum RTLOGDEST
     RTLOGDEST_DEBUGGER      = 0x00000008,
     /** Log to com port. */
     RTLOGDEST_COM           = 0x00000010,
+    /** Log a memory ring buffer. */
+    RTLOGDEST_RINGBUF       = 0x00000020,
     /** Just a dummy flag to be used when no other flag applies. */
     RTLOGDEST_DUMMY         = 0x20000000,
     /** Log to a user defined output stream. */
