@@ -8566,6 +8566,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
 #define IEM_MC_FETCH_MEM_U64_ALIGN_U128(a_u128Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64AlignedU128(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
+#define IEM_MC_FETCH_MEM_I64(a_i64Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, (uint64_t *)&(a_i64Dst), (a_iSeg), (a_GCPtrMem)))
 
 #define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &(a_r32Dst).u32, (a_iSeg), (a_GCPtrMem)))
@@ -10136,6 +10138,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         && pIemCpu->cIOWrites == 0
         && !pIemCpu->fProblematicMemory)
     {
+        uint64_t uStartRip = pOrgCtx->rip;
         unsigned iLoops = 0;
         do
         {
@@ -10148,6 +10151,8 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
                  || (   pOrgCtx->rip != pDebugCtx->rip
                      && pIemCpu->uInjectCpl != UINT8_MAX
                      && iLoops < 8) );
+        if (rc == VINF_EM_RESCHEDULE && pOrgCtx->rip != uStartRip)
+            rc = VINF_SUCCESS;
     }
 #endif
     if (   rc == VERR_EM_CANNOT_EXEC_GUEST
@@ -10156,6 +10161,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         || rc == VINF_IOM_R3_MMIO_READ
         || rc == VINF_IOM_R3_MMIO_READ_WRITE
         || rc == VINF_IOM_R3_MMIO_WRITE
+        || rc == VINF_EM_RESCHEDULE
         )
     {
         EMRemLock(pVM);
