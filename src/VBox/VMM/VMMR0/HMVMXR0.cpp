@@ -344,7 +344,8 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
-                                                 uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntState);
+                                                 uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress,
+                                                 bool fStepping, uint32_t *puIntState);
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
@@ -7502,8 +7503,11 @@ DECLINLINE(void) hmR0VmxSetPendingDebugXcpt(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ * @param   fStepping       Running in hmR0VmxRunGuestCodeStep and we should
+ *                          return VINF_EM_DBG_STEPPED an event was dispatched
+ *                          directly.
  */
-static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
 {
     HMVMX_ASSERT_PREEMPT_SAFE();
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
@@ -7553,7 +7557,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#x\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
               (uint8_t)uIntType));
         rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.cbInstr,
-                                    pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
+                                    pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, fStepping, &uIntrState);
         AssertRCReturn(rc, rc);
 
         /* Update the interruptibility-state as it could have been changed by
@@ -7603,7 +7607,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
     AssertRC(rc2);
 
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
     NOREF(fBlockMovSS); NOREF(fBlockSti);
     return rc;
 }
@@ -7633,14 +7637,21 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ * @param   fStepping       Whether we're running in hmR0VmxRunGuestCodeStep and
+ *                          should return VINF_EM_DBG_STEPPED if the event is
+ *                          injected directly (registerd modified by us, not by
+ *                          hardware on VM entry).
+ * @param   puIntrState     Pointer to the current guest interruptibility-state.
+ *                          This interruptibility-state will be updated if
+ *                          necessary. This cannot not be NULL.
  */
-DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *puIntrState)
+DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping, uint32_t *puIntrState)
 {
     uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */,
-                                  puIntrState);
+                                  fStepping, puIntrState);
 }
 
 
@@ -7691,16 +7702,23 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  * @param   fErrorCodeValid     Whether the error code is valid (depends on the CPU
  *                              mode, i.e. in real-mode it's not valid).
  * @param   u32ErrorCode        The error code associated with the #GP.
+ * @param   fStepping           Whether we're running in hmR0VmxRunGuestCodeStep
+ *                              and should return VINF_EM_DBG_STEPPED if the
+ *                              event is injected directly (registerd modified
+ *                              by us, not by hardware on VM entry).
+ * @param   puIntrState         Pointer to the current guest interruptibility-state.
+ *                              This interruptibility-state will be updated if
+ *                              necessary. This cannot not be NULL.
  */
 DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
-                                    uint32_t *puIntrState)
+                                    bool fStepping, uint32_t *puIntrState)
 {
     uint32_t u32IntInfo  = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     if (fErrorCodeValid)
         u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */,
-                                  puIntrState);
+                                  fStepping, puIntrState);
 }
 
 
@@ -7795,12 +7813,16 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
+ * @param   fStepping           Whether we're running in hmR0VmxRunGuestCodeStep
+ *                              and should return VINF_EM_DBG_STEPPED if the
+ *                              event is injected directly (registerd modified
+ *                              by us, not by hardware on VM entry).
  *
  * @remarks Requires CR0!
  * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
-                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState)
+                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, bool fStepping, uint32_t *puIntrState)
 {
     /* Intel spec. 24.8.3 "VM-Entry Controls for Event Injection" specifies the interruption-information field to be 32-bits. */
     AssertMsg(u64IntInfo >> 32 == 0, ("%#RX64\n", u64IntInfo));
@@ -7870,15 +7892,15 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 /* If we are trying to inject a #DF with no valid IDT entry, return a triple-fault. */
                 if (uVector == X86_XCPT_DF)
                     return VINF_EM_RESET;
-                else if (uVector == X86_XCPT_GP)
-                {
-                    /* If we're injecting a #GP with no valid IDT entry, inject a double-fault. */
-                    return hmR0VmxInjectXcptDF(pVCpu, pMixedCtx, puIntrState);
-                }
+
+                /* If we're injecting a #GP with no valid IDT entry, inject a double-fault. */
+                if (uVector == X86_XCPT_GP)
+                    return hmR0VmxInjectXcptDF(pVCpu, pMixedCtx, fStepping, puIntrState);
 
                 /* If we're injecting an interrupt/exception with no valid IDT entry, inject a general-protection fault. */
                 /* No error codes for exceptions in real-mode. See Intel spec. 20.1.4 "Interrupt and Exception Handling" */
-                return hmR0VmxInjectXcptGP(pVCpu, pMixedCtx, false /* fErrCodeValid */, 0 /* u32ErrCode */, puIntrState);
+                return hmR0VmxInjectXcptGP(pVCpu, pMixedCtx, false /* fErrCodeValid */, 0 /* u32ErrCode */,
+                                           fStepping, puIntrState);
             }
 
             /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */
@@ -7931,13 +7953,18 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                     Log4(("Clearing inhibition due to STI.\n"));
                     *puIntrState &= ~VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
                 }
-                Log4(("Injecting real-mode: u32IntInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntInfo, u32ErrCode, cbInstr));
+                Log4(("Injecting real-mode: u32IntInfo=%#x u32ErrCode=%#x instrlen=%#x efl=%#x cs:eip=%04x:%04x\n",
+                      u32IntInfo, u32ErrCode, cbInstr, pMixedCtx->eflags.u, pMixedCtx->cs.Sel, pMixedCtx->eip));
 
                 /* The event has been truly dispatched. Mark it as no longer pending so we don't attempt to 'undo'
                    it, if we are returning to ring-3 before executing guest code. */
                 pVCpu->hm.s.Event.fPending = false;
+
+                /* Make hmR0VmxPreRunGuest return if we're stepping since we've changed cs:rip. */
+                if (fStepping)
+                    rc = VINF_EM_DBG_STEPPED;
             }
-            Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
+            Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
             return rc;
         }
 
@@ -8401,6 +8428,8 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *          have been disabled.
  * @retval  VINF_EM_RESET if a triple-fault occurs while injecting a
  *          double-fault into the guest.
+ * @retval  VINF_EM_DBG_STEPPED if @a fStepping is true and an event was
+ *          dispatched directly.
  * @retval  VINF_* scheduling changes, we have to go back to ring-3.
  *
  * @param   pVM             Pointer to the VM.
@@ -8409,8 +8438,10 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
- * @param   fStepping       Set if called from hmR0VmxRunGuestCodeStep, makes us
- *                          ignore some of the reasons for returning to ring-3.
+ * @param   fStepping       Set if called from hmR0VmxRunGuestCodeStep.  Makes
+ *                          us ignore some of the reasons for returning to
+ *                          ring-3, and return VINF_EM_DBG_STEPPED if event
+ *                          dispatching took place.
  */
 static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, bool fStepping)
 {
@@ -8457,10 +8488,10 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus needs to be done with
      * longjmps or interrupts + preemption enabled. Event injection might also result in triple-faulting the VM.
      */
-    rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
+    rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx, fStepping);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        Assert(rc == VINF_EM_RESET);
+        Assert(rc == VINF_EM_RESET || (rc == VINF_EM_DBG_STEPPED && fStepping));
         return rc;
     }
 
@@ -9917,7 +9948,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return VINF_SUCCESS;
     }
-    else if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc == VINF_EM_RESET))
     {
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return rc;
@@ -11813,6 +11844,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             case OP_CLI:
             {
                 pMixedCtx->eflags.Bits.u1IF = 0;
+                pMixedCtx->eflags.Bits.u1RF = 0;
                 pMixedCtx->rip += pDis->cbInstr;
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
                 hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
@@ -11822,10 +11854,15 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
             case OP_STI:
             {
+                bool fOldIF = pMixedCtx->eflags.Bits.u1IF;
                 pMixedCtx->eflags.Bits.u1IF = 1;
+                pMixedCtx->eflags.Bits.u1RF = 0;
                 pMixedCtx->rip += pDis->cbInstr;
-                EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
-                Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+                if (!fOldIF)
+                {
+                    EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
+                    Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+                }
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
                 hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
@@ -11836,7 +11873,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             {
                 rc = VINF_EM_HALT;
                 pMixedCtx->rip += pDis->cbInstr;
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
+                pMixedCtx->eflags.Bits.u1RF = 0;
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
                 break;
             }
@@ -11875,9 +11913,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     break;
                 }
                 Log4(("POPF %#x -> %#RX64 mask=%#x RIP=%#RX64\n", Eflags.u, pMixedCtx->rsp, uMask, pMixedCtx->rip));
-                pMixedCtx->eflags.u32 =   (pMixedCtx->eflags.u32 & ~(X86_EFL_POPF_BITS & uMask))
-                                        | (Eflags.u32 & X86_EFL_POPF_BITS & uMask);
-                pMixedCtx->eflags.Bits.u1RF  = 0;    /* The RF bit is always cleared by POPF; see Intel Instruction reference. */
+                pMixedCtx->eflags.u32 = (pMixedCtx->eflags.u32 & ~((X86_EFL_POPF_BITS & uMask) | X86_EFL_RF))
+                                      | (Eflags.u32 & X86_EFL_POPF_BITS & uMask);
                 pMixedCtx->esp              += cbParm;
                 pMixedCtx->esp              &= uMask;
                 pMixedCtx->rip              += pDis->cbInstr;
@@ -11931,7 +11968,10 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->esp               -= cbParm;
                 pMixedCtx->esp               &= uMask;
                 pMixedCtx->rip               += pDis->cbInstr;
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP);
+                pMixedCtx->eflags.Bits.u1RF   = 0;
+                HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
+                                    | HM_CHANGED_GUEST_RSP
+                                    | HM_CHANGED_GUEST_RFLAGS);
                 hmR0VmxSetPendingDebugXcpt(pVCpu, pMixedCtx);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPushf);
                 break;
@@ -11964,8 +12004,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->cs.Sel             = aIretFrame[1];
                 pMixedCtx->cs.ValidSel        = aIretFrame[1];
                 pMixedCtx->cs.u64Base         = (uint64_t)pMixedCtx->cs.Sel << 4;
-                pMixedCtx->eflags.u32         = (pMixedCtx->eflags.u32 & ~(X86_EFL_POPF_BITS & uMask))
-                                                | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
+                pMixedCtx->eflags.u32         = (pMixedCtx->eflags.u32 & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF))
+                                              | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
                 pMixedCtx->sp                += sizeof(aIretFrame);
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                     | HM_CHANGED_GUEST_SEGMENT_REGS
@@ -11996,11 +12036,17 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     /* INTO clears EFLAGS.TF, we mustn't set any pending debug exceptions here. */
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInt);
                 }
+                else
+                {
+                    pMixedCtx->eflags.Bits.u1RF = 0;
+                    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_RFLAGS);
+                }
                 break;
             }
 
             default:
             {
+                pMixedCtx->eflags.Bits.u1RF = 0; /* This is correct most of the time... */
                 VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, CPUMCTX2CORE(pMixedCtx), 0 /* pvFault */,
                                                                     EMCODETYPE_SUPERVISOR);
                 rc = VBOXSTRICTRC_VAL(rc2);
@@ -12121,7 +12167,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
         return rc;
     }
-    else if (rc == VINF_EM_RAW_GUEST_TRAP)
+    if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         if (!pVmxTransient->fVectoringDoublePF)
         {
