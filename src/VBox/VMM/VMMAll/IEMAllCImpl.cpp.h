@@ -2750,7 +2750,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         uNewFlags  = uFrame.pu16[2];
         uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                    | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT;
-        uNewFlags |= Efl.u & (UINT32_C(0xffff0000) | X86_EFL_1);
+        uNewFlags |= Efl.u & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF);
         /** @todo The intel pseudo code does not indicate what happens to
          *        reserved flags. We just ignore them. */
     }
