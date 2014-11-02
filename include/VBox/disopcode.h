@@ -1,9 +1,9 @@
 /** @file
- * Disassembler - opcode.h.
+ * Disassembler - Opcodes
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_opcode_h
-#define ___VBox_opcode_h
+#ifndef ___VBox_disopcode_h
+#define ___VBox_disopcode_h
 
 #define MODRM_MOD(a)    (a>>6)
 #define MODRM_REG(a)    ((a>>3)&0x7)
@@ -40,10 +40,11 @@
  * @ingroup grp_dis
  * @{
  */
-enum OPCODES {
+enum OPCODES
+{
 /** @name  Full Intel X86 opcode list
  * @{ */
-    OP_INVALID,
+    OP_INVALID = 0,
     OP_OPSIZE,
     OP_ADDRSIZE,
     OP_SEG,
@@ -51,7 +52,7 @@ enum OPCODES {
     OP_REPE,
     OP_REX,
     OP_LOCK,
-    OP_LAST_PREFIX = OP_LOCK, /* Last prefix for disassembler */
+    OP_LAST_PREFIX = OP_LOCK, /**< Last prefix for disassembler. */
     OP_AND,
     OP_OR,
     OP_DAA,
@@ -724,6 +725,7 @@ enum OPCODES {
     OP_MOV_DR,
     OP_MOV_TR,
     OP_SWAPGS,
+/** @}  */
 /** @name VT-x instructions
 * @{ */
     OP_VMREAD,
@@ -748,112 +750,115 @@ enum OPCODES {
 };
 /** @} */
 
+
 /** @defgroup grp_dis_opparam Opcode parameters (DISOPCODE::fParam1,
  *            DISOPCODE::fParam2, DISOPCODE::fParam3)
  * @ingroup grp_dis
  * @{
  */
 
-/* NOTE: Register order is important for translations!! */
+/**
+ * @remarks Register order is important for translations!!
+ */
 enum OP_PARM
 {
-  OP_PARM_NONE,
+    OP_PARM_NONE,
 
-  OP_PARM_REG_EAX,
-  OP_PARM_REG_GEN32_START = OP_PARM_REG_EAX,
-  OP_PARM_REG_ECX,
-  OP_PARM_REG_EDX,
-  OP_PARM_REG_EBX,
-  OP_PARM_REG_ESP,
-  OP_PARM_REG_EBP,
-  OP_PARM_REG_ESI,
-  OP_PARM_REG_EDI,
-  OP_PARM_REG_GEN32_END = OP_PARM_REG_EDI,
+    OP_PARM_REG_EAX,
+    OP_PARM_REG_GEN32_START = OP_PARM_REG_EAX,
+    OP_PARM_REG_ECX,
+    OP_PARM_REG_EDX,
+    OP_PARM_REG_EBX,
+    OP_PARM_REG_ESP,
+    OP_PARM_REG_EBP,
+    OP_PARM_REG_ESI,
+    OP_PARM_REG_EDI,
+    OP_PARM_REG_GEN32_END = OP_PARM_REG_EDI,
 
-  OP_PARM_REG_ES,
-  OP_PARM_REG_SEG_START = OP_PARM_REG_ES,
-  OP_PARM_REG_CS,
-  OP_PARM_REG_SS,
-  OP_PARM_REG_DS,
-  OP_PARM_REG_FS,
-  OP_PARM_REG_GS,
-  OP_PARM_REG_SEG_END = OP_PARM_REG_GS,
+    OP_PARM_REG_ES,
+    OP_PARM_REG_SEG_START = OP_PARM_REG_ES,
+    OP_PARM_REG_CS,
+    OP_PARM_REG_SS,
+    OP_PARM_REG_DS,
+    OP_PARM_REG_FS,
+    OP_PARM_REG_GS,
+    OP_PARM_REG_SEG_END = OP_PARM_REG_GS,
 
-  OP_PARM_REG_AX,
-  OP_PARM_REG_GEN16_START = OP_PARM_REG_AX,
-  OP_PARM_REG_CX,
-  OP_PARM_REG_DX,
-  OP_PARM_REG_BX,
-  OP_PARM_REG_SP,
-  OP_PARM_REG_BP,
-  OP_PARM_REG_SI,
-  OP_PARM_REG_DI,
-  OP_PARM_REG_GEN16_END = OP_PARM_REG_DI,
+    OP_PARM_REG_AX,
+    OP_PARM_REG_GEN16_START = OP_PARM_REG_AX,
+    OP_PARM_REG_CX,
+    OP_PARM_REG_DX,
+    OP_PARM_REG_BX,
+    OP_PARM_REG_SP,
+    OP_PARM_REG_BP,
+    OP_PARM_REG_SI,
+    OP_PARM_REG_DI,
+    OP_PARM_REG_GEN16_END = OP_PARM_REG_DI,
 
-  OP_PARM_REG_AL,
-  OP_PARM_REG_GEN8_START = OP_PARM_REG_AL,
-  OP_PARM_REG_CL,
-  OP_PARM_REG_DL,
-  OP_PARM_REG_BL,
-  OP_PARM_REG_AH,
-  OP_PARM_REG_CH,
-  OP_PARM_REG_DH,
-  OP_PARM_REG_BH,
-  OP_PARM_REG_GEN8_END = OP_PARM_REG_BH,
+    OP_PARM_REG_AL,
+    OP_PARM_REG_GEN8_START = OP_PARM_REG_AL,
+    OP_PARM_REG_CL,
+    OP_PARM_REG_DL,
+    OP_PARM_REG_BL,
+    OP_PARM_REG_AH,
+    OP_PARM_REG_CH,
+    OP_PARM_REG_DH,
+    OP_PARM_REG_BH,
+    OP_PARM_REG_GEN8_END = OP_PARM_REG_BH,
 
-  OP_PARM_REGFP_0,
-  OP_PARM_REG_FP_START = OP_PARM_REGFP_0,
-  OP_PARM_REGFP_1,
-  OP_PARM_REGFP_2,
-  OP_PARM_REGFP_3,
-  OP_PARM_REGFP_4,
-  OP_PARM_REGFP_5,
-  OP_PARM_REGFP_6,
-  OP_PARM_REGFP_7,
-  OP_PARM_REG_FP_END = OP_PARM_REGFP_7,
+    OP_PARM_REGFP_0,
+    OP_PARM_REG_FP_START = OP_PARM_REGFP_0,
+    OP_PARM_REGFP_1,
+    OP_PARM_REGFP_2,
+    OP_PARM_REGFP_3,
+    OP_PARM_REGFP_4,
+    OP_PARM_REGFP_5,
+    OP_PARM_REGFP_6,
+    OP_PARM_REGFP_7,
+    OP_PARM_REG_FP_END = OP_PARM_REGFP_7,
 
-  OP_PARM_NTA,
-  OP_PARM_T0,
-  OP_PARM_T1,
-  OP_PARM_T2,
-  OP_PARM_1,
+    OP_PARM_NTA,
+    OP_PARM_T0,
+    OP_PARM_T1,
+    OP_PARM_T2,
+    OP_PARM_1,
 
-  OP_PARM_REX,
-  OP_PARM_REX_START = OP_PARM_REX,
-  OP_PARM_REX_B,
-  OP_PARM_REX_X,
-  OP_PARM_REX_XB,
-  OP_PARM_REX_R,
-  OP_PARM_REX_RB,
-  OP_PARM_REX_RX,
-  OP_PARM_REX_RXB,
-  OP_PARM_REX_W,
-  OP_PARM_REX_WB,
-  OP_PARM_REX_WX,
-  OP_PARM_REX_WXB,
-  OP_PARM_REX_WR,
-  OP_PARM_REX_WRB,
-  OP_PARM_REX_WRX,
-  OP_PARM_REX_WRXB,
+    OP_PARM_REX,
+    OP_PARM_REX_START = OP_PARM_REX,
+    OP_PARM_REX_B,
+    OP_PARM_REX_X,
+    OP_PARM_REX_XB,
+    OP_PARM_REX_R,
+    OP_PARM_REX_RB,
+    OP_PARM_REX_RX,
+    OP_PARM_REX_RXB,
+    OP_PARM_REX_W,
+    OP_PARM_REX_WB,
+    OP_PARM_REX_WX,
+    OP_PARM_REX_WXB,
+    OP_PARM_REX_WR,
+    OP_PARM_REX_WRB,
+    OP_PARM_REX_WRX,
+    OP_PARM_REX_WRXB,
 
-  OP_PARM_REG_RAX,
-  OP_PARM_REG_GEN64_START = OP_PARM_REG_RAX,
-  OP_PARM_REG_RCX,
-  OP_PARM_REG_RDX,
-  OP_PARM_REG_RBX,
-  OP_PARM_REG_RSP,
-  OP_PARM_REG_RBP,
-  OP_PARM_REG_RSI,
-  OP_PARM_REG_RDI,
-  OP_PARM_REG_R8,
-  OP_PARM_REG_R9,
-  OP_PARM_REG_R10,
-  OP_PARM_REG_R11,
-  OP_PARM_REG_R12,
-  OP_PARM_REG_R13,
-  OP_PARM_REG_R14,
-  OP_PARM_REG_R15,
-  OP_PARM_REG_GEN64_END = OP_PARM_REG_R15
+    OP_PARM_REG_RAX,
+    OP_PARM_REG_GEN64_START = OP_PARM_REG_RAX,
+    OP_PARM_REG_RCX,
+    OP_PARM_REG_RDX,
+    OP_PARM_REG_RBX,
+    OP_PARM_REG_RSP,
+    OP_PARM_REG_RBP,
+    OP_PARM_REG_RSI,
+    OP_PARM_REG_RDI,
+    OP_PARM_REG_R8,
+    OP_PARM_REG_R9,
+    OP_PARM_REG_R10,
+    OP_PARM_REG_R11,
+    OP_PARM_REG_R12,
+    OP_PARM_REG_R13,
+    OP_PARM_REG_R14,
+    OP_PARM_REG_R15,
+    OP_PARM_REG_GEN64_END = OP_PARM_REG_R15
 };
 
 #define OP_PARM_VTYPE(a)        ((unsigned)a & 0xFE0)
