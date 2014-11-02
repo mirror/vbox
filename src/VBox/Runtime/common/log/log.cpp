@@ -830,7 +830,6 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         pLogger->pInt->pvPrefixUserArg          = NULL;
         pLogger->pInt->afPadding1[0]            = false;
         pLogger->pInt->afPadding1[1]            = false;
-        pLogger->pInt->afPadding1[2]            = false;
         pLogger->pInt->fCreated                 = false;
         pLogger->pInt->cMaxGroups               = cGroups;
         pLogger->pInt->papszGroups              = papszGroups;
