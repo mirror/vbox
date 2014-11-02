@@ -15633,8 +15633,39 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
 /** Opcode 0xdf !11/4. */
 FNIEMOP_STUB_1(iemOp_fbld_m80d,   uint8_t, bRm);
 
+
 /** Opcode 0xdf !11/5. */
-FNIEMOP_STUB_1(iemOp_fild_m64i,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fild_m64i,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fild m64i");
+
+    IEM_MC_BEGIN(2, 3);
+    IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,              FpuRes);
+    IEM_MC_LOCAL(int64_t,                   i64Val);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT,     pFpuRes,    FpuRes, 0);
+    IEM_MC_ARG_LOCAL_REF(int64_t const *,   pi64Val,    i64Val, 1);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_I64(i64Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+
+    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fild_i64_to_r80, pFpuRes, pi64Val);
+        IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ENDIF();
+    IEM_MC_USED_FPU();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xdf !11/6. */
 FNIEMOP_STUB_1(iemOp_fbstp_m80d,  uint8_t, bRm);
