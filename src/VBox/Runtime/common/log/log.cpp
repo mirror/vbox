@@ -105,6 +105,8 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
     unsigned                iGroup;
 } RTLOGOUTPUTPREFIXEDARGS, *PRTLOGOUTPUTPREFIXEDARGS;
 
+#ifndef IN_RC
+
 /**
  * Internal logger data.
  *
@@ -173,7 +175,7 @@ typedef struct RTLOGGERINTERNAL
     char * volatile         pchRingBufCur;
     /** @} */
 
-#ifdef IN_RING3 /* Note! Must be at the end! */
+# ifdef IN_RING3 /* Note! Must be at the end! */
     /** @name File logging bits for the logger.
      * @{ */
     /** Pointer to the function called when starting logging, and when
@@ -197,19 +199,21 @@ typedef struct RTLOGGERINTERNAL
     /** Pointer to filename. */
     char                    szFilename[RTPATH_MAX];
     /** @} */
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
 } RTLOGGERINTERNAL;
 
 /** The revision of the internal logger structure. */
-#define RTLOGGERINTERNAL_REV    UINT32_C(10)
+# define RTLOGGERINTERNAL_REV    UINT32_C(10)
 
-#ifdef IN_RING3
+# ifdef IN_RING3
 /** The size of the RTLOGGERINTERNAL structure in ring-0.  */
-# define RTLOGGERINTERNAL_R0_SIZE       RT_OFFSETOF(RTLOGGERINTERNAL, pfnPhase)
+#  define RTLOGGERINTERNAL_R0_SIZE       RT_OFFSETOF(RTLOGGERINTERNAL, pfnPhase)
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, hFile, sizeof(void *));
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbHistoryFileMax, sizeof(uint64_t));
-#endif
+# endif
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbRingBufUnflushed, sizeof(uint64_t));
+
+#endif /* !IN_RC */
 
 
 /*******************************************************************************
