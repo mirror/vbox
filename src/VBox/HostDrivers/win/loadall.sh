@@ -1,10 +1,10 @@
 #!/bin/bash
 ## @file
-# For development, builds and loads all the host drivers.
+# For development, loads all the host drivers.
 #
 
 #
-# Copyright (C) 2010-2012 Oracle Corporation
+# Copyright (C) 2010-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,10 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+
+if test -n "$Path" -a test -z "$PATH"; then
+    export PATH="$Path"
+fi
 
 MY_DIR=`cd "${0}/.." && cmd /c cd | kmk_sed -e 's,\\\\,/,g' `
 if [ ! -d "${MY_DIR}" ]; then
@@ -61,12 +65,14 @@ done
 #
 # Invoke the installers.
 #
-for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe ; #NetAdpInstall.exe; - busted
-do
-    if test -f ${MY_DIR}/$inst; then
-        ${MY_DIR}/$inst
-    fi
-done
+if "$1" != "-u" -a "$1" != "--uninstall"; then
+    for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe ; #NetAdpInstall.exe; - busted
+    do
+        if test -f ${MY_DIR}/$inst; then
+            ${MY_DIR}/$inst
+        fi
+    done
+fi
 
 echo "load.sh: Successfully installed all drivers"
 exit 0
