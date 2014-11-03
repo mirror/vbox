@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2007-2013 Oracle Corporation
+ * Copyright (C) 2007-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -843,7 +843,7 @@ void doQueuesLoop()
     soap_init(&soap);
 
 #ifdef WITH_OPENSSL
-    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_DEFAULT | SOAP_TLSv1, g_pcszKeyFile,
+    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_REQUIRE_SERVER_AUTHENTICATION | SOAP_TLSv1, g_pcszKeyFile,
                                          g_pcszPassword, g_pcszCACert, g_pcszCAPath,
                                          g_pcszDHFile, g_pcszRandFile, g_pcszSID))
     {
