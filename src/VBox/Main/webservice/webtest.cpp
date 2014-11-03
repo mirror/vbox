@@ -3,7 +3,7 @@
  *      demo webservice client in C++. This mimics some of the
  *      functionality of VBoxManage for testing purposes.
  *
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
     // Use SOAP_SSL_NO_AUTHENTICATION here to accept broken server configs.
     // In a real world setup please use at least SOAP_SSL_DEFAULT and provide
     // the necessary CA certificate for validating the server's certificate.
-    if (fSSL && soap_ssl_client_context(&soap, SOAP_SSL_NO_AUTHENTICATION,
+    if (fSSL && soap_ssl_client_context(&soap, SOAP_SSL_NO_AUTHENTICATION | SOAP_TLSv1,
                                         NULL /*clientkey*/, NULL /*password*/,
                                         NULL /*cacert*/, NULL /*capath*/,
                                         NULL /*randfile*/))
