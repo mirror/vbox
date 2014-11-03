@@ -843,7 +843,7 @@ void doQueuesLoop()
     soap_init(&soap);
 
 #ifdef WITH_OPENSSL
-    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_DEFAULT, g_pcszKeyFile,
+    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_DEFAULT | SOAP_TLSv1, g_pcszKeyFile,
                                          g_pcszPassword, g_pcszCACert, g_pcszCAPath,
                                          g_pcszDHFile, g_pcszRandFile, g_pcszSID))
     {
