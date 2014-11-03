@@ -861,9 +861,20 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** L0, L1, L2, and L3.  */
 #define X86_DR7_GE_ALL                      UINT64_C(0x00000000000000aa)
 
+/** Bit 12 - IR (ICE) - Interrupt redirection on Pentium.  When set, the in
+ * Circut Emulator (ICE) will break emulation on breakpoints and stuff.
+ * May cause CPU hang if enabled without ICE attached when the ICEBP/INT1
+ * instruction is executed.
+ * @see http://www.rcollins.org/secrets/DR7.html  */
+#define X86_DR7_ICE_IR                      RT_BIT(12)
 /** Bit 13 - GD - General detect enable. Enables emulators to get exceptions when
  * any DR register is accessed. */
 #define X86_DR7_GD                          RT_BIT(13)
+/** Bit 14 - TR1 (ICE) - Code discontinuity trace for use with ICE on
+ *  Pentium. */
+#define X86_DR7_ICE_TR1                     RT_BIT(14)
+/** Bit 15 - TR2 (ICE) - Controls unknown ICE trace feature of the pentium. */
+#define X86_DR7_ICE_TR2                     RT_BIT(15)
 /** Bit 16 & 17 - R/W0 - Read write field 0. Values X86_DR7_RW_*. */
 #define X86_DR7_RW0_MASK                    (3 << 16)
 /** Bit 18 & 19 - LEN0 - Length field 0. Values X86_DR7_LEN_*. */
@@ -883,7 +894,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 /** Bits which reads as 1s. */
 #define X86_DR7_RA1_MASK                    (RT_BIT(10))
-/** Bits which reads as zeros. */
+/** Bits which reads as zeros.  These are related to ICE (bits 12, 14, 15). */
 #define X86_DR7_RAZ_MASK                    UINT64_C(0x0000d800)
 /** Bits which must be 0s when writing to DR7. */
 #define X86_DR7_MBZ_MASK                    UINT64_C(0xffffffff00000000)
