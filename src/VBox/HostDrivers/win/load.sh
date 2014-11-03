@@ -1,10 +1,10 @@
 #!/bin/bash
 ## @file
-# For development, builds and loads all the host drivers.
+# For development, loads the support driver.
 #
 
 #
-# Copyright (C) 2010-2012 Oracle Corporation
+# Copyright (C) 2010-2014 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -65,12 +65,14 @@ done
 #
 # Invoke the installer.
 #
-for inst in SUPInstall.exe;
-do
-    if test -f ${MY_DIR}/$inst; then
-        ${MY_DIR}/$inst
-    fi
-done
+if "$1" != "-u" -a "$1" != "--uninstall"; then
+    for inst in SUPInstall.exe;
+    do
+        if test -f ${MY_DIR}/$inst; then
+            ${MY_DIR}/$inst
+        fi
+    done
+fi
 
 echo "load.sh: Successfully installed SUPDrv (aka VBoxDrv)"
 exit 0
