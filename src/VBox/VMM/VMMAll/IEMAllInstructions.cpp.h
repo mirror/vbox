@@ -1330,7 +1330,7 @@ FNIEMOP_DEF(iemOp_nop_Ev_GrpP)
         case 6: /* Aliased to /0 for the time being. */
         case 7: /* Aliased to /0 for the time being. */
         case 0: IEMOP_MNEMONIC("prefetch"); break;
-        case 1: IEMOP_MNEMONIC("prefetchw "); break;
+        case 1: IEMOP_MNEMONIC("prefetchw"); break;
         case 3: IEMOP_MNEMONIC("prefetchw"); break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }

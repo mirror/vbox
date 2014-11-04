@@ -1176,7 +1176,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                         "Please use IMachine::setCPUIDLeaf() instead.");
 
     /*
-     * Pre-exploded the CPUID info.
+     * Pre-explode the CPUID info.
      */
     if (RT_SUCCESS(rc))
         rc = cpumR3CpuIdExplodeFeatures(pCPUM->GuestInfo.paCpuIdLeavesR3, pCPUM->GuestInfo.cCpuIdLeaves, &pCPUM->GuestFeatures);
