@@ -1190,14 +1190,16 @@ BEGINPROC TMPL_NM_CMN(CalcTestPerSecond)
         cmp     edx, ecx
         jae     .div_overflow
         mov     eax, [sAX]
+        shld    edx, eax, 10
+        shl     eax,10
         div     ecx                     ; eax = NS per test
 
         ; Calc tests per second.
         mov     ecx, eax
         cmp     ecx, 0
         jz      .div_zero
-        xor     edx, edx
-        mov     eax, 1000000000         ; 1G
+        mov     edx, 0xee
+        mov     eax, 0x6b280000         ; 1024G
         div     ecx                     ; eax = tests per second
 
 .done:
