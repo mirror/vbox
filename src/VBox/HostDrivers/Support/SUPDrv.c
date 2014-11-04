@@ -6259,11 +6259,11 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
         PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
         uint8_t            idApic = ASMGetApicId();
 
-        AssertReturnVoid(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId));
+        Assert(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId));
         iCpu = pGip->aiCpuFromApicId[idApic];
-        AssertReturnVoid(iCpu < pGip->cCpus);
+        Assert(iCpu < pGip->cCpus);
         pGipCpu = &pGip->aCPUs[iCpu];
-        AssertReturnVoid(pGipCpu->idCpu == RTMpCpuId());
+        Assert(pGipCpu->idCpu == RTMpCpuId());
 
         /*
          * The calculations in supdrvGipUpdate() is very timing sensitive and doesn't handle
