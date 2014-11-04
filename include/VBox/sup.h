@@ -1487,7 +1487,7 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
     Assert(pGip);
 
     iCpu = pGip->aiCpuFromApicId[idApic];
-    AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_APIC_ID);
+    AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
     pGipCpu = &pGip->aCPUs[iCpu];
     Assert(pGipCpu);
 
