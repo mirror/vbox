@@ -1577,6 +1577,19 @@ DECLCALLBACK(bool) vusbIDeviceIsEmulated(PVUSBIDEVICE pInterface)
 
 
 /**
+ * @interface_method_impl{VUSBIDEVICE,pfnGetState}
+ */
+DECLCALLBACK(VUSBSPEED) vusbIDeviceGetSpeed(PVUSBIDEVICE pInterface)
+{
+    PVUSBDEV pDev = (PVUSBDEV)pInterface;
+    VUSBSPEED enmSpeed = pDev->pUsbIns->enmSpeed;
+
+    LogFlowFunc(("pInterface=%p, returns %u\n", pInterface, enmSpeed));
+    return enmSpeed;
+}
+
+
+/**
  * The maximum number of interfaces the device can have in all of it's configuration.
  *
  * @returns Number of interfaces.
@@ -1717,6 +1730,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     pDev->IDevice.pfnPowerOff = vusbIDevicePowerOff;
     pDev->IDevice.pfnGetState = vusbIDeviceGetState;
     pDev->IDevice.pfnIsEmulated = vusbIDeviceIsEmulated;
+    pDev->IDevice.pfnGetSpeed = vusbIDeviceGetSpeed;
     pDev->pUsbIns = pUsbIns;
     pDev->pNext = NULL;
     pDev->pNextHash = NULL;

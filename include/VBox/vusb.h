@@ -478,6 +478,28 @@ typedef const VUSBSETUP *PCVUSBSETUP;
 #define VUSB_STDVER_30              RT_BIT(3)
 /** @} */
 
+/**
+ * USB port/device speeds.
+ */
+typedef enum VUSBSPEED
+{
+    /** Undetermined/unknown speed. */
+    VUSB_SPEED_UNKNOWN = 0,
+    /** Low-speed (LS), 1.5 Mbit/s, USB 1.0. */
+    VUSB_SPEED_LOW,
+    /** Full-speed (FS), 12 Mbit/s, USB 1.1. */
+    VUSB_SPEED_FULL,
+    /** High-speed (HS), 480 Mbit/s, USB 2.0. */
+    VUSB_SPEED_HIGH,
+    /** Variable speed, wireless USB 2.5. */
+    VUSB_SPEED_VARIABLE,
+    /** SuperSpeed (SS), 5.0 Gbit/s, USB 3.0. */
+    VUSB_SPEED_SUPER,
+    /** SuperSpeed+ (SS+), 10.0 Gbit/s, USB 3.1. */
+    VUSB_SPEED_SUPERPLUS,
+    /** The usual 32-bit hack. */
+    VUSB_SPEED_32BIT_HACK = 0x7fffffff
+} VUSBSPEED;
 
 /** Pointer to a VBox USB device interface. */
 typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
@@ -807,7 +829,7 @@ typedef enum VUSBDEVICESTATE
      * Next states: VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_DESTROYED
      */
     VUSB_DEVICE_STATE_RESET,
-    /** The device has been destroy. */
+    /** The device has been destroyed. */
     VUSB_DEVICE_STATE_DESTROYED,
     /** The usual 32-bit hack. */
     VUSB_DEVICE_STATE_32BIT_HACK = 0x7fffffff
@@ -881,6 +903,14 @@ typedef struct VUSBIDEVICE
      * @param   pInterface      Pointer to the device interface structure.
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsEmulated,(PVUSBIDEVICE pInterface));
+
+    /**
+     * Get the speed the device is operating at.
+     *
+     * @returns Device state.
+     * @param   pInterface      Pointer to the device interface structure.
+     */
+    DECLR3CALLBACKMEMBER(VUSBSPEED, pfnGetSpeed,(PVUSBIDEVICE pInterface));
 
 } VUSBIDEVICE;
 /** VUSBIDEVICE interface ID. */

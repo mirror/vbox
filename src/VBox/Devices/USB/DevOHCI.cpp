@@ -965,6 +965,8 @@ static DECLCALLBACK(int) ohciRhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE
     Assert(uPort >= 1 && uPort <= RT_ELEMENTS(pThis->RootHub.aPorts));
     uPort--;
     Assert(!pThis->RootHub.aPorts[uPort].pDev);
+    /* Only LS/FS devices can end up here. */
+    Assert(pDev->pfnGetSpeed(pDev) == VUSB_SPEED_LOW || pDev->pfnGetSpeed(pDev) == VUSB_SPEED_FULL);
 
     /*
      * Attach it.

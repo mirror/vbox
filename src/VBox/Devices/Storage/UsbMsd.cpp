@@ -2007,9 +2007,9 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbMsdUsbGetDescriptorCache(PPDMUSBINS pU
 {
     PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
     LogFlow(("usbMsdUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
-    if (pThis->pUsbIns->iUsbHubVersion & VUSB_STDVER_30)
+    if (pThis->pUsbIns->enmSpeed == VUSB_SPEED_SUPER)
         return &g_UsbMsdDescCacheSS;
-    else if (pThis->pUsbIns->iUsbHubVersion & VUSB_STDVER_20)
+    else if (pThis->pUsbIns->enmSpeed == VUSB_SPEED_SUPER)
         return &g_UsbMsdDescCacheHS;
     else
         return &g_UsbMsdDescCacheFS;
