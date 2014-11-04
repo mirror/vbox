@@ -5646,7 +5646,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         if (u64CurTSC - pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, -pVCpu->hm.s.vmx.u64TSCOffset);  AssertRC(rc);
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0 - pVCpu->hm.s.vmx.u64TSCOffset); AssertRC(rc);
 
             pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);          AssertRC(rc);
