@@ -6002,8 +6002,8 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
 
             uint16_t iCpuBefore = pGip->aiCpuFromApicId[idApicBefore];
             uint16_t iCpuAfter  = pGip->aiCpuFromApicId[idApicAfter];
-            AssertMsgReturn(iCpuBefore < pGip->cCpus, ("iCpuBefore=%u cCpus=%u\n", iCpuBefore, pGip->cCpus), VERR_WRONG_ORDER);
-            AssertMsgReturn(iCpuAfter  < pGip->cCpus, ("iCpuAfter=%u cCpus=%u\n", iCpuAfter, pGip->cCpus), VERR_WRONG_ORDER);
+            AssertMsgReturn(iCpuBefore < pGip->cCpus, ("iCpuBefore=%u cCpus=%u\n", iCpuBefore, pGip->cCpus), VERR_INVALID_CPU_INDEX);
+            AssertMsgReturn(iCpuAfter  < pGip->cCpus, ("iCpuAfter=%u cCpus=%u\n", iCpuAfter, pGip->cCpus), VERR_INVALID_CPU_INDEX);
             pGipCpuBefore = &pGip->aCPUs[iCpuBefore];
             pGipCpuAfter  = &pGip->aCPUs[iCpuAfter];
 
@@ -6256,7 +6256,9 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     {
         PSUPGIPCPU         pGipCpu;
         PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-        unsigned           iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
+        uint8_t            idApic = ASMGetApicId();
+        AssertReturnVoid(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId));
+        unsigned           iCpu = pGip->aiCpuFromApicId[idApic];
         AssertReturnVoid(iCpu < pGip->cCpus);
         pGipCpu = &pGip->aCPUs[iCpu];
         AssertReturnVoid(pGipCpu->idCpu == RTMpCpuId());
@@ -7654,9 +7656,10 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
             int rc2;
 
             /* If we failed to have a delta, measurement the delta and retry. */
-            AssertReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), VERR_INVALID_CPU_ID);
+            AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId),
+                            ("idApic=%u ArraySize=%u\n", idApic, RT_ELEMENTS(pGip->aiCpuFromApicId)), VERR_INVALID_CPU_INDEX);
             uint16_t iCpu = pGip->aiCpuFromApicId[idApic];
-            AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_WRONG_ORDER);
+            AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
 
             rc2 = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
             if (RT_SUCCESS(rc2))

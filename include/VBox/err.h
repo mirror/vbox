@@ -86,8 +86,8 @@
 #define VERR_SERVICE_DISABLED               (-1020)
 /** The requested feature is not supported in raw-mode. */
 #define VERR_NOT_SUP_IN_RAW_MODE            (-1021)
-/** Invalid APIC ID. */
-#define VERR_INVALID_APIC_ID                (-1022)
+/** Invalid CPU index. */
+#define VERR_INVALID_CPU_INDEX              (-1022)
 /** @} */
 
 
