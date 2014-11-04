@@ -306,7 +306,6 @@ int main()
      * Init the runtime, test and say hello.
      */
     RTTEST hTest;
-    PDRVTSTMOUSE pThis;
     int rc = RTTestInitAndCreate("tstUsbMouse", &hTest);
     if (rc)
         return rc;
