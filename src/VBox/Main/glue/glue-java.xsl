@@ -4241,10 +4241,19 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.net.Socket;
+import java.net.InetAddress;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLSocket;
 
 class PortPool
 {
@@ -4360,6 +4369,99 @@ class PortPool
 }
 
 
+class VBoxTLSSocketFactory extends SSLSocketFactory
+{
+    private final SSLSocketFactory sf;
+
+    private void setupSocket(SSLSocket s)
+    {
+        String[] oldproto = s.getEnabledProtocols();
+        List<String> protolist = new ArrayList<String>();
+        for (int i = 0; i < oldproto.length; i++)
+            if (oldproto[i].toUpperCase().startsWith("TLS"))
+                protolist.add(oldproto[i]);
+        String[] newproto = protolist.toArray(new String[protolist.size()]);
+        s.setEnabledProtocols(newproto);
+    }
+
+    public VBoxTLSSocketFactory()
+    {
+        SSLSocketFactory tmp = null;
+        try
+        {
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, null, null);
+            tmp = sc.getSocketFactory();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        sf = tmp;
+    }
+
+    public static SocketFactory getDefault()
+    {
+        return new VBoxTLSSocketFactory();
+    }
+
+    public Socket createSocket(Socket socket, String host, int port,
+                               boolean autoClose) throws IOException, UnknownHostException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket(socket, host, port, autoClose);
+        setupSocket(s);
+        return s;
+    }
+
+    public Socket createSocket() throws IOException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket();
+        setupSocket(s);
+        return s;
+    }
+
+    public Socket createSocket(InetAddress host, int port) throws IOException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket(host, port);
+        setupSocket(s);
+        return s;
+    }
+
+    public Socket createSocket(InetAddress address, int port,
+                               InetAddress localAddress, int localPort) throws IOException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket(address, port, localAddress, localPort);
+        setupSocket(s);
+        return s;
+    }
+
+    public Socket createSocket(String host, int port) throws IOException, UnknownHostException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket(host, port);
+        setupSocket(s);
+        return s;
+    }
+
+    public Socket createSocket(String host, int port,
+                               InetAddress localHost, int localPort) throws IOException, UnknownHostException
+    {
+        SSLSocket s = (SSLSocket)sf.createSocket(host, port, localHost, localPort);
+        setupSocket(s);
+        return s;
+    }
+
+    public String[] getDefaultCipherSuites()
+    {
+        return sf.getSupportedCipherSuites();
+    }
+
+    public String[] getSupportedCipherSuites()
+    {
+        return sf.getSupportedCipherSuites();
+    }
+}
+        
+
 public class VirtualBoxManager
 {
     private static PortPool pool = new PortPool(true);
@@ -4386,6 +4488,10 @@ public class VirtualBoxManager
         {
             ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+            VBoxTLSSocketFactory sf = new VBoxTLSSocketFactory();
+            ((BindingProvider)port).getRequestContext().
+                put("com.sun.xml.internal.ws.transport.https.client.SSLSocketFactory", sf);
+
             String handle = port.iWebsessionManagerLogon(username, passwd);
             this.vbox = new IVirtualBox(handle, port);
         }
