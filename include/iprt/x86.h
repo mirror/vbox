@@ -76,7 +76,7 @@ typedef struct X86EFLAGSBITS
     unsigned    u1DF : 1;
     /** Bit 11 - OF - Overflow flag - Status flag. */
     unsigned    u1OF : 1;
-    /** Bit 12-13 - IOPL - I/O prvilege level flag - System flag. */
+    /** Bit 12-13 - IOPL - I/O Privilege Level flag - System flag. */
     unsigned    u2IOPL : 2;
     /** Bit 14 - NT - Nested task flag - System flag. */
     unsigned    u1NT : 1;
@@ -184,7 +184,7 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 /** Bit 11 - OF - Overflow flag - Status flag. */
 #define X86_EFL_OF          RT_BIT(11)
 #define X86_EFL_OF_BIT      11
-/** Bit 12-13 - IOPL - I/O prvilege level flag - System flag. */
+/** Bit 12-13 - IOPL - I/O privilege level flag - System flag. */
 #define X86_EFL_IOPL        (RT_BIT(12) | RT_BIT(13))
 /** Bit 14 - NT - Nested task flag - System flag. */
 #define X86_EFL_NT          RT_BIT(14)
@@ -206,7 +206,7 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_RA1_MASK    RT_BIT_32(1)
 /** IOPL shift. */
 #define X86_EFL_IOPL_SHIFT  12
-/** The the IOPL level from the flags. */
+/** The IOPL level from the flags. */
 #define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
 /** Bits restored by popf */
 #define X86_EFL_POPF_BITS       (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
@@ -336,7 +336,7 @@ typedef struct X86CPUIDFEATEDX
     unsigned    u1CMOV : 1;
     /** Bit 16 - PAT - Page Attribute Table. */
     unsigned    u1PAT : 1;
-    /** Bit 17 - PSE-36 - 36-bit Page Size Extention. */
+    /** Bit 17 - PSE-36 - 36-bit Page Size Extension. */
     unsigned    u1PSE36 : 1;
     /** Bit 18 - PSN - Processor Serial Number. */
     unsigned    u1PSN : 1;
@@ -499,7 +499,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_CLFSH     RT_BIT(19)
 /** Bit 21 - DS - Debug Store. */
 #define X86_CPUID_FEATURE_EDX_DS        RT_BIT(21)
-/** Bit 22 - ACPI - Termal Monitor and Software Controlled Clock Facilities. */
+/** Bit 22 - ACPI - Thermal Monitor and Software Controlled Clock Facilities. */
 #define X86_CPUID_FEATURE_EDX_ACPI      RT_BIT(22)
 /** Bit 23 - MMX - Intel MMX Technology. */
 #define X86_CPUID_FEATURE_EDX_MMX       RT_BIT(23)
@@ -638,7 +638,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_EDX_CMOV      RT_BIT(15)
 /** Bit 16 - PAT - Page Attribute Table. */
 #define X86_CPUID_AMD_FEATURE_EDX_PAT       RT_BIT(16)
-/** Bit 17 - PSE-36 - 36-bit Page Size Extention. */
+/** Bit 17 - PSE-36 - 36-bit Page Size Extension. */
 #define X86_CPUID_AMD_FEATURE_EDX_PSE36     RT_BIT(17)
 /** Bit 22 - AXMMX - AMD Extensions to MMX Instructions. */
 #define X86_CPUID_AMD_FEATURE_EDX_AXMMX     RT_BIT(22)
@@ -932,7 +932,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  */
 #define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
 
-/** Fetch the the R/Wx bits for a given breakpoint (so it can be compared with
+/** Fetch the R/Wx bits for a given breakpoint (so it can be compared with
  * one of the X86_DR7_RW_XXX constants).
  *
  * @returns X86_DR7_RW_XXX
@@ -1100,7 +1100,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
  * The 16th bit whether flex ratio is being used, in which case bits 15:8
  * holds a ratio that Apple takes for TSC granularity.
  *
- * @note This MSR conflics the P4 MSR_MCG_R12 register. */
+ * @note This MSR conflicts the P4 MSR_MCG_R12 register. */
 #define MSR_FLEX_RATIO                      0x194
 /** Performance state value and starting with Intel core more.
  * Apple uses the >=core features to determine TSC granularity on older CPUs. */
@@ -2527,7 +2527,7 @@ typedef struct X86DESCATTRBITS
     unsigned    u4Type : 4;
     /** 04 - Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType : 1;
-    /** 05 - Descriptor Privelege level. */
+    /** 05 - Descriptor Privilege level. */
     unsigned    u2Dpl : 2;
     /** 07 - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
@@ -2598,7 +2598,7 @@ typedef struct X86DESCGENERIC
     unsigned    u4Type : 4;
     /** 2c - Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType : 1;
-    /** 2d - Descriptor Privelege level. */
+    /** 2d - Descriptor Privilege level. */
     unsigned    u2Dpl : 2;
     /** 2f - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
@@ -2660,7 +2660,7 @@ typedef struct X86DESCGATE
     unsigned    u4Type : 4;
     /** 2c - Descriptor Type (0 = system). */
     unsigned    u1DescType : 1;
-    /** 2d - Descriptor Privelege level. */
+    /** 2d - Descriptor Privilege level. */
     unsigned    u2Dpl : 2;
     /** 2f - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
@@ -2760,7 +2760,7 @@ typedef struct X86DESC64GENERIC
     unsigned    u4Type : 4;
     /** Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
+    /** Descriptor Privilege level. */
     unsigned    u2Dpl : 2;
     /** Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
@@ -2809,7 +2809,7 @@ typedef struct X86DESC64SYSTEM
     unsigned    u4Type          : 4;
     /** Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType      : 1;
-    /** Descriptor Privelege level. */
+    /** Descriptor Privilege level. */
     unsigned    u2Dpl           : 2;
     /** Flags selector present(=1) or not. */
     unsigned    u1Present       : 1;
@@ -2857,7 +2857,7 @@ typedef struct X86DESC64GATE
     unsigned    u4Type : 4;
     /** Descriptor Type (0 = system). */
     unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
+    /** Descriptor Privilege level. */
     unsigned    u2Dpl : 2;
     /** Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
@@ -3369,7 +3369,7 @@ typedef enum X86XCPT
     X86_XCPT_MC = 0x12,
     /** \#XF - SIMD Floating-Pointer Exception. */
     X86_XCPT_XF = 0x13,
-    /** \#VE - Virtualzation Exception. */
+    /** \#VE - Virtualization Exception. */
     X86_XCPT_VE = 0x14,
     /** \#SX - Security Exception. */
     X86_XCPT_SX = 0x1f
