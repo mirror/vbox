@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - (none).
  */
-#define SUPDRV_IOC_VERSION                              0x001c0000
+#define SUPDRV_IOC_VERSION                              0x001c0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1507,6 +1507,37 @@ typedef struct SUPTSCDELTAMEASURE
 AssertCompileMemberAlignment(SUPTSCDELTAMEASURE, u, 8);
 /** @} */
 
+/** @name SUP_IOCTL_TSC_READ
+ * Reads the TSC and TSC-delta atomically and returns the delta-adjusted TSC
+ * value.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TSC_READ                              SUP_CTL_CODE_SIZE(37, SUP_IOCTL_TSC_READ_SIZE)
+#define SUP_IOCTL_TSC_READ_SIZE                         sizeof(SUPTSCREAD)
+#define SUP_IOCTL_TSC_READ_SIZE_IN                      sizeof(SUPTSCREAD)
+#define SUP_IOCTL_TSC_READ_SIZE_OUT                     sizeof(SUPREQHDR)
+typedef struct SUPTSCREAD
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+
+    /** Input/output union. */
+    union
+    {
+        struct
+        {
+            /** The TSC after applying the relevant delta. */
+            uint64_t        u64AdjustedTsc;
+            /** The APIC Id of the CPU where the TSC was read. */
+            uint16_t        idApic;
+            /** Padding for future. */
+            uint64_t        auPadding[3];
+        } Out;
+    } u;
+} SUPTSCREAD, *PSUPTSCREAD;
+AssertCompileMemberAlignment(SUPTSCREAD, u, 8);
+/** @} */
 
 #pragma pack()                          /* paranoia */
 

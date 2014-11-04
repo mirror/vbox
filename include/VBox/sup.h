@@ -28,9 +28,11 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>
+#include <iprt/asm-amd64-x86.h>
 
 RT_C_DECLS_BEGIN
 
@@ -1449,8 +1451,103 @@ SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
  */
 SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries);
 
+/**
+ * Reads the delta-adjust TSC value.
+ *
+ * @returns VBox status code.
+ * @param   puTsc           Where to store the read TSC value.
+ * @param   pidApic         Where to store the APIC ID of the CPU where the TSC
+ *                          was read (optional, can be NULL).
+ */
+SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
+
 /** @} */
 #endif /* IN_RING3 */
+
+
+/**
+ * Applies the TSC delta to the supplied raw TSC value.
+ *
+ * @returns VBox status code.
+ * @param   pGip            Pointer to the GIP.
+ * @param   puTsc           Pointer to a valid TSC value before the TSC delta has been applied.
+ * @param   idApic          The APIC ID of the CPU @c uTsc corresponds to.
+ * @param   fDeltaApplied   Where to store whether the TSC delta was succesfully
+ *                          applied or not (optional, can be NULL).
+ *
+ * @remarks Maybe called with interrupts disabled!
+ */
+DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *fDeltaApplied)
+{
+    PSUPGIPCPU pGipCpu;
+    uint16_t  iCpu;
+
+    /* Validate. */
+    Assert(puTsc);
+    Assert(pGip);
+
+    iCpu = pGip->aiCpuFromApicId[idApic];
+    AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_APIC_ID);
+    pGipCpu = &pGip->aCPUs[iCpu];
+    Assert(pGipCpu);
+
+    if (RT_LIKELY(pGipCpu->i64TSCDelta != INT64_MAX))
+    {
+        *puTsc -= pGipCpu->i64TSCDelta;
+        if (fDeltaApplied)
+            *fDeltaApplied = true;
+    }
+    else if (fDeltaApplied)
+        *fDeltaApplied = false;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads the delta-adjusted TSC.
+ *
+ * @returns VBox status code.
+ * @param   puTsc           Where to store the normalized TSC value.
+ * @param   pidApic         Where to store the APIC ID of the CPU where the TSC
+ *                          was read (optional, can be NULL). This is updated
+ *                          even if the function fails with
+ *                          VERR_SUPDRV_TSC_READ_FAILED. Not guaranteed to be
+ *                          updated for other failures.
+ *
+ * @remarks May be called with interrupts disabled!
+ */
+DECLINLINE(int) SUPReadTsc(uint64_t *puTsc, uint16_t *pidApic)
+{
+#ifdef IN_RING3
+    return SUPR3ReadTsc(puTsc, pidApic);
+#else
+    RTCCUINTREG uFlags;
+    uint16_t    idApic;
+    bool        fDeltaApplied;
+    int         rc;
+
+    /* Validate. */
+    Assert(puTsc);
+
+    uFlags = ASMIntDisableFlags();
+    idApic = ASMGetApicId();        /* Doubles as serialization. */
+    *puTsc = ASMReadTSC();
+    ASMSetFlags(uFlags);
+
+    if (pidApic)
+        *pidApic = idApic;
+
+    if (RT_LIKELY(g_pSUPGlobalInfoPage))
+    {
+        rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
+        AssertRCReturn(rc, rc);
+        return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
+    }
+    return VERR_INVALID_POINTER;
+#endif
+}
+
 
 /** @name User mode module flags (SUPR3TracerRegisterModule & SUP_IOCTL_TRACER_UMOD_REG).
  * @{ */
