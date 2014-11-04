@@ -10165,10 +10165,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
     }
     else
-    {
-        AssertMsgFailed(("hmR0VmxExitRdtsc: EMInterpretRdtsc failed with %Rrc\n", rc));
         rc = VERR_EM_INTERPRETER;
-    }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return rc;
 }
