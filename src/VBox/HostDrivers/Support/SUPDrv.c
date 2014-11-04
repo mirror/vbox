@@ -7447,7 +7447,7 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
                  *        calculation on non-invariant hosts if it changes the history decision
                  *        taken in supdrvGipDoUpdateCpu(). */
                 ASMAtomicWriteU32(&pGip->u32UpdateHz, u32UpdateHz);
-                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, u64Delta / GIP_UPDATEHZ_RECALC_FREQ);
+                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, (uint32_t)u64Delta / GIP_UPDATEHZ_RECALC_FREQ);
             }
 #endif
         }
@@ -7629,7 +7629,7 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
 {
     uint64_t uTsc;
     uint16_t idApic;
-    int16_t cTries;
+    int16_t  cTries;
     PSUPGLOBALINFOPAGE pGip;
     int rc;
 
