@@ -7706,7 +7706,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  * @param   fStepping           Whether we're running in
  *                              hmR0VmxRunGuestCodeStep() and should return
  *                              VINF_EM_DBG_STEPPED if the event is injected
- *                              directly (registerd modified by us, not by
+ *                              directly (register modified by us, not by
  *                              hardware on VM-entry).
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
@@ -9134,7 +9134,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
         case VMX_EXIT_TASK_SWITCH:
 
-        /* Instruction specfic exits: */
+        /* Instruction specific VM-exits: */
         case VMX_EXIT_IO_INSTR:
         case VMX_EXIT_CPUID:
         case VMX_EXIT_RDTSC:
@@ -9305,7 +9305,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint32_t uSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         uint32_t uZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
-           See Intel spec. 26.3.1 "Checks on guest Guest Control Registers, Debug Registers and MSRs." */
+           See Intel spec. 26.3.1 "Checks on Guest Control Registers, Debug Registers and MSRs." */
         if (fUnrestrictedGuest)
             uSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
 
