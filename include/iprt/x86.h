@@ -76,7 +76,7 @@ typedef struct X86EFLAGSBITS
     unsigned    u1DF : 1;
     /** Bit 11 - OF - Overflow flag - Status flag. */
     unsigned    u1OF : 1;
-    /** Bit 12-13 - IOPL - I/O Privilege Level flag - System flag. */
+    /** Bit 12-13 - IOPL - I/O privilege level flag - System flag. */
     unsigned    u2IOPL : 2;
     /** Bit 14 - NT - Nested task flag - System flag. */
     unsigned    u1NT : 1;
