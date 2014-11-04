@@ -86,6 +86,8 @@
 #define VERR_SERVICE_DISABLED               (-1020)
 /** The requested feature is not supported in raw-mode. */
 #define VERR_NOT_SUP_IN_RAW_MODE            (-1021)
+/** Invalid APIC ID. */
+#define VERR_INVALID_APIC_ID                (-1022)
 /** @} */
 
 
@@ -1770,6 +1772,8 @@
 #define VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED    (-3743)
 /** Failed to calculate the TSC frequency. */
 #define VERR_SUPDRV_TSC_FREQ_MEASUREMENT_FAILED     (-3744)
+/** Failed to get the delta-adjusted TSC value. */
+#define VERR_SUPDRV_TSC_READ_FAILED                 (-3745)
 /** @} */
 
 

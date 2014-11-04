@@ -157,6 +157,7 @@ static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt,
 static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static int                  supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq);
 static int                  supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASURE pReq);
+static int                  supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq);
 static int                  supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -2252,6 +2253,16 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             REQ_CHECK_SIZES(SUP_IOCTL_TSC_DELTA_MEASURE);
 
             pReqHdr->rc = supdrvIOCtl_TscDeltaMeasure(pDevExt, pReq);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TSC_READ):
+        {
+            /* validate */
+            PSUPTSCREAD pReq = (PSUPTSCREAD)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_TSC_READ);
+
+            pReqHdr->rc = supdrvIOCtl_TscRead(pDevExt, pReq);
             return 0;
         }
 
@@ -5909,6 +5920,7 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
 #endif /* SUPDRV_USE_TSC_DELTA_THREAD */
 
 
+#if 0
 /**
  * Measures the nominal TSC frequency.
  *
@@ -6023,6 +6035,7 @@ static int supdrvGipMeasureNominalTscFreq(PSUPGLOBALINFOPAGE pGip)
 
     return VERR_SUPDRV_TSC_FREQ_MEASUREMENT_FAILED;
 }
+#endif
 
 
 /**
@@ -7344,7 +7357,7 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
         u32UpdateIntervalTSC += u32;
         u32UpdateIntervalTSC >>= 1;
 
-        /* Value chosen for a 2GHz Athlon64 running linux 2.6.10/11, . */
+        /* Value chosen for a 2GHz Athlon64 running linux 2.6.10/11. */
         u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
     }
     else if (pGip->u32UpdateHz >= 90)
@@ -7599,6 +7612,58 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASUR
             break;
         }
     }
+    return rc;
+}
+
+
+/**
+ * Reads the TSC and TSC-delta atomically, applies the TSC delta.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pReq            Pointer to the TSC-read request.
+ */
+static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
+{
+    uint64_t uTsc;
+    uint16_t idApic;
+    int16_t cTries;
+    PSUPGLOBALINFOPAGE pGip;
+    int rc;
+
+    /*
+     * Validate.
+     */
+    AssertReturn(pDevExt, VERR_INVALID_PARAMETER);
+    AssertReturn(pReq, VERR_INVALID_PARAMETER);
+    AssertReturn(pDevExt->pGip, VERR_INVALID_PARAMETER);
+    pGip = pDevExt->pGip;
+
+    cTries = 4;
+    while (cTries-- > 0)
+    {
+        rc = SUPReadTsc(&uTsc, &idApic);
+        if (RT_SUCCESS(rc))
+        {
+            pReq->u.Out.u64AdjustedTsc = uTsc;
+            pReq->u.Out.idApic = idApic;
+            return VINF_SUCCESS;
+        }
+        else
+        {
+            int rc2;
+
+            /* If we failed to have a delta, measurement the delta and retry. */
+            AssertReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), VERR_INVALID_CPU_ID);
+            uint16_t iCpu = pGip->aiCpuFromApicId[idApic];
+            AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_WRONG_ORDER);
+
+            rc2 = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
+            if (RT_SUCCESS(rc2))
+                AssertReturn(pGip->aCPUs[iCpu].i64TSCDelta != INT64_MAX, VERR_INTERNAL_ERROR_2);
+        }
+    }
+
     return rc;
 }
 
