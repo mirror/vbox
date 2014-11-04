@@ -5619,20 +5619,18 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
 
-#if 1
     if (fParavirtTsc)
     {
-#if 1
+        /** @todo this is a hack until TM switches to pure-offsetting mode. */
         uint64_t const u64CurTsc   = ASMReadTSC();
         uint64_t const u64LastTick = TMCpuTickGetLastSeen(pVCpu);
-        if (u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset < u64LastTick)
+        if (u64CurTsc - pVCpu->hm.s.vmx.u64TSCOffset < u64LastTick)
         {
-            pVCpu->hm.s.vmx.u64TSCOffset = (u64LastTick - u64CurTsc);
+            pVCpu->hm.s.vmx.u64TSCOffset = u64CurTsc - u64LastTick;
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffsetAdjusted);
         }
 
-        Assert(u64CurTsc + pVCpu->hm.s.vmx.u64TSCOffset >= u64LastTick);
-#endif
+        Assert(u64CurTsc - pVCpu->hm.s.vmx.u64TSCOffset >= u64LastTick);
         rc = GIMR0UpdateParavirtTsc(pVM, pVCpu->hm.s.vmx.u64TSCOffset);
         AssertRC(rc);
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
@@ -5642,18 +5640,13 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);              AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
-    else
-#else
-    if (fParavirtTsc)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
-#endif
-    if (fOffsettedTsc)
+    else if (fOffsettedTsc)
     {
         uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC - pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);   AssertRC(rc);
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, -pVCpu->hm.s.vmx.u64TSCOffset);  AssertRC(rc);
 
             pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);          AssertRC(rc);
@@ -8730,8 +8723,8 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
         /** @todo Find a way to fix hardcoding a guestimate.  */
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC()
-                             + pVCpu->hm.s.vmx.u64TSCOffset - 0x400   /* guestimate of world switch overhead in clock ticks */);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() - pVCpu->hm.s.vmx.u64TSCOffset
+                             - 0x400  /* guestimate of world switch overhead in clock ticks */);
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
