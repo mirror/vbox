@@ -2100,16 +2100,16 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned w
     }
     /* @todo might crash if a blit follows a resolution change very quickly (seen this many times!) */
 
-    if (    s->svga.iWidth == -1
-        ||  s->svga.iHeight == -1
-        ||  s->svga.iBpp == UINT32_MAX)
+    if (    s->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+        ||  s->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
+        ||  s->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
     {
         /* Intermediate state; skip redraws. */
         AssertFailed();
         return VINF_SUCCESS;
     }
 
-    switch(s->svga.iBpp) {
+    switch(s->svga.uBpp) {
     default:
     case 0:
     case 8:
@@ -2165,20 +2165,20 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
     uint32_t v, addr1, addr;
     vga_draw_line_func *vga_draw_line;
 
-    if (    pThis->svga.iWidth == -1
-        ||  pThis->svga.iHeight == -1
-        ||  pThis->svga.iBpp == UINT32_MAX)
+    if (    pThis->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
+        ||  pThis->svga.uBpp    == VMSVGA_VAL_UNINITIALIZED)
     {
         /* Intermediate state; skip redraws. */
         return VINF_SUCCESS;
     }
 
-    width  = pThis->svga.iWidth;
-    height = pThis->svga.iHeight;
+    width  = pThis->svga.uWidth;
+    height = pThis->svga.uHeight;
 
     disp_width = width;
 
-    switch(pThis->svga.iBpp) {
+    switch(pThis->svga.uBpp) {
     default:
     case 0:
     case 8:
@@ -5328,7 +5328,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    LogFlow(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 #ifdef VBOX_WITH_VMSVGA
     AssertReturn((iRegion == ((pThis->fVMSVGAEnabled) ? 1 : 0)) && (enmType == ((pThis->fVMSVGAEnabled) ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH)), VERR_INTERNAL_ERROR);
 #else
@@ -5370,10 +5370,21 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
          */
         Assert(pThis->GCPhysVRAM);
 #ifdef VBOX_WITH_VMSVGA
-        Assert(!pThis->svga.fEnabled);
+        Assert(!pThis->svga.fEnabled || !pThis->svga.fVRAMTracking);
+        if (    !pThis->svga.fEnabled
+            ||  (   pThis->svga.fEnabled
+                 && pThis->svga.fVRAMTracking
+                )
+           )
+        {
 #endif
         rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
         AssertRC(rc);
+#ifdef VBOX_WITH_VMSVGA
+        }
+        else
+            rc = VINF_SUCCESS;
+#endif
         pThis->GCPhysVRAM = 0;
         /* NB: VBE_DISPI_INDEX_FB_BASE_HI is left unchanged here. */
     }
@@ -5546,8 +5557,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         }
 
 #ifdef VBOX_WITH_VMSVGA
-        if (    uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_2D
-            &&  pThis->fVMSVGAEnabled)
+        if (pThis->fVMSVGAEnabled)
         {
             rc = vmsvgaLoadExec(pDevIns, pSSM, uVersion, uPass);
             AssertRCReturn(rc, rc);
@@ -5563,19 +5573,22 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    int rc = VINF_SUCCESS;
+
 #ifdef VBOX_WITH_HGSMI
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     VBVAPause(pThis, (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0);
-    int rc = vboxVBVALoadStateDone(pDevIns, pSSM);
+    rc = vboxVBVALoadStateDone(pDevIns, pSSM);
     AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_VDMA
     rc = vboxVDMASaveLoadDone(pThis->pVdma);
     AssertRCReturn(rc, rc);
 # endif
-    return VINF_SUCCESS;
-#else
-    return VINF_SUCCESS;
 #endif
+#ifdef VBOX_WITH_VMSVGA
+    rc = vmsvgaLoadDone(pDevIns);
+#endif
+    return rc;
 }
 
 
@@ -5593,6 +5606,11 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 
     if (pThis->pVdma)
         vboxVDMAReset(pThis->pVdma);
+
+#ifdef VBOX_WITH_VMSVGA
+    if (pThis->fVMSVGAEnabled)
+        vmsvgaReset(pDevIns);
+#endif
 
 #ifdef VBOX_WITH_HGSMI
     VBVAReset(pThis);
@@ -6034,6 +6052,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IPort.pfnUpdateDisplayRect   = vgaPortUpdateDisplayRect;
     pThis->IPort.pfnCopyRect            = vgaPortCopyRect;
     pThis->IPort.pfnSetRenderVRAM       = vgaPortSetRenderVRAM;
+#ifdef VBOX_WITH_VMSVGA
+    pThis->IPort.pfnSetViewPort         = vmsvgaPortSetViewPort;
+#endif
 
 #if defined(VBOX_WITH_HGSMI)
 # if defined(VBOX_WITH_VIDEOHWACCEL)

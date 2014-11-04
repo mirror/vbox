@@ -211,6 +211,108 @@ typedef struct _VBOX_VHWA_PENDINGCMD
 } VBOX_VHWA_PENDINGCMD;
 #endif
 
+#ifdef VBOX_WITH_VMSVGA
+
+#define VMSVGA_FIFO_EXTCMD_NONE                 0
+#define VMSVGA_FIFO_EXTCMD_TERMINATE            1
+#define VMSVGA_FIFO_EXTCMD_SAVESTATE            2
+#define VMSVGA_FIFO_EXTCMD_LOADSTATE            3
+#define VMSVGA_FIFO_EXTCMD_RESET                4
+
+typedef struct
+{
+    PSSMHANDLE      pSSM;
+    uint32_t        uVersion;
+    uint32_t        uPass;
+} VMSVGA_STATE_LOAD, *PVMSVGA_STATE_LOAD;
+
+typedef struct
+{
+    /** The host window handle */
+    uint64_t                    u64HostWindowId;
+    /** The R3 FIFO pointer. */
+    R3PTRTYPE(uint32_t *)       pFIFOR3;
+    /** The R0 FIFO pointer. */
+    R0PTRTYPE(uint32_t *)       pFIFOR0;
+    /** R3 Opaque pointer to svga state. */
+    R3PTRTYPE(void *)           pSVGAState;
+    /** R3 Opaque pointer to 3d state. */
+    R3PTRTYPE(void *)           p3dState;
+    /** R3 Opaque pointer to a copy of the first 32k of the framebuffer before switching into svga mode. */
+    R3PTRTYPE(void *)           pFrameBufferBackup;
+    /** R3 Opaque pointer to an external fifo cmd parameter. */
+    R3PTRTYPE(void *)           pFIFOExtCmdParam;
+
+    /** Guest physical address of the FIFO memory range. */
+    RTGCPHYS                    GCPhysFIFO;
+    /** Size in bytes of the FIFO memory range. */
+    uint32_t                    cbFIFO;
+    /** SVGA id. */
+    uint32_t                    u32SVGAId;
+    /** SVGA extensions enabled or not. */
+    uint32_t                    fEnabled;
+    /** SVGA memory area configured status. */
+    uint32_t                    fConfigured;
+    /** Device is busy handling FIFO requests. */
+    uint32_t                    fBusy;
+    /** Traces (dirty page detection) enabled or not. */
+    uint32_t                    fTraces;
+    /** Guest OS identifier. */
+    uint32_t                    u32GuestId;
+    /** Scratch region size. */
+    uint32_t                    cScratchRegion;
+    /** Scratch array. */
+    uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
+    /** Irq status. */
+    uint32_t                    u32IrqStatus;
+    /** Irq mask. */
+    uint32_t                    u32IrqMask;
+    /** Pitch lock. */
+    uint32_t                    u32PitchLock;
+    /** Current GMR id. (SVGA_REG_GMR_ID) */
+    uint32_t                    u32CurrentGMRId;
+    /** Register caps. */
+    uint32_t                    u32RegCaps;
+    uint32_t                    Padding2;
+    /** Physical address of command mmio range. */
+    RTIOPORT                    BasePort;
+    /** Port io index register. */
+    uint32_t                    u32IndexReg;
+    /** FIFO request semaphore. */
+    RTSEMEVENT                  FIFORequestSem;
+    /** FIFO external command semaphore. */
+    RTSEMEVENT                  FIFOExtCmdSem;
+    /** FIFO IO Thread. */
+    R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
+    uint32_t                    uWidth;
+    uint32_t                    uHeight;
+    uint32_t                    uBpp;
+    uint32_t                    cbScanline;
+    /** Maximum width supported. */
+    uint32_t                    u32MaxWidth;
+    /** Maximum height supported. */
+    uint32_t                    u32MaxHeight;
+    /** Viewport rectangle */
+    struct
+    {
+        uint32_t                x;
+        uint32_t                y;
+        uint32_t                cx;
+        uint32_t                cy;
+    } viewport;
+    /** Action flags */
+    uint32_t                    u32ActionFlags;
+    /** SVGA 3d extensions enabled or not. */
+    bool                        f3DEnabled;
+    /** VRAM page monitoring enabled or not. */
+    bool                        fVRAMTracking;
+    /** External command to be executed in the FIFO thread. */
+    uint8_t                     u8FIFOExtCommand;
+    bool                        Padding6[1];
+} VMSVGAState;
+#endif /* VBOX_WITH_VMSVGA */
+
+
 typedef struct VGAState {
 #ifndef VBOX
     VGA_STATE_COMMON
@@ -319,78 +421,7 @@ typedef struct VGAState {
     R0PTRTYPE(uint8_t *)        vram_ptrR0;
 
 #ifdef VBOX_WITH_VMSVGA
-    struct
-    {
-        /** The host window handle */
-        uint64_t                    u64HostWindowId;
-        /** The R3 FIFO pointer. */
-        R3PTRTYPE(uint32_t *)       pFIFOR3;
-        /** The R0 FIFO pointer. */
-        R0PTRTYPE(uint32_t *)       pFIFOR0;
-        /** R3 Opaque pointer to svga state. */
-        R3PTRTYPE(void *)           pSVGAState;
-        /** R3 Opaque pointer to 3d state. */
-        R3PTRTYPE(void *)           p3dState;
-        /** R3 Opaque pointer to a copy of the first 32k of the framebuffer before switching into svga mode. */
-        R3PTRTYPE(void *)           pFrameBufferBackup;
-#if HC_ARCH_BITS == 32
-        uint32_t                    Padding3;
-#endif
-        /** Guest physical address of the FIFO memory range. */
-        RTGCPHYS                    GCPhysFIFO;
-        /** Size in bytes of the FIFO memory range. */
-        uint32_t                    cbFIFO;
-        /** SVGA id. */
-        uint32_t                    u32SVGAId;
-        /** SVGA extensions enabled or not. */
-        uint32_t                    fEnabled;
-        /** SVGA memory area configured status. */
-        uint32_t                    fConfigured;
-        /** Device is busy handling FIFO requests. */
-        uint32_t                    fBusy;
-        /** Traces (dirty page detection) enabled or not. */
-        uint32_t                    fTraces;
-        /** Guest OS identifier. */
-        uint32_t                    u32GuestId;
-        /** Scratch region size. */
-        uint32_t                    cScratchRegion;
-        /** Scratch array. */
-        uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
-        /** Irq status. */
-        uint32_t                    u32IrqStatus;
-        /** Irq mask. */
-        uint32_t                    u32IrqMask;
-        /** Pitch lock. */
-        uint32_t                    u32PitchLock;
-        /** Current GMR id. (SVGA_REG_GMR_ID) */
-        uint32_t                    u32CurrentGMRId;
-        /** Register caps. */
-        uint32_t                    u32RegCaps;
-        /** Physical address of command mmio range. */
-        uint32_t                    Padding2;
-        RTIOPORT                    BasePort;
-        /** Port io index register. */
-        uint32_t                    u32IndexReg;
-        /** FIFO request semaphore. */
-        RTSEMEVENT                  FIFORequestSem;
-        /** FIFO IO Thread. */
-        R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
-        int32_t                     iWidth;
-        int32_t                     iHeight;
-        uint32_t                    iBpp;
-        uint32_t                    cbScanline;
-        /** Maximum width supported. */
-        uint32_t                    u32MaxWidth;
-        /** Maximum height supported. */
-        uint32_t                    u32MaxHeight;
-        /** Action flags */
-        uint32_t                    u32ActionFlags;
-        /** SVGA 3d extensions enabled or not. */
-        bool                        f3DEnabled;
-        /** VRAM page monitoring enabled or not. */
-        bool                        fVRAMTracking;
-        bool                        Padding6[2];
-    } svga;
+    VMSVGAState                 svga;
 #endif
 
     /** The number of monitors. */
