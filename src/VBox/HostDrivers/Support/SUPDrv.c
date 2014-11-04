@@ -6255,10 +6255,12 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     if (supdrvIsInvariantTsc())
     {
         PSUPGIPCPU         pGipCpu;
+        unsigned           iCpu;
         PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
         uint8_t            idApic = ASMGetApicId();
+
         AssertReturnVoid(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId));
-        unsigned           iCpu = pGip->aiCpuFromApicId[idApic];
+        iCpu = pGip->aiCpuFromApicId[idApic];
         AssertReturnVoid(iCpu < pGip->cCpus);
         pGipCpu = &pGip->aCPUs[iCpu];
         AssertReturnVoid(pGipCpu->idCpu == RTMpCpuId());
