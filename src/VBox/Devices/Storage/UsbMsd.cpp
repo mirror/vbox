@@ -157,10 +157,6 @@ typedef struct USBMSDREQ
     uint8_t             ScsiReqSense[64];
     /** The status of a completed SCSI request. */
     int                 iScsiReqStatus;
-    /** Set if the request structure must be destroyed when the SCSI driver
-     * completes it.  This is used to deal with requests that runs while the
-     * device is being reset. */
-    bool                fDestoryOnCompletion;
     /** Pointer to the USB device instance owning it. */
     PPDMUSBINS          pUsbIns;
 } USBMSDREQ;
