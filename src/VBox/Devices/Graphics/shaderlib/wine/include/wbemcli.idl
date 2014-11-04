@@ -16,6 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+/*
+ * Oracle LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the language indicating
+ * that LGPLv2 or any later version may be used, or where a choice of which version
+ * of the LGPL is applied is otherwise unspecified.
+ */
+
 cpp_quote("DEFINE_GUID(CLSID_WbemLocator, 0x4590f811,0x1d3A,0x11d0,0x89,0x1f,0x00,0xaa,0x00,0x4b,0x2e,0x24);")
 cpp_quote("DEFINE_GUID(CLSID_WbemStatusCode, 0xeb87e1bd,0x3233,0x11d2,0xae,0xc9,0x00,0xc0,0x4f,0xb6,0x88,0x20);")
 
