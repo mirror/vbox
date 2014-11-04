@@ -90,7 +90,10 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The frequency by which we recalculate the u32UpdateHz and
- * u32UpdateIntervalNS GIP members. The value must be a power of 2. */
+ * u32UpdateIntervalNS GIP members. The value must be a power of 2.
+ *
+ * Warning: Bumping this too high might overflow u32UpdateIntervalNS.
+ */
 #define GIP_UPDATEHZ_RECALC_FREQ            0x800
 
 /** A reserved TSC value used for synchronization as well as measurement of
@@ -7176,7 +7179,6 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cPages                = (uint16_t)(cbGip / PAGE_SIZE);
     pGip->u32UpdateHz           = uUpdateHz;
     pGip->u32UpdateIntervalNS   = uUpdateIntervalNS;
-    pGip->u64NanoTSLastUpdateHz = u64NanoTS;
     RTCpuSetEmpty(&pGip->OnlineCpuSet);
     RTCpuSetEmpty(&pGip->PresentCpuSet);
     RTMpGetSet(&pGip->PossibleCpuSet);
@@ -7426,12 +7428,15 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
             uint32_t u32UpdateHz = (uint32_t)((RT_NS_1SEC_64 * GIP_UPDATEHZ_RECALC_FREQ) / u64Delta);
             if (u32UpdateHz <= 2000 && u32UpdateHz >= 30)
             {
+                /** @todo r=ramshankar: Changing u32UpdateHz might screw up TSC frequency
+                 *        calculation on non-invariant hosts if it changes the history decision
+                 *        taken in supdrvGipDoUpdateCpu(). */
                 ASMAtomicWriteU32(&pGip->u32UpdateHz, u32UpdateHz);
-                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, RT_NS_1SEC / u32UpdateHz);
+                ASMAtomicWriteU32(&pGip->u32UpdateIntervalNS, u64Delta / GIP_UPDATEHZ_RECALC_FREQ);
             }
 #endif
         }
-        ASMAtomicWriteU64(&pGip->u64NanoTSLastUpdateHz, u64NanoTS);
+        ASMAtomicWriteU64(&pGip->u64NanoTSLastUpdateHz, u64NanoTS + 1);
     }
 
     /*
