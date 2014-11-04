@@ -458,6 +458,31 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
 
 
 /**
+ * Translates a USB vesion (a bit-mask) to USB speed (enum). Picks 
+ * the highest available version. 
+ * 
+ * @returns VUSBSPEED enum
+ *  
+ * @param   iUsbVersion     The USB version.
+ * 
+ */
+static VUSBSPEED pdmR3UsbVer2Spd(uint32_t iUsbVersion)
+{
+    VUSBSPEED   enmSpd = VUSB_SPEED_UNKNOWN;
+    Assert(iUsbVersion);
+
+    if (iUsbVersion & VUSB_STDVER_30)
+        enmSpd = VUSB_SPEED_SUPER;
+    else if (iUsbVersion & VUSB_STDVER_20)
+        enmSpd = VUSB_SPEED_HIGH;
+    else if (iUsbVersion & VUSB_STDVER_11)
+        enmSpd = VUSB_SPEED_FULL;    /* Can't distinguish LS vs. FS. */
+
+    return enmSpd;
+}
+
+
+/**
  * Creates the device.
  *
  * @returns VBox status code.
@@ -471,11 +496,11 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
  *                              In the pdmR3UsbInstantiateDevices() case (iInstance != -1) this is
  *                              the actual instance node and will not be cleaned up.
  *
- * @param   iUsbVersion         The USB version preferred by the device.
+ * @param   enmSpeed            The speed the USB device is operating at.
  * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  */
 static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int iInstance, PCRTUUID pUuid,
-                                PCFGMNODE *ppInstanceNode, uint32_t iUsbVersion, const char *pszCaptureFilename)
+                                PCFGMNODE *ppInstanceNode, VUSBSPEED enmSpeed, const char *pszCaptureFilename)
 {
     const bool fAtRuntime = iInstance == -1;
     int rc;
@@ -589,7 +614,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->pszName                        = RTStrDup(pUsbDev->pReg->szName);
     //pUsbIns->fTracing                       = 0;
     pUsbIns->idTracing                      = ++pVM->pdm.s.idTracingOther;
-    pUsbIns->iUsbHubVersion                 = iUsbVersion;
+    pUsbIns->enmSpeed                       = enmSpeed;
 
     /*
      * Link it into all the lists.
@@ -862,7 +887,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
          * Create and attach the device.
          */
         rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &paUsbDevs[i].Uuid,
-                                  &paUsbDevs[i].pNode, iUsbVersion, NULL);
+                                  &paUsbDevs[i].pNode, pdmR3UsbVer2Spd(iUsbVersion), NULL);
         if (RT_FAILURE(rc))
             return rc;
     } /* for device instances */
@@ -939,7 +964,8 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
     /*
      * Create and attach the device.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, iUsbVersion, pszCaptureFilename);
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, 
+                              pdmR3UsbVer2Spd(iUsbVersion), pszCaptureFilename);
     AssertRCReturn(rc, rc);
 
     return rc;
@@ -1025,10 +1051,12 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
         return rc;
     }
 
+    VUSBSPEED enmSpeed = pdmR3UsbVer2Spd(iUsbVersion);
+
     /*
      * Finally, try to create it.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstance, iUsbVersion, pszCaptureFilename);
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstance, enmSpeed, pszCaptureFilename);
     if (RT_FAILURE(rc) && pInstance)
         CFGMR3RemoveNode(pInstance);
     return rc;

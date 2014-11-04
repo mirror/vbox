@@ -783,9 +783,8 @@ typedef struct PDMUSBINS
     uint32_t                    fTracing;
     /** The tracing ID of this device.  */
     uint32_t                    idTracing;
-    /** The USB version of the hub this device is attached to. Used to
-     * determine whether the device communicates at high-speed or full-/low-speed. */
-    uint32_t                    iUsbHubVersion;
+    /** The port/device speed. HCs and emulated devices need to know. */
+    VUSBSPEED                   enmSpeed;
 
     /** Padding to make achInstanceData aligned at 32 byte boundary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 3];
@@ -796,7 +795,7 @@ typedef struct PDMUSBINS
 } PDMUSBINS;
 
 /** Current USBINS version number. */
-#define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 2, 0)
+#define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 3, 0)
 
 /**
  * Checks the structure versions of the USB device instance and USB device
