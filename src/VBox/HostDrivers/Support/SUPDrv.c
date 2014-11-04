@@ -7654,11 +7654,12 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
         else
         {
             int rc2;
+            uint16_t iCpu;
 
             /* If we failed to have a delta, measurement the delta and retry. */
             AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId),
                             ("idApic=%u ArraySize=%u\n", idApic, RT_ELEMENTS(pGip->aiCpuFromApicId)), VERR_INVALID_CPU_INDEX);
-            uint16_t iCpu = pGip->aiCpuFromApicId[idApic];
+            iCpu = pGip->aiCpuFromApicId[idApic];
             AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
 
             rc2 = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
