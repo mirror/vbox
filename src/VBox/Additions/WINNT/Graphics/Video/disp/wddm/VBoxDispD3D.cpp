@@ -523,7 +523,7 @@ static BOOLEAN vboxWddmDalCheckAdd(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_A
     }
     else
     {
-        Assert(pAlloc->fDirtyWrite == fWrite);
+        Assert(pAlloc->fDirtyWrite == fWrite || pAlloc->pRc->RcDesc.fFlags.SharedResource);
     }
     pAlloc->fDirtyWrite |= fWrite;
     pAlloc->fEverWritten |= fWrite;
