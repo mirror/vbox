@@ -3199,8 +3199,6 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
-    NOREF(cbInstr);
-
     /*
      * Read the IDT entry.
      */
@@ -3636,8 +3634,6 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
-    NOREF(cbInstr);
-
     /*
      * Read the IDT entry.
      */

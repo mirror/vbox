@@ -12189,6 +12189,9 @@ FNIEMOP_DEF(iemOp_int_Ib)
 /** Opcode 0xce. */
 FNIEMOP_DEF(iemOp_into)
 {
+    IEMOP_MNEMONIC("into");
+    IEMOP_HLP_NO_64BIT();
+
     IEM_MC_BEGIN(2, 0);
     IEM_MC_ARG_CONST(uint8_t,   u8Int,      /*=*/ X86_XCPT_OF, 0);
     IEM_MC_ARG_CONST(bool,      fIsBpInstr, /*=*/ false, 1);
@@ -16143,6 +16146,15 @@ FNIEMOP_DEF(iemOp_lock)
 }
 
 
+/** Opcode 0xf1. */
+FNIEMOP_DEF(iemOp_int_1)
+{
+    IEMOP_MNEMONIC("int1"); /* icebp */
+    /** @todo testcase! */
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_DB, false /*fIsBpInstr*/);
+}
+
+
 /** Opcode 0xf2. */
 FNIEMOP_DEF(iemOp_repne)
 {
@@ -17304,7 +17316,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xe4 */  iemOp_in_AL_Ib,         iemOp_in_eAX_Ib,        iemOp_out_Ib_AL,        iemOp_out_Ib_eAX,
     /* 0xe8 */  iemOp_call_Jv,          iemOp_jmp_Jv,           iemOp_jmp_Ap,           iemOp_jmp_Jb,
     /* 0xec */  iemOp_in_AL_DX,         iemOp_eAX_DX,           iemOp_out_DX_AL,        iemOp_out_DX_eAX,
-    /* 0xf0 */  iemOp_lock,             iemOp_Invalid,          iemOp_repne,            iemOp_repe, /** @todo 0xf1 is INT1 / ICEBP. */
+    /* 0xf0 */  iemOp_lock,             iemOp_int_1,            iemOp_repne,            iemOp_repe,
     /* 0xf4 */  iemOp_hlt,              iemOp_cmc,              iemOp_Grp3_Eb,          iemOp_Grp3_Ev,
     /* 0xf8 */  iemOp_clc,              iemOp_stc,              iemOp_cli,              iemOp_sti,
     /* 0xfc */  iemOp_cld,              iemOp_std,              iemOp_Grp4,             iemOp_Grp5,
