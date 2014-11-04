@@ -650,7 +650,6 @@ typedef struct PDMIDISPLAYPORT
      * Inform the VGA device of viewport changes (as a result of e.g. scrolling)
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   
      * @param   uScreenId           The screen updates are for.
      * @param   x                   The upper left corner x coordinate of the new viewport rectangle
      * @param   y                   The upper left corner y coordinate of the new viewport rectangle
