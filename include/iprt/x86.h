@@ -862,7 +862,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR7_GE_ALL                      UINT64_C(0x00000000000000aa)
 
 /** Bit 12 - IR (ICE) - Interrupt redirection on Pentium.  When set, the in
- * Circut Emulator (ICE) will break emulation on breakpoints and stuff.
+ * Circuit Emulator (ICE) will break emulation on breakpoints and stuff.
  * May cause CPU hang if enabled without ICE attached when the ICEBP/INT1
  * instruction is executed.
  * @see http://www.rcollins.org/secrets/DR7.html  */
