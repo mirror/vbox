@@ -1538,13 +1538,9 @@ DECLINLINE(int) SUPReadTsc(uint64_t *puTsc, uint16_t *pidApic)
     if (pidApic)
         *pidApic = idApic;
 
-    if (RT_LIKELY(g_pSUPGlobalInfoPage))
-    {
-        rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
-        AssertRCReturn(rc, rc);
-        return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
-    }
-    return VERR_INVALID_POINTER;
+    rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
+    AssertRCReturn(rc, rc);
+    return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
 #endif
 }
 
