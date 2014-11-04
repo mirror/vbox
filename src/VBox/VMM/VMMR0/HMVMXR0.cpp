@@ -224,7 +224,7 @@ typedef struct VMXTRANSIENT
     uint16_t        u16Alignment0;
     /** The VM-exit interruption error code. */
     uint32_t        uExitIntErrorCode;
-    /** The VM-exit exit qualification. */
+    /** The VM-exit exit code qualification. */
     uint64_t        uExitQualification;
 
     /** The VM-exit interruption-information field. */
@@ -502,8 +502,8 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
     /*  4 */ "VMLAUNCH with non-clear VMCS.",
     /*  5 */ "VMRESUME with non-launched VMCS.",
     /*  6 */ "VMRESUME after VMXOFF",
-    /*  7 */ "VM entry with invalid control fields.",
-    /*  8 */ "VM entry with invalid host state fields.",
+    /*  7 */ "VM-entry with invalid control fields.",
+    /*  8 */ "VM-entry with invalid host state fields.",
     /*  9 */ "VMPTRLD with invalid physical address.",
     /* 10 */ "VMPTRLD with VMXON pointer.",
     /* 11 */ "VMPTRLD with incorrect revision identifier.",
@@ -511,17 +511,17 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
     /* 13 */ "VMWRITE to read-only VMCS component.",
     /* 14 */ "(Not Used)",
     /* 15 */ "VMXON executed in VMX root operation.",
-    /* 16 */ "VM entry with invalid executive-VMCS pointer.",
-    /* 17 */ "VM entry with non-launched executing VMCS.",
-    /* 18 */ "VM entry with executive-VMCS pointer not VMXON pointer.",
+    /* 16 */ "VM-entry with invalid executive-VMCS pointer.",
+    /* 17 */ "VM-entry with non-launched executing VMCS.",
+    /* 18 */ "VM-entry with executive-VMCS pointer not VMXON pointer.",
     /* 19 */ "VMCALL with non-clear VMCS.",
     /* 20 */ "VMCALL with invalid VM-exit control fields.",
     /* 21 */ "(Not Used)",
     /* 22 */ "VMCALL with incorrect MSEG revision identifier.",
     /* 23 */ "VMXOFF under dual monitor treatment of SMIs and SMM.",
     /* 24 */ "VMCALL with invalid SMM-monitor features.",
-    /* 25 */ "VM entry with invalid VM-execution control fields in executive VMCS.",
-    /* 26 */ "VM entry with events blocked by MOV SS.",
+    /* 25 */ "VM-entry with invalid VM-execution control fields in executive VMCS.",
+    /* 26 */ "VM-entry with events blocked by MOV SS.",
     /* 27 */ "(Not Used)",
     /* 28 */ "Invalid operand to INVEPT/INVVPID."
 };
@@ -682,7 +682,8 @@ DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * Reads the exit qualification from the VMCS into the VMX transient structure.
+ * Reads the exit code qualification from the VMCS into the VMX transient
+ * structure.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU (required for the VMCS cache
@@ -4685,7 +4686,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 /**
  * Loads certain guest MSRs into the VM-entry MSR-load and VM-exit MSR-store
  * areas. These MSRs will automatically be loaded to the host CPU on every
- * successful VM entry and stored from the host CPU on every successful VM-exit.
+ * successful VM-entry and stored from the host CPU on every successful VM-exit.
  *
  * This also creates/updates MSR slots for the host MSRs. The actual host
  * MSR values are -not- updated here for performance reasons. See
@@ -7503,9 +7504,9 @@ DECLINLINE(void) hmR0VmxSetPendingDebugXcpt(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
- * @param   fStepping       Running in hmR0VmxRunGuestCodeStep and we should
- *                          return VINF_EM_DBG_STEPPED an event was dispatched
- *                          directly.
+ * @param   fStepping       Running in hmR0VmxRunGuestCodeStep() and we should
+ *                          return VINF_EM_DBG_STEPPED if the event was
+ *                          dispatched directly.
  */
 static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fStepping)
 {
@@ -7601,7 +7602,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSte
     }
 
     /*
-     * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
+     * There's no need to clear the VM-entry interruption-information field here if we're not injecting anything.
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
     int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
@@ -7637,10 +7638,10 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
- * @param   fStepping       Whether we're running in hmR0VmxRunGuestCodeStep and
- *                          should return VINF_EM_DBG_STEPPED if the event is
- *                          injected directly (registerd modified by us, not by
- *                          hardware on VM entry).
+ * @param   fStepping       Whether we're running in hmR0VmxRunGuestCodeStep()
+ *                          and should return VINF_EM_DBG_STEPPED if the event
+ *                          is injected directly (register modified by us, not
+ *                          by hardware on VM-entry).
  * @param   puIntrState     Pointer to the current guest interruptibility-state.
  *                          This interruptibility-state will be updated if
  *                          necessary. This cannot not be NULL.
@@ -7702,10 +7703,11 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
  * @param   fErrorCodeValid     Whether the error code is valid (depends on the CPU
  *                              mode, i.e. in real-mode it's not valid).
  * @param   u32ErrorCode        The error code associated with the #GP.
- * @param   fStepping           Whether we're running in hmR0VmxRunGuestCodeStep
- *                              and should return VINF_EM_DBG_STEPPED if the
- *                              event is injected directly (registerd modified
- *                              by us, not by hardware on VM entry).
+ * @param   fStepping           Whether we're running in
+ *                              hmR0VmxRunGuestCodeStep() and should return
+ *                              VINF_EM_DBG_STEPPED if the event is injected
+ *                              directly (registerd modified by us, not by
+ *                              hardware on VM-entry).
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
@@ -7813,10 +7815,11 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
- * @param   fStepping           Whether we're running in hmR0VmxRunGuestCodeStep
- *                              and should return VINF_EM_DBG_STEPPED if the
- *                              event is injected directly (registerd modified
- *                              by us, not by hardware on VM entry).
+ * @param   fStepping           Whether we're running in
+ *                              hmR0VmxRunGuestCodeStep() and should return
+ *                              VINF_EM_DBG_STEPPED if the event is injected
+ *                              directly (register modified by us, not by
+ *                              hardware on VM-entry).
  *
  * @remarks Requires CR0!
  * @remarks No-long-jump zone!!!
@@ -7953,7 +7956,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                     Log4(("Clearing inhibition due to STI.\n"));
                     *puIntrState &= ~VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
                 }
-                Log4(("Injecting real-mode: u32IntInfo=%#x u32ErrCode=%#x instrlen=%#x efl=%#x cs:eip=%04x:%04x\n",
+                Log4(("Injecting real-mode: u32IntInfo=%#x u32ErrCode=%#x cbInstr=%#x Eflags=%#x CS:EIP=%04x:%04x\n",
                       u32IntInfo, u32ErrCode, cbInstr, pMixedCtx->eflags.u, pMixedCtx->cs.Sel, pMixedCtx->eip));
 
                 /* The event has been truly dispatched. Mark it as no longer pending so we don't attempt to 'undo'
@@ -8415,13 +8418,14 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  * Does the preparations before executing guest code in VT-x.
  *
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
- * recompiler. We must be cautious what we do here regarding committing
+ * recompiler/IEM. We must be cautious what we do here regarding committing
  * guest-state information into the VMCS assuming we assuredly execute the
- * guest in VT-x mode. If we fall back to the recompiler after updating the VMCS
- * and clearing the common-state (TRPM/forceflags), we must undo those changes
- * so that the recompiler can (and should) use them when it resumes guest
- * execution. Otherwise such operations must be done when we can no longer
- * exit to ring-3.
+ * guest in VT-x mode.
+ *
+ * If we fall back to the recompiler/IEM after updating the VMCS and clearing
+ * the common-state (TRPM/forceflags), we must undo those changes so that the
+ * recompiler/IEM can (and should) use them when it resumes guest execution.
+ * Otherwise such operations must be done when we can no longer exit to ring-3.
  *
  * @returns Strict VBox status code.
  * @retval  VINF_SUCCESS if we can proceed with running the guest, interrupts
@@ -8438,7 +8442,7 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
- * @param   fStepping       Set if called from hmR0VmxRunGuestCodeStep.  Makes
+ * @param   fStepping       Set if called from hmR0VmxRunGuestCodeStep().  Makes
  *                          us ignore some of the reasons for returning to
  *                          ring-3, and return VINF_EM_DBG_STEPPED if event
  *                          dispatching took place.
@@ -8831,7 +8835,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Preparatory work for running guest code, this may force us to return
            to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient, false /*fStepping*/);
+        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient, false /* fStepping */);
         if (rc != VINF_SUCCESS)
             break;
 
@@ -8905,7 +8909,7 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Preparatory work for running guest code, this may force us to return
            to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rcStrict = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient, true /*fStepping*/);
+        rcStrict = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient, true /* fStepping */);
         if (rcStrict != VINF_SUCCESS)
             break;
 
@@ -8925,7 +8929,7 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return VBOXSTRICTRC_TODO(rcStrict);
         }
 
-        /* Handle the VM-exit - we quit earlier on certain exits, see hmR0VmxHandleExitStep. */
+        /* Handle the VM-exit - we quit earlier on certain VM-exits, see hmR0VmxHandleExitStep(). */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
@@ -9094,10 +9098,10 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
 
 /**
- * Single stepping exit filtering.
+ * Single-stepping VM-exit filtering.
  *
  * This is preprocessing the exits and deciding whether we've gotten far enough
- * to return VINF_EM_DBG_STEPPED already.  If not, normal exit handling is
+ * to return VINF_EM_DBG_STEPPED already.  If not, normal VM-exit handling is
  * performed.
  *
  * @returns Strict VBox status code.
@@ -9106,7 +9110,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
  *                          out-of-sync. Make sure to update the required
  *                          fields before using them.
  * @param   pVmxTransient   Pointer to the VMX-transient structure.
- * @param   uExitReason     The exit reason.
+ * @param   uExitReason     The VM-exit reason.
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient,
                                                uint32_t uExitReason, uint16_t uCsStart, uint64_t uRipStart)
@@ -9115,7 +9119,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitStep(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     {
         case VMX_EXIT_XCPT_OR_NMI:
         {
-            /* Check for NMI. */
+            /* Check for host NMI. */
             int rc2 = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
             AssertRCReturn(rc2, rc2);
             uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntInfo);
@@ -10374,7 +10378,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 {
     /*
      * This can only happen if we support dual-monitor treatment of SMI, which can be activated by executing VMCALL in VMX
-     * root operation. Only an STM (SMM transfer monitor) would get this exit when we (the executive monitor) execute a VMCALL
+     * root operation. Only an STM (SMM transfer monitor) would get this VM-exit when we (the executive monitor) execute a VMCALL
      * in VMX root mode or receive an SMI. If we get here, something funny is going on.
      * See Intel spec. "33.15.6 Activating the Dual-Monitor Treatment" and Intel spec. 25.3 "Other Causes of VM-Exits"
      */
@@ -10973,7 +10977,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         default:
         {
-            AssertMsgFailed(("Invalid access-type in Mov CRx exit qualification %#x\n", uAccessType));
+            AssertMsgFailed(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType));
             rc = VERR_VMX_UNEXPECTED_EXCEPTION;
         }
     }
@@ -11172,7 +11176,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             VMMRZCallRing3Disable(pVCpu);
             HM_DISABLE_PREEMPT_IF_NEEDED();
 
-            bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /*fDr6*/);
+            bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /* fDr6 */);
 
             VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pMixedCtx, uIOPort, cbValue);
             if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
@@ -11555,7 +11559,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     TRPMAssertXcptPF(pVCpu, GCPhys, uErrorCode);
 
-    Log4(("EPT violation %#x at %#RX64 ErrorCode %#x CS:EIP=%04x:%08RX64\n", pVmxTransient->uExitQualification, GCPhys,
+    Log4(("EPT violation %#x at %#RX64 ErrorCode %#x CS:RIP=%04x:%08RX64\n", pVmxTransient->uExitQualification, GCPhys,
           uErrorCode, pMixedCtx->cs.Sel, pMixedCtx->rip));
 
     /* Handle the pagefault trap for the nested shadow table. */
@@ -11661,7 +11665,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     Log6(("XcptDB\n"));
 
     /*
-     * Get the DR6-like values from the exit qualification and pass it to DBGF
+     * Get the DR6-like values from the VM-exit qualification and pass it to DBGF
      * for processing.
      */
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
@@ -11881,7 +11885,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
             case OP_POPF:
             {
-                Log4(("POPF CS:RIP %04x:%04RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
+                Log4(("POPF CS:EIP %04x:%04RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
                 uint32_t cbParm;
                 uint32_t uMask;
                 bool     fStepping = RT_BOOL(pMixedCtx->eflags.Bits.u1TF);
@@ -12167,6 +12171,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
         return rc;
     }
+
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         if (!pVmxTransient->fVectoringDoublePF)
