@@ -97,6 +97,71 @@ BITS TMPL_BITS
 
 
 ;;
+; Run the RDTSC benchmark for this mode.
+;
+; @uses nothing
+;
+BEGINCODELOW
+BITS 16
+BEGINPROC TMPL_NM(BenchmarkRdTsc_rm)
+        call    TMPL_NM(Bs2IsModeSupported_rm)
+        jz      .done
+        call    TMPL_NM(Bs2EnterMode_rm)
+BITS TMPL_BITS
+        push    xBP
+        mov     xBP, xSP
+        push    sAX
+        push    sBX
+        push    sCX
+        push    sDX
+        push    sDI
+        sub     sSP, 20h
+
+        ; Get the current time.
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(GetNanoTS)
+
+        ; Do the test.
+        mov     edi, TEST_INSTRUCTION_COUNT_RDTSC / 4
+.again:
+        rdtsc
+        rdtsc
+        rdtsc
+        rdtsc
+        dec     edi
+        jnz     .again
+
+        ; Calc the elapsed time and report the result.
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(GetElapsedNanoTS)
+
+        mov     xCX, .s_szTestName
+        mov     edx, TEST_INSTRUCTION_COUNT_RDTSC
+        mov     xAX, xSP
+        call    TMPL_NM_CMN(ReportResult)
+
+        add     sSP, 20h
+        pop     sDI
+        pop     sDX
+        pop     sCX
+        pop     sBX
+        pop     sAX
+        leave
+
+        call    TMPL_NM(Bs2ExitMode)
+BITS 16
+.done:
+        ret
+
+.s_szTestName:
+        db TMPL_MODE_STR, ', RDTSC', 0
+ENDPROC TMPL_NM(BenchmarkRdTsc_rm)
+
+TMPL_BEGINCODE
+BITS TMPL_BITS
+
+
+;;
 ; Prologue for the I/O port tests.
 %ifndef HaveIoPortPrologue
 %define HaveIoPortPrologue
