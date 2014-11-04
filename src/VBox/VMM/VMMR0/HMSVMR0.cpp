@@ -2264,9 +2264,9 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
         if (fParavirtTsc)
         {
 #if 0
-            if (u64CurTSC + pVmcb->ctrl.u64TSCOffset > u64LastTick)
+            if (u64CurTSC - pVmcb->ctrl.u64TSCOffset < u64LastTick)
             {
-                pVmcb->ctrl.u64TSCOffset = u64LastTick - u64CurTSC;
+                pVmcb->ctrl.u64TSCOffset = u64CurTSC - u64LastTick;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffsetAdjusted);
             }
             int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), pVmcb->ctrl.u64TSCOffset);
@@ -2275,7 +2275,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
         }
 
-        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC - pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
             pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
@@ -3207,7 +3207,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
     {
         /** @todo Find a way to fix hardcoding a guestimate.  */
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset - 0x400);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() - pVmcb->ctrl.u64TSCOffset - 0x400);
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
