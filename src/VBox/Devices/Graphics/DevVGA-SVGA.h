@@ -12,7 +12,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #ifndef __DEVVGA_SVGA_H__
 #define __DEVVGA_SVGA_H__
 
@@ -24,11 +23,13 @@
 /** Surface memory available to the guest. */
 #define VMSVGA_SURFACE_SIZE             (512*1024*1024)
 /** Maximum GMR pages. */
-#define VMSVGA_MAX_GMR_PAGES            0x2000
+#define VMSVGA_MAX_GMR_PAGES            0x100000
 /** Maximum nr of GMR ids. */
 #define VMSVGA_MAX_GMR_IDS              0x100
 /** Size of the region to backup when switching into svga mode. */
 #define VMSVGA_FRAMEBUFFER_BACKUP_SIZE  (32*1024)
+
+#define VMSVGA_VAL_UNINITIALIZED        (unsigned)-1
 
 /* u32ActionFlags */
 #define VMSVGA_ACTION_CHANGEMODE_BIT    0
@@ -36,11 +37,15 @@
 
 DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType);
 
+DECLCALLBACK(void) vmsvgaPortSetViewPort(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+
 int vmsvgaInit(PPDMDEVINS pDevIns);
+int vmsvgaReset(PPDMDEVINS pDevIns);
 int vmsvgaDestruct(PPDMDEVINS pDevIns);
 int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+int vmsvgaLoadDone(PPDMDEVINS pDevIns);
 int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
+DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
 
 #endif  /* __DEVVGA_SVGA_H__ */
-

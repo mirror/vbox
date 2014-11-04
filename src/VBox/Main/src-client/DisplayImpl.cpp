@@ -2559,6 +2559,15 @@ HRESULT Display::viewportChanged(ULONG aScreenId, ULONG aX, ULONG aY, ULONG aWid
         }
     }
 #endif /* VBOX_WITH_CROGL && VBOX_WITH_HGCM */
+
+#ifdef VBOX_WITH_VMSVGA
+    /* The driver might not have been constructed yet */
+    if (mpDrv)
+    {
+        mpDrv->pUpPort->pfnSetViewPort(mpDrv->pUpPort, aScreenId, aX, aY, aWidth, aHeight);
+    }
+#endif
+
     return S_OK;
 }
 

@@ -338,7 +338,7 @@ int main()
     GEN_CHECK_OFF(VGASTATE, svga.cbFIFO);
     GEN_CHECK_OFF(VGASTATE, svga.BasePort);
     GEN_CHECK_OFF(VGASTATE, svga.pFIFOIOThread);
-    GEN_CHECK_OFF(VGASTATE, svga.iWidth);
+    GEN_CHECK_OFF(VGASTATE, svga.uWidth);
     GEN_CHECK_OFF(VGASTATE, svga.u32ActionFlags);
     GEN_CHECK_OFF(VGASTATE, svga.f3DEnabled);
     GEN_CHECK_OFF(VGASTATE, svga.fVRAMTracking);
