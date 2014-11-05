@@ -65,7 +65,7 @@ done
 #
 # Invoke the installers.
 #
-if "$1" != "-u" -a "$1" != "--uninstall"; then
+if test "$1" != "-u" -a "$1" != "--uninstall"; then
     for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe ; #NetAdpInstall.exe; - busted
     do
         if test -f ${MY_DIR}/$inst; then
