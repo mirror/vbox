@@ -29,6 +29,9 @@
 /* Forward declarations: */
 class UIHostComboEditorPrivate;
 class QIToolButton;
+#ifdef Q_WS_WIN
+class WinAltGrMonitor;
+#endif /* Q_WS_WIN */
 
 /* Native hot-key namespace to unify
  * all the related hot-key processing stuff: */
@@ -170,11 +173,14 @@ private:
     QTimer* m_pReleaseTimer;
     bool m_fStartNewSequence;
 
-#ifdef Q_WS_MAC
-    /* The current modifier key mask. Used to figure out which modifier
-     * key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    uint32_t m_uDarwinKeyModifiers;
-#endif /* Q_WS_MAC */
+#if defined(Q_WS_MAC)
+     /* The current modifier key mask. Used to figure out which modifier
+      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
+     uint32_t m_uDarwinKeyModifiers;
+#elif defined(Q_WS_WIN)
+    /** Holds the object monitoring key event stream for problematic AltGr events. */
+    WinAltGrMonitor *m_pAltGrMonitor;
+#endif /* Q_WS_WIN */
 };
 
 #endif /* !___UIHostComboEditor_h___ */

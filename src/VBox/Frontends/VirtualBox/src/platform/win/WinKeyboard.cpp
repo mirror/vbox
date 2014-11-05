@@ -170,3 +170,117 @@ void WinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollL
     else
         LogRel2(("HID LEDs sync: broadcast failed\n"));
 }
+
+/** @brief doesCurrentLayoutHaveAltGr
+  *
+  * @return true if this keyboard layout has an AltGr key, false otherwise
+  * Check to see whether the current keyboard layout actually has an AltGr key
+  * by checking whether any of the keys which might do produce a symbol when
+  * AltGr (Control + Alt) is depressed. Generally this loop will exit pretty
+  * early (it exits on the first iteration for my German layout). If there is
+  * no AltGr key in the layout then it will run right through, but that should
+  * hopefully not happen very often.
+  * 
+  * In theory we could do this once and cache the result, but that involves
+  * tracking layout switches to invalidate the cache, and I don't think that the
+  * added complexity is worth the price. */
+static bool doesCurrentLayoutHaveAltGr()
+{
+    /** Keyboard state array with VK_CONTROL and VK_MENU depressed. */
+    const BYTE auKeyStates[256] =
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
+    WORD ach;
+    unsigned i;
+
+    for (i = '0'; i <= VK_OEM_102; ++i)
+    {
+        if (ToAscii(i, 0, auKeyStates, &ach, 0))
+            break;
+        /* Skip ranges of virtual keys which are undefined or not relevant. */
+        if (i == '9')
+            i = 'A' - 1;
+        if (i == 'Z')
+            i = VK_OEM_1 - 1;
+        if (i == VK_OEM_3)
+            i = VK_OEM_4 - 1;
+        if (i == VK_OEM_8)
+            i = VK_OEM_102 - 1;
+    }
+    if (i > VK_OEM_102)
+        return false;
+    return true;
+}
+
+void WinAltGrMonitor::updateStateFromKeyEvent(unsigned iDownScanCode,
+                                              bool fKeyDown, bool fExtendedKey)
+{
+    LONG messageTime = GetMessageTime();
+    /* We do not want the make/break: */
+    AssertRelease(~iDownScanCode & 0x80);
+    /* Depending on m_enmFakeControlDetectionState: */
+    switch (m_enmFakeControlDetectionState)
+    {
+        case NONE:
+        case FAKE_CONTROL_DOWN:
+            if (   iDownScanCode == 0x1D /* left control */
+                && fKeyDown
+                && !fExtendedKey)
+                m_enmFakeControlDetectionState = LAST_EVENT_WAS_LEFT_CONTROL_DOWN;
+            else
+                m_enmFakeControlDetectionState = NONE;
+            break;
+        case LAST_EVENT_WAS_LEFT_CONTROL_DOWN:
+            if (   iDownScanCode == 0x38 /* Alt */
+                && fKeyDown
+                && fExtendedKey
+                && m_timeOfLastKeyEvent == messageTime
+                && doesCurrentLayoutHaveAltGr())
+            {
+                m_enmFakeControlDetectionState = FAKE_CONTROL_DOWN;
+                break;
+            }
+            else
+                m_enmFakeControlDetectionState = LEFT_CONTROL_DOWN;
+            /* Fall through. */
+        case LEFT_CONTROL_DOWN:
+            if (   iDownScanCode == 0x1D /* left control */
+                && !fKeyDown
+                && !fExtendedKey)
+                m_enmFakeControlDetectionState = NONE;
+            break;
+        default:
+            AssertReleaseMsgFailed(("Unknown AltGr detection state.\n"));
+    }
+    m_timeOfLastKeyEvent = messageTime;
+}
+
+bool WinAltGrMonitor::isLeftControlReleaseNeeded() const
+{
+    return m_enmFakeControlDetectionState == FAKE_CONTROL_DOWN;
+}
+
+bool WinAltGrMonitor::isCurrentEventDefinitelyFake(unsigned iDownScanCode,
+                                                   bool fKeyDown,
+                                                   bool fExtendedKey) const
+{
+    MSG peekMsg;
+    LONG messageTime = GetMessageTime();
+
+    if (   iDownScanCode != 0x1d /* scan code: Control */ || fExtendedKey)
+        return false;
+    if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
+        return false;
+
+		if (   fKeyDown
+        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
+        return false;
+    if (   !fKeyDown
+        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
+        return false;
+    if (   ((RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
+        || !(RT_HIWORD(peekMsg.lParam) & KF_EXTENDED))
+        return false;
+    if (!doesCurrentLayoutHaveAltGr())
+        return false;
+    return true;
+}
