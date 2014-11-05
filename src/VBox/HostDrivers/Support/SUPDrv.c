@@ -6259,7 +6259,6 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
         PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
         uint8_t            idApic = ASMGetApicId();
 
-        Assert(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId));
         iCpu = pGip->aiCpuFromApicId[idApic];
         Assert(iCpu < pGip->cCpus);
         pGipCpu = &pGip->aCPUs[iCpu];
