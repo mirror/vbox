@@ -68,50 +68,6 @@ WindowExists( Display *dpy, Window w )
     return WindowExistsFlag;
 }
 
-static GLboolean
-renderDestroyWindow( Display *dpy, Window w )
-{
-    XWindowAttributes xwa;
-    int (*oldXErrorHandler)(Display *, XErrorEvent *);
-
-    WindowExistsFlag = GL_TRUE;
-    oldXErrorHandler = XSetErrorHandler(WindowExistsErrorHandler);
-    XGetWindowAttributes(dpy, w, &xwa); /* dummy request */
-    if (xwa.map_state == IsViewable) {
-        XDestroyWindow (dpy, w); /* dummy request */
-        XSync (dpy,0);
-    }
-    XSetErrorHandler(oldXErrorHandler);
-    return WindowExistsFlag;
-}
-
-#if 0
-/*
- * Garbage collection function.
- * Loop over all known windows and check if corresponding X window still
- * exists.  If it doesn't, destroy the render SPU window.
- * XXX seems to blow up with threadtest.conf tests.
- */
-void
-renderspu_GCWindow(void)
-{
-    int i;
-    WindowInfo *window;
-
-    for (i = 0; i < (int)render_spu.window_id - 1; i++) {
-        window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, i);
-        if (window->visual->dpy) {
-            if (!WindowExists (window->visual->dpy, window->appWindow) ) {
-                XSync(window->visual->dpy,0);
-                if(WindowExists(window->visual->dpy, window->window)) {
-                    renderDestroyWindow(window->visual->dpy, window->window);
-                }
-            }
-        }
-    }
-}
-#endif
-
 static Colormap 
 GetLUTColormap( Display *dpy, XVisualInfo *vi )
 {
@@ -1674,11 +1630,6 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
         }
 
     }
-
-#if 0
-    /* XXX disabled for now due to problem with threadtest.conf */
-    renderspu_GCWindow();
-#endif
 }
 
 
