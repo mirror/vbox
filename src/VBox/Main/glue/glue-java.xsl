@@ -4488,9 +4488,20 @@ public class VirtualBoxManager
         {
             ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+
+            // Unfortunately there is no official way to make JAX-WS use
+            // TLS only, which means that a rather tedious approach is
+            // unavoidable (implementing a TLS only SSLSocketFactory,
+            // because the default one associated with a TLS SSLContext
+            // happily uses SSLv2/3 handshakes, which make TLS servers
+            // drop the connection), and additionally a not standardized,
+            // shotgun approach is needed to make the relevant JAX-WS
+            // implementations use this factory.
             VBoxTLSSocketFactory sf = new VBoxTLSSocketFactory();
             ((BindingProvider)port).getRequestContext().
                 put("com.sun.xml.internal.ws.transport.https.client.SSLSocketFactory", sf);
+            ((BindingProvider)port).getRequestContext().
+                put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", sf);
 
             String handle = port.iWebsessionManagerLogon(username, passwd);
             this.vbox = new IVirtualBox(handle, port);
