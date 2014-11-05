@@ -65,7 +65,7 @@ done
 #
 # Invoke the installer.
 #
-if "$1" != "-u" -a "$1" != "--uninstall"; then
+if test "$1" != "-u" -a "$1" != "--uninstall"; then
     for inst in SUPInstall.exe;
     do
         if test -f ${MY_DIR}/$inst; then
