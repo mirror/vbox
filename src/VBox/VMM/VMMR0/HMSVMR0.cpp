@@ -2261,19 +2261,6 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
     {
         uint64_t u64CurTSC   = ASMReadTSC();
         uint64_t u64LastTick = TMCpuTickGetLastSeen(pVCpu);
-        if (fParavirtTsc)
-        {
-#if 0
-            if (u64CurTSC - pVmcb->ctrl.u64TSCOffset < u64LastTick)
-            {
-                pVmcb->ctrl.u64TSCOffset = u64CurTSC - u64LastTick;
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffsetAdjusted);
-            }
-            int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), pVmcb->ctrl.u64TSCOffset);
-            AssertRC(rc);
-#endif
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
-        }
 
         if (u64CurTSC - pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
@@ -2294,6 +2281,13 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
         pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+    }
+
+    if (fParavirtTsc)
+    {
+        int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), 0 /* u64Offset */);
+        AssertRC(rc);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
