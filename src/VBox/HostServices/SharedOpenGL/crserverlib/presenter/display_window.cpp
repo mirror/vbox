@@ -67,58 +67,6 @@ void CrFbDisplayWindow::UpdateEnd(struct CR_FRAMEBUFFER *pFb)
 }
 
 
-int CrFbDisplayWindow::RegionsChanged(struct CR_FRAMEBUFFER *pFb)
-{
-    int rc = CrFbDisplayBase::RegionsChanged(pFb);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("err"));
-        return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-int CrFbDisplayWindow::EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
-{
-    int rc = CrFbDisplayBase::EntryCreated(pFb, hEntry);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("err"));
-        return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-int CrFbDisplayWindow::EntryReplaced(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hNewEntry, HCR_FRAMEBUFFER_ENTRY hReplacedEntry)
-{
-    int rc = CrFbDisplayBase::EntryReplaced(pFb, hNewEntry, hReplacedEntry);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("err"));
-        return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-int CrFbDisplayWindow::EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
-{
-    int rc = CrFbDisplayBase::EntryTexChanged(pFb, hEntry);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("err"));
-        return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
 int CrFbDisplayWindow::FramebufferChanged(struct CR_FRAMEBUFFER *pFb)
 {
     int rc = CrFbDisplayBase::FramebufferChanged(pFb);
