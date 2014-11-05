@@ -1045,6 +1045,9 @@ bool UISession::prepareSession()
     if (m_debugger.isNull())
         return false;
 
+    /* Update machine-name: */
+    m_strMachineName = machine().GetName();
+
     /* Update machine-state: */
     m_machineState = machine().GetState();
 
