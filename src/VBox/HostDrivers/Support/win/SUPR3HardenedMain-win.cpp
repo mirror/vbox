@@ -368,7 +368,7 @@ static uint32_t             g_fSupAdversaries = 0;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
+static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfAccess, PULONG pfProtect,
                                          bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust,
                                          bool *pfQuiet);
 static void     supR3HardenedWinRegisterDllNotificationCallback(void);
@@ -1051,8 +1051,8 @@ static void supR3HardenedWinVerifyCacheProcessImportTodos(void)
                     ULONG fAccess = 0;
                     ULONG fProtect = 0;
                     bool  fCallRealApi = false;
-                    rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
-                                                    "Imports", false /*fAvoidWinVerifyTrust*/, NULL /*pfQuiet*/);
+                    rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, false /*fIgnoreArch*/, &fAccess, &fProtect,
+                                                    &fCallRealApi, "Imports", false /*fAvoidWinVerifyTrust*/, NULL /*pfQuiet*/);
                     NtClose(hFile);
                 }
                 else
@@ -1274,7 +1274,29 @@ static void supR3HardenedWinFix8dot3Path(HANDLE hFile, PUNICODE_STRING pUniStr)
 }
 
 
-static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAccess, PULONG pfProtect,
+/**
+ * Screens an image file or file mapped with execute access.
+ *
+ * @returns NT status code.
+ * @param   hFile                   The file handle.
+ * @param   fImage                  Set if image file mapping being made
+ *                                  (NtCreateSection thing).
+ * @param   fIgnoreArch             Using the DONT_RESOLVE_DLL_REFERENCES flag,
+ *                                  which also implies that DLL init / term code
+ *                                  isn't called, so the architecture should be
+ *                                  ignored.
+ * @param   pfAccess                Pointer to the NtCreateSection access flags,
+ *                                  so we can modify them if necessary.
+ * @param   pfProtect               Pointer to the NtCreateSection protection
+ *                                  flags, so we can modify them if necessary.
+ * @param   pfCallRealApi           Whether it's ok to go on to the real API.
+ * @param   pszCaller               Who is calling (for debugging / logging).
+ * @param   fAvoidWinVerifyTrust    Whether we should avoid WinVerifyTrust.
+ * @param   pfQuiet                 Where to return whether to be quiet about
+ *                                  this image in the log (i.e. we've seen it
+ *                                  lots of times already).  Optional.
+ */
+static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, bool fIgnoreArch, PULONG pfAccess, PULONG pfProtect,
                                          bool *pfCallRealApi, const char *pszCaller, bool fAvoidWinVerifyTrust, bool *pfQuiet)
 {
     *pfCallRealApi = false;
@@ -1539,6 +1561,8 @@ static NTSTATUS supR3HardenedScreenImage(HANDLE hFile, bool fImage, PULONG pfAcc
      * Do the verification. For better error message we borrow what's
      * left of the path buffer for an RTERRINFO buffer.
      */
+    if (fIgnoreArch)
+        fFlags |= SUPHNTVI_F_IGNORE_ARCHITECTURE;
     RTERRINFO ErrInfo;
     RTErrInfoInit(&ErrInfo, (char *)&uBuf.abBuffer[cbNameBuf], sizeof(uBuf) - cbNameBuf);
 
@@ -1609,8 +1633,8 @@ DECLHIDDEN(void) supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName)
     ULONG fProtect = 0;
     bool  fCallRealApi;
     //SUP_DPRINTF(("supR3HardenedWinVerifyCachePreload: scanning %ls\n", pwszName));
-    supR3HardenedScreenImage(hFile, false, &fAccess, &fProtect, &fCallRealApi, "preload", false /*fAvoidWinVerifyTrust*/,
-                             NULL /*pfQuiet*/);
+    supR3HardenedScreenImage(hFile, false, false /*fIgnoreArch*/, &fAccess, &fProtect, &fCallRealApi, "preload",
+                             false /*fAvoidWinVerifyTrust*/, NULL /*pfQuiet*/);
     //SUP_DPRINTF(("supR3HardenedWinVerifyCachePreload: done %ls\n", pwszName));
 
     NtClose(hFile);
@@ -1647,7 +1671,7 @@ supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POB
 
             bool fCallRealApi;
             //SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: 1\n"));
-            NTSTATUS rcNt = supR3HardenedScreenImage(hFile, fImage, &fAccess, &fProtect, &fCallRealApi,
+            NTSTATUS rcNt = supR3HardenedScreenImage(hFile, fImage, true /*fIgnoreArch*/, &fAccess, &fProtect, &fCallRealApi,
                                                      "NtCreateSection", true /*fAvoidWinVerifyTrust*/, NULL /*pfQuiet*/);
             //SUP_DPRINTF(("supR3HardenedMonitor_NtCreateSection: 2 rcNt=%#x fCallRealApi=%#x\n", rcNt, fCallRealApi));
 
@@ -1981,7 +2005,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             ULONG fAccess = 0;
             ULONG fProtect = 0;
             bool  fCallRealApi = false;
-            rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
+            rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, RT_VALID_PTR(pfFlags) && (*pfFlags & 0x2) /*fIgnoreArch*/,
+                                            &fAccess, &fProtect, &fCallRealApi,
                                             "LdrLoadDll", false /*fAvoidWinVerifyTrust*/, &fQuiet);
             NtClose(hFile);
             if (!NT_SUCCESS(rcNt))
@@ -2131,7 +2156,7 @@ static VOID CALLBACK supR3HardenedDllNotificationCallback(ULONG ulReason, PCLDR_
         ULONG fProtect = 0;
         bool  fCallRealApi = false;
         bool  fQuietFailure = false;
-        rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, &fAccess, &fProtect, &fCallRealApi,
+        rcNt = supR3HardenedScreenImage(hFile, true /*fImage*/, true /*fIgnoreArch*/, &fAccess, &fProtect, &fCallRealApi,
                                         "LdrLoadDll", true /*fAvoidWinVerifyTrust*/, &fQuietFailure);
         NtClose(hFile);
         if (!NT_SUCCESS(rcNt))

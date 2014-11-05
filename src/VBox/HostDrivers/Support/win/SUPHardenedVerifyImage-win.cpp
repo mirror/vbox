@@ -1234,7 +1234,7 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByHandle(HANDLE hFile, PCRTUTF16 pwszNa
          */
         RTLDRMOD hLdrMod;
         RTLDRARCH enmArch = fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST;
-        if (fFlags & SUPHNTVI_F_RESOURCE_IMAGE)
+        if (fFlags & SUPHNTVI_F_IGNORE_ARCHITECTURE)
             enmArch = RTLDRARCH_WHATEVER;
         rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pErrInfo);
         if (RT_SUCCESS(rc))

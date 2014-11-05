@@ -132,8 +132,9 @@ DECLHIDDEN(int)  supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 p
 #  define SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION    RT_BIT(3)
 /** The file owner must be TrustedInstaller on Vista+. */
 #  define SUPHNTVI_F_TRUSTED_INSTALLER_OWNER        RT_BIT(4)
-/** Resource image, could be any bitness. */
-#  define SUPHNTVI_F_RESOURCE_IMAGE                 RT_BIT(30)
+/** Ignore the image architecture (otherwise it must match the verification
+ * code).  Used with resource images and such. */
+#  define SUPHNTVI_F_IGNORE_ARCHITECTURE            RT_BIT(30)
 /** Raw-mode context image, always 32-bit. */
 #  define SUPHNTVI_F_RC_IMAGE                       RT_BIT(31)
 /** @} */
