@@ -1834,7 +1834,7 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
                     ? SUPHNTVI_F_TRUSTED_INSTALLER_OWNER | SUPHNTVI_F_ALLOW_CAT_FILE_VERIFICATION
                     : SUPHNTVI_F_REQUIRE_BUILD_CERT;
     if (f32bitResourceDll)
-        fFlags |= SUPHNTVI_F_RESOURCE_IMAGE;
+        fFlags |= SUPHNTVI_F_IGNORE_ARCHITECTURE;
 
     PSUPHNTVIRDR pNtViRdr;
     int rc = supHardNtViRdrCreate(hFile, pUniStrPath->Buffer, fFlags, &pNtViRdr);
@@ -1849,7 +1849,7 @@ static int supHardNtLdrCacheNewEntry(PSUPHNTLDRCACHEENTRY pEntry, const char *ps
      */
     RTLDRMOD hLdrMod;
     RTLDRARCH enmArch = fFlags & SUPHNTVI_F_RC_IMAGE ? RTLDRARCH_X86_32 : RTLDRARCH_HOST;
-    if (fFlags & SUPHNTVI_F_RESOURCE_IMAGE)
+    if (fFlags & SUPHNTVI_F_IGNORE_ARCHITECTURE)
         enmArch = RTLDRARCH_WHATEVER;
     rc = RTLdrOpenWithReader(&pNtViRdr->Core, RTLDR_O_FOR_VALIDATION, enmArch, &hLdrMod, pErrInfo);
     if (RT_FAILURE(rc))
