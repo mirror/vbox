@@ -24,6 +24,7 @@
 #include <VBox/log.h>
 
 #include <Windows.h>
+#include <windns.h>
 
 #include <algorithm>
 #include <sstream>
@@ -201,9 +202,7 @@ HRESULT HostDnsServiceWin::updateInfo()
 {
     LONG lrc;
 
-    std::string strNameServer;
     std::string strDomain;
-    std::string strDhcpNameServer;
     std::string strDhcpDomain;
     std::string strSearchList;  /* NB: comma separated, no spaces */
 
@@ -236,20 +235,10 @@ HRESULT HostDnsServiceWin::updateInfo()
         if (cbKeyData > 0 && keyData[cbKeyData - 1] == '\0')
             --cbKeyData;     /* don't count trailing NUL if present */
 
-        if (RTStrICmp("NameServer", keyName) == 0)
-        {
-            strNameServer.assign(keyData, cbKeyData);
-            Log2(("... NameServer=\"%s\"\n", strNameServer.c_str()));
-        }
-        else if (RTStrICmp("Domain", keyName) == 0)
+        if (RTStrICmp("Domain", keyName) == 0)
         {
             strDomain.assign(keyData, cbKeyData);
             Log2(("... Domain=\"%s\"\n", strDomain.c_str()));
-        }
-        else if (RTStrICmp("DhcpNameServer", keyName) == 0)
-        {
-            strDhcpNameServer.assign(keyData, cbKeyData);
-            Log2(("... DhcpNameServer=\"%s\"\n", strDhcpNameServer.c_str()));
         }
         else if (RTStrICmp("DhcpDomain", keyName) == 0)
         {
@@ -265,10 +254,36 @@ HRESULT HostDnsServiceWin::updateInfo()
 
     HostDnsInformation info;
 
-    if (!strNameServer.empty())
-        vappend(info.servers, strNameServer);
-    else if (!strDhcpNameServer.empty())
-        vappend(info.servers, strDhcpNameServer);
+    /*
+     * When name servers are configured statically it seems that the
+     * value of Tcpip\Parameters\NameServer is NOT set, inly interface
+     * specific NameServer value is (which triggers notification for
+     * us to pick up the change).  Fortunately, DnsApi seems to do the
+     * right thing there.
+     */
+    DNS_STATUS status;
+    PIP4_ARRAY pIp4Array = NULL;
+
+    // NB: must be set on input it seems, despite docs' claim to the contrary.
+    DWORD cbBuffer = sizeof(&pIp4Array);
+
+    status = DnsQueryConfig(DnsConfigDnsServerList,
+                            DNS_CONFIG_FLAG_ALLOC, NULL, NULL,
+                            &pIp4Array, &cbBuffer);
+    
+    if (status == NO_ERROR && pIp4Array != NULL)
+    {
+        for (DWORD i = 0; i < pIp4Array->AddrCount; ++i)
+        {
+            char szAddrStr[16] = "";
+            RTStrPrintf(szAddrStr, sizeof(szAddrStr), "%RTnaipv4", pIp4Array->AddrArray[i]);
+
+            Log2(("  server %d: %s\n", i+1,  szAddrStr));
+            info.servers.push_back(szAddrStr);
+        }
+
+        LocalFree(pIp4Array);
+    }
 
     if (!strDomain.empty())
     {

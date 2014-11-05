@@ -328,6 +328,9 @@ VBoxSVC_LIBS.solaris = \
 	socket \
 	$(LIB_VMM)
 
+VBoxSVC_LIBS.win += \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/dnsapi.lib
+
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H) \
