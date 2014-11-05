@@ -5478,9 +5478,11 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #endif
 
 #ifdef VBOX_WITH_VMSVGA
-    if (    rc == VINF_SUCCESS
-        &&  pThis->fVMSVGAEnabled)
+    if (pThis->fVMSVGAEnabled)
+    {
         rc = vmsvgaSaveExec(pDevIns, pSSM);
+        AssertRCReturn(rc, rc);
+    }
 #endif
 
     return rc;
@@ -5586,7 +5588,11 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 # endif
 #endif
 #ifdef VBOX_WITH_VMSVGA
-    rc = vmsvgaLoadDone(pDevIns);
+    if (pThis->fVMSVGAEnabled)
+    {
+        rc = vmsvgaLoadDone(pDevIns);
+        AssertRCReturn(rc, rc);
+    }
 #endif
     return rc;
 }
