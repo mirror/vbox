@@ -77,6 +77,7 @@ SRCS += \
 .PATH:	${.CURDIR}/common/string
 SRCS += \
 	RTStrCopy.c \
+	RTStrCopyEx.c \
 	RTStrCopyP.c \
 	strformat.c \
 	strformatrt.c \
