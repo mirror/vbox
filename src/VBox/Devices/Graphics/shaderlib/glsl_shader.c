@@ -54,6 +54,7 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d);
 #include <VBox/log.h>
 #undef WDLOG
 #define WDLOG(_m) Log(_m)
+#undef CONST
 #define CONST const
 #endif
  

@@ -10,6 +10,7 @@
 #include "../../../vbox/VBoxWineEx.h"
 #endif
 
+# undef DECLSPEC_HIDDEN
 # define DECLSPEC_HIDDEN
 
 #ifdef __cplusplus

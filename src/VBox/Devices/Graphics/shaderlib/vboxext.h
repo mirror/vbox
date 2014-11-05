@@ -39,6 +39,7 @@ int VBoxExtReleaseDC(HWND hWnd, HDC hDC);
  * In other words, wined3d may internally call Win32 API functions which result in a DLL lock acquisition while holding wined3d lock.
  * So lock order should always be "wined3d lock" -> "dll lock".
  * To avoid possible deadlocks we make an asynchronous call to a worker thread to make a context release from there. */
+struct wined3d_context;
 void VBoxExtReleaseContextAsync(struct wined3d_context *context);
 #endif
 
@@ -54,6 +55,8 @@ typedef FNVBOXEXT_HASHMAP_HASH *PFNVBOXEXT_HASHMAP_HASH;
 typedef DECLCALLBACK(bool) FNVBOXEXT_HASHMAP_EQUAL(void *pvKey1, void *pvKey2);
 typedef FNVBOXEXT_HASHMAP_EQUAL *PFNVBOXEXT_HASHMAP_EQUAL;
 
+struct VBOXEXT_HASHMAP;
+struct VBOXEXT_HASHMAP_ENTRY;
 typedef DECLCALLBACK(bool) FNVBOXEXT_HASHMAP_VISITOR(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor);
 typedef FNVBOXEXT_HASHMAP_VISITOR *PFNVBOXEXT_HASHMAP_VISITOR;
 
@@ -97,6 +100,7 @@ DECLINLINE(void*) VBoxExtHashEntryKey(PVBOXEXT_HASHMAP_ENTRY pEntry)
     return pEntry->pvKey;
 }
 
+struct VBOXEXT_HASHCACHE_ENTRY;
 typedef DECLCALLBACK(void) FNVBOXEXT_HASHCACHE_CLEANUP_ENTRY(void *pvKey, struct VBOXEXT_HASHCACHE_ENTRY *pEntry);
 typedef FNVBOXEXT_HASHCACHE_CLEANUP_ENTRY *PFNVBOXEXT_HASHCACHE_CLEANUP_ENTRY;
 
