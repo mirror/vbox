@@ -437,7 +437,9 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enable vmsvga (svga2) graphics device variant, 2D part
 VBOX_WITH_VMSVGA = 1
 # Enable vmsvga (svga2) graphics device variant, 3D part
-VBOX_WITH_VMSVGA3D = 1
+if1of ($(KBUILD_TARGET), darwin linux solaris)
+ VBOX_WITH_VMSVGA3D = 1
+endif
 # Enable Host Guest Shared Memory Interface.
 VBOX_WITH_HGSMI = 1
 # Enable Video 2D Acceleration.
