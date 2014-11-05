@@ -41,6 +41,7 @@
 # undef LOBYTE
 # undef HIBYTE
 # include <windows.h>
+# include "WinKeyboard.h"
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_X11
@@ -390,6 +391,9 @@ UIHostComboWrapper UIHostComboEditor::combo() const
 UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     : m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
+#ifdef Q_WS_WIN
+    , m_pAltGrMonitor(0)
+#endif /* Q_WS_WIN */
 {
     /* Configure widget: */
     setAttribute(Qt::WA_NativeWindow);
@@ -402,21 +406,26 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pReleaseTimer->setInterval(200);
     connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
 
-#ifdef Q_WS_X11
-    /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif /* Q_WS_X11 */
-
-#ifdef Q_WS_MAC
-    m_uDarwinKeyModifiers = 0;
-    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
-    ::DarwinGrabKeyboard(false /* just modifiers */);
-#endif /* Q_WS_MAC */
+#if defined(Q_WS_X11)
+     /* Initialize the X keyboard subsystem: */
+     initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+#elif defined(Q_WS_MAC)
+     m_uDarwinKeyModifiers = 0;
+     UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
+     ::DarwinGrabKeyboard(false /* just modifiers */);
+#elif defined(Q_WS_WIN)
+    /* Prepare AltGR monitor: */
+    m_pAltGrMonitor = new WinAltGrMonitor;
+#endif /* Q_WS_WIN */
 }
 
 UIHostComboEditorPrivate::~UIHostComboEditorPrivate()
 {
-#ifdef Q_WS_MAC
+#if defined(Q_WS_WIN)
+    /* Cleanup AltGR monitor: */
+    delete m_pAltGrMonitor;
+    m_pAltGrMonitor = 0;
+#elif defined(Q_WS_MAC)
     ::DarwinReleaseKeyboard();
     UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditorPrivate::darwinEventHandlerProc, this);
 #endif /* Q_WS_MAC */
@@ -464,75 +473,6 @@ void UIHostComboEditorPrivate::sltClear()
 }
 
 #ifdef Q_WS_WIN
-/**
- * @brief isSyntheticLCtrl
- * @param   pMsg  Windows WM_[SYS]KEY* event message structure
- * @return  true if this is a synthetic LCtrl event, false otherwise
- * This function is a heuristic to tell whether a key event is the first in
- * a synthetic LCtrl+RAlt sequence which Windows uses to signal AltGr.  Our
- * heuristic is in two parts.  First of all, we check whether there is a pending
- * RAlt key event matching this LCtrl event (i.e. both key up or both key down)
- * and if there is, we check whether the current layout has an AltGr key.  We
- * check this by looking to see if any of the layout-dependent keys has a symbol
- * associated when AltGr is pressed.
- */
-static bool isSyntheticLCtrl(MSG *pMsg)
-{
-    MSG peekMsg;
-    /** Keyboard state array with VK_CONTROL and VK_MENU depressed. */
-    const BYTE auKeyStates[256] =
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
-    WORD ach;
-    unsigned i;
-
-    Assert(   pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN
-           || pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP);
-    if (   ((RT_HIWORD(pMsg->lParam) & 0xFF) != 0x1d /* scan code: Control */)
-        || RT_HIWORD(pMsg->lParam) & KF_EXTENDED)
-        return false;
-    if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
-        return false;
-    if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
-        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
-        return false;
-    if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
-        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
-        return false;
-    if (   ((RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
-        || !(RT_HIWORD(peekMsg.lParam) & KF_EXTENDED))
-        return false;
-    /* If we got this far then we have a key event which could potentially
-     * be a synthetic left control.  Now we check to see whether the current
-     * keyboard layout actually has an AltGr key by checking whether any of
-     * the keys which might do produce a symbol when AltGr (Control + Alt) is
-     * depressed.  Generally this loop will exit pretty early (it exits on the
-     * first iteration for my German layout).  If there is no AltGr key in the
-     * layout then it will run right through, but that should not happen very
-     * often as we should hardly ever reach the loop in that case.
-     *
-     * In theory we could do this once and cache the result, but that involves
-     * tracking layout switches to invalidate the cache, and I don't think
-     * that the added complexity is worth the price.
-     */
-    for (i = '0'; i <= VK_OEM_102; ++i)
-    {
-        if (ToAscii(i, 0, auKeyStates, &ach, 0))
-            break;
-        /* Skip ranges of virtual keys which are undefined or not relevant. */
-        if (i == '9')
-            i = 'A' - 1;
-        if (i == 'Z')
-            i = VK_OEM_1 - 1;
-        if (i == VK_OEM_3)
-            i = VK_OEM_4 - 1;
-        if (i == VK_OEM_8)
-            i = VK_OEM_102 - 1;
-    }
-    if (i > VK_OEM_102)
-        return false;
-    return true;
-}
-
 bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
 {
     switch (pMsg->message)
@@ -544,11 +484,26 @@ bool UIHostComboEditorPrivate::winEvent(MSG *pMsg, long* /* pResult */)
         {
             /* Get key-code: */
             int iKeyCode = UINativeHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
+            unsigned iDownScanCode = (pMsg->lParam >> 16) & 0x7F;
+            bool fPressed = !(pMsg->lParam & 0x80000000);
+            bool fExtended = pMsg->lParam & 0x1000000;
 
-            /* If this is the first event in a synthetic AltGr = LCtrl+RAlt
-             * sequence then swallow it. */
-            if (isSyntheticLCtrl(pMsg))
-                return true;
+            /* If present - why not just assert this? */
+            if (m_pAltGrMonitor)
+            {
+                /* Update AltGR monitor state from key-event: */
+                m_pAltGrMonitor->updateStateFromKeyEvent(iDownScanCode, fPressed, fExtended);
+                /* And release left Ctrl key early (if required): */
+                if (m_pAltGrMonitor->isLeftControlReleaseNeeded())
+                {
+                    m_pressedKeys.remove(VK_LCONTROL);
+                    m_shownKeys.remove(VK_LCONTROL);
+                }
+                /* Fake LCtrl release events can also end up in the released
+                 * key set.  Detect them on the immediately following RAlt up. */
+                if (!m_pressedKeys.contains(VK_LCONTROL))
+                    m_releasedKeys.remove(VK_LCONTROL);
+            }
 
             /* Process the key event: */
             return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
