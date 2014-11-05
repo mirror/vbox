@@ -216,6 +216,8 @@ void UIGMachinePreview::sltRecreatePreview()
                     image = QImage::fromData(screenData.data(), screenData.size(), "PNG")
                             .scaled(imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight)),
                                     Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                    /* And detach that copy to make it deep: */
+                    image.detach();
                     /* Dim image to give it required look: */
                     dimImage(image);
                     break;
@@ -259,7 +261,7 @@ void UIGMachinePreview::sltRecreatePreview()
                     /* Create image based on shallow copy of acquired data: */
                     image = QImage(screenData.data(), size.width(), size.height(), QImage::Format_RGB32);
                     /* And detach that copy to make it deep: */
-                    (uchar*)image.bits();
+                    image.detach();
                     /* Dim image to give it required look for PAUSED state: */
                     if (machineState == KMachineState_Paused)
                         dimImage(image);
@@ -275,8 +277,8 @@ void UIGMachinePreview::sltRecreatePreview()
         {
             /* Shallow copy that image: */
             m_pPreviewImg = new QImage(image);
-            /* And detach that copy: */
-            m_pPreviewImg->bits();
+            /* And detach that copy to make it deep: */
+            m_pPreviewImg->detach();
         }
 
         /* If preset changed: */
