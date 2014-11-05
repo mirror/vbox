@@ -742,34 +742,6 @@ static void crVBoxServerInternalClientWriteRead(CRClient *pClient)
     CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
 
     crServerServiceClients();
-
-#if 0
-        if (pClient->currentMural) {
-            crStateViewport( 0, 0, 500, 500 );
-            pClient->currentMural->viewportValidated = GL_FALSE;
-            cr_server.head_spu->dispatch_table.Viewport( 0, 0, 500, 500 );
-            crStateViewport( 0, 0, 600, 600 );
-            pClient->currentMural->viewportValidated = GL_FALSE;
-            cr_server.head_spu->dispatch_table.Viewport( 0, 0, 600, 600 );
-
-            crStateMatrixMode(GL_PROJECTION);
-            cr_server.head_spu->dispatch_table.MatrixMode(GL_PROJECTION);
-            crServerDispatchLoadIdentity();
-            crStateFrustum(-0.6, 0.6, -0.5, 0.5, 1.5, 150.0);
-            cr_server.head_spu->dispatch_table.Frustum(-0.6, 0.6, -0.5, 0.5, 1.5, 150.0);
-            crServerDispatchLoadIdentity();
-            crStateFrustum(-0.5, 0.5, -0.5, 0.5, 1.5, 150.0);
-            cr_server.head_spu->dispatch_table.Frustum(-0.5, 0.5, -0.5, 0.5, 1.5, 150.0);
-
-            crStateMatrixMode(GL_MODELVIEW);
-            cr_server.head_spu->dispatch_table.MatrixMode(GL_MODELVIEW);
-            crServerDispatchLoadIdentity();
-            crStateFrustum(-0.5, 0.5, -0.5, 0.5, 1.5, 150.0);
-            cr_server.head_spu->dispatch_table.Frustum(-0.5, 0.5, -0.5, 0.5, 1.5, 150.0);
-            crServerDispatchLoadIdentity();
-        }
-#endif
-
     crStateResetCurrentPointers(&cr_server.current);
 
 #ifndef VBOX_WITH_CRHGSMI
@@ -791,7 +763,6 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
 
     if (RT_FAILURE(rc))
         return rc;
-
 
     CRASSERT(pBuffer);
 
@@ -1386,8 +1357,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         return VINF_SUCCESS;
     }
 
-    if ((pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
-    		|| (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
+    if (   (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
+        || (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
     {
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;

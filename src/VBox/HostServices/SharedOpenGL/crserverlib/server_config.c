@@ -110,40 +110,12 @@ void crServerSetVBoxConfiguration()
     }
     spu_names[i] = NULL;
 
-    //spu_dir = crStrdup(response);
     crNetSetRank(0);
     crNetSetContextRange(32, 35);
     crNetSetNodeRange("iam0", "iamvis20");
     crNetSetKey(key,sizeof(key));
     crNetSetKey(key,sizeof(key));
     cr_server.tcpip_port = 7000;
-
-        /*cr_server.optimizeBucket = crStrToInt(response);
-        cr_server.localTileSpec = crStrToInt(response);
-        cr_server.useL2 = crStrToInt(response);
-        cr_server.ignore_papi = crStrToInt(response);
-        if (crMothershipGetServerParam(conn, response, "overlap_blending"))
-        {
-            if (!crStrcmp(response, "blend"))
-                cr_server.overlapBlending = 1;
-            else if (!crStrcmp(response, "knockout"))
-                cr_server.overlapBlending = 2;
-        }
-        if (crMothershipGetServerParam(conn, response, "overlap_levels"))
-        cr_server.only_swap_once = crStrToInt(response);
-        cr_server.debug_barriers = crStrToInt(response);
-        cr_server.sharedDisplayLists = crStrToInt(response);
-        cr_server.sharedTextureObjects = crStrToInt(response);
-        cr_server.sharedPrograms = crStrToInt(response);
-        cr_server.sharedWindows = crStrToInt(response);
-        cr_server.uniqueWindows = crStrToInt(response);
-        cr_server.useDMX = crStrToInt(response);
-        if (crMothershipGetServerParam(conn, response, "vertprog_projection_param"))
-        if (crMothershipGetServerParam(conn, response, "stereo_view"))
-        if (crMothershipGetServerParam(conn, response, "view_matrix"))
-        if (crMothershipGetServerParam(conn, response, "right_view_matrix"))
-        if (crMothershipGetServerParam(conn, response, "projection_matrix"))
-        if (crMothershipGetServerParam(conn, response, "right_projection_matrix"))*/
 
     crDebug("CRServer: my port number is %d", cr_server.tcpip_port);
 
@@ -315,6 +287,7 @@ void crServerSetVBoxConfigurationHGCM()
     }
     else
         cr_server.fVisualBitsDefault = CR_RGB_BIT | CR_ALPHA_BIT | CR_DOUBLE_BIT;
+
 
     env = crGetenv("CR_SERVER_CAPS");
     if (env && env[0] != '\0')
