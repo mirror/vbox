@@ -7277,6 +7277,8 @@ static void supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
  * @param   u64NanoTS       The current time stamp.
  * @param   u64TSC          The current TSC.
  * @param   iTick           The current timer tick.
+ *
+ * @remarks Can be called with interrupts disabled!
  */
 static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
@@ -7398,6 +7400,8 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
  * @param   u64TSC          The current TSC timesamp.
  * @param   idCpu           The CPU ID.
  * @param   iTick           The current timer tick.
+ *
+ * @remarks Can be called with interrupts disabled!
  */
 static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick)
 {
@@ -7477,6 +7481,8 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
  * @param   idCpu           The CPU ID.
  * @param   idApic          The APIC id for the CPU index.
  * @param   iTick           The current timer tick.
+ *
+ * @remarks Can be called with interrupts disabled!
  */
 static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
