@@ -11969,7 +11969,7 @@ FNIEMOP_DEF(iemOp_retn)
 
 
 /** Opcode 0xc4. */
-FNIEMOP_DEF(iemOp_les_Gv_Mp)
+FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
@@ -11991,23 +11991,41 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp)
 
 
 /** Opcode 0xc5. */
-FNIEMOP_DEF(iemOp_lds_Gv_Mp)
+FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
 {
+    /* The LDS instruction is invalid 64-bit mode. In legacy and
+       compatability mode it is invalid with MOD=3.
+       The use as a VEX prefix is made possible by assigning the inverted
+       REX.R and REX.X to the two MOD bits, since the REX bits are ignored
+       outside of 64-bit mode.  VEX is not available in real or v86 mode. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
-        || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    if (pIemCpu->enmCpuMode != IEMMODE_64BIT)
     {
-        IEMOP_MNEMONIC("3-byte-vex");
-        /* The LDS instruction is invalid 64-bit mode. In legacy and
-           compatability mode it is invalid with MOD=3.
-           The use as a VEX prefix is made possible by assigning the inverted
-           REX.R and REX.X to the two MOD bits, since the REX bits are ignored
-           outside of 64-bit mode. */
-        /** @todo VEX: Just use new tables for it. */
-        return IEMOP_RAISE_INVALID_OPCODE();
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            IEMOP_MNEMONIC("lds Gv,Mp");
+            return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_DS, bRm);
+        }
+        IEMOP_HLP_NO_REAL_OR_V86_MODE();
     }
-    IEMOP_MNEMONIC("lds Gv,Mp");
-    return FNIEMOP_CALL_2(iemOpCommonLoadSRegAndGreg, X86_SREG_DS, bRm);
+
+    IEMOP_MNEMONIC("3-byte-vex");
+    /** @todo Test when exctly the VEX conformance checks kick in during
+     * instruction decoding and fetching (using \#PF). */
+    uint8_t bVex1;   IEM_OPCODE_GET_NEXT_U8(&bVex1);
+    uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
+    uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
+#if 0 /* will make sense of this next week... */
+    if (   !(pIemCpu->fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REX))
+        &&
+        )
+    {
+
+    }
+#endif
+
+    /** @todo VEX: Just use new tables for it. */
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -12615,6 +12633,26 @@ FNIEMOP_DEF(iemOp_aad_Ib)
     IEMOP_HLP_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
     return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_aad, bImm);
+}
+
+
+/** Opcode 0xd6. */
+FNIEMOP_DEF(iemOp_salc)
+{
+    IEMOP_MNEMONIC("salc");
+    uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_NO_64BIT();
+
+    IEM_MC_BEGIN(0, 0);
+    IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
+        IEM_MC_STORE_GREG_U8(X86_GREG_xAX, 0xff);
+    } IEM_MC_ELSE() {
+        IEM_MC_STORE_GREG_U8(X86_GREG_xAX, 0x00);
+    } IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
@@ -17305,11 +17343,11 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xb8 */  iemOp_eAX_Iv,           iemOp_eCX_Iv,           iemOp_eDX_Iv,           iemOp_eBX_Iv,
     /* 0xbc */  iemOp_eSP_Iv,           iemOp_eBP_Iv,           iemOp_eSI_Iv,           iemOp_eDI_Iv,
     /* 0xc0 */  iemOp_Grp2_Eb_Ib,       iemOp_Grp2_Ev_Ib,       iemOp_retn_Iw,          iemOp_retn,
-    /* 0xc4 */  iemOp_les_Gv_Mp,        iemOp_lds_Gv_Mp,        iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
+    /* 0xc4 */  iemOp_les_Gv_Mp_vex2,   iemOp_lds_Gv_Mp_vex3,   iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
     /* 0xc8 */  iemOp_enter_Iw_Ib,      iemOp_leave,            iemOp_retf_Iw,          iemOp_retf,
     /* 0xcc */  iemOp_int_3,            iemOp_int_Ib,           iemOp_into,             iemOp_iret,
     /* 0xd0 */  iemOp_Grp2_Eb_1,        iemOp_Grp2_Ev_1,        iemOp_Grp2_Eb_CL,       iemOp_Grp2_Ev_CL,
-    /* 0xd4 */  iemOp_aam_Ib,           iemOp_aad_Ib,           iemOp_Invalid,          iemOp_xlat,
+    /* 0xd4 */  iemOp_aam_Ib,           iemOp_aad_Ib,           iemOp_salc,             iemOp_xlat,
     /* 0xd8 */  iemOp_EscF0,            iemOp_EscF1,            iemOp_EscF2,            iemOp_EscF3,
     /* 0xdc */  iemOp_EscF4,            iemOp_EscF5,            iemOp_EscF6,            iemOp_EscF7,
     /* 0xe0 */  iemOp_loopne_Jb,        iemOp_loope_Jb,         iemOp_loop_Jb,          iemOp_jecxz_Jb,
