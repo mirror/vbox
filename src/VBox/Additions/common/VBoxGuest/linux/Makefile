@@ -74,6 +74,7 @@ MOD_OBJS   = \
 	common/misc/assert.o \
 	common/misc/thread.o \
 	common/string/RTStrCopy.o \
+	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \
 	common/string/strformat.o \
 	common/string/strformatrt.o \
