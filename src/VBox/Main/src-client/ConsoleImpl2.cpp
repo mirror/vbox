@@ -3401,7 +3401,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
 #ifdef VBOX_WITH_VMSVGA3D
             IFramebuffer *pFramebuffer = NULL;
-            hrc = getDisplay()->QueryFramebuffer(0, &pFramebuffer);
+            hrc = i_getDisplay()->QueryFramebuffer(0, &pFramebuffer);
             if (SUCCEEDED(hrc) && pFramebuffer)
             {
                 LONG64 winId = 0;

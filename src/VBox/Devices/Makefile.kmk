@@ -1349,7 +1349,7 @@ endif # VBOX_WITH_EXTPACK_PUEL
 TEMPLATE_VBoxSVGA3D         = VBoxSVGA3D
 TEMPLATE_VBoxSVGA3D_EXTENDS = VBOXR3
 TEMPLATE_VBoxSVGA3D_CFLAGS  = \
-	$(filter-out -pedantic -fno-common,$(TEMPLATE_VBOXR3_CFLAGS))
+	$(filter-out -pedantic -fno-common -Wstrict-prototypes,$(TEMPLATE_VBOXR3_CFLAGS))
 TEMPLATE_VBoxSVGA3D_CXXFLAG = \
         $(filter-out -pedantic -fno-common,$(TEMPLATE_VBOXR3_CXXFLAGS))
 TEMPLATE_VBoxSVGA3D_CFLAGS.darwin  = \

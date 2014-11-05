@@ -228,7 +228,7 @@ static void vbox_log_v(const char *pszFormat, va_list args)
     if (vbox_log_backdoor)
     {
         static char buf[8092];
-        int offset = sprintf(buf, "[0x%lx.0x%lx] Wine Debug: ", GetCurrentProcessId(), GetCurrentThreadId());
+        int offset = sprintf(buf, "[0x%lx.0x%lx] Wine Debug: ", (unsigned long)GetCurrentProcessId(), (unsigned long)GetCurrentThreadId());
         vsprintf(buf + offset, pszFormat, args);
         vbox_log_backdoor(buf);
     }
