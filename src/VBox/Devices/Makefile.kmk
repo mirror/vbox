@@ -1396,7 +1396,7 @@ VBoxSVGA3D_DEFS.darwin += \
 	__builtin_ms_va_list=va_list \
 	__stdcall=
 VBoxSVGA3D_CFLAGS = \
-    $(filter-out -pedantic -Wattributes,$(VBoxR3DllWarnNoPic_CFLAGS))
+	$(filter-out -pedantic -Wattributes,$(VBoxR3DllWarnNoPic_CFLAGS))
 VBoxSVGA3D_INCS.win    := \
 	Graphics/shaderlib/libWineStub/include
 VBoxSVGA3D_INCS.linux  := \
