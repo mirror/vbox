@@ -41,7 +41,9 @@
 #endif
 
 #ifdef VBOX_WITH_VMSVGA
-# ifndef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
+DECLIMPORT(void) APIENTRY glFinish(void);
+# else
 void glFinish(void);
 # endif
 #endif
