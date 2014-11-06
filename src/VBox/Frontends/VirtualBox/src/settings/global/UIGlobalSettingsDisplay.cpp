@@ -19,8 +19,9 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIGlobalSettingsDisplay.h"
+# include "UIExtraDataManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -56,6 +57,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 
     /* Load to cache: */
     m_cache.m_strMaxGuestResolution = m_settings.maxGuestRes();
+    m_cache.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -88,6 +90,8 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pResolutionWidthSpin->setValue(iWidth);
         m_pResolutionHeightSpin->setValue(iHeight);
     }
+    /* Set state for corresponding check-box: */
+    m_pCheckBoxActivateOnMouseHover->setChecked(m_cache.m_fActivateHoveredMachineWindow);
 }
 
 /* Save data from corresponding widgets to cache,
@@ -112,6 +116,8 @@ void UIGlobalSettingsDisplay::putToCache()
         /* Else if both field attributes are non-zeroes => resolution set to "fixed": */
         m_cache.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
     }
+    /* Acquire state from corresponding check-box: */
+    m_cache.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -123,6 +129,7 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
     /* Save from cache: */
     m_settings.setMaxGuestRes(m_cache.m_strMaxGuestResolution);
+    gEDataManager->setActivateHoveredMachineWindow(m_cache.m_fActivateHoveredMachineWindow);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);

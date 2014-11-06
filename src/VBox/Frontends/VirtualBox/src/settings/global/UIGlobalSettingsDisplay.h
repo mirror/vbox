@@ -25,6 +25,7 @@
 struct UISettingsCacheGlobalDisplay
 {
     QString m_strMaxGuestResolution;
+    bool m_fActivateHoveredMachineWindow;
 };
 
 /* Global settings / Display page: */
