@@ -58,10 +58,16 @@ namespace UIExtraDataDefs
 
     /** @name Settings
       * @{ */
-        /** Holds restricted Plobal Settings pages. */
+        /** Holds restricted Global Settings pages. */
         extern const char* GUI_RestrictedGlobalSettingsPages;
         /** Holds restricted Machine Settings pages. */
         extern const char* GUI_RestrictedMachineSettingsPages;
+    /** @} */
+
+    /** @name Settings: Display
+      * @{ */
+        /** Holds whether hovered machine-window should be activated. */
+        extern const char* GUI_ActivateHoveredMachineWindow;
     /** @} */
 
     /** @name Settings: Keyboard

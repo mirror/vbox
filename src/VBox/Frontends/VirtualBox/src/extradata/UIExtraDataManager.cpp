@@ -1756,6 +1756,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
            << GUI_RestrictedGlobalSettingsPages << GUI_RestrictedMachineSettingsPages
+           << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
@@ -2083,6 +2084,12 @@ QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPage
     }
     /* Return result: */
     return result;
+}
+
+bool UIExtraDataManager::activateHoveredMachineWindow()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_ActivateHoveredMachineWindow);
 }
 
 QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDataID)
