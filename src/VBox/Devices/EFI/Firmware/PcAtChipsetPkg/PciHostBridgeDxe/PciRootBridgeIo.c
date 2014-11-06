@@ -13,6 +13,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/ 
 
 #include "PciHostBridge.h"
+#ifdef VBOX
+# define IN_RING3
+# include <iprt/asm-amd64-x86.h>
+#endif
 
 typedef struct {
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     SpaceDesp[TypeMax];
@@ -1002,21 +1006,21 @@ RootBridgeIoIoRW (
     {
       case EfiPciWidthFifoUint8:
         if (Write)
-          IoWriteBuffer8((UINTN)Address, Buffer, Count);
+          ASMOutStrU8((RTIOPORT)Address, (const uint8_t*)Buffer, (size_t)Count);
         else
-          IoReadBuffer8((UINTN)Address, Buffer, Count);
+          ASMInStrU8((RTIOPORT)Address, (uint8_t*)Buffer, (size_t)Count);
         break;
       case EfiPciWidthFifoUint16:
         if (Write)
-          IoWriteBuffer16((UINTN)Address, Buffer, Count);
+          ASMOutStrU16((RTIOPORT)Address, (const uint16_t*)Buffer, (size_t)Count);
         else
-          IoReadBuffer16((UINTN)Address, Buffer, Count);
+          ASMInStrU16((RTIOPORT)Address, (uint16_t*)Buffer, (size_t)Count);
         break;
       case EfiPciWidthFifoUint32:
         if (Write)
-          IoWriteBuffer32((UINTN)Address, Buffer, Count);
+          ASMOutStrU32((RTIOPORT)Address, (const uint32_t*)Buffer, (size_t)Count);
         else
-          IoReadBuffer32((UINTN)Address, Buffer, Count);
+          ASMInStrU32((RTIOPORT)Address, (uint32_t*)Buffer, (size_t)Count);
         break;
       default:
         ASSERT (FALSE);
