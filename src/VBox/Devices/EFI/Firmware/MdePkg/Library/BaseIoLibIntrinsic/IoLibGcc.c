@@ -196,3 +196,130 @@ IoWrite32 (
   return Value;
 }
 
+
+#ifdef VBOX
+
+/**
+  Reads an 8-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of bytes to read.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoReadBuffer8 (
+  IN      UINTN                     Port,
+  OUT     VOID                      *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; insb" : "+D" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+
+/**
+  Reads a 16-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of words to read.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoReadBuffer16 (
+  IN      UINTN                     Port,
+  OUT     VOID                      *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; insw" : "+D" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+/**
+  Reads a 32-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of dwords to read.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoReadBuffer32 (
+  IN      UINTN                     Port,
+  OUT     VOID                      *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; insl" : "+D" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+
+/**
+  Writes to an 8-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of bytes to write.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoWriteBuffer8 (
+  IN      UINTN                     Port,
+  IN CONST VOID                     *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; outsb" : "+S" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+
+/**
+  Writes to a 16-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of words to write.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoWriteBuffer16 (
+  IN      UINTN                     Port,
+  IN CONST VOID                     *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; outsw" : "+S" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+/**
+  Writes to a 32-bit I/O FIFO port.
+
+  @param  Port   The I/O port to read.
+  @param  Buffer The buffer to write the data to.
+  @param  Count  The number of dwords to write.
+
+**/
+__inline__
+VOID
+EFIAPI
+IoWriteBuffer32 (
+  IN      UINTN                     Port,
+  IN CONST VOID                     *Buffer,
+  IN      UINTN                     Count
+  )
+{
+  __asm__ __volatile__ ("rep; outsl" : "+S" (Buffer), "+c" (Count) : "d" ((UINT16)Port));
+}
+
+#endif /* VBOX */
