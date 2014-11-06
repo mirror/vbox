@@ -164,6 +164,12 @@ public:
         QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QString &strID);
     /** @} */
 
+    /** @name Settings: Display
+      * @{ */
+        /** Returns whether hovered machine-window should be activated. */
+        bool activateHoveredMachineWindow();
+    /** @} */
+
     /** @name Settings: Keyboard
       * @{ */
         /** Returns shortcut overrides for shortcut-pool with @a strPoolExtraDataID. */
