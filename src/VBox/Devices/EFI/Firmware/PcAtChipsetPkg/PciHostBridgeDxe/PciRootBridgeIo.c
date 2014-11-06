@@ -994,6 +994,35 @@ RootBridgeIoIoRW (
   InStride = mInStride[Width];
   OutStride = mOutStride[Width];
   OperationWidth = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) (Width & 0x03);
+#ifdef VBOX
+  /* rep ins/outs is much faster than single port I/O */
+  if (Count > 1 && Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint32)
+  {
+    switch (Width)
+    {
+      case EfiPciWidthFifoUint8:
+        if (Write)
+          IoWriteBuffer8((UINTN)Address, Buffer, Count);
+        else
+          IoReadBuffer8((UINTN)Address, Buffer, Count);
+        break;
+      case EfiPciWidthFifoUint16:
+        if (Write)
+          IoWriteBuffer16((UINTN)Address, Buffer, Count);
+        else
+          IoReadBuffer16((UINTN)Address, Buffer, Count);
+        break;
+      case EfiPciWidthFifoUint32:
+        if (Write)
+          IoWriteBuffer32((UINTN)Address, Buffer, Count);
+        else
+          IoReadBuffer32((UINTN)Address, Buffer, Count);
+        break;
+      default:
+        ASSERT (FALSE);
+    }
+  } else {
+#endif
   for (Uint8Buffer = Buffer; Count > 0; Address += InStride, Uint8Buffer += OutStride, Count--) {
     if (Write) {
       switch (OperationWidth) {
@@ -1035,6 +1064,9 @@ RootBridgeIoIoRW (
       }
     }
   }
+#ifdef VBOX
+  }
+#endif
   return EFI_SUCCESS;
 }
 
