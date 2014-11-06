@@ -2092,6 +2092,12 @@ bool UIExtraDataManager::activateHoveredMachineWindow()
     return isFeatureAllowed(GUI_ActivateHoveredMachineWindow);
 }
 
+void UIExtraDataManager::setActivateHoveredMachineWindow(bool fActivate)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    setExtraDataString(GUI_ActivateHoveredMachineWindow, toFeatureAllowed(fActivate));
+}
+
 QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDataID)
 {
     if (strPoolExtraDataID == GUI_Input_SelectorShortcuts)

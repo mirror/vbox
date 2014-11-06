@@ -168,6 +168,8 @@ public:
       * @{ */
         /** Returns whether hovered machine-window should be activated. */
         bool activateHoveredMachineWindow();
+        /** Defines whether hovered machine-window should be @a fActivated. */
+        void setActivateHoveredMachineWindow(bool fActivate);
     /** @} */
 
     /** @name Settings: Keyboard

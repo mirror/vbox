@@ -93,7 +93,33 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
+   <item row="3" column="0">
+    <widget class="QLabel" name="m_pLabelMachineWindow">
+     <property name="text">
+      <string>Machine Windows:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QCheckBox" name="m_pCheckBoxActivateOnMouseHover">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="whatsThis" >
+      <string>If checked, machine windows will be raised when the mouse pointer moves over them.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Raise Window Under Mouse</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="2">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
