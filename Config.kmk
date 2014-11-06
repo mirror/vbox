@@ -438,7 +438,7 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 VBOX_WITH_VMSVGA = 1
 # Enable vmsvga (svga2) graphics device variant, 3D part
 if1of ($(KBUILD_TARGET), windows)
-# VBOX_WITH_VMSVGA3D = 1
+ VBOX_WITH_VMSVGA3D = 1
 endif
 # Enable Host Guest Shared Memory Interface.
 VBOX_WITH_HGSMI = 1
