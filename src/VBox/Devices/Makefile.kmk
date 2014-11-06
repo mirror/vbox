@@ -1388,15 +1388,15 @@ if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
 endif
 VBoxSVGA3D_DEFS.x86    += __i386__
 VBoxSVGA3D_DEFS.amd64  += __x86_64__
-VBoxSVGA3D_DEFS.win    += USE_WIN32_OPENGL
+VBoxSVGA3D_DEFS.win    += \
+	USE_WIN32_OPENGL \
+	VBOX_WINE_WITHOUT_LIBWINE
 # WINE relies on a gcc 4.4 feature but we have 4.2 on Darwin
 VBoxSVGA3D_DEFS.darwin += \
 	__builtin_ms_va_list=va_list \
 	__stdcall=
 VBoxSVGA3D_CFLAGS = \
     $(filter-out -pedantic -Wattributes,$(VBoxR3DllWarnNoPic_CFLAGS))
-VBoxSVGA3D_INCS.win    += \
-	VBOX_WINE_WITHOUT_LIBWINE
 VBoxSVGA3D_INCS.win    := \
 	Graphics/shaderlib/libWineStub/include
 VBoxSVGA3D_INCS.linux  := \
