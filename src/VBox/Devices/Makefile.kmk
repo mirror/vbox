@@ -1357,7 +1357,7 @@ TEMPLATE_VBoxSVGA3D_CFLAGS.darwin  = \
 TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin += \
 	-framework AppKit -framework OpenGL
 
-if defined(VBOX_WITH_VMSVGA3D)
+if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
 DLLS += VBoxSVGA3D
 endif
 
