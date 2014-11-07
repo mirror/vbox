@@ -96,15 +96,14 @@ int main(int argc, char **argv)
     {
         if (g_pSUPGlobalInfoPage)
         {
-            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u32Mode=%d (%s) u32Version=%#x\n",
+            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u64CpuHz=%RU64  u32Mode=%d (%s) u32Version=%#x\n",
                      g_pSUPGlobalInfoPage->cCpus,
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
                      g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz,
+                     g_pSUPGlobalInfoPage->u64CpuHz,
                      g_pSUPGlobalInfoPage->u32Mode,
-                     g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC       ? "sync"
-                     : g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_ASYNC_TSC    ? "async"
-                     :                                                            "???",
+                     SUPGetGIPModeName(g_pSUPGlobalInfoPage),
                      g_pSUPGlobalInfoPage->u32Version);
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      TSC Interval History...\n"

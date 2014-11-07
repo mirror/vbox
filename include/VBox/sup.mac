@@ -57,6 +57,7 @@ struc SUPGLOBALINFOPAGE
     .u32UpdateHz                resd 1
     .u32UpdateIntervalNS        resd 1
     .u64NanoTSLastUpdateHz      resq 1
+    .u64CpuHz                   resq 1
     .OnlineCpuSet               resq 4
     .PresentCpuSet              resq 4
     .PossibleCpuSet             resq 4
@@ -65,7 +66,7 @@ struc SUPGLOBALINFOPAGE
     .cPossibleCpus              resw 1
     .u16Padding0                resw 1
     .idCpuMax                   resd 1
-    .au32Padding1               resd 29
+    .au32Padding1               resd 27
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
     .aCPUs                      resb SUPGIPCPU_size

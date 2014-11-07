@@ -225,6 +225,8 @@ int _init(void)
         rc = supdrvInitDevExt(&g_DevExt, sizeof(SUPDRVSESSION));
         if (RT_SUCCESS(rc))
         {
+            cmn_err(CE_CONT, "!tsc::mode %s @ tentative %lu Hz\n", SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
+
             /*
              * Initialize the session hash table.
              */
