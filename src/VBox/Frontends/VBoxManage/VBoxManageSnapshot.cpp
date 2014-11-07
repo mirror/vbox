@@ -284,6 +284,8 @@ int handleSnapshot(HandlerArg *a)
     {
         /* we have to open a session for this task (new or shared) */
         rc = pMachine->LockMachine(a->session, LockType_Shared);
+	ComPtr<IConsole> pConsole;
+	CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(pConsole.asOutParam()));
 
         /* switch based on the command */
         bool fDelete = false,
@@ -343,13 +345,35 @@ int handleSnapshot(HandlerArg *a)
             if (FAILED(rc))
                 break;
 
-            ComPtr<IProgress> pProgress;
-            CHECK_ERROR_BREAK(pMachine, TakeSnapshot(name.raw(), desc.raw(),
-				                     fPause,
-                                                     pProgress.asOutParam()));
+            if (fPause)
+            {
+                MachineState_T machineState;
+                CHECK_ERROR_BREAK(pConsole, COMGETTER(State)(&machineState));
+                if (machineState == MachineState_Running)
+                    CHECK_ERROR_BREAK(pConsole, Pause());
+                else
+                    fPause = false;
+            }
 
-            rc = showProgress(pProgress);
-            CHECK_PROGRESS_ERROR(pProgress, ("Failed to take snapshot"));
+            ComPtr<IProgress> progress;
+            CHECK_ERROR_BREAK(pConsole, TakeSnapshot(name.raw(), desc.raw(),
+                                                     progress.asOutParam()));
+
+            rc = showProgress(progress);
+            CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
+
+            if (fPause)
+            {
+                MachineState_T machineState;
+                CHECK_ERROR_BREAK(pConsole, COMGETTER(State)(&machineState));
+                if (machineState == MachineState_Paused)
+                {
+                    if (SUCCEEDED(rc))
+                        CHECK_ERROR_BREAK(pConsole, Resume());
+                    else
+                        pConsole->Resume();
+                }
+            }
         }
         else if (    (fDelete = !strcmp(a->argv[1], "delete"))
                   || (fRestore = !strcmp(a->argv[1], "restore"))
@@ -392,14 +416,14 @@ int handleSnapshot(HandlerArg *a)
 
             if (fDelete)
             {
-                CHECK_ERROR_BREAK(pMachine, DeleteSnapshot(bstrSnapGuid.raw(),
+                CHECK_ERROR_BREAK(pConsole, DeleteSnapshot(bstrSnapGuid.raw(),
                                                            pProgress.asOutParam()));
             }
             else
             {
                 // restore or restore current
                 RTPrintf("Restoring snapshot %ls\n", bstrSnapGuid.raw());
-                CHECK_ERROR_BREAK(pMachine, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
+                CHECK_ERROR_BREAK(pConsole, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
             }
 
             rc = showProgress(pProgress);
