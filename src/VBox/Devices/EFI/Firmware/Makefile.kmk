@@ -249,7 +249,9 @@ VBOX_EFI_BUILD_CMD += \
 	-D "VBOX_PATH_ROOT=$(PATH_ROOT)" \
 	-D "VBOX_RESET_VECTOR_X86=$(VBoxEfiResetVector-x86_1_TARGET)" \
 	-D "VBOX_RESET_VECTOR_AMD64=$(VBoxEfiResetVector-amd64_1_TARGET)" \
-       $(if $(VBOX_OSE),-D "VBOX_OSE=1") \
+	$(if $(VBOX_OSE),-D "VBOX_OSE=1") \
+	--silent \
+	$(if $(KBUILD_VERBOSE),,--quiet) \
 	--no-cache \
 	--buildtarget $(VBOX_EFI_BUILD_TARGET) \
 	--tagname $(VBOX_EFI_TOOL_CHAIN)
