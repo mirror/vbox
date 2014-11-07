@@ -417,8 +417,8 @@ static int __init VBoxDrvLinuxInit(void)
                     if (rc == 0)
 #endif
                     {
-                        printk(KERN_INFO "vboxdrv: TSC mode is %s, kernel timer mode is 'normal'.\n",
-                               g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                        printk(KERN_INFO "vboxdrv: TSC mode is '%s', tentative frequency %llu Hz.\n",
+                               SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
                         printk(KERN_DEBUG "vboxdrv: Successfully loaded version "
                                 VBOX_VERSION_STRING " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ").\n");

@@ -309,6 +309,8 @@ typedef struct SUPGLOBALINFOPAGE
     volatile uint32_t   u32UpdateIntervalNS;
     /** The timestamp of the last time we update the update frequency. */
     volatile uint64_t   u64NanoTSLastUpdateHz;
+    /** The TSC frequency of the system. */
+    uint64_t            u64CpuHz;
     /** The set of online CPUs. */
     RTCPUSET            OnlineCpuSet;
     /** The set of present CPUs. */
@@ -321,13 +323,12 @@ typedef struct SUPGLOBALINFOPAGE
     volatile uint16_t   cPresentCpus;
     /** The highest number of CPUs possible. */
     uint16_t            cPossibleCpus;
-    /** The highest number of CPUs possible. */
     uint16_t            u16Padding0;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[29];
+    uint32_t            au32Padding1[27];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
@@ -359,7 +360,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00040000
+#define SUPGLOBALINFOPAGE_VERSION   0x00050000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -1466,6 +1467,60 @@ SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
 
 
 /**
+ * Gets the GIP mode name given the GIP mode.
+ *
+ * @returns The name
+ * @param   enmGipMode      The GIP mode.
+ */
+DECLINLINE(const char *) SUPGetGIPModeName(PSUPGLOBALINFOPAGE pGip)
+{
+    Assert(pGip);
+    switch (pGip->u32Mode)
+    {
+        /* case SUPGIPMODE_INVARIANT_TSC:  return "Invariant"; */
+        case SUPGIPMODE_SYNC_TSC:       return "Synchronous";
+        case SUPGIPMODE_ASYNC_TSC:      return "Asynchronous";
+        case SUPGIPMODE_INVALID:        return "Invalid";
+        default:                        return "???";
+    }
+}
+
+
+/**
+ * Checks if the provided TSC frequency is close enough to the computed TSC
+ * frequency of the host.
+ *
+ * @returns true if it's compatible, false otherwise.
+ */
+DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (   pGip
+        && pGip->u32Mode == SUPGIPMODE_SYNC_TSC)   /** @todo use INVARIANT_TSC */
+    {
+        uint64_t uLo;
+        uint64_t uHi;
+
+        if (pGip->u64CpuHz == u64CpuHz)
+            return true;
+
+        /* Arbitrary tolerance threshold, tweak later if required, perhaps
+           more tolerance on higher frequencies and less tolerance on lower. */
+        uLo = (pGip->u64CpuHz << 10) / 1025;
+        uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
+        if (   u64CpuHz < uLo
+            || u64CpuHz > uHi)
+        {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+
+
+/**
  * Applies the TSC delta to the supplied raw TSC value.
  *
  * @returns VBox status code.
@@ -1477,7 +1532,7 @@ SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
  *
  * @remarks Maybe called with interrupts disabled!
  */
-DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *fDeltaApplied)
+DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *pfDeltaApplied)
 {
     PSUPGIPCPU pGipCpu;
     uint16_t  iCpu;
@@ -1486,6 +1541,7 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
     Assert(puTsc);
     Assert(pGip);
 
+    AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), ("idApic=%u\n", idApic), VERR_INVALID_CPU_ID);
     iCpu = pGip->aiCpuFromApicId[idApic];
     AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
     pGipCpu = &pGip->aCPUs[iCpu];
@@ -1494,11 +1550,11 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
     if (RT_LIKELY(pGipCpu->i64TSCDelta != INT64_MAX))
     {
         *puTsc -= pGipCpu->i64TSCDelta;
-        if (fDeltaApplied)
-            *fDeltaApplied = true;
+        if (pfDeltaApplied)
+            *pfDeltaApplied = true;
     }
-    else if (fDeltaApplied)
-        *fDeltaApplied = false;
+    else if (pfDeltaApplied)
+        *pfDeltaApplied = false;
 
     return VINF_SUCCESS;
 }
