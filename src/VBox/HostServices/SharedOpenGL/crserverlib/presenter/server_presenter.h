@@ -205,7 +205,9 @@ class CrFbWindow
     public:
 
         CrFbWindow(uint64_t parentId);
+        bool IsCreated() const;
         bool IsVisivle() const;
+        void Destroy();
         int Reparent(uint64_t parentId);
         int SetVisible(bool fVisible);
         int SetSize(uint32_t width, uint32_t height);
@@ -215,15 +217,14 @@ class CrFbWindow
         int UpdateBegin();
         void UpdateEnd();
         uint64_t GetParentId();
+        int Create();
         ~CrFbWindow();
 
     protected:
 
-        int Create();
         void checkRegions();
         bool isPresentNeeded();
         bool checkInitedUpdating();
-        void Destroy();
 
     private:
 
@@ -259,6 +260,10 @@ class CrFbDisplayWindow : public CrFbDisplayBase
         virtual ~CrFbDisplayWindow();
         virtual int UpdateBegin(struct CR_FRAMEBUFFER *pFb);
         virtual void UpdateEnd(struct CR_FRAMEBUFFER *pFb);
+        virtual int RegionsChanged(struct CR_FRAMEBUFFER *pFb);
+        virtual int EntryCreated(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry);
+        virtual int EntryReplaced(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hNewEntry, HCR_FRAMEBUFFER_ENTRY hReplacedEntry);
+        virtual int EntryTexChanged(struct CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry);
         virtual int FramebufferChanged(struct CR_FRAMEBUFFER *pFb);
         const RTRECT* getViewportRect();
         virtual int setViewportRect(const RTRECT *pViewportRect);

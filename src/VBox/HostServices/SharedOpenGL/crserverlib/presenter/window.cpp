@@ -30,9 +30,13 @@ CrFbWindow::CrFbWindow(uint64_t parentId) :
     mParentId(parentId)
 {
     mFlags.Value = 0;
-    Create();
 }
 
+
+bool CrFbWindow::IsCreated() const
+{
+    return !!mSpuWindow;
+}
 
 bool CrFbWindow::IsVisivle() const
 {
@@ -40,16 +44,30 @@ bool CrFbWindow::IsVisivle() const
 }
 
 
+void CrFbWindow::Destroy()
+{
+    CRASSERT(!mcUpdates);
+
+    if (!mSpuWindow)
+        return;
+
+    cr_server.head_spu->dispatch_table.WindowDestroy(mSpuWindow);
+
+    mSpuWindow = 0;
+    mFlags.fDataPresented = 0;
+}
+
+
 int CrFbWindow::Reparent(uint64_t parentId)
 {
-    crDebug("CrFbWindow: reparent to %p (current mxPos=%d, myPos=%d, mWidth=%u, mHeight=%u)",
-        parentId, mxPos, myPos, mWidth, mHeight);
-
     if (!checkInitedUpdating())
     {
         WARN(("err"));
         return VERR_INVALID_STATE;
     }
+
+    crDebug("CrFbWindow: reparent to %p (current mxPos=%d, myPos=%d, mWidth=%u, mHeight=%u)",
+        parentId, mxPos, myPos, mWidth, mHeight);
 
     uint64_t oldParentId = mParentId;
 
@@ -62,6 +80,7 @@ int CrFbWindow::Reparent(uint64_t parentId)
 
         renderspuSetWindowId(mParentId);
         renderspuReparentWindow(mSpuWindow);
+        renderspuSetWindowId(cr_server.screen[0].winID);
 
         if (parentId)
         {
@@ -247,7 +266,7 @@ int CrFbWindow::Create()
 {
     if (mSpuWindow)
     {
-        WARN(("window already created"));
+        //WARN(("window already created"));
         return VINF_ALREADY_INITIALIZED;
     }
 
@@ -267,9 +286,6 @@ int CrFbWindow::Create()
 
     if (mParentId && mFlags.fVisible)
         cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, true);
-
-    crDebug("CrFbWindow: create window with parent %p (mxPos=%d, myPos=%d, mWidth=%u, mHeight=%u)",
-        mParentId, mxPos, myPos, mWidth, mHeight);
 
     return VINF_SUCCESS;
 }
@@ -328,19 +344,5 @@ bool CrFbWindow::checkInitedUpdating()
     }
 
     return true;
-}
-
-
-void CrFbWindow::Destroy()
-{
-    CRASSERT(!mcUpdates);
-
-    if (!mSpuWindow)
-        return;
-
-    cr_server.head_spu->dispatch_table.WindowDestroy(mSpuWindow);
-
-    mSpuWindow = 0;
-    mFlags.fDataPresented = 0;
 }
 
