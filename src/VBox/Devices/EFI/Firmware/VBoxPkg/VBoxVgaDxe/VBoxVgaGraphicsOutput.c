@@ -85,7 +85,8 @@ VBoxVgaCompleteModeData (
 
   DEBUG((DEBUG_INFO, "%a:%d FrameBufferBase:%x\n", __FILE__, __LINE__, FrameBufDesc->AddrRangeMin));
   Mode->FrameBufferBase = FrameBufDesc->AddrRangeMin;
-  Mode->FrameBufferSize = (UINTN)(FrameBufDesc->AddrRangeMax - FrameBufDesc->AddrRangeMin);
+  Mode->FrameBufferSize = Info->PixelsPerScanLine * Info->VerticalResolution
+                        * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL);    /* 32bpp only! */
 
   return EFI_SUCCESS;
 }
