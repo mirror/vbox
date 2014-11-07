@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -861,7 +861,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                 for (size_t i = 0; i < machines.size(); ++i)
                 {
                     if (machines[i])
-                        rc = showVMInfo(pVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                        rc = showVMInfo(pVirtualBox, machines[i], NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
                 }
             }
             break;
@@ -894,7 +894,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                             case MachineState_LiveSnapshotting:
                             case MachineState_Paused:
                             case MachineState_TeleportingPausedVM:
-                                rc = showVMInfo(pVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                                rc = showVMInfo(pVirtualBox, machines[i], NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
                                 break;
                         }
                     }

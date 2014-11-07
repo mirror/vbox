@@ -350,12 +350,15 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
 # pragma optimize("g", off)
 #endif
 
-HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
+HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                    ComPtr<IMachine> machine,
-                   VMINFO_DETAILS details /*= VMINFO_NONE*/,
-                   ComPtr<IConsole> console /*= ComPtr<IConsole> ()*/)
+                   ComPtr<ISession> pSession,
+                   VMINFO_DETAILS details /*= VMINFO_NONE*/)
 {
     HRESULT rc;
+    ComPtr<IConsole> pConsole;
+    if (pSession)
+        pSession->COMGETTER(Console)(pConsole.asOutParam());
 
 #define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
     SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_szMachine, a_szHuman, "on", "off")
@@ -499,7 +502,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     Bstr osTypeId;
     CHECK_ERROR2_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
     ComPtr<IGuestOSType> osType;
-    CHECK_ERROR2_RET(virtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
+    CHECK_ERROR2_RET(pVirtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
     SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               "Groups");
     SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS");
     SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID");
@@ -608,7 +611,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
 
     ComPtr<ISystemProperties> systemProperties;
-    CHECK_ERROR2_RET(virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
+    CHECK_ERROR2_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
     ULONG maxBootPosition = 0;
     CHECK_ERROR2_RET(systemProperties, COMGETTER(MaxBootPosition)(&maxBootPosition), hrcCheck);
     for (ULONG i = 1; i <= maxBootPosition; i++)
@@ -956,7 +959,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     }
 
     /* get the maximum amount of NICS */
-    ULONG maxNICs = getMaxNics(virtualBox, machine);
+    ULONG maxNICs = getMaxNics(pVirtualBox, machine);
 
     for (ULONG currentNIC = 0; currentNIC < maxNICs; currentNIC++)
     {
@@ -1336,7 +1339,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Keyboard Device: %s\n", pszHID);
 
     ComPtr<ISystemProperties> sysProps;
-    virtualBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
+    pVirtualBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
 
     /* get the maximum amount of UARTs */
     ULONG maxUARTs = 0;
@@ -1666,17 +1669,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         }
     }
 
-    if (console)
+    if (pConsole)
     {
         do
         {
             ComPtr<IDisplay> display;
-            rc = console->COMGETTER(Display)(display.asOutParam());
+            rc = pConsole->COMGETTER(Display)(display.asOutParam());
             if (rc == E_ACCESSDENIED || display.isNull())
                 break; /* VM not powered up */
             if (FAILED(rc))
             {
-                com::GlueHandleComError(console, "COMGETTER(Display)(display.asOutParam())", rc, __FILE__, __LINE__);
+                com::GlueHandleComError(pConsole, "COMGETTER(Display)(display.asOutParam())", rc, __FILE__, __LINE__);
                 return rc;
             }
             ULONG xRes, yRes, bpp;
@@ -1752,10 +1755,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     strAuthType = "unknown";
                     break;
             }
-            if (console)
+            if (pConsole)
             {
                 ComPtr<IVRDEServerInfo> vrdeServerInfo;
-                CHECK_ERROR_RET(console, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
+                CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
                 if (!vrdeServerInfo.isNull())
                 {
                     rc = vrdeServerInfo->COMGETTER(Port)(&currentPort);
@@ -1789,7 +1792,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 if (address.isEmpty())
                     address = "0.0.0.0";
                 RTPrintf("VRDE:            enabled (Address %ls, Ports %ls, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
-                if (console && currentPort != -1 && currentPort != 0)
+                if (pConsole && currentPort != -1 && currentPort != 0)
                    RTPrintf("VRDE port:       %d\n", currentPort);
                 if (fVideoChannel)
                     RTPrintf("Video redirection: enabled (Quality %ls)\n", videoChannelQuality.raw());
@@ -1968,7 +1971,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             }
         }
 
-        if (console)
+        if (pConsole)
         {
             /* scope */
             {
@@ -1976,7 +1979,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Available remote USB devices:\n\n");
 
                 SafeIfaceArray <IHostUSBDevice> coll;
-                CHECK_ERROR_RET(console, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), rc);
+                CHECK_ERROR_RET(pConsole, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), rc);
 
                 if (coll.size() == 0)
                 {
@@ -2065,7 +2068,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("Currently Attached USB Devices:\n\n");
 
                 SafeIfaceArray <IUSBDevice> coll;
-                CHECK_ERROR_RET(console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), rc);
+                CHECK_ERROR_RET(pConsole, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), rc);
 
                 if (coll.size() == 0)
                 {
@@ -2213,7 +2216,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     /* globally shared folders first */
     {
         SafeIfaceArray <ISharedFolder> sfColl;
-        CHECK_ERROR_RET(virtualBox, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sfColl)), rc);
+        CHECK_ERROR_RET(pVirtualBox, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(sfColl)), rc);
         for (size_t i = 0; i < sfColl.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = sfColl[i];
@@ -2256,11 +2259,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         }
     }
     /* transient mappings */
-    if (console)
+    if (pConsole)
     {
         com::SafeIfaceArray <ISharedFolder> folders;
 
-        CHECK_ERROR_RET(console, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
+        CHECK_ERROR_RET(pConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
@@ -2288,13 +2291,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
 
-    if (console)
+    if (pConsole)
     {
         /*
          * Live VRDE info.
          */
         ComPtr<IVRDEServerInfo> vrdeServerInfo;
-        CHECK_ERROR_RET(console, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
+        CHECK_ERROR_RET(pConsole, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
         BOOL    Active = FALSE;
         ULONG   NumberOfClients = 0;
         LONG64  BeginTime = 0;
@@ -2502,10 +2505,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
 
-    if (console)
+    if (pConsole)
     {
         ComPtr<IGuest> guest;
-        rc = console->COMGETTER(Guest)(guest.asOutParam());
+        rc = pConsole->COMGETTER(Guest)(guest.asOutParam());
         if (SUCCEEDED(rc) && !guest.isNull())
         {
             Bstr guestString;
@@ -2697,7 +2700,7 @@ int handleShowVMInfo(HandlerArg *a)
     {
         ULONG64 uOffset = 0;
         SafeArray<BYTE> aLogData;
-        ULONG cbLogData;
+        size_t cbLogData;
         while (true)
         {
             /* Reset the array */
@@ -2711,7 +2714,7 @@ int handleShowVMInfo(HandlerArg *a)
             /* aLogData has a platform dependent line ending, standardize on
              * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
              * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-            ULONG cbLogDataPrint = cbLogData;
+            size_t cbLogDataPrint = cbLogData;
             for (BYTE *s = aLogData.raw(), *d = s;
                  s - aLogData.raw() < (ssize_t)cbLogData;
                  s++, d++)
@@ -2740,21 +2743,15 @@ int handleShowVMInfo(HandlerArg *a)
         else
             details = VMINFO_STANDARD;
 
-        ComPtr<IConsole> console;
-
         /* open an existing session for the VM */
         rc = machine->LockMachine(a->session, LockType_Shared);
         if (SUCCEEDED(rc))
             /* get the session machine */
             rc = a->session->COMGETTER(Machine)(machine.asOutParam());
-        if (SUCCEEDED(rc))
-            /* get the session console */
-            rc = a->session->COMGETTER(Console)(console.asOutParam());
 
-        rc = showVMInfo(a->virtualBox, machine, details, console);
+        rc = showVMInfo(a->virtualBox, machine, a->session, details);
 
-        if (console)
-            a->session->UnlockMachine();
+        a->session->UnlockMachine();
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
