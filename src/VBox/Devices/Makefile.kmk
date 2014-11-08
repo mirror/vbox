@@ -235,21 +235,26 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_VMSVGA
-  VBoxDD_DEFS         += VBOX_WITH_VMSVGA
-  VBoxDD_SOURCES      += Graphics/DevVGA-SVGA.cpp
+  VBoxDD_DEFS           += VBOX_WITH_VMSVGA
+  VBoxDD_SOURCES        += Graphics/DevVGA-SVGA.cpp
  endif
  ifdef VBOX_WITH_VMSVGA3D
-  VBoxDD_DEFS         += VBOX_WITH_VMSVGA3D
-  VBoxDD_SOURCES      += Graphics/DevVGA-SVGA3d-shared.cpp
-  ifeq ($(KBUILD_TARGET),win)
-    VBoxDD_SOURCES += Graphics/DevVGA-SVGA3d-win.cpp
+  VBoxDD_DEFS           += VBOX_WITH_VMSVGA3D
+  VBoxDD_SOURCES        += Graphics/DevVGA-SVGA3d-shared.cpp
+  ifeq ($(KBUILD_TARGET),win) # (Disable this to work with OpenGL on Windows.)
+   VBoxDD_SOURCES       += Graphics/DevVGA-SVGA3d-win.cpp
+   VBoxDD_LIBS.win      += d3d9.lib
   else
-    VBoxDD_SOURCES += Graphics/DevVGA-SVGA3d-ogl.cpp
-    VBoxDD_LIBS    += $(PATH_STAGE_BIN)/VBoxSVGA3D$(VBOX_SUFF_DLL)
+   VBoxDD_SOURCES       += Graphics/DevVGA-SVGA3d-ogl.cpp
+   if1of ($(KBUILD_TARGET),win)
+    VBoxDD_LIBS         += $(PATH_STAGE_LIB)/VBoxSVGA3D$(VBOX_SUFF_LIB)
+   else
+    VBoxDD_LIBS         += $(PATH_STAGE_BIN)/VBoxSVGA3D$(VBOX_SUFF_DLL)
+   endif
+   VBoxDD_LIBS.linux    += GL X11
+   VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+   VBoxDD_LDFLAGS.darwin += -framework OpenGL
   endif
-  VBoxDD_LIBS.win      += d3d9.lib
-  VBoxDD_LIBS.linux    += GL X11
-  VBoxDD_LDFLAGS.darwin += -framework OpenGL
  endif
 
  ifdef VBOX_WITH_VDMA
