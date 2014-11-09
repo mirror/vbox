@@ -2411,7 +2411,11 @@ typedef void (WINE_GLAPI *PGLFNGLPROVOKINGVERTEXPROC)(GLenum mode);
 #ifndef GL_ARB_shader_objects
 #define GL_ARB_shader_objects 1
 typedef char GLcharARB;
+#ifdef RT_OS_DARWIN
+typedef void *GLhandleARB;
+#else
 typedef unsigned int GLhandleARB;
+#endif
 #define GL_PROGRAM_OBJECT_ARB                               0x8b40
 #define GL_OBJECT_TYPE_ARB                                  0x8b4e
 #define GL_OBJECT_SUBTYPE_ARB                               0x8b4f
