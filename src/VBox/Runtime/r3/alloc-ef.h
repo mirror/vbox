@@ -118,6 +118,15 @@
 # define RTALLOC_EFENCE_CPP
 #endif
 
+#if defined(RUNNING_DOXYGEN)
+/** @def RTALLOC_REPLACE_MALLOC
+ * Replaces the malloc, calloc, realloc, free and friends in libc (experimental).
+ * Set in LocalConfig.kmk. Requires RTALLOC_EFENCE_TRACE to work. */
+# define RTALLOC_REPLACE_MALLOC
+#endif
+#if defined(RTALLOC_REPLACE_MALLOC) && !defined(RTALLOC_EFENCE_TRACE)
+# error "RTALLOC_REPLACE_MALLOC requires RTALLOC_EFENCE_TRACE."
+#endif
 
 
 /*******************************************************************************
@@ -190,6 +199,19 @@ RTDECL(void *)  rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld
                                const char *pszTag, void *pvCaller, RT_SRC_POS_DECL);
 RTDECL(void)    rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, RT_SRC_POS_DECL);
 RT_C_DECLS_END
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef RTALLOC_REPLACE_MALLOC
+RT_C_DECLS_BEGIN
+extern void * (*g_pfnOrgMalloc)(size_t);
+extern void * (*g_pfnOrgCalloc)(size_t, size_t);
+extern void * (*g_pfnOrgRealloc)(void *, size_t);
+extern void   (*g_pfnOrgFree)(void *);
+RT_C_DECLS_END
+#endif
 
 #endif
 

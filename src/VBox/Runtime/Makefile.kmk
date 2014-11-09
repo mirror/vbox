@@ -1305,6 +1305,9 @@ endif
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_DEFS                  += IPRT_WITH_HTTP
 endif
+ifdef RTALLOC_REPLACE_MALLOC
+ VBoxRT_DEFS                  += RTALLOC_REPLACE_MALLOC
+endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
@@ -1362,6 +1365,10 @@ ifndef SDK_VBOX_OPENSSL_LIBS
 endif
 ifdef IPRT_WITH_LZO
  VBoxRT_LIBS                  += lzo2
+endif
+ifdef RTALLOC_REPLACE_MALLOC
+VBoxRT_LIBS                   += \
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 endif
 VBoxRT_LIBS.linux              = \
 	crypt
