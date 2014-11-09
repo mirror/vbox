@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
  * DevVMWare - VMWare SVGA device
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,36 +44,38 @@
 #include "vmsvga/svga_reg.h"
 #include "vmsvga/svga3d_reg.h"
 #include "vmsvga/svga3d_shaderdefs.h"
+
 #ifdef RT_OS_WINDOWS
-#include <GL/gl.h>
-#include "vmsvga_glext/wglext.h"
-#elif RT_OS_DARWIN
-#include <OpenGL/OpenGL.h>
-#include <OpenGL/gl3.h>
-#include <OpenGL/gl3ext.h>
-#define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
-#include "DevVGA-SVGA3d-cocoa.h"
+# include <GL/gl.h>
+# include "vmsvga_glext/wglext.h"
+
+#elif defined(RT_OS_DARWIN)
+# include <OpenGL/OpenGL.h>
+# include <OpenGL/gl3.h>
+# include <OpenGL/gl3ext.h>
+# define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
+# include <OpenGL/gl.h>
+# include <OpenGL/glext.h>
+# include "DevVGA-SVGA3d-cocoa.h"
 /* work around conflicting definition of GLhandleARB in VMware's glext.h */
 //#define GL_ARB_shader_objects
 // HACK
 typedef void (APIENTRYP PFNGLFOGCOORDPOINTERPROC) (GLenum type, GLsizei stride, const GLvoid *pointer);
 typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, GLint *params);
-#define GL_RGBA_S3TC 0x83A2
-#define GL_ALPHA8_EXT 0x803c
-#define GL_LUMINANCE8_EXT 0x8040
-#define GL_LUMINANCE16_EXT 0x8042
-#define GL_LUMINANCE4_ALPHA4_EXT 0x8043
-#define GL_LUMINANCE8_ALPHA8_EXT 0x8045
-#define GL_INT_2_10_10_10_REV 0x8D9F
+# define GL_RGBA_S3TC 0x83A2
+# define GL_ALPHA8_EXT 0x803c
+# define GL_LUMINANCE8_EXT 0x8040
+# define GL_LUMINANCE16_EXT 0x8042
+# define GL_LUMINANCE4_ALPHA4_EXT 0x8043
+# define GL_LUMINANCE8_ALPHA8_EXT 0x8045
+# define GL_INT_2_10_10_10_REV 0x8D9F
 #else
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
+# include <X11/Xlib.h>
+# include <X11/Xatom.h>
+# include <GL/gl.h>
+# include <GL/glx.h>
+# include <GL/glext.h>
 //HACK FOR NOW
 typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 #endif
@@ -86,14 +89,14 @@ typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 
 #ifdef RT_OS_WINDOWS
 #define OGLGETPROCADDRESS       wglGetProcAddress
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
 #include <dlfcn.h>
 void *MyNSGLGetProcAddress(const char *name)
 {
-    static void *image = NULL;
-    if (image == NULL)
-        image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
-    return (image ? dlsym(image, name) : NULL);
+    static void *s_image = NULL;
+    if (s_image == NULL)
+        s_image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
+    return (s_image ? dlsym(s_image, name) : NULL);
 }
 # define OGLGETPROCADDRESS       MyNSGLGetProcAddress
 #else
@@ -114,52 +117,54 @@ void *MyNSGLGetProcAddress(const char *name)
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 #define VMSVGA3D_CLEAR_CURRENT_CONTEXT(pState)                          \
-    pState->idActiveContext = OPENGL_INVALID_ID;
+    do { (pState)->idActiveContext = OPENGL_INVALID_ID; } while (0)
 
 #ifdef RT_OS_WINDOWS
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext)                   \
-    if (pState->idActiveContext != pContext->id)                          \
+    if ((pState)->idActiveContext != pContext->id)                        \
     {                                                                     \
-        BOOL makecurret = wglMakeCurrent(pContext->hdc, pContext->hglrc); \
+        BOOL makecurret = wglMakeCurrent((pContext)->hdc, (pContext)->hglrc); \
         Assert(makecurret == TRUE);                                       \
-        pState->idActiveContext = pContext->id;                           \
-    }
+        pState->idActiveContext = (pContext)->id;                         \
+    } else do { } while (0)
 
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if (pState->idActiveContext != pContext->id)                        \
+    if ((pState)->idActiveContext != (pContext)->id)                    \
     {                                                                   \
-        vmsvga3dCocoaViewMakeCurrentContext(pContext->cocoaView, pContext->cocoaContext); \
-        pState->idActiveContext = pContext->id;                         \
-    }
+        vmsvga3dCocoaViewMakeCurrentContext((pContext)->cocoaView, (pContext)->cocoaContext); \
+        (pState)->idActiveContext = (pContext)->id;                     \
+    } else do { } while (0)
 #else
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if (pState->idActiveContext != pContext->id)                        \
+    if ((pState)->idActiveContext != (pContext)->id)                    \
     {                                                                   \
-        Bool makecurret = glXMakeCurrent(pState->display,              \
-                                         pContext->window,              \
-                                         pContext->glxContext);         \
+        Bool makecurret = glXMakeCurrent((pState)->display,             \
+                                         (pContext)->window,            \
+                                         (pContext)->glxContext);       \
         Assert(makecurret == True);                                     \
-        pState->idActiveContext = pContext->id;                         \
-    }
+        (pState)->idActiveContext = (pContext)->id;                     \
+    } else do { } while (0)
 #endif
 
-#ifdef DEBUG
-# define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext)                        \
-    Assert(pState->idActiveContext == pContext->id);                        \
-    pContext->lastError = glGetError();                                     \
-    AssertMsgReturn(pContext->lastError == GL_NO_ERROR, ("%s (%d): last error 0x%x\n", __FUNCTION__, __LINE__, pContext->lastError), VERR_INTERNAL_ERROR);
+#ifdef VBOX_STRICT
+# define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext) do {                   \
+    Assert((pState)->idActiveContext == (pContext)->id);                    \
+    (pContext)->lastError = glGetError();                                   \
+    AssertMsgReturn((pContext)->lastError == GL_NO_ERROR, ("%s (%d): last error 0x%x\n", __FUNCTION__, __LINE__, (pContext)->lastError), VERR_INTERNAL_ERROR); \
+    } while (0)
 #else
-# define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext)                   ;
+# define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext)                        do { } while (0)
 #endif
 
-#ifdef DEBUG
-# define VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext)                   \
-    Assert(pState->idActiveContext == pContext->id);                        \
-    pContext->lastError = glGetError();                                     \
-    AssertMsg(pContext->lastError == GL_NO_ERROR, ("%s (%d): last error 0x%x\n", __FUNCTION__, __LINE__, pContext->lastError));
+#ifdef VBOX_STRICT
+# define VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext) do {              \
+    Assert((pState)->idActiveContext == (pContext)->id);                    \
+    (pContext)->lastError = glGetError();                                   \
+    AssertMsg((pContext)->lastError == GL_NO_ERROR, ("%s (%d): last error 0x%x\n", __FUNCTION__, __LINE__, (pContext)->lastError)); \
+    } while (0)
 #else
-# define VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext)                   ;
+# define VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext)                   do { } while (0)
 #endif
 
 typedef struct
@@ -321,7 +326,7 @@ typedef struct
     HGLRC                   hglrc;
     /* Device context window handle. */
     HWND                    hwnd;
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
     /* OpenGL rendering context */
     NativeNSOpenGLContextRef cocoaContext;
     NativeNSViewRef          cocoaView;
@@ -432,7 +437,7 @@ typedef struct
     HMODULE                 hInstance;
     /** Window request semaphore. */
     RTSEMEVENT              WndRequestSem;
-#elif RT_OS_LINUX
+#elif defined(RT_OS_LINUX)
     /* The X display */
     Display                 *display;
     R3PTRTYPE(RTTHREAD)    pWindowThread;
@@ -751,7 +756,10 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
     glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &pState->caps.maxTextureBufferSize);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+#ifdef DEBUG_bird
+    if (pState->fGLVersion >= 3.1) /* darwin: Requires GL 3.1, so triggers on older mac os x versions. */
+#endif
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext); 
     glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures);
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
     glGetIntegerv(GL_MAX_CLIP_DISTANCES, &pState->caps.maxClipDistances);
@@ -971,9 +979,9 @@ int vmsvga3dTerminate(PVGASTATE pThis)
     AssertRCReturn(rc, rc);
 
     RTSemEventDestroy(pState->WndRequestSem);
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
 
-#elif RT_OS_LINUX
+#elif defined(RT_OS_LINUX)
     /* signal to the thread that it is supposed to exit */
     pState->bTerminate = true;
     /* wait for it to terminate */
@@ -2804,7 +2812,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 #ifdef RT_OS_WINDOWS
     BOOL ret = SwapBuffers(pContext->hdc);
     AssertMsg(ret, ("SwapBuffers failed with %d\n", GetLastError()));
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
     vmsvga3dCocoaSwapBuffers(pContext->cocoaContext);
 #else
     /* show the window if not already done */
@@ -2990,7 +2998,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
         }
     }
 
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
     /* Find the first active context to share the display list with (necessary for sharing e.g. textures between contexts). */
     NativeNSOpenGLContextRef shareContext = NULL;
     for (uint32_t i = 0; i < pState->cContexts; i++)
@@ -3187,10 +3195,10 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
         /* Destroy the window we've created. */
         int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_DESTROYWINDOW, (WPARAM)pContext->hwnd, 0);
         AssertRC(rc);
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
         vmsvga3dCocoaDestroyView(pContext->cocoaView);
         vmsvga3dCocoaDestroyContext(pContext->cocoaContext);
-#elif RT_OS_LINUX
+#elif defined(RT_OS_LINUX)
         glXMakeCurrent(pState->display, None, NULL);
         glXDestroyContext(pState->display, pContext->glxContext);
         XDestroyWindow(pState->display, pContext->window);
@@ -3231,9 +3239,9 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
             /* Resize the window. */
             int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_RESIZEWINDOW, (WPARAM)pContext->hwnd, (LPARAM)&cs);
             AssertRC(rc);
-#elif RT_OS_DARWIN
+#elif defined(RT_OS_DARWIN)
             vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
-#elif RT_OS_LINUX
+#elif defined(RT_OS_LINUX)
             XWindowChanges wc;
             wc.width = pThis->svga.uWidth;
             wc.height = pThis->svga.uHeight;
@@ -5563,6 +5571,7 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             case SVGA3D_DECLUSAGE_SAMPLE:
                 AssertFailed();
                 break;
+            case SVGA3D_DECLUSAGE_MAX: AssertFailed(); break; /* shut up gcc */
             }
         }
        
@@ -5631,6 +5640,7 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                 break;
             case SVGA3D_DECLUSAGE_SAMPLE:
                 break;
+            case SVGA3D_DECLUSAGE_MAX: AssertFailed(); break; /* shut up gcc */
             }
         }
     }
@@ -5840,7 +5850,7 @@ internal_error:
                 PVMSVGA3DSURFACE pTexture;
                 pTexture = &pState->paSurface[pContext->aSidActiveTexture[activeTextureUnit - GL_TEXTURE0]];
 
-                AssertMsg(pTexture->oglId.texture == activeTexture, ("%x vs %x unit %d - %d\n", pTexture->oglId.texture, activeTexture, i, activeTextureUnit - GL_TEXTURE0));
+                AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture, ("%x vs %x unit %d - %d\n", pTexture->oglId.texture, activeTexture, i, activeTextureUnit - GL_TEXTURE0));
             }
         }
     }
