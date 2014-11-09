@@ -138,10 +138,18 @@ struct glsl_shader_prog_link {
     UINT                        inp2Fixup_info;
 };
 
+#ifdef VBOX_WITH_VMSVGA
+# define WINEFIXUPINFO_NOINDEX (~0U)
+#else
 #define WINEFIXUPINFO_NOINDEX (~0UL)
+#endif
 #define WINEFIXUPINFO_GET(_p) get_fixup_info((const IWineD3DPixelShaderImpl*)(_p)->pshader, (_p)->inp2Fixup_info)
 #define WINEFIXUPINFO_ISVALID(_p) ((_p)->inp2Fixup_info != WINEFIXUPINFO_NOINDEX)
+#ifdef VBOX_WITH_VMSVGA
+# define WINEFIXUPINFO_INIT(_p) do { (_p)->inp2Fixup_info = WINEFIXUPINFO_NOINDEX; } while (0)
+#else
 #define WINEFIXUPINFO_INIT(_p) ((_p)->inp2Fixup_info == WINEFIXUPINFO_NOINDEX)
+#endif
 
 typedef struct {
     IWineD3DVertexShader         *vshader;
@@ -393,7 +401,7 @@ static void shader_glsl_validate_compile_link(const struct wined3d_gl_info *gl_i
         GL_EXTCALL(glGetObjectParameterivARB(program, GL_OBJECT_LINK_STATUS_ARB, &tmp));
         if (!tmp)
         {
-            ERR("Program %u link status invalid.\n", program);
+            ERR("Program %p link status invalid.\n", (void *)(uintptr_t)program);
 #ifndef VBOXWINEDBG_SHADERS
             shader_glsl_dump_program_source(gl_info, program);
 #endif
@@ -412,7 +420,7 @@ static void shader_glsl_validate_compile_link(const struct wined3d_gl_info *gl_i
         GL_EXTCALL(glGetObjectParameterivARB(program, GL_OBJECT_COMPILE_STATUS_ARB, &tmp));
         if (!tmp)
         {
-            ERR("Shader %u compile status invalid.\n", program);
+            ERR("Shader %p compile status invalid.\n", (void *)(uintptr_t)program);
             shader_glsl_dump_shader_source(gl_info, program);
         }
     }
@@ -3802,13 +3810,13 @@ static void delete_glsl_program_entry(struct shader_glsl_priv *priv, const struc
 
     if (context_get_current() == entry->context)
     {
-        TRACE("deleting program %u\n", entry->programId);
+        TRACE("deleting program %p\n", (void *)(uintptr_t)entry->programId);
         GL_EXTCALL(glDeleteObjectARB(entry->programId));
         checkGLcall("glDeleteObjectARB");
     }
     else
     {
-        WARN("Attempting to delete program %u created in ctx %p from ctx %p\n", entry->programId, entry->context, context_get_current());
+        WARN("Attempting to delete program %p created in ctx %p from ctx %p\n", (void *)(uintptr_t)entry->programId, entry->context, context_get_current());
     }
     
     if (entry->vshader) list_remove(&entry->vshader_entry);
@@ -4004,10 +4012,10 @@ static void generate_texcoord_assignment(struct wined3d_shader_buffer *buffer, I
 
 /* GL locking is done by the caller */
 static GLhandleARB generate_param_reorder_function(struct wined3d_shader_buffer *buffer,
-        IWineD3DVertexShader *vertexshader, IWineD3DPixelShader *pixelshader, const struct wined3d_gl_info *gl_info)
+        IWineD3DVertexShader *a_vertexshader, IWineD3DPixelShader *pixelshader, const struct wined3d_gl_info *gl_info)
 {
     GLhandleARB ret = 0;
-    IWineD3DVertexShaderImpl *vs = (IWineD3DVertexShaderImpl *) vertexshader;
+    IWineD3DVertexShaderImpl *vs = (IWineD3DVertexShaderImpl *) a_vertexshader;
     IWineD3DPixelShaderImpl *ps = (IWineD3DPixelShaderImpl *) pixelshader;
     IWineD3DDeviceImpl *device;
     DWORD vs_major = vs->baseShader.reg_maps.shader_version.major;
@@ -4171,7 +4179,11 @@ static void hardcode_local_constants(IWineD3DBaseShaderImpl *shader, const struc
 }
 
 /* GL locking is done by the caller */
+#ifdef VBOX_WITH_VMSVGA
+static GLhandleARB shader_glsl_generate_pshader(const struct wined3d_context *context,
+#else
 static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context,
+#endif
         struct wined3d_shader_buffer *buffer, IWineD3DPixelShaderImpl *This,
         const struct ps_compile_args *args, struct ps_np2fixup_info *np2fixup_info)
 {
@@ -4267,7 +4279,7 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
 
     shader_addline(buffer, "}\n");
 
-    TRACE("Compiling shader object %u\n", shader_obj);
+    TRACE("Compiling shader object %p\n", (void *)(uintptr_t)shader_obj);
     GL_EXTCALL(glShaderSourceARB(shader_obj, 1, (const char**)&buffer->buffer, NULL));
     GL_EXTCALL(glCompileShaderARB(shader_obj));
     shader_glsl_validate_compile_link(gl_info, shader_obj, FALSE);
@@ -4277,7 +4289,11 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
 }
 
 /* GL locking is done by the caller */
+#ifdef VBOX_WITH_VMSVGA
+static GLhandleARB shader_glsl_generate_vshader(const struct wined3d_context *context,
+#else
 static GLuint shader_glsl_generate_vshader(const struct wined3d_context *context,
+#endif
         struct wined3d_shader_buffer *buffer, IWineD3DVertexShaderImpl *This,
         const struct vs_compile_args *args)
 {
@@ -4343,7 +4359,7 @@ static GLuint shader_glsl_generate_vshader(const struct wined3d_context *context
 
     shader_addline(buffer, "}\n");
 
-    TRACE("Compiling shader object %u\n", shader_obj);
+    TRACE("Compiling shader object %p\n", (void *)(uintptr_t)shader_obj);
     GL_EXTCALL(glShaderSourceARB(shader_obj, 1, (const char**)&buffer->buffer, NULL));
     GL_EXTCALL(glCompileShaderARB(shader_obj));
     shader_glsl_validate_compile_link(gl_info, shader_obj, FALSE);
@@ -4508,10 +4524,10 @@ static GLhandleARB find_glsl_vshader(const struct wined3d_context *context,
 
 /* GL locking is done by the caller */
 static void set_glsl_shader_program(const struct wined3d_context *context,
-        IWineD3DDeviceImpl *device, BOOL use_ps, BOOL use_vs)
+        IWineD3DDeviceImpl *device, BOOL a_use_ps, BOOL a_use_vs)
 {
-    IWineD3DVertexShader *vshader = use_vs ? device->stateBlock->vertexShader : NULL;
-    IWineD3DPixelShader *pshader = use_ps ? device->stateBlock->pixelShader : NULL;
+    IWineD3DVertexShader *vshader = a_use_vs ? device->stateBlock->vertexShader : NULL;
+    IWineD3DPixelShader *pshader = a_use_ps ? device->stateBlock->pixelShader : NULL;
     const struct wined3d_gl_info *gl_info = context->gl_info;
     struct shader_glsl_priv *priv = device->shader_priv;
     struct glsl_shader_prog_link *entry    = NULL;
@@ -4533,7 +4549,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
 
     /* If we get to this point, then no matching program exists, so we create one */
     programId = GL_EXTCALL(glCreateProgramObjectARB());
-    TRACE("Created new GLSL shader program %u\n", programId);
+    TRACE("Created new GLSL shader program %p\n", (void *)(uintptr_t)programId);
 
     /* Create the entry */
     entry = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct glsl_shader_prog_link));
@@ -4560,7 +4576,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
         char tmp_name[10];
 
         reorder_shader_id = generate_param_reorder_function(&priv->shader_buffer, vshader, pshader, gl_info);
-        TRACE("Attaching GLSL shader object %u to program %u\n", reorder_shader_id, programId);
+        TRACE("Attaching GLSL shader object %p to program %p\n", (void *)(uintptr_t)reorder_shader_id, (void *)(uintptr_t)programId);
         GL_EXTCALL(glAttachObjectARB(programId, reorder_shader_id));
         checkGLcall("glAttachObjectARB");
         /* Flag the reorder function for deletion, then it will be freed automatically when the program
@@ -4568,7 +4584,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
          */
         GL_EXTCALL(glDeleteObjectARB(reorder_shader_id));
 
-        TRACE("Attaching GLSL shader object %u to program %u\n", vshader_id, programId);
+        TRACE("Attaching GLSL shader object %p to program %p\n", (void *)(uintptr_t)vshader_id, (void *)(uintptr_t)programId);
         GL_EXTCALL(glAttachObjectARB(programId, vshader_id));
         checkGLcall("glAttachObjectARB");
 
@@ -4600,7 +4616,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
                 (IWineD3DPixelShaderImpl *)pshader, &ps_compile_args,
                 &entry->inp2Fixup_info
                 );
-        TRACE("Attaching GLSL shader object %u to program %u\n", pshader_id, programId);
+        TRACE("Attaching GLSL shader object %p to program %p\n", (void *)(uintptr_t)pshader_id, (void *)(uintptr_t)programId);
         GL_EXTCALL(glAttachObjectARB(programId, pshader_id));
         checkGLcall("glAttachObjectARB");
 
@@ -4608,7 +4624,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
     }
 
     /* Link the program */
-    TRACE("Linking GLSL shader program %u\n", programId);
+    TRACE("Linking GLSL shader program %p\n", (void *)(uintptr_t)programId);
     GL_EXTCALL(glLinkProgramARB(programId));
     shader_glsl_validate_compile_link(gl_info, programId, TRUE);
 
@@ -4666,7 +4682,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
             && ((IWineD3DPixelShaderImpl *)pshader)->baseShader.reg_maps.shader_version.major >= 3
             && ((IWineD3DPixelShaderImpl *)pshader)->declared_in_count > vec4_varyings(3, gl_info))
     {
-        TRACE("Shader %d needs vertex color clamping disabled\n", programId);
+        TRACE("Shader %p needs vertex color clamping disabled\n", (void *)(uintptr_t)programId);
         entry->vertex_color_clamp = GL_FALSE;
     } else {
         entry->vertex_color_clamp = GL_FIXED_ONLY_ARB;
@@ -4816,7 +4832,7 @@ static void shader_glsl_select(const struct wined3d_context *context, BOOL usePS
     }
 
     program_id = priv->glsl_program ? priv->glsl_program->programId : 0;
-    if (program_id) TRACE("Using GLSL program %u\n", program_id);
+    if (program_id) TRACE("Using GLSL program %p\n", (void *)(uintptr_t)program_id);
     GL_EXTCALL(glUseProgramObjectARB(program_id));
     checkGLcall("glUseProgramObjectARB");
 #ifdef DEBUG_misha
@@ -4876,7 +4892,7 @@ static void shader_glsl_deselect_depth_blt(IWineD3DDevice *iface) {
     GLhandleARB program_id;
 
     program_id = priv->glsl_program ? priv->glsl_program->programId : 0;
-    if (program_id) TRACE("Using GLSL program %u\n", program_id);
+    if (program_id) TRACE("Using GLSL program %p\n", (void *)(uintptr_t)program_id);
 
     GL_EXTCALL(glUseProgramObjectARB(program_id));
     checkGLcall("glUseProgramObjectARB");
@@ -4969,14 +4985,14 @@ static void shader_glsl_destroy(IWineD3DBaseShader *iface) {
         for(i = 0; i < shader_data->num_gl_shaders; i++) {
             if (shader_data->gl_shaders[i].context==context_get_current())
             {
-                TRACE("deleting pshader %u\n", shader_data->gl_shaders[i].prgId);
+                TRACE("deleting pshader %p\n", (void *)(uintptr_t)shader_data->gl_shaders[i].prgId);
                 GL_EXTCALL(glDeleteObjectARB(shader_data->gl_shaders[i].prgId));
                 checkGLcall("glDeleteObjectARB");
             }
             else
             {
-                WARN("Attempting to delete pshader %u created in ctx %p from ctx %p\n", 
-                     shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
+                WARN("Attempting to delete pshader %p created in ctx %p from ctx %p\n",
+                     (void *)(uintptr_t)shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
             }
         }
         LEAVE_GL();
@@ -4991,14 +5007,14 @@ static void shader_glsl_destroy(IWineD3DBaseShader *iface) {
         for(i = 0; i < shader_data->num_gl_shaders; i++) {
             if (shader_data->gl_shaders[i].context==context_get_current())
             {
-                TRACE("deleting vshader %u\n", shader_data->gl_shaders[i].prgId);
+                TRACE("deleting vshader %p\n", (void *)(uintptr_t)shader_data->gl_shaders[i].prgId);
                 GL_EXTCALL(glDeleteObjectARB(shader_data->gl_shaders[i].prgId));
                 checkGLcall("glDeleteObjectARB");
             }
             else
             {
-                WARN("Attempting to delete vshader %u created in ctx %p from ctx %p\n", 
-                     shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
+                WARN("Attempting to delete vshader %p created in ctx %p from ctx %p\n",
+                     (void *)(uintptr_t)shader_data->gl_shaders[i].prgId, shader_data->gl_shaders[i].context, context_get_current());
             }
         }
         LEAVE_GL();
