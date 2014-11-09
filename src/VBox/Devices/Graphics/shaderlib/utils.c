@@ -1,3 +1,20 @@
+/* $Id$ */
+/** @file
+ * DevVMWare/Shaderlib - Utility/Stub Functions & Data.
+ */
+
+/*
+ * Copyright (C) 2013-2014 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
@@ -97,11 +114,6 @@ static void CDECL wined3d_do_nothing(void)
 
 void (* CDECL wine_tsx11_lock_ptr)(void)   = wined3d_do_nothing;
 void (* CDECL wine_tsx11_unlock_ptr)(void) = wined3d_do_nothing;
-
-HANDLE WINAPI VBoxGetProcessHeap(void)
-{
-    return 0;
-}
 
 LPVOID      WINAPI VBoxHeapAlloc(HANDLE hHeap, DWORD heaptype,SIZE_T size)
 {
