@@ -401,18 +401,44 @@ static HRESULT listUsbHost(const ComPtr<IVirtualBox> &pVirtualBox)
             CHECK_ERROR_RET(dev, COMGETTER(Version)(&usVersion), 1);
             USHORT usPortVersion;
             CHECK_ERROR_RET(dev, COMGETTER(PortVersion)(&usPortVersion), 1);
+            USBConnectionSpeed_T enmSpeed;
+            CHECK_ERROR_RET(dev, COMGETTER(Speed)(&enmSpeed), 1);
 
             RTPrintf("UUID:               %s\n"
                      "VendorId:           %#06x (%04X)\n"
                      "ProductId:          %#06x (%04X)\n"
                      "Revision:           %u.%u (%02u%02u)\n"
-                     "Port:               %u\n"
-                     "USB version/speed:  %u/%u\n",
+                     "Port:               %u\n",
                      Utf8Str(id).c_str(),
                      usVendorId, usVendorId, usProductId, usProductId,
                      bcdRevision >> 8, bcdRevision & 0xff,
                      bcdRevision >> 8, bcdRevision & 0xff,
-                     usPort, usVersion, usPortVersion);
+                     usPort);
+
+            const char *pszSpeed = "?";
+            switch (enmSpeed)
+            {
+                case USBConnectionSpeed_Low:
+                    pszSpeed = "Low";
+                    break;
+                case USBConnectionSpeed_Full:
+                    pszSpeed = "Full";
+                    break;
+                case USBConnectionSpeed_High:
+                    pszSpeed = "High";
+                    break;
+                case USBConnectionSpeed_Super:
+                    pszSpeed = "Super";
+                    break;
+                case USBConnectionSpeed_SuperPlus:
+                    pszSpeed = "SuperPlus";
+                    break;
+                default:
+                    ASSERT(false);
+                    break;
+            }
+
+            RTPrintf("USB version/speed:  %u/%s\n", usVersion, pszSpeed);
 
             /* optional stuff. */
             Bstr bstr;

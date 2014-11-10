@@ -56,12 +56,13 @@ private:
     HRESULT getPort(USHORT *aPort);
     HRESULT getVersion(USHORT *aVersion);
     HRESULT getPortVersion(USHORT *aPortVersion);
+    HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
     HRESULT getRemote(BOOL *aRemote);
 
     struct Data
     {
         Data() : vendorId (0), productId (0), revision (0), port (0),
-                 version (1), portVersion (1), remote (FALSE) {}
+                 version (1), portVersion (1), speed (USBConnectionSpeed_Null), remote (FALSE) {}
 
         /** The UUID of this device. */
         const Guid id;
@@ -87,6 +88,8 @@ private:
         const USHORT version;
         /** The major USB version number of the port the device is attached to. */
         const USHORT portVersion;
+        /** The speed at which the device is communicating. */
+        const USBConnectionSpeed_T speed;
         /** Remote (VRDP) or local device. */
         const BOOL remote;
     };
