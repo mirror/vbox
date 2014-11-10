@@ -166,7 +166,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxOGLrenderspu.so \
 		$(if $(VBOX_WITH_QTGUI),VBoxTestOGL,) \
 		VBoxSharedCrOpenGL.so,) \
-	$(if $(VBOX_WITH_VMSVGA3D),VBoxSVGA3D,) \
+	$(if $(VBOX_WITH_VMSVGA3D),VBoxSVGA3D.so,) \
 	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)),) \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
 	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
