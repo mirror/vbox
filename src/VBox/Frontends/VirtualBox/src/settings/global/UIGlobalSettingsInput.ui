@@ -15,9 +15,6 @@
  <class>UIGlobalSettingsInput</class>
  <widget class="QWidget" name="UIGlobalSettingsInput">
   <layout class="QGridLayout" name="m_pMainLayout">
-   <property name="margin">
-    <number>0</number>
-   </property>
    <item row="1" column="0">
     <widget class="QCheckBox" name="m_pEnableAutoGrabCheckbox">
      <property name="whatsThis">
