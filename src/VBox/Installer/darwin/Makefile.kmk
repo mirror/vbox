@@ -407,6 +407,10 @@ if defined(VBOX_WITH_PYTHON) && !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7)
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxPython2_7.so
 endif
+ifdef VBOX_WITH_VMSVGA3D
+ VBOX_DI_VBAPP_DYLIBS += \
+ 	MacOS/VBoxSVGA3D.dylib
+endif
 
 VBOX_DI_VBAPP_DYLIBS.x86 := \
 	MacOS/VBoxREM32.dylib \
