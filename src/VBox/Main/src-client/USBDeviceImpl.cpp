@@ -95,6 +95,9 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     hrc = aUSBDevice->COMGETTER(PortVersion)(&unconst(mData.portVersion));
     ComAssertComRCRet(hrc, hrc);
 
+    hrc = aUSBDevice->COMGETTER(Speed)(&unconst(mData.speed));
+    ComAssertComRCRet(hrc, hrc);
+
     hrc = aUSBDevice->COMGETTER(Remote)(&unconst(mData.remote));
     ComAssertComRCRet(hrc, hrc);
 
@@ -282,6 +285,14 @@ HRESULT OUSBDevice::getPortVersion(USHORT *aPortVersion)
 {
     /* this is const, no need to lock */
     *aPortVersion = mData.portVersion;
+
+    return S_OK;
+}
+
+HRESULT OUSBDevice::getSpeed(USBConnectionSpeed_T *aSpeed)
+{
+    /* this is const, no need to lock */
+    *aSpeed = mData.speed;
 
     return S_OK;
 }

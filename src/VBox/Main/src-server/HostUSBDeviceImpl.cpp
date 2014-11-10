@@ -221,6 +221,35 @@ HRESULT HostUSBDevice::getVersion(USHORT *aVersion)
     return S_OK;
 }
 
+
+HRESULT HostUSBDevice::getSpeed(USBConnectionSpeed_T *aSpeed)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* If the speed is unknown (which it shouldn't be), make a guess
+     * which will be correct for USB 1 and 3 devices, but may be wrong
+     * for USB 2.0 devices
+     */
+    switch (mUsb->enmSpeed)
+    {
+        case USBDEVICESPEED_LOW:        *aSpeed = USBConnectionSpeed_Low;       break;
+        case USBDEVICESPEED_FULL:       *aSpeed = USBConnectionSpeed_Full;      break;
+        case USBDEVICESPEED_HIGH:       *aSpeed = USBConnectionSpeed_High;      break;
+        case USBDEVICESPEED_SUPER:      *aSpeed = USBConnectionSpeed_Super;     break;
+//        case USBDEVICESPEED_SUPERPLUS:  *aSpeed = USBConnectionSpeed_SuperPlus; break;
+        default:
+            switch (mUsb->bcdUSB >> 8)
+            {
+                case 3:     *aSpeed = USBConnectionSpeed_Super; break;
+                case 2:     *aSpeed = USBConnectionSpeed_High;  break;
+                default:    *aSpeed = USBConnectionSpeed_Full;
+            }
+    }
+
+    return S_OK;
+}
+
+
 HRESULT HostUSBDevice::getPortVersion(USHORT *aPortVersion)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

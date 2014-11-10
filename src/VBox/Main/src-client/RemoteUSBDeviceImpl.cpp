@@ -88,18 +88,27 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc
             case VRDE_USBDEVICESPEED_LOW:
             case VRDE_USBDEVICESPEED_FULL:
                 unconst(mData.portVersion) = 1;
+                unconst(mData.speed) = USBConnectionSpeed_Full;
                 break;
 
             case VRDE_USBDEVICESPEED_HIGH:
             case VRDE_USBDEVICESPEED_VARIABLE:
-            case VRDE_USBDEVICESPEED_SUPERSPEED:
                 unconst(mData.portVersion) = 2;
+                unconst(mData.speed) = USBConnectionSpeed_High;
+                break;
+
+            case VRDE_USBDEVICESPEED_SUPERSPEED:
+                unconst(mData.portVersion) = 3;
+                unconst(mData.speed) = USBConnectionSpeed_Super;
                 break;
         }
     }
     else
     {
         unconst(mData.portVersion)  = mData.version;
+        unconst(mData.speed) = mData.version == 3 ? USBConnectionSpeed_Super :
+                               mData.version == 2 ? USBConnectionSpeed_High :
+                               USBConnectionSpeed_Full;
     }
 
     mData.state                  = USBDeviceState_Available;
@@ -293,6 +302,19 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
 
     /* this is const, no need to lock */
     *aPortVersion = mData.portVersion;
+
+    return S_OK;
+}
+
+STDMETHODIMP RemoteUSBDevice::COMGETTER(Speed) (USBConnectionSpeed_T *aSpeed)
+{
+    CheckComArgOutPointerValid(aSpeed);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* this is const, no need to lock */
+    *aSpeed = mData.speed;
 
     return S_OK;
 }

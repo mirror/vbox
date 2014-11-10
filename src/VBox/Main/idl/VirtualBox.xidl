@@ -17135,9 +17135,60 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="USBConnectionSpeed"
+    uuid="d2915840-ea26-4fb4-b72a-21eaf6b888ff"
+    >
+    <desc>
+      USB device/port speed state. This enumeration represents speeds at
+      which a USB device can communicate with the host.
+
+      The speed is a function of both the device itself and the port which
+      it is attached to, including hubs and cables in the path.
+
+      <note>
+        Due to differences in USB stack implementations on various hosts,
+        the reported speed may not exactly match the actual speed.
+      </note>
+
+      <see><link to="IHostUSBDevice"/></see>
+    </desc>
+
+    <const name="Null"                  value="0">
+      <desc>
+        @c null value. Never returned by the API.
+      </desc>
+    </const>
+    <const name="Low"                   value="1">
+      <desc>
+        Low speed, 1.5 Mbps.
+      </desc>
+    </const>
+    <const name="Full"                  value="2">
+      <desc>
+        Full speed, 12 Mbps.
+      </desc>
+    </const>
+    <const name="High"                  value="3">
+      <desc>
+        High speed, 480 Mbps.
+      </desc>
+    </const>
+    <const name="Super"                 value="4">
+      <desc>
+        SuperSpeed, 5 Gbps.
+      </desc>
+    </const>
+    <const name="SuperPlus"             value="5">
+      <desc>
+        SuperSpeedPlus, 10 Gbps.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="IUSBDevice" extends="$unknown"
-    uuid="f8967b0b-4483-400f-92b5-8b675d98a85b"
+    uuid="8d826296-e04f-4e86-9310-cb85b19becde"
     wsmap="managed"
     >
     <desc>
@@ -17197,15 +17248,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="version" type="unsigned short" readonly="yes">
       <desc>
-        The major USB version of the device - 1 or 2.
+        The major USB version of the device - 1, 2 or 3.
       </desc>
     </attribute>
 
     <attribute name="portVersion" type="unsigned short" readonly="yes">
       <desc>
         The major USB version of the host USB port the device is
-        physically connected to - 1 or 2. For devices not connected to
+        physically connected to - 1, 2 or 3. For devices not connected to
         anything this will have the same value as the version attribute.
+      </desc>
+    </attribute>
+
+    <attribute name="speed" type="USBConnectionSpeed" readonly="yes">
+      <desc>
+        The speed at which the device is currently communicating.
       </desc>
     </attribute>
 
