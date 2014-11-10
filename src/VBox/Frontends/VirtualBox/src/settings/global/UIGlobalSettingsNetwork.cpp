@@ -472,6 +472,13 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         m_pToolbarNetworkHost->addAction(m_pActionEditNetworkHost);
     }
 
+#ifndef Q_WS_WIN
+    /* On Windows host that looks ugly, but
+     * On Mac OS X and X11 that deserves it's place. */
+    m_pLayoutNAT->setContentsMargins(0, 0, 0, 0);
+    m_pLayoutHostOnly->setContentsMargins(0, 0, 0, 0);
+#endif /* !Q_WS_WIN */
+
     /* Apply language settings: */
     retranslateUi();
 }
