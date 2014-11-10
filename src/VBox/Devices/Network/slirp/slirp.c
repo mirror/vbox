@@ -335,7 +335,19 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifdef RT_OS_WINDOWS
     {
         WSADATA Data;
+        RTLDRMOD hLdrMod;
+
         WSAStartup(MAKEWORD(2, 0), &Data);
+
+        rc = RTLdrLoadSystem("Iphlpapi.dll", /* :fNoUnload */ true, &hLdrMod);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTLdrGetSymbol(hLdrMod, "GetAdaptersAddresses", (void **)&pData->pfGetAdaptersAddresses);
+            if (RT_FAILURE(rc))
+                LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll\n"));
+
+            RTLdrClose(hLdrMod);
+        }
     }
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
