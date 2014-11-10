@@ -247,6 +247,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                     sVer1 = sOsVersion[:iSep].strip();
                     sVer2 = sOsVersion[iSep + 3:].strip();
                     sVer2 = sVer2.replace('Red Hat Enterprise Linux Server', 'RHEL');
+                    sVer2 = sVer2.replace('Oracle Linux Server', 'OL');
             elif oEntry.sOs == 'solaris':
                 iSep = sOsVersion.find(' (');
                 if iSep > 0 and sOsVersion[-1] == ')':
