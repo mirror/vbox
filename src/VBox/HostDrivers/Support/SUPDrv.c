@@ -5971,6 +5971,9 @@ static int supdrvGipMeasureTscFreq(PSUPGLOBALINFOPAGE pGip)
         u64NanoTsBefore = RTTimeSystemNanoTS();
         ASMSetFlags(uFlags);
 
+        /* Activate this when implemented invariant TSC GIP mode. Otherwise systems that are really invariant
+           which get detected as async will break. */
+#if 0
         if (supdrvIsInvariantTsc())
         {
             /*
@@ -5984,6 +5987,7 @@ static int supdrvGipMeasureTscFreq(PSUPGLOBALINFOPAGE pGip)
             u64NanoTsAfter = RTTimeSystemNanoTS();
         }
         else
+#endif
         {
             /* Busy-wait keeping the frequency up and measure. */
             for (;;)
@@ -6001,8 +6005,10 @@ static int supdrvGipMeasureTscFreq(PSUPGLOBALINFOPAGE pGip)
         u64TscAfter = ASMReadTSC();
         ASMSetFlags(uFlags);
 
-        /** @todo replace with enum check. */
-        if (supdrvIsInvariantTsc())
+        /* Activate this when implemented invariant TSC GIP mode. Otherwise systems that are really invariant
+           which get detected as async will break. */
+#if 0
+        if (supdrvIsInvariantTsc())        /** @todo replace with enum check. */
         {
             int rc;
             bool fAppliedBefore;
@@ -6018,6 +6024,7 @@ static int supdrvGipMeasureTscFreq(PSUPGLOBALINFOPAGE pGip)
                 continue;
             }
         }
+#endif
 
         /*
          * Update GIP.
