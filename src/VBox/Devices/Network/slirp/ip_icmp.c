@@ -126,9 +126,6 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
         {
             pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))RTLdrGetFunction(hLdrMod, "IcmpParseReplies");
             pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))RTLdrGetFunction(hLdrMod, "IcmpCloseHandle");
-            rc = RTLdrGetSymbol(hLdrMod, "GetAdaptersAddresses", (void **)&pData->pfGetAdaptersAddresses);
-            if (RT_FAILURE(rc))
-                LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll\n"));
             RTLdrClose(hLdrMod);
         }
 
