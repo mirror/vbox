@@ -274,6 +274,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QISplitter.h \
 	src/extensions/QIStatusBar.h \
 	src/extensions/QIStatusBarIndicator.h \
+	src/extensions/QIStyledItemDelegate.h \
 	src/extensions/QITabWidget.h \
 	src/extensions/QITableView.h \
 	src/extensions/QIToolButton.h \
@@ -494,7 +495,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
-	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
