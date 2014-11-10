@@ -28,7 +28,6 @@
 
 #include "VBoxDispD3DCmn.h"
 #include "VBoxDispD3D.h"
-#include "VBoxScreen.h"
 #include <VBox/VBoxCrHgsmi.h>
 
 #include <Psapi.h>
@@ -218,8 +217,6 @@ HRESULT vboxDispMpTstStop();
 #endif
 
 #define VBOXDISP_WITH_WINE_BB_WORKAROUND
-
-static VBOXSCREENMONRUNNER g_VBoxScreenMonRunner;
 
 //#define VBOXWDDMOVERLAY_TEST
 
