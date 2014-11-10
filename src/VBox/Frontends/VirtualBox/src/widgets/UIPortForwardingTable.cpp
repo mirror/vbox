@@ -639,15 +639,20 @@ const UIPortForwardingDataList& UIPortForwardingTable::rules() const
 bool UIPortForwardingTable::validate() const
 {
     /* Validate table: */
+    QSet<QString> usedNames;
     for (int i = 0; i < m_pModel->rowCount(); ++i)
     {
         /* If at aleast one port is 'zero': */
         if (m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value() == 0 ||
             m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value() == 0)
-        {
-            msgCenter().warnAboutIncorrectPort(window());
-            return false;
-        }
+            return msgCenter().warnAboutIncorrectPort(window());
+
+        /* Make sure non of the names were previosly used: */
+        const QString strName = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Name), Qt::EditRole).value<NameData>();
+        if (!usedNames.contains(strName))
+            usedNames << strName;
+        else
+            return msgCenter().warnAboutNameShouldBeUnique(window());
     }
     /* True by default: */
     return true;
