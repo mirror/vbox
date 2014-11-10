@@ -172,6 +172,7 @@ def getHostOsVersion():
             [
                 [ '/etc/debian_version', 'Debian v'],
                 [ '/etc/gentoo-release', '' ],
+                [ '/etc/oracle-release', '' ],
                 [ '/etc/redhat-release', '' ],
                 [ '/etc/SuSE-release', '' ],
             ];
