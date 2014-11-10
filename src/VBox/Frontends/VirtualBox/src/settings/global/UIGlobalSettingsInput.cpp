@@ -22,12 +22,12 @@
 /* Qt includes: */
 # include <QHeaderView>
 # include <QAbstractItemDelegate>
-# include <QStyledItemDelegate>
 # include <QItemEditorFactory>
 # include <QTabWidget>
 
 /* GUI includes: */
 # include "QIWidgetValidator.h"
+# include "QIStyledItemDelegate.h"
 # include "UIGlobalSettingsInput.h"
 # include "UIShortcutPool.h"
 # include "UIHotKeyEditor.h"
@@ -551,36 +551,6 @@ void UIHotKeyTableModel::applyFilter()
 }
 
 
-/** Own QStyledItemDelegate implementation. */
-class UIStyledItemDelegate : public QStyledItemDelegate
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructor. */
-    UIStyledItemDelegate(QObject *pParent) : QStyledItemDelegate(pParent) {}
-
-private:
-
-    /** Returns the widget used to edit the item specified by @a index for editing.
-      * The @a pParent widget and style @a option are used to control how the editor widget appears.
-      * Besides Qt description copy-pasted above we are installing the hook to redirect editor's sigCommitData signal. */
-    QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-};
-
-QWidget* UIStyledItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    /* Call to base-class to get actual editor created: */
-    QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
-    /* All the stuff we actually need from UIStyledItemDelegate is to redirect this one signal: */
-    if (qobject_cast<UIHotKeyEditor*>(pEditor) || qobject_cast<UIHostComboEditor*>(pEditor))
-        connect(pEditor, SIGNAL(sigCommitData(QWidget*)), this, SIGNAL(commitData(QWidget*)));
-    /* Return actual editor: */
-    return pEditor;
-}
-
-
 UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName)
     : QTableView(pParent)
 {
@@ -607,7 +577,7 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
 
     /* Reinstall delegate: */
     delete itemDelegate();
-    UIStyledItemDelegate *pStyledItemDelegate = new UIStyledItemDelegate(this);
+    QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
     setItemDelegate(pStyledItemDelegate);
 
     /* Create new item editor factory: */
@@ -636,6 +606,4 @@ void UIHotKeyTable::sltHandleShortcutsLoaded()
     sortByColumn(UIHotKeyTableSection_Name, Qt::AscendingOrder);
     setSortingEnabled(true);
 }
-
-#include "UIGlobalSettingsInput.moc"
 
