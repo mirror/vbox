@@ -37,10 +37,10 @@
 
 RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser)
 {
-    int rc = RTTimerCreateEx(ppTimer, uMilliesInterval * UINT64_C(1000000), 0, pfnTimer, pvUser);
+    int rc = RTTimerCreateEx(ppTimer, uMilliesInterval * RT_NS_1MS_64, 0 /* fFlags */, pfnTimer, pvUser);
     if (RT_SUCCESS(rc))
     {
-        rc = RTTimerStart(*ppTimer, 0);
+        rc = RTTimerStart(*ppTimer, 0 /* u64First */);
         if (RT_FAILURE(rc))
         {
             int rc2 = RTTimerDestroy(*ppTimer); AssertRC(rc2);
