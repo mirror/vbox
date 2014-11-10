@@ -70,7 +70,7 @@ void UIMultiScreenLayout::update()
      * and all guests screens need there own host screen. */
     CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
     bool fShouldWeAutoMountGuestScreens = gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid());
-    LogRelFlow(("UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s.\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
+    LogRel(("UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s.\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
     QDesktopWidget *pDW = QApplication::desktop();
     foreach (int iGuestScreen, m_guestScreens)
     {
@@ -129,7 +129,7 @@ void UIMultiScreenLayout::update()
         else if (fShouldWeAutoMountGuestScreens)
         {
             /* Then we have to disable excessive guest-screen: */
-            LogRelFlow(("UIMultiScreenLayout::update: Disabling excessive guest-screen %d.\n", iGuestScreen));
+            LogRel(("UIMultiScreenLayout::update: Disabling excessive guest-screen %d.\n", iGuestScreen));
             display.SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
         }
     }
@@ -161,8 +161,8 @@ void UIMultiScreenLayout::update()
                 pFrameBuffer->setAutoEnabled(true);
             }
             /* Re-enable guest-screen with proper resolution: */
-            LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d.\n",
-                        iGuestScreen, uWidth, uHeight));
+            LogRel(("UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d.\n",
+                    iGuestScreen, uWidth, uHeight));
             display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32);
         }
     }
