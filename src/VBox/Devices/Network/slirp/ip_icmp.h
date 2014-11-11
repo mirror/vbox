@@ -202,4 +202,10 @@ int icmp_init (PNATState , int);
 void icmp_finit (PNATState );
 struct icmp_msg * icmp_find_original_mbuf (PNATState , struct ip *);
 
+#ifdef RT_OS_WINDOWS
+/* Windows ICMP API code in ip_icmpwin.c */
+int icmpwin_init (PNATState);
+void icmpwin_finit (PNATState);
+#endif
+
 #endif
