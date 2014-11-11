@@ -260,7 +260,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u\n", g_pSUPGlobalInfoPage->u32Mode,
             SUPGetGIPModeName(g_pSUPGlobalInfoPage), g_pSUPGlobalInfoPage->u32UpdateHz,
             g_pSUPGlobalInfoPage->u32UpdateIntervalNS));
-    LogRel(("TM: GIP - u64CpuHz=%#RX64 (%'RU64)\n", g_pSUPGlobalInfoPage->u64CpuHz));
+    LogRel(("TM: GIP - u64CpuHz=%#RX64 (%'RU64)\n", g_pSUPGlobalInfoPage->u64CpuHz, g_pSUPGlobalInfoPage->u64CpuHz));
 
     /*
      * Setup the VirtualGetRaw backend.
