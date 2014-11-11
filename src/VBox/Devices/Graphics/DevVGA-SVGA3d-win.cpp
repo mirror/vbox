@@ -502,7 +502,13 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->pD3D9 = Direct3DCreate9(D3D_SDK_VERSION);
     AssertReturn(pState->pD3D9, VERR_INTERNAL_ERROR);
 #else
-    hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pState->pD3D9);
+    /* Direct3DCreate9Ex was introduced in Vista, so resolve it dynamically. */
+    typedef HRESULT (WINAPI *PFNDIRECT3DCREATE9EX)(UINT, IDirect3D9Ex **);
+    PFNDIRECT3DCREATE9EX pfnDirect3dCreate9Ex = (PFNDIRECT3DCREATE9EX)RTLdrGetSystemSymbol("d3d9.dll", "Direct3DCreate9Ex");
+    if (!pfnDirect3dCreate9Ex)
+        return PDMDevHlpVMSetError(pThis->CTX_SUFF(pDevIns), VERR_SYMBOL_NOT_FOUND, RT_SRC_POS,
+                                   "vmsvga3d: Unable to locate Direct3DCreate9Ex. This feature requires Vista and later.");
+    hr = pfnDirect3dCreate9Ex(D3D_SDK_VERSION, &pState->pD3D9);
     AssertReturn(hr == D3D_OK, VERR_INTERNAL_ERROR);
 #endif
     hr = pState->pD3D9->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &pState->caps);
