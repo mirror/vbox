@@ -118,45 +118,8 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
     NSOCK_INC();
 
 #else /* RT_OS_WINDOWS */
-    /* Resolve symbols we need. */
-    {
-        RTLDRMOD hLdrMod;
-        int rc = RTLdrLoadSystem("Iphlpapi.dll", true /*fNoUnload*/, &hLdrMod);
-        if (RT_SUCCESS(rc))
-        {
-            pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))RTLdrGetFunction(hLdrMod, "IcmpParseReplies");
-            pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))RTLdrGetFunction(hLdrMod, "IcmpCloseHandle");
-            RTLdrClose(hLdrMod);
-        }
-
-        if (pData->pfIcmpParseReplies == NULL)
-        {
-            int rc = RTLdrLoadSystem("Icmp.dll", true /*fNoUnload*/, &hLdrMod);
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("NAT: Icmp.dll could not be loaded: %Rrc\n", rc));
-                return 1;
-            }
-            pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))RTLdrGetFunction(hLdrMod, "IcmpParseReplies");
-            pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))RTLdrGetFunction(hLdrMod, "IcmpCloseHandle");
-            RTLdrClose(hLdrMod);
-        }
-    }
-    if (pData->pfIcmpParseReplies == NULL)
-    {
-        LogRel(("NAT: Can't find IcmpParseReplies symbol\n"));
+    if (icmpwin_init(pData) != 0)
         return 1;
-    }
-    if (pData->pfIcmpCloseHandle == NULL)
-    {
-        LogRel(("NAT: Can't find IcmpCloseHandle symbol\n"));
-        return 1;
-    }
-
-    pData->icmp_socket.sh = IcmpCreateFile();
-    pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-    pData->cbIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
-    pData->pvIcmpBuffer = RTMemAlloc(pData->cbIcmpBuffer);
 #endif /* RT_OS_WINDOWS */
 
     LIST_INIT(&pData->icmp_msg_head);
@@ -171,8 +134,7 @@ icmp_finit(PNATState pData)
 {
     icmp_cache_clean(pData, -1);
 #ifdef RT_OS_WINDOWS
-    pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
-    RTMemFree(pData->pvIcmpBuffer);
+    icmpwin_finit(pData);
 #else
     closesocket(pData->icmp_socket.s);
 #endif
