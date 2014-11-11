@@ -402,6 +402,7 @@ private:
 
         /* Enumerate up to uMaxCount adapters: */
         bool fAdaptersPresent = false;
+        bool fCablesDisconnected = true;
         for (ulong uSlot = 0; uSlot < uMaxCount; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
@@ -416,13 +417,17 @@ private:
                     if (iIp >= 0)
                         strGuestIp = ipList[iIp];
                 }
+                /* Check if the adapter's cable is connected: */
+                const bool fCableConnected = adapter.GetCableConnected();
+                if (fCablesDisconnected && fCableConnected)
+                    fCablesDisconnected = false;
                 /* Append adapter data: */
                 strFullData += QApplication::translate("UIIndicatorsPool",
                     "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
                     .arg(gpConverter->toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
-                    .arg(adapter.GetCableConnected() ?
+                    .arg(fCableConnected ?
                          QApplication::translate("UIIndicatorsPool", "connected", "Network adapters tooltip") :
                          QApplication::translate("UIIndicatorsPool", "disconnected", "Network adapters tooltip"));
             }
@@ -436,10 +441,14 @@ private:
         if (!fAdaptersPresent)
             hide();
 
+        /* Update icon for the 'Null' state: */
+        if (fAdaptersPresent && fCablesDisconnected)
+            setStateIcon(KDeviceActivity_Null, UIIconPool::iconSet(":/nw_disconnected_16px.png"));
+
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
         /* Update indicator state: */
-        setState(fAdaptersPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 
     /** Holds the session UI reference. */

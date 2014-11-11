@@ -210,6 +210,7 @@
         <file alias="nw_24px_hidpi.png">images/hidpi/nw_24px_hidpi.png</file>
         <file alias="nw_32px_hidpi.png">images/hidpi/nw_32px_hidpi.png</file>
         <file alias="nw_disabled_16px_hidpi.png">images/hidpi/nw_disabled_16px_hidpi.png</file>
+        <file alias="nw_disconnected_16px_hidpi.png">images/hidpi/nw_disconnected_16px_hidpi.png</file>
         <file alias="nw_error_16px_hidpi.png">images/hidpi/nw_error_16px_hidpi.png</file>
         <file alias="nw_loading_16px_hidpi.png">images/hidpi/nw_loading_16px_hidpi.png</file>
         <file alias="nw_read_16px_hidpi.png">images/hidpi/nw_read_16px_hidpi.png</file>
@@ -252,6 +253,5 @@
         <file alias="os_openbsd_hidpi.png">images/hidpi/os_openbsd_hidpi.png</file>
         <file alias="os_opensuse_64_hidpi.png">images/hidpi/os_opensuse_64_hidpi.png</file>
         <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
-        <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
     </qresource>
 </RCC>

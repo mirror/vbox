@@ -216,6 +216,7 @@
         <file alias="nw_24px.png">images/nw_24px.png</file>
         <file alias="nw_32px.png">images/nw_32px.png</file>
         <file alias="nw_disabled_16px.png">images/nw_disabled_16px.png</file>
+        <file alias="nw_disconnected_16px.png">images/nw_disconnected_16px.png</file>
         <file alias="nw_error_16px.png">images/nw_error_16px.png</file>
         <file alias="nw_loading_16px.png">images/nw_loading_16px.png</file>
         <file alias="nw_read_16px.png">images/nw_read_16px.png</file>
