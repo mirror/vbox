@@ -986,9 +986,8 @@ void UIActionPool::updateMenuApplication()
 
     /* 'About' action: */
     addAction(pMenu, action(UIActionIndex_M_Application_S_About));
-    /* 'Preferences' action (only for Runtime pool): */
-    if (type() == UIActionPoolType_Runtime)
-        addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences));
+    /* 'Preferences' action: */
+    addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences));
     /* 'Close' action: */
     addAction(pMenu, action(UIActionIndex_M_Application_S_Close));
 
