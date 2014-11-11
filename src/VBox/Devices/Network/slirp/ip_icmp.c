@@ -411,7 +411,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 || CTL_CHECK(dst, CTL_DNS)
                 || CTL_CHECK(dst, CTL_TFTP))
             {
-                icp->icmp_type = ICMP_ECHOREPLY;
+                uint8_t echo_reply = ICMP_ECHOREPLY;
+                m_copyback(pData, m, hlen + RT_OFFSETOF(struct icmp, icmp_type),
+                           sizeof(echo_reply), (caddr_t)&echo_reply);
                 ip->ip_dst.s_addr = ip->ip_src.s_addr;
                 ip->ip_src.s_addr = dst;
                 icmp_reflect(pData, m);
