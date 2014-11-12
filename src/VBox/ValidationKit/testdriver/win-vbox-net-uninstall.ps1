@@ -119,7 +119,7 @@ if ($needcorrection) {
 }
 
 #Write-Host ($connections | Out-String)
-$ghostcon = (Get-ChildItem ("HKLM\SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}") | Where-Object { !$connections.ContainsKey($_.PSChildName) -and $_.PSChildName -ne "Descriptions" } )
+$ghostcon = @(Get-ChildItem ("HKLM\SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}") | Where-Object { !$connections.ContainsKey($_.PSChildName) -and $_.PSChildName -ne "Descriptions" } )
 if ($ghostcon -eq $null) {
    Write-Host "`nNo ghost connections has been found -- nothing to do"
 } else {
