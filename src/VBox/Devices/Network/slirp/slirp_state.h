@@ -202,11 +202,6 @@ typedef struct NATState
 # ifdef RT_OS_WINDOWS
     void *pvIcmpBuffer;
     uint32_t cbIcmpBuffer;
-    /* According MSDN specification IcmpParseReplies
-     * function should be detected at runtime.
-     */
-    long (WINAPI * pfIcmpParseReplies)(void *, long);
-    BOOL (WINAPI * pfIcmpCloseHandle)(HANDLE);
 # endif
 #if defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
