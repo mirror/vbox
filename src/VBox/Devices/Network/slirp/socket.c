@@ -1460,7 +1460,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     int out_len;
     int size;
 
-    len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->cbIcmpBuffer);
+    len = IcmpParseReplies(pData->pvIcmpBuffer, pData->cbIcmpBuffer);
     if (len < 0)
     {
         LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
