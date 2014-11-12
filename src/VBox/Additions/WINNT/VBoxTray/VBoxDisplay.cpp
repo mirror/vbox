@@ -224,7 +224,7 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 }
 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
-                                    DWORD aBitsPerPixel, DWORD aPosX, DWORD aPosY, BOOL fEnabled, BOOL fExtDispSup)
+                                    DWORD aBitsPerPixel, LONG aPosX, LONG aPosY, BOOL fEnabled, BOOL fExtDispSup)
 {
     DISPLAY_DEVICE displayDeviceTmp;
     DISPLAY_DEVICE displayDevice;
@@ -441,17 +441,16 @@ DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD 
 
 /* Returns TRUE to try again. */
 static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPerPixel,
-                                BOOL fEnabled, DWORD dwNewPosX, DWORD dwNewPosY,
+                                BOOL fEnabled, LONG dwNewPosX, LONG dwNewPosY, bool fChangeOrigin,
                                 VBOXDISPLAYCONTEXT *pCtx, BOOL fExtDispSup)
 {
     BOOL fDispAlreadyEnabled = false; /* check whether the monitor with ID is already enabled. */
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0 &&
-                       dwNewPosX == 0 && dwNewPosY == 0);
+                       dwNewPosX == 0 && dwNewPosY == 0 && !fChangeOrigin);
     DWORD dmFields = 0;
 
-    LogFlowFunc(("ResizeDisplayDevice Width= %d, Height=%d , PosX=%d and PosY=%d \
-         fEnabled = %d, fExtDisSup = %d\n",
-          Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
+    LogFlowFunc(("[%d] %dx%d at %d,%d fChangeOrigin %d fEnabled %d fExtDisSup %d\n",
+          Id, Width, Height, dwNewPosX, dwNewPosY, fChangeOrigin, fEnabled, fExtDispSup));
 
     if (!gCtx.fAnyX)
         Width &= 0xFFF8;
@@ -490,13 +489,14 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
         if (fExtDispSup)
         {
             LogRel(("Extended Display Support.\n"));
-            LogFlowFunc(("ResizeDisplayDevice1: %dx%dx%d at %d,%d . Id = %d and DevNum=%d, fEnabled=%d\n",
-                  paDeviceModes[Id].dmPelsWidth,
-                  paDeviceModes[Id].dmPelsHeight,
-                  paDeviceModes[Id].dmBitsPerPel,
-                  paDeviceModes[Id].dmPosition.x,
-                  paDeviceModes[Id].dmPosition.y,
-                  Id, DevNum, fEnabled));
+            LogFlowFunc(("[%d] %dx%dx%d at %d,%d, dmFields 0x%x\n",
+                  i,
+                  paDeviceModes[i].dmPelsWidth,
+                  paDeviceModes[i].dmPelsHeight,
+                  paDeviceModes[i].dmBitsPerPel,
+                  paDeviceModes[i].dmPosition.x,
+                  paDeviceModes[i].dmPosition.y,
+                  paDeviceModes[i].dmFields));
         }
         else
         {
@@ -536,14 +536,18 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
     else
         dmFields |= DM_BITSPERPEL;
 
-    if (!dwNewPosX && !dwNewPosY)
+    if (!fChangeOrigin)
     {
-        /* @fixme: zero position is a valid state, so another values should be used as a special case !!! */
+        /* Use existing position. */
         dwNewPosX = paRects[Id].left;
         dwNewPosY = paRects[Id].top;
+        LogFlowFunc(("existing dwNewPosX %d, dwNewPosY %d\n", dwNewPosX, dwNewPosY));
     }
-    else
-        dmFields |= DM_POSITION;
+
+    /* Always update the position.
+     * It is either explicitly requested or must be set to the existing position.
+     */
+    dmFields |= DM_POSITION;
 
     /* Check whether a mode reset or a change is requested.
      * Rectangle position is recalculated only if fEnabled is 1.
@@ -611,13 +615,14 @@ static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPe
                 paDeviceModes[i].dmBitsPerPel = 32;
             }
 
-            LogFlowFunc(("ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
+            LogFlowFunc(("ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d fields 0x%X\n",
                   gCtx.pfnChangeDisplaySettingsEx,
                   paDeviceModes[i].dmPelsWidth,
                   paDeviceModes[i].dmPelsHeight,
                   paDeviceModes[i].dmBitsPerPel,
                   paDeviceModes[i].dmPosition.x,
-                  paDeviceModes[i].dmPosition.y));
+                  paDeviceModes[i].dmPosition.y,
+                  paDeviceModes[i].dmFields));
         }
 
         LogFlowFunc(("Request to resize the displa\n"));
@@ -848,6 +853,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                                          displayChangeRequest.fEnabled,
                                                          displayChangeRequest.cxOrigin,
                                                          displayChangeRequest.cyOrigin,
+                                                         displayChangeRequest.fChangeOrigin,
                                                          pCtx,
                                                          fExtDispSup
                                                          ))
