@@ -396,7 +396,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                      ++it)
                 {
                     std::string address, strOffset;
-                    int pos = it->find('=');
+                    size_t pos = it->find('=');
                     LONG lOffset = 0;
                     Bstr bstrAddress;
 
