@@ -52,7 +52,7 @@ typedef struct VBOXDISPIF_OP
 } VBOXDISPIF_OP;
 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
-                                    DWORD aBitsPerPixel, DWORD aPosX, DWORD aPosY, BOOL fEnabled, BOOL fExtDispSup);
+                                    DWORD aBitsPerPixel, LONG aPosX, LONG aPosY, BOOL fEnabled, BOOL fExtDispSup);
 
 static DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, BOOL fEnable, DISPLAY_DEVICE * paDisplayDevices, DEVMODE *paDeviceMode, UINT devModes);
 
@@ -319,6 +319,10 @@ static DWORD vboxDispIfWddmDcSettingsUpdate(VBOXDISPIF_WDDM_DISPCFG *pCfg, int i
             pCfg->pModeInfoArray[iSrcMode].sourceMode.height = pDeviceMode->dmPelsHeight;
         if (pDeviceMode->dmFields & DM_POSITION)
         {
+            LogFlowFunc(("DM_POSITION %d,%d -> %d,%d\n",
+                         pCfg->pModeInfoArray[iSrcMode].sourceMode.position.x,
+                         pCfg->pModeInfoArray[iSrcMode].sourceMode.position.y,
+                         pDeviceMode->dmPosition.x, pDeviceMode->dmPosition.y));
             pCfg->pModeInfoArray[iSrcMode].sourceMode.position.x = pDeviceMode->dmPosition.x;
             pCfg->pModeInfoArray[iSrcMode].sourceMode.position.y = pDeviceMode->dmPosition.y;
         }
@@ -1392,7 +1396,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 {
     DWORD winEr = NO_ERROR;
 
-    Log(("VBoxTray: vboxDispIfResizeModesWDDM\n"));
+    Log(("VBoxTray: vboxDispIfResizeModesWDDM iChanged %d cDevModes %d\n", iChangedMode, cDevModes));
     VBoxRrRetryStop();
 
     VBOXDISPIF_OP Op;
