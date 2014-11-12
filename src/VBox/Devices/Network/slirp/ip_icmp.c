@@ -345,10 +345,10 @@ icmp_attach(PNATState pData, struct mbuf *m)
 void
 icmp_input(PNATState pData, struct mbuf *m, int hlen)
 {
-    register struct icmp *icp;
-    void *icp_buf = NULL;
     register struct ip *ip = mtod(m, struct ip *);
     int icmplen = ip->ip_len;
+    uint8_t icmp_type;
+    void *icp_buf = NULL;
     int status;
     uint32_t dst;
 #if !defined(RT_OS_WINDOWS)
@@ -381,19 +381,8 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         goto end_error_free_m;
     }
 
-    if (m->m_next)
-    {
-        icp_buf = RTMemAlloc(icmplen);
-        if (!icp_buf)
-        {
-            Log(("NAT: not enought memory to allocate the buffer\n"));
-            goto end_error_free_m;
-        }
-        m_copydata(m, 0, icmplen, icp_buf);
-        icp = (struct icmp *)icp_buf;
-    }
-    else
-        icp = mtod(m, struct icmp *);
+    /* are we guaranteed to have ICMP header in first mbuf? be safe. */
+    m_copydata(m, 0, sizeof(icmp_type), (caddr_t)&icmp_type);
 
     m->m_len += hlen;
     m->m_data -= hlen;
@@ -401,8 +390,8 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     /* icmpstat.icps_inhist[icp->icmp_type]++; */
     /* code = icp->icmp_code; */
 
-    LogFlow(("icmp_type = %d\n", icp->icmp_type));
-    switch (icp->icmp_type)
+    LogFlow(("icmp_type = %d\n", icmp_type));
+    switch (icmp_type)
     {
         case ICMP_ECHO:
             ip->ip_len += hlen;              /* since ip_input subtracts this */
@@ -421,6 +410,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
             }
             else
             {
+                struct icmp *icp;
                 struct sockaddr_in addr;
 #ifdef RT_OS_WINDOWS
                 IP_OPTION_INFORMATION ipopt;
@@ -441,6 +431,21 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 }
                 else
                     addr.sin_addr.s_addr = ip->ip_dst.s_addr;
+
+                if (m->m_next)
+                {
+                    icp_buf = RTMemAlloc(icmplen);
+                    if (!icp_buf)
+                    {
+                        Log(("NAT: not enought memory to allocate the buffer\n"));
+                        goto end_error_free_m;
+                    }
+                    m_copydata(m, hlen, icmplen, icp_buf);
+                    icp = (struct icmp *)icp_buf;
+                }
+                else
+                    icp = (struct icmp *)(mtod(m, char *) + hlen);
+
 #ifndef RT_OS_WINDOWS
                 if (pData->icmp_socket.s != -1)
                 {
