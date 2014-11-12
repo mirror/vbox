@@ -1636,40 +1636,24 @@ void UIExtraDataManagerWindow::addChooserItem(const QString &strID,
 void UIExtraDataManagerWindow::addChooserItemByMachine(const CMachine &machine,
                                                        const int iPosition /* = -1 */)
 {
-    /* Call to wrapper above: */
-    addChooserItem(machine.GetId(), machine.GetName(), machine.GetOSTypeId(), iPosition);
+    /* Make sure VM is accessible: */
+    if (!machine.isNull() && machine.GetAccessible())
+        return addChooserItem(machine.GetId(), machine.GetName(), machine.GetOSTypeId(), iPosition);
 }
 
 void UIExtraDataManagerWindow::addChooserItemByID(const QString &strID,
                                                   const int iPosition /* = -1 */)
 {
-    /* Prepare arguments: */
-    QString strName;
-    QString strOsTypeID;
     /* Global ID? */
     if (strID == UIExtraDataManager::GlobalID)
-        strName = "Global";
-    /* Machine ID? */
-    else
-    {
-        /* Search for the corresponding machine by ID: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        const CMachine machine = vbox.FindMachine(strID);
-        /* Acquire actual arguments if possible: */
-        if (vbox.isOk() && !machine.isNull())
-        {
-            strName = machine.GetName();
-            strOsTypeID = machine.GetOSTypeId();
-        }
-        /* Or use default: */
-        else
-        {
-            strName = "Unknown VM";
-            strOsTypeID = "Other";
-        }
-    }
-    /* Call to wrapper above: */
-    addChooserItem(strID, strName, strOsTypeID, iPosition);
+        return addChooserItem(strID, QString("Global"), QString(), iPosition);
+
+    /* Search for the corresponding machine by ID: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    const CMachine machine = vbox.FindMachine(strID);
+    /* Make sure VM is accessible: */
+    if (vbox.isOk() && !machine.isNull() && machine.GetAccessible())
+        return addChooserItem(strID, machine.GetName(), machine.GetOSTypeId(), iPosition);
 }
 
 void UIExtraDataManagerWindow::makeSureChooserHaveCurrentIndexIfPossible()
