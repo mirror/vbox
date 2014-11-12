@@ -1434,9 +1434,11 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     DdiData.PrivateDriverDataSize = sizeof (VidPnData);
 
     NTSTATUS Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
-    if (NT_SUCCESS(Status))
-        winEr = NO_ERROR;
-    else
+    LogFunc(("InvalidateActiveVidPn 0x%08x\n", Status));
+
+    /* Resize displays always to keep the display layout because
+     * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
+     */
     {
         winEr = NO_ERROR;
 
