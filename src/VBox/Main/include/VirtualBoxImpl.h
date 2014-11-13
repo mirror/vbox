@@ -337,8 +337,7 @@ private:
     HRESULT i_registerMachine(Machine *aMachine);
     HRESULT i_registerDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
-    HRESULT i_unregisterDHCPServer(DHCPServer *aDHCPServer,
-                                   bool aSaveRegistry = true);
+    HRESULT i_unregisterDHCPServer(DHCPServer *aDHCPServer);
     HRESULT i_registerNATNetwork(NATNetwork *aNATNetwork,
                                  bool aSaveRegistry = true);
     HRESULT i_unregisterNATNetwork(NATNetwork *aNATNetwork,

@@ -4784,7 +4784,7 @@ HRESULT VirtualBox::removeDHCPServer(const ComPtr<IDHCPServer> &aServer)
 {
     IDHCPServer *aP = aServer;
 
-    HRESULT rc = i_unregisterDHCPServer(static_cast<DHCPServer *>(aP), true);
+    HRESULT rc = i_unregisterDHCPServer(static_cast<DHCPServer *>(aP));
 
     return rc;
 }
@@ -4812,6 +4812,9 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
+    // Acquire a lock on the VirtualBox object early to avoid lock order issues
+    // when we call i_saveSettings() later on.
+    AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
     // need it below, in findDHCPServerByNetworkName (reading) and in
     // m->allDHCPServers.addChild, so need to get it here to avoid lock
     // order trouble with dhcpServerCaller
@@ -4834,15 +4837,20 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
     rc = S_OK;
 
     m->allDHCPServers.addChild(aDHCPServer);
+    // we need to release the list lock before we attempt to acquire locks
+    // on other objects in i_saveSettings (see @bugref{7500})
+    alock.release();
 
     if (aSaveSettings)
     {
-        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+        // we acquired the lock on 'this' earlier to avoid lock order issues
         rc = i_saveSettings();
-        vboxLock.release();
 
         if (FAILED(rc))
-            i_unregisterDHCPServer(aDHCPServer, false /* aSaveSettings */);
+        {
+            alock.acquire();
+            m->allDHCPServers.removeChild(aDHCPServer);
+        }
     }
 
     return rc;
@@ -4852,16 +4860,14 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
  * Removes the given DHCP server from the settings.
  *
  * @param aDHCPServer   DHCP server object to remove.
- * @param aSaveSettings @c true to save settings to disk (default).
  *
- * When @a aSaveSettings is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the DHCP server
- * will NOT be removed from the settingsi when this method returns.
+ * This operation may fail because of the failed #saveSettings() method it
+ * calls. In this case, the DHCP server will NOT be removed from the settings
+ * when this method returns.
  *
  * @note Locks this object for writing.
  */
-HRESULT VirtualBox::i_unregisterDHCPServer(DHCPServer *aDHCPServer,
-                                           bool aSaveSettings /*= true*/)
+HRESULT VirtualBox::i_unregisterDHCPServer(DHCPServer *aDHCPServer)
 {
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
@@ -4871,18 +4877,20 @@ HRESULT VirtualBox::i_unregisterDHCPServer(DHCPServer *aDHCPServer,
     AutoCaller dhcpServerCaller(aDHCPServer);
     AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());
 
+    AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->allDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     m->allDHCPServers.removeChild(aDHCPServer);
+    // we need to release the list lock before we attempt to acquire locks
+    // on other objects in i_saveSettings (see @bugref{7500})
+    alock.release();
 
-    HRESULT rc = S_OK;
+    HRESULT rc = i_saveSettings();
 
-    if (aSaveSettings)
+    // undo the changes if we failed to save them
+    if (FAILED(rc))
     {
-        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
-        rc = i_saveSettings();
-        vboxLock.release();
-
-        if (FAILED(rc))
-            rc = i_registerDHCPServer(aDHCPServer, false /* aSaveSettings */);
+        alock.acquire();
+        m->allDHCPServers.addChild(aDHCPServer);
     }
 
     return rc;
