@@ -539,8 +539,8 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
     }
 
 #ifndef IN_RING3
-    /* Reset and Set Default commands must be run in R3. */
-    if (cmd == ACMD_RESET || cmd == ACMD_SET_DEFAULT)
+    /* Reset, Enable, and Set Default commands must be run in R3. */
+    if (cmd == ACMD_RESET || cmd == ACMD_ENABLE || cmd == ACMD_SET_DEFAULT)
         return VINF_IOM_R3_IOPORT_WRITE;
 #endif
 
