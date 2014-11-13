@@ -271,7 +271,9 @@ bool WinAltGrMonitor::isCurrentEventDefinitelyFake(unsigned iDownScanCode,
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
 
-		if (   fKeyDown
+	if (messageTime != peekMsg.time)
+	    return false;
+	if (   fKeyDown
         && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
         return false;
     if (   !fKeyDown
