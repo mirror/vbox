@@ -2,8 +2,6 @@
 ; @file
 ; VBoxNetLwf.inf - VirtualBox Bridged Networking Driver inf file
 ;
-; Note: We use the same component id as the old NetFlt implementation 
-;
 ;
 ; Copyright (C) 2014 Oracle Corporation
 ;
@@ -31,13 +29,13 @@ Provider    = %Provider%
 [ControlFlags]
 
 [VBox]
-%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, sun_VBoxNetFlt
+%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
 
 [VBox.NTx86]
-%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, sun_VBoxNetFlt
+%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
 
 [VBox.NTamd64]
-%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, sun_VBoxNetFlt
+%VBoxNetLwf_Desc% = VBoxNetLwf.ndi, oracle_VBoxNetLwf
 
 [VBoxNetLwf.ndi]
 AddReg           = VBoxNetLwf.ndi.AddReg, VBoxNetLwf.AddReg

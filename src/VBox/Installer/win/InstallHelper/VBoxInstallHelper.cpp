@@ -497,8 +497,6 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
 #define NETADP_ID  L"sun_VBoxNetAdp" /** @todo Needs to be changed (?). */
 
 #define NETLWF_INF_NAME L"VBoxNetLwf.inf"
-#define NETLWF_ID       L"sun_VBoxNetLwf" /** @todo Needs to be changed (?). */
-#define NETADP6_ID      L"sun_VBoxNetAdp6" /** @todo Needs to be changed (?). */
 
 static MSIHANDLE g_hCurrentModule = NULL;
 
@@ -859,7 +857,7 @@ UINT __stdcall InstallNetLwf(MSIHANDLE hModule)
         uErr = doNetCfgInit(hModule, &pNetCfg, TRUE);
         if (uErr == ERROR_SUCCESS)
         {
-            WCHAR wszInfName[] = L"VBoxNetLwf.inf";
+            WCHAR wszInfName[] = NETLWF_INF_NAME;
             WCHAR wszInf[MAX_PATH];
             DWORD cchInf = RT_ELEMENTS(wszInf) - sizeof(NETLWF_INF_NAME) - 1;
             UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszInf, &cchInf);

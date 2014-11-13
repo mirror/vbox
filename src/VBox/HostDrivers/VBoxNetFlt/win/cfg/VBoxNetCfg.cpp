@@ -2087,11 +2087,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetAdpUninstall(IN INetCfg *pNc, IN LPC
     return vboxNetCfgWinNetAdpUninstall(pNc, pwszId, SUOI_FORCEDELETE);
 }
 
-/*
- * Use the same id as does the old implementation for NDIS 5
- * #define VBOXNETCFGWIN_NETLWF_ID    L"oracle_VBoxNetLwf"
- */
-#define VBOXNETCFGWIN_NETLWF_ID    L"sun_VBoxNetFlt"
+#define VBOXNETCFGWIN_NETLWF_ID    L"oracle_VBoxNetLwf"
 
 static HRESULT vboxNetCfgWinNetLwfUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
 {

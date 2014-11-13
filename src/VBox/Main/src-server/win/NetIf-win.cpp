@@ -1480,8 +1480,13 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         /* for the protocol-based approach for now we just get all miniports the MS_TCPIP protocol binds to */
         hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
 # else
-        /* for the filter-based approach we get all miniports our filter (sun_VBoxNetFlt)is bound to */
-        hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
+        /* for the filter-based approach we get all miniports our filter (oracle_VBoxNetLwf)is bound to */
+        hr = pNc->FindComponent(L"oracle_VBoxNetLwf", &pTcpIpNcc);
+        if (hr != S_OK)
+        {
+            /* fall back to NDIS5 miniport lookup (sun_VBoxNetFlt) */
+            hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
+        }
 #  ifndef VBOX_WITH_HARDENING
         if (hr != S_OK)
         {
@@ -1570,7 +1575,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
         }
         else
         {
-            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)\n", hr));
+            LogRel(("failed to get the oracle_VBoxNetLwf(sun_VBoxNetFlt) component, error (0x%x)\n", hr));
         }
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
