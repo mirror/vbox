@@ -308,7 +308,7 @@ private slots:
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Handles menu-bar configuration-change. */
-    void sltHandleMenuBarConfigurationChange();
+    void sltHandleMenuBarConfigurationChange(const QString &strMachineID);
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */

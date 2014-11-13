@@ -57,8 +57,16 @@ signals:
 
 public:
 
-    /** Constructor, taking @a pActionPool argument. */
-    UIMenuBarEditorWidget(UIActionPool *pActionPool);
+    /** Constructor.
+      * @param pParent      is passed to QWidget constructor,
+      * @param strMachineID brings the machine ID to be used by the editor,
+      * @param pActionPool  brings the action-pool to be used by the editor. */
+    UIMenuBarEditorWidget(QWidget *pParent,
+                          const QString &strMachineID,
+                          UIActionPool *pActionPool);
+
+    /** Returns the machine ID instance. */
+    const QString& machineID() const { return m_strMachineID; }
 
     /** Returns the action-pool reference. */
     const UIActionPool* actionPool() const { return m_pActionPool; }
@@ -66,7 +74,7 @@ public:
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange();
+    void sltHandleConfigurationChange(const QString &strMachineID);
 
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();
@@ -142,6 +150,8 @@ private:
 
     /** @name General
       * @{ */
+        /** Holds the machine ID instance. */
+        QString m_strMachineID;
         /** Holds the action-pool reference. */
         const UIActionPool *m_pActionPool;
     /** @} */
@@ -159,9 +169,12 @@ private:
     /** @} */
 };
 
-
-UIMenuBarEditorWidget::UIMenuBarEditorWidget(UIActionPool *pActionPool)
-    : m_pActionPool(pActionPool)
+UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
+                                             const QString &strMachineID,
+                                             UIActionPool *pActionPool)
+    : QIWithRetranslateUI2<QWidget>(pParent)
+    , m_strMachineID(strMachineID)
+    , m_pActionPool(pActionPool)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pButtonClose(0)
@@ -170,8 +183,12 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(UIActionPool *pActionPool)
     prepare();
 }
 
-void UIMenuBarEditorWidget::sltHandleConfigurationChange()
+void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
+    /* Skip unrelated machine IDs: */
+    if (machineID() != strMachineID)
+        return;
+
     /* Update menus: */
     updateMenus();
 }
@@ -191,11 +208,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::MenuType type =
                 static_cast<UIExtraDataMetaDefs::MenuType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuType restrictions = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::MenuType restrictions = gEDataManager->restrictedRuntimeMenuTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::MenuType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, machineID());
             break;
         }
 #ifdef Q_WS_MAC
@@ -205,11 +222,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::MenuApplicationActionType type =
                 static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuApplicationActionType restrictions = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::MenuApplicationActionType restrictions = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::MenuApplicationActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(restrictions, machineID());
             break;
         }
 #endif /* Q_WS_MAC */
@@ -219,11 +236,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::RuntimeMenuMachineActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictions = gEDataManager->restrictedRuntimeMenuMachineActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictions = gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(restrictions, machineID());
             break;
         }
         case UIExtraDataMetaDefs::MenuType_View:
@@ -232,11 +249,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::RuntimeMenuViewActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictions = gEDataManager->restrictedRuntimeMenuViewActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictions = gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuViewActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuViewActionTypes(restrictions, machineID());
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Input:
@@ -245,11 +262,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::RuntimeMenuInputActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictions = gEDataManager->restrictedRuntimeMenuInputActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictions = gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuInputActionTypes(restrictions, machineID());
             break;
         }
         case UIExtraDataMetaDefs::MenuType_Devices:
@@ -258,11 +275,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictions = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictions = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(restrictions, machineID());
             break;
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -272,11 +289,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictions = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictions = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(restrictions, machineID());
             break;
         }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -286,11 +303,11 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             const UIExtraDataMetaDefs::MenuHelpActionType type =
                 static_cast<UIExtraDataMetaDefs::MenuHelpActionType>(pAction->property("type").toInt());
             /* Load current menu-bar restrictions: */
-            UIExtraDataMetaDefs::MenuHelpActionType restrictions = gEDataManager->restrictedRuntimeMenuHelpActionTypes(vboxGlobal().managedVMUuid());
+            UIExtraDataMetaDefs::MenuHelpActionType restrictions = gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID());
             /* Invert restriction for sender type: */
             restrictions = (UIExtraDataMetaDefs::MenuHelpActionType)(restrictions ^ type);
             /* Save updated menu-bar restrictions: */
-            gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(restrictions, vboxGlobal().managedVMUuid());
+            gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(restrictions, machineID());
             break;
         }
         default: break;
@@ -362,8 +379,8 @@ void UIMenuBarEditorWidget::prepareMenus()
     prepareMenuHelp();
 
     /* Listen for the menu-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()),
-            this, SLOT(sltHandleConfigurationChange()));
+    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
+            this, SLOT(sltHandleConfigurationChange(const QString&)));
 
     /* Update menus: */
     updateMenus();
@@ -643,7 +660,7 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
 void UIMenuBarEditorWidget::updateMenus()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuType restrictionsMenuBar = gEDataManager->restrictedRuntimeMenuTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::MenuType restrictionsMenuBar = gEDataManager->restrictedRuntimeMenuTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -686,7 +703,7 @@ void UIMenuBarEditorWidget::updateMenus()
 void UIMenuBarEditorWidget::updateMenuApplication()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuApplicationActionType restrictionsMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::MenuApplicationActionType restrictionsMenuApplication = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -716,7 +733,7 @@ void UIMenuBarEditorWidget::updateMenuApplication()
 void UIMenuBarEditorWidget::updateMenuMachine()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionsMenuMachine = gEDataManager->restrictedRuntimeMenuMachineActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionsMenuMachine = gEDataManager->restrictedRuntimeMenuMachineActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -745,7 +762,7 @@ void UIMenuBarEditorWidget::updateMenuMachine()
 void UIMenuBarEditorWidget::updateMenuView()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionsMenuView = gEDataManager->restrictedRuntimeMenuViewActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionsMenuView = gEDataManager->restrictedRuntimeMenuViewActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -774,7 +791,7 @@ void UIMenuBarEditorWidget::updateMenuView()
 void UIMenuBarEditorWidget::updateMenuInput()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictionsMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictionsMenuInput = gEDataManager->restrictedRuntimeMenuInputActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -803,7 +820,7 @@ void UIMenuBarEditorWidget::updateMenuInput()
 void UIMenuBarEditorWidget::updateMenuDevices()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionsMenuDevices = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionsMenuDevices = gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -833,7 +850,7 @@ void UIMenuBarEditorWidget::updateMenuDevices()
 void UIMenuBarEditorWidget::updateMenuDebug()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictionsMenuDebug = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictionsMenuDebug = gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -863,7 +880,7 @@ void UIMenuBarEditorWidget::updateMenuDebug()
 void UIMenuBarEditorWidget::updateMenuHelp()
 {
     /* Recache menu-bar configuration: */
-    const UIExtraDataMetaDefs::MenuHelpActionType restrictionsMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(vboxGlobal().managedVMUuid());
+    const UIExtraDataMetaDefs::MenuHelpActionType restrictionsMenuHelp = gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID());
     /* Get static meta-object: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
 
@@ -963,9 +980,9 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
 
 UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
 #ifndef Q_WS_MAC
-    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #else /* Q_WS_MAC */
-    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #endif /* Q_WS_MAC */
 {
 }

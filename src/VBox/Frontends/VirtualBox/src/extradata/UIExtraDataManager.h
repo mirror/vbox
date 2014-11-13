@@ -68,9 +68,9 @@ signals:
     void sigRuntimeUIShortcutChange();
 
     /** Notifies about menu-bar configuration change. */
-    void sigMenuBarConfigurationChange();
+    void sigMenuBarConfigurationChange(const QString &strMachineID);
     /** Notifies about status-bar configuration change. */
-    void sigStatusBarConfigurationChange();
+    void sigStatusBarConfigurationChange(const QString &strMachineID);
 
     /** Notifies about HID LEDs synchronization state change. */
     void sigHidLedsSyncStateChange(bool fEnabled);

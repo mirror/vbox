@@ -180,7 +180,7 @@ public:
 protected slots:
 
     /** Handles configuration-change. */
-    void sltHandleConfigurationChange();
+    void sltHandleConfigurationChange(const QString &strMachineID);
 
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Normal, Scale). */
     void sltPrepareMenuViewScreen();

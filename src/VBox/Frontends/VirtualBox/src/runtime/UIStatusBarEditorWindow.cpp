@@ -126,13 +126,19 @@ signals:
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor. */
-    UIStatusBarEditorWidget(QWidget *pParent = 0);
+    /** Constructor.
+      * @param pParent      is passed to QWidget constructor,
+      * @param strMachineID brings the machine ID to be used by the editor. */
+    UIStatusBarEditorWidget(QWidget *pParent,
+                            const QString &strMachineID);
+
+    /** Returns the machine ID instance. */
+    const QString& machineID() const { return m_strMachineID; }
 
 private slots:
 
     /** Handles configuration change. */
-    void sltHandleConfigurationChange();
+    void sltHandleConfigurationChange(const QString &strMachineID);
 
     /** Handles button click. */
     void sltHandleButtonClick();
@@ -169,6 +175,12 @@ private:
 
     /** Returns position for passed @a type. */
     int position(IndicatorType type) const;
+
+    /** @name General
+      * @{ */
+        /** Holds the machine ID instance. */
+        QString m_strMachineID;
+    /** @} */
 
     /** @name Contents
       * @{ */
@@ -344,8 +356,10 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
 }
 
 
-UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent /* = 0 */)
+UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
+                                                 const QString &strMachineID)
     : QIWithRetranslateUI2<QWidget>(pParent)
+    , m_strMachineID(strMachineID)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
     , m_pButtonDropToken(0)
@@ -355,8 +369,12 @@ UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-void UIStatusBarEditorWidget::sltHandleConfigurationChange()
+void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
+    /* Skip unrelated machine IDs: */
+    if (machineID() != strMachineID)
+        return;
+
     /* Update status buttons: */
     updateStatusButtons();
 }
@@ -372,7 +390,7 @@ void UIStatusBarEditorWidget::sltHandleButtonClick()
 
     /* Load current status-bar indicator restrictions: */
     QList<IndicatorType> restrictions =
-        gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+        gEDataManager->restrictedStatusBarIndicators(machineID());
 
     /* Invert restriction for sender type: */
     if (restrictions.contains(type))
@@ -381,7 +399,7 @@ void UIStatusBarEditorWidget::sltHandleButtonClick()
         restrictions.append(type);
 
     /* Save updated status-bar indicator restrictions: */
-    gEDataManager->setRestrictedStatusBarIndicators(restrictions, vboxGlobal().managedVMUuid());
+    gEDataManager->setRestrictedStatusBarIndicators(restrictions, machineID());
 }
 
 void UIStatusBarEditorWidget::sltHandleDragObjectDestroy()
@@ -463,8 +481,8 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
     }
 
     /* Listen for the status-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange()),
-            this, SLOT(sltHandleConfigurationChange()));
+    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
+            this, SLOT(sltHandleConfigurationChange(const QString&)));
 
     /* Update status buttons: */
     updateStatusButtons();
@@ -489,8 +507,8 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
 void UIStatusBarEditorWidget::updateStatusButtons()
 {
     /* Recache status-bar configuration: */
-    m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
-    m_order = gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
+    m_restrictions = gEDataManager->restrictedStatusBarIndicators(machineID());
+    m_order = gEDataManager->statusBarIndicatorOrder(machineID());
     for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
         if (iType != IndicatorType_Invalid && iType != IndicatorType_KeyboardExtension &&
             !m_order.contains((IndicatorType)iType))
@@ -687,7 +705,7 @@ void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
 
     /* Load current status-bar indicator order and make sure it's complete: */
     QList<IndicatorType> order =
-        gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
+        gEDataManager->statusBarIndicatorOrder(machineID());
     for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
         if (iType != IndicatorType_Invalid && iType != IndicatorType_KeyboardExtension &&
             !order.contains((IndicatorType)iType))
@@ -702,7 +720,7 @@ void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
     order.insert(iPosition, droppedType);
 
     /* Save updated status-bar indicator order: */
-    gEDataManager->setStatusBarIndicatorOrder(order, vboxGlobal().managedVMUuid());
+    gEDataManager->setStatusBarIndicatorOrder(order, machineID());
 }
 
 int UIStatusBarEditorWidget::position(IndicatorType type) const
@@ -718,7 +736,7 @@ int UIStatusBarEditorWidget::position(IndicatorType type) const
 
 
 UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
-    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget, UISlidingToolBar::Position_Bottom)
+    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
 {
 }
 
