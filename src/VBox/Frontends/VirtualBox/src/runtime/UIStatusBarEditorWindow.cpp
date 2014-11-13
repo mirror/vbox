@@ -29,8 +29,6 @@
 # include <QPainter>
 # include <QPixmap>
 # include <QDrag>
-# include <QList>
-# include <QMap>
 
 /* GUI includes: */
 # include "UIStatusBarEditorWindow.h"
@@ -38,7 +36,6 @@
 # include "UIMachineWindow.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
-# include "QIWithRetranslateUI.h"
 # include "QIToolButton.h"
 # include "VBoxGlobal.h"
 
@@ -110,105 +107,6 @@ private:
     bool m_fHovered;
     /** Holds the last mouse-press position. */
     QPoint m_mousePressPosition;
-};
-
-
-/** QWidget reimplementation
-  * used as status-bar editor widget. */
-class UIStatusBarEditorWidget : public QIWithRetranslateUI2<QWidget>
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about Cancel button click. */
-    void sigCancelClicked();
-
-public:
-
-    /** Constructor.
-      * @param pParent      is passed to QWidget constructor,
-      * @param strMachineID brings the machine ID to be used by the editor. */
-    UIStatusBarEditorWidget(QWidget *pParent,
-                            const QString &strMachineID);
-
-    /** Returns the machine ID instance. */
-    const QString& machineID() const { return m_strMachineID; }
-
-private slots:
-
-    /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QString &strMachineID);
-
-    /** Handles button click. */
-    void sltHandleButtonClick();
-
-    /** Handles drag object destroy. */
-    void sltHandleDragObjectDestroy();
-
-private:
-
-    /** Prepare routine. */
-    void prepare();
-    /** Prepare status buttons routine. */
-    void prepareStatusButtons();
-    /** Prepare status button routine. */
-    void prepareStatusButton(IndicatorType type);
-
-    /** Updates status buttons. */
-    void updateStatusButtons();
-
-    /** Retranslation routine. */
-    virtual void retranslateUi();
-
-    /** Paint event handler. */
-    virtual void paintEvent(QPaintEvent *pEvent);
-
-    /** Drag-enter event handler. */
-    virtual void dragEnterEvent(QDragEnterEvent *pEvent);
-    /** Drag-move event handler. */
-    virtual void dragMoveEvent(QDragMoveEvent *pEvent);
-    /** Drag-leave event handler. */
-    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent);
-    /** Drop event handler. */
-    virtual void dropEvent(QDropEvent *pEvent);
-
-    /** Returns position for passed @a type. */
-    int position(IndicatorType type) const;
-
-    /** @name General
-      * @{ */
-        /** Holds the machine ID instance. */
-        QString m_strMachineID;
-    /** @} */
-
-    /** @name Contents
-      * @{ */
-        /** Holds the main-layout instance. */
-        QHBoxLayout *m_pMainLayout;
-        /** Holds the button-layout instance. */
-        QHBoxLayout *m_pButtonLayout;
-        /** Holds the close-button instance. */
-        QIToolButton *m_pButtonClose;
-        /** Holds status-bar buttons. */
-        QMap<IndicatorType, UIStatusBarEditorButton*> m_buttons;
-    /** @} */
-
-    /** @name Contents: Restrictions
-      * @{ */
-        /** Holds the cached status-bar button restrictions. */
-        QList<IndicatorType> m_restrictions;
-    /** @} */
-
-    /** @name Contents: Order
-      * @{ */
-        /** Holds the cached status-bar button order. */
-        QList<IndicatorType> m_order;
-        /** Holds the token-button to drop dragged-button nearby. */
-        UIStatusBarEditorButton *m_pButtonDropToken;
-        /** Holds whether dragged-button should be dropped <b>after</b> the token-button. */
-        bool m_fDropAfterTokenButton;
-    /** @} */
 };
 
 
@@ -357,14 +255,25 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
 
 
 UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
-                                                 const QString &strMachineID)
+                                                 bool fStartedFromVMSettings /* = true */,
+                                                 const QString &strMachineID /* = QString() */)
     : QIWithRetranslateUI2<QWidget>(pParent)
+    , m_fPrepared(false)
+    , m_fStartedFromVMSettings(fStartedFromVMSettings)
     , m_strMachineID(strMachineID)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
     , m_pButtonDropToken(0)
     , m_fDropAfterTokenButton(true)
 {
+    /* Prepare: */
+    prepare();
+}
+
+void UIStatusBarEditorWidget::setMachineID(const QString &strMachineID)
+{
+    /* Remember new machine ID: */
+    m_strMachineID = strMachineID;
     /* Prepare: */
     prepare();
 }
@@ -413,6 +322,14 @@ void UIStatusBarEditorWidget::sltHandleDragObjectDestroy()
 
 void UIStatusBarEditorWidget::prepare()
 {
+    /* Do nothing if already prepared: */
+    if (m_fPrepared)
+        return;
+
+    /* Do not prepare if machine ID is not set: */
+    if (m_strMachineID.isEmpty())
+        return;
+
     /* Track D&D events: */
     setAcceptDrops(true);
 
@@ -433,18 +350,21 @@ void UIStatusBarEditorWidget::prepare()
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
 #endif /* !Q_WS_MAC */
         m_pMainLayout->setSpacing(0);
-        /* Create close-button: */
-        m_pButtonClose = new QIToolButton;
-        AssertPtrReturnVoid(m_pButtonClose);
+        /* Create close-button if necessary: */
+        if (!m_fStartedFromVMSettings)
         {
-            /* Configure close-button: */
-            m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
-            m_pButtonClose->setMinimumSize(QSize(1, 1));
-            m_pButtonClose->setShortcut(Qt::Key_Escape);
-            m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
-            connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
-            /* Add close-button into main-layout: */
-            m_pMainLayout->addWidget(m_pButtonClose);
+            m_pButtonClose = new QIToolButton;
+            AssertPtrReturnVoid(m_pButtonClose);
+            {
+                /* Configure close-button: */
+                m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
+                m_pButtonClose->setMinimumSize(QSize(1, 1));
+                m_pButtonClose->setShortcut(Qt::Key_Escape);
+                m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
+                connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
+                /* Add close-button into main-layout: */
+                m_pMainLayout->addWidget(m_pButtonClose);
+            }
         }
         /* Insert stretch: */
         m_pMainLayout->addStretch();
@@ -461,6 +381,9 @@ void UIStatusBarEditorWidget::prepare()
         /* Prepare status buttons: */
         prepareStatusButtons();
     }
+
+    /* Mark as prepared: */
+    m_fPrepared = true;
 
     /* Translate contents: */
     retranslateUi();
@@ -535,8 +458,9 @@ void UIStatusBarEditorWidget::updateStatusButtons()
 
 void UIStatusBarEditorWidget::retranslateUi()
 {
-    /* Translate close-button: */
-    m_pButtonClose->setToolTip(tr("Close"));
+    /* Translate close-button if necessary: */
+    if (!m_fStartedFromVMSettings && m_pButtonClose)
+        m_pButtonClose->setToolTip(tr("Close"));
 }
 
 void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
@@ -736,7 +660,7 @@ int UIStatusBarEditorWidget::position(IndicatorType type) const
 
 
 UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
-    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
+    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, false, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
 {
 }
 

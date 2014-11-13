@@ -644,6 +644,40 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="m_pTabMachineWindow">
+      <attribute name="title">
+       <string>Machine &amp;Window</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="m_pLayoutTabMachineWindow">
+       <item>
+        <widget class="UIMenuBarEditorWidget" name="m_pMenuBarEditor">
+         <property name="whatsThis">
+          <string>Allows to modify VM menu-bar contents.</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="m_pSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="UIStatusBarEditorWidget" name="m_pStatusBarEditor">
+         <property name="whatsThis">
+          <string>Allows to modify VM status-bar contents.</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -669,6 +703,16 @@
    <class>UIFilmContainer</class>
    <extends>QWidget</extends>
    <header>UIFilmContainer.h</header>
+  </customwidget>
+  <customwidget>
+   <class>UIMenuBarEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>UIMenuBarEditorWindow.h</header>
+  </customwidget>
+  <customwidget>
+   <class>UIStatusBarEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>UIStatusBarEditorWindow.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

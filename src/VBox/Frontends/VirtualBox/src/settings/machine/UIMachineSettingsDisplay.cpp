@@ -28,6 +28,7 @@
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UIConverter.h"
+# include "UIActionPool.h"
 
 /* COM includes: */
 # include "CVRDEServer.h"
@@ -48,9 +49,16 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_CRHGSMI
     , m_fWddmModeSupported(false)
 #endif /* VBOX_WITH_CRHGSMI */
+    , m_pActionPool(0)
 {
     /* Prepare: */
     prepare();
+}
+
+UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
+{
+    /* Cleanup: */
+    cleanup();
 }
 
 void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
@@ -177,6 +185,12 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoCaptureFrameRate->setValue(displayData.m_iVideoCaptureFrameRate);
     m_pEditorVideoCaptureBitRate->setValue(displayData.m_iVideoCaptureBitRate);
     m_pScrollerVideoCaptureScreens->setValue(displayData.m_screens);
+
+    /* Prepare Machine Window data: */
+    const QString strMachineID = m_machine.GetId();
+    m_pMenuBarEditor->setMachineID(strMachineID);
+    m_pStatusBarEditor->setMachineID(strMachineID);
+    m_pMenuBarEditor->setActionPool(m_pActionPool);
 
     /* Polish page finally: */
     polishPage();
@@ -692,6 +706,7 @@ void UIMachineSettingsDisplay::prepare()
     prepareVideoTab();
     prepareRemoteDisplayTab();
     prepareVideoCaptureTab();
+    prepareMachineWindowTab();
 
     /* Prepare validation: */
     prepareValidation();
@@ -840,6 +855,12 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
 }
 
+void UIMachineSettingsDisplay::prepareMachineWindowTab()
+{
+    /* Create personal action-pool: */
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+}
+
 void UIMachineSettingsDisplay::prepareValidation()
 {
     /* Configure validation: */
@@ -850,6 +871,18 @@ void UIMachineSettingsDisplay::prepareValidation()
     connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
     connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
     connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
+}
+
+void UIMachineSettingsDisplay::cleanupMachineWindowTab()
+{
+    /* Destroy personal action-pool: */
+    UIActionPool::destroy(m_pActionPool);
+}
+
+void UIMachineSettingsDisplay::cleanup()
+{
+    /* Cleanup tabs: */
+    cleanupMachineWindowTab();
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()

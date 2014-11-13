@@ -24,6 +24,9 @@
 /* COM includes: */
 #include "CGuestOSType.h"
 
+/* Forward declarations: */
+class UIActionPool;
+
 /* Machine settings / Display page / Data: */
 struct UIDataSettingsMachineDisplay
 {
@@ -114,8 +117,10 @@ class UIMachineSettingsDisplay : public UISettingsPageMachine,
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIMachineSettingsDisplay();
+    /** Destructor. */
+    ~UIMachineSettingsDisplay();
 
     /* API: Correlation stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
@@ -174,12 +179,23 @@ private slots:
 
 private:
 
-    /* Helpers: Prepare stuff: */
+    /** Prepare routine. */
     void prepare();
+    /** Prepare routine: Video tab. */
     void prepareVideoTab();
+    /** Prepare routine: Remote Display tab. */
     void prepareRemoteDisplayTab();
+    /** Prepare routine: Video Capture tab. */
     void prepareVideoCaptureTab();
+    /** Prepare routine: Machine Window tab. */
+    void prepareMachineWindowTab();
+    /** Prepare routine: Validation. */
     void prepareValidation();
+
+    /** Cleanup routine: Machine Window tab. */
+    void cleanupMachineWindowTab();
+    /** Cleanup routine. */
+    void cleanup();
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
@@ -216,6 +232,9 @@ private:
 
     /* Cache: */
     UICacheSettingsMachineDisplay m_cache;
+
+    /** Holds the action-pool instance. */
+    UIActionPool *m_pActionPool;
 };
 
 #endif // __UIMachineSettingsDisplay_h__
