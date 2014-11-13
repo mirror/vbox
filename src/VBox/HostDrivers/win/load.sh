@@ -15,7 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-if test -n "$Path" -a test -z "$PATH"; then
+if test -n "$Path" -a -z "$PATH"; then
     export PATH="$Path"
 fi
 
