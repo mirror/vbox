@@ -26,7 +26,6 @@
 # include <QMenuBar>
 # include <QPainter>
 # include <QMenu>
-# include <QMap>
 
 /* GUI includes: */
 # include "UIMenuBarEditorWindow.h"
@@ -36,149 +35,41 @@
 # include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIToolBar.h"
-# include "QIWithRetranslateUI.h"
 # include "QIToolButton.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-
-/** QWidget reimplementation
-  * used as menu-bar editor widget. */
-class UIMenuBarEditorWidget : public QIWithRetranslateUI2<QWidget>
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about Cancel button click. */
-    void sigCancelClicked();
-
-public:
-
-    /** Constructor.
-      * @param pParent      is passed to QWidget constructor,
-      * @param strMachineID brings the machine ID to be used by the editor,
-      * @param pActionPool  brings the action-pool to be used by the editor. */
-    UIMenuBarEditorWidget(QWidget *pParent,
-                          const QString &strMachineID,
-                          UIActionPool *pActionPool);
-
-    /** Returns the machine ID instance. */
-    const QString& machineID() const { return m_strMachineID; }
-
-    /** Returns the action-pool reference. */
-    const UIActionPool* actionPool() const { return m_pActionPool; }
-
-private slots:
-
-    /** Handles configuration change. */
-    void sltHandleConfigurationChange(const QString &strMachineID);
-
-    /** Handles menu-bar menu click. */
-    void sltHandleMenuBarMenuClick();
-
-private:
-
-    /** Prepare routine. */
-    void prepare();
-
-#ifdef Q_WS_MAC
-    /** Prepare named menu routine. */
-    QMenu* prepareNamedMenu(const QString &strName);
-#endif /* Q_WS_MAC */
-    /** Prepare copied menu routine. */
-    QMenu* prepareCopiedMenu(const UIAction *pAction);
-#if 0
-    /** Prepare copied sub-menu routine. */
-    QMenu* prepareCopiedSubMenu(QMenu *pMenu, const UIAction *pAction);
-#endif
-    /** Prepare named action routine. */
-    QAction* prepareNamedAction(QMenu *pMenu, const QString &strName,
-                                int iExtraDataID, const QString &strExtraDataID);
-    /** Prepare copied action routine. */
-    QAction* prepareCopiedAction(QMenu *pMenu, const UIAction *pAction);
-
-    /** Prepare menus routine. */
-    void prepareMenus();
-#ifdef Q_WS_MAC
-    /** Mac OS X: Prepare 'Application' menu routine. */
-    void prepareMenuApplication();
-#endif /* Q_WS_MAC */
-    /** Prepare 'Machine' menu routine. */
-    void prepareMenuMachine();
-    /** Prepare 'View' menu routine. */
-    void prepareMenuView();
-    /** Prepare 'Input' menu routine. */
-    void prepareMenuInput();
-    /** Prepare 'Devices' menu routine. */
-    void prepareMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Prepare 'Debug' menu routine. */
-    void prepareMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Prepare 'Help' menu routine. */
-    void prepareMenuHelp();
-
-    /** Updates menus routine. */
-    void updateMenus();
-#ifdef Q_WS_MAC
-    /** Mac OS X: Updates 'Application' menu routine. */
-    void updateMenuApplication();
-#endif /* Q_WS_MAC */
-    /** Updates 'Machine' menu routine. */
-    void updateMenuMachine();
-    /** Updates 'View' menu routine. */
-    void updateMenuView();
-    /** Updates 'Input' menu routine. */
-    void updateMenuInput();
-    /** Updates 'Devices' menu routine. */
-    void updateMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Updates 'Debug' menu routine. */
-    void updateMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
-    /** Updates 'Help' menu routine. */
-    void updateMenuHelp();
-
-    /** Retranslation routine. */
-    virtual void retranslateUi();
-
-    /** Paint event handler. */
-    virtual void paintEvent(QPaintEvent *pEvent);
-
-    /** @name General
-      * @{ */
-        /** Holds the machine ID instance. */
-        QString m_strMachineID;
-        /** Holds the action-pool reference. */
-        const UIActionPool *m_pActionPool;
-    /** @} */
-
-    /** @name Contents
-      * @{ */
-        /** Holds the main-layout instance. */
-        QHBoxLayout *m_pMainLayout;
-        /** Holds the tool-bar instance. */
-        UIToolBar *m_pToolBar;
-        /** Holds the close-button instance. */
-        QIToolButton *m_pButtonClose;
-        /** Holds tool-bar action references. */
-        QMap<QString, QAction*> m_actions;
-    /** @} */
-};
-
 UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
-                                             const QString &strMachineID,
-                                             UIActionPool *pActionPool)
+                                             bool fStartedFromVMSettings /* = true */,
+                                             const QString &strMachineID /* = QString() */,
+                                             UIActionPool *pActionPool /* = 0 */)
     : QIWithRetranslateUI2<QWidget>(pParent)
+    , m_fPrepared(false)
+    , m_fStartedFromVMSettings(fStartedFromVMSettings)
     , m_strMachineID(strMachineID)
     , m_pActionPool(pActionPool)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pButtonClose(0)
 {
+    /* Prepare: */
+    prepare();
+}
+
+void UIMenuBarEditorWidget::setMachineID(const QString &strMachineID)
+{
+    /* Remember new machine ID: */
+    m_strMachineID = strMachineID;
+    /* Prepare: */
+    prepare();
+}
+
+void UIMenuBarEditorWidget::setActionPool(UIActionPool *pActionPool)
+{
+    /* Remember new action-pool: */
+    m_pActionPool = pActionPool;
     /* Prepare: */
     prepare();
 }
@@ -316,6 +207,14 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
 
 void UIMenuBarEditorWidget::prepare()
 {
+    /* Do nothing if already prepared: */
+    if (m_fPrepared)
+        return;
+
+    /* Do not prepare if machine ID or action-pool is not set: */
+    if (m_strMachineID.isEmpty() || !m_pActionPool)
+        return;
+
     /* Create main-layout: */
     m_pMainLayout = new QHBoxLayout(this);
     AssertPtrReturnVoid(m_pMainLayout);
@@ -344,20 +243,26 @@ void UIMenuBarEditorWidget::prepare()
         }
         /* Insert stretch: */
         m_pMainLayout->addStretch();
-        /* Create close-button: */
-        m_pButtonClose = new QIToolButton;
-        AssertPtrReturnVoid(m_pButtonClose);
+        /* Create close-button if necessary: */
+        if (!m_fStartedFromVMSettings)
         {
-            /* Configure close-button: */
-            m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
-            m_pButtonClose->setMinimumSize(QSize(1, 1));
-            m_pButtonClose->setShortcut(Qt::Key_Escape);
-            m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
-            connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
-            /* Add close-button into main-layout: */
-            m_pMainLayout->addWidget(m_pButtonClose);
+            m_pButtonClose = new QIToolButton;
+            AssertPtrReturnVoid(m_pButtonClose);
+            {
+                /* Configure close-button: */
+                m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
+                m_pButtonClose->setMinimumSize(QSize(1, 1));
+                m_pButtonClose->setShortcut(Qt::Key_Escape);
+                m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
+                connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
+                /* Add close-button into main-layout: */
+                m_pMainLayout->addWidget(m_pButtonClose);
+            }
         }
     }
+
+    /* Mark as prepared: */
+    m_fPrepared = true;
 
     /* Translate contents: */
     retranslateUi();
@@ -908,8 +813,9 @@ void UIMenuBarEditorWidget::updateMenuHelp()
 
 void UIMenuBarEditorWidget::retranslateUi()
 {
-    /* Translate close-button: */
-    m_pButtonClose->setToolTip(tr("Close"));
+    /* Translate close-button if necessary: */
+    if (!m_fStartedFromVMSettings && m_pButtonClose)
+        m_pButtonClose->setToolTip(tr("Close"));
 }
 
 void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
@@ -973,6 +879,8 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
     painter.drawLine(QLine(QPoint(5 + 1, 0),                                  QPoint(5 + 1, height() - 1 - 5 - 1)));
     painter.drawLine(QLine(QPoint(5 + 1, height() - 1 - 5 - 1),               QPoint(width() - 1 - 5 - 1, height() - 1 - 5 - 1)));
     painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, height() - 1 - 5 - 1), QPoint(width() - 1 - 5 - 1, 0)));
+    if (m_fStartedFromVMSettings)
+        painter.drawLine(QLine(QPoint(width() - 1 - 5 - 1, 0), QPoint(5 + 1, 0)));
     painter.restore();
 #endif /* Q_WS_WIN || Q_WS_X11 */
 }
@@ -980,12 +888,10 @@ void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
 
 UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
 #ifndef Q_WS_MAC
-    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #else /* Q_WS_MAC */
-    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #endif /* Q_WS_MAC */
 {
 }
-
-#include "UIMenuBarEditorWindow.moc"
 
