@@ -3511,11 +3511,25 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
 #endif /* Q_WS_MAC */
         }
     }
-    /* Make sure event came for the currently running VM: */
-    else if (   vboxGlobal().isVMConsoleProcess()
-             && strMachineID == vboxGlobal().managedVMUuid())
+    /* Machine extra-data 'change' event: */
+    else
     {
-        /* Status-bar configuration change: */
+        /* Current VM only: */
+        if (   vboxGlobal().isVMConsoleProcess()
+            && strMachineID == vboxGlobal().managedVMUuid())
+        {
+            /* HID LEDs sync state changed (allowed if not restricted)? */
+            if (strKey == GUI_HidLedsSync)
+                emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
+#ifdef Q_WS_MAC
+            /* 'Dock icon' appearance changed (allowed if not restricted)? */
+            else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
+                     || strKey == GUI_RealtimeDockIconUpdateMonitor)
+                emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
+#endif /* Q_WS_MAC */
+        }
+
+        /* Menu-bar configuration change: */
         if (strKey == GUI_MenuBar_Enabled ||
             strKey == GUI_RestrictedRuntimeMenus ||
 #ifdef Q_WS_MAC
@@ -3529,21 +3543,12 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
             strKey == GUI_RestrictedRuntimeDebuggerMenuActions ||
 #endif /* VBOX_WITH_DEBUGGER_GUI */
             strKey == GUI_RestrictedRuntimeHelpMenuActions)
-            emit sigMenuBarConfigurationChange();
+            emit sigMenuBarConfigurationChange(strMachineID);
         /* Status-bar configuration change: */
         else if (strKey == GUI_StatusBar_Enabled ||
                  strKey == GUI_RestrictedStatusBarIndicators ||
                  strKey == GUI_StatusBar_IndicatorOrder)
-            emit sigStatusBarConfigurationChange();
-        /* HID LEDs sync state changed (allowed if not restricted)? */
-        else if (strKey == GUI_HidLedsSync)
-            emit sigHidLedsSyncStateChange(!isFeatureRestricted(strKey, strMachineID));
-#ifdef Q_WS_MAC
-        /* 'Dock icon' appearance changed (allowed if not restricted)? */
-        else if (   strKey == GUI_RealtimeDockIconUpdateEnabled
-                 || strKey == GUI_RealtimeDockIconUpdateMonitor)
-            emit sigDockIconAppearanceChange(!isFeatureRestricted(strKey, strMachineID));
-#endif /* Q_WS_MAC */
+            emit sigStatusBarConfigurationChange(strMachineID);
     }
 
     /* Notify listeners: */

@@ -120,8 +120,12 @@ void UIMachineWindowNormal::sltCPUExecutionCapChange()
 }
 
 #ifndef RT_OS_DARWIN
-void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange()
+void UIMachineWindowNormal::sltHandleMenuBarConfigurationChange(const QString &strMachineID)
 {
+    /* Skip unrelated machine IDs: */
+    if (vboxGlobal().managedVMUuid() != strMachineID)
+        return;
+
     /* Check whether menu-bar is enabled: */
     const bool fEnabled = gEDataManager->menuBarEnabled(vboxGlobal().managedVMUuid());
     /* Update settings action 'enable' state: */
@@ -149,8 +153,12 @@ void UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest(const QPoint &pos
 }
 #endif /* !RT_OS_DARWIN */
 
-void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange()
+void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QString &strMachineID)
 {
+    /* Skip unrelated machine IDs: */
+    if (vboxGlobal().managedVMUuid() != strMachineID)
+        return;
+
     /* Check whether status-bar is enabled: */
     const bool fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
     /* Update settings action 'enable' state: */
@@ -245,8 +253,8 @@ void UIMachineWindowNormal::prepareMenu()
         menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleMenuBarContextMenuRequest(const QPoint&)));
-        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()),
-                this, SLOT(sltHandleMenuBarConfigurationChange()));
+        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
+                this, SLOT(sltHandleMenuBarConfigurationChange(const QString&)));
         /* Update menu-bar: */
         updateMenu();
     }
@@ -277,8 +285,8 @@ void UIMachineWindowNormal::prepareStatusBar()
             statusBar()->addPermanentWidget(m_pIndicatorsPool, 0);
         }
         /* Post-configure status-bar: */
-        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange()),
-                this, SLOT(sltHandleStatusBarConfigurationChange()));
+        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QString&)),
+                this, SLOT(sltHandleStatusBarConfigurationChange(const QString&)));
     }
 
 #ifdef Q_WS_MAC

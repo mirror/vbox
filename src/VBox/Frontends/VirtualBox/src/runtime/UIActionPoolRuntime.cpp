@@ -1884,8 +1884,12 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIActionPoolRuntime::sltHandleConfigurationChange()
+void UIActionPoolRuntime::sltHandleConfigurationChange(const QString &strMachineID)
 {
+    /* Skip unrelated machine IDs: */
+    if (vboxGlobal().managedVMUuid() != strMachineID)
+        return;
+
     /* Update configuration: */
     updateConfiguration();
 }
@@ -2058,7 +2062,8 @@ void UIActionPoolRuntime::prepareConnections()
 {
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
-    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange()), this, SLOT(sltHandleConfigurationChange()));
+    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
+            this, SLOT(sltHandleConfigurationChange(const QString&)));
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
