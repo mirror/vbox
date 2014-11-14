@@ -266,7 +266,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, b
         {
             /* The source is the real TSC. */
             if (pVM->tm.s.fTSCVirtualized)
-                *poffRealTSC = pVCpu->tm.s.offTSCRawSrc;
+                *poffRealTSC = 0 - pVCpu->tm.s.offTSCRawSrc;
             else
                 *poffRealTSC = 0;
         }
@@ -364,7 +364,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
         {
             /* The source is the real TSC. */
             if (pVM->tm.s.fTSCVirtualized)
-                *poffRealTSC = pVCpu->tm.s.offTSCRawSrc;
+                *poffRealTSC = 0 - pVCpu->tm.s.offTSCRawSrc;
             else
                 *poffRealTSC = 0;
             cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));

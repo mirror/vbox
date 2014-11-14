@@ -2262,7 +2262,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
         uint64_t u64CurTSC   = ASMReadTSC();
         uint64_t u64LastTick = TMCpuTickGetLastSeen(pVCpu);
 
-        if (u64CurTSC - pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
             pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
@@ -3198,11 +3198,10 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
             ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
     }
 
+    /** @todo Last-seen-tick shouldn't be necessary when TM supports invariant
+     *        mode. */
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
-    {
-        /** @todo Find a way to fix hardcoding a guestimate.  */
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() - pVmcb->ctrl.u64TSCOffset - 0x400);
-    }
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
