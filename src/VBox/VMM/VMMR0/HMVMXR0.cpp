@@ -5629,10 +5629,10 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     if (fOffsettedTsc)
     {
         uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC - pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
         {
             /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0 - pVCpu->hm.s.vmx.u64TSCOffset); AssertRC(rc);
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);     AssertRC(rc);
 
             pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
@@ -8706,12 +8706,10 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
+    /** @todo Last-seen-tick shouldn't be necessary when TM supports invariant
+     *        mode. */
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-    {
-        /** @todo Find a way to fix hardcoding a guestimate.  */
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() - pVCpu->hm.s.vmx.u64TSCOffset
-                             - 0x400  /* guestimate of world switch overhead in clock ticks */);
-    }
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
