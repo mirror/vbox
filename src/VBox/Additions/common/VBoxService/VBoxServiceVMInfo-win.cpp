@@ -131,7 +131,7 @@ static bool vboxServiceVMInfoSession0Separation(void)
  * @return  IPRT status code.
  */
 static int VBoxServiceVMInfoWinProcessesGetModuleNameA(PVBOXSERVICEVMINFOPROC const pProc,
-                                                       char **ppszName)
+                                                       PRTUTF16 *ppszName)
 {
     AssertPtrReturn(pProc, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszName, VERR_INVALID_POINTER);
@@ -197,10 +197,11 @@ static int VBoxServiceVMInfoWinProcessesGetModuleNameA(PVBOXSERVICEVMINFOPROC co
         }
         else
         {
-            char *pszName;
-            rc = RTUtf16ToUtf8(wszName, &pszName);
-            if (RT_SUCCESS(rc))
+            PRTUTF16 pszName = RTUtf16Dup(wszName);
+            if (pszName)
                 *ppszName = pszName;
+            else
+                rc = VERR_NO_MEMORY;
         }
 
         CloseHandle(h);
@@ -594,13 +595,13 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
             {
                 if (g_cVerbosity)
                 {
-                    char *pszName;
+                    PRTUTF16 pszName;
                     int rc2 = VBoxServiceVMInfoWinProcessesGetModuleNameA(&paProcs[i], &pszName);
-                    VBoxServiceVerbose(4, "Session %RU32: PID=%ld (fInt=%RTbool): %s\n",
+                    VBoxServiceVerbose(4, "Session %RU32: PID=%ld (fInt=%RTbool): %ls\n",
                                        pSessionData->Session, paProcs[i].id, paProcs[i].fInteractive,
-                                       RT_SUCCESS(rc2) ? pszName : "<Unknown>");
+                                       RT_SUCCESS(rc2) ? pszName : L"<Unknown>");
                     if (RT_SUCCESS(rc2))
-                        RTStrFree(pszName);
+                        RTUtf16Free(pszName);
                 }
 
                 if (paProcs[i].fInteractive)
