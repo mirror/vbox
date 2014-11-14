@@ -61,8 +61,8 @@
 
   ENTRY_POINT                    = InitializeVBoxVga
 
-  PCI_VENDOR_ID  = 0x1013
-  PCI_DEVICE_ID  = 0x00A8
+  PCI_VENDOR_ID  = 0x80EE
+  PCI_DEVICE_ID  = 0xBEEF
   PCI_CLASS_CODE = 0x030000
   PCI_REVISION   = 0x00
   COMPRESS       = TRUE
@@ -115,3 +115,6 @@
 [FeaturePcd.common]
   gVBoxVgaPkgTokenSpaceGuid.PcdSupportGop
   gVBoxVgaPkgTokenSpaceGuid.PcdSupportUga
+
+[Pcd]
+  gVBoxVgaPkgTokenSpaceGuid.PcdDriverSupportedEfiVersion

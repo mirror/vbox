@@ -49,6 +49,7 @@
         gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize|0|UINT32|0x00001003
         gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase|0|UINT32|0x00001004
         gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize|0|UINT32|0x00001005
+        gVBoxVgaPkgTokenSpaceGuid.PcdDriverSupportedEfiVersion|0x0002000a|UINT32|0x00010003
 
 ## XXX - boot mode - gEfiNt32PkgTokenSpaceGuid.PcdWinNtBootMode|1|UINT32|0x00001006
 
