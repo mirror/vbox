@@ -661,7 +661,9 @@ static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod, u
     /*
      * Verify the image file.
      */
-    int rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
+    int rc = SUPR3HardenedVerifyInit();
+    if (RT_FAILURE(rc))
+        rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
     if (RT_FAILURE(rc))
     {
         LogRel(("supR3HardenedLdrLoadIt: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
