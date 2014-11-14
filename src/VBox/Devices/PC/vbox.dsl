@@ -586,7 +586,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                         Return (0x00)
                      }
                      else {
-                        Return (0x0E)
+                        Return (0x0F)
                      }
                     }
                 }               
