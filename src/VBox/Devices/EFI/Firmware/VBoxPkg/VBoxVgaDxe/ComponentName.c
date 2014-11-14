@@ -60,12 +60,12 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL gVBoxVgaComponentName
 
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mVBoxVgaDriverNameTable[] = {
-  { "eng;en", L"Cirrus Logic 5430 Driver" },
+  { "eng;en", L"VirtualBox SVGA Driver" },
   { NULL , NULL }
 };
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_STRING_TABLE mVBoxVgaControllerNameTable[] = {
-  { "eng;en", L"Cirrus Logic 5430 PCI Adapter" },
+  { "eng;en", L"VirtualBox SVGA PCI Adapter" },
   { NULL , NULL }
 };
 
