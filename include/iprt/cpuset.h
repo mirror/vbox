@@ -70,6 +70,20 @@ DECLINLINE(PRTCPUSET) RTCpuSetFill(PRTCPUSET pSet)
 
 
 /**
+ * Copies one set to another.
+ *
+ * @param   pDst    Pointer to the destination set.
+ * @param   pSrc    Pointer to the source set.
+ */
+DECLINLINE(void) RTCpuSetCopy(PRTCPUSET pDst, PRTCPUSET pSrc)
+{
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(pDst->bmSet); i++)
+        pDst->bmSet[i] = pSrc->bmSet[i];
+}
+
+
+/**
  * ANDs the given CPU set with another.
  *
  * @returns pSet.
