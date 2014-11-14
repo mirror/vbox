@@ -231,6 +231,7 @@ public:
     void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool warnAboutNameShouldBeUnique(QWidget *pParent = 0) const;
+    bool warnAboutRulesConflict(QWidget *pParent = 0) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
     void cannotCreateSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent = 0);
     void cannotCreateSharedFolder(const CConsole &console, const QString &strName, const QString &strPath, QWidget *pParent = 0);

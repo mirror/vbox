@@ -1119,6 +1119,14 @@ bool UIMessageCenter::warnAboutNameShouldBeUnique(QWidget *pParent /* = 0 */) co
     return false;
 }
 
+bool UIMessageCenter::warnAboutRulesConflict(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "Few rules have same host ports and conflicting IP addresses."));
+    return false;
+}
+
 bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,
