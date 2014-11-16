@@ -1448,6 +1448,8 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
                 pData, eth_proto, m, flags));
 
     M_ASSERTPKTHDR(m);
+
+    Assert(M_LEADINGSPACE(m) >= ETH_HLEN);
     m->m_data -= ETH_HLEN;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
