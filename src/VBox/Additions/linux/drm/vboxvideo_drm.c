@@ -52,6 +52,7 @@
 #include "version-generated.h"
 
 #include <linux/module.h>
+#include <linux/version.h>
 #include <drm/drmP.h>
 #include "vboxvideo_drm.h"
 
@@ -88,7 +89,12 @@ static struct file_operations driver_fops =
         .open = drm_open,
         .release = drm_release,
         .unlocked_ioctl = drm_ioctl,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+        /* This shouldn't be necessary even for old kernels as there is
+         * nothing sensible to mmap. But we play safe and keep it for
+         * legacy reasons. */
         .mmap = drm_mmap,
+# endif
         .poll = drm_poll,
 };
 #endif
