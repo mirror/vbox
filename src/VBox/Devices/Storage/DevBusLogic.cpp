@@ -2237,7 +2237,8 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
                 /* If there are no mailboxes configured, don't even try to do anything. */
-                if (pBusLogic->cMailbox) {
+                if (pBusLogic->cMailbox)
+                {
                     ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
                     if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
                     {

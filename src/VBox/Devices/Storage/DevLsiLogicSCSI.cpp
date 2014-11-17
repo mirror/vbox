@@ -193,7 +193,7 @@ typedef struct LSILOGICSCSI
     /** Flag whether diagnostic access is enabled. */
     bool                 fDiagnosticEnabled;
     /** Flag whether a notification was send to R3. */
-    bool                 fNotificationSend;
+    bool                 fNotificationSent;
     /** Flag whether the guest enabled event notification from the IOC. */
     bool                 fEventNotificationEnabled;
     /** Flag whether the diagnostic address and RW registers are enabled. */
@@ -1282,19 +1282,22 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             uNextWrite %= pThis->cRequestQueueEntries;
             ASMAtomicWriteU32(&pThis->uRequestQueueNextEntryFreeWrite, uNextWrite);
 
-            /* Send notification to R3 if there is not one send already. */
-            if (!ASMAtomicXchgBool(&pThis->fNotificationSend, true))
+            /* Send notification to R3 if there is not one sent already. Do this
+             * only if the worker thread is not sleeping or might go sleeping. */
+            if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
             {
+                if (!ASMAtomicXchgBool(&pThis->fNotificationSent, true))
+                {
 #ifdef IN_RC
-                PPDMQUEUEITEMCORE pNotificationItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
-                AssertPtr(pNotificationItem);
-
-                PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), pNotificationItem);
+                    PPDMQUEUEITEMCORE pNotificationItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
+                    AssertPtr(pNotificationItem);
+                    PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), pNotificationItem);
 #else
-                LogFlowFunc(("Signal event semaphore\n"));
-                int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
-                AssertRC(rc);
+                    LogFlowFunc(("Signal event semaphore\n"));
+                    int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+                    AssertRC(rc);
 #endif
+                }
             }
             break;
         }
@@ -4038,7 +4041,7 @@ static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     pHlp->pfnPrintf(pHlp, "enmWhoInit=%u\n", pThis->enmWhoInit);
     pHlp->pfnPrintf(pHlp, "enmDoorbellState=%d\n", pThis->enmDoorbellState);
     pHlp->pfnPrintf(pHlp, "fDiagnosticEnabled=%RTbool\n", pThis->fDiagnosticEnabled);
-    pHlp->pfnPrintf(pHlp, "fNotificationSend=%RTbool\n", pThis->fNotificationSend);
+    pHlp->pfnPrintf(pHlp, "fNotificationSent=%RTbool\n", pThis->fNotificationSent);
     pHlp->pfnPrintf(pHlp, "fEventNotificationEnabled=%RTbool\n", pThis->fEventNotificationEnabled);
     pHlp->pfnPrintf(pHlp, "uInterruptMask=%#x\n", pThis->uInterruptMask);
     pHlp->pfnPrintf(pHlp, "uInterruptStatus=%#x\n", pThis->uInterruptStatus);
@@ -4163,11 +4166,9 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        bool fNotificationSend;
-
         ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, true);
-        fNotificationSend = ASMAtomicXchgBool(&pThis->fNotificationSend, false);
-        if (!fNotificationSend)
+        bool fNotificationSent = ASMAtomicXchgBool(&pThis->fNotificationSent, false);
+        if (!fNotificationSent)
         {
             Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
             rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
@@ -4175,7 +4176,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
             LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
-            fNotificationSend = ASMAtomicXchgBool(&pThis->fNotificationSend, false);
+            ASMAtomicWriteBool(&pThis->fNotificationSent, false);
         }
 
         ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
@@ -4298,7 +4299,7 @@ static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
  */
 static void lsilogicR3Kick(PLSILOGICSCSI pThis)
 {
-    if (pThis->fNotificationSend)
+    if (pThis->fNotificationSent)
     {
         /* Send a notifier to the PDM queue that there are pending requests. */
         PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
@@ -4359,7 +4360,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32   (pSSM, pThis->enmWhoInit);
     SSMR3PutU32   (pSSM, pThis->enmDoorbellState);
     SSMR3PutBool  (pSSM, pThis->fDiagnosticEnabled);
-    SSMR3PutBool  (pSSM, pThis->fNotificationSend);
+    SSMR3PutBool  (pSSM, pThis->fNotificationSent);
     SSMR3PutBool  (pSSM, pThis->fEventNotificationEnabled);
     SSMR3PutU32   (pSSM, pThis->uInterruptMask);
     SSMR3PutU32   (pSSM, pThis->uInterruptStatus);
@@ -4600,7 +4601,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     else
         SSMR3GetU32(pSSM, (uint32_t *)&pThis->enmDoorbellState);
     SSMR3GetBool  (pSSM, &pThis->fDiagnosticEnabled);
-    SSMR3GetBool  (pSSM, &pThis->fNotificationSend);
+    SSMR3GetBool  (pSSM, &pThis->fNotificationSent);
     SSMR3GetBool  (pSSM, &pThis->fEventNotificationEnabled);
     SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uInterruptMask);
     SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uInterruptStatus);
@@ -4995,7 +4996,7 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
     {
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
 
-        AssertMsg(!pThis->fNotificationSend, ("The PDM Queue should be empty at this point\n"));
+        AssertMsg(!pThis->fNotificationSent, ("The PDM Queue should be empty at this point\n"));
 
         if (pThis->fRedo)
         {
@@ -5022,7 +5023,7 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
                     pThis->uRequestQueueNextEntryFreeWrite++;
                     pThis->uRequestQueueNextEntryFreeWrite %= pThis->cRequestQueueEntries;
 
-                    pThis->fNotificationSend = true;
+                    pThis->fNotificationSent = true;
                 }
                 else
                 {
