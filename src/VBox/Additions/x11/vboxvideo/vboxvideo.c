@@ -288,7 +288,7 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
     unsigned cDisplay = (uintptr_t)crtc->driver_private;
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    pVBox->pScreens[cDisplay].afDisabled = (mode != DPMSModeOn);
+    pVBox->pScreens[cDisplay].afDisabled = (mode == DPMSModeOff);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!crtc->scrn->vtSema) {
