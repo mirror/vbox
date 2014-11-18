@@ -1284,9 +1284,9 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
 
             /* Send notification to R3 if there is not one sent already. Do this
              * only if the worker thread is not sleeping or might go sleeping. */
-            if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
+            if (!ASMAtomicXchgBool(&pThis->fNotificationSent, true))
             {
-                if (!ASMAtomicXchgBool(&pThis->fNotificationSent, true))
+                if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
                 {
 #ifdef IN_RC
                     PPDMQUEUEITEMCORE pNotificationItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
