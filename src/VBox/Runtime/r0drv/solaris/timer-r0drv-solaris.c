@@ -224,7 +224,7 @@ static void rtTimerSolOmniCpuOnline(void *pvArg, cpu_t *pCpu, cyc_handler_t *pCy
     pCyclicHandler->cyh_arg   = pTimer;
     pCyclicHandler->cyh_level = CY_LOCK_LEVEL;
 
-    uint64_t u64Now = RTTimeNanoTS();
+    uint64_t u64Now = RTTimeSystemNanoTS();
     if (pTimer->pOmniTimer->u64When < u64Now)
         pCyclicTime->cyt_when = u64Now + pTimer->interval / 2;
     else
@@ -307,6 +307,25 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
      * Free the associated resources.
      */
     RTTimerStop(pTimer);
+
+    /** @remarks Do -not- call this function from a timer callback,
+     *           cyclic_remove() will deadlock the system. */
+    if (pTimer->pSingleTimer)
+    {
+        mutex_enter(&cpu_lock);
+        cyclic_remove(pTimer->hCyclicId);
+        mutex_exit(&cpu_lock);
+        RTMemFree(pTimer->pSingleTimer);
+    }
+    else if (pTimer->pOmniTimer)
+    {
+        mutex_enter(&cpu_lock);
+        cyclic_remove(pTimer->hCyclicId);
+        mutex_exit(&cpu_lock);
+        RTMemFree(pTimer->pOmniTimer->au64Ticks);
+        RTMemFree(pTimer->pOmniTimer);
+    }
+
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
     RTMemFree(pTimer);
     return VINF_SUCCESS;
@@ -341,7 +360,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
          * and from there we setup periodic timers per CPU.
          */
         pTimer->pOmniTimer = pOmniTimer;
-        pOmniTimer->u64When     = pTimer->interval + RTTimeNanoTS();
+        pOmniTimer->u64When     = pTimer->interval + RTTimeSystemNanoTS();
 
         cyc_omni_handler_t hOmni;
         hOmni.cyo_online        = rtTimerSolOmniCpuOnline;
@@ -381,7 +400,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
             return VERR_CPU_OFFLINE;
         }
 
-        pSingleTimer->hFireTime.cyt_when = u64First + RTTimeNanoTS();
+        pSingleTimer->hFireTime.cyt_when = u64First + RTTimeSystemNanoTS();
         if (pTimer->interval == 0)
         {
             /*
@@ -413,24 +432,14 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     if (pTimer->fSuspended)
         return VERR_TIMER_SUSPENDED;
 
-    pTimer->fSuspended = true;
-    if (pTimer->pSingleTimer)
-    {
-        mutex_enter(&cpu_lock);
-        cyclic_remove(pTimer->hCyclicId);
-        mutex_exit(&cpu_lock);
-        RTMemFree(pTimer->pSingleTimer);
-    }
-    else if (pTimer->pOmniTimer)
-    {
-        mutex_enter(&cpu_lock);
-        cyclic_remove(pTimer->hCyclicId);
-        mutex_exit(&cpu_lock);
-        RTMemFree(pTimer->pOmniTimer->au64Ticks);
-        RTMemFree(pTimer->pOmniTimer);
-    }
-
-    return VINF_SUCCESS;
+    /*
+     * Solaris does not allow removing cyclics from the timer callback but it does allow
+     * reprogramming the cyclic. Reprogram such that it never expires.
+     */
+    int rc = RTTimerChangeInterval(pTimer, CY_INFINITY);
+    if (RT_SUCCESS(rc))
+        pTimer->fSuspended = true;
+    return rc;
 }
 
 
@@ -438,9 +447,18 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
     RTTIMER_ASSERT_VALID_RET(pTimer);
 
-    /** @todo implement me! */
+    if (pTimer->hCyclicId != CYCLIC_NONE)
+    {
+        uint64_t uNanoTS = RTTimeSystemNanoTS();
+        if (   u64NanoInterval >= CY_INFINITY
+            || uNanoTS >= CY_INFINITY - u64NanoInterval)
+            cyclic_reprogram(pTimer->hCyclicId, CY_INFINITY);
+        else
+            cyclic_reprogram(pTimer->hCyclicId, (hrtime_t)(u64NanoInterval + uNanoTS));
 
-    return VERR_NOT_SUPPORTED;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_STATE;
 }
 
 
