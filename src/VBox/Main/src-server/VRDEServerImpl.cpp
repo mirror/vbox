@@ -375,29 +375,27 @@ HRESULT VRDEServer::setVRDEProperty(const com::Utf8Str &aKey, const com::Utf8Str
     AutoMutableOrSavedStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    Bstr key = aKey;
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Special processing for some "standard" properties. */
-    if (key == Bstr("TCP/Ports"))
+    if (aKey == "TCP/Ports")
     {
-        /* Verify the string. */
-        int vrc = i_vrdpServerVerifyPortsString(aValue);
+        /* Verify the string. "0" means the default port. */
+        Utf8Str strPorts = aValue == "0"?
+                               VRDP_DEFAULT_PORT_STR:
+                               aValue;
+        int vrc = i_vrdpServerVerifyPortsString(strPorts);
         if (RT_FAILURE(vrc))
             return E_INVALIDARG;
 
-        if (aValue != mData->mProperties["TCP/Ports"])
+        if (strPorts != mData->mProperties["TCP/Ports"])
         {
             /* Port value is not verified here because it is up to VRDP transport to
              * use it. Specifying a wrong port number will cause a running server to
              * stop. There is no fool proof here.
              */
             mData.backup();
-            if (aValue == Utf8Str("0"))
-                mData->mProperties["TCP/Ports"] = VRDP_DEFAULT_PORT_STR;
-            else
-                mData->mProperties["TCP/Ports"] = aValue;
+            mData->mProperties["TCP/Ports"] = strPorts;
 
             /* leave the lock before informing callbacks */
             alock.release();
