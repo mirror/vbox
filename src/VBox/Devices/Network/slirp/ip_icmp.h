@@ -206,6 +206,7 @@ struct icmp_msg * icmp_find_original_mbuf (PNATState , struct ip *);
 /* Windows ICMP API code in ip_icmpwin.c */
 int icmpwin_init (PNATState);
 void icmpwin_finit (PNATState);
+void icmpwin_ping(PNATState, struct mbuf *, int);
 #endif
 
 #endif
