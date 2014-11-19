@@ -115,7 +115,7 @@ int main(int argc, char **argv)
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
                      : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      %sTSC Interval History...\n",
-                     uCpuHzRef ? "  CpuHzDev  " : "");
+                     uCpuHzRef ? "  CpuHz deviation  " : "");
             static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
@@ -136,9 +136,13 @@ int main(int argc, char **argv)
                         {
                             int64_t iCpuHzDeviation = pCpu->u64CpuHz - uCpuHzRef;
                             if (RT_ABS(iCpuHzDeviation) > 999999999)
-                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10s  ", "?");
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%17s  ", "?");
                             else
-                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64  ", iCpuHzDeviation);
+                            {
+                                uint32_t uPct = (uint32_t)(RT_ABS(iCpuHzDeviation) * 100000 / pCpu->u64CpuHz + 5);
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  ",
+                                            iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10);
+                            }
                         }
                         else
                             szCpuHzDeviation[0] = '\0';
