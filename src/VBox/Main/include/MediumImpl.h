@@ -17,6 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 #ifndef ____H_MEDIUMIMPL
 #define ____H_MEDIUMIMPL
 
@@ -54,11 +55,12 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    // initializer to create empty medium (VirtualBox::CreateHardDisk())
+    // initializer to create empty medium (VirtualBox::CreateMedium())
     HRESULT init(VirtualBox *aVirtualBox,
                  const Utf8Str &aFormat,
                  const Utf8Str &aLocation,
-                 const Guid &uuidMachineRegistry);
+                 const Guid &uuidMachineRegistry,
+                 const DeviceType_T aDeviceType);
 
     // initializer for opening existing media
     // (VirtualBox::OpenMedium(); Machine::AttachDevice())

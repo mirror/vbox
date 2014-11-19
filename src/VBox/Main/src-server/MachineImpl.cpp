@@ -4092,7 +4092,8 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         rc = diff->init(mParent,
                         medium->i_getPreferredDiffFormat(),
                         strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                        uuidRegistryParent);
+                        uuidRegistryParent,
+                        DeviceType_HardDisk);
         if (FAILED(rc)) return rc;
 
         /* Apply the normal locking logic to the entire chain. */
@@ -10585,7 +10586,8 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
             rc = diff->init(mParent,
                             pMedium->i_getPreferredDiffFormat(),
                             strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                            uuidRegistryParent);
+                            uuidRegistryParent,
+                            DeviceType_HardDisk);
             if (FAILED(rc)) throw rc;
 
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before

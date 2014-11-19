@@ -14,7 +14,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #include "MediumImpl.h"
 #include "TokenImpl.h"
 #include "ProgressImpl.h"
@@ -898,11 +897,13 @@ void Medium::FinalRelease()
  * @param aLocation     Storage unit location.
  * @param uuidMachineRegistry The registry to which this medium should be added
  *                            (global registry UUID or machine UUID or empty if none).
+ * @param deviceType    Device Type.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Utf8Str &aFormat,
                      const Utf8Str &aLocation,
-                     const Guid &uuidMachineRegistry)
+                     const Guid &uuidMachineRegistry,
+                     const DeviceType_T aDeviceType)
 {
     AssertReturn(aVirtualBox != NULL, E_FAIL);
     AssertReturn(!aFormat.isEmpty(), E_FAIL);
@@ -924,6 +925,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* cannot be a host drive */
     m->hostDrive = false;
 
+    m->devType = aDeviceType;
+
     /* No storage unit is created yet, no need to call Medium::i_queryInfo */
 
     rc = i_setFormat(aFormat);
@@ -936,8 +939,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                                                | MediumFormatCapabilities_CreateDynamic))
        )
     {
-        /* Storage for hard disks of this format can neither be explicitly
-         * created by VirtualBox nor deleted, so we place the hard disk to
+        /* Storage for mediums of this format can neither be explicitly
+         * created by VirtualBox nor deleted, so we place the medium to
          * Inaccessible state here and also add it to the registry. The
          * state means that one has to use RefreshState() to update the
          * medium format specific fields. */
@@ -958,7 +961,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         {
             bool fInUse;
 
-            fInUse = m->pVirtualBox->i_isMediaUuidInUse(m->id, DeviceType_HardDisk);
+            fInUse = m->pVirtualBox->i_isMediaUuidInUse(m->id, aDeviceType);
             if (fInUse)
             {
                 // create new UUID
@@ -968,7 +971,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                 break;
         }
 
-        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, DeviceType_HardDisk, treeLock);
+        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, aDeviceType, treeLock);
         Assert(this == pMedium || FAILED(rc));
     }
 
@@ -6075,7 +6078,7 @@ HRESULT Medium::i_setStateError()
  * @note Must be called from under this object's write lock.
  */
 HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
-                            const Utf8Str &aFormat /* = Utf8Str::Empty */)
+                              const Utf8Str &aFormat /* = Utf8Str::Empty */)
 {
     AssertReturn(!aLocation.isEmpty(), E_FAIL);
 

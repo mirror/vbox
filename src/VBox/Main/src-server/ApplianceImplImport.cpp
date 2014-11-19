@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -750,7 +750,10 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
         }
     }
 
-    AssertReturn(!(m->optListImport.contains(ImportOptions_KeepAllMACs) && m->optListImport.contains(ImportOptions_KeepNATMACs)), E_INVALIDARG);
+    AssertReturn(!(m->optListImport.contains
+                   (ImportOptions_KeepAllMACs)
+                   && m->optListImport.contains(ImportOptions_KeepNATMACs)
+                  ), E_INVALIDARG);
 
     // do not allow entering this method if the appliance is busy reading or writing
     if (!i_isApplianceIdle())
@@ -2512,7 +2515,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 rc = pTargetHD->init(mVirtualBox,
                                      strTrgFormat,
                                      *strTargetPath,
-                                     Guid::Empty /* media registry: none yet */);
+                                     Guid::Empty /* media registry: none yet */,
+                                     DeviceType_HardDisk);
                 if (FAILED(rc)) throw rc;
 
                 /* Now create an empty hard disk. */

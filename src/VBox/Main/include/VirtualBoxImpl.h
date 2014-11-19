@@ -216,7 +216,8 @@ public:
     const Utf8Str& i_homeDir() const;
     int i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void i_copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
-    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType, AutoWriteLock &mediaTreeLock);
+    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType,
+                             AutoWriteLock &mediaTreeLock);
     HRESULT i_unregisterMedium(Medium *pMedium);
     void i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
     HRESULT i_unregisterMachineMedia(const Guid &id);
@@ -239,6 +240,8 @@ public:
     int  i_decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext);
     void i_storeSettingsKey(const Utf8Str &aKey);
     bool i_isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType);
+
+
 
 private:
     class ClientWatcher;
@@ -294,6 +297,12 @@ private:
     HRESULT createHardDisk(const com::Utf8Str &aFormat,
                            const com::Utf8Str &aLocation,
                            ComPtr<IMedium> &aMedium);
+    HRESULT createMedium(const com::Utf8Str &aFormat,
+                         const com::Utf8Str &aLocation,
+                         AccessMode_T aAccessMode,
+                         BOOL aForceNewUuid,
+                         DeviceType_T aDeviceType,
+                         ComPtr<IMedium> &aMedium);
     HRESULT openMedium(const com::Utf8Str &aLocation,
                        DeviceType_T aDeviceType,
                        AccessMode_T aAccessMode,
