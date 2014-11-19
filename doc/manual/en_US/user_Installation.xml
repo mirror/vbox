@@ -221,10 +221,13 @@
       use the command line version of the installer application.</para>
 
       <para>Mount the disk image (dmg) file as described in the normal
-      installation. Then open a terminal session and execute:</para>
+      installation or use the following command line:</para>
 
-      <screen>sudo installer -pkg /Volumes/VirtualBox/VirtualBox.mpkg \
-      -target /Volumes/Macintosh\ HD</screen>
+      <screen>hdiutil attach /path/to/VirtualBox-xyz.dmg</screen>
+
+      <para>Then open a terminal session and execute:</para>
+
+      <screen>sudo installer -pkg /Volumes/VirtualBox/VirtualBox.pkg -target /Volumes/Macintosh\ HD</screen>
     </sect2>
   </sect1>
 
