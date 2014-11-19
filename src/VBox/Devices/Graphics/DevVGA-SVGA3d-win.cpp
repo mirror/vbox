@@ -5135,7 +5135,7 @@ int vmsvga3dSetClipPlane(PVGASTATE pThis, uint32_t cid,  uint32_t index, float p
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dSetClipPlane %x %d (%d,%d)(%d,%d)\n", cid, index, (unsigned)(plane[0] * 100.0), (unsigned)(plane[1] * 100.0), (unsigned)(plane[2] * 100.0), (unsigned)(plane[3] * 100.0)));
-    AssertReturn(index <= SVGA3D_CLIPPLANE_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(index < SVGA3D_CLIPPLANE_MAX, VERR_INVALID_PARAMETER);
 
     if (    cid >= pState->cContexts
         ||  pState->paContext[cid].id != cid)
