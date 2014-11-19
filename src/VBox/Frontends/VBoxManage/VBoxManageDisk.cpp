@@ -186,6 +186,60 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
     return rc;
 }
 
+static HRESULT createFloppy(HandlerArg *a, const char *pszFormat,
+                            const char *pszFilename, ComPtr<IMedium> &pMedium)
+{
+    HRESULT rc;
+    char szFilenameAbs[RTPATH_MAX] = "";
+
+    /** @todo laziness shortcut. should really check the MediumFormatCapabilities */
+    if (RTStrICmp(pszFormat, "iSCSI"))
+    {
+        int irc = RTPathAbs(pszFilename, szFilenameAbs, sizeof(szFilenameAbs));
+        if (RT_FAILURE(irc))
+        {
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
+            return E_FAIL;
+        }
+        pszFilename = szFilenameAbs;
+    }
+
+    CHECK_ERROR(a->virtualBox, CreateMedium(Bstr(pszFormat).raw(),
+                                            Bstr(pszFilename).raw(),
+                                            AccessMode_ReadWrite,
+                                            TRUE,
+                                            DeviceType_Floppy,
+                                            pMedium.asOutParam()));
+    return rc;
+}
+
+static HRESULT createDVD(HandlerArg *a, const char *pszFormat,
+                        const char *pszFilename, ComPtr<IMedium> &pMedium)
+{
+    HRESULT rc;
+    char szFilenameAbs[RTPATH_MAX] = "";
+
+    /** @todo laziness shortcut. should really check the MediumFormatCapabilities */
+    if (RTStrICmp(pszFormat, "iSCSI"))
+    {
+        int irc = RTPathAbs(pszFilename, szFilenameAbs, sizeof(szFilenameAbs));
+        if (RT_FAILURE(irc))
+        {
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
+            return E_FAIL;
+        }
+        pszFilename = szFilenameAbs;
+    }
+
+    CHECK_ERROR(a->virtualBox, CreateMedium(Bstr(pszFormat).raw(),
+                                            Bstr(pszFilename).raw(),
+                                            AccessMode_ReadWrite,
+                                            TRUE,
+                                            DeviceType_DVD,
+                                            pMedium.asOutParam()));
+    return rc;
+}
+
 static HRESULT createHardDisk(HandlerArg *a, const char *pszFormat,
                               const char *pszFilename, ComPtr<IMedium> &pMedium)
 {
@@ -398,6 +452,348 @@ int handleCreateHardDisk(HandlerArg *a)
         }
 
         CHECK_ERROR(hardDisk, Close());
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
+int handleCreateFloppy(HandlerArg *a)
+{
+    HRESULT rc;
+    int vrc;
+    const char *filename = NULL;
+    const char *diffparent = NULL;
+    uint64_t size = 0;
+    const char *format = NULL;
+    bool fBase = true;
+    MediumVariant_T DiskVariant = MediumVariant_Standard;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCreateHardDiskOptions, RT_ELEMENTS(g_aCreateHardDiskOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'f':   // --filename
+                filename = ValueUnion.psz;
+                break;
+
+            case 'd':   // --diffparent
+                diffparent = ValueUnion.psz;
+                fBase = false;
+                break;
+
+            case 's':   // --size
+                size = ValueUnion.u64 * _1M;
+                break;
+
+            case 'S':   // --sizebyte
+                size = ValueUnion.u64;
+                break;
+
+            case 'o':   // --format
+                format = ValueUnion.psz;
+                break;
+
+            case 'F':   // --static ("fixed"/"flat")
+            {
+                unsigned uDiskVariant = (unsigned)DiskVariant;
+                uDiskVariant |= MediumVariant_Fixed;
+                DiskVariant = (MediumVariant_T)uDiskVariant;
+                break;
+            }
+
+            case 'm':   // --variant
+                vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(vrc))
+                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_CREATEFLOPPY, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CREATEFLOPPY, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CREATEFLOPPY, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CREATEFLOPPY, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CREATEFLOPPY, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CREATEFLOPPY, "error: %Rrs", c);
+        }
+    }
+
+    /* check the outcome */
+    ComPtr<IMedium> parentMedium;
+    if (fBase)
+    {
+        if (   !filename
+            || !*filename
+            || size == 0)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
+        if (!format || !*format)
+            format = "RAW";
+    }
+    else
+    {
+        if (   !filename
+            || !*filename)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename is required");
+        size = 0;
+        DiskVariant = MediumVariant_Diff;
+        if (!format || !*format)
+        {
+            const char *pszExt = RTPathSuffix(filename);
+            /* Skip over . if there is an extension. */
+            if (pszExt)
+                pszExt++;
+            if (!pszExt || !*pszExt)
+                format = "RAW";
+            else
+                format = pszExt;
+        }
+        rc = openMedium(a, diffparent, DeviceType_Floppy,
+                        AccessMode_ReadWrite, parentMedium,
+                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        if (FAILED(rc))
+            return 1;
+        if (parentMedium.isNull())
+        {
+            RTMsgError("Invalid parent medium reference, avoiding crash");
+            return 1;
+        }
+        MediumState_T state;
+        CHECK_ERROR(parentMedium, COMGETTER(State)(&state));
+        if (FAILED(rc))
+            return 1;
+        if (state == MediumState_Inaccessible)
+        {
+            CHECK_ERROR(parentMedium, RefreshState(&state));
+            if (FAILED(rc))
+                return 1;
+        }
+    }
+    /* check for filename extension */
+    /** @todo use IMediumFormat to cover all extensions generically */
+    Utf8Str strName(filename);
+    if (!RTPathHasSuffix(strName.c_str()))
+    {
+        Utf8Str strFormat(format);
+        strName.append(".raw");
+        filename = strName.c_str();
+    }
+
+    ComPtr<IMedium> medium;
+    rc = createFloppy(a, format, filename, medium);
+    if (SUCCEEDED(rc) && medium)
+    {
+        ComPtr<IProgress> progress;
+        com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
+
+        for (ULONG i = 0; i < l_variants.size(); ++i)
+        {
+            ULONG temp = DiskVariant;
+            temp &= 1<<i;
+            l_variants [i] = (MediumVariant_T)temp;
+        }
+
+        if (fBase)
+            CHECK_ERROR(medium, CreateBaseStorage(size, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
+        else
+            CHECK_ERROR(parentMedium, CreateDiffStorage(medium, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
+        if (SUCCEEDED(rc) && progress)
+        {
+            rc = showProgress(progress);
+            CHECK_PROGRESS_ERROR(progress, ("Failed to create Floppy"));
+            if (SUCCEEDED(rc))
+            {
+                Bstr uuid;
+                CHECK_ERROR(medium, COMGETTER(Id)(uuid.asOutParam()));
+                RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).c_str());
+            }
+        }
+
+        CHECK_ERROR(medium, Close());
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
+int handleCreateDVD(HandlerArg *a)
+{
+    HRESULT rc;
+    int vrc;
+    const char *filename = NULL;
+    const char *diffparent = NULL;
+    uint64_t size = 0;
+    const char *format = NULL;
+    bool fBase = true;
+    MediumVariant_T DiskVariant = MediumVariant_Standard;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCreateHardDiskOptions, RT_ELEMENTS(g_aCreateHardDiskOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'f':   // --filename
+                filename = ValueUnion.psz;
+                break;
+
+            case 'd':   // --diffparent
+                diffparent = ValueUnion.psz;
+                fBase = false;
+                break;
+
+            case 's':   // --size
+                size = ValueUnion.u64 * _1M;
+                break;
+
+            case 'S':   // --sizebyte
+                size = ValueUnion.u64;
+                break;
+
+            case 'o':   // --format
+                format = ValueUnion.psz;
+                break;
+
+            case 'F':   // --static ("fixed"/"flat")
+            {
+                unsigned uDiskVariant = (unsigned)DiskVariant;
+                uDiskVariant |= MediumVariant_Fixed;
+                DiskVariant = (MediumVariant_T)uDiskVariant;
+                break;
+            }
+
+            case 'm':   // --variant
+                vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
+                if (RT_FAILURE(vrc))
+                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_CREATEDVD, "Invalid parameter '%s'", ValueUnion.psz);
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_CREATEDVD, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_CREATEDVD, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_CREATEDVD, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_CREATEDVD, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_CREATEDVD, "error: %Rrs", c);
+        }
+    }
+
+    /* check the outcome */
+    ComPtr<IMedium> parentMedium;
+    if (fBase)
+    {
+        if (   !filename
+            || !*filename
+            || size == 0)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
+        if (!format || !*format)
+            format = "ISO";
+    }
+    else
+    {
+        if (   !filename
+            || !*filename)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename is required");
+        size = 0;
+        DiskVariant = MediumVariant_Diff;
+        if (!format || !*format)
+        {
+            const char *pszExt = RTPathSuffix(filename);
+            /* Skip over . if there is an extension. */
+            if (pszExt)
+                pszExt++;
+            if (!pszExt || !*pszExt)
+                format = "ISO";
+            else
+                format = pszExt;
+        }
+        rc = openMedium(a, diffparent, DeviceType_DVD,
+                        AccessMode_ReadWrite, parentMedium,
+                        false /* fForceNewUuidOnOpen */, false /* fSilent */);
+        if (FAILED(rc))
+            return 1;
+        if (parentMedium.isNull())
+        {
+            RTMsgError("Invalid parent hard disk reference, avoiding crash");
+            return 1;
+        }
+        MediumState_T state;
+        CHECK_ERROR(parentMedium, COMGETTER(State)(&state));
+        if (FAILED(rc))
+            return 1;
+        if (state == MediumState_Inaccessible)
+        {
+            CHECK_ERROR(parentMedium, RefreshState(&state));
+            if (FAILED(rc))
+                return 1;
+        }
+    }
+    /* check for filename extension */
+    /** @todo use IMediumFormat to cover all extensions generically */
+    Utf8Str strName(filename);
+    if (!RTPathHasSuffix(strName.c_str()))
+    {
+        Utf8Str strFormat(format);
+        strName.append(".iso");
+        filename = strName.c_str();
+    }
+
+    ComPtr<IMedium> medium;
+    rc = createDVD(a, format, filename, medium);
+    if (SUCCEEDED(rc) && medium)
+    {
+        ComPtr<IProgress> progress;
+        com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
+
+        for (ULONG i = 0; i < l_variants.size(); ++i)
+        {
+            ULONG temp = DiskVariant;
+            temp &= 1<<i;
+            l_variants [i] = (MediumVariant_T)temp;
+        }
+
+        if (fBase)
+            CHECK_ERROR(medium, CreateBaseStorage(size, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
+        else
+            CHECK_ERROR(parentMedium, CreateDiffStorage(medium, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
+        if (SUCCEEDED(rc) && progress)
+        {
+            rc = showProgress(progress);
+            CHECK_PROGRESS_ERROR(progress, ("Failed to create DVD"));
+            if (SUCCEEDED(rc))
+            {
+                Bstr uuid;
+                CHECK_ERROR(medium, COMGETTER(Id)(uuid.asOutParam()));
+                RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).c_str());
+            }
+        }
+
+        CHECK_ERROR(medium, Close());
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }

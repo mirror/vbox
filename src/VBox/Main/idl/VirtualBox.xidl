@@ -1812,7 +1812,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="fafa4e17-1ee2-4905-a10e-fe7c18bf5554"
+    uuid="5e67bc8a-5f8f-11e4-aa15-123b93f75cba"
     wsmap="managed"
     >
     <desc>
@@ -2280,6 +2280,90 @@
       </desc>
       <param name="appliance" type="IAppliance" dir="return">
         <desc>New appliance.</desc>
+      </param>
+    </method>
+
+    <method name="createMedium">
+      <desc>
+        Creates a new base medium object that will use the given storage
+        format and location for medium data.
+
+        The actual storage unit is not created by this method. In order to
+        do it, and before you are able to attach the created medium to
+        virtual machines, you must call one of the following methods to
+        allocate a format-specific storage unit at the specified location:
+        <ul>
+          <li><link to="IMedium::createBaseStorage"/></li>
+          <li><link to="IMedium::createDiffStorage"/></li>
+        </ul>
+
+        Some medium attributes, such as <link to="IMedium::id"/>, may
+        remain uninitialized until the medium storage unit is successfully
+        created by one of the above methods.
+
+        Depending on the given device type, the file at the storage location
+        must be in one of the media formats understood by VirtualBox:
+
+        <ul>
+          <li>With a "HardDisk" device type, the file must be a hard disk image
+            in one of the formats supported by VirtualBox (see
+            <link to="ISystemProperties::mediumFormats" />).
+            After the storage unit is successfully created and this method succeeds, 
+            if the medium is a base medium, it
+            will be added to the <link to="#hardDisks"/> array attribute. </li>
+          <li>With a "DVD" device type, the file must be an ISO 9960 CD/DVD image.
+            After this method succeeds, the medium will be added to the
+            <link to="#DVDImages"/> array attribute.</li>
+          <li>With a "Floppy" device type, the file must be an RAW floppy image.
+            After this method succeeds, the medium will be added to the
+            <link to="#floppyImages"/> array attribute.</li>
+        </ul>
+
+        The list of all storage formats supported by this VirtualBox
+        installation can be obtained using
+        <link to="ISystemProperties::mediumFormats"/>. If the @a format
+        attribute is empty or @c null then the default storage format
+        specified by <link to="ISystemProperties::defaultHardDiskFormat"/> will
+        be used for disks r creating a storage unit of the medium.
+
+        Note that the format of the location string is storage format specific.
+        See <link to="IMedium::location"/> and IMedium for more details.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          @a format identifier is invalid. See
+          <link to="ISystemProperties::mediumFormats"/>.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          @a location is a not valid file name (for file-based formats only).
+        </result>
+      </desc>
+      <param name="format" type="wstring" dir="in">
+        <desc>
+          Identifier of the storage format to use for the new medium.
+        </desc>
+      </param>
+      <param name="location" type="wstring" dir="in">
+        <desc>
+          Location of the storage unit for the new medium.
+        </desc>
+      </param>
+      <param name="accessMode" type="AccessMode" dir="in">
+        <desc>Whether to open the image in read/write or read-only mode. For
+        a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
+      </param>
+      <param name="forceNewUuid" type="boolean" dir="in">
+         <desc>Allows the caller to request a completely new medium UUID for
+           the image which is to be opened. Useful if one intends to open an exact
+           copy of a previously opened image, as this would normally fail due to
+           the duplicate UUID.</desc>
+      </param>
+      <param name="aDeviceTypeType" type="DeviceType" dir="in">
+        <desc>
+          Must be one of "HardDisk", "DVD" or "Floppy".
+        </desc>
+      </param>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Created medium object.</desc>
       </param>
     </method>
 

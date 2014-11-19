@@ -1739,18 +1739,67 @@ HRESULT VirtualBox::createHardDisk(const com::Utf8Str &aFormat,
                                    ComPtr<IMedium> &aMedium)
 {
     /* we don't access non-const data members so no need to lock */
-    com::Utf8Str format = aFormat;
-    if (format.isEmpty())
-        i_getDefaultHardDiskFormat(format);
+    HRESULT rc = createMedium(aFormat, aLocation, AccessMode_ReadWrite, TRUE, DeviceType_HardDisk, aMedium);
 
-    ComObjPtr<Medium> hardDisk;
-    hardDisk.createObject();
-    HRESULT rc = hardDisk->init(this,
-                                format,
-                                aLocation,
-                                Guid::Empty /* media registry: none yet */);
+    return rc;
+}
+
+HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
+                                 const com::Utf8Str &aLocation,
+                                 AccessMode_T aAccessMode,
+                                 BOOL aForceNewUuid,
+                                 DeviceType_T aDeviceType,
+                                 ComPtr<IMedium> &aMedium)
+{
+    HRESULT rc = S_OK;
+
+    ComObjPtr<Medium> medium;
+    medium.createObject();
+    com::Utf8Str format = aFormat;
+
+    switch (aDeviceType)
+    {
+        case DeviceType_HardDisk:
+        {
+
+            /* we don't access non-const data members so no need to lock */
+            if (format.isEmpty())
+                i_getDefaultHardDiskFormat(format);
+
+            rc = medium->init(this,
+                              format,
+                              aLocation,
+                              Guid::Empty /* media registry: none yet */,
+                              aDeviceType);
+        }
+        break;
+
+        case DeviceType_DVD:
+        case DeviceType_Floppy:
+        {
+
+            if (format.isEmpty())
+                return setError(E_INVALIDARG, "Format must be Valid Type%s", format.c_str());
+
+            // enforce read-only for DVDs even if caller specified ReadWrite
+            if (aDeviceType == DeviceType_DVD)
+                aAccessMode = AccessMode_ReadOnly;
+
+             rc = medium->init(this,
+                               format,
+                               aLocation,
+                               Guid::Empty /* media registry: none yet */,
+                               aDeviceType);
+
+         }
+         break;
+
+         default:
+             return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy %d", aDeviceType);
+    }
+
     if (SUCCEEDED(rc))
-        hardDisk.queryInterfaceTo(aMedium.asOutParam());
+        medium.queryInterfaceTo(aMedium.asOutParam());
 
     return rc;
 }
@@ -1787,10 +1836,10 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
         case DeviceType_DVD:
             if (id.isValid() && !id.isZero())
                 rc = i_findDVDOrFloppyImage(aDeviceType, &id, Utf8Str::Empty,
-                                          false /* setError */, &pMedium);
+                                            false /* setError */, &pMedium);
             else
                 rc = i_findDVDOrFloppyImage(aDeviceType, NULL, aLocation,
-                                          false /* setError */, &pMedium);
+                                            false /* setError */, &pMedium);
 
             // enforce read-only for DVDs even if caller specified ReadWrite
             if (aDeviceType == DeviceType_DVD)
