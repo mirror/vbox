@@ -52,13 +52,16 @@ int main(int argc, char **argv)
         { "--iterations",       'i', RTGETOPT_REQ_INT32 },
         { "--hex",              'h', RTGETOPT_REQ_NOTHING },
         { "--decimal",          'd', RTGETOPT_REQ_NOTHING },
-        { "--spin",             's', RTGETOPT_REQ_NOTHING }
+        { "--spin",             's', RTGETOPT_REQ_NOTHING },
+        { "--reference",        'r', RTGETOPT_REQ_UINT64 },  /* reference value of CpuHz, display the
+                                                              * CpuHz deviation in a separate column. */
     };
 
     uint32_t cIterations = 40;
     bool fHex = true;
     bool fSpin = false;
     int ch;
+    uint64_t uCpuHzRef = 0;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -80,6 +83,10 @@ int main(int argc, char **argv)
 
             case 's':
                 fSpin = true;
+                break;
+
+            case 'r':
+                uCpuHzRef = ValueUnion.u64;
                 break;
 
             default:
@@ -106,8 +113,9 @@ int main(int argc, char **argv)
                      SUPGetGIPModeName(g_pSUPGlobalInfoPage),
                      g_pSUPGlobalInfoPage->u32Version);
             RTPrintf(fHex
-                     ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      TSC Interval History...\n"
-                     : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      TSC Interval History...\n");
+                     ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
+                     : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      %sTSC Interval History...\n",
+                     uCpuHzRef ? "  CpuHzDev  " : "");
             static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
@@ -121,11 +129,22 @@ int main(int argc, char **argv)
                     if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0
                         &&  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz != _4G + 1)
                     {
+                        char szCpuHzDeviation[32];
                         PSUPGIPCPU pPrevCpu = &s_aaCPUs[!(i & 1)][iCpu];
                         PSUPGIPCPU pCpu = &s_aaCPUs[i & 1][iCpu];
+                        if (uCpuHzRef)
+                        {
+                            int64_t iCpuHzDeviation = pCpu->u64CpuHz - uCpuHzRef;
+                            if (RT_ABS(iCpuHzDeviation) > 999999999)
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10s  ", "?");
+                            else
+                                RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64  ", iCpuHzDeviation);
+                        }
+                        else
+                            szCpuHzDeviation[0] = '\0';
                         RTPrintf(fHex
-                                 ? "tstGIP-2: %4d/%d: %016llx %09llx %016llx %08x %d %08x %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n"
-                                 : "tstGIP-2: %4d/%d: %016llu %09llu %016llu %010u %d %010u %15llu %08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
+                                 ? "tstGIP-2: %4d/%d: %016llx %09llx %016llx %08x %d %08x %15llu %s%08x %08x %08x %08x %08x %08x %08x %08x (%d)\n"
+                                 : "tstGIP-2: %4d/%d: %016llu %09llu %016llu %010u %d %010u %15llu %s%08x %08x %08x %08x %08x %08x %08x %08x (%d)\n",
                                  i, iCpu,
                                  pCpu->u64NanoTS,
                                  i ? pCpu->u64NanoTS - pPrevCpu->u64NanoTS : 0,
@@ -134,6 +153,7 @@ int main(int argc, char **argv)
                                  pCpu->iTSCHistoryHead,
                                  pCpu->u32TransactionId,
                                  pCpu->u64CpuHz,
+                                 szCpuHzDeviation,
                                  pCpu->au32TSCHistory[0],
                                  pCpu->au32TSCHistory[1],
                                  pCpu->au32TSCHistory[2],
