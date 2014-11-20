@@ -143,8 +143,11 @@ int main(int argc, char **argv)
                                 RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%17s  ", "?");
                             else
                             {
-                                uCpuHzOverallDeviation += uCpuHzDeviation;
-                                cCpuHzOverallDevCnt++;
+                                if (pCpu->u32TransactionId > 7)
+                                {
+                                    uCpuHzOverallDeviation += uCpuHzDeviation;
+                                    cCpuHzOverallDevCnt++;
+                                }
                                 uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
                                 RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  ",
                                             iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10);
@@ -217,7 +220,7 @@ int main(int argc, char **argv)
             for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
                     RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
-            
+
             if (uCpuHzRef)
             {
                 uint32_t uPct = (uint32_t)(uCpuHzOverallDeviation * 100000 / cCpuHzOverallDevCnt / uCpuHzRef + 5);
