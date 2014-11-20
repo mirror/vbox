@@ -321,6 +321,8 @@ endif
 	src/net/udp/dhcp.c \
 	src/net/udp/dns.c \
 	src/net/udp/tftp.c \
+	src/net/tcp/http.c \
+	src/net/tcp/httpcore.c \
 	src/usr/autoboot.c \
 	src/usr/dhcpmgmt.c \
 	src/usr/ifmgmt.c \
