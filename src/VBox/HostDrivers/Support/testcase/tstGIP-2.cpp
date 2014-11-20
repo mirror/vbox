@@ -63,6 +63,7 @@ int main(int argc, char **argv)
     int ch;
     uint64_t uCpuHzRef = 0;
     uint64_t uCpuHzOverallDeviation = 0;
+    int32_t cCpuHzOverallDevCnt = 0;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -143,6 +144,7 @@ int main(int argc, char **argv)
                             else
                             {
                                 uCpuHzOverallDeviation += uCpuHzDeviation;
+                                cCpuHzOverallDevCnt++;
                                 uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
                                 RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  ",
                                             iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10);
@@ -218,7 +220,7 @@ int main(int argc, char **argv)
             
             if (uCpuHzRef)
             {
-                uint32_t uPct = (uint32_t)(uCpuHzOverallDeviation * 100000 / cIterations / g_pSUPGlobalInfoPage->cCpus / uCpuHzRef + 5);
+                uint32_t uPct = (uint32_t)(uCpuHzOverallDeviation * 100000 / cCpuHzOverallDevCnt / uCpuHzRef + 5);
                 RTPrintf("tstGIP-2: Overall CpuHz deviation: %d.%02d%%\n", uPct / 1000, (uPct % 1000) / 10);
             }
         }
