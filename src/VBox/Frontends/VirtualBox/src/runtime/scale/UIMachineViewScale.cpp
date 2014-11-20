@@ -70,7 +70,7 @@ UIMachineViewScale::~UIMachineViewScale()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewScale::takePauseShotLive()
+void UIMachineViewScale::takePausePixmapLive()
 {
     /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
     QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
@@ -81,7 +81,7 @@ void UIMachineViewScale::takePauseShotLive()
     scalePauseShot();
 }
 
-void UIMachineViewScale::takePauseShotSnapshot()
+void UIMachineViewScale::takePausePixmapSnapshot()
 {
     ULONG width = 0, height = 0;
     QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, width, height);
@@ -96,10 +96,10 @@ void UIMachineViewScale::takePauseShotSnapshot()
     }
 }
 
-void UIMachineViewScale::resetPauseShot()
+void UIMachineViewScale::resetPausePixmap()
 {
     /* Call the base class */
-    UIMachineView::resetPauseShot();
+    UIMachineView::resetPausePixmap();
 
     if (m_pPauseImage)
     {
@@ -117,7 +117,7 @@ void UIMachineViewScale::scalePauseShot()
         {
             QImage tmpImg = m_pPauseImage->scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             dimImage(tmpImg);
-            m_pauseShot = QPixmap::fromImage(tmpImg);
+            m_pausePixmap = QPixmap::fromImage(tmpImg);
         }
     }
 }

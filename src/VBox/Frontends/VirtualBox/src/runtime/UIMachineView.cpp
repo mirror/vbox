@@ -297,8 +297,9 @@ void UIMachineView::sltMachineStateChanged()
                 && (   state           != KMachineState_TeleportingPausedVM
                     || m_previousState != KMachineState_Teleporting))
             {
-                takePauseShotLive();
-                /* Fully repaint to pick up m_pauseShot: */
+                /* Take live pause-pixmap: */
+                takePausePixmapLive();
+                /* Fully repaint to pick up pause-pixmap: */
                 viewport()->update();
             }
             break;
@@ -308,8 +309,9 @@ void UIMachineView::sltMachineStateChanged()
             /* Only works with the primary screen currently. */
             if (screenId() == 0)
             {
-                takePauseShotSnapshot();
-                /* Fully repaint to pick up m_pauseShot: */
+                /* Take snapshot pause-pixmap: */
+                takePausePixmapSnapshot();
+                /* Fully repaint to pick up pause-pixmap: */
                 viewport()->update();
             }
             break;
@@ -322,8 +324,8 @@ void UIMachineView::sltMachineStateChanged()
             {
                 if (m_pFrameBuffer)
                 {
-                    /* Reset the pixmap to free memory: */
-                    resetPauseShot();
+                    /* Reset pause-pixmap: */
+                    resetPausePixmap();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
                     display().InvalidateAndUpdate();
@@ -686,42 +688,67 @@ void UIMachineView::storeGuestSizeHint(const QSize &size)
     gEDataManager->setLastGuestSizeHint(m_uScreenId, size, vboxGlobal().managedVMUuid());
 }
 
-void UIMachineView::takePauseShotLive()
+void UIMachineView::resetPausePixmap()
 {
-    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-    /* If TakeScreenShot fails or returns no image, just show a black image. */
-    shot.fill(0);
-    if (vboxGlobal().isSeparateProcess())
-    {
-        QVector<BYTE> screenData = display().TakeScreenShotToArray(screenId(), shot.width(), shot.height(), KBitmapFormat_BGR0);
-
-        /* Make sure screen-data is OK: */
-        if (display().isOk() && !screenData.isEmpty())
-            memcpy(shot.bits(), screenData.data(), shot.width() * shot.height() * 4);
-    }
-    else
-        display().TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
-    /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-     * after the machine execution was resumed. It's not fatal: */
-    if (display().isOk())
-        dimImage(shot);
-    m_pauseShot = QPixmap::fromImage(shot);
+    /* Reset pixmap: */
+    m_pausePixmap = QPixmap();
 }
 
-void UIMachineView::takePauseShotSnapshot()
+void UIMachineView::takePausePixmapLive()
 {
-    ULONG width = 0, height = 0;
-    QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, width, height);
-    if (screenData.size() != 0)
+    /* Prepare a screen-shot: */
+    QImage screenShot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+    /* Which will be a 'black image' by default. */
+    screenShot.fill(0);
+
+    /* For separate process: */
+    if (vboxGlobal().isSeparateProcess())
     {
-        ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-        BOOL fEnabled = true;
-        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
-        dimImage(shot);
-        m_pauseShot = QPixmap::fromImage(shot);
+        /* Take screen-data to array: */
+        const QVector<BYTE> screenData = display().TakeScreenShotToArray(screenId(), screenShot.width(), screenShot.height(), KBitmapFormat_BGR0);
+        /* And copy that data to screen-shot if it is Ok: */
+        if (display().isOk() && !screenData.isEmpty())
+            memcpy(screenShot.bits(), screenData.data(), screenShot.width() * screenShot.height() * 4);
     }
+    /* For the same process: */
+    else
+    {
+        /* Take the screen-shot directly: */
+        display().TakeScreenShot(screenId(), screenShot.bits(), screenShot.width(), screenShot.height(), KBitmapFormat_BGR0);
+    }
+
+    /* Dim screen-shot if it is Ok: */
+    if (display().isOk() && !screenShot.isNull())
+        dimImage(screenShot);
+
+    /* Finally copy the screen-shot to pause-pixmap: */
+    m_pausePixmap = QPixmap::fromImage(screenShot);
+}
+
+void UIMachineView::takePausePixmapSnapshot()
+{
+    /* Acquire the screen-data from the saved-state: */
+    ULONG uWidth = 0, uHeight = 0;
+    const QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, uWidth, uHeight);
+
+    /* Make sure there is saved-state screen-data: */
+    if (screenData.isEmpty())
+        return;
+
+    /* Acquire the screen-data properties from the saved-state: */
+    ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
+    BOOL fEnabled = true;
+    machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
+
+    /* Create a screen-shot on the basis of the screen-data we have in saved-state: */
+    QImage screenShot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : guestSizeHint());
+
+    /* Dim screen-shot if it is Ok: */
+    if (machine().isOk() && !screenShot.isNull())
+        dimImage(screenShot);
+
+    /* Finally copy the screen-shot to pause-pixmap: */
+    m_pausePixmap = QPixmap::fromImage(screenShot);
 }
 
 void UIMachineView::updateSliders()
@@ -809,8 +836,8 @@ void UIMachineView::updateDockIcon()
 CGImageRef UIMachineView::vmContentImage()
 {
     /* Use pause-image if exists: */
-    if (!m_pauseShot.isNull())
-        return darwinToCGImageRef(&m_pauseShot);
+    if (!pausePixmap().isNull())
+        return darwinToCGImageRef(&pausePixmap());
 
     /* Create the image ref out of the frame-buffer: */
     return frameBuffertoCGImageRef(m_pFrameBuffer);
@@ -955,13 +982,13 @@ void UIMachineView::moveEvent(QMoveEvent *pEvent)
 void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 {
     /* Use pause-image if exists: */
-    if (!m_pauseShot.isNull())
+    if (!pausePixmap().isNull())
     {
         /* We have a snapshot for the paused state: */
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
-        painter.drawPixmap(rect, m_pauseShot, QRect(rect.x() + contentsX(), rect.y() + contentsY(),
-                                                    rect.width(), rect.height()));
+        painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
+                                                      rect.width(), rect.height()));
 #ifdef Q_WS_MAC
         /* Update the dock icon: */
         updateDockIcon();

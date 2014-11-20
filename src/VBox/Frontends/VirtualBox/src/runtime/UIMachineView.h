@@ -172,7 +172,6 @@ protected:
     int visibleHeight() const;
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
-    const QPixmap& pauseShot() const { return m_pauseShot; }
     /** Atomically store the maximum guest resolution which we currently wish
      * to handle for @a maxGuestSize() to read.  Should be called if anything
      * happens (e.g. a screen hotplug) which might cause the value to change.
@@ -192,10 +191,15 @@ protected:
      * fullscreen. */
     void storeGuestSizeHint(const QSize &size);
 
-    /* Protected helpers: */
-    virtual void takePauseShotLive();
-    virtual void takePauseShotSnapshot();
-    virtual void resetPauseShot() { m_pauseShot = QPixmap(); }
+    /** Returns the pause-pixmap: */
+    const QPixmap& pausePixmap() const { return m_pausePixmap; }
+    /** Resets the pause-pixmap. */
+    virtual void resetPausePixmap();
+    /** Acquires live pause-pixmap. */
+    virtual void takePausePixmapLive();
+    /** Acquires snapshot pause-pixmap. */
+    virtual void takePausePixmapSnapshot();
+
     /** The available area on the current screen for application windows. */
     virtual QRect workingArea() const = 0;
     /** Calculate how big the guest desktop can be while still fitting on one
@@ -268,7 +272,8 @@ protected:
     bool m_fAccelerate2DVideo : 1;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-    QPixmap m_pauseShot;
+    /** Holds the pause-pixmap. */
+    QPixmap m_pausePixmap;
 
     /* Friend classes: */
     friend class UIKeyboardHandler;
