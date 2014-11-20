@@ -2866,6 +2866,11 @@ VBOX_SUFF_LIB = .lib
 else
 VBOX_SUFF_LIB = .a
 endif
+if1of ($(KBUILD_HOST), os2 win)
+VBOX_HOSTSUFF_LIB = .lib
+else
+VBOX_HOSTSUFF_LIB = .a
+endif
 VBOX_SUFF_DLL = $(SUFF_DLL)
 ifeq ($(KBUILD_TARGET),os2) # GXX3OMF produces out .o at the moment.
 VBOX_SUFF_OBJ = .o
@@ -5126,10 +5131,10 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxAdvBldProg_CXXFLAGS = $(TEMPLATE_VBoxBldProg_CXXFLAGS) $(VBOX_VCC_WERR)
 endif
 TEMPLATE_VBoxAdvBldProg_LIBS    = \
-	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB) \
 	$(if-expr defined(IPRT_WITH_KSTUFF), \
-		$(PATH_STAGE_LIB)/VBox-kStuffStaticBldProg$(VBOX_SUFF_LIB) \
-		$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
+		$(PATH_STAGE_LIB)/VBox-kStuffStaticBldProg$(VBOX_HOSTSUFF_LIB) \
+		$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB) \
 	,) \
 	$(TEMPLATE_VBoxBldProg_LIBS)
 TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
