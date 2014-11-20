@@ -36,9 +36,9 @@ protected:
     /* Scale machine-view destructor: */
     virtual ~UIMachineViewScale();
 
-    virtual void takePauseShotLive();
-    virtual void takePauseShotSnapshot();
-    virtual void resetPauseShot();
+    virtual void takePausePixmapLive();
+    virtual void takePausePixmapSnapshot();
+    virtual void resetPausePixmap();
     void scalePauseShot();
 
 private slots:
