@@ -217,10 +217,12 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         const bool fActualResize = frameBuffer()->width() != iWidth ||
                                    frameBuffer()->height() != iHeight;
 
-        // TODO: Move to appropriate place!
-        /* Adjust 'scale' mode for current machine-view size: */
+        /* Adjust 'scale' mode to current machine-view size: */
         if (visualStateType() == UIVisualStateType_Scale)
+        {
+            /* Assign new frame-buffer logical-size: */
             frameBuffer()->setScaledSize(size());
+        }
 
         /* Perform frame-buffer mode-change: */
         frameBuffer()->notifyChange(iWidth, iHeight);
@@ -602,17 +604,20 @@ QSize UIMachineView::sizeHint() const
 {
     if (m_sizeHintOverride.isValid())
         return m_sizeHintOverride;
+
+    /* Get frame-buffer size-hint: */
+    QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // TODO: Fix all DEBUGGER stuff!
     /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
-    QSize fb(m_pFrameBuffer->width(), m_pFrameBuffer->height());
-    if (fb.width() < 16 || fb.height() < 16)
+    if (size.width() < 16 || size.height() < 16)
         if (vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled())
-            fb = QSize(640, 480);
-    return QSize(fb.width() + frameWidth() * 2, fb.height() + frameWidth() * 2);
-#else /* !VBOX_WITH_DEBUGGER_GUI */
-    return QSize(m_pFrameBuffer->width() + frameWidth() * 2, m_pFrameBuffer->height() + frameWidth() * 2);
+            size = QSize(640, 480);
 #endif /* !VBOX_WITH_DEBUGGER_GUI */
+
+    /* Return the resulting size-hint: */
+    return QSize(size.width() + frameWidth() * 2, size.height() + frameWidth() * 2);
 }
 
 int UIMachineView::contentsX() const
@@ -679,8 +684,12 @@ QSize UIMachineView::guestSizeHint()
     /* Load guest-screen size-hint: */
     QSize size = gEDataManager->lastGuestSizeHint(m_uScreenId, vboxGlobal().managedVMUuid());
 
-    /* Return loaded or default: */
-    return size.isValid() ? size : QSize(800, 600);
+    /* Invent the default if necessary: */
+    if (!size.isValid())
+        size = QSize(800, 600);
+
+    /* Return size: */
+    return size;
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &size)
