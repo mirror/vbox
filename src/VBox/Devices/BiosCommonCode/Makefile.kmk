@@ -26,7 +26,7 @@ MakeAlternativeSource_TEMPLATE = VBoxAdvBldProg
 MakeAlternativeSource_DEFS     = IN_DIS
 MakeAlternativeSource_SOURCES  = MakeAlternativeSource.cpp
 MakeAlternativeSource_LIBS     = \
-	$(PATH_STAGE_LIB)/DisasmBldProg$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmBldProg$(VBOX_HOSTSUFF_LIB)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
