@@ -314,7 +314,7 @@ icmpwin_callback(struct pong *pong)
 
         m_append(pData, m, reqsize, reply->Data);
 
-        icmp->icmp_cksum = in_cksum_skip(m, sizeof(*icmp) + reqsize, sizeof(*ip));
+        icmp->icmp_cksum = in_cksum_skip(m, ip->ip_len, sizeof(*ip));
     }
     else {
         uint8_t type, code;
@@ -411,7 +411,7 @@ icmpwin_get_error(struct pong *pong, int type, int code)
     m_append(pData, m, sizeof(pong->reqiph), (caddr_t)&pong->reqiph);
     m_append(pData, m, sizeof(pong->reqicmph), (caddr_t)&pong->reqicmph);
 
-    icmp->icmp_cksum = in_cksum_skip(m, sizeof(*icmp) + reqsize, sizeof(*ip));
+    icmp->icmp_cksum = in_cksum_skip(m, ip->ip_len, sizeof(*ip));
 
     return m;
 }
