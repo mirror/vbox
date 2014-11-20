@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     bool fSpin = false;
     int ch;
     uint64_t uCpuHzRef = 0;
+    uint64_t uCpuHzOverallDeviation = 0;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -136,11 +137,13 @@ int main(int argc, char **argv)
                         if (uCpuHzRef)
                         {
                             int64_t iCpuHzDeviation = pCpu->u64CpuHz - uCpuHzRef;
-                            if (RT_ABS(iCpuHzDeviation) > 999999999)
+                            uint64_t uCpuHzDeviation = RT_ABS(iCpuHzDeviation);
+                            if (uCpuHzDeviation > 999999999)
                                 RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%17s  ", "?");
                             else
                             {
-                                uint32_t uPct = (uint32_t)(RT_ABS(iCpuHzDeviation) * 100000 / pCpu->u64CpuHz + 5);
+                                uCpuHzOverallDeviation += uCpuHzDeviation;
+                                uint32_t uPct = (uint32_t)(uCpuHzDeviation * 100000 / uCpuHzRef + 5);
                                 RTStrPrintf(szCpuHzDeviation, sizeof(szCpuHzDeviation), "%10RI64%3d.%02d%%  ",
                                             iCpuHzDeviation, uPct / 1000, (uPct % 1000) / 10);
                             }
@@ -212,6 +215,12 @@ int main(int argc, char **argv)
             for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
                     RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
+            
+            if (uCpuHzRef)
+            {
+                uint32_t uPct = (uint32_t)(uCpuHzOverallDeviation * 100000 / cIterations / g_pSUPGlobalInfoPage->cCpus / uCpuHzRef + 5);
+                RTPrintf("tstGIP-2: Overall CpuHz deviation: %d.%02d%%\n", uPct / 1000, (uPct % 1000) / 10);
+            }
         }
         else
         {
