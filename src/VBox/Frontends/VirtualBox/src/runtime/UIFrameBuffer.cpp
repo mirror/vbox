@@ -27,6 +27,7 @@
 # include "UIMachineWindow.h"
 # include "UIMachineView.h"
 # include "UIPopupCenter.h"
+# include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WITH_MASKED_SEAMLESS
 #  include "UIMachineWindow.h"
@@ -60,6 +61,7 @@ UIFrameBuffer::UIFrameBuffer()
     , m_fUpdatesAllowed(true)
     , m_fUnused(false)
     , m_fAutoEnabled(false)
+    , m_dScaleFactor(gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()))
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
 {
@@ -468,6 +470,10 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         /* Which is inclusive: */
         rect.setRight(rects->xRight - 1);
         rect.setBottom(rects->yBottom - 1);
+        /* Tune according scale-factor: */
+        // TODO: Take rounding into account..
+        rect.moveTo(rect.topLeft() * m_dScaleFactor);
+        rect.setSize(rect.size() * m_dScaleFactor);
         /* Append region: */
         region += rect;
         ++rects;
@@ -718,9 +724,6 @@ void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
         case UIVisualStateType_Seamless:
             paintSeamless(pEvent);
             break;
-        case UIVisualStateType_Scale:
-            paintScaled(pEvent);
-            break;
         default:
             paintDefault(pEvent);
             break;
@@ -790,8 +793,22 @@ void UIFrameBuffer::cleanupConnections()
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
 {
+    /* Scaled image is NULL by default: */
+    QImage scaledImage;
+    /* But if scaled-factor is set and current image is NOT null: */
+    if (m_scaledSize.isValid() && !m_image.isNull())
+    {
+        /* We are doing a deep copy of the image to make sure it will not be
+         * detached during scale process, otherwise we can get a frozen frame-buffer. */
+        scaledImage = m_image.copy();
+        /* And scaling the image to predefined scaled-factor: */
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+    /* Finally we are choosing image to paint from: */
+    const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
+
     /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(m_image.rect()).intersected(m_pMachineView->viewport()->geometry());
+    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
     if (paintRect.isEmpty())
         return;
 
@@ -799,15 +816,29 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
     QPainter painter(m_pMachineView->viewport());
 
     /* Draw image rectangle: */
-    drawImageRect(painter, m_image, paintRect,
+    drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   hiDPIOptimizationType(), backingScaleFactor());
 }
 
 void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 {
+    /* Scaled image is NULL by default: */
+    QImage scaledImage;
+    /* But if scaled-factor is set and current image is NOT null: */
+    if (m_scaledSize.isValid() && !m_image.isNull())
+    {
+        /* We are doing a deep copy of the image to make sure it will not be
+         * detached during scale process, otherwise we can get a frozen frame-buffer. */
+        scaledImage = m_image.copy();
+        /* And scaling the image to predefined scaled-factor: */
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+    /* Finally we are choosing image to paint from: */
+    const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
+
     /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(m_image.rect()).intersected(m_pMachineView->viewport()->geometry());
+    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
     if (paintRect.isEmpty())
         return;
 
@@ -850,41 +881,11 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
             /* Draw image rectangle: */
-            drawImageRect(painter, m_image, rect,
+            drawImageRect(painter, sourceImage, rect,
                           m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                           hiDPIOptimizationType(), backingScaleFactor());
         }
     }
-}
-
-void UIFrameBuffer::paintScaled(QPaintEvent *pEvent)
-{
-    /* Scaled image is NULL by default: */
-    QImage scaledImage;
-    /* But if scaled-factor is set and current image is NOT null: */
-    if (m_scaledSize.isValid() && !m_image.isNull())
-    {
-        /* We are doing a deep copy of the image to make sure it will not be
-         * detached during scale process, otherwise we can get a frozen frame-buffer. */
-        scaledImage = m_image.copy();
-        /* And scaling the image to predefined scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    }
-    /* Finally we are choosing image to paint from: */
-    QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
-
-    /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
-    if (paintRect.isEmpty())
-        return;
-
-    /* Create painter: */
-    QPainter painter(m_pMachineView->viewport());
-
-    /* Draw image rectangle: */
-    drawImageRect(painter, sourceImage, paintRect,
-                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  hiDPIOptimizationType(), backingScaleFactor());
 }
 
 /* static */

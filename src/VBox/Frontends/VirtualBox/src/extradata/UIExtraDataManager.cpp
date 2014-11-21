@@ -1791,6 +1791,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_MouseCapturePolicy
            << GUI_GuruMeditationHandler
            << GUI_HidLedsSync
+           << GUI_ScaleFactor
            << GUI_InformationWindowGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
@@ -3254,6 +3255,23 @@ bool UIExtraDataManager::hidLedsSyncState(const QString &strID)
 {
     /* 'True' unless feature restricted: */
     return !isFeatureRestricted(GUI_HidLedsSync, strID);
+}
+
+double UIExtraDataManager::scaleFactor(const QString &strID)
+{
+    /* Get corresponding extra-data value: */
+    const QString strValue = extraDataString(GUI_ScaleFactor, strID);
+
+    /* Try to convert loaded data to double: */
+    bool fOk = false;
+    double dValue = strValue.toDouble(&fOk);
+
+    /* Invent the default value: */
+    if (!fOk || !dValue)
+        dValue = 1;
+
+    /* Return value: */
+    return dValue;
 }
 
 QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID)

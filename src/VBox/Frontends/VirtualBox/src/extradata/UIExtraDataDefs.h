@@ -236,6 +236,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_GuruMeditationHandler;
         /** Holds whether machine should perform HID LEDs synchronization. */
         extern const char* GUI_HidLedsSync;
+        /** Holds the scale-factor. */
+        extern const char* GUI_ScaleFactor;
     /** @} */
 
     /** @name Virtual Machine: Information dialog

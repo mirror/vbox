@@ -233,8 +233,6 @@ protected:
     void paintDefault(QPaintEvent *pEvent);
     /** Paint routine for seamless mode. */
     void paintSeamless(QPaintEvent *pEvent);
-    /** Paint routine for scaled mode. */
-    void paintScaled(QPaintEvent *pEvent);
 
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
@@ -276,9 +274,11 @@ protected:
     /** RTCRITSECT object to protect frame-buffer access. */
     mutable RTCRITSECT m_critSect;
 
-    /** @name Scaled mode related variables.
+    /** @name Scale-factor related variables.
      * @{ */
-    /** Holds frame-buffer scaled size. */
+    /** Holds the scale-factor used by the scaled-size. */
+    const double m_dScaleFactor;
+    /** Holds the frame-buffer's scaled-size. */
     QSize m_scaledSize;
     /** @} */
 

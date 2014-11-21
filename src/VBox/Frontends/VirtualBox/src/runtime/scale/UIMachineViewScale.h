@@ -36,11 +36,6 @@ protected:
     /* Scale machine-view destructor: */
     virtual ~UIMachineViewScale();
 
-    virtual void takePausePixmapLive();
-    virtual void takePausePixmapSnapshot();
-    virtual void resetPausePixmap();
-    void scalePauseShot();
-
 private slots:
 
     /* Slot to perform guest resize: */
@@ -68,9 +63,6 @@ private:
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
     void updateSliders();
-
-    /* Private members: */
-    QImage *m_pPauseImage;
 
     /* Friend classes: */
     friend class UIMachineView;

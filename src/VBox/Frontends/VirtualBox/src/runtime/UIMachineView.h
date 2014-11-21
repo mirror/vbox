@@ -193,12 +193,16 @@ protected:
 
     /** Returns the pause-pixmap: */
     const QPixmap& pausePixmap() const { return m_pausePixmap; }
+    /** Returns the scaled pause-pixmap: */
+    const QPixmap& pausePixmapScaled() const { return m_pausePixmapScaled; }
     /** Resets the pause-pixmap. */
-    virtual void resetPausePixmap();
+    void resetPausePixmap();
     /** Acquires live pause-pixmap. */
-    virtual void takePausePixmapLive();
+    void takePausePixmapLive();
     /** Acquires snapshot pause-pixmap. */
-    virtual void takePausePixmapSnapshot();
+    void takePausePixmapSnapshot();
+    /** Updates the scaled pause-pixmap. */
+    void updateScaledPausePixmap();
 
     /** The available area on the current screen for application windows. */
     virtual QRect workingArea() const = 0;
@@ -274,6 +278,8 @@ protected:
 
     /** Holds the pause-pixmap. */
     QPixmap m_pausePixmap;
+    /** Holds the scaled pause-pixmap. */
+    QPixmap m_pausePixmapScaled;
 
     /* Friend classes: */
     friend class UIKeyboardHandler;
