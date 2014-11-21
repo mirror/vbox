@@ -6611,7 +6611,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
             {
                 idxNewGipMaster = supdrvGipCpuIndexFromCpuId(pGip, idNewGipMaster);
                 iTSCDelta       = pGip->aCPUs[idxNewGipMaster].i64TSCDelta;
-                Assert(iTSCDelta != UINT64_MAX);
+                Assert(iTSCDelta != INT64_MAX);
                 for (i = 0; i < pGip->cCpus; i++)
                 {
                     PSUPGIPCPU pGipCpu      = &pGip->aCPUs[i];
@@ -6749,18 +6749,23 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
     Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
     while (cTriesLeft-- > 0)
     {
-        unsigned    i;
-        uint64_t    uMinCmpReadTime = UINT64_MAX;
+        unsigned i;
+        uint64_t uMinCmpReadTime = UINT64_MAX;
         for (i = 0; i < GIP_TSC_DELTA_LOOPS; i++)
         {
-            RTCCUINTREG uFlags = ASMIntDisableFlags();   /* Disable interrupts per-iteration, see @bugref{6710} comment #38. */
             if (idCpu == idMaster)
             {
                 /*
                  * The master.
                  */
+                RTCCUINTREG uFlags;
                 Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
                 ASMAtomicWriteU32(&g_pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_START);
+
+                /* Disable interrupts only in the master for as short a period
+                   as possible, thanks again to Windows. See @bugref{6710} comment #73. */
+                uFlags = ASMIntDisableFlags();
+
                 while (ASMAtomicReadU32(&g_pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_START)
                     ;
 
@@ -6769,6 +6774,8 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                     ASMSerializeInstruction();
                     ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, ASMReadTSC());
                 } while (pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
+
+                ASMSetFlags(uFlags);
 
                 while (ASMAtomicReadU32(&g_pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_WORKER_DONE)
                     ;
@@ -6838,8 +6845,6 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                 while (ASMAtomicReadU32(&g_pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_WORKER_DONE)
                     ASMNopPause();
             }
-
-            ASMSetFlags(uFlags);
         }
 
         if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
