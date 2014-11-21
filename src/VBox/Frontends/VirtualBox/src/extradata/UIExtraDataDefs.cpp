@@ -135,6 +135,7 @@ const char* UIExtraDataDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIExtraDataDefs::GUI_MouseCapturePolicy = "GUI/MouseCapturePolicy";
 const char* UIExtraDataDefs::GUI_GuruMeditationHandler = "GUI/GuruMeditationHandler";
 const char* UIExtraDataDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
+const char* UIExtraDataDefs::GUI_ScaleFactor = "GUI/ScaleFactor";
 
 /* Virtual Machine: Information dialog: */
 const char* UIExtraDataDefs::GUI_InformationWindowGeometry = "GUI/InformationWindowGeometry";

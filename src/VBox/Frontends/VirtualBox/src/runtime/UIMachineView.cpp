@@ -184,6 +184,10 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    newSize /= dScaleFactor;
+
     /* Expand current limitations: */
     setMaxGuestSize(newSize);
 
@@ -222,6 +226,13 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         {
             /* Assign new frame-buffer logical-size: */
             frameBuffer()->setScaledSize(size());
+        }
+        /* Adjust other modes to current NotifyChange event size: */
+        else
+        {
+            /* Assign new frame-buffer logical-size taking the scale-factor into account: */
+            const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+            frameBuffer()->setScaledSize(dScaleFactor == 1 ? QSize() : QSize(iWidth * dScaleFactor, iHeight * dScaleFactor));
         }
 
         /* Perform frame-buffer mode-change: */
@@ -270,8 +281,25 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
 {
-    /* Update corresponding viewport part: */
-    viewport()->update(iX - contentsX(), iY - contentsY(), iWidth, iHeight);
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor == 1)
+    {
+        /* Just update corresponding viewport part: */
+        viewport()->update(iX - contentsX(), iY - contentsY(), iWidth, iHeight);
+    }
+    else
+    {
+        /* Calculate corresponding viewport part: */
+        QRect rect(iX * dScaleFactor - 1 - contentsX(),
+                   iY * dScaleFactor - 1 - contentsY(),
+                   iWidth  * dScaleFactor + 2 * dScaleFactor + 1,
+                   iHeight * dScaleFactor + 2 * dScaleFactor + 1);
+        /* Limit the resulting part by the viewport rectangle: */
+        rect &= viewport()->rect();
+        /* Update corresponding viewport part: */
+        viewport()->update(rect);
+    }
 }
 
 void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
@@ -391,6 +419,9 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
+    /* Take scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
     /* Prepare frame-buffer: */
     UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
     if (pFrameBuffer)
@@ -421,7 +452,9 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->init(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
-
+        m_pFrameBuffer->setScaledSize(dScaleFactor == 1 ? QSize() :
+                                      QSize(m_pFrameBuffer->width() * dScaleFactor,
+                                            m_pFrameBuffer->height() * dScaleFactor));
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
 
@@ -462,7 +495,12 @@ void UIMachineView::prepareFrameBuffer()
     }
     /* If we have a valid size, resize the framebuffer. */
     if (size.width() > 0 && size.height() > 0)
+    {
         frameBuffer()->resizeEvent(size.width(), size.height());
+        frameBuffer()->setScaledSize(dScaleFactor == 1 ? QSize() :
+                                     QSize(frameBuffer()->width() * dScaleFactor,
+                                           frameBuffer()->height() * dScaleFactor));
+    }
 }
 
 void UIMachineView::prepareCommon()
@@ -608,6 +646,10 @@ QSize UIMachineView::sizeHint() const
     /* Get frame-buffer size-hint: */
     QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    size *= dScaleFactor;
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // TODO: Fix all DEBUGGER stuff!
     /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
@@ -688,6 +730,10 @@ QSize UIMachineView::guestSizeHint()
     if (!size.isValid())
         size = QSize(800, 600);
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    size *= dScaleFactor;
+
     /* Return size: */
     return size;
 }
@@ -703,8 +749,9 @@ void UIMachineView::storeGuestSizeHint(const QSize &size)
 
 void UIMachineView::resetPausePixmap()
 {
-    /* Reset pixmap: */
+    /* Reset pixmap(s): */
     m_pausePixmap = QPixmap();
+    m_pausePixmapScaled = QPixmap();
 }
 
 void UIMachineView::takePausePixmapLive()
@@ -736,6 +783,9 @@ void UIMachineView::takePausePixmapLive()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
+
+    /* Update scaled pause pixmap: */
+    updateScaledPausePixmap();
 }
 
 void UIMachineView::takePausePixmapSnapshot()
@@ -762,6 +812,24 @@ void UIMachineView::takePausePixmapSnapshot()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
+
+    /* Update scaled pause pixmap: */
+    updateScaledPausePixmap();
+}
+
+void UIMachineView::updateScaledPausePixmap()
+{
+    /* Make sure pause pixmap is not null: */
+    if (pausePixmap().isNull())
+        return;
+
+    /* Make sure scaled-size is not null: */
+    const QSize scaledSize = frameBuffer()->scaledSize();
+    if (!scaledSize.isValid())
+        return;
+
+    /* Update pause pixmap finally: */
+    m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 }
 
 void UIMachineView::updateSliders()
@@ -1000,8 +1068,14 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         /* We have a snapshot for the paused state: */
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
-        painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
-                                                      rect.width(), rect.height()));
+        /* Take the scale-factor into account: */
+        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+        if (dScaleFactor == 1)
+            painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
+                                                          rect.width(), rect.height()));
+        else
+            painter.drawPixmap(rect, pausePixmapScaled(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
+                                                                rect.width(), rect.height()));
 #ifdef Q_WS_MAC
         /* Update the dock icon: */
         updateDockIcon();

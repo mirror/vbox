@@ -52,7 +52,6 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     )
-    , m_pPauseImage(0)
 {
     /* Resend the last resize hint if necessary: */
     maybeResendSizeHint();
@@ -70,66 +69,14 @@ UIMachineViewScale::~UIMachineViewScale()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewScale::takePausePixmapLive()
-{
-    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-    /* If TakeScreenShot fails or returns no image, just show a black image. */
-    shot.fill(0);
-    display().TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height(), KBitmapFormat_BGR0);
-    m_pPauseImage = new QImage(shot);
-    scalePauseShot();
-}
-
-void UIMachineViewScale::takePausePixmapSnapshot()
-{
-    ULONG width = 0, height = 0;
-    QVector<BYTE> screenData = machine().ReadSavedScreenshotPNGToArray(0, width, height);
-    if (screenData.size() != 0)
-    {
-        ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-        BOOL fEnabled = true;
-        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-        QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(guestWidth > 0 ? QSize(guestWidth, guestHeight) : guestSizeHint());
-        m_pPauseImage = new QImage(shot);
-        scalePauseShot();
-    }
-}
-
-void UIMachineViewScale::resetPausePixmap()
-{
-    /* Call the base class */
-    UIMachineView::resetPausePixmap();
-
-    if (m_pPauseImage)
-    {
-        delete m_pPauseImage;
-        m_pPauseImage = 0;
-    }
-}
-
-void UIMachineViewScale::scalePauseShot()
-{
-    if (m_pPauseImage)
-    {
-        QSize scaledSize = frameBuffer()->scaledSize();
-        if (scaledSize.isValid())
-        {
-            QImage tmpImg = m_pPauseImage->scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-            dimImage(tmpImg);
-            m_pausePixmap = QPixmap::fromImage(tmpImg);
-        }
-    }
-}
-
 void UIMachineViewScale::sltPerformGuestScale()
 {
     /* Check if scale is requested: */
     /* Set new frame-buffer scale-factor: */
     frameBuffer()->setScaledSize(viewport()->size());
 
-    /* Scale the pause image if necessary */
-    scalePauseShot();
+    /* Scale the pause-pixmap: */
+    updateScaledPausePixmap();
 
     /* Update viewport: */
     viewport()->repaint();
