@@ -449,10 +449,8 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
         err = WSAStartup(wVersionRequested, &wsaData);
         if (err != 0)
             crError("Couldn't initialize sockets on WINDOWS");
-# ifndef VBOX
         //reinit hostname for debug messages as it's incorrect before WSAStartup gets called    
         __getHostInfo();
-# endif
 #endif
 
         cr_net.use_gm      = 0;
