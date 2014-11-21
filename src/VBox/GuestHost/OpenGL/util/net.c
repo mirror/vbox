@@ -423,7 +423,6 @@ crNetFreeConnection(CRConnection *conn)
 }
 
 
-extern void __getHostInfo();
 /**
  * Start the ball rolling.  give functions to handle incoming traffic
  * (usually placing blocks on a queue), and a handler for dropped
@@ -449,8 +448,6 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
         err = WSAStartup(wVersionRequested, &wsaData);
         if (err != 0)
             crError("Couldn't initialize sockets on WINDOWS");
-        //reinit hostname for debug messages as it's incorrect before WSAStartup gets called    
-        __getHostInfo();
 #endif
 
         cr_net.use_gm      = 0;
