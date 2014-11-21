@@ -1975,9 +1975,22 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+
+ # Check for the Xcode 4.1 bits in tools/darwin.x86.
+ if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
+   && !defined(VBOX_XCODE_VERSION) \
+   && exists "$(PATH_DEVTOOLS)/darwin.x86/xcode/v4.1"
+  VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
+  VBOX_PATH_MACOSX_DEVEL_ROOT := $(PATH_DEVTOOLS)/darwin.x86/xcode/v4.1
+  VBOX_XCODE_VERSION := 4.1
+ endif
+
+ # Fallback - system / LocalConfig.kmk.
  VBOX_PATH_MACOSX_DEVEL_ROOT ?= /Developer
  VBOX_PATH_MACOSX_SDK_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
 
+ # Figure the default SDK location and obsolete linker tricks.
  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
   ifeq ($(origin VBOX_DARWIN_CLASSIC_LINKER),undefined)
    VBOX_DARWIN_CLASSIC_LINKER := $(shell ld -v 2>&1 )
@@ -2013,7 +2026,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_XCODE_VERSION_MINOR := $(word 2, $(subst ., ,$(VBOX_XCODE_VERSION)))
  VBOX_XCODE_VERSION       := $(VBOX_XCODE_VERSION_MAJOR).$(VBOX_XCODE_VERSION_MINOR)
 
- VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5)
    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= $(VBOX_LD_no_compact_linkedit)
