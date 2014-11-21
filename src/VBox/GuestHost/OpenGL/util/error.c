@@ -1,3 +1,134 @@
+/* $Id$ */
+/** @file
+ * VBox crOpenGL error logging
+ */
+
+/*
+ * Copyright (C) 2014 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+#if 1
+
+#include <iprt/string.h>
+#include <iprt/stream.h>
+#include <VBox/log.h>
+
+#ifdef RT_OS_WINDOWS
+# include <windows.h>
+#endif
+
+#include <signal.h>
+#include <stdlib.h>
+
+static void logMessageV(const char *pszPrefix, const char *pszFormat, va_list va)
+{
+    char *pszMessage;
+
+    RTStrAPrintfV(&pszMessage, pszFormat, va);
+    if (pszMessage != NULL)
+    {
+        LogRel(("%s%s\n", pszPrefix, pszMessage));
+#ifdef IN_GUEST
+        RTStrmPrintf(g_pStdErr, "%s%s\n", pszPrefix, pszMessage);
+#endif
+        RTStrFree(pszMessage);
+    }
+}
+
+static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    logMessageV(pszPrefix, pszFormat, va);
+    va_end(va);
+}
+
+static void logDebugV(const char *pszPrefix, const char *pszFormat, va_list va)
+{
+    char *pszMessage;
+
+    RTStrAPrintfV(&pszMessage, pszFormat, va);
+    if (pszMessage != NULL)
+    {
+        Log(("%s%s\n", pszPrefix, pszMessage));
+        RTStrFree(pszMessage);
+    }
+}
+
+DECLEXPORT(void) crError(const char *pszFormat, ... )
+{
+    va_list va;
+#ifdef WINDOWS
+    DWORD err;
+#endif
+
+#ifdef WINDOWS
+    if ((err = GetLastError()) != 0 && crGetenv("CR_WINDOWS_ERRORS") != NULL )
+    {
+        char *pszWindowsMessage;
+
+        SetLastError(0);
+        FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                FORMAT_MESSAGE_FROM_SYSTEM |
+                FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, err,
+                MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+                (LPTSTR) &pszWindowsMessage, 0, NULL );
+        if (pszWindowsMessage)
+        {
+            logMessage("OpenGL, Windows error: \n", "%s", pszWindowsMessage);
+            LocalFree(pszWindowsMessage);
+        }
+        else
+            logMessage("OpenGL, Windows error: \n", "%ld", (long) err);
+    }
+#endif
+    va_start(va, pszFormat);
+    logMessageV("OpenGL Error: ", pszFormat, va);
+    va_end(va);
+    AssertFailed();
+#ifdef IN_GUEST
+    /* Give things a chance to close down. */
+    raise(SIGTERM);
+    exit(1);
+#endif
+}
+
+DECLEXPORT(void) crWarning(const char *pszFormat, ... )
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    logMessageV("OpenGL Warning: ", pszFormat, va);
+    va_end(va);
+}
+
+DECLEXPORT(void) crInfo(const char *pszFormat, ... )
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    logMessageV("OpenGL Info: ", pszFormat, va);
+    va_end(va);
+}
+
+DECLEXPORT(void) crDebug(const char *pszFormat, ... )
+{
+    va_list va;
+
+    va_start(va, pszFormat);
+    logDebugV("OpenGL Debug: ", pszFormat, va);
+    va_end(va);
+}
+
+#else
 /* Copyright (c) 2001, Stanford University
  * All rights reserved
  *
@@ -605,4 +736,5 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
     return TRUE;
 }
+#endif
 #endif
