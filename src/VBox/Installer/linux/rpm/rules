@@ -152,7 +152,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
-	     $(if $(filter el5 el6 sles10.1,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
+	     $(if $(filter el5 el6 sles10.1 sles11.0,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
 	     VBOX_DO_STRIP= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
@@ -163,7 +163,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	     $(if $(filter el5 ol5 centos5 sles10.1 sles11.0,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
+	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
 
 rpm/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/rpm $(cfg_flags)
