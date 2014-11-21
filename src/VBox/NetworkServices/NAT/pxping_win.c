@@ -192,7 +192,7 @@ pxping_recv4(void *arg, struct pbuf *p)
     }
 
     bufsize = sizeof(ICMP_ECHO_REPLY) + p->tot_len;
-    pong = (struct pong4 *)malloc(sizeof(*pong) - sizeof(pong->buf) + bufsize);
+    pong = (struct pong4 *)malloc(RT_OFFSETOF(struct pong4, buf) + bufsize);
     if (RT_UNLIKELY(pong == NULL)) {
         goto out;
     }
@@ -469,7 +469,7 @@ pxping_recv6(void *arg, struct pbuf *p)
     }
 
     bufsize = sizeof(ICMPV6_ECHO_REPLY) + p->tot_len;
-    pong = (struct pong6 *)malloc(sizeof(*pong) - sizeof(pong->buf) + bufsize);
+    pong = (struct pong6 *)malloc(RT_OFFSETOF(struct pong6, buf) + bufsize);
     if (RT_UNLIKELY(pong == NULL)) {
         goto out;
     }
