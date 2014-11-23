@@ -1365,11 +1365,11 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  TEMPLATE_VBoxSVGA3D_EXTENDS = VBOXR3
  TEMPLATE_VBoxSVGA3D_CFLAGS  = \
  	$(filter-out -pedantic -fno-common -Wstrict-prototypes,$(TEMPLATE_VBOXR3_CFLAGS))
- TEMPLATE_VBoxSVGA3D_CXXFLAG = \
+ TEMPLATE_VBoxSVGA3D_CXXFLAGS = \
  	$(filter-out -pedantic -fno-common,$(TEMPLATE_VBOXR3_CXXFLAGS))
  TEMPLATE_VBoxSVGA3D_CFLAGS.darwin  = \
  	$(filter-out -fno-common,$(TEMPLATE_VBOXR3_CFLAGS.darwin))
- TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin = \
+ TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin = $(TEMPLATE_VBOXR3_LDFLAGS.darwin) \
  	-framework AppKit -framework OpenGL
 
  #
