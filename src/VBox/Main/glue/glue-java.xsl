@@ -218,13 +218,36 @@
     </xsl:call-template>
   </xsl:variable>
 
+  <!-- &amp;, &lt; and &gt; must remain as they are or javadoc 8 throws a fit. -->
   <xsl:variable name="rep4">
-    <xsl:call-template name="string-trim">
-      <xsl:with-param name="text" select="$rep3"/>
+    <xsl:call-template name="string-replace">
+      <xsl:with-param name="haystack" select="$rep3"/>
+      <xsl:with-param name="needle" select="'&amp;'"/>
+      <xsl:with-param name="replacement" select="'&amp;amp;'"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:variable name="rep5">
+    <xsl:call-template name="string-replace">
+      <xsl:with-param name="haystack" select="$rep4"/>
+      <xsl:with-param name="needle" select="'&lt;'"/>
+      <xsl:with-param name="replacement" select="'&amp;lt;'"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:variable name="rep6">
+    <xsl:call-template name="string-replace">
+      <xsl:with-param name="haystack" select="$rep5"/>
+      <xsl:with-param name="needle" select="'&gt;'"/>
+      <xsl:with-param name="replacement" select="'&amp;gt;'"/>
     </xsl:call-template>
   </xsl:variable>
 
-  <xsl:value-of select="$rep4"/>
+  <xsl:variable name="rep7">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="$rep6"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:value-of select="$rep7"/>
 </xsl:template>
 
 <!--
@@ -233,7 +256,11 @@
 -->
 <xsl:template match="desc//*">
   <xsl:variable name="tagname" select="local-name()"/>
-  <xsl:value-of select="concat('&lt;', $tagname, '&gt;')"/>
+  <xsl:value-of select="concat('&lt;', $tagname)"/>
+  <xsl:if test="$tagname = 'table'"> <!-- javadoc 8 fudge -->
+    <xsl:text> summary=""</xsl:text>
+  </xsl:if>
+  <xsl:text>&gt;</xsl:text>
   <xsl:apply-templates/>
   <xsl:value-of select="concat('&lt;/', $tagname, '&gt;')"/>
 </xsl:template>
@@ -411,7 +438,7 @@
 <xsl:template match="desc" mode="results">
   <xsl:if test="result">
     <xsl:text>&#10;Expected result codes:&#10;</xsl:text>
-    <xsl:text>&lt;table&gt;&#10;</xsl:text>
+    <xsl:text>&lt;table summary=""&gt;&#10;</xsl:text>
     <xsl:for-each select="result">
       <xsl:text>&lt;tr&gt;</xsl:text>
       <xsl:choose>
@@ -425,7 +452,7 @@
       <xsl:text>&lt;td&gt;</xsl:text>
       <xsl:apply-templates select="text() | *[not(self::note or self::see or
                                                   self::result)]"/>
-      <xsl:text>&lt;/td&gt;&lt;tr&gt;&#10;</xsl:text>
+      <xsl:text>&lt;/td&gt;&lt;/tr&gt;&#10;</xsl:text>
     </xsl:for-each>
     <xsl:text>&lt;/table&gt;&#10;</xsl:text>
   </xsl:if>
@@ -445,7 +472,7 @@
 <xsl:template match="desc" mode="interface">
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
-  <xsl:text>&#10;Interface ID: &lt;tt&gt;{</xsl:text>
+  <xsl:text>&#10;&#10;Interface ID: &lt;tt&gt;{</xsl:text>
   <xsl:call-template name="uppercase">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>
@@ -464,6 +491,7 @@
   <xsl:call-template name="typeIdl2Glue">
     <xsl:with-param name="type" select="../@type"/>
     <xsl:with-param name="safearray" select="../@safearray"/>
+    <xsl:with-param name="doubleescape">yes</xsl:with-param>
   </xsl:call-template>
   <xsl:text>&#10;</xsl:text>
   <xsl:apply-templates select="see"/>
@@ -482,6 +510,7 @@
   <xsl:call-template name="typeIdl2Glue">
     <xsl:with-param name="type" select="../@type"/>
     <xsl:with-param name="safearray" select="../@safearray"/>
+    <xsl:with-param name="doubleescape">yes</xsl:with-param>
   </xsl:call-template>
   <xsl:text>&#10;</xsl:text>
   <xsl:apply-templates select="see"/>
@@ -714,6 +743,7 @@
   <xsl:param name="safearray" />
   <xsl:param name="forceelem" />
   <xsl:param name="skiplisttype" />
+  <xsl:param name="doubleescape" />
 
   <xsl:variable name="needarray" select="($safearray='yes') and not($forceelem='yes')" />
   <xsl:variable name="needlist" select="($needarray) and not($type='octet')" />
@@ -721,7 +751,14 @@
   <xsl:if test="($needlist)">
     <xsl:text>List</xsl:text>
     <xsl:if test="not($skiplisttype='yes')">
-      <xsl:text>&lt;</xsl:text>
+      <xsl:choose>
+        <xsl:when test="$doubleescape='yes'">
+          <xsl:text>&amp;lt;</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:text>&lt;</xsl:text>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:if>
   </xsl:if>
 
@@ -747,7 +784,14 @@
   <xsl:choose>
     <xsl:when test="($needlist)">
       <xsl:if test="not($skiplisttype='yes')">
-        <xsl:text>&gt;</xsl:text>
+        <xsl:choose>
+          <xsl:when test="$doubleescape='yes'">
+            <xsl:text>&amp;gt;</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>&gt;</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:if>
     </xsl:when>
     <xsl:when test="($needarray)">

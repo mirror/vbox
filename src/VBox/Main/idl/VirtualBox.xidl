@@ -11484,12 +11484,13 @@
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          <para>Environment variables that can be set while the command is being
+          Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.</para>
-          <para>This parameter can be used to override environment variables set by
+          variable just set its name ("NAME") without a value.
+
+          This parameter can be used to override environment variables set by
           the guest session, which will be applied to the newly started process
-          in any case.</para>
+          in any case.
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -11513,11 +11514,10 @@
 
     <method name="processCreateEx">
       <desc>
-        <para>Creates a new process running on the guest. Extended version for
-          also setting the process priority and affinity.</para>
+        Creates a new process running on the guest. Extended version for
+        also setting the process priority and affinity.
 
-        <para>See <link to="IGuestSession::processCreate"/> for more
-          information.</para>
+        See <link to="IGuestSession::processCreate"/> for more information.
       </desc>
       <param name="command" type="wstring" dir="in">
         <desc>
@@ -11530,12 +11530,13 @@
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          <para>Environment variables that can be set while the command is being
+          Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.</para>
-          <para>This parameter can be used to override environment variables set by
+          variable just set its name ("NAME") without a value.
+
+          This parameter can be used to override environment variables set by
           the guest session, which will be applied to the newly started process
-          in any case.</para>
+          in any case.
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
