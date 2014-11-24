@@ -135,7 +135,6 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     else
         bufsize += reqsize;
     bufsize += 16; /* whatever that is; empirically at least XP needs it */
-    LogRel(("NAT: ping size=%d bufsize=%d\n", (int)reqsize, (int)bufsize));
 
     pong = RTMemAlloc(RT_OFFSETOF(struct pong, buf) + bufsize);
     if (RT_UNLIKELY(pong == NULL))
