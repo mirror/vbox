@@ -562,6 +562,7 @@ EOF
     # And set up VBoxClient to start when the X session does
     install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
         fail "See the log file $LOG for more information."
+    ln -s "$lib_dir/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
     succ_msg
 }
 
@@ -642,6 +643,7 @@ EOF
     rm /etc/X11/xinit/xinitrc.d/98vboxadd-xclient.sh 2>/dev/null
     rm /etc/xdg/autostart/vboxclient.desktop 2>/dev/null
     rm /usr/share/autostart/vboxclient.desktop 2>/dev/null
+    rm /usr/bin/VBoxClient-all 2>/dev/null
 
     # Remove other files
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
