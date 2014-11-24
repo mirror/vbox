@@ -185,8 +185,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
     /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    newSize /= dScaleFactor;
+    newSize /= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
     /* Expand current limitations: */
     setMaxGuestSize(newSize);
@@ -218,8 +217,8 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     if (uisession()->isScreenVisible(m_uScreenId))
     {
         /* Check if that notify-change brings actual resize-event: */
-        const bool fActualResize = frameBuffer()->width() != iWidth ||
-                                   frameBuffer()->height() != iHeight;
+        const bool fActualResize = frameBuffer()->width() != (ulong)iWidth ||
+                                   frameBuffer()->height() != (ulong)iHeight;
 
         /* Adjust 'scale' mode to current machine-view size: */
         if (visualStateType() == UIVisualStateType_Scale)
@@ -647,8 +646,7 @@ QSize UIMachineView::sizeHint() const
     QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
 
     /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    size *= dScaleFactor;
+    size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // TODO: Fix all DEBUGGER stuff!
@@ -731,8 +729,7 @@ QSize UIMachineView::guestSizeHint()
         size = QSize(800, 600);
 
     /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    size *= dScaleFactor;
+    size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
     /* Return size: */
     return size;
@@ -838,6 +835,10 @@ void UIMachineView::updateSliders()
     QSize m = maximumViewportSize();
 
     QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
+
+    /* Take the scale-factor into account: */
+    v *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
     /* No scroll bars needed: */
     if (m.expandedTo(v) == m)
         p = m;
@@ -1069,8 +1070,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
-        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-        if (dScaleFactor == 1)
+        if (gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()) == 1)
             painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
                                                           rect.width(), rect.height()));
         else
