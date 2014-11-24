@@ -15,8 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  *
- * This code is based on: dsoundaudio.c
- *
  * QEMU DirectSound audio driver
  *
  * Copyright (c) 2005 Vassili Karpov (malc)

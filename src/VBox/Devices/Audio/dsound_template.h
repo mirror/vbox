@@ -12,8 +12,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  *
- * This code is based on: audio.h
- *
  * QEMU DirectSound audio driver header
  *
  * Copyright (c) 2005 Vassili Karpov (malc)
