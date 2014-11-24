@@ -444,7 +444,7 @@ $(VBOX_JWS_GEN)/MANIFEST.MF: $(VBOX_PATH_WEBSERVICE)/MANIFEST.MF.in
 		-e 's/@VBOX_API_SUFFIX@/$(VBOX_API_SUFFIX)/' \
 		<  $< >  $@
 
-$$(VBOX_JWSDOC_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) $$(VBOX_JWS_JAR) | $$(dir $$@)
+$$(VBOX_JWSDOC_JAR): $(VBOX_JWS_GEN)/jwsglue.list $$(VBoxJWs-inst-jar_GENERATEDSOURCES) $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) $$(VBOX_JWS_JAR) | $$(dir $$@)
 	$(call MSG_TOOL,javadoc,$(notdir $@),jwsgen.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JWSDOC_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JWSDOC_JDEST)
