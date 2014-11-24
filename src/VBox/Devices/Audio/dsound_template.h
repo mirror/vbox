@@ -1,4 +1,19 @@
+/* $Id$ */
+
 /*
+ * Copyright (C) 2014 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * --------------------------------------------------------------------
+ *
+ * This code is based on: audio.h
+ *
  * QEMU DirectSound audio driver header
  *
  * Copyright (c) 2005 Vassili Karpov (malc)
@@ -145,16 +160,18 @@ static int glue (dsound_lock_, TYPE) (
 
 #ifdef DSBTYPE_IN
 static void dsound_fini_in (HWVoiceIn *hw)
+{
+    DSoundVoiceIn *ds = (DSoundVoiceIn *) hw;
+    dsoundCaptureClose (ds);
+    ds->last_read_pos = 0;
+    ds->capture_buffer_size = 0;
+    memset (&ds->as, 0, sizeof(ds->as));
+}
 #else
 static void dsound_fini_out (HWVoiceOut *hw)
-#endif
 {
     HRESULT hr;
-#ifdef DSBTYPE_IN
-    DSoundVoiceIn *ds = (DSoundVoiceIn *) hw;
-#else
     DSoundVoiceOut *ds = (DSoundVoiceOut *) hw;
-#endif
 
     if (ds->FIELD) {
         hr = glue (IFACE, _Stop) (ds->FIELD);
@@ -169,52 +186,48 @@ static void dsound_fini_out (HWVoiceOut *hw)
         ds->FIELD = NULL;
     }
 }
+#endif
 
 #ifdef DSBTYPE_IN
 static int dsound_init_in (HWVoiceIn *hw, audsettings_t *as)
+{
+    DSoundVoiceIn *ds = (DSoundVoiceIn *) hw;
+
+    ds->last_read_pos = 0;
+    ds->capture_buffer_size = 0;
+    ds->dsound_capture_buffer = NULL;
+    ds->as = *as;
+
+    /* Init default settings. */
+    audio_pcm_init_info (&hw->info, &ds->as);
+    hw->samples = conf.bufsize_in >> hw->info.shift;
+
+    /* Try to open capture in case the device is already there. */
+    dsoundCaptureOpen (ds);
+
+    return 0;
+}
 #else
 static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
-#endif
 {
     int err;
     HRESULT hr;
     dsound *s = &glob_dsound;
     WAVEFORMATEX wfx;
     audsettings_t obt_as;
-#ifdef DSBTYPE_IN
-    const char *typ = "ADC";
-    DSoundVoiceIn *ds = (DSoundVoiceIn *) hw;
-    DSCBUFFERDESC bd;
-    DSCBCAPS bc;
-#else
     const char *typ = "DAC";
     DSoundVoiceOut *ds = (DSoundVoiceOut *) hw;
     DSBUFFERDESC bd;
     DSBCAPS bc;
-#endif
 
     err = waveformat_from_audio_settings (&wfx, as);
     if (err) {
         return -1;
     }
 
-#ifdef DSBTYPE_IN
-    if (!s->dsound_capture)
-        return -1;
-#endif
-
     memset (&bd, 0, sizeof (bd));
     bd.dwSize = sizeof (bd);
     bd.lpwfxFormat = &wfx;
-#ifdef DSBTYPE_IN
-    bd.dwBufferBytes = conf.bufsize_in;
-    hr = IDirectSoundCapture_CreateCaptureBuffer (
-        s->dsound_capture,
-        &bd,
-        &ds->dsound_capture_buffer,
-        NULL
-        );
-#else
     bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
     bd.dwBufferBytes = conf.bufsize_out;
     hr = IDirectSound_CreateSoundBuffer (
@@ -223,7 +236,6 @@ static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
         &ds->dsound_buffer,
         NULL
         );
-#endif
 
     if (FAILED (hr)) {
         dsound_logerr2 (hr, typ, "Could not create " NAME "\n");
@@ -284,6 +296,7 @@ static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
     glue (dsound_fini_, TYPE) (hw);
     return -1;
 }
+#endif
 
 #undef NAME
 #undef TYPE
