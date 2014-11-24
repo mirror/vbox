@@ -4288,7 +4288,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         if (fGuestHvp)
         {
             pHyperLeafGst = cpumR3CpuIdGetLeaf(pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, pVM->cpum.s.GuestInfo.cCpuIdLeaves,
-                                                       uHyperLeaf, 0 /* uSubLeaf */);
+                                               uHyperLeaf, 0 /* uSubLeaf */);
         }
 
         RT_ZERO(Host);
@@ -4296,7 +4296,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             ASMCpuIdExSlow(uHyperLeaf, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         CPUMCPUIDLEAF  GuestLeaf;
-        uint32_t const cHyperGstMax = pHyperLeafGst->uEax;
+        uint32_t const cHyperGstMax = pHyperLeafGst ? pHyperLeafGst->uEax : 0;
         uint32_t const cHyperHstMax = Host.eax;
         uint32_t const cHyperMax    = RT_MAX(cHyperHstMax, cHyperGstMax);
         for (uint32_t i = uHyperLeaf; i <= cHyperMax; i++)
