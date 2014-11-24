@@ -121,9 +121,6 @@ VBOX_ADD_STRIP_BIN += \
 VBOX_ADD_STRIP_BIN.linux += \
 	VBoxClient
 
-VBOX_ADD_BIN.linux += \
-	VBoxClient-all
-
 VBOX_ADD_STRIP_SBIN += \
 	VBoxService \
 	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
@@ -378,15 +375,6 @@ ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
  LnxAdd-scripts_EXEC_SOURCES += \
 	$(VBOX_REL_LNX_ADD_INST)module-autologon.sh=>installer/module-autologon
 endif
-
-#
-# VBoxClient-all
-#
-INSTALLS += LnxAdd-Nostrip-Bin
-LnxAdd-Nostrip-Bin_INST     = $(VBOX_LNX_ADD_INST_BIN_DIR)
-LnxAdd-Nostrip-Bin_INSTTYPE = stage
-LnxAdd-Nostrip-Bin_EXEC_SOURCES = \
-	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
 
 
 #
