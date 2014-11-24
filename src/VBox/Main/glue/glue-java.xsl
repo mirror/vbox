@@ -158,7 +158,7 @@
       </xsl:call-template>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:variable name="end" select="substring($text, string-length($text) - 1, 1)"/>
+      <xsl:variable name="end" select="substring($text, string-length($text), 1)"/>
       <xsl:choose>
         <xsl:when test="$end = ' ' or $end = '&#10;' or $end = '&#13;'">
           <xsl:call-template name="string-trim">
