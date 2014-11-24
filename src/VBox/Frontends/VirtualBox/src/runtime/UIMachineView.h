@@ -113,6 +113,9 @@ protected slots:
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 
+    /** Handles the scale-factor change. */
+    void sltHandleScaleFactorChange(const QString &strMachineID);
+
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
 

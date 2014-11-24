@@ -3567,6 +3567,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
                  strKey == GUI_RestrictedStatusBarIndicators ||
                  strKey == GUI_StatusBar_IndicatorOrder)
             emit sigStatusBarConfigurationChange(strMachineID);
+        /* Scale-factor change: */
+        else if (strKey == GUI_ScaleFactor)
+            emit sigScaleFactorChange(strMachineID);
     }
 
     /* Notify listeners: */

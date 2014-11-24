@@ -36,6 +36,7 @@
 # include "UIMachineWindow.h"
 # include "UIMachineViewFullscreen.h"
 # include "UIFrameBuffer.h"
+# include "UIExtraDataManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -143,10 +144,15 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewFullscreen::adjustGuestScreenSize()
 {
+    /* Acquire working-area size: */
+    const QSize workingAreaSize = workingArea().size();
+    /* Acquire frame-buffer size: */
+    QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+    /* Take the scale-factor into account: */
+    frameBufferSize *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     /* Check if we should adjust guest-screen to new size: */
     if (frameBuffer()->isAutoEnabled() ||
-        (int)frameBuffer()->width() != workingArea().size().width() ||
-        (int)frameBuffer()->height() != workingArea().size().height())
+        frameBufferSize != workingAreaSize)
         if (m_bIsGuestAutoresizeEnabled &&
             uisession()->isGuestSupportsGraphics() &&
             uisession()->isScreenVisible(screenId()))
