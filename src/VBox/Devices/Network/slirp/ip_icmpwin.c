@@ -114,21 +114,29 @@ void
 icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
 {
     struct ip *ip = mtod(m, struct ip *);
-    int icmplen = ip->ip_len - hlen;
+    size_t reqsize;
     uint8_t ttl;
     size_t bufsize;
     struct pong *pong;
     IPAddr dst;
     IP_OPTION_INFORMATION opts;
     void *reqdata;
-    size_t reqsize;
     int status;
 
     ttl = ip->ip_ttl;
     AssertReturnVoid(ttl > 1); /* should've been dealt with in the caller */
     --ttl;
 
-    bufsize = sizeof(ICMP_ECHO_REPLY) + icmplen;
+    reqsize = ip->ip_len - hlen - sizeof(struct icmp_echo);
+
+    bufsize = sizeof(ICMP_ECHO_REPLY);
+    if (reqsize < sizeof(IO_STATUS_BLOCK) + sizeof(struct icmp_echo))
+        bufsize += sizeof(IO_STATUS_BLOCK) + sizeof(struct icmp_echo);
+    else
+        bufsize += reqsize;
+    bufsize += 16; /* whatever that is; empirically at least XP needs it */
+    LogRel(("NAT: ping size=%d bufsize=%d\n", (int)reqsize, (int)bufsize));
+
     pong = RTMemAlloc(RT_OFFSETOF(struct pong, buf) + bufsize);
     if (RT_UNLIKELY(pong == NULL))
         return;
@@ -139,7 +147,6 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     m_copydata(m, hlen, sizeof(struct icmp_echo), (caddr_t)&pong->reqicmph);
     AssertReturnVoid(pong->reqicmph.icmp_type == ICMP_ECHO);
 
-    reqsize = icmplen - sizeof(struct icmp_echo); /* just the payload */
     if (m->m_next == NULL)
     {
         /* already in single contiguous buffer */
