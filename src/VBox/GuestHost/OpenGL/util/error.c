@@ -16,6 +16,8 @@
  */
 #if 1
 
+#define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
+
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <VBox/log.h>
@@ -58,7 +60,11 @@ static void logDebugV(const char *pszPrefix, const char *pszFormat, va_list va)
     RTStrAPrintfV(&pszMessage, pszFormat, va);
     if (pszMessage != NULL)
     {
+#if defined(DEBUG_vgalitsy) || defined(DEBUG_galitsyn)
+        LogRel(("%s%s\n", pszPrefix, pszMessage));
+#else
         Log(("%s%s\n", pszPrefix, pszMessage));
+#endif
         RTStrFree(pszMessage);
     }
 }
