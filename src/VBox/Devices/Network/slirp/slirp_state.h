@@ -177,8 +177,7 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
-    struct socket icmp_socket;
-    struct icmp_storage icmp_msg_head;
+
 # ifndef RT_OS_WINDOWS
     /* counter of sockets needed for allocation enough room to
      * process sockets with poll/epoll
@@ -197,6 +196,9 @@ typedef struct NATState
 #  define NSOCK_INC_EX(ex) do {} while (0)
 #  define NSOCK_DEC_EX(ex) do {} while (0)
 # endif
+
+    struct socket icmp_socket;
+    struct icmp_storage icmp_msg_head;
     int cIcmpCacheSize;
     int iIcmpCacheLimit;
 # ifdef RT_OS_WINDOWS
