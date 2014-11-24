@@ -167,10 +167,14 @@ void UIMachineViewNormal::maybeResendSizeHint()
 
 void UIMachineViewNormal::adjustGuestScreenSize()
 {
-    /* Check if we should adjust guest-screen to new size: */
+    /* Acquire central-widget size: */
     const QSize centralWidgetSize = machineWindow()->centralWidget()->size();
-    if ((int)frameBuffer()->width() != centralWidgetSize.width() ||
-        (int)frameBuffer()->height() != centralWidgetSize.height())
+    /* Acquire frame-buffer size: */
+    QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+    /* Take the scale-factor into account: */
+    frameBufferSize *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    /* Check if we should adjust guest-screen to new size: */
+    if (frameBufferSize != centralWidgetSize)
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
             sltPerformGuestResize(centralWidgetSize);
 }

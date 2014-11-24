@@ -763,8 +763,19 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+void UIFrameBuffer::sltHandleScaleFactorChange(const QString &strMachineID)
+{
+    /* Skip unrelated machine IDs: */
+    if (strMachineID != vboxGlobal().managedVMUuid())
+        return;
+
+    /* Fetch new scale-factor: */
+    m_dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+}
+
 void UIFrameBuffer::prepareConnections()
 {
+    /* EMT connections: */
     connect(this, SIGNAL(sigNotifyChange(int, int)),
             m_pMachineView, SLOT(sltHandleNotifyChange(int, int)),
             Qt::QueuedConnection);
@@ -777,10 +788,15 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
             m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)),
             Qt::QueuedConnection);
+
+    /* Extra-data manager connections: */
+    connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
+            this, SLOT(sltHandleScaleFactorChange(const QString&)));
 }
 
 void UIFrameBuffer::cleanupConnections()
 {
+    /* EMT connections: */
     disconnect(this, SIGNAL(sigNotifyChange(int, int)),
                m_pMachineView, SLOT(sltHandleNotifyChange(int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
@@ -789,6 +805,10 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
     disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
+
+    /* Extra-data manager connections: */
+    disconnect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
+               this, SLOT(sltHandleScaleFactorChange(const QString&)));
 }
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)

@@ -222,6 +222,11 @@ public:
     /** Define backing scale factor used by HiDPI frame-buffer. */
     void setBackingScaleFactor(double dBackingScaleFactor) { m_dBackingScaleFactor = dBackingScaleFactor; }
 
+protected slots:
+
+    /** Handles the scale-factor change. */
+    void sltHandleScaleFactorChange(const QString &strMachineID);
+
 protected:
 
     /** Prepare connections routine. */
@@ -277,7 +282,7 @@ protected:
     /** @name Scale-factor related variables.
      * @{ */
     /** Holds the scale-factor used by the scaled-size. */
-    const double m_dScaleFactor;
+    double m_dScaleFactor;
     /** Holds the frame-buffer's scaled-size. */
     QSize m_scaledSize;
     /** @} */

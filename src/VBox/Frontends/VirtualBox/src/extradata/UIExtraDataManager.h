@@ -75,6 +75,9 @@ signals:
     /** Notifies about HID LEDs synchronization state change. */
     void sigHidLedsSyncStateChange(bool fEnabled);
 
+    /** Notifies about the scale-factor change. */
+    void sigScaleFactorChange(const QString &strMachineID);
+
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'presentation mode' status change. */
     void sigPresentationModeChange(bool fEnabled);
