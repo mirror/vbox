@@ -107,7 +107,6 @@ typedef struct {
     LPDIRECTSOUNDCAPTURE dsound_capture;
     LPDIRECTSOUNDBUFFER dsound_primary_buffer;
     audsettings_t settings;
-    LPCGUID devguidp;
     LPCGUID devguidp_capture;
 } dsound;
 
@@ -471,7 +470,12 @@ static int dsoundCaptureInterfaceCreate (dsound *s)
     else {
         hr = IDirectSoundCapture_Initialize (s->dsound_capture, s->devguidp_capture);
         if (FAILED (hr)) {
-            DSLOGREL(("DSound: DirectSoundCapture initialize %Rhrc\n", hr));
+            if (hr == DSERR_NODRIVER) {
+                DSLOGREL(("DSound: DirectSoundCapture not available\n"));
+            }
+            else {
+                DSLOGREL(("DSound: DirectSoundCapture initialize %Rhrc\n", hr));
+            }
             dsoundCaptureInterfaceRelease (s);
         }
     }
@@ -1298,9 +1302,9 @@ static void *dsound_audio_init (void)
         if (RT_FAILURE(rc)) {
             LogRel(("DSound: Could not parse DirectSound input device GUID\n"));
         }
-        s->devguidp = (LPCGUID)&devguid;
+        s->devguidp_capture = (LPCGUID)&devguid;
     } else {
-        s->devguidp = NULL;
+        s->devguidp_capture = NULL;
     }
 
     err = dsound_open (s);
