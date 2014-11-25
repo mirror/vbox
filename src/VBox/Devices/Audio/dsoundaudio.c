@@ -107,6 +107,7 @@ typedef struct {
     LPDIRECTSOUNDCAPTURE dsound_capture;
     LPDIRECTSOUNDBUFFER dsound_primary_buffer;
     audsettings_t settings;
+    RTUUID devguid_capture;
     LPCGUID devguidp_capture;
 } dsound;
 
@@ -1298,11 +1299,11 @@ static void *dsound_audio_init (void)
     }
 
     if (conf.device_guid_in) {
-        int rc = RTUuidFromStr(&devguid, conf.device_guid_in);
+        int rc = RTUuidFromStr(&s->devguid_capture, conf.device_guid_in);
         if (RT_FAILURE(rc)) {
             LogRel(("DSound: Could not parse DirectSound input device GUID\n"));
         }
-        s->devguidp_capture = (LPCGUID)&devguid;
+        s->devguidp_capture = (LPCGUID)&s->devguid_capture;
     } else {
         s->devguidp_capture = NULL;
     }
