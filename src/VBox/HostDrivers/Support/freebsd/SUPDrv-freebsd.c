@@ -539,6 +539,12 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
+bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
+{
+    return false;
+}
+
+
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
     NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);

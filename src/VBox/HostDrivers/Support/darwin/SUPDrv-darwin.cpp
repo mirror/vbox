@@ -953,6 +953,11 @@ bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
+bool VBOXCALL supdrvOSAreTscDeltasInSync(void)
+{
+    return false;
+}
+
 void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
 #if 1

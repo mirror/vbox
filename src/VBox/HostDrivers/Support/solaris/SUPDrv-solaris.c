@@ -963,6 +963,13 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
+
+bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
+{
+    return false;
+}
+
+
 #if  defined(VBOX_WITH_NATIVE_SOLARIS_LOADING) \
  && !defined(VBOX_WITHOUT_NATIVE_R0_LOADER)
 

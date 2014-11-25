@@ -1654,6 +1654,16 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
+/**
+ * Whether the hardware TSC has been synchronized by the OS.
+ */
+bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
+{
+    /* Windows writes back the hardware TSC registers to adjust for inter-CPU deltas. */
+    return true;
+}
+
+
 #define MY_SystemLoadGdiDriverInSystemSpaceInformation  54
 #define MY_SystemUnloadGdiDriverInformation             27
 
