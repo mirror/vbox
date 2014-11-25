@@ -648,15 +648,63 @@
       <attribute name="title">
        <string>Machine &amp;Window</string>
       </attribute>
-      <layout class="QVBoxLayout" name="m_pLayoutTabMachineWindow">
-       <item>
+      <layout class="QGridLayout" name="m_pLayoutTabMachineWindow">
+       <item row="0" column="0" colspan="2">
         <widget class="UIMenuBarEditorWidget" name="m_pMenuBarEditor">
          <property name="whatsThis">
           <string>Allows to modify VM menu-bar contents.</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="m_pLabelMiniToolBar">
+         <property name="text">
+          <string>Mini ToolBar:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="m_pCheckBoxShowMiniToolBar">
+         <property name="sizePolicy">
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis">
+          <string>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</string>
+         </property>
+         <property name="text">
+          <string>Show in &amp;Fullscreen/Seamless</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="m_pComboToolBarAlignment">
+         <property name="sizePolicy">
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis">
+          <string>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</string>
+         </property>
+         <property name="text">
+          <string>Show at &amp;Top of Screen</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="2">
         <spacer name="m_pSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -669,7 +717,7 @@
          </property>
         </spacer>
        </item>
-       <item>
+       <item row="4" column="0" colspan="2">
         <widget class="UIStatusBarEditorWidget" name="m_pStatusBarEditor">
          <property name="whatsThis">
           <string>Allows to modify VM status-bar contents.</string>
@@ -722,6 +770,22 @@
    <signal>toggled(bool)</signal>
    <receiver>m_pContainerRemoteDisplayOptions</receiver>
    <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>m_pCheckBoxShowMiniToolBar</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pComboToolBarAlignment</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>195</x>
+     <y>50</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>72</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>

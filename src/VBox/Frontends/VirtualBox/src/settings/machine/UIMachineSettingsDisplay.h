@@ -51,6 +51,8 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureFrameHeight(0)
         , m_iVideoCaptureFrameRate(0)
         , m_iVideoCaptureBitRate(0)
+        , m_fShowMiniToolBar(false)
+        , m_fMiniToolBarAtTop(false)
     {}
 
     /* Functions: */
@@ -74,7 +76,9 @@ struct UIDataSettingsMachineDisplay
                (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight) &&
                (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
                (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
-               (m_screens == other.m_screens);
+               (m_screens == other.m_screens) &&
+               (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
+               (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
     }
 
     /* Operators: */
@@ -106,6 +110,10 @@ struct UIDataSettingsMachineDisplay
     int m_iVideoCaptureFrameRate;
     int m_iVideoCaptureBitRate;
     QVector<BOOL> m_screens;
+
+    /* Variables: Machine Window stuff: */
+    bool m_fShowMiniToolBar;
+    bool m_fMiniToolBarAtTop;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
