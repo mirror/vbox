@@ -95,6 +95,10 @@ struct port_forward_rule
 LIST_HEAD(port_forward_rule_list, port_forward_rule);
 
 
+#ifdef RT_OS_WINDOWS
+struct pong;
+TAILQ_HEAD(pong_tailq, pong);
+#endif
 
 /* forward declaration */
 struct proto_handler;
@@ -198,13 +202,16 @@ typedef struct NATState
 # endif
 
     struct socket icmp_socket;
+# if !defined(RT_OS_WINDOWS)
     struct icmp_storage icmp_msg_head;
     int cIcmpCacheSize;
     int iIcmpCacheLimit;
-# ifdef RT_OS_WINDOWS
-    void *pvIcmpBuffer;
-    uint32_t cbIcmpBuffer;
+# else
+    struct pong_tailq pongs_expected;
+    struct pong_tailq pongs_received;
+    size_t cbIcmpPending;
 # endif
+
 #if defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];

@@ -207,6 +207,7 @@ struct icmp_msg * icmp_find_original_mbuf (PNATState , struct ip *);
 int icmpwin_init (PNATState);
 void icmpwin_finit (PNATState);
 void icmpwin_ping(PNATState, struct mbuf *, int);
+void icmpwin_process(PNATState);
 #endif
 
 #endif

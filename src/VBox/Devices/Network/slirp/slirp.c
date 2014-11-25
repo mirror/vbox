@@ -891,7 +891,7 @@ static bool slirpConnectOrWrite(PNATState pData, struct socket *so, bool fConnec
 }
 
 #if defined(RT_OS_WINDOWS)
-void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp)
+void slirp_select_poll(PNATState pData, int fTimeout)
 #else /* RT_OS_WINDOWS */
 void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #endif /* !RT_OS_WINDOWS */
@@ -941,11 +941,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     if (!link_up)
         goto done;
 #if defined(RT_OS_WINDOWS)
-    /*XXX: before renaming please make see define
-     * fIcmp in slirp_state.h
-     */
-    if (fIcmp)
-        sorecvfrom(pData, &pData->icmp_socket);
+    icmpwin_process(pData);
 #else
     if (   (pData->icmp_socket.s != -1)
         && CHECK_FD_SET(&pData->icmp_socket, ignored, readfds))
