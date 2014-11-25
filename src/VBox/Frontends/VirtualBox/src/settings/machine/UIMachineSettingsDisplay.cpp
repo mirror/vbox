@@ -25,10 +25,11 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsDisplay.h"
-# include "VBoxGlobal.h"
+# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
-# include "UIConverter.h"
 # include "UIActionPool.h"
+# include "UIConverter.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CVRDEServer.h"
@@ -139,6 +140,10 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     displayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
     displayData.m_screens = m_machine.GetVideoCaptureScreens();
 
+    /* Cache Machine Window data: */
+    displayData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
+    displayData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
+
     /* Initialize other variables: */
     m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
 
@@ -191,6 +196,8 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pMenuBarEditor->setMachineID(strMachineID);
     m_pStatusBarEditor->setMachineID(strMachineID);
     m_pMenuBarEditor->setActionPool(m_pActionPool);
+    m_pCheckBoxShowMiniToolBar->setChecked(displayData.m_fShowMiniToolBar);
+    m_pComboToolBarAlignment->setChecked(displayData.m_fMiniToolBarAtTop);
 
     /* Polish page finally: */
     polishPage();
@@ -233,6 +240,10 @@ void UIMachineSettingsDisplay::putToCache()
     displayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
     displayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
     displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
+
+    /* Gather Machine Window data from page: */
+    displayData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
+    displayData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 
     /* Cache display data: */
     m_cache.cacheCurrentData(displayData);
@@ -314,6 +325,13 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
             m_machine.SetVideoCaptureFPS(displayData.m_iVideoCaptureFrameRate);
             m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
             m_machine.SetVideoCaptureScreens(displayData.m_screens);
+        }
+
+        /* Store Machine Window data: */
+        if (isMachineInValidMode())
+        {
+            gEDataManager->setMiniToolbarEnabled(displayData.m_fShowMiniToolBar, m_machine.GetId());
+            gEDataManager->setMiniToolbarAlignment(displayData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
         }
     }
 
@@ -476,6 +494,10 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
     setTabOrder(m_pEditorVideoCaptureFrameRate, m_pSliderVideoCaptureQuality);
     setTabOrder(m_pSliderVideoCaptureQuality, m_pEditorVideoCaptureBitRate);
+
+    /* Machine Window tab-order: */
+    setTabOrder(m_pEditorVideoCaptureBitRate, m_pCheckBoxShowMiniToolBar);
+    setTabOrder(m_pCheckBoxShowMiniToolBar, m_pComboToolBarAlignment);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
@@ -529,6 +551,11 @@ void UIMachineSettingsDisplay::polishPage()
     /* Video Capture tab: */
     m_pContainerVideoCapture->setEnabled(isMachineInValidMode());
     sltHandleVideoCaptureCheckboxToggle();
+
+    /* Machine-window tab: */
+    m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
+    m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
+    m_pComboToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoMemorySizeSliderChange()

@@ -26,7 +26,6 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsGeneral.h"
-# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
 # include "UIConverter.h"
 
@@ -111,8 +110,6 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Gather general data: */
     generalData.m_strName = m_machine.GetName();
     generalData.m_strGuestOsTypeId = m_machine.GetOSTypeId();
-    generalData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
-    generalData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
     generalData.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
     generalData.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
     generalData.m_clipboardMode = m_machine.GetClipboardMode();
@@ -136,8 +133,6 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Load general data to page: */
     m_pNameAndSystemEditor->setName(generalData.m_strName);
     m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(generalData.m_strGuestOsTypeId));
-    mCbShowToolBar->setChecked(generalData.m_fShowMiniToolBar);
-    mCbToolBarAlignment->setChecked(generalData.m_fMiniToolBarAtTop);
     mPsSnapshot->setPath(generalData.m_strSnapshotsFolder);
     mPsSnapshot->setHomeDir(generalData.m_strSnapshotsHomeDir);
     mCbClipboard->setCurrentIndex(generalData.m_clipboardMode);
@@ -161,8 +156,6 @@ void UIMachineSettingsGeneral::putToCache()
     /* Gather general data: */
     generalData.m_strName = m_pNameAndSystemEditor->name();
     generalData.m_strGuestOsTypeId = m_pNameAndSystemEditor->type().GetId();
-    generalData.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
-    generalData.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
     generalData.m_strSnapshotsFolder = mPsSnapshot->path();
     generalData.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
     generalData.m_dndMode = (KDnDMode)mCbDragAndDrop->currentIndex();
@@ -192,8 +185,6 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             /* Advanced tab: */
             m_machine.SetClipboardMode(generalData.m_clipboardMode);
             m_machine.SetDnDMode(generalData.m_dndMode);
-            gEDataManager->setMiniToolbarEnabled(generalData.m_fShowMiniToolBar, m_machine.GetId());
-            gEDataManager->setMiniToolbarAlignment(generalData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
             /* Description tab: */
             m_machine.SetDescription(generalData.m_strDescription);
         }
@@ -264,11 +255,9 @@ void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (m_pNameAndSystemEditor, mPsSnapshot);
     setTabOrder (mPsSnapshot, mCbClipboard);
     setTabOrder (mCbClipboard, mCbDragAndDrop);
-    setTabOrder (mCbDragAndDrop, mCbShowToolBar);
-    setTabOrder (mCbShowToolBar, mCbToolBarAlignment);
 
     /* Description tab-order */
-    setTabOrder (mCbToolBarAlignment, mTeDescription);
+    setTabOrder (mCbDragAndDrop, mTeDescription);
 }
 
 void UIMachineSettingsGeneral::retranslateUi()
@@ -313,8 +302,5 @@ void UIMachineSettingsGeneral::polishPage()
     mCbClipboard->setEnabled(isMachineInValidMode());
     mLbDragAndDrop->setEnabled(isMachineInValidMode());
     mCbDragAndDrop->setEnabled(isMachineInValidMode());
-    mLbToolBar->setEnabled(isMachineInValidMode());
-    mCbShowToolBar->setEnabled(isMachineInValidMode());
-    mCbToolBarAlignment->setEnabled(isMachineInValidMode() && mCbShowToolBar->isChecked());
 }
 
