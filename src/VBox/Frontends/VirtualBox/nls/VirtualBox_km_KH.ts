@@ -824,6 +824,124 @@
         <source>Insert the Guest Additions disk file into the virtual drive</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Menu Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Menu Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens window to configure menu-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Menu &amp;Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle menu-bar visibility for this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Status Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Status Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens window to configure status-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Status &amp;Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle status-bar visibility for this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the global settings window to configure shortcuts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Drive Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>&amp;USB Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of USB devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Shared Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">បង្ហាញ​កំណត់​ហេតុ...</translation>
+    </message>
+    <message>
+        <source>E&amp;xtra Data Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Extra Data Manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIActionPoolRuntime</name>
+    <message>
+        <source>Enable</source>
+        <comment>Virtual Screen</comment>
+        <translation type="unfinished">បើក</translation>
+    </message>
+    <message>
+        <source>Resize to %1x%2</source>
+        <comment>Virtual Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -1264,14 +1382,14 @@
     </message>
 </context>
 <context>
-    <name>UIDnDHandler</name>
+    <name>UIDnDDrag</name>
     <message>
-        <source>Dropping data ...</source>
+        <source>Retrieving data ...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIDnDMimeData</name>
+    <name>UIDnDHandler</name>
     <message>
         <source>Dropping data ...</source>
         <translation type="unfinished"></translation>
@@ -2159,6 +2277,16 @@ p, li { white-space: pre-wrap; }
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Minimal Paravirtualization</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hyper-V Paravirtualization</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2351,6 +2479,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Machine Windows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3750,7 +3890,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;វត្ថុ​បញ្ជា USB ត្រូវ​បាន​បិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;វត្ថុ​បញ្ជា USB ត្រូវ​បាន​បិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -3803,6 +3943,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3873,6 +4017,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect Network Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect Network Adapter %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4140,6 +4292,46 @@ p, li { white-space: pre-wrap; }
         <source>Enable video recording for screen %1.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Machine &amp;Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allows to modify VM menu-bar contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation type="unfinished">របារ​ឧបករណ៍​តូច​ ៖</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation type="unfinished">ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
+    </message>
+    <message>
+        <source>Show in &amp;Fullscreen/Seamless</source>
+        <translation type="unfinished">​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished">ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
+    </message>
+    <message>
+        <source>Show at &amp;Top of Screen</source>
+        <translation type="unfinished">បង្ហាញ​កំពូល​​អេក្រង់​</translation>
+    </message>
+    <message>
+        <source>Allows to modify VM status-bar contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -4185,35 +4377,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
-        <translation>ប្រសិនបើបាន​គូស​ធីក ការ​ផ្លាស់ប្ដូរ​ទៅ​មេឌៀ​ថាសទន់ ឬ​ស៊ីឌី/ឌីវីឌី​ដែល​បានម៉ោន​ បាន អនុវត្ត​កំឡុង​ពេល​​ប្រតិបត្តិការ​ម៉ាស៊ីន នឹង​ត្រូវ​បាន​រក្សាទុក​ក្នុង​ឯកសារ​កំណត់​ ដើម្បី​បម្រុង​ទុក​នូវ​ការ​កំណត់​រចនាសម្ព័ន្ធ​របស់​មេឌៀ​ដែល​បានម៉ោន​​ចន្លោះ​ពេល​រត់ ។</translation>
+        <translation type="obsolete">ប្រសិនបើបាន​គូស​ធីក ការ​ផ្លាស់ប្ដូរ​ទៅ​មេឌៀ​ថាសទន់ ឬ​ស៊ីឌី/ឌីវីឌី​ដែល​បានម៉ោន​ បាន អនុវត្ត​កំឡុង​ពេល​​ប្រតិបត្តិការ​ម៉ាស៊ីន នឹង​ត្រូវ​បាន​រក្សាទុក​ក្នុង​ឯកសារ​កំណត់​ ដើម្បី​បម្រុង​ទុក​នូវ​ការ​កំណត់​រចនាសម្ព័ន្ធ​របស់​មេឌៀ​ដែល​បានម៉ោន​​ចន្លោះ​ពេល​រត់ ។</translation>
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation>មេឌៀ​ចល័ត ៖</translation>
+        <translation type="obsolete">មេឌៀ​ចល័ត ៖</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation>ចង់​ចាំ​ការផ្លាស់​ប្តូរ​ពេល​ដំណើរ​ការ​</translation>
+        <translation type="obsolete">ចង់​ចាំ​ការផ្លាស់​ប្តូរ​ពេល​ដំណើរ​ការ​</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation>របារ​ឧបករណ៍​តូច​ ៖</translation>
+        <translation type="obsolete">របារ​ឧបករណ៍​តូច​ ៖</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
+        <translation type="obsolete">ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
     </message>
     <message>
         <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation>​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
+        <translation type="obsolete">​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
+        <translation type="obsolete">ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation>បង្ហាញ​កំពូល​​អេក្រង់​</translation>
+        <translation type="obsolete">បង្ហាញ​កំពូល​​អេក្រង់​</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
@@ -5090,6 +5282,14 @@ network adapter name</comment>
         <source>Add USB Controller</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked the guest system will see the virtual disk as a hot-pluggable device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hot-pluggable</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -5304,14 +5504,6 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5320,15 +5512,31 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Paravirtualization Interface:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5401,7 +5609,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>បើក​វត្ថុ​បញ្ជា USB 2.0 (E&amp;HCI)</translation>
+        <translation type="obsolete">បើក​វត្ថុ​បញ្ជា USB 2.0 (E&amp;HCI)</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -5457,6 +5665,26 @@ network adapter name</comment>
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0 to be able to start the machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;1.1 (OHCI) Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;2.0 (EHCI) Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;3.0 (xHCI) Controller</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5595,7 +5823,7 @@ network adapter name</comment>
         <translation type="obsolete">ជ្រើស</translation>
     </message>
     <message>
-        <source>C&amp;lose</source>
+        <source>Removing medium...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5612,6 +5840,21 @@ network adapter name</comment>
     <message>
         <source>Choose mode:</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMenuBarEditorWidget</name>
+    <message>
+        <source>Virtual Screen Resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen Mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">បិទ</translation>
     </message>
 </context>
 <context>
@@ -7143,6 +7386,14 @@ medium</comment>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -8002,6 +8253,20 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
 </context>
 <context>
+    <name>UIStatusBarEditorButton</name>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIStatusBarEditorWidget</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">បិទ</translation>
+    </message>
+</context>
+<context>
     <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
@@ -8164,6 +8429,14 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
         <translation type="unfinished">ស្តារ​រូប​ថត​បច្ចុប្បន្ន​ &apos;%1&apos;</translation>
     </message>
+    <message>
+        <source>&amp;Continue running in the background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMDesktop</name>
@@ -8174,6 +8447,148 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>&amp;Snapshots</source>
         <translation type="unfinished">រូបថត</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMInfoDialog</name>
+    <message>
+        <source>%1 - Session Information</source>
+        <translation>%1 - ព័ត៌មាន​សម័យ</translation>
+    </message>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="obsolete">សេចក្ដី​លម្អិត</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime</source>
+        <translation type="obsolete">ពេលវេលា​រត់</translation>
+    </message>
+    <message>
+        <source>DMA Transfers</source>
+        <translation>ការ​ផ្ទេរ DMA</translation>
+    </message>
+    <message>
+        <source>PIO Transfers</source>
+        <translation>ការ​ផ្ទេរ PIO</translation>
+    </message>
+    <message>
+        <source>Data Read</source>
+        <translation>អាន​ទិន្នន័យ</translation>
+    </message>
+    <message>
+        <source>Data Written</source>
+        <translation>សរសេរ​ទិន្នន័យ</translation>
+    </message>
+    <message>
+        <source>Data Transmitted</source>
+        <translation>បានផ្ទេរ​ទិន្នន័យ</translation>
+    </message>
+    <message>
+        <source>Data Received</source>
+        <translation>បាន​ទទួល​ទិន្នន័យ</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation>គុណលក្ខណៈ​ពេលវេលា​រត់</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation>គុណភាព​បង្ហាញ​របស់​អេក្រង់</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="obsolete">កំណែ %1.%2</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation>រក​មិនឃើញ</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation>រក​មិន​ឃើញ</translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation>ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ</translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation>គ្មានអាដាប់ទ័រ​បណ្ដាញ​ទេ</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">បានបើក</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">បានបិទ</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="obsolete">ភេយីង​ខាង​ក្នុង</translation>
+    </message>
+    <message>
+        <source>UIVMInfoDialog</source>
+        <translation type="obsolete">UIVMInfoDialog</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>
+
+
+details report (VRDP server port)</comment>
+        <translation type="obsolete">មិនអាច​ប្រើបាន​</translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation>ស្ថិតិ​ផ្ទុក​</translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation>គ្មាន​ឧបករណ៍​ផ្ទុក​ទេ​</translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation>ស្ថិតិ​បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="obsolete">មិនអាច​ប្រើបាន​</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished">មិនអាច​ប្រើបាន​</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configuration &amp;Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Runtime Information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Uptime</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8295,11 +8710,19 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
 <context>
     <name>UIWizard</name>
     <message>
-        <source>Hide Description</source>
+        <source>&amp;Expert Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show Description</source>
+        <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guided Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11569,6 +11992,46 @@ medium</comment>
         <comment>StorageSlot</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>off</source>
+        <comment>guest monitor status</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paravirtualization Interface</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">គ្មាន</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">លំនាំដើម</translation>
+    </message>
+    <message>
+        <source>Legacy</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimal</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hyper-V</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -12440,144 +12903,6 @@ VMM: Floppy Image</comment>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation type="obsolete">ម៉ាស៊ីន​និម្មិត​ដែល​បាន​ជ្រើស​ &lt;i&gt;មិន​អាច​ចូលដំណើរការ​បានទេ&lt;/i&gt; ។ សូម​ពិនិត្យ​មើល​សារ​កំហុស​ដែល​បានបង្ហាញ​ខាង​ក្រោម ហើយ​ចុច​ប៊ូតុង &lt;b&gt;ធ្វើ​ឲ្យ​ស្រស់&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​ធ្វើការ​ពិនិត្យ​ការ​ចូលដំណើរការ​​ឡើង​វិញ ៖</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMInfoDialog</name>
-    <message>
-        <source>%1 - Session Information</source>
-        <translation>%1 - ព័ត៌មាន​សម័យ</translation>
-    </message>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">សេចក្ដី​លម្អិត</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime</source>
-        <translation type="obsolete">ពេលវេលា​រត់</translation>
-    </message>
-    <message>
-        <source>DMA Transfers</source>
-        <translation>ការ​ផ្ទេរ DMA</translation>
-    </message>
-    <message>
-        <source>PIO Transfers</source>
-        <translation>ការ​ផ្ទេរ PIO</translation>
-    </message>
-    <message>
-        <source>Data Read</source>
-        <translation>អាន​ទិន្នន័យ</translation>
-    </message>
-    <message>
-        <source>Data Written</source>
-        <translation>សរសេរ​ទិន្នន័យ</translation>
-    </message>
-    <message>
-        <source>Data Transmitted</source>
-        <translation>បានផ្ទេរ​ទិន្នន័យ</translation>
-    </message>
-    <message>
-        <source>Data Received</source>
-        <translation>បាន​ទទួល​ទិន្នន័យ</translation>
-    </message>
-    <message>
-        <source>Runtime Attributes</source>
-        <translation>គុណលក្ខណៈ​ពេលវេលា​រត់</translation>
-    </message>
-    <message>
-        <source>Screen Resolution</source>
-        <translation>គុណភាព​បង្ហាញ​របស់​អេក្រង់</translation>
-    </message>
-    <message>
-        <source>Version %1.%2</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">កំណែ %1.%2</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest additions</comment>
-        <translation>រក​មិនឃើញ</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest os type</comment>
-        <translation>រក​មិន​ឃើញ</translation>
-    </message>
-    <message>
-        <source>Guest Additions</source>
-        <translation>ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ</translation>
-    </message>
-    <message>
-        <source>No Network Adapters</source>
-        <translation>គ្មានអាដាប់ទ័រ​បណ្ដាញ​ទេ</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">បានបើក</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">បានបិទ</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <translation type="obsolete">ភេយីង​ខាង​ក្នុង</translation>
-    </message>
-    <message>
-        <source>UIVMInfoDialog</source>
-        <translation>UIVMInfoDialog</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>
-
-
-details report (VRDP server port)</comment>
-        <translation type="obsolete">មិនអាច​ប្រើបាន​</translation>
-    </message>
-    <message>
-        <source>Storage Statistics</source>
-        <translation>ស្ថិតិ​ផ្ទុក​</translation>
-    </message>
-    <message>
-        <source>No Storage Devices</source>
-        <translation>គ្មាន​ឧបករណ៍​ផ្ទុក​ទេ​</translation>
-    </message>
-    <message>
-        <source>Network Statistics</source>
-        <translation>ស្ថិតិ​បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDP server port)</comment>
-        <translation type="obsolete">មិនអាច​ប្រើបាន​</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">មិនអាច​ប្រើបាន​</translation>
-    </message>
-    <message>
-        <source>Clipboard Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag&apos;n&apos;Drop Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Configuration &amp;Details</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Runtime Information</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

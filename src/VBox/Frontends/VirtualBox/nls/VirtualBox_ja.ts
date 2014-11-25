@@ -1014,6 +1014,124 @@
         <source>Popup Menu</source>
         <translation>ポップアップメニュー</translation>
     </message>
+    <message>
+        <source>&amp;VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Menu Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Menu Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens window to configure menu-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Menu &amp;Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle menu-bar visibility for this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Status Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Status Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens window to configure status-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Status &amp;Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle status-bar visibility for this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard</source>
+        <translation type="unfinished">キーボード(&amp;K)</translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the global settings window to configure shortcuts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hard Drive Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of hard drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">ネットワーク</translation>
+    </message>
+    <message>
+        <source>&amp;USB Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change the settings of USB devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Shared Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">ログを参照(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>E&amp;xtra Data Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Extra Data Manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIActionPoolRuntime</name>
+    <message>
+        <source>Enable</source>
+        <comment>Virtual Screen</comment>
+        <translation type="unfinished">有効</translation>
+    </message>
+    <message>
+        <source>Resize to %1x%2</source>
+        <comment>Virtual Screen</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
@@ -1686,6 +1804,13 @@
     </message>
 </context>
 <context>
+    <name>UIDnDDrag</name>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDnDHandler</name>
     <message>
         <source>Dropping data ...</source>
@@ -1696,7 +1821,7 @@
     <name>UIDnDMimeData</name>
     <message>
         <source>Dropping data ...</source>
-        <translation>データのドロップ...</translation>
+        <translation type="obsolete">データのドロップ...</translation>
     </message>
 </context>
 <context>
@@ -2685,6 +2810,16 @@ p, li { white-space: pre-wrap; }
         <comment>details (description)</comment>
         <translation>なし</translation>
     </message>
+    <message>
+        <source>Minimal Paravirtualization</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hyper-V Paravirtualization</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2971,6 +3106,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
         <translation>ゲストで使用する最大のスクリーンサイズを提示します。Guest Additionsがインストールされている場合は、ゲストにはこの提案されたサイズだけが表示されます。</translation>
+    </message>
+    <message>
+        <source>Machine Windows:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, machine windows will be raised when the mouse pointer moves over them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Raise Window Under Mouse</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4338,7 +4485,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラーが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラーが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -4401,6 +4548,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>キーボードがゲストOSにキャプチャーされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;)か、そうではないとき(&lt;img src=:/hostkey_16px.png/&gt;)かを表示します。</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4479,6 +4630,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <translation>ホストマシンに接続されたデバイスはサポートされていません</translation>
+    </message>
+    <message>
+        <source>Connect Network Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect Network Adapter %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4761,6 +4920,46 @@ p, li { white-space: pre-wrap; }
         <source>Enable video recording for screen %1.</source>
         <translation>スクリーン %1 のビデオを録画します。</translation>
     </message>
+    <message>
+        <source>Machine &amp;Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allows to modify VM menu-bar contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini ToolBar:</source>
+        <translation type="unfinished">ミニ ツールバー:</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation type="unfinished">フルスクリーンモードまたはシームレスモード時にミニ ツールバーを表示します。</translation>
+    </message>
+    <message>
+        <source>Show in &amp;Fullscreen/Seamless</source>
+        <translation type="unfinished">フルスクリーン/シームレスモード時に表示(&amp;F)</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished">ミニ ツールバーを画面の上部に表示します。デフォルトの設定では画面の下部に表示します。</translation>
+    </message>
+    <message>
+        <source>Show at &amp;Top of Screen</source>
+        <translation type="unfinished">画面の上部に表示(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Allows to modify VM status-bar contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -4946,7 +5145,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
-        <translation>仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
+        <translation type="obsolete">仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
@@ -4998,31 +5197,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation>リムーバブル メディア:</translation>
+        <translation type="obsolete">リムーバブル メディア:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation>実行時に変更したメディアを記録(&amp;R)</translation>
+        <translation type="obsolete">実行時に変更したメディアを記録(&amp;R)</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation>ミニ ツールバー:</translation>
+        <translation type="obsolete">ミニ ツールバー:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>フルスクリーンモードまたはシームレスモード時にミニ ツールバーを表示します。</translation>
+        <translation type="obsolete">フルスクリーンモードまたはシームレスモード時にミニ ツールバーを表示します。</translation>
     </message>
     <message>
         <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation>フルスクリーン/シームレスモード時に表示(&amp;F)</translation>
+        <translation type="obsolete">フルスクリーン/シームレスモード時に表示(&amp;F)</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>ミニ ツールバーを画面の上部に表示します。デフォルトの設定では画面の下部に表示します。</translation>
+        <translation type="obsolete">ミニ ツールバーを画面の上部に表示します。デフォルトの設定では画面の下部に表示します。</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation>画面の上部に表示(&amp;T)</translation>
+        <translation type="obsolete">画面の上部に表示(&amp;T)</translation>
     </message>
 </context>
 <context>
@@ -6233,6 +6432,14 @@ p, li { white-space: pre-wrap; }
         <source>Controller: %1</source>
         <translation>コントローラー: %1</translation>
     </message>
+    <message>
+        <source>When checked the guest system will see the virtual disk as a hot-pluggable device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hot-pluggable</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -6286,11 +6493,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
-        <translation>I/O APIC機能はシステムページのマザーボードセクションで有効になっていません。チップセットのタイプをICH9にするなら必須です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="obsolete">I/O APIC機能はシステムページのマザーボードセクションで有効になっていません。チップセットのタイプをICH9にするなら必須です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation>USBコントローラーエミュレーションがUSBのページで有効になっていません。USBインプットデバイスのエミュレーションを使用するのに必要です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="obsolete">USBコントローラーエミュレーションがUSBのページで有効になっていません。USBインプットデバイスのエミュレーションを使用するのに必要です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
@@ -6302,11 +6509,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation>I/O APIC機能はシステムページのマザーボードセクションで有効になっていません。仮想プロセッサーを複数にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="obsolete">I/O APIC機能はシステムページのマザーボードセクションで有効になっていません。仮想プロセッサーを複数にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation>ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。仮想プロセッサーを複数にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
+        <translation type="obsolete">ハードウェア仮想化がシステムページのアクセラレーションセクションで有効になっていません。仮想プロセッサーを複数にするのなら必須です。変更を確認すると自動的に有効になります。</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
@@ -6497,6 +6704,30 @@ p, li { white-space: pre-wrap; }
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>EFIを有効化(一部のOSのみ)(&amp;E)</translation>
     </message>
+    <message>
+        <source>&amp;Paravirtualization Interface:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsUSB</name>
@@ -6619,7 +6850,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>USB 2.0 (EHCI)コントローラーを有効化(&amp;H)</translation>
+        <translation type="obsolete">USB 2.0 (EHCI)コントローラーを有効化(&amp;H)</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
@@ -6632,6 +6863,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>[filter]</source>
         <translation>[フィルター]</translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;1.1 (OHCI) Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;2.0 (EHCI) Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB &amp;3.0 (xHCI) Controller</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6770,7 +7021,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>閉じる(&amp;L)</translation>
+        <translation type="obsolete">閉じる(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Removing medium...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6786,6 +7041,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose mode:</source>
         <translation>メディアタイプを選択:</translation>
+    </message>
+</context>
+<context>
+    <name>UIMenuBarEditorWidget</name>
+    <message>
+        <source>Virtual Screen Resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen Mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">閉じる</translation>
     </message>
 </context>
 <context>
@@ -8557,6 +8827,14 @@ p, li { white-space: pre-wrap; }
         <source>Do not show this message again</source>
         <translation>次回からこのメッセージを表示しない</translation>
     </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -9747,6 +10025,20 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
 </context>
 <context>
+    <name>UIStatusBarEditorButton</name>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIStatusBarEditorWidget</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">閉じる</translation>
+    </message>
+</context>
+<context>
     <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
@@ -9923,6 +10215,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
         <translation>現在のスナップショット  &apos;%1&apos;  に復元(&amp;R)</translation>
     </message>
+    <message>
+        <source>&amp;Continue running in the background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMDesktop</name>
@@ -9933,6 +10233,177 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>&amp;Snapshots</source>
         <translation>スナップショット(&amp;S)</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMInfoDialog</name>
+    <message>
+        <source>Session Information Dialog</source>
+        <translation type="obsolete">セッション情報ダイアログ</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">閉じる(&amp;C)</translation>
+    </message>
+    <message>
+        <source>%1 - Session Information</source>
+        <translation>%1 - セッション情報</translation>
+    </message>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="obsolete">詳細(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime</source>
+        <translation type="obsolete">ランタイム(&amp;R)</translation>
+    </message>
+    <message>
+        <source>DMA Transfers</source>
+        <translation>DMA 転送</translation>
+    </message>
+    <message>
+        <source>PIO Transfers</source>
+        <translation>PIO 転送</translation>
+    </message>
+    <message>
+        <source>Data Read</source>
+        <translation>データ読み込み</translation>
+    </message>
+    <message>
+        <source>Data Written</source>
+        <translation>データ書き込み</translation>
+    </message>
+    <message>
+        <source>Data Transmitted</source>
+        <translation>データ送信</translation>
+    </message>
+    <message>
+        <source>Data Received</source>
+        <translation>データ受信</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation>利用不可</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation>ランタイム属性</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation>画面解像度</translation>
+    </message>
+    <message>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">CD/DVD 統計</translation>
+    </message>
+    <message>
+        <source>Network Adapter Statistics</source>
+        <translation type="obsolete">ネットワークアダプター統計</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="obsolete">バージョン %1.%2</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation>未検出</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation>未検出</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation>クリップボードモード</translation>
+    </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop Mode</source>
+        <translation>ドラッグ＆ドロップモード</translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation>Guest Additions</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>ゲストOSのタイプ</translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="obsolete">ハードディスク統計</translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="obsolete">ハードディスクなし</translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation>ネットワークアダプターなし</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">無効</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="obsolete">ネステッドページング</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="obsolete">ネステッドページング</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation type="obsolete">有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation type="obsolete">無効</translation>
+    </message>
+    <message>
+        <source>UIVMInfoDialog</source>
+        <translation type="obsolete">UIVMInfoDialog</translation>
+    </message>
+    <message>
+        <source>Configuration &amp;Details</source>
+        <translation>設定の詳細(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime Information</source>
+        <translation>ランタイム情報(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="obsolete">利用不可</translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation>ストレージ統計</translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation>ストレージデバイス なし</translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation>ネットワーク 統計</translation>
+    </message>
+    <message>
+        <source>VM Uptime</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10086,11 +10557,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIWizard</name>
     <message>
         <source>Hide Description</source>
-        <translation>説明を隠す</translation>
+        <translation type="obsolete">説明を隠す</translation>
     </message>
     <message>
         <source>Show Description</source>
-        <translation>説明を表示</translation>
+        <translation type="obsolete">説明を表示</translation>
+    </message>
+    <message>
+        <source>&amp;Expert Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guided Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13745,6 +14232,46 @@ Version %1</source>
         <source>Please choose a location for new virtual hard drive file</source>
         <translation>新しい仮想ハードドライブファイルの場所を選択</translation>
     </message>
+    <message>
+        <source>off</source>
+        <comment>guest monitor status</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paravirtualization Interface</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">なし</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished">デフォルト</translation>
+    </message>
+    <message>
+        <source>Legacy</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimal</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hyper-V</source>
+        <comment>ParavirtProvider</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -15775,173 +16302,6 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation type="obsolete">選択した仮想マシンにアクセスできません。アクセス可否を再確認するには以下に示されたエラーメッセージを調査して&lt;b&gt;[最新の情報に更新]&lt;/b&gt;ボタンをクリックしてください:</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMInfoDialog</name>
-    <message>
-        <source>Session Information Dialog</source>
-        <translation type="obsolete">セッション情報ダイアログ</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">閉じる(&amp;C)</translation>
-    </message>
-    <message>
-        <source>%1 - Session Information</source>
-        <translation>%1 - セッション情報</translation>
-    </message>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">詳細(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime</source>
-        <translation type="obsolete">ランタイム(&amp;R)</translation>
-    </message>
-    <message>
-        <source>DMA Transfers</source>
-        <translation>DMA 転送</translation>
-    </message>
-    <message>
-        <source>PIO Transfers</source>
-        <translation>PIO 転送</translation>
-    </message>
-    <message>
-        <source>Data Read</source>
-        <translation>データ読み込み</translation>
-    </message>
-    <message>
-        <source>Data Written</source>
-        <translation>データ書き込み</translation>
-    </message>
-    <message>
-        <source>Data Transmitted</source>
-        <translation>データ送信</translation>
-    </message>
-    <message>
-        <source>Data Received</source>
-        <translation>データ受信</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDE server port)</comment>
-        <translation>利用不可</translation>
-    </message>
-    <message>
-        <source>Runtime Attributes</source>
-        <translation>ランタイム属性</translation>
-    </message>
-    <message>
-        <source>Screen Resolution</source>
-        <translation>画面解像度</translation>
-    </message>
-    <message>
-        <source>CD/DVD Statistics</source>
-        <translation type="obsolete">CD/DVD 統計</translation>
-    </message>
-    <message>
-        <source>Network Adapter Statistics</source>
-        <translation type="obsolete">ネットワークアダプター統計</translation>
-    </message>
-    <message>
-        <source>Version %1.%2</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">バージョン %1.%2</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest additions</comment>
-        <translation>未検出</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest os type</comment>
-        <translation>未検出</translation>
-    </message>
-    <message>
-        <source>Clipboard Mode</source>
-        <translation>クリップボードモード</translation>
-    </message>
-    <message>
-        <source>Drag&apos;n&apos;Drop Mode</source>
-        <translation>ドラッグ＆ドロップモード</translation>
-    </message>
-    <message>
-        <source>Guest Additions</source>
-        <translation>Guest Additions</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>ゲストOSのタイプ</translation>
-    </message>
-    <message>
-        <source>Hard Disk Statistics</source>
-        <translation type="obsolete">ハードディスク統計</translation>
-    </message>
-    <message>
-        <source>No Hard Disks</source>
-        <translation type="obsolete">ハードディスクなし</translation>
-    </message>
-    <message>
-        <source>No Network Adapters</source>
-        <translation>ネットワークアダプターなし</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">有効</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">無効</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details report</comment>
-        <translation type="obsolete">ネステッドページング</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <translation type="obsolete">ネステッドページング</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <translation type="obsolete">有効</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation type="obsolete">無効</translation>
-    </message>
-    <message>
-        <source>UIVMInfoDialog</source>
-        <translation>UIVMInfoDialog</translation>
-    </message>
-    <message>
-        <source>Configuration &amp;Details</source>
-        <translation>設定の詳細(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime Information</source>
-        <translation>ランタイム情報(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDP server port)</comment>
-        <translation type="obsolete">利用不可</translation>
-    </message>
-    <message>
-        <source>Storage Statistics</source>
-        <translation>ストレージ統計</translation>
-    </message>
-    <message>
-        <source>No Storage Devices</source>
-        <translation>ストレージデバイス なし</translation>
-    </message>
-    <message>
-        <source>Network Statistics</source>
-        <translation>ネットワーク 統計</translation>
     </message>
 </context>
 <context>
