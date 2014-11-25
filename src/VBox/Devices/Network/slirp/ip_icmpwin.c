@@ -40,6 +40,8 @@ AssertCompileSize(struct icmp_echo, 8);
 struct pong {
     PNATState pData;
 
+    TAILQ_ENTRY(pong) queue_entry;
+
     struct ip reqiph;
     struct icmp_echo reqicmph;
 
@@ -52,6 +54,7 @@ static VOID WINAPI icmpwin_callback_apc(void *ctx, PIO_STATUS_BLOCK iob, ULONG r
 static VOID WINAPI icmpwin_callback_old(void *ctx);
 
 static void icmpwin_callback(struct pong *pong);
+static void icmpwin_pong(struct pong *pong);
 
 static struct mbuf *icmpwin_get_error(struct pong *pong, int type, int code);
 static struct mbuf *icmpwin_get_mbuf(PNATState pData, size_t reqsize);
@@ -90,10 +93,11 @@ icmpwin_init(PNATState pData)
             pfIcmpCallback = icmpwin_callback_old;
     }
 
+    TAILQ_INIT(&pData->pongs_expected);
+    TAILQ_INIT(&pData->pongs_received);
+
     pData->icmp_socket.sh = IcmpCreateFile();
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-    pData->cbIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
-    pData->pvIcmpBuffer = RTMemAlloc(pData->cbIcmpBuffer);
 
     return 0;
 }
@@ -103,7 +107,19 @@ void
 icmpwin_finit(PNATState pData)
 {
     IcmpCloseHandle(pData->icmp_socket.sh);
-    RTMemFree(pData->pvIcmpBuffer);
+
+    while (!TAILQ_EMPTY(&pData->pongs_received)) {
+        struct pong *pong = TAILQ_FIRST(&pData->pongs_received);
+        TAILQ_REMOVE(&pData->pongs_received, pong, queue_entry);
+        RTMemFree(pong);
+    }
+ 
+    /* this should be empty */
+    while (!TAILQ_EMPTY(&pData->pongs_expected)) {
+        struct pong *pong = TAILQ_FIRST(&pData->pongs_expected);
+        TAILQ_REMOVE(&pData->pongs_expected, pong, queue_entry);
+        pong->pData = NULL;
+    }
 }
 
 
@@ -114,7 +130,7 @@ void
 icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
 {
     struct ip *ip = mtod(m, struct ip *);
-    size_t reqsize;
+    size_t reqsize, pongsize;
     uint8_t ttl;
     size_t bufsize;
     struct pong *pong;
@@ -136,7 +152,11 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
         bufsize += reqsize;
     bufsize += 16; /* whatever that is; empirically at least XP needs it */
 
-    pong = RTMemAlloc(RT_OFFSETOF(struct pong, buf) + bufsize);
+    pongsize = RT_OFFSETOF(struct pong, buf) + bufsize;
+    if (pData->cbIcmpPending + pongsize > 1024 * 1024)
+        return;
+
+    pong = RTMemAlloc(pongsize);
     if (RT_UNLIKELY(pong == NULL))
         return;
 
@@ -208,11 +228,14 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     }
     else /* success */
     {
-        Log2(("NAT: pong %p for ping %RTnaipv4 id 0x%04x seq %d len %d\n",
+        Log2(("NAT: pong %p for ping %RTnaipv4 id 0x%04x seq %d len %zu (%zu)\n",
               pong, dst,
               RT_N2H_U16(pong->reqicmph.icmp_echo_id),
               RT_N2H_U16(pong->reqicmph.icmp_echo_seq),
-              reqsize));
+              pongsize, reqsize));
+
+        pData->cbIcmpPending += pongsize;
+        TAILQ_INSERT_TAIL(&pData->pongs_expected, pong, queue_entry);
         pong = NULL;            /* callback owns it now */
     }
 
@@ -225,12 +248,8 @@ static VOID WINAPI
 icmpwin_callback_apc(void *ctx, PIO_STATUS_BLOCK iob, ULONG reserved)
 {
     struct pong *pong = (struct pong *)ctx;
-
     if (pong != NULL)
-    {
         icmpwin_callback(pong);
-        RTMemFree(pong);
-    }
 }
 
 
@@ -238,21 +257,86 @@ static VOID WINAPI
 icmpwin_callback_old(void *ctx)
 {
     struct pong *pong = (struct pong *)ctx;
-
     if (pong != NULL)
-    {
         icmpwin_callback(pong);
-        RTMemFree(pong);
-    }
 }
 
 
 /*
  * Actual callback code for IcmpSendEcho2().  OS version specific
  * trampoline will free "pong" argument for us.
+ *
+ * Since async callback can be called anytime the thread is alertable,
+ * it's not safe to do any processing here.  Instead queue it and
+ * notify the main loop.
  */
 static void
 icmpwin_callback(struct pong *pong)
+{
+    PNATState pData = pong->pData;
+
+    if (pData == NULL)
+    {
+        RTMemFree(pong);
+        return;
+    }
+
+#ifdef DEBUG
+    {
+        struct pong *expected, *already;
+
+        TAILQ_FOREACH(expected, &pData->pongs_expected, queue_entry)
+        {
+            if (expected == pong)
+                break;
+        }
+        Assert(expected);
+
+        TAILQ_FOREACH(already, &pData->pongs_received, queue_entry)
+        {
+            if (already == pong)
+                break;
+        }
+        Assert(!already);
+    }
+#endif
+
+    TAILQ_REMOVE(&pData->pongs_expected, pong, queue_entry);
+    TAILQ_INSERT_TAIL(&pData->pongs_received, pong, queue_entry);
+
+    WSASetEvent(pData->phEvents[VBOX_ICMP_EVENT_INDEX]);
+}
+
+
+void
+icmpwin_process(PNATState pData)
+{
+    struct pong_tailq pongs;
+
+    if (TAILQ_EMPTY(&pData->pongs_received))
+        return;
+
+    TAILQ_INIT(&pongs);
+    TAILQ_CONCAT(&pongs, &pData->pongs_received, queue_entry);
+
+    while (!TAILQ_EMPTY(&pongs)) {
+        struct pong *pong = TAILQ_FIRST(&pongs);
+        size_t sz;
+
+        sz = RT_OFFSETOF(struct pong, buf) + pong->bufsize;
+        Assert(pData->cbIcmpPending >= sz);
+        pData->cbIcmpPending -= sz;
+
+        icmpwin_pong(pong);
+
+        TAILQ_REMOVE(&pongs, pong, queue_entry);
+        RTMemFree(pong);
+    }
+}
+
+
+void
+icmpwin_pong(struct pong *pong)
 {
     PNATState pData;
     DWORD nreplies;
