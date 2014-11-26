@@ -1361,7 +1361,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         || (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
     {
         pEl = &pData->aElements[pData->cElements];
-        pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+        pEl->idFBO = pMural->idDepthStencilRB;
         pEl->enmBuffer = 0; /* we do not care */
         pEl->posX = 0;
         pEl->posY = 0;
