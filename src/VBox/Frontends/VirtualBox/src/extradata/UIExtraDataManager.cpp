@@ -3274,6 +3274,12 @@ double UIExtraDataManager::scaleFactor(const QString &strID)
     return dValue;
 }
 
+void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strID)
+{
+    /* Set corresponding extra-data value: */
+    setExtraDataString(GUI_ScaleFactor, QString::number(dScaleFactor), strID);
+}
+
 QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID)
 {
     /* Get corresponding extra-data: */

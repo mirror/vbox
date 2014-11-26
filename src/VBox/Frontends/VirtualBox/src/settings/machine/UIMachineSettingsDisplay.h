@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,6 +51,7 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureFrameHeight(0)
         , m_iVideoCaptureFrameRate(0)
         , m_iVideoCaptureBitRate(0)
+        , m_dScaleFactor(1)
         , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
     {}
@@ -77,6 +78,7 @@ struct UIDataSettingsMachineDisplay
                (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
                (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
                (m_screens == other.m_screens) &&
+               (m_dScaleFactor == other.m_dScaleFactor) &&
                (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
                (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
     }
@@ -112,6 +114,7 @@ struct UIDataSettingsMachineDisplay
     QVector<BOOL> m_screens;
 
     /* Variables: Machine Window stuff: */
+    double m_dScaleFactor;
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
 };
@@ -184,6 +187,10 @@ private slots:
     void sltHandleVideoCaptureFrameRateEditorChange();
     void sltHandleVideoCaptureQualitySliderChange();
     void sltHandleVideoCaptureBitRateEditorChange();
+
+    /* Handlers: Guest-screen scale-factor stuff: */
+    void sltHandleGuestScreenScaleSliderChange();
+    void sltHandleGuestScreenScaleEditorChange();
 
 private:
 

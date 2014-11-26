@@ -453,8 +453,10 @@ public:
         /** Returns whether machine should perform HID LEDs synchronization. */
         bool hidLedsSyncState(const QString &strID);
 
-        /** Returns scale-factor. */
+        /** Returns the scale-factor. */
         double scaleFactor(const QString &strID);
+        /** Defines the @a dScaleFactor. */
+        void setScaleFactor(double dScaleFactor, const QString &strID);
     /** @} */
 
     /** @name Virtual Machine: Information dialog
