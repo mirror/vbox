@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008-2013 Oracle Corporation
+ Copyright (C) 2008-2014 Oracle Corporation
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -649,7 +649,7 @@
        <string>Machine &amp;Window</string>
       </attribute>
       <layout class="QGridLayout" name="m_pLayoutTabMachineWindow">
-       <item row="0" column="0" colspan="2">
+       <item row="0" column="0" colspan="3">
         <widget class="UIMenuBarEditorWidget" name="m_pMenuBarEditor">
          <property name="whatsThis">
           <string>Allows to modify VM menu-bar contents.</string>
@@ -657,6 +657,70 @@
         </widget>
        </item>
        <item row="1" column="0">
+        <widget class="QLabel" name="m_pLabelGuestScreenScale">
+         <property name="text">
+          <string>Screen Scale Factor:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" rowspan="2">
+        <layout class="QGridLayout" name="m_pLayoutGuestScreenScaleSlider">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item row="0" column="0" colspan="3">
+          <widget class="QIAdvancedSlider" name="m_pSliderGuestScreenScale">
+           <property name="whatsThis">
+            <string>This setting determines the guest-screen scale-factor.</string>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="m_pLabelGuestScreenScaleMin">
+           <property name="text">
+            <string>100%</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <spacer name="m_pSpacerGuestScreenScale">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="m_pLabelGuestScreenScaleMax">
+           <property name="text">
+            <string>200%</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="2">
+        <widget class="QSpinBox" name="m_pEditorGuestScreenScale">
+         <property name="whatsThis">
+          <string>This setting determines the guest-screen scale-factor.</string>
+         </property>
+         <property name="suffix">
+          <string>%</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
         <widget class="QLabel" name="m_pLabelMiniToolBar">
          <property name="text">
           <string>Mini ToolBar:</string>
@@ -666,7 +730,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="3" column="1" colspan="2">
         <widget class="QCheckBox" name="m_pCheckBoxShowMiniToolBar">
          <property name="sizePolicy">
           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
@@ -685,7 +749,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="4" column="1" colspan="2">
         <widget class="QCheckBox" name="m_pComboToolBarAlignment">
          <property name="sizePolicy">
           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
@@ -704,7 +768,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0" colspan="2">
+       <item row="5" column="0" colspan="3">
         <spacer name="m_pSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -717,7 +781,7 @@
          </property>
         </spacer>
        </item>
-       <item row="4" column="0" colspan="2">
+       <item row="6" column="0" colspan="3">
         <widget class="UIStatusBarEditorWidget" name="m_pStatusBarEditor">
          <property name="whatsThis">
           <string>Allows to modify VM status-bar contents.</string>

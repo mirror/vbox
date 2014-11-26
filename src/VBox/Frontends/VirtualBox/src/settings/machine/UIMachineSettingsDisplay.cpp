@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -141,6 +141,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     displayData.m_screens = m_machine.GetVideoCaptureScreens();
 
     /* Cache Machine Window data: */
+    displayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
     displayData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
     displayData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
 
@@ -196,6 +197,7 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pMenuBarEditor->setMachineID(strMachineID);
     m_pStatusBarEditor->setMachineID(strMachineID);
     m_pMenuBarEditor->setActionPool(m_pActionPool);
+    m_pEditorGuestScreenScale->setValue(displayData.m_dScaleFactor * 100);
     m_pCheckBoxShowMiniToolBar->setChecked(displayData.m_fShowMiniToolBar);
     m_pComboToolBarAlignment->setChecked(displayData.m_fMiniToolBarAtTop);
 
@@ -242,6 +244,7 @@ void UIMachineSettingsDisplay::putToCache()
     displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
 
     /* Gather Machine Window data from page: */
+    displayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
     displayData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
     displayData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 
@@ -330,6 +333,7 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         /* Store Machine Window data: */
         if (isMachineInValidMode())
         {
+            gEDataManager->setScaleFactor(displayData.m_dScaleFactor, m_machine.GetId());
             gEDataManager->setMiniToolbarEnabled(displayData.m_fShowMiniToolBar, m_machine.GetId());
             gEDataManager->setMiniToolbarAlignment(displayData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
         }
@@ -496,7 +500,9 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoCaptureQuality, m_pEditorVideoCaptureBitRate);
 
     /* Machine Window tab-order: */
-    setTabOrder(m_pEditorVideoCaptureBitRate, m_pCheckBoxShowMiniToolBar);
+    setTabOrder(m_pEditorVideoCaptureBitRate, m_pSliderGuestScreenScale);
+    setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
+    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxShowMiniToolBar);
     setTabOrder(m_pCheckBoxShowMiniToolBar, m_pComboToolBarAlignment);
 }
 
@@ -724,6 +730,22 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
     updateVideoCaptureSizeHint();
 }
 
+void UIMachineSettingsDisplay::sltHandleGuestScreenScaleSliderChange()
+{
+    /* Apply proposed scale-factor: */
+    m_pEditorGuestScreenScale->blockSignals(true);
+    m_pEditorGuestScreenScale->setValue(m_pSliderGuestScreenScale->value());
+    m_pEditorGuestScreenScale->blockSignals(false);
+}
+
+void UIMachineSettingsDisplay::sltHandleGuestScreenScaleEditorChange()
+{
+    /* Apply proposed scale-factor: */
+    m_pSliderGuestScreenScale->blockSignals(true);
+    m_pSliderGuestScreenScale->setValue(m_pEditorGuestScreenScale->value());
+    m_pSliderGuestScreenScale->blockSignals(false);
+}
+
 void UIMachineSettingsDisplay::prepare()
 {
     /* Apply UI decorations: */
@@ -886,6 +908,21 @@ void UIMachineSettingsDisplay::prepareMachineWindowTab()
 {
     /* Create personal action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
+
+    /* Prepare scale-factor slider: */
+    m_pSliderGuestScreenScale->setMinimum(100);
+    m_pSliderGuestScreenScale->setMaximum(200);
+    m_pSliderGuestScreenScale->setPageStep(10);
+    m_pSliderGuestScreenScale->setSingleStep(1);
+    m_pSliderGuestScreenScale->setTickInterval(10);
+    m_pSliderGuestScreenScale->setSnappingEnabled(true);
+    connect(m_pSliderGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleSliderChange()));
+
+    /* Prepare scale-factor editor: */
+    m_pEditorGuestScreenScale->setMinimum(100);
+    m_pEditorGuestScreenScale->setMaximum(200);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
+    connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
 }
 
 void UIMachineSettingsDisplay::prepareValidation()
