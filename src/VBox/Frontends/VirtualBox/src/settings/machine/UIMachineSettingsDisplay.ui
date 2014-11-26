@@ -674,7 +674,7 @@
          <item row="0" column="0" colspan="3">
           <widget class="QIAdvancedSlider" name="m_pSliderGuestScreenScale">
            <property name="whatsThis">
-            <string>This setting determines the guest-screen scale-factor.</string>
+            <string>This setting determines the guest screen scale factor.</string>
            </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -713,7 +713,7 @@
        <item row="1" column="2">
         <widget class="QSpinBox" name="m_pEditorGuestScreenScale">
          <property name="whatsThis">
-          <string>This setting determines the guest-screen scale-factor.</string>
+          <string>This setting determines the guest screen scale factor.</string>
          </property>
          <property name="suffix">
           <string>%</string>
