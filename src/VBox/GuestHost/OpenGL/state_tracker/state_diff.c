@@ -307,6 +307,8 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
         for (i = 0; i < data->cElements; ++i)
         {
             CRFBDataElement *el = &data->aElements[i];
+            bool fUseRenderBuffer =
+                (el->enmFormat == GL_STENCIL_INDEX || el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL);
 #if 0
             char fname[200];
             sprintf(fname, "./img_apply_%p_%d_%d.tga", to, i, el->enmFormat);
@@ -342,7 +344,11 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
                 }
             }
 
-            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, el->idFBO);
+            /* Bind to corresponding buffer. */
+            if (fUseRenderBuffer)
+                diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, el->idFBO);
+            else
+                diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, el->idFBO);
 
             if (el->enmBuffer)
                 diff_api.DrawBuffer(el->enmBuffer);
@@ -379,6 +385,12 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
                 }
                 diff_api.Disable(GL_STENCIL_TEST);
             }
+
+            /* Bind to window system default buffer. */
+            if (fUseRenderBuffer)
+                diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+            else
+                diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
         }
 
         diff_api.WindowPos3fvARB(to->current.rasterAttrib[VERT_ATTRIB_POS]);
