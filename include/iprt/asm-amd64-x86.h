@@ -1695,7 +1695,7 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
  *
  * @returns true / false.
  */
-DECLINLINE(RTCCUINTREG) ASMIntAreEnabled(void)
+DECLINLINE(bool) ASMIntAreEnabled(void)
 {
     RTCCUINTREG uFlags = ASMGetFlags();
     return uFlags & 0x200 /* X86_EFL_IF */ ? true : false;
