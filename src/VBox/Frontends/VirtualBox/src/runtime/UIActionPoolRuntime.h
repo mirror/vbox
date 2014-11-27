@@ -67,6 +67,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_M_StatusBar,
     UIActionIndexRT_M_View_M_StatusBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar_T_Visibility,
+    UIActionIndexRT_M_View_M_ScaleFactor,
 
     /* 'Input' menu actions: */
     UIActionIndexRT_M_Input,
@@ -182,6 +183,9 @@ protected slots:
     /** Handles configuration-change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
+    /** Handles 'View' : 'Scale Factor' menu : @a pAction trigger. */
+    void sltHandleActionTriggerViewScaleFactor(QAction *pAction);
+
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Normal, Scale). */
     void sltPrepareMenuViewScreen();
     /** Prepare 'View' : 'Virtual Screen #' menu routine (Fullscreen, Seamless). */
@@ -226,6 +230,8 @@ protected:
     void updateMenuViewMenuBar();
     /** Update 'View' : 'Status Bar' menu routine. */
     void updateMenuViewStatusBar();
+    /** Update 'View' : 'Scale Factor' menu routine. */
+    void updateMenuViewScaleFactor();
     /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Normal, Scale). */
     void updateMenuViewScreen(QMenu *pMenu);
     /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Fullscreen, Seamless). */
