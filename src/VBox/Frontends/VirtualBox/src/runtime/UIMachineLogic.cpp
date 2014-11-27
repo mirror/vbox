@@ -897,6 +897,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_Scale));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_ScaleFactor));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCAD));
 #ifdef Q_WS_X11
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS));
