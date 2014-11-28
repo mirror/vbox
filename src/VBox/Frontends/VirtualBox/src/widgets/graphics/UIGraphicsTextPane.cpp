@@ -314,6 +314,9 @@ void UIGraphicsTextPane::updateHoverStuff()
     /* Update text-layout: */
     updateTextLayout();
 
+    /* Update tool-tip: */
+    setToolTip(m_strHoveredAnchor.section(',', -1));
+
     /* Update text-pane: */
     update();
 }
