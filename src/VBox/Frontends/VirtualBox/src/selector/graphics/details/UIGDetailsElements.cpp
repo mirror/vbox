@@ -541,11 +541,14 @@ void UIGDetailsUpdateThreadStorage::run()
                         /* Configure hovering anchors: */
                         const QString strAnchorType = deviceType == KDeviceType_DVD || deviceType == KDeviceType_Floppy ? QString("mount") :
                                                       deviceType == KDeviceType_HardDisk ? QString("attach") : QString();
+                        const CMedium medium = attachment.GetMedium();
+                        const QString strMediumLocation = medium.isNull() ? QString() : medium.GetLocation();
                         attachmentsMap.insert(attachmentSlot,
-                                              QString("<a href=#%1,%2,%3>%4</a>")
+                                              QString("<a href=#%1,%2,%3,%4>%5</a>")
                                                       .arg(strAnchorType,
                                                            controller.GetName(),
                                                            gpConverter->toString(attachmentSlot),
+                                                           strMediumLocation,
                                                            strDeviceType + strAttachmentInfo));
                     }
                 }
