@@ -33,6 +33,7 @@
 # include "UIGDetailsModel.h"
 # include "UIGraphicsRotatorButton.h"
 # include "UIGraphicsTextPane.h"
+# include "UIActionPool.h"
 # include "UIIconPool.h"
 # include "UIConverter.h"
 # include "VBoxGlobal.h"
@@ -155,7 +156,8 @@ void UIGDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
         )
     {
         /* Prepare storage-menu: */
-        QMenu menu;
+        UIMenu menu;
+        menu.setShowToolTip(true);
 
         /* Storage-controller name: */
         QString strControllerName = strData.section(',', 0, 0);
