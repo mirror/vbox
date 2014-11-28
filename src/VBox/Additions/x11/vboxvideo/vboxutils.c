@@ -252,10 +252,17 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
     if (prop && prop->type == XA_INTEGER && prop->format == 32)
         for (i = 0; i < prop->size && i < pVBox->cScreens; ++i)
         {
-            if (!((int32_t *)prop->data)[i])
+            if (((int32_t *)prop->data)[i] == 0)
                 continue;
-            pVBox->pScreens[i].aPreferredSize.cx = ((int32_t *)prop->data)[i] >> 16;
-            pVBox->pScreens[i].aPreferredSize.cy = ((int32_t *)prop->data)[i] & 0xffff;
+            else if (((int32_t *)prop->data)[i] < 0)
+                pVBox->pScreens[i].afDisabled = true;
+            else
+            {
+                pVBox->pScreens[i].aPreferredSize.cx =
+                    ((int32_t *)prop->data)[i] >> 16;
+                pVBox->pScreens[i].aPreferredSize.cy =
+                    ((int32_t *)prop->data)[i] & 0x8fff;
+            }
         }
 }
 
