@@ -805,6 +805,8 @@ private:
                                                         size_t *pcbKey);
     static DECLCALLBACK(int)    i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId);
 
+    static DECLCALLBACK(int)    i_pdmIfSecKeyHlp_KeyMissingNotify(PPDMISECKEYHLP pInterface);
+
     int mcAudioRefs;
     volatile uint32_t mcVRDPClients;
     uint32_t mu32SingleRDPClientId; /* The id of a connected client in the single connection mode. */
@@ -979,6 +981,12 @@ private:
     {
         Console *pConsole;
     } *mpIfSecKey;
+
+    /** Pointer to the key helpers -> provider (that's us) callbacks. */
+    struct MYPDMISECKEYHLP : public PDMISECKEYHLP
+    {
+        Console *pConsole;
+    } *mpIfSecKeyHlp;
 
 /* Note: FreeBSD needs this whether netflt is used or not. */
 #if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))

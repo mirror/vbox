@@ -1337,6 +1337,26 @@ typedef struct PDMISECKEY
 /** PDMISECKEY interface ID. */
 #define PDMISECKEY_IID                           "a7336c4a-2ca0-489d-ad2d-f740f215a1e6"
 
+/** Pointer to a secret key helper interface. */
+typedef struct PDMISECKEYHLP *PPDMISECKEYHLP;
+
+/**
+ * Secret key helper interface for non critical functionality.
+ */
+typedef struct PDMISECKEYHLP
+{
+    /**
+     * Notifies the interface provider that a key couldn't be retrieved from the key store.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyMissingNotify, (PPDMISECKEYHLP pInterface));
+
+} PDMISECKEYHLP;
+/** PDMISECKEY interface ID. */
+#define PDMISECKEYHLP_IID                        "7be96168-4156-40ac-86d2-3073bf8b318e"
+
 /**
  * Media geometry structure.
  */
@@ -1456,9 +1476,11 @@ typedef struct PDMIMEDIA
      * @param   pIfSecKey       The secret key interface to use.
      *                          Use NULL to clear the currently set interface and clear all secret
      *                          keys from the user.
+     * @param   pIfSecKeyHlp    The secret key helper interface to use.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetSecKeyIf,(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey));
+    DECLR3CALLBACKMEMBER(int, pfnSetSecKeyIf,(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey,
+                                              PPDMISECKEYHLP pIfSecKeyHlp));
 
     /**
      * Get the media size in bytes.
@@ -1586,7 +1608,7 @@ typedef struct PDMIMEDIA
 
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "b4acf420-c9e3-4333-9ed5-e86f6b2d5f1a"
+#define PDMIMEDIA_IID                           "d8997ad8-4dda-4352-aa99-99bf87d54102"
 
 
 /** Pointer to a block BIOS interface. */
