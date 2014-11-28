@@ -182,10 +182,14 @@ typedef struct ATADevState
     uint32_t cbElementaryTransfer;
     /** Maximum ATAPI elementary transfer size, PIO only. */
     uint32_t cbPIOTransferLimit;
+    /** ATAPI passthrough transfer size, shared PIO/DMA */
+    uint32_t cbAtapiPassthroughTransfer;
     /** Current read/write buffer position, shared PIO/DMA. */
     uint32_t iIOBufferCur;
     /** First element beyond end of valid buffer content, shared PIO/DMA. */
     uint32_t iIOBufferEnd;
+    /** Align the following fields correctly. */
+    uint32_t Alignment0;
 
     /** ATA/ATAPI current PIO read/write transfer position. Not shared with DMA for safety reasons. */
     uint32_t iIOBufferPIODataStart;
@@ -1736,6 +1740,7 @@ static void atapiCmdError(ATADevState *s, const uint8_t *pabATAPISense, size_t c
     memcpy(s->abATAPISense, pabATAPISense, RT_MIN(cbATAPISense, sizeof(s->abATAPISense)));
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
+    s->cbAtapiPassthroughTransfer = 0;
     s->iIOBufferCur = 0;
     s->iIOBufferEnd = 0;
     s->uTxDir = PDMBLOCKTXDIR_NONE;
@@ -1762,6 +1767,7 @@ static void atapiCmdBT(ATADevState *s)
 {
     s->fATAPITransfer = true;
     s->cbElementaryTransfer = s->cbTotalTransfer;
+    s->cbAtapiPassthroughTransfer = s->cbTotalTransfer;
     s->cbPIOTransferLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         atapiCmdOK(s);
@@ -1952,7 +1958,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     uint32_t cbTransfer;
     PSTAMPROFILEADV pProf = NULL;
 
-    cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
+    cbTransfer = RT_MIN(s->cbAtapiPassthroughTransfer, s->cbIOBuffer);
 
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         Log3(("ATAPI PT data write (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
@@ -2178,7 +2184,7 @@ static bool atapiPassthroughSS(ATADevState *s)
 
         if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
         {
-            Assert(cbTransfer <= s->cbTotalTransfer);
+            Assert(cbTransfer <= s->cbAtapiPassthroughTransfer);
             /*
              * Reply with the same amount of data as the real drive
              * but only if the command wasn't split.
@@ -2208,7 +2214,7 @@ static bool atapiPassthroughSS(ATADevState *s)
          * transfer size. But the I/O buffer size limits what can actually be
          * done in one transfer, so set the actual value of the buffer end. */
         s->cbElementaryTransfer = cbTransfer;
-        if (cbTransfer >= s->cbTotalTransfer)
+        if (cbTransfer >= s->cbAtapiPassthroughTransfer)
         {
             s->iSourceSink = ATAFN_SS_NULL;
             atapiCmdOK(s);
@@ -3750,6 +3756,7 @@ static bool ataPacketSS(ATADevState *s)
     s->uTxDir = PDMBLOCKTXDIR_NONE;
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
+    s->cbAtapiPassthroughTransfer = 0;
     atapiParseCmd(s);
     return false;
 }
@@ -3842,6 +3849,7 @@ static DECLCALLBACK(void) ataUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 static void ataPacketBT(ATADevState *s)
 {
     s->cbElementaryTransfer = s->cbTotalTransfer;
+    s->cbAtapiPassthroughTransfer = s->cbTotalTransfer;
     s->uATARegNSector = (s->uATARegNSector & ~7) | ATAPI_INT_REASON_CD;
     Log2(("%s: interrupt reason %#04x\n", __FUNCTION__, s->uATARegNSector));
     ataSetStatusValue(s, ATA_STAT_READY);
@@ -3861,6 +3869,7 @@ static void ataResetDevice(ATADevState *s)
     ataSetSignature(s);
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
+    s->cbAtapiPassthroughTransfer = 0;
     s->iIOBufferPIODataStart = 0;
     s->iIOBufferPIODataEnd = 0;
     s->iBeginTransfer = ATAFN_BT_NULL;
