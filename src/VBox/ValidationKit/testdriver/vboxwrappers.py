@@ -2219,11 +2219,12 @@ class SessionWrapper(TdTaskBase):
         Returns False on failure.
         """
         try:
-            iWidth, iHeight, _, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
             if self.fpApiVer >= 4.4:
+                iWidth, iHeight, _, _, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
                 aPngData = self.o.console.display.takeScreenShotToArray(iScreenId, iWidth, iHeight,
                                                                         vboxcon.BitmapFormat_PNG)
             else:
+                iWidth, iHeight, _, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
                 aPngData = self.o.console.display.takeScreenShotPNGToArray(iScreenId, iWidth, iHeight)
         except:
             reporter.logXcpt("Unable to take screenshot")
