@@ -422,6 +422,7 @@ Console::Console()
 #endif
     , mBusMgr(NULL)
     , mpIfSecKey(NULL)
+    , mpIfSecKeyHlp(NULL)
     , mVMStateChangeCallbackDisabled(false)
     , mfUseHostClipboard(true)
     , mMachineState(MachineState_PoweredOff)
@@ -466,6 +467,13 @@ HRESULT Console::FinalConstruct()
     pIfSecKey->pfnKeyRelease            = Console::i_pdmIfSecKey_KeyRelease;
     pIfSecKey->pConsole                 = this;
     mpIfSecKey = pIfSecKey;
+
+    MYPDMISECKEYHLP *pIfSecKeyHlp = (MYPDMISECKEYHLP *)RTMemAllocZ(sizeof(*mpIfSecKeyHlp) + sizeof(Console *));
+    if (!pIfSecKeyHlp)
+        return E_OUTOFMEMORY;
+    pIfSecKeyHlp->pfnKeyMissingNotify   = Console::i_pdmIfSecKeyHlp_KeyMissingNotify;
+    pIfSecKeyHlp->pConsole              = this;
+    mpIfSecKeyHlp = pIfSecKeyHlp;
 
     return BaseFinalConstruct();
 }
@@ -700,6 +708,12 @@ void Console::uninit()
     {
         RTMemFree((void *)mpIfSecKey);
         mpIfSecKey = NULL;
+    }
+
+    if (mpIfSecKeyHlp)
+    {
+        RTMemFree((void *)mpIfSecKeyHlp);
+        mpIfSecKeyHlp = NULL;
     }
 
     if (mNvram)
@@ -4456,7 +4470,7 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
                 pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
                 if (pIMedium)
                 {
-                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL);
+                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL, mpIfSecKeyHlp);
                     Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
                 }
             }
@@ -4573,7 +4587,7 @@ HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
                         return setError(E_FAIL, tr("could not query medium interface of controller"));
                     else
                     {
-                        rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey);
+                        rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey, mpIfSecKeyHlp);
                         if (RT_FAILURE(rc))
                             return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
                     }
@@ -8223,6 +8237,16 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
             break;
         }
 
+        case VMSTATE_POWERING_ON:
+        {
+            /*
+             * We have to set the secret key helper interface for the VD drivers to
+             * get notified about missing keys.
+             */
+            that->i_clearDiskEncryptionKeysOnAllAttachments();
+            break;
+        }
+
         default: /* shut up gcc */
             break;
     }
@@ -8892,16 +8916,6 @@ Console::i_setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
 
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
             fFatal, pszErrorId, message.c_str()));
-
-    /* Set guest property if the reason of the error is a missing DEK for a disk. */
-    if (!RTStrCmp(pszErrorId, "DrvVD_DEKMISSING"))
-    {
-        that->mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw());
-        that->mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw(),
-                                         Bstr("1").raw(), Bstr("RDONLYGUEST").raw());
-        that->mMachine->SaveSettings();
-    }
-
 
     that->i_onRuntimeError(BOOL(fFatal), Bstr(pszErrorId).raw(), Bstr(message).raw());
 
@@ -10257,6 +10271,22 @@ Console::i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId)
     return VERR_NOT_FOUND;
 }
 
+/**
+ * @interface_method_impl{PDMISECKEYHLP,pfnKeyMissingNotify}
+ */
+/*static*/ DECLCALLBACK(int)
+Console::i_pdmIfSecKeyHlp_KeyMissingNotify(PPDMISECKEYHLP pInterface)
+{
+    Console *pConsole = ((MYPDMISECKEYHLP *)pInterface)->pConsole;
+
+    /* Set guest property only, the VM is paused in the media driver calling us. */
+    pConsole->mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw());
+    pConsole->mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/DekMissing").raw(),
+                                         Bstr("1").raw(), Bstr("RDONLYGUEST").raw());
+    pConsole->mMachine->SaveSettings();
+
+    return VINF_SUCCESS;
+}
 
 
 

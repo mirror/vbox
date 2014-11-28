@@ -3967,6 +3967,22 @@ int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
                                        fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             AssertRCReturn(rc, rc);
 
+            /*
+             * Make the secret key helper interface known to the VD driver if it is attached,
+             * so we can get notified about missing keys.
+             */
+            PPDMIBASE pIBase = NULL;
+            rc = PDMR3QueryDriverOnLun(pUVM, pcszDevice, uInstance, uLUN, "VD", &pIBase);
+            if (RT_SUCCESS(rc) && pIBase)
+            {
+                PPDMIMEDIA pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+                if (pIMedium)
+                {
+                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL, mpIfSecKeyHlp);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+                }
+            }
+
             /* There is no need to handle removable medium mounting, as we
              * unconditionally replace everthing including the block driver level.
              * This means the new medium will be picked up automatically. */

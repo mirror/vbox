@@ -198,6 +198,8 @@ typedef struct VBOXDISK
     VDINTERFACECRYPTO        VDIfCrypto;
     /** The secret key interface used to retrieve keys. */
     PPDMISECKEY              pIfSecKey;
+    /** The secret key helper interface used to notify about missing keys. */
+    PPDMISECKEYHLP           pIfSecKeyHlp;
     /** @} */
 } VBOXDISK, *PVBOXDISK;
 
@@ -1536,6 +1538,28 @@ static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET Sock)
     return VINF_SUCCESS;
 }
 
+/**
+ * Checks the prerequisites for encrypted I/O.
+ *
+ * @returns VBox status code.
+ * @param   pThis    The VD driver instance data.
+ */
+static int drvvdKeyCheckPrereqs(PVBOXDISK pThis)
+{
+    if (   pThis->pCfgCrypto
+        && !pThis->pIfSecKey)
+    {
+        AssertPtr(pThis->pIfSecKeyHlp);
+        pThis->pIfSecKeyHlp->pfnKeyMissingNotify(pThis->pIfSecKeyHlp);
+
+        int rc = PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
+                                            N_("VD: The DEK for this disk is missing"));
+        AssertRC(rc);
+        return VERR_VD_DEK_MISSING;
+    }
+
+    return VINF_SUCCESS;
+}
 
 /*******************************************************************************
 *   Media interface methods                                                    *
@@ -1550,14 +1574,9 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     LogFlowFunc(("off=%#llx pvBuf=%p cbRead=%d\n", off, pvBuf, cbRead));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
 
-    if (   pThis->pCfgCrypto
-        && !pThis->pIfSecKey)
-    {
-        rc = PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
-                                        N_("VD: The DEK for this disk is missing"));
-        AssertRC(rc);
-        return VERR_VD_DEK_MISSING;
-    }
+    rc = drvvdKeyCheckPrereqs(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     if (!pThis->fBootAccelActive)
         rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
@@ -1665,14 +1684,9 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d\n%.*Rhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
 
-    if (   pThis->pCfgCrypto
-        && !pThis->pIfSecKey)
-    {
-        int rc = PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
-                                            N_("VD: The DEK for this disk is missing"));
-        AssertRC(rc);
-        return VERR_VD_DEK_MISSING;
-    }
+    int rc = drvvdKeyCheckPrereqs(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* Invalidate any buffer if boot acceleration is enabled. */
     if (pThis->fBootAccelActive)
@@ -1681,7 +1695,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
         pThis->offDisk     = 0;
     }
 
-    int rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
+    rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1732,7 +1746,7 @@ static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
 }
 
 /** @copydoc PDMIMEDIA::pfnSetKey */
-static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey)
+static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIfSecKey, PPDMISECKEYHLP pIfSecKeyHlp)
 {
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
@@ -1741,6 +1755,8 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
     if (pThis->pCfgCrypto)
     {
         PVDINTERFACE pVDIfFilter = NULL;
+
+        pThis->pIfSecKeyHlp = pIfSecKeyHlp;
 
         if (   pThis->pIfSecKey
             && !pIfSecKey)
@@ -1986,14 +2002,9 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
-    if (   pThis->pCfgCrypto
-        && !pThis->pIfSecKey)
-    {
-        rc = PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
-                                        N_("VD: The DEK for this disk is missing"));
-        AssertRC(rc);
-        return VERR_VD_DEK_MISSING;
-    }
+    rc = drvvdKeyCheckPrereqs(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     pThis->fBootAccelActive = false;
 
@@ -2024,14 +2035,9 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
-    if (   pThis->pCfgCrypto
-        && !pThis->pIfSecKey)
-    {
-        rc = PDMDrvHlpVMSetRuntimeError(pThis->pDrvIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
-                                        N_("VD: The DEK for this disk is missing"));
-        AssertRC(rc);
-        return VERR_VD_DEK_MISSING;
-    }
+    rc = drvvdKeyCheckPrereqs(pThis);
+    if (RT_FAILURE(rc))
+        return rc;
 
     pThis->fBootAccelActive = false;
 
