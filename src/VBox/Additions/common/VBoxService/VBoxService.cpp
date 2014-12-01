@@ -1097,7 +1097,8 @@ int main(int argc, char **argv)
         rcExit = VBoxServiceWinEnterCtrlDispatcher();
 #else
         VBoxServiceVerbose(1, "Daemonizing...\n");
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */,
+                             false /* fRespawn */);
         if (RT_FAILURE(rc))
             return VBoxServiceError("Daemon failed: %Rrc\n", rc);
         /* in-child */
