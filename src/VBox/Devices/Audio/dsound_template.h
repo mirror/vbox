@@ -168,21 +168,12 @@ static void dsound_fini_in (HWVoiceIn *hw)
 #else
 static void dsound_fini_out (HWVoiceOut *hw)
 {
-    HRESULT hr;
     DSoundVoiceOut *ds = (DSoundVoiceOut *) hw;
-
-    if (ds->FIELD) {
-        hr = glue (IFACE, _Stop) (ds->FIELD);
-        if (FAILED (hr)) {
-            dsound_logerr (hr, "Could not stop " NAME "\n");
-        }
-
-        hr = glue (IFACE, _Release) (ds->FIELD);
-        if (FAILED (hr)) {
-            dsound_logerr (hr, "Could not release " NAME "\n");
-        }
-        ds->FIELD = NULL;
-    }
+    dsoundPlayClose (ds);
+    ds->old_pos = 0;
+    ds->first_time = 1;
+    ds->playback_buffer_size = 0;
+    memset (&ds->as, 0, sizeof(ds->as));
 }
 #endif
 
@@ -193,6 +184,7 @@ static int dsound_init_in (HWVoiceIn *hw, audsettings_t *as)
 
     ds->last_read_pos = 0;
     ds->capture_buffer_size = 0;
+    ds->dsound_capture = NULL;
     ds->dsound_capture_buffer = NULL;
     ds->as = *as;
 
@@ -208,91 +200,23 @@ static int dsound_init_in (HWVoiceIn *hw, audsettings_t *as)
 #else
 static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
 {
-    int err;
-    HRESULT hr;
-    dsound *s = &glob_dsound;
-    WAVEFORMATEX wfx;
-    audsettings_t obt_as;
-    const char *typ = "DAC";
     DSoundVoiceOut *ds = (DSoundVoiceOut *) hw;
-    DSBUFFERDESC bd;
-    DSBCAPS bc;
 
-    err = waveformat_from_audio_settings (&wfx, as);
-    if (err) {
-        return -1;
-    }
-
-    memset (&bd, 0, sizeof (bd));
-    bd.dwSize = sizeof (bd);
-    bd.lpwfxFormat = &wfx;
-    bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
-    bd.dwBufferBytes = conf.bufsize_out;
-    hr = IDirectSound_CreateSoundBuffer (
-        s->dsound,
-        &bd,
-        &ds->dsound_buffer,
-        NULL
-        );
-
-    if (FAILED (hr)) {
-        dsound_logerr2 (hr, typ, "Could not create " NAME "\n");
-        return -1;
-    }
-
-    hr = glue (IFACE, _GetFormat) (ds->FIELD, &wfx, sizeof (wfx), NULL);
-    if (FAILED (hr)) {
-        dsound_logerr2 (hr, typ, "Could not get " NAME " format\n");
-        goto fail0;
-    }
-
-#ifdef DEBUG_DSOUND
-    dolog (NAME "\n");
-    print_wave_format (&wfx);
-#endif
-
-    memset (&bc, 0, sizeof (bc));
-    bc.dwSize = sizeof (bc);
-
-    hr = glue (IFACE, _GetCaps) (ds->FIELD, &bc);
-    if (FAILED (hr)) {
-        dsound_logerr2 (hr, typ, "Could not get " NAME " format\n");
-        goto fail0;
-    }
-
-    err = waveformat_to_audio_settings (&wfx, &obt_as);
-    if (err) {
-        goto fail0;
-    }
-
+    ds->dsound = NULL;
+    ds->dsound_buffer = NULL;
+    ds->old_pos = 0;
     ds->first_time = 1;
-    obt_as.endianness = 0;
-    audio_pcm_init_info (&hw->info, &obt_as);
+    ds->playback_buffer_size = 0;
+    ds->as = *as;
 
-    if (bc.dwBufferBytes & hw->info.align) {
-        dolog (
-            "GetCaps returned misaligned buffer size %ld, alignment %d\n",
-            bc.dwBufferBytes, hw->info.align + 1
-            );
-    }
-    hw->samples = bc.dwBufferBytes >> hw->info.shift;
+    /* Init default settings. */
+    audio_pcm_init_info (&hw->info, &ds->as);
+    hw->samples = conf.bufsize_out >> hw->info.shift;
 
-#ifdef DEBUG_DSOUND
-    dolog ("caps %ld, desc %ld\n",
-           bc.dwBufferBytes, bd.dwBufferBytes);
+    /* Try to open playback in case the device is already there. */
+    dsoundPlayOpen (ds);
 
-    dolog ("bufsize %d, freq %d, chan %d, bits %d, sign %d\n",
-           hw->samples << hw->info.shift,
-           hw->info.freq,
-           hw->info.nchannels,
-           hw->info.bits,
-           hw->info.sign);
-#endif
     return 0;
-
- fail0:
-    glue (dsound_fini_, TYPE) (hw);
-    return -1;
 }
 #endif
 
