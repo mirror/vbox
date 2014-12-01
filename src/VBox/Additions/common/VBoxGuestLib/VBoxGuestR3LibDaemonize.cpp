@@ -42,6 +42,7 @@
 #else /* the unices */
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/wait.h>
 # include <stdio.h>
 # include <fcntl.h>
 # include <stdlib.h>
@@ -65,16 +66,22 @@
  *
  * @param   fNoChDir    Pass false to change working directory to root.
  * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
+ * @param   fRespawn    Restart the daemonised process after five seconds if it
+ *                      terminates abnormally.
  *
  * @todo    Use RTProcDaemonize instead of this.
+ * @todo    Implement fRespawn on OS/2.
+ * @todo    Make the respawn interval configurable.  But not until someone
+ *          actually needs that.
  */
-VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
+VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn)
 {
 #if defined(RT_OS_OS2)
     PPIB pPib;
     PTIB pTib;
     DosGetInfoBlocks(&pTib, &pPib);
 
+    AssertRelease(!fRespawn);
     /* Get the full path to the executable. */
     char szExe[CCHMAXPATH];
     APIRET rc = DosQueryModuleName(pPib->pib_hmte, sizeof(szExe), szExe);
@@ -210,6 +217,28 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
         exit(0);
 # endif /* RT_OS_LINUX */
 
+    if (fRespawn)
+        /* We implement re-spawning as a third fork(), with the parent process
+         * monitoring the child and re-starting it after a delay if it exits
+         * abnormally. */
+        for (;;)
+        {
+            int iStatus, rcWait;
+
+            pid = fork();
+            if (pid == -1)
+                return RTErrConvertFromErrno(errno);
+            if (pid == 0)
+                return VINF_SUCCESS;
+            do
+                rcWait = waitpid(pid, &iStatus, 0);
+            while (rcWait == -1 && errno == EINTR);
+            if (rcWait == -1)
+                exit(1);
+            if (WIFEXITED(iStatus) && WEXITSTATUS(iStatus) == 0)
+                exit(0);
+            sleep(5);
+        }
     return VINF_SUCCESS;
 #endif
 }

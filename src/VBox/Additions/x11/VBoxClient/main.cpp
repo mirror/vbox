@@ -270,7 +270,7 @@ void vboxClientUsage(const char *pcszFileName)
  */
 int main(int argc, char *argv[])
 {
-    bool fDaemonise = true;
+    bool fDaemonise = true, fRespawn = true;
     int rc;
     const char *pcszFileName, *pcszStage;
 
@@ -309,6 +309,10 @@ int main(int argc, char *argv[])
                 RTPrintf("%s: failed to redivert error output, rc=%Rrc\n",
                          pcszFileName, rc);
             fDaemonise = false;
+        }
+        else if (!strcmp(argv[i], "--no-respawn"))
+        {
+            fRespawn = false;
         }
         else if (!strcmp(argv[i], "--clipboard"))
         {
@@ -372,7 +376,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
     if (fDaemonise)
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn);
     if (RT_FAILURE(rc))
         VBClFatalError(("Daemonizing: %Rrc\n", rc));
     if (g_szPidFile[0])
