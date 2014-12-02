@@ -36,6 +36,10 @@ DisasmR3_SOURCES        = \
 	DisasmFormatBytes.cpp \
 	DisasmFormatYasm.cpp
 
+LIBRARIES              += DisasmR3Static
+DisasmR3Static_TEMPLATE = VBoxR3Static
+DisasmR3Static_EXTENDS  = DisasmR3
+
 LIBRARIES              += DisasmBldProg
 DisasmBldProg_TEMPLATE  = VBoxBldProg
 DisasmBldProg_EXTENDS   = DisasmR3
