@@ -2681,7 +2681,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(VBOX_TSA_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
-       $(3) \
+	$(3) \
 	$(1)
   ## Sign an executable image.
   # @param 1  The file to sign.
@@ -2721,7 +2721,7 @@ ifdef VBOX_SIGNING_MODE
   # (Installer package signing is done elsewhere (VBOX_MACOSX_INSTALLER_SIGN).)
   #
   ifeq ($(strip $(VBOX_SIGNING_MODE)),test)
-   VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You, need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
   else if1of ($(VBOX_SIGNING_MODE), release development)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= Developer ID Application: Oracle America, Inc.
@@ -2746,7 +2746,7 @@ ifdef VBOX_SIGNING_MODE
   VBOX_SIGN_MACHO_FN = $(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
-       --file-list - \
+	--file-list - \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
@@ -2757,13 +2757,47 @@ ifdef VBOX_SIGNING_MODE
   VBOX_SIGN_VMM_MOD_FN = $(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
-       --file-list - \
+	--file-list - \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) -D $(1).codesign \
 	$(if $(2),--identifier "$(2)",)
 
+ else ifeq ($(KBUILD_HOST),solaris)
+  #
+  # Solaris code signing.
+  #
+
+  # There are three signing modes; 'test', 'development' and 'release'.
+  ifeq ($(strip $(VBOX_SIGNING_MODE)),test)
+   VBOX_CERTIFICATE_FILE  ?= $(error You need to set VBOX_CERTIFICATE_FILE in LocalConfig.kmk.)
+   VBOX_TOKEN_NAME        ?= $(error You need to set VBOX_TOKEN_NAME in LocalConfig.kmk.)
+   VBOX_PIN_FILE          ?= $(error You need to set VBOX_PIN_FILE in LocalConfig.kmk.)
+  else if1of ($(VBOX_SIGNING_MODE), release development)
+   VBOX_CERTIFICATE_FILE  ?= $(PATH_ROOT)/oracle.pem
+   VBOX_TOKEN_NAME        ?= "Sun Software PKCS\#11 softtoken"
+   VBOX_PIN_FILE          ?= $(PATH_ROOT)/oracle.pin
+  else
+   $(error VBox: Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
+  endif
+  VBOX_CERTIFICATE_FILE_ARGS ?= -c $(VBOX_CERTIFICATE_FILE)
+  VBOX_TOKEN_NAME_ARGS       ?= -T $(VBOX_TOKEN_NAME)
+  VBOX_PIN_ARGS              ?= -P $(VBOX_PIN_FILE)
+
+  VBOX_ELFSIGN ?= elfsign
+
+  ## Commands for signing a driver image after link.
+  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_ELF_FN,$(out)))
+  # Sign an ELF image.
+  # @param 1   The elf object file to sign.
+  VBOX_SIGN_ELF_FN ?= $(VBOX_ELFSIGN) \
+	sign \
+	$(VBOX_CERTIFICATE_FILE_ARGS) \
+	$(VBOX_TOKEN_NAME_ARGS) \
+	$(VBOX_PIN_ARGS) \
+	-e $(1)
+
  else
-  # Not Windows or mac os x build host, ignore.
+  # Not Windows, Mac OS X or Solaris build host, ignore.
   VBOX_SIGNING_MODE :=
  endif
 endif
@@ -3336,6 +3370,8 @@ ifeq ($(KBUILD_TARGET),solaris)
   TEMPLATE_VBoxR0_CFLAGS.amd64 += -Wa,-xmodel=kernel
   TEMPLATE_VBoxR0_CXXFLAGS.amd64 += -Wa,-xmodel=kernel
  endif
+ # Solaris driver signing.
+ TEMPLATE_VBoxR0_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 else
  TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic -g
  ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
@@ -3514,6 +3550,7 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith -Winline \
 	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
 TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64)
+TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif # Solaris
 
 ifeq ($(KBUILD_TARGET),freebsd)
