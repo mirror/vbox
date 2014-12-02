@@ -28,6 +28,8 @@ drmDropMaster
 drmFreeVersion
 drmGetVersion
 drmIoctl
+drmModeGetResources
+drmModeFreeResources
 drmSetMaster
 ___errno
 __errno_location
