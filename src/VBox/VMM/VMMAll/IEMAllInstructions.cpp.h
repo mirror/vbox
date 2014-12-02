@@ -8095,7 +8095,7 @@ FNIEMOP_DEF(iemOp_popa)
 
 
 /** Opcode 0x62. */
-FNIEMOP_STUB(iemOp_bound_Gv_Ma);
+FNIEMOP_STUB(iemOp_bound_Gv_Ma_evex);
 
 
 /** Opcode 0x63 - non-64-bit modes. */
@@ -10261,9 +10261,13 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp1A)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_REG_MASK) != (0 << X86_MODRM_REG_SHIFT)) /* only pop Ev in this group. */
-        return IEMOP_RAISE_INVALID_OPCODE();
-    return FNIEMOP_CALL_1(iemOp_pop_Ev, bRm);
+    if ((bRm & X86_MODRM_REG_MASK) == (0 << X86_MODRM_REG_SHIFT)) /* /0 */
+        return FNIEMOP_CALL_1(iemOp_pop_Ev, bRm);
+
+    /* AMD has defined /1 thru /7 as XOP prefix (similar to three byte VEX). */
+    /** @todo XOP decoding. */
+    IEMOP_MNEMONIC("3-byte-xop");
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -17318,7 +17322,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x54 */  iemOp_push_eSP,         iemOp_push_eBP,         iemOp_push_eSI,         iemOp_push_eDI,
     /* 0x58 */  iemOp_pop_eAX,          iemOp_pop_eCX,          iemOp_pop_eDX,          iemOp_pop_eBX,
     /* 0x5c */  iemOp_pop_eSP,          iemOp_pop_eBP,          iemOp_pop_eSI,          iemOp_pop_eDI,
-    /* 0x60 */  iemOp_pusha,            iemOp_popa,             iemOp_bound_Gv_Ma,      iemOp_arpl_Ew_Gw_movsx_Gv_Ev,
+    /* 0x60 */  iemOp_pusha,            iemOp_popa,             iemOp_bound_Gv_Ma_evex, iemOp_arpl_Ew_Gw_movsx_Gv_Ev,
     /* 0x64 */  iemOp_seg_FS,           iemOp_seg_GS,           iemOp_op_size,          iemOp_addr_size,
     /* 0x68 */  iemOp_push_Iz,          iemOp_imul_Gv_Ev_Iz,    iemOp_push_Ib,          iemOp_imul_Gv_Ev_Ib,
     /* 0x6c */  iemOp_insb_Yb_DX,       iemOp_inswd_Yv_DX,      iemOp_outsb_Yb_DX,      iemOp_outswd_Yv_DX,
