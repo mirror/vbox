@@ -114,6 +114,7 @@
 
 #ifdef VBOX_DRI
 # include "xf86drm.h"
+# include "xf86drmMode.h"
 #endif
 
 /* Mandatory functions */
@@ -1200,13 +1201,10 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
 #elif defined(VBOX_DRI)  /* DRI2 */
-    /* Expected failure mode: KMS not supported, drmDropMaster() fails. */
-    if (pVBox->drmFD < 0 || drmDropMaster(pVBox->drmFD) < 0)
-        VBOXRestoreMode(pScrn);
+    if (pVBox->drmFD >= 0)
+        drmDropMaster(pVBox->drmFD);
 #endif
-#if !defined(VBOX_DRI) || defined(VBOX_DRI_OLD)
     VBOXRestoreMode(pScrn);
-#endif
 #ifdef SET_HAVE_VT_PROPERTY
     updateHasVTProperty(pScrn, FALSE);
 #endif
@@ -1395,8 +1393,21 @@ VBOXRestoreMode(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     vgaRegPtr vgaReg;
+#ifdef VBOX_DRI
+    drmModeResPtr pRes;
+#endif
 
     TRACE_ENTRY();
+#ifdef VBOX_DRI
+    /* Do not try to re-set the VGA state if a mode-setting driver is loaded. */
+    if (   pVBox->drmFD >= 0
+        && LoaderSymbol("drmModeGetResources") != NULL
+        && (pRes == drmModeGetResources(pVBox->drmFD)) != NULL)
+    {
+        drmModeFreeResources(pRes);
+        return;
+    }
+#endif
     vgaReg = &VGAHWPTR(pScrn)->SavedReg;
     vgaHWRestore(pScrn, vgaReg, VGA_SR_ALL);
     if (pVBox->fSavedVBEMode)
