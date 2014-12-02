@@ -610,6 +610,9 @@ class GenFdsGlobalVariable:
     def InfLogger (msg):
         EdkLogger.info(msg)
 
+    def QuietLogger (msg):
+        EdkLogger.quiet(msg)
+
     def ErrorLogger (msg, File = None, Line = None, ExtraData = None):
         EdkLogger.error('GenFds', GENFDS_ERROR, msg, File, Line, ExtraData)
 
@@ -702,6 +705,7 @@ class GenFdsGlobalVariable:
     VerboseLogger = staticmethod(VerboseLogger)
     InfLogger = staticmethod(InfLogger)
     ErrorLogger = staticmethod(ErrorLogger)
+    QuietLogger = staticmethod(QuietLogger)
     DebugLogger = staticmethod(DebugLogger)
     MacroExtend = staticmethod (MacroExtend)
     GetPcdValue = staticmethod(GetPcdValue)
