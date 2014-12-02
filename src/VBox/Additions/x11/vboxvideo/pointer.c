@@ -133,11 +133,8 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     /* Query information about mouse integration from the host. */
     if (rc) {
         int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-        if (RT_FAILURE(vrc)) {
-            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                     "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", vrc);
+        if (RT_FAILURE(vrc))
             rc = FALSE;
-        }
     }
     /* If we got the information from the host then make sure the host wants
      * to draw the pointer. */
