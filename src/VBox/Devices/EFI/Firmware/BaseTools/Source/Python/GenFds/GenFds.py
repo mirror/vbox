@@ -468,7 +468,7 @@ class GenFds :
                 if TotalFound and UsedFound and FreeFound:
                     FvSpaceInfoList.append((FvName, Total, Used, Free))
                 
-        GenFdsGlobalVariable.InfLogger('\nFV Space Information')
+        GenFdsGlobalVariable.QuietLogger('\nFV Space Information')
         for FvSpaceInfo in FvSpaceInfoList:
             Name = FvSpaceInfo[0]
             TotalSizeValue = long(FvSpaceInfo[1], 0)
@@ -479,7 +479,7 @@ class GenFds :
             else:
                 Percentage = str((UsedSizeValue+0.0)/TotalSizeValue)[0:4].lstrip('0.') 
             
-            GenFdsGlobalVariable.InfLogger(Name + ' ' + '[' + Percentage + '%Full] ' + str(TotalSizeValue) + ' total, ' + str(UsedSizeValue) + ' used, ' + str(FreeSizeValue) + ' free')
+            GenFdsGlobalVariable.QuietLogger(Name + ' ' + '[' + Percentage + '%Full] ' + str(TotalSizeValue) + ' total, ' + str(UsedSizeValue) + ' used, ' + str(FreeSizeValue) + ' free')
 
     ## PreprocessImage()
     #
@@ -522,7 +522,7 @@ class GenFds :
                 GuidXRefFile.write("%s %s\n" % (Module.Guid, Module.BaseName))
         if GuidXRefFile.getvalue():
             SaveFileOnChange(GuidXRefFileName, GuidXRefFile.getvalue(), False)
-            GenFdsGlobalVariable.InfLogger("\nGUID cross reference file can be found at %s" % GuidXRefFileName)
+            GenFdsGlobalVariable.QuietLogger("\nGUID cross reference file can be found at %s" % GuidXRefFileName)
         elif os.path.exists(GuidXRefFileName):
             os.remove(GuidXRefFileName)
         GuidXRefFile.close()
