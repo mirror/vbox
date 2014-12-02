@@ -63,25 +63,10 @@ RT_EXPORT_SYMBOL(RTR0MemUserIsValidAddr);
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 {
     /* Couldn't find a straight forward way of doing this... */
-#ifdef RT_ARCH_X86
-# ifdef CONFIG_X86_HIGH_ENTRY
+#if defined(RT_ARCH_X86) && defined(CONFIG_X86_HIGH_ENTRY)
     return true; /* ?? */
-# else
+#elif defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     return (uintptr_t)pv >= PAGE_OFFSET;
-# endif
-
-#elif defined(RT_ARCH_AMD64)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
-    /* Linux 2.6.0 ... 2.6.10 set PAGE_OFFSET to 0x0000010000000000.
-     * Linux 2.6.11 sets PAGE_OFFSET to 0xffff810000000000.
-     * Linux 2.6.33 sets PAGE_OFFSET to 0xffff880000000000. */
-    return (uintptr_t)pv >= PAGE_OFFSET;
-# else
-    /* Not correct (KERNEL_TEXT_START=0xffffffff80000000),
-     * VMALLOC_START (0xffffff0000000000) would be better */
-    return (uintptr_t)pv >= KERNEL_TEXT_START;
-# endif
-
 #else
 # error "PORT ME"
     return !access_ok(VERIFY_READ, pv, 1);
