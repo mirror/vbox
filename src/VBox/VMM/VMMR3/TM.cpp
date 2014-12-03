@@ -312,75 +312,74 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     }
 
     /*
-     * Handle deprecated TM settings.
+     * Specific errors about some obsolete TM settings (remove after 2015-12-03).
      */
-    do
-    {
-        /** @todo make these runtime warnings instead of errors that refuse to start
-         *        the VM? */
-        bool fTSCVirtualized;
-        rc = CFGMR3QueryBool(pCfgHandle, "TSCVirtualized", &fTSCVirtualized);
-        if (RT_SUCCESS(rc))
-            return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
-                              N_("Configuration error: TM setting \"TSCVirtualized\" is no longer supported. Use the \"Mode\" setting instead."));
+    if (CFGMR3Exists(pCfgHandle, "TSCVirtualized"))
+        return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
+                          N_("Configuration error: TM setting \"TSCVirtualized\" is no longer supported. Use the \"Mode\" setting instead."));
+    if (CFGMR3Exists(pCfgHandle, "UseRealTSC"))
+        return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
+                          N_("Configuration error: TM setting \"UseRealTSC\" is no longer supported. Use the \"Mode\" setting instead."));
 
-        bool fForceUseRealTSC;
-        rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &fForceUseRealTSC);
-        if (RT_SUCCESS(rc))
-            return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
-                              N_("Configuration error: TM setting \"UseRealTSC\" is no longer supported. Use the \"Mode\" setting instead."));
-
-        bool fMaybeUseOffsettedHostTSC;
-        rc = CFGMR3QueryBool(pCfgHandle, "MaybeUseOffsettedHostTSC", &fMaybeUseOffsettedHostTSC);
-        if (RT_SUCCESS(rc))
-            return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
-                              N_("Configuration error: TM setting \"MaybeUseOffsettedHostTSC\" is no longer supported. Use the \"Mode\" setting instead."));
-    } while(0);
+    if (CFGMR3Exists(pCfgHandle, "MaybeUseOffsettedHostTSC"))
+        return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
+                          N_("Configuration error: TM setting \"MaybeUseOffsettedHostTSC\" is no longer supported. Use the \"Mode\" setting instead."));
 
     /*
      * Validate the rest of the TM settings.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
-                              "Mode\0"
-                              "TSCTicksPerSecond\0"
-                              "TSCTiedToExecution\0"
-                              "TSCNotTiedToHalt\0"
-                              "ScheduleSlack\0"
-                              "CatchUpStopThreshold\0"
-                              "CatchUpGiveUpThreshold\0"
-                              "CatchUpStartThreshold0\0CatchUpStartThreshold1\0CatchUpStartThreshold2\0CatchUpStartThreshold3\0"
-                              "CatchUpStartThreshold4\0CatchUpStartThreshold5\0CatchUpStartThreshold6\0CatchUpStartThreshold7\0"
-                              "CatchUpStartThreshold8\0CatchUpStartThreshold9\0"
-                              "CatchUpPrecentage0\0CatchUpPrecentage1\0CatchUpPrecentage2\0CatchUpPrecentage3\0"
-                              "CatchUpPrecentage4\0CatchUpPrecentage5\0CatchUpPrecentage6\0CatchUpPrecentage7\0"
-                              "CatchUpPrecentage8\0CatchUpPrecentage9\0"
-                              "UTCOffset\0"
-                              "WarpDrivePercentage\0"
-                              "HostHzMax\0"
-                              "HostHzFudgeFactorTimerCpu\0"
-                              "HostHzFudgeFactorOtherCpu\0"
-                              "HostHzFudgeFactorCatchUp100\0"
-                              "HostHzFudgeFactorCatchUp200\0"
-                              "HostHzFudgeFactorCatchUp400\0"
-                              "TimerMillies\0"
-                              ))
-        return VMSetError(pVM, VERR_CFGM_CONFIG_UNKNOWN_NODE, RT_SRC_POS, N_("Configuration error: Invalid config key for TM."));
+    rc = CFGMR3ValidateConfig(pCfgHandle, "/",
+                              "Mode|"
+                              "TSCTicksPerSecond|"
+                              "TSCTiedToExecution|"
+                              "TSCNotTiedToHalt|"
+                              "ScheduleSlack|"
+                              "CatchUpStopThreshold|"
+                              "CatchUpGiveUpThreshold|"
+                              "CatchUpStartThreshold0|CatchUpStartThreshold1|CatchUpStartThreshold2|CatchUpStartThreshold3|"
+                              "CatchUpStartThreshold4|CatchUpStartThreshold5|CatchUpStartThreshold6|CatchUpStartThreshold7|"
+                              "CatchUpStartThreshold8|CatchUpStartThreshold9|"
+                              "CatchUpPrecentage0|CatchUpPrecentage1|CatchUpPrecentage2|CatchUpPrecentage3|"
+                              "CatchUpPrecentage4|CatchUpPrecentage5|CatchUpPrecentage6|CatchUpPrecentage7|"
+                              "CatchUpPrecentage8|CatchUpPrecentage9|"
+                              "UTCOffset|"
+                              "WarpDrivePercentage|"
+                              "HostHzMax|"
+                              "HostHzFudgeFactorTimerCpu|"
+                              "HostHzFudgeFactorOtherCpu|"
+                              "HostHzFudgeFactorCatchUp100|"
+                              "HostHzFudgeFactorCatchUp200|"
+                              "HostHzFudgeFactorCatchUp400|"
+                              "TimerMillies",
+                              "",
+                              "TM", 0);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Determine the TSC configuration and frequency.
      */
-    /** @cfgm{/TM/Mode, string}
-     *  The name of the time-keeping mode. The default is picked dynamically based
-     *  on configuration of the VM. */
+    /** @cfgm{/TM/Mode, string, Depends on the CPU and VM config}
+     * The name of the TSC mode to use: VirtTSCEmulated, RealTSCOffset or Dyamic.
+     * The default depends on the VM configuration and the capabilities of the
+     * host CPU.  Other config options or runtime changes may override the TSC
+     * mode specified here.
+     * @todo r=bird: s/Mode/TSCMode/g */
     char szMode[32];
     rc = CFGMR3QueryString(pCfgHandle, "Mode", szMode, sizeof(szMode));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pVM->tm.s.enmMode = tmR3HasFixedTSC(pVM) ? TMMODE_DYNAMIC : TMMODE_VIRT_TSC_EMULATED;
+    {
+        /** @todo Rainy-day/never: Dynamic mode isn't currently suitable for SMP VMs, so
+         * fall back on the more expensive emulated mode. With the current TSC handling
+         * (frequent switching between offsetted mode and taking VM exits, on all VCPUs
+         * without any kind of coordination) will lead to inconsistent TSC behavior with
+         * guest SMP, including TSC going backwards. */
+        pVM->tm.s.enmMode = pVM->cCpus == 1 && tmR3HasFixedTSC(pVM) ? TMMODE_DYNAMIC : TMMODE_VIRT_TSC_EMULATED;
+    }
     else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying string value \"Mode\""));
     else
     {
-        AssertRC(rc);
         if (!RTStrCmp(szMode, "VirtTSCEmulated"))
             pVM->tm.s.enmMode = TMMODE_VIRT_TSC_EMULATED;
         else if (!RTStrCmp(szMode, "RealTSCOffset"))
@@ -390,15 +389,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         else
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Unrecognized TM mode value \"%s\""), szMode);
     }
-
-    /** @todo needs a better fix, for now disable offsetted mode for VMs
-     * with more than one VCPU. With the current TSC handling (frequent
-     * switching between offsetted mode and taking VM exits, on all VCPUs
-     * without any kind of coordination) it will lead to inconsistent TSC
-     * behavior with guest SMP, including TSC going backwards. */
-    if (   pVM->cCpus != 1
-        && pVM->tm.s.enmMode != TMMODE_REAL_TSC_OFFSET)
-        pVM->tm.s.enmMode = TMMODE_VIRT_TSC_EMULATED;
 
     /** @cfgm{/TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
      * The number of TSC ticks per second (i.e. the TSC frequency). This will
@@ -2853,8 +2843,7 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
     if (fPaused) /** @todo this isn't really working, but wtf. */
         TMR3NotifySuspend(pVM, pVCpu);
 
-    /** @todo should probably switch TM mode to virt-tsc-emulated if it isn't
-     *        already. */
+    /** @todo Should switch TM mode to virt-tsc-emulated if it isn't alread!. */
     pVM->tm.s.u32VirtualWarpDrivePercentage = u32Percent;
     pVM->tm.s.fVirtualWarpDrive = u32Percent != 100;
     LogRel(("TM: u32VirtualWarpDrivePercentage=%RI32 fVirtualWarpDrive=%RTbool\n",
@@ -3256,7 +3245,7 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
  * @returns The name.
  * @param   pVM      Pointer to the VM.
  */
-static const char * tmR3GetModeName(PVM pVM)
+static const char *tmR3GetModeName(PVM pVM)
 {
     Assert(pVM);
     switch (pVM->tm.s.enmMode)
