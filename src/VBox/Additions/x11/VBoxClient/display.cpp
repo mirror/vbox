@@ -206,22 +206,27 @@ static void runDisplay(struct x11State *pState)
 
     LogRelFlowFunc(("\n"));
     rc = VbglR3VideoModeGetHighestSavedScreen(&cScreens);
-    if (RT_FAILURE(rc))
+    if (rc != VINF_SUCCESS && rc != VERR_NOT_SUPPORTED)
         VBClFatalError(("Failed to get the number of saved screen modes, rc=%Rrc\n",
                     rc));
-    for (i = 0; i < RT_MAX(cScreens + 1, 8); ++i)
-    {
-        unsigned cx = 0, cy = 0, cBPP = 0, x = 0, y = 0;
-        bool fEnabled = true;
+    if (rc == VINF_SUCCESS)
+        /* The "8" is to sanity test that VbglR3VideoModeGetHighestSavedScreen()
+         * worked right. */
+        for (i = 0; i < RT_MAX(cScreens + 1, 8); ++i)
+        {
+            unsigned cx = 0, cy = 0, cBPP = 0, x = 0, y = 0;
+            bool fEnabled = true;
 
-        rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
-                                     &fEnabled);
-        if (RT_SUCCESS(rc) && i > cScreens) /* Sanity */
-            VBClFatalError(("Internal error retrieving the number of saved screen modes.\n"));
-        if (RT_SUCCESS(rc))
-            setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
-                       true);
-    }
+            rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
+                                         &fEnabled);
+            /* Sanity test. */
+            if (   (rc != VINF_SUCCESS && rc != VERR_NOT_FOUND)
+                || (i > cScreens && rc != VERR_NOT_FOUND))
+                VBClFatalError(("Internal error retrieving the number of saved screen modes.\n"));
+            if (rc == VINF_SUCCESS)
+                setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
+                           true);
+        }
     while (true)
     {
         uint32_t fEvents;
@@ -260,15 +265,13 @@ static void runDisplay(struct x11State *pState)
                                                &x, &y, &fEnabled,
                                                &fChangeOrigin, true);
             /* Extended display version not supported on host */
-            if (RT_FAILURE(rc))
+            if (rc != VINF_SUCCESS)
                 VBClFatalError(("Failed to get display change request, rc=%Rrc\n",
                                 rc));
             else
-                LogRelFlowFunc(("Got extended size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d, x=%d, y=%d fEnabled=%d\n",
+                LogRelFlowFunc(("Got size hint from host cx=%d, cy=%d, bpp=%d, iDisplay=%d, x=%d, y=%d fEnabled=%d\n",
                                 cx, cy, cBPP, iDisplay, x, y,
                                 fEnabled));
-            if (RT_FAILURE(rc))
-                VBClFatalError(("Failed to retrieve size hint, rc=%Rrc\n", rc));
             if (iDisplay > INT32_MAX)
                 VBClFatalError(("Received a size hint for too high display number %u\n",
                             (unsigned) iDisplay));
@@ -279,9 +282,7 @@ static void runDisplay(struct x11State *pState)
             {
                 rc = VbglR3SaveVideoMode(iDisplay, cx, cy, cBPP, x, y,
                                          fEnabled);
-                if (   RT_FAILURE(rc)
-                    && rc != VERR_HGCM_SERVICE_NOT_FOUND
-                    && rc != VERR_NOT_IMPLEMENTED /* No HGCM */)
+                if (RT_FAILURE(rc) && rc != VERR_NOT_SUPPORTED)
                     VBClFatalError(("Failed to save size hint, rc=%Rrc\n", rc));
             }
             setModeX11(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled,

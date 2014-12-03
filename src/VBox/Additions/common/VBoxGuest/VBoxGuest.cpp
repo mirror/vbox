@@ -2318,6 +2318,8 @@ static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUEST
                 return VERR_TOO_MANY_OPEN_FILES;
             }
         }
+        else
+            rc = pInfo->result;
         if (pcbDataReturned)
             *pcbDataReturned = sizeof(*pInfo);
     }

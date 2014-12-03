@@ -120,6 +120,7 @@ using namespace guestProp;
  * Connects to the guest property service.
  *
  * @returns VBox status code
+ * @returns VERR_NOT_SUPPORTED if guest properties are not available on the host.
  * @param   pu32ClientId    Where to put the client id on success. The client id
  *                          must be passed to all the other calls to the service.
  */
@@ -138,6 +139,8 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
         rc = Info.result;
         if (RT_SUCCESS(rc))
             *pu32ClientId = Info.u32ClientID;
+        if (rc == VERR_NOT_IMPLEMENTED || rc == VERR_HGCM_SERVICE_NOT_FOUND)
+            rc = VERR_NOT_SUPPORTED;
     }
     return rc;
 }
