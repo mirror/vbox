@@ -317,8 +317,10 @@ typedef TMCPULOADSTATE *PTMCPULOADSTATE;
 
 
 /**
- * TM mode.
- * The main modes of how TM abstracts time.
+ * TSC mode.
+ *
+ * The main modes of how TM implements the TSC clock (TMCLOCK_TSC).
+ * @todo r=bird: s/TMMODE/TMTSCMODE/g
  */
 typedef enum TMMODE
 {
@@ -329,6 +331,7 @@ typedef enum TMMODE
     /** The guest TSC is dynamically derived through emulation or offsetting. */
     TMMODE_DYNAMIC
 } TMMODE;
+AssertCompileSize(TMMODE, sizeof(uint32_t));
 
 
 /**
@@ -349,8 +352,9 @@ typedef struct TM
      * See TM2VM(). */
     RTUINT                      offVM;
 
-    /** The current timekeeping mode of the VM.
-     *  Config variable: Mode (string) */
+    /** The current TSC mode of the VM.
+     *  Config variable: Mode (string)
+     * @todo r=bird: s/enmMode/enmTscMode/g */
     TMMODE                      enmMode;
     /** Whether the TSC is tied to the execution of code.
      * Config variable: TSCTiedToExecution (bool) */
@@ -358,7 +362,7 @@ typedef struct TM
     /** Modifier for fTSCTiedToExecution which pauses the TSC while halting if true.
      * Config variable: TSCNotTiedToHalt (bool) */
     bool                        fTSCNotTiedToHalt;
-    /** Alignment. */
+    /** Alignment padding. */
     bool                        afAlignment0[2];
     /** The ID of the virtual CPU that normally runs the timers. */
     VMCPUID                     idTimerCpu;
@@ -383,7 +387,7 @@ typedef struct TM
     bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
-    /** Alignment. */
+    /** Alignment padding. */
     bool                        afAlignment1[1];
     /** WarpDrive percentage.
      * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply
