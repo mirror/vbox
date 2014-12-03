@@ -304,6 +304,7 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
  * if there are no saved modes.
  *
  * @returns iprt status value
+ * @returns VERR_NOT_SUPPORTED if the guest property service is not available.
  * @param   pcScreen   where to store the virtual screen number
  */
 VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
@@ -342,7 +343,7 @@ VBGLR3DECL(int) VbglR3VideoModeGetHighestSavedScreen(unsigned *pcScreen)
         *pcScreen = cHighestScreen;
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_SUPPORTED;
 #endif /* !VBOX_WITH_GUEST_PROPS */
 }
 
@@ -403,7 +404,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
             rc = VERR_INTERNAL_ERROR;
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_SUPPORTED;
 #endif /* !VBOX_WITH_GUEST_PROPS */
 }
 
@@ -487,6 +488,6 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
     }
     return rc;
 #else /* !VBOX_WITH_GUEST_PROPS */
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_SUPPORTED;
 #endif /* !VBOX_WITH_GUEST_PROPS */
 }
