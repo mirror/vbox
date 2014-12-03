@@ -353,7 +353,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                               "CatchUpStartThreshold8\0CatchUpStartThreshold9\0"
                               "CatchUpPrecentage0\0CatchUpPrecentage1\0CatchUpPrecentage2\0CatchUpPrecentage3\0"
                               "CatchUpPrecentage4\0CatchUpPrecentage5\0CatchUpPrecentage6\0CatchUpPrecentage7\0"
-                              "CatchUpPrecentage8\0CatchUpPrecentage8\0"
+                              "CatchUpPrecentage8\0CatchUpPrecentage9\0"
                               "UTCOffset\0"
                               "WarpDrivePercentage\0"
                               "HostHzMax\0"
