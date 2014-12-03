@@ -135,8 +135,8 @@ endstruc
     je      %%done
 %%valid_delta:
     ; Subtract the delta from edx:eax
-    sub     eax, dword [%1 + SUPGIPCPU.i64TSCDelta + 4]
-    sbb     edx, dword [%1 + SUPGIPCPU.i64TSCDelta]
+    sub     eax, dword [%1 + SUPGIPCPU.i64TSCDelta]
+    sbb     edx, dword [%1 + SUPGIPCPU.i64TSCDelta + 4]
 %%done:
 %endmacro
 
