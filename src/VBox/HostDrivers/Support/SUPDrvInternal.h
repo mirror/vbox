@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -231,7 +231,8 @@
 #endif
 
 #if 0
-/**  Use a dedicated kernel thread to service TSC-delta measurement requests. */
+/**  Use a dedicated kernel thread to service TSC-delta measurement requests.
+ *   @todo Test on servers with many CPUs and sockets. */
 #define SUPDRV_USE_TSC_DELTA_THREAD
 #endif
 
@@ -692,6 +693,8 @@ typedef struct SUPDRVDEVEXT
     RTMSINTERVAL                    cMsTscDeltaTimeout;
     /** The set of CPUs we need to take measurements for. */
     RTCPUSET                        TscDeltaCpuSet;
+    /** The set of CPUs we have completed taken measurements for. */
+    RTCPUSET                        TscDeltaObtainedCpuSet;
     /** Whether the TSC-delta measurement was successful. */
     int                             rcTscDelta;
     /** @} */

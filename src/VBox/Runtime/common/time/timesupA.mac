@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2011 Oracle Corporation
+; Copyright (C) 2006-2014 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -125,6 +125,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     edx, [edi + SUPGIPCPU.u32UpdateIntervalTSC]
     mov     u32UpdateIntervalTSC, edx
     rdtsc
+    SupTscDeltaApply edi        ; Apply inter-cpu TSC-delta to have the normalized TSC value in edx:eax
     mov     ecx, [edi + SUPGIPCPU.u64NanoTS]
     mov     u64CurNanoTS, ecx
     mov     esi, [edi + SUPGIPCPU.u64NanoTS + 4]
@@ -543,6 +544,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     u32UpdateIntervalNS,  [pGip + SUPGLOBALINFOPAGE.u32UpdateIntervalNS] ; before u64TSC
     mov     u32UpdateIntervalTSC, [pGipCPU + SUPGIPCPU.u32UpdateIntervalTSC]
     rdtsc
+    SUPTscDeltaApply pGipCPU
     mov     u64PrevNanoTS,        [pData + RTTIMENANOTSDATA.pu64Prev]
     mov     u64PrevNanoTS,        [u64PrevNanoTS]
     shl     rdx, 32

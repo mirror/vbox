@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -315,6 +315,22 @@ AssertCompileMemberAlignment(TMCPULOADSTATE, cNsPrevTotal, 8);
 /** Pointer to a CPU load data set. */
 typedef TMCPULOADSTATE *PTMCPULOADSTATE;
 
+
+/**
+ * TM mode.
+ * The main modes of how TM abstracts time.
+ */
+typedef enum TMMODE
+{
+    /** The guest TSC is an emulated virtual TSC. */
+    TMMODE_VIRT_TSC_EMULATED = 1,
+    /** The guest TSC is an offset of the real TSC. */
+    TMMODE_REAL_TSC_OFFSET,
+    /** The guest TSC is dynamically derived through emulation or offsetting. */
+    TMMODE_DYNAMIC
+} TMMODE;
+
+
 /**
  * Converts a TM pointer into a VM pointer.
  * @returns Pointer to the VM structure the TM is part of.
@@ -333,30 +349,24 @@ typedef struct TM
      * See TM2VM(). */
     RTUINT                      offVM;
 
-    /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions.
-     * Config variable: TSCVirtualized (bool) */
-    bool                        fTSCVirtualized;
-    /** Set if we use the real TSC as time source or if we use the virtual clock.
-     * If fTSCVirtualized is set we maintain a offset to the TSC and pausing/resuming the
-     * ticking. fTSCVirtualized = false implies fTSCUseRealTSC = true.
-     * Config variable: TSCUseRealTSC (bool) */
-    bool                        fTSCUseRealTSC;
-    /** Flag indicating that the host TSC is suitable for use in AMD-V and VT-x mode.
-     * Config variable: MaybeUseOffsettedHostTSC (boolean) */
-    bool                        fMaybeUseOffsettedHostTSC;
+    /** The current timekeeping mode of the VM.
+     *  Config variable: Mode (string) */
+    TMMODE                      enmMode;
     /** Whether the TSC is tied to the execution of code.
      * Config variable: TSCTiedToExecution (bool) */
     bool                        fTSCTiedToExecution;
     /** Modifier for fTSCTiedToExecution which pauses the TSC while halting if true.
      * Config variable: TSCNotTiedToHalt (bool) */
     bool                        fTSCNotTiedToHalt;
-    bool                        afAlignment0[2]; /**< alignment padding */
+    /** Alignment. */
+    bool                        afAlignment0[2];
     /** The ID of the virtual CPU that normally runs the timers. */
     VMCPUID                     idTimerCpu;
 
     /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
-     * The config variable implies fTSCVirtualized = true and fTSCUseRealTSC = false. */
+     * The config variable implies @c enmMode would be
+     * TMMODE_VIRT_TSC_EMULATED. */
     uint64_t                    cTSCTicksPerSecond;
     /** The TSC difference introduced by pausing the VM. */
     uint64_t                    offTSCPause;
@@ -373,7 +383,8 @@ typedef struct TM
     bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
-    bool                        afAlignment1[1]; /**< alignment padding */
+    /** Alignment. */
+    bool                        afAlignment1[1];
     /** WarpDrive percentage.
      * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply
      * this percentage to the raw time source for the period it's been valid in,
@@ -779,7 +790,6 @@ DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
 /** Checks that the caller owns the timer lock.  */
 #define TM_ASSERT_TIMER_LOCK_OWNERSHIP(a_pVM) \
     Assert(PDMCritSectIsOwner(&(a_pVM)->tm.s.TimerCritSect))
-
 
 /** @} */
 

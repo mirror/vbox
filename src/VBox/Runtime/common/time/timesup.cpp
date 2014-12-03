@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -123,7 +123,8 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (    pGip
         &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-        &&  (   pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+        &&  (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+             || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
         return rtTimeNanoTSInternalRediscover(pData);
     NOREF(pData);
@@ -145,15 +146,16 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (    pGip
         &&  pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-        &&  (   pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+        &&  (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+             || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
     {
         if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
-            iWorker = pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
                     ? RTTIMENANO_WORKER_SYNC_LFENCE
                     : RTTIMENANO_WORKER_ASYNC_LFENCE;
         else
-            iWorker = pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
                     ? RTTIMENANO_WORKER_SYNC_CPUID
                     : RTTIMENANO_WORKER_ASYNC_CPUID;
     }

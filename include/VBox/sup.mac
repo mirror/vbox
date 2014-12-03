@@ -122,6 +122,23 @@ struc SUPDRVTRACERUSRCTX64
         .u.Amd64.r15            resq 1
 endstruc
 
+;;
+; Macro to apply per-CPU TSC delta to the TSC value read in through rdtsc.
+;
+; @param   %1    The pSupGipCpu pointer
+; @remarks edx:eax contains the 64-bit TSC value to apply the delta to.
+%macro SUPTscDeltaApply 1
+    ; Check if we have a valid TSC-delta, i.e. != INT64_MAX.
+    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta + 4], 0xffffffff
+    jne     %%valid_delta
+    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta], 0x7fffffff
+    je      %%done
+%%valid_delta:
+    ; Subtract the delta from edx:eax
+    sub     eax, dword [%1 + SUPGIPCPU.i64TSCDelta + 4]
+    sbb     edx, dword [%1 + SUPGIPCPU.i64TSCDelta]
+%%done:
+%endmacro
 
 %endif
 
