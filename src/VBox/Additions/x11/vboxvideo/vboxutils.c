@@ -254,8 +254,6 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         {
             if (((int32_t *)prop->data)[i] == 0)
                 continue;
-            else if (((int32_t *)prop->data)[i] < 0)
-                pVBox->pScreens[i].afDisabled = true;
             else
             {
                 pVBox->pScreens[i].aPreferredSize.cx =
