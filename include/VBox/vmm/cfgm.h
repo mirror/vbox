@@ -133,6 +133,7 @@ VMMR3DECL(int)          CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName);
 /** @} */
 VMMR3DECL(int)          CFGMR3CopyTree(PCFGMNODE pDstTree, PCFGMNODE pSrcTree, uint32_t fFlags);
 
+VMMR3DECL(bool)         CFGMR3Exists(           PCFGMNODE pNode, const char *pszName);
 VMMR3DECL(int)          CFGMR3QueryType(        PCFGMNODE pNode, const char *pszName, PCFGMVALUETYPE penmType);
 VMMR3DECL(int)          CFGMR3QuerySize(        PCFGMNODE pNode, const char *pszName, size_t *pcb);
 VMMR3DECL(int)          CFGMR3QueryInteger(     PCFGMNODE pNode, const char *pszName, uint64_t *pu64);
