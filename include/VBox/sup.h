@@ -32,7 +32,9 @@
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -426,7 +428,7 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
  */
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
-
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
  * Gets the TSC frequency of the calling CPU.
  *
@@ -447,13 +449,13 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
     {
         Assert(pGip->u32Mode == SUPGIPMODE_ASYNC_TSC);
         iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
-        if (iCpu >= pGip->cCpus)
+        if (RT_UNLIKELY(iCpu >= pGip->cCpus))
             return UINT64_MAX;
     }
 
     return pGip->aCPUs[iCpu].u64CpuHz;
 }
-
+#endif /* X86 || AMD64 */
 
 /**
  * Request for generic VMMR0Entry calls.
@@ -1482,11 +1484,11 @@ DECLINLINE(const char *) SUPGetGIPModeName(PSUPGLOBALINFOPAGE pGip)
     AssertReturn(pGip, NULL);
     switch (pGip->u32Mode)
     {
-        case SUPGIPMODE_INVARIANT_TSC: return "Invariant";
-        case SUPGIPMODE_SYNC_TSC:      return "Synchronous";
-        case SUPGIPMODE_ASYNC_TSC:     return "Asynchronous";
-        case SUPGIPMODE_INVALID:       return "Invalid";
-        default:                       return "???";
+        case SUPGIPMODE_INVARIANT_TSC:  return "Invariant";
+        case SUPGIPMODE_SYNC_TSC:       return "Synchronous";
+        case SUPGIPMODE_ASYNC_TSC:      return "Asynchronous";
+        case SUPGIPMODE_INVALID:        return "Invalid";
+        default:                        return "???";
     }
 }
 
@@ -1503,24 +1505,22 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
     if (   pGip
         && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
-        uint64_t uLo;
-        uint64_t uHi;
-
-        if (pGip->u64CpuHz == u64CpuHz)
-            return true;
-
-        /* Arbitrary tolerance threshold, tweak later if required, perhaps
-           more tolerance on lower frequencies and less tolerance on higher. */
-        uLo = (pGip->u64CpuHz << 10) / 1025;
-        uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
-        if (   u64CpuHz < uLo
-            || u64CpuHz > uHi)
-            return false;
+        if (pGip->u64CpuHz != u64CpuHz)
+        {
+            /* Arbitrary tolerance threshold, tweak later if required, perhaps
+               more tolerance on lower frequencies and less tolerance on higher. */
+            uint64_t uLo = (pGip->u64CpuHz << 10) / 1025;
+            uint64_t uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
+            if (   u64CpuHz < uLo
+                || u64CpuHz > uHi)
+                return false;
+        }
         return true;
     }
     return false;
 }
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
 /**
  * Applies the TSC delta to the supplied raw TSC value.
@@ -1532,10 +1532,11 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
  * @param   fDeltaApplied   Where to store whether the TSC delta was succesfully
  *                          applied or not (optional, can be NULL).
  *
- * @note If you change the delta calculation made here, make sure to update the
- *       assembly version in sup.mac! Also update supdrvGipMpEvent() while
- *       re-adjusting deltas while choosing a new GIP master.
  * @remarks Maybe called with interrupts disabled in ring-0!
+ *
+ * @note    If you change the delta calculation made here, make sure to update
+ *          the assembly version in sup.mac! Also update supdrvGipMpEvent()
+ *          while re-adjusting deltas while choosing a new GIP master.
  */
 DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *pfDeltaApplied)
 {
@@ -1566,11 +1567,12 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
 
 
 /**
- * Gets the delta-adjusted TSC, must only be called when GIP mode is invariant
- * (i.e. when TSC deltas are likely to be computed and available).
+ * Gets the delta-adjusted TSC.
  *
- * In other GIP modes, like async, we don't bother with computing TSC deltas and
- * therefore it is meaningless to call this function, use SUPReadTSC() instead.
+ * Must only be called when GIP mode is invariant (i.e. when TSC deltas are
+ * likely to be computed and available).  In other GIP modes, like async, we
+ * don't bother with computing TSC deltas and therefore it is meaningless to
+ * call this function, use SUPReadTSC() instead.
  *
  * @returns VBox status code.
  * @param   puTsc           Where to store the normalized TSC value.
@@ -1584,9 +1586,9 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
  */
 DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
 {
-#ifdef IN_RING3
+# ifdef IN_RING3
     return SUPR3ReadTsc(puTsc, pidApic);
-#else
+# else
     RTCCUINTREG uFlags;
     uint16_t    idApic;
     bool        fDeltaApplied;
@@ -1606,12 +1608,13 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
     rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
     AssertRCReturn(rc, rc);
     return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
-#endif
+# endif
 }
 
 
 /**
  * Reads the host TSC value.
+ *
  * If applicable, normalizes the host TSC value with intercpu TSC deltas.
  *
  * @returns the TSC value.
@@ -1627,9 +1630,10 @@ DECLINLINE(uint64_t) SUPReadTsc(void)
         AssertRC(rc);
         return u64Tsc;
     }
-    else
-        return ASMReadTSC();
+    return ASMReadTSC();
 }
+
+#endif /* X86 || AMD64 */
 
 
 /** @name User mode module flags (SUPR3TracerRegisterModule & SUP_IOCTL_TRACER_UMOD_REG).
