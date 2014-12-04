@@ -66,7 +66,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
 
         /** @todo Test that pausing and resuming doesn't cause lag! (I.e. that we're
          *        unpaused before the virtual time and stopped after it. */
-        if (pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET)
+        if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
             pVCpu->tm.s.offTSCRawSrc = ASMReadTSC() - pVCpu->tm.s.u64TSC;
         else
             pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
@@ -101,7 +101,7 @@ int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
             STAM_COUNTER_INC(&pVM->tm.s.StatTSCResume);
 
             /* When resuming, use the TSC value of the last stopped VCPU to avoid the TSC going back. */
-            if (pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET)
+            if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
                 pVCpu->tm.s.offTSCRawSrc = ASMReadTSC() - pVM->tm.s.u64LastPausedTSC;
             else
                 pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
@@ -181,11 +181,11 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
 DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
 {
     /* Sample the reason for refusing. */
-    if (pVM->tm.s.enmMode != TMMODE_DYNAMIC)
+    if (pVM->tm.s.enmTSCMode != TMTSCMODE_DYNAMIC)
        STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
     else if (!pVCpu->tm.s.fTSCTicking)
        STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotTicking);
-    else if (pVM->tm.s.enmMode != TMMODE_REAL_TSC_OFFSET)
+    else if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
     {
         if (pVM->tm.s.fVirtualSyncCatchUp)
         {
@@ -234,14 +234,14 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, b
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
     *pfParavirtTsc = GIMIsParavirtTscEnabled(pVM);
-    if (    pVM->tm.s.enmMode == TMMODE_DYNAMIC
+    if (    pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
         &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET
+        &&  (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
              || (   !pVM->tm.s.fVirtualSyncCatchUp
                  && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
                  && !pVM->tm.s.fVirtualWarpDrive)))
     {
-        if (pVM->tm.s.enmMode != TMMODE_REAL_TSC_OFFSET)
+        if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
         {
             /* The source is the timer synchronous virtual clock. */
             if (poffRealTSC)
@@ -328,15 +328,15 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
     *pfParavirtTsc = GIMIsParavirtTscEnabled(pVM);
-    if (    pVM->tm.s.enmMode == TMMODE_DYNAMIC
+    if (    pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
         &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET
+        &&  (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
              || (   !pVM->tm.s.fVirtualSyncCatchUp
                  && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
                  && !pVM->tm.s.fVirtualWarpDrive)))
     {
         *pfOffsettedTsc = true;
-        if (pVM->tm.s.enmMode != TMMODE_REAL_TSC_OFFSET)
+        if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
         {
             /* The source is the timer synchronous virtual clock. */
             uint64_t cNsToDeadline;
@@ -382,7 +382,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
     if (RT_LIKELY(pVCpu->tm.s.fTSCTicking))
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
-        if (pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET)
+        if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
             u64 = ASMReadTSC();
         else
             u64 = tmCpuTickGetRawVirtual(pVM, fCheckTimers);
@@ -504,7 +504,7 @@ VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
 {
     /** @todo revisit this, not sure why we need to get the rate from GIP for
      *        real-tsc-offset. */
-    if (pVM->tm.s.enmMode == TMMODE_REAL_TSC_OFFSET)
+    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
     {
         uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
         if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))

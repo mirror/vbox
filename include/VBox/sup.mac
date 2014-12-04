@@ -129,9 +129,9 @@ endstruc
 ; @remarks edx:eax contains the 64-bit TSC value to apply the delta to.
 %macro SUPTscDeltaApply 1
     ; Check if we have a valid TSC-delta, i.e. != INT64_MAX.
-    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta + 4], 0xffffffff
+    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta], 0xffffffff
     jne     %%valid_delta
-    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta], 0x7fffffff
+    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta + 4], 0x7fffffff
     je      %%done
 %%valid_delta:
     ; Subtract the delta from edx:eax

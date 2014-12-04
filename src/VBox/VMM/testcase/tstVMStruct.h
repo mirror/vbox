@@ -1010,7 +1010,7 @@
     //GEN_CHECK_OFF(TM, pvGIPR0);
     GEN_CHECK_OFF(TM, pvGIPRC);
     GEN_CHECK_OFF(TMCPU, fTSCTicking);
-    GEN_CHECK_OFF(TM, enmMode);
+    GEN_CHECK_OFF(TM, enmTSCMode);
     GEN_CHECK_OFF(TM, fTSCTiedToExecution);
     GEN_CHECK_OFF(TMCPU, offTSCRawSrc);
     GEN_CHECK_OFF(TMCPU, u64TSC);

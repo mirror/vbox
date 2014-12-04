@@ -1528,7 +1528,7 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
  * @returns VBox status code.
  * @param   pGip            Pointer to the GIP.
  * @param   puTsc           Pointer to a valid TSC value before the TSC delta has been applied.
- * @param   idApic          The APIC ID of the CPU @c uTsc corresponds to.
+ * @param   idApic          The APIC ID of the CPU @c puTsc corresponds to.
  * @param   fDeltaApplied   Where to store whether the TSC delta was succesfully
  *                          applied or not (optional, can be NULL).
  *
