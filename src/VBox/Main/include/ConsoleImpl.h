@@ -39,6 +39,7 @@ class AudioVRDE;
 #else
 class AudioSniffer;
 #endif
+class AudioVRDE;
 class Nvram;
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2757,8 +2757,6 @@ typedef struct PDMIAUDIOCONNECTOR
 /** PDMIAUDIOCONNECTOR interface ID. */
 #define PDMIAUDIOCONNECTOR_IID                  "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
-
-#endif
 /** @todo r=bird: the two following interfaces are hacks to work around the missing audio driver
  * interface. This should be addressed rather than making more temporary hacks. */
 
@@ -2911,6 +2909,7 @@ typedef struct PDMIAUDIOSNIFFERCONNECTOR
 /** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
 #define PDMIAUDIOSNIFFERCONNECTOR_IID           "9d37f543-27af-45f8-8002-8ef7abac71e4"
 
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 /**
  * Generic status LED core.

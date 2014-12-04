@@ -25,6 +25,9 @@ endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+ include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
+endif
 include $(PATH_SUB_CURRENT)/Input/testcase/Makefile.kmk
 if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
@@ -164,7 +167,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
 	\
- 	Audio/mixeng.c \
  	Input/DrvKeyboardQueue.cpp \
  	Input/DrvMouseQueue.cpp \
  	Network/DrvIntNet.cpp \
@@ -508,57 +510,126 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # --- Audio bits. ---
 
  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-   VBoxDD_DEFS         +=VBOX_WITH_PDM_AUDIO_DRIVER
- endif
- ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-   VBoxDD_SOURCES += Audio/DrvAudio.c \
-	 Audio/DrvAudioUtil.c \
-	 Audio/DrvHostNullAudio.c
- else
-   VBoxDD_SOURCES += Audio/audio.c \
+  VBoxDD_DEFS            += VBOX_WITH_PDM_AUDIO_DRIVER
+  VBoxDD_SOURCES         += \
+	Audio/AudioMixBuffer.cpp   \
+	Audio/AudioMixer.cpp       \
+	Audio/DrvAudio.cpp         \
+	Audio/DrvAudioCommon.cpp   \
+	Audio/DrvHostNullAudio.cpp
+
+  ## @todo Darwin CoreAudio driver missing!
+
+  ifeq ($(KBUILD_TARGET),win)
+   VBoxDD_SOURCES += \
+	Audio/DrvHostDSound.cpp
+   VBoxDD_LIBS    += \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dsound.lib
+  endif
+
+  ifeq ($(KBUILD_TARGET),linux)
+   VBoxDD_SOURCES  += \
+		Audio/DrvHostOssAudio.cpp
+   ifdef VBOX_WITH_PULSE
+    VBoxDD_DEFS    += VBOX_WITH_PULSE
+    VBoxDD_SOURCES += \
+	Audio/DrvHostPulseAudio.cpp \
+	Audio/pulse_stubs.c
+   endif
+
+   ifdef VBOX_WITH_ALSA
+    VBoxDD_DEFS.linux    += VBOX_WITH_ALSA
+    VBoxDD_SOURCES.linux += \
+	Audio/DrvHostAlsaAudio.cpp \
+	Audio/alsa_stubs.c
+   endif
+  endif
+
+  ifeq ($(KBUILD_TARGET),freebsd)
+   VBoxDD_SOURCES  += \
+		Audio/DrvHostOssAudio.cpp
+   ifdef VBOX_WITH_PULSE
+    VBoxDD_DEFS    += VBOX_WITH_PULSE
+    VBoxDD_SOURCES += \
+	Audio/DrvHostPulseAudio.cpp \
+	Audio/pulse_stubs.c
+   endif
+  endif
+
+  ifeq ($(KBUILD_TARGET),solaris)
+   VBoxDD_SOURCES += \
+ 	Audio/DrvHostSolAudio.cpp
+   ifdef VBOX_WITH_SOLARIS_OSS
+    VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
+    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
+   endif
+  endif
+
+ else # !VBOX_WITH_PDM_AUDIO_DRIVER
+
+  VBoxDD_SOURCES += \
+ 	 Audio/audio.c \
  	 Audio/audiosniffer.c \
  	 Audio/noaudio.c \
- 	 Audio/filteraudio.c
- endif
+ 	 Audio/filteraudio.c \
+	 Audio/mixeng.c
 
- ifdef VBOX_WITH_ALSA
-  VBoxDD_DEFS.linux     += VBOX_WITH_ALSA
-  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_DEFS.linux     += VBOX_WITH_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_SOURCES.linux  += \
- 	  Audio/DrvHostAlsaAudio.c \
-      Audio/alsa_stubs.c
-  else
-    VBoxDD_SOURCES.linux  += \
+  ifeq ($(KBUILD_TARGET),win)
+   VBoxDD_SOURCES += \
+	Audio/dsoundaudio.c
+  endif
+
+  VBoxDD_SOURCES.darwin  += \
+  	Audio/coreaudio.c
+
+  ifeq ($(KBUILD_TARGET),solaris)
+   VBoxDD_SOURCES += \
+ 	Audio/solaudio.c
+   ifdef VBOX_WITH_SOLARIS_OSS
+    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
+    VBoxDD_SOURCES += \
+	Audio/ossaudio.c
+   endif
+  endif
+
+  ifeq ($(KBUILD_TARGET),linux)
+   VBoxDD_SOURCES += \
+ 	  Audio/ossaudio.c
+   ifdef VBOX_WITH_PULSE
+    VBoxDD_DEFS    += VBOX_WITH_PULSE
+    VBoxDD_SOURCES += \
+ 	  Audio/pulseaudio.c \
+ 	  Audio/pulse_stubs.c
+   endif
+   ifdef VBOX_WITH_ALSA
+    VBoxDD_DEFS    += VBOX_WITH_ALSA
+    VBoxDD_SOURCES += \
  	  Audio/alsaaudio.c \
  	  Audio/alsa_stubs.c
+   endif
   endif
- endif
 
- ifdef VBOX_WITH_PULSE
-  VBoxDD_DEFS.linux     += VBOX_WITH_PULSE
-  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_DEFS.linux     += VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_SOURCES.linux  += \
- 	  Audio/DrvHostPulseAudio.c \
-      Audio/pulse_stubs.c
-  else
-    VBoxDD_SOURCES.linux  += \
+  ifeq ($(KBUILD_TARGET),freebsd)
+   VBoxDD_SOURCES += \
+ 	  Audio/ossaudio.c
+   ifdef VBOX_WITH_PULSE
+    VBoxDD_DEFS    += VBOX_WITH_PULSE
+    VBoxDD_SOURCES += \
  	  Audio/pulseaudio.c \
  	  Audio/pulse_stubs.c
+   endif
   endif
-  VBoxDD_DEFS.freebsd   += VBOX_WITH_PULSE
-  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_SOURCES.freebsd+= \
- 	  Audio/DrvHostPulseAudio.c \
-	  Audio/pulse_stubs.c
-  else
-    VBoxDD_SOURCES.freebsd+= \
- 	  Audio/pulseaudio.c \
- 	  Audio/pulse_stubs.c
-  endif
- endif
 
+  ifeq ($(KBUILD_TARGET),solaris)
+   VBoxDD_SOURCES += \
+ 	Audio/solaudio.c
+   ifdef VBOX_WITH_SOLARIS_OSS
+    VBoxDD_SOURCES += Audio/ossaudio.c
+    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
+   endif
+  endif
+
+ endif # VBOX_WITH_PDM_AUDIO_DRIVER
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
  VBOX_SLIRP_SOURCES = \
@@ -672,92 +743,41 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES        := \
-  	$(filter-out Storage/DrvHostRaw% Storage/DrvHostFloppy%, $(VBoxDD_SOURCES)) \
-  	Audio/coreaudio.c
+  	$(filter-out Storage/DrvHostRaw% Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
   VBoxDD_SOURCES.darwin += \
   	Serial/DrvHostSerial.cpp
  endif # darwin
 
  ifeq ($(KBUILD_TARGET),freebsd)
-  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_SOURCES        := \
-  	  $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES)) \
-  	  Audio/DrvHostOssAudio.c \
-  	  Serial/DrvHostSerial.cpp
-    VBoxDD_SOURCES.freebsd += \
- 	  Network/DrvTAP.cpp
-  else
-    VBoxDD_SOURCES        := \
-  	  $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES)) \
-  	  Audio/ossaudio.c \
-  	  Serial/DrvHostSerial.cpp
-    VBoxDD_SOURCES.freebsd += \
- 	  Network/DrvTAP.cpp
-  endif
+  VBoxDD_SOURCES        := \
+		$(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
+		Serial/DrvHostSerial.cpp
+  VBoxDD_SOURCES.freebsd += \
+		Network/DrvTAP.cpp
  endif # freebsd
 
- VBoxDD_SOURCES.linux  += \
+ VBoxDD_SOURCES.linux   += \
  	Network/DrvTAP.cpp \
  	Parallel/DrvHostParallel.cpp \
  	Serial/DrvHostSerial.cpp
-
- ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-  VBoxDD_SOURCES.linux  += \
-    Audio/DrvHostOssAudio.c
- else
-   VBoxDD_SOURCES.linux  += \
- 	 Audio/ossaudio.c
- endif
 
  ifeq ($(KBUILD_TARGET),os2)
  VBoxDD_SOURCES        := $(filter-out Storage/DrvHost%, $(VBoxDD_SOURCES))
  endif
 
  ifeq ($(KBUILD_TARGET),solaris)
-  VBoxDD_SOURCES        := $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
-  VBoxDD_SOURCES.solaris += \
+  VBoxDD_SOURCES          := $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
+  VBoxDD_SOURCES.solaris  += \
  	Serial/DrvHostSerial.cpp
-  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    VBoxDD_SOURCES.solaris += \
- 	  Audio/DrvHostSolAudio.c
-  else
-    VBoxDD_SOURCES.solaris += \
- 	  Audio/solaudio.c
-  endif
-  ifdef VBOX_WITH_SOLARIS_OSS
-    ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-      VBoxDD_SOURCES += Audio/DrvHostOssAudio.c
-    else
-      VBoxDD_SOURCES += Audio/ossaudio.c
-    endif
-    VBoxDD_DEFS += VBOX_WITH_SOLARIS_OSS
-  endif
   ifdef VBOX_WITH_SUID_WRAPPER
-   VBoxDD_DEFS += VBOX_WITH_SUID_WRAPPER
+   VBoxDD_DEFS    += VBOX_WITH_SUID_WRAPPER
   endif
  endif
 
- VBoxDD_DEFS.win       += VBOX_WITH_WIN_PARPORT_SUP
- ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-   VBoxDD_DEFS.win       += VBOX_WITH_PDM_AUDIO_DRIVER
- endif
- VBoxDD_SOURCES.win    += \
- 	Serial/DrvHostSerial.cpp \
+ VBoxDD_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
+ VBoxDD_SOURCES.win   += \
+	Serial/DrvHostSerial.cpp \
 	Parallel/DrvHostParallel.cpp
-
- ifdef VBOX_WITH_PDM_AUDIO_DRIVER
- VBoxDD_SOURCES.win    += \
-   Audio/DrvHostDSound.c
- else
- VBoxDD_SOURCES.win    += \
-   Audio/dsoundaudio.c
- endif
-
- ifdef VBOX_WITH_VIRTUALKD
-  VBoxDD_DEFS.win     += VBOX_WITH_VIRTUALKD
-  VBoxDD_SOURCES.win  += \
-    Misc/VirtualKD.cpp
- endif
 
  if defined(VBOX_WITH_NETFLT)
   VBoxDD_DEFS          += VBOX_WITH_NETFLT
@@ -1349,7 +1369,7 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
 
 
  #
- # The Intel PXE rom.
+ # The Intel PXE ROM.
  #
  INSTALLS += VBoxExtPackPuelInsRoms
  VBoxExtPackPuelInsRoms_TEMPLATE = VBoxInsExtPackPuel

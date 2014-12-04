@@ -33,9 +33,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/vmm/pdmdev.h>
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 #include <VBox/vmm/pdmaudioifs.h>
-#endif
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -89,16 +87,8 @@ typedef struct SB16State {
 #ifdef VBOX
     /** Pointer to the device instance. */
     PPDMDEVINSR3 pDevIns;
-# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /** Pointer to the connector of the attached audio driver. */
     PPDMIAUDIOCONNECTOR     pDrv;
-# endif
-#endif
-#ifndef VBOX
-    qemu_irq *pic;
-#endif
-#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-    QEMUSoundCard card;
 #endif
 #ifdef VBOX /* lazy bird */
     int irqCfg;
@@ -118,7 +108,12 @@ typedef struct SB16State {
     int fmt_stereo;
     int fmt_signed;
     int fmt_bits;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    PDMAUDIOFMT fmt;
+#else
     audfmt_e fmt;
+    QEMUSoundCard card;
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     int dma_auto;
     int block_size;
     int fifo;
@@ -153,27 +148,29 @@ typedef struct SB16State {
     int dma_running;
     int bytes_per_second;
     int align;
-    int audio_free;
+    uint32_t audio_free;
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    PPDMGSTVOICEOUT voice;
+    PPDMAUDIOGSTSTRMOUT pGstStrmOut;
 #else
     SWVoiceOut *voice;
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-#ifndef VBOX
-    QEMUTimer *aux_ts;
-#else
     PTMTIMER  pTimer;
     PPDMIBASE pDrvBase;
     /** LUN\#0: Base interface. */
     PDMIBASE  IBase;
-#endif
+
     /* mixer state */
     int mixer_nreg;
     uint8_t mixer_regs[256];
 } SB16State;
 
-static void SB_audio_callback (void *opaque, int free);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+static void sb16AudioCallback(void *pvContext, uint32_t cbFree);
+#else
+static void sb16AudioCallback(void *pvContext, int cbFree);
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 static int magic_of_irq (int irq)
 {
@@ -187,7 +184,7 @@ static int magic_of_irq (int irq)
     case 10:
         return 8;
     default:
-        LogFlow(("SB16: bad irq %d\n", irq));
+        LogFlowFunc(("bad irq %d\n", irq));
         return 2;
     }
 }
@@ -204,7 +201,7 @@ static int irq_of_magic (int magic)
     case 8:
         return 10;
     default:
-        LogFlow(("SB16: bad irq magic %d\n", magic));
+        LogFlowFunc(("bad irq magic %d\n", magic));
         return -1;
     }
 }
@@ -235,7 +232,7 @@ static void control (SB16State *s, int hold)
     int dma = s->use_hdma ? s->hdma : s->dma;
     s->dma_running = hold;
 
-    LogFlow(("SB16: hold %d high %d dma %d\n", hold, s->use_hdma, dma));
+    LogFlowFunc(("hold %d high %d dma %d\n", hold, s->use_hdma, dma));
 
 #ifndef VBOX
     if (hold) {
@@ -252,7 +249,7 @@ static void control (SB16State *s, int hold)
         PDMDevHlpDMASetDREQ (s->pDevIns, dma, 1);
         PDMDevHlpDMASchedule (s->pDevIns);
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        s->pDrv->pfnEnableOut(s->pDrv, s->voice, 1);
+        s->pDrv->pfnEnableOut(s->pDrv, s->pGstStrmOut, true /* fEnable */);
 #else
         AUD_set_active_out (s->voice, 1);
 #endif
@@ -261,7 +258,7 @@ static void control (SB16State *s, int hold)
     {
         PDMDevHlpDMASetDREQ (s->pDevIns, dma, 0);
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        s->pDrv->pfnEnableOut(s->pDrv, s->voice, 0);
+        s->pDrv->pfnEnableOut(s->pDrv, s->pGstStrmOut, false /* fEnable */);
 #else
         AUD_set_active_out (s->voice, 0);
 #endif
@@ -290,17 +287,22 @@ static DECLCALLBACK(void) sb16Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
 
 static void continue_dma8 (SB16State *s)
 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc;
-#endif
-    if (s->freq > 0) {
-
+    if (s->freq > 0)
+    {
         s->audio_free = 0;
 
-
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        rc = s->pDrv->pfnOpenOut(s->pDrv, &s->voice, "sb16", s, SB_audio_callback, s->freq, 1 << s->fmt_stereo,
-                                 s->fmt, 0);
+        PDMAUDIOSTREAMCFG as;
+        as.uHz           = s->freq;
+        as.cChannels     = 1 << s->fmt_stereo;
+        as.enmFormat     = s->fmt;
+        as.enmEndianness = PDMAUDIOHOSTENDIANESS;
+
+        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
+                                     sb16AudioCallback /* fnCallback */, s /* pvCallback */,
+                                     &as,
+                                     &s->pGstStrmOut);
+        AssertRC(rc);
 #else
         audsettings_t as;
         as.freq = s->freq;
@@ -312,10 +314,10 @@ static void continue_dma8 (SB16State *s)
             s->voice,
             "sb16",
             s,
-            SB_audio_callback,
+            sb16AudioCallback,
             &as
             );
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
 
     control (s, 1);
@@ -344,6 +346,8 @@ static void dma_cmd8 (SB16State *s, int mask, int dma_len)
         /* This is apparently the only way to make both Act1/PL
            and SecondReality/FC work
 
+           r=andy Wow, actually someone who remembers Future Crew :-)
+
            Act1 sets block size via command 0x48 and it's an odd number
            SR does the same with even number
            Both use stereo, and Creatives own documentation states that
@@ -359,11 +363,11 @@ static void dma_cmd8 (SB16State *s, int mask, int dma_len)
     s->align = (1 << s->fmt_stereo) - 1;
 
     if (s->block_size & s->align) {
-        LogFlow(("SB16: warning: misaligned block size %d, alignment %d\n",
+        LogFlowFunc(("warning: misaligned block size %d, alignment %d\n",
                s->block_size, s->align + 1));
     }
 
-    LogFlow(("SB16: freq %d, stereo %d, sign %d, bits %d, "
+    LogFlowFunc(("freq %d, stereo %d, sign %d, bits %d, "
             "dma %d, auto %d, fifo %d, high %d\n",
             s->freq, s->fmt_stereo, s->fmt_signed, s->fmt_bits,
             s->block_size, s->dma_auto, s->fifo, s->highspeed));
@@ -411,7 +415,7 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
         s->block_size <<= s->fmt_stereo;
     }
 
-    LogFlow(("SB16: freq %d, stereo %d, sign %d, bits %d, "
+    LogFlowFunc(("freq %d, stereo %d, sign %d, bits %d, "
             "dma %d, auto %d, fifo %d, high %d\n",
             s->freq, s->fmt_stereo, s->fmt_signed, s->fmt_bits,
             s->block_size, s->dma_auto, s->fifo, s->highspeed));
@@ -439,18 +443,26 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
     s->highspeed = 0;
     s->align = (1 << (s->fmt_stereo + (s->fmt_bits == 16))) - 1;
     if (s->block_size & s->align) {
-        LogFlow(("SB16: warning: misaligned block size %d, alignment %d\n",
+        LogFlowFunc(("warning: misaligned block size %d, alignment %d\n",
                s->block_size, s->align + 1));
     }
 
-    if (s->freq) {
-
+    if (s->freq)
+    {
         s->audio_free = 0;
 
-
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc;
-        rc = s->pDrv->pfnOpenOut(s->pDrv, &s->voice, "sb16", s,SB_audio_callback, s->freq, 1 << s->fmt_stereo, s->fmt, 0);
+        PDMAUDIOSTREAMCFG as;
+        as.uHz           = s->freq;
+        as.cChannels     = 1 << s->fmt_stereo;
+        as.enmFormat     = s->fmt;
+        as.enmEndianness = PDMAUDIOHOSTENDIANESS;
+
+        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
+                                     sb16AudioCallback /* fnCallback */, s /* pvCallback */,
+                                     &as,
+                                     &s->pGstStrmOut);
+        AssertRC(rc);
 #else
         audsettings_t as;
         as.freq = s->freq;
@@ -462,10 +474,10 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
             s->voice,
             "sb16",
             s,
-            SB_audio_callback,
+            sb16AudioCallback,
             &as
             );
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
 
     control (s, 1);
@@ -474,7 +486,7 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
 
 static inline void dsp_out_data (SB16State *s, uint8_t val)
 {
-    LogFlow(("SB16: outdata %#x\n", val));
+    LogFlowFunc(("outdata %#x\n", val));
     if ((size_t) s->out_data_len < sizeof (s->out_data)) {
         s->out_data[s->out_data_len++] = val;
     }
@@ -486,18 +498,18 @@ static inline uint8_t dsp_get_data (SB16State *s)
         return s->in2_data[--s->in_index];
     }
     else {
-        LogFlow(("SB16: buffer underflow\n"));
+        LogFlowFunc(("buffer underflow\n"));
         return 0;
     }
 }
 
 static void command (SB16State *s, uint8_t cmd)
 {
-    LogFlow(("SB16: command %#x\n", cmd));
+    LogFlowFunc(("command %#x\n", cmd));
 
     if (cmd > 0xaf && cmd < 0xd0) {
         if (cmd & 8) {
-            LogFlow(("SB16: ADC not yet supported (command %#x)\n", cmd));
+            LogFlowFunc(("ADC not yet supported (command %#x)\n", cmd));
         }
 
         switch (cmd >> 4) {
@@ -505,7 +517,7 @@ static void command (SB16State *s, uint8_t cmd)
         case 12:
             break;
         default:
-            LogFlow(("SB16: %#x wrong bits\n", cmd));
+            LogFlowFunc(("%#x wrong bits\n", cmd));
         }
         s->needed_bytes = 3;
     }
@@ -559,7 +571,7 @@ static void command (SB16State *s, uint8_t cmd)
             goto warn;
 
         case 0x35:
-            LogFlow(("SB16: 0x35 - MIDI command not implemented\n"));
+            LogFlowFunc(("0x35 - MIDI command not implemented\n"));
             break;
 
         case 0x40:
@@ -593,32 +605,32 @@ static void command (SB16State *s, uint8_t cmd)
 
         case 0x74:
             s->needed_bytes = 2; /* DMA DAC, 4-bit ADPCM */
-            LogFlow(("SB16: 0x75 - DMA DAC, 4-bit ADPCM not implemented\n"));
+            LogFlowFunc(("0x75 - DMA DAC, 4-bit ADPCM not implemented\n"));
             break;
 
         case 0x75:              /* DMA DAC, 4-bit ADPCM Reference */
             s->needed_bytes = 2;
-            LogFlow(("SB16: 0x74 - DMA DAC, 4-bit ADPCM Reference not implemented\n"));
+            LogFlowFunc(("0x74 - DMA DAC, 4-bit ADPCM Reference not implemented\n"));
             break;
 
         case 0x76:              /* DMA DAC, 2.6-bit ADPCM */
             s->needed_bytes = 2;
-            LogFlow(("SB16: 0x74 - DMA DAC, 2.6-bit ADPCM not implemented\n"));
+            LogFlowFunc(("0x74 - DMA DAC, 2.6-bit ADPCM not implemented\n"));
             break;
 
         case 0x77:              /* DMA DAC, 2.6-bit ADPCM Reference */
             s->needed_bytes = 2;
-            LogFlow(("SB16: 0x74 - DMA DAC, 2.6-bit ADPCM Reference not implemented\n"));
+            LogFlowFunc(("0x74 - DMA DAC, 2.6-bit ADPCM Reference not implemented\n"));
             break;
 
         case 0x7d:
-            LogFlow(("SB16: 0x7d - Autio-Initialize DMA DAC, 4-bit ADPCM Reference\n"));
-            LogFlow(("SB16: not implemented\n"));
+            LogFlowFunc(("0x7d - Autio-Initialize DMA DAC, 4-bit ADPCM Reference\n"));
+            LogFlowFunc(("not implemented\n"));
             break;
 
         case 0x7f:
-            LogFlow(("SB16: 0x7d - Autio-Initialize DMA DAC, 2.6-bit ADPCM Reference\n"));
-            LogFlow(("SB16: not implemented\n"));
+            LogFlowFunc(("0x7d - Autio-Initialize DMA DAC, 2.6-bit ADPCM Reference\n"));
+            LogFlowFunc(("not implemented\n"));
             break;
 
         case 0x80:
@@ -690,7 +702,7 @@ static void command (SB16State *s, uint8_t cmd)
             break;
 
         case 0xe7:
-            LogFlow(("SB16: Attempt to probe for ESS (0xe7)?\n"));
+            LogFlowFunc(("Attempt to probe for ESS (0xe7)?\n"));
             break;
 
         case 0xe8:              /* read test reg */
@@ -721,7 +733,7 @@ static void command (SB16State *s, uint8_t cmd)
             goto warn;
 
         default:
-            LogFlow(("SB16: Unrecognized command %#x\n", cmd));
+            LogFlowFunc(("Unrecognized command %#x\n", cmd));
             break;
         }
     }
@@ -740,7 +752,7 @@ static void command (SB16State *s, uint8_t cmd)
     return;
 
  warn:
-    LogFlow(("SB16: warning: command %#x,%d is not truly understood yet\n",
+    LogFlowFunc(("warning: command %#x,%d is not truly understood yet\n",
            cmd, s->needed_bytes));
     goto exit;
 
@@ -763,7 +775,7 @@ static uint16_t dsp_get_hilo (SB16State *s)
 static void complete (SB16State *s)
 {
     int d0, d1, d2;
-    LogFlow(("SB16: complete command %#x, in_index %d, needed_bytes %d\n",
+    LogFlowFunc(("complete command %#x, in_index %d, needed_bytes %d\n",
             s->cmd, s->in_index, s->needed_bytes));
 
     if (s->cmd > 0xaf && s->cmd < 0xd0) {
@@ -772,11 +784,11 @@ static void complete (SB16State *s)
         d0 = dsp_get_data (s);
 
         if (s->cmd & 8) {
-            LogFlow(("SB16: ADC params cmd = %#x d0 = %d, d1 = %d, d2 = %d\n",
+            LogFlowFunc(("ADC params cmd = %#x d0 = %d, d1 = %d, d2 = %d\n",
                    s->cmd, d0, d1, d2));
         }
         else {
-            LogFlow(("SB16: cmd = %#x d0 = %d, d1 = %d, d2 = %d\n",
+            LogFlowFunc(("cmd = %#x d0 = %d, d1 = %d, d2 = %d\n",
                     s->cmd, d0, d1, d2));
             dma_cmd (s, s->cmd, d0, d1 + (d2 << 8));
         }
@@ -787,13 +799,13 @@ static void complete (SB16State *s)
             s->csp_mode = dsp_get_data (s);
             s->csp_reg83r = 0;
             s->csp_reg83w = 0;
-            LogFlow(("SB16: CSP command 0x04: mode=%#x\n", s->csp_mode));
+            LogFlowFunc(("CSP command 0x04: mode=%#x\n", s->csp_mode));
             break;
 
         case 0x05:
             s->csp_param = dsp_get_data (s);
             s->csp_value = dsp_get_data (s);
-            LogFlow(("SB16: CSP command 0x05: param=%#x value=%#x\n",
+            LogFlowFunc(("CSP command 0x05: param=%#x value=%#x\n",
                     s->csp_param,
                     s->csp_value));
             break;
@@ -801,9 +813,9 @@ static void complete (SB16State *s)
         case 0x0e:
             d0 = dsp_get_data (s);
             d1 = dsp_get_data (s);
-            LogFlow(("SB16: write CSP register %d <- %#x\n", d1, d0));
+            LogFlowFunc(("write CSP register %d <- %#x\n", d1, d0));
             if (d1 == 0x83) {
-                LogFlow(("SB16: 0x83[%d] <- %#x\n", s->csp_reg83r, d0));
+                LogFlowFunc(("0x83[%d] <- %#x\n", s->csp_reg83r, d0));
                 s->csp_reg83[s->csp_reg83r % 4] = d0;
                 s->csp_reg83r += 1;
             }
@@ -814,10 +826,10 @@ static void complete (SB16State *s)
 
         case 0x0f:
             d0 = dsp_get_data (s);
-            LogFlow(("SB16: read CSP register %#x -> %#x, mode=%#x\n",
+            LogFlowFunc(("read CSP register %#x -> %#x, mode=%#x\n",
                     d0, s->csp_regs[d0], s->csp_mode));
             if (d0 == 0x83) {
-                LogFlow(("SB16: 0x83[%d] -> %#x\n",
+                LogFlowFunc(("0x83[%d] -> %#x\n",
                         s->csp_reg83w,
                         s->csp_reg83[s->csp_reg83w % 4]));
                 dsp_out_data (s, s->csp_reg83[s->csp_reg83w % 4]);
@@ -830,7 +842,7 @@ static void complete (SB16State *s)
 
         case 0x10:
             d0 = dsp_get_data (s);
-            LogFlow(("SB16: cmd 0x10 d0=%#x\n", d0));
+            LogFlowFunc(("cmd 0x10 d0=%#x\n", d0));
             break;
 
         case 0x14:
@@ -839,21 +851,21 @@ static void complete (SB16State *s)
 
         case 0x40:
             s->time_const = dsp_get_data (s);
-            LogFlow(("SB16: set time const %d\n", s->time_const));
+            LogFlowFunc(("set time const %d\n", s->time_const));
             break;
 
         case 0x42:              /* FT2 sets output freq with this, go figure */
 #if 0
-            dolog ("cmd 0x42 might not do what it think it should\n");
+            LogFlowFunc(("cmd 0x42 might not do what it think it should\n"));
 #endif
         case 0x41:
             s->freq = dsp_get_hilo (s);
-            LogFlow(("SB16: set freq %d\n", s->freq));
+            LogFlowFunc(("set freq %d\n", s->freq));
             break;
 
         case 0x48:
             s->block_size = dsp_get_lohi (s) + 1;
-            LogFlow(("SB16: set dma block len %d\n", s->block_size));
+            LogFlowFunc(("set dma block len %d\n", s->block_size));
             break;
 
         case 0x74:
@@ -884,14 +896,14 @@ static void complete (SB16State *s)
                             );
                     }
                 }
-                LogFlow(("SB16: mix silence %d %d %" PRId64 "\n", samples, bytes, ticks));
+                LogFlowFunc(("mix silence %d %d %" PRId64 "\n", samples, bytes, ticks));
 #else  /* VBOX */
                 ticks = (bytes * TMTimerGetFreq(s->pTimer)) / freq;
                 if (ticks < TMTimerGetFreq(s->pTimer) / 1024)
                     PDMDevHlpISASetIrq(s->pDevIns, s->irq, 1);
                 else
                     TMTimerSet(s->pTimer, TMTimerGet(s->pTimer) + ticks);
-                LogFlow(("SB16: mix silence %d %d % %RU64\n", samples, bytes, ticks));
+                LogFlowFunc(("mix silence %d %d % %RU64\n", samples, bytes, ticks));
 #endif /* VBOX */
             }
             break;
@@ -899,7 +911,7 @@ static void complete (SB16State *s)
         case 0xe0:
             d0 = dsp_get_data (s);
             s->out_data_len = 0;
-            LogFlow(("SB16: E0 data = %#x\n", d0));
+            LogFlowFunc(("E0 data = %#x\n", d0));
             dsp_out_data (s, ~d0);
             break;
 
@@ -914,7 +926,7 @@ static void complete (SB16State *s)
 
         case 0xf9:
             d0 = dsp_get_data (s);
-            LogFlow(("SB16: command 0xf9 with %#x\n", d0));
+            LogFlowFunc(("command 0xf9 with %#x\n", d0));
             switch (d0) {
             case 0x0e:
                 dsp_out_data (s, 0xff);
@@ -935,7 +947,7 @@ static void complete (SB16State *s)
             break;
 
         default:
-            LogFlow(("SB16: complete: unrecognized command %#x\n", s->cmd));
+            LogFlowFunc(("complete: unrecognized command %#x\n", s->cmd));
             return;
         }
     }
@@ -947,15 +959,23 @@ static void complete (SB16State *s)
 
 static void legacy_reset (SB16State *s)
 {
-
     s->freq = 11025;
     s->fmt_signed = 0;
     s->fmt_bits = 8;
     s->fmt_stereo = 0;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc;
-    rc = s->pDrv->pfnOpenOut(s->pDrv, &s->voice, "sb16", s, SB_audio_callback, 11025, 1, AUD_FMT_U8, 0);
+    PDMAUDIOSTREAMCFG as;
+    as.uHz           = s->freq;
+    as.cChannels     = 1;
+    as.enmFormat     = AUD_FMT_U8;
+    as.enmEndianness = PDMAUDIOHOSTENDIANESS;
+
+    int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
+                                 sb16AudioCallback /* fnCallback */, s /* pvContext */,
+                                 &as,
+                                 &s->pGstStrmOut);
+    AssertRC(rc);
 #else
     audsettings_t as;
     as.freq = s->freq;
@@ -967,11 +987,11 @@ static void legacy_reset (SB16State *s)
         s->voice,
         "sb16",
         s,
-        SB_audio_callback,
+        sb16AudioCallback,
         &as
         );
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-#endif
     /* Not sure about that... */
     /* AUD_set_active_out (s->voice, 1); */
 }
@@ -1015,7 +1035,7 @@ static IO_WRITE_PROTO (dsp_write)
     SB16State *s = (SB16State*)opaque;
     int iport = nport - s->port;
 
-    LogFlow(("SB16: write %#x <- %#x\n", nport, val));
+    LogFlowFunc(("write %#x <- %#x\n", nport, val));
     switch (iport) {
     case 0x06:
         switch (val) {
@@ -1076,7 +1096,7 @@ static IO_WRITE_PROTO (dsp_write)
         }
         else {
             if (s->in_index == sizeof (s->in2_data)) {
-                LogFlow(("SB16: in data overrun\n"));
+                LogFlowFunc(("in data overrun\n"));
             }
             else {
                 s->in2_data[s->in_index++] = val;
@@ -1092,7 +1112,7 @@ static IO_WRITE_PROTO (dsp_write)
         break;
 
     default:
-        LogFlow(("SB16: nport=%#x, val=%#x)\n", nport, val));
+        LogFlowFunc(("nport=%#x, val=%#x)\n", nport, val));
         break;
     }
 
@@ -1124,7 +1144,7 @@ static IO_READ_PROTO (dsp_read)
         }
         else {
             if (s->cmd != -1) {
-                LogFlow(("SB16: empty output buffer for command %#x\n",
+                LogFlowFunc(("empty output buffer for command %#x\n",
                        s->cmd));
             }
             retval = s->last_read_byte;
@@ -1137,7 +1157,7 @@ static IO_READ_PROTO (dsp_read)
         break;
 
     case 0x0d:                  /* timer interrupt clear */
-        /* dolog ("timer interrupt clear\n"); */
+        /* LogFlowFunc(("timer interrupt clear\n")); */
         retval = 0;
         break;
 
@@ -1172,7 +1192,7 @@ static IO_READ_PROTO (dsp_read)
     }
 
     if (!ack) {
-        LogFlow(("SB16: read %#x -> %#x\n", nport, retval));
+        LogFlowFunc(("read %#x -> %#x\n", nport, retval));
     }
 
 #ifndef VBOX
@@ -1183,7 +1203,7 @@ static IO_READ_PROTO (dsp_read)
 #endif
 
  error:
-    LogFlow(("SB16: warning: dsp_read %#x error\n", nport));
+    LogFlowFunc(("warning: dsp_read %#x error\n", nport));
 #ifndef VBOX
     return 0xff;
 #else
@@ -1231,8 +1251,9 @@ static IO_WRITE_PROTO(mixer_write_indexb)
     return VINF_SUCCESS;
 #endif
 }
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-uint32_t popcount (uint32_t u)
+uint32_t popcount (uint32_t u) /** @todo r=andy WTF? */
 {
     u = ((u&0x55555555) + ((u>>1)&0x55555555));
     u = ((u&0x33333333) + ((u>>2)&0x33333333));
@@ -1244,7 +1265,7 @@ uint32_t popcount (uint32_t u)
 
 uint32_t lsbindex (uint32_t u)
 {
-    return popcount ((u&-u)-1);
+    return popcount ((u&-u)-1); /** @todo r=andy Un/signed mismatch? */
 }
 #endif
 
@@ -1255,7 +1276,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
     bool        update_voice  = false;
 
     (void) nport;
-    LogFlow(("SB16: mixer_write [%#x] <- %#x\n", s->mixer_nreg, val));
+    LogFlowFunc(("mixer_write [%#x] <- %#x\n", s->mixer_nreg, val));
 
     switch (s->mixer_nreg) {
     case 0x00:
@@ -1306,7 +1327,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
     case 0x80:
         {
             int irq = irq_of_magic (val);
-            LogFlow(("SB16: setting irq to %d (val=%#x)\n", irq, val));
+            LogFlowFunc(("setting irq to %d (val=%#x)\n", irq, val));
             if (irq > 0) {
                 s->irq = irq;
             }
@@ -1333,7 +1354,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
         break;
 
     case 0x82:
-        LogFlow(("SB16: attempt to write into IRQ status register (val=%#x)\n",
+        LogFlowFunc(("attempt to write into IRQ status register (val=%#x)\n",
                val));
 #ifdef VBOX
         return VINF_SUCCESS;
@@ -1341,7 +1362,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
     default:
         if (s->mixer_nreg >= 0x80) {
-            LogFlow(("SB16: attempt to write mixer[%#x] <- %#x\n", s->mixer_nreg, val));
+            LogFlowFunc(("attempt to write mixer[%#x] <- %#x\n", s->mixer_nreg, val));
         }
         break;
     }
@@ -1355,12 +1376,12 @@ static IO_WRITE_PROTO(mixer_write_datab)
         int     mute = 0;
         uint8_t lvol = s->mixer_regs[0x30];
         uint8_t rvol = s->mixer_regs[0x31];
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        /*@todo not passinga audmixer_Ctl values as its not used in DrvAudio.c */
-        s->pDrv->pfnSetVolume(s->pDrv, &mute, &lvol, &rvol);
+        s->pDrv->pfnSetVolume(s->pDrv, RT_BOOL(mute), lvol, rvol);
 #else
         AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lvol, &rvol);
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
     /* Update the voice (PCM) volume. */
     if (update_voice)
@@ -1368,11 +1389,12 @@ static IO_WRITE_PROTO(mixer_write_datab)
         int     mute = 0;
         uint8_t lvol = s->mixer_regs[0x32];
         uint8_t rvol = s->mixer_regs[0x33];
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        s->pDrv->pfnSetVolume(s->pDrv, &mute, &lvol, &rvol);
+        s->pDrv->pfnSetVolume(s->pDrv, RT_BOOL(mute), lvol, rvol);
 #else
         AUD_set_volume(AUD_MIXER_PCM, &mute, &lvol, &rvol);
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
 #endif /* VBOX */
 
@@ -1421,11 +1443,11 @@ static IO_READ_PROTO(mixer_read)
     (void) nport;
 #ifndef DEBUG_SB16_MOST
     if (s->mixer_nreg != 0x82) {
-        LogFlow(("SB16: mixer_read[%#x] -> %#x\n",
+        LogFlowFunc(("mixer_read[%#x] -> %#x\n",
                 s->mixer_nreg, s->mixer_regs[s->mixer_nreg]));
     }
 #else
-    LogFlow(("SB16: mixer_read[%#x] -> %#x\n",
+    LogFlowFunc(("mixer_read[%#x] -> %#x\n",
             s->mixer_nreg, s->mixer_regs[s->mixer_nreg]));
 #endif
 #ifndef VBOX
@@ -1440,25 +1462,25 @@ static int write_audio (SB16State *s, int nchan, int dma_pos,
                         int dma_len, int len)
 {
     int temp, net;
-    uint8_t tmpbuf[4096];
+    uint8_t tmpbuf[_4K];
 
     temp = len;
     net = 0;
 
-    while (temp) {
+    while (temp)
+    {
         int left = dma_len - dma_pos;
 #ifndef VBOX
-        int copied;
         size_t to_copy;
+        int copied;
 #else
+        size_t to_copy;
         uint32_t copied;
-        uint32_t to_copy;
 #endif
 
-        to_copy = audio_MIN (temp, left);
-        if (to_copy > sizeof (tmpbuf)) {
-            to_copy = sizeof (tmpbuf);
-        }
+        to_copy = RT_MIN(temp, left);
+        if (to_copy > sizeof(tmpbuf))
+            to_copy = sizeof(tmpbuf);
 
 #ifndef VBOX
         copied = DMA_read_memory (nchan, tmpbuf, dma_pos, to_copy);
@@ -1469,18 +1491,19 @@ static int write_audio (SB16State *s, int nchan, int dma_pos,
 #endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        copied = s->pDrv->pfnWrite(s->pDrv, s->voice, tmpbuf, copied);
+        rc = s->pDrv->pfnWrite(s->pDrv, s->pGstStrmOut, tmpbuf, to_copy, &copied);
+        if (RT_FAILURE(rc))
+            break;
 #else
         copied = AUD_write (s->voice, tmpbuf, copied);
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
         temp -= copied;
         dma_pos = (dma_pos + copied) % dma_len;
         net += copied;
 
-        if (!copied) {
+        if (!copied)
             break;
-        }
     }
 
     return net;
@@ -1496,7 +1519,7 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
     int till, copy, written, free;
 
     if (s->block_size <= 0) {
-        LogFlow(("SB16: invalid block size=%d nchan=%d dma_pos=%d dma_len=%d\n",
+        LogFlowFunc(("invalid block size=%d nchan=%d dma_pos=%d dma_len=%d\n",
                s->block_size, nchan, dma_pos, dma_len));
         return dma_pos;
     }
@@ -1505,7 +1528,11 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
         s->left_till_irq = s->block_size;
     }
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    if (s->pGstStrmOut) {
+#else
     if (s->voice) {
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
         free = s->audio_free & ~s->align;
         if ((free <= 0) || !dma_len) {
             return dma_pos;
@@ -1519,7 +1546,7 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
     till = s->left_till_irq;
 
 #ifdef DEBUG_SB16_MOST
-    LogFlow(("SB16: pos:%06d %d till:%d len:%d\n",
+    LogFlowFunc(("pos:%06d %d till:%d len:%d\n",
            dma_pos, free, till, dma_len));
 #endif
 
@@ -1551,7 +1578,7 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
     }
 
 #ifdef DEBUG_SB16_MOST
-    LogFlow(("SB16: pos %5d free %5d size %5d till % 5d copy %5d written %5d size %5d\n",
+    LogFlowFunc(("pos %5d free %5d size %5d till % 5d copy %5d written %5d size %5d\n",
             dma_pos, free, dma_len, s->left_till_irq, copy, written,
             s->block_size));
 #endif
@@ -1563,13 +1590,18 @@ static DECLCALLBACK(uint32_t) SB_read_DMA (PPDMDEVINS pDevIns, void *opaque, uns
     return dma_pos;
 }
 
-static void SB_audio_callback (void *opaque, int free)
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+static void sb16AudioCallback(void *pvContext, uint32_t cbFree)
+#else
+static void sb16AudioCallback(void *pvContext, int cbFree)
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 {
-    SB16State *s = (SB16State*)opaque;
-    s->audio_free = free;
+    SB16State *pState = (SB16State*)pvContext;
+    AssertPtrReturnVoid(pState);
+    pState->audio_free = cbFree;
 #ifdef VBOX
     /* New space available, see if we can transfer more. There is no cyclic DMA timer in VBox. */
-    PDMDevHlpDMASchedule (s->pDevIns);
+    PDMDevHlpDMASchedule(pState->pDevIns);
 #endif
 }
 
@@ -1690,23 +1722,35 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
     s->mixer_nreg=qemu_get_be32 (f);
     qemu_get_buffer (f, s->mixer_regs, 256);
 
-    if (s->voice) {
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        s->pDrv->pfnCloseOut(s->pDrv, s->voice);
-#else
-        AUD_close_out (&s->card, s->voice);
-#endif
-        s->voice = NULL;
+    if (s->pGstStrmOut)
+    {
+        s->pDrv->pfnCloseOut(s->pDrv, s->pGstStrmOut);
+        s->pGstStrmOut = NULL;
     }
+#else
+    AUD_close_out (&s->card, s->voice);
+    s->voice = NULL;
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-    if (s->dma_running) {
-        if (s->freq) {
-
+    if (s->dma_running)
+    {
+        if (s->freq)
+        {
             s->audio_free = 0;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            int rc;
-            rc = s->pDrv->pfnOpenOut(s->pDrv, &s->voice, "sb16", s, SB_audio_callback, s->freq, 1 << s->fmt_stereo, s->fmt, 0);
+            PDMAUDIOSTREAMCFG streamCfg;
+            streamCfg.uHz           = s->freq;
+            streamCfg.cChannels     = 1 << s->fmt_stereo;
+            streamCfg.enmFormat     = s->fmt;
+            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+
+            int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
+                                         sb16AudioCallback /* fnCallback */, s /* pvContext */,
+                                         &streamCfg,
+                                         &s->pGstStrmOut);
+            AssertRC(rc);
 #else
             audsettings_t as;
             as.freq = s->freq;
@@ -1718,14 +1762,14 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
                 s->voice,
                 "sb16",
                 s,
-                SB_audio_callback,
+                sb16AudioCallback,
                 &as
                 );
-#endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
         }
 
-        control (s, 1);
-        speaker (s, s->speaker);
+        control(s, 1);
+        speaker(s, s->speaker);
     }
 
 #ifdef VBOX
@@ -1742,14 +1786,14 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
     static const uint8_t dsp_read_ports[] = {0x6, 0xa, 0xc, 0xd, 0xe, 0xf};
 
     if (!audio) {
-        LogFlow(("SB16: No audio state\n"));
+        LogFlowFunc(("No audio state\n"));
         return -1;
     }
 
     s = qemu_mallocz (sizeof (*s));
     if (!s) {
-        LogFlow(("SB16: Could not allocate memory for SB16 (%zu bytes)\n",
-               sizeof (*s)));
+        LogFlowFunc(("Could not allocate memory for SB16 (%zu bytes)\n",
+               sizeof (*s));
         return -1;
     }
 
@@ -1771,7 +1815,7 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
     reset_mixer (s);
     s->aux_ts = qemu_new_timer (vm_clock, aux_timer, s);
     if (!s->aux_ts) {
-        LogFlow(("SB16: warning: Could not create auxiliary timer\n"));
+        LogFlowFunc(("warning: Could not create auxiliary timer\n"));
     }
 
     for (i = 0; i < LENOFA (dsp_write_ports); i++) {
@@ -1792,7 +1836,7 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
     s->can_write = 1;
 
     register_savevm ("sb16", 0, 1, SB_save, SB_load, s);
-    AUD_register_card (audio, "sb16");
+    AUD_register_card (audio, "sb16", &s->card);
     return 0;
 }
 
@@ -1874,6 +1918,16 @@ static DECLCALLBACK(void *) sb16QueryInterface (struct PDMIBASE *pInterface,
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     return NULL;
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
+{
+    SB16State *pThis = PDMINS_2_DATA(pDevIns, SB16State *);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
@@ -1991,42 +2045,45 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
 #else
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
 #endif
-        Log(("ac97: No attached driver!\n"));
+        LogFunc(("No attached driver!\n"));
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to attach AC97 LUN #0! rc=%Rrc\n", rc));
         return rc;
     }
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-     s->pDrv->pfnRegisterCard(s->pDrv, "sb16");
-#else
-    AUD_register_card("sb16", &s->card);
-#endif
     legacy_reset(s);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    if (!s->pDrv->pfnIsHostVoiceOutOK(s->pDrv,s->voice))
-#else
-    if (!AUD_is_host_voice_out_ok(s->voice))
-#endif
+    if (!s->pDrv->pfnIsOutputOK(s->pDrv,s->pGstStrmOut))
     {
-        LogRel (("SB16: WARNING: Unable to open PCM OUT!\n"));
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        s->pDrv->pfnCloseOut(s->pDrv, s->voice );
-#else
-        AUD_close_out (&s->card, s->voice);
-#endif
-        s->voice = NULL;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        LogRel(("SB16: WARNING: Unable to open PCM OUT!\n"));
+        s->pDrv->pfnCloseOut(s->pDrv, s->pGstStrmOut );
+        s->pGstStrmOut = NULL;
+
         s->pDrv->pfnInitNull(s->pDrv);
-#else
-        AUD_init_null();
-#endif
+
         PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_("No audio devices could be opened. Selecting the NULL audio backend "
                "with the consequence that no sound is audible"));
     }
+#else
+    AUD_register_card("sb16", &s->card);
+
+    if (!AUD_is_host_voice_out_ok(s->voice))
+    {
+        LogRel (("SB16: WARNING: Unable to open PCM OUT!\n"));
+        AUD_close_out (&s->card, s->voice);
+        s->voice = NULL;
+
+        AUD_init_null();
+
+        PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+            N_("No audio devices could be opened. Selecting the NULL audio backend "
+               "with the consequence that no sound is audible"));
+    }
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+
     return VINF_SUCCESS;
 }
 
@@ -2053,7 +2110,7 @@ const PDMDEVREG g_DeviceSB16 =
     /* pfnConstruct */
     sb16Construct,
     /* pfnDestruct */
-    NULL,
+    sb16Destruct,
     /* pfnRelocate */
     NULL,
     /* pfnMemSetup */

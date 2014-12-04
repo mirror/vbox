@@ -744,6 +744,8 @@ VBoxC_SOURCES = \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 ifdef VBOX_WITH_PDM_AUDIO_DRIVER
  VBoxC_SOURCES += \
+	../Devices/Audio/AudioMixBuffer.cpp \
+	../Devices/Audio/DrvAudioCommon.cpp \
 	src-client/DrvAudioVRDE.cpp
 else
  VBoxC_SOURCES += \

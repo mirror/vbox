@@ -2611,9 +2611,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         AudioSniffer *pAudioSniffer = mAudioSniffer;
         InsertConfigInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);
 #endif
-
         /*
-         * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio
+         * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio.
          */
         BOOL fAudioEnabled = FALSE;
         ComPtr<IAudioAdapter> audioAdapter;
@@ -2629,7 +2628,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 case AudioControllerType_AC97:
                 {
-                    /* default: ICH AC97 */
+                    /* Default: ICH AC97. */
                     InsertConfigNode(pDevices, "ichac97", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
@@ -2639,7 +2638,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
                 case AudioControllerType_SB16:
                 {
-                    /* legacy SoundBlaster16 */
+                    /* Legacy SoundBlaster16. */
                     InsertConfigNode(pDevices, "sb16", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
@@ -2653,7 +2652,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
                 case AudioControllerType_HDA:
                 {
-                    /* Intel HD Audio */
+                    /* Intel HD Audio. */
                     InsertConfigNode(pDevices, "hda", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
@@ -2662,38 +2661,45 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
             }
 
-            /* the Audio driver */
+            /* The audio driver. */
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
-            InsertConfigString(pLunL1, "Driver", "PulseAudio");
-#endif
-
             InsertConfigNode(pLunL0,   "Config", &pCfg);
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            PCFGMNODE pLunL1;
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
+            InsertConfigNode(pLunL1, "Config", &pCfg);
+#endif
             AudioDriverType_T audioDriver;
             hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
             switch (audioDriver)
             {
                 case AudioDriverType_Null:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pLunL1, "Driver", "NullAudio");
+#else
                     InsertConfigString(pCfg, "AudioDriver", "null");
+#endif
                     break;
                 }
 #ifdef RT_OS_WINDOWS
-#ifdef VBOX_WITH_WINMM
+# ifdef VBOX_WITH_WINMM
                 case AudioDriverType_WinMM:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    #error "Port WinMM audio backend!" /** @todo Still needed? */
+#else
                     InsertConfigString(pCfg, "AudioDriver", "winmm");
+#endif
                     break;
                 }
-#endif
+# endif
                 case AudioDriverType_DirectSound:
                 {
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    InsertConfigString(pCfg, "AudioDriver", "DSoundAudio");
+                    InsertConfigString(pLunL1, "Driver", "DSoundAudio");
 #else
                     InsertConfigString(pCfg, "AudioDriver", "dsound");
 #endif
@@ -2703,77 +2709,80 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef RT_OS_SOLARIS
                 case AudioDriverType_SolAudio:
                 {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    #error "Port Solaris audio backend!" /** @todo Port Solaris driver. */
+#else
                     InsertConfigString(pCfg, "AudioDriver", "solaudio");
+#endif
                     break;
                 }
 #endif
-#ifdef RT_OS_LINUX
-# ifdef VBOX_WITH_ALSA
+#ifdef VBOX_WITH_ALSA
                 case AudioDriverType_ALSA:
                 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    InsertConfigString(pCfg, "AudioDriver", "AlsaAudio");
-#else
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pLunL1, "Driver", "AlsaAudio");
+# else
                     InsertConfigString(pCfg, "AudioDriver", "alsa");
-#endif
+# endif
                     break;
                 }
-# endif
-# ifdef VBOX_WITH_PULSE
+#endif
+#ifdef VBOX_WITH_PULSE
                 case AudioDriverType_Pulse:
                 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    InsertConfigString(pCfg, "AudioDriver", "PulseAudio");
-#else
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pLunL1, "Driver", "PulseAudio");
+# else
                     InsertConfigString(pCfg, "AudioDriver", "pulse");
-#endif
+# endif
                     break;
                 }
-# endif
-#endif /* RT_OS_LINUX */
+#endif
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
                 case AudioDriverType_OSS:
                 {
-                    InsertConfigString(pCfg, "AudioDriver", "oss");
-                    break;
-                }
-#endif
-#ifdef RT_OS_FREEBSD
-# ifdef VBOX_WITH_PULSE
-                case AudioDriverType_Pulse:
-                {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    InsertConfigString(pCfg, "AudioDriver", "PulseAudio");
-#else
-                    InsertConfigString(pCfg, "AudioDriver", "pulse");
-#endif
-                    break;
-                }
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    #error "Port OSS audio backend!" /** @todo Port OSS driver. */
+# else
+                    InsertConfigString(pCfg, "AudioDriver", "ossaudio");
 # endif
+                    break;
+                }
 #endif
 #ifdef RT_OS_DARWIN
                 case AudioDriverType_CoreAudio:
                 {
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    InsertConfigString(pLunL1, "Driver", "CoreAudio");
+# else
                     InsertConfigString(pCfg, "AudioDriver", "coreaudio");
+# endif
                     break;
                 }
 #endif
             }
+
             hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
-            InsertConfigString(pCfg, "StreamName", bstr);
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            /* the Audio driver */
-            InsertConfigNode(pInst, "LUN#1", &pLunL0);
-            InsertConfigString(pLunL0, "Driver", "AUDIO");
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
+            /*
+             * The VRDE audio backend driver. This one always is there
+             * and therefore is hardcoded here.
+             */
+            InsertConfigNode(pInst, "LUN#1", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "AUDIO");
+
+            InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
             InsertConfigString(pLunL1, "Driver", "AudioVRDE");
-            InsertConfigNode(pLunL0, "Config", &pCfg);
+
+            InsertConfigNode(pLunL1, "Config", &pCfg);
             InsertConfigString(pCfg, "AudioDriver", "AudioVRDE");
             InsertConfigString(pCfg, "StreamName", bstr);
-            InsertConfigNode(pLunL1, "Config", &pCfg);
-            InsertConfigInteger(pCfg,  "Object", (uintptr_t)mAudioVRDE);
-            InsertConfigInteger(pCfg,  "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
+            InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
+            InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
 
+            /** @todo Add audio video recording driver here. */
 #endif
         }
 

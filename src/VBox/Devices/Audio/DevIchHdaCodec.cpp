@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,11 +23,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+//#define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/vmm/pdmdev.h>
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 #include <VBox/vmm/pdmaudioifs.h>
-#endif
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
@@ -48,10 +46,14 @@ extern "C" {
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /* PRM 5.3.1 */
+/** Codec address mask. */
 #define CODEC_CAD_MASK              0xF0000000
+/** Codec address shift. */
 #define CODEC_CAD_SHIFT             28
 #define CODEC_DIRECT_MASK           RT_BIT(27)
+/** Node ID mask. */
 #define CODEC_NID_MASK              0x07F00000
+/** Node ID shift. */
 #define CODEC_NID_SHIFT             20
 #define CODEC_VERBDATA_MASK         0x000FFFFF
 #define CODEC_VERB_4BIT_CMD         0x000FFFF0
@@ -61,7 +63,7 @@ extern "C" {
 #define CODEC_VERB_16BIT_CMD        0x000F0000
 #define CODEC_VERB_16BIT_DATA       0x0000FFFF
 
-#define CODEC_CAD(cmd) ((cmd) & CODEC_CAD_MASK)
+#define CODEC_CAD(cmd) (((cmd) & CODEC_CAD_MASK) >> CODEC_CAD_SHIFT)
 #define CODEC_DIRECT(cmd) ((cmd) & CODEC_DIRECT_MASK)
 #define CODEC_NID(cmd) ((((cmd) & CODEC_NID_MASK)) >> CODEC_NID_SHIFT)
 #define CODEC_VERBDATA(cmd) ((cmd) & CODEC_VERBDATA_MASK)
@@ -1095,6 +1097,8 @@ static int stac9220Construct(PHDACODEC pThis)
     pThis->u8BSKU = 0x76;
     pThis->u8AssemblyId = 0x80;
     pThis->paNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pThis->cTotalNodes);
+    if (!pThis->paNodes)
+        return VERR_NO_MEMORY;
     pThis->fInReset = false;
 #define STAC9220WIDGET(type) pThis->au8##type##s = g_abStac9220##type##s
     STAC9220WIDGET(Port);
@@ -1163,7 +1167,7 @@ DECLISNODEOFTYPE(Reserved)
  * Misc helpers.
  */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, audmixerctl_t mt)
+static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL mt)
 #else
 static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
 #endif
@@ -1171,23 +1175,37 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
     uint32_t dir = AMPLIFIER_OUT;
     switch (mt)
     {
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        case PDMAUDIOMIXERCTL_VOLUME:
+        case PDMAUDIOMIXERCTL_PCM:
+#else
         case AUD_MIXER_VOLUME:
         case AUD_MIXER_PCM:
+#endif
             dir = AMPLIFIER_OUT;
             break;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        case PDMAUDIOMIXERCTL_LINE_IN:
+#else
         case AUD_MIXER_LINE_IN:
+#endif
             dir = AMPLIFIER_IN;
             break;
+        default:
+            AssertMsgFailed(("Invalid mixer control %ld\n", mt));
+            break;
     }
+
     int mute = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & RT_BIT(7);
     mute |= AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & RT_BIT(7);
     mute >>=7;
     mute &= 0x1;
     uint8_t lVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_LEFT, 0) & 0x7f;
     uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & 0x7f;
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-     /* @todo in SetVolume no passing audmixerctl_in as its not used in DrvAudio.c */
-    pThis->pDrv->pfnSetVolume(pThis->pDrv, &mute, &lVol, &rVol);
+    /** @todo In SetVolume no passing audmixerctl_in as its not used in DrvAudio.cpp. */
+    pThis->pfnSetVolume(pThis->pHDAState, RT_BOOL(mute), lVol, rVol);
 #else
     AUD_set_volume(mt, &mute, &lVol, &rVol);
 #endif
@@ -1218,7 +1236,7 @@ DECLINLINE(void) hdaCodecSetRegisterU16(uint32_t *pu32Reg, uint32_t u32Cmd, uint
 
 static DECLCALLBACK(int) vrbProcUnimplemented(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
-    Log(("vrbProcUnimplemented: cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
+    LogFlowFunc(("cmd(raw:%x: cad:%x, d:%c, nid:%x, verb:%x)\n", cmd,
         CODEC_CAD(cmd), CODEC_DIRECT(cmd) ? 'N' : 'Y', CODEC_NID(cmd), CODEC_VERBDATA(cmd)));
     *pResp = 0;
     return VINF_SUCCESS;
@@ -1239,7 +1257,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1294,7 +1312,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     Assert(CODEC_CAD(cmd) == pThis->id);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1339,16 +1357,18 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     }
     if (CODEC_NID(cmd) == pThis->u8DacLineOut)
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, pAmplifier, AUD_MIXER_VOLUME);
+        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_VOLUME);
 #else
         hdaCodecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
 #endif
+
     if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn) /* Microphone */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, pAmplifier, AUD_MIXER_LINE_IN);
+        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
 #else
         hdaCodecToAudVolume(pAmplifier, AUD_MIXER_LINE_IN);
 #endif
+
     return VINF_SUCCESS;
 }
 
@@ -1357,13 +1377,13 @@ static DECLCALLBACK(int) vrbProcGetParameter(PHDACODEC pThis, uint32_t cmd, uint
     Assert(CODEC_CAD(cmd) == pThis->id);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F00_PARAM_LENGTH);
     if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F00_PARAM_LENGTH)
     {
-        Log(("HdaCodec: invalid F00 parameter %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
+        LogFlowFunc(("invalid F00 parameter %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
     }
     *pResp = pThis->paNodes[CODEC_NID(cmd)].node.au32F00_param[cmd & CODEC_VERB_8BIT_DATA];
@@ -1377,7 +1397,7 @@ static DECLCALLBACK(int) vrbProcGetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1400,7 +1420,7 @@ static DECLCALLBACK(int) vrbProcSetConSelectCtrl(PHDACODEC pThis, uint32_t cmd, 
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1428,7 +1448,7 @@ static DECLCALLBACK(int) vrbProcGetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1456,7 +1476,7 @@ static DECLCALLBACK(int) vrbProcSetPinCtrl(PHDACODEC pThis, uint32_t cmd, uint64
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1487,7 +1507,7 @@ static DECLCALLBACK(int) vrbProcGetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1515,7 +1535,7 @@ static DECLCALLBACK(int) vrbProcSetUnsolicitedEnabled(PHDACODEC pThis, uint32_t 
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1545,7 +1565,7 @@ static DECLCALLBACK(int) vrbProcGetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1565,7 +1585,7 @@ static DECLCALLBACK(int) vrbProcSetPinSense(PHDACODEC pThis, uint32_t cmd, uint6
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1587,13 +1607,13 @@ static DECLCALLBACK(int) vrbProcGetConnectionListEntry(PHDACODEC pThis, uint32_t
     *pResp = 0;
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     Assert((cmd & CODEC_VERB_8BIT_DATA) < CODECNODE_F02_PARAM_LENGTH);
     if ((cmd & CODEC_VERB_8BIT_DATA) >= CODECNODE_F02_PARAM_LENGTH)
     {
-        Log(("HdaCodec: access to invalid F02 index %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
+        LogFlowFunc(("access to invalid F02 index %d\n", (cmd & CODEC_VERB_8BIT_DATA)));
         return VINF_SUCCESS;
     }
     *pResp = pThis->paNodes[CODEC_NID(cmd)].node.au32F02_param[cmd & CODEC_VERB_8BIT_DATA];
@@ -1607,7 +1627,7 @@ static DECLCALLBACK(int) vrbProcGetProcessingState(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1623,7 +1643,7 @@ static DECLCALLBACK(int) vrbProcSetProcessingState(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1639,7 +1659,7 @@ static DECLCALLBACK(int) vrbProcGetDigitalConverter(PHDACODEC pThis, uint32_t cm
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1656,7 +1676,7 @@ static int codecSetDigitalConverter(PHDACODEC pThis, uint32_t cmd, uint8_t u8Off
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1686,7 +1706,7 @@ static DECLCALLBACK(int) vrbProcGetSubId(PHDACODEC pThis, uint32_t cmd, uint64_t
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     if (CODEC_NID(cmd) == 1 /* AFG */)
@@ -1702,7 +1722,7 @@ static int codecSetSubIdX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg;
@@ -1750,14 +1770,14 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, uint32_t cmd, uint64_t *p
         && pThis->pfnCodecNodeReset)
     {
         uint8_t i;
-        Log(("HdaCodec: enters reset\n"));
+        LogFlowFunc(("enters reset\n"));
         Assert(pThis->pfnCodecNodeReset);
         for (i = 0; i < pThis->cTotalNodes; ++i)
         {
             pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
         }
         pThis->fInReset = false;
-        Log(("HdaCodec: exits reset\n"));
+        LogFlowFunc(("exits reset\n"));
     }
     *pResp = 0;
     return VINF_SUCCESS;
@@ -1770,7 +1790,7 @@ static DECLCALLBACK(int) vrbProcGetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1810,7 +1830,7 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1876,7 +1896,7 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1899,7 +1919,7 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1926,7 +1946,7 @@ static DECLCALLBACK(int) vrbProcGetConverterFormat(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1947,7 +1967,7 @@ static DECLCALLBACK(int) vrbProcSetConverterFormat(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1969,7 +1989,7 @@ static DECLCALLBACK(int) vrbProcGetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -1989,7 +2009,7 @@ static DECLCALLBACK(int) vrbProcSetEAPD_BTLEnabled(PHDACODEC pThis, uint32_t cmd
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
 
@@ -2015,7 +2035,7 @@ static DECLCALLBACK(int) vrbProcGetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -2031,7 +2051,7 @@ static DECLCALLBACK(int) vrbProcSetVolumeKnobCtrl(PHDACODEC pThis, uint32_t cmd,
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
@@ -2051,7 +2071,7 @@ static DECLCALLBACK(int) vrbProcGetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -2068,7 +2088,7 @@ static DECLCALLBACK(int) vrbProcSetGPIOUnsolisted(PHDACODEC pThis, uint32_t cmd,
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
@@ -2088,7 +2108,7 @@ static DECLCALLBACK(int) vrbProcGetConfig(PHDACODEC pThis, uint32_t cmd, uint64_
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     *pResp = 0;
@@ -2113,7 +2133,7 @@ static int codecSetConfigX(PHDACODEC pThis, uint32_t cmd, uint8_t u8Offset)
     Assert(CODEC_NID(cmd) < pThis->cTotalNodes);
     if (CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
-        Log(("HdaCodec: invalid node address %d\n", CODEC_NID(cmd)));
+        LogFlowFunc(("invalid node address %d\n", CODEC_NID(cmd)));
         return VINF_SUCCESS;
     }
     uint32_t *pu32Reg = NULL;
@@ -2218,14 +2238,14 @@ static int codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR 
 {
     Assert(CODEC_CAD(cmd) == pThis->id);
     if (hdaCodecIsReservedNode(pThis, CODEC_NID(cmd)))
-        Log(("HdaCodec: cmd %x was addressed to reserved node\n", cmd));
+        LogFlowFunc(("cmd %x was addressed to reserved node\n", cmd));
 
     if (   CODEC_VERBDATA(cmd) == 0
         || CODEC_NID(cmd) >= pThis->cTotalNodes)
     {
         *pfn = vrbProcUnimplemented;
         /// @todo r=michaln: There needs to be a counter to avoid log flooding (see e.g. DevRTC.cpp)
-        Log(("HdaCodec: cmd %x was ignored\n", cmd));
+        LogFlowFunc(("cmd %x was ignored\n", cmd));
         return VINF_SUCCESS;
     }
 
@@ -2239,10 +2259,11 @@ static int codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR 
     }
 
     *pfn = vrbProcUnimplemented;
-    Log(("HdaCodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
+    LogFlowFunc(("callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 static void pi_callback(void *opaque, int avail)
 {
     PHDACODEC pThis = (PHDACODEC)opaque;
@@ -2254,7 +2275,7 @@ static void po_callback(void *opaque, int avail)
     PHDACODEC pThis = (PHDACODEC)opaque;
     pThis->pfnTransfer(pThis, PO_INDEX, avail);
 }
-
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 /*
  * APIs exposed to DevHDA.
@@ -2270,58 +2291,55 @@ static void po_callback(void *opaque, int avail)
  *       format) before enabling.
  */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-int hdaCodecOpenVoice(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, uint32_t uFrequency, uint32_t cChannels,
-                      audfmt_e fmt, uint32_t Endian)
+int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIOSTREAMCFG pCfg)
 #else
-int hdaCodecOpenVoice(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings)
+int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings)
 #endif
 {
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
     int rc;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    Assert(pThis);
-    if (!pThis)
-        return -1;
-#else
-    Assert(pThis && pAudioSettings);
-    if (   !pThis
-        || !pAudioSettings)
-        return -1;
-#endif
+
     switch (enmSoundSource)
     {
         case PI_INDEX:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             /* old and new stream settings are not same. Then only call open */
-
             //if (!hdaCodecCompareAudioSettings(&(pThis->SwVoiceIn)->info, pAudioSettings) && !pThis->SwVoiceIn)
-                rc = pThis->pDrv->pfnOpenIn(pThis->pDrv, &pThis->SwVoiceIn, "hda.in", pThis, pi_callback, uFrequency,
-                                            cChannels, fmt, Endian);
+                rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in",
+                                      PDMAUDIORECSOURCE_LINE_IN, pCfg);
 #else
-            pThis->SwVoiceIn = AUD_open_in(&pThis->card, pThis->SwVoiceIn, "hda.in", pThis, pi_callback, pAudioSettings);
+                pThis->SwVoiceIn = AUD_open_in(&pThis->card, pThis->SwVoiceIn, "hda.in", pThis, pi_callback, pAudioSettings);
+                rc = pThis->SwVoiceIn ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 #endif
-            rc = pThis->SwVoiceIn ? 0 : 1;
             break;
+
         case PO_INDEX:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            rc = pThis->pDrv->pfnOpenOut(pThis->pDrv, &pThis->SwVoiceOut, "hda.out", pThis, po_callback, uFrequency,
-                                         cChannels, fmt, Endian);
+            rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
 #else
             pThis->SwVoiceOut = AUD_open_out(&pThis->card, pThis->SwVoiceOut, "hda.out", pThis, po_callback, pAudioSettings);
+            rc = pThis->SwVoiceOut ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 #endif
-            rc = pThis->SwVoiceOut ? 0 : 1;
             break;
-        default:
-            return -1;
-    }
-    if (!rc)
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        LogRel(("HdaCodec: Can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", uFrequency));
-#else
-        LogRel(("HdaCodec: Can't open %s fmt(freq: %d)\n", enmSoundSource == PI_INDEX? "in" : "out", pAudioSettings->freq));
-#endif
+        case MC_INDEX:
+            /* old and new stream settings are not same. Then only call open */
+            //if (!hdaCodecCompareAudioSettings(&(pThis->SwVoiceIn)->info, pAudioSettings) && !pThis->SwVoiceIn)
+                rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc",
+                                      PDMAUDIORECSOURCE_MIC, pCfg);
+            break;
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+
+        default:
+            AssertMsgFailed(("Index %ld not implemented\n", enmSoundSource));
+            rc = VERR_NOT_IMPLEMENTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
 
 int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
 {
@@ -2333,7 +2351,6 @@ int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
                          0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
     return VINF_SUCCESS;
 }
-
 
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
@@ -2390,14 +2407,14 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
      */
     if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_VOLUME);
 #else
         hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
 #endif
     else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_VOLUME);
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 #else
         hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
     hdaCodecToAudVolume(&pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
@@ -2406,23 +2423,32 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     return VINF_SUCCESS;
 }
 
-
 int hdaCodecDestruct(PHDACODEC pThis)
 {
-    RTMemFree(pThis->paNodes);
-    pThis->paNodes = NULL;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    if (pThis->paNodes)
+    {
+        RTMemFree(pThis->paNodes);
+        pThis->paNodes = NULL;
+    }
+
     return VINF_SUCCESS;
 }
 
-
-int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PCFGMNODE pCfg)
+int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
+                      uint16_t uLUN, PCFGMNODE pCfg)
 {
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+
+    pThis->id        = uLUN;
     pThis->paVerbs   = &g_aCodecVerbs[0];
     pThis->cVerbs    = RT_ELEMENTS(g_aCodecVerbs);
     pThis->pfnLookup = codecLookup;
     int rc = stac9220Construct(pThis);
     AssertRC(rc);
-
 
     /* common root node initializers */
     pThis->paNodes[0].node.au32F00_param[0] = CODEC_MAKE_F00_00(pThis->u16VendorId, pThis->u16DeviceId);
@@ -2432,9 +2458,13 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PCFGMNODE pCfg)
     pThis->paNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->paNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
 
-    /// @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    pThis->pDrv->pfnRegisterCard(pThis->pDrv, "ICH0");
+    /* 44.1 kHz. */
+    PDMAUDIOSTREAMCFG as;
+    as.uHz           = 44100;
+    as.cChannels     = 2;
+    as.enmFormat     = AUD_FMT_S16;
+    as.enmEndianness = PDMAUDIOHOSTENDIANESS;
 #else
     AUD_register_card("ICH0", &pThis->card);
 
@@ -2447,101 +2477,64 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PCFGMNODE pCfg)
 #endif
 
     pThis->paNodes[1].node.au32F00_param[0xA] = CODEC_F00_0A_16_BIT;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    hdaCodecOpenVoice(pThis, PI_INDEX, 44100, 2, AUD_FMT_S16, 0);
-    hdaCodecOpenVoice(pThis, PO_INDEX, 44100, 2, AUD_FMT_S16, 0);
-#else
-    hdaCodecOpenVoice(pThis, PI_INDEX, &as);
-    hdaCodecOpenVoice(pThis, PO_INDEX, &as);
-#endif
+
+    hdaCodecOpenStream(pThis, PI_INDEX, &as);
+    hdaCodecOpenStream(pThis, PO_INDEX, &as);
 
     pThis->paNodes[1].node.au32F00_param[0xA] |= CODEC_F00_0A_44_1KHZ;
 
     uint8_t i;
     Assert(pThis->paNodes);
     Assert(pThis->pfnCodecNodeReset);
+
     for (i = 0; i < pThis->cTotalNodes; ++i)
-    {
         pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
-    }
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_VOLUME);
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 #else
     hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     hdaCodecToAudVolume(&pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
-#endif
 
-    /* If no host voices were created, then fallback to nul audio. */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    if (!pThis->pDrv->pfnIsHostVoiceInOK(pThis->pDrv, pThis->SwVoiceIn))
-        LogRel (("HDA: pfnIsHostVoiceInOK WARNING: Unable to open PCM IN!\n"));
-    if (!pThis->pDrv->pfnIsHostVoiceOutOK(pThis->pDrv, pThis->SwVoiceOut))
-        LogRel (("HDA: pfnIsHostVoiceOutOK WARNING: Unable to open PCM OUT!\n"));
-#else
     if (!AUD_is_host_voice_in_ok(pThis->SwVoiceIn))
         LogRel (("HDA: WARNING: Unable to open PCM IN!\n"));
     if (!AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
         LogRel (("HDA: WARNING: Unable to open PCM OUT!\n"));
-#endif
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    if (   !pThis->pDrv->pfnIsHostVoiceInOK(pThis->pDrv, pThis->SwVoiceIn)
-        && !pThis->pDrv->pfnIsHostVoiceOutOK(pThis->pDrv, pThis->SwVoiceOut))
-#else
     if (   !AUD_is_host_voice_in_ok(pThis->SwVoiceIn)
         && !AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-#endif
     {
-        /* Was not able initialize *any* voice. Select the NULL audio driver instead */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        pThis->pDrv->pfnCloseIn(pThis->pDrv, pThis->SwVoiceIn);
-        pThis->pDrv->pfnCloseOut(pThis->pDrv, pThis->SwVoiceOut);
-#else
         AUD_close_in(&pThis->card, pThis->SwVoiceIn);
         AUD_close_out(&pThis->card, pThis->SwVoiceOut);
-#endif
+
         pThis->SwVoiceOut = NULL;
         pThis->SwVoiceIn = NULL;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        pThis->pDrv->pfnInitNull(pThis->pDrv);
-#else
+
         AUD_init_null ();
-#endif
 
         PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_ ("No audio devices could be opened. Selecting the NULL audio backend "
                 "with the consequence that no sound is audible"));
     }
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    else if (   !pThis->pDrv->pfnIsHostVoiceInOK(pThis->pDrv, pThis->SwVoiceIn)
-             || !pThis->pDrv->pfnIsHostVoiceOutOK(pThis->pDrv, pThis->SwVoiceOut))
-
-#else
     else if (   !AUD_is_host_voice_in_ok(pThis->SwVoiceIn)
              || !AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-#endif
     {
         char   szMissingVoices[128];
         size_t len = 0;
- #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        if (!pThis->pDrv->pfnIsHostVoiceInOK(pThis->pDrv, pThis->SwVoiceIn))
-            len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
-        if (!pThis->pDrv->pfnIsHostVoiceOutOK(pThis->pDrv, pThis->SwVoiceOut))
-            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
- #else
+
         if (!AUD_is_host_voice_in_ok(pThis->SwVoiceIn))
             len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
         if (!AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
             len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
 
- #endif
         PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
             N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
                 "output or depending on audio input may hang. Make sure your host audio device "
                 "is working properly. Check the logfile for error messages of the audio "
                 "subsystem"), szMissingVoices);
     }
+#endif
 
     return VINF_SUCCESS;
 }

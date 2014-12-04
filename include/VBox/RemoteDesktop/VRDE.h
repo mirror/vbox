@@ -93,7 +93,7 @@ typedef uint32_t VRDEAUDIOFORMAT;
 typedef struct VRDEAUDIOINBEGIN
 {
     VRDEAUDIOFORMAT fmt; /* Actual format of data, which will be sent in VRDE_AUDIOIN_DATA events. */
-} VRDEAUDIOINBEGIN;
+} VRDEAUDIOINBEGIN, *PVRDEAUDIOINBEGIN;
 
 
 /*

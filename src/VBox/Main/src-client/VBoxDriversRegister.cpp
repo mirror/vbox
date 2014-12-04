@@ -70,8 +70,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &VMMDev::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
+
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvAudioVRDE);
+    rc = pCallbacks->pfnRegister(pCallbacks, &AudioVRDE::DrvReg);
 #else
     rc = pCallbacks->pfnRegister(pCallbacks, &AudioSniffer::DrvReg);
 #endif
