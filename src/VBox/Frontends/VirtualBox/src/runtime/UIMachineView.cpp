@@ -280,25 +280,33 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
 {
+    /* Prepare corresponding viewport part: */
+    QRect rect;
+
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     if (dScaleFactor == 1)
     {
-        /* Just update corresponding viewport part: */
-        viewport()->update(iX - contentsX(), iY - contentsY(), iWidth, iHeight);
+        /* Adjust corresponding viewport part: */
+        rect.moveTo(iX - contentsX(),
+                    iY - contentsY());
+        rect.setSize(QSize(iWidth,
+                           iHeight));
     }
     else
     {
-        /* Calculate corresponding viewport part: */
-        QRect rect(iX * dScaleFactor - 1 - contentsX(),
-                   iY * dScaleFactor - 1 - contentsY(),
-                   iWidth  * dScaleFactor + 2 * dScaleFactor + 1,
-                   iHeight * dScaleFactor + 2 * dScaleFactor + 1);
-        /* Limit the resulting part by the viewport rectangle: */
-        rect &= viewport()->rect();
-        /* Update corresponding viewport part: */
-        viewport()->update(rect);
+        /* Adjust corresponding viewport part: */
+        rect.moveTo(iX * dScaleFactor - 1 - contentsX(),
+                    iY * dScaleFactor - 1 - contentsY());
+        rect.setSize(QSize(iWidth  * dScaleFactor + 2 * dScaleFactor + 1,
+                           iHeight * dScaleFactor + 2 * dScaleFactor + 1));
     }
+
+    /* Limit the resulting part by the viewport rectangle: */
+    rect &= viewport()->rect();
+
+    /* Update corresponding viewport part: */
+    viewport()->update(rect);
 }
 
 void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
