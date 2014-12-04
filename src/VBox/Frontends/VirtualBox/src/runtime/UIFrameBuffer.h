@@ -212,6 +212,9 @@ public:
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+    /** Returns whether frame-buffer should use unscaled HiDPI output. */
+    bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
+
     /** Return HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** Define HiDPI frame-buffer optimization type: */
@@ -242,6 +245,7 @@ protected:
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
+                              bool fUseUnscaledHiDPIOutput,
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
 
@@ -307,6 +311,8 @@ protected:
 
     /** @name HiDPI screens related variables.
      * @{ */
+    /** Holds whether frame-buffer should use unscaled HiDPI output. */
+    bool m_fUseUnscaledHiDPIOutput;
     /** Holds HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType m_hiDPIOptimizationType;
     /** Holds backing scale factor used by HiDPI frame-buffer. */

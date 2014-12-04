@@ -393,6 +393,9 @@ public:
         bool usePixelFormatAYUV(const QString &strID);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+        /** Returns whether Runtime UI should use unscaled HiDPI output. */
+        bool useUnscaledHiDPIOutput(const QString &strID);
+
         /** Returns Runtime UI HiDPI optimization type. */
         HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);
 

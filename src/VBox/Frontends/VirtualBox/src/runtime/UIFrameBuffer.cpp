@@ -62,6 +62,7 @@ UIFrameBuffer::UIFrameBuffer()
     , m_fUnused(false)
     , m_fAutoEnabled(false)
     , m_dScaleFactor(gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()))
+    , m_fUseUnscaledHiDPIOutput(gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
 {
@@ -816,6 +817,13 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
     /* Prepare the 'paint' rectangle: */
     QRect paintRect = pEvent->rect();
 
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
+        paintRect.setSize(paintRect.size() * backingScaleFactor());
+    }
+
     /* Scaled image is NULL by default: */
     QImage scaledImage;
     /* But if scaled-factor is set and current image is NOT null: */
@@ -841,13 +849,20 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  hiDPIOptimizationType(), backingScaleFactor());
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 }
 
 void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 {
     /* Prepare the 'paint' rectangle: */
     QRect paintRect = pEvent->rect();
+
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
+        paintRect.setSize(paintRect.size() * backingScaleFactor());
+    }
 
     /* Scaled image is NULL by default: */
     QImage scaledImage;
@@ -909,7 +924,7 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
             /* Draw image rectangle: */
             drawImageRect(painter, sourceImage, rect,
                           m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                          hiDPIOptimizationType(), backingScaleFactor());
+                          useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
         }
     }
 }
@@ -917,6 +932,7 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 /* static */
 void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                   int iContentsShiftX, int iContentsShiftY,
+                                  bool fUseUnscaledHiDPIOutput,
                                   HiDPIOptimizationType hiDPIOptimizationType,
                                   double dBackingScaleFactor)
 {
@@ -942,7 +958,7 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     {
         /* Should we
          * perform logical HiDPI scaling and optimize it for performance? */
-        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
             subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
@@ -952,8 +968,9 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
 # ifdef Q_WS_MAC
 #  ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
+         * do not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
-        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
@@ -964,6 +981,10 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
 
     /* Which point we should draw corresponding sub-pixmap? */
     QPoint paintPoint = rect.topLeft();
+
+    /* Take the backing-scale-factor into account: */
+    if (fUseUnscaledHiDPIOutput && dBackingScaleFactor > 1.0)
+        paintPoint /= dBackingScaleFactor;
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
