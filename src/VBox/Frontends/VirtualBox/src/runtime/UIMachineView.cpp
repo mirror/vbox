@@ -184,6 +184,16 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            newSize *= dBackingScaleFactor;
+    }
+#endif /* Q_WS_MAC */
+
     /* Take the scale-factor into account: */
     newSize /= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
@@ -301,6 +311,19 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
         rect.setSize(QSize(iWidth  * dScaleFactor + 2 * dScaleFactor + 1,
                            iHeight * dScaleFactor + 2 * dScaleFactor + 1));
     }
+
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+        {
+            rect.moveTo(rect.topLeft() / dBackingScaleFactor - QPoint(1, 1));
+            rect.setSize(rect.size() / dBackingScaleFactor + QSize(2, 2));
+        }
+    }
+#endif /* Q_WS_MAC */
 
     /* Limit the resulting part by the viewport rectangle: */
     rect &= viewport()->rect();
@@ -668,6 +691,16 @@ QSize UIMachineView::sizeHint() const
     /* Get frame-buffer size-hint: */
     QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
 
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            size /= dBackingScaleFactor;
+    }
+#endif /* Q_WS_MAC */
+
     /* Take the scale-factor into account: */
     size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
@@ -750,6 +783,16 @@ QSize UIMachineView::guestSizeHint()
     /* Invent the default if necessary: */
     if (!size.isValid())
         size = QSize(800, 600);
+
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            size /= dBackingScaleFactor;
+    }
+#endif /* Q_WS_MAC */
 
     /* Take the scale-factor into account: */
     size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
@@ -858,6 +901,16 @@ void UIMachineView::updateSliders()
     QSize m = maximumViewportSize();
 
     QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
+
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            v /= dBackingScaleFactor;
+    }
+#endif /* Q_WS_MAC */
 
     /* Take the scale-factor into account: */
     v *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());

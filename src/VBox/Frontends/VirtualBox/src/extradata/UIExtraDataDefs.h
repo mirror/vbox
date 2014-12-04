@@ -206,6 +206,8 @@ namespace UIExtraDataDefs
         /** Holds whether 2D acceleration should use AYUV pixel format. */
         extern const char* GUI_Accelerate2D_PixformatAYUV;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+        /** Holds whether Runtime UI should use unscaled HiDPI output. */
+        extern const char* GUI_HiDPI_UnscaledOutput;
         /** Holds Runtime UI HiDPI optimization type. */
         extern const char* GUI_HiDPI_Optimization;
         /** Holds whether mini-toolbar is enabled for full and seamless screens. */

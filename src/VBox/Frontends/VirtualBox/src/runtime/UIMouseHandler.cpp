@@ -969,6 +969,16 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
 
+#ifdef Q_WS_MAC
+            /* Take the backing-scale-factor into account: */
+            if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+            {
+                const double dBackingScaleFactor = darwinBackingScaleFactor(m_windows.value(uScreenId));
+                if (dBackingScaleFactor > 1.0)
+                    cpnt *= dBackingScaleFactor;
+            }
+#endif /* Q_WS_MAC */
+
             /* Post absolute mouse-event into guest: */
             mouse().PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);
             return true;
