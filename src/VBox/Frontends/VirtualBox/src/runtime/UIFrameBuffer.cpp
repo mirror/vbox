@@ -813,6 +813,9 @@ void UIFrameBuffer::cleanupConnections()
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
 {
+    /* Prepare the 'paint' rectangle: */
+    QRect paintRect = pEvent->rect();
+
     /* Scaled image is NULL by default: */
     QImage scaledImage;
     /* But if scaled-factor is set and current image is NOT null: */
@@ -822,13 +825,13 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
         /* And scaling the image to predefined scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
-    /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
+    /* Make sure paint-rectangle is within the image boundary: */
+    paintRect = paintRect.intersected(sourceImage.rect());
     if (paintRect.isEmpty())
         return;
 
@@ -843,6 +846,9 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
 
 void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 {
+    /* Prepare the 'paint' rectangle: */
+    QRect paintRect = pEvent->rect();
+
     /* Scaled image is NULL by default: */
     QImage scaledImage;
     /* But if scaled-factor is set and current image is NOT null: */
@@ -852,13 +858,13 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
         /* And scaling the image to predefined scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
-    /* Get rectangle to paint: */
-    QRect paintRect = pEvent->rect().intersected(sourceImage.rect()).intersected(m_pMachineView->viewport()->geometry());
+    /* Make sure paint-rectangle is within the image boundary: */
+    paintRect = paintRect.intersected(sourceImage.rect());
     if (paintRect.isEmpty())
         return;
 
@@ -934,23 +940,33 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     /* If HiDPI 'backing scale factor' defined: */
     if (dBackingScaleFactor > 1.0)
     {
-        /* Should we optimize HiDPI output for performance? */
+        /* Should we
+         * perform logical HiDPI scaling and optimize it for performance? */
         if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
             subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        }
+
 # ifdef Q_WS_MAC
 #  ifdef VBOX_GUI_WITH_HIDPI
+        /* Should we
+         * perform logical HiDPI scaling and optimize it for performance? */
+        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+        }
 #  endif /* VBOX_GUI_WITH_HIDPI */
 # endif /* Q_WS_MAC */
-        }
     }
 
+    /* Which point we should draw corresponding sub-pixmap? */
+    QPoint paintPoint = rect.topLeft();
+
     /* Draw sub-pixmap: */
-    painter.drawPixmap(rect.x(), rect.y(), subPixmap);
+    painter.drawPixmap(paintPoint, subPixmap);
 #else /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
     /* If HiDPI 'backing scale factor' defined: */
     if (dBackingScaleFactor > 1.0)
