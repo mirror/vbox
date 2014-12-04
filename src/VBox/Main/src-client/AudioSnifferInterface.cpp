@@ -26,6 +26,12 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+#include <VBox/log.h>
+
 //
 // defines
 //

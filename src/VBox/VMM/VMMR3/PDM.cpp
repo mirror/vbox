@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@
  * Devices register themselves when the module containing them is loaded.  PDM
  * will call the entry point 'VBoxDevicesRegister' when loading a device module.
  * The device module will then use the supplied callback table to check the VMM
- * version and to register its devices.  Each device have an unique (for the
+ * version and to register its devices.  Each device has an unique (for the
  * configured VM) name.  The name is not only used in PDM but also in CFGM (to
  * organize device and device instance settings) and by anyone who wants to talk
  * to a specific device instance.
@@ -51,7 +51,7 @@
  *
  * Some devices are trusted devices, most are not.  The trusted devices are an
  * integrated part of the VM and can obtain the VM handle from their device
- * instance handles, thus enabling them to call any VM api.  Untrusted devices
+ * instance handles, thus enabling them to call any VM API.  Untrusted devices
  * can only use the callbacks provided during device instantiation.
  *
  * The main purpose in having DevHlps rather than just giving all the devices
@@ -63,8 +63,8 @@
  *
  * A device can provide a ring-0 and/or a raw-mode context extension to improve
  * the VM performance by handling exits and traps (respectively) without
- * requiring context switches (to ring-3).  Callbacks for MMIO and I/O ports can
- * needs to be registered specifically for the additional contexts for this to
+ * requiring context switches (to ring-3).  Callbacks for MMIO and I/O ports
+ * need to be registered specifically for the additional contexts for this to
  * make sense.  Also, the device has to be trusted to be loaded into R0/RC
  * because of the extra privilege it entails.  Note that raw-mode code and data
  * will be subject to relocation.
@@ -103,7 +103,7 @@
  *
  * The way USB devices work differs greatly from other devices though since they
  * aren't attaches directly to the PCI/ISA/whatever system buses but via a
- * USB host control (OHCI, UHCI or EHCI).  USB devices handles USB requests
+ * USB host control (OHCI, UHCI or EHCI).  USB devices handle USB requests
  * (URBs) and does not register I/O ports, MMIO ranges or PCI bus
  * devices/functions.
  *
@@ -119,7 +119,7 @@
  * For instance take a DVD/CD drive.  This can be connected to a SCSI
  * controller, an ATA controller or a SATA controller.  The basics of the DVD/CD
  * drive implementation remains the same - eject, insert, read, seek, and such.
- * (For the scsi case, you might wanna speak SCSI directly to, but that can of
+ * (For the scsi SCSCI, you might want to speak SCSI directly to, but that can of
  * course be fixed - see SCSI passthru.)  So, it
  * makes much sense to have a generic CD/DVD driver which implements this.
  *
@@ -135,10 +135,10 @@
  * the DVD/CD Driver will have a ISO, HostDVD or RAW (media) Driver attached.
  *
  * It is possible to configure many levels of drivers inserting filters, loggers,
- * or whatever you desire into the chain.  We're using this for network sniffing
+ * or whatever you desire into the chain.  We're using this for network sniffing,
  * for instance.
  *
- * The drivers are loaded in a similar manner to that of the device, namely by
+ * The drivers are loaded in a similar manner to that of a device, namely by
  * iterating a keyspace in CFGM, load the modules listed there and call
  * 'VBoxDriversRegister' with a callback table.
  *
@@ -147,14 +147,14 @@
  *
  * @section sec_pdm_ifs     Interfaces
  *
- * The pluggable drivers and devices exposes one standard interface (callback
+ * The pluggable drivers and devices expose one standard interface (callback
  * table) which is used to construct, destruct, attach, detach,( ++,) and query
  * other interfaces. A device will query the interfaces required for it's
  * operation during init and hot-plug.  PDM may query some interfaces during
  * runtime mounting too.
  *
  * An interface here means a function table contained within the device or
- * driver instance data. Its method are invoked with the function table pointer
+ * driver instance data. Its methods are invoked with the function table pointer
  * as the first argument and they will calculate the address of the device or
  * driver instance data from it. (This is one of the aspects which *might* have
  * been better done in C++.)

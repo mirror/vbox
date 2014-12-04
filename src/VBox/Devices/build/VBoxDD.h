@@ -118,6 +118,7 @@ extern const PDMDRVREG g_DrvNetShaper;
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+extern const PDMDRVREG g_DrvHostNullAudio;
 # if defined(RT_OS_WINDOWS)
 extern const PDMDRVREG g_DrvHostDSound;
 # endif

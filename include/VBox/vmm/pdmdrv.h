@@ -188,7 +188,7 @@ typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
 /**
  * Attach command.
  *
- * This is called to let the drive attach to a driver at runtime.  This is not
+ * This is called to let the driver attach to a driver at runtime.  This is not
  * called during VM construction, the driver constructor have to do this by
  * calling PDMDrvHlpAttach.
  *
