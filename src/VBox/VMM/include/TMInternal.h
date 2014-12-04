@@ -320,18 +320,17 @@ typedef TMCPULOADSTATE *PTMCPULOADSTATE;
  * TSC mode.
  *
  * The main modes of how TM implements the TSC clock (TMCLOCK_TSC).
- * @todo r=bird: s/TMMODE/TMTSCMODE/g
  */
-typedef enum TMMODE
+typedef enum TMTSCMODE
 {
     /** The guest TSC is an emulated virtual TSC. */
-    TMMODE_VIRT_TSC_EMULATED = 1,
+    TMTSCMODE_VIRT_TSC_EMULATED = 1,
     /** The guest TSC is an offset of the real TSC. */
-    TMMODE_REAL_TSC_OFFSET,
+    TMTSCMODE_REAL_TSC_OFFSET,
     /** The guest TSC is dynamically derived through emulation or offsetting. */
-    TMMODE_DYNAMIC
-} TMMODE;
-AssertCompileSize(TMMODE, sizeof(uint32_t));
+    TMTSCMODE_DYNAMIC
+} TMTSCMODE;
+AssertCompileSize(TMTSCMODE, sizeof(uint32_t));
 
 
 /**
@@ -353,9 +352,8 @@ typedef struct TM
     RTUINT                      offVM;
 
     /** The current TSC mode of the VM.
-     *  Config variable: Mode (string)
-     * @todo r=bird: s/enmMode/enmTscMode/g */
-    TMMODE                      enmMode;
+     *  Config variable: Mode (string). */
+    TMTSCMODE                   enmTSCMode;
     /** Whether the TSC is tied to the execution of code.
      * Config variable: TSCTiedToExecution (bool) */
     bool                        fTSCTiedToExecution;
@@ -369,8 +367,8 @@ typedef struct TM
 
     /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
-     * The config variable implies @c enmMode would be
-     * TMMODE_VIRT_TSC_EMULATED. */
+     * The config variable implies @c enmTSCMode would be
+     * TMTSCMODE_VIRT_TSC_EMULATED. */
     uint64_t                    cTSCTicksPerSecond;
     /** The TSC difference introduced by pausing the VM. */
     uint64_t                    offTSCPause;
