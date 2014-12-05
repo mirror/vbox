@@ -555,6 +555,20 @@ typedef struct SUPDRVSESSION
 
 
 /**
+ * The TSC delta synchronization struct. rounded to cache line size.
+ */
+typedef union SUPTSCDELTASYNC
+{
+    /** The synchronization variable, holds values GIP_TSC_DELTA_SYNC_*. */
+    volatile uint32_t   u;
+    /** Padding to cache line size. */
+    uint8_t             u8Padding[64];
+} SUPTSCDELTASYNC;
+AssertCompileSize(SUPTSCDELTASYNC, 64);
+typedef SUPTSCDELTASYNC *PSUPTSCDELTASYNC;
+
+
+/**
  * Device extension.
  */
 typedef struct SUPDRVDEVEXT
@@ -678,8 +692,30 @@ typedef struct SUPDRVDEVEXT
     int32_t                         cSessions;
     /** @} */
 
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
     /** @name TSC-delta measurement.
+     *  @{ */
+    /** TSC reading during start of TSC frequency refinement phase. */
+    uint64_t                        u64TscAnchor;
+    /** Timestamp (in nanosec) during start of TSC frequency refinement phase. */
+    uint64_t                        u64NanoTSAnchor;
+    /** Pointer to the timer used to refine the TSC frequency. */
+    PRTTIMER                        pTscRefineTimer;
+    /** Pointer to the TSC delta sync. struct. */
+    void                           *pvTscDeltaSync;
+    /** The TSC delta measurement initiator Cpu Id. */
+    RTCPUID volatile                idTscDeltaInitiator;
+    /** Number of online/offline events, incremented each time a CPU goes online
+     *  or offline. */
+    uint32_t volatile               cMpOnOffEvents;
+    /** Aligned pointer to the TSC delta sync. struct. */
+    PSUPTSCDELTASYNC                pTscDeltaSync;
+    /** Whether the host OS has already normalized the hardware TSC deltas across
+     *  CPUs. */
+    bool                            fOsTscDeltasInSync;
+    /** @}  */
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /** @name TSC-delta measurement thread.
      *  @{ */
     /** Spinlock protecting enmTscDeltaState. */
     RTSPINLOCK                      hTscDeltaSpinlock;
