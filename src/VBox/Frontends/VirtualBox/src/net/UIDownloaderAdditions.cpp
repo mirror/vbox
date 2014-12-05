@@ -63,7 +63,7 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     /* Prepare source/target: */
     const QString &strName = QString("VBoxGuestAdditions_%1.iso").arg(vboxGlobal().vboxVersionStringNormalized());
     const QString &strSource = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + strName;
-    const QString &strTarget = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(strName);
+    const QString &strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strName);
 
     /* Set source/target: */
     setSource(strSource);

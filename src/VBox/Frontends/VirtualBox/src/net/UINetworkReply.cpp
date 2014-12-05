@@ -206,7 +206,7 @@ void UINetworkReplyPrivateThread::run()
 /* static */
 QString UINetworkReplyPrivateThread::fullCertificateFileName()
 {
-    const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().virtualBox().GetHomeFolder()));
+    const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().homeFolder()));
     return QDir::toNativeSeparators(homeDir.absoluteFilePath(m_strCertificateFileName));
 }
 

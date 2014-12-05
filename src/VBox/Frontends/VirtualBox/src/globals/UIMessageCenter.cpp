@@ -2522,7 +2522,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     /* For OSE version we have to check if it present first: */
     QString strUserManualFileName1 = vboxGlobal().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
-    QString strUserManualFileName2 = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(strShortFileName);
+    QString strUserManualFileName2 = QDir(vboxGlobal().HomeFolder()).absoluteFilePath(strShortFileName);
     /* Show if user manual already present: */
     if (QFile::exists(strUserManualFileName1))
         sltShowUserManual(strUserManualFileName1);

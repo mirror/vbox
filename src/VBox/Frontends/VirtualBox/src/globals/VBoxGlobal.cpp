@@ -1601,7 +1601,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
             break;
     }
     QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder :
-                            strDefaultFolder.isEmpty() ? vboxGlobal().virtualBox().GetHomeFolder() : strDefaultFolder;
+                            strDefaultFolder.isEmpty() ? vboxGlobal().homeFolder() : strDefaultFolder;
 
     /* Prepare filters and backends: */
     for (int i = 0; i < filters.count(); ++i)
@@ -3876,6 +3876,7 @@ void VBoxGlobal::prepare()
         return;
     }
     mHost = virtualBox().GetHost();
+    mHomeFolder = virtualBox().GetHomeFolder();
 
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);

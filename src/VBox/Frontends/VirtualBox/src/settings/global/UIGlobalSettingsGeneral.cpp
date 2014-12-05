@@ -43,8 +43,8 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     m_pCheckBoxHostScreenSaver->hide();
 
     /* Setup widgets: */
-    m_pSelectorMachineFolder->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
-    m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
+    m_pSelectorMachineFolder->setHomeDir(vboxGlobal().homeFolder());
+    m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().homeFolder());
     m_pSelectorVRDPLibName->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
 
     /* Apply language settings: */
