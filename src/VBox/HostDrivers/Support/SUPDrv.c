@@ -3964,6 +3964,49 @@ static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser
 
 
 /**
+ * Increase the timer freqency on hosts where this is possible (NT).
+ *
+ * The idea is that more interrupts is better for us... Also, it's better than
+ * we increase the timer frequence, because we might end up getting inaccuract
+ * callbacks if someone else does it.
+ *
+ * @param   pDevExt   Sets u32SystemTimerGranularityGrant if increased.
+ */
+static void supdrvGipRequestHigherTimerFrequencyFromSystem(PSUPDRVDEVEXT pDevExt)
+{
+    if (pDevExt->u32SystemTimerGranularityGrant == 0)
+    {
+        uint32_t u32SystemResolution;
+        if (   RT_SUCCESS_NP(RTTimerRequestSystemGranularity(  976563 /* 1024 HZ */, &u32SystemResolution))
+            || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1000000 /* 1000 HZ */, &u32SystemResolution))
+            || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1953125 /*  512 HZ */, &u32SystemResolution))
+            || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 2000000 /*  500 HZ */, &u32SystemResolution))
+           )
+        {
+            Assert(RTTimerGetSystemGranularity() <= u32SystemResolution);
+            pDevExt->u32SystemTimerGranularityGrant = u32SystemResolution;
+        }
+    }
+}
+
+
+/**
+ * Undoes supdrvGipRequestHigherTimerFrequencyFromSystem.
+ *
+ * @param   pDevExt     Clears u32SystemTimerGranularityGrant.
+ */
+static void supdrvGipReleaseHigherTimerFrequencyFromSystem(PSUPDRVDEVEXT pDevExt)
+{
+    if (pDevExt->u32SystemTimerGranularityGrant)
+    {
+        int rc2 = RTTimerReleaseSystemGranularity(pDevExt->u32SystemTimerGranularityGrant);
+        AssertRC(rc2);
+        pDevExt->u32SystemTimerGranularityGrant = 0;
+    }
+}
+
+
+/**
  * Maps the GIP into userspace and/or get the physical address of the GIP.
  *
  * @returns IPRT status code.
@@ -4027,29 +4070,14 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
             {
                 PSUPGLOBALINFOPAGE pGipR0 = pDevExt->pGip;
                 uint64_t u64NanoTS;
-                uint32_t u32SystemResolution;
-                unsigned i;
 
                 LogFlow(("SUPR0GipMap: Resumes GIP updating\n"));
 
-                /*
-                 * Try bump up the system timer resolution.
-                 * The more interrupts the better...
-                 */
-                /** @todo On Windows, RTTimerRequestSystemGranularity() always succeeds, so
-                 *        whats the point of the remaining calls? */
-                if (   RT_SUCCESS_NP(RTTimerRequestSystemGranularity(  976563 /* 1024 HZ */, &u32SystemResolution))
-                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1000000 /* 1000 HZ */, &u32SystemResolution))
-                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1953125 /*  512 HZ */, &u32SystemResolution))
-                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 2000000 /*  500 HZ */, &u32SystemResolution))
-                   )
-                {
-                    Assert(RTTimerGetSystemGranularity() <= u32SystemResolution);
-                    pDevExt->u32SystemTimerGranularityGrant = u32SystemResolution;
-                }
+                supdrvGipRequestHigherTimerFrequencyFromSystem(pDevExt);
 
                 if (pGipR0->aCPUs[0].u32TransactionId != 2 /* not the first time */)
                 {
+                    unsigned i;
                     for (i = 0; i < pGipR0->cCpus; i++)
                         ASMAtomicUoWriteU32(&pGipR0->aCPUs[i].u32TransactionId,
                                             (pGipR0->aCPUs[i].u32TransactionId + GIP_UPDATEHZ_RECALC_FREQ * 2)
@@ -4151,13 +4179,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 #ifndef DO_NOT_START_GIP
             rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = VINF_SUCCESS;
 #endif
-
-            if (pDevExt->u32SystemTimerGranularityGrant)
-            {
-                int rc2 = RTTimerReleaseSystemGranularity(pDevExt->u32SystemTimerGranularityGrant);
-                AssertRC(rc2);
-                pDevExt->u32SystemTimerGranularityGrant = 0;
-            }
+            supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
         }
     }
 
@@ -6304,6 +6326,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     /*
      * Find a reasonable update interval and initialize the structure.
      */
+    supdrvGipRequestHigherTimerFrequencyFromSystem(pDevExt);
     /** @todo figure out why using a 100Ms interval upsets timekeeping in VMs.
      *        See @bugref{6710}. */
     u32MinInterval      = RT_NS_10MS;
@@ -6389,6 +6412,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                              * We're good.
                              */
                             Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
+                            supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
+
                             g_pSUPGlobalInfoPage = pGip;
                             if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
                                 supdrvRefineTscFreq(pDevExt);
@@ -6415,7 +6440,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     else
         OSDBGPRINT(("supdrvGipCreate: supdrvTscDeltaInit failed. rc=%Rrc\n", rc));
 
-    supdrvGipDestroy(pDevExt);
+    supdrvGipDestroy(pDevExt); /* Releases timer frequency increase too. */
     return rc;
 }
 
@@ -6484,11 +6509,7 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
      * Finally, make sure we've release the system timer resolution request
      * if one actually succeeded and is still pending.
      */
-    if (pDevExt->u32SystemTimerGranularityGrant)
-    {
-        rc = RTTimerReleaseSystemGranularity(pDevExt->u32SystemTimerGranularityGrant); AssertRC(rc);
-        pDevExt->u32SystemTimerGranularityGrant = 0;
-    }
+    supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
 }
 
 
