@@ -223,6 +223,14 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
+        /*
+         * Machine specific register access - emulate the instruction.
+         */
+        case VINF_CPUM_R3_MSR_READ:
+        case VINF_CPUM_R3_MSR_WRITE:
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "MSR");
+            break;
+
 #ifdef EMHANDLERC_WITH_HM
         /*
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance

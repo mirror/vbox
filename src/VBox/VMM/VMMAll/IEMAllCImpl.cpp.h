@@ -5378,24 +5378,33 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
      * Do the job.
      */
     RTUINT64U uValue;
-    int rc = CPUMQueryGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, &uValue.u);
-    if (rc != VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, &uValue.u);
+    if (rcStrict == VINF_SUCCESS)
     {
-#ifdef IN_RING3
-        static uint32_t s_cTimes = 0;
-        if (s_cTimes++ < 10)
-            LogRel(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
-#endif
-        Log(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
-        AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
-        return iemRaiseGeneralProtectionFault0(pIemCpu);
+        pCtx->rax = uValue.s.Lo;
+        pCtx->rdx = uValue.s.Hi;
+
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+        return VINF_SUCCESS;
     }
 
-    pCtx->rax = uValue.s.Lo;
-    pCtx->rdx = uValue.s.Hi;
-
-    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
-    return VINF_SUCCESS;
+#ifndef IN_RING3
+    /* Deferred to ring-3. */
+    if (rcStrict == VINF_CPUM_R3_MSR_READ)
+    {
+        Log(("IEM: rdmsr(%#x) -> ring-3\n", pCtx->ecx));
+        return rcStrict;
+    }
+#else /* IN_RING3 */
+    /* Often a unimplemented MSR or MSR bit, so worth logging. */
+    static uint32_t s_cTimes = 0;
+    if (s_cTimes++ < 10)
+        LogRel(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
+    else
+#endif
+        Log(("IEM: rdmsr(%#x) -> #GP(0)\n", pCtx->ecx));
+    AssertMsgReturn(rcStrict == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IPE_UNEXPECTED_STATUS);
+    return iemRaiseGeneralProtectionFault0(pIemCpu);
 }
 
 
@@ -5421,31 +5430,40 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     uValue.s.Lo = pCtx->eax;
     uValue.s.Hi = pCtx->edx;
 
-    int rc;
+    VBOXSTRICTRC rcStrict;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+        rcStrict = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
     else
     {
         CPUMCTX CtxTmp = *pCtx;
-        rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+        rcStrict = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
         PCPUMCTX pCtx2 = CPUMQueryGuestCtxPtr(IEMCPU_TO_VMCPU(pIemCpu));
         *pCtx = *pCtx2;
         *pCtx2 = CtxTmp;
     }
-    if (rc != VINF_SUCCESS)
+    if (rcStrict == VINF_SUCCESS)
     {
-#ifdef IN_RING3
-        static uint32_t s_cTimes = 0;
-        if (s_cTimes++ < 10)
-            LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
-#endif
-        Log(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
-        AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
-        return iemRaiseGeneralProtectionFault0(pIemCpu);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+        return VINF_SUCCESS;
     }
 
-    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
-    return VINF_SUCCESS;
+#ifndef IN_RING3
+    /* Deferred to ring-3. */
+    if (rcStrict == VINF_CPUM_R3_MSR_WRITE)
+    {
+        Log(("IEM: rdmsr(%#x) -> ring-3\n", pCtx->ecx));
+        return rcStrict;
+    }
+#else /* IN_RING3 */
+    /* Often a unimplemented MSR or MSR bit, so worth logging. */
+    static uint32_t s_cTimes = 0;
+    if (s_cTimes++ < 10)
+        LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
+    else
+#endif
+        Log(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
+    AssertMsgReturn(rcStrict == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IPE_UNEXPECTED_STATUS);
+    return iemRaiseGeneralProtectionFault0(pIemCpu);
 }
 
 

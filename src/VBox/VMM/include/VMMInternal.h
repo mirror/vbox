@@ -343,6 +343,8 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetMMIOPatchRead;
     STAMCOUNTER                 StatRZRetMMIOPatchWrite;
     STAMCOUNTER                 StatRZRetMMIOReadWrite;
+    STAMCOUNTER                 StatRZRetMSRRead;
+    STAMCOUNTER                 StatRZRetMSRWrite;
     STAMCOUNTER                 StatRZRetLDTFault;
     STAMCOUNTER                 StatRZRetGDTFault;
     STAMCOUNTER                 StatRZRetIDTFault;

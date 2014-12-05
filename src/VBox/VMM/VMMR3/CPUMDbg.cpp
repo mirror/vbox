@@ -422,8 +422,8 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
     VMCPU_ASSERT_EMT(pVCpu);
 
     uint64_t u64Value;
-    int rc = CPUMQueryGuestMsr(pVCpu, pDesc->offRegister, &u64Value);
-    if (RT_SUCCESS(rc))
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pDesc->offRegister, &u64Value);
+    if (rcStrict == VINF_SUCCESS)
     {
         switch (pDesc->enmType)
         {
@@ -435,7 +435,8 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
         }
     }
     /** @todo what to do about errors? */
-    return rc;
+    Assert(RT_FAILURE_NP(rcStrict));
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
@@ -444,8 +445,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
-    int         rc;
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
+    PVMCPU pVCpu = (PVMCPU)pvUser;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -478,9 +478,12 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
     if (fMask != fMaskMax)
     {
         uint64_t u64FullValue;
-        rc = CPUMQueryGuestMsr(pVCpu, pDesc->offRegister, &u64FullValue);
-        if (RT_FAILURE(rc))
-            return rc;
+        VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pDesc->offRegister, &u64FullValue);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            AssertRC(RT_FAILURE_NP(rcStrict));
+            return VBOXSTRICTRC_VAL(rcStrict);
+        }
         u64Value = (u64FullValue & ~fMask)
                  | (u64Value     &  fMask);
     }
@@ -488,7 +491,11 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
     /*
      * Perform the assignment.
      */
-    return CPUMSetGuestMsr(pVCpu, pDesc->offRegister, u64Value);
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pDesc->offRegister, u64Value);
+    if (rcStrict == VINF_SUCCESS)
+        return VINF_SUCCESS;
+    AssertRC(RT_FAILURE_NP(rcStrict));
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 

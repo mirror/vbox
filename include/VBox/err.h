@@ -624,6 +624,10 @@
 #define VERR_CPUM_DB_CPU_NOT_FOUND              (-1756)
 /** Invalid CPUMCPU offset in MSR range. */
 #define VERR_CPUM_MSR_BAD_CPUMCPU_OFFSET        (-1757)
+/** Return to ring-3 to read the MSR there. */
+#define VINF_CPUM_R3_MSR_READ                   (1758)
+/** Return to ring-3 to write the MSR there. */
+#define VINF_CPUM_R3_MSR_WRITE                  (1759)
 /** @} */
 
 

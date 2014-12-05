@@ -1291,7 +1291,7 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     g_fIgnoreRaxRdx = true;
 #endif
     /* Low dword of the TSC_AUX msr only. */
-    CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx);
+    VBOXSTRICTRC rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pCtx->rcx); Assert(rc2 == VINF_SUCCESS);
     pCtx->rcx &= UINT32_C(0xffffffff);
 
     return VINF_SUCCESS;
@@ -1745,17 +1745,17 @@ VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     }
 
     uint64_t uValue;
-    int rc = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
     {
-        Assert(rc == VERR_CPUM_RAISE_GP_0 || rc == VERR_EM_INTERPRETER);
-        Log4(("EM: Refuse RDMSR: rc=%Rrc\n", rc));
+        Log4(("EM: Refuse RDMSR: rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_READ);
         return VERR_EM_INTERPRETER;
     }
     pRegFrame->rax = (uint32_t) uValue;
     pRegFrame->rdx = (uint32_t)(uValue >> 32);
     LogFlow(("EMInterpretRdmsr %s (%x) -> %RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, uValue));
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1778,17 +1778,17 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
         return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
     }
 
-    int rc = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
-    if (rc != VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
+    if (rcStrict != VINF_SUCCESS)
     {
-        Assert(rc == VERR_CPUM_RAISE_GP_0 || rc == VERR_EM_INTERPRETER);
-        Log4(("EM: Refuse WRMSR: CPUMSetGuestMsr returned %Rrc\n", rc));
+        Log4(("EM: Refuse WRMSR: CPUMSetGuestMsr returned %Rrc\n",  VBOXSTRICTRC_VAL(rcStrict)));
+        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_WRITE);
         return VERR_EM_INTERPRETER;
     }
     LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
              RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx)));
     NOREF(pVM);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

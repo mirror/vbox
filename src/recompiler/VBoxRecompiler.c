@@ -4513,13 +4513,13 @@ void cpu_set_apic_base(CPUX86State *env, uint64_t val)
 uint64_t cpu_get_apic_base(CPUX86State *env)
 {
     uint64_t u64;
-    int rc = CPUMQueryGuestMsr(env->pVCpu, MSR_IA32_APICBASE, &u64);
-    if (RT_SUCCESS(rc))
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(env->pVCpu, MSR_IA32_APICBASE, &u64);
+    if (RT_SUCCESS(rcStrict))
     {
         LogFlow(("cpu_get_apic_base: returns %#llx \n", u64));
         return u64;
     }
-    LogFlow(("cpu_get_apic_base: returns 0 (rc=%Rrc)\n", rc));
+    LogFlow(("cpu_get_apic_base: returns 0 (rc=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
     return 0;
 }
 

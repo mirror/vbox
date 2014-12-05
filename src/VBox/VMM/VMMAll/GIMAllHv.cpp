@@ -81,13 +81,16 @@ VMM_INT_DECL(bool) GIMHvIsParavirtTscEnabled(PVM pVM)
 /**
  * MSR read handler for Hyper-V.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code like CPUMQueryGuestMsr.
+ * @retval  VINF_CPUM_R3_MSR_READ
+ * @retval  VERR_CPUM_RAISE_GP_0
+ *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR being read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
  */
-VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+VMM_INT_DECL(VBOXSTRICTRC) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -166,13 +169,16 @@ VMM_INT_DECL(int) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRan
 /**
  * MSR write handler for Hyper-V.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code like CPUMSetGuestMsr.
+ * @retval  VINF_CPUM_R3_MSR_WRITE
+ * @retval  VERR_CPUM_RAISE_GP_0
+ *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR being written.
  * @param   pRange      The range this MSR belongs to.
  * @param   uRawValue   The raw value with the ignored bits not masked.
  */
-VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
+VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -195,7 +201,7 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
         case MSR_GIM_HV_GUEST_OS_ID:
         {
 #ifndef IN_RING3
-            return VERR_EM_INTERPRETER;
+            return VINF_CPUM_R3_MSR_WRITE;
 #else
             /* Disable the hypercall-page if 0 is written to this MSR. */
             if (!uRawValue)
@@ -205,14 +211,14 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             }
             pHv->u64GuestOsIdMsr = uRawValue;
             return VINF_SUCCESS;
-#endif  /* !IN_RING3 */
+#endif /* IN_RING3 */
         }
 
         case MSR_GIM_HV_HYPERCALL:
         {
 #ifndef IN_RING3
-            return VERR_EM_INTERPRETER;
-#else   /* IN_RING3 */
+            return VINF_CPUM_R3_MSR_WRITE;
+#else  /* IN_RING3 */
             /* First, update all but the hypercall enable bit. */
             pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT);
 
@@ -242,14 +248,14 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             }
 
             return VERR_CPUM_RAISE_GP_0;
-#endif  /* !IN_RING3 */
+#endif /* IN_RING3 */
         }
 
         case MSR_GIM_HV_REF_TSC:
         {
 #ifndef IN_RING3
-            return VERR_EM_INTERPRETER;
-#else   /* IN_RING3 */
+            return VINF_CPUM_R3_MSR_WRITE;
+#else  /* IN_RING3 */
             /* First, update all but the TSC-page enable bit. */
             pHv->u64TscPageMsr = (uRawValue & ~MSR_GIM_HV_REF_TSC_ENABLE_BIT);
 
@@ -272,13 +278,13 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             }
 
             return VERR_CPUM_RAISE_GP_0;
-#endif  /* !IN_RING3 */
+#endif /* IN_RING3 */
         }
 
         case MSR_GIM_HV_RESET:
         {
 #ifndef IN_RING3
-            return VERR_EM_INTERPRETER;
+            return VINF_CPUM_R3_MSR_WRITE;
 #else
             if (MSR_GIM_HV_RESET_IS_SET(uRawValue))
             {
@@ -288,7 +294,7 @@ VMM_INT_DECL(int) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRa
             }
             /* else: Ignore writes to other bits. */
             return VINF_SUCCESS;
-#endif  /* !IN_RING3 */
+#endif /* IN_RING3 */
         }
 
         case MSR_GIM_HV_TIME_REF_COUNT:     /* Read-only MSRs. */
