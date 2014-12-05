@@ -81,8 +81,13 @@ struct request {
      * to connect server, timeout function should change
      * it's value on next server. And dnsproxy_query should
      * initializate with first server in the list
+     *
+     * dnsgen is a generation number - a copy of pData->dnsgen at the
+     * time of request creation (poor man's weak reference).
+     * dns_server must not be used if pData->dnsgen changed.
      */
     struct dns_entry    *dns_server;
+    uint32_t            dnsgen; 
     int nbyte; /* length of dns request */
     char byte[1]; /* copy of original request */
 #endif

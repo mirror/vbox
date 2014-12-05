@@ -150,6 +150,7 @@ typedef struct NATState
 #endif
     struct dns_list_head pDnsList;
     struct dns_domain_list_head pDomainList;
+    uint32_t dnsgen;            /* XXX: merge with dnsLastUpdate? */
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
     uint32_t dnsLastUpdate;

@@ -303,6 +303,10 @@ int slirpReleaseDnsSettings(PNATState pData)
             RTStrFree(pDomain->dd_pszDomain);
         RTMemFree(pDomain);
     }
+
+    /* tell any pending dnsproxy requests their copy is expired */
+    ++pData->dnsgen;
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
