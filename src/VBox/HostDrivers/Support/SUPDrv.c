@@ -186,6 +186,8 @@ static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 *******************************************************************************/
 DECLEXPORT(PSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage = NULL;
 
+/** @name r=bird: Stuff that should be SUPDRVDEVEXT members.
+ * @todo Move this ASAP.  */
 /**
  * The TSC delta synchronization struct. rounded to cache line size.
  */
@@ -217,6 +219,7 @@ static PRTTIMER             g_pTscRefineTimer;
 /** Whether the host OS has already normalized the hardware TSC deltas across
  *  CPUs. */
 static bool                 g_fOsTscDeltasInSync;
+/** @}  */
 
 /**
  * Array of the R0 SUP API.
@@ -6060,7 +6063,7 @@ static int supdrvGipMeasureTscFreq(PSUPDRVDEVEXT pDevExt)
 
         /*
          * Synchronize with the host OS clock tick before reading the TSC.
-         * Especially important on Windows where the granularity is terrible.
+         * Especially important on older Windows version where the granularity is terrible.
          */
         u64NanoTsBefore = RTTimeSystemNanoTS();
         while (RTTimeSystemNanoTS() == u64NanoTsBefore)
@@ -6169,9 +6172,11 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
     Assert(pGip);
     Assert(pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC);
 
+#if !defined(RT_OS_OS2) /* PORTME: Disable if timers are called from clock interrupt handler or with interrupts disabled. */
     u64NanoTS = RTTimeSystemNanoTS();
     while (RTTimeSystemNanoTS() == u64NanoTS)
         ASMNopPause();
+#endif
     uFlags    = ASMIntDisableFlags();
     idApic    = ASMGetApicId();
     u64Tsc    = ASMReadTSC();
@@ -6526,14 +6531,6 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     uint64_t           u64NanoTS;
     PSUPDRVDEVEXT      pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-
-    /*
-     * Synchronize with the host OS clock tick before reading the TSC.
-     * Especially important on Windows where the granularity is terrible.
-     */
-    u64NanoTS = RTTimeSystemNanoTS();
-    while (u64NanoTS == RTTimeSystemNanoTS())
-        ASMNopPause();
 
     uFlags    = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     u64TSC    = ASMReadTSC();
