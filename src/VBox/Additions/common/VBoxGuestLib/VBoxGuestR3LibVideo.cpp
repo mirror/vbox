@@ -382,10 +382,15 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
-        if (cScreen == 0)  /* Write out the mode using the legacy name too, in
-                            * case the user installs older Additions. */
+        /* Write out the mode using the legacy name too, in case the user
+         * re-installs older Additions. */
+        if (cScreen == 0)
+        {
+            RTStrPrintf(szModeParms, sizeof(szModeParms), "%ux%ux%u", cx, cy,
+                        cBits);
             VbglR3GuestPropWriteValue(u32ClientId, VIDEO_PROP_PREFIX"SavedMode",
                                       szModeParms);
+        }
     }
     if (u32ClientId != 0)
         rc2 = VbglR3GuestPropDisconnect(u32ClientId);
@@ -446,8 +451,12 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
     char szModeParms[1024];
     uint32_t u32ClientId = 0;
     int cMatches;
-    unsigned cx, cy, cBits, x, y, fEnabled;
-    int rc, rc2 = VERR_UNRESOLVED_ERROR;
+    unsigned cx, cy, cBits;
+    unsigned x = 0;
+    unsigned y = 0;
+    unsigned fEnabled = 1;
+    int rc;
+    int rc2 = VERR_UNRESOLVED_ERROR;
 
     /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
     RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
@@ -456,7 +465,8 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
     {
         rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
                                       sizeof(szModeParms), NULL);
-        if (rc == VERR_NOT_FOUND)  /* Try legacy single screen name. */
+        /* Try legacy single screen name. */
+        if (rc == VERR_NOT_FOUND && cScreen == 0)
             rc = VbglR3GuestPropReadValue(u32ClientId,
                                           VIDEO_PROP_PREFIX"SavedMode",
                                           szModeParms, sizeof(szModeParms),
@@ -472,9 +482,10 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
  */
     if (RT_SUCCESS(rc))
     {
-        cMatches = sscanf(szModeParms, "%ux%ux%u,%ux%u,%u\n", &cx, &cy, &cBits,
-                          &x, &y, &fEnabled);
-        if (cMatches == 6)
+        char c1, c2;
+        cMatches = sscanf(szModeParms, "%ux%ux%u%c%ux%u,%u%c", &cx, &cy, &cBits,
+                          &c1, &x, &y, &fEnabled, &c2);
+        if ((cMatches == 7 && c1 == ',') || cMatches == 3)
             rc = VINF_SUCCESS;
         else if (cMatches < 0)
             rc = VERR_READ_ERROR;
