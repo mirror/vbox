@@ -217,7 +217,9 @@ int main(int argc, char **argv)
                 {
                     if (pu32TransactionId)
                     {
-                        while (u32TransactionId == *pu32TransactionId)
+                        uint32_t uTmp;
+                        while (   u32TransactionId == (uTmp = *pu32TransactionId)
+                               || (uTmp & 1))
                             ASMNopPause();
                     }
                     else
