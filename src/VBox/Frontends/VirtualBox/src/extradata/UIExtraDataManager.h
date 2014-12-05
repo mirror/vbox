@@ -79,6 +79,9 @@ signals:
     void sigScaleFactorChange(const QString &strMachineID);
 
 #ifdef RT_OS_DARWIN
+    /** Mac OS X: Notifies about unscaled HiDPI output mode change. */
+    void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
+
     /** Mac OS X: Notifies about 'presentation mode' status change. */
     void sigPresentationModeChange(bool fEnabled);
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
@@ -395,6 +398,8 @@ public:
 
         /** Returns whether Runtime UI should use unscaled HiDPI output. */
         bool useUnscaledHiDPIOutput(const QString &strID);
+        /** Defines whether Runtime UI should @a fUseUnscaledHiDPIOutput. */
+        void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID);
 
         /** Returns Runtime UI HiDPI optimization type. */
         HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);

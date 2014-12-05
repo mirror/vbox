@@ -360,6 +360,20 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     adjustGuestScreenSize();
 }
 
+#ifdef RT_OS_DARWIN
+void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
+{
+    /* Skip unrelated machine IDs: */
+    if (strMachineID != vboxGlobal().managedVMUuid())
+        return;
+
+    /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
+    sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
+    machineWindow()->normalizeGeometry(true /* adjust position */);
+    adjustGuestScreenSize();
+}
+#endif /* RT_OS_DARWIN */
+
 void UIMachineView::sltMachineStateChanged()
 {
     /* Get machine state: */
@@ -585,6 +599,11 @@ void UIMachineView::prepareConnections()
     /* Scale-factor change: */
     connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
             this, SLOT(sltHandleScaleFactorChange(const QString&)));
+#ifdef Q_WS_MAC
+    /* Unscaled HiDPI output mode change: */
+    connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
+            this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineView::prepareConsoleConnections()
