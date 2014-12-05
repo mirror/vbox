@@ -656,6 +656,12 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_PATM_HC_MMIO_PATCH_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOPatchWrite);
             break;
+        case VINF_CPUM_R3_MSR_READ:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMSRRead);
+            break;
+        case VINF_CPUM_R3_MSR_WRITE:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMSRWrite);
+            break;
         case VINF_EM_RAW_EMULATE_INSTR:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetEmulate);
             break;

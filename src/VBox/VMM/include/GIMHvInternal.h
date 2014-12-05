@@ -494,6 +494,8 @@ AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
 
 RT_C_DECLS_BEGIN
 
+/** @todo r=bird: Internal header, internal prefix: s/GIM\(R.|\)Hv/gim\1Hv/g  */
+
 #ifdef IN_RING0
 VMMR0_INT_DECL(int)             GIMR0HvInitVM(PVM pVM);
 VMMR0_INT_DECL(int)             GIMR0HvTermVM(PVM pVM);
@@ -519,8 +521,8 @@ VMMR3_INT_DECL(int)             GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCP
 VMM_INT_DECL(bool)              GIMHvIsParavirtTscEnabled(PVM pVM);
 VMM_INT_DECL(bool)              GIMHvAreHypercallsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(int)               GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(int)               GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-VMM_INT_DECL(int)               GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+VMM_INT_DECL(VBOXSTRICTRC)      GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(VBOXSTRICTRC)      GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 
 RT_C_DECLS_END
 

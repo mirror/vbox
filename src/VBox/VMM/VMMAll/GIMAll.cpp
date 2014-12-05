@@ -132,13 +132,16 @@ VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
 /**
  * Invokes the read-MSR handler for the GIM provider configured for the VM.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code like CPUMQueryGuestMsr.
+ * @retval  VINF_CPUM_R3_MSR_READ
+ * @retval  VERR_CPUM_RAISE_GP_0
+ *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR to read.
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
  */
-VMM_INT_DECL(int) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+VMM_INT_DECL(VBOXSTRICTRC) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     Assert(pVCpu);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -160,14 +163,17 @@ VMM_INT_DECL(int) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange
 /**
  * Invokes the write-MSR handler for the GIM provider configured for the VM.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code like CPUMSetGuestMsr.
+ * @retval  VINF_CPUM_R3_MSR_WRITE
+ * @retval  VERR_CPUM_RAISE_GP_0
+ *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idMsr       The MSR to write.
  * @param   pRange      The range this MSR belongs to.
  * @param   uValue      The value to set, ignored bits masked.
  * @param   uRawValue   The raw value with the ignored bits not masked.
  */
-VMM_INT_DECL(int) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+VMM_INT_DECL(VBOXSTRICTRC) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     AssertPtr(pVCpu);
     NOREF(uValue);
