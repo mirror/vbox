@@ -4965,7 +4965,6 @@ PCPUMMSRRANGE cpumLookupMsrRange(PVM pVM, uint32_t idMsr)
     return NULL;
 }
 
-#ifdef VBOX_WITH_NEW_MSR_CODE
 
 /**
  * Query a guest MSR.
@@ -5124,8 +5123,6 @@ VMMDECL(VBOXSTRICTRC) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uVa
     }
     return rcStrict;
 }
-
-#endif /* VBOX_WITH_NEW_MSR_CODE */
 
 
 #if defined(VBOX_STRICT) && defined(IN_RING3)
