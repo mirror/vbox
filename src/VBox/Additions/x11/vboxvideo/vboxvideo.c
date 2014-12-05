@@ -1402,7 +1402,7 @@ VBOXRestoreMode(ScrnInfoPtr pScrn)
     /* Do not try to re-set the VGA state if a mode-setting driver is loaded. */
     if (   pVBox->drmFD >= 0
         && LoaderSymbol("drmModeGetResources") != NULL
-        && (pRes == drmModeGetResources(pVBox->drmFD)) != NULL)
+        && (pRes = drmModeGetResources(pVBox->drmFD)) != NULL)
     {
         drmModeFreeResources(pRes);
         return;
