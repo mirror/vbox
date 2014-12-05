@@ -383,8 +383,6 @@ VBOX_WITH_DEBUGGER = 1
 VBOX_WITH_DEBUGGER_GUI = 1
 # Enables the first step using IEM (the interpreter).
 VBOX_WITH_FIRST_IEM_STEP = 1
-# Enables the new MSR code.
-VBOX_WITH_NEW_MSR_CODE = 1
 ## @}
 
 
