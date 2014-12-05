@@ -253,7 +253,10 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         for (i = 0; i < prop->size && i < pVBox->cScreens; ++i)
         {
             if (((int32_t *)prop->data)[i] == 0)
-                continue;
+            {
+                pVBox->pScreens[i].aPreferredSize.cx = 1024;
+                pVBox->pScreens[i].aPreferredSize.cy = 768;
+            }
             else
             {
                 pVBox->pScreens[i].aPreferredSize.cx =
