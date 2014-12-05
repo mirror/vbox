@@ -380,7 +380,13 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
+    {
         rc = VbglR3GuestPropWriteValue(u32ClientId, szModeName, szModeParms);
+        if (cScreen == 0)  /* Write out the mode using the legacy name too, in
+                            * case the user installs older Additions. */
+            VbglR3GuestPropWriteValue(u32ClientId, VIDEO_PROP_PREFIX"SavedMode",
+                                      szModeParms);
+    }
     if (u32ClientId != 0)
         rc2 = VbglR3GuestPropDisconnect(u32ClientId);
     if (RT_SUCCESS(rc))
@@ -447,8 +453,15 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(unsigned cScreen,
     RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%u", cScreen);
     rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
+    {
         rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
                                       sizeof(szModeParms), NULL);
+        if (rc == VERR_NOT_FOUND)  /* Try legacy single screen name. */
+            rc = VbglR3GuestPropReadValue(u32ClientId,
+                                          VIDEO_PROP_PREFIX"SavedMode",
+                                          szModeParms, sizeof(szModeParms),
+                                          NULL);
+    }
     if (u32ClientId != 0)
         rc2 = VbglR3GuestPropDisconnect(u32ClientId);
     if (RT_SUCCESS(rc))
