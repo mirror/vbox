@@ -69,7 +69,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     addSource(QString("http://download.virtualbox.org/virtualbox/") + strUserManualShortFileName);
 
     /* Set target: */
-    QString strUserManualDestination = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(strUserManualShortFileName);
+    QString strUserManualDestination = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strUserManualShortFileName);
     setTarget(strUserManualDestination);
 }
 

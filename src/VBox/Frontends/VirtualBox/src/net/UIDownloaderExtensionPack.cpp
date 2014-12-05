@@ -69,7 +69,7 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSourceName(strTemplateSourceName.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSource(strSourcePath + strSourceName);
-    QString strTargetPath(vboxGlobal().virtualBox().GetHomeFolder());
+    QString strTargetPath(vboxGlobal().homeFolder());
     QString strTargetName(strSourceName);
     QString strTarget(QDir(strTargetPath).absoluteFilePath(strTargetName));
 

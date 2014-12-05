@@ -103,6 +103,7 @@ public:
 
     CVirtualBox virtualBox() const { return mVBox; }
     CHost host() const { return mHost; }
+    QString homeFolder() const { return mHomeFolder; }
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
@@ -430,6 +431,7 @@ private:
 
     CVirtualBox mVBox;
     CHost mHost;
+    QString mHomeFolder;
 
     VBoxGlobalSettings gset;
 
