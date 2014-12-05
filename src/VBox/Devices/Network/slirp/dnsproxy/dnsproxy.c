@@ -120,9 +120,16 @@ timeout(PNATState pData, struct socket *so, void *arg)
     /* be paranoid */
     AssertPtrReturnVoid(arg);
 
-    if (   req->dns_server == NULL
+    if (   req->dnsgen != pData->dnsgen
+        || req->dns_server == NULL
         || (de = TAILQ_PREV(req->dns_server, dns_list_head, de_list)) == NULL)
     {
+        if (req->dnsgen != pData->dnsgen)
+        {
+            /* XXX: Log2 */
+            LogRel(("NAT: dnsproxy: timeout: req %p dnsgen %u != %u on %R[natsock]\n",
+                    req, req->dnsgen, pData->dnsgen, so));
+        }
         hash_remove_request(pData, req);
         RTMemFree(req);
         ++removed_queries;
@@ -355,6 +362,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         memcpy(&req->client, &fromaddr, sizeof(struct sockaddr_in));
         memcpy(&req->clientid, &buf[0], 2);
         req->dns_server = TAILQ_LAST(&pData->pDnsList, dns_list_head);
+        req->dnsgen = pData->dnsgen;
         if (req->dns_server == NULL)
         {
             static int fail_counter = 0;
@@ -374,7 +382,20 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     }
     else
     {
-         retransmit = 1;
+        if (req->dnsgen != pData->dnsgen)
+        {
+            /* XXX: Log2 */
+            LogRel(("NAT: dnsproxy: query: req %p dnsgen %u != %u on %R[natsock]\n",
+                    req, req->dnsgen, pData->dnsgen, so));
+            /*
+             * XXX: TODO: this probably requires more cleanup.
+             * Cf. XXX comment for sendto() failure below, but that
+             * error leg is probably untested since ~never taken.
+             */
+            ++dropped_queries;
+            return;
+        }
+        retransmit = 1;
     }
 
     req->recursion = 0;
@@ -403,7 +424,8 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     addr.sin_port = htons(53);
 
     /* send it to our authoritative server */
-    Log2(("NAT: request will be sent to %RTnaipv4 on %R[natsock]\n", addr.sin_addr, so));
+    Log2(("NAT: request will be %ssent to %RTnaipv4 on %R[natsock]\n",
+          retransmit ? "re" : "", addr.sin_addr, so));
 
     byte = sendto(so->s, buf, (unsigned int)byte, 0,
                   (struct sockaddr *)&addr,
@@ -417,7 +439,8 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     }
 
     so->so_state = SS_ISFCONNECTED; /* now it's selected */
-    Log2(("NAT: request was sent to %RTnaipv4 on %R[natsock]\n", addr.sin_addr, so));
+    Log2(("NAT: request was %ssent to %RTnaipv4 on %R[natsock]\n",
+          retransmit ? "re" : "", addr.sin_addr, so));
 
     ++authoritative_queries;
 
