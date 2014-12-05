@@ -952,7 +952,7 @@ void UIExtraDataManagerWindow::sltSave()
     AssertReturnVoid(pSenderAction && m_pActionSave);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(vboxGlobal().HomeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(vboxGlobal().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-save dialog to choose file to save extra-data into: */
     const QString strFileName = QIFileDialog::getSaveFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to save extra-data into..", 0, true, true);
@@ -1039,7 +1039,7 @@ void UIExtraDataManagerWindow::sltLoad()
     AssertReturnVoid(pSenderAction && m_pActionLoad);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(vboxGlobal().HomeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(vboxGlobal().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-open dialog to choose file to open extra-data into: */
     const QString strFileName = QIFileDialog::getOpenFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to load extra-data from..");
