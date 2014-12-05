@@ -41,21 +41,34 @@ typedef VOID (__stdcall *PFNHALSENDSOFTWAREINTERRUPT)(ULONG ProcessorNumber, KIR
 typedef int (__stdcall *PFNRTSENDIPI)(RTCPUID idCpu);
 typedef ULONG_PTR (__stdcall *PFNRTKEIPIGENERICCALL)(PKIPI_BROADCAST_WORKER BroadcastFunction, ULONG_PTR  Context);
 typedef ULONG (__stdcall *PFNRTRTLGETVERSION)(PRTL_OSVERSIONINFOEXW pVerInfo);
+#ifndef RT_ARCH_AMD64
+typedef ULONGLONG (__stdcall *PFNRTKEQUERYINTERRUPTTIME)(VOID);
+typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIME)(PLARGE_INTEGER pTime);
+#endif
+typedef ULONG64 (__stdcall *PFNRTKEQUERYINTERRUPTTIMEPRECISE)(PULONG64 pQpcTS);
+typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIMEPRECISE)(PLARGE_INTEGER pTime);
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern RTCPUSET                     g_rtMpNtCpuSet;
-extern PFNMYEXSETTIMERRESOLUTION    g_pfnrtNtExSetTimerResolution;
-extern PFNMYKEFLUSHQUEUEDDPCS       g_pfnrtNtKeFlushQueuedDpcs;
-extern PFNHALREQUESTIPI             g_pfnrtNtHalRequestIpi;
-extern PFNHALSENDSOFTWAREINTERRUPT  g_pfnrtNtHalSendSoftwareInterrupt;
-extern PFNRTSENDIPI                 g_pfnrtSendIpi;
-extern PFNRTKEIPIGENERICCALL        g_pfnrtKeIpiGenericCall;
-extern PFNRTRTLGETVERSION             g_pfnrtRtlGetVersion;
-extern uint32_t                     g_offrtNtPbQuantumEnd;
-extern uint32_t                     g_cbrtNtPbQuantumEnd;
-extern uint32_t                     g_offrtNtPbDpcQueueDepth;
+extern RTCPUSET                         g_rtMpNtCpuSet;
+extern PFNMYEXSETTIMERRESOLUTION        g_pfnrtNtExSetTimerResolution;
+extern PFNMYKEFLUSHQUEUEDDPCS           g_pfnrtNtKeFlushQueuedDpcs;
+extern PFNHALREQUESTIPI                 g_pfnrtNtHalRequestIpi;
+extern PFNHALSENDSOFTWAREINTERRUPT      g_pfnrtNtHalSendSoftwareInterrupt;
+extern PFNRTSENDIPI                     g_pfnrtSendIpi;
+extern PFNRTKEIPIGENERICCALL            g_pfnrtKeIpiGenericCall;
+extern PFNRTRTLGETVERSION               g_pfnrtRtlGetVersion;
+#ifndef RT_ARCH_AMD64
+extern PFNRTKEQUERYINTERRUPTTIME        g_pfnrtKeQueryInterruptTime;
+extern PFNRTKEQUERYSYSTEMTIME           g_pfnrtKeQuerySystemTime;
+#endif
+extern PFNRTKEQUERYINTERRUPTTIMEPRECISE g_pfnrtKeQueryInterruptTimePrecise;
+extern PFNRTKEQUERYSYSTEMTIMEPRECISE    g_pfnrtKeQuerySystemTimePrecise;
+extern uint32_t                         g_offrtNtPbQuantumEnd;
+extern uint32_t                         g_cbrtNtPbQuantumEnd;
+extern uint32_t                         g_offrtNtPbDpcQueueDepth;
 
 
 int rtMpSendIpiVista(RTCPUID idCpu);
