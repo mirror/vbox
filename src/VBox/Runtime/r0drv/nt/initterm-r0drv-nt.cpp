@@ -49,29 +49,39 @@
  * Once we start caring about this, we'll simply let the native MP event callback
  * and update this variable as CPUs comes online. (The code is done already.)
  */
-RTCPUSET                    g_rtMpNtCpuSet;
+RTCPUSET                            g_rtMpNtCpuSet;
 
 /** ExSetTimerResolution, introduced in W2K. */
-PFNMYEXSETTIMERRESOLUTION   g_pfnrtNtExSetTimerResolution;
+PFNMYEXSETTIMERRESOLUTION           g_pfnrtNtExSetTimerResolution;
 /** KeFlushQueuedDpcs, introduced in XP. */
-PFNMYKEFLUSHQUEUEDDPCS      g_pfnrtNtKeFlushQueuedDpcs;
+PFNMYKEFLUSHQUEUEDDPCS              g_pfnrtNtKeFlushQueuedDpcs;
 /** HalRequestIpi, introduced in ??. */
-PFNHALREQUESTIPI            g_pfnrtNtHalRequestIpi;
+PFNHALREQUESTIPI                    g_pfnrtNtHalRequestIpi;
 /** HalSendSoftwareInterrupt */
-PFNHALSENDSOFTWAREINTERRUPT g_pfnrtNtHalSendSoftwareInterrupt;
+PFNHALSENDSOFTWAREINTERRUPT         g_pfnrtNtHalSendSoftwareInterrupt;
 /** SendIpi handler based on Windows version */
-PFNRTSENDIPI                g_pfnrtSendIpi;
+PFNRTSENDIPI                        g_pfnrtSendIpi;
 /** KeIpiGenericCall - Windows Server 2003+ only */
-PFNRTKEIPIGENERICCALL       g_pfnrtKeIpiGenericCall;
+PFNRTKEIPIGENERICCALL               g_pfnrtKeIpiGenericCall;
 /** RtlGetVersion, introduced in ??. */
-PFNRTRTLGETVERSION          g_pfnrtRtlGetVersion;
+PFNRTRTLGETVERSION                  g_pfnrtRtlGetVersion;
+#ifndef RT_ARCH_AMD64
+/** KeQueryInterruptTime - exported/new in Windows 2000. */
+PFNRTKEQUERYINTERRUPTTIME           g_pfnrtKeQueryInterruptTime;
+/** KeQuerySystemTime - exported/new in Windows 2000. */
+PFNRTKEQUERYSYSTEMTIME              g_pfnrtKeQuerySystemTime;
+#endif
+/** KeQueryInterruptTimePrecise - new in Windows 8. */
+PFNRTKEQUERYINTERRUPTTIMEPRECISE    g_pfnrtKeQueryInterruptTimePrecise;
+/** KeQuerySystemTimePrecise - new in Windows 8. */
+PFNRTKEQUERYSYSTEMTIMEPRECISE       g_pfnrtKeQuerySystemTimePrecise;
 
 /** Offset of the _KPRCB::QuantumEnd field. 0 if not found. */
-uint32_t                    g_offrtNtPbQuantumEnd;
+uint32_t                            g_offrtNtPbQuantumEnd;
 /** Size of the _KPRCB::QuantumEnd field. 0 if not found. */
-uint32_t                    g_cbrtNtPbQuantumEnd;
+uint32_t                            g_cbrtNtPbQuantumEnd;
 /** Offset of the _KPRCB::DpcQueueDepth field. 0 if not found. */
-uint32_t                    g_offrtNtPbDpcQueueDepth;
+uint32_t                            g_offrtNtPbDpcQueueDepth;
 
 
 /**
@@ -199,6 +209,9 @@ DECLHIDDEN(int) rtR0InitNative(void)
     RTCpuSetFromU64(&g_rtMpNtCpuSet, ActiveProcessors);
 /** @todo Port to W2K8 with > 64 cpus/threads. */
 
+    /*
+     * Initialize the function pointers.
+     */
 #ifdef IPRT_TARGET_NT4
     g_pfnrtNtExSetTimerResolution = NULL;
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
@@ -206,10 +219,11 @@ DECLHIDDEN(int) rtR0InitNative(void)
     g_pfnrtNtHalSendSoftwareInterrupt = NULL;
     g_pfnrtKeIpiGenericCall = NULL;
     g_pfnrtRtlGetVersion = NULL;
+    g_pfnrtKeQueryInterruptTime = NULL;
+    g_pfnrtKeQueryInterruptTimePrecise = NULL;
+    g_pfnrtKeQuerySystemTime = NULL;
+    g_pfnrtKeQuerySystemTimePrecise = NULL;
 #else
-    /*
-     * Initialize the function pointers.
-     */
     UNICODE_STRING RoutineName;
     RtlInitUnicodeString(&RoutineName, L"ExSetTimerResolution");
     g_pfnrtNtExSetTimerResolution = (PFNMYEXSETTIMERRESOLUTION)MmGetSystemRoutineAddress(&RoutineName);
@@ -228,6 +242,18 @@ DECLHIDDEN(int) rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"RtlGetVersion");
     g_pfnrtRtlGetVersion = (PFNRTRTLGETVERSION)MmGetSystemRoutineAddress(&RoutineName);
+# ifndef RT_ARCH_AMD64
+    RtlInitUnicodeString(&RoutineName, L"KeQueryInterruptTime");
+    g_pfnrtKeQueryInterruptTime = (PFNRTKEQUERYINTERRUPTTIME)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeQuerySystemTime");
+    g_pfnrtKeQuerySystemTime = (PFNRTKEQUERYSYSTEMTIME)MmGetSystemRoutineAddress(&RoutineName);
+# endif
+    RtlInitUnicodeString(&RoutineName, L"KeQueryInterruptTimePrecise");
+    g_pfnrtKeQueryInterruptTimePrecise = (PFNRTKEQUERYINTERRUPTTIMEPRECISE)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeQuerySystemTimePrecise");
+    g_pfnrtKeQuerySystemTimePrecise = (PFNRTKEQUERYSYSTEMTIMEPRECISE)MmGetSystemRoutineAddress(&RoutineName);
 #endif
 
     /*

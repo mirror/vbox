@@ -30,6 +30,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #include "the-nt-kernel.h"
+#include "internal-r0drv-nt.h"
 #include <iprt/time.h>
 
 
@@ -48,20 +49,30 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
      * later.
      */
 #if 1
-    /* Interrupt time. (NT4 doesn't have an API for it.) */
-# ifndef IPRT_TARGET_NT4
-    ULONGLONG InterruptTime = KeQueryInterruptTime();
-    return (uint64_t)InterruptTime * 100; /* The value is in 100ns, convert to ns units. */
-# else
+    /* Interrupt time. */
     LARGE_INTEGER InterruptTime;
-    do
+    if (g_pfnrtKeQueryInterruptTimePrecise)
     {
-        InterruptTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High1Time;
-        InterruptTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.LowPart;
-    } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High2Time != InterruptTime.HighPart);
-
-    return (uint64_t)InterruptTime.QuadPart * 100;
+        ULONG64 QpcTsIgnored;
+        InterruptTime.QuadPart = g_pfnrtKeQueryInterruptTimePrecise(&QpcTsIgnored);
+    }
+# ifdef RT_ARCH_AMD64
+    else
+        InterruptTime.QuadPart = KeQueryInterruptTime(); /* macro */
+# else
+    else if (g_pfnrtKeQueryInterruptTime)
+        InterruptTime.QuadPart = g_pfnrtKeQueryInterruptTime();
+    else
+    {
+        /* NT4 (no API) and pre-init fallback. */
+        do
+        {
+            InterruptTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High1Time;
+            InterruptTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.LowPart;
+        } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->InterruptTime.High2Time != InterruptTime.HighPart);
+    }
 # endif
+    return (uint64_t)InterruptTime.QuadPart * 100;
 #else
     /* Tick Count (NT4 SP1 has these APIs, haven't got SP0 to check). */
     LARGE_INTEGER Tick;
@@ -98,14 +109,22 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     LARGE_INTEGER SystemTime;
-#ifndef IPRT_TARGET_NT4
-    KeQuerySystemTime(&SystemTime);
+    if (g_pfnrtKeQuerySystemTimePrecise)
+        g_pfnrtKeQuerySystemTimePrecise(&SystemTime);
+#ifdef RT_ARCH_AMD64
+    else
+        KeQuerySystemTime(&SystemTime); /* macro */
 #else
-    do
+    else if (g_pfnrtKeQuerySystemTime)
+        g_pfnrtKeQuerySystemTime(&SystemTime);
+    else
     {
-        SystemTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High1Time;
-        SystemTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.LowPart;
-    } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High2Time != SystemTime.HighPart);
+        do
+        {
+            SystemTime.HighPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High1Time;
+            SystemTime.LowPart = ((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.LowPart;
+        } while (((KUSER_SHARED_DATA volatile *)SharedUserData)->SystemTime.High2Time != SystemTime.HighPart);
+    }
 #endif
     return RTTimeSpecSetNtTime(pTime, SystemTime.QuadPart);
 }
