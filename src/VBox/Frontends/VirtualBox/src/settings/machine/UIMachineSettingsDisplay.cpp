@@ -142,6 +142,9 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 
     /* Cache Machine Window data: */
     displayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
+#ifdef Q_WS_MAC
+    displayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
+#endif /* Q_WS_MAC */
     displayData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
     displayData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
 
@@ -198,6 +201,9 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pStatusBarEditor->setMachineID(strMachineID);
     m_pMenuBarEditor->setActionPool(m_pActionPool);
     m_pEditorGuestScreenScale->setValue(displayData.m_dScaleFactor * 100);
+#ifdef Q_WS_MAC
+    m_pCheckBoxUnscaledHiDPIOutput->setChecked(displayData.m_fUseUnscaledHiDPIOutput);
+#endif /* Q_WS_MAC */
     m_pCheckBoxShowMiniToolBar->setChecked(displayData.m_fShowMiniToolBar);
     m_pComboToolBarAlignment->setChecked(displayData.m_fMiniToolBarAtTop);
 
@@ -245,6 +251,9 @@ void UIMachineSettingsDisplay::putToCache()
 
     /* Gather Machine Window data from page: */
     displayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
+#ifdef Q_WS_MAC
+    displayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
+#endif /* Q_WS_MAC */
     displayData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
     displayData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 
@@ -334,6 +343,9 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         if (isMachineInValidMode())
         {
             gEDataManager->setScaleFactor(displayData.m_dScaleFactor, m_machine.GetId());
+#ifdef Q_WS_MAC
+            gEDataManager->setUseUnscaledHiDPIOutput(displayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
+#endif /* Q_WS_MAC */
             gEDataManager->setMiniToolbarEnabled(displayData.m_fShowMiniToolBar, m_machine.GetId());
             gEDataManager->setMiniToolbarAlignment(displayData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
         }
@@ -502,7 +514,8 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     /* Machine Window tab-order: */
     setTabOrder(m_pEditorVideoCaptureBitRate, m_pSliderGuestScreenScale);
     setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
-    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxShowMiniToolBar);
+    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxUnscaledHiDPIOutput);
+    setTabOrder(m_pCheckBoxUnscaledHiDPIOutput, m_pCheckBoxShowMiniToolBar);
     setTabOrder(m_pCheckBoxShowMiniToolBar, m_pComboToolBarAlignment);
 }
 
@@ -559,9 +572,23 @@ void UIMachineSettingsDisplay::polishPage()
     sltHandleVideoCaptureCheckboxToggle();
 
     /* Machine-window tab: */
+    m_pMenuBarEditor->setEnabled(isMachineInValidMode());
+    m_pLabelGuestScreenScale->setEnabled(isMachineInValidMode());
+    m_pSliderGuestScreenScale->setEnabled(isMachineInValidMode());
+    m_pLabelGuestScreenScaleMin->setEnabled(isMachineInValidMode());
+    m_pLabelGuestScreenScaleMax->setEnabled(isMachineInValidMode());
+    m_pEditorGuestScreenScale->setEnabled(isMachineInValidMode());
+#ifdef Q_WS_MAC
+    m_pLabelHiDPI->setEnabled(isMachineInValidMode());
+    m_pCheckBoxUnscaledHiDPIOutput->setEnabled(isMachineInValidMode());
+#else /* !Q_WS_MAC */
+    m_pLabelHiDPI->hide();
+    m_pCheckBoxUnscaledHiDPIOutput->hide();
+#endif /* !Q_WS_MAC */
     m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
     m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
     m_pComboToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
+    m_pStatusBarEditor->setEnabled(isMachineInValidMode());
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoMemorySizeSliderChange()

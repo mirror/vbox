@@ -52,6 +52,9 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureFrameRate(0)
         , m_iVideoCaptureBitRate(0)
         , m_dScaleFactor(1)
+#ifdef Q_WS_MAC
+        , m_fUseUnscaledHiDPIOutput(false)
+#endif /* Q_WS_MAC */
         , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
     {}
@@ -79,6 +82,9 @@ struct UIDataSettingsMachineDisplay
                (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
                (m_screens == other.m_screens) &&
                (m_dScaleFactor == other.m_dScaleFactor) &&
+#ifdef Q_WS_MAC
+               (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput) &&
+#endif /* Q_WS_MAC */
                (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
                (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
     }
@@ -115,6 +121,9 @@ struct UIDataSettingsMachineDisplay
 
     /* Variables: Machine Window stuff: */
     double m_dScaleFactor;
+#ifdef Q_WS_MAC
+    bool m_fUseUnscaledHiDPIOutput;
+#endif /* Q_WS_MAC */
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
 };
