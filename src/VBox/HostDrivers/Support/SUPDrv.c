@@ -6166,19 +6166,19 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
     /* Calculate the TSC frequency. */
     if (   u64DeltaTsc < UINT64_MAX / RT_NS_1SEC
         && u64DeltaNanoTS < UINT32_MAX)
-        pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1SEC, u64DeltaNanoTS);
+        pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1SEC, (uint32_t)u64DeltaNanoTS);
     else
     {
         /* Try not to lose precision, the larger the interval the more likely we overflow. */
         if (   u64DeltaTsc < UINT64_MAX / RT_NS_100MS
             && u64DeltaNanoTS / 10 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_100MS, u64DeltaNanoTS / 10);
+            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_100MS, (uint32_t)(u64DeltaNanoTS / 10));
         else if (   u64DeltaTsc < UINT64_MAX / RT_NS_10MS
                  && u64DeltaNanoTS / 100 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_10MS, u64DeltaNanoTS / 100);
+            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_10MS, (uint32_t)(u64DeltaNanoTS / 100));
         else if (   u64DeltaTsc < UINT64_MAX / RT_NS_1MS
                  && u64DeltaNanoTS / 1000 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1MS, u64DeltaNanoTS / 1000);
+            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1MS, (uint32_t)(u64DeltaNanoTS / 1000));
         else /* Screw it. */
             pGip->u64CpuHz = u64DeltaTsc / (u64DeltaNanoTS / RT_NS_1SEC_64);
     }
@@ -7933,6 +7933,9 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
     cTries = 4;
     while (cTries-- > 0)
     {
+        int rc2;
+        uint16_t iCpu;
+
         rc = SUPGetTsc(&uTsc, &idApic);
         if (RT_SUCCESS(rc))
         {
@@ -7942,8 +7945,6 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
         }
 
         /* If we failed to have a TSC-delta, measurement the TSC-delta and retry. */
-        int rc2;
-        uint16_t iCpu;
         AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId),
                         ("idApic=%u ArraySize=%u\n", idApic, RT_ELEMENTS(pGip->aiCpuFromApicId)), VERR_INVALID_CPU_INDEX);
         iCpu = pGip->aiCpuFromApicId[idApic];
