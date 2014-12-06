@@ -6399,11 +6399,9 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                                 supdrvRefineTscFreq(pDevExt);
                             return VINF_SUCCESS;
                         }
-                        else
-                        {
-                            OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
-                            Assert(!pDevExt->pGipTimer);
-                        }
+
+                        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
+                        Assert(!pDevExt->pGipTimer);
                     }
                     else
                         OSDBGPRINT(("supdrvGipCreate: supdrvGipMeasureTscFreq failed. rc=%Rrc\n", rc));
@@ -7940,21 +7938,19 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPTSCREAD pReq)
             pReq->u.Out.idApic = idApic;
             return VINF_SUCCESS;
         }
-        else
-        {
-            /* If we failed to have a TSC-delta, measurement the TSC-delta and retry. */
-            int rc2;
-            uint16_t iCpu;
-            AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId),
-                            ("idApic=%u ArraySize=%u\n", idApic, RT_ELEMENTS(pGip->aiCpuFromApicId)), VERR_INVALID_CPU_INDEX);
-            iCpu = pGip->aiCpuFromApicId[idApic];
-            AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
 
-            Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pDevExt));
-            rc2 = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
-            if (RT_SUCCESS(rc2))
-                AssertReturn(pGip->aCPUs[iCpu].i64TSCDelta != INT64_MAX, VERR_INTERNAL_ERROR_2);
-        }
+        /* If we failed to have a TSC-delta, measurement the TSC-delta and retry. */
+        int rc2;
+        uint16_t iCpu;
+        AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId),
+                        ("idApic=%u ArraySize=%u\n", idApic, RT_ELEMENTS(pGip->aiCpuFromApicId)), VERR_INVALID_CPU_INDEX);
+        iCpu = pGip->aiCpuFromApicId[idApic];
+        AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
+
+        Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pDevExt));
+        rc2 = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
+        if (RT_SUCCESS(rc2))
+            AssertReturn(pGip->aCPUs[iCpu].i64TSCDelta != INT64_MAX, VERR_INTERNAL_ERROR_2);
     }
 
     return rc;
