@@ -125,7 +125,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     edx, [edi + SUPGIPCPU.u32UpdateIntervalTSC]
     mov     u32UpdateIntervalTSC, edx
     rdtsc
-    SupTscDeltaApply edi        ; Apply inter-cpu TSC-delta to have the normalized TSC value in edx:eax
+;; @todo r-bird: Deltas are only valid in INVARIANT mode according to SUPDrv.c macro.
+;; edi is pointing to aCpu[0] in INVARIANT and SYNC.  Code does more harm than good atm => disabled.
+;; (Just drop the SUPTscDeltaApply macro btw.)  Sketched what is needed for invariant in timesupA.asm, more work .cpp files in IPRT and VMM.
+;    SUPTscDeltaApply edi        ; Apply inter-cpu TSC-delta to have the normalized TSC value in edx:eax
     mov     ecx, [edi + SUPGIPCPU.u64NanoTS]
     mov     u64CurNanoTS, ecx
     mov     esi, [edi + SUPGIPCPU.u64NanoTS + 4]
@@ -544,7 +547,10 @@ BEGINPROC rtTimeNanoTSInternalAsm
     mov     u32UpdateIntervalNS,  [pGip + SUPGLOBALINFOPAGE.u32UpdateIntervalNS] ; before u64TSC
     mov     u32UpdateIntervalTSC, [pGipCPU + SUPGIPCPU.u32UpdateIntervalTSC]
     rdtsc
-    SUPTscDeltaApply pGipCPU
+;; @todo r-bird: Deltas are only valid in INVARIANT mode according to SUPDrv.c macro.
+;; pGipCPU is pointing to aCpu[0] in INVARIANT and SYNC.  Code is 32-bit, i.e. inefficient. Code does more harm than good atm => disabled.
+;; (Just drop the SUPTscDeltaApply macro btw.)  Sketched what is needed for invariant in timesupA.asm, more work .cpp files in IPRT and VMM.
+;    SUPTscDeltaApply pGipCPU
     mov     u64PrevNanoTS,        [pData + RTTIMENANOTSDATA.pu64Prev]
     mov     u64PrevNanoTS,        [u64PrevNanoTS]
     shl     rdx, 32
