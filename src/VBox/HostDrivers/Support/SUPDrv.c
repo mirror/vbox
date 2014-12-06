@@ -137,7 +137,8 @@ AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_T
 #endif
 
 /** Whether the application of TSC-deltas is required. */
-#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pDevExt)  ((a_pDevExt)->pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pDevExt)->fOsTscDeltasInSync))
+#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pDevExt) \
+    ((a_pDevExt)->pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pDevExt)->fOsTscDeltasInSync))
 
 
 /*******************************************************************************
@@ -7036,9 +7037,10 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
 
 
 /**
- * Clears all TSCs on the per-CPUs GIP struct. as well as the delta
- * synchronization variable. Optionally also clears the deltas on the per-CPU
- * GIP struct. as well.
+ * Clears TSC delta related variables.
+ *
+ * Clears all TSC samples as well as the delta synchronization variable on the
+ * all the per-CPU structs.  Optionally also clears the per-cpu deltas too.
  *
  * @param   pDevExt         Pointer to the device instance data.
  * @param   fClearDeltas    Whether the deltas are also to be cleared.
@@ -7435,7 +7437,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
 
     /*
      * Record whether the host OS has already normalized inter-CPU deltas for the hardware TSC.
-     * We only bother with TSC-deltas only on invariant CPUs for now.
+     * We only bother with TSC-deltas on invariant CPUs for now.
      */
     pDevExt->fOsTscDeltasInSync = supdrvIsInvariantTsc() && supdrvOSAreTscDeltasInSync();
 
