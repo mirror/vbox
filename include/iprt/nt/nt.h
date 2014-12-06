@@ -70,6 +70,9 @@
 #define _PEB_LDR_DATA              Incomplete__PEB_LDR_DATA
 #define PEB_LDR_DATA               Incomplete_PEB_LDR_DATA
 #define PPEB_LDR_DATA              Incomplete_PPEB_LDR_DATA
+#define _KUSER_SHARED_DATA         Incomplete__KUSER_SHARED_DATA
+#define KUSER_SHARED_DATA          Incomplete_KUSER_SHARED_DATA
+#define PKUSER_SHARED_DATA         Incomplete_PKUSER_SHARED_DATA
 
 
 
@@ -207,6 +210,9 @@
 #undef _PEB_LDR_DATA
 #undef PEB_LDR_DATA
 #undef PPEB_LDR_DATA
+#undef _KUSER_SHARED_DATA
+#undef KUSER_SHARED_DATA
+#undef PKUSER_SHARED_DATA
 
 
 #include <iprt/types.h>
@@ -437,6 +443,7 @@ typedef struct _XSTATE_CONFIGURATION
 } XSTATE_CONFIGURATION;
 typedef XSTATE_CONFIGURATION *PXSTATE_CONFIGURATION;
 # endif
+#endif /* IPRT_NT_USE_WINTERNL */
 
 typedef struct _KUSER_SHARED_DATA
 {
@@ -558,7 +565,6 @@ typedef struct _KUSER_SHARED_DATA
     XSTATE_CONFIGURATION    XState;                                     /**< 0x3d8 */
 } KUSER_SHARED_DATA;
 typedef KUSER_SHARED_DATA *PKUSER_SHARED_DATA;
-#endif /* IPRT_NT_USE_WINTERNL */
 AssertCompileMemberOffset(KUSER_SHARED_DATA, InterruptTime,             0x008);
 AssertCompileMemberOffset(KUSER_SHARED_DATA, SystemTime,                0x014);
 AssertCompileMemberOffset(KUSER_SHARED_DATA, NtSystemRoot,              0x030);
@@ -567,9 +573,29 @@ AssertCompileMemberOffset(KUSER_SHARED_DATA, Reserved1,                 0x2b4);
 AssertCompileMemberOffset(KUSER_SHARED_DATA, TestRetInstruction,        0x2f8);
 AssertCompileMemberOffset(KUSER_SHARED_DATA, Cookie,                    0x330);
 AssertCompileMemberOffset(KUSER_SHARED_DATA, ImageFileExecutionOptions, 0x3a0);
-#ifdef IPRT_NT_USE_WINTERNL
 AssertCompileMemberOffset(KUSER_SHARED_DATA, XState,                    0x3d8);
-#endif /* IPRT_NT_USE_WINTERNL */
+/** @def MM_SHARED_USER_DATA_VA
+ * Read only userland mapping of KUSER_SHARED_DATA. */
+#ifndef MM_SHARED_USER_DATA_VA
+# if ARCH_BITS == 32
+#  define MM_SHARED_USER_DATA_VA        UINT32_C(0x7ffe0000)
+# elif ARCH_BITS == 64
+#  define MM_SHARED_USER_DATA_VA        UINT64_C(0x7ffe0000)
+# else
+#  error "Unsupported/undefined ARCH_BITS value."
+# endif
+#endif
+/** @def KI_USER_SHARED_DATA
+ * Read write kernel mapping of KUSER_SHARED_DATA. */
+#ifndef KI_USER_SHARED_DATA
+# ifdef RT_ARCH_X86
+#  define KI_USER_SHARED_DATA           UINT32_C(0xffdf0000)
+# elif defined(RT_ARCH_AMD64)
+#  define KI_USER_SHARED_DATA           UINT64_C(0xfffff78000000000)
+# else
+#  error "PORT ME - KI_USER_SHARED_DATA"
+# endif
+#endif
 /** @} */
 
 
@@ -2298,6 +2324,9 @@ NTSYSAPI ULONG NTAPI    RtlGetLastWin32Error(VOID);
 NTSYSAPI VOID NTAPI     RtlSetLastWin32Error(ULONG uError);
 NTSYSAPI VOID NTAPI     RtlSetLastWin32ErrorAndNtStatusFromNtStatus(NTSTATUS rcNt);
 NTSYSAPI VOID NTAPI     RtlRestoreLastWin32Error(ULONG uError);
+NTSYSAPI BOOLEAN NTAPI  RtlQueryPerformanceCounter(PLARGE_INTEGER);
+NTSYSAPI uint64_t NTAPI RtlGetSystemTimePrecise(VOID);
+typedef uint64_t (NTAPI * PFNRTLGETSYSTEMTIMEPRECISE)(VOID);
 
 RT_C_DECLS_END
 /** @} */

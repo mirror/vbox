@@ -125,4 +125,6 @@ EXPORTS
     RtlSetLastWin32ErrorAndNtStatusFromNtStatus ;;= _RtlSetLastWin32ErrorAndNtStatusFromNtStatus@4
     RtlSizeHeap                           ;;= _RtlSizeHeap@12
     RtlSubAuthoritySid                    ;;= _RtlSubAuthoritySid@8
+    RtlQueryPerformanceCounter            ;;= _RtlQueryPerformanceCounter@4
+    RtlGetSystemTimePrecise               ;;= _RtlGetSystemTimePrecise@0
 

@@ -751,7 +751,8 @@ RuntimeR3_SOURCES.win = \
 	r3/win/rtFileNativeSetAttributes-win.cpp \
 	r3/win/thread-win.cpp \
 	r3/win/thread2-win.cpp \
-	r3/win/time-win.cpp \
+	$(if-expr 1,r3/win/time-win.cpp,r3/nt/time-nt.cpp) \
+	r3/win/time2-win.cpp \
 	r3/win/timer-win.cpp \
 	r3/win/tls-win.cpp \
 	r3/win/utf16locale-win.cpp \
