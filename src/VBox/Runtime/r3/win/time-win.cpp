@@ -161,19 +161,6 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 }
 
 
-RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
-{
-    FILETIME    FileTime;
-    SYSTEMTIME  SysTime;
-    if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTime, &FileTime), &SysTime))
-    {
-        if (SetSystemTime(&SysTime))
-            return VINF_SUCCESS;
-    }
-    return RTErrConvertFromWin32(GetLastError());
-}
-
-
 RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 {
     uint64_t u64;
@@ -197,45 +184,5 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
     if (GetTimeZoneInformation(&Tzi) != TIME_ZONE_ID_INVALID)
         return -(int64_t)Tzi.Bias * 60 * RT_NS_1SEC_64;
     return 0;
-}
-
-
-RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
-{
-    /*
-     * FileTimeToLocalFileTime does not do the right thing, so we'll have
-     * to convert to system time and SystemTimeToTzSpecificLocalTime instead.
-     */
-    RTTIMESPEC LocalTime;
-    SYSTEMTIME SystemTimeIn;
-    FILETIME FileTime;
-    if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTimeSpec, &FileTime), &SystemTimeIn))
-    {
-        SYSTEMTIME SystemTimeOut;
-        if (SystemTimeToTzSpecificLocalTime(NULL /* use current TZI */,
-                                            &SystemTimeIn,
-                                            &SystemTimeOut))
-        {
-            if (SystemTimeToFileTime(&SystemTimeOut, &FileTime))
-            {
-                RTTimeSpecSetNtFileTime(&LocalTime, &FileTime);
-                pTime = RTTimeExplode(pTime, &LocalTime);
-                if (pTime)
-                    pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
-                return pTime;
-            }
-        }
-    }
-
-    /*
-     * The fallback is to use the current offset.
-     * (A better fallback would be to use the offset of the same time of the year.)
-     */
-    LocalTime = *pTimeSpec;
-    RTTimeSpecAddNano(&LocalTime, RTTimeLocalDeltaNano());
-    pTime = RTTimeExplode(pTime, &LocalTime);
-    if (pTime)
-        pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
-    return pTime;
 }
 
