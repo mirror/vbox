@@ -422,7 +422,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                                               .arg(VBoxGlobal::qtRTVersionString());
             QMessageBox::critical(0, QApplication::tr("Incompatible Qt Library Error"),
                                   strMsg, QMessageBox::Abort, 0);
-            qFatal("%s", strMsg.toAscii().constData());
+            qFatal("%s", strMsg.toUtf8().constData());
             break;
         }
 #endif /* Q_WS_X11 */
@@ -670,7 +670,7 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
 
     QMessageBox::critical(0 /* parent */, strTitle, strText,
                           QMessageBox::Abort /* 1st button */, 0 /* 2nd button */);
-    qFatal("%s", strText.toAscii().constData());
+    qFatal("%s", strText.toUtf8().constData());
 }
 
 #endif /* VBOX_WITH_HARDENING */
