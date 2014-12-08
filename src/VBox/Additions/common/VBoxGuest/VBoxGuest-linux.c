@@ -133,6 +133,7 @@ static char                     g_szDbgLogDst[128];
 /** The input device handle */
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
 static struct input_dev        *g_pInputDevice = NULL;
+static bool                     g_fInputDeviceRegistered = false;
 #endif
 
 /** The file_operations structure. */
@@ -450,6 +451,7 @@ static int __init vboxguestLinuxCreateInputDevice(void)
             input_free_device(g_pInputDevice);
             return rc;
         }
+        g_fInputDeviceRegistered = true;
     }
     /* Do what one of our competitors apparently does as that works. */
     ASMBitSet(g_pInputDevice->evbit, EV_ABS);
@@ -474,8 +476,11 @@ static int __init vboxguestLinuxCreateInputDevice(void)
 static void vboxguestLinuxTermInputDevice(void)
 {
     VbglGRFree(&g_pMouseStatusReq->header);
-    input_unregister_device(g_pInputDevice);
-    input_free_device(g_pInputDevice);
+    /* see documentation of input_register_device() */
+    if (g_fInputDeviceRegistered)
+        input_unregister_device(g_pInputDevice);
+    else
+        input_free_device(g_pInputDevice);
 }
 #endif
 
