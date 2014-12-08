@@ -289,6 +289,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     NOREF(ppInterface);
     if (RT_SUCCESS(rc))
         rc = vboxClipboardMain();
+    if (rc == VERR_NOT_SUPPORTED)
+        rc = VINF_SUCCESS;  /* Prevent automatic restart. */
     if (RT_FAILURE(rc))
         LogRelFunc(("guest clipboard service terminated abnormally: return code %Rrc\n", rc));
     return rc;
