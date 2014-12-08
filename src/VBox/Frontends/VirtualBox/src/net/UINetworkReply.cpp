@@ -243,7 +243,7 @@ int UINetworkReplyPrivateThread::applyCertificates(RTHTTP pHttp, const QString &
         return VERR_INVALID_POINTER;
 
     /* Apply HTTPs certificates: */
-    return RTHttpSetCAFile(pHttp, strFullCertificateFileName.toAscii().constData());
+    return RTHttpSetCAFile(pHttp, strFullCertificateFileName.toUtf8().constData());
 }
 
 /* static */
