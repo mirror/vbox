@@ -45,6 +45,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
+#include <iprt/uint128.h>
 #include <iprt/uuid.h>
 #include <iprt/net.h>
 #include <iprt/crc.h>
@@ -6170,15 +6171,14 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
         pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1SEC, (uint32_t)u64DeltaNanoTS);
     else
     {
-        /* Try not to lose precision, the larger the interval the more likely we overflow. */
-#if 0  /** @todo r=bird: What about falling back on iprt/uint128.h here instead of
-         * trading accuracy for values that works with ASMMultU64ByU32DivByU32? Speed
-         * is hardly an issue at this point. */
+#if 1
         RTUINT128U CpuHz, Tmp, Divisor;
-        RTUInt128MulU64ByU64(&Tmp, u64DeltaTsc, RT_NS_1SEC);
+        CpuHz.s.Lo = CpuHz.s.Hi = 0;
+        RTUInt128MulU64ByU64(&Tmp, u64DeltaTsc, RT_NS_1SEC_64);
         RTUInt128Div(&CpuHz, &Tmp, RTUInt128AssignU64(&Divisor, u64DeltaNanoTS));
         pGip->u64CpuHz = CpuHz.s.Lo;
 #else
+        /* Try not to lose precision, the larger the interval the more likely we overflow. */
         if (   u64DeltaTsc < UINT64_MAX / RT_NS_100MS
             && u64DeltaNanoTS / 10 < UINT32_MAX)
             pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_100MS, (uint32_t)(u64DeltaNanoTS / 10));
