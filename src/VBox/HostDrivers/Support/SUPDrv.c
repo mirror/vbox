@@ -45,7 +45,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
-#include <iprt/uint128.h>
 #include <iprt/uuid.h>
 #include <iprt/net.h>
 #include <iprt/crc.h>
@@ -55,7 +54,7 @@
 # include <iprt/rand.h>
 # include <iprt/path.h>
 #endif
-/*#include <iprt/uint128.h> - probably needs exporting. */
+#include <iprt/uint128.h>
 #include <iprt/x86.h>
 
 #include <VBox/param.h>
@@ -3940,7 +3939,7 @@ static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser
  * Increase the timer freqency on hosts where this is possible (NT).
  *
  * The idea is that more interrupts is better for us... Also, it's better than
- * we increase the timer frequence, because we might end up getting inaccuract
+ * we increase the timer frequence, because we might end up getting inaccurate
  * callbacks if someone else does it.
  *
  * @param   pDevExt   Sets u32SystemTimerGranularityGrant if increased.
@@ -6178,6 +6177,7 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
         RTUInt128Div(&CpuHz, &Tmp, RTUInt128AssignU64(&Divisor, u64DeltaNanoTS));
         pGip->u64CpuHz = CpuHz.s.Lo;
 #else
+        /** @todo remove later */
         /* Try not to lose precision, the larger the interval the more likely we overflow. */
         if (   u64DeltaTsc < UINT64_MAX / RT_NS_100MS
             && u64DeltaNanoTS / 10 < UINT32_MAX)
