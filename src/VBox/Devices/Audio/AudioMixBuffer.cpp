@@ -295,17 +295,17 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     }
 
 /* audioMixBufConvToS8: 8 bit, signed. */
-AUDMIXBUF_CONVERT(S8 /* Name */,  int8_t,   INT8_MIN  /* Min */, INT8_MAX   /* Max */, true  /* fSigned */, 8  /* cShift */);
+AUDMIXBUF_CONVERT(S8 /* Name */,  int8_t,   INT8_MIN  /* Min */, INT8_MAX   /* Max */, true  /* fSigned */, 8  /* cShift */)
 /* audioMixBufConvToU8: 8 bit, unsigned. */
-AUDMIXBUF_CONVERT(U8 /* Name */,  uint8_t,  0         /* Min */, UINT8_MAX  /* Max */, false /* fSigned */, 8  /* cShift */);
+AUDMIXBUF_CONVERT(U8 /* Name */,  uint8_t,  0         /* Min */, UINT8_MAX  /* Max */, false /* fSigned */, 8  /* cShift */)
 /* audioMixBufConvToS16: 16 bit, signed. */
-AUDMIXBUF_CONVERT(S16 /* Name */, int16_t,  INT16_MIN /* Min */, INT16_MAX  /* Max */, true  /* fSigned */, 16 /* cShift */);
+AUDMIXBUF_CONVERT(S16 /* Name */, int16_t,  INT16_MIN /* Min */, INT16_MAX  /* Max */, true  /* fSigned */, 16 /* cShift */)
 /* audioMixBufConvToU16: 16 bit, unsigned. */
-AUDMIXBUF_CONVERT(U16 /* Name */, uint16_t, 0         /* Min */, UINT16_MAX /* Max */, false /* fSigned */, 16 /* cShift */);
+AUDMIXBUF_CONVERT(U16 /* Name */, uint16_t, 0         /* Min */, UINT16_MAX /* Max */, false /* fSigned */, 16 /* cShift */)
 /* audioMixBufConvToS32: 32 bit, signed. */
-AUDMIXBUF_CONVERT(S32 /* Name */, int32_t,  INT32_MIN /* Min */, INT32_MAX  /* Max */, true  /* fSigned */, 32 /* cShift */);
+AUDMIXBUF_CONVERT(S32 /* Name */, int32_t,  INT32_MIN /* Min */, INT32_MAX  /* Max */, true  /* fSigned */, 32 /* cShift */)
 /* audioMixBufConvToU32: 32 bit, unsigned. */
-AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* Max */, false /* fSigned */, 32 /* cShift */);
+AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* Max */, false /* fSigned */, 32 /* cShift */)
 
 #undef AUDMIXBUF_CONVERT
 
@@ -393,9 +393,9 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
     }
 
 /* audioMixBufOpAssign: Assigns values from source buffer to destination bufffer, overwriting the destination. */
-AUDMIXBUF_MIXOP(Assign /* Name */,  = /* Operation */);
+AUDMIXBUF_MIXOP(Assign /* Name */,  = /* Operation */)
 /* audioMixBufOpBlend: Blends together the values from both, the source and the destination buffer. */
-AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */);
+AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */)
 
 #undef AUDMIXBUF_MIXOP
 #undef AUDMIXBUF_MACRO_LOG
@@ -1213,7 +1213,7 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc = VINF_SUCCESS;
 
     uint32_t cToWrite = AUDIOMIXBUF_B2S(pMixBuf, cbBuf);
-    Assert(cToWrite);
+    AssertMsg(cToWrite, ("cToWrite is 0 (cbBuf=%zu)\n", cbBuf));
 
     PPDMAUDIOSAMPLE pSamplesDst1 = pMixBuf->pSamples + pMixBuf->offReadWrite;
     size_t cLenDst1 = cToWrite;
