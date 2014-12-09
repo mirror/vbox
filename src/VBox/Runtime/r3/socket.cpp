@@ -1588,26 +1588,45 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
  */
 int rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr)
 {
+    RTSOCKADDRUNION u;
+    int             cbAddr;
+    int rc = rtSocketAddrFromNetAddr(pAddr, &u, sizeof(u), &cbAddr);
+    if (RT_SUCCESS(rc))
+        rc = rtSocketBindRawAddr(hSocket, &u.Addr, cbAddr);
+    return rc;
+}
+
+
+/**
+ * Very thin wrapper around bind.
+ *
+ * @returns IPRT status code.
+ * @param   hSocket             The socket handle.
+ * @param   pvAddr              The address to bind to (struct sockaddr and
+ *                              friends).
+ * @param   cbAddr              The size of the address.
+ */
+int rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr)
+{
     /*
      * Validate input.
      */
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pvAddr, VERR_INVALID_POINTER);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
-    RTSOCKADDRUNION u;
-    int             cbAddr;
-    int rc = rtSocketAddrFromNetAddr(pAddr, &u, sizeof(u), &cbAddr);
-    if (RT_SUCCESS(rc))
-    {
-        if (bind(pThis->hNative, &u.Addr, cbAddr) != 0)
-            rc = rtSocketError();
-    }
+    int rc;
+    if (bind(pThis->hNative, (struct sockaddr const *)pvAddr, cbAddr) == 0)
+        rc = VINF_SUCCESS;
+    else
+        rc = rtSocketError();
 
     rtSocketUnlock(pThis);
     return rc;
 }
+
 
 
 /**
