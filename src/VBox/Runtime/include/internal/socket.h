@@ -55,6 +55,7 @@ int rtSocketResolverError(void);
 int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative);
 int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol);
 int rtSocketBind(RTSOCKET hSocket, PCRTNETADDR pAddr);
+int rtSocketBindRawAddr(RTSOCKET hSocket, void const *pvAddr, size_t cbAddr);
 int rtSocketListen(RTSOCKET hSocket, int cMaxPending);
 int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr);
 int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr);
