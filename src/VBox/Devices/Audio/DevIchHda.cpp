@@ -626,6 +626,7 @@ typedef struct HDASTATE
     /** Number of active + allocated LUNs. Each
      *  LUN has a HDA driver assigned. */
     uint8_t                            cLUNs;
+    uint8_t                            au8PaddingLUNs[4];
     /** The HDA codec to use. */
     R3PTRTYPE(PHDACODEC)               pCodec;
     /** Array of active HDA drivers. */
@@ -644,7 +645,11 @@ typedef struct HDASTATE
     uint64_t                           u64BaseTS;
     /** 1.2.3.4.5.6.7. - someone please tell me what I'm counting! - .8.9.10... */
     uint8_t                            u8Counter;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    uint8_t                            au8Padding[4];
+#else
     uint8_t                            au8Padding[7];
+#endif
 } HDASTATE;
 /** Pointer to the ICH Intel HD Audio Controller state. */
 typedef HDASTATE *PHDASTATE;
@@ -1477,10 +1482,12 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 u8Strm = 0;
                 pBdle = &pThis->StInBdle;
                 break;
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             case HDA_REG_SD2CTL:
                 u8Strm = 2;
                 pBdle = &pThis->StMicBdle;
                 break;
+#endif
             case HDA_REG_SD4CTL:
                 u8Strm = 4;
                 pBdle = &pThis->StOutBdle;
