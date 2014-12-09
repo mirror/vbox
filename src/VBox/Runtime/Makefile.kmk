@@ -1220,6 +1220,10 @@ RuntimeBldProg_SOURCES          = $(filter-out \
 	r3/xml.cpp \
 	common/zip/xarvfs.cpp \
 	, $(RuntimeR3_SOURCES))
+if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" != "win"
+RuntimeBldProg_SOURCES         += \
+	common/err/errmsgxpcom.cpp
+endif
 
 
 
