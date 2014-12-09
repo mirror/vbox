@@ -1,9 +1,9 @@
 /** @file
- * IPRT - TCP/IP.
+ * IPRT - Local IPC Server & Client.
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,15 +23,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_tcp_h
-#define ___iprt_tcp_h
+#ifndef ___iprt_localipc_h
+#define ___iprt_localipc_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/thread.h>
 
 #ifdef IN_RING0
-# error "There are no RTFile APIs available Ring-0 Host Context!"
+# error "There are no RTLocalIpc APIs available Ring-0 Host Context!"
 #endif
 
 
@@ -65,10 +65,9 @@ typedef RTLOCALIPCSESSION              *PRTLOCALIPCSESSION;
  * @retval  VINF_SUCCESS on success and *phServer containing the instance handle.
  *
  * @param   phServer    Where to put the server instance handle.
- * @param   pszName     The servier name. This must be unique and not
- *                      include any special chars or slashes. It will
- *                      be morphed into a unique platform specific
- *                      identifier.
+ * @param   pszName     The server name.  This must be unique and not include
+ *                      any special chars or slashes. It will be morphed into a
+ *                      unique platform specific identifier.
  * @param   fFlags      Flags, see RTLOCALIPC_FLAGS_*.
  */
 RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszName, uint32_t fFlags);
