@@ -41,11 +41,6 @@ Bool vbox_device_available(VBOXPtr pVBox)
     return TRUE;
 }
 
-Bool vboxEnableGraphicsCap(VBOXPtr pVBox)
-{
-    return TRUE;
-}
-
 void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox) {}
 
 static struct
