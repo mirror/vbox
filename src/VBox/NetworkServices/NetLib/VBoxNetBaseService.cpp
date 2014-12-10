@@ -457,6 +457,21 @@ void VBoxNetBaseService::shutdown(void)
 {
     syncEnter();
     m->fShutdown = true;
+    if (m->m_hThrRecv != NIL_RTTHREAD)
+    {
+        int rc = m->m_EventQ->interruptEventQueueProcessing();
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTThreadWait(m->m_hThrRecv, 60000, NULL);
+            if (RT_FAILURE(rc))
+                LogWarningFunc(("RTThreadWait(%RTthrd) -> %Rrc\n", m->m_hThrRecv, rc));
+        }
+        else
+        {
+            AssertMsgFailed(("interruptEventQueueProcessing() failed\n"));
+            RTThreadWait(m->m_hThrRecv , 0, NULL);
+        }
+    }
     syncLeave();
 }
 
@@ -734,19 +749,19 @@ int VBoxNetBaseService::startReceiveThreadAndEnterEventLoop()
                             RTTHREADTYPE_IO, /* type */
                             0, /* flags, @todo: waitable ?*/
                             "RECV");
-    AssertRCReturn(rc,rc);
+    AssertRCReturn(rc, rc);
 
     m->m_EventQ = com::NativeEventQueue::getMainEventQueue();
     AssertPtrReturn(m->m_EventQ, VERR_INTERNAL_ERROR);
 
-    while(true)
+    while (!m->fShutdown)
     {
-        m->m_EventQ->processEventQueue(0);
-
-        if (m->fShutdown)
+        rc = m->m_EventQ->processEventQueue(RT_INDEFINITE_WAIT);
+        if (rc == VERR_INTERRUPTED)
+        {
+            LogFlow(("Event queue processing ended with rc=%Rrc\n", rc));
             break;
-
-        m->m_EventQ->processEventQueue(500);
+        }
     }
 
     return VINF_SUCCESS;
