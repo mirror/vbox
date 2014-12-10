@@ -202,7 +202,7 @@ class tdGuestOsBootTest1(vbox.TestDriver):
             fRc = fRc and oSession.setNicTraceEnabled(True, sNicTraceFile)
 
         # Remote desktop
-        oSession.setupVrdp(True, uPort=3389)
+        oSession.setupVrdp(True)
 
         fRc = fRc and oSession.saveSettings()
         fRc = fRc and oSession.close()

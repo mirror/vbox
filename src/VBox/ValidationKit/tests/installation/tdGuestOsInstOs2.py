@@ -193,7 +193,7 @@ class tdGuestOsInstOs2(vbox.TestDriver):
         fRc = fRc and oSession.enablePae(self.fEnablePAE)
 
         # Remote desktop
-        oSession.setupVrdp(True, uPort=3389)
+        oSession.setupVrdp(True)
 
         # Set extra data
         if self.asExtraData != []:
