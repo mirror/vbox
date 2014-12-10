@@ -655,6 +655,8 @@ class RemoteReporter(ReporterBase):
                                    constants.tbreq.ALL_PARAM_ACTION:  constants.tbreq.UPLOAD,
                                 });
 
+        self._writeOutput('%s: _doUploadFile: url="%s"' % (utils.getTimePrefix(), sUrl));
+
         # Retry loop.
         secStart = utils.timestampSecond();
         while True:
