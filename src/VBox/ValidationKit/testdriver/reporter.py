@@ -543,6 +543,8 @@ class RemoteReporter(ReporterBase):
         self._fnUrlEncode       = urllib.urlencode;
         self._fnUrlParseQs      = urlparse.parse_qs;
         self._oParsedTmUrl      = urlparse.urlparse(self.sTestManagerUrl);
+        self._writeOutput('%s: RemoteReporter: host="%s"' % (self._oParsedTmUrl.hostname));
+
         if     sys.version_info[0] >= 3 \
            or (sys.version_info[0] == 2 and sys.version_info[1] >= 6):
             if self._oParsedTmUrl.scheme == 'https': # pylint: disable=E1101
