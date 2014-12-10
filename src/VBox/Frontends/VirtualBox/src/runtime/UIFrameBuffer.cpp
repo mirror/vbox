@@ -62,6 +62,7 @@ UIFrameBuffer::UIFrameBuffer()
     , m_fUnused(false)
     , m_fAutoEnabled(false)
     , m_dScaleFactor(gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()))
+    , m_transform(QTransform().scale(m_dScaleFactor, m_dScaleFactor))
     , m_fUseUnscaledHiDPIOutput(gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
@@ -471,13 +472,13 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         /* Which is inclusive: */
         rect.setRight(rects->xRight - 1);
         rect.setBottom(rects->yBottom - 1);
-        /* Tune according scale-factor: */
-        rect.moveTo(rect.topLeft() * m_dScaleFactor);
-        rect.setSize(rect.size() * m_dScaleFactor + QSize(1, 1));
         /* Append region: */
         region += rect;
         ++rects;
     }
+    /* Tune according scale-factor: */
+    if (m_dScaleFactor != 1.0)
+        region = m_transform.map(region);
 
     if (m_fUpdatesAllowed)
     {
@@ -771,6 +772,7 @@ void UIFrameBuffer::sltHandleScaleFactorChange(const QString &strMachineID)
 
     /* Fetch new scale-factor: */
     m_dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    m_transform = QTransform().scale(m_dScaleFactor, m_dScaleFactor);
 }
 
 #ifdef RT_OS_DARWIN
