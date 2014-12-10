@@ -739,7 +739,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>If checked, guest screen content will not be logically scaled on hosts with HiDPI screens.</string>
+          <string>If checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</string>
          </property>
          <property name="text">
           <string>Use &amp;Unscaled HiDPI Output</string>
