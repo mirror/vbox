@@ -20,6 +20,7 @@
 /* Qt includes: */
 #include <QRegion>
 #include <QImage>
+#include <QTransform>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -292,6 +293,8 @@ protected:
      * @{ */
     /** Holds the scale-factor used by the scaled-size. */
     double m_dScaleFactor;
+    /** Holds the coordinate-system for the scale-factor above. */
+    QTransform m_transform;
     /** Holds the frame-buffer's scaled-size. */
     QSize m_scaledSize;
     /** @} */

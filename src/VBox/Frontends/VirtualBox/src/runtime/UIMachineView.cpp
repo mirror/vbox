@@ -241,7 +241,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         {
             /* Assign new frame-buffer logical-size taking the scale-factor into account: */
             const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-            frameBuffer()->setScaledSize(dScaleFactor == 1 ? QSize() : QSize(iWidth * dScaleFactor, iHeight * dScaleFactor));
+            frameBuffer()->setScaledSize(dScaleFactor == 1.0 ? QSize() : QSize(iWidth * dScaleFactor, iHeight * dScaleFactor));
         }
 
         /* Perform frame-buffer mode-change: */
@@ -295,7 +295,7 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor == 1)
+    if (dScaleFactor == 1.0)
     {
         /* Adjust corresponding viewport part: */
         rect.moveTo(iX - contentsX(),
@@ -508,7 +508,7 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->init(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
-        m_pFrameBuffer->setScaledSize(dScaleFactor == 1 ? QSize() :
+        m_pFrameBuffer->setScaledSize(dScaleFactor == 1.0 ? QSize() :
                                       QSize(m_pFrameBuffer->width() * dScaleFactor,
                                             m_pFrameBuffer->height() * dScaleFactor));
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
@@ -1165,7 +1165,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
-        if (gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()) == 1)
+        if (gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()) == 1.0)
             painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
                                                           rect.width(), rect.height()));
         else
