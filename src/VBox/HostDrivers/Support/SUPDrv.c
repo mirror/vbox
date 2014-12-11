@@ -7329,8 +7329,10 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 static SUPGIPMODE supdrvGipDetermineTscMode(PSUPDRVDEVEXT pDevExt)
 {
     /* Trust CPUs that declare their TSC to be invariant. */
+#if 0       /** @todo this cannot be enabled until Michal's AMD laptop with insane deltas are working. */
     if (supdrvIsInvariantTsc())
         return SUPGIPMODE_INVARIANT_TSC;
+#endif
 
     /*
      * Without invariant CPU ID bit - On SMP we're faced with two problems:
@@ -7377,6 +7379,11 @@ static SUPGIPMODE supdrvGipDetermineTscMode(PSUPDRVDEVEXT pDevExt)
             }
         }
     }
+
+    /** @todo later remove this when the above todo with AMD laptop is done (i.e.
+     *        TSC deltas handled everywhere). */
+    if (supdrvIsInvariantTsc())
+        return SUPGIPMODE_INVARIANT_TSC;
     return SUPGIPMODE_SYNC_TSC;
 }
 
