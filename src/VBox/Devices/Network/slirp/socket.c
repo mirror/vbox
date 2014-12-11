@@ -878,7 +878,10 @@ sorecvfrom(PNATState pData, struct socket *so)
             status = WSARecvFrom(so->s, iov, 2, &nbytes, &flags,
                                  (struct sockaddr *)&addr, &addrlen,
                                  NULL, NULL);
-            nread = (status != SOCKET_ERROR) ? nbytes : -1;
+            if (status != SOCKET_ERROR)
+                nread = nbytes;
+            else
+                nread = -1;
         }
 #endif
         if (nread >= 0)
