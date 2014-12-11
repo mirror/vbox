@@ -543,7 +543,6 @@ class RemoteReporter(ReporterBase):
         self._fnUrlEncode       = urllib.urlencode;
         self._fnUrlParseQs      = urlparse.parse_qs;
         self._oParsedTmUrl      = urlparse.urlparse(self.sTestManagerUrl);
-        self._writeOutput('RemoteReporter: host="%s"' % (self._oParsedTmUrl.hostname));
 
         if     sys.version_info[0] >= 3 \
            or (sys.version_info[0] == 2 and sys.version_info[1] >= 6):
@@ -656,8 +655,6 @@ class RemoteReporter(ReporterBase):
                                    constants.tbreq.UPLOAD_PARAM_MIME: sMime,
                                    constants.tbreq.ALL_PARAM_ACTION:  constants.tbreq.UPLOAD,
                                 });
-
-        self._writeOutput('%s: _doUploadFile: url="%s"' % (utils.getTimePrefix(), sUrl));
 
         # Retry loop.
         secStart = utils.timestampSecond();
