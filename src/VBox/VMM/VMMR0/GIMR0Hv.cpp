@@ -117,17 +117,16 @@ VMM_INT_DECL(int) GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
     RTSpinlockAcquire(pcHv->hSpinlockR0);
     if (pRefTsc->i64TscOffset != i64TscOffset)
     {
-        ASMAtomicWriteS64(&pRefTsc->i64TscOffset, i64TscOffset);
         if (pRefTsc->u32TscSequence < UINT32_C(0xfffffffe))
             ASMAtomicIncU32(&pRefTsc->u32TscSequence);
         else
             ASMAtomicWriteU32(&pRefTsc->u32TscSequence, 1);
+        ASMAtomicWriteS64(&pRefTsc->i64TscOffset, i64TscOffset);
     }
     RTSpinlockRelease(pcHv->hSpinlockR0);
 
     Assert(pRefTsc->u32TscSequence != 0);
     Assert(pRefTsc->u32TscSequence != UINT32_C(0xffffffff));
-    AssertReturn(pRefTsc->u32TscSequence != 0xfffffffe, VERR_GIM_IPE_3);
     return VINF_SUCCESS;
 }
 
