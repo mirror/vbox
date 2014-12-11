@@ -494,6 +494,7 @@ HGSMIOFFSET HGSMIHostRead (HGSMIINSTANCE *pIns)
 
     VM_ASSERT_EMT(pIns->pVM);
 
+    AssertPtrReturn(pIns->pHGFlags, VERR_WRONG_ORDER);
     int rc = hgsmiFIFOLock(pIns);
     AssertRC(rc);
     if(RT_SUCCESS(rc))
@@ -545,11 +546,13 @@ static void hgsmiNotifyGuest (HGSMIINSTANCE *pIns)
 
 void HGSMISetHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
 {
+    AssertPtrReturnVoid(pIns->pHGFlags);
     ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, flags);
 }
 
 void HGSMIClearHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
 {
+    AssertPtrReturnVoid(pIns->pHGFlags);
     ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, (~flags));
 }
 
@@ -851,6 +854,7 @@ static int hgsmiHostCommandWrite (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem
 {
     HGSMIHOSTFIFOENTRY *pEntry;
 
+    AssertPtrReturn(pIns->pHGFlags, VERR_WRONG_ORDER);
     int rc = hgsmiHostFIFOAlloc (pIns, &pEntry);
 
     if (RT_SUCCESS (rc))
@@ -1890,6 +1894,7 @@ static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
 {
     HGSMIGUESTCOMPLENTRY *pEntry = NULL;
 
+    AssertPtrReturn(pIns->pHGFlags, VERR_WRONG_ORDER);
     int rc = hgsmiGuestCompletionFIFOAlloc (pIns, &pEntry);
     AssertRC(rc);
     if (RT_SUCCESS (rc))
