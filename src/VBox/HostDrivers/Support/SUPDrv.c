@@ -5624,13 +5624,16 @@ static bool supdrvIsInvariantTsc(void)
     static bool s_fIsInvariantTsc = false;
     if (!s_fQueried)
     {
-        uint32_t uEax, uEbx, uEcx, uEdx;
-        ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
-        if (uEax >= 0x80000007)
+        if (ASMHasCpuId())
         {
-            ASMCpuId(0x80000007, &uEax, &uEbx, &uEcx, &uEdx);
-            if (uEdx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
-                s_fIsInvariantTsc = true;
+            uint32_t uEax, uEbx, uEcx, uEdx;
+            ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
+            if (uEax >= 0x80000007)
+            {
+                ASMCpuId(0x80000007, &uEax, &uEbx, &uEcx, &uEdx);
+                if (uEdx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
+                    s_fIsInvariantTsc = true;
+            }
         }
         s_fQueried = true;
     }
