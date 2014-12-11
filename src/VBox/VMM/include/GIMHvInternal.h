@@ -439,10 +439,10 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
  */
 typedef struct GIMHVREFTSC
 {
-    uint32_t volatile   u32TscSequence;
-    uint32_t            uReserved0;
-    uint64_t volatile   u64TscScale;
-    int64_t  volatile   i64TscOffset;
+    uint32_t u32TscSequence;
+    uint32_t uReserved0;
+    uint64_t u64TscScale;
+    int64_t  i64TscOffset;
 } GIMHVTSCPAGE;
 /** Pointer to Hyper-V reference TSC. */
 typedef GIMHVREFTSC *PGIMHVREFTSC;
