@@ -352,15 +352,15 @@ static void ichac97ColdReset(PAC97STATE pThis)
 static void ichac97FetchBufDesc(PAC97STATE pThis, PAC97BMREG pReg)
 {
     PPDMDEVINS pDevIns = ICHAC97STATE_2_DEVINS(pThis);
-    uint8_t b[8];
+    uint32_t u32[2];
 
-    PDMDevHlpPhysRead(pDevIns, pReg->bdbar + pReg->civ * 8, b, sizeof(b));
+    PDMDevHlpPhysRead(pDevIns, pReg->bdbar + pReg->civ * 8, &u32[0], sizeof(u32));
     pReg->bd_valid   = 1;
 #if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
 # error Please adapt the code (audio buffers are little endian)!
 #else
-    pReg->bd.addr    = (*(uint32_t *) &b[0]) & ~3;
-    pReg->bd.ctl_len = (*(uint32_t *) &b[4]);
+    pReg->bd.addr    = RT_H2LE_U32(u32[0] & ~3);
+    pReg->bd.ctl_len = RT_H2LE_U32(u32[1]);
 #endif
     pReg->picb       = pReg->bd.ctl_len & 0xffff;
     LogFlowFunc(("bd %2d addr=%#x ctl=%#06x len=%#x(%d bytes)\n",
