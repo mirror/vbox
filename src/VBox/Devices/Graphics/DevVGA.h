@@ -398,10 +398,6 @@ typedef struct VGAState {
     /** Status LUN\#0: Leds interface. */
     PDMILEDPORTS                ILeds;
 
-#if HC_ARCH_BITS == 32
-    uint32_t                    Padding2;
-#endif
-
     /** Pointer to base interface of the driver. */
     R3PTRTYPE(PPDMIBASE)        pDrvBase;
     /** Pointer to display connector interface of the driver. */
