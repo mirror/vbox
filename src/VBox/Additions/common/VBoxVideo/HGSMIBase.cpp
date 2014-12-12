@@ -237,6 +237,21 @@ static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
+/**
+ * Notify the host of HGSMI-related guest capabilities via an HGSMI command.
+ * @returns  IPRT status value.
+ * @returns  VERR_NOT_IMPLEMENTED  if the host does not support the command.
+ * @returns  VERR_NO_MEMORY        if a heap allocation fails.
+ * @param    pCtx                  the context of the guest heap to use.
+ * @param    fCaps                 the capabilities to report, see VBVACAPS.
+ */
+RTDECL(int) VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                  uint32_t fCaps)
+{
+    return vboxHGSMISendCapsInfo(pCtx, fCaps);
+}
+
+
 /** Tell the host about the location of the area of VRAM set aside for the host
  * heap. */
 static int vboxHGSMIReportHostArea(PHGSMIGUESTCOMMANDCONTEXT pCtx,

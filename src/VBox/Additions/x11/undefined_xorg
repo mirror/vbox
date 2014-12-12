@@ -8,6 +8,7 @@ chdir
 chmod
 chown
 close
+closedir
 __ctype_b_loc
 __ctype_mask
 __cxa_finalize
@@ -88,6 +89,7 @@ nanosleep
 nl_langinfo
 open
 open64
+opendir
 pci_device_map_range
 pci_device_unmap_range
 posix_memalign
@@ -96,12 +98,15 @@ pthread_sigmask
 pthread_yield
 putenv
 read
+readdir
+readdir64
 realloc
 realpath
 __realpath_chk
 __register_frame_info_bases
 rename
 RRChangeOutputProperty
+RRGetInfo
 setenv
 ShadowFBInit2
 sigdelset
@@ -118,6 +123,7 @@ strchr
 strcmp
 strcpy
 strlen
+strncat
 strncmp
 strncpy
 __strncpy_chk
@@ -143,6 +149,7 @@ vgaHWSetStdFuncs
 vsnprintf
 __vsnprintf_chk
 write
+xf86AddGeneralHandler
 xf86CreateCursorInfoRec
 xf86CrtcConfigInit
 xf86CrtcConfigPrivateIndex
@@ -158,6 +165,7 @@ xf86ModesAdd
 xf86OutputCreate
 xf86OutputSetEDID
 xf86OutputUseScreenMonitor
+xf86RemoveGeneralHandler
 xf86SaveScreen
 xf86ScreenToScrn
 xf86ScrnToScreen

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VirtualBox X11 Additions graphics driver utility functions
+ * VirtualBox X11 Additions graphics driver dynamic video mode functions.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,9 @@
 
 #include "xf86.h"
 #include "dixstruct.h"
+#ifdef VBOX_GUESTR3XF86MOD
+# define EXTENSION_PROC_ARGS char *name, GCPtr pGC
+#endif
 #include "extnsionst.h"
 #include "windowstr.h"
 #include <X11/extensions/randrproto.h>
@@ -32,6 +35,17 @@
 # include <stdlib.h>
 #endif
 
+#ifdef VBOXVIDEO_13
+# ifdef RT_OS_LINUX
+# include "randrstr.h"
+# include "xf86_OSproc.h"
+#  include <linux/input.h>
+#  include <dirent.h>
+#  include <errno.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+# endif /* RT_OS_LINUX */
+#endif /* VBOXVIDEO_13 */
 /**************************************************************************
 * Main functions                                                          *
 **************************************************************************/
@@ -242,6 +256,25 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
     PropertyPtr prop = NULL;
     unsigned i;
 
+#ifdef VBOXVIDEO_13
+    if (RT_SUCCESS(VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens,
+                                         pVBox->paVBVAModeHints)))
+    {
+        for (i = 0; i < pVBox->cScreens; ++i)
+        {
+            if (pVBox->paVBVAModeHints[i].magic == VBVAMODEHINT_MAGIC)
+            {
+                pVBox->pScreens[i].aPreferredSize.cx =
+                    pVBox->paVBVAModeHints[i].cx;
+                pVBox->pScreens[i].aPreferredSize.cy =
+                    pVBox->paVBVAModeHints[i].cy;
+                pVBox->pScreens[i].afConnected =
+                    pVBox->paVBVAModeHints[i].fEnabled;
+            }
+        }
+        return;
+    }
+#endif    
     /* We can get called early, before the root window is created. */
     if (!ROOT_WINDOW(pScrn))
         return;
@@ -379,3 +412,87 @@ void VBoxSetUpRandR11(ScreenPtr pScreen)
 }
 
 #endif /* !VBOXVIDEO_13 */
+
+#ifdef VBOXVIDEO_13
+# ifdef RT_OS_LINUX
+static void acpiEventHandler(int fd, void *pvData)
+{
+    struct input_event event;
+    ssize_t rc;
+
+    RRGetInfo((ScreenPtr)pvData
+# if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
+              , TRUE
+# endif
+             );
+    do
+        rc = read(fd, &event, sizeof(event));
+    while (rc > 0 || (rc == -1 && errno == EINTR));
+    if (rc == -1 && errno != EAGAIN)  /* Why not just return 0? */
+        FatalError("Reading ACPI input event failed.\n");
+}
+
+void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
+{
+    VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
+    struct dirent *pDirent;
+    DIR *pDir;
+    int fd = -1;
+
+    if (pVBox->fdACPIDevices != -1 || pVBox->hACPIEventHandler != NULL)
+        FatalError("ACPI input file descriptor not initialised correctly.\n");
+    pDir = opendir("/dev/input");
+    if (pDir == NULL)
+        return;
+    for (pDirent = readdir(pDir); pDirent != NULL; pDirent = readdir(pDir))
+    {
+        if (strncmp(pDirent->d_name, "event", sizeof("event") - 1) == 0)
+        {
+#define BITS_PER_BLOCK (sizeof(unsigned long) * 8)
+            char pszFile[64] = "/dev/input/";
+            char pszDevice[64] = "";
+            unsigned long afKeys[KEY_MAX / BITS_PER_BLOCK];
+
+            strncat(pszFile, pDirent->d_name, sizeof(pszFile));
+            if (fd != -1)
+                close(fd);
+            fd = open(pszFile, O_RDONLY | O_NONBLOCK);
+            if (   fd == -1
+                || ioctl(fd, EVIOCGNAME(sizeof(pszDevice)), pszDevice) == -1
+                || strcmp(pszDevice, "Video Bus") != 0)
+                continue;
+            if (   ioctl(fd, EVIOCGBIT(EV_KEY, KEY_MAX), afKeys) == -1
+                || ((   afKeys[KEY_SWITCHVIDEOMODE / BITS_PER_BLOCK]
+                     >> KEY_SWITCHVIDEOMODE % BITS_PER_BLOCK) & 1) == 0)
+                break;
+            if (ioctl(fd, EVIOCGRAB, (void *)1) != 0)
+                break;
+            pVBox->hACPIEventHandler
+                = xf86AddGeneralHandler(fd, acpiEventHandler, pScreen);
+            if (pVBox->hACPIEventHandler == NULL)
+                break;
+            /* We ignore the return value as the fall-back should be active
+             * anyway. */
+            VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS);
+            pVBox->fdACPIDevices = fd;
+            fd = -1;
+            break;
+#undef BITS_PER_BLOCK
+        }
+    }
+    if (fd != -1)
+        close(fd);
+    closedir(pDir);
+}
+
+void VBoxCleanUpLinuxACPI(ScreenPtr pScreen)
+{
+    VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
+    if (pVBox->fdACPIDevices != -1)
+        close(pVBox->fdACPIDevices);
+    pVBox->fdACPIDevices = -1;
+    xf86RemoveGeneralHandler(pVBox->hACPIEventHandler);
+    pVBox->hACPIEventHandler = NULL;
+}
+# endif /* RT_OS_LINUX */
+#endif /* VBOXVIDEO_13 */

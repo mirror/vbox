@@ -200,6 +200,12 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     pVBox->pScreens = calloc(pVBox->cScreens, sizeof(*pVBox->pScreens));
     if (pVBox->pScreens == NULL)
         FatalError("Failed to allocate memory for screens array.\n");
+#ifdef VBOXVIDEO_13
+    pVBox->paVBVAModeHints = calloc(pVBox->cScreens,
+                                    sizeof(*pVBox->paVBVAModeHints));
+    if (pVBox->paVBVAModeHints == NULL)
+        FatalError("Failed to allocate memory for mode hints array.\n");
+#endif
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Requested monitor count: %u\n",
                pVBox->cScreens);
     for (i = 0; i < pVBox->cScreens; ++i)
