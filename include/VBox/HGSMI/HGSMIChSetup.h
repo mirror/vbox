@@ -55,6 +55,8 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 #endif
 /* vsync interrupt flag, should be accessed under VGAState::lock only */
 #define HGSMIHOSTFLAGS_VSYNC               0x10
+/** monitor hotplug flag, should be accessed under VGAState::lock only */
+#define HGSMIHOSTFLAGS_HOTPLUG             0x20
 
 typedef struct _HGSMIHOSTFLAGS
 {

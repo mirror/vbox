@@ -855,6 +855,7 @@ typedef struct VBVABUFFER
 #define VBVA_CMDVBVA_SUBMIT  16 /* inform host about VBVA Command submission */
 #define VBVA_CMDVBVA_FLUSH   17 /* inform host about VBVA Command submission */
 #define VBVA_CMDVBVA_CTL     18 /* G->H DMA command             */
+#define VBVA_QUERY_MODE_HINTS 19 /* Query most recent mode hints sent. */
 
 /* host->guest commands */
 #define VBVAHG_EVENT              1
@@ -910,6 +911,8 @@ typedef struct VBVAHOSTCMD
 /* VBVACONF32::u32Index */
 #define VBOX_VBVA_CONF32_MONITOR_COUNT  0
 #define VBOX_VBVA_CONF32_HOST_HEAP_SIZE 1
+/** Returns VINF_SUCCESS if the host can report mode hints via VBVA. */
+#define VBOX_VBVA_CONF32_MODE_HINT_REPORTING  2
 
 typedef struct VBVACONF32
 {
@@ -1076,6 +1079,8 @@ typedef struct VBVAMOUSEPOINTERSHAPE
 #define VBVACAPS_COMPLETEGCMD_BY_IOREAD 0x00000001
 /* the guest driver can handle video adapter IRQs */
 #define VBVACAPS_IRQ                    0x00000002
+/** The guest can read video mode hints sent via VBVA. */
+#define VBVACAPS_VIDEO_MODE_HINTS       0x00000004
 typedef struct VBVACAPS
 {
     int32_t rc;
@@ -1108,6 +1113,38 @@ typedef struct VBVASCANLINEINFO
     uint32_t u32InVBlank;
     uint32_t u32ScanLine;
 } VBVASCANLINEINFO;
+
+/** Query the most recent mode hints received from the host. */
+typedef struct VBVAQUERYMODEHINTS
+{
+    /** The maximum number of screens to return hints for. */
+    uint16_t cHintsQueried;
+    /** The size of the mode hint structures directly following this one. */
+    uint16_t cbHintStructureGuest;
+    /** The return code for the operation.  Initialise to VERR_NOT_SUPPORTED. */
+    int32_t  rc;
+} VBVAQUERYMODEHINTS;
+
+/** Structure in which a mode hint is returned.  The guest allocates an array
+ *  of these immediately after the VBVAQUERYMODEHINTS structure.  To accomodate
+ *  future extensions, the VBVAQUERYMODEHINTS structure specifies the size of
+ *  the VBVAMODEHINT structures allocated by the guest, and the host only fills
+ *  out structure elements which fit into that size.  The host should fill any
+ *  unused members (e.g. dx, dy) or structure space on the end with ~0.  The
+ *  whole structure can legally be set to ~0 to skip a screen. */
+typedef struct VBVAMODEHINT
+{
+    uint32_t magic;
+    uint32_t cx;
+    uint32_t cy;
+    uint32_t cBPP;  /* Which has never been used... */
+    uint32_t cDisplay;
+    uint32_t dx;  /**< X offset into the virtual frame-buffer. */
+    uint32_t dy;  /**< Y offset into the virtual frame-buffer. */
+    uint32_t fEnabled;  /* Not fFlags.  Add new members for new flags. */
+} VBVAMODEHINT;
+
+#define VBVAMODEHINT_MAGIC UINT32_C(0x0801add9)
 
 #pragma pack()
 

@@ -6061,6 +6061,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifdef VBOX_WITH_VMSVGA
     pThis->IPort.pfnSetViewPort         = vmsvgaPortSetViewPort;
 #endif
+    pThis->IPort.pfnSendModeHint        = vbvaPortSendModeHint;
 
 #if defined(VBOX_WITH_HGSMI)
 # if defined(VBOX_WITH_VIDEOHWACCEL)

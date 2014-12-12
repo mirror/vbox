@@ -5185,6 +5185,47 @@ void Console::i_onVRDEServerInfoChange()
     fireVRDEServerInfoChangedEvent(mEventSource);
 }
 
+HRESULT Console::i_sendACPIMonitorHotPlugEvent()
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting)
+        return i_setInvalidMachineStateError();
+
+    /* get the VM handle. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    // no need to release lock, as there are no cross-thread callbacks
+
+    /* get the acpi device interface and press the sleep button. */
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
+    if (RT_SUCCESS(vrc))
+    {
+        Assert(pBase);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
+        if (pPort)
+            vrc = pPort->pfnMonitorHotPlugEvent(pPort);
+        else
+            vrc = VERR_PDM_MISSING_INTERFACE;
+    }
+
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
+        setError(VBOX_E_PDM_ERROR,
+            tr("Sending monitor hot-plug event failed (%Rrc)"),
+            vrc);
+
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
+    LogFlowThisFuncLeave();
+    return rc;
+}
+
 HRESULT Console::i_onVideoCaptureChange()
 {
     AutoCaller autoCaller(this);

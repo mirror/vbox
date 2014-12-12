@@ -82,6 +82,7 @@ typedef struct VBVACONTEXT
     VBVAVIEW aViews[64 /* @todo SchemaDefs::MaxGuestMonitors*/];
     VBVAMOUSESHAPEINFO mouseShapeInfo;
     bool fPaused;
+    VBVAMODEHINT aModeHints[VBOX_VIDEO_MAX_SCREENS];
 } VBVACONTEXT;
 
 
@@ -494,6 +495,8 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
     {
         pVBVA->hostFlags.u32HostEvents = 0;
         pVBVA->hostFlags.u32SupportedOrders = 0;
+        pVGAState->fGuestCaps = 0;
+        pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, 0);
 
         rc = pVGAState->pDrv->pfnVBVAEnable (pVGAState->pDrv, uScreenId, &pVBVA->hostFlags, false);
     }
@@ -1598,6 +1601,16 @@ int vboxVBVASaveDevStateExec (PVGASTATE pVGAState, PSSMHANDLE pSSM)
             rc = SSMR3PutU32 (pSSM, 0);
             AssertRCReturn(rc, rc);
 #endif
+            rc = SSMR3PutU32 (pSSM, RT_ELEMENTS(pCtx->aModeHints));
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, sizeof(VBVAMODEHINT));
+            AssertRCReturn(rc, rc);
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aModeHints); ++i)
+            {
+                rc = SSMR3PutMem (pSSM, pCtx->aModeHints[i],
+                                  sizeof(VBVAMODEHINT));
+                AssertRCReturn(rc, rc);
+            }
         }
     }
 
@@ -2145,6 +2158,10 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 /* @todo a value calculated from the vram size */
                 pConf32->u32Value = 64*_1K;
             }
+            else if (pConf32->u32Index == VBOX_VBVA_CONF32_MODE_HINT_REPORTING)
+            {
+                pConf32->u32Value = VINF_SUCCESS;
+            }
             else
             {
                 Log(("Unsupported VBVA_QUERY_CONF32 index %d!!!\n",
@@ -2396,6 +2413,8 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
             VBVACAPS *pCaps = (VBVACAPS*)pvBuffer;
             pVGAState->fGuestCaps = pCaps->fCaps;
+            pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv,
+                                                          pCaps->fCaps);
             pCaps->rc = VINF_SUCCESS;
         } break;
 #endif
@@ -2411,6 +2430,40 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             pVGAState->fScanLineCfg = pCfg->fFlags;
             pCfg->rc = VINF_SUCCESS;
         } break;
+
+        case VBVA_QUERY_MODE_HINTS:
+        {
+            if (cbBuffer < sizeof(VBVAQUERYMODEHINTS))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            VBVAQUERYMODEHINTS *pModeHintQuery = (VBVAQUERYMODEHINTS*)pvBuffer;
+            LogRelFlowFunc(("VBVA_QUERY_MODE_HINTS: cHintsQueried=%u, cbHintStructureGuest=%u\n",
+                            (unsigned)pModeHintQuery->cHintsQueried,
+                            (unsigned)pModeHintQuery->cbHintStructureGuest));
+            if (cbBuffer <   sizeof (VBVAQUERYMODEHINTS)
+                           +   (uint64_t)pModeHintQuery->cHintsQueried
+                             * pModeHintQuery->cbHintStructureGuest)
+            {
+                pModeHintQuery->rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            pModeHintQuery->rc = VINF_SUCCESS;
+            uint8_t *pbHint = (uint8_t *)pvBuffer + sizeof(VBVAQUERYMODEHINTS);
+            memset(pbHint, ~0, cbBuffer - sizeof(VBVAQUERYMODEHINTS));
+            unsigned iHint;
+            for (iHint = 0; iHint < pModeHintQuery->cHintsQueried && iHint < 64;
+                 ++iHint)
+            {
+                memcpy(pbHint, &pCtx->aModeHints[iHint],
+                       RT_MIN(pModeHintQuery->cbHintStructureGuest,
+                              sizeof(VBVAMODEHINT)));
+                pbHint += pModeHintQuery->cbHintStructureGuest;
+                Assert(pbHint - (uint8_t *)pvBuffer <= cbBuffer);
+            }
+        } break;
+
         default:
             Log(("Unsupported VBVA guest command %d!!!\n",
                  u16ChannelInfo));
@@ -2504,6 +2557,50 @@ int VBVAUpdateDisplay (PVGASTATE pVGAState)
     return rc;
 }
 
+static int vbvaSendModeHintWorker(PVGASTATE pThis, uint32_t cx, uint32_t cy,
+                                  uint32_t cBPP, uint32_t iDisplay, uint32_t dx,
+                                  uint32_t dy, uint32_t fEnabled,
+                                  uint32_t fNotifyGuest)
+{
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pThis->pHGSMI);
+    /** @note See Display::setVideoModeHint: "It is up to the guest to decide
+     *  whether the hint is valid. Therefore don't do any VRAM sanity checks
+     *  here! */
+    if (iDisplay > RT_MIN(pThis->cMonitors, RT_ELEMENTS(pCtx->aModeHints)))
+        return VERR_OUT_OF_RANGE;
+    pCtx->aModeHints[iDisplay].magic    = VBVAMODEHINT_MAGIC;
+    pCtx->aModeHints[iDisplay].cx       = cx;
+    pCtx->aModeHints[iDisplay].cy       = cy;
+    pCtx->aModeHints[iDisplay].cBPP     = cBPP;
+    pCtx->aModeHints[iDisplay].dx       = dx;
+    pCtx->aModeHints[iDisplay].dy       = dy;
+    pCtx->aModeHints[iDisplay].fEnabled = fEnabled;
+    if (fNotifyGuest && pThis->fGuestCaps & VBVACAPS_IRQ)
+        VBVARaiseIrq(pThis, HGSMIHOSTFLAGS_HOTPLUG);
+    return VINF_SUCCESS;
+}
+
+/** Converts a display port interface pointer to a vga state pointer. */
+#define IDISPLAYPORT_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, IPort)) )
+
+DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
+                                       uint32_t cy, uint32_t cBPP,
+                                       uint32_t iDisplay, uint32_t dx,
+                                       uint32_t dy, uint32_t fEnabled,
+                                       uint32_t fNotifyGuest)
+{
+    PVGASTATE pThis;
+    int rc;
+
+    pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
+    rc = vbvaSendModeHintWorker(pThis, cx, cy, cBPP, iDisplay, dx, dy, fEnabled,
+                                fNotifyGuest);
+    PDMCritSectLeave(&pThis->CritSect);
+    return rc;
+}
+
 static HGSMICHANNELHANDLER sOldChannelHandler;
 
 int VBVAInit (PVGASTATE pVGAState)
@@ -2534,6 +2631,7 @@ int VBVAInit (PVGASTATE pVGAState)
              VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
              pCtx->cViews = pVGAState->cMonitors;
              pCtx->fPaused = true;
+             memset(pCtx->aModeHints, ~0, sizeof(*pCtx->aModeHints));
          }
      }
 

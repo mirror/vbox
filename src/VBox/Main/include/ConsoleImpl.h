@@ -249,6 +249,7 @@ public:
     void i_onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage);
     HRESULT i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId);
     void i_onVRDEServerInfoChange();
+    HRESULT i_sendACPIMonitorHotPlugEvent();
 
     static const PDMDRVREG DrvStatusReg;
 
