@@ -20,6 +20,7 @@
 
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/initterm.h>
 #include <VBox/log.h>
 
 #ifdef RT_OS_WINDOWS
@@ -33,12 +34,15 @@
 static void logMessageV(const char *pszPrefix, const char *pszFormat, va_list va)
 {
     va_list vaCopy;
-    va_copy(vaCopy, va);
-    LogRel(("%s%N\n", pszPrefix, pszFormat, &vaCopy));
-    va_end(vaCopy);
+    if (RTR3InitIsInitialized())
+    {
+        va_copy(vaCopy, va);
+        LogRel(("%s%N\n", pszPrefix, pszFormat, &vaCopy));
+        va_end(vaCopy);
+    }
 
-#ifdef IN_GUEST
-    va_copy(vaCopy, va); /* paranoia */
+#ifdef IN_GUEST  /** @todo Could be subject to pre-iprt-init issues, but hopefully not... */
+    va_copy(vaCopy, va);
     RTStrmPrintf(g_pStdErr, "%s%N\n", pszPrefix, pszFormat, &vaCopy);
     va_end(vaCopy);
 #endif
@@ -53,7 +57,7 @@ static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
     va_end(va);
 }
 
-DECLEXPORT(void) crError(const char *pszFormat, ... )
+DECLEXPORT(void) crError(const char *pszFormat, ...)
 {
     va_list va;
 #ifdef WINDOWS
@@ -99,35 +103,44 @@ DECLEXPORT(void) crError(const char *pszFormat, ... )
 #endif
 }
 
-DECLEXPORT(void) crWarning(const char *pszFormat, ... )
+DECLEXPORT(void) crWarning(const char *pszFormat, ...)
 {
-    va_list va;
+    if (RTR3InitIsInitialized())
+    {
+        va_list va;
 
-    va_start(va, pszFormat);
-    logMessageV("OpenGL Warning: ", pszFormat, va);
-    va_end(va);
+        va_start(va, pszFormat);
+        logMessageV("OpenGL Warning: ", pszFormat, va);
+        va_end(va);
+    }
 }
 
-DECLEXPORT(void) crInfo(const char *pszFormat, ... )
+DECLEXPORT(void) crInfo(const char *pszFormat, ...)
 {
-    va_list va;
+    if (RTR3InitIsInitialized())
+    {
+        va_list va;
 
-    va_start(va, pszFormat);
-    logMessageV("OpenGL Info: ", pszFormat, va);
-    va_end(va);
+        va_start(va, pszFormat);
+        logMessageV("OpenGL Info: ", pszFormat, va);
+        va_end(va);
+    }
 }
 
-DECLEXPORT(void) crDebug(const char *pszFormat, ... )
+DECLEXPORT(void) crDebug(const char *pszFormat, ...)
 {
-    va_list va;
+    if (RTR3InitIsInitialized())
+    {
+        va_list va;
 
-    va_start(va, pszFormat);
+        va_start(va, pszFormat);
 #if defined(DEBUG_vgalitsy) || defined(DEBUG_galitsyn)
-    LogRel(("OpenGL Debug: %N\n", pszFormat, &va));
+        LogRel(("OpenGL Debug: %N\n", pszFormat, &va));
 #else
-    Log(("OpenGL Debug: %N\n", pszFormat, &va));
+        Log(("OpenGL Debug: %N\n", pszFormat, &va));
 #endif
-    va_end(va);
+        va_end(va);
+    }
 }
 
 #else
