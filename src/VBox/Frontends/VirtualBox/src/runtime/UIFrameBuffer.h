@@ -251,6 +251,11 @@ protected:
     /** Paint routine for seamless mode. */
     void paintSeamless(QPaintEvent *pEvent);
 
+    /** Erases corresponding @a rect with @a painter. */
+    static void eraseImageRect(QPainter &painter, const QRect &rect,
+                               bool fUseUnscaledHiDPIOutput,
+                               HiDPIOptimizationType hiDPIOptimizationType,
+                               double dBackingScaleFactor);
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,

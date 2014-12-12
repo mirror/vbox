@@ -864,16 +864,6 @@ void UIFrameBuffer::updateCoordinateSystem()
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
 {
-    /* Prepare the 'paint' rectangle: */
-    QRect paintRect = pEvent->rect();
-
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
-    {
-        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
-        paintRect.setSize(paintRect.size() * backingScaleFactor());
-    }
-
     /* Scaled image is NULL by default: */
     QImage scaledImage;
     /* But if scaled-factor is set and current image is NOT null: */
@@ -887,6 +877,16 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
+
+    /* Prepare the 'paint' rectangle: */
+    QRect paintRect = pEvent->rect();
+
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
+        paintRect.setSize(paintRect.size() * backingScaleFactor());
+    }
 
     /* Make sure paint-rectangle is within the image boundary: */
     paintRect = paintRect.intersected(sourceImage.rect());
@@ -904,16 +904,6 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
 
 void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 {
-    /* Prepare the 'paint' rectangle: */
-    QRect paintRect = pEvent->rect();
-
-    /* Take the backing-scale-factor into account: */
-    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
-    {
-        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
-        paintRect.setSize(paintRect.size() * backingScaleFactor());
-    }
-
     /* Scaled image is NULL by default: */
     QImage scaledImage;
     /* But if scaled-factor is set and current image is NOT null: */
@@ -927,6 +917,16 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
+
+    /* Prepare the 'paint' rectangle: */
+    QRect paintRect = pEvent->rect();
+
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        paintRect.moveTo(paintRect.topLeft() * backingScaleFactor());
+        paintRect.setSize(paintRect.size() * backingScaleFactor());
+    }
 
     /* Make sure paint-rectangle is within the image boundary: */
     paintRect = paintRect.intersected(sourceImage.rect());
@@ -946,7 +946,8 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
         painter.setCompositionMode(QPainter::CompositionMode_Clear);
         /* Erase required region, slowly, rectangle-by-rectangle: */
         foreach (const QRect &rect, regionToErase.rects())
-            painter.eraseRect(rect);
+            eraseImageRect(painter, rect,
+                           useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
         /* Restore composition-mode: */
         painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
@@ -977,6 +978,52 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
                           useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
         }
     }
+}
+
+/* static */
+void UIFrameBuffer::eraseImageRect(QPainter &painter, const QRect &rect,
+                                   bool fUseUnscaledHiDPIOutput,
+                                   HiDPIOptimizationType hiDPIOptimizationType,
+                                   double dBackingScaleFactor)
+{
+    /* Prepare sub-pixmap: */
+    QPixmap subPixmap = QPixmap(rect.width(), rect.height());
+
+    /* If HiDPI 'backing scale factor' defined: */
+    if (dBackingScaleFactor > 1.0)
+    {
+        /* Should we
+         * perform logical HiDPI scaling and optimize it for performance? */
+        if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Adjust sub-pixmap: */
+            subPixmap = QPixmap(rect.width() * dBackingScaleFactor,
+                                rect.height() * dBackingScaleFactor);
+        }
+
+#ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
+        /* Should we
+         * do not perform logical HiDPI scaling or
+         * perform logical HiDPI scaling and optimize it for performance? */
+        if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
+        {
+            /* Mark sub-pixmap as HiDPI: */
+            subPixmap.setDevicePixelRatio(dBackingScaleFactor);
+        }
+# endif /* VBOX_GUI_WITH_HIDPI */
+#endif /* Q_WS_MAC */
+    }
+
+    /* Which point we should draw corresponding sub-pixmap? */
+    QPointF paintPoint = rect.topLeft();
+
+    /* Take the backing-scale-factor into account: */
+    if (fUseUnscaledHiDPIOutput && dBackingScaleFactor > 1.0)
+        paintPoint /= dBackingScaleFactor;
+
+    /* Draw sub-pixmap: */
+    painter.drawPixmap(paintPoint, subPixmap);
 }
 
 /* static */
@@ -1030,7 +1077,7 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     }
 
     /* Which point we should draw corresponding sub-pixmap? */
-    QPoint paintPoint = rect.topLeft();
+    QPointF paintPoint = rect.topLeft();
 
     /* Take the backing-scale-factor into account: */
     if (fUseUnscaledHiDPIOutput && dBackingScaleFactor > 1.0)
