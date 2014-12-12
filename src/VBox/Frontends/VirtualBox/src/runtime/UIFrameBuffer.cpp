@@ -921,6 +921,12 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
     /* Prepare the 'paint' rectangle: */
     QRect paintRect = pEvent->rect();
 
+    /* Prepare seamless regions to erase/paint: */
+    lock();
+    const QRegion eraseRegion = QRegion(paintRect) - m_syncVisibleRegion;
+    const QRegion paintRegion = QRegion(paintRect) & m_syncVisibleRegion;
+    unlock();
+
     /* Take the backing-scale-factor into account: */
     if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
     {
@@ -936,48 +942,32 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
     /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
 
-    /* Determine the region to erase: */
-    lock();
-    QRegion regionToErase = (QRegion)paintRect - m_syncVisibleRegion;
-    unlock();
-    if (!regionToErase.isEmpty())
-    {
-        /* Optimize composition-mode: */
-        painter.setCompositionMode(QPainter::CompositionMode_Clear);
-        /* Erase required region, slowly, rectangle-by-rectangle: */
-        foreach (const QRect &rect, regionToErase.rects())
-            eraseImageRect(painter, rect,
-                           useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
-        /* Restore composition-mode: */
-        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    }
+    /* Apply painter clipping for erasing: */
+    painter.setClipRegion(eraseRegion);
+    /* Set composition-mode to erase: */
+    painter.setCompositionMode(QPainter::CompositionMode_Clear);
+    /* Erase rectangle: */
+    eraseImageRect(painter, paintRect,
+                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 
-    /* Determine the region to paint: */
-    lock();
-    QRegion regionToPaint = (QRegion)paintRect & m_syncVisibleRegion;
-    unlock();
-    if (!regionToPaint.isEmpty())
-    {
-        /* Paint required region, slowly, rectangle-by-rectangle: */
-        foreach (const QRect &rect, regionToPaint.rects())
-        {
+    /* Apply painter clipping for painting: */
+    painter.setClipRegion(paintRegion);
+    /* Set composition-mode to paint: */
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
 # if defined(Q_WS_WIN) || defined(Q_WS_X11)
-            /* Replace translucent background with black one,
-             * that is necessary for window with Qt::WA_TranslucentBackground
-             * and no native backing store support like Mac OS X has: */
-            painter.setCompositionMode(QPainter::CompositionMode_Source);
-            painter.fillRect(rect, QColor(Qt::black));
-            painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+    /* Replace translucent background with black one,
+     * that is necessary for window with Qt::WA_TranslucentBackground
+     * and no native backing store support like Mac OS X has: */
+    painter.setCompositionMode(QPainter::CompositionMode_Source);
+    painter.fillRect(paintRect, QColor(Qt::black));
+    painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 # endif /* Q_WS_WIN || Q_WS_X11 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
-
-            /* Draw image rectangle: */
-            drawImageRect(painter, sourceImage, rect,
-                          m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                          useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
-        }
-    }
+    /* Paint rectangle: */
+    drawImageRect(painter, sourceImage, paintRect,
+                  m_pMachineView->contentsX(), m_pMachineView->contentsY(),
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 }
 
 /* static */
