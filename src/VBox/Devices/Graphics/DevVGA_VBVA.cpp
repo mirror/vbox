@@ -1607,7 +1607,7 @@ int vboxVBVASaveDevStateExec (PVGASTATE pVGAState, PSSMHANDLE pSSM)
             AssertRCReturn(rc, rc);
             for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aModeHints); ++i)
             {
-                rc = SSMR3PutMem (pSSM, pCtx->aModeHints[i],
+                rc = SSMR3PutMem (pSSM, &pCtx->aModeHints[i],
                                   sizeof(VBVAMODEHINT));
                 AssertRCReturn(rc, rc);
             }
@@ -1827,6 +1827,23 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 if (cbExtra > 0)
                 {
                     rc = SSMR3Skip(pSSM, cbExtra);
+                    AssertRCReturn(rc, rc);
+                }
+                uint32_t cModeHints, cbModeHints;
+                rc = SSMR3GetU32 (pSSM, &cModeHints);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &cbModeHints);
+                AssertRCReturn(rc, rc);
+                memset(&pCtx->aModeHints, ~0, sizeof(pCtx->aModeHints));
+                unsigned iHint;
+                for (iHint = 0; iHint < cModeHints; ++iHint)
+                {
+                    if (   cbModeHints <= sizeof(VBVAMODEHINT)
+                        && iHint < RT_ELEMENTS(pCtx->aModeHints))
+                        rc = SSMR3GetMem(pSSM, &pCtx->aModeHints[iHint],
+                                         cbModeHints);
+                    else
+                        rc = SSMR3Skip(pSSM, cbModeHints);
                     AssertRCReturn(rc, rc);
                 }
             }
