@@ -124,11 +124,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceICH6_HDA);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    //rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceAudioVRDE);
-    //if (RT_FAILURE(rc))
-    //    return rc;
-#else
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceAudioSniffer);
     if (RT_FAILURE(rc))
         return rc;
@@ -295,9 +291,15 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostPulseAudio);
     if (RT_FAILURE(rc))
         return rc;
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostALSAAudio);
+    if (RT_FAILURE(rc))
+        return rc;    
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
+    if (RT_FAILURE(rc))
+        return rc;    
 # endif
 # if defined(RT_OS_FREEBSD)
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOssAudio);
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
         return rc;
 # endif
@@ -307,6 +309,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 # endif
 # if defined(RT_OS_SOLARIS)
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
+    if (RT_FAILURE(rc))
+        return rc;   
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostSolAudio);
     if (RT_FAILURE(rc))
         return rc;
