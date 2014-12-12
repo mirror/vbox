@@ -1036,7 +1036,6 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
                              iSubImageWidth, iSubImageHeight,
                              image.bytesPerLine(), image.format());
 
-#ifndef QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
 
@@ -1052,8 +1051,8 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
-# ifdef Q_WS_MAC
-#  ifdef VBOX_GUI_WITH_HIDPI
+#ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
         /* Should we
          * do not perform logical HiDPI scaling or
          * perform logical HiDPI scaling and optimize it for performance? */
@@ -1062,8 +1061,8 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dBackingScaleFactor);
         }
-#  endif /* VBOX_GUI_WITH_HIDPI */
-# endif /* Q_WS_MAC */
+# endif /* VBOX_GUI_WITH_HIDPI */
+#endif /* Q_WS_MAC */
     }
 
     /* Which point we should draw corresponding sub-pixmap? */
@@ -1075,29 +1074,5 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
-#else /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
-    /* If HiDPI 'backing scale factor' defined: */
-    if (dBackingScaleFactor > 1.0)
-    {
-        /* Should we optimize HiDPI output for performance? */
-        if (hiDPIOptimizationType == HiDPIOptimizationType_Performance)
-        {
-            /* Create fast-scaled-sub-image (1st copy involved): */
-            QImage scaledSubImage = subImage.scaled(subImage.size() * dBackingScaleFactor,
-                                                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
-# ifdef Q_WS_MAC
-#  ifdef VBOX_GUI_WITH_HIDPI
-            /* Mark sub-pixmap as HiDPI: */
-            scaledSubImage.setDevicePixelRatio(dBackingScaleFactor);
-#  endif /* VBOX_GUI_WITH_HIDPI */
-# endif /* Q_WS_MAC */
-            /* Directly draw scaled-sub-image: */
-            painter.drawImage(rect.x(), rect.y(), scaledSubImage);
-            return;
-        }
-    }
-    /* Directly draw sub-image: */
-    painter.drawImage(rect.x(), rect.y(), subImage);
-#endif /* QIMAGE_FRAMEBUFFER_WITH_DIRECT_OUTPUT */
 }
 
