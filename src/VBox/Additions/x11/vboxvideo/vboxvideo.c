@@ -148,7 +148,13 @@ static void VBOXRestoreMode(ScrnInfoPtr pScrn);
 static inline void VBOXSetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate)
-        pScrn->driverPrivate = calloc(sizeof(VBOXRec), 1);
+    {
+        VBOXPtr pVBox = (VBOXPtr)xnfcalloc(sizeof(VBOXRec), 1);
+        pScrn->driverPrivate = pVBox;
+#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
+        pVBox->fdACPIDevices = -1;
+#endif
+    }
 }
 
 enum GenericTypes
@@ -1140,6 +1146,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     xf86DPMSInit(pScreen, VBOXDisplayPowerManagementSet, 0);
 #endif
 
+#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
+    VBoxSetUpLinuxACPI(pScreen);
+#endif
+
     /* Report any unused options (only for the first generation) */
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
@@ -1250,6 +1260,9 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
     vbox_close(pScrn, pVBox);
 
     pScreen->CloseScreen = pVBox->CloseScreen;
+#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
+    VBoxCleanUpLinuxACPI(pScreen);
+#endif
 #ifndef XF86_SCRN_INTERFACE
     return pScreen->CloseScreen(pScreen->myNum, pScreen);
 #else

@@ -202,7 +202,16 @@ typedef struct VBOXRec
     struct VBoxScreen *pScreens;
     /** The last requested framebuffer size. */
     RTRECTSIZE FBSize;
-#ifndef VBOXVIDEO_13
+#ifdef VBOXVIDEO_13
+    /** Array of structures for receiving mode hints. */
+    VBVAMODEHINT *paVBVAModeHints;
+# ifdef RT_OS_LINUX
+    /** Input device file descriptor for getting ACPI hot-plug events. */
+    int fdACPIDevices;
+    /** Input handler handle for ACPI hot-plug listener. */
+    void *hACPIEventHandler;
+# endif
+#else
     /** The original CreateScreenResources procedure which we wrap with our own.
      */
     CreateScreenResourcesProcPtr pfnCreateScreenResources;
@@ -231,6 +240,7 @@ extern Bool vbox_device_available(VBOXPtr pVBox);
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern void vboxDisableVbva(ScrnInfoPtr pScrn);
 
+/* getmode.c */
 extern unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
                                      uint32_t *pcx, uint32_t *pcy);
 extern void vboxAddModes(ScrnInfoPtr pScrn);
@@ -238,6 +248,9 @@ extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
 extern void VBoxUpdateSizeHints(ScrnInfoPtr pScrn);
 #ifndef VBOXVIDEO_13
 extern void VBoxSetUpRandR11(ScreenPtr pScreen);
+#else
+void VBoxSetUpLinuxACPI(ScreenPtr pScreen);
+void VBoxCleanUpLinuxACPI(ScreenPtr pScreen);
 #endif
 
 /* DRI stuff */

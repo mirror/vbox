@@ -31,6 +31,7 @@
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
+#include <VBox/VBoxVideo.h>
 
 #ifdef VBOX_XPDM_MINIPORT
 RT_C_DECLS_BEGIN
@@ -221,6 +222,8 @@ RTDECL(void)     VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                              uint32_t *poffGuestHeapMemory,
                                              uint32_t *pcbGuestHeapMemory,
                                              uint32_t *poffHostFlags);
+RTDECL(int)      VBoxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                       uint32_t fCaps);
 /** @todo we should provide a cleanup function too as part of the API */
 RTDECL(int)      VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                             void *pvGuestHeapMemory,
@@ -325,6 +328,8 @@ RTDECL(void)     VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cHeight,
                                              uint16_t cBPP,
                                              uint16_t fFlags);
+RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                  unsigned cScreens, VBVAMODEHINT *paHints);
 
 /** @}  */
 
