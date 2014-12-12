@@ -243,6 +243,9 @@ protected:
     /** Cleanup connections routine. */
     void cleanupConnections();
 
+    /** Updates coordinate-system: */
+    void updateCoordinateSystem();
+
     /** Default paint routine. */
     void paintDefault(QPaintEvent *pEvent);
     /** Paint routine for seamless mode. */
