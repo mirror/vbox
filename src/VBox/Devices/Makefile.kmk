@@ -528,8 +528,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
 
   ifeq ($(KBUILD_TARGET),linux)
-   VBoxDD_SOURCES  += \
-		Audio/DrvHostOssAudio.cpp
+   VBoxDD_SOURCES += \
+		Audio/DrvHostOSSAudio.cpp
+
    ifdef VBOX_WITH_PULSE
     VBoxDD_DEFS    += VBOX_WITH_PULSE
     VBoxDD_SOURCES += \
@@ -538,16 +539,16 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    endif
 
    ifdef VBOX_WITH_ALSA
-    VBoxDD_DEFS.linux    += VBOX_WITH_ALSA
-    VBoxDD_SOURCES.linux += \
-	Audio/DrvHostAlsaAudio.cpp \
-	Audio/alsa_stubs.c
+    VBoxDD_DEFS    += VBOX_WITH_ALSA
+    VBoxDD_SOURCES += \
+		Audio/DrvHostALSAAudio.cpp \
+		Audio/alsa_stubs.c
    endif
   endif
 
   ifeq ($(KBUILD_TARGET),freebsd)
    VBoxDD_SOURCES  += \
-		Audio/DrvHostOssAudio.cpp
+		Audio/DrvHostOSSAudio.cpp
    ifdef VBOX_WITH_PULSE
     VBoxDD_DEFS    += VBOX_WITH_PULSE
     VBoxDD_SOURCES += \

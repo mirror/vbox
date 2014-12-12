@@ -2720,7 +2720,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 case AudioDriverType_ALSA:
                 {
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    InsertConfigString(pLunL1, "Driver", "AlsaAudio");
+                    InsertConfigString(pLunL1, "Driver", "ALSAAudio");
 # else
                     InsertConfigString(pCfg, "AudioDriver", "alsa");
 # endif
@@ -2742,7 +2742,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 case AudioDriverType_OSS:
                 {
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-//                    #error "Port OSS audio backend!" /** @todo Port OSS driver. */
+                    InsertConfigString(pLunL1, "Driver", "OSSAudio");
 # else
                     InsertConfigString(pCfg, "AudioDriver", "ossaudio");
 # endif

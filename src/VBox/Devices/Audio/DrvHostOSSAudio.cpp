@@ -67,7 +67,7 @@ typedef struct OSSAUDIOSTREAMCFG
 typedef struct OSSAUDIOSTREAMIN
 {
     /** Note: Always must come first! */
-    PDMAUDIOHSTSTRMIN  hw;
+    PDMAUDIOHSTSTRMIN  pStreamIn;
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
@@ -78,7 +78,7 @@ typedef struct OSSAUDIOSTREAMIN
 typedef struct OSSAUDIOSTREAMOUT
 {
     /** Note: Always must come first! */
-    PDMAUDIOHSTSTRMOUT  hw;
+    PDMAUDIOHSTSTRMOUT  pStreamOut;
     int                 hFile;
     int                 cFragments;
     int                 cbFragmentSize;
@@ -203,19 +203,25 @@ static int drvHostOSSAudioOSSToFmt(int fmt,
     return VINF_SUCCESS;
 }
 
-static void drvHostOSSAudioClose(int *phFile)
+static int drvHostOSSAudioClose(int *phFile)
 {
-    if (!phFile)
-        return;
+    if (!phFile || !*phFile)
+        return VINF_SUCCESS;
 
-    if (*phFile) 
+    int rc;
+    if (close(*phFile))
     {
-        if (close(*phFile))
-            LogRel(("Audio: Closing descriptor failed: %s\n", 
-                    strerror(errno)));
-        else
-            *phFile = -1;
+        LogRel(("Audio: Closing descriptor failed: %s\n", 
+                strerror(errno)));
+        rc = VERR_GENERAL_FAILURE; /** @todo */
     }
+    else
+    {
+        *phFile = -1;
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 static int drvHostOSSAudioOpen(bool fIn, 
@@ -231,19 +237,19 @@ static int drvHostOSSAudioOpen(bool fIn,
 
     do 
     {
-        const char *pszDSP = fIn ? s_OSSConf.devpath_in : s_OSSConf.devpath_out;
-        if (!pszDSP)
+        const char *pszDev = fIn ? s_OSSConf.devpath_in : s_OSSConf.devpath_out;
+        if (!pszDev)
         {
-            LogRel(("Audio: Invalid or no %s DSP set\n", 
+            LogRel(("Audio: Invalid or no %s device name set\n", 
                     fIn ? "input" : "output"));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
 
-        hFile = open(pszDSP, (fIn ? O_RDONLY : O_WRONLY) | O_NONBLOCK);
-        if (!hFile) 
+        hFile = open(pszDev, (fIn ? O_RDONLY : O_WRONLY) | O_NONBLOCK);
+        if (hFile == -1) 
         {
-            LogRel(("Audio: Failed to open %s: %s\n", pszDSP, strerror(errno)));
+            LogRel(("Audio: Failed to open %s: %s\n", pszDev, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
