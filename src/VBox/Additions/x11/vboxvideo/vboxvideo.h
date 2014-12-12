@@ -161,6 +161,8 @@ struct VBoxScreen
     struct VBVABUFFERCONTEXT aVbvaCtx;
     /** The current preferred resolution for the screen */
     RTRECTSIZE aPreferredSize;
+    /** Has this screen been enabled by the host? */
+    Bool afConnected;
 };
 
 typedef struct VBOXRec

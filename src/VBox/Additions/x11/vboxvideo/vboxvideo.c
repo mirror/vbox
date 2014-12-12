@@ -417,8 +417,11 @@ vbox_output_mode_set (xf86OutputPtr output, DisplayModePtr mode,
 static xf86OutputStatus
 vbox_output_detect (xf86OutputPtr output)
 {
-    (void) output;
-    return XF86OutputStatusConnected;
+    ScrnInfoPtr pScrn = output->scrn;
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    uint32_t iScreen = (uintptr_t)output->driver_private;
+    return   pVBox->pScreens[iScreen].afConnected
+           ? XF86OutputStatusConnected : XF86OutputStatusDisconnected;
 }
 
 static DisplayModePtr
