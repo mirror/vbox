@@ -24,6 +24,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <windows.h>
+# include "cr_environment.h"
 #endif
 
 #include <signal.h>
@@ -31,17 +32,16 @@
 
 static void logMessageV(const char *pszPrefix, const char *pszFormat, va_list va)
 {
-    char *pszMessage;
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    LogRel(("%s%N\n", pszPrefix, pszFormat, &vaCopy));
+    va_end(vaCopy);
 
-    RTStrAPrintfV(&pszMessage, pszFormat, va);
-    if (pszMessage != NULL)
-    {
-        LogRel(("%s%s\n", pszPrefix, pszMessage));
 #ifdef IN_GUEST
-        RTStrmPrintf(g_pStdErr, "%s%s\n", pszPrefix, pszMessage);
+    va_copy(vaCopy, va); /* paranoia */
+    RTStrmPrintf(g_pStdErr, "%s%N\n", pszPrefix, pszFormat, &vaCopy);
+    va_end(vaCopy);
 #endif
-        RTStrFree(pszMessage);
-    }
 }
 
 static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
@@ -53,53 +53,45 @@ static void logMessage(const char *pszPrefix, const char *pszFormat, ...)
     va_end(va);
 }
 
-static void logDebugV(const char *pszPrefix, const char *pszFormat, va_list va)
-{
-    char *pszMessage;
-
-    RTStrAPrintfV(&pszMessage, pszFormat, va);
-    if (pszMessage != NULL)
-    {
-#if defined(DEBUG_vgalitsy) || defined(DEBUG_galitsyn)
-        LogRel(("%s%s\n", pszPrefix, pszMessage));
-#else
-        Log(("%s%s\n", pszPrefix, pszMessage));
-#endif
-        RTStrFree(pszMessage);
-    }
-}
-
 DECLEXPORT(void) crError(const char *pszFormat, ... )
 {
     va_list va;
 #ifdef WINDOWS
-    DWORD err;
+    DWORD dwLastErr;
 #endif
 
 #ifdef WINDOWS
-    if ((err = GetLastError()) != 0 && crGetenv("CR_WINDOWS_ERRORS") != NULL )
+    /* Log last error on windows. */
+    dwLastErr = GetLastError();
+    if (dwLastErr != 0 && crGetenv("CR_WINDOWS_ERRORS") != NULL)
     {
-        char *pszWindowsMessage;
+        LPTSTR pszWindowsMessage;
 
         SetLastError(0);
-        FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, err,
-                MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-                (LPTSTR) &pszWindowsMessage, 0, NULL );
+        FormatMessageA(  FORMAT_MESSAGE_ALLOCATE_BUFFER
+                       | FORMAT_MESSAGE_FROM_SYSTEM
+                       | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                       NULL, dwLastErr,
+                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                       (LPTSTR)&pszWindowsMessage, 0, NULL);
         if (pszWindowsMessage)
         {
-            logMessage("OpenGL, Windows error: \n", "%s", pszWindowsMessage);
+            logMessage("OpenGL, Windows error: ", "%u\n%s", dwLastErr, pszWindowsMessage);
             LocalFree(pszWindowsMessage);
         }
         else
-            logMessage("OpenGL, Windows error: \n", "%ld", (long) err);
+            logMessage("OpenGL, Windows error: ", "%u", dwLastErr);
     }
 #endif
+
+    /* The message. */
     va_start(va, pszFormat);
     logMessageV("OpenGL Error: ", pszFormat, va);
     va_end(va);
+
+    /* Dump core or activate the debugger in debug builds. */
     AssertFailed();
+
 #ifdef IN_GUEST
     /* Give things a chance to close down. */
     raise(SIGTERM);
@@ -130,7 +122,11 @@ DECLEXPORT(void) crDebug(const char *pszFormat, ... )
     va_list va;
 
     va_start(va, pszFormat);
-    logDebugV("OpenGL Debug: ", pszFormat, va);
+#if defined(DEBUG_vgalitsy) || defined(DEBUG_galitsyn)
+    LogRel(("OpenGL Debug: %N\n", pszFormat, &va));
+#else
+    Log(("OpenGL Debug: %N\n", pszFormat, &va));
+#endif
     va_end(va);
 }
 
