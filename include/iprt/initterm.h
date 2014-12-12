@@ -108,6 +108,13 @@ RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***
 RTR3DECL(void) RTR3Term(void);
 
 /**
+ * Is IPRT succesfully initialized?
+ *
+ * @returns true/false.
+ */
+RTR3DECL(bool) RTR3InitIsInitialized(void);
+
+/**
  * Are we running in unobtrusive mode?
  * @returns true/false.
  */
