@@ -216,6 +216,7 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
     {
         pVBox->pScreens[i].aPreferredSize.cx = 1024;
         pVBox->pScreens[i].aPreferredSize.cy = 768;
+        pVBox->pScreens[i].afConnected       = true;
     }
     /* Set up the first mode correctly to match the requested initial mode. */
     pScrn->modes->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
@@ -252,12 +253,7 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
     if (prop && prop->type == XA_INTEGER && prop->format == 32)
         for (i = 0; i < prop->size && i < pVBox->cScreens; ++i)
         {
-            if (((int32_t *)prop->data)[i] == 0)
-            {
-                pVBox->pScreens[i].aPreferredSize.cx = 1024;
-                pVBox->pScreens[i].aPreferredSize.cy = 768;
-            }
-            else
+            if (((int32_t *)prop->data)[i] != 0)
             {
                 pVBox->pScreens[i].aPreferredSize.cx =
                     ((int32_t *)prop->data)[i] >> 16;
