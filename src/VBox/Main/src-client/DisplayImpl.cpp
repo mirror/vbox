@@ -19,6 +19,7 @@
 #include "DisplayUtils.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
+#include "GuestImpl.h"
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
@@ -121,6 +122,8 @@ HRESULT Display::FinalConstruct()
 
 #ifdef VBOX_WITH_HGSMI
     mu32UpdateVBVAFlags = 0;
+    mfVMMDevSupportsGraphics = false;
+    mfGuestVBVACapabilities = 0;
 #endif
 #ifdef VBOX_WITH_VPX
     mpVideoRecCtx = NULL;
@@ -1033,6 +1036,51 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
     }
 }
 
+void Display::i_updateGuestGraphicsFacility(void)
+{
+    Guest* pGuest = mParent->i_getGuest();
+    AssertPtrReturnVoid(pGuest);
+    /* The following is from GuestImpl.cpp. */
+    /** @todo A nit: The timestamp is wrong on saved state restore. Would be better
+     *  to move the graphics and seamless capability -> facility translation to
+     *  VMMDev so this could be saved.  */
+    RTTIMESPEC TimeSpecTS;
+    RTTimeNow(&TimeSpecTS);
+
+    if (   mfVMMDevSupportsGraphics
+        || (mfGuestVBVACapabilities & VBVACAPS_VIDEO_MODE_HINTS) != 0)
+        pGuest->i_setAdditionsStatus(VBoxGuestFacilityType_Graphics,
+                                     VBoxGuestFacilityStatus_Active,
+                                     0 /*fFlags*/, &TimeSpecTS);
+    else
+        pGuest->i_setAdditionsStatus(VBoxGuestFacilityType_Graphics,
+                                     VBoxGuestFacilityStatus_Inactive,
+                                     0 /*fFlags*/, &TimeSpecTS);
+}
+
+void Display::i_handleUpdateVMMDevSupportsGraphics(bool fSupportsGraphics)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (mfVMMDevSupportsGraphics == fSupportsGraphics)
+        return;
+    mfVMMDevSupportsGraphics = fSupportsGraphics;
+    i_updateGuestGraphicsFacility();
+    /* The VMMDev interface notifies the console. */
+}
+
+void Display::i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    bool fNotify = (fNewCapabilities & VBVACAPS_VIDEO_MODE_HINTS) != 0;
+
+    mfGuestVBVACapabilities = fNewCapabilities;
+    if (!fNotify)
+        return;
+    i_updateGuestGraphicsFacility();
+    /* Tell the console about it */
+    mParent->i_onAdditionsStateChange();
+}
+
 /**
  * Returns the upper left and lower right corners of the virtual framebuffer.
  * The lower right is "exclusive" (i.e. first pixel beyond the framebuffer),
@@ -1636,6 +1684,27 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
      * will call EMT.  */
     alock.release();
 
+    /* We always send the hint to the graphics card in case the guest enables
+     * support later.  For now we notify exactly when support is enabled. */
+    mpDrv->pUpPort->pfnSendModeHint(mpDrv->pUpPort, aWidth, aHeight,
+                                    aBitsPerPixel, aDisplay,
+                                    aChangeOrigin ? aOriginX : ~0,
+                                    aChangeOrigin ? aOriginY : ~0,
+                                    RT_BOOL(aEnabled),
+                                      mfGuestVBVACapabilities
+                                    & VBVACAPS_VIDEO_MODE_HINTS);
+    if (   mfGuestVBVACapabilities & VBVACAPS_VIDEO_MODE_HINTS
+        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
+    {
+        HRESULT hrc = mParent->i_sendACPIMonitorHotPlugEvent();
+        if (FAILED(hrc))
+            return hrc;
+    }
+
+    /* We currently never suppress the VMMDev hint if the guest has requested
+     * it.  Specifically the video graphics driver may not be responsible for
+     * screen positioning in the guest virtual desktop, and the component
+     * responsible may want to get the hint from VMMDev. */
     VMMDev *pVMMDev = mParent->i_getVMMDev();
     if (pVMMDev)
     {
@@ -3780,6 +3849,16 @@ DECLCALLBACK(int) Display::i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR 
 
     return VINF_SUCCESS;
 }
+
+DECLCALLBACK(void) Display::i_displayVBVAGuestCapabilityUpdate(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fCapabilities)
+{
+    LogFlowFunc(("\n"));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    pThis->i_handleUpdateGuestVBVACapabilities(fCapabilities);
+}
 #endif /* VBOX_WITH_HGSMI */
 
 /**
@@ -3880,6 +3959,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IConnector.pfnVBVAUpdateEnd         = Display::i_displayVBVAUpdateEnd;
     pThis->IConnector.pfnVBVAResize            = Display::i_displayVBVAResize;
     pThis->IConnector.pfnVBVAMousePointerShape = Display::i_displayVBVAMousePointerShape;
+    pThis->IConnector.pfnVBVAGuestCapabilityUpdate = Display::i_displayVBVAGuestCapabilityUpdate;
 #endif
 
     /*

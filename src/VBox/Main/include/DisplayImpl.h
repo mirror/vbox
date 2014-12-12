@@ -147,6 +147,8 @@ public:
     int  i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine,
                                uint32_t w, uint32_t h, uint16_t flags);
     void i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int h);
+    void i_handleUpdateVMMDevSupportsGraphics(bool fSupportsGraphics);
+    void i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     int  i_handleVHWACommandProcess(PVBOXVHWACMD pCommand);
 #endif
@@ -326,6 +328,7 @@ private:
     static DECLCALLBACK(int)   i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
                                                               uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy,
                                                               const void *pvShape);
+    static DECLCALLBACK(void)  i_displayVBVAGuestCapabilityUpdate(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fCapabilities);
 #endif
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -356,6 +359,12 @@ private:
 
     unsigned mcMonitors;
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
+    /** Does the VMM device have the "supports graphics" capability set?
+     *  Does not go into the saved state as it is refreshed on restore. */
+    bool        mfVMMDevSupportsGraphics;
+    /** Mirror of the current guest VBVA capabilities.
+     *  Does not go into the saved state as it is refreshed on restore. */
+    uint32_t    mfGuestVBVACapabilities;
 
     bool mfSourceBitmapEnabled;
     bool volatile fVGAResizing;
@@ -424,6 +433,8 @@ public:
 private:
     static int i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll);
     static int i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+
+    void i_updateGuestGraphicsFacility(void);
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     int i_crOglWindowsShow(bool fShow);

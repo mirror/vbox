@@ -659,12 +659,32 @@ typedef struct PDMIDISPLAYPORT
      */
     DECLR3CALLBACKMEMBER(void, pfnSetViewPort,(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy));
 #endif
+
+    /**
+     * Send a video mode hint to the VGA device.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   cx                  The X resolution.
+     * @param   cy                  The Y resolution.
+     * @param   cBPP                The bit count.
+     * @param   iDisplay            The screen number.
+     * @param   dx                  X offset into the virtual framebuffer or ~0.
+     * @param   dy                  Y offset into the virtual framebuffer or ~0.
+     * @param   fEnabled            Is this screen currently enabled?
+     * @param   fNotifyGuest        Should the device send the guest an IRQ?
+     *                              Set for the last hint of a series.
+     * @thread  Schedules on the emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSendModeHint,
+                         (PPDMIDISPLAYPORT pInterface, uint32_t cx, uint32_t cy,
+                          uint32_t cBPP, uint32_t iDisplay, uint32_t dx,
+                          uint32_t dy, uint32_t fEnabled, uint32_t fNotifyGuest));
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
 #ifdef VBOX_WITH_VMSVGA
 #define PDMIDISPLAYPORT_IID                     "f7ed5b9a-3940-4862-9310-1de7e3d118a4"
 #else
-#define PDMIDISPLAYPORT_IID                     "dae29a50-5e24-4fd6-9a6a-65f6bf900acb"
+#define PDMIDISPLAYPORT_IID                     "613ed6c0-817a-11e4-bc1e-931613071d2c"
 #endif
 
 
@@ -924,6 +944,15 @@ typedef struct PDMIDISPLAYCONNECTOR
                                                         uint32_t cx, uint32_t cy,
                                                         const void *pvShape));
 
+    /**
+     * The guest capabilities were updated.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   fCapabilities       The new capability flag state.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAGuestCapabilityUpdate,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fCapabilities));
+
     /** Read-only attributes.
      * For preformance reasons some readonly attributes are kept in the interface.
      * We trust the interface users to respect the readonlyness of these.
@@ -942,7 +971,7 @@ typedef struct PDMIDISPLAYCONNECTOR
     /** @} */
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "906d0c25-091f-497e-908c-1d70cb7e6114"
+#define PDMIDISPLAYCONNECTOR_IID                "33a332b3-0850-4b0f-a697-dcc140bb2e05"
 
 
 /** Pointer to a block port interface. */
@@ -2244,9 +2273,18 @@ typedef struct PDMIACPIPORT
      * @param   pfLocked        Is set to true if the CPU is still locked by the guest, false otherwise.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetCpuStatus,(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked));
+
+    /**
+     * Send an ACPI monitor hot-plug event.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing
+     *                          the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMonitorHotPlugEvent,(PPDMIACPIPORT pInterface));
 } PDMIACPIPORT;
 /** PDMIACPIPORT interface ID. */
-#define PDMIACPIPORT_IID                        "30d3dc4c-6a73-40c8-80e9-34309deacbb3"
+#define PDMIACPIPORT_IID                        "d64233e3-7bb0-4ef1-a313-2bcfafbe6260"
 
 
 /** Pointer to an ACPI connector interface. */
