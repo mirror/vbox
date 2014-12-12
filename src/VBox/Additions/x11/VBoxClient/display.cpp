@@ -218,8 +218,7 @@ static void runDisplay(struct x11State *pState)
             rc = VbglR3RetrieveVideoMode(i, &cx, &cy, &cBPP, &x, &y,
                                          &fEnabled);
             /* Sanity test. */
-            if (   (rc != VINF_SUCCESS && rc != VERR_NOT_FOUND)
-                || (i > cScreens && rc != VERR_NOT_FOUND))
+            if (i > cScreens && rc != VERR_NOT_FOUND)
                 VBClFatalError(("Internal error retrieving the number of saved screen modes.\n"));
             if (rc == VINF_SUCCESS)
                 setModeX11(pState, cx, cy, cBPP, i, x, y, fEnabled,
