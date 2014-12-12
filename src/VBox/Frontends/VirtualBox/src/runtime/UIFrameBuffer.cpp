@@ -478,7 +478,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         ++rects;
     }
     /* Tune according scale-factor: */
-    if (m_dScaleFactor != 1.0)
+    if (m_dScaleFactor != 1.0 || backingScaleFactor() > 1.0)
         region = m_transform.map(region);
 
     if (m_fUpdatesAllowed)
@@ -765,6 +765,15 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
+{
+    /* Remember new backing-scale-factor: */
+    m_dBackingScaleFactor = dBackingScaleFactor;
+
+    /* Update coordinate-system: */
+    updateCoordinateSystem();
+}
+
 void UIFrameBuffer::sltHandleScaleFactorChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
@@ -787,6 +796,9 @@ void UIFrameBuffer::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
 
     /* Fetch new unscaled HiDPI output mode value: */
     m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+
+    /* Update coordinate-system: */
+    updateCoordinateSystem();
 }
 #endif /* RT_OS_DARWIN */
 
@@ -844,6 +856,10 @@ void UIFrameBuffer::updateCoordinateSystem()
     /* Apply the scale-factor if necessary: */
     if (m_dScaleFactor != 1.0)
         m_transform = m_transform.scale(m_dScaleFactor, m_dScaleFactor);
+
+    /* Apply the backing-scale-factor if necessary: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+        m_transform = m_transform.scale(1.0 / backingScaleFactor(), 1.0 / backingScaleFactor());
 }
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)

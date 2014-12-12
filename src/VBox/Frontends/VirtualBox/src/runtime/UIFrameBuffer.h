@@ -224,7 +224,7 @@ public:
     /** Return backing scale factor used by HiDPI frame-buffer. */
     double backingScaleFactor() const { return m_dBackingScaleFactor; }
     /** Define backing scale factor used by HiDPI frame-buffer. */
-    void setBackingScaleFactor(double dBackingScaleFactor) { m_dBackingScaleFactor = dBackingScaleFactor; }
+    void setBackingScaleFactor(double dBackingScaleFactor);
 
 protected slots:
 
