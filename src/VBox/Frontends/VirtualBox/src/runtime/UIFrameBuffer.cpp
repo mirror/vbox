@@ -62,11 +62,12 @@ UIFrameBuffer::UIFrameBuffer()
     , m_fUnused(false)
     , m_fAutoEnabled(false)
     , m_dScaleFactor(gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()))
-    , m_transform(QTransform().scale(m_dScaleFactor, m_dScaleFactor))
     , m_fUseUnscaledHiDPIOutput(gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
 {
+    /* Update coordinate-system: */
+    updateCoordinateSystem();
 }
 
 HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
@@ -772,7 +773,9 @@ void UIFrameBuffer::sltHandleScaleFactorChange(const QString &strMachineID)
 
     /* Fetch new scale-factor: */
     m_dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    m_transform = QTransform().scale(m_dScaleFactor, m_dScaleFactor);
+
+    /* Update coordinate-system: */
+    updateCoordinateSystem();
 }
 
 #ifdef RT_OS_DARWIN
@@ -831,6 +834,16 @@ void UIFrameBuffer::cleanupConnections()
     disconnect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
                this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
 #endif /* Q_WS_MAC */
+}
+
+void UIFrameBuffer::updateCoordinateSystem()
+{
+    /* Reset to default: */
+    m_transform = QTransform();
+
+    /* Apply the scale-factor if necessary: */
+    if (m_dScaleFactor != 1.0)
+        m_transform = m_transform.scale(m_dScaleFactor, m_dScaleFactor);
 }
 
 void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
