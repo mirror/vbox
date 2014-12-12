@@ -1158,6 +1158,7 @@
 # define RTR3InitExe                                    RT_MANGLER(RTR3InitExe)
 # define RTR3InitExeNoArguments                         RT_MANGLER(RTR3InitExeNoArguments)
 # define RTR3InitEx                                     RT_MANGLER(RTR3InitEx)
+# define RTR3InitIsInitialized                          RT_MANGLER(RTR3InitIsInitialized)
 # define RTR3InitIsUnobtrusive                          RT_MANGLER(RTR3InitIsUnobtrusive)
 # define rtR3MemAlloc                                   RT_MANGLER(rtR3MemAlloc)
 # define rtR3MemFree                                    RT_MANGLER(rtR3MemFree)

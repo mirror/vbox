@@ -640,10 +640,18 @@ RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***
     return rtR3Init(fFlags, cArgs, papszArgs, pszProgramPath);
 }
 
+
+RTR3DECL(bool) RTR3InitIsInitialized(void)
+{
+    return g_cUsers >= 1 && !g_fInitializing;
+}
+
+
 RTR3DECL(bool) RTR3InitIsUnobtrusive(void)
 {
     return RT_BOOL(g_fInitFlags & RTR3INIT_FLAGS_UNOBTRUSIVE);
 }
+
 
 #if 0 /** @todo implement RTR3Term. */
 RTR3DECL(void) RTR3Term(void)
