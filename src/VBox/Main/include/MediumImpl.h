@@ -298,7 +298,8 @@ private:
                                              char *pszValue, size_t cchValue);
     static DECLCALLBACK(int) i_vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock);
     static DECLCALLBACK(int) i_vdTcpSocketDestroy(VDSOCKET Sock);
-    static DECLCALLBACK(int) i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort);
+    static DECLCALLBACK(int) i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+                                                  RTMSINTERVAL cMillies);
     static DECLCALLBACK(int) i_vdTcpClientClose(VDSOCKET Sock);
     static DECLCALLBACK(bool) i_vdTcpIsClientConnected(VDSOCKET Sock);
     static DECLCALLBACK(int) i_vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies);
