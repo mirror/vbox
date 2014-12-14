@@ -1780,7 +1780,7 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
                             {
                                 int iSockError = 0;
                                 socklen_t cbSockOpt = sizeof(iSockError);
-                                rcSock = getsockopt(pThis->hNative, SOL_SOCKET, SO_ERROR, &iSockError, (char *)&cbSockOpt);
+                                rcSock = getsockopt(pThis->hNative, SOL_SOCKET, SO_ERROR, (char *)&iSockError, &cbSockOpt);
                                 if (rcSock == 0)
                                 {
                                     if (iSockError == 0)
