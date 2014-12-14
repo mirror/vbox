@@ -678,7 +678,7 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
     if (!pHostEnt)
     {
         rc = rtSocketResolverError();
-        AssertMsgFailed(("Could not resolve '%s', rc=%Rrc\n", pszAddress, rc));
+        //AssertMsgFailed(("Could not resolve '%s', rc=%Rrc\n", pszAddress, rc));
         return rc;
     }
 
@@ -1721,8 +1721,12 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
  * @returns IPRT status code.
  * @param   hSocket             The socket handle.
  * @param   pAddr               The socket address to connect to.
+ * @param   cMillies            Number of milliseconds to wait for the connect attempt to complete.
+ *                              Use RT_INDEFINITE_WAIT to wait for ever.
+ *                              Use RT_TCPCLIENTCONNECT_DEFAULT_WAIT to wait for the default time
+ *                              configured on the running system.
  */
-int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr)
+int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr, RTMSINTERVAL cMillies)
 {
     /*
      * Validate input.
@@ -1737,8 +1741,73 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr)
     int rc = rtSocketAddrFromNetAddr(pAddr, &u, sizeof(u), &cbAddr);
     if (RT_SUCCESS(rc))
     {
-        if (connect(pThis->hNative, &u.Addr, cbAddr) != 0)
-            rc = rtSocketError();
+        if (cMillies == RT_SOCKETCONNECT_DEFAULT_WAIT)
+        {
+            if (connect(pThis->hNative, &u.Addr, cbAddr) != 0)
+                rc = rtSocketError();
+        }
+        else
+        {
+            /*
+             * Switch the socket to nonblocking mode, initiate the connect
+             * and wait for the socket to become writable or until the timeout
+             * expires.
+             */
+            rc = rtSocketSwitchBlockingMode(pThis, false /* fBlocking */);
+            if (RT_SUCCESS(rc))
+            {
+                if (connect(pThis->hNative, &u.Addr, cbAddr) != 0)
+                {
+                    rc = rtSocketError();
+                    if (rc == VERR_TRY_AGAIN || rc == VERR_NET_IN_PROGRESS)
+                    {
+                        int rcSock = 0;
+                        fd_set FdSetWriteable;
+                        struct timeval TvTimeout;
+
+                        TvTimeout.tv_sec = cMillies / RT_MS_1SEC;
+                        TvTimeout.tv_usec = (cMillies % RT_MS_1SEC) * RT_US_1MS;
+
+                        FD_ZERO(&FdSetWriteable);
+                        FD_SET(pThis->hNative, &FdSetWriteable);
+                        do
+                        {
+                            rcSock = select(pThis->hNative + 1, NULL, &FdSetWriteable, NULL,
+                                              cMillies == RT_INDEFINITE_WAIT || cMillies >= INT_MAX
+                                            ? NULL
+                                            : &TvTimeout);
+                            if (rcSock > 0)
+                            {
+                                int iSockError = 0;
+                                socklen_t cbSockOpt = sizeof(iSockError);
+                                rcSock = getsockopt(pThis->hNative, SOL_SOCKET, SO_ERROR, &iSockError, &cbSockOpt);
+                                if (rcSock == 0)
+                                {
+                                    if (iSockError == 0)
+                                        rc = VINF_SUCCESS;
+                                    else
+                                    {
+#ifdef RT_OS_WINDOWS
+                                        rc = RTErrConvertFromWin32(iSockError);
+#else
+                                        rc = RTErrConvertFromErrno(iSockError);
+#endif
+                                    }
+                                }
+                                else
+                                    rc = rtSocketError();
+                            }
+                            else if (rcSock == 0)
+                                rc = VERR_TIMEOUT;
+                            else
+                                rc = rtSocketError();
+                        } while (rc == VERR_INTERRUPTED);
+                    }
+                }
+
+                rtSocketSwitchBlockingMode(pThis, true /* fBlocking */);
+            }
+        }
     }
 
     rtSocketUnlock(pThis);

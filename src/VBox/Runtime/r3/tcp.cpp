@@ -805,12 +805,12 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
 
 RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
 {
-    return RTTcpClientConnectEx(pszAddress, uPort, pSock, NULL);
+    return RTTcpClientConnectEx(pszAddress, uPort, pSock, RT_SOCKETCONNECT_DEFAULT_WAIT, NULL);
 }
 
 
 RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock,
-                                   PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie)
+                                   RTMSINTERVAL cMillies, PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie)
 {
     /*
      * Validate input.
@@ -837,13 +837,13 @@ RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSO
         RTSocketSetInheritance(Sock, false /*fInheritable*/);
 
         if (!ppCancelCookie)
-            rc = rtSocketConnect(Sock, &Addr);
+            rc = rtSocketConnect(Sock, &Addr, cMillies);
         else
         {
             RTSocketRetain(Sock);
             if (ASMAtomicCmpXchgPtr(ppCancelCookie, (PRTTCPCLIENTCONNECTCANCEL)Sock, NULL))
             {
-                rc = rtSocketConnect(Sock, &Addr);
+                rc = rtSocketConnect(Sock, &Addr, cMillies);
                 if (ASMAtomicCmpXchgPtr(ppCancelCookie, NULL, (PRTTCPCLIENTCONNECTCANCEL)Sock))
                     RTSocketRelease(Sock);
                 else

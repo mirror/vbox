@@ -44,6 +44,9 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** Use the system default timeout for the connet attempt. */
+#define RT_SOCKETCONNECT_DEFAULT_WAIT (RT_INDEFINITE_WAIT - 1)
+
 /**
  * Retains a reference to the socket handle.
  *
