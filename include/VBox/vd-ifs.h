@@ -1055,8 +1055,13 @@ typedef struct VDINTERFACETCPNET
      * @param   Sock            Socket descriptor.
      * @param   pszAddress      The address to connect to.
      * @param   uPort           The port to connect to.
+     * @param   cMillies        Number of milliseconds to wait for the connect attempt to complete.
+     *                          Use RT_INDEFINITE_WAIT to wait for ever.
+     *                          Use RT_SOCKETCONNECT_DEFAULT_WAIT to wait for the default time
+     *                          configured on the running system.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClientConnect, (VDSOCKET Sock, const char *pszAddress, uint32_t uPort));
+    DECLR3CALLBACKMEMBER(int, pfnClientConnect, (VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+                                                 RTMSINTERVAL cMillies));
 
     /**
      * Close a TCP connection.
