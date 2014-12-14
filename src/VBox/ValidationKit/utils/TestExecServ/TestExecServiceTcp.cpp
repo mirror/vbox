@@ -203,7 +203,8 @@ static DECLCALLBACK(int) txsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
         /* Try connect. */ /** @todo make cancelable! */
         RTSOCKET hTcpClient;
         Log2(("Calling RTTcpClientConnect(%s, %u,)...\n", g_szTcpConnectAddr, g_uTcpConnectPort));
-        int rc = RTTcpClientConnectEx(g_szTcpConnectAddr, g_uTcpConnectPort, &hTcpClient, &g_pTcpConnectCancelCookie);
+        int rc = RTTcpClientConnectEx(g_szTcpConnectAddr, g_uTcpConnectPort, &hTcpClient,
+                                      RT_SOCKETCONNECT_DEFAULT_WAIT, &g_pTcpConnectCancelCookie);
         Log(("txsTcpRecvPkt: RTTcpClientConnect -> %Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
@@ -277,7 +278,7 @@ static int txsTcpConnect(void)
         for (;;)
         {
             Log2(("Calling RTTcpClientConnect(%s, %u,)...\n", g_szTcpConnectAddr, g_uTcpConnectPort));
-            rc = RTTcpClientConnectEx(g_szTcpConnectAddr, g_uTcpConnectPort, &g_hTcpClient, NULL);
+            rc = RTTcpClientConnect(g_szTcpConnectAddr, g_uTcpConnectPort, &g_hTcpClient);
             Log(("txsTcpRecvPkt: RTTcpClientConnect -> %Rrc\n", rc));
             if (RT_SUCCESS(rc) || txsTcpIsFatalClientConnectStatus(rc))
                 break;

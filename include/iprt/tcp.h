@@ -180,6 +180,10 @@ typedef struct RTTCPCLIENTCONNECTCANCEL *PRTTCPCLIENTCONNECTCANCEL;
  * @param   pszAddress      The address to connect to.
  * @param   uPort           The port to connect to.
  * @param   pSock           Where to store the handle to the established connection.
+ * @param   cMillies        Number of milliseconds to wait for the connect attempt to complete.
+ *                          Use RT_INDEFINITE_WAIT to wait for ever.
+ *                          Use RT_SOCKETCONNECT_DEFAULT_WAIT to wait for the default time
+ *                          configured on the running system.
  * @param   ppCancelCookie  Where to store information for canceling the
  *                          operation (from a different thread). Optional.
  *
@@ -193,7 +197,7 @@ typedef struct RTTCPCLIENTCONNECTCANCEL *PRTTCPCLIENTCONNECTCANCEL;
  * @sa      RTTcpClientCancelConnect
  */
 RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock,
-                                   PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie);
+                                   RTMSINTERVAL cMillies, PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie);
 
 /**
  * Cancels a RTTcpClientConnectEx call on a different thread.
