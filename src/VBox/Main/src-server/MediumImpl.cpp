@@ -6525,11 +6525,12 @@ DECLCALLBACK(int) Medium::i_vdTcpSocketDestroy(VDSOCKET Sock)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) Medium::i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
+DECLCALLBACK(int) Medium::i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+                                               RTMSINTERVAL cMillies)
 {
     PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
 
-    return RTTcpClientConnect(pszAddress, uPort, &pSocketInt->hSocket);
+    return RTTcpClientConnectEx(pszAddress, uPort, &pSocketInt->hSocket, cMillies, NULL);
 }
 
 DECLCALLBACK(int) Medium::i_vdTcpClientClose(VDSOCKET Sock)
