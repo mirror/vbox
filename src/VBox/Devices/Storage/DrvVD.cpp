@@ -727,7 +727,8 @@ static DECLCALLBACK(int) drvvdINIPSocketDestroy(VDSOCKET Sock)
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnClientConnect */
-static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
+static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+                                                RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
@@ -736,6 +737,8 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
 #ifdef VBOX_WITH_NEW_LWIP
     ip6_addr_t ip6;
 #endif
+
+    NOREF(cMillies); /** LwIP doesn't support connect timeout. */
 
     /* Check whether lwIP is set up in this VM instance. */
     if (!DevINIPConfigured())
@@ -1166,12 +1169,13 @@ static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
 }
 
 /** @copydoc VDINTERFACETCPNET::pfnClientConnect */
-static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort)
+static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+                                               RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
 
-    rc = RTTcpClientConnect(pszAddress, uPort, &pSockInt->hSocket);
+    rc = RTTcpClientConnectEx(pszAddress, uPort, &pSockInt->hSocket, cMillies, NULL);
     if (RT_SUCCESS(rc))
     {
         /* Add to the pollset if required. */
