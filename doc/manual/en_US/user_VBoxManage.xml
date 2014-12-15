@@ -2828,7 +2828,8 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><computeroutput>get &lt;vm&gt;</computeroutput>: This
+          <para><computeroutput>get &lt;vm&gt; &lt;property&gt;
+          </computeroutput>: This
           retrieves the value of a single property only. If the property
           cannot be found (e.g. because the guest is not running), this will
           print <screen>No value set!</screen></para>
