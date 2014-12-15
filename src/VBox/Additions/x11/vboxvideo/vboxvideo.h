@@ -147,8 +147,10 @@ struct VBoxScreen
     /** Position information for each virtual screen for the purposes of
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation;
-    /** Has this screen been disabled by the guest? */
-    Bool afDisabled;
+    /** Is this CRTC enabled or in DPMS off state? */
+    Bool fCrtcEnabled;
+    /** Is this output enabled or in DPMS low power state? */
+    Bool fOutputEnabled;
 #ifdef VBOXVIDEO_13
     /** The virtual crtcs. */
     struct _xf86Crtc *paCrtcs;

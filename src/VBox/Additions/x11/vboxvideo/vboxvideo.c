@@ -294,12 +294,12 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
 {
     VBOXPtr pVBox = VBOXGetRec(crtc->scrn);
     unsigned cDisplay = (uintptr_t)crtc->driver_private;
-    bool fDisabled = (mode == DPMSModeOff);
+    bool fEnabled = (mode != DPMSModeOff);
 
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    if (pVBox->pScreens[cDisplay].afDisabled == fDisabled)
+    if (pVBox->pScreens[cDisplay].fCrtcEnabled == fEnabled)
         return;
-    pVBox->pScreens[cDisplay].afDisabled = fDisabled;
+    pVBox->pScreens[cDisplay].fCrtcEnabled = fEnabled;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!crtc->scrn->vtSema) {
@@ -346,7 +346,8 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
 
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
-    pVBox->pScreens[cDisplay].afDisabled = false;
+    pVBox->pScreens[cDisplay].fCrtcEnabled = true;
+    pVBox->pScreens[cDisplay].fOutputEnabled = true;
     pVBox->pScreens[cDisplay].aScreenLocation.cx = adjusted_mode->HDisplay;
     pVBox->pScreens[cDisplay].aScreenLocation.cy = adjusted_mode->VDisplay;
     pVBox->pScreens[cDisplay].aScreenLocation.x = x;
@@ -401,7 +402,30 @@ vbox_output_stub (xf86OutputPtr output)
 
 static void
 vbox_output_dpms (xf86OutputPtr output, int mode)
-{ (void) output; (void) mode; }
+{
+    VBOXPtr pVBox = VBOXGetRec(output->scrn);
+    unsigned cDisplay = (uintptr_t)output->driver_private;
+    bool fEnabled = (mode == DPMSModeOn);
+
+    TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
+    if (pVBox->pScreens[cDisplay].fOutputEnabled == fEnabled)
+        return;
+    pVBox->pScreens[cDisplay].fOutputEnabled = fEnabled;
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (!output->scrn->vtSema) {
+        xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return;
+    }
+    if (   pVBox->pScreens[cDisplay].aScreenLocation.cx
+        && pVBox->pScreens[cDisplay].aScreenLocation.cy)
+        VBOXSetMode(output->scrn, cDisplay,
+                    pVBox->pScreens[cDisplay].aScreenLocation.cx,
+                    pVBox->pScreens[cDisplay].aScreenLocation.cy,
+                    pVBox->pScreens[cDisplay].aScreenLocation.x,
+                    pVBox->pScreens[cDisplay].aScreenLocation.y);
+}
 
 static int
 vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
