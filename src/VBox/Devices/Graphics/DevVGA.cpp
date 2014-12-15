@@ -5830,7 +5830,8 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     LogFlow(("vgaR3Destruct:\n"));
 
 # ifdef VBOX_WITH_VDMA
-    vboxVDMADestruct(pThis->pVdma);
+    if (pThis->pVdma)
+        vboxVDMADestruct(pThis->pVdma);
 # endif
 
 #ifdef VBOX_WITH_VMSVGA
