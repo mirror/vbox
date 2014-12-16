@@ -124,6 +124,7 @@ strcmp
 strcpy
 strlen
 strncat
+__strncat_chk
 strncmp
 strncpy
 __strncpy_chk
