@@ -121,6 +121,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported()
     CGOpenGLDisplayMask cglDisplayMask = CGDisplayIDToOpenGLDisplayMask (display);
     CGLPixelFormatObj   pixelFormat = NULL;
     GLint numPixelFormats = 0;
+    CGLError            rcCgl;
 
     CGLPixelFormatAttribute attribs[] = {
         kCGLPFADisplayMask,
@@ -134,13 +135,25 @@ bool RTCALL VBoxOglIs3DAccelerationSupported()
 
     display = CGMainDisplayID();
     cglDisplayMask = CGDisplayIDToOpenGLDisplayMask(display);
-    CGLChoosePixelFormat(attribs, &pixelFormat, &numPixelFormats);
+    rcCgl = CGLChoosePixelFormat(attribs, &pixelFormat, &numPixelFormats);
+    if (rcCgl != kCGLNoError)
+    {
+        LogRel(("OpenGL Info: 3D test unable to choose pixel format (rcCgl=0x%X)\n", rcCgl));
+        return false;
+    }
 
     if (pixelFormat)
     {
         CGLContextObj cglContext = 0;
-        CGLCreateContext(pixelFormat, NULL, &cglContext);
+        rcCgl = CGLCreateContext(pixelFormat, NULL, &cglContext);
         CGLDestroyPixelFormat(pixelFormat);
+
+        if (rcCgl != kCGLNoError)
+        {
+            LogRel(("OpenGL Info: 3D test unable to create context (rcCgl=0x%X)\n", rcCgl));
+            return false;
+        }
+
         if (cglContext)
         {
             GLboolean isSupported = GL_TRUE;
@@ -156,15 +169,20 @@ bool RTCALL VBoxOglIs3DAccelerationSupported()
             {
                 isSupported = gluCheckExtension((const GLubyte*)"GL_EXT_texture_rectangle", strExt);
                 if (!isSupported)
-                    LogRel(("OpenGL Info: GL_EXT_texture_rectangle extension not supported\n"));
+                    LogRel(("OpenGL Info: 3D test found that GL_EXT_texture_rectangle extension not supported\n"));
             }
             else
-                LogRel(("OpenGL Info: GL_EXT_framebuffer_object extension not supported\n"));
+                LogRel(("OpenGL Info: 3D test found that GL_EXT_framebuffer_object extension not supported\n"));
 #endif /* VBOX_WITH_COCOA_QT */
             CGLDestroyContext(cglContext);
+            LogRel(("OpenGL Info: 3D test %spassed\n", isSupported == GL_TRUE ? "" : "not "));
             return isSupported == GL_TRUE ? true : false;
         }
+        else
+            LogRel(("OpenGL Info: 3D test unable to create context (internal error)\n"));
     }
+    else
+        LogRel(("OpenGL Info: 3D test unable to choose pixel format (internal error)\n"));
 
     return false;
 }
