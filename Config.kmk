@@ -4280,6 +4280,8 @@ ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) -Wno-sign-compare
  TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) \
 	-Wno-sign-compare -Werror-implicit-function-declaration
+ TEMPLATE_VBOXR3NP_OBJCFLAGS             = $(filter-out -pedantic -Wstrict-prototypes,$(TEMPLATE_VBOXR3_OBJCFLAGS))
+ TEMPLATE_VBOXR3NP_OBJCXXFLAGS           = $(filter-out -pedantic,$(TEMPLATE_VBOXR3_OBJCXXFLAGS))
 endif
 
 
