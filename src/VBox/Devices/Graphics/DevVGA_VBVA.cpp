@@ -2474,8 +2474,8 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             uint8_t *pbHint = (uint8_t *)pvBuffer + sizeof(VBVAQUERYMODEHINTS);
             memset(pbHint, ~0, cbBuffer - sizeof(VBVAQUERYMODEHINTS));
             unsigned iHint;
-            for (iHint = 0; iHint < pModeHintQuery->cHintsQueried && iHint < 64;
-                 ++iHint)
+            for (iHint = 0;    iHint < pModeHintQuery->cHintsQueried
+                            && iHint < VBOX_VIDEO_MAX_SCREENS; ++iHint)
             {
                 memcpy(pbHint, &pCtx->aModeHints[iHint],
                        RT_MIN(pModeHintQuery->cbHintStructureGuest,
