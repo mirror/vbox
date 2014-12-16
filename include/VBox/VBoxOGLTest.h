@@ -22,16 +22,16 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
-#ifndef ___VBoxOGLTest_h__
-#define ___VBoxOGLTest_h__
+#ifndef ___VBoxOGLTest_h
+#define ___VBoxOGLTest_h
 
 #include <iprt/cdefs.h>
 
 RT_C_DECLS_BEGIN
 
-bool RTCALL VBoxOglIsOfflineRenderingAppropriate();
-bool RTCALL VBoxOglIs3DAccelerationSupported();
+bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void );
+bool RTCALL VBoxOglIs3DAccelerationSupported(void);
 
 RT_C_DECLS_END
 
-#endif /*#ifndef ___VBoxOGLTest_h__*/
+#endif /* !___VBoxOGLTest_h */

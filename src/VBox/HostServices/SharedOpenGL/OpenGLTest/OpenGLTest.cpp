@@ -29,7 +29,7 @@
 
 #include <VBox/VBoxOGLTest.h>
 
-bool RTCALL VBoxOglIs3DAccelerationSupported()
+bool RTCALL VBoxOglIs3DAccelerationSupported(void)
 {
     if (RTEnvExist("VBOX_CROGL_FORCE_SUPPORTED"))
     {

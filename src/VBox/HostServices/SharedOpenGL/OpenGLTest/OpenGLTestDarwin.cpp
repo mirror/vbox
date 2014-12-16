@@ -33,7 +33,7 @@
 
 #include <VBox/VBoxOGLTest.h>
 
-bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
+bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void)
 {
     /* It is assumed that it is makes sense to enable offline rendering
        only in case if host has more than one GPU installed. This routine
@@ -109,7 +109,7 @@ bool RTCALL VBoxOglIsOfflineRenderingAppropriate()
     return fAppropriate;
 }
 
-bool RTCALL VBoxOglIs3DAccelerationSupported()
+bool RTCALL VBoxOglIs3DAccelerationSupported(void)
 {
     if (RTEnvExist("VBOX_CROGL_FORCE_SUPPORTED"))
     {
