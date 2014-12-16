@@ -31,7 +31,6 @@ PROGRAMS += xmmsaving
 xmmsaving_TEMPLATE = VBoxValidationKitR3
 xmmsaving_SOURCES  = xmmsaving.cpp xmmsaving-asm.asm
 
-
 PROGRAMS += exceptionsR3
 exceptionsR3_TEMPLATE = VBoxValidationKitR3
 exceptionsR3_SOURCES  = exceptionsR3.cpp exceptionsR3-asm.asm
@@ -44,6 +43,17 @@ PROGRAMS += cpu-alloc-all-mem
 cpu-alloc-all-mem_TEMPLATE = VBoxValidationKitR3
 cpu-alloc-all-mem_SOURCES  = cpu-alloc-all-mem.cpp
 
+PROGRAMS += cidet-app
+cidet-app_TEMPLATE = VBoxValidationKitR3
+cidet-app_SOURCES  = \
+	cidet-app.cpp \
+	cidet-appA.asm \
+	cidet-core.cpp \
+	cidet-instr-1.cpp
+if 1
+cidet-app_DEFS = IN_DIS
+cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
+endif
 
 #PROGRAMS += rdtsc
 #rdtsc_TEMPLATE = rdtsc
