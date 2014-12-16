@@ -120,9 +120,11 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
                        unsigned y, bool fEnabled, bool fChangeOrigin)
 {
     char szCommand[256];
-    int status;
     uint32_t i;
 
+    /** @note The xrandr command can fail if something else accesses RandR at
+     *  the same time.  We just ignore failure for now and let the user try
+     *  again as we do not know what someone else is doing. */
     if (iDisplay >= pState->cSizeHints)
     {
         pState->paSizeHints = (long *)RTMemRealloc(pState->paSizeHints,
@@ -148,9 +150,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
     {
         RTStrPrintf(szCommand, sizeof(szCommand),
                     "%s -s %ux%u", pState->pcszXrandr, cx, cy);
-        status = system(szCommand);
-        if (WEXITSTATUS(status) != 0)
-            VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+        system(szCommand);
     }
     else
     {
@@ -161,18 +161,14 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
             RTStrPrintf(szCommand, sizeof(szCommand),
                         "%s --output VGA-%u --auto --pos %ux%u",
                         pState->pcszXrandr, iDisplay, x, y);
-            status = system(szCommand);
-            if (WEXITSTATUS(status) != 0)
-                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+            system(szCommand);
         }
         if ((!fChangeOrigin || fEnabled) && cx != 0 && cy != 0)
         {
             RTStrPrintf(szCommand, sizeof(szCommand),
                         "%s --output VGA-%u --preferred",
                         pState->pcszXrandr, iDisplay);
-            status = system(szCommand);
-            if (WEXITSTATUS(status) != 0)
-                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+            system(szCommand);
         }
         if (!fEnabled)
         {
@@ -180,9 +176,7 @@ static void setModeX11(struct x11State *pState, unsigned cx, unsigned cy,
             RTStrPrintf(szCommand, sizeof(szCommand),
                         "%s --output VGA-%u --off",
                          pState->pcszXrandr, iDisplay);
-            status = system(szCommand);
-            if (WEXITSTATUS(status) != 0)
-                VBClFatalError(("Failed to execute \\\"%s\\\".\n", szCommand));
+            system(szCommand);
         }
     }
 }
