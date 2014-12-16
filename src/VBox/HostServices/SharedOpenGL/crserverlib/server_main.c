@@ -571,7 +571,10 @@ GLboolean crVBoxServerInit(void)
     crServerSetVBoxConfigurationHGCM();
 
     if (!cr_server.head_spu)
+    {
+        crStateDestroy();
         return GL_FALSE;
+    }
 
     crServerInitDispatch();
     crServerInitTmpCtxDispatch();
