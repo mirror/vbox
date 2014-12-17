@@ -787,7 +787,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         # TEMPORARY HACK - START
         sHostName = socket.getfqdn();
-        if fRc and sHostName.startswith('testboxwin3') \
+        if fRc and not sHostName.startswith('testboxwin3') \
                and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
             reporter.log('Peforming extra NDIS cleanup...');
             sMagicScript = os.path.abspath(os.path.join(g_ksValidationKitDir, 'testdriver', 'win-vbox-net-uninstall.ps1'));
