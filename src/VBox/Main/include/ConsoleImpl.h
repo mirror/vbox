@@ -693,6 +693,7 @@ private:
                        IMedium *pMedium,
                        MachineState_T aMachineState,
                        HRESULT *phrc);
+    int i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP);
     static DECLCALLBACK(int) i_reconfigureMediumAttachment(Console *pThis,
                                                            PUVM pUVM,
                                                            const char *pcszDevice,
