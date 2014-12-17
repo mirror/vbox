@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,24 +32,27 @@ struct WindowInfo;
 ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSOpenGLContext);
 
-/* OpenGL context management */
+/** @name OpenGL context management
+ * @{ */
 void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, NativeNSOpenGLContextRef pSharedCtx);
 void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx);
+/** @} */
 
-/* View management */
+/** @name View management
+ * @{ */
 void cocoaViewCreate(NativeNSViewRef *ppView, struct WindowInfo *pWinInfo, NativeNSViewRef pParentView, GLbitfield fVisParams);
 void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView);
 void cocoaViewDestroy(NativeNSViewRef pView);
 void cocoaViewDisplay(NativeNSViewRef pView);
 void cocoaViewShow(NativeNSViewRef pView, GLboolean fShowIt);
 void cocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
-void cocoaViewSetSize(NativeNSViewRef pView, int w, int h);
-void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int *pH);
-
+void cocoaViewSetSize(NativeNSViewRef pView, int cx, int cy);
+void cocoaViewGetGeometry(NativeNSViewRef pView, int *px, int *py, int *pcx, int *pcy);
 void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
-void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint* paRects);
+void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint *paRects);
 GLboolean cocoaViewNeedsEmptyPresent(NativeNSViewRef pView);
 void cocoaViewPresentComposition(NativeNSViewRef pView, const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry);
+/** @} */
 
 RT_C_DECLS_END
 
