@@ -679,15 +679,15 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryPosSet(PVBOXVR_SCR_COMPOSITOR pComposito
 /* regions are valid until the next CrVrScrCompositor call */
 VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsGet(const VBOXVR_SCR_COMPOSITOR *pCompositor, const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions, const RTRECT **ppaDstUnstretchedRects)
 {
-	if (CrVrScrCompositorEntryIsUsed(pEntry))
-	{
-		int rc = crVrScrCompositorRectsCheckInit(pCompositor);
-		if (!RT_SUCCESS(rc))
-		{
-			WARN(("crVrScrCompositorRectsCheckInit failed, rc %d", rc));
-			return rc;
-		}
-	}
+    if (CrVrScrCompositorEntryIsUsed(pEntry))
+    {
+        int rc = crVrScrCompositorRectsCheckInit(pCompositor);
+        if (!RT_SUCCESS(rc))
+        {
+                WARN(("crVrScrCompositorRectsCheckInit failed, rc %d", rc));
+                return rc;
+        }
+    }
 
     Assert(pCompositor->cRects != VBOXVR_SCR_COMPOSITOR_RECTS_UNDEFINED);
 
