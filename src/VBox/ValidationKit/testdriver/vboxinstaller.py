@@ -37,6 +37,7 @@ __version__ = "$Revision$"
 import os
 import sys
 import re
+import socket
 import tempfile
 import time
 
@@ -785,7 +786,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         # TEMPORARY HACK - START
-        if fRc and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
+        sHostName = socket.getfqdn();
+        if fRc and sHostName.startswidth('testboxwin3') \
+               and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
             reporter.log('Peforming extra NDIS cleanup...');
             sMagicScript = os.path.abspath(os.path.join(g_ksValidationKitDir, 'testdriver', 'win-vbox-net-uninstall.ps1'));
             fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-Command', 'set-executionpolicy unrestricted']);
