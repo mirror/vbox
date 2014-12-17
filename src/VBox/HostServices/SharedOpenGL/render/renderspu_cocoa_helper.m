@@ -406,25 +406,6 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 @end
 
 
-#if 0
-/** Callback function pointer type for VBoxTaskCallback. */
-typedef DECLCALLBACKPTR(void, PFNVBOXTASKCALLBACK)(void *pvUser);
-
-/**
- * Generic task class for executing a given C callback with a single parameter.
- */
-@interface VBoxTaskCallback: VBoxTask
-{
-@private
-    PFNVBOXTASKCALLBACK m_pfnCallback;
-    void *m_pvUser;
-}
-- (id)initWithCb:(PFNVBOXTASKCALLBACK)pfnCb arg:(void *)pvUser;
-- (void)run;
-@end
-#endif
-
-
 /**
  * 
  */
@@ -1448,24 +1429,6 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     DEBUG_FUNC_LEAVE();
 }
 
-#if 0 /* unused */
-typedef struct CR_RCD_SETPOS
-{
-    OverlayView *pView;
-    NSPoint pos;
-} CR_RCD_SETPOS;
-
-static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
-{
-    DEBUG_FUNC_ENTER();
-
-    CR_RCD_SETPOS *pPos = (CR_RCD_SETPOS*)pvCb;
-    [pPos->pView vboxSetPosUI:pPos->pos];
-
-    DEBUG_FUNC_LEAVE();
-}
-#endif
-
 - (void)vboxSetPos:(NSPoint)pos
 {
     DEBUG_FUNC_ENTER();
@@ -1560,22 +1523,6 @@ static DECLCALLBACK(void) vboxRcdSetPos(void *pvCb)
 
     DEBUG_FUNC_LEAVE();
 }
-
-#if 0 /* unused */
-typedef struct CR_RCD_SETSIZE
-{
-    OverlayView *pView;
-    NSSize size;
-} CR_RCD_SETSIZE;
-
-static DECLCALLBACK(void) vboxRcdSetSize(void *pvCb)
-{
-    DEBUG_FUNC_ENTER();
-    CR_RCD_SETSIZE * pSetSize = (CR_RCD_SETSIZE*)pvCb;
-    [pSetSize->pView vboxSetSizeUI:pSetSize->size];
-    DEBUG_FUNC_LEAVE();
-}
-#endif
 
 - (void)vboxSetSize:(NSSize)size
 {
@@ -1860,23 +1807,6 @@ static DECLCALLBACK(void) vboxRcdSetSize(void *pvCb)
     [self performSelectorOnMainThread:@selector(vboxTryDrawUI) withObject:nil waitUntilDone:NO];
 }
 
-#if 0 /* unused */
-typedef struct CR_RCD_SETVISIBLE
-{
-    OverlayView *pView;
-    BOOL fVisible;
-} CR_RCD_SETVISIBLE;
-
-static DECLCALLBACK(void) vboxRcdSetVisible(void *pvCb)
-{
-    DEBUG_FUNC_ENTER();
-    CR_RCD_SETVISIBLE * pVisible = (CR_RCD_SETVISIBLE*)pvCb;
-    
-    [pVisible->pView vboxSetVisibleUI:pVisible->fVisible];
-    DEBUG_FUNC_LEAVE();
-}
-#endif
-
 - (void)vboxSetVisible:(GLboolean)fVisible
 {
     DEBUG_FUNC_ENTER();
@@ -1902,22 +1832,6 @@ static DECLCALLBACK(void) vboxRcdSetVisible(void *pvCb)
     [self vboxSetVisibleUI:fVisible];
     DEBUG_FUNC_LEAVE();
 }
-
-#if 0 /* unused */
-typedef struct CR_RCD_REPARENT
-{
-    OverlayView *pView;
-    NSView *pParent;
-} CR_RCD_REPARENT;
-
-static DECLCALLBACK(void) vboxRcdReparent(void *pvCb)
-{
-    DEBUG_FUNC_ENTER();
-    CR_RCD_REPARENT * pReparent = (CR_RCD_REPARENT*)pvCb;
-    [pReparent->pView vboxReparentUI:pReparent->pParent];
-    DEBUG_FUNC_LEAVE();
-}
-#endif
 
 - (void)vboxReparent:(NSView *)pParentView
 {
