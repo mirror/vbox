@@ -71,7 +71,8 @@ typedef struct OSSAUDIOSTREAMIN
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
-    void              *pvPCMBuf;
+    void              *pvBuf;
+    size_t             cbBuf;
     int                old_optr;
 } OSSAUDIOSTREAMIN, *POSSAUDIOSTREAMIN;
 
@@ -411,8 +412,96 @@ static DECLCALLBACK(int) drvHostOSSAudioInit(PPDMIHOSTAUDIO pInterface)
 static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn,
                                                   uint32_t *pcSamplesCaptured)
 {
-    *pcSamplesCaptured = 0;
-    return VINF_SUCCESS;
+    NOREF(pInterface);
+    AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
+
+    POSSAUDIOSTREAMIN pThisStrmIn = (POSSAUDIOSTREAMIN)pHstStrmIn;
+
+    int rc = VINF_SUCCESS;
+    size_t cbToRead = RT_MIN(pThisStrmIn->cbBuf, 
+                             audioMixBufFreeBytes(&pHstStrmIn->MixBuf));
+
+    LogFlowFunc(("cbToRead=%zu\n", cbToRead));
+
+    uint32_t cWrittenTotal = 0;
+    uint32_t cbTemp;
+    ssize_t  cbRead;
+    size_t   offWrite = 0;
+
+    while (cbToRead) 
+    {
+        cbTemp = RT_MIN(cbToRead, pThisStrmIn->cbBuf);
+        AssertBreakStmt(cbTemp, rc = VERR_NO_DATA);
+        cbRead = read(pThisStrmIn->hFile, pThisStrmIn->pvBuf + offWrite, cbTemp);
+
+        LogFlowFunc(("cbRead=%zi, cbTemp=%RU32, cbToRead=%zu\n",
+                     cbRead, cbTemp, cbToRead));
+
+        if (cbRead < 0) 
+        {
+            switch (errno) 
+            {
+                case 0:
+                {
+                    LogFunc(("Failed to read %z frames\n", cbRead));
+                    rc = VERR_ACCESS_DENIED;
+                    break;
+                }
+
+                case EINTR:
+                case EAGAIN:
+                    rc = VERR_NO_DATA;
+                    break;
+
+                default:
+                    LogFlowFunc(("Failed to read %zu input frames, rc=%Rrc\n", 
+                                 cbTemp, rc));
+                    rc = VERR_GENERAL_FAILURE; /** @todo */
+                    break;
+            }
+
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (cbRead)
+        {
+            uint32_t cWritten;  
+            rc = audioMixBufWriteCirc(&pHstStrmIn->MixBuf, 
+                                      pThisStrmIn->pvBuf, cbRead,
+                                      &cWritten);
+            if (RT_FAILURE(rc))
+                break;
+
+            uint32_t cbWritten = AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf, cWritten);
+
+            Assert(cbToRead >= cbWritten);
+            cbToRead      -= cbWritten;
+            offWrite      += cbWritten;
+            cWrittenTotal += cWritten;
+        }
+        else /* No more data, try next round. */
+            break;
+    }
+
+    if (rc == VERR_NO_DATA)
+        rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cProcessed = 0;
+        if (cWrittenTotal)
+            rc = audioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal,
+                                        &cProcessed);
+
+        if (pcSamplesCaptured)
+            *pcSamplesCaptured = cWrittenTotal;
+
+        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 processed), rc=%Rrc\n",
+                     cWrittenTotal, cProcessed, rc));
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostOSSAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn)
@@ -424,8 +513,11 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAU
 
     LogFlowFuncEnter();
 
-    RTMemFree(pThisStrmIn->pvPCMBuf);
-    pThisStrmIn->pvPCMBuf = NULL;
+    if (pThisStrmIn->pvBuf) 
+    {
+        RTMemFree(pThisStrmIn->pvBuf);
+        pThisStrmIn->pvBuf = NULL;
+    }
 
     return VINF_SUCCESS;
 }
@@ -442,8 +534,11 @@ static DECLCALLBACK(int) drvHostOSSAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDMA
 #ifndef RT_OS_L4
     if (!pThisStrmOut->fMemMapped) 
     {
-        RTMemFree(pThisStrmOut->pvPCMBuf);
-        pThisStrmOut->pvPCMBuf = NULL;
+        if (pThisStrmOut->pvPCMBuf) 
+        {
+            RTMemFree(pThisStrmOut->pvPCMBuf);
+            pThisStrmOut->pvPCMBuf = NULL;
+        }
     }
 #endif
 
@@ -508,19 +603,24 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
             if (RT_SUCCESS(rc)) 
             {
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) 
-                           >> pHstStrmIn->Props.cShift;  
+                           >> pHstStrmIn->Props.cShift;
+                if (!cSamples)
+                    rc = VERR_INVALID_PARAMETER;
             }
         }
 
         if (RT_SUCCESS(rc)) 
         {
-            pThisStrmIn->pvPCMBuf = RTMemAlloc(cSamples * (1 << pHstStrmIn->Props.cShift));
-            if (!pThisStrmIn->pvPCMBuf) 
+            size_t cbBuf = cSamples * (1 << pHstStrmIn->Props.cShift);
+            pThisStrmIn->pvBuf = RTMemAlloc(cbBuf);
+            if (!pThisStrmIn->pvBuf) 
             {
                 LogRel(("Audio: Failed allocating ADC buffer with %RU32 samples, each %d bytes\n",
                         cSamples, 1 << pHstStrmIn->Props.cShift));
                 rc = VERR_NO_MEMORY;
             }
+
+            pThisStrmIn->cbBuf = cbBuf;
 
             if (pcSamples)
                 *pcSamples = cSamples;
@@ -578,10 +678,8 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
 
             rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
             if (RT_SUCCESS(rc)) 
-            {
                 cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) 
                            >> pHstStrmOut->Props.cShift;  
-            }
         }
 
         if (RT_SUCCESS(rc))
@@ -642,15 +740,15 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
             if (!pThisStrmOut->fMemMapped) 
             {
 #endif
+                LogFlowFunc(("cSamples=%RU32\n", cSamples));
                 pThisStrmOut->pvPCMBuf = RTMemAlloc(cSamples * (1 << pHstStrmOut->Props.cShift));
                 if (!pThisStrmOut->pvPCMBuf) 
                 {
                     LogRel(("Audio: Failed allocating DAC buffer with %RU32 samples, each %d bytes\n",
                             cSamples, 1 << pHstStrmOut->Props.cShift));
                     rc = VERR_NO_MEMORY;
+                    break;
                 }
-
-                break;
 #ifndef RT_OS_L4
             }
 #endif
@@ -719,7 +817,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 #endif
             audio_buf_info abinfo;
             int rc2 = ioctl(pThisStrmOut->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
-            if (!rc2) 
+            if (rc2 < 0) 
             {
                 LogRel(("Audio: Failed to retrieve current playback buffer: %s\n", 
                         strerror(errno)));
@@ -787,15 +885,20 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     } while(0);
 
-    uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
-    if (cReadTotal)
-        audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+    if (RT_SUCCESS(rc)) 
+    {
+        uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
+        if (cReadTotal)
+            audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
 
-    if (pcSamplesPlayed)
-        *pcSamplesPlayed = cReadTotal;
+        if (pcSamplesPlayed)
+            *pcSamplesPlayed = cReadTotal;
 
-    LogFlowFunc(("cReadTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", 
-                 cReadTotal, cbReadTotal, rc));
+        LogFlowFunc(("cReadTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", 
+                     cReadTotal, cbReadTotal, rc));
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
