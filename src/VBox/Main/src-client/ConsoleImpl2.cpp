@@ -4232,49 +4232,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
 
                 /* Pass all custom parameters. */
                 bool fHostIP = true;
-                SafeArray<BSTR> names;
-                SafeArray<BSTR> values;
-                hrc = pMedium->GetProperties(Bstr().raw(),
-                                             ComSafeArrayAsOutParam(names),
-                                             ComSafeArrayAsOutParam(values));               H();
-
-                if (names.size() != 0)
-                {
-                    PCFGMNODE pVDC;
-                    InsertConfigNode(pCfg, "VDConfig", &pVDC);
-                    for (size_t ii = 0; ii < names.size(); ++ii)
-                    {
-                        if (values[ii] && *values[ii])
-                        {
-                            /* Put properties of filters in a separate config node. */
-                            Utf8Str name = names[ii];
-                            Utf8Str value = values[ii];
-                            size_t offSlash = name.find("/", 0);
-                            if (   offSlash != name.npos
-                                && !name.startsWith("Special/"))
-                            {
-                                com::Utf8Str strFilter;
-                                com::Utf8Str strKey;
-
-                                hrc = strFilter.assignEx(name, 0, offSlash); H();
-                                hrc = strKey.assignEx(name, offSlash + 1, name.length() - offSlash - 1); /* Skip slash */ H();
-
-                                PCFGMNODE pCfgFilterConfig = CFGMR3GetChild(pVDC, strFilter.c_str());
-                                if (!pCfgFilterConfig)
-                                    InsertConfigNode(pVDC, strFilter.c_str(), &pCfgFilterConfig);
-
-                                InsertConfigString(pCfgFilterConfig, strKey.c_str(), value);
-                            }
-                            else
-                            {
-                                InsertConfigString(pVDC, name.c_str(), value);
-                                if (    name.compare("HostIPStack") == 0
-                                    &&  value.compare("0") == 0)
-                                    fHostIP = false;
-                            }
-                        }
-                    }
-                }
+                hrc = i_configMediumProperties(pCfg, pMedium, &fHostIP); H();
 
                 /* Create an inverted list of parents. */
                 uImage--;
@@ -4301,30 +4259,8 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                             InsertConfigInteger(pCur, "MergeTarget", 1);
                     }
 
-                    /* Pass all custom parameters. */
-                    SafeArray<BSTR> aNames;
-                    SafeArray<BSTR> aValues;
-                    hrc = pMedium->GetProperties(NULL,
-                                                ComSafeArrayAsOutParam(aNames),
-                                                ComSafeArrayAsOutParam(aValues));           H();
-
-                    if (aNames.size() != 0)
-                    {
-                        PCFGMNODE pVDC;
-                        InsertConfigNode(pCur, "VDConfig", &pVDC);
-                        for (size_t ii = 0; ii < aNames.size(); ++ii)
-                        {
-                            if (aValues[ii] && *aValues[ii])
-                            {
-                                Utf8Str name = aNames[ii];
-                                Utf8Str value = aValues[ii];
-                                InsertConfigString(pVDC, name.c_str(), value);
-                                if (    name.compare("HostIPStack") == 0
-                                    &&  value.compare("0") == 0)
-                                    fHostIP = false;
-                            }
-                        }
-                    }
+                    /* Configure medium properties. */
+                    hrc = i_configMediumProperties(pCur, pMedium, &fHostIP); H();
 
                     /* next */
                     pParent = pCur;
@@ -4346,6 +4282,68 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
     }
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Adds the medium properties to the CFGM tree.
+ *
+ * @returns VBox status code.
+ * @param   pCur       The current CFGM node.
+ * @param   pMedium    The medium object to configure.
+ * @param   pfHostIP   Where to return the value of the \"HostIPStack\" property if found.
+ */
+int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP)
+{
+    /* Pass all custom parameters. */
+    SafeArray<BSTR> aNames;
+    SafeArray<BSTR> aValues;
+    HRESULT hrc = pMedium->GetProperties(NULL, ComSafeArrayAsOutParam(aNames),
+                                         ComSafeArrayAsOutParam(aValues));
+
+    if (   SUCCEEDED(hrc)
+        && aNames.size() != 0)
+    {
+        PCFGMNODE pVDC;
+        InsertConfigNode(pCur, "VDConfig", &pVDC);
+        for (size_t ii = 0; ii < aNames.size(); ++ii)
+        {
+            if (aValues[ii] && *aValues[ii])
+            {
+                Utf8Str name = aNames[ii];
+                Utf8Str value = aValues[ii];
+                size_t offSlash = name.find("/", 0);
+                if (   offSlash != name.npos
+                    && !name.startsWith("Special/"))
+                {
+                    com::Utf8Str strFilter;
+                    com::Utf8Str strKey;
+
+                    hrc = strFilter.assignEx(name, 0, offSlash);
+                    if (FAILED(hrc))
+                        break;
+
+                    hrc = strKey.assignEx(name, offSlash + 1, name.length() - offSlash - 1); /* Skip slash */
+                    if (FAILED(hrc))
+                        break;
+
+                    PCFGMNODE pCfgFilterConfig = CFGMR3GetChild(pVDC, strFilter.c_str());
+                    if (!pCfgFilterConfig)
+                        InsertConfigNode(pVDC, strFilter.c_str(), &pCfgFilterConfig);
+
+                    InsertConfigString(pCfgFilterConfig, strKey.c_str(), value);
+                }
+                else
+                {
+                    InsertConfigString(pVDC, name.c_str(), value);
+                    if (    name.compare("HostIPStack") == 0
+                        &&  value.compare("0") == 0)
+                        *pfHostIP = false;
+                }
+            }
+        }
+    }
+
+    return hrc;
 }
 
 /**

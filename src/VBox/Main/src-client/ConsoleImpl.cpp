@@ -4680,6 +4680,11 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
                     /* Add the key to the map */
                     m_mapSecretKeys.insert(std::make_pair(Utf8Str(pszUuid), pKey));
                     hrc = i_configureEncryptionForDisk(pszUuid);
+                    if (FAILED(hrc))
+                    {
+                        /* Delete the key from the map. */
+                        m_mapSecretKeys.erase(Utf8Str(pszUuid));
+                    }
                 }
                 else
                     hrc = setError(E_FAIL,
