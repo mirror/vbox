@@ -558,8 +558,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
 
   ifeq ($(KBUILD_TARGET),solaris)
-   VBoxDD_SOURCES += \
- 	Audio/DrvHostSolAudio.cpp
    ifdef VBOX_WITH_SOLARIS_OSS
     VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
     VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
