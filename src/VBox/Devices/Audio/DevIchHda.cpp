@@ -56,11 +56,24 @@
 #endif
 #include "DevIchHdaCodec.h"
 
+#ifdef DEBUG
+#define DEBUG_LUN
+# ifdef DEBUG_LUN
+#  define DEBUG_LUN_NUM 0
+# endif
+#endif /* DEBUG */
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 //#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
+
+#if (defined(DEBUG) && defined(DEBUG_andy))
+/* Enables experimental support for separate mic-in handling.
+   Do not enable this yet for regular builds, as this needs more testing first! */
+# define VBOX_WITH_HDA_MIC_IN
+#endif
 
 #if defined(VBOX_WITH_HP_HDA)
 /* HP Pavilion dv4t-1300 */
@@ -559,6 +572,8 @@ typedef struct HDADRIVER
     RTLISTNODE                         Node;
     /** Pointer to HDA controller (state). */
     PHDASTATE                          pHDAState;
+    /** Driver flags. */
+    PDMAUDIODRVFLAGS                   Flags;
     /** LUN to which this driver has been assigned. */
     uint8_t                            uLUN;
     /** Audio connector interface to the underlying
@@ -1483,10 +1498,12 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 pBdle = &pThis->StInBdle;
                 break;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
             case HDA_REG_SD2CTL:
                 u8Strm = 2;
                 pBdle = &pThis->StMicBdle;
                 break;
+# endif
 #endif
             case HDA_REG_SD4CTL:
                 u8Strm = 4;
@@ -1523,12 +1540,12 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
                     break;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
                 case HDA_REG_SD2CTL:
                     for (uint8_t lun = 0; lun < pThis->cLUNs; lun++)
                         pThis->paDrv[lun]->pConnector->pfnEnableIn(pThis->paDrv[lun]->pConnector,
                                                                    pThis->paDrv[lun]->pStrmMic, fRun);
-#else
-
+# endif
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
                     break;
                 case HDA_REG_SD4CTL:
@@ -1756,10 +1773,14 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             for (uint8_t lun = 0; lun < pThis->cLUNs; lun++)
                 rc = hdaCodecOpenStream(pThis->pCodec, PI_INDEX, &as);
             break;
-        case HDA_REG_SD4FMT:
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
+        case HDA_REG_SD2FMT:
             for (uint8_t lun = 0; lun < pThis->cLUNs; lun++)
-                rc = hdaCodecOpenStream(pThis->pCodec, PO_INDEX, &as);
+                rc = hdaCodecOpenStream(pThis->pCodec, MC_INDEX, &as);
             break;
+# endif
+#endif
         default:
             LogFunc(("Warning: Attempt to change format on register %d\n", iReg));
             break;
@@ -2020,7 +2041,9 @@ DECLINLINE(void) hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cb
      * Probably we need to move the buffer, but it is rather hard to imagine a situation
      * where it might happen.
      */
-    Assert((cbCopied == pBdle->cbUnderFifoW + cbArranged2Copy)); /* we assume that we write the entire buffer including unreported bytes */
+    AssertMsg((cbCopied == pBdle->cbUnderFifoW + cbArranged2Copy), /* we assume that we write the entire buffer including unreported bytes */
+              ("cbCopied=%RU32 != pBdle->cbUnderFifoW=%RU32 + cbArranged2Copy=%RU32\n",
+               cbCopied, pBdle->cbUnderFifoW, cbArranged2Copy)); 
     if (   pBdle->cbUnderFifoW
         && pBdle->cbUnderFifoW <= cbCopied)
     {
@@ -2271,16 +2294,23 @@ static uint32_t hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDes
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             int rc;
             uint32_t cbWritten;
-            for (uint8_t lun = 0; lun < pThis->cLUNs; lun++)
+# ifdef DEBUG_LUN
+            uint8_t lun = DEBUG_LUN_NUM;
+# else
+            for (uint8_t lun = 0; lun < 1; lun++)
             {
+# endif 
                 rc = pThis->paDrv[lun]->pConnector->pfnWrite(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pGstStrmOut,
                                                              pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW,
                                                              &cbWritten);
+# ifndef DEBUG_LUN
                 if (RT_FAILURE(rc))
                     continue;
-
+# endif
                 cbWrittenMax = RT_MAX(cbWrittenMax, cbWritten);
+# ifndef DEBUG_LUN
             }
+# endif
 #else
             cbWrittenMax = AUD_write (pThis->pCodec->SwVoiceOut, pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
@@ -2351,11 +2381,13 @@ static DECLCALLBACK(void) hdaCloseOut(PHDASTATE pThis)
 }
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
 static void hdaMicInputCallback(void *pvDrv, uint32_t cbAvail)
 {
     PHDADRIVER pThis = (PHDADRIVER)pvDrv;
     hdaTransfer(pThis, MC_INDEX, cbAvail);
 }
+# endif /* VBOX_WITH_HDA_MIC_IN */
 
 static void hdaLineInputCallback(void *pvDrv, uint32_t cbAvail)
 {
@@ -2378,10 +2410,12 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
 
     switch (enmRecSource)
     {
+# ifdef VBOX_WITH_HDA_MIC_IN
         case PDMAUDIORECSOURCE_MIC:
             pfnCallback = hdaMicInputCallback;
             pSink = pThis->pSinkMicIn;
             break;
+# endif
         case PDMAUDIORECSOURCE_LINE_IN:
             pfnCallback = hdaLineInputCallback;
             pSink = pThis->pSinkLineIn;
@@ -2489,13 +2523,14 @@ static DECLCALLBACK(void) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, i
             break;
         }
 
+#ifdef VBOX_WITH_HDA_MIC_IN
         case MC_INDEX:
         {
             u8Strm = 2;
             pBdle = &pThis->StMicBdle;
             break;
         }
-
+#endif
         case PO_INDEX:
         {
             u8Strm = 4;
@@ -2523,7 +2558,7 @@ static DECLCALLBACK(void) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, i
             hdaFetchBdle(pThis, pBdle, &StreamDesc);
 
         *StreamDesc.pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
-        Assert((cbAvail >= 0 && (StreamDesc.u32Cbl >= (*StreamDesc.pu32Lpib)))); /* sanity */
+        Assert((StreamDesc.u32Cbl >= (*StreamDesc.pu32Lpib))); /* sanity */
         uint32_t u32CblLimit = StreamDesc.u32Cbl - (*StreamDesc.pu32Lpib);
         Assert((u32CblLimit > hdaFifoWToSz(pThis, &StreamDesc)));
 
@@ -2551,10 +2586,12 @@ static DECLCALLBACK(void) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, i
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
                 break;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
             case MC_INDEX:
                 pSink = pThis->pSinkMicIn;
                 cb = hdaReadAudio(pThis, pSink, pBdle, &StreamDesc, &cbAvail, &fStop, u32CblLimit);
                 break;
+# endif
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
             default:
                 cb = 0;
@@ -3523,6 +3560,16 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
             pDrv->pHDAState = pThis;
             pDrv->uLUN = uLUN;
 
+            /*
+             * For now we always set the driver at LUN 0 as our primary 
+             * host backend. This might change in the future.
+             */
+            if (pDrv->uLUN == 0)
+                pDrv->Flags |= PDMAUDIODRVFLAG_PRIMARY;
+
+            LogFunc(("LUN #%u: pCon=%p, drvFlags=0x%x\n",
+                     uLUN, pDrv->pConnector, pDrv->Flags));
+
             pThis->paDrv[uLUN] = pDrv;
             pThis->cLUNs++;
         }
@@ -3539,7 +3586,7 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
 
     RTStrFree(pszDesc);
 
-    LogFlowFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
 }
 

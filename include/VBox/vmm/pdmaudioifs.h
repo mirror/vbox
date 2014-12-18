@@ -37,6 +37,17 @@ typedef struct
 } volume_t;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+typedef uint32_t PDMAUDIODRVFLAGS;
+
+/** No flags set. */
+#define PDMAUDIODRVFLAG_NONE        0
+/** Marks a primary audio driver which is critical
+ *  when running the VM. */
+#define PDMAUDIODRVFLAG_PRIMARY     RT_BIT(0)
+
+/**
+ * Audio format in signed or unsigned variants.
+ */
 typedef enum PDMAUDIOFMT
 {
     AUD_FMT_INVALID,

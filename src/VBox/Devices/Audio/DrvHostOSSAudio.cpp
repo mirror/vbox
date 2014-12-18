@@ -212,7 +212,7 @@ static int drvHostOSSAudioClose(int *phFile)
     int rc;
     if (close(*phFile))
     {
-        LogRel(("Audio: Closing descriptor failed: %s\n", 
+        LogRel(("OSS: Closing descriptor failed: %s\n", 
                 strerror(errno)));
         rc = VERR_GENERAL_FAILURE; /** @todo */
     }
@@ -241,7 +241,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         const char *pszDev = fIn ? s_OSSConf.devpath_in : s_OSSConf.devpath_out;
         if (!pszDev)
         {
-            LogRel(("Audio: Invalid or no %s device name set\n", 
+            LogRel(("OSS: Invalid or no %s device name set\n", 
                     fIn ? "input" : "output"));
             rc = VERR_INVALID_PARAMETER;
             break;
@@ -250,7 +250,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         hFile = open(pszDev, (fIn ? O_RDONLY : O_WRONLY) | O_NONBLOCK);
         if (hFile == -1) 
         {
-            LogRel(("Audio: Failed to open %s: %s\n", pszDev, strerror(errno)));
+            LogRel(("OSS: Failed to open %s: %s\n", pszDev, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -258,7 +258,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int iFormat = drvHostOSSAudioFmtToOSS(pReq->enmFormat);
         if (ioctl(hFile, SNDCTL_DSP_SAMPLESIZE, &iFormat)) 
         {
-            LogRel(("Audio: Failed to set audio format to %ld\n",
+            LogRel(("OSS: Failed to set audio format to %ld\n",
                     iFormat, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
@@ -267,7 +267,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int cChannels = pReq->cChannels;
         if (ioctl(hFile, SNDCTL_DSP_CHANNELS, &cChannels)) 
         {
-            LogRel(("Audio: Failed to set number of audio channels (%d): %s\n",
+            LogRel(("OSS: Failed to set number of audio channels (%d): %s\n",
                      pReq->cChannels, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
@@ -276,7 +276,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int freq = pReq->uFreq;
         if (ioctl(hFile, SNDCTL_DSP_SPEED, &freq)) 
         {
-            LogRel(("Audio: Failed to set audio frequency (%dHZ): %s\n", 
+            LogRel(("OSS: Failed to set audio frequency (%dHZ): %s\n", 
                     pReq->uFreq, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
@@ -286,7 +286,7 @@ static int drvHostOSSAudioOpen(bool fIn,
 #if !(defined(VBOX) && defined(RT_OS_SOLARIS))
         if (ioctl(hFile, SNDCTL_DSP_NONBLOCK)) 
         {
-            LogRel(("Audio: Failed to set non-blocking mode: %s\n",
+            LogRel(("OSS: Failed to set non-blocking mode: %s\n",
                     strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
@@ -295,7 +295,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         int mmmmssss = (pReq->cFragments << 16) | lsbindex(pReq->cbFragmentSize);
         if (ioctl(hFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss)) 
         {
-            LogRel(("Audio: Failed to set %RU16 fragments to %RU32 bytes each: %s\n",
+            LogRel(("OSS: Failed to set %RU16 fragments to %RU32 bytes each: %s\n",
                     pReq->cFragments, pReq->cbFragmentSize, strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
@@ -305,7 +305,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, 
                   &abinfo)) 
         {
-            LogRel(("Audio: Failed to retrieve buffer length: %s\n", strerror(errno)));
+            LogRel(("OSS: Failed to retrieve buffer length: %s\n", strerror(errno)));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
@@ -369,7 +369,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
             mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0) 
             {
-                LogRel(("Audio: Failed to enable output stream: %s\n", 
+                LogRel(("OSS: Failed to enable output stream: %s\n", 
                         strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
             }
@@ -382,7 +382,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
             mask = 0;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0) 
             {
-                LogRel(("Audio: Failed to disable output stream: %s\n", 
+                LogRel(("OSS: Failed to disable output stream: %s\n", 
                        strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
             }
@@ -587,7 +587,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
         if (RT_SUCCESS(rc))
         {
             if (obtStream.cFragments * obtStream.cbFragmentSize & pHstStrmIn->Props.uAlign) 
-                LogRel(("Audio: Warning: Misaligned DAC output buffer: Size = %zu, Alignment = %u\n",
+                LogRel(("OSS: Warning: Misaligned DAC output buffer: Size = %zu, Alignment = %u\n",
                         obtStream.cFragments * obtStream.cbFragmentSize, 
                         pHstStrmIn->Props.uAlign + 1));
 
@@ -615,7 +615,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
             pThisStrmIn->pvBuf = RTMemAlloc(cbBuf);
             if (!pThisStrmIn->pvBuf) 
             {
-                LogRel(("Audio: Failed allocating ADC buffer with %RU32 samples, each %d bytes\n",
+                LogRel(("OSS: Failed allocating ADC buffer with %RU32 samples, each %d bytes\n",
                         cSamples, 1 << pHstStrmIn->Props.cShift));
                 rc = VERR_NO_MEMORY;
             }
@@ -664,7 +664,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
         if (RT_SUCCESS(rc))
         {
             if (obtStream.cFragments * obtStream.cbFragmentSize & pHstStrmOut->Props.uAlign) 
-                LogRel(("Audio: Warning: Misaligned DAC output buffer: Size = %zu, Alignment = %u\n",
+                LogRel(("OSS: Warning: Misaligned DAC output buffer: Size = %zu, Alignment = %u\n",
                         obtStream.cFragments * obtStream.cbFragmentSize, 
                         pHstStrmOut->Props.uAlign + 1));
 
@@ -692,7 +692,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                                               PROT_READ | PROT_WRITE, MAP_SHARED, hFile, 0);
                 if (pThisStrmOut->pvPCMBuf == MAP_FAILED) 
                 {
-                    LogRel(("Audio: Failed to memory map %zu bytes of DAC output file: %s\n", 
+                    LogRel(("OSS: Failed to memory map %zu bytes of DAC output file: %s\n", 
                             cSamples << pHstStrmOut->Props.cShift, strerror(errno)));
                     rc = RTErrConvertFromErrno(errno);
                     break;
@@ -702,7 +702,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                     int mask = 0;
                     if (ioctl(hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0) 
                     {
-                        LogRel(("Audio: Failed to retrieve initial trigger mask: %s\n", 
+                        LogRel(("OSS: Failed to retrieve initial trigger mask: %s\n", 
                                 strerror(errno)));
                         rc = RTErrConvertFromErrno(errno);
                         /* Note: No break here, need to unmap file first! */
@@ -712,8 +712,8 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                         mask = PCM_ENABLE_OUTPUT;
                         if (ioctl (hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0) 
                         {
-                            LogRel(("Audio: Failed to retrieve PCM_ENABLE_OUTPUT mask: %s\n", 
-                                strerror(errno)));
+                            LogRel(("OSS: Failed to retrieve PCM_ENABLE_OUTPUT mask: %s\n", 
+                                    strerror(errno)));
                             rc = RTErrConvertFromErrno(errno);
                             /* Note: No break here, need to unmap file first! */
                         }
@@ -726,7 +726,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                         int rc2 = munmap(pThisStrmOut->pvPCMBuf, 
                                          cSamples << pHstStrmOut->Props.cShift);
                         if (rc2)
-                            LogRel(("Audio: Failed to unmap DAC output file: %s\n", 
+                            LogRel(("OSS: Failed to unmap DAC output file: %s\n", 
                                     strerror(errno)));
 
                         break;
@@ -744,7 +744,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
                 pThisStrmOut->pvPCMBuf = RTMemAlloc(cSamples * (1 << pHstStrmOut->Props.cShift));
                 if (!pThisStrmOut->pvPCMBuf) 
                 {
-                    LogRel(("Audio: Failed allocating DAC buffer with %RU32 samples, each %d bytes\n",
+                    LogRel(("OSS: Failed allocating DAC buffer with %RU32 samples, each %d bytes\n",
                             cSamples, 1 << pHstStrmOut->Props.cShift));
                     rc = VERR_NO_MEMORY;
                     break;
@@ -792,7 +792,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
             int rc2 = ioctl(pThisStrmOut->hFile, SNDCTL_DSP_GETOPTR, &cntinfo);
             if (!rc2) 
             {
-                LogRel(("Audio: Failed to retrieve current playback pointer: %s\n", 
+                LogRel(("OSS: Failed to retrieve current playback pointer: %s\n", 
                         strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
                 break;
@@ -819,7 +819,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
             int rc2 = ioctl(pThisStrmOut->hFile, SNDCTL_DSP_GETOSPACE, &abinfo);
             if (rc2 < 0) 
             {
-                LogRel(("Audio: Failed to retrieve current playback buffer: %s\n", 
+                LogRel(("OSS: Failed to retrieve current playback buffer: %s\n", 
                         strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
                 break;
@@ -864,7 +864,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
                                       cbRead);
             if (cbWritten == -1) 
             {
-                LogRel(("Audio: Failed writing output data %s\n", strerror(errno)));
+                LogRel(("OSS: Failed writing output data %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
                 break;
             }

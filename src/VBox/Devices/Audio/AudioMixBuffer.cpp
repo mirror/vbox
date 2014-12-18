@@ -1050,7 +1050,7 @@ size_t audioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
 
 void audioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
 {
-    if (!pMixBuf)
+    if (!pMixBuf || !pMixBuf->pszName)
         return;
 
     LogFlowFunc(("%s\n", pMixBuf->pszName));
