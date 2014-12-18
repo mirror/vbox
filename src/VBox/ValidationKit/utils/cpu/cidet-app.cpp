@@ -102,6 +102,13 @@ typedef struct CIDETAPP
     CIDETAPPBUF     aCodeBuffers[CIDETAPP_CODE_BUF_COUNT];
     /** Data buffers (runs parallel to g_aDataBufCfgs). */
     CIDETAPPBUF     aDataBuffers[CIDETAPP_DATA_BUF_COUNT];
+
+    /** The lowest stack address. */
+    uint8_t        *pbStackLow;
+    /** The end of the stack allocation (highest address). */
+    uint8_t        *pbStackEnd;
+    /** Stack size (= pbStackEnd - pbStackLow). */
+    uint32_t        cbStack;
 } CIDETAPP;
 /** Pointer to a CIDET driver app instance. */
 typedef CIDETAPP *PCIDETAPP;
@@ -346,6 +353,39 @@ static int CidetAppXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
+
+/**
+ * Vectored exception handler.
+ *
+ * @returns Long jumps or terminates the process.
+ * @param   pXcptPtrs   The exception record.
+ */
+static LONG CALLBACK CidetAppVectoredXcptHandler(EXCEPTION_POINTERS *pXcptPtrs)
+{
+    RTStrmPrintf(g_pStdErr, "CidetAppVectoredXcptHandler!\n");
+    CidetAppXcptFilter(pXcptPtrs);
+
+    /* won't get here. */
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+
+/**
+ * Unhandled exception filter.
+ *
+ * @returns Long jumps or terminates the process.
+ * @param   pXcptPtrs   The exception record.
+ */
+static LONG CALLBACK CidetAppUnhandledXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
+{
+    RTStrmPrintf(g_pStdErr, "CidetAppUnhandledXcptFilter!\n");
+    CidetAppXcptFilter(pXcptPtrs);
+
+    /* won't get here. */
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+
 #elif defined(USE_SIGNALS)
 /**
  * Signal handler.
@@ -394,14 +434,6 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
  *
  *
  */
-
-static void CidetAppDeleteBuffer(PCIDETAPPBUF pBuf)
-{
-    RTMemPageFree(pBuf->pbNormal - PAGE_SIZE, PAGE_SIZE + pBuf->cb + PAGE_SIZE);
-    if (pBuf->pbLow != pBuf->pbNormal && pBuf->pbLow)
-        RTMemFreeEx(pBuf->pbLow, pBuf->cb);
-}
-
 
 static int cidetAppAllocateAndConfigureOneBuffer(PCIDETAPP pThis, PCIDETAPPBUF pBuf, uint16_t idxBuf, bool fIsCode,
                                                  uint32_t fFlags)
@@ -499,6 +531,16 @@ static int cidetAppAllocateAndConfigureOneBuffer(PCIDETAPP pThis, PCIDETAPPBUF p
 }
 
 
+static void CidetAppDeleteBuffer(PCIDETAPPBUF pBuf)
+{
+    RTMemProtect(pBuf->pbNormal - PAGE_SIZE, PAGE_SIZE + pBuf->cb + PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    RTMemPageFree(pBuf->pbNormal - PAGE_SIZE, PAGE_SIZE + pBuf->cb + PAGE_SIZE);
+    if (pBuf->pbLow != pBuf->pbNormal && pBuf->pbLow)
+    {
+        RTMemProtect(pBuf->pbLow, pBuf->cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        RTMemFreeEx(pBuf->pbLow, pBuf->cb);
+    }
+}
 
 
 static bool CidetAppArmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
@@ -531,7 +573,7 @@ static bool CidetAppDearmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
         return false;
     }
     pAppBuf->fArmed = false;
-    return false;
+    return true;
 }
 
 
@@ -543,7 +585,6 @@ static DECLCALLBACK(bool) CidetAppCbReInitDataBuf(PCIDETCORE pThis, PCIDETBUF pB
     PCIDETAPP    pThisApp = (PCIDETAPP)pThis;
     PCIDETAPPBUF pAppBuf  = &pThisApp->aDataBuffers[pBuf->idxCfg];
     Assert(CIDETBUF_IS_DATA(pBuf->pCfg->fFlags));
-    Assert(!pAppBuf->fArmed);
 
     /*
      * De-arm the buffer.
@@ -679,13 +720,9 @@ static DECLCALLBACK(bool) CidetAppCbReInitCodeBuf(PCIDETCORE pThis, PCIDETBUF pB
      * Determin the prologue and epilogue sizes.
      */
     uint16_t cbPrologue = 0;
-    uint16_t cbEpilogue = ARCH_BITS == 64 ? 0x3b : 0x36;
+    uint16_t cbEpilogue = ARCH_BITS == 64 ? 0x56 : 0x4e;
     if (pThis->InCtx.fTrickyStack)
-    {
-        /** @todo tricky stack.   */
-        AssertReleaseFailedReturn(false);
-    }
-
+        cbEpilogue = 16;
 
     /*
      * Check the allocation requirements.
@@ -742,20 +779,57 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
     /*
      * Emit epilogue code.
      */
-    /* Restore working stack if necessary. */
-    if (pThis->InCtx.fTrickyStack)
-    {
-        /** @todo emit code for establishing a working stack. */
-        AssertReleaseFailedReturn(false);
-    }
-    else
+    if (!pThis->InCtx.fTrickyStack)
     {
         /*
          * The stack is reasonably good, do minimal work.
+         *
+         * Note! Ideally, we would just fill in 16 int3s here and check that
+         *       we hit the first right one.  However, if we wish to run this
+         *       code with IEM, we better skip unnecessary trips to ring-0.
          */
+
+        /* jmp      $+6 */
+        *pbDst++ = 0xeb;
+        *pbDst++ = 0x06;        /* This is a push es, so if the decoder is one off, we'll hit the int 3 below. */
+
+        /* Six int3s for trapping incorrectly decoded instructions. */
+        *pbDst++ = 0xcc;
+        *pbDst++ = 0xcc;
+        *pbDst++ = 0xcc;
+        *pbDst++ = 0xcc;
+        *pbDst++ = 0xcc;
+        *pbDst++ = 0xcc;
+
+        /* push     rip / call $+0 */
+        *pbDst++ = 0xe8;
+        *pbDst++ = 0x00;
+        *pbDst++ = 0x00;
+        *pbDst++ = 0x00;
+        *pbDst++ = 0x00;
 
         /* push     xCX */
         *pbDst++ = 0x51;
+
+        /* mov      xCX, [xSP + xCB] */
+        *pbDst++ = 0x48;
+        *pbDst++ = 0x8b;
+        *pbDst++ = 0x4c;
+        *pbDst++ = 0x24;
+        *pbDst++ = 0x08;
+
+        /* lea      xCX, [xCX - 14] */
+        *pbDst++ = 0x48;
+        *pbDst++ = 0x8d;
+        *pbDst++ = 0x49;
+        *pbDst++ = 0xf2;
+
+        /* mov      xCX, [xSP + xCB] */
+        *pbDst++ = 0x48;
+        *pbDst++ = 0x89;
+        *pbDst++ = 0x4c;
+        *pbDst++ = 0x24;
+        *pbDst++ = 0x08;
 
         /* mov      xCX, &pThis->ActualCtx */
 #ifdef RT_ARCH_AMD64
@@ -777,7 +851,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
 #ifdef RT_ARCH_AMD64
         *pbDst++ = 0x48;
 #endif
-        *pbDst++ = 0x85;
+        *pbDst++ = 0x89;
         *pbDst++ = 0x51;
         *pbDst++ = RT_OFFSETOF(CIDETCPUCTX, aGRegs[X86_GREG_xDX]);
         Assert(RT_OFFSETOF(CIDETCPUCTX, aGRegs[X86_GREG_xDX]) < 0x7f);
@@ -818,10 +892,21 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
 #endif
         *(uintptr_t *)pbDst = (uintptr_t)CidetAppSaveAndRestoreCtx;
         pbDst  += sizeof(uintptr_t);
+
+        /* int3 */
+        *pbDst++ = 0xcc;
+    }
+    else
+    {
+        /*
+         * Tricky stack, so just make it raise #UD after a successful run.
+         */
+        *pbDst++ = 0xf0;         /* lock prefix */
+        //*pbDst++ = 0xcc;         /* lock prefix */
+        memset(pbDst, 0xcc, 15); /* int3 */
+        pbDst += 15;
     }
 
-
-    *pbDst++ = 0xcc; /* int3 */
     AssertMsg(pbDst == &pAppBuf->pbNormal[pBuf->offActive + pBuf->cb + pBuf->cbEpilogue],
               ("cbEpilogue=%#x, actual %#x\n", pBuf->cbEpilogue, pbDst - &pAppBuf->pbNormal[pBuf->offActive + pBuf->cb]));
 
@@ -833,10 +918,16 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnSetupBuf}
+ * @interface_method_impl{CIDETCORE::pfnExecute}
  */
-static DECLCALLBACK(void) CidetAppCbExecute(PCIDETCORE pThis)
+static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
 {
+#if defined(RT_OS_WINDOWS)
+    /* Skip tricky stack because windows cannot dispatch exception if RSP/ESP is bad. */
+    if (pThis->InCtx.fTrickyStack)
+        return false;
+#endif
+
     g_pExecutingThis = (PCIDETAPP)pThis;
 #ifdef RT_OS_WINDOWS
     __try
@@ -851,6 +942,8 @@ static DECLCALLBACK(void) CidetAppCbExecute(PCIDETCORE pThis)
     CidetAppExecute(&((PCIDETAPP)pThis)->ExecuteCtx, &pThis->InCtx);
 #endif
     g_pExecutingThis = NULL;
+
+    return true;
 }
 
 
@@ -878,6 +971,9 @@ static DECLCALLBACK(void) CidetAppCbFailureV(PCIDETCORE pThis, const char *pszMs
 
 static int cidetAppAllocateAndConfigureBuffers(PCIDETAPP pThis)
 {
+    /*
+     * Code buffers.
+     */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCodeBuffers); i++)
     {
         int rc = cidetAppAllocateAndConfigureOneBuffer(pThis, &pThis->aCodeBuffers[i], i, true /*fCode*/,
@@ -886,6 +982,9 @@ static int cidetAppAllocateAndConfigureBuffers(PCIDETAPP pThis)
             return rc;
     }
 
+    /*
+     * Data buffers.
+     */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDataBuffers); i++)
     {
         int rc = cidetAppAllocateAndConfigureOneBuffer(pThis, &pThis->aDataBuffers[i], i, false /*fCode*/,
@@ -893,6 +992,19 @@ static int cidetAppAllocateAndConfigureBuffers(PCIDETAPP pThis)
         if (RT_FAILURE(rc))
             return rc;
     }
+
+    /*
+     * Stack.
+     */
+    pThis->cbStack    = _32K;
+    pThis->pbStackLow = (uint8_t *)RTMemPageAlloc(pThis->cbStack);
+    if (!pThis->pbStackLow)
+    {
+        RTTestIFailed("Failed to allocate %u bytes for stack\n", pThis->cbStack);
+        return false;
+    }
+    pThis->pbStackEnd = pThis->pbStackLow + pThis->cbStack;
+
     return true;
 }
 
@@ -942,6 +1054,7 @@ static int CidetAppCreate(PPCIDETAPP ppThis)
                     pThis->Core.InTemplateCtx.aSRegs[X86_SREG_FS] = ASMGetFS();
                     pThis->Core.InTemplateCtx.aSRegs[X86_SREG_GS] = ASMGetGS();
                     pThis->Core.InTemplateCtx.aSRegs[X86_SREG_SS] = ASMGetSS();
+                    pThis->Core.InTemplateCtx.aGRegs[X86_GREG_xSP] = (uintptr_t)pThis->pbStackEnd - 64;
 
                     *ppThis = pThis;
                     return VINF_SUCCESS;
@@ -972,6 +1085,8 @@ static void CidetAppDestroy(PCIDETAPP pThis)
         CidetAppDeleteBuffer(&pThis->aCodeBuffers[i]);
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDataBuffers); i++)
         CidetAppDeleteBuffer(&pThis->aDataBuffers[i]);
+    RTMemPageFree(pThis->pbStackLow, pThis->cbStack);
+
     RTMemFree(pThis);
 }
 
@@ -1029,14 +1144,29 @@ int main(int argc, char **argv)
 
 #ifdef USE_SIGNALS
     /*
-     * Set up signal handlers.
+     * Set up signal handlers with alternate stack.
      */
+    /* Alternative stack so we can play with esp/rsp. */
+    struct sigaltstack AltStack;
+    RT_ZERO(AltStack);
+    AltStack.ss_flags = SS_ONSTACK;
+# ifdef SIGSTKSZ
+    AltStack.ss_size  = RT_MAX(SIGSTKSZ, _128K);
+# else
+    AltStack.ss_size  = _128K;
+# endif
+    AltStack.ss_sp    = RTMemPageAlloc(AltStack.ss_size);
+    RTTESTI_CHECK_RET(AltStack.ss_sp != NULL, RTEXITCODE_FAILURE);
+    RTTESTI_CHECK_RC_RET(sigaltstack(&AltStack, NULL), 0, RTEXITCODE_FAILURE);
+
+    /* Default signal action config. */
     struct sigaction Act;
     RT_ZERO(Act);
-    Act.sa_sigaction = CidetAppSigHandler;
-    Act.sa_flags     = SA_SIGINFO;
+    Act.sa_sigaction  = CidetAppSigHandler;
+    Act.sa_flags      = SA_SIGINFO | SA_ONSTACK;
     sigfillset(&Act.sa_mask);
 
+    /* Hook the signals we might need. */
     sigaction(SIGILL,  &Act, NULL);
     sigaction(SIGTRAP, &Act, NULL);
 # ifdef SIGEMT
@@ -1045,6 +1175,14 @@ int main(int argc, char **argv)
     sigaction(SIGFPE,  &Act, NULL);
     sigaction(SIGBUS,  &Act, NULL);
     sigaction(SIGSEGV, &Act, NULL);
+
+#elif defined(RT_OS_WINDOWS)
+    /*
+     * Register vectored exception handler and override the default unhandled
+     * exception filter, just to be on the safe side...
+     */
+    RTTESTI_CHECK(AddVectoredExceptionHandler(1 /* first */, CidetAppVectoredXcptHandler) != NULL);
+    SetUnhandledExceptionFilter(CidetAppUnhandledXcptFilter);
 #endif
 
     /*
