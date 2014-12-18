@@ -54,10 +54,12 @@
 # define USE_MIXER
 #endif
 
+#ifdef DEBUG
 //#define DEBUG_LUN
-#ifdef DEBUG_LUN
-# define DEBUG_LUN_NUM 1
-#endif
+# ifdef DEBUG_LUN
+#  define DEBUG_LUN_NUM 1
+# endif
+#endif /* DEBUG */
 
 #define AC97_SSM_VERSION 1
 
@@ -217,6 +219,8 @@ typedef struct AC97DRIVER
 {
     /** Pointer to AC97 controller (state). */
     PAC97STATE                         pAC97State;
+    /** Driver flags. */
+    PDMAUDIODRVFLAGS                   Flags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
     /** Audio connector interface to the underlying
@@ -2086,8 +2090,16 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
             pDrv->pAC97State = pThis;
             pDrv->uLUN = uLUN;
 
-            LogFlowFunc(("LUN #%u is using connector %p\n", uLUN, pDrv->pConnector));
+            /*
+             * For now we always set the driver at LUN 0 as our primary 
+             * host backend. This might change in the future.
+             */
+            if (pDrv->uLUN == 0)
+                pDrv->Flags |= PDMAUDIODRVFLAG_PRIMARY;
 
+            LogFunc(("LUN #%u: pCon=%p, drvFlags=0x%x\n",
+                     uLUN, pDrv->pConnector, pDrv->Flags));
+           
             pThis->paDrv[uLUN] = pDrv;
             pThis->cLUNs++;
         }
@@ -2104,7 +2116,7 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
 
     RTStrFree(pszDesc);
 
-    LogFlowFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
+    LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
 }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
@@ -2194,7 +2206,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #else
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log(("ac97: No attached driver!\n"));
+        LogFunc(("ac97: No attached driver!\n"));
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to attach AC97 LUN #0! rc=%Rrc\n", rc));
@@ -2220,38 +2232,54 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     for (uint8_t lun = 0; lun < pThis->cLUNs; lun++)
     {
-        if (   !pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmIn)
-            && !pThis->paDrv[lun]->pConnector->pfnIsOutputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmOut)
-            && !pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmMic))
+        PAC97DRIVER pDrv = pThis->paDrv[lun];
+        AssertPtr(pDrv);
+
+        /* Only primary drivers are critical for the VM to run. Everything else
+         * might not worth showing an own error message box in the GUI. */
+        if (!(pDrv->Flags & PDMAUDIODRVFLAG_PRIMARY))
+            continue;
+
+        PPDMIAUDIOCONNECTOR pCon = pThis->paDrv[lun]->pConnector;
+        AssertPtr(pCon);
+        if (   !pCon->pfnIsInputOK (pCon, pDrv->pStrmIn)
+            && !pCon->pfnIsOutputOK(pCon, pDrv->pStrmOut)
+            && !pCon->pfnIsInputOK (pCon, pDrv->pStrmMic))
         {
-            /* Was not able initialize *any* stream. Select the NULL audio driver instead. */
-            pThis->paDrv[lun]->pConnector->pfnCloseIn(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmIn);
-            pThis->paDrv[lun]->pConnector->pfnCloseOut(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmOut);
-            pThis->paDrv[lun]->pConnector->pfnCloseIn(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmMic);
+            LogRel(("AC97: Selecting NULL driver\n"));
 
-            pThis->paDrv[lun]->pStrmOut = NULL;
-            pThis->paDrv[lun]->pStrmIn = NULL;
-            pThis->paDrv[lun]->pStrmMic = NULL;
+            /* Was not able initialize *any* stream.
+             * Select the NULL audio driver instead. */
+            pCon->pfnCloseIn (pCon, pDrv->pStrmIn);
+            pCon->pfnCloseOut(pCon, pDrv->pStrmOut);
+            pCon->pfnCloseIn (pCon, pDrv->pStrmMic);
 
-            pThis->paDrv[lun]->pConnector->pfnInitNull(pThis->paDrv[lun]->pConnector);
+            pDrv->pStrmOut = NULL;
+            pDrv->pStrmIn = NULL;
+            pDrv->pStrmMic = NULL;
+
+            pCon->pfnInitNull(pCon);
             ac97Reset(pDevIns);
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                 N_("No audio devices could be opened. Selecting the NULL audio backend "
                    "with the consequence that no sound is audible"));
         }
-        else if (   !pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmIn)
-                 || !pThis->paDrv[lun]->pConnector->pfnIsOutputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmOut)
-                 || !pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmMic))
+        else if (   !pCon->pfnIsInputOK (pCon, pDrv->pStrmIn)
+                 || !pCon->pfnIsOutputOK(pCon, pDrv->pStrmOut)
+                 || !pCon->pfnIsInputOK (pCon, pDrv->pStrmMic))
         {
             char   szMissingStreams[128];
             size_t len = 0;
-            if (!pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmIn))
-                len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-            if (!pThis->paDrv[lun]->pConnector->pfnIsOutputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmOut))
-                len += RTStrPrintf(szMissingStreams + len, sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-            if (!pThis->paDrv[lun]->pConnector->pfnIsInputOK(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pStrmMic))
-                len += RTStrPrintf(szMissingStreams + len, sizeof(szMissingStreams) - len, len ? ", PCM Mic" : "PCM Mic");
+            if (!pCon->pfnIsInputOK (pCon, pDrv->pStrmIn))
+                len = RTStrPrintf(szMissingStreams, 
+                                  sizeof(szMissingStreams), "PCM Input");
+            if (!pCon->pfnIsOutputOK(pCon, pDrv->pStrmOut))
+                len += RTStrPrintf(szMissingStreams + len, 
+                                   sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+            if (!pCon->pfnIsInputOK (pCon, pDrv->pStrmMic))
+                len += RTStrPrintf(szMissingStreams + len, 
+                                   sizeof(szMissingStreams) - len, len ? ", PCM Mic" : "PCM Mic");
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                 N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "

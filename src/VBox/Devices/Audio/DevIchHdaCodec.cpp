@@ -2304,8 +2304,6 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettin
     {
         case PI_INDEX:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            /* old and new stream settings are not same. Then only call open */
-            //if (!hdaCodecCompareAudioSettings(&(pThis->SwVoiceIn)->info, pAudioSettings) && !pThis->SwVoiceIn)
                 rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in",
                                       PDMAUDIORECSOURCE_LINE_IN, pCfg);
 #else
@@ -2324,12 +2322,12 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettin
             break;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
         case MC_INDEX:
-            /* old and new stream settings are not same. Then only call open */
-            //if (!hdaCodecCompareAudioSettings(&(pThis->SwVoiceIn)->info, pAudioSettings) && !pThis->SwVoiceIn)
-                rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc",
-                                      PDMAUDIORECSOURCE_MIC, pCfg);
+            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc",
+                                  PDMAUDIORECSOURCE_MIC, pCfg);
             break;
+# endif
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
         default:
@@ -2480,6 +2478,11 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
 
     hdaCodecOpenStream(pThis, PI_INDEX, &as);
     hdaCodecOpenStream(pThis, PO_INDEX, &as);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+# ifdef VBOX_WITH_HDA_MIC_IN
+    hdaCodecOpenStream(pThis, MC_INDEX, &as);
+# endif
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     pThis->paNodes[1].node.au32F00_param[0xA] |= CODEC_F00_0A_44_1KHZ;
 
@@ -2493,6 +2496,8 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_VOLUME);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+
+
 #else
     hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     hdaCodecToAudVolume(&pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
