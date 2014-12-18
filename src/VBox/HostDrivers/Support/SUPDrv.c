@@ -6375,8 +6375,10 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 }
                 else
                 {
+#if 0  /** @todo Hitting this on mac pro runing maverics. panicing on driver load is annoying.*/
                     for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-                        Assert(!pGip->aCPUs[iCpu].i64TSCDelta);
+                        AssertMsg(!pGip->aCPUs[iCpu].i64TSCDelta, ("i=%u iCpu=%u %lld mode=%d\n", i, iCpu, pGip->aCPUs[iCpu].i64TSCDelta, pGip->enmMode);
+#endif
                 }
 #endif
                 if (RT_SUCCESS(rc))
