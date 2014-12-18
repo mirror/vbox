@@ -44,6 +44,19 @@ g_uTargetCs     dw 0
 
 
 ;;
+; Leave GS alone on 64-bit darwin (gs is 0, no ldt or gdt entry to load that'll
+; restore the lower 32-bits of the base when saving and restoring the register).
+%ifdef RT_OS_DARWIN
+ %ifdef RT_ARCH_AMD64
+  %define CIDET_LEAVE_GS_ALONE
+ %endif
+%endif
+
+
+
+BEGINCODE
+
+;;
 ; ASSUMES that it's called and the EIP/RIP is found on the stack.
 ;
 ; @param    pSaveCtx     ds:xCX     The context to save; DS, xDX and xCX have
@@ -152,7 +165,9 @@ NAME(CidetAppSaveAndRestoreCtx_Restore):
         ; Restore ES, FS, and GS.
         mov     es, [xDX + CIDETCPUCTX.aSRegs + X86_SREG_ES * 2]
         mov     fs, [xDX + CIDETCPUCTX.aSRegs + X86_SREG_FS * 2]
+%ifndef CIDET_LEAVE_GS_ALONE
         mov     gs, [xDX + CIDETCPUCTX.aSRegs + X86_SREG_GS * 2]
+%endif
 
         ; Restore most GPRs (except xCX, xAX and xSP).
         mov     xCX, [xDX + CIDETCPUCTX.aGRegs + X86_GREG_xCX * 8]

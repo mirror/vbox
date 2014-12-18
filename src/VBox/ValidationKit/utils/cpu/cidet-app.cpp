@@ -50,6 +50,17 @@
 #endif
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def CIDET_LEAVE_GS_ALONE
+ * Leave GS alone on 64-bit darwin (gs is 0, no ldt or gdt entry to load that'll
+ * restore the lower 32-bits of the base when saving and restoring the register).
+ */
+#if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+# define CIDET_LEAVE_GS_ALONE
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -922,7 +933,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
  */
 static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
 {
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     /* Skip tricky stack because windows cannot dispatch exception if RSP/ESP is bad. */
     if (pThis->InCtx.fTrickyStack)
         return false;
@@ -1056,6 +1067,16 @@ static int CidetAppCreate(PPCIDETAPP ppThis)
                     pThis->Core.InTemplateCtx.aSRegs[X86_SREG_SS] = ASMGetSS();
                     pThis->Core.InTemplateCtx.aGRegs[X86_GREG_xSP] = (uintptr_t)pThis->pbStackEnd - 64;
 
+                    pThis->Core.fTestCfg |= CIDET_TESTCFG_SEG_PRF_CS;
+                    pThis->Core.fTestCfg |= CIDET_TESTCFG_SEG_PRF_DS;
+                    pThis->Core.fTestCfg |= CIDET_TESTCFG_SEG_PRF_ES;
+#if !defined(RT_OS_WINDOWS)
+                    pThis->Core.fTestCfg |= CIDET_TESTCFG_SEG_PRF_FS;
+#endif
+#if !defined(CIDET_LEAVE_GS_ALONE)
+                    pThis->Core.fTestCfg |= CIDET_TESTCFG_SEG_PRF_GS;
+#endif
+
                     *ppThis = pThis;
                     return VINF_SUCCESS;
                 }
@@ -1147,9 +1168,9 @@ int main(int argc, char **argv)
      * Set up signal handlers with alternate stack.
      */
     /* Alternative stack so we can play with esp/rsp. */
-    struct sigaltstack AltStack;
+    stack_t AltStack;
     RT_ZERO(AltStack);
-    AltStack.ss_flags = SS_ONSTACK;
+    AltStack.ss_flags = 0;
 # ifdef SIGSTKSZ
     AltStack.ss_size  = RT_MAX(SIGSTKSZ, _128K);
 # else

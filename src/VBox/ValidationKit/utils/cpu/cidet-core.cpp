@@ -60,7 +60,7 @@
 
 /** @def CIDET_DPRINTF
  * Debug printf. */
-#if 0 //def DEBUG_bird
+#ifdef DEBUG_bird
 # define CIDET_DPRINTF(a)   do { RTPrintf a; } while (0)
 #else
 # define CIDET_DPRINTF(a)   do { } while (0)
