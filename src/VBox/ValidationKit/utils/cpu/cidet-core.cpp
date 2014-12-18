@@ -26,22 +26,6 @@
 
 
 /*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#include "cidet.h"
-
-#include <iprt/assert.h>
-#include <iprt/rand.h>
-#include <iprt/param.h>
-#include <iprt/string.h>
-#include <VBox/err.h>
-#ifdef DEBUG_bird
-# include <VBox/dis.h>
-# include <iprt/stream.h>
-#endif
-
-
-/*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #define CIDET_INSTR_TEST_OP_FLAG(a_pInstr, a_fFlag) \
@@ -60,8 +44,9 @@
 
 /** @def CIDET_DPRINTF
  * Debug printf. */
-#ifdef DEBUG_bird
+#if 1 //def DEBUG_bird
 # define CIDET_DPRINTF(a)   do { RTPrintf a; } while (0)
+# define CIDET_DPRINTF_ENABLED
 #else
 # define CIDET_DPRINTF(a)   do { } while (0)
 #endif
@@ -70,6 +55,22 @@
  * Enables instruction disassembly. */
 #if defined(DOXYGEN_RUNNING)
 # define CIDET_DEBUG_DISAS 1
+#endif
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "cidet.h"
+
+#include <iprt/assert.h>
+#include <iprt/rand.h>
+#include <iprt/param.h>
+#include <iprt/string.h>
+#include <VBox/err.h>
+#if defined(CIDET_DPRINTF_ENABLED) || defined(CIDET_DEBUG_DISAS)
+# include <VBox/dis.h>
+# include <iprt/stream.h>
 #endif
 
 
@@ -2064,6 +2065,7 @@ bool CidetCoreReInitCodeBuf(PCIDETCORE pThis)
 }
 
 
+#ifdef CIDET_DEBUG_DISAS
 /**
  * @callback_method_impl{FNDISREADBYTES}
  */
@@ -2074,6 +2076,7 @@ static DECLCALLBACK(int) cidetCoreDisReadBytes(PDISSTATE pDis, uint8_t offInstr,
     pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VINF_SUCCESS;
 }
+#endif
 
 
 bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
