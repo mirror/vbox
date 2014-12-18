@@ -60,10 +60,16 @@
 
 /** @def CIDET_DPRINTF
  * Debug printf. */
-#ifdef DEBUG_bird
-# define CIDET_DPRINTF(a)   RTPrintf a
+#if 0 //def DEBUG_bird
+# define CIDET_DPRINTF(a)   do { RTPrintf a; } while (0)
 #else
 # define CIDET_DPRINTF(a)   do { } while (0)
+#endif
+
+/** @def CIDET_DEBUG_DISAS
+ * Enables instruction disassembly. */
+#if defined(DOXYGEN_RUNNING)
+# define CIDET_DEBUG_DISAS 1
 #endif
 
 
@@ -104,6 +110,20 @@ static const uint64_t g_au64ByteSizeToMask[] =
     UINT64_C(0x0000ffffffffffff),
     UINT64_C(0x00ffffffffffffff),
     UINT64_C(0xffffffffffffffff),
+};
+
+/** Converts operand sizes in bytes to 64-bit signed max values. */
+static const int64_t g_ai64ByteSizeToMax[] =
+{
+    INT64_C(0x0000000000000000),
+    INT64_C(0x000000000000007f),
+    INT64_C(0x0000000000007fff),
+    INT64_C(0x00000000007fffff),
+    INT64_C(0x000000007fffffff),
+    INT64_C(0x0000007fffffffff),
+    INT64_C(0x00007fffffffffff),
+    INT64_C(0x007fffffffffffff),
+    INT64_C(0x7fffffffffffffff),
 };
 
 
@@ -239,7 +259,6 @@ void CidetCoreInitializeCtxTemplate(PCIDETCORE pThis)
             pThis->InTemplateCtx.aGRegs[i] = UINT64_C(0xfada009b)
                                            | ((uint32_t)i << 12)
                                            | ((uint32_t)i << 8);
-
     i = RT_ELEMENTS(pThis->InTemplateCtx.aSRegs);
     while (i-- > 0)
         pThis->InTemplateCtx.aSRegs[i] = 0; /* Front end sets these afterwards. */
@@ -281,7 +300,7 @@ int CidetCoreSetTargetMode(PCIDETCORE pThis, uint8_t bMode)
         //case CIDETMODE_PAE_16:
         case CIDETMODE_PAE_32:
         //case CIDETMODE_PAE_V86:
-        //case CIDETMODE_LM_16:
+        //case CIDETMODE_LM_S16:
         //case CIDETMODE_LM_32:
         case CIDETMODE_LM_64:
             break;
@@ -487,9 +506,12 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uin
         pThis->aOperands[pThis->idxMrmRmOp].iReg            = 0;
         pThis->aOperands[pThis->idxMrmRmOp].fIsMem          = false;
         pThis->aOperands[pThis->idxMrmRmOp].fIsRipRelative  = false;
+        pThis->aOperands[pThis->idxMrmRmOp].fIsHighByteRegister = false;
+        pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp       = 0;
         pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg     = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].iMemIndexReg    = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].uMemScale       = 1;
+        pThis->aOperands[pThis->idxMrmRmOp].iEffSeg         = UINT8_MAX;
         pThis->bModRm                     &= ~(X86_MODRM_RM_MASK | X86_MODRM_MOD_MASK);
         pThis->bModRm                     |= 3 << X86_MODRM_MOD_SHIFT;
         pThis->fRexB                       = false;
@@ -500,6 +522,7 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uin
         pThis->fHasRegCollisionMem         = false;
         pThis->fHasRegCollisionMemBase     = false;
         pThis->fHasRegCollisionMemIndex    = false;
+        pThis->fHasStackRegInMrmRmBase     = false;
     }
     else
     {
@@ -507,9 +530,12 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uin
         pThis->aOperands[pThis->idxMrmRmOp].iReg            = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].fIsMem          = true;
         pThis->aOperands[pThis->idxMrmRmOp].fIsRipRelative  = false;
+        pThis->aOperands[pThis->idxMrmRmOp].fIsHighByteRegister = false;
+        pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp       = 0;
         pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg     = X86_GREG_xBX;
         pThis->aOperands[pThis->idxMrmRmOp].iMemIndexReg    = X86_GREG_xSI;
         pThis->aOperands[pThis->idxMrmRmOp].uMemScale       = 1;
+        pThis->aOperands[pThis->idxMrmRmOp].iEffSeg         = UINT8_MAX;
         pThis->bModRm                     &= ~(X86_MODRM_RM_MASK | X86_MODRM_MOD_MASK);
         pThis->fRexB                       = false;
         pThis->fRexX                       = false;
@@ -518,6 +544,7 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uin
         pThis->fHasRegCollisionMemBase     = iReg == X86_GREG_xBX && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
         pThis->fHasRegCollisionMemIndex    = iReg == X86_GREG_xSI && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
         pThis->fHasRegCollisionMem         = pThis->fHasRegCollisionMemBase || pThis->fHasRegCollisionMemIndex;
+        pThis->fHasStackRegInMrmRmBase     = false;
     }
 }
 
@@ -553,6 +580,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uint
             pThis->bModRm |= iRm;
             pThis->fHasRegCollisionDirect = iRm == iReg
                                         && CIDET_OF_K_IS_SAME(pThis->fMrmRmOp, pThis->fMrmRegOp);
+            pThis->fHasStackRegInMrmRmBase = iRm == X86_GREG_xSP && CIDET_OF_K_IS_GPR(pThis->fMrmRmOp);
             return true;
         }
 
@@ -647,6 +675,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uint
     pThis->bModRm |= iMod << X86_MODRM_MOD_SHIFT;
     pThis->fHasMemoryOperand = true;
     pThis->fHasRegCollisionDirect = false;
+    pThis->fHasStackRegInMrmRmBase = false;
     if (CIDET_OF_K_IS_GPR(pThis->fMrmRmOp))
     {
         pThis->fHasRegCollisionMemBase = iReg == X86_GREG_xBX;
@@ -671,9 +700,12 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis
         pThis->aOperands[pThis->idxMrmRmOp].iReg            = 0;
         pThis->aOperands[pThis->idxMrmRmOp].fIsMem          = false;
         pThis->aOperands[pThis->idxMrmRmOp].fIsRipRelative  = false;
+        pThis->aOperands[pThis->idxMrmRmOp].fIsHighByteRegister = false;
+        pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp       = 0;
         pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg     = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].iMemIndexReg    = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].uMemScale       = 1;
+        pThis->aOperands[pThis->idxMrmRmOp].iEffSeg         = UINT8_MAX;
         pThis->bModRm                     &= ~(X86_MODRM_RM_MASK | X86_MODRM_MOD_MASK);
         pThis->bModRm                     |= 3 << X86_MODRM_MOD_SHIFT;
         pThis->fRexB                       = false;
@@ -684,6 +716,7 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis
         pThis->fHasRegCollisionMem         = false;
         pThis->fHasRegCollisionMemBase     = false;
         pThis->fHasRegCollisionMemIndex    = false;
+        pThis->fHasStackRegInMrmRmBase     = false;
     }
     else
     {
@@ -691,9 +724,12 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis
         pThis->aOperands[pThis->idxMrmRmOp].iReg            = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].fIsMem          = true;
         pThis->aOperands[pThis->idxMrmRmOp].fIsRipRelative  = false;
+        pThis->aOperands[pThis->idxMrmRmOp].fIsHighByteRegister = false;
+        pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp       = 0;
         pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg     = 0;
         pThis->aOperands[pThis->idxMrmRmOp].iMemIndexReg    = UINT8_MAX;
         pThis->aOperands[pThis->idxMrmRmOp].uMemScale       = 1;
+        pThis->aOperands[pThis->idxMrmRmOp].iEffSeg         = UINT8_MAX;
         pThis->bModRm                     &= ~(X86_MODRM_RM_MASK | X86_MODRM_MOD_MASK);
         pThis->fRexB                       = false;
         pThis->fRexX                       = false;
@@ -702,6 +738,7 @@ static void cidetCoreSetupFirstBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis
         pThis->fHasRegCollisionMemIndex    = false;
         pThis->fHasRegCollisionMemBase     = iReg == 0 && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
         pThis->fHasRegCollisionMem         = pThis->fHasRegCollisionMemBase;
+        pThis->fHasStackRegInMrmRmBase     = false;
     }
 }
 
@@ -760,6 +797,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
                     pThis->fRexX = true;
                     pThis->fHasRegCollisionDirect = CIDET_OF_K_IS_GPR(pThis->fMrmRegOp)
                                                  && iRm == iReg - pThis->fHasHighByteRegInMrmReg * 4;
+                    pThis->fHasStackRegInMrmRmBase = iRm == X86_GREG_xSP && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
                 }
                 else
                 {
@@ -778,6 +816,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
                         pThis->aOperands[pThis->idxMrmRmOp].fIsHighByteRegister = true;
                         pThis->fHasRegCollisionDirect = CIDET_OF_K_IS_GPR(pThis->fMrmRegOp)
                                                      && iRm - 4 == iReg - pThis->fHasHighByteRegInMrmReg * 4;
+                        pThis->fHasStackRegInMrmRmBase = false;
 
                     }
                     else
@@ -786,6 +825,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
                            Note! We don't set the RexX yet since the base register or operand width holds it down. */
                         pThis->fHasRegCollisionDirect = CIDET_OF_K_IS_GPR(pThis->fMrmRegOp)
                                                      && iRm == iReg - pThis->fHasHighByteRegInMrmReg * 4;
+                        pThis->fHasStackRegInMrmRmBase = iRm == X86_GREG_xSP && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
                     }
                 }
             }
@@ -802,6 +842,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
                 pThis->fRexX   = false;
                 pThis->fHasRegCollisionDirect = iRm == iReg - pThis->fHasHighByteRegInMrmReg * 4
                                             && CIDET_OF_K_IS_SAME(pThis->fMrmRmOp, pThis->fMrmRegOp);
+                pThis->fHasStackRegInMrmRmBase = iRm == X86_GREG_xSP && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
             }
             return true;
         }
@@ -825,6 +866,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
          */
         Assert(pThis->idxMrmRmOp < RT_ELEMENTS(pThis->aOperands) && pThis->aOperands[pThis->idxMrmRmOp].fIsMem);
         Assert(pThis->fHasMemoryOperand);
+        Assert(!pThis->fHasStackRegInMrmRmBase);
         if (iRm < (CIDETMODE_IS_64BIT(pThis->bMode) && !pThis->fNoRexPrefix ? 15 : 7))
         {
             iRm++;
@@ -893,6 +935,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
     pThis->fHasRegCollisionMemIndex = false;
     pThis->fHasRegCollisionMemBase = iReg == X86_GREG_xAX && CIDET_OF_K_IS_GPR(pThis->fMrmRmOp);
     pThis->fHasRegCollisionMem = pThis->fHasRegCollisionMemBase;
+    pThis->fHasStackRegInMrmRmBase = false;
     return true;
 }
 
@@ -948,6 +991,7 @@ static bool cidetCoreSetupNextBaseEncoding_SibBase(PCIDETCORE pThis, uint8_t iRe
     pThis->fHasRegCollisionMemBase = pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg == iReg
                                   && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
     pThis->fHasRegCollisionMem = pThis->fHasRegCollisionMemBase || pThis->fHasRegCollisionMemIndex;
+    pThis->fHasStackRegInMrmRmBase = iBase == X86_GREG_xSP;
 
     return iBase != 0;
 }
@@ -1209,7 +1253,7 @@ bool CidetCoreSetupFirstBaseEncoding(PCIDETCORE pThis)
     pThis->fHasRegCollisionMem      = false;
     pThis->fHasRegCollisionMemBase  = false;
     pThis->fHasRegCollisionMemIndex = false;
-    pThis->fHasRegCollisionDirect   = false;
+    pThis->fHasStackRegInMrmRmBase  = false;
 
     /*
      * Now, drill down on the instruction encoding.
@@ -1535,20 +1579,60 @@ bool CidetCoreSetupInOut(PCIDETCORE pThis)
             }
             else if (iMemBaseReg != UINT8_MAX)
             {
-                /* [base] or [base + disp] or [base + index * scale] or [base + index * scale + disp] */
-                if (pThis->aOperands[idxOp].cbMemDisp > 0)
+                if (   iMemBaseReg != iMemIndexReg
+                    || pThis->fUsesVexIndexRegs)
                 {
-                    pThis->aOperands[idxOp].uImmDispValue = CidetCoreGetRandS64(pThis, pThis->aOperands[idxOp].cbMemDisp);
-                    offSeg -= pThis->aOperands[idxOp].uImmDispValue;
-                }
+                    /* [base] or [base + disp] or [base + index * scale] or [base + index * scale + disp] */
+                    if (pThis->aOperands[idxOp].cbMemDisp > 0)
+                    {
+                        pThis->aOperands[idxOp].uImmDispValue = CidetCoreGetRandS64(pThis, pThis->aOperands[idxOp].cbMemDisp);
+                        offSeg -= (int64_t)pThis->aOperands[idxOp].uImmDispValue;
+                    }
 
-                if (iMemIndexReg != UINT8_MAX)
+                    if (iMemIndexReg != UINT8_MAX)
+                    {
+                        pThis->aOperands[idxOp].uMemIndexRegValue = CidetCoreGetRandU64(pThis, pThis->cbAddrMode);
+                        offSeg -= pThis->aOperands[idxOp].uMemIndexRegValue * pThis->aOperands[idxOp].uMemScale;
+                    }
+
+                    pThis->aOperands[idxOp].uMemBaseRegValue = offSeg & g_au64ByteSizeToMask[pThis->cbAddrMode];
+                }
+                else
                 {
-                    pThis->aOperands[idxOp].uMemIndexRegValue = CidetCoreGetRandU64(pThis, pThis->cbAddrMode);
-                    offSeg -= pThis->aOperands[idxOp].uMemIndexRegValue * pThis->aOperands[idxOp].uMemScale;
+                    /* base == index;  [base + index * scale] or [base * (scale + 1)]. */
+                    uint8_t const uEffScale = pThis->aOperands[idxOp].uMemScale + 1;
+                    if (pThis->aOperands[idxOp].cbMemDisp > 0)
+                    {
+                        pThis->aOperands[idxOp].uImmDispValue = CidetCoreGetRandS64(pThis, pThis->aOperands[idxOp].cbMemDisp);
+                        offSeg -= (int64_t)pThis->aOperands[idxOp].uImmDispValue;
+                        offSeg &= g_au64ByteSizeToMask[pThis->cbAddrMode];
+                        uint8_t uRemainder = offSeg % uEffScale;
+                        if (uRemainder != 0)
+                        {
+                            Assert(pThis->aOperands[idxOp].cbMemDisp < 8);
+                            Assert(   (int64_t)pThis->aOperands[idxOp].uImmDispValue
+                                   <= g_ai64ByteSizeToMax[pThis->aOperands[idxOp].cbMemDisp]);
+                            pThis->aOperands[idxOp].uImmDispValue = (int64_t)pThis->aOperands[idxOp].uImmDispValue
+                                                                  + uRemainder;
+                            offSeg -= uRemainder;
+                            if (  (int64_t)pThis->aOperands[idxOp].uImmDispValue
+                                > g_ai64ByteSizeToMax[pThis->aOperands[idxOp].cbMemDisp])
+                            {
+                                pThis->aOperands[idxOp].uImmDispValue -= uEffScale;
+                                offSeg += uEffScale;
+                            }
+                            Assert(offSeg % uEffScale == 0);
+                        }
+                    }
+                    else
+                    {
+                        offSeg &= g_au64ByteSizeToMask[pThis->cbAddrMode];
+                        if (offSeg % uEffScale != 0)
+                            return false;
+                    }
+                    offSeg /= uEffScale;
+                    pThis->aOperands[idxOp].uMemBaseRegValue = pThis->aOperands[idxOp].uMemIndexRegValue = offSeg;
                 }
-
-                pThis->aOperands[idxOp].uMemBaseRegValue = offSeg & g_au64ByteSizeToMask[pThis->cbAddrMode];
             }
             else if (iMemIndexReg != UINT8_MAX)
             {
@@ -1556,7 +1640,7 @@ bool CidetCoreSetupInOut(PCIDETCORE pThis)
                 if (pThis->aOperands[idxOp].cbMemDisp > 0)
                 {
                     pThis->aOperands[idxOp].uImmDispValue = CidetCoreGetRandS64(pThis, pThis->aOperands[idxOp].cbMemDisp);
-                    offSeg -= pThis->aOperands[idxOp].uImmDispValue;
+                    offSeg -= (int64_t)pThis->aOperands[idxOp].uImmDispValue;
                     pThis->aOperands[idxOp].uImmDispValue += offSeg & (RT_BIT_64(pThis->aOperands[idxOp].uMemScale) - 1);
                     offSeg &= ~(RT_BIT_64(pThis->aOperands[idxOp].uMemScale) - 1);
                 }
@@ -1997,6 +2081,7 @@ bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
     if (CidetCoreAssemble(pThis))
     {
         //CIDET_DPRINTF(("%04u: %.*Rhxs\n", i, pThis->cbInstr, pThis->abInstr));
+#ifdef CIDET_DEBUG_DISAS
         DISCPUSTATE Dis;
         char        szInstr[80] = {0};
         uint32_t    cbInstr;
@@ -2011,7 +2096,7 @@ bool CidetCoreSetupCodeBuf(PCIDETCORE pThis, unsigned iSubTest)
                                     szInstr, sizeof(szInstr));
         CIDET_DPRINTF(("%04u: %s", iSubTest, szInstr));
         Assert(cbInstr == pThis->cbInstr);
-
+#endif
         if (pThis->pfnSetupCodeBuf(pThis, &pThis->CodeBuf, pThis->abInstr))
         {
             return true;
@@ -2050,14 +2135,25 @@ bool CidetCoreTest_Basic(PCIDETCORE pThis)
                      * Set up inputs and expected outputs, then emit the test code.
                      */
                     pThis->InCtx        = pThis->InTemplateCtx;
-                    pThis->ExpectedCtx  = pThis->InTemplateCtx;
+                    pThis->InCtx.fTrickyStack = pThis->fHasStackRegInMrmRmBase || pThis->fHasStackRegInMrmReg;
+                    pThis->ExpectedCtx  = pThis->InCtx;
                     if (   CidetCoreReInitCodeBuf(pThis)
                         && CidetCoreSetupInOut(pThis)
                         && CidetCoreSetupCodeBuf(pThis, cSkipped + cExecuted)
                        )
                     {
-                        pThis->pfnExecute(pThis);
-                        cExecuted++;
+                        if (pThis->pfnExecute(pThis))
+                        {
+                            cExecuted++;
+
+                            /*
+                             * Check the result against our expectations.
+                             */
+                            /** @todo check result. */
+
+                        }
+                        else
+                            cSkipped++;
                     }
                     else
                         cSkipped++;

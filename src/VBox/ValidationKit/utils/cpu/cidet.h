@@ -842,9 +842,10 @@ typedef struct CIDETCORE
     /**
      * Executes the code indicated by InCtx, returning the result in ActualCtx.
      *
+     * @returns true if execute, false if skipped.
      * @param   pThis           Pointer to the core structure.
      */
-    DECLCALLBACKMEMBER(void, pfnExecute)(struct CIDETCORE *pThis);
+    DECLCALLBACKMEMBER(bool, pfnExecute)(struct CIDETCORE *pThis);
 
     /**
      * Report a test failure.
@@ -915,10 +916,16 @@ typedef struct CIDETCORE
     bool                fHasRegCollisionMem : 1;
     /** Indicator: Helper indicator for tracking SIB.BASE collision. */
     bool                fHasRegCollisionMemBase : 1;
-    /** Indicator: Helper indicator for tracking SIB.BASE collision. */
+    /** Indicator: Helper indicator for tracking SIB.INDEX collision. */
     bool                fHasRegCollisionMemIndex : 1;
     /** Indicator: Set if a register is used directly in more than one operand. */
     bool                fHasRegCollisionDirect : 1;
+
+    /** Indicator: Set if MODRM.REG is the stack register. */
+    bool                fHasStackRegInMrmReg : 1;
+    /** Indicator: Set if MODRM.RM or SIB.BASE is the stack register. */
+    bool                fHasStackRegInMrmRmBase: 1;
+
     /** Indicator: High byte-register specified by MODRM.REG. */
     bool                fHasHighByteRegInMrmReg : 1;
     /** Indicator: High byte-register specified by MODRM.RM. */

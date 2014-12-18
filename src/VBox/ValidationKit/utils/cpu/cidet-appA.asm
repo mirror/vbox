@@ -56,7 +56,8 @@ BEGINPROC   CidetAppSaveAndRestoreCtx
         ; bypass this step if we need to.
         ;
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_xAX * 8], xAX ; need scratch register.
-        mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_xSP * 8], xSP
+        lea     xAX, [xSP + xCB]
+        mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_xSP * 8], xAX
         mov     word [xCX + CIDETCPUCTX.aSRegs + X86_SREG_SS * 2], ss
         mov     word [xCX + CIDETCPUCTX.aSRegs + X86_SREG_CS * 2], cs
         mov     xAX, [xSP]
@@ -144,7 +145,7 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.ldtr], ax
 
         ;
-        ; Restore the other state.
+        ; Restore the other state (pointer in xDX).
         ;
 NAME(CidetAppSaveAndRestoreCtx_Restore):
 
@@ -239,7 +240,6 @@ BEGINPROC   CidetAppExecute
         mov     word [xCX + CIDETCPUCTX.aSRegs + X86_SREG_DS * 2], ds
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_xDX * 8], xDX
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_xCX * 8], xCX
-        mov     [xDX + CIDETCPUCTX.aGRegs + X86_GREG_xSP * 8], xSP
         jmp     NAME(CidetAppSaveAndRestoreCtx)
 ENDPROC     CidetAppExecute
 
@@ -253,7 +253,9 @@ BEGINPROC   CidetAppRestoreCtx
         mov     edx, [esp + 4]
 %elifdef ASM_CALL64_GCC
         mov     rdx, rdi
-%elifndef ASM_CALL64_MSC
+%elifdef ASM_CALL64_MSC
+        mov     rdx, rcx
+%else
  %error "unsupport arch."
 %endif
         mov     ds, [cs:xDX + CIDETCPUCTX.aSRegs + X86_SREG_DS * 2]
