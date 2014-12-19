@@ -617,7 +617,7 @@ static DECLCALLBACK(bool) CidetAppCbReInitDataBuf(PCIDETCORE pThis, PCIDETBUF pB
     /*
      * Do we need to use the low buffer?  Check that we have one, if we need it.
      */
-    bool fUseNormal = pThis->cbAddrMode == ARCH_BITS;
+    bool fUseNormal = pThis->cbAddrMode == ARCH_BITS / 8;
     if (!fUseNormal && !pAppBuf->pbLow)
         return false;
 
