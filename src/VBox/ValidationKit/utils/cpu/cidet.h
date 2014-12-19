@@ -110,6 +110,8 @@
  * @retval  VINF_EOF when static test data wraps (first entry is returned).
  * @retval  VERR_NO_DATA if @a fInvalid is set and there are no invalid operand
  *          values for this instruction.
+ * @retval  VERR_NOT_SUPPORTED if something in the setup prevents us from
+ *          comming up with working set of inputs and outputs.
  *
  * @param   pThis           The core CIDET state structure.  The InCtx
  *                          and ExpectedCtx members will be modified.
@@ -171,15 +173,18 @@ typedef struct CIDETCPUCTX
     uint64_t            dr6;
     uint64_t            dr7;
 
-    uint32_t            fIgnoredRFlags; /**< Only for expected result. */
-    uint32_t            uXcpt;          /**< Exception number.  UINT32_MAX if no exception.  (Not for input context.) */
     uint64_t            uErr;           /**< Exception error code.  UINT64_MAX if not applicable.  (Not for input context.) */
+    uint32_t            uXcpt;          /**< Exception number.  UINT32_MAX if no exception.  (Not for input context.) */
 
+    uint32_t            fIgnoredRFlags; /**< Only for expected result. */
     bool                fTrickyStack;   /**< Set if the stack might be bad.  May come at the cost of accurate flags (32-bit). */
-
 } CIDETCPUCTX;
 typedef CIDETCPUCTX *PCIDETCPUCTX;
 typedef CIDETCPUCTX const *PCCIDETCPUCTX;
+
+/** Number of bytes of CIDETCPUCTX that can be compared quickly using memcmp.
+ * Anything following these bytes are not relevant to the compare.  */
+#define CIDETCPUCTX_COMPARE_SIZE    RT_UOFFSETOF(CIDETCPUCTX, fIgnoredRFlags)
 
 
 /** @name CPU mode + bits + environment.
@@ -1022,6 +1027,30 @@ typedef struct CIDETCORE
 
     /** Input and expected output temporary memory buffers. */
     uint8_t             abBuf[0x2000];
+
+
+    /** Number of skipped tests because of pfnSetupInOut failures. */
+    uint32_t            cSkippedSetupInOut;
+    /** Number of skipped tests because of pfnReInitDataBuf failures. */
+    uint32_t            cSkippedReInitDataBuf;
+    /** Number of skipped tests because of pfnSetupDataBuf failures. */
+    uint32_t            cSkippedSetupDataBuf;
+    /** Number of skipped tests because RIP relative addressing constraints. */
+    uint32_t            cSkippedDataBufWrtRip;
+    /** Number of skipped tests because of assemble failures. */
+    uint32_t            cSkippedAssemble;
+    /** Number of skipped tests because of pfnReInitCodeBuf failures. */
+    uint32_t            cSkippedReInitCodeBuf;
+    /** Number of skipped tests because of pfnSetupCodeBuf failures. */
+    uint32_t            cSkippedSetupCodeBuf;
+    /** Number of skipped tests because the base and index registers are the same
+     * one and there was a remainder when trying to point to the data buffer. */
+    uint32_t            cSkippedSameBaseIndexRemainder;
+    /** Number of skipped tests because index-only addressing left a remainder. */
+    uint32_t            cSkippedOnlyIndexRemainder;
+    /** Number of skipped tests because of direct addressing overflowed. */
+    uint32_t            cSkippedDirectAddressingOverflow;
+
 
 } CIDETCORE;
 /** Pointer to the CIDET core state. */
