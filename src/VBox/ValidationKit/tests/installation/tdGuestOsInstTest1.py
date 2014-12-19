@@ -65,6 +65,7 @@ class InstallTestVm(vboxtestvms.TestVm):
     kfReqPae                = 0x40;
     kfIdeIrqDelay           = 0x80;
     kfUbuntuNewAmdBug       = 0x80;
+    kfNoWin81Paravirt       = 0x100;
     ## @}
 
     ## IRQ delay extra data config for win2k VMs.
@@ -74,7 +75,11 @@ class InstallTestVm(vboxtestvms.TestVm):
     ksIsoPathBase    = os.path.join('4.2', 'isos');
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, sHdCtrlNm, cGbHdd, fFlags):
-        vboxtestvms.TestVm.__init__(self, oSet, sVmName, sKind = sKind, sHddControllerType = sHdCtrlNm, fUseParavirtProvider=True); # pylint: disable=C0301
+        fUseParavirtProvider = True;
+        if fFlags & self.kfNoWin81Paravirt:
+            fUseParavirtProvider = False;
+        vboxtestvms.TestVm.__init__(self, oSet, sVmName, sKind = sKind, sHddControllerType = sHdCtrlNm,
+                                    fUseParavirtProvider = fUseParavirtProvider); # pylint: disable=C0301
         self.sDvdImage    = os.path.join(self.ksIsoPathBase, sInstallIso);
         self.cGbHdd       = cGbHdd;
         self.fInstVmFlags = fFlags;
@@ -273,8 +278,9 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-wxp',          'WindowsXP',        'winxppro-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-wxpsp2',       'WindowsXP',        'winxpsp2-txs.iso',         InstallTestVm.ksIdeController,  25, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-wxp64',        'WindowsXP_64',     'winxp64-txs.iso',          InstallTestVm.ksIdeController,  25, InstallTestVm.kf64Bit),
-            InstallTestVm(oSet, 'tst-w81-32',       'Windows81',        'win81-x86-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf32Bit),
-            InstallTestVm(oSet, 'tst-w81-64',       'Windows81_64',     'win81-x64-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit),
+            ## @todo disable paravirt for Windows 8.1 guests as long as it's not fixed in the code
+            InstallTestVm(oSet, 'tst-w81-32',       'Windows81',        'win81-x86-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf32Bit | InstallTestVm.kfNoWin81Paravirt),
+            InstallTestVm(oSet, 'tst-w81-64',       'Windows81_64',     'win81-x64-txs.iso',        InstallTestVm.ksSataController, 25, InstallTestVm.kf64Bit | InstallTestVm.kfNoWin81Paravirt),
             # pylint: enable=C0301
         ]);
         self.oTestVmSet = oSet;
