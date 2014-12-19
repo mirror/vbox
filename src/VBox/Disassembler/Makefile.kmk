@@ -19,7 +19,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # include the sub-makefile first.
-ifdef VBOX_WITH_TESTCASES
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_VALIDATIONKIT)
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
 
@@ -40,38 +40,42 @@ LIBRARIES              += DisasmR3Static
 DisasmR3Static_TEMPLATE = VBoxR3Static
 DisasmR3Static_EXTENDS  = DisasmR3
 
-LIBRARIES              += DisasmBldProg
-DisasmBldProg_TEMPLATE  = VBoxBldProg
-DisasmBldProg_EXTENDS   = DisasmR3
+ifndef VBOX_ONLY_VALIDATIONKIT
 
-LIBRARIES              += DisasmCoreR3
-DisasmCoreR3_TEMPLATE   = VBOXR3
-DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
-DisasmCoreR3_SOURCES    = \
-	DisasmCore.cpp \
-	DisasmReg.cpp \
-	DisasmTables.cpp \
-	DisasmTablesX64.cpp
+ LIBRARIES              += DisasmBldProg
+ DisasmBldProg_TEMPLATE  = VBoxBldProg
+ DisasmBldProg_EXTENDS   = DisasmR3
 
-ifdef VBOX_WITH_RAW_MODE
- LIBRARIES              += DisasmRC
- DisasmRC_TEMPLATE       = VBoxRc
- DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
- DisasmRC_SOURCES        = \
+ LIBRARIES              += DisasmCoreR3
+ DisasmCoreR3_TEMPLATE   = VBOXR3
+ DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
+ DisasmCoreR3_SOURCES    = \
  	DisasmCore.cpp \
  	DisasmReg.cpp \
  	DisasmTables.cpp \
  	DisasmTablesX64.cpp
-endif # VBOX_WITH_RAW_MODE
 
-LIBRARIES              += DisasmR0
-DisasmR0_TEMPLATE       = VBoxR0
-DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
-DisasmR0_SOURCES        = \
-	DisasmCore.cpp \
-	DisasmReg.cpp \
-	DisasmTables.cpp \
-	DisasmTablesX64.cpp
+ ifdef VBOX_WITH_RAW_MODE
+  LIBRARIES              += DisasmRC
+  DisasmRC_TEMPLATE       = VBoxRc
+  DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
+  DisasmRC_SOURCES        = \
+  	DisasmCore.cpp \
+  	DisasmReg.cpp \
+  	DisasmTables.cpp \
+  	DisasmTablesX64.cpp
+ endif # VBOX_WITH_RAW_MODE
+
+ LIBRARIES              += DisasmR0
+ DisasmR0_TEMPLATE       = VBoxR0
+ DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
+ DisasmR0_SOURCES        = \
+ 	DisasmCore.cpp \
+ 	DisasmReg.cpp \
+ 	DisasmTables.cpp \
+ 	DisasmTablesX64.cpp
+
+endif # !VBOX_ONLY_VALIDATIONKIT
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
