@@ -328,7 +328,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Validate the rest of the TM settings.
      */
-    rc = CFGMR3ValidateConfig(pCfgHandle, "/TM",
+    rc = CFGMR3ValidateConfig(pCfgHandle, "/TM/",
                               "Mode|"
                               "TSCTicksPerSecond|"
                               "TSCTiedToExecution|"
