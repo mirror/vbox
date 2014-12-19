@@ -75,11 +75,8 @@ class InstallTestVm(vboxtestvms.TestVm):
     ksIsoPathBase    = os.path.join('4.2', 'isos');
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, sHdCtrlNm, cGbHdd, fFlags):
-        fUseParavirtProvider = True;
-        if fFlags & self.kfNoWin81Paravirt:
-            fUseParavirtProvider = False;
         vboxtestvms.TestVm.__init__(self, oSet, sVmName, sKind = sKind, sHddControllerType = sHdCtrlNm,
-                                    fUseParavirtProvider = fUseParavirtProvider); # pylint: disable=C0301
+                                    fRandomPvPMode = (fFlags & self.kfNoWin81Paravirt) != 0);
         self.sDvdImage    = os.path.join(self.ksIsoPathBase, sInstallIso);
         self.cGbHdd       = cGbHdd;
         self.fInstVmFlags = fFlags;

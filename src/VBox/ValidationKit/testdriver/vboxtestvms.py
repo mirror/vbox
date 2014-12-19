@@ -29,8 +29,8 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
-import re
-import random
+import re;
+import random;
 
 # Validation Kit imports.
 from testdriver import base;
@@ -98,20 +98,29 @@ g_aaNameToDetails = \
     [ 'BSD',            'FreeBSD_64',            g_k32_64, 1, 1, ['bs-.*']], # boot sectors, wanted 64-bit type.
 ];
 
-# Guest OS type string constants.
-g_ksGuestOsTypeDarwin  = 'darwin'
-g_ksGuestOsTypeFreeBSD = 'freebsd'
-g_ksGuestOsTypeLinux   = 'linux'
-g_ksGuestOsTypeOS2     = 'os2'
-g_ksGuestOsTypeSolaris = 'solaris'
-g_ksGuestOsTypeWindows = 'windows'
 
-# String constants for hypervisor types.
-g_ksParavirtProviderNone    = 'none'
-g_ksParavirtProviderDefault = 'default'
-g_ksParavirtProviderLegacy  = 'legacy'
-g_ksParavirtProviderMinimal = 'minimal'
-g_ksParavirtProviderHyperV  = 'hyperv'
+## @name Guest OS type string constants.
+## @{
+g_ksGuestOsTypeDarwin  = 'darwin';
+g_ksGuestOsTypeFreeBSD = 'freebsd';
+g_ksGuestOsTypeLinux   = 'linux';
+g_ksGuestOsTypeOS2     = 'os2';
+g_ksGuestOsTypeSolaris = 'solaris';
+g_ksGuestOsTypeWindows = 'windows';
+## @}
+
+## @name String constants for paravirtualization providers.
+## @{
+g_ksParavirtProviderNone    = 'none';
+g_ksParavirtProviderDefault = 'default';
+g_ksParavirtProviderLegacy  = 'legacy';
+g_ksParavirtProviderMinimal = 'minimal';
+g_ksParavirtProviderHyperV  = 'hyperv';
+## @}
+
+## Valid paravirtualization providers.
+g_kasParavirtProviders = ( g_ksParavirtProviderNone, g_ksParavirtProviderDefault, g_ksParavirtProviderLegacy,
+                           g_ksParavirtProviderMinimal, g_ksParavirtProviderHyperV );
 
 # Mapping for support of paravirtualisation providers per guest OS.
 #g_kdaParavirtProvidersSupported = {
@@ -159,12 +168,14 @@ class TestVm(object):
 
     def __init__(self, oSet, sVmName, sHd = None, sKind = None, acCpusSup = None, asVirtModesSup = None, # pylint: disable=R0913
                  fIoApic = None, fPae = None, sNic0AttachType = None, sHddControllerType = 'IDE Controller',
-                 sFloppy = None, fVmmDevTestingPart = None, fVmmDevTestingMmio = False, fUseParavirtProvider = False):
+                 sFloppy = None, fVmmDevTestingPart = None, fVmmDevTestingMmio = False, asParavirtModesSup = None,
+                 fRandomPvPMode = False):
         self.oSet                    = oSet;
         self.sVmName                 = sVmName;
         self.sHd                     = sHd;          # Relative to the testrsrc root.
         self.acCpusSup               = acCpusSup;
         self.asVirtModesSup          = asVirtModesSup;
+        self.asParavirtModesSup      = asParavirtModesSup;
         self.sKind                   = sKind;
         self.sGuestOsType            = None;
         self.sDvdImage               = None;         # Relative to the testrsrc root.
@@ -176,20 +187,10 @@ class TestVm(object):
         self.fVmmDevTestingPart      = fVmmDevTestingPart;
         self.fVmmDevTestingMmio      = fVmmDevTestingMmio;
 
-        self.fSnapshotRestoreCurrent = False;       # Whether to restore execution on the current snapshot.
+        self.fSnapshotRestoreCurrent = False;        # Whether to restore execution on the current snapshot.
         self.fSkip                   = False;        # All VMs are included in the configured set by default.
         self.aInfo                   = None;
-        self._guessStuff();
-
-        # Assign all available paravirt providers for current VM type if fUseParavirtProvider allows to do that.
-        # The list might be overwritten later once --paravirt-modes option is specified.
-        #
-        # Temporary solution: in order to do not overload testboxes, the only one provider is enabled by default (a random one).
-        if fUseParavirtProvider:
-            random.seed()
-            self.asParavirtModes = (random.choice(g_kdaParavirtProvidersSupported[self.sGuestOsType]),)
-        else:
-            self.asParavirtModes = (None,)
+        self._guessStuff(fRandomPvPMode);
 
     def _mkCanonicalGuestOSType(self, sType):
         """
@@ -210,7 +211,7 @@ class TestVm(object):
             return g_ksGuestOsTypeWindows
         raise base.GenError(sWhat="unknown guest OS kind: %s" % str(sType))
 
-    def _guessStuff(self):
+    def _guessStuff(self, fRandomPvPMode):
         """
         Used by the constructor to guess stuff.
         """
@@ -271,6 +272,15 @@ class TestVm(object):
             else:
                 self.acCpusSup = [1];
 
+        # Figure relevant PV modes based on the OS.
+        if self.asParavirtModesSup is None:
+            self.asParavirtModesSup = g_kdaParavirtProvidersSupported[self.sGuestOsType];
+            ## @todo Remove this hack as soon as we've got around to explictly configure test variations
+            ## on the server side. Client side random is interesting but not the best option.
+            if fRandomPvPMode:
+                random.seed();
+                self.asParavirtModesSup = (random.choice(self.asParavirtModesSup),);
+
         return True;
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
@@ -299,7 +309,7 @@ class TestVm(object):
                         fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
 
-                        if oSession.fpApiVer >= 4.4 and sParavirtMode is not None:
+                        if sParavirtMode is not None and oSession.fpApiVer >= 4.4:
                             adParavirtProviders = {
                                 g_ksParavirtProviderNone   : vboxcon.ParavirtProvider_None,
                                 g_ksParavirtProviderDefault: vboxcon.ParavirtProvider_Default,
@@ -308,7 +318,6 @@ class TestVm(object):
                                 g_ksParavirtProviderHyperV : vboxcon.ParavirtProvider_HyperV,
                             };
                             fRc = fRc and oSession.setParavirtProvider(adParavirtProviders[sParavirtMode]);
-                            reporter.log('Set paravirtualization provider [%s].' % sParavirtMode);
 
                         fCfg64Bit = self.is64bitRequired() or (self.is64bit() and fHostSupports64bit and sVirtMode != 'raw');
                         fRc = fRc and oSession.enableLongMode(fCfg64Bit);
@@ -423,7 +432,7 @@ class TestVmSet(object):
         self.asVirtModes    = asVirtModes;
         self.aoTestVms      = [];
         self.fIgnoreSkippedVm = fIgnoreSkippedVm;
-        self.asParavirtModes = None
+        self.asParavirtModes = None; ##< If None, use the first PV mode of the test VM, otherwise all modes in this list.
 
     def findTestVmByName(self, sVmName):
         """
@@ -469,19 +478,9 @@ class TestVmSet(object):
         reporter.log('      Skip the specified VMs when testing.');
         reporter.log('  --snapshot-restore-current');
         reporter.log('      Restores the current snapshot and resumes execution.');
-        reporter.log('  --paravirt-modes   <m1[:m2[:]]')
-        reporter.log('      Default for OS X guests   : %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeDarwin  ]))) # pylint: disable=C0301
-        reporter.log('      Default for FreeBSD guests: %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeFreeBSD ]))) # pylint: disable=C0301
-        reporter.log('      Default for Linux guests  : %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeLinux   ]))) # pylint: disable=C0301
-        reporter.log('      Default for OS/2 guests   : %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeOS2     ]))) # pylint: disable=C0301
-        reporter.log('      Default for Solaris guests: %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeSolaris ]))) # pylint: disable=C0301
-        reporter.log('      Default for Windows guests: %s' % (':'.join(str(m) for m in g_kdaParavirtProvidersSupported[g_ksGuestOsTypeWindows ]))) # pylint: disable=C0301
-        reporter.log('      NOTE: this option can be applied only in case if VM set contains')
-        reporter.log('            the only one VM because different VMs might not support all')
-        reporter.log('            the specified paravirtualisation providers. If the option not')
-        reporter.log('            specified, default set of paravirtualisation providers assigned')
-        reporter.log('            to VM according to its type.')
-
+        reporter.log('  --paravirt-modes   <pv1[:pv2[:]]>');
+        reporter.log('      Set of paravirtualized providers (modes) to tests. Intersected with what the test VM supports.');
+        reporter.log('      Default is the first PV mode the test VMs support, generally same as "legacy".');
         ## @todo Add more options for controlling individual VMs.
         return True;
 
@@ -576,13 +575,13 @@ class TestVmSet(object):
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--paravirt-modes" takes a colon separated list of modes');
 
-            # Check and remember specified paravirtualisation providers list.
             self.asParavirtModes = asArgs[iArg].split(':')
-
-            for sMode in self.asParavirtModes:
-                if sMode not in (g_ksParavirtProviderNone, g_ksParavirtProviderDefault,
-                                 g_ksParavirtProviderLegacy, g_ksParavirtProviderMinimal, g_ksParavirtProviderHyperV):
-                    raise base.InvalidOption('Bad paravirtualisation provider specified: %s' % sMode);
+            for sPvMode in self.asParavirtModes:
+                if sPvMode not in g_kasParavirtProviders:
+                    raise base.InvalidOption('The "--paravirt-modes" value "%s" is not valid; valid values are: %s'
+                                             % (sPvMode, ', '.join(g_kasParavirtProviders),));
+            if len(self.asParavirtModes) == 0:
+                self.asParavirtModes = None;
 
         else:
             return iArg;
@@ -610,24 +609,9 @@ class TestVmSet(object):
         Returns False if not.
         """
 
-        # Check if --paravirt-modes option was specified and it meets requirements.
-        if self.asParavirtModes is not None:
-            iNumberOfActivatedVMs = len([item for item in self.aoTestVms if item.fSkip is not True])
-            if iNumberOfActivatedVMs != 1:
-                raise base.InvalidOption('The --paravirt-modes option assumes that the only one VM '
-                                         'is activated in test VMs set while %d are active.' % iNumberOfActivatedVMs)
-
         for oTestVm in self.aoTestVms:
             if oTestVm.fSkip:
                 continue;
-
-            # At this point we know that if --paravirt-modes option was specified, there is only one VM in set.
-            if self.asParavirtModes is not None:
-                for sMode in self.asParavirtModes:
-                    if sMode not in g_kdaParavirtProvidersSupported[oTestVm.sGuestOsType]:
-                        raise base.InvalidOption('Paravirtualisation provider "%s" is not supported by current guest OS.' % sMode)
-                # At this point oTestVm' asParavirtModes might be safely overwritten.
-                oTestVm.asParavirtModes = self.asParavirtModes
 
             if oTestVm.fSnapshotRestoreCurrent:
                 # If we want to restore a VM we don't need to create
@@ -714,6 +698,16 @@ class TestVmSet(object):
             # Ditto for CPUs.
             acCpusSup      = [cCpus for cCpus in oTestVm.acCpusSup      if cCpus in self.acCpus];
 
+            # Ditto for paravirtualization modes, except if not specified we got a less obvious default.
+            if self.asParavirtModes is not None  and  oTestDrv.fpApiVer >= 4.4:
+                asParavirtModes = [sPvMode for sPvMode in oTestVm.asParavirtModesSup if sPvMode in self.asParavirtModes];
+                assert None not in asParavirtModes;
+            elif oTestDrv.fpApiVer >= 4.4:
+                asParavirtModes = oTestVm.asParavirtModesSup[0];
+                assert None not in asParavirtModes;
+            else:
+                asParavirtModes = (None,);
+
             for cCpus in acCpusSup:
                 if cCpus == 1:
                     reporter.testStart('1 cpu');
@@ -727,20 +721,24 @@ class TestVmSet(object):
                 for sVirtMode in asVirtModesSup:
                     if sVirtMode == 'raw' and cCpus > 1:
                         continue;
+                    reporter.testStart('%s' % ( g_dsVirtModeDescs[sVirtMode], ) );
+                    cStartTests = cTests;
 
-                    for sParavirtMode in oTestVm.asParavirtModes:
-
-                        reporter.testStart("%s/%s" % (g_dsVirtModeDescs[sVirtMode], sParavirtMode if sParavirtMode is not None else "[paravirtualisation provider not set]")); # pylint: disable=C0301
+                    for sParavirtMode in asParavirtModes:
+                        if sParavirtMode is not None:
+                            assert oTestDrv.fpApiVer >= 4.4;
+                            reporter.testStart('%s' % ( sParavirtMode, ) );
 
                         # Reconfigure the VM.
                         try:
-                            (rc2, oVM) = oTestVm.getReconfiguredVm(oTestDrv, cCpus, sVirtMode, sParavirtMode=sParavirtMode);
+                            (rc2, oVM) = oTestVm.getReconfiguredVm(oTestDrv, cCpus, sVirtMode, sParavirtMode = sParavirtMode);
                         except KeyboardInterrupt:
                             raise;
                         except:
                             reporter.errorXcpt(cFrames = 9);
                             rc2 = False;
                         if rc2 is True:
+                            # Do the testing.
                             try:
                                 rc2 = fnCallback(oVM, oTestVm);
                             except KeyboardInterrupt:
@@ -756,7 +754,10 @@ class TestVmSet(object):
                             fRc = False;
 
                         cTests = cTests + (rc2 is not None);
-                        reporter.testDone(fSkipped = (rc2 is None));
+                        if sParavirtMode is not None:
+                            reporter.testDone(fSkipped = (rc2 is None));
+
+                    reporter.testDone(fSkipped = cTests == cStartTests);
 
                 reporter.testDone(fSkipped = cTests == 0);
 
