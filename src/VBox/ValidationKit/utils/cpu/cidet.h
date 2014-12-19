@@ -84,6 +84,10 @@
 #define CIDET_OF_M_RM           (CIDET_OF_M_RM_ONLY_R | CIDET_OF_M_RM_ONLY_M)
 #define CIDET_OF_M_REG          UINT32_C(0x00040000)
 
+#define CIDET_OF_A_R            UINT32_C(0x00080000) /**< Read access. */
+#define CIDET_OF_A_W            UINT32_C(0x00100000) /**< Write access. */
+#define CIDET_OF_A_RW           UINT32_C(0x00180000) /**< Read & write access. */
+
 /** The operand defaults to 64-bit width in 64-bit mode, making 32-bit width
  * inaccessible. */
 #define CIDET_OF_DEFAULT_64BIT  UINT32_C(0x40000000)
