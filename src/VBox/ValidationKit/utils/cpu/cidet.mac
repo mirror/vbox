@@ -33,6 +33,7 @@ struc CIDETCPUCTX
     .rfl                resq 1
     .aGRegs             resq 16
     .aSRegs             resw 6
+
     .tr                 resw 1
     .ldtr               resw 1
     .cr0                resq 1
@@ -40,9 +41,17 @@ struc CIDETCPUCTX
     .cr3                resq 1
     .cr4                resq 1
     .cr8                resq 1
-    .fIgnoredRFlags     resd 1
-    .uXcpt              resd 1
+    .dr0                resq 1
+    .dr1                resq 1
+    .dr2                resq 1
+    .dr3                resq 1
+    .dr6                resq 1
+    .dr7                resq 1
+
     .uErr               resq 1
+    .uXcpt              resd 1
+
+    .fIgnoredRFlags     resd 1
     .fTrickyStack       resb 1
 endstruc
 

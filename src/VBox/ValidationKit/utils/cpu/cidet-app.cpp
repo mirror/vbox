@@ -135,6 +135,12 @@ static RTTEST               g_hTest;
 /** Points to the instance data while executing, NULL if not executing or if
  * we've already handled the first exception while executing. */
 static PCIDETAPP volatile   g_pExecutingThis;
+#ifdef USE_SIGNALS
+/** The default signal mask. */
+static sigset_t             g_ProcSigMask;
+/** The alternative signal stack. */
+static stack_t              g_AltStack;
+#endif
 
 
 /** Code buffer configurations (parallel to CIDETAPP::aCodeBuffers). */
@@ -799,6 +805,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
          *       we hit the first right one.  However, if we wish to run this
          *       code with IEM, we better skip unnecessary trips to ring-0.
          */
+        uint8_t * const pbStartEpilogue = pbDst;
 
         /* jmp      $+6 */
         *pbDst++ = 0xeb;
@@ -818,6 +825,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
         *pbDst++ = 0x00;
         *pbDst++ = 0x00;
         *pbDst++ = 0x00;
+        uint8_t offRipAdjust = (uint8_t)(uintptr_t)(pbStartEpilogue - pbDst);
 
         /* push     xCX */
         *pbDst++ = 0x51;
@@ -827,20 +835,20 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
         *pbDst++ = 0x8b;
         *pbDst++ = 0x4c;
         *pbDst++ = 0x24;
-        *pbDst++ = 0x08;
+        *pbDst++ = sizeof(uintptr_t);
 
-        /* lea      xCX, [xCX - 14] */
+        /* lea      xCX, [xCX - 24] */
         *pbDst++ = 0x48;
         *pbDst++ = 0x8d;
         *pbDst++ = 0x49;
-        *pbDst++ = 0xf2;
+        *pbDst++ = offRipAdjust;
 
         /* mov      xCX, [xSP + xCB] */
         *pbDst++ = 0x48;
         *pbDst++ = 0x89;
         *pbDst++ = 0x4c;
         *pbDst++ = 0x24;
-        *pbDst++ = 0x08;
+        *pbDst++ = sizeof(uintptr_t);
 
         /* mov      xCX, &pThis->ActualCtx */
 #ifdef RT_ARCH_AMD64
@@ -949,10 +957,17 @@ static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
     {
         /* Won't end up here... */
     }
+    g_pExecutingThis = NULL;
 #else
     CidetAppExecute(&((PCIDETAPP)pThis)->ExecuteCtx, &pThis->InCtx);
+    if (g_pExecutingThis)
+        g_pExecutingThis = NULL;
+    else
+    {
+        RTTESTI_CHECK_RC(sigprocmask(SIG_SETMASK, &g_ProcSigMask, NULL), 0);
+        RTTESTI_CHECK_RC(sigaltstack(&g_AltStack, NULL), 0);
+    }
 #endif
-    g_pExecutingThis = NULL;
 
     return true;
 }
@@ -1168,18 +1183,20 @@ int main(int argc, char **argv)
     /*
      * Set up signal handlers with alternate stack.
      */
+    /* Get the default signal mask. */
+    RTTESTI_CHECK_RC_RET(sigprocmask(SIG_BLOCK, NULL, &g_ProcSigMask), 0, RTEXITCODE_FAILURE);
+
     /* Alternative stack so we can play with esp/rsp. */
-    stack_t AltStack;
-    RT_ZERO(AltStack);
-    AltStack.ss_flags = 0;
+    RT_ZERO(g_AltStack);
+    g_AltStack.ss_flags = 0;
 # ifdef SIGSTKSZ
-    AltStack.ss_size  = RT_MAX(SIGSTKSZ, _128K);
+    g_AltStack.ss_size  = RT_MAX(SIGSTKSZ, _128K);
 # else
-    AltStack.ss_size  = _128K;
+    g_AltStack.ss_size  = _128K;
 # endif
-    AltStack.ss_sp    = RTMemPageAlloc(AltStack.ss_size);
-    RTTESTI_CHECK_RET(AltStack.ss_sp != NULL, RTEXITCODE_FAILURE);
-    RTTESTI_CHECK_RC_RET(sigaltstack(&AltStack, NULL), 0, RTEXITCODE_FAILURE);
+    g_AltStack.ss_sp    = RTMemPageAlloc(g_AltStack.ss_size);
+    RTTESTI_CHECK_RET(g_AltStack.ss_sp != NULL, RTEXITCODE_FAILURE);
+    RTTESTI_CHECK_RC_RET(sigaltstack(&g_AltStack, NULL), 0, RTEXITCODE_FAILURE);
 
     /* Default signal action config. */
     struct sigaction Act;
