@@ -18,13 +18,6 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-#
-# Include sub-makefile(s).
-#
-ifndef VBOX_USE_SYSTEM_XORG_HEADERS
- include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-endif
-
 vboxvideo_70_DEFS := \
 	IN_MODULE XORG_7X RENDER=1 IN_RT_STATIC
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
