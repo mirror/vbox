@@ -44,8 +44,8 @@ const CIDETINSTR g_aCidetInstructions1[] =
 {
     {
         "add Eb,Gb", cidetInOutAdd,  1, {0x00, 0, 0}, 0, 2,
-        {   CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_RM,
-            CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_REG,
+        {   CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_RM | CIDET_OF_A_RW,
+            CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_REG | CIDET_OF_A_R,
             0, 0 }, CIDET_IF_MODRM
     },
 #if 0

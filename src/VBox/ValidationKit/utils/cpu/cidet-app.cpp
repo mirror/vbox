@@ -1022,6 +1022,8 @@ static int cidetAppAllocateAndConfigureBuffers(PCIDETAPP pThis)
 
 static int CidetAppCreate(PPCIDETAPP ppThis)
 {
+    *ppThis = NULL;
+
     PCIDETAPP pThis = (PCIDETAPP)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
         return RTTestIFailedRc(VERR_NO_MEMORY, "Error allocating %zu bytes.", sizeof(*pThis));
@@ -1093,7 +1095,6 @@ static int CidetAppCreate(PPCIDETAPP ppThis)
     else
         rc = RTTestIFailedRc(rc, "RTRandAdvCreate failed: %Rrc", rc);
     RTMemFree(pThis);
-    *ppThis = NULL;
     return rc;
 }
 
