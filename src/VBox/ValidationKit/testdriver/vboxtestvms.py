@@ -703,8 +703,8 @@ class TestVmSet(object):
                 asParavirtModes = [sPvMode for sPvMode in oTestVm.asParavirtModesSup if sPvMode in self.asParavirtModes];
                 assert None not in asParavirtModes;
             elif oTestDrv.fpApiVer >= 4.4:
-                asParavirtModes = oTestVm.asParavirtModesSup[0];
-                assert None not in asParavirtModes;
+                asParavirtModes = (oTestVm.asParavirtModesSup[0],);
+                assert asParavirtModes[0] is not None;
             else:
                 asParavirtModes = (None,);
 
