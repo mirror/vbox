@@ -43,7 +43,9 @@ PROGRAMS += cpu-alloc-all-mem
 cpu-alloc-all-mem_TEMPLATE = VBoxValidationKitR3
 cpu-alloc-all-mem_SOURCES  = cpu-alloc-all-mem.cpp
 
+ifneq ($(KBUILD_HOST),os2)
 PROGRAMS += cidet-app
+endif
 cidet-app_TEMPLATE = VBoxValidationKitR3
 cidet-app_SOURCES  = \
 	cidet-app.cpp \
