@@ -29,7 +29,7 @@
 
 RT_C_DECLS_BEGIN
 
-bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void );
+bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void);
 bool RTCALL VBoxOglIs3DAccelerationSupported(void);
 
 RT_C_DECLS_END
