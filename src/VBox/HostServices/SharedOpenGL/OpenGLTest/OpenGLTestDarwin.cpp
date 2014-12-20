@@ -49,14 +49,14 @@ static DECLCALLBACK(int32_t) vboxOglIsOfflineRenderingAppropriateOnce(void *pvUs
        set to "display". If the number of such devices is greater than one,
        it sets pfAppropriate to TRUE, otherwise to FALSE. */
 
-    CFStringRef ppDictionaryKeys[] = { CFSTR(kIOProviderClassKey), CFSTR(kIONameMatchKey) };
-    CFStringRef ppDictionaryVals[] = { CFSTR("IOPCIDevice"),       CFSTR("display") };
-    Assert(RT_ELEMENTS(ppDictionaryKeys) == RT_ELEMENTS(ppDictionaryVals));
+    CFStringRef apKeyStrings[]   = { CFSTR(kIOProviderClassKey), CFSTR(kIONameMatchKey) };
+    CFStringRef apValueStrings[] = { CFSTR("IOPCIDevice"),       CFSTR("display") };
+    Assert(RT_ELEMENTS(apKeyStrings) == RT_ELEMENTS(apValueStrings));
 
     CFDictionaryRef pMatchingDictionary = CFDictionaryCreate(kCFAllocatorDefault,
-                                                             (const void **)ppDictionaryKeys,
-                                                             (const void **)ppDictionaryVals,
-                                                             RT_ELEMENTS(ppDictionaryKeys),
+                                                             (const void **)apKeyStrings,
+                                                             (const void **)apValueStrings,
+                                                             RT_ELEMENTS(apKeyStrings),
                                                              &kCFTypeDictionaryKeyCallBacks,
                                                              &kCFTypeDictionaryValueCallBacks);
     if (pMatchingDictionary)
