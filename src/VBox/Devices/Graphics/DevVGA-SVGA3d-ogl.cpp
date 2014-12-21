@@ -88,9 +88,9 @@ typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 #include <float.h>
 
 #ifdef RT_OS_WINDOWS
-#define OGLGETPROCADDRESS       wglGetProcAddress
+# define OGLGETPROCADDRESS       wglGetProcAddress
 #elif defined(RT_OS_DARWIN)
-#include <dlfcn.h>
+# include <dlfcn.h>
 void *MyNSGLGetProcAddress(const char *name)
 {
     static void *s_image = NULL;
@@ -98,9 +98,9 @@ void *MyNSGLGetProcAddress(const char *name)
         s_image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
     return (s_image ? dlsym(s_image, name) : NULL);
 }
-# define OGLGETPROCADDRESS       MyNSGLGetProcAddress
+# define OGLGETPROCADDRESS      MyNSGLGetProcAddress
 #else
-#define OGLGETPROCADDRESS(x)    glXGetProcAddress((const GLubyte *)x)
+# define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
 #endif
 
 /* Invert y-coordinate for OpenGL's bottom left origin. */
@@ -2342,10 +2342,11 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     glBindTexture(GL_TEXTURE_2D, activeTexture);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
                 }
-                /* Free the double buffer. */
-                RTMemFree(pDoubleBuffer);
 
                 LogFlow(("first line:\n%.*Rhxd\n", pBoxes[i].w * pSurface->cbBlock, pDoubleBuffer));
+
+                /* Free the double buffer. */
+                RTMemFree(pDoubleBuffer);
                 break;
             }
 
@@ -2813,7 +2814,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     BOOL ret = SwapBuffers(pContext->hdc);
     AssertMsg(ret, ("SwapBuffers failed with %d\n", GetLastError()));
 #elif defined(RT_OS_DARWIN)
-    vmsvga3dCocoaSwapBuffers(pContext->cocoaContext);
+    vmsvga3dCocoaSwapBuffers(pContext->cocoaView, pContext->cocoaContext);
 #else
     /* show the window if not already done */
     if (!pContext->fMapped)
@@ -3012,8 +3013,9 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
         }
     }
     vmsvga3dCocoaCreateContext(&pContext->cocoaContext, shareContext);
-    NativeNSViewRef pHostView = (NativeNSViewRef*)pThis->svga.u64HostWindowId;
+    NativeNSViewRef pHostView = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateView(&pContext->cocoaView, pHostView);
+
 #else
     Window hostWindow = (Window)pThis->svga.u64HostWindowId;
 
@@ -3027,7 +3029,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
         AssertMsgReturn(ret && glxMajor == 1 && glxMinor >= 3, ("glX >=1.3 not present"), VERR_INTERNAL_ERROR);
         /* start our X event handling thread */
         rc = RTThreadCreate(&pState->pWindowThread, vmsvga3dXEventThread, pState, 0, RTTHREADTYPE_GUI, RTTHREADFLAGS_WAITABLE, "VMSVGA3DXEVENT");
-           if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("%s: Async IO Thread creation for 3d window handling failed rc=%d\n", __FUNCTION__, rc));
             return rc;
