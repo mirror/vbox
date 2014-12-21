@@ -456,6 +456,8 @@ void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLC
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
 #if 1
+    // @todo galitsyn: NSOpenGLPFAWindow was deprecated starting from OSX 10.9.
+    // Consider to remove it and check if it's harmless.
     NSOpenGLPixelFormatAttribute attribs[] =
     {
         NSOpenGLPFAWindow,

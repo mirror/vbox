@@ -601,7 +601,7 @@ void stubSetPFA( ContextInfo *ctx, CGLPixelFormatAttribute *attribs, int size, G
     SET_ATTR_V(attribs, i, kCGLPFASamples, 0);
     SET_ATTR_V(attribs, i, kCGLPFADisplayMask, 0);  */
     SET_ATTR(attribs, i, kCGLPFABackingStore);
-    SET_ATTR(attribs, i, kCGLPFAWindow);
+    //SET_ATTR(attribs, i, kCGLPFAWindow); // kCGLPFAWindow deprecated starting from OSX 10.7
     SET_ATTR_V(attribs, i, kCGLPFADisplayMask, ctx->disp_mask);
 
     SET_ATTR(attribs, i, 0);
