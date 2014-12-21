@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___cr_blitter_h__
-#define ___cr_blitter_h__
+#ifndef ___cr_blitter_h
+#define ___cr_blitter_h
 
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
