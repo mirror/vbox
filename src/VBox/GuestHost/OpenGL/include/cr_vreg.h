@@ -29,6 +29,7 @@
 #ifndef IN_RING0
 # define VBOXVREGDECL(_type) DECLEXPORT(_type)
 #else
+/** @todo r=bird: Using RTDECL is just SOO wrong!   */
 # define VBOXVREGDECL(_type) RTDECL(_type)
 #endif
 
