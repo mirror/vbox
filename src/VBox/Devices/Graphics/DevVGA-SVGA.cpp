@@ -1,8 +1,17 @@
+/* $Id$ */
 /** @file
- * VMWare SVGA device
+ * VMWare SVGA device.
+ *
+ * Logging levels guidelines for this and related files:
+ *  - Log() for normal bits.
+ *  - LogFlow() for more info.
+ *  - Log2 for hex dump of cursor data.
+ *  - Log3 for hex dump of shader code.
+ *  - Log4 for hex dumps of 3D data.
  */
+
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2127,7 +2136,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 pCursorCopy = (uint8_t *)RTMemAlloc(cbCursorShape);
                 AssertBreak(pCursorCopy);
 
-                LogFlow(("Cursor data:\n%.*Rhxd\n", pCursor->width * pCursor->height * sizeof(uint32_t), pCursor+1));
+                Log2(("Cursor data:\n%.*Rhxd\n", pCursor->width * pCursor->height * sizeof(uint32_t), pCursor+1));
 
                 /* Transparency is defined by the alpha bytes, so make the whole bitmap visible. */
                 memset(pCursorCopy, 0xff, cbAndMask);

@@ -2369,7 +2369,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                                     pBoxes[i].w * pSurface->cbBlock,
                                     pBoxes[i].d * pBoxes[i].h);
 
-            LogFlow(("first line:\n%.*Rhxd\n", pMipLevel->cbSurfacePitch, pMipLevel->pSurfaceData));
+            Log4(("first line:\n%.*Rhxd\n", pMipLevel->cbSurfacePitch, pMipLevel->pSurfaceData));
 
             AssertRC(rc);
         }
@@ -2506,7 +2506,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                                        pBoxes[i].h);
                 AssertRC(rc);
 
-                LogFlow(("first line:\n%.*Rhxd\n", pBoxes[i].w * pSurface->cbBlock, LockedRect.pBits));
+                Log4(("first line:\n%.*Rhxd\n", pBoxes[i].w * pSurface->cbBlock, LockedRect.pBits));
 
                 if (fTexture)
                 {
@@ -2578,7 +2578,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                                        pBoxes[i].h);
                 AssertRC(rc);
 
-                LogFlow(("first line:\n%.*Rhxd\n", cbSrcPitch, pData));
+                Log4(("first line:\n%.*Rhxd\n", cbSrcPitch, pData));
 
                 if (fVertex)
                     hr = pSurface->u.pVertexBuffer->Unlock();
@@ -5694,7 +5694,7 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dShaderDefine %x shid=%x type=%s cbData=%x\n", cid, shid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", cbData));
-    LogFlow(("shader code:\n%.*Rhxd\n", cbData, pShaderData));
+    Log3(("shader code:\n%.*Rhxd\n", cbData, pShaderData));
 
     if (    cid >= pState->cContexts
         ||  pState->paContext[cid].id != cid)
