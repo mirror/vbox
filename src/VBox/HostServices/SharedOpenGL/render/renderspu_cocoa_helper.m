@@ -2406,12 +2406,11 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
 
     NSOpenGLPixelFormatAttribute attribs[24] =
     {
-        NSOpenGLPFAWindow,
         NSOpenGLPFAAccelerated,
         NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24
     };
 
-    int i = 4;
+    int i = 3;
 
     if (fVisParams & CR_ALPHA_BIT)
     {

@@ -114,7 +114,6 @@ bool RTCALL VBoxOglIs3DAccelerationSupported(void)
         (CGLPixelFormatAttribute)cglDisplayMask,
         kCGLPFAAccelerated,
         kCGLPFADoubleBuffer,
-        kCGLPFAWindow,
         VBoxOglIsOfflineRenderingAppropriate() ? kCGLPFAAllowOfflineRenderers : (CGLPixelFormatAttribute)NULL,
         (CGLPixelFormatAttribute)NULL
     };
