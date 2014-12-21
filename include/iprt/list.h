@@ -53,6 +53,8 @@ typedef struct RTLISTNODE
 } RTLISTNODE;
 /** Pointer to a list node. */
 typedef RTLISTNODE *PRTLISTNODE;
+/** Pointer to a const list node. */
+typedef RTLISTNODE const *PCRTLISTNODE;
 /** Pointer to a list node pointer. */
 typedef PRTLISTNODE *PPRTLISTNODE;
 
@@ -64,6 +66,8 @@ typedef PRTLISTNODE *PPRTLISTNODE;
 typedef RTLISTNODE RTLISTANCHOR;
 /** Pointer to a doubly linked list anchor. */
 typedef RTLISTANCHOR *PRTLISTANCHOR;
+/** Pointer to a const doubly linked list anchor. */
+typedef RTLISTANCHOR const *PCRTLISTANCHOR;
 
 
 /**
