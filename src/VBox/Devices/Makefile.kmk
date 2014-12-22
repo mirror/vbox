@@ -1388,8 +1388,10 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	$(filter-out -pedantic -fno-common,$(TEMPLATE_VBOXR3_CXXFLAGS))
  TEMPLATE_VBoxSVGA3D_CFLAGS.darwin  = \
  	$(filter-out -fno-common,$(TEMPLATE_VBOXR3_CFLAGS.darwin))
+ TEMPLATE_VBoxSVGA3D_OBJCFLAGS = \
+ 	$(filter-out -pedantic,$(TEMPLATE_VBOXR3_OBJCFLAGS))
  TEMPLATE_VBoxSVGA3D_LDFLAGS.darwin = $(TEMPLATE_VBOXR3_LDFLAGS.darwin) \
- 	-framework AppKit -framework OpenGL
+ 	-framework AppKit -framework OpenGL -framework IOKit
 
  #
  # The shader library used by the SVGA3D implementation.
@@ -1415,6 +1417,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	VBOX_USING_WINDDK_W7_OR_LATER \
  	VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT \
  	IN_vmsvgashader_STATIC \
+ 	IN_VMSVGA3D \
  	VBOX_WINE_WITH_IPRT
  if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
   VBoxSVGA3D_DEFS       += WINE_NO_DEBUG_MSGS
@@ -1423,7 +1426,8 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  VBoxSVGA3D_DEFS.amd64  += __x86_64__
  VBoxSVGA3D_DEFS.win    += \
  	USE_WIN32_OPENGL \
- 	VBOX_WINE_WITHOUT_LIBWINE
+ 	VBOX_WINE_WITHOUT_LIBWINE \
+
  # WINE relies on a gcc 4.4 feature but we have 4.2 on Darwin
  VBoxSVGA3D_DEFS.darwin += \
  	__builtin_ms_va_list=va_list \
@@ -1437,6 +1441,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  VBoxSVGA3D_INCS.linux  := \
  	Graphics/shaderlib/wine/include
  VBoxSVGA3D_INCS.darwin := \
+ 	Graphics/ \
  	Graphics/shaderlib/wine/include
  VBoxSVGA3D_SOURCES     := \
  	Graphics/shaderlib/glsl_shader.c \
@@ -1448,8 +1453,17 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	Graphics/shaderlib/stateblock.c \
  	Graphics/shaderlib/directx.c \
  	Graphics/shaderlib/libWineStub/debug.c
- VBoxSVGA3D_SOURCES.darwin  += \
+ if 1
+ VBoxSVGA3D_SOURCES.darwin += \
  	Graphics/DevVGA-SVGA3d-cocoa.m
+ else
+ VBoxSVGA3D_SOURCES.darwin += \
+ 	../HostServices/SharedOpenGL/render/renderspu_cocoa_helper.m \
+ 	../GuestHost/OpenGL/util/vreg.cpp \
+ 	../GuestHost/OpenGL/util/blitter.cpp \
+ 	../GuestHost/OpenGL/util/compositor.cpp \
+ 	../HostServices/SharedOpenGL/OpenGLTest/OpenGLTestDarwin.cpp
+ endif
  VBoxSVGA3D_LIBS        = \
  	$(LIB_RUNTIME)
  VBoxSVGA3D_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
