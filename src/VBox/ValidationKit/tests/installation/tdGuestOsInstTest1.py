@@ -76,7 +76,7 @@ class InstallTestVm(vboxtestvms.TestVm):
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, sHdCtrlNm, cGbHdd, fFlags):
         vboxtestvms.TestVm.__init__(self, oSet, sVmName, sKind = sKind, sHddControllerType = sHdCtrlNm,
-                                    fRandomPvPMode = (fFlags & self.kfNoWin81Paravirt) != 0);
+                                    fRandomPvPMode = (fFlags & self.kfNoWin81Paravirt) == 0);
         self.sDvdImage    = os.path.join(self.ksIsoPathBase, sInstallIso);
         self.cGbHdd       = cGbHdd;
         self.fInstVmFlags = fFlags;
