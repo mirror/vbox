@@ -23,18 +23,27 @@
 
 RT_C_DECLS_BEGIN
 
+#ifndef ___renderspu_cocoa_helper_h
 ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSOpenGLContext);
+#endif
 
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pShareCtx);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtrx);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaDestroyView(NativeNSViewRef pView);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
-__attribute__ ((visibility("default"))) void vmsvga3dCocoaSwapBuffers(NativeNSOpenGLContextRef pCtx);
+#ifdef IN_VMSVGA3D
+# define VMSVGA3D_DECL(type)  DECLEXPORT(type)
+#else
+# define VMSVGA3D_DECL(type)  DECLIMPORT(type)
+#endif
+
+VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx);
+VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx);
+VMSVGA3D_DECL(void) vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView);
+VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyView(NativeNSViewRef pView);
+VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
+VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h);
+VMSVGA3D_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+VMSVGA3D_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
 
 RT_C_DECLS_END
 
 #endif /* !__DevVGA_SVGA3d_cocoa_h */
+
