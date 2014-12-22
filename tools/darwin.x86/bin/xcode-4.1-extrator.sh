@@ -32,6 +32,9 @@ MY_DARWIN_DIR=`dirname "${MY_DARWIN_DIR}"`
 # Constants.
 #
 MY_PKGS="gcc4.2.pkg llvm-gcc4.2.pkg DeveloperToolsCLI.pkg xcrun.pkg JavaSDK.pkg MacOSX10.6.pkg MacOSX10.7.pkg"
+MY_LAST_PKG="MacOSX10.7.pkg"
+MY_PKGS="clang.pkg"
+MY_LAST_PKG="clang.pkg"
 declare -a MY_FULL_PKGS
 for i in $MY_PKGS;  
 do 
@@ -135,9 +138,9 @@ if [ ! -f "${MY_TMP_DIR}/x/MainPayload.tar" ]; then
 fi
 
 #
-# Extract the sub-packages from MainPayload.tar. Make sure MacOSX10.7.pkg is the last.
+# Extract the sub-packages from MainPayload.tar. 
 #
-if [ ! -f "${MY_TMP_DIR}/x/MacOSX10.7.pkg" ]; then
+if [ ! -f "${MY_TMP_DIR}/x/${MY_LAST_PKG}" ]; then
     echo "info: Extracting packages from 'MainPayload.tar'..."
     if ! tar xvf "${MY_TMP_DIR}/x/MainPayload.tar" -C "${MY_TMP_DIR}/x" "${MY_FULL_PKGS[@]}"; then 
         echo "error: Failure extracting sub-packages from MainPayload.tar (see above)." 1>&2;
