@@ -21,8 +21,13 @@
 #include <iprt/cdefs.h>
 #include <VBox/VBoxCocoa.h>
 #include <OpenGL/OpenGL.h>
-#include <cr_vreg.h>
-#include <cr_compositor.h>
+#ifdef IN_VMSVGA3D
+# include "../../../GuestHost/OpenGL/include/cr_vreg.h"
+# include "../../../GuestHost/OpenGL/include/cr_compositor.h"
+#else
+# include <cr_vreg.h>
+# include <cr_compositor.h>
+#endif
 
 
 RT_C_DECLS_BEGIN

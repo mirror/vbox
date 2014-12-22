@@ -1,10 +1,10 @@
 /* $Id$ */
-
 /** @file
  * Blitter API implementation
  */
+
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,19 +14,35 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include "cr_blitter.h"
-#include "cr_spu.h"
-#include "chromium.h"
-#include "cr_error.h"
-#include "cr_net.h"
-#include "cr_rand.h"
-#include "cr_mem.h"
-#include "cr_string.h"
-#include "cr_bmpscale.h"
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#ifdef IN_VMSVGA3D
+# include <OpenGL/OpenGL.h>
+# include "../include/cr_blitter.h"
+# include <iprt/assert.h>
+# define WARN       AssertMsgFailed
+# define CRASSERT   Assert
+DECLINLINE(void) crWarning(const char *format, ... ) {}
+#else
+# include "cr_blitter.h"
+# include "cr_spu.h"
+# include "chromium.h"
+# include "cr_error.h"
+# include "cr_net.h"
+# include "cr_rand.h"
+# include "cr_mem.h"
+# include "cr_string.h"
+# include "cr_bmpscale.h"
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/mem.h>
+
+
 
 static void crMClrFillMem(uint32_t *pu32Dst, int32_t cbDstPitch, uint32_t width, uint32_t height, uint32_t u32Color)
 {
@@ -144,6 +160,8 @@ void CrMBltImg(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, uint32_t cRects,
     }
 }
 
+#ifndef IN_VMSVGA3D
+
 void CrMBltImgRectScaled(const CR_BLITTER_IMG *pSrc, const RTPOINT *pPos, bool fSrcInvert, const RTRECT *pCopyRect, float strX, float strY, CR_BLITTER_IMG *pDst)
 {
     RTPOINT UnscaledPos;
@@ -258,25 +276,51 @@ void CrMBltImgScaled(const CR_BLITTER_IMG *pSrc, const RTRECTSIZE *pSrcRectSize,
     }
 }
 
-/* @param pCtxBase      - contains the blitter context info. Its value is treated differently depending on the fCreateNewCtx value
- * @param fCreateNewCtx - if true  - the pCtxBase must NOT be NULL. its visualBits is used as a visual bits info for the new context,
- *                                   its id field is used to specified the shared context id to be used for blitter context.
- *                                   The id can be null to specify no shared context is needed
- *                        if false - if pCtxBase is NOT null AND its id field is NOT null -
- *                                     specified the blitter context to be used
- *                                     blitter treats it as if it has default ogl state.
- *                                   otherwise -
- *                                     the blitter works in a "no-context" mode, i.e. a caller is responsible
- *                                     to making a proper context current before calling the blitter.
- *                                     Note that BltEnter/Leave MUST still be called, but the proper context
- *                                     must be set before doing BltEnter, and ResoreContext info is ignored in that case.
- *                                     Also note that blitter caches the current window info, and assumes the current context's values are preserved
- *                                     wrt that window before the calls, so if one uses different contexts for one blitter,
- *                                     the blitter current window values must be explicitly reset by doing CrBltMuralSetCurrentInfo(pBlitter, NULL)
- * @param fForceDrawBlt - if true  - forces the blitter to always use glDrawXxx-based blits even if GL_EXT_framebuffer_blit.
- *                                   This is needed because BlitFramebufferEXT is known to be often buggy, and glDrawXxx-based blits appear to be more reliable
+#endif /* !IN_VMSVGA3D */
+
+
+/**
+ *
+ * @param   pBlitter        The blitter to initialize.
+ * @param   pCtxBase        Contains the blitter context info. Its value is
+ *                          treated differently depending on the fCreateNewCtx
+ *                          value.
+ * @param   fCreateNewCtx   If true, then @a pCtxBase must NOT be NULL. Its
+ *                          visualBits is used as a visual bits info for the new
+ *                          context, its id field is used to specified the
+ *                          shared context id to be used for blitter context.
+ *                          The id can be null to specify no shared context is
+ *                          needed
+ *
+ *                          If false and @a pCtxBase is NOT null AND its id
+ *                          field is NOT null, then specified the blitter
+ *                          context to be used blitter treats it as if it has
+ *                          default ogl state.
+ *
+ *                          Otherwise, the blitter works in a "no-context" mode,
+ *                          i.e. the§ caller is responsible for making a proper
+ *                          context current before calling the blitter. Note
+ *                          that BltEnter/Leave MUST still be called, but the
+ *                          proper context must be set before doing BltEnter,
+ *                          and ResoreContext info is ignored in that case. Also
+ *                          note that the blitter caches the current window
+ *                          info, and assumes the current context's values are
+ *                          preserved wrt that window before the calls, so if
+ *                          one uses different contexts for one blitter, the
+ *                          blitter current window values must be explicitly
+ *                          reset by doing CrBltMuralSetCurrentInfo(pBlitter,
+ *                          NULL).
+ * @param   fForceDrawBlt   If true this forces the blitter to always use
+ *                          glDrawXxx-based blits even if
+ *                          GL_EXT_framebuffer_blit.  This is needed because
+ *                          BlitFramebufferEXT is often known to be buggy, and
+ *                          glDrawXxx-based blits appear to be more reliable.
+ * @param   pShaders
+ * @param   pDispatch
  */
-VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, const CR_GLSL_CACHE *pShaders, SPUDispatchTable *pDispatch)
+VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase,
+                               bool fCreateNewCtx, bool fForceDrawBlt, const CR_GLSL_CACHE *pShaders,
+                               SPUDispatchTable *pDispatch)
 {
     if (pCtxBase && pCtxBase->Base.id < 0)
     {
@@ -290,7 +334,7 @@ VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *p
         return VERR_INVALID_PARAMETER;
     }
 
-    memset(pBlitter, 0, sizeof (*pBlitter));
+    RT_ZERO(*pBlitter);
 
     pBlitter->pDispatch = pDispatch;
     if (pCtxBase)
@@ -300,10 +344,15 @@ VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *p
 
     if (fCreateNewCtx)
     {
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+        pBlitter->CtxInfo.Base.id = 0;
+#else
         pBlitter->CtxInfo.Base.id = pDispatch->CreateContext("", pCtxBase->Base.visualBits, pCtxBase->Base.id);
+#endif
         if (!pBlitter->CtxInfo.Base.id)
         {
-            memset(pBlitter, 0, sizeof (*pBlitter));
+            RT_ZERO(*pBlitter);
             crWarning("CreateContext failed!");
             return VERR_GENERAL_FAILURE;
         }
@@ -351,8 +400,12 @@ VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter)
 
 void CrBltTerm(PCR_BLITTER pBlitter)
 {
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
     if (pBlitter->Flags.CtxCreated)
         pBlitter->pDispatch->DestroyContext(pBlitter->CtxInfo.Base.id);
+#endif
     memset(pBlitter, 0, sizeof (*pBlitter));
 }
 
@@ -380,7 +433,8 @@ int CrBltMuralSetCurrentInfo(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMur
 
     if (!CrBltIsEntered(pBlitter))
         return VINF_SUCCESS;
-    else if (!pBlitter->CtxInfo.Base.id)
+
+    if (!pBlitter->CtxInfo.Base.id)
     {
         WARN(("setting current mural for entered no-context blitter"));
         return VERR_INVALID_STATE;
@@ -388,12 +442,19 @@ int CrBltMuralSetCurrentInfo(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMur
 
     WARN(("changing mural for entered blitter, is is somewhat expected?"));
 
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
     pBlitter->pDispatch->Flush();
 
     pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
+#endif
 
     return VINF_SUCCESS;
 }
+
+
+#ifndef IN_VMSVGA3D
 
 static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
@@ -597,7 +658,7 @@ static GLfloat* crBltVtRectsITNormalized(const RTRECT *paRects, uint32_t cRects,
     return pBuff;
 }
 
-static void* crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
+static void *crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
 {
     if (pBuffer->cbBuffer < cbBuffer)
     {
@@ -623,27 +684,41 @@ static void* crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
     return pBuffer->pvBuffer;
 }
 
+#endif /* !IN_VMSVGA3D */
+
+
 static void crBltCheckSetupViewport(PCR_BLITTER pBlitter, const RTRECTSIZE *pDstSize, bool fFBODraw)
 {
     bool fUpdateViewport = pBlitter->Flags.CurrentMuralChanged;
-    if (pBlitter->CurrentSetSize.cx != pDstSize->cx
-            || pBlitter->CurrentSetSize.cy != pDstSize->cy)
+    if (   pBlitter->CurrentSetSize.cx != pDstSize->cx
+        || pBlitter->CurrentSetSize.cy != pDstSize->cy)
     {
         pBlitter->CurrentSetSize = *pDstSize;
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->MatrixMode(GL_PROJECTION);
         pBlitter->pDispatch->LoadIdentity();
         pBlitter->pDispatch->Ortho(0, pDstSize->cx, 0, pDstSize->cy, -1, 1);
+#endif
         fUpdateViewport = true;
     }
 
     if (fUpdateViewport)
     {
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->Viewport(0, 0, pBlitter->CurrentSetSize.cx, pBlitter->CurrentSetSize.cy);
+#endif
         pBlitter->Flags.CurrentMuralChanged = 0;
     }
 
     pBlitter->Flags.LastWasFBODraw = fFBODraw;
 }
+
+
+#ifndef IN_VMSVGA3D
 
 static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
@@ -776,6 +851,9 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
     return VINF_SUCCESS;
 }
 
+#endif /* !IN_VMSVGA3D */
+
+
 void CrBltLeave(PCR_BLITTER pBlitter)
 {
     if (!pBlitter->cEnters)
@@ -787,6 +865,9 @@ void CrBltLeave(PCR_BLITTER pBlitter)
     if (--pBlitter->cEnters)
         return;
 
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
     if (pBlitter->Flags.SupportsFBO)
     {
         pBlitter->pDispatch->BindFramebufferEXT(GL_FRAMEBUFFER, 0);
@@ -798,6 +879,7 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 
     if (pBlitter->CtxInfo.Base.id)
         pBlitter->pDispatch->MakeCurrent(0, 0, 0);
+#endif
 }
 
 int CrBltEnter(PCR_BLITTER pBlitter)
@@ -813,13 +895,22 @@ int CrBltEnter(PCR_BLITTER pBlitter)
 
     if (pBlitter->CurrentMural.Base.id) /* <- pBlitter->CurrentMural.Base.id can be null if the blitter is in a "no-context" mode (see comments to BltInit for detail)*/
     {
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
+#endif
     }
 
     if (pBlitter->Flags.Initialized)
         return VINF_SUCCESS;
 
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+    int rc = VINF_SUCCESS;
+#else
     int rc = crBltInitOnMakeCurent(pBlitter);
+#endif
     if (RT_SUCCESS(rc))
     {
         pBlitter->Flags.Initialized = 1;
@@ -831,8 +922,12 @@ int CrBltEnter(PCR_BLITTER pBlitter)
     return rc;
 }
 
+
 static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const RTRECTSIZE *pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
     pBlitter->pDispatch->DrawBuffer(enmDstBuff);
 
     crBltCheckSetupViewport(pBlitter, pDstSize, enmDstBuff == GL_DRAW_FRAMEBUFFER);
@@ -841,10 +936,9 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, co
         pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
     else
     {
-        int rc = pBlitter->Flags.ShadersGloal ?
-                CrGlslProgUseNoAlpha(pBlitter->pGlslCache, pSrc->target)
-                :
-                CrGlslProgUseGenNoAlpha(&pBlitter->LocalGlslCache, pSrc->target);
+        int rc = pBlitter->Flags.ShadersGloal
+               ? CrGlslProgUseNoAlpha(pBlitter->pGlslCache, pSrc->target)
+               : CrGlslProgUseGenNoAlpha(&pBlitter->LocalGlslCache, pSrc->target);
 
         if (!RT_SUCCESS(rc))
         {
@@ -861,6 +955,7 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, co
 
         CrGlslProgClear(pBlitter->pGlslCache);
     }
+#endif
 }
 
 void CrBltCheckUpdateViewport(PCR_BLITTER pBlitter)
@@ -879,10 +974,17 @@ void CrBltBlitTexMural(PCR_BLITTER pBlitter, bool fBb, const VBOXVR_TEXTURE *pSr
 
     RTRECTSIZE DstSize = {pBlitter->CurrentMural.width, pBlitter->CurrentMural.height};
 
+#ifdef IN_VMSVGA3D
+    /** @todo IN_VMSVGA3D */
+#else
     pBlitter->pDispatch->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+#endif
 
     crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, fBb ? GL_BACK : GL_FRONT, &DstSize, paDstRects, cRects, fFlags);
 }
+
+
+#ifndef IN_VMSVGA3D
 
 void CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, const VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
 {
@@ -1321,6 +1423,8 @@ VBOXBLITTERDECL(int) CrGlslProgUseGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTe
     return VINF_SUCCESS;
 }
 
+#endif /* !IN_VMSVGA3D */
+
 VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(const CR_GLSL_CACHE *pCache)
 {
     return pCache->uNoAlpha2DProg || pCache->uNoAlpha2DRectProg;
@@ -1330,13 +1434,21 @@ VBOXBLITTERDECL(void) CrGlslCleanup(CR_GLSL_CACHE *pCache)
 {
     if (pCache->uNoAlpha2DProg)
     {
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pCache->pDispatch->DeleteProgram(pCache->uNoAlpha2DProg);
+#endif
         pCache->uNoAlpha2DProg = 0;
     }
 
     if (pCache->uNoAlpha2DRectProg)
     {
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pCache->pDispatch->DeleteProgram(pCache->uNoAlpha2DRectProg);
+#endif
         pCache->uNoAlpha2DRectProg = 0;
     }
 }
@@ -1351,6 +1463,7 @@ VBOXBLITTERDECL(void) CrGlslTerm(CR_GLSL_CACHE *pCache)
     memset(pCache, 0, sizeof (*pCache));
 }
 
+#ifndef IN_VMSVGA3D
 
 /*TdBlt*/
 static void crTdBltCheckPBO(PCR_TEXDATA pTex)
@@ -1417,6 +1530,9 @@ int crTdBltCheckInvertTex(PCR_TEXDATA pTex)
     return VINF_SUCCESS;
 }
 
+#endif /* !IN_VMSVGA3D */
+
+
 void crTdBltImgRelease(PCR_TEXDATA pTex)
 {
     pTex->Flags.DataValid = 0;
@@ -1440,9 +1556,13 @@ void crTdBltImgFree(PCR_TEXDATA pTex)
         PCR_BLITTER pBlitter = pTex->pBlitter;
 
         Assert(CrBltIsEntered(pBlitter));
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pTex->idPBO);
         pBlitter->pDispatch->UnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);
         pBlitter->pDispatch->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+#endif
     }
     else
     {
@@ -1452,6 +1572,9 @@ void crTdBltImgFree(PCR_TEXDATA pTex)
 
     pTex->Img.pvData = NULL;
 }
+
+
+#ifndef IN_VMSVGA3D
 
 int crTdBltImgAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted)
 {
@@ -1519,6 +1642,9 @@ int crTdBltImgAcquire(PCR_TEXDATA pTex, GLenum enmFormat, bool fInverted)
     pTex->Flags.DataInverted = fInverted;
     return VINF_SUCCESS;
 }
+
+#endif /* !IN_VMSVGA3D */
+
 
 /* release the texture data, the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataInvalidateNe or CrTdBltDataCleanup */
 VBOXBLITTERDECL(int) CrTdBltDataRelease(PCR_TEXDATA pTex)
@@ -1619,14 +1745,22 @@ static void crTdBltDataCleanup(PCR_TEXDATA pTex)
     if (pTex->idPBO)
     {
         Assert(CrBltIsEntered(pBlitter));
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->DeleteBuffersARB(1, &pTex->idPBO);
+#endif
         pTex->idPBO = 0;
     }
 
     if (pTex->idInvertTex)
     {
         Assert(CrBltIsEntered(pBlitter));
+#ifdef IN_VMSVGA3D
+        /** @todo IN_VMSVGA3D */
+#else
         pBlitter->pDispatch->DeleteTextures(1, &pTex->idInvertTex);
+#endif
         pTex->idInvertTex = 0;
     }
 
@@ -1669,6 +1803,9 @@ VBOXBLITTERDECL(int) CrTdBltDataCleanupNe(PCR_TEXDATA pTex)
 
     return VINF_SUCCESS;
 }
+
+
+#ifndef IN_VMSVGA3D
 
 /* acquire the texture data, returns the cached data in case it is cached.
  * the data remains cached in the CR_TEXDATA object until it is discarded with CrTdBltDataFree or CrTdBltDataCleanup.
@@ -1980,3 +2117,6 @@ VBOXBLITTERDECL(void) CrTdBltScaleCacheMoveTo(PCR_TEXDATA pTex, PCR_TEXDATA pDst
     pDstTex->pScaledCache = pTex->pScaledCache;
     pTex->pScaledCache = NULL;
 }
+
+#endif /* !IN_VMSVGA3D */
+
