@@ -5265,24 +5265,27 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
                 if (FAILED(rc)) throw rc;
                 LogFunc(("Deleting file %s\n", strLocation.c_str()));
             }
-            ComPtr<IProgress> pProgress2;
-            rc = pMedium->DeleteStorage(pProgress2.asOutParam());
-            if (FAILED(rc)) throw rc;
-            rc = task.pProgress->WaitForAsyncProgressCompletion(pProgress2);
-            if (FAILED(rc)) throw rc;
-            /* Check the result of the asynchronous process. */
-            LONG iRc;
-            rc = pProgress2->COMGETTER(ResultCode)(&iRc);
-            if (FAILED(rc)) throw rc;
-            /* If the thread of the progress object has an error, then
-             * retrieve the error info from there, or it'll be lost. */
-            if (FAILED(iRc))
-                throw setError(ProgressErrorInfo(pProgress2));
+            if (pMedium->i_isMediumFormatFile())
+            {
+                ComPtr<IProgress> pProgress2;
+                rc = pMedium->DeleteStorage(pProgress2.asOutParam());
+                if (FAILED(rc)) throw rc;
+                rc = task.pProgress->WaitForAsyncProgressCompletion(pProgress2);
+                if (FAILED(rc)) throw rc;
+                /* Check the result of the asynchronous process. */
+                LONG iRc;
+                rc = pProgress2->COMGETTER(ResultCode)(&iRc);
+                if (FAILED(rc)) throw rc;
+                /* If the thread of the progress object has an error, then
+                 * retrieve the error info from there, or it'll be lost. */
+                if (FAILED(iRc))
+                    throw setError(ProgressErrorInfo(pProgress2));
+            }
 
             /* Close the medium, deliberately without checking the return
--            * code, and without leaving any trace in the error info, as
--            * a failure here is a very minor issue, which shouldn't happen
--            * as above we even managed to delete the medium. */
+             * code, and without leaving any trace in the error info, as
+             * a failure here is a very minor issue, which shouldn't happen
+             * as above we even managed to delete the medium. */
             {
                 ErrorInfoKeeper eik;
                 pMedium->Close();
