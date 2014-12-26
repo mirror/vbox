@@ -2791,7 +2791,7 @@ ifdef VBOX_SIGNING_MODE
    define VBOX_TEST_SIGN_KEXT
   $1_INSTTYPE.darwin = none
 
-  $1.kext_SOURCES  += $$($1.kext_0_OUTDIR)/Contents/MacOS/$1 \
+  $1.kext_SOURCES  += $$($1.kext_0_OUTDIR)/Contents/MacOS/$1=>MacOS/$1 \
   	$(foreach extfile, $(VBOX_DARWIN_KEXT_SIGN_FILES) \
 	        , $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)=>_CodeSignature/$(extfile))
   $1.kext_SYMLINKS += $(foreach symfile, $(VBOX_DARWIN_KEXT_SIGN_SYMLINKS), $(symfile)=>_CodeSignature/$(symfile))
