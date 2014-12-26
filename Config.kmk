@@ -2729,6 +2729,11 @@ ifdef VBOX_SIGNING_MODE
   endif
 
   VBOX_CODESIGN ?= codesign
+  if 0
+   VBOX_DARWIN_KEXT_SIGN_FILES = CodeDirectory CodeRequirement CodeResources CodeSignature
+  else
+   VBOX_DARWIN_KEXT_SIGN_FILES = CodeResources
+  endif
 
   # The above version with complicated requirements is what Xcode 5.0.1GM suggest for kexts.
   VBOX_SIGN_BUNDLE_FN = $(VBOX_CODESIGN) \
@@ -2759,6 +2764,47 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) -D $(1).codesign \
 	$(if $(2),--identifier "$(2)",)
+
+  ## @def VBOX_TEST_SIGN_KEXT
+  # Adds test signing to a $1.kext target (the plist installer target).
+  #
+  # After both targets has been defined:
+  #    $(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxDrv)
+  #
+  # @param 1   The kext name.  Assumes there is a SYSMODS target of name $1
+  #            as well as an .plist installer by the name of '$1.kext'.
+  # @remarks   Currently assumes only binary + Info.plist in the bundle, no
+  #            other files.  Should that be requirement, add them as a list
+  #            in the 2nd parameter.
+  # @note      This is only for the 'test' signing mode, we skip this in
+  #             'release' signing mode as to not waste time on the build boxes.
+  ifeq ($(VBOX_SIGNING_MODE),test)
+   define VBOX_TEST_SIGN_KEXT
+  $1_INSTTYPE.darwin = none
+
+  $1.kext_SOURCES  += $$($1.kext_0_OUTDIR)/Contents/MacOS/$1 \
+  	$(foreach extfile, $(VBOX_DARWIN_KEXT_SIGN_FILES) \
+	        , $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)=>_CodeSignature/$(extfile))
+  $1.kext_SYMLINKS += $(foreach symfile, $(VBOX_DARWIN_KEXT_SIGN_SYMLINKS), $(symfile)=>_CodeSignature/$(symfile))
+  $1.kext_CLEAN    += \
+  	$(foreach extfile, $(VBOX_DARWIN_KEXT_SIGN_FILES)   , $$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(extfile)) \
+  	$(foreach symfile, $(VBOX_DARWIN_KEXT_SIGN_SYMLINKS), $$($1.kext_0_OUTDIR)/Contents/$(symfile)) \
+	$$($1.kext_0_OUTDIR)/Contents/MacOS/$1 \
+	$$($1.kext_0_OUTDIR)/$1.kext/Contents/_CodeSignature/
+  $1.kext_BLDDIRS  += $$($1.kext_0_OUTDIR)/Contents/MacOS/
+
+  $$$$($1.kext_0_OUTDIR)/Contents/MacOS/$1 \
+  + $(foreach file,$(VBOX_DARWIN_KEXT_SIGN_FILES), $$$$($1.kext_0_OUTDIR)/Contents/_CodeSignature/$(file)): \
+ 		$$$$($1.kext_0_OUTDIR)/Contents/Info.plist $$$$($1_1_TARGET) | $$$$($1.kext_0_OUTDIR)/
+	$(RM) -Rf -- "$$($1.kext_0_OUTDIR)/Contents/_CodeSignature/" "$$($1.kext_0_OUTDIR)/Contents/MacOS/"
+	$(MKDIR) -p -- "$$($1.kext_0_OUTDIR)/Contents/MacOS/"
+	$(INSTALL) -m 644 $$($1_1_TARGET) $$($1.kext_0_OUTDIR)/Contents/MacOS/$1
+	$(call VBOX_SIGN_BUNDLE_FN,$$($1.kext_0_OUTDIR),org.virtualbox.app.kext.$1)
+   endef
+  else
+   VBOX_TEST_SIGN_KEXT =
+  endif
+
 
  else ifeq ($(KBUILD_HOST),solaris)
   #
