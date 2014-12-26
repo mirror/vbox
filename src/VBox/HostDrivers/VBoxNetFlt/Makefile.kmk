@@ -71,12 +71,11 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
 ifeq ($(KBUILD_TARGET),darwin)
  INSTALLS += VBoxNetFlt.kext
  VBoxNetFlt.kext_INST     = $(INST_VBOXNETFLT)Contents/
- VBoxNetFlt.kext_SOURCES  = \
- 	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
- VBoxNetFlt.kext_CLEAN    = \
- 	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
+ VBoxNetFlt.kext_SOURCES  = $(VBoxNetFlt.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxNetFlt.kext_CLEAN    = $(VBoxNetFlt.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxNetFlt.kext_BLDDIRS  = $(VBoxNetFlt.kext_0_OUTDIR)/Contents/
 
-$$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(VBoxNetFlt.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -89,6 +88,8 @@ $$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ \
 		$<
+
+ $(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxNetFlt)
 
  INSTALLS.darwin += Scripts-darwin
  Scripts-darwin_INST = $(INST_DIST)

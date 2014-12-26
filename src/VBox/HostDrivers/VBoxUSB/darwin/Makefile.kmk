@@ -38,10 +38,11 @@ VBoxUSB_SOURCES      := \
 
 INSTALLS += VBoxUSB.kext
 VBoxUSB.kext_INST     = $(INST_VBOXUSB)Contents/
-VBoxUSB.kext_SOURCES  =	$(VBoxUSB.kext_0_OUTDIR)/Info.plist
-VBoxUSB.kext_CLEAN    = $(VBoxUSB.kext_0_OUTDIR)/Info.plist
+VBoxUSB.kext_SOURCES  = $(VBoxUSB.kext_0_OUTDIR)/Contents/Info.plist
+VBoxUSB.kext_CLEAN    = $(VBoxUSB.kext_0_OUTDIR)/Contents/Info.plist
+VBoxUSB.kext_BLDDIRS  = $(VBoxUSB.kext_0_OUTDIR)/Contents/
 
-$$(VBoxUSB.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(VBoxUSB.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxUSB,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -54,6 +55,8 @@ $$(VBoxUSB.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERS
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ \
 		$<
+
+$(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxUSB)
 
 # Common manual loader script.
 INSTALLS += ScriptsUSB

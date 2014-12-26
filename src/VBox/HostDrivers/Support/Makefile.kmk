@@ -611,7 +611,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib
 
- #VBoxDrv_LDFLAGS.darwin    = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+ #VBoxDrv_LDFLAGS.darwin   = -Wl,-sectcreate,__TEXT,__info_plist,$(VBoxDrv.kext_0_OUTDIR)/Info.plist
+ #VBoxDrv_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
  VBoxDrv_LDFLAGS.solaris += -N misc/ctf
  ifdef VBOX_WITH_NATIVE_DTRACE
   VBoxDrv_LDFLAGS.solaris += -N drv/dtrace
@@ -662,10 +663,11 @@ if1of ($(KBUILD_TARGET), darwin)
  # Files necessary to make a darwin kernel extension bundle.
  INSTALLS.darwin += VBoxDrv.kext
  VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
- VBoxDrv.kext_SOURCES  = $(VBoxDrv.kext_0_OUTDIR)/Info.plist
- VBoxDrv.kext_CLEAN    = $(VBoxDrv.kext_0_OUTDIR)/Info.plist
+ VBoxDrv.kext_SOURCES  = $(VBoxDrv.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxDrv.kext_CLEAN    = $(VBoxDrv.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxDrv.kext_BLDDIRS  = $(VBoxDrv.kext_0_OUTDIR)/Contents/
 
-$$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
+ $$(VBoxDrv.kext_0_OUTDIR)/Contents/Info.plist: \
 		$(PATH_SUB_CURRENT)/darwin/Info.plist \
 		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
@@ -680,6 +682,8 @@ $$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ \
 		$<
+
+ $(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxDrv)
 endif
 
 

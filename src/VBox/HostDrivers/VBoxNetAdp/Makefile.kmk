@@ -65,12 +65,11 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
  INSTALLS += VBoxNetAdp.kext
  VBoxNetAdp.kext_INST     = $(INST_VBOXNETADP)Contents/
- VBoxNetAdp.kext_SOURCES  = \
- 	$(VBoxNetAdp.kext_0_OUTDIR)/Info.plist
- VBoxNetAdp.kext_CLEAN    = \
- 	$(VBoxNetAdp.kext_0_OUTDIR)/Info.plist
+ VBoxNetAdp.kext_SOURCES  = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxNetAdp.kext_CLEAN    = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxNetAdp.kext_BLDDIRS  = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/
 
-$$(VBoxNetAdp.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
+$$(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp,$@,$<)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -83,6 +82,8 @@ $$(VBoxNetAdp.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ \
 		$<
+
+ $(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxNetAdp)
 
  INSTALLS.darwin += Scripts-darwin-adp
  Scripts-darwin-adp_INST = $(INST_DIST)
