@@ -263,13 +263,15 @@ void CidetCoreInitializeCtxTemplate(PCIDETCORE pThis)
     i = RT_ELEMENTS(pThis->InTemplateCtx.aSRegs);
     while (i-- > 0)
         pThis->InTemplateCtx.aSRegs[i] = 0; /* Front end sets these afterwards. */
+    pThis->InTemplateCtx.cr2  = 0;
+#ifndef CIDET_REDUCED_CTX
     pThis->InTemplateCtx.tr   = 0;
     pThis->InTemplateCtx.ldtr = 0;
     pThis->InTemplateCtx.cr0  = 0;
-    pThis->InTemplateCtx.cr2  = 0;
     pThis->InTemplateCtx.cr3  = 0;
     pThis->InTemplateCtx.cr4  = 0;
     pThis->InTemplateCtx.cr8  = 0;
+#endif
     pThis->InTemplateCtx.fIgnoredRFlags = 0;
     pThis->InTemplateCtx.uXcpt          = UINT32_MAX;
     pThis->InTemplateCtx.uErr           = UINT64_MAX;
@@ -425,6 +427,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmReg(PCIDETCORE pThis, uint8_t iReg
         {
             /* The AMD64 low variants: spl, bpl, sil and dil. */
             pThis->fRex = true;
+            pThis->fHasStackRegInMrmReg = iReg == X86_GREG_xSP;
 
             /* Check for collisions. */
             if (pThis->idxMrmRmOp < RT_ELEMENTS(pThis->aOperands))
@@ -455,6 +458,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmReg(PCIDETCORE pThis, uint8_t iReg
             pThis->fNoRexPrefixMrmReg       = true;
             pThis->fNoRexPrefix             = true;
             pThis->fHasHighByteRegInMrmReg  = true;
+            pThis->fHasStackRegInMrmReg     = false;
             pThis->aOperands[pThis->idxMrmRegOp].fIsHighByteRegister = true;
             Assert(!pThis->fRexW); Assert(!pThis->fRexX); Assert(!pThis->fRexB);
 
@@ -493,6 +497,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmReg(PCIDETCORE pThis, uint8_t iReg
     pThis->bModRm &= ~X86_MODRM_REG_MASK;
     pThis->bModRm |= (iReg & X86_MODRM_REG_SMASK) << X86_MODRM_REG_SHIFT;
     pThis->fRexR   = iReg >= 8;
+    pThis->fHasStackRegInMrmReg = iReg == X86_GREG_xSP && CIDET_OF_K_IS_GPR(pThis->fMrmRegOp);
 
     /*
      * Register collision detection.
@@ -672,7 +677,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_16bit(PCIDETCORE pThis, uint
             }
             pThis->bModRm &= ~X86_MODRM_RM_MASK;
             pThis->bModRm |= iRm;
-            if (CIDET_OF_K_IS_GPR(pThis->fMrmRmOp))
+            if (CIDET_OF_K_IS_GPR(pThis->fMrmRegOp))
             {
                 iReg -= pThis->fHasHighByteRegInMrmReg * 4;
                 pThis->fHasRegCollisionMemBase = iReg == pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg;
@@ -928,10 +933,9 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
             pThis->bModRm |= iRm & X86_MODRM_RM_MASK;
             pThis->fRexB   = iRm >= 8;
             pThis->fRexX   = false;
-            if (CIDET_OF_K_IS_GPR(pThis->fMrmRmOp))
+            if (CIDET_OF_K_IS_GPR(pThis->fMrmRegOp))
             {
-                if (pThis->fHasHighByteRegInMrmReg)
-                    iReg -= 4;
+                iReg -= pThis->fHasHighByteRegInMrmReg * 4;
                 pThis->fHasRegCollisionMemBase = iReg == pThis->aOperands[pThis->idxMrmRmOp].iMemBaseReg;
                 pThis->fHasRegCollisionMemIndex = iReg == pThis->aOperands[pThis->idxMrmRmOp].iMemIndexReg;
                 pThis->fHasRegCollisionMem = pThis->fHasRegCollisionMemBase || pThis->fHasRegCollisionMemIndex;
@@ -1178,7 +1182,7 @@ static bool cidetCoreSetupNextBaseEncoding_OperandSize(PCIDETCORE pThis)
                     return true;
                 case 1:
                     pThis->fOpSizePrf = false;
-                    if (!pThis->fNoRexPrefix)
+                    if (pThis->fNoRexPrefix)
                         break;
                     pThis->fRexW = true;
                     cidetCoreUpdateOperandSizes(pThis);
@@ -2218,10 +2222,13 @@ bool CidetCoreCheckResults(PCIDETCORE pThis)
     IF_FIELD_DIFFERS_SET_ERROR(aSRegs[X86_SREG_ES],    "%#06x");
     IF_FIELD_DIFFERS_SET_ERROR(aSRegs[X86_SREG_FS],    "%#06x");
     IF_FIELD_DIFFERS_SET_ERROR(aSRegs[X86_SREG_GS],    "%#06x");
+    IF_FIELD_DIFFERS_SET_ERROR(uXcpt,                  "%#04x");
+    IF_FIELD_DIFFERS_SET_ERROR(uErr,                   "%#04llx");
+    IF_FIELD_DIFFERS_SET_ERROR(cr2,                    "%#010llx");
+#ifndef CIDET_REDUCED_CTX
     IF_FIELD_DIFFERS_SET_ERROR(tr,                     "%#06x");
     IF_FIELD_DIFFERS_SET_ERROR(ldtr,                   "%#06x");
     IF_FIELD_DIFFERS_SET_ERROR(cr0,                    "%#010llx");
-    IF_FIELD_DIFFERS_SET_ERROR(cr2,                    "%#010llx");
     IF_FIELD_DIFFERS_SET_ERROR(cr3,                    "%#010llx");
     IF_FIELD_DIFFERS_SET_ERROR(cr4,                    "%#010llx");
     IF_FIELD_DIFFERS_SET_ERROR(cr8,                    "%#010llx");
@@ -2231,10 +2238,9 @@ bool CidetCoreCheckResults(PCIDETCORE pThis)
     IF_FIELD_DIFFERS_SET_ERROR(dr3,                    "%#010llx");
     IF_FIELD_DIFFERS_SET_ERROR(dr6,                    "%#010llx");
     IF_FIELD_DIFFERS_SET_ERROR(dr7,                    "%#010llx");
-    IF_FIELD_DIFFERS_SET_ERROR(uXcpt,                  "%#04x");
-    IF_FIELD_DIFFERS_SET_ERROR(uErr,                   "%#04llx");
+#endif
 
-AssertBreakpoint();
+AssertMsgFailed(("cDiffs=%d\n", cDiffs));
     Assert(cDiffs > 0);
     return cDiffs == 0;
 }

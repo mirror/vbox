@@ -190,7 +190,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
 
                     *pThis->aOperands[0].Expected.pu32 = pEntry->uOut;
                     if (!pThis->aOperands[0].fIsMem)
-                        pThis->aOperands[0].Expected.pu32[0] = 0;
+                        pThis->aOperands[0].Expected.pu32[1] = 0;
                     *pThis->aOperands[1].Expected.pu32 = pEntry->uIn2;
                     pThis->ExpectedCtx.rfl            |= pEntry->fEFlagsOut;
                     break;
@@ -252,17 +252,19 @@ static DECLCALLBACK(int) cidetInOutAdd(PCIDETCORE pThis, bool fInvalid)
 /** First bunch of instructions.  */
 const CIDETINSTR g_aCidetInstructions1[] =
 {
+#if 1
     {
         "add Eb,Gb", cidetInOutAdd,  1, {0x00, 0, 0}, 0, 2,
         {   CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_RM | CIDET_OF_A_RW,
             CIDET_OF_K_GPR | CIDET_OF_Z_BYTE | CIDET_OF_M_REG | CIDET_OF_A_R,
             0, 0 }, CIDET_IF_MODRM
     },
-#if 0
+#endif
+#if 1
     {
-        "add Ev,Gv", cidetInOutAdd,  1, {0x00, 0, 0}, 0, 2,
-        {   CIDET_OF_K_GPR | CIDET_OF_Z_VAR_WDQ | CIDET_OF_M_RM,
-            CIDET_OF_K_GPR | CIDET_OF_Z_VAR_WDQ | CIDET_OF_M_REG,
+        "add Ev,Gv", cidetInOutAdd,  1, {0x01, 0, 0}, 0, 2,
+        {   CIDET_OF_K_GPR | CIDET_OF_Z_VAR_WDQ | CIDET_OF_M_RM | CIDET_OF_A_RW,
+            CIDET_OF_K_GPR | CIDET_OF_Z_VAR_WDQ | CIDET_OF_M_REG | CIDET_OF_A_R,
             0, 0 }, CIDET_IF_MODRM
     },
 #endif

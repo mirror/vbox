@@ -110,8 +110,9 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_x14 * 8], r14
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_x15 * 8], r15
         xor     eax, eax
-        mov     [xCX + CIDETCPUCTX.cr0], rax
         mov     [xCX + CIDETCPUCTX.cr2], rax
+ %ifndef CIDET_REDUCED_CTX
+        mov     [xCX + CIDETCPUCTX.cr0], rax
         mov     [xCX + CIDETCPUCTX.cr3], rax
         mov     [xCX + CIDETCPUCTX.cr4], rax
         mov     [xCX + CIDETCPUCTX.cr8], rax
@@ -121,6 +122,9 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.dr3], rax
         mov     [xCX + CIDETCPUCTX.dr6], rax
         mov     [xCX + CIDETCPUCTX.dr7], rax
+        mov     [xCX + CIDETCPUCTX.tr], ax
+        mov     [xCX + CIDETCPUCTX.ldtr], ax
+ %endif
 %else
         xor     eax, eax
         mov     [xCX + CIDETCPUCTX.rfl + 4], eax
@@ -149,10 +153,11 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_x14 * 8 + 4], eax
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_x15 * 8    ], eax
         mov     [xCX + CIDETCPUCTX.aGRegs + X86_GREG_x15 * 8 + 4], eax
-        mov     [xCX + CIDETCPUCTX.cr0    ], eax
-        mov     [xCX + CIDETCPUCTX.cr0 + 4], eax
         mov     [xCX + CIDETCPUCTX.cr2    ], eax
         mov     [xCX + CIDETCPUCTX.cr2 + 4], eax
+ %ifndef CIDET_REDUCED_CTX
+        mov     [xCX + CIDETCPUCTX.cr0    ], eax
+        mov     [xCX + CIDETCPUCTX.cr0 + 4], eax
         mov     [xCX + CIDETCPUCTX.cr3    ], eax
         mov     [xCX + CIDETCPUCTX.cr3 + 4], eax
         mov     [xCX + CIDETCPUCTX.cr4    ], eax
@@ -171,9 +176,10 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.dr6 + 4], eax
         mov     [xCX + CIDETCPUCTX.dr7    ], eax
         mov     [xCX + CIDETCPUCTX.dr7 + 4], eax
-%endif
         mov     [xCX + CIDETCPUCTX.tr], ax
         mov     [xCX + CIDETCPUCTX.ldtr], ax
+ %endif
+%endif
         dec     xAX
         mov     [xCX + CIDETCPUCTX.uErr], xAX
 %ifdef RT_ARCH_X86
