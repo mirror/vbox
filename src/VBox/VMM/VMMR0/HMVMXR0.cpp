@@ -1147,10 +1147,7 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
         pbMsrBitmap += 0x400;
     }
     else
-    {
-        AssertMsgFailed(("hmR0VmxSetMsrPermission: Invalid MSR %#RX32\n", uMsr));
-        return;
-    }
+        AssertMsgFailedReturnVoid(("hmR0VmxSetMsrPermission: Invalid MSR %#RX32\n", uMsr));
 
     Assert(iBit <= 0x1fff);
     if (enmRead == VMXMSREXIT_INTERCEPT_READ)
@@ -1196,10 +1193,7 @@ static int hmR0VmxGetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, PVMXMSREXITREAD 
         pbMsrBitmap += 0x400;
     }
     else
-    {
-        AssertMsgFailed(("hmR0VmxGetMsrPermission: Invalid MSR %#RX32\n", uMsr));
-        return VERR_NOT_SUPPORTED;
-    }
+        AssertMsgFailedReturn(("hmR0VmxGetMsrPermission: Invalid MSR %#RX32\n", uMsr), VERR_NOT_SUPPORTED);
 
     Assert(iBit <= 0x1fff);
     if (ASMBitTest(pbMsrBitmap, iBit))
@@ -3066,11 +3060,9 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * Host TR base. Verify that TR selector doesn't point past the GDT. Masking off the TI and RPL bits
      * is effectively what the CPU does for "scaling by 8". TI is always 0 and RPL should be too in most cases.
      */
-    if ((uSelTR | X86_SEL_RPL_LDT) > Gdtr.cbGdt)
-    {
-        AssertMsgFailed(("hmR0VmxSaveHostSegmentRegs: TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.cbGdt));
-        return VERR_VMX_INVALID_HOST_STATE;
-    }
+    AssertMsgReturn((uSelTR | X86_SEL_RPL_LDT) <= Gdtr.cbGdt,
+                    ("hmR0VmxSaveHostSegmentRegs: TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.cbGdt),
+                    VERR_VMX_INVALID_HOST_STATE);
 
     PCX86DESCHC pDesc = (PCX86DESCHC)(Gdtr.pGdt + (uSelTR & X86_SEL_MASK));
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -11297,11 +11289,9 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
         case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
         case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
         {
-            if (  (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
-                && VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification) == 0x80)
-            {
-                AssertMsgFailed(("hmR0VmxExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
-            }
+            AssertMsg(   !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+                      || VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification) != 0x80,
+                      ("hmR0VmxExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
 
             RTGCPHYS GCPhys = pMixedCtx->msrApicBase;   /* Always up-to-date, msrApicBase is not part of the VMCS. */
             GCPhys &= PAGE_BASE_GC_MASK;
@@ -11311,7 +11301,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                  VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification)));
 
             VBOXSTRICTRC rc2 = IOMMMIOPhysHandler(pVM, pVCpu,
-                                                  (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW,
+                                                  uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW,
                                                   CPUMCTX2CORE(pMixedCtx), GCPhys);
             rc = VBOXSTRICTRC_VAL(rc2);
             Log4(("ApicAccess rc=%d\n", rc));
