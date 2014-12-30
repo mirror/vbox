@@ -136,6 +136,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
     Assert(pThis->idxMrmRegOp < 2);
     Assert(pThis->idxMrmRmOp  < 2);
     Assert(pThis->idxMrmRmOp != pThis->idxMrmRegOp);
+    AssertCompile(RT_ELEMENTS(pThis->aiInOut) >= 4);
 
     if (!fInvalid)
     {
@@ -148,7 +149,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
             {
                 case 1:
                 {
-                    uint16_t                       idx    = ++pThis->iInOut % pResults->c8Entries;
+                    uint16_t                       idx    = ++pThis->aiInOut[0] % pResults->c8Entries;
                     PCCIDET2IN1OUTWITHFLAGSU8ENTRY pEntry = &pResults->pa8Entries[idx];
                     rc = idx ? VINF_SUCCESS : VINF_EOF;
 
@@ -164,7 +165,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
 
                 case 2:
                 {
-                    uint16_t                        idx    = ++pThis->iInOut % pResults->c16Entries;
+                    uint16_t                        idx    = ++pThis->aiInOut[1] % pResults->c16Entries;
                     PCCIDET2IN1OUTWITHFLAGSU16ENTRY pEntry = &pResults->pa16Entries[idx];
                     rc = idx ? VINF_SUCCESS : VINF_EOF;
 
@@ -180,7 +181,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
 
                 case 4:
                 {
-                    uint16_t                        idx    = ++pThis->iInOut % pResults->c32Entries;
+                    uint16_t                        idx    = ++pThis->aiInOut[2] % pResults->c32Entries;
                     PCCIDET2IN1OUTWITHFLAGSU32ENTRY pEntry = &pResults->pa32Entries[idx];
                     rc = idx ? VINF_SUCCESS : VINF_EOF;
 
@@ -198,7 +199,7 @@ static int CidetGenericIn2Out1WithFlags(PCIDETCORE pThis, bool fInvalid, CIDET2I
 
                 case 8:
                 {
-                    uint16_t                        idx    = ++pThis->iInOut % pResults->c64Entries;
+                    uint16_t                        idx    = ++pThis->aiInOut[3] % pResults->c64Entries;
                     PCCIDET2IN1OUTWITHFLAGSU64ENTRY pEntry = &pResults->pa64Entries[idx];
                     rc = idx ? VINF_SUCCESS : VINF_EOF;
 
@@ -231,18 +232,30 @@ static DECLCALLBACK(int) cidetInOutAdd(PCIDETCORE pThis, bool fInvalid)
     static const CIDET2IN1OUTWITHFLAGSU8ENTRY s_a8Results[] =
     {
         { UINT8_C(0x00), UINT8_C(0x00), 0, UINT8_C(0x00), ZF | PF },
+        { UINT8_C(0xff), UINT8_C(0x01), 0, UINT8_C(0x00), CF | ZF | AF | PF  },
+        { UINT8_C(0x7f), UINT8_C(0x80), 0, UINT8_C(0xff), SF | PF },
+        { UINT8_C(0x01), UINT8_C(0x01), 0, UINT8_C(0x02), 0 },
     };
     static const CIDET2IN1OUTWITHFLAGSU16ENTRY s_a16Results[] =
     {
         { UINT16_C(0x0000), UINT16_C(0x0000), 0, UINT16_C(0x0000), ZF | PF },
+        { UINT16_C(0xfefd), UINT16_C(0x0103), 0, UINT16_C(0x0000), CF | ZF | AF | PF },
+        { UINT16_C(0x8e7d), UINT16_C(0x7182), 0, UINT16_C(0xffff), SF | PF },
+        { UINT16_C(0x0001), UINT16_C(0x0001), 0, UINT16_C(0x0002), 0 },
     };
     static const CIDET2IN1OUTWITHFLAGSU32ENTRY s_a32Results[] =
     {
         { UINT32_C(0x00000000), UINT32_C(0x00000000), 0, UINT32_C(0x00000000), ZF | PF },
+        { UINT32_C(0xfefdfcfb), UINT32_C(0x01020305), 0, UINT32_C(0x00000000), CF | ZF | AF | PF },
+        { UINT32_C(0x8efdfcfb), UINT32_C(0x71020304), 0, UINT32_C(0xffffffff), SF | PF },
+        { UINT32_C(0x00000001), UINT32_C(0x00000001), 0, UINT32_C(0x00000002), 0 },
     };
     static const CIDET2IN1OUTWITHFLAGSU64ENTRY s_a64Results[] =
     {
         { UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000), 0, UINT64_C(0x0000000000000000), ZF | PF },
+        { UINT64_C(0xfefdfcfbfaf9f8f7), UINT64_C(0x0102030405060709), 0, UINT64_C(0x0000000000000000), CF | ZF | AF | PF },
+        { UINT64_C(0x7efdfcfbfaf9f8f7), UINT64_C(0x8102030405060708), 0, UINT64_C(0xffffffffffffffff), SF | PF },
+        { UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000001), 0, UINT64_C(0x0000000000000002), 0 },
     };
     static const CIDET2IN1OUTWITHFLAGS s_Results = CIDET2IN1OUTWITHFLAGS_INITIALIZER(CF | PF | AF | SF | OF);
     return CidetGenericIn2Out1WithFlags(pThis, fInvalid, &s_Results);

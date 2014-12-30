@@ -871,10 +871,10 @@ typedef struct CIDETCORE
      */
     DECLCALLBACKMEMBER(void, pfnFailure)(struct CIDETCORE *pThis, const char *pszFormat, va_list va);
 
-    /** Variable that's incremented each time the FNCIDETSETUPINOUT is called
-     *  for an instruction.  Reset when changing instruction or switching
-     *  between valid and invalid inputs. */
-    uint32_t            iInOut;
+    /** Array of indexes for use by FNCIDETSETUPINOUT.
+     * Reset when changing instruction or switching between valid and invalid
+     * inputs. */
+    uint32_t            aiInOut[4];
 
     /** @name Copyied and extracted instruction information.
      * @{ */
