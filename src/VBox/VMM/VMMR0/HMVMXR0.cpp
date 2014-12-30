@@ -9916,13 +9916,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return VINF_SUCCESS;
-    }
-    if (RT_UNLIKELY(rc == VINF_EM_RESET))
-    {
+        if (rc == VINF_HM_DOUBLE_FAULT)
+            rc = VINF_SUCCESS;
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return rc;
     }
@@ -11264,10 +11261,12 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
-        return VINF_SUCCESS;
-    if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        if (rc == VINF_HM_DOUBLE_FAULT)
+            rc = VINF_SUCCESS;
         return rc;
+    }
 
 #if 0
     /** @todo Investigate if IOMMMIOPhysHandler() requires a lot of state, for now
@@ -11437,10 +11436,12 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
-        return VINF_SUCCESS;
-    if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        if (rc == VINF_HM_DOUBLE_FAULT)
+            rc = VINF_SUCCESS;
         return rc;
+    }
 
     RTGCPHYS GCPhys = 0;
     rc = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
@@ -11492,10 +11493,12 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
-    if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
-        return VINF_SUCCESS;
-    if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        if (rc == VINF_HM_DOUBLE_FAULT)
+            rc = VINF_SUCCESS;
         return rc;
+    }
 
     RTGCPHYS GCPhys = 0;
     rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
