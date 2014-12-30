@@ -1545,7 +1545,8 @@ bool CideCoreSetInstruction(PCIDETCORE pThis, PCCIDETINSTR pInstr)
     /*
      * Reset various things.
      */
-    pThis->iInOut = 0;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aiInOut); i++)
+        pThis->aiInOut[i] = 0;
 
     return true;
 }
