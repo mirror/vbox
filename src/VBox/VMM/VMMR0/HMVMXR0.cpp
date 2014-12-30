@@ -11266,7 +11266,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
         return VINF_SUCCESS;
-    else if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc == VINF_EM_RESET))
         return rc;
 
 #if 0
@@ -11439,7 +11439,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
         return VINF_SUCCESS;
-    else if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc == VINF_EM_RESET))
         return rc;
 
     RTGCPHYS GCPhys = 0;
@@ -11494,7 +11494,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     int rc = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pMixedCtx, pVmxTransient);
     if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT))
         return VINF_SUCCESS;
-    else if (RT_UNLIKELY(rc == VINF_EM_RESET))
+    if (RT_UNLIKELY(rc == VINF_EM_RESET))
         return rc;
 
     RTGCPHYS GCPhys = 0;
