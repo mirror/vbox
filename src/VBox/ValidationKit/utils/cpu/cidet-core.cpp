@@ -271,8 +271,8 @@ void CidetCoreInitializeCtxTemplate(PCIDETCORE pThis)
     pThis->InTemplateCtx.cr4  = 0;
     pThis->InTemplateCtx.cr8  = 0;
     pThis->InTemplateCtx.fIgnoredRFlags = 0;
-    pThis->InTemplateCtx.uXcpt          = 0;
-    pThis->InTemplateCtx.uErr           = 0;
+    pThis->InTemplateCtx.uXcpt          = UINT32_MAX;
+    pThis->InTemplateCtx.uErr           = UINT64_MAX;
     pThis->InTemplateCtx.fTrickyStack   = false;
 }
 
@@ -456,6 +456,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmReg(PCIDETCORE pThis, uint8_t iReg
             pThis->fNoRexPrefix             = true;
             pThis->fHasHighByteRegInMrmReg  = true;
             pThis->aOperands[pThis->idxMrmRegOp].fIsHighByteRegister = true;
+            Assert(!pThis->fRexW); Assert(!pThis->fRexX); Assert(!pThis->fRexB);
 
             /* Check for collisions. */
             if (pThis->idxMrmRmOp < RT_ELEMENTS(pThis->aOperands))
@@ -833,7 +834,7 @@ static bool cidetCoreSetupNextBaseEncoding_MrmRmMod_32bit64bit(PCIDETCORE pThis,
                     pThis->bModRm |= iRm & X86_MODRM_RM_MASK;
                     pThis->fRexB   = false;
                     pThis->fRexX   = false;
-                    if (!pThis->fRexB && !pThis->fRexW && !pThis->fRex)
+                    if (!pThis->fRexR && !pThis->fRexW && !pThis->fRex)
                     {
                         pThis->fNoRexPrefixMrmRm = true;
                         pThis->fNoRexPrefix = true;

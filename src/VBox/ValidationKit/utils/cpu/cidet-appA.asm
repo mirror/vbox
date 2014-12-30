@@ -115,6 +115,12 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.cr3], rax
         mov     [xCX + CIDETCPUCTX.cr4], rax
         mov     [xCX + CIDETCPUCTX.cr8], rax
+        mov     [xCX + CIDETCPUCTX.dr0], rax
+        mov     [xCX + CIDETCPUCTX.dr1], rax
+        mov     [xCX + CIDETCPUCTX.dr2], rax
+        mov     [xCX + CIDETCPUCTX.dr3], rax
+        mov     [xCX + CIDETCPUCTX.dr6], rax
+        mov     [xCX + CIDETCPUCTX.dr7], rax
 %else
         xor     eax, eax
         mov     [xCX + CIDETCPUCTX.rfl + 4], eax
@@ -153,9 +159,27 @@ CidetAppSaveAndRestoreCtx_1:
         mov     [xCX + CIDETCPUCTX.cr4 + 4], eax
         mov     [xCX + CIDETCPUCTX.cr8    ], eax
         mov     [xCX + CIDETCPUCTX.cr8 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr0    ], eax
+        mov     [xCX + CIDETCPUCTX.dr0 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr1    ], eax
+        mov     [xCX + CIDETCPUCTX.dr1 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr2    ], eax
+        mov     [xCX + CIDETCPUCTX.dr2 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr3    ], eax
+        mov     [xCX + CIDETCPUCTX.dr3 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr6    ], eax
+        mov     [xCX + CIDETCPUCTX.dr6 + 4], eax
+        mov     [xCX + CIDETCPUCTX.dr7    ], eax
+        mov     [xCX + CIDETCPUCTX.dr7 + 4], eax
 %endif
         mov     [xCX + CIDETCPUCTX.tr], ax
         mov     [xCX + CIDETCPUCTX.ldtr], ax
+        dec     xAX
+        mov     [xCX + CIDETCPUCTX.uErr], xAX
+%ifdef RT_ARCH_X86
+        mov     [xCX + CIDETCPUCTX.uErr + 4], eax
+%endif
+        mov     [xCX + CIDETCPUCTX.uXcpt], eax
 
         ;
         ; Restore the other state (pointer in xDX).
