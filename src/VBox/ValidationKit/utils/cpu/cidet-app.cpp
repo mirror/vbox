@@ -47,6 +47,7 @@
 # define USE_SIGNALS
 # include <signal.h>
 # include <unistd.h>
+# include <sys/ucontext.h>
 #endif
 
 
@@ -120,6 +121,8 @@ typedef struct CIDETAPP
     uint8_t        *pbStackEnd;
     /** Stack size (= pbStackEnd - pbStackLow). */
     uint32_t        cbStack;
+    /** Whether we're currently using the 'lock int3' to deal with tricky stack. */
+    bool            fUsingLockedInt3;
 } CIDETAPP;
 /** Pointer to a CIDET driver app instance. */
 typedef CIDETAPP *PCIDETAPP;
@@ -410,11 +413,16 @@ static LONG CALLBACK CidetAppUnhandledXcptFilter(EXCEPTION_POINTERS *pXcptPtrs)
 static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
 {
 # if 1
-    RTStrmPrintf(g_pStdErr, "signal %d pSigInfo=%p pvCtx=%p", iSignal, pSigInfo, pvCtx);
-    if (pSigInfo)
-        RTStrmPrintf(g_pStdErr, " si_addr=%p si_code=%#x sival_ptr=%p sival_int=%d",
-                     pSigInfo->si_addr, pSigInfo->si_code, pSigInfo->si_value.sival_ptr, pSigInfo->si_value.sival_int);
-    RTStrmPrintf(g_pStdErr, "\n");
+    if (   !g_pExecutingThis
+        || !g_pExecutingThis->fUsingLockedInt3
+        || iSignal != SIGILL)
+    {
+        RTStrmPrintf(g_pStdErr, "signal %d pSigInfo=%p pvCtx=%p", iSignal, pSigInfo, pvCtx);
+        if (pSigInfo)
+            RTStrmPrintf(g_pStdErr, " si_addr=%p si_code=%#x sival_ptr=%p sival_int=%d",
+                         pSigInfo->si_addr, pSigInfo->si_code, pSigInfo->si_value.sival_ptr, pSigInfo->si_value.sival_int);
+        RTStrmPrintf(g_pStdErr, "\n");
+    }
 # endif
 
     /*
@@ -432,7 +440,105 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
     /*
      * Gather all the CPU state information available.
      */
+# ifdef RT_OS_LINUX
+    ucontext_t const *pCtx = (ucontext_t const *)pvCtx;
+#  ifdef RT_ARCH_AMD64
 
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xAX] = pCtx->uc_mcontext.gregs[REG_RAX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xCX] = pCtx->uc_mcontext.gregs[REG_RCX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xDX] = pCtx->uc_mcontext.gregs[REG_RDX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xBX] = pCtx->uc_mcontext.gregs[REG_RBX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xSP] = pCtx->uc_mcontext.gregs[REG_RSP];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xBP] = pCtx->uc_mcontext.gregs[REG_RBP];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xSI] = pCtx->uc_mcontext.gregs[REG_RSI];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xDI] = pCtx->uc_mcontext.gregs[REG_RDI];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x8 ] = pCtx->uc_mcontext.gregs[REG_R8];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x9 ] = pCtx->uc_mcontext.gregs[REG_R9];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x10] = pCtx->uc_mcontext.gregs[REG_R10];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x11] = pCtx->uc_mcontext.gregs[REG_R11];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x12] = pCtx->uc_mcontext.gregs[REG_R12];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x13] = pCtx->uc_mcontext.gregs[REG_R13];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x14] = pCtx->uc_mcontext.gregs[REG_R14];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_x15] = pCtx->uc_mcontext.gregs[REG_R15];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_CS]  = RT_LO_U16((uint32_t)pCtx->uc_mcontext.gregs[REG_CSGSFS]);
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_GS]  = RT_HI_U16((uint32_t)pCtx->uc_mcontext.gregs[REG_CSGSFS]);
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_FS]  = (uint16_t)RT_HI_U32(pCtx->uc_mcontext.gregs[REG_CSGSFS]);
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_DS]  = ASMGetDS();
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_ES]  = ASMGetES();
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_SS]  = ASMGetSS();
+    pThis->Core.ActualCtx.rip                  = pCtx->uc_mcontext.gregs[REG_RIP];
+    pThis->Core.ActualCtx.rfl                  = pCtx->uc_mcontext.gregs[REG_EFL];
+    pThis->Core.ActualCtx.cr2                  = pCtx->uc_mcontext.gregs[REG_CR2];
+    pThis->Core.ActualCtx.uXcpt                = pCtx->uc_mcontext.gregs[REG_TRAPNO];
+    pThis->Core.ActualCtx.uErr                 = pCtx->uc_mcontext.gregs[REG_ERR];
+
+    /* Fudge the FS register as it seems REG_CSGSFS isn't working right. */
+    if (   pThis->Core.ActualCtx.aSRegs[X86_SREG_FS] == 0
+        && pThis->Core.ExpectedCtx.aSRegs[X86_SREG_FS] != 0)
+       pThis->Core.ActualCtx.aSRegs[X86_SREG_FS] = pThis->Core.ExpectedCtx.aSRegs[X86_SREG_FS];
+
+#  elif defined(RT_ARCH_X86)
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xAX] = pCtx->uc_mcontext.gregs[REG_EAX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xCX] = pCtx->uc_mcontext.gregs[REG_ECX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xDX] = pCtx->uc_mcontext.gregs[REG_EDX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xBX] = pCtx->uc_mcontext.gregs[REG_EBX];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xSP] = pCtx->uc_mcontext.gregs[REG_ESP];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xBP] = pCtx->uc_mcontext.gregs[REG_EBP];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xSI] = pCtx->uc_mcontext.gregs[REG_ESI];
+    pThis->Core.ActualCtx.aGRegs[X86_GREG_xDI] = pCtx->uc_mcontext.gregs[REG_EDI];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_CS]  = pCtx->uc_mcontext.gregs[REG_CS];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_DS]  = pCtx->uc_mcontext.gregs[REG_DS];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_ES]  = pCtx->uc_mcontext.gregs[REG_ES];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_FS]  = pCtx->uc_mcontext.gregs[REG_FS];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_GS]  = pCtx->uc_mcontext.gregs[REG_GS];
+    pThis->Core.ActualCtx.aSRegs[X86_SREG_SS]  = pCtx->uc_mcontext.gregs[REG_SS];
+    pThis->Core.ActualCtx.rip                  = pCtx->uc_mcontext.gregs[REG_EIP];
+    pThis->Core.ActualCtx.rfl                  = pCtx->uc_mcontext.gregs[REG_EFL];
+    pThis->Core.ActualCtx.cr2                  = pCtx->uc_mcontext.cr2;
+    pThis->Core.ActualCtx.uXcpt                = pCtx->uc_mcontext.gregs[REG_TRAPNO];
+    pThis->Core.ActualCtx.uErr                 = pCtx->uc_mcontext.gregs[REG_ERR];
+
+#  else
+#   error "Unsupported arch."
+#  endif
+
+    /* Adjust uErr. */
+    switch (pThis->Core.ActualCtx.uXcpt)
+    {
+        case X86_XCPT_TS:
+        case X86_XCPT_NP:
+        case X86_XCPT_SS:
+        case X86_XCPT_GP:
+        case X86_XCPT_PF:
+        case X86_XCPT_AC:
+        case X86_XCPT_DF:
+            break;
+        default:
+            pThis->Core.ActualCtx.uErr = UINT64_MAX;
+            break;
+    }
+
+    /* Fudge the resume flag (it's probably always set here). */
+    if (   (pThis->Core.ActualCtx.rfl & X86_EFL_RF)
+        && !(pThis->Core.ExpectedCtx.rfl & X86_EFL_RF))
+        pThis->Core.ActualCtx.rfl &= ~X86_EFL_RF;
+
+# else
+    /** @todo    */
+# endif
+
+
+    /*
+     * Check for the 'lock int3' instruction used for tricky stacks.
+     */
+    if (   pThis->fUsingLockedInt3
+        && pThis->Core.ActualCtx.uXcpt == X86_XCPT_UD
+        && pThis->Core.ActualCtx.rip == pThis->Core.CodeBuf.uEffBufAddr - pThis->Core.CodeBuf.offSegBase
+                                        + pThis->Core.CodeBuf.offActive + pThis->Core.CodeBuf.cbActive )
+    {
+        pThis->Core.ActualCtx.uXcpt = UINT32_MAX;
+        Assert(pThis->Core.ActualCtx.uErr == UINT64_MAX);
+    }
 
     /*
      * Jump back to CidetAppCbExecute.
@@ -914,6 +1020,9 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
 
         /* int3 */
         *pbDst++ = 0xcc;
+
+        pThisApp->fUsingLockedInt3 = false;
+
     }
     else
     {
@@ -921,9 +1030,10 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
          * Tricky stack, so just make it raise #UD after a successful run.
          */
         *pbDst++ = 0xf0;         /* lock prefix */
-        //*pbDst++ = 0xcc;         /* lock prefix */
         memset(pbDst, 0xcc, 15); /* int3 */
         pbDst += 15;
+
+        pThisApp->fUsingLockedInt3 = true;
     }
 
     AssertMsg(pbDst == &pAppBuf->pbNormal[pBuf->offActive + pBuf->cb + pBuf->cbEpilogue],
