@@ -472,10 +472,11 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
     pThis->Core.ActualCtx.uXcpt                = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     pThis->Core.ActualCtx.uErr                 = pCtx->uc_mcontext.gregs[REG_ERR];
 
-    /* Fudge the FS register as it seems REG_CSGSFS isn't working right. */
-    if (   pThis->Core.ActualCtx.aSRegs[X86_SREG_FS] == 0
-        && pThis->Core.ExpectedCtx.aSRegs[X86_SREG_FS] != 0)
+    /* Fudge the FS and GS registers as setup_sigcontext returns 0. */
+    if (pThis->Core.ActualCtx.aSRegs[X86_SREG_FS] == 0)
        pThis->Core.ActualCtx.aSRegs[X86_SREG_FS] = pThis->Core.ExpectedCtx.aSRegs[X86_SREG_FS];
+    if (pThis->Core.ActualCtx.aSRegs[X86_SREG_GS] == 0)
+       pThis->Core.ActualCtx.aSRegs[X86_SREG_GS] = pThis->Core.ExpectedCtx.aSRegs[X86_SREG_GS];
 
 #  elif defined(RT_ARCH_X86)
     pThis->Core.ActualCtx.aGRegs[X86_GREG_xAX] = pCtx->uc_mcontext.gregs[REG_EAX];
@@ -518,10 +519,12 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
             break;
     }
 
+#  if 0
     /* Fudge the resume flag (it's probably always set here). */
     if (   (pThis->Core.ActualCtx.rfl & X86_EFL_RF)
         && !(pThis->Core.ExpectedCtx.rfl & X86_EFL_RF))
         pThis->Core.ActualCtx.rfl &= ~X86_EFL_RF;
+#  endif
 
 # else
     /** @todo    */
@@ -538,6 +541,7 @@ static void CidetAppSigHandler(int iSignal, siginfo_t *pSigInfo, void *pvCtx)
     {
         pThis->Core.ActualCtx.uXcpt = UINT32_MAX;
         Assert(pThis->Core.ActualCtx.uErr == UINT64_MAX);
+        pThis->Core.ActualCtx.rfl &= ~X86_EFL_RF;
     }
 
     /*

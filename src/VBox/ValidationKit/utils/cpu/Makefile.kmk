@@ -53,6 +53,7 @@ cidet-app_SOURCES  = \
 	cidet-core.cpp \
 	cidet-instr-1.cpp
 cidet-app_DEFS = IN_DIS
+cidet-app_DEFS.linux = CIDET_REDUCED_CTX
 cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
 
 #PROGRAMS += rdtsc

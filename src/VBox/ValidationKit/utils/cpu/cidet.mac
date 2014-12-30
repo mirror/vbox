@@ -34,10 +34,15 @@ struc CIDETCPUCTX
     .aGRegs             resq 16
     .aSRegs             resw 6
 
+%ifndef CIDET_REDUCED_CTX
     .tr                 resw 1
     .ldtr               resw 1
     .cr0                resq 1
+%else
+    .au16Padding        resw 2
+%endif
     .cr2                resq 1
+%ifndef CIDET_REDUCED_CTX
     .cr3                resq 1
     .cr4                resq 1
     .cr8                resq 1
@@ -47,6 +52,7 @@ struc CIDETCPUCTX
     .dr3                resq 1
     .dr6                resq 1
     .dr7                resq 1
+%endif
 
     .uErr               resq 1
     .uXcpt              resd 1

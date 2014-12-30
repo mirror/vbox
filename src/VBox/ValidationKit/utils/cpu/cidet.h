@@ -159,10 +159,15 @@ typedef struct CIDETCPUCTX
     uint64_t            aGRegs[16];
     uint16_t            aSRegs[6];
 
+#ifndef CIDET_REDUCED_CTX
     uint16_t            tr;
     uint16_t            ldtr;
     uint64_t            cr0;
+#else
+    uint16_t            au16Padding[2];
+#endif
     uint64_t            cr2;
+#ifndef CIDET_REDUCED_CTX
     uint64_t            cr3;
     uint64_t            cr4;
     uint64_t            cr8;
@@ -172,6 +177,7 @@ typedef struct CIDETCPUCTX
     uint64_t            dr3;
     uint64_t            dr6;
     uint64_t            dr7;
+#endif
 
     uint64_t            uErr;           /**< Exception error code.  UINT64_MAX if not applicable.  (Not for input context.) */
     uint32_t            uXcpt;          /**< Exception number.  UINT32_MAX if no exception.  (Not for input context.) */
