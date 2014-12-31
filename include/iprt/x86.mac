@@ -117,6 +117,30 @@
 %define X86_CPUID_FEATURE_EDX_PBE       RT_BIT(31)
 %define X86_CPUID_MWAIT_ECX_EXT            RT_BIT(0)
 %define X86_CPUID_MWAIT_ECX_BREAKIRQIF0    RT_BIT(1)
+%define X86_CPUID_STEXT_FEATURE_EBX_FSGSBASE          RT_BIT(0)
+%define X86_CPUID_STEXT_FEATURE_EBX_TSC_ADJUST        RT_BIT(1)
+%define X86_CPUID_STEXT_FEATURE_EBX_BMI1              RT_BIT(3)
+%define X86_CPUID_STEXT_FEATURE_EBX_HLE               RT_BIT(4)
+%define X86_CPUID_STEXT_FEATURE_EBX_AVX2              RT_BIT(5)
+%define X86_CPUID_STEXT_FEATURE_EBX_SMEP              RT_BIT(7)
+%define X86_CPUID_STEXT_FEATURE_EBX_BMI2              RT_BIT(8)
+%define X86_CPUID_STEXT_FEATURE_EBX_ERMS              RT_BIT(9)
+%define X86_CPUID_STEXT_FEATURE_EBX_INVPCID           RT_BIT(10)
+%define X86_CPUID_STEXT_FEATURE_EBX_RTM               RT_BIT(11)
+%define X86_CPUID_STEXT_FEATURE_EBX_PQM               RT_BIT(12)
+%define X86_CPUID_STEXT_FEATURE_EBX_DEPR_FPU_CS_DS    RT_BIT(13)
+%define X86_CPUID_STEXT_FEATURE_EBX_MPE               RT_BIT(14)
+%define X86_CPUID_STEXT_FEATURE_EBX_PQE               RT_BIT(15)
+%define X86_CPUID_STEXT_FEATURE_EBX_AVX512F           RT_BIT(16)
+%define X86_CPUID_STEXT_FEATURE_EBX_RDSEED            RT_BIT(18)
+%define X86_CPUID_STEXT_FEATURE_EBX_ADX               RT_BIT(19)
+%define X86_CPUID_STEXT_FEATURE_EBX_SMAP              RT_BIT(20)
+%define X86_CPUID_STEXT_FEATURE_EBX_CLFLUSHOPT        RT_BIT(23)
+%define X86_CPUID_STEXT_FEATURE_EBX_INTEL_PT          RT_BIT(25)
+%define X86_CPUID_STEXT_FEATURE_EBX_AVX512PF          RT_BIT(26)
+%define X86_CPUID_STEXT_FEATURE_EBX_AVX512ER          RT_BIT(27)
+%define X86_CPUID_STEXT_FEATURE_EBX_AVX512CD          RT_BIT(28)
+%define X86_CPUID_STEXT_FEATURE_EBX_SHA               RT_BIT(29)
 %define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT(0)
 %define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT(11)
 %define X86_CPUID_EXT_FEATURE_EDX_NX            RT_BIT(20)
@@ -236,7 +260,10 @@
 %define X86_DR7_GE                          RT_BIT(9)
 %define X86_DR7_LE_ALL                      0x0000000000000055
 %define X86_DR7_GE_ALL                      0x00000000000000aa
+%define X86_DR7_ICE_IR                      RT_BIT(12)
 %define X86_DR7_GD                          RT_BIT(13)
+%define X86_DR7_ICE_TR1                     RT_BIT(14)
+%define X86_DR7_ICE_TR2                     RT_BIT(15)
 %define X86_DR7_RW0_MASK                    (3 << 16)
 %define X86_DR7_LEN0_MASK                   (3 << 18)
 %define X86_DR7_RW1_MASK                    (3 << 20)
@@ -270,8 +297,6 @@
 %define X86_DR7_LEN_ALL_MASKS               0xcccc0000
 %define X86_DR7_RW_LEN_ALL_MASKS            0xffff0000
 %define X86_DR7_INIT_VAL                    0x400
-%define X86_OFF_FXSTATE_RSVD                0x1d0
-%define X86_FXSTATE_RSVD_32BIT_MAGIC        0x32b3232b
 %define MSR_P5_MC_ADDR                      0x00000000
 %define MSR_P5_MC_TYPE                      0x00000001
 %define MSR_IA32_TSC                        0x10
@@ -291,6 +316,7 @@
 %define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
 %define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT(1)
 %define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
+%define MSR_IA32_TSC_ADJUST                 0x3B
 %define MSR_IA32_BIOS_UPDT_TRIG             0x79
 %define MSR_IA32_BIOS_SIGN_ID               0x8B
 %define MSR_IA32_PMC0                       0xC1
@@ -397,6 +423,7 @@
 %define  MSR_K6_EFER_SVME                    RT_BIT(12)
 %define  MSR_K6_EFER_LMSLE                   RT_BIT(13)
 %define  MSR_K6_EFER_FFXSR                   RT_BIT(14)
+%define  MSR_K6_EFER_TCE                     RT_BIT(15)
 %define MSR_K6_STAR                         0xc0000081
 %define  MSR_K6_STAR_SYSRET_CS_SS_SHIFT     48
 %define  MSR_K6_STAR_SYSCALL_CS_SS_SHIFT    32
@@ -559,6 +586,8 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
+%define X86_OFF_FXSTATE_RSVD            0x1d0
+%define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
 %define X86_FSW_IE          RT_BIT(0)
 %define X86_FSW_DE          RT_BIT(1)
 %define X86_FSW_ZE          RT_BIT(2)
@@ -721,6 +750,8 @@
 %define X86_DESC_AVL                        RT_BIT(20)
 %define X86_DESC_DB                         RT_BIT(22)
 %define X86_DESC_G                          RT_BIT(23)
+%define X86_SEL_TYPE_SYS_286_TSS_LIMIT_MIN      0x2b
+%define X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN      0x67
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %ifndef VBOX_FOR_DTRACE_LIB
