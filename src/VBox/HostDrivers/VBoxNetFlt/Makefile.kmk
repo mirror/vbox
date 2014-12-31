@@ -152,7 +152,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
   VBoxNetLwf_INSTTYPE = none
   VBoxNetLwf_DEBUG_INSTTYPE = both
  endif
- VBoxNetLwf_DEFS = IN_RT_R0 IN_SUP_STATIC 
+ VBoxNetLwf_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetLwf_INCS = .
  VBoxNetLwf_SOURCES = VBoxNetFlt.c
  VBoxNetLwf_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS

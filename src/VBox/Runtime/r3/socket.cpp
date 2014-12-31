@@ -783,7 +783,7 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
     {
         struct sockaddr_in const *pgrSa = (struct sockaddr_in const *)pgrResult->ai_addr;
         cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress),
-				   "%RTnaipv4", pgrSa->sin_addr.s_addr);
+                                   "%RTnaipv4", pgrSa->sin_addr.s_addr);
         Assert(cchIpAddress >= 7 && cchIpAddress < sizeof(szIpAddress) - 1);
         enmAddrType = RTNETADDRTYPE_IPV4;
         rc = VINF_SUCCESS;
@@ -792,7 +792,7 @@ RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszResult, size_t
     {
         struct sockaddr_in6 const *pgrSa6 = (struct sockaddr_in6 const *)pgrResult->ai_addr;
         cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress),
-				   "%RTnaipv6", (PRTNETADDRIPV6)&pgrSa6->sin6_addr);
+                                   "%RTnaipv6", (PRTNETADDRIPV6)&pgrSa6->sin6_addr);
         enmAddrType = RTNETADDRTYPE_IPV6;
         rc = VINF_SUCCESS;
     }

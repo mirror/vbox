@@ -1531,4 +1531,3 @@ RTCrX509Certificates_FindByIssuerAndSerialNumber(PCRTCRX509CERTIFICATES pCertifi
     return NULL;
 }
 
-

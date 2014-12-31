@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for AMD Athlon(tm) 64 Processor 3200+.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Athlon_64_3200[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Athlon_64_3200[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x68747541, 0x444d4163, 0x69746e65, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00000f48, 0x00000800, 0x00000000, 0x078bfbff, 0 },
@@ -62,7 +62,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Athlon_64_3200[] =
 /**
  * MSR ranges for AMD Athlon(tm) 64 Processor 3200+.
  */
-static CPUMMSRRANGE const g_aMsrRanges_AMD_Athlon_64_3200[] = 
+static CPUMMSRRANGE const g_aMsrRanges_AMD_Athlon_64_3200[] =
 {
     MAL(0x00000000, "IA32_P5_MC_ADDR", 0x00000402),
     MAL(0x00000001, "IA32_P5_MC_TYPE", 0x00000401),
@@ -195,7 +195,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_Athlon_64_3200[] =
 /**
  * Database entry for AMD Athlon(tm) 64 Processor 3200+.
  */
-static CPUMDBENTRY const g_Entry_AMD_Athlon_64_3200 = 
+static CPUMDBENTRY const g_Entry_AMD_Athlon_64_3200 =
 {
     /*.pszName          = */ "AMD Athlon 64 3200+",
     /*.pszFullName      = */ "AMD Athlon(tm) 64 Processor 3200+",

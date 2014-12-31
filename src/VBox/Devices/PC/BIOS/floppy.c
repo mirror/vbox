@@ -582,7 +582,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x000c, 0x00); // clear flip-flop
             outb(0x0005, base_count);
             outb(0x0005, base_count>>8);
-            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n", 
+            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n",
                               base_count, page, base_address);
 
             // port 0b: DMA-1 Mode Register
@@ -721,7 +721,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x000c, 0x00); // clear flip-flop
             outb(0x0005, base_count);
             outb(0x0005, base_count>>8);
-            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n", 
+            BX_DEBUG_INT13_FL("xfer buf %x bytes at %x:%x\n",
                               base_count, page, base_address);
 
             // port 0b: DMA-1 Mode Register

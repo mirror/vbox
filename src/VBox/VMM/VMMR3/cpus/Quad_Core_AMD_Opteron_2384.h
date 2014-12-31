@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Quad-Core AMD Opteron(tm) Processor 2384.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Quad_Core_AMD_Opteron_2384[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Quad_Core_AMD_Opteron_2384[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000005, 0x68747541, 0x444d4163, 0x69746e65, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00100f42, 0x06040800, 0x00802009, 0x178bfbff, 0 },
@@ -68,7 +68,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Quad_Core_AMD_Opteron_2384[] =
 /**
  * MSR ranges for Quad-Core AMD Opteron(tm) Processor 2384.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Quad_Core_AMD_Opteron_2384[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Quad_Core_AMD_Opteron_2384[] =
 {
     MAL(0x00000000, "IA32_P5_MC_ADDR", 0x00000402),
     MAL(0x00000001, "IA32_P5_MC_TYPE", 0x00000401),
@@ -241,7 +241,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Quad_Core_AMD_Opteron_2384[] =
 /**
  * Database entry for Quad-Core AMD Opteron(tm) Processor 2384.
  */
-static CPUMDBENTRY const g_Entry_Quad_Core_AMD_Opteron_2384 = 
+static CPUMDBENTRY const g_Entry_Quad_Core_AMD_Opteron_2384 =
 {
     /*.pszName          = */ "Quad-Core AMD Opteron 2384",
     /*.pszFullName      = */ "Quad-Core AMD Opteron(tm) Processor 2384",

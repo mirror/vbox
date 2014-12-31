@@ -193,7 +193,7 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
     PSHFLSTRING pString = NULL;
     const uint32_t u32HeaderSize = SHFLSTRING_HEADER_SIZE;
 
-    /* 
+    /*
      * Check that the buffer size is big enough to hold a zero sized string
      * and is not too big to fit into 16 bit variables.
      */

@@ -402,7 +402,7 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *pvMbox, void **msg)
         /* (mbox) is empty, don't wait */
         rc = LWIPMutexRelease((mbox)->mutex);
         AssertRC(rc);
-	return SYS_MBOX_EMPTY;
+        return SYS_MBOX_EMPTY;
     }
     if (((mbox)->head + 1) % MBOX_ENTRIES_MAX == (mbox)->tail)
     {

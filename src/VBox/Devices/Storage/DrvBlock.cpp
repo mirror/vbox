@@ -150,7 +150,7 @@ static DECLCALLBACK(int) drvblockRead(PPDMIBLOCK pInterface, uint64_t off, void 
 /** @copydoc PDMIBLOCK::pfnReadPcBios */
 static DECLCALLBACK(int) drvblockReadPcBios(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface); 
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
     /*
      * Check the state.

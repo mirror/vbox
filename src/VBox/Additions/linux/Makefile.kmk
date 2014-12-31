@@ -488,4 +488,3 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
 		/bin/sh ./install.sh "\$$0 1> /dev/null"
 
-

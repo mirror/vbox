@@ -22,7 +22,7 @@
 typedef DECLCALLBACK(void) FNRT1(void *);
 typedef FNRT1 *PFNRT1;
 /**
- * initiliazes LWIP core, and do callback on tcp/ip thread 
+ * initiliazes LWIP core, and do callback on tcp/ip thread
  */
 int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void * pfnCallbackArg);
 void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void * pfnCallbackArg);

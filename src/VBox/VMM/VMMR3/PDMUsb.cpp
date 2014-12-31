@@ -458,13 +458,13 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
 
 
 /**
- * Translates a USB vesion (a bit-mask) to USB speed (enum). Picks 
- * the highest available version. 
- * 
+ * Translates a USB vesion (a bit-mask) to USB speed (enum). Picks
+ * the highest available version.
+ *
  * @returns VUSBSPEED enum
- *  
+ *
  * @param   iUsbVersion     The USB version.
- * 
+ *
  */
 static VUSBSPEED pdmR3UsbVer2Spd(uint32_t iUsbVersion)
 {
@@ -964,7 +964,7 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
     /*
      * Create and attach the device.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, 
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode,
                               pdmR3UsbVer2Spd(iUsbVersion), pszCaptureFilename);
     AssertRCReturn(rc, rc);
 

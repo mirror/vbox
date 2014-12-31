@@ -486,7 +486,7 @@ typedef PAVLGCPTRNODECORE     AVLGCPTRTREE;
 /** Pointer to a tree of RTGCPTR keys. */
 typedef PPAVLGCPTRNODECORE    PAVLGCPTRTREE;
 
-/** Callback function for RTAvlGCPtrDoWithAll(). 
+/** Callback function for RTAvlGCPtrDoWithAll().
  *  @returns IPRT status codes. */
 typedef DECLCALLBACK(int)   AVLGCPTRCALLBACK(PAVLGCPTRNODECORE pNode, void *pvUser);
 /** Pointer to callback function for RTAvlGCPtrDoWithAll(). */

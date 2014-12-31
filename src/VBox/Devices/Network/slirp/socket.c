@@ -809,7 +809,7 @@ void
 sorecvfrom(PNATState pData, struct socket *so)
 {
     LogFlowFunc(("sorecvfrom: so = %lx\n", (long)so));
- 
+
 #ifdef RT_OS_WINDOWS
     /* ping is handled with ICMP API in ip_icmpwin.c */
     Assert(so->so_type == IPPROTO_UDP);

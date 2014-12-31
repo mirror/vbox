@@ -3899,4 +3899,3 @@ RT_DECL_DATA_CONST(const RTUNICASERANGE) g_aRTUniLowerRanges[] =
     { ~(RTUNICP)0, ~(RTUNICP)0, NULL }
 };
 
-

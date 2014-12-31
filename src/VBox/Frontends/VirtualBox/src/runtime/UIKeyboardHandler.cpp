@@ -74,7 +74,7 @@ const int XKeyRelease = KeyRelease;
 #ifdef Q_WS_WIN
 # include "WinKeyboard.h"
 #endif /* Q_WS_WIN */
- 
+
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
@@ -182,7 +182,7 @@ static Bool checkForX11FocusEventsWorker(Display *pDisplay, XEvent *pEvent,
 {
     NOREF(pDisplay);
     struct CHECKFORX11FOCUSEVENTSDATA *pStruct;
-    
+
     pStruct = (struct CHECKFORX11FOCUSEVENTSDATA *)pArg;
     if (   pEvent->xany.type == XFocusIn
         || pEvent->xany.type == XFocusOut)

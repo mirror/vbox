@@ -1720,7 +1720,7 @@ pxtcp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
          * Remote closed inbound.
          */
         if (!pxtcp->outbound_close_done) {
-            /* 
+            /*
              * We might still need to poll for POLLOUT, but we can not
              * poll for POLLIN anymore (even if not all data are read)
              * because we will be spammed by POLLHUP.

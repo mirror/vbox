@@ -2091,7 +2091,7 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
             pDrv->uLUN = uLUN;
 
             /*
-             * For now we always set the driver at LUN 0 as our primary 
+             * For now we always set the driver at LUN 0 as our primary
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)
@@ -2099,7 +2099,7 @@ static DECLCALLBACK(int) ichac97Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32
 
             LogFunc(("LUN #%u: pCon=%p, drvFlags=0x%x\n",
                      uLUN, pDrv->pConnector, pDrv->Flags));
-           
+
             pThis->paDrv[uLUN] = pDrv;
             pThis->cLUNs++;
         }
@@ -2272,13 +2272,13 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             char   szMissingStreams[128];
             size_t len = 0;
             if (!pCon->pfnIsInputOK (pCon, pDrv->pStrmIn))
-                len = RTStrPrintf(szMissingStreams, 
+                len = RTStrPrintf(szMissingStreams,
                                   sizeof(szMissingStreams), "PCM Input");
             if (!pCon->pfnIsOutputOK(pCon, pDrv->pStrmOut))
-                len += RTStrPrintf(szMissingStreams + len, 
+                len += RTStrPrintf(szMissingStreams + len,
                                    sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
             if (!pCon->pfnIsInputOK (pCon, pDrv->pStrmMic))
-                len += RTStrPrintf(szMissingStreams + len, 
+                len += RTStrPrintf(szMissingStreams + len,
                                    sizeof(szMissingStreams) - len, len ? ", PCM Mic" : "PCM Mic");
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",

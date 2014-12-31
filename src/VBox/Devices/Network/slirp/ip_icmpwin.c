@@ -113,7 +113,7 @@ icmpwin_finit(PNATState pData)
         TAILQ_REMOVE(&pData->pongs_received, pong, queue_entry);
         RTMemFree(pong);
     }
- 
+
     /* this should be empty */
     while (!TAILQ_EMPTY(&pData->pongs_expected)) {
         struct pong *pong = TAILQ_FIRST(&pData->pongs_expected);

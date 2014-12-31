@@ -2043,7 +2043,7 @@ DECLINLINE(void) hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cb
      */
     AssertMsg((cbCopied == pBdle->cbUnderFifoW + cbArranged2Copy), /* we assume that we write the entire buffer including unreported bytes */
               ("cbCopied=%RU32 != pBdle->cbUnderFifoW=%RU32 + cbArranged2Copy=%RU32\n",
-               cbCopied, pBdle->cbUnderFifoW, cbArranged2Copy)); 
+               cbCopied, pBdle->cbUnderFifoW, cbArranged2Copy));
     if (   pBdle->cbUnderFifoW
         && pBdle->cbUnderFifoW <= cbCopied)
     {
@@ -2299,7 +2299,7 @@ static uint32_t hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDes
 # else
             for (uint8_t lun = 0; lun < 1; lun++)
             {
-# endif 
+# endif
                 rc = pThis->paDrv[lun]->pConnector->pfnWrite(pThis->paDrv[lun]->pConnector, pThis->paDrv[lun]->pGstStrmOut,
                                                              pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW,
                                                              &cbWritten);
@@ -3561,7 +3561,7 @@ static DECLCALLBACK(int) hdaAttach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t f
             pDrv->uLUN = uLUN;
 
             /*
-             * For now we always set the driver at LUN 0 as our primary 
+             * For now we always set the driver at LUN 0 as our primary
              * host backend. This might change in the future.
              */
             if (pDrv->uLUN == 0)

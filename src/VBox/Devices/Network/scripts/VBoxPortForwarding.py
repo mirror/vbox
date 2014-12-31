@@ -22,12 +22,12 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 # > VBoxManage setextradata "winXP"
 #        "VBoxInternal/Devices/pcnet/0/LUN#0/Config/www/GuestPort" 80
 # > VBoxManage setextradata "winXP"
-#        "VBoxInternal/Devices/pcnet/0/LUN#0/Config/www/HostPort" 8080 
+#        "VBoxInternal/Devices/pcnet/0/LUN#0/Config/www/HostPort" 8080
 ################################################################################
 
 import os,sys
 from vboxapi import VirtualBoxManager
-import optparse 
+import optparse
 
 class OptionParser (optparse.OptionParser):
     def check_required(self, opt):
@@ -40,7 +40,7 @@ class OptionParser (optparse.OptionParser):
 
 def generate_profile_name(proto, host_port, guest_port):
     return proto + '_' + str(host_port) + '_' + str(guest_port)
- 
+
 def main(argv):
 
     usage = "usage: %prog --vm winXP -a 1 -p TCP -l 8080 -g 80 -P www"
@@ -58,7 +58,7 @@ def main(argv):
     parser.add_option("-a", "--adapter", dest="adapter", type="int",
                      default=-1)
     (options,args) = parser.parse_args(argv)
-    
+
     if (not (parser.check_required("-V") or parser.check_required("-G"))):
         parser.error("please define --vm or --guid option")
     if (not parser.check_required("-p")):
@@ -83,7 +83,7 @@ def main(argv):
             vm = vb.getMachine(options.vmname)
     except:
         print "can't find VM by name or UID:",options.vmname
-        del man 
+        del man
         return
 
     print "vm found: %s [%s]" % (vm.name, vm.id)
@@ -92,16 +92,16 @@ def main(argv):
     vm = session.machine
 
     adapter = vm.getNetworkAdapter(options.adapter)
-    
+
     if adapter.enabled == False:
-        print "adapter(%d) is disabled" % adapter.slot    
+        print "adapter(%d) is disabled" % adapter.slot
         del man
         return
 
     name = None
     if (adapter.adapterType == man.constants.NetworkAdapterType_Null):
         print "none adapter type detected"
-        return -1 
+        return -1
     elif (adapter.adapterType == man.constants.NetworkAdapterType_Am79C970A):
         name = "pcnet"
     elif (adapter.adapterType == man.constants.NetworkAdapterType_Am79C973):
@@ -113,15 +113,15 @@ def main(argv):
     elif (adapter.adapterType == man.constants.NetworkAdapterType_I82543GC):
         name = "e1000"
     print "adapter of '%s' type has been detected" % name
-    
+
     profile_name = options.profile
     if profile_name == None:
-        profile_name = generate_profile_name(options.proto.upper(), 
-                                            options.host_port, 
+        profile_name = generate_profile_name(options.proto.upper(),
+                                            options.host_port,
                                             options.guest_port)
     config = "VBoxInternal/Devices/" + name + "/"
     config = config + str(adapter.slot)  +"/LUN#0/Config/" + profile_name
-    proto = config + "/Protocol" 
+    proto = config + "/Protocol"
     host_port = config + "/HostPort"
     guest_port = config + "/GuestPort"
 

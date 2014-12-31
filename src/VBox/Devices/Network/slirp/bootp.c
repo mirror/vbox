@@ -705,13 +705,13 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
      * We're going update dns list at least once per DHCP transaction (!not on every operation
      * within transaction), assuming that transaction can't be longer than 1 min.
      *
-     * @note: if we have notification update (HAVE_NOTIFICATION_FOR_DNS_UPDATE) 
-     * provided by host, we don't need implicitly re-initialize dns list. 
-     * 
-     * @note: NATState::fUseHostResolver became (r89055) the flag signalling that Slirp 
-     * wasn't able to fetch fresh host DNS info and fall down to use host-resolver, on one 
+     * @note: if we have notification update (HAVE_NOTIFICATION_FOR_DNS_UPDATE)
+     * provided by host, we don't need implicitly re-initialize dns list.
+     *
+     * @note: NATState::fUseHostResolver became (r89055) the flag signalling that Slirp
+     * wasn't able to fetch fresh host DNS info and fall down to use host-resolver, on one
      * of the previous attempts to proxy dns requests to Host's name-resolving API
-     * 
+     *
      * @note: Checking NATState::fUseHostResolver == true, we want to try restore behaviour initialy
      * wanted by user ASAP (P here when host serialize its  configuration in files parsed by Slirp).
      */

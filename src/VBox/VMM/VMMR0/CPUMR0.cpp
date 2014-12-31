@@ -428,7 +428,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             /** @todo r=ramshankar: Can't we used a cached value here
              *        instead of reading the MSR? host EFER doesn't usually
              *        change. */
-            uHostEfer = ASMRdMsr(MSR_K6_EFER);    
+            uHostEfer = ASMRdMsr(MSR_K6_EFER);
             if (uHostEfer & MSR_K6_EFER_FFXSR)
             {
                 ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);

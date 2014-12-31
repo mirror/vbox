@@ -303,7 +303,7 @@ struct VBCLSERVICE vbclClipboardInterface =
     run,
     VBClServiceDefaultHandler, /* pause */
     VBClServiceDefaultHandler, /* resume */
-    VBClServiceDefaultCleanup    
+    VBClServiceDefaultCleanup
 };
 
 struct CLIPBOARDSERVICE

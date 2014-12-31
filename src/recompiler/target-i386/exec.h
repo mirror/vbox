@@ -145,25 +145,25 @@ static inline void svm_check_intercept(uint32_t type)
 
 #ifdef VBOX
 # ifdef IPRT_NO_CRT
-#  undef  sin  
-#  undef  cos  
-#  undef  sqrt 
-#  undef  pow  
-#  undef  log  
-#  undef  tan  
+#  undef  sin
+#  undef  cos
+#  undef  sqrt
+#  undef  pow
+#  undef  log
+#  undef  tan
 #  undef  atan2
 #  undef  floor
-#  undef  ceil 
+#  undef  ceil
 #  undef  ldexp
-#  define sin   sinl  
-#  define cos   cosl  
-#  define sqrt  sqrtl 
-#  define pow   powl  
-#  define log   logl  
-#  define tan   tanl  
+#  define sin   sinl
+#  define cos   cosl
+#  define sqrt  sqrtl
+#  define pow   powl
+#  define log   logl
+#  define tan   tanl
 #  define atan2 atan2l
 #  define floor floorl
-#  define ceil  ceill 
+#  define ceil  ceill
 #  define ldexp ldexpl
 # endif
 #endif

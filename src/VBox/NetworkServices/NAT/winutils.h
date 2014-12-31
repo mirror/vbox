@@ -174,15 +174,15 @@ proxy_error_is_transient(int error)
 # if !defined(RT_OS_WINDOWS)
     return error == EWOULDBLOCK
 #  if EAGAIN != EWOULDBLOCK
-	|| error == EAGAIN
+        || error == EAGAIN
 #  endif
-	|| error == EINTR
-	|| error == ENOBUFS
-	|| error == ENOMEM;
+        || error == EINTR
+        || error == ENOBUFS
+        || error == ENOMEM;
 # else
     return error == WSAEWOULDBLOCK
-	|| error == WSAEINTR	/* NB: we don't redefine EINTR above */
-	|| error == WSAENOBUFS;
+        || error == WSAEINTR    /* NB: we don't redefine EINTR above */
+        || error == WSAENOBUFS;
 # endif
 }
 

@@ -1490,7 +1490,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     if (fSeparate)
     {
-        MachineState_T machineState = MachineState_Null; 
+        MachineState_T machineState = MachineState_Null;
         pMachine->COMGETTER(State)(&machineState);
         if (   machineState == MachineState_Running
             || machineState == MachineState_Teleporting

@@ -3239,7 +3239,7 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
                 Log(("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc));
                 new_cs = new_cs & 0xfffc;
             }
-            else 
+            else
             {
                 /* Ugly assumption: assume a genuine switch to ring-1. */
                 Log(("Genuine switch to ring-1 (iret)\n"));

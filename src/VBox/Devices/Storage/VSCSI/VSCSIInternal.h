@@ -264,7 +264,7 @@ int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8
  * @param   pVScsiReq     The SCSI request.
  * @param   uSCSISenseKey The SCSI sense key to set.
  * @param   uSCSIASC      The ASC value.
- * @param   uSCSIASC      The ASCQ value. 
+ * @param   uSCSIASC      The ASCQ value.
  * @param   uInfo         The 32-bit sense information.
  */
 int vscsiReqSenseErrorInfoSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey,

@@ -106,7 +106,7 @@ HRESULT RemoteUSBDevice::init (uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevDesc
     else
     {
         unconst(mData.portVersion)  = mData.version;
-        unconst(mData.speed) = mData.version == 3 
+        unconst(mData.speed) = mData.version == 3
                              ? (USBConnectionSpeed_T)USBConnectionSpeed_Super
                              : mData.version == 2 ? (USBConnectionSpeed_T)USBConnectionSpeed_High
                                                   : (USBConnectionSpeed_T)USBConnectionSpeed_Full;

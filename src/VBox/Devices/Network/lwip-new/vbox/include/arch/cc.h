@@ -33,7 +33,7 @@ typedef uintptr_t mem_ptr_t;
 # define PACK_STRUCT_STRUCT
 # define PACK_STRUCT_USE_INCLUDES
 # if _MSC_VER < 1600
-#  define LWIP_PROVIDE_ERRNO 
+#  define LWIP_PROVIDE_ERRNO
 # else
 #  include <errno.h>
 # endif

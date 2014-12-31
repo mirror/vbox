@@ -403,7 +403,7 @@ static enum RCP_TOKEN rcp_parse_search(struct rcp_parser *parser)
     /* just ignore "too many search list" */
     if (st->rcps_num_searchlist >= RCPS_MAX_SEARCHLIST)
         return rcp_get_token(parser);
-    
+
     /* we don't want accept keywords */
     if (tok <= tok_nameserver)
         return tok;

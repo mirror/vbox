@@ -19,9 +19,9 @@
  * @todo: this should be somehow shared with with DevINIP, because
  * we want that every NAT and DevINIP instance uses a initialized LWIP
  * initialization of LWIP should happen on iLWIPInitiatorCounter 0 -> 1.
- * see pfnConstruct/Destruct. 
+ * see pfnConstruct/Destruct.
  *
- * @note: see comment to DevINIP.cpp:DevINIPConfigured 
+ * @note: see comment to DevINIP.cpp:DevINIPConfigured
  * @note: perhaps initilization stuff would be better move out of NAT driver,
  *  because we have to deal with attaching detaching NAT driver at runtime.
  */
@@ -48,12 +48,12 @@ extern "C" {
 typedef struct {
     PFNRT1 pfn;
     void *pvUser;
-} LWIPCOREUSERCALLBACK, *PLWIPCOREUSERCALLBACK; 
+} LWIPCOREUSERCALLBACK, *PLWIPCOREUSERCALLBACK;
 
 
 RTCLockMtx g_mtxLwip;
 
-typedef struct LWIPCORE 
+typedef struct LWIPCORE
 {
     int iLWIPInitiatorCounter;
     sys_sem_t LwipTcpIpSem;
@@ -163,7 +163,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
 
 
 /**
- * This function decrement lwip reference counter 
+ * This function decrement lwip reference counter
  * and calls tcpip thread termination function.
  */
 void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)

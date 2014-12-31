@@ -880,7 +880,7 @@ public:
      * Swaps two strings in a fast way.
      *
      * Exception safe.
-     * 
+     *
      * @param   a_rThat  The string to swap with.
      */
     inline void swap(RTCString &a_rThat) throw()

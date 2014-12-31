@@ -17,7 +17,7 @@
 # Clean up before we start.
 cr="
 "
-tab="	"
+tab="   "
 IFS=" ${cr}${tab}"
 'unset' -f unalias
 'unalias' -a 2>/dev/null
