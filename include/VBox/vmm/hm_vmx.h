@@ -469,7 +469,6 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @todo uint64_t isn't safe for bitfields (gcc pedantic warnings, and IIRC,
  *       this did cause trouble with one compiler/version).
  */
-#pragma pack(1)
 typedef struct EPTPML4EBITS
 {
     /** Present bit. */
@@ -487,7 +486,6 @@ typedef struct EPTPML4EBITS
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPML4EBITS;
-#pragma pack()
 AssertCompileSize(EPTPML4EBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
@@ -500,7 +498,6 @@ AssertCompileSize(EPTPML4EBITS, 8);
 /**
  * EPT PML4E.
  */
-#pragma pack(1)
 typedef union EPTPML4E
 {
     /** Normal view. */
@@ -512,22 +509,20 @@ typedef union EPTPML4E
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } EPTPML4E;
-#pragma pack()
+AssertCompileSize(EPTPML4E, 8);
 /** Pointer to a PML4 table entry. */
 typedef EPTPML4E *PEPTPML4E;
 /** Pointer to a const PML4 table entry. */
 typedef const EPTPML4E *PCEPTPML4E;
-AssertCompileSize(EPTPML4E, 8);
 
 /**
  * EPT PML4 Table.
  */
-#pragma pack(1)
 typedef struct EPTPML4
 {
     EPTPML4E    a[EPT_PG_ENTRIES];
 } EPTPML4;
-#pragma pack()
+AssertCompileSize(EPTPML4, 0x1000);
 /** Pointer to an EPT PML4 Table. */
 typedef EPTPML4 *PEPTPML4;
 /** Pointer to a const EPT PML4 Table. */
@@ -536,7 +531,6 @@ typedef const EPTPML4 *PCEPTPML4;
 /**
  * EPT Page Directory Pointer Entry. Bit view.
  */
-#pragma pack(1)
 typedef struct EPTPDPTEBITS
 {
     /** Present bit. */
@@ -554,7 +548,6 @@ typedef struct EPTPDPTEBITS
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDPTEBITS;
-#pragma pack()
 AssertCompileSize(EPTPDPTEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
@@ -567,7 +560,6 @@ AssertCompileSize(EPTPDPTEBITS, 8);
 /**
  * EPT Page Directory Pointer.
  */
-#pragma pack(1)
 typedef union EPTPDPTE
 {
     /** Normal view. */
@@ -579,22 +571,20 @@ typedef union EPTPDPTE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } EPTPDPTE;
-#pragma pack()
+AssertCompileSize(EPTPDPTE, 8);
 /** Pointer to an EPT Page Directory Pointer Entry. */
 typedef EPTPDPTE *PEPTPDPTE;
 /** Pointer to a const EPT Page Directory Pointer Entry. */
 typedef const EPTPDPTE *PCEPTPDPTE;
-AssertCompileSize(EPTPDPTE, 8);
 
 /**
  * EPT Page Directory Pointer Table.
  */
-#pragma pack(1)
 typedef struct EPTPDPT
 {
     EPTPDPTE    a[EPT_PG_ENTRIES];
 } EPTPDPT;
-#pragma pack()
+AssertCompileSize(EPTPDPT, 0x1000);
 /** Pointer to an EPT Page Directory Pointer Table. */
 typedef EPTPDPT *PEPTPDPT;
 /** Pointer to a const EPT Page Directory Pointer Table. */
@@ -604,7 +594,6 @@ typedef const EPTPDPT *PCEPTPDPT;
 /**
  * EPT Page Directory Table Entry. Bit view.
  */
-#pragma pack(1)
 typedef struct EPTPDEBITS
 {
     /** Present bit. */
@@ -624,7 +613,6 @@ typedef struct EPTPDEBITS
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDEBITS;
-#pragma pack()
 AssertCompileSize(EPTPDEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
@@ -637,7 +625,6 @@ AssertCompileSize(EPTPDEBITS, 8);
 /**
  * EPT 2MB Page Directory Table Entry. Bit view.
  */
-#pragma pack(1)
 typedef struct EPTPDE2MBITS
 {
     /** Present bit. */
@@ -661,7 +648,6 @@ typedef struct EPTPDE2MBITS
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDE2MBITS;
-#pragma pack()
 AssertCompileSize(EPTPDE2MBITS, 8);
 
 /** Bits 21-51 - - EPT - Physical Page number of the next level. */
@@ -670,7 +656,6 @@ AssertCompileSize(EPTPDE2MBITS, 8);
 /**
  * EPT Page Directory Table Entry.
  */
-#pragma pack(1)
 typedef union EPTPDE
 {
     /** Normal view. */
@@ -684,22 +669,20 @@ typedef union EPTPDE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } EPTPDE;
-#pragma pack()
+AssertCompileSize(EPTPDE, 8);
 /** Pointer to an EPT Page Directory Table Entry. */
 typedef EPTPDE *PEPTPDE;
 /** Pointer to a const EPT Page Directory Table Entry. */
 typedef const EPTPDE *PCEPTPDE;
-AssertCompileSize(EPTPDE, 8);
 
 /**
  * EPT Page Directory Table.
  */
-#pragma pack(1)
 typedef struct EPTPD
 {
     EPTPDE      a[EPT_PG_ENTRIES];
 } EPTPD;
-#pragma pack()
+AssertCompileSize(EPTPD, 0x1000);
 /** Pointer to an EPT Page Directory Table. */
 typedef EPTPD *PEPTPD;
 /** Pointer to a const EPT Page Directory Table. */
@@ -709,7 +692,6 @@ typedef const EPTPD *PCEPTPD;
 /**
  * EPT Page Table Entry. Bit view.
  */
-#pragma pack(1)
 typedef struct EPTPTEBITS
 {
     /** 0 - Present bit.
@@ -735,7 +717,6 @@ typedef struct EPTPTEBITS
     /** 63:52 - Available for software. */
     uint64_t    u12Available    : 12;
 } EPTPTEBITS;
-#pragma pack()
 AssertCompileSize(EPTPTEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
@@ -748,7 +729,6 @@ AssertCompileSize(EPTPTEBITS, 8);
 /**
  * EPT Page Table Entry.
  */
-#pragma pack(1)
 typedef union EPTPTE
 {
     /** Normal view. */
@@ -760,22 +740,20 @@ typedef union EPTPTE
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } EPTPTE;
-#pragma pack()
+AssertCompileSize(EPTPTE, 8);
 /** Pointer to an EPT Page Directory Table Entry. */
 typedef EPTPTE *PEPTPTE;
 /** Pointer to a const EPT Page Directory Table Entry. */
 typedef const EPTPTE *PCEPTPTE;
-AssertCompileSize(EPTPTE, 8);
 
 /**
  * EPT Page Table.
  */
-#pragma pack(1)
 typedef struct EPTPT
 {
     EPTPTE      a[EPT_PG_ENTRIES];
 } EPTPT;
-#pragma pack()
+AssertCompileSize(EPTPT, 0x1000);
 /** Pointer to an extended page table. */
 typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
