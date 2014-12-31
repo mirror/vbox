@@ -861,7 +861,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** And-mask for setting reserved bits to zero */
-#define VMX_EFLAGS_RESERVED_0                                   (~(X86_EFL_1 | X86_EFL_LIVE_MASK))
+#define VMX_EFLAGS_RESERVED_0                                   (X86_EFL_1 | X86_EFL_LIVE_MASK)
 /** Or-mask for setting reserved bits to 1 */
 #define VMX_EFLAGS_RESERVED_1                                   X86_EFL_1
 /** @} */
