@@ -3622,6 +3622,13 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
            Let us assert it as such and use 32-bit VMWRITE. */
         Assert(!(pMixedCtx->rflags.u64 >> 32));
         X86EFLAGS Eflags = pMixedCtx->eflags;
+        /** @todo r=bird: There shall be no need to OR in X86_EFL_1 here, nor
+         * shall there be any reason for clearing bits 63:22, 15, 5 and 3.
+         * These will never be cleared/set, unless some other part of the VMM
+         * code is buggy - in which case we're better of finding and fixing
+         * those bugs than hiding them. */
+        Assert(Eflags.u32 & X86_EFL_RA1_MASK);
+        Assert(!(Eflags.u32 & ~(X86_EFL_1 | X86_EFL_LIVE_MASK)));
         Eflags.u32 &= VMX_EFLAGS_RESERVED_0;                   /* Bits 22-31, 15, 5 & 3 MBZ. */
         Eflags.u32 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
 
