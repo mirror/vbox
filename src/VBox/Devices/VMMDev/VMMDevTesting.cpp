@@ -67,6 +67,23 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
             }
             return VINF_SUCCESS;
 
+        case VMMDEV_TESTING_MMIO_NOP_R3:
+            switch (cb)
+            {
+                case 8:
+                case 4:
+                case 2:
+                case 1:
+#ifndef IN_RING3
+                    return VINF_IOM_R3_MMIO_READ_WRITE;
+#else
+                    return VINF_SUCCESS;
+#endif
+                default:
+                    AssertFailed();
+                    return VERR_INTERNAL_ERROR_5;
+            }
+
         default:
             break;
     }
@@ -81,6 +98,18 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
 {
     switch (GCPhysAddr)
     {
+        case VMMDEV_TESTING_MMIO_NOP_R3:
+#ifndef IN_RING3
+            switch (cb)
+            {
+                case 8:
+                case 4:
+                case 2:
+                case 1:
+                    return VINF_IOM_R3_MMIO_READ;
+            }
+#endif
+            /* fall thru. */
         case VMMDEV_TESTING_MMIO_NOP:
             switch (cb)
             {
@@ -101,7 +130,6 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
                     return VERR_INTERNAL_ERROR_5;
             }
             return VINF_SUCCESS;
-
 
         default:
             break;
@@ -188,6 +216,22 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                     return VERR_INTERNAL_ERROR_2;
             }
             return VINF_SUCCESS;
+
+        case VMMDEV_TESTING_IOPORT_NOP_R3:
+            switch (cb)
+            {
+                case 4:
+                case 2:
+                case 1:
+#ifndef IN_RING3
+                    return VINF_IOM_R3_IOPORT_WRITE;
+#else
+                    return VINF_SUCCESS;
+#endif
+                default:
+                    AssertFailed();
+                    return VERR_INTERNAL_ERROR_2;
+            }
 
         /* The timestamp I/O ports are read-only. */
         case VMMDEV_TESTING_IOPORT_TS_LOW:
@@ -422,6 +466,23 @@ PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             }
             *pu32 = VMMDEV_TESTING_NOP_RET;
             return VINF_SUCCESS;
+
+        case VMMDEV_TESTING_IOPORT_NOP_R3:
+            switch (cb)
+            {
+                case 4:
+                case 2:
+                case 1:
+#ifndef IN_RING3
+                    return VINF_IOM_R3_IOPORT_READ;
+#else
+                    *pu32 = VMMDEV_TESTING_NOP_RET;
+                    return VINF_SUCCESS;
+#endif
+                default:
+                    AssertFailed();
+                    return VERR_INTERNAL_ERROR_2;
+            }
 
         /*
          * The timestamp I/O ports are obviously used for getting a good fix
