@@ -314,7 +314,7 @@ def asFlag(var):
 def getFacilityStatus(ctx, guest, facilityType):
     (status, _timestamp) = guest.getFacilityStatus(facilityType)
     return asEnumElem(ctx, 'AdditionsFacilityStatus', status)
-        
+
 def perfStats(ctx, mach):
     if not ctx['perf']:
         return

@@ -81,7 +81,7 @@ HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
 HRESULT HostDnsServiceResolvConf::readResolvConf()
 {
     struct rcp_state st;
-    
+
     st.rcps_flags = RCPSF_NO_STR2IPCONV;
     int rc = rcp_parse(&st, m->resolvConfFilename.c_str());
     if (rc == -1)
@@ -93,7 +93,7 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
         AssertBreak(st.rcps_str_nameserver[i]);
         info.servers.push_back(st.rcps_str_nameserver[i]);
     }
-    
+
     if (st.rcps_domain)
         info.domain = st.rcps_domain;
 

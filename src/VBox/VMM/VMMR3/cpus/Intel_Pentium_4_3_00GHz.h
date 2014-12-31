@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Intel(R) Pentium(R) 4 CPU 3.00GHz.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_4_3_00GHz[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_4_3_00GHz[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000005, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00000f43, 0x00020800, 0x0000649d, 0xbfebfbff, 0 },
@@ -51,7 +51,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Pentium_4_3_00GHz[] =
 /**
  * MSR ranges for Intel(R) Pentium(R) 4 CPU 3.00GHz.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_4_3_00GHz[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_4_3_00GHz[] =
 {
     MFO(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr), /* value=0xc55df88 */
     MFO(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType), /* value=0xbe000300`1008081f */
@@ -248,7 +248,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Pentium_4_3_00GHz[] =
 /**
  * Database entry for Intel(R) Pentium(R) 4 CPU 3.00GHz.
  */
-static CPUMDBENTRY const g_Entry_Intel_Pentium_4_3_00GHz = 
+static CPUMDBENTRY const g_Entry_Intel_Pentium_4_3_00GHz =
 {
     /*.pszName          = */ "Intel Pentium 4 3.00GHz",
     /*.pszFullName      = */ "Intel(R) Pentium(R) 4 CPU 3.00GHz",

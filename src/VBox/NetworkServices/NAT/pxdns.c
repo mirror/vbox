@@ -693,7 +693,7 @@ pxdns_forward_outbound(struct pxdns *pxdns, struct request *req)
     if (resolver->sa.sa_family == AF_INET) {
         nsent = sendto(pxdns->sock4, req->data, req->size, 0,
                        &resolver->sa, sizeof(resolver->sin));
-        
+
     }
     else if (resolver->sa.sa_family == AF_INET6) {
         if (pxdns->sock6 != INVALID_SOCKET) {

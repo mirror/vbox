@@ -546,7 +546,7 @@ pxping_recv6(void *arg, struct pbuf *p)
         }
         goto out;
     }
-    
+
     pong = NULL;                /* callback owns it now */
   out:
     if (pong != NULL) {

@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for AMD Phenom(tm) II X6 1100T Processor.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Phenom_II_X6_1100T[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Phenom_II_X6_1100T[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000006, 0x68747541, 0x444d4163, 0x69746e65, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00100fa0, 0x01060800, 0x00802009, 0x178bfbff, 0 },
@@ -69,7 +69,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_Phenom_II_X6_1100T[] =
 /**
  * MSR ranges for AMD Phenom(tm) II X6 1100T Processor.
  */
-static CPUMMSRRANGE const g_aMsrRanges_AMD_Phenom_II_X6_1100T[] = 
+static CPUMMSRRANGE const g_aMsrRanges_AMD_Phenom_II_X6_1100T[] =
 {
     MAL(0x00000000, "IA32_P5_MC_ADDR", 0x00000402),
     MAL(0x00000001, "IA32_P5_MC_TYPE", 0x00000401),
@@ -243,7 +243,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_Phenom_II_X6_1100T[] =
 /**
  * Database entry for AMD Phenom(tm) II X6 1100T Processor.
  */
-static CPUMDBENTRY const g_Entry_AMD_Phenom_II_X6_1100T = 
+static CPUMDBENTRY const g_Entry_AMD_Phenom_II_X6_1100T =
 {
     /*.pszName          = */ "AMD Phenom II X6 1100T",
     /*.pszFullName      = */ "AMD Phenom(tm) II X6 1100T Processor",

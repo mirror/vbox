@@ -284,8 +284,8 @@ int handleSnapshot(HandlerArg *a)
     {
         /* we have to open a session for this task (new or shared) */
         rc = pMachine->LockMachine(a->session, LockType_Shared);
-	ComPtr<IConsole> pConsole;
-	CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(pConsole.asOutParam()));
+        ComPtr<IConsole> pConsole;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(pConsole.asOutParam()));
 
         /* switch based on the command */
         bool fDelete = false,

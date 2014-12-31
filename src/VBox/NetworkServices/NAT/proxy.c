@@ -529,7 +529,7 @@ proxy_reset_socket(SOCKET s)
      * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4468997
      */
     setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&linger, sizeof(linger));
-    
+
     closesocket(s);
 }
 

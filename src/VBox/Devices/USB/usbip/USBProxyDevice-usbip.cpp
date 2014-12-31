@@ -583,7 +583,7 @@ static int usbProxyUsbIpConnect(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
         rc = RTTcpSetSendCoalescing(pProxyDevUsbIp->hSocket, false);
         if (RT_FAILURE(rc))
             LogRel(("UsbIp: Disabling send coalescing failed (rc=%Rrc), continuing nevertheless but expect reduced performance\n", rc));
- 
+
         /* Import the device, i.e. claim it for our use. */
         UsbIpReqImport ReqImport;
         ReqImport.u16Version = RT_H2N_U16(USBIP_VERSION);
@@ -1006,7 +1006,7 @@ static DECLCALLBACK(PVUSBURB) usbProxyUsbIpUrbReap(PUSBPROXYDEV pProxyDev, RTMSI
 
     if (pUrbUsbIp)
     {
-        
+
     }
 
     return pUrb;

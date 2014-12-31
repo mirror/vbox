@@ -270,7 +270,7 @@ HRESULT HostDnsServiceWin::updateInfo()
     status = DnsQueryConfig(DnsConfigDnsServerList,
                             DNS_CONFIG_FLAG_ALLOC, NULL, NULL,
                             &pIp4Array, &cbBuffer);
-    
+
     if (status == NO_ERROR && pIp4Array != NULL)
     {
         for (DWORD i = 0; i < pIp4Array->AddrCount; ++i)

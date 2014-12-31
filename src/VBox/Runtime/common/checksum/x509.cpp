@@ -91,12 +91,12 @@ static int rtX509ReadCertificateFromPEM(void const *pvPem, unsigned int cbPem, X
  *
  * @returns iprt status code.
  *
- * @param   pvBuf                 string representation 
+ * @param   pvBuf                 string representation
  *                                containing X509 certificate
  *                                in PEM format
- * @param   pOutSignature         memory buffer where the binary 
+ * @param   pOutSignature         memory buffer where the binary
  *                                representation will be stored
- * @param   lengthOfSignature     length of X509 certificate in 
+ * @param   lengthOfSignature     length of X509 certificate in
  *                                binary representation
  */
 static int RTX509ConvertCertificateToBinary(void *pvBuf, unsigned char** pOutSignature, unsigned int* lengthOfSignature)
@@ -245,15 +245,15 @@ RTDECL(int) RTRSAVerify(void *pvBuf, unsigned int cbSize, const char* pManifestD
 RT_EXPORT_SYMBOL(RTRSAVerify);
 
 /**
- * Get X509 certificate basic constraints 
+ * Get X509 certificate basic constraints
  *
  * @returns iprt status code.
  *
- * @param   pvBuf                 string representation 
+ * @param   pvBuf                 string representation
  *                                containing X509 certificate
  *                                in PEM format
  * @param   cbSize                The amount of data (in bytes)
- * @param   pBasicConstraintsOut  memory buffer where the 
+ * @param   pBasicConstraintsOut  memory buffer where the
  *                                extracted basic constraints
  *                                will be stored in string
  *                                representation

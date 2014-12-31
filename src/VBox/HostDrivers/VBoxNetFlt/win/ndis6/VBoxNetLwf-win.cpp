@@ -578,7 +578,7 @@ static NDIS_STATUS vboxNetLwfWinGetPacketFilter(PVBOXNETLWF_MODULE pModuleCtx)
     {
         Log((__FUNCTION__": vboxNetLwfWinSyncOidRequest(query, OID_GEN_CURRENT_PACKET_FILTER) failed to write neccessary amount (%d bytes), actually written %d bytes\n", sizeof(pModuleCtx->uPacketFilter), Rq.Request.DATA.QUERY_INFORMATION.BytesWritten));
     }
-    
+
     Log5((__FUNCTION__": OID_GEN_CURRENT_PACKET_FILTER query returned the following filters:\n"));
     vboxNetLwfWinDumpFilterTypes(pModuleCtx->uPacketFilter);
 
@@ -816,7 +816,7 @@ static VOID vboxNetLwfWinDetach(IN NDIS_HANDLE hModuleCtx)
         /* We do not 'release' netflt instance since it has been done by pfnDisconnect */
     }
     pModuleCtx->pNetFlt = NULL;
-        
+
     /*
      * We have to make sure that all NET_BUFFER_LIST structures have been freed by now, but
      * it does not require us to do anything here since it has already been taken care of
@@ -1403,7 +1403,7 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
         vboxNetLwfWinDumpPackets(__FUNCTION__": consumed", pBufLists);
         NdisFSendNetBufferListsComplete(pModule->hFilter, pBufLists,
                                         fFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL ? NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
-        
+
     }
     LogFlow(("<=="__FUNCTION__"\n"));
 }

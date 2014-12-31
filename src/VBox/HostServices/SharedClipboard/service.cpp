@@ -764,7 +764,7 @@ static SSMFIELD const g_aClipboardClientDataFields[] =
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
 #ifndef UNIT_TEST
-    /* 
+    /*
      * When the state will be restored, pending requests will be reissued
      * by VMMDev. The service therefore must save state as if there were no
      * pending request.

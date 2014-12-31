@@ -187,7 +187,7 @@
 #define tcp_recved lwip_tcp_recved
 #define tcp_rexmit lwip_tcp_rexmit
 #define tcp_rexmit_rto lwip_tcp_rexmit_rto
-/* tcp_rst is renaming to tcp_rst_impl, 
+/* tcp_rst is renaming to tcp_rst_impl,
  * so for cleaner ABI, _impl was added. */
 #define tcp_rst_impl lwip_tcp_rst_impl
 #define tcp_seg_copy lwip_tcp_seg_copy

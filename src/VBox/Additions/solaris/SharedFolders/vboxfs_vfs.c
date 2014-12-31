@@ -239,7 +239,7 @@ sf_pn_get(char *rawpath, struct mounta *uap, char **outpath)
 	return (0);
 }
 
-static void 
+static void
 sffs_print(sffs_data_t *sffs)
 {
 	cmn_err(CE_NOTE, "sffs_data_t at 0x%p\n", sffs);

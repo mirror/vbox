@@ -40,8 +40,8 @@ RT_C_DECLS_BEGIN
 #endif
 
 /**
- * In Slirp we don't need IPv6 for general case (only for dnsproxy mode 
- * it's potentially acceptable) 
+ * In Slirp we don't need IPv6 for general case (only for dnsproxy mode
+ * it's potentially acceptable)
  */
 #define RCPSF_IGNORE_IPV6 RT_BIT(0)
 /**

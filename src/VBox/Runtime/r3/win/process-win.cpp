@@ -612,18 +612,18 @@ static void rtProcWinUserLogoff(HANDLE hToken)
 
 
 /**
- * Creates an environment block out of a handed-in Unicode and 
- * RTENV block. The RTENV block can overwrite entries already 
- * present in the Unicode block. 
+ * Creates an environment block out of a handed-in Unicode and
+ * RTENV block. The RTENV block can overwrite entries already
+ * present in the Unicode block.
  *
  * @return  IPRT status code.
  *
  * @param   pvEnvBlock          Unicode block (array) of environment entries;
  *                              in form of "FOO=BAR\0BAR=BAZ".
- * @param   hEnv                Handle of an existing RTENV block to use. 
- * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv 
- *                              with the ones defined in pvEnvBlock. 
- * @param   ppwszBlock          Pointer to the final output. 
+ * @param   hEnv                Handle of an existing RTENV block to use.
+ * @param   fOverwriteExisting  Whether to overwrite existing values of hEnv
+ *                              with the ones defined in pvEnvBlock.
+ * @param   ppwszBlock          Pointer to the final output.
  */
 static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
                                               bool fOverwriteExisting,
@@ -649,12 +649,12 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvEnvBlock, RTENV hEnv,
                     {
                         rc = RTEnvUnset(pszEntry);
                     }
-                    else if (pszEq) 
+                    else if (pszEq)
                     {
                         const char *pszValue = pszEq + 1;
                         size_t cchVar = pszEq - pszEntry;
                         char *pszVar = (char *)RTMemAlloc(cchVar + 1);
-                        if (pszVar) 
+                        if (pszVar)
                         {
                             memcpy(pszVar, pszEntry, cchVar);
                             pszVar[cchVar] = '\0';
@@ -720,7 +720,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
                 LPVOID pvEnvBlockProfile = NULL;
                 if (pfnCreateEnvironmentBlock(&pvEnvBlockProfile, hToken, FALSE /* Don't inherit from parent. */))
                 {
-                    rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv, 
+                    rc = rtProcWinEnvironmentCreateInternal(pvEnvBlockProfile, hEnv,
                                                             false /* fOverwriteExisting */,
                                                             ppwszBlock);
                     pfnDestroyEnvironmentBlock(pvEnvBlockProfile);

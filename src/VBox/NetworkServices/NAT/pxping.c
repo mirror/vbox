@@ -795,7 +795,7 @@ pxping_pcb_rtstrfmt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                               " (%RTnaipv4)", pcb->peer.sin.sin_addr.s_addr);
         }
     }
-                      
+
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL,
                       " id %04x->%04x", ntohs(pcb->guest_id), ntohs(pcb->host_id));
 

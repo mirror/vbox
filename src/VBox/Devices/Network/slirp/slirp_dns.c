@@ -174,22 +174,22 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
     if (st.rcps_num_nameserver == 0)
         return -1;
 
-    
-    /* XXX: We're composing the list, but we already knows 
-     * its size so we can allocate array instead (Linux guests 
-     * dont like >3 servers in the list anyway) 
+
+    /* XXX: We're composing the list, but we already knows
+     * its size so we can allocate array instead (Linux guests
+     * dont like >3 servers in the list anyway)
      * or use pre-allocated array in NATState.
      */
     for (i = 0; i != st.rcps_num_nameserver; ++i)
     {
         struct dns_entry *pDns;
         RTNETADDRU *address = &st.rcps_nameserver[i].uAddr;
-        if (  (address->IPv4.u & RT_H2N_U32_C(IN_CLASSA_NET)) 
-           == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET)) 
+        if (  (address->IPv4.u & RT_H2N_U32_C(IN_CLASSA_NET))
+           == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
         {
-            /** 
+            /**
              * XXX: Note shouldn't patch the address in case of using DNS proxy,
-             * because DNS proxy we do revert it back actually. 
+             * because DNS proxy we do revert it back actually.
              */
             if (address->IPv4.u == RT_N2H_U32_C(INADDR_LOOPBACK))
                 address->IPv4.u = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);

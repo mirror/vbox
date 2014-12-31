@@ -136,4 +136,3 @@ RTDECL(int) RTCrPkixSignatureCreateByObjId(PRTCRPKIXSIGNATURE phSignature, PCRTA
     return VERR_NOT_FOUND;
 }
 
-

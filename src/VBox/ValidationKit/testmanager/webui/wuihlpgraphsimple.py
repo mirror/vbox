@@ -144,4 +144,3 @@ class WuiHlpLineGraphErrorbarY(WuiHlpLineGraph):
 
     pass;
 
-

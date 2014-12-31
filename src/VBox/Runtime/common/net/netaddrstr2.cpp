@@ -386,7 +386,7 @@ RTDECL(int) RTNetStrToIPv6Addr(const char *pcszAddr, PRTNETADDRIPV6 pAddr,
     if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
         return VERR_INVALID_PARAMETER;
 
-    return VINF_SUCCESS;    
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTNetStrToIPv6Addr);
 

@@ -28,11 +28,11 @@ public:
 
     /* Gets translation from loaded QM file
      *
-     * @param	context	  QM context to look for translation
+     * @param   context   QM context to look for translation
      * @param   source    Source string in one-byte encoding
      * @param   disamb    Disambiguationg comment, empty by default
      *
-     * @returns	Pointer to a translation in UTF-8 encoding, empty string on failure */
+     * @returns Pointer to a translation in UTF-8 encoding, empty string on failure */
 
     const char *translate(const char *pszContext, const char *pszSource, const char *pszDisamb = "") const throw();
 
@@ -44,8 +44,8 @@ public:
     int load(const char *pszFilename) throw();
 
 private:
-	/* QMTranslator implementation.
-	 * To separate all the code from the interface */
+        /* QMTranslator implementation.
+         * To separate all the code from the interface */
     QMTranslator_Impl *_impl;
 
     /* If copying is required, please define the following operators */

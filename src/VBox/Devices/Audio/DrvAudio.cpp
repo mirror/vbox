@@ -681,7 +681,7 @@ static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMA
     int rc = drvAudioHstInAdd(pThis, pThisCfg, enmRecSource, &pHstStrmIn);
     if (RT_FAILURE(rc))
     {
-        LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n", 
+        LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n",
                  pszName, rc));
 
         RTMemFree(pGstStrmIn);
@@ -1592,13 +1592,13 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(bool) drvAudioIsInputOK(PPDMIAUDIOCONNECTOR pInterface, 
+static DECLCALLBACK(bool) drvAudioIsInputOK(PPDMIAUDIOCONNECTOR pInterface,
                                             PPDMAUDIOGSTSTRMIN  pGstStrmIn)
 {
     return (pGstStrmIn != NULL);
 }
 
-static DECLCALLBACK(bool) drvAudioIsOutputOK(PPDMIAUDIOCONNECTOR pInterface, 
+static DECLCALLBACK(bool) drvAudioIsOutputOK(PPDMIAUDIOCONNECTOR pInterface,
                                              PPDMAUDIOGSTSTRMOUT pGstStrmOut)
 {
     return (pGstStrmOut != NULL);
@@ -1768,7 +1768,7 @@ DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *ps
             pGstStrmOut->cTotalSamplesWritten += cSamplesMixed;
         }
 #endif
-    }   
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

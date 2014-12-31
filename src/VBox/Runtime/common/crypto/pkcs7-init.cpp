@@ -50,4 +50,3 @@ static int rtCrPkcs7ContentInfo_CloneExtra(PRTCRPKCS7CONTENTINFO pThis)
  */
 #include <iprt/asn1-generator-init.h>
 
-

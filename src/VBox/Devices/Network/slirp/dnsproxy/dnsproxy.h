@@ -87,7 +87,7 @@ struct request {
      * dns_server must not be used if pData->dnsgen changed.
      */
     struct dns_entry    *dns_server;
-    uint32_t            dnsgen; 
+    uint32_t            dnsgen;
     int nbyte; /* length of dns request */
     char byte[1]; /* copy of original request */
 #endif

@@ -172,11 +172,11 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 
     if (sdom == PF_INET) {
         fwspec->src.sin.sin_port = htons(src_port);
-        fwspec->dst.sin.sin_port = htons(dst_port); 
+        fwspec->dst.sin.sin_port = htons(dst_port);
     }
     else { /* PF_INET6 */
         fwspec->src.sin6.sin6_port = htons(src_port);
-        fwspec->dst.sin6.sin6_port = htons(dst_port); 
+        fwspec->dst.sin6.sin6_port = htons(dst_port);
     }
 
     return 0;

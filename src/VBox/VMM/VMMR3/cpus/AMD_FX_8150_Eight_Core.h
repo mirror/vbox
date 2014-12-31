@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for AMD FX(tm)-8150 Eight-Core Processor.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_FX_8150_Eight_Core[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_FX_8150_Eight_Core[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000d, 0x68747541, 0x444d4163, 0x69746e65, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00600f12, 0x02080800, 0x1e98220b, 0x178bfbff, 0 },
@@ -84,7 +84,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_FX_8150_Eight_Core[] =
 /**
  * MSR ranges for AMD FX(tm)-8150 Eight-Core Processor.
  */
-static CPUMMSRRANGE const g_aMsrRanges_AMD_FX_8150_Eight_Core[] = 
+static CPUMMSRRANGE const g_aMsrRanges_AMD_FX_8150_Eight_Core[] =
 {
     MAL(0x00000000, "IA32_P5_MC_ADDR", 0x00000402),
     MAL(0x00000001, "IA32_P5_MC_TYPE", 0x00000401),
@@ -354,7 +354,7 @@ static CPUMMSRRANGE const g_aMsrRanges_AMD_FX_8150_Eight_Core[] =
 /**
  * Database entry for AMD FX(tm)-8150 Eight-Core Processor.
  */
-static CPUMDBENTRY const g_Entry_AMD_FX_8150_Eight_Core = 
+static CPUMDBENTRY const g_Entry_AMD_FX_8150_Eight_Core =
 {
     /*.pszName          = */ "AMD FX-8150 Eight-Core",
     /*.pszFullName      = */ "AMD FX(tm)-8150 Eight-Core Processor",

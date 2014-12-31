@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Intel(R) Xeon(R) CPU           X5482  @ 3.20GHz.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000a, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x00010676, 0x04040800, 0x000ce3bd, 0xbfebfbff, 0 },
@@ -54,7 +54,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Xeon_X5482_3_20GHz[] =
 /**
  * MSR ranges for Intel(R) Xeon(R) CPU           X5482  @ 3.20GHz.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
 {
     MFO(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr), /* value=0x610010 */
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
@@ -216,7 +216,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Xeon_X5482_3_20GHz[] =
 /**
  * Database entry for Intel(R) Xeon(R) CPU           X5482  @ 3.20GHz.
  */
-static CPUMDBENTRY const g_Entry_Intel_Xeon_X5482_3_20GHz = 
+static CPUMDBENTRY const g_Entry_Intel_Xeon_X5482_3_20GHz =
 {
     /*.pszName          = */ "Intel Xeon X5482 3.20GHz",
     /*.pszFullName      = */ "Intel(R) Xeon(R) CPU           X5482  @ 3.20GHz",

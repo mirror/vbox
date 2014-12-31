@@ -173,7 +173,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
     PVBOXNETADP_ADAPTER pAdapter = NULL;
 
     LogFlow(("==>"__FUNCTION__": adapter handle=%p\n", hAdapter));
-    
+
     *ppAdapter = NULL;
 
     pAdapter = (PVBOXNETADP_ADAPTER)NdisAllocateMemoryWithTagPriority(g_VBoxNetAdpGlobals.hMiniportDriver,
@@ -239,7 +239,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
             Log((__FUNCTION__": Failed to allocate the adapter context with 0x%x\n", Status));
             break;
         }
-    
+
         RAttrs.Header.Type = NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES;
         RAttrs.Header.Size = NDIS_SIZEOF_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
         RAttrs.Header.Revision = NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
@@ -368,7 +368,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
             cbInfo = NDIS_SIZEOF_INTERRUPT_MODERATION_PARAMETERS_REVISION_1;
             if (cbInfo > pQuery->InformationBufferLength)
                 break;
-            pParams->Header.Type = NDIS_OBJECT_TYPE_DEFAULT; 
+            pParams->Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
             pParams->Header.Revision = NDIS_INTERRUPT_MODERATION_PARAMETERS_REVISION_1;
             pParams->Header.Size = NDIS_SIZEOF_INTERRUPT_MODERATION_PARAMETERS_REVISION_1;
             pParams->Flags = 0;
@@ -401,7 +401,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
                 break;
             pInfo = NULL; /* Do not copy */
             memset(pStats, 0, cbInfo);
-            pStats->Header.Type = NDIS_OBJECT_TYPE_DEFAULT; 
+            pStats->Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
             pStats->Header.Revision = NDIS_STATISTICS_INFO_REVISION_1;
             pStats->Header.Size = NDIS_SIZEOF_STATISTICS_INFO_REVISION_1;
             // TODO: We need some stats, don't we?
@@ -507,7 +507,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqSet(PVBOXNETADP_ADAPTER pAdapter,
             pSet->BytesRead = sizeof(NDIS_DEVICE_POWER_STATE);
             Status = NDIS_STATUS_SUCCESS;
             break;
-            
+
         default:
             Status = NDIS_STATUS_NOT_SUPPORTED;
             break;

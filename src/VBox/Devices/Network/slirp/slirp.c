@@ -63,10 +63,10 @@
 #include <alias.h>
 
 #ifndef RT_OS_WINDOWS
-/** 
+/**
  * XXX: It shouldn't be non-Windows specific.
  * resolv_conf_parser.h client's structure isn't OS specific, it's just need to be generalized a
- * a bit to replace slirp_state.h DNS server (domain) lists with rcp_state like structure.  
+ * a bit to replace slirp_state.h DNS server (domain) lists with rcp_state like structure.
  */
 # include "resolv_conf_parser.h"
 #endif
@@ -465,7 +465,7 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 void slirp_link_up(PNATState pData)
 {
     struct arp_cache_entry *ac;
-    
+
     if (link_up == 1)
         return;
 
@@ -495,7 +495,7 @@ void slirp_link_down(PNATState pData)
         return;
 
     slirpReleaseDnsSettings(pData);
-    
+
     while ((so = tcb.so_next) != &tcb)
     {
         /* Don't miss TCB releasing */
@@ -2119,7 +2119,7 @@ int slirp_host_network_configuration_change_strategy_selector(const PNATState pD
         /* We dont conflict with bootp.c::dhcp_decode */
         struct rcp_state rcp_state;
         int rc;
-        
+
         rcp_state.rcps_flags |= RCPSF_IGNORE_IPV6;
         rc = rcp_parse(&rcp_state, RESOLV_CONF_FILE);
         LogRelFunc(("NAT: rcp_parse:%Rrc old domain:%s new domain:%s\n",
@@ -2128,7 +2128,7 @@ int slirp_host_network_configuration_change_strategy_selector(const PNATState pD
         if (   RT_FAILURE(rc)
             || LIST_EMPTY(&pData->pDomainList))
             return VBOX_NAT_DNS_DNSPROXY;
-        
+
         if (   rcp_state.rcps_domain
             && strcmp(rcp_state.rcps_domain, LIST_FIRST(&pData->pDomainList)->dd_pszDomain) == 0)
             return VBOX_NAT_DNS_DNSPROXY;

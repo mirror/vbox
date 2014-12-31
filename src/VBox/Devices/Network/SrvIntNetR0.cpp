@@ -2814,7 +2814,7 @@ static uint16_t computeIPv6FullChecksum(PCRTNETIPV6 pIpHdr)
  * Neighbor Discovery datagrams.
  */
 static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTNETIF pIfSender,
-						     PRTNETETHERHDR pEthHdr, uint32_t cb)
+                                                     PRTNETETHERHDR pEthHdr, uint32_t cb)
 {
     if (RT_UNLIKELY(cb < sizeof(*pEthHdr)))
         return;
@@ -2841,24 +2841,24 @@ static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTN
     switch (type)
     {
         case RTNETIPV6_ICMP_TYPE_RS:
-	    hdrlen = 8;
-	    break;
+            hdrlen = 8;
+            break;
 
         case RTNETIPV6_ICMP_TYPE_RA:
-	    hdrlen = 16;
-	    break;
+            hdrlen = 16;
+            break;
 
         case RTNETIPV6_ICMP_TYPE_NS:
-	    hdrlen = 24;
-	    break;
+            hdrlen = 24;
+            break;
 
         case RTNETIPV6_ICMP_TYPE_NA:
-	    hdrlen = 24;
-	    llaopt = RTNETIPV6_ICMP_ND_TLLA_OPT;
-	    break;
+            hdrlen = 24;
+            llaopt = RTNETIPV6_ICMP_ND_TLLA_OPT;
+            break;
 
         default:
-	    return;
+            return;
     }
 
     AssertReturnVoid(hdrlen > 0);
@@ -2866,7 +2866,7 @@ static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTN
         return;
 
     if (RT_UNLIKELY(pICMPv6->icmp6_code != 0))
-	return;
+        return;
 
     PRTNETNDP_LLA_OPT pLLAOpt = NULL;
     char *pOpt = (char *)pICMPv6 + hdrlen;
@@ -2881,8 +2881,8 @@ static void intnetR0TrunkSharedMacEditIPv6FromIntNet(PINTNETTRUNKIF pThis, PINTN
 
         if (opt == llaopt)
         {
-	    if (RT_UNLIKELY(optlen != 8))
-		return;
+            if (RT_UNLIKELY(optlen != 8))
+                return;
             pLLAOpt = (PRTNETNDP_LLA_OPT)pOpt;
             break;
         }

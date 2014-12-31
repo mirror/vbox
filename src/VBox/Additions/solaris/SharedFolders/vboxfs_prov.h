@@ -65,7 +65,7 @@ extern void sfprov_disconnect(sfp_connection_t *);
  *
  * sfprov_unmount() unmounts the mounted file system. It returns 0 on
  * success and any relevant errno on failure.
- * 
+ *
  * spf_mount_t is the representation of an active mount point.
  */
 typedef struct spf_mount_t {

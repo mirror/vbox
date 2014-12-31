@@ -451,7 +451,7 @@ static uint64_t rtZipPkzipReaderUncompressed(PRTZIPPKZIPREADER pThis)
 {
     if (pThis->fZip64Ex && pThis->cdh.cbUncompressed == (uint32_t)-1)
         return pThis->cd64ex.cbUncompressed;
-    
+
     return pThis->cdh.cbUncompressed;
 }
 
@@ -463,7 +463,7 @@ static uint64_t rtZipPkzipReaderCompressed(PRTZIPPKZIPREADER pThis)
 {
     if (pThis->fZip64Ex && pThis->cdh.cbCompressed == (uint32_t)-1)
         return pThis->cd64ex.cbCompressed;
-    
+
     return pThis->cdh.cbCompressed;
 }
 

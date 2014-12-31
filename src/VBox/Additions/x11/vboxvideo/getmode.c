@@ -280,7 +280,7 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         }
         return;
     }
-#endif    
+#endif
     /* We can get called early, before the root window is created. */
     if (!ROOT_WINDOW(pScrn))
         return;

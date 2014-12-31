@@ -208,7 +208,7 @@ static int pfnMonitorThread(RTTHREAD self, void *pvUser)
 {
     Display *pDisplay;
     bool fHasVT = true;
-    
+
     pDisplay = XOpenDisplay(NULL);
     if (!pDisplay)
         VBClFatalError(("Failed to open the X11 display\n"));

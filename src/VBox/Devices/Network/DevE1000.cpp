@@ -2817,7 +2817,7 @@ static int e1kRegWriteMDIC(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
     {
         E1kLog(("%s WARNING! Access to invalid PHY detected, phy=%d.\n",
                 pThis->szPrf, GET_BITS_V(value, MDIC, PHY)));
-        /* 
+        /*
          * Some drivers scan the MDIO bus for a PHY. We can work with these
          * drivers if we set MDIC_READY and MDIC_ERROR when there isn't a PHY
          * at the requested address, see @bugref{7346}.

@@ -293,10 +293,10 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostALSAAudio);
     if (RT_FAILURE(rc))
-        return rc;    
+        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
-        return rc;    
+        return rc;
 # endif
 # if defined(RT_OS_FREEBSD)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
@@ -311,7 +311,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 # if defined(RT_OS_SOLARIS)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
-        return rc;   
+        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostSolAudio);
     if (RT_FAILURE(rc))
         return rc;

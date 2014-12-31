@@ -105,10 +105,10 @@ typedef struct
     uint32_t                id;
     uint32_t                idAssociatedContext;
     uint32_t                flags;
-    SVGA3dSurfaceFormat     format; 
+    SVGA3dSurfaceFormat     format;
     SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
     uint32_t                cFaces;
-    PVMSVGA3DMIPMAPLEVEL    pMipmapLevels; 
+    PVMSVGA3DMIPMAPLEVEL    pMipmapLevels;
     uint32_t                multiSampleCount;
     SVGA3dTextureFilter     autogenFilter;
     D3DFORMAT               formatD3D;
@@ -332,7 +332,7 @@ typedef struct
 #else
     IDirect3D9Ex           *pD3D9;
 #endif
-    D3DCAPS9                caps; 
+    D3DCAPS9                caps;
 
     /** Window Thread. */
     R3PTRTYPE(RTTHREAD)     pWindowThread;
@@ -377,7 +377,7 @@ typedef struct
     SVGA3dFormatOp          FormatOp;
 } VMSVGA3DFORMATSUPPORT;
 
-VMSVGA3DFORMATSUPPORT aFormatSupport[] = 
+VMSVGA3DFORMATSUPPORT aFormatSupport[] =
 {
     {
         0,
@@ -436,7 +436,7 @@ VMSVGA3DFORMATSUPPORT aFormatSupport[] =
     }
 };
 
-VMSVGA3DFORMATSUPPORT aFeatureReject[] = 
+VMSVGA3DFORMATSUPPORT aFeatureReject[] =
 {
     {
         D3DUSAGE_QUERY_WRAPANDMIP,
@@ -452,7 +452,7 @@ VMSVGA3DFORMATSUPPORT aFeatureReject[] =
         D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING,
         D3DRTYPE_TEXTURE, /* ?? */
         SVGA3DFORMAT_OP_NOALPHABLEND
-    },    
+    },
 };
 
 static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps);
@@ -517,7 +517,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     vmsvgaDumpD3DCaps(&pState->caps);
 
     /* Check if INTZ is supported. */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                           D3DDEVTYPE_HAL,
                                           D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                           0,
@@ -532,7 +532,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->fSupportedSurfaceINTZ = true;
 
     /* Check if NULL is supported. */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                           D3DDEVTYPE_HAL,
                                           D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                           D3DUSAGE_RENDERTARGET,
@@ -548,7 +548,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
 
     /*  Check if DX9 depth stencil textures are supported */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                           D3DDEVTYPE_HAL,
                                           D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                           D3DUSAGE_DEPTHSTENCIL,
@@ -559,7 +559,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA: texture format D3DFMT_D16 not supported\n"));
     }
 
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                           D3DDEVTYPE_HAL,
                                           D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                           D3DUSAGE_DEPTHSTENCIL,
@@ -569,7 +569,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     {
         LogRel(("VMSVGA: texture format D3DFMT_D24X8 not supported\n"));
     }
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                           D3DDEVTYPE_HAL,
                                           D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                           D3DUSAGE_DEPTHSTENCIL,
@@ -635,7 +635,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
     uint32_t result = 0;
 
     /* Try if the format can be used for the primary display. */
-    hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+    hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                             D3DDEVTYPE_HAL,
                                             format,
                                             0,
@@ -644,7 +644,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
 
     for (unsigned i = 0; i < RT_ELEMENTS(aFormatSupport); i++)
     {
-        hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+        hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                                 D3DDEVTYPE_HAL,
                                                 D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                                 aFormatSupport[i].Usage,
@@ -659,7 +659,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aFeatureReject); i++)
         {
-            hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+            hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                                     D3DDEVTYPE_HAL,
                                                     D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                                     aFeatureReject[i].Usage,
@@ -671,7 +671,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
     }
 
     /* @todo missing:
-     * 
+     *
      * SVGA3DFORMAT_OP_PIXELSIZE
      */
 
@@ -680,7 +680,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
     case SVGA3D_DEVCAP_SURFACEFMT_X8R8G8B8:
     case SVGA3D_DEVCAP_SURFACEFMT_X1R5G5B5:
     case SVGA3D_DEVCAP_SURFACEFMT_R5G6B5:
-        result |= SVGA3DFORMAT_OP_MEMBEROFGROUP_ARGB 
+        result |= SVGA3DFORMAT_OP_MEMBEROFGROUP_ARGB
                |  SVGA3DFORMAT_OP_CONVERT_TO_ARGB
                |  SVGA3DFORMAT_OP_DISPLAYMODE           /* Should not be set for alpha formats. */
                |  SVGA3DFORMAT_OP_3DACCELERATION;       /* implies OP_DISPLAYMODE */
@@ -690,7 +690,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
     case SVGA3D_DEVCAP_SURFACEFMT_A2R10G10B10:
     case SVGA3D_DEVCAP_SURFACEFMT_A1R5G5B5:
     case SVGA3D_DEVCAP_SURFACEFMT_A4R4G4B4:
-        result |= SVGA3DFORMAT_OP_MEMBEROFGROUP_ARGB 
+        result |= SVGA3DFORMAT_OP_MEMBEROFGROUP_ARGB
                |  SVGA3DFORMAT_OP_CONVERT_TO_ARGB
                |  SVGA3DFORMAT_OP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET;
         break;
@@ -705,15 +705,15 @@ static uint32_t vmsvga3dGetDepthFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t 
 {
     HRESULT  hr;
     uint32_t result = 0;
-        
-    hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT, 
+
+    hr = pState3D->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
                                             D3DDEVTYPE_HAL,
                                             D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
                                             D3DUSAGE_DEPTHSTENCIL,
                                             D3DRTYPE_SURFACE,
                                             format);
     if (hr == D3D_OK)
-        result =  SVGA3DFORMAT_OP_ZSTENCIL 
+        result =  SVGA3DFORMAT_OP_ZSTENCIL
                 | SVGA3DFORMAT_OP_ZSTENCIL_WITH_ARBITRARY_COLOR_DEPTH
                 | SVGA3DFORMAT_OP_TEXTURE /* Necessary for Ubuntu Unity */;
 
@@ -1114,13 +1114,13 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
     /* Dump of VMWare Player caps (from their log); for debugging purposes */
     switch (idx3dCaps)
     {
-    case 0: 
+    case 0:
         *pu32Val = 0x00000001;
         break;
     case 1:
         *pu32Val = 0x0000000a;
         break;
-    case 2: 
+    case 2:
         *pu32Val = 0x00000008;
         break;
     case 3: *pu32Val = 0x00000006; break;
@@ -1383,8 +1383,8 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     PVMSVGA3DSURFACE pSurface;
     PVMSVGA3DSTATE   pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
-   
-    Log(("vmsvga3dSurfaceDefine: sid=%x surfaceFlags=%x format=%s (%x) multiSampleCount=%d autogenFilter=%d, cMipLevels=%d size=(%d,%d,%d)\n", 
+
+    Log(("vmsvga3dSurfaceDefine: sid=%x surfaceFlags=%x format=%s (%x) multiSampleCount=%d autogenFilter=%d, cMipLevels=%d size=(%d,%d,%d)\n",
          sid, surfaceFlags, vmsvgaSurfaceType2String(format), format, multisampleCount, autogenFilter, cMipLevels, pMipLevelSize->width, pMipLevelSize->height, pMipLevelSize->depth));
 
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
@@ -1414,7 +1414,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     pSurface->hSharedObject         = NULL;
     pSurface->pSharedObjectTree     = NULL;
 
-    /* The surface type is sort of undefined now, even though the hints and format can help to clear that up. 
+    /* The surface type is sort of undefined now, even though the hints and format can help to clear that up.
      * In some case we'll have to wait until the surface is used to create the D3D object.
      */
     switch (format)
@@ -1551,7 +1551,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
         /* Unknown; decide later. */
         break;
     }
-   
+
     Assert(!pSurface->u.pSurface);
 
     /* Allocate buffer to hold the surface data until we can move it into a D3D object */
@@ -1574,7 +1574,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 }
 
 /*
- * Release all shared surface objects. 
+ * Release all shared surface objects.
  */
 static int vmsvga3dSharedSurfaceDestroyTree(PAVLU32NODECORE pNode, void *pParam)
 {
@@ -1705,13 +1705,13 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVGASTATE pThis, PVMS
         HRESULT hr;
         bool    ret;
 
-        Log(("vmsvga3dSurfaceGetSharedCopy: Create shared texture copy d3d (%d,%d) cMip=%d usage %x format %x.\n", 
-              pSurface->pMipmapLevels[0].size.width, 
-              pSurface->pMipmapLevels[0].size.height, 
-              pSurface->faces[0], 
+        Log(("vmsvga3dSurfaceGetSharedCopy: Create shared texture copy d3d (%d,%d) cMip=%d usage %x format %x.\n",
+              pSurface->pMipmapLevels[0].size.width,
+              pSurface->pMipmapLevels[0].size.height,
+              pSurface->faces[0],
               pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET,
               pSurface->formatD3D));
-            
+
         pSharedSurface = (PVMSVGA3DSHAREDSURFACE)RTMemAllocZ(sizeof(*pSharedSurface));
         AssertReturn(pSharedSurface, NULL);
 
@@ -1720,9 +1720,9 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVGASTATE pThis, PVMS
         AssertReturn(ret, NULL);
 
         /* Create shadow copy of the original shared texture. Shared d3d resources require Vista+ and have some restrictions. */
-        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width, 
-                                              pSurface->pMipmapLevels[0].size.height, 
-                                              pSurface->faces[0].numMipLevels, 
+        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width,
+                                              pSurface->pMipmapLevels[0].size.height,
+                                              pSurface->faces[0].numMipLevels,
                                               pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET /* required for use as a StretchRect destination */,
                                               pSurface->formatD3D,
                                               D3DPOOL_DEFAULT,
@@ -1737,7 +1737,7 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVGASTATE pThis, PVMS
 #define vmsvga3dSurfaceTrackUsage(a, b, c)
 #define vmsvga3dSurfaceFlush(a, b)
 #else
-/* Inject a query event into the D3D pipeline so we can check when usage of this surface has finished. 
+/* Inject a query event into the D3D pipeline so we can check when usage of this surface has finished.
  * (D3D does not synchronize shared surface usage)
  */
 static int vmsvga3dSurfaceTrackUsage(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t sid)
@@ -1859,7 +1859,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         /* @todo stricter checks for associated context */
         cid = pSurfaceDest->idAssociatedContext;
         if (    cid >= pState->cContexts
-            ||  pState->paContext[cid].id != cid)   
+            ||  pState->paContext[cid].id != cid)
         {
             Log(("vmsvga3dSurfaceCopy invalid context id!\n"));
             return VERR_INVALID_PARAMETER;
@@ -1871,7 +1871,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
 
 #ifndef VBOX_VMSVGA3D_WITH_OPENGL
-        if (    fSrcTexture 
+        if (    fSrcTexture
             &&  pSurfaceSrc->idAssociatedContext != cid)
         {
             Log(("vmsvga3dSurfaceCopy; using texture %x created for another context (%d vs %d)\n", sidSrc, pSurfaceSrc->idAssociatedContext, cid));
@@ -1960,7 +1960,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         Rect.bottom = pBox[i].srcy + pBox[i].h;   /* exclusive */
 
         Log(("vmsvga3dSurfaceCopy: (manual) copy src=%x src=%x face=%d (%d,%d)(%d,%d) to dest=%x src=%x face=%d (%d,%d)\n", sidSrc, src.face, src.mipmap, Rect.left, Rect.top, Rect.right, Rect.bottom, sidDest, dest.face, dest.mipmap, pBox[i].x, pBox[i].y));
-            
+
         Assert(!pBox[i].srcz && !pBox[i].z);
 
         if (!pSurfaceSrc->u.pSurface)
@@ -2059,8 +2059,8 @@ static int vmsvga3dCreateTexture(PVMSVGA3DCONTEXT pContext, uint32_t idAssociate
     {
         Assert(pSurface->faces[0].numMipLevels == 1);
         /* Use the INTZ format for a depth/stencil surface that will be used as a texture */
-        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width, 
-                                              pSurface->pMipmapLevels[0].size.height, 
+        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width,
+                                              pSurface->pMipmapLevels[0].size.height,
                                               1,
                                               D3DUSAGE_DEPTHSTENCIL,
                                               FOURCC_INTZ,
@@ -2074,9 +2074,9 @@ static int vmsvga3dCreateTexture(PVMSVGA3DCONTEXT pContext, uint32_t idAssociate
     }
     else
     {
-        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width, 
-                                              pSurface->pMipmapLevels[0].size.height, 
-                                              pSurface->faces[0].numMipLevels, 
+        hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width,
+                                              pSurface->pMipmapLevels[0].size.height,
+                                              pSurface->faces[0].numMipLevels,
                                               pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET /* required for use as a StretchRect destination */,
                                               pSurface->formatD3D,
                                               D3DPOOL_DEFAULT,
@@ -2084,10 +2084,10 @@ static int vmsvga3dCreateTexture(PVMSVGA3DCONTEXT pContext, uint32_t idAssociate
                                               &pSurface->hSharedObject);
         if (hr == D3D_OK)
         {
-            /* Create another texture object to serve as a bounce buffer as the above texture surface can't be locked. */ 
-            hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width, 
-                                                  pSurface->pMipmapLevels[0].size.height, 
-                                                  pSurface->faces[0].numMipLevels, 
+            /* Create another texture object to serve as a bounce buffer as the above texture surface can't be locked. */
+            hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width,
+                                                  pSurface->pMipmapLevels[0].size.height,
+                                                  pSurface->faces[0].numMipLevels,
                                                   (pSurface->fUsageD3D & ~D3DUSAGE_RENDERTARGET) | D3DUSAGE_DYNAMIC /* Lockable */,
                                                   pSurface->formatD3D,
                                                   D3DPOOL_SYSTEMMEM,
@@ -2100,9 +2100,9 @@ static int vmsvga3dCreateTexture(PVMSVGA3DCONTEXT pContext, uint32_t idAssociate
         {
             Log(("Format not accepted -> try old method\n"));
             /* The format was probably not accepted; fall back to our old mode. */
-            hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width, 
-                                                  pSurface->pMipmapLevels[0].size.height, 
-                                                  pSurface->faces[0].numMipLevels, 
+            hr = pContext->pDevice->CreateTexture(pSurface->pMipmapLevels[0].size.width,
+                                                  pSurface->pMipmapLevels[0].size.height,
+                                                  pSurface->faces[0].numMipLevels,
                                                   (pSurface->fUsageD3D & ~D3DUSAGE_RENDERTARGET) |  D3DUSAGE_DYNAMIC /* Lockable */,
                                                   pSurface->formatD3D,
                                                   D3DPOOL_DEFAULT,
@@ -2359,10 +2359,10 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
 
             cbSrcPitch = (guest.pitch == 0) ? pBoxes[i].w * pSurface->cbBlock : guest.pitch;
 
-            rc = vmsvgaGMRTransfer(pThis, 
+            rc = vmsvgaGMRTransfer(pThis,
                                     transfer,
-                                    (uint8_t *)pMipLevel->pSurfaceData + uDestOffset, 
-                                    pMipLevel->cbSurfacePitch, 
+                                    (uint8_t *)pMipLevel->pSurfaceData + uDestOffset,
+                                    pMipLevel->cbSurfacePitch,
                                     guest.ptr,
                                     pBoxes[i].srcx * pSurface->cbBlock + (pBoxes[i].srcy + pBoxes[i].srcz * pBoxes[i].h) * cbSrcPitch,
                                     cbSrcPitch,
@@ -2494,11 +2494,11 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     Log(("Lock TEXTURE (bounce=%d) memory for rectangle (%d,%d)(%d,%d)\n", !!(pSurface->bounce.pTexture), Rect.left, Rect.top, Rect.right, Rect.bottom));
                 else
                     Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n", (pSurface->flags & SVGA3D_SURFACE_HINT_DEPTHSTENCIL) ? "DEPTH-STENCIL" : "RENDERTARGET", Rect.left, Rect.top, Rect.right, Rect.bottom));
-                
-                rc = vmsvgaGMRTransfer(pThis, 
+
+                rc = vmsvgaGMRTransfer(pThis,
                                        transfer,
-                                       (uint8_t *)LockedRect.pBits, 
-                                       LockedRect.Pitch, 
+                                       (uint8_t *)LockedRect.pBits,
+                                       LockedRect.Pitch,
                                        guest.ptr,
                                        pBoxes[i].srcx * pSurface->cbBlock + pBoxes[i].srcy * cbSrcPitch,
                                        cbSrcPitch,
@@ -2561,16 +2561,16 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                 /* @todo lock only as much as we really need */
                 if (fVertex)
                     hr = pSurface->u.pVertexBuffer->Lock(0, 0, (void **)&pData, dwFlags);
-                else        
+                else
                     hr = pSurface->u.pIndexBuffer->Lock(0, 0, (void **)&pData, dwFlags);
                 AssertMsg(hr == D3D_OK, ("vmsvga3dSurfaceDMA: Lock %s failed with %x\n", (fVertex) ? "vertex" : "index", hr));
 
                 Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n", (fVertex) ? "vertex" : "index", pBoxes[i].x, pBoxes[i].y, pBoxes[i].x + pBoxes[i].w, pBoxes[i].y + pBoxes[i].h));
 
-                rc = vmsvgaGMRTransfer(pThis, 
+                rc = vmsvgaGMRTransfer(pThis,
                                        transfer,
-                                       pData + uDestOffset, 
-                                       pSurface->pMipmapLevels[host.mipmap].cbSurfacePitch, 
+                                       pData + uDestOffset,
+                                       pSurface->pMipmapLevels[host.mipmap].cbSurfacePitch,
                                        guest.ptr,
                                        pBoxes[i].srcx * pSurface->cbBlock + pBoxes[i].srcy * cbSrcPitch,
                                        cbSrcPitch,
@@ -2617,7 +2617,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t dest, SVGASignedRect d
         /* easy case; no clipping */
         SVGA3dCopyBox        box;
         SVGA3dGuestImage     dest;
-       
+
         box.x       = destRect.left;
         box.y       = destRect.top;
         box.z       = 0;
@@ -2653,7 +2653,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t dest, SVGASignedRect d
 
         /* @todo merge into one SurfaceDMA call */
         for (uint32_t i = 0; i < cRects; i++)
-        {   
+        {
             /* The clipping rectangle is relative to the top-left corner of srcRect & destRect. Adjust here. */
             box.srcx = srcRect.left + pRect[i].left;
             box.srcy = srcRect.top  + pRect[i].top;
@@ -2775,7 +2775,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     HRESULT             hr;
     IDirect3DSurface9  *pBackBuffer;
     IDirect3DSurface9  *pSurfaceD3D;
-    struct 
+    struct
     {
         uint32_t        x;
         uint32_t        y;
@@ -2812,7 +2812,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
     {
         hr = pSurface->u.pTexture->GetSurfaceLevel(0, &pSurfaceD3D);
-        AssertMsgReturn(hr == D3D_OK, ("vmsvga3dCommandPresent: GetSurfaceLevel failed with %x\n", hr), VERR_INTERNAL_ERROR);        
+        AssertMsgReturn(hr == D3D_OK, ("vmsvga3dCommandPresent: GetSurfaceLevel failed with %x\n", hr), VERR_INTERNAL_ERROR);
     }
     else
         pSurfaceD3D = pSurface->u.pSurface;
@@ -3292,7 +3292,7 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
                 }
             }
 #endif /* #ifdef VMSVGA3D_DIRECT3D9_RESET */
-            memset(&cs, 0, sizeof(cs));            
+            memset(&cs, 0, sizeof(cs));
             cs.cx = pThis->svga.uWidth;
             cs.cy = pThis->svga.uHeight;
 
@@ -3596,7 +3596,7 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
 
         switch (pRenderState[i].state)
         {
-        case SVGA3D_RS_ZENABLE:                /* SVGA3dBool */            
+        case SVGA3D_RS_ZENABLE:                /* SVGA3dBool */
             renderState = D3DRS_ZENABLE;
             val = pRenderState[i].uintValue;
             Assert(val == D3DZB_FALSE || val == D3DZB_TRUE);
@@ -4294,13 +4294,13 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                  * wishing to update an actual color render target
                  */
                 IDirect3DSurface9* pDummyRenderTarget;
-                hr = pContext->pDevice->CreateRenderTarget(pThis->svga.uWidth, 
-                                                           pThis->svga.uHeight, 
+                hr = pContext->pDevice->CreateRenderTarget(pThis->svga.uWidth,
+                                                           pThis->svga.uHeight,
                                                            FOURCC_NULL,
-                                                           D3DMULTISAMPLE_NONE, 
-                                                           0, 
-                                                           FALSE, 
-                                                           &pDummyRenderTarget, 
+                                                           D3DMULTISAMPLE_NONE,
+                                                           0,
+                                                           FALSE,
+                                                           &pDummyRenderTarget,
                                                            NULL);
 
                 AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetRenderTarget: CreateRenderTarget failed with %x\n", hr), VERR_INTERNAL_ERROR);
@@ -4353,11 +4353,11 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                 int rc = vmsvga3dCreateTexture(pContext, cid, pRenderTarget);
                 AssertRC(rc);   /* non-fatal */
             }
-            
+
             if (!pRenderTarget->fStencilAsTexture)
             {
                 Log(("vmsvga3dSetRenderTarget DEPTH/STENCIL; cQualityLevels=%d\n", cQualityLevels));
-                hr = pContext->pDevice->CreateDepthStencilSurface(pRenderTarget->pMipmapLevels[0].size.width, 
+                hr = pContext->pDevice->CreateDepthStencilSurface(pRenderTarget->pMipmapLevels[0].size.width,
                                                                   pRenderTarget->pMipmapLevels[0].size.height,
                                                                   pRenderTarget->formatD3D,
                                                                   pRenderTarget->multiSampleTypeD3D,
@@ -4506,8 +4506,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                 Log(("vmsvga3dSetRenderTarget COLOR; cQualityLevels=%d\n", cQualityLevels));
                 Log(("Create rendertarget (%d,%d) format=%x multisample=%x\n", pRenderTarget->pMipmapLevels[0].size.width, pRenderTarget->pMipmapLevels[0].size.height, pRenderTarget->formatD3D, pRenderTarget->multiSampleTypeD3D));
 
-                hr = pContext->pDevice->CreateRenderTarget(pRenderTarget->pMipmapLevels[0].size.width, 
-                                                           pRenderTarget->pMipmapLevels[0].size.height, 
+                hr = pContext->pDevice->CreateRenderTarget(pRenderTarget->pMipmapLevels[0].size.width,
+                                                           pRenderTarget->pMipmapLevels[0].size.height,
                                                            pRenderTarget->formatD3D,
                                                            pRenderTarget->multiSampleTypeD3D,
                                                            ((cQualityLevels >= 1) ? cQualityLevels - 1 : 0),   /* 0 - (levels-1) */
@@ -4819,7 +4819,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 if (pSurface->idAssociatedContext != cid)
                 {
                     Log(("vmsvga3dSetTextureState; using texture %x created for another context (%d vs %d)\n", sid, pSurface->idAssociatedContext, cid));
-    
+
                     PVMSVGA3DSHAREDSURFACE pSharedSurface = vmsvga3dSurfaceGetSharedCopy(pThis, pContext, pSurface);
                     AssertReturn(pSharedSurface, VERR_INTERNAL_ERROR);
 
@@ -4881,22 +4881,22 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             samplerType = D3DSAMP_BORDERCOLOR;
             val = pTextureState[i].value;   /* Identical */
             break;
-            
+
         case SVGA3D_TS_TEXTURE_LOD_BIAS:            /* float */
             samplerType = D3DSAMP_MIPMAPLODBIAS;
             val = pTextureState[i].value;   /* Identical */
             break;
-            
+
         case SVGA3D_TS_TEXTURE_MIPMAP_LEVEL:        /* uint32_t */
             samplerType = D3DSAMP_MAXMIPLEVEL;
             val = pTextureState[i].value;   /* Identical?? */
             break;
-            
+
         case SVGA3D_TS_TEXTURE_ANISOTROPIC_LEVEL:   /* uint32_t */
             samplerType = D3DSAMP_MAXANISOTROPY;
             val = pTextureState[i].value;   /* Identical?? */
             break;
-            
+
         case SVGA3D_TS_GAMMA:                       /* float */
             samplerType = D3DSAMP_SRGBTEXTURE;
             /* Boolean in D3D */
@@ -4904,7 +4904,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 val = FALSE;
             else
                 val = TRUE;
-            break;           
+            break;
 
         /* Internal commands, that don't map directly to the SetTextureStageState API. */
         case SVGA3D_TS_TEXCOORDGEN:                 /* SVGA3dTextureCoordGen */
@@ -5476,7 +5476,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             AssertMsg(pRange[iPrimitive].indexWidth == sizeof(uint32_t) || pRange[iPrimitive].indexWidth == sizeof(uint16_t), ("Unsupported primitive width %d\n", pRange[iPrimitive].indexWidth));
 
             if (    sidIndex >= SVGA3D_MAX_SURFACE_IDS
-                ||  sidIndex >= pState->cSurfaces 
+                ||  sidIndex >= pState->cSurfaces
                 ||  pState->paSurface[sidIndex].id != sidIndex)
             {
                 Assert(sidIndex < SVGA3D_MAX_SURFACE_IDS);
@@ -5562,7 +5562,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
 
             UINT numVertices;
 
-            if (pVertexDecl[0].rangeHint.last) 
+            if (pVertexDecl[0].rangeHint.last)
                 numVertices = pVertexDecl[0].rangeHint.last - pVertexDecl[0].rangeHint.first + 1;
             else
                 numVertices = pVertexSurface->pMipmapLevels[0].cbSurface / strideVertex - pVertexDecl[0].array.offset / strideVertex - pVertexDecl[0].rangeHint.first - pRange[iPrimitive].indexBias;

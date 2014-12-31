@@ -29,7 +29,7 @@
 
 cr="
 "
-tab="	"
+tab="   "
 IFS=" ${cr}${tab}"
 'unset' -f unalias
 'unalias' -a

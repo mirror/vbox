@@ -498,4 +498,3 @@ RTDECL(void) RTSha1(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTSHA1_HA
 }
 RT_EXPORT_SYMBOL(RTSha1);
 
-

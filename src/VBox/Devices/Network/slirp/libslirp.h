@@ -115,7 +115,7 @@ void slirp_set_somaxconn(PNATState pData, int iSoMaxConn);
  *    VBOX_NAT_DNS_DNSPROXY
  * - ignore (NAT configured to use hostresolver - we aren't track any host DNS changes)
  *    VBOX_NAT_DNS_HOSTRESOLVER
- * @note: It's safe to call this method from any thread, because settings we're checking 
+ * @note: It's safe to call this method from any thread, because settings we're checking
  * are immutable at runtime.
  */
 #define VBOX_NAT_DNS_EXTERNAL 0

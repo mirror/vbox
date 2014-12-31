@@ -318,7 +318,7 @@ static int init(struct VBCLSERVICE **ppInterface)
 {
     struct DISPLAYSERVICE *pSelf = getClassFromInterface(ppInterface);
     int rc;
-    
+
     if (pSelf->mfInit)
         return VERR_WRONG_ORDER;
     rc = initX11(&pSelf->mState);
@@ -375,7 +375,7 @@ struct VBCLSERVICE vbclDisplayInterface =
     run,
     pause,
     resume,
-    cleanup    
+    cleanup
 };
 
 struct VBCLSERVICE **VBClGetDisplayService()

@@ -24,7 +24,7 @@
 /**
  * CPUID leaves for Intel(R) Core(TM) i7-3960X CPU @ 3.30GHz.
  */
-static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_3960X[] = 
+static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_3960X[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
     { 0x00000001, 0x00000000, 0x00000000, 0x000206d6, 0x02200800, 0x1fbee3bf, 0xbfebfbff, 0 },
@@ -66,7 +66,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_3960X[] =
 /**
  * MSR ranges for Intel(R) Core(TM) i7-3960X CPU @ 3.30GHz.
  */
-static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] = 
+static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
 {
     MFX(0x00000000, "IA32_P5_MC_ADDR", Ia32P5McAddr, Ia32P5McAddr, 0, UINT64_C(0xffffffffffffffe0), 0), /* value=0x1f */
     MFX(0x00000001, "IA32_P5_MC_TYPE", Ia32P5McType, Ia32P5McType, 0, 0, UINT64_MAX), /* value=0x0 */
@@ -340,7 +340,7 @@ static CPUMMSRRANGE const g_aMsrRanges_Intel_Core_i7_3960X[] =
 /**
  * Database entry for Intel(R) Core(TM) i7-3960X CPU @ 3.30GHz.
  */
-static CPUMDBENTRY const g_Entry_Intel_Core_i7_3960X = 
+static CPUMDBENTRY const g_Entry_Intel_Core_i7_3960X =
 {
     /*.pszName          = */ "Intel Core i7-3960X",
     /*.pszFullName      = */ "Intel(R) Core(TM) i7-3960X CPU @ 3.30GHz",

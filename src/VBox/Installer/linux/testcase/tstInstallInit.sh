@@ -19,7 +19,7 @@
 # This will initially be a skeleton with a couple of tests - add more for quick
 # debugging when you suspect that something isn't working as specified.
 
-tab="	"
+tab="   "
 tmpbase="/tmp/tstInstallInit 99"  # Space in the name for a little stress...
 if [ -n "${TESTBOX_PATH_SCRATCH}" ]; then
     tmpbase="${TESTBOX_PATH_SCRATCH}/tstInstallInit 99"

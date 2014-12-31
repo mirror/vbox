@@ -320,4 +320,3 @@ class WuiHlpMiniSuccessRateGraph(WuiHlpGraphMatplotlibBase):
 
         return self._produceSvg(oFigure, False);
 
-

@@ -1864,7 +1864,7 @@ int main()
     GEN_CHECK_OFF(HDASTATE, pMixer);
     GEN_CHECK_OFF(HDASTATE, pSinkLineIn);
     GEN_CHECK_OFF(HDASTATE, pSinkMicIn);
-#else 
+#else
     GEN_CHECK_OFF(HDASTATE, pCodec);
     GEN_CHECK_OFF(HDASTATE, u64BaseTS);
     GEN_CHECK_OFF(HDASTATE, u8Counter);

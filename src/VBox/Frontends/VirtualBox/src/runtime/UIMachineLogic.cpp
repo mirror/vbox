@@ -1981,7 +1981,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
     if (m_pHostLedsState)
     {
 #if defined(Q_WS_MAC)
-    	DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
+        DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
 #elif defined(Q_WS_WIN)
         keyboardHandler()->winSkipKeyboardEvents(true);
         WinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);

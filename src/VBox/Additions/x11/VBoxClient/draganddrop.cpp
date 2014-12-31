@@ -2415,7 +2415,7 @@ struct VBCLSERVICE vbclDragAndDropInterface =
     run,
     VBClServiceDefaultHandler, /* pause */
     VBClServiceDefaultHandler, /* resume */
-    VBClServiceDefaultCleanup    
+    VBClServiceDefaultCleanup
 };
 
 /* Static factory */

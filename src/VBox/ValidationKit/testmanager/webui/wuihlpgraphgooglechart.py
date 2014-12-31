@@ -244,4 +244,3 @@ class WuiHlpLineGraphErrorbarY(WuiHlpLineGraph):
     def __init__(self, sId, oData, oDisp = None):
         WuiHlpLineGraph.__init__(self, sId, oData, fErrorBarY = True);
 
-
