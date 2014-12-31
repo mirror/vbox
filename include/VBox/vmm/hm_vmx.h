@@ -831,7 +831,7 @@ typedef struct
     /** The MSR value. */
     uint64_t    u64Value;
 } VMXAUTOMSR;
-AssertCompileSize(VMXAUTOMSR, 8);
+AssertCompileSize(VMXAUTOMSR, 16);
 /** Pointer to an MSR load/store element. */
 typedef VMXAUTOMSR *PVMXAUTOMSR;
 /** Pointer to a const MSR load/store element. */
