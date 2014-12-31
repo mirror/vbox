@@ -1796,17 +1796,20 @@ typedef struct {
   ///
   /// The table header for the EFI Boot Services Table.
   ///
+/* 64: 0 */
   EFI_TABLE_HEADER                Hdr;
 
   //
   // Task Priority Services
   //
+/* 64: 3*8 */
   EFI_RAISE_TPL                   RaiseTPL;
   EFI_RESTORE_TPL                 RestoreTPL;
 
   //
   // Memory Services
   //
+/* 64: 5*8 */
   EFI_ALLOCATE_PAGES              AllocatePages;
   EFI_FREE_PAGES                  FreePages;
   EFI_GET_MEMORY_MAP              GetMemoryMap;
@@ -1816,6 +1819,7 @@ typedef struct {
   //
   // Event & Timer Services
   //
+/* 64: 10*8 = 0x50 (80) */
   EFI_CREATE_EVENT                  CreateEvent;
   EFI_SET_TIMER                     SetTimer;
   EFI_WAIT_FOR_EVENT                WaitForEvent;
@@ -1826,10 +1830,12 @@ typedef struct {
   //
   // Protocol Handler Services
   //
+/* 64: 16*8 = 0x80 (128) */
   EFI_INSTALL_PROTOCOL_INTERFACE    InstallProtocolInterface;
   EFI_REINSTALL_PROTOCOL_INTERFACE  ReinstallProtocolInterface;
   EFI_UNINSTALL_PROTOCOL_INTERFACE  UninstallProtocolInterface;
   EFI_HANDLE_PROTOCOL               HandleProtocol;
+/* 64: 20*8 = 0xA0 (160) */
   VOID                              *Reserved;
   EFI_REGISTER_PROTOCOL_NOTIFY      RegisterProtocolNotify;
   EFI_LOCATE_HANDLE                 LocateHandle;
@@ -1839,6 +1845,7 @@ typedef struct {
   //
   // Image Services
   //
+/* 64: 25*8 = 0xC8 (200) */
   EFI_IMAGE_LOAD                    LoadImage;
   EFI_IMAGE_START                   StartImage;
   EFI_EXIT                          Exit;
@@ -1848,6 +1855,7 @@ typedef struct {
   //
   // Miscellaneous Services
   //
+/* 64: 30*8 = 0xF0 (240) */
   EFI_GET_NEXT_MONOTONIC_COUNT      GetNextMonotonicCount;
   EFI_STALL                         Stall;
   EFI_SET_WATCHDOG_TIMER            SetWatchdogTimer;
@@ -1855,12 +1863,14 @@ typedef struct {
   //
   // DriverSupport Services
   //
+/* 64: 33*8 = 0x108 (264) */
   EFI_CONNECT_CONTROLLER            ConnectController;
   EFI_DISCONNECT_CONTROLLER         DisconnectController;
 
   //
   // Open and Close Protocol Services
   //
+/* 64: 35*8 = 0x118 (280) */
   EFI_OPEN_PROTOCOL                 OpenProtocol;
   EFI_CLOSE_PROTOCOL                CloseProtocol;
   EFI_OPEN_PROTOCOL_INFORMATION     OpenProtocolInformation;
@@ -1868,6 +1878,7 @@ typedef struct {
   //
   // Library Services
   //
+/* 64: 38*8 = 0x130 (304) */
   EFI_PROTOCOLS_PER_HANDLE          ProtocolsPerHandle;
   EFI_LOCATE_HANDLE_BUFFER          LocateHandleBuffer;
   EFI_LOCATE_PROTOCOL               LocateProtocol;
@@ -1877,14 +1888,17 @@ typedef struct {
   //
   // 32-bit CRC Services
   //
+/* 64: 43*8 = 0x158 (344) */
   EFI_CALCULATE_CRC32               CalculateCrc32;
 
   //
   // Miscellaneous Services
   //
+/* 64: 44*8 = 0x160 (352) */
   EFI_COPY_MEM                      CopyMem;
   EFI_SET_MEM                       SetMem;
   EFI_CREATE_EVENT_EX               CreateEventEx;
+/* 64: 47*8 = 0x178 (376) */
 } EFI_BOOT_SERVICES;
 
 ///
