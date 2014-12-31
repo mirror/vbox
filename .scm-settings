@@ -66,7 +66,7 @@
 --filter-out-dirs  "*/src/VBox/Devices/Graphics/vmsvga/."
 --filter-out-dirs  "*/src/VBox/Devices/Graphics/vmsvga_glext/."
 --filter-out-dirs  "*/src/VBox/Devices/PC/ipxe/*/."
---filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/*/."
+--filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware/*/."
 --filter-out-dirs  "*/src/VBox/Devices/Network/lwip*/src*/."
 --filter-out-dirs  "*/src/VBox/Devices/Network/lwip*/doc*/."
 --filter-out-dirs  "*/src/VBox/Devices/Network/lwip*/test*/."
