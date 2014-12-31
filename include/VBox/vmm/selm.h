@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -85,7 +85,6 @@ VMM_INT_DECL(void)      SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, 
 
 #ifdef IN_RING3
 /** @defgroup grp_selm_r3   The Selector Monitor(/Manager) API
- * @ingroup grp_selm
  * @{
  */
 VMMR3DECL(int)          SELMR3Init(PVM pVM);

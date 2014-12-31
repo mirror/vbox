@@ -129,7 +129,7 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
 RTDECL(int)         RTVfsIsRangeInUse(RTVFS hVfs, uint64_t off, size_t cb,
                                       bool *pfUsed);
 
-/** @defgroup grp_vfs_dir           VFS Base Object API
+/** @defgroup grp_vfs_obj           VFS Base Object API
  * @{
  */
 

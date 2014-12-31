@@ -1097,7 +1097,6 @@ typedef const STAMRATIOU32 *PCSTAMRATIOU32;
 
 
 /** @defgroup grp_stam_r3   The STAM Host Context Ring 3 API
- * @ingroup grp_stam
  * @{
  */
 

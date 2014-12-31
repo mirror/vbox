@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,7 @@
 #include <iprt/types.h>
 #include <iprt/asm.h>
 
-/** @defgroup grp_rt_list    RTQueueAtomic - Generic Work Queue
+/** @defgroup grp_rt_queueatomic RTQueueAtomic - Generic Work Queue
  * @ingroup grp_rt
  *
  * Implementation of a lockless work queue for threaded environments.
@@ -121,3 +121,4 @@ RT_C_DECLS_END
 /** @} */
 
 #endif
+

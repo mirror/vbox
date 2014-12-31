@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1244,8 +1244,7 @@ VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 
 
 #ifdef IN_RING3
-/** @defgroup grp_cpum_r3    The CPU Monitor(/Manager) API
- * @ingroup grp_cpum
+/** @defgroup grp_cpum_r3    The CPUM ring-3 API
  * @{
  */
 
@@ -1281,8 +1280,7 @@ VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRa
 #endif /* IN_RING3 */
 
 #ifdef IN_RC
-/** @defgroup grp_cpum_gc    The CPU Monitor(/Manager) API
- * @ingroup grp_cpum
+/** @defgroup grp_cpum_rc    The CPUM Raw-mode Context API
  * @{
  */
 
@@ -1321,8 +1319,7 @@ VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
 #endif /* IN_RC */
 
 #ifdef IN_RING0
-/** @defgroup grp_cpum_r0    The CPU Monitor(/Manager) API
- * @ingroup grp_cpum
+/** @defgroup grp_cpum_r0    The CPUM ring-0 API
  * @{
  */
 VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);

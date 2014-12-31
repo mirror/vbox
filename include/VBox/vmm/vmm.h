@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -269,9 +269,8 @@ VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPU pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_vmm_r3    The VMM Host Context Ring 3 API
- * @ingroup grp_vmm
  * @{
  */
 VMMR3_INT_DECL(int)     VMMR3Init(PVM pVM);
@@ -336,7 +335,6 @@ VMMR3_INT_DECL(int)     VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0A
 
 
 /** @defgroup grp_vmm_r0    The VMM Host Context Ring 0 API
- * @ingroup grp_vmm
  * @{
  */
 
@@ -503,7 +501,7 @@ typedef struct GCFGMVALUEREQ
  */
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
-#ifdef IN_RING0
+#if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 VMMR0DECL(int)       VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
 VMMR0DECL(void)      VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)       VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
@@ -531,9 +529,8 @@ VMMR0DECL(bool)      VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
 /** @} */
 
 
-#ifdef IN_RC
+#if defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_vmm_rc    The VMM Raw-Mode Context API
- * @ingroup grp_vmm
  * @{
  */
 VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
@@ -542,9 +539,8 @@ VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
 /** @} */
 #endif /* IN_RC */
 
-#if defined(IN_RC) || defined(IN_RING0)
+#if defined(IN_RC) || defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_vmm_rz    The VMM Raw-Mode and Ring-0 Context API
- * @ingroup grp_vmm
  * @{
  */
 VMMRZDECL(int)      VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);

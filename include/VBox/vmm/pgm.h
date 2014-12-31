@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -414,7 +414,6 @@ VMMDECL(int)        PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
 
 #ifdef IN_RC
 /** @defgroup grp_pgm_gc  The PGM Guest Context API
- * @ingroup grp_pgm
  * @{
  */
 VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
@@ -424,7 +423,6 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 
 #ifdef IN_RING0
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
- * @ingroup grp_pgm
  * @{
  */
 VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
@@ -450,7 +448,6 @@ VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu);
 
 #ifdef IN_RING3
 /** @defgroup grp_pgm_r3  The PGM Host Context Ring-3 API
- * @ingroup grp_pgm
  * @{
  */
 VMMR3DECL(int)      PGMR3Init(PVM pVM);

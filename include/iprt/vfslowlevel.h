@@ -1152,7 +1152,7 @@ RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags
 #define RTVFSCHAIN_PF_TRAILING_ACTION_OPTIONAL  RT_BIT_32(2)
 /** Mask of valid flags. */
 #define RTVFSCHAIN_PF_VALID_MASK                UINT32_C(0x00000007)
-/** @}*/
+/** @} */
 
 /**
  * Frees a parsed chain specification.

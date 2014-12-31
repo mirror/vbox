@@ -759,7 +759,6 @@ typedef const struct RTTIMESPEC *PCRTTIMESPEC;
 
 
 /** @defgroup grp_rt_types_both  Common Guest and Host Context Basic Types
- * @ingroup grp_rt_types
  * @{
  */
 
@@ -949,7 +948,6 @@ typedef const RTFAR64 *PCRTFAR64;
 
 
 /** @defgroup grp_rt_types_hc  Host Context Basic Types
- * @ingroup grp_rt_types
  * @{
  */
 
@@ -1228,7 +1226,6 @@ typedef const RTR0UINTREG  *PCRTR0UINTREG;
 
 
 /** @defgroup grp_rt_types_gc  Guest Context Basic Types
- * @ingroup grp_rt_types
  * @{
  */
 
@@ -1430,7 +1427,6 @@ typedef const RTGCUINTREG      *PCRTGCUINTREG;
 /** @} */
 
 /** @defgroup grp_rt_types_rc  Raw mode Context Basic Types
- * @ingroup grp_rt_types
  * @{
  */
 
@@ -1482,7 +1478,6 @@ typedef uint32_t        RTRCUINTPTR;
 
 
 /** @defgroup grp_rt_types_cc  Current Context Basic Types
- * @ingroup grp_rt_types
  * @{
  */
 
