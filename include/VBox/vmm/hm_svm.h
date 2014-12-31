@@ -445,7 +445,6 @@
 /**
  * SVM Selector type; includes hidden parts.
  */
-#pragma pack(1)
 typedef struct
 {
     uint16_t    u16Sel;
@@ -453,12 +452,11 @@ typedef struct
     uint32_t    u32Limit;
     uint64_t    u64Base;        /**< Only lower 32 bits are implemented for CS, DS, ES & SS. */
 } SVMSEL;
-#pragma pack()
+AssertCompileSize(SVMSEL, 16);
 
 /**
  * SVM GDTR/IDTR type.
  */
-#pragma pack(1)
 typedef struct
 {
     uint16_t    u16Reserved1;
@@ -466,7 +464,7 @@ typedef struct
     uint32_t    u32Limit;       /**< Only lower 16 bits are implemented. */
     uint64_t    u64Base;
 } SVMGDTR;
-#pragma pack()
+AssertCompileSize(SVMGDTR, 16);
 typedef SVMGDTR SVMIDTR;
 
 /**
@@ -601,7 +599,6 @@ AssertCompileSize(SVMAVICPHYS, 8);
 /**
  * SVM VM Control Block. (VMCB)
  */
-#pragma pack(1)
 typedef struct SVMVMCB
 {
     /** Control Area. */
@@ -619,7 +616,7 @@ typedef struct SVMVMCB
         uint32_t    u32InterceptException;
         /** Offset 0x0C - Intercept control field 1. */
         uint32_t    u32InterceptCtrl1;
-        /** Offset 0x0C - Intercept control field 2. */
+        /** Offset 0x10 - Intercept control field 2. */
         uint32_t    u32InterceptCtrl2;
         /** Offset 0x14-0x3F - Reserved. */
         uint8_t     u8Reserved[0x3c - 0x14];
@@ -665,7 +662,7 @@ typedef struct SVMVMCB
         uint64_t    u64NextRIP;
         /** Offset 0xD0 - Number of bytes fetched. */
         uint8_t     cbInstrFetched;
-        /** Offset 0xD1 - Number of bytes fetched. */
+        /** Offset 0xD1 - Fetched bytes. */
         uint8_t     abInstr[15];
         /** Offset 0xE0 - AVIC APIC_BACKING_PAGE pointer. */
         SVMAVIC     AvicBackingPagePtr;
@@ -772,34 +769,88 @@ typedef struct SVMVMCB
     /** Offset 0x698-0xFFF- Reserved. */
     uint8_t     u8Reserved10[0x1000-0x698];
 } SVMVMCB;
-#pragma pack()
 /** Pointer to the SVMVMCB structure. */
 typedef SVMVMCB *PSVMVMCB;
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx,    0x000);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount,  0x03e);
-AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl,              0x058);
-AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo,          0x088);
-AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject,          0x0A8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr,              0x0D1);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBackingPagePtr,   0x0E0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicLogicalTablePtr,  0x0F0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicPhysicalTablePtr, 0x0F8);
-AssertCompileMemberOffset(SVMVMCB, guest,                     0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.ES,                  0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.TR,                  0x490);
-AssertCompileMemberOffset(SVMVMCB, guest.u64EFER,             0x4D0);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR4,              0x548);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RIP,              0x578);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RSP,              0x5D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR2,              0x640);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4,         0x4A0);
-AssertCompileMemberOffset(SVMVMCB, guest.u8CPL,               0x4CB);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6,         0x4D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7,         0x580);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,         0x648);
-AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,             0x668);
-AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,       0x690);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved10,              0x698);
+AssertCompileMemberOffset(SVMVMCB, ctrl, 0x00);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx, 0x00);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrCRx, 0x02);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdDRx, 0x04);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrDRx, 0x06);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptException, 0x08);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptCtrl1, 0x0C);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptCtrl2, 0x10);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved, 0x14);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterThreshold, 0x3c);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount, 0x3e);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64IOPMPhysAddr, 0x40);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64MSRPMPhysAddr, 0x48);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64TSCOffset, 0x50);
+AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl, 0x58);
+AssertCompileMemberOffset(SVMVMCB, ctrl.IntCtrl, 0x60);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64IntShadow, 0x68);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitCode, 0x70);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitInfo1, 0x78);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitInfo2, 0x80);
+AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo, 0x88);
+AssertCompileMemberOffset(SVMVMCB, ctrl.NestedPaging, 0x90);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBar, 0x98);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved2, 0xA0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject, 0xA8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64NestedPagingCR3, 0xB0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64LBRVirt, 0xB8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64VmcbCleanBits, 0xC0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64NextRIP, 0xC8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.cbInstrFetched, 0xD0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr, 0xD1);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBackingPagePtr, 0xE0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved3, 0xE8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicLogicalTablePtr, 0xF0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicPhysicalTablePtr, 0xF8);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved3, 0x100);
+AssertCompileMemberOffset(SVMVMCB, guest, 0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.ES, 0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.CS, 0x410);
+AssertCompileMemberOffset(SVMVMCB, guest.SS, 0x420);
+AssertCompileMemberOffset(SVMVMCB, guest.DS, 0x430);
+AssertCompileMemberOffset(SVMVMCB, guest.FS, 0x440);
+AssertCompileMemberOffset(SVMVMCB, guest.GS, 0x450);
+AssertCompileMemberOffset(SVMVMCB, guest.GDTR, 0x460);
+AssertCompileMemberOffset(SVMVMCB, guest.LDTR, 0x470);
+AssertCompileMemberOffset(SVMVMCB, guest.IDTR, 0x480);
+AssertCompileMemberOffset(SVMVMCB, guest.TR, 0x490);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4, 0x4A0);
+AssertCompileMemberOffset(SVMVMCB, guest.u8CPL, 0x4CB);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved5, 0x4CC);
+AssertCompileMemberOffset(SVMVMCB, guest.u64EFER, 0x4D0);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6, 0x4D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR4, 0x548);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR3, 0x550);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR0, 0x558);
+AssertCompileMemberOffset(SVMVMCB, guest.u64DR7, 0x560);
+AssertCompileMemberOffset(SVMVMCB, guest.u64DR6, 0x568);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RFlags, 0x570);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RIP, 0x578);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7, 0x580);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RSP, 0x5D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved8, 0x5E0);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RAX, 0x5F8);
+AssertCompileMemberOffset(SVMVMCB, guest.u64STAR, 0x600);
+AssertCompileMemberOffset(SVMVMCB, guest.u64LSTAR, 0x608);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CSTAR, 0x610);
+AssertCompileMemberOffset(SVMVMCB, guest.u64SFMASK, 0x618);
+AssertCompileMemberOffset(SVMVMCB, guest.u64KernelGSBase, 0x620);
+AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterCS, 0x628);
+AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterESP, 0x630);
+AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterEIP, 0x638);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR2, 0x640);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9, 0x648);
+AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT, 0x668);
+AssertCompileMemberOffset(SVMVMCB, guest.u64DBGCTL, 0x670);
+AssertCompileMemberOffset(SVMVMCB, guest.u64BR_FROM, 0x678);
+AssertCompileMemberOffset(SVMVMCB, guest.u64BR_TO, 0x680);
+AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPFROM, 0x688);
+AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO, 0x690);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved10,                0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
