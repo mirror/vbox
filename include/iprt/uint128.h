@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,7 +36,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_once       RTUInt128 - 128-bit Unsigned Integer Methods
+/** @defgroup grp_rt_uint128 RTUInt128 - 128-bit Unsigned Integer Methods
  * @ingroup grp_rt
  * @{
  */

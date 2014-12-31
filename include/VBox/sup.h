@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -702,7 +702,6 @@ SUPDECL(uint32_t) SUPSemEventMultiGetResolution(PSUPDRVSESSION pSession);
 #ifdef IN_RING3
 
 /** @defgroup   grp_sup_r3     SUP Host Context Ring-3 API
- * @ingroup grp_sup
  * @{
  */
 
@@ -1649,7 +1648,6 @@ DECLINLINE(uint64_t) SUPReadTsc(void)
 
 #ifdef IN_RING0
 /** @defgroup   grp_sup_r0     SUP Host Context Ring-0 API
- * @ingroup grp_sup
  * @{
  */
 
@@ -2044,7 +2042,6 @@ typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
 
 
 /** @defgroup   grp_sup_r0_idc  The IDC Interface
- * @ingroup grp_sup_r0
  * @{
  */
 

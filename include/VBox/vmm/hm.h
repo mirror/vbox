@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -164,7 +164,6 @@ VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 
 #ifdef IN_RING0
 /** @defgroup grp_hm_r0    The VM Hardware Manager API
- * @ingroup grp_hm
  * @{
  */
 VMMR0_INT_DECL(int)             HMR0Init(void);
@@ -179,6 +178,38 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR
                                                            unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
                                                           unsigned uPort, unsigned uAndVal, unsigned cbSize);
+/** Disables preemption if required. */
+# define HM_DISABLE_PREEMPT_IF_NEEDED() \
+    RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+    bool fPreemptDisabledInternal = false; \
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD)) \
+    { \
+        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
+        RTThreadPreemptDisable(&PreemptStateInternal); \
+        fPreemptDisabledInternal = true; \
+    } else do { } while (0)
+
+/** Restores preemption if previously disabled by HM_DISABLE_PREEMPT(). */
+# define HM_RESTORE_PREEMPT_IF_NEEDED() \
+    do \
+    { \
+        if (fPreemptDisabledInternal) \
+            RTThreadPreemptRestore(&PreemptStateInternal); \
+    } while (0)
+
+VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
+VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int)             HMR0Enter(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int)             HMR0EnterCpu(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPU pVCpu);
+VMMR0_INT_DECL(void)            HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser);
+VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
+
+# if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+VMMR0_INT_DECL(int)             HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(int)             HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(int)             HMR0TestSwitcher3264(PVM pVM);
+# endif
 
 /** @} */
 #endif /* IN_RING0 */
@@ -186,7 +217,6 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR 
 
 #ifdef IN_RING3
 /** @defgroup grp_hm_r3    The VM Hardware Manager API
- * @ingroup grp_hm
  * @{
  */
 VMMR3DECL(bool)                 HMR3IsEnabled(PUVM pUVM);
@@ -219,47 +249,6 @@ VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
 
 /** @} */
 #endif /* IN_RING3 */
-
-#ifdef IN_RING0
-/** @addtogroup grp_hm_r0
- * @{
- */
-/** Disables preemption if required. */
-# define HM_DISABLE_PREEMPT_IF_NEEDED() \
-   RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
-   bool fPreemptDisabledInternal = false; \
-   if (RTThreadPreemptIsEnabled(NIL_RTTHREAD)) \
-   { \
-       Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
-       RTThreadPreemptDisable(&PreemptStateInternal); \
-       fPreemptDisabledInternal = true; \
-   }
-
-/** Restores preemption if previously disabled by HM_DISABLE_PREEMPT(). */
-# define HM_RESTORE_PREEMPT_IF_NEEDED() \
-   do \
-   { \
-        if (fPreemptDisabledInternal) \
-            RTThreadPreemptRestore(&PreemptStateInternal); \
-   } while (0)
-
-VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
-VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0Enter(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0EnterCpu(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPU pVCpu);
-VMMR0_INT_DECL(void)            HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser);
-VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
-
-# if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-VMMR0_INT_DECL(int)             HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0_INT_DECL(int)             HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0_INT_DECL(int)             HMR0TestSwitcher3264(PVM pVM);
-# endif
-
-/** @} */
-#endif /* IN_RING0 */
-
 
 /** @} */
 RT_C_DECLS_END

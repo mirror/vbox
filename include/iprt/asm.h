@@ -141,11 +141,15 @@
  * when in PIC mode on x86.
  */
 #ifndef RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
-# define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC \
+# ifdef DOXYGEN_RUNNING
+#  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC 1
+# else
+#  define RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC \
     (   (defined(PIC) || defined(__PIC__)) \
      && defined(RT_ARCH_X86) \
      && (   RT_INLINE_ASM_GCC_4_3_X_X86 \
          || defined(RT_OS_DARWIN)) )
+# endif
 #endif
 
 

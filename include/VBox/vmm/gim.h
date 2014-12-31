@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -140,7 +140,6 @@ typedef FNGIMWRMSR *PFNGIMWRMSR;
 
 #ifdef IN_RC
 /** @defgroup grp_gim_rc  The GIM Raw-mode Context API
- * @ingroup grp_gim
  * @{
  */
 /** @} */
@@ -148,7 +147,6 @@ typedef FNGIMWRMSR *PFNGIMWRMSR;
 
 #ifdef IN_RING0
 /** @defgroup grp_gim_r0  The GIM Host Context Ring-0 API
- * @ingroup grp_gim
  * @{
  */
 VMMR0_INT_DECL(int)         GIMR0InitVM(PVM pVM);
@@ -160,7 +158,6 @@ VMMR0_INT_DECL(int)         GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 
 #ifdef IN_RING3
 /** @defgroup grp_gim_r3  The GIM Host Context Ring-3 API
- * @ingroup grp_gim
  * @{
  */
 VMMR3_INT_DECL(int)         GIMR3Init(PVM pVM);

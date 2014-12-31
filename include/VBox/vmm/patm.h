@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -159,8 +159,7 @@ VMM_INT_DECL(int)       PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTAT
 #endif
 
 #ifdef IN_RC
-/** @defgroup grp_patm_rc    The Patch Manager RC API
- * @ingroup grp_patm
+/** @defgroup grp_patm_rc    The Patch Manager Raw-mode Context API
  * @{
  */
 
@@ -173,8 +172,7 @@ VMMRC_INT_DECL(int)     PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegF
 #endif
 
 #ifdef IN_RING3
-/** @defgroup grp_patm_r3    The Patch Manager API
- * @ingroup grp_patm
+/** @defgroup grp_patm_r3    The Patch Manager Host Ring-3 Context API
  * @{
  */
 

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,7 +52,6 @@ VMM_INT_DECL(int)   FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType);
 
 #ifdef IN_RING3
 /** @defgroup grp_ftm_r3     The FTM Host Context Ring-3 API
- * @ingroup grp_ftm
  * @{
  */
 VMMR3DECL(int)      FTMR3PowerOn(PUVM pUVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort, const char *pszPassword);

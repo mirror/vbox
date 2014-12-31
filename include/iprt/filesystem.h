@@ -32,7 +32,11 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_filesystem           IPRT Filesystem VFS
+/** @defgroup grp_rt_filesystem           IPRT Filesystem VFS
+ *
+ * @todo r=bird: WRONG WRONG WRONG FILE. We already have a file system API in
+ * IPRT, it is RTFs*, see @ref grp_rt_fs.  NOBODY ADDS ANY NEW APIS HERE!!
+ *
  * @{
  */
 

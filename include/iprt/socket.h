@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,7 +39,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_tcp    RTSocket - Network Sockets
+/** @defgroup grp_rt_socket RTSocket - Network Sockets
  * @ingroup grp_rt
  * @{
  */

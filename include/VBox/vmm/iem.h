@@ -83,8 +83,7 @@ VMM_INT_DECL(void)   IEMNotifyIOPortWriteString(PVM pVM, RTIOPORT Port, RTGCPTR 
 #endif
 
 
-/** @defgroup grp_em_r3     The IEM Host Context Ring-3 API.
- * @ingroup grp_em
+/** @defgroup grp_iem_r3     The IEM Host Context Ring-3 API.
  * @{
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM);

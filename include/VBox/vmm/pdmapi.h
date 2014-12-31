@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -59,7 +59,6 @@ VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
 
 
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
- * @ingroup grp_pdm
  * @{
  */
 
@@ -164,7 +163,6 @@ VMMR3_INT_DECL(int)     PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t
 
 
 /** @defgroup grp_pdm_rc    The PDM Raw-Mode Context API
- * @ingroup grp_pdm
  * @{
  */
 /** @} */
@@ -172,7 +170,6 @@ VMMR3_INT_DECL(int)     PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t
 
 
 /** @defgroup grp_pdm_r0    The PDM Ring-0 Context API
- * @ingroup grp_pdm
  * @{
  */
 

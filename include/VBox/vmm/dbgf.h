@@ -536,7 +536,7 @@ VMMR3DECL(int)      DBGFR3InfoStdErr(PUVM pUVM, const char *pszName, const char 
 VMMR3_INT_DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const char *pszExcludePat,
                                     const char *pszSepFmt, PCDBGFINFOHLP pHlp);
 
-/** @def DBGFR3InfoLog
+/** @def DBGFR3_INFO_LOG
  * Display a piece of info writing to the log if enabled.
  *
  * @param   a_pVM       The shared VM handle.
@@ -912,7 +912,7 @@ VMMR3DECL(int)      DBGFR3DisasInstrEx(PUVM pUVM, VMCPUID idCpu, RTSEL Sel, RTGC
 VMMR3_INT_DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t cbOutput);
 VMMR3DECL(int)      DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix);
 
-/** @def DBGFR3DisasInstrCurrentLog
+/** @def DBGFR3_DISAS_INSTR_CUR_LOG
  * Disassembles the current guest context instruction and writes it to the log.
  * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
  */
@@ -928,7 +928,7 @@ VMMR3DECL(int)      DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char 
 
 VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPtr, const char *pszPrefix);
 
-/** @def DBGFR3DisasInstrLog
+/** @def DBGFR3_DISAS_INSTR_LOG
  * Disassembles the specified guest context instruction and writes it to the log.
  * Addresses will be attempted resolved to symbols.
  * @thread Any EMT.

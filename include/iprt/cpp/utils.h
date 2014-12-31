@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,8 +41,6 @@
  *
  * Inherit from this class in order to prevent automatic generation
  * of the copy constructor and assignment operator in your class.
- *
- * @addtogroup grp_rt_cpp_util
  */
 class RTCNonCopyable
 {

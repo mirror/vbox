@@ -94,9 +94,10 @@
 #define HMVMXCPU_GST_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState))
 
 /** @name Host-state restoration flags.
+ * @note If you change these values don't forget to update the assembly
+ *       defines as well!
  * @{
  */
-/* If you change these values don't forget to update the assembly defines as well! */
 #define VMX_RESTORE_HOST_SEL_DS               RT_BIT(0)
 #define VMX_RESTORE_HOST_SEL_ES               RT_BIT(1)
 #define VMX_RESTORE_HOST_SEL_FS               RT_BIT(2)
@@ -434,24 +435,24 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 /** @name VMX VMCS-Read cache indices.
  * @{
  */
-# define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                       0
-# define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                       1
-# define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                       2
-# define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                       3
-# define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                       4
-# define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                       5
-# define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                     6
-# define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                       7
-# define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                     8
-# define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                     9
-# define VMX_VMCS_GUEST_RSP_CACHE_IDX                           10
-# define VMX_VMCS_GUEST_RIP_CACHE_IDX                           11
-# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                  12
-# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                  13
-# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX               14
-# define VMX_VMCS_MAX_CACHE_IDX                                 (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
-# define VMX_VMCS_GUEST_CR3_CACHE_IDX                           15
-# define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                   (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
+#define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                        0
+#define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                        1
+#define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                        2
+#define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                        3
+#define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                        4
+#define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                        5
+#define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                      6
+#define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                        7
+#define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                      8
+#define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                      9
+#define VMX_VMCS_GUEST_RSP_CACHE_IDX                            10
+#define VMX_VMCS_GUEST_RIP_CACHE_IDX                            11
+#define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                   12
+#define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                   13
+#define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                14
+#define VMX_VMCS_MAX_CACHE_IDX                                  (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
+#define VMX_VMCS_GUEST_CR3_CACHE_IDX                            15
+#define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                    (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 /** @} */
 
 /** @name VMX EPT paging structures
@@ -780,9 +781,10 @@ typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
 typedef const EPTPT *PCEPTPT;
 
-/** @name VMX VPID flush types.
- *  Warning!! Valid enum members are in accordance to the VT-x spec.
- * @{
+/** @} */
+
+/** VMX VPID flush types.
+ * Warning!! Valid enum members are in accordance to the VT-x spec.
  */
 typedef enum
 {
@@ -800,11 +802,9 @@ typedef enum
     VMXFLUSHVPID_NONE                          = 0xbad1
 } VMXFLUSHVPID;
 AssertCompileSize(VMXFLUSHVPID, 4);
-/** @} */
 
-/** @name VMX EPT flush types.
- *  Warning!! Valid enums values below are in accordance to the VT-x spec.
- * @{
+/** VMX EPT flush types.
+ * @note Warning!! Valid enums values below are in accordance to the VT-x spec.
  */
 typedef enum
 {
@@ -818,13 +818,10 @@ typedef enum
     VMXFLUSHEPT_NONE                           = 0xbad1
 } VMXFLUSHEPT;
 AssertCompileSize(VMXFLUSHEPT, 4);
-/** @} */
 
-/** @name VMX MSR autoload/store element.
- *  In accordance to VT-x spec.
- * @{
+/** VMX MSR autoload/store element.
+ * In accordance to VT-x spec.
  */
-#pragma pack(1)
 typedef struct
 {
     /** The MSR Id. */
@@ -834,17 +831,15 @@ typedef struct
     /** The MSR value. */
     uint64_t    u64Value;
 } VMXAUTOMSR;
-#pragma pack()
+AssertCompileSize(VMXAUTOMSR, 8);
 /** Pointer to an MSR load/store element. */
 typedef VMXAUTOMSR *PVMXAUTOMSR;
 /** Pointer to a const MSR load/store element. */
 typedef const VMXAUTOMSR *PCVMXAUTOMSR;
-/** @} */
 
-/** @name VMX-capability qword
- * @{
+/**
+ * VMX-capability qword
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -857,11 +852,10 @@ typedef union
     } n;
     uint64_t            u;
 } VMXCAPABILITY;
-#pragma pack()
-/** @} */
+AssertCompileSize(VMXCAPABILITY, 8);
 
-/** @name VMX MSRs.
- *  @{
+/**
+ * VMX MSRs.
  */
 typedef struct VMXMSRS
 {
@@ -881,18 +875,17 @@ typedef struct VMXMSRS
     uint64_t                u64Vmfunc;
     uint64_t                u64EptVpidCaps;
 } VMXMSRS;
+AssertCompileSizeAlignment(VMXMSRS, 8);
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
-AssertCompileSizeAlignment(VMXMSRS, 8);
-/** @} */
 
 /** @name VMX EFLAGS reserved bits.
  * @{
  */
 /** And-mask for setting reserved bits to zero */
-#define VMX_EFLAGS_RESERVED_0                                   (~0xffc08028)
+#define VMX_EFLAGS_RESERVED_0                                   (~(X86_EFL_1 | X86_EFL_LIVE_MASK))
 /** Or-mask for setting reserved bits to 1 */
-#define VMX_EFLAGS_RESERVED_1                                   0x00000002
+#define VMX_EFLAGS_RESERVED_1                                   X86_EFL_1
 /** @} */
 
 /** @name VMX Basic Exit Reasons.
@@ -1069,7 +1062,6 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_ERROR_VMENTRY_MOV_SS                                26
 /** Invalid operand to INVEPT/INVVPID. */
 #define VMX_ERROR_INVEPTVPID_INVALID_OPERAND                    28
-
 /** @} */
 
 
@@ -1154,7 +1146,6 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT                 RT_BIT_64(41)
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS                   RT_BIT_64(42)
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS  RT_BIT_64(43)
-
 /** @} */
 
 /** @name Extended Page Table Pointer (EPTP)
@@ -1449,113 +1440,113 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
  * @{
  */
 /** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
-#define VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING            RT_BIT_64(0)
+#define VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING                     RT_BIT_64(0)
 /** @} */
 
 
-/**  @name VMCS field encoding - 32 Bits read-only fields
+/** @name VMCS field encoding - 32 Bits read-only fields
  * @{
  */
-#define VMX_VMCS32_RO_VM_INSTR_ERROR                              0x4400
-#define VMX_VMCS32_RO_EXIT_REASON                                 0x4402
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                      0x4404
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE                0x4406
-#define VMX_VMCS32_RO_IDT_INFO                                    0x4408
-#define VMX_VMCS32_RO_IDT_ERROR_CODE                              0x440A
-#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                           0x440C
-#define VMX_VMCS32_RO_EXIT_INSTR_INFO                             0x440E
+#define VMX_VMCS32_RO_VM_INSTR_ERROR                            0x4400
+#define VMX_VMCS32_RO_EXIT_REASON                               0x4402
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                    0x4404
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE              0x4406
+#define VMX_VMCS32_RO_IDT_INFO                                  0x4408
+#define VMX_VMCS32_RO_IDT_ERROR_CODE                            0x440A
+#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440C
+#define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440E
 /** @} */
 
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
-#define VMX_EXIT_REASON_BASIC(a)                                  ((a) & 0xffff)
+#define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
 /** @} */
 
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
  */
-#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                   RT_BOOL((a) & RT_BIT(31))
-#define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                    8
-#define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                       ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
+#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                 RT_BOOL((a) & RT_BIT(31))
+#define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                  8
+#define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                     ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 /** @} */
 
 
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                      ((a) & 0xff)
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                     8
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID               RT_BIT(11)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(a)            ((a) & RT_BIT(12))
-#define VMX_EXIT_INTERRUPTION_INFO_VALID                          RT_BIT(31)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    RT_BOOL((a) & RT_BIT(31))
+#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                    ((a) & 0xff)
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                   8
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                      (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID             RT_BIT(11)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)       RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
+#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(a)          ((a) & RT_BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_VALID                        RT_BIT(31)
+#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                  RT_BOOL((a) & RT_BIT(31))
 /** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)        ((a) & ~RT_BIT(12))
+#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      ((a) & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT                   0
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI                       2
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT                   3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                    4
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT              5
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                   6
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT                 0
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI                     2
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT                 3
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                  4
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT            5
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                 6
 /** @} */
 
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_VECTOR(a)                          ((a) & 0xff)
-#define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                         8
-#define VMX_IDT_VECTORING_INFO_TYPE(a)                            (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
-#define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
-#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             RT_BOOL((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
-#define VMX_IDT_VECTORING_INFO_VALID(a)                           ((a) & RT_BIT(31))
-#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                  ((a) & ~RT_BIT(12))
+#define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
+#define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
+#define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)           RT_BOOL((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+#define VMX_IDT_VECTORING_INFO_VALID(a)                         ((a) & RT_BIT(31))
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT                       0
-#define VMX_IDT_VECTORING_INFO_TYPE_NMI                           2
-#define VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT                       3
-#define VMX_IDT_VECTORING_INFO_TYPE_SW_INT                        4
-#define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT                  5
-#define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT                       6
+#define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT                     0
+#define VMX_IDT_VECTORING_INFO_TYPE_NMI                         2
+#define VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT                     3
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_INT                      4
+#define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT                5
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT                     6
 /** @} */
 
 
-/**  @name VMCS field encoding - 32 Bits guest state fields
+/** @name VMCS field encoding - 32 Bits guest state fields
  * @{
  */
-#define VMX_VMCS32_GUEST_ES_LIMIT                                 0x4800
-#define VMX_VMCS32_GUEST_CS_LIMIT                                 0x4802
-#define VMX_VMCS32_GUEST_SS_LIMIT                                 0x4804
-#define VMX_VMCS32_GUEST_DS_LIMIT                                 0x4806
-#define VMX_VMCS32_GUEST_FS_LIMIT                                 0x4808
-#define VMX_VMCS32_GUEST_GS_LIMIT                                 0x480A
-#define VMX_VMCS32_GUEST_LDTR_LIMIT                               0x480C
-#define VMX_VMCS32_GUEST_TR_LIMIT                                 0x480E
-#define VMX_VMCS32_GUEST_GDTR_LIMIT                               0x4810
-#define VMX_VMCS32_GUEST_IDTR_LIMIT                               0x4812
-#define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                         0x4814
-#define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                         0x4816
-#define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                         0x4818
-#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                         0x481A
-#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                         0x481C
-#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                         0x481E
-#define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                       0x4820
-#define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                         0x4822
-#define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                   0x4824
-#define VMX_VMCS32_GUEST_ACTIVITY_STATE                           0x4826
-#define VMX_VMCS32_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
-#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                      0x482E
+#define VMX_VMCS32_GUEST_ES_LIMIT                               0x4800
+#define VMX_VMCS32_GUEST_CS_LIMIT                               0x4802
+#define VMX_VMCS32_GUEST_SS_LIMIT                               0x4804
+#define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
+#define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
+#define VMX_VMCS32_GUEST_GS_LIMIT                               0x480A
+#define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480C
+#define VMX_VMCS32_GUEST_TR_LIMIT                               0x480E
+#define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
+#define VMX_VMCS32_GUEST_IDTR_LIMIT                             0x4812
+#define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                       0x4814
+#define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                       0x4816
+#define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                       0x4818
+#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481A
+#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481C
+#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481E
+#define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
+#define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
+#define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                 0x4824
+#define VMX_VMCS32_GUEST_ACTIVITY_STATE                         0x4826
+#define VMX_VMCS32_GUEST_SYSENTER_CS                            0x482A  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                    0x482E
 /** @} */
 
 
@@ -1563,13 +1554,13 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
  * @{
  */
 /** The logical processor is active. */
-#define VMX_VMCS_GUEST_ACTIVITY_ACTIVE                           0x0
+#define VMX_VMCS_GUEST_ACTIVITY_ACTIVE                          0x0
 /** The logical processor is inactive, because executed a HLT instruction. */
-#define VMX_VMCS_GUEST_ACTIVITY_HLT                              0x1
+#define VMX_VMCS_GUEST_ACTIVITY_HLT                             0x1
 /** The logical processor is inactive, because of a triple fault or other serious error. */
-#define VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN                         0x2
+#define VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN                        0x2
 /** The logical processor is inactive, because it's waiting for a startup-IPI */
-#define VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT                        0x3
+#define VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT                       0x3
 /** @} */
 
 
@@ -1657,7 +1648,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_EXIT_QUALIFICATION_CRX_RES2(a)                      (((a) >> 12) & 0xF)
 /** 16-31: LMSW source data (else 0). */
 #define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xFFFF)
-/** Rest: reserved. */
+/* Rest: reserved. */
 /** @} */
 
 /** @name VMX_EXIT_QUALIFICATION_CRX_ACCESS
@@ -1771,7 +1762,6 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR                     15
 /** @} */
 
-/** @} */
 
 /** @name VMCS field encoding - Natural width guest state fields
  * @{
@@ -1800,6 +1790,7 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 
 
 /** @name VMX_VMCS_GUEST_DEBUG_EXCEPTIONS
+ * Bits 4-11, 13 and 15-63 are reserved.
  * @{
  */
 /** Hardware breakpoint 0 was met. */
@@ -1814,8 +1805,6 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      RT_BIT(12)
 /** A debug exception would have been triggered by single-step execution mode. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
-/** Bits 4-11, 13 and 15-63 are reserved. */
-
 /** @} */
 
 /** @name VMCS field encoding - Natural width host state fields
@@ -1835,11 +1824,8 @@ AssertCompileSizeAlignment(VMXMSRS, 8);
 #define VMX_VMCS_HOST_RIP                                       0x6C16
 /** @} */
 
-/** @} */
-
 
 /** @defgroup grp_vmx_asm   vmx assembly helpers
- * @ingroup grp_vmx
  * @{
  */
 
@@ -2183,10 +2169,10 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 #elif ARCH_BITS == 32
 # define VMXWriteVmcsHstN                       VMXWriteVmcs32
 # define VMXWriteVmcsGstN(idxField, u64Val)     VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
-# else  /* ARCH_BITS == 64 */
+#else  /* ARCH_BITS == 64 */
 # define VMXWriteVmcsHstN                       VMXWriteVmcs64
 # define VMXWriteVmcsGstN                       VMXWriteVmcs64
-# endif
+#endif
 
 
 /**
@@ -2357,6 +2343,8 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys);
 #endif /* IN_RING0 */
+
+/** @} */
 
 /** @} */
 

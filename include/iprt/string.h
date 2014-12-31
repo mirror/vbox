@@ -2601,7 +2601,6 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2);
 
 
 /** @defgroup rt_str_conv   String To/From Number Conversions
- * @ingroup grp_rt_str
  * @{ */
 
 /**
@@ -3043,7 +3042,6 @@ RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32
 
 
 /** @defgroup rt_str_space  Unique String Space
- * @ingroup grp_rt_str
  * @{
  */
 
@@ -3165,7 +3163,6 @@ RTDECL(int) RTStrSpaceEnumerate(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfn
 
 
 /** @defgroup rt_str_hash       Sting hashing
- * @ingroup grp_rt_str
  * @{ */
 
 /**
@@ -3214,7 +3211,6 @@ RTDECL(uint32_t)    RTStrHash1ExNV(size_t cPairs, va_list va);
 
 
 /** @defgroup rt_str_utf16      UTF-16 String Manipulation
- * @ingroup grp_rt_str
  * @{
  */
 
@@ -4060,7 +4056,6 @@ RTDECL(int) RTUtf16PrintHexBytes(PRTUTF16 pwszBuf, size_t cwcBuf, void const *pv
 
 
 /** @defgroup rt_str_latin1     Latin-1 (ISO-8859-1) String Manipulation
- * @ingroup grp_rt_str
  * @{
  */
 

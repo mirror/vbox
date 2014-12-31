@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,7 +39,7 @@
  * @{
  */
 
-/** @todo it would be nice if we could have two define without paths. */
+/** @todo It would be nice if we could have two defines without paths. */
 
 /** @def VBOXGUEST_DEVICE_NAME
  * The support device name. */
@@ -80,10 +80,11 @@
 
 #ifdef RT_OS_DARWIN
 /** Cookie used to fend off some unwanted clients to the IOService. */
-#define VBOXGUEST_DARWIN_IOSERVICE_COOKIE   0x56426F78 /* 'VBox' */
+# define VBOXGUEST_DARWIN_IOSERVICE_COOKIE      UINT32_C(0x56426f78) /* 'VBox' */
 #endif
 
 #if !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT)
+
 /** @name VBoxGuest IOCTL codes and structures.
  *
  * The range 0..15 is for basic driver communication.
@@ -359,7 +360,8 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 # ifdef RT_ARCH_AMD64
 /** @name IOCTL numbers that 32-bit clients, like the Windows OpenGL guest
  *        driver, will use when taking to a 64-bit driver.
- * @remarks These are only used by the driver implementation! */
+ * @remarks These are only used by the driver implementation!
+ * @{*/
 #  define VBOXGUEST_IOCTL_HGCM_CONNECT_32           VBOXGUEST_IOCTL_CODE_32(16, sizeof(VBoxGuestHGCMConnectInfo))
 #  define VBOXGUEST_IOCTL_HGCM_DISCONNECT_32        VBOXGUEST_IOCTL_CODE_32(17, sizeof(VBoxGuestHGCMDisconnectInfo))
 #  define VBOXGUEST_IOCTL_HGCM_CALL_32(Size)        VBOXGUEST_IOCTL_CODE_32(18, (Size))
@@ -547,8 +549,9 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 #endif /* RT_OS_LINUX || RT_OS_SOLARIS || RT_OS_FREEBSD */
 
-/** @} */
 #endif /* !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT) */
+
+/** @} */
 
 #endif
 

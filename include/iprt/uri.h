@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -108,7 +108,6 @@ RTR3DECL(char *) RTUriFragment(const char *pszUri);
 /** @defgroup grp_rt_uri_file   RTUriFile - Uri file parsing and creation
  * Adds file: scheme support to the generic RTUri interface. This is partly
  * documented in http://datatracker.ietf.org/doc/rfc1738/.
- * @ingroup grp_rt_uri
  * @{
  */
 

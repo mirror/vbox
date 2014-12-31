@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,13 +36,11 @@
 
 
 /** @defgroup grp_types_both  Common Guest and Host Context Basic Types
- * @ingroup grp_types
  * @{
  */
 
 
 /** @defgroup grp_types_hc  Host Context Basic Types
- * @ingroup grp_types_both
  * @{
  */
 
@@ -50,7 +48,6 @@
 
 
 /** @defgroup grp_types_gc  Guest Context Basic Types
- * @ingroup grp_types_both
  * @{
  */
 
@@ -404,7 +401,6 @@ typedef const struct CPUMSELREG *PCCPUMSELREGHID;
 
 
 /** @defgroup grp_types_idt     Interrupt Descriptor Table Entry.
- * @ingroup grp_types
  * @todo This all belongs in x86.h!
  * @{ */
 
