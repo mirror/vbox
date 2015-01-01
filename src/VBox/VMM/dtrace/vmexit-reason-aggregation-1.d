@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DTracing VBox - vmexit rip aggregation test \#1.
+ * DTracing VBox - vmexit reason aggregation test \#1.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,15 +18,19 @@
 #pragma D option quiet
 
 
-vboxvmm:::r0-hmsvm-vmexit,vboxvmm:::r0-hmvmx-vmexit
+vboxvmm:::r0-hmsvm-vmexit
 {
-    /*printf("cs:rip=%02x:%08llx", args[1]->cs.Sel, args[1]->rip.rip);*/
-    @g_aRips[args[1]->rip.rip] = count();
-    /*@g_aRips[args[0]->cpum.s.Guest.rip.rip] = count(); - alternative access route */
+    @g_aSvmExits[args[2]] = count();
+}
+
+vboxvmm:::r0-hmvmx-vmexit-noctx
+{
+    @g_aVmxExits[args[2]] = count();
 }
 
 END
 {
-    printa(" rip=%#018llx   %@4u times\n", @g_aRips);
+    printa(" svmexit=%#04llx   %@10u times\n", @g_aSvmExits);
+    printa(" vmxexit=%#04llx   %@10u times\n", @g_aVmxExits);
 }
 

@@ -36,6 +36,8 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
+# include "dtrace/VBoxVMM.h"
+
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
 # define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
@@ -8831,12 +8833,22 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return rc;
         }
 
-        /* Handle the VM-exit. */
+        /* Profiling the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
+
+        VBOXVMM_R0_HMVMX_VMEXIT_NOCTX(pVCpu, pCtx, VmxTransient.uExitReason);
+        if (RT_UNLIKELY(VBOXVMM_R0_HMVMX_VMEXIT_ENABLED()))
+        {
+            hmR0VmxReadExitQualificationVmcs(pVCpu, &VmxTransient);
+            hmR0VmxSaveGuestState(pVCpu, pCtx);
+            VBOXVMM_R0_HMVMX_VMEXIT(pVCpu, pCtx, VmxTransient.uExitReason, VmxTransient.uExitQualification);
+        }
+
+        /* Handle the VM-exit. */
 #ifdef HMVMX_USE_FUNCTION_TABLE
         rc = g_apfnVMExitHandlers[VmxTransient.uExitReason](pVCpu, pCtx, &VmxTransient);
 #else
@@ -8904,13 +8916,22 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0VmxReportWorldSwitchError(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict), pCtx, &VmxTransient);
             return VBOXSTRICTRC_TODO(rcStrict);
         }
-
-        /* Handle the VM-exit - we quit earlier on certain VM-exits, see hmR0VmxHandleExitStep(). */
+        /* Profiling the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
+
+        VBOXVMM_R0_HMVMX_VMEXIT_NOCTX(pVCpu, pCtx, VmxTransient.uExitReason);
+        if (RT_UNLIKELY(VBOXVMM_R0_HMVMX_VMEXIT_ENABLED()))
+        {
+            hmR0VmxReadExitQualificationVmcs(pVCpu, &VmxTransient);
+            hmR0VmxSaveGuestState(pVCpu, pCtx);
+            VBOXVMM_R0_HMVMX_VMEXIT(pVCpu, pCtx, VmxTransient.uExitReason, VmxTransient.uExitQualification);
+        }
+
+        /* Handle the VM-exit - we quit earlier on certain VM-exits, see hmR0VmxHandleExitStep(). */
         rcStrict = hmR0VmxHandleExitStep(pVCpu, pCtx, &VmxTransient, VmxTransient.uExitReason, uCsStart, uRipStart);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rcStrict != VINF_SUCCESS)
