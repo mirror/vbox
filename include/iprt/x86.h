@@ -944,9 +944,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** R/W0, R/W1, R/W2, and R/W3. */
 #define X86_DR7_RW_ALL_MASKS                UINT32_C(0x33330000)
 
+#ifndef VBOX_FOR_DTRACE_LIB
 /** Checks if there are any I/O breakpoint types configured in the RW
  * registers.  Does NOT check if these are enabled, sorry. */
-#define X86_DR7_ANY_RW_IO(uDR7) \
+# define X86_DR7_ANY_RW_IO(uDR7) \
     (   (    UINT32_C(0x22220000) & (uDR7) ) /* any candidates? */ \
      && ( ( (UINT32_C(0x22220000) & (uDR7) ) >> 1 )  &  ~(uDR7) ) )
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x33330000)) == 0);
@@ -958,6 +959,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00010000)) == 0);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00020000)) == 1);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00030000)) == 0);
 AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
+#endif /* !VBOX_FOR_DTRACE_LIB */
 
 /** @name Length values.
  * @{ */
@@ -2372,8 +2374,10 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 /** The 32-bit magic used to recognize if this a 32-bit FPU state. Don't
  *  forget to update x86.mac if you change this! */
 #define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86FXSTATE, 512);
 AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD);
+#endif
 
 /** @name FPU status word flags.
  * @{ */
