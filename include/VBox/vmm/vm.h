@@ -234,7 +234,7 @@ typedef struct VMCPU
     } gim;
 
     /** Align the following members on page boundary. */
-    //uint8_t                 abAlignment2[64];
+    /*uint8_t                 abAlignment2[64];*/
 
     /** PGM part. */
     union

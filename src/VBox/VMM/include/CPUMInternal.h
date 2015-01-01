@@ -26,6 +26,13 @@
 #else
 # pragma D depends_on library x86.d
 # pragma D depends_on library cpumctx.d
+
+/* Some fudging. */
+typedef uint32_t CPUMMICROARCH;
+typedef uint32_t CPUMUKNOWNCPUID;
+typedef struct CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
+typedef struct CPUMMSRRANGE  *PCPUMMSRRANGE;
+typedef uint64_t STAMCOUNTER;
 #endif
 
 
@@ -127,7 +134,11 @@ typedef struct CPUMFEATURES
     /** The CPU stepping. */
     uint8_t         uStepping;
     /** The microarchitecture. */
+#ifndef VBOX_FOR_DTRACE_LIB
     CPUMMICROARCH   enmMicroarch;
+#else
+    uint32_t        enmMicroarch;
+#endif
     /** The maximum physical address with of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
     /** Alignment padding. */
@@ -180,7 +191,9 @@ typedef struct CPUMFEATURES
 
     uint64_t        auPadding[2];
 } CPUMFEATURES;
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 32);
+#endif
 /** Pointer to a CPU feature structure. */
 typedef CPUMFEATURES *PCPUMFEATURES;
 /** Pointer to a const CPU feature structure. */
