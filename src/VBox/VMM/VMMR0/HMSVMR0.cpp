@@ -30,6 +30,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
+#include "dtrace/VBoxVMM.h"
 
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
@@ -3299,6 +3300,7 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
@@ -3376,6 +3378,7 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
