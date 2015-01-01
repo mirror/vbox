@@ -8845,7 +8845,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
             break;
-        else if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        if (cLoops > pVM->hm.s.cMaxResumeLoops)
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
             rc = VINF_EM_RAW_INTERRUPT;
