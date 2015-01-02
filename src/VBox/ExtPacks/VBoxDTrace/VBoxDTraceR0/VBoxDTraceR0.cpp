@@ -46,12 +46,27 @@
 
 
 /*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+struct VBoxDtDevInfo
+{
+    /** The major device cdoe. */
+    RTDEV       uMajor;
+};
+
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Per CPU information */
-cpucore_t               g_aVBoxDtCpuCores[RTCPUSET_MAX_CPUS];
+cpucore_t                       g_aVBoxDtCpuCores[RTCPUSET_MAX_CPUS];
 /** Dummy mutex. */
-struct VBoxDtMutex      g_DummyMtx;
+struct VBoxDtMutex              g_DummyMtx;
+/** Fake dtrace device info. */
+static struct VBoxDtDevInfo     g_DevInfo =
+{
+    /* .uMajor = */ 127
+};
 
 void           (*dtrace_cpu_init)(processorid_t);
 void           (*dtrace_modload)(struct modctl *);
@@ -530,14 +545,29 @@ void VBoxDtCredFree(struct VBoxDtCred *pCred)
 }
 
 
+/* ddi_driver_major implementation. */
+major_t VBoxDtDdiDriverMajor(struct VBoxDtDevInfo *pDevInfo)
+{
+    Assert(pDevInfo == &g_DevInfo);
+    return pDevInfo->uMajor;
+}
+
+/* ddi_report_dev stub.*/
+void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo)
+{
+    Assert(pDevInfo == &g_DevInfo);
+}
+
+
+//VBoxDtDdiSoftStateAllocZ
+//VBoxDtDdiSoftStateFree
+//VBoxDtDdiSoftStateGet
+//VBoxDtDdiSoftStateInit
+//VBoxDtDdiSoftStateTerm
+
+
+
 #if 0
-VBoxDtDdiDriverMajor
-VBoxDtDdiReportDev
-VBoxDtDdiSoftStateAllocZ
-VBoxDtDdiSoftStateFree
-VBoxDtDdiSoftStateGet
-VBoxDtDdiSoftStateInit
-VBoxDtDdiSoftStateTerm
 
 VBoxDtGetCurrentProc
 VBoxDtGetCurrentThread
@@ -563,3 +593,23 @@ dtrace_xcall
 nocrt_strncpy
 RTErrConvertToErrno
 #endif
+
+
+
+#if 0
+#define VBDTR0_IOC_OPEN     UINT32_C(0xfeed0001)
+
+DECLEXPORT(int) VBoxDTraceR0SrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
+                                          uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
+{
+    /*
+     *
+     */
+    if (uOperation == VBDTR0_IOC_OPEN)
+    {
+
+    }
+
+}
+#endif
+
