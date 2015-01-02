@@ -55,6 +55,8 @@ provider vboxvmm
     probe r0__hmvmx__vmexit(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, uint64_t a_ExitReason, uint64_t a_ExitQualification);
     probe r0__hmvmx__vmexit__noctx(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pIncompleteCtx, uint64_t a_ExitReason);
 
+    probe r0__vmm__return__to__ring3__rc(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
+    probe r0__vmm__return__to__ring3__hm(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxvmm provider
