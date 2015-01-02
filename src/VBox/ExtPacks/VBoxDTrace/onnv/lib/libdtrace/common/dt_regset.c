@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
@@ -31,6 +32,9 @@
 #include <assert.h>
 #include <strings.h>
 #include <stdlib.h>
+#else  /* VBOX */
+# include <iprt/asm.h>
+#endif /* VBOX */
 
 #include <dt_regset.h>
 

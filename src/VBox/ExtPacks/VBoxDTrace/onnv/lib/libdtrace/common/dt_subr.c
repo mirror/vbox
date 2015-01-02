@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/sysmacros.h>
 
 #include <strings.h>
@@ -37,6 +38,15 @@
 #include <assert.h>
 #include <libgen.h>
 #include <limits.h>
+#else  /* VBOX */
+# include <ctype.h>
+# include <iprt/mp.h>
+# ifdef _MSC_VER
+#  include <io.h>
+# else
+#  include <unistd.h>
+# endif
+#endif /* VBOX */
 
 #include <dt_impl.h>
 
@@ -216,12 +226,21 @@ dtrace_str2attr(const char *str, dtrace_attribute_t *attr)
 	dtrace_stability_t s;
 	dtrace_class_t c;
 	char *p, *q;
+#ifdef VBOX
+	size_t cbStr;
+#endif
 
 	if (str == NULL || attr == NULL)
 		return (-1); /* invalid function arguments */
 
 	*attr = _dtrace_maxattr;
+#ifndef VBOX
 	p = strdupa(str);
+#else
+	cbStr = strlen(str) + 1;
+	p = alloca(cbStr);
+	memcpy(p, str, cbStr);
+#endif
 
 	if ((p = dt_getstrattr(p, &q)) == NULL)
 		return (0);
@@ -472,8 +491,12 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 	if (v != NULL)
 		return (v->dtv_ioctl(dtp->dt_varg, val, arg));
 
+#ifndef VBOX
 	if (dtp->dt_fd >= 0)
 		return (ioctl(dtp->dt_fd, val, arg));
+#else
+	AssertFailed(); /** @todo FIXME */
+#endif
 
 	errno = EBADF;
 	return (-1);
@@ -485,11 +508,17 @@ dt_status(dtrace_hdl_t *dtp, processorid_t cpu)
 	const dtrace_vector_t *v = dtp->dt_vector;
 
 	if (v == NULL)
+#ifndef VBOX
 		return (p_online(cpu, P_STATUS));
+#else
+		return RTMpIsCpuOnline(cpu) ? 1
+			: RTMpIsCpuPresent(cpu) ? 0 : -1; /* Only -1 is checked. */
+#endif
 
 	return (v->dtv_status(dtp->dt_varg, cpu));
 }
 
+#ifndef VBOX
 long
 dt_sysconf(dtrace_hdl_t *dtp, int name)
 {
@@ -500,6 +529,7 @@ dt_sysconf(dtrace_hdl_t *dtp, int name)
 
 	return (v->dtv_sysconf(dtp->dt_varg, name));
 }
+#endif /* !VBOX */
 
 /*
  * Wrapper around write(2) to handle partial writes.  For maximum safety of
@@ -560,7 +590,7 @@ dt_printf(dtrace_hdl_t *dtp, FILE *fp, const char *format, ...)
 
 		assert(dtp->dt_sprintf_buf != NULL);
 
-		buf = &dtp->dt_sprintf_buf[len = strlen(dtp->dt_sprintf_buf)];
+		buf = &dtp->dt_sprintf_buf[len = VBDTCAST(int)strlen(dtp->dt_sprintf_buf)];
 		len = dtp->dt_sprintf_buflen - len;
 		assert(len >= 0);
 
@@ -741,7 +771,11 @@ dt_difo_free(dtrace_hdl_t *dtp, dtrace_difo_t *dp)
 int
 dt_gmatch(const char *s, const char *p)
 {
+#ifndef VBOX
 	return (p == NULL || *p == '\0' || gmatch(s, p));
+#else
+	return (p == NULL || *p == '\0' || RTStrSimplePatternMatch(p, s)); /** @todo implement gmatch. */
+#endif
 }
 
 char *
@@ -804,7 +838,7 @@ dt_popcb(const ulong_t *bp, ulong_t n)
 static int
 dt_string2str(char *s, char *str, int nbytes)
 {
-	int len = strlen(s);
+	int len = VBDTCAST(int)strlen(s);
 
 	if (nbytes == 0) {
 		/*
@@ -831,6 +865,7 @@ dt_string2str(char *s, char *str, int nbytes)
 int
 dtrace_addr2str(dtrace_hdl_t *dtp, uint64_t addr, char *str, int nbytes)
 {
+#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
 
@@ -862,6 +897,10 @@ dtrace_addr2str(dtrace_hdl_t *dtp, uint64_t addr, char *str, int nbytes)
 			(void) snprintf(s, n, "0x%llx", (u_longlong_t)addr);
 		}
 	}
+#else
+	char s[32];
+	RTStrPrintf(s, sizeof(s), "0x%llx", (uint64_t)addr);
+#endif
 
 	return (dt_string2str(s, str, nbytes));
 }
@@ -870,6 +909,7 @@ int
 dtrace_uaddr2str(dtrace_hdl_t *dtp, pid_t pid,
     uint64_t addr, char *str, int nbytes)
 {
+#ifndef VBOX
 	char name[PATH_MAX], objname[PATH_MAX], c[PATH_MAX * 2];
 	struct ps_prochandle *P = NULL;
 	GElf_Sym sym;
@@ -905,6 +945,10 @@ dtrace_uaddr2str(dtrace_hdl_t *dtp, pid_t pid,
 
 	dt_proc_unlock(dtp, P);
 	dt_proc_release(dtp, P);
+#else
+	char c[32];
+	RTStrPrintf(c, sizeof (c), "0x%llx", addr);
+#endif
 
 	return (dt_string2str(c, str, nbytes));
 }

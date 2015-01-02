@@ -24,7 +24,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 /*
  * DTrace Memory Buffer Routines
@@ -39,8 +41,10 @@
  * to check for errors and then perform a single check before using the buffer.
  */
 
+#ifndef VBOX
 #include <sys/sysmacros.h>
 #include <strings.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_buf.h>

@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
@@ -35,6 +36,8 @@
 #include <setjmp.h>
 #include <assert.h>
 #include <errno.h>
+#else  /* VBOX */
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_grammar.h>

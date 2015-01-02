@@ -23,12 +23,20 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <strings.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
 
 #include <dt_string.h>
+
+#else  /* VBOX */
+# include <dt_string.h>
+# include <dt_impl.h>
+# include <iprt/ctype.h>
+# define isalnum(a_ch) RT_C_IS_ALNUM(a_ch)
+#endif /* VBOX */
 
 /*
  * Transform string s inline, converting each embedded C escape sequence string
@@ -252,17 +260,48 @@ strbasename(const char *s)
 const char *
 strbadidnum(const char *s)
 {
+#ifndef VBOX
 	char *p;
+#endif
 	int c;
 
 	if (*s == '\0')
 		return (s);
 
+#ifndef VBOX
 	errno = 0;
 	(void) strtoull(s, &p, 0);
 
 	if (errno == 0 && *p == '\0')
 		return (NULL); /* matches RGX_INT */
+#else
+	/* A number? */
+	c = *s;
+	if (RT_C_IS_DIGIT(c)) {
+		s++;
+		if (c == '0') {
+			c = *s;
+			if (c == 'x' || c == 'X') {
+				s++;
+				while ((c = *s++) != '\0') {
+					if (RT_C_IS_XDIGIT(c) == 0)
+						return (s - 1);
+				}
+			} else  {
+				while ((c = *s++) != '\0') {
+					if (RT_C_IS_ODIGIT(c) == 0)
+						return (s - 1);
+				}
+			}
+		} else {
+			while ((c = *s++) != '\0') {
+				if (RT_C_IS_DIGIT(c) == 0)
+					return (s - 1);
+			}
+		}
+		return (NULL); /* matches RGX_INT */
+	}
+#endif
 
 	while ((c = *s++) != '\0') {
 		if (isalnum(c) == 0 && c != '_' && c != '`')

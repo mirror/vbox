@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/sysmacros.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -36,10 +37,21 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#else  /* VBOX */
+# include <iprt/asm.h>
+# include <ctype.h>
+#endif /* VBOX */
 
 #include <dt_printf.h>
 #include <dt_string.h>
 #include <dt_impl.h>
+
+#ifdef VBOX
+static const char g_aszMonth[12][4] =
+{ "Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+static const char g_aszDay[7][4] =
+{ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+#endif
 
 /*ARGSUSED*/
 static int
@@ -301,9 +313,11 @@ pfprint_fp(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	case sizeof (double):
 		return (dt_printf(dtp, fp, format,
 		    *((double *)addr) / n));
+#ifndef _MSC_VER
 	case sizeof (long double):
 		return (dt_printf(dtp, fp, format,
 		    *((long double *)addr) / ldn));
+#endif
 	default:
 		return (dt_set_errno(dtp, EDT_DMISMATCH));
 	}
@@ -446,6 +460,7 @@ static int
 pfprint_time(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+#ifndef VBOX
 	char src[32], buf[32], *dst = buf;
 	hrtime_t time = *((uint64_t *)addr);
 	time_t sec = (time_t)(time / NANOSEC);
@@ -471,6 +486,16 @@ pfprint_time(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		*dst++ = src[i];
 
 	*dst = '\0';
+#else
+	RTTIMESPEC 	TimeSpec;
+	RTTIME 		Time;
+	char 		buf[32];
+
+	RTTimeLocalExplode(&Time, RTTimeSpecSetNano(&TimeSpec, *(uint64_t *)addr));
+	RTStrPrintf(buf, sizeof(buf), "%u %s %2u %02u:%02u:%02u",
+				Time.i32Year, g_aszMonth[Time.u8Month - 1],
+				Time.u8MonthDay, Time.u8Hour, Time.u8Minute, Time.u8Second);
+#endif
 	return (dt_printf(dtp, fp, format, buf));
 }
 
@@ -484,6 +509,7 @@ static int
 pfprint_time822(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+#ifndef VBOX
 	hrtime_t time = *((uint64_t *)addr);
 	time_t sec = (time_t)(time / NANOSEC);
 	struct tm tm;
@@ -491,6 +517,18 @@ pfprint_time822(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 
 	(void) localtime_r(&sec, &tm);
 	(void) strftime(buf, sizeof (buf), "%a, %d %b %G %T %Z", &tm);
+#else
+	RTTIMESPEC 	TimeSpec;
+	RTTIME 		Time;
+	char 		buf[64];
+
+	RTTimeLocalExplode(&Time, RTTimeSpecSetNano(&TimeSpec, *(uint64_t *)addr));
+	RTStrPrintf(buf, sizeof(buf), "%s, %u %s %u %02u:%02u:%02u %s%u%s",
+				g_aszDay[Time.u8WeekDay], Time.u8MonthDay, g_aszMonth[Time.u8Month - 1],
+				Time.u8Hour, Time.u8Minute, Time.u8Second,
+				Time.offUTC >= 0 ? "UTC+" : "UTC", Time.offUTC / 60,
+				Time.offUTC % 60 == 30 ? ".5" : "");
+#endif
 	return (dt_printf(dtp, fp, format, buf));
 }
 
@@ -499,6 +537,7 @@ static int
 pfprint_port(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
+#ifndef VBOX
 	uint16_t port = htons(*((uint16_t *)addr));
 	char buf[256];
 	struct servent *sv, res;
@@ -507,6 +546,12 @@ pfprint_port(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		return (dt_printf(dtp, fp, format, sv->s_name));
 
 	(void) snprintf(buf, sizeof (buf), "%d", *((uint16_t *)addr));
+#else
+	uint16_t uPortNet = *(uint16_t *)addr;
+	char buf[32];
+
+	RTStrPrintf(buf, sizeof(buf), "%d", RT_N2H_U16(uPortNet));
+#endif
 	return (dt_printf(dtp, fp, format, buf));
 }
 
@@ -516,14 +561,17 @@ pfprint_inetaddr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     const dt_pfargd_t *pfd, const void *addr, size_t size, uint64_t normal)
 {
 	char *s = alloca(size + 1);
+#ifndef VBOX
 	struct hostent *host, res;
 	char inetaddr[NS_IN6ADDRSZ];
 	char buf[1024];
 	int e;
+#endif
 
 	bcopy(addr, s, size);
 	s[size] = '\0';
 
+#ifndef VBOX
 	if (strchr(s, ':') == NULL && inet_pton(AF_INET, s, inetaddr) != -1) {
 		if ((host = gethostbyaddr_r(inetaddr, NS_INADDRSZ,
 		    AF_INET, &res, buf, sizeof (buf), &e)) != NULL)
@@ -533,6 +581,7 @@ pfprint_inetaddr(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		    AF_INET6, &e)) != NULL)
 			return (dt_printf(dtp, fp, format, host->h_name));
 	}
+#endif
 
 	return (dt_printf(dtp, fp, format, s));
 }
@@ -1023,7 +1072,7 @@ dt_printf_validate(dt_pfargv_t *pfv, uint_t flags,
 	dtrace_typeinfo_t dtt;
 	const char *aggtype;
 	dt_node_t aggnode;
-	int i, j;
+	VBDTTYPE(uint_t,int) i, j;
 
 	if (pfv->pfv_format[0] == '\0') {
 		xyerror(D_PRINTF_FMT_EMPTY,
@@ -1336,7 +1385,7 @@ dt_printf_format(dtrace_hdl_t *dtp, FILE *fp, const dt_pfargv_t *pfv,
 		nrecs--;
 	}
 
-	for (i = 0; i < pfv->pfv_argc; i++, pfd = pfd->pfd_next) {
+	for (i = 0; VBDTCAST(uint_t)i < pfv->pfv_argc; i++, pfd = pfd->pfd_next) {
 		const dt_pfconv_t *pfc = pfd->pfd_conv;
 		int width = pfd->pfd_width;
 		int prec = pfd->pfd_prec;
@@ -1606,17 +1655,21 @@ dtrace_freopen(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
     const dtrace_probedata_t *data, const dtrace_recdesc_t *recp,
     uint_t nrecs, const void *buf, size_t len)
 {
+#ifndef VBOX
 	char selfbuf[40], restorebuf[40], *filename;
 	FILE *nfp;
-	int rval, errval;
 	dt_pfargv_t *pfv = fmtdata;
 	dt_pfargd_t *pfd = pfv->pfv_argv;
+#else
+	int rval, errval;
+#endif
 
 	rval = dtrace_sprintf(dtp, fp, fmtdata, recp, nrecs, buf, len);
 
 	if (rval == -1 || fp == NULL)
 		return (rval);
 
+#ifndef VBOX
 	if (pfd->pfd_preflen != 0 &&
 	    strcmp(pfd->pfd_prefix, DT_FREOPEN_RESTORE) == 0) {
 		/*
@@ -1699,6 +1752,12 @@ dtrace_freopen(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
 	(void) fclose(nfp);
 
 	return (rval);
+
+#else  /* VBOX  - the above is not easily portable because of /dev/fd/xxx. */
+	if ((errval = dt_handle_liberr(dtp, data, "reopening stdout is not implemented")) == 0)
+		return (rval);
+	return (errval);
+#endif
 }
 
 /*ARGSUSED*/
@@ -1716,7 +1775,7 @@ dtrace_printf_create(dtrace_hdl_t *dtp, const char *s)
 {
 	dt_pfargv_t *pfv = dt_printf_create(dtp, s);
 	dt_pfargd_t *pfd;
-	int i;
+	VBDTTYPE(uint_t,int) i;
 
 	if (pfv == NULL)
 		return (NULL);		/* errno has been set for us */
@@ -1775,7 +1834,12 @@ dtrace_printf_format(dtrace_hdl_t *dtp, void *fmtdata, char *s, size_t len)
 	size_t formatlen = strlen(pfv->pfv_format) + 3 * pfv->pfv_argc + 1;
 	char *format = alloca(formatlen);
 	char *f = format;
+#ifndef VBOX
 	int i, j;
+#else
+	uint_t i;
+	size_t j;
+#endif
 
 	for (i = 0; i < pfv->pfv_argc; i++, pfd = pfd->pfd_next) {
 		const dt_pfconv_t *pfc = pfd->pfd_conv;
@@ -1915,7 +1979,7 @@ dtrace_fprinta(dtrace_hdl_t *dtp, FILE *fp, void *fmtdata,
 	 * need to scan forward through the records until we find a record from
 	 * a different statement.
 	 */
-	for (i = 0; i < nrecs; i++) {
+	for (i = 0; VBDTCAST(uint_t)i < nrecs; i++) {
 		const dtrace_recdesc_t *nrec = &recs[i];
 
 		if (nrec->dtrd_uarg != recs->dtrd_uarg)
