@@ -1,0 +1,41 @@
+# $Id$
+## @file
+# Sub-makefile for VBoxDTraceR0
+#
+
+#
+# Copyright (C) 2012 ????
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+
+SYSMODS += VBoxDTraceR0
+VBoxDTraceR0_TEMPLATE = VBoxR0
+VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0
+ifeq ($(VBOX_LDR_FMT),elf)
+ VBoxDTraceR0_LDFLAGS = -e ???
+endif
+VBoxDTraceR0_INCS = \
+	$(VBOXDT_PATH_UTS)/common
+VBoxDTraceR0_SOURCES = \
+	VBoxDTraceR0.cpp
+VBoxDTraceR0_LIBS = \
+	$(VBOXDT_PATH_VBOX_SDK_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
+ VBoxDTraceR0_LIBS += \
+ 	$(VBOXDT_PATH_VBOX_SDK_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

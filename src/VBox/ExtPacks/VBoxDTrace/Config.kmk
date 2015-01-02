@@ -1,0 +1,14 @@
+
+ifndef VBOX_ROOT
+ VBOX_ROOT := $(abspath $(PATH_ROOT)/../../../2vn/trunk)
+endif
+
+include $(VBOX_ROOT)/Config.kmk
+
+
+
+VBOXDT_PATH_ONNV = $(PATH_ROOT)/src/onnv
+VBOXDT_PATH_UTS  = $(VBOXDT_PATH_ONNV)/uts
+VBOXDT_PATH_CMD  = $(VBOXDT_PATH_ONNV)/cmd
+
+VBOXDT_PATH_VBOX_SDK_LIB = $(VBOX_ROOT)/out/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/$(KBUILD_TYPE)/lib
