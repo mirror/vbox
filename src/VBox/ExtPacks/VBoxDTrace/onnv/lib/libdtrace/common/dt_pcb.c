@@ -90,7 +90,9 @@ dt_pcb_push(dtrace_hdl_t *dtp, dt_pcb_t *pcb)
 	dtp->dt_pcb = pcb;
 	dtp->dt_gen++;
 
+#ifndef USING_FLEX /* In case flex starts work too early. Moved to dt_compile. */
 	yyinit(pcb);
+#endif
 }
 
 static int
