@@ -1408,7 +1408,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
            we've already reported. */
         PCVTGPROBELOC pProbeLocRO = &pProv->paProbeLocsRO[idxProbeLoc];
         PVTGDESCPROBE pProbeDesc  = (PVTGDESCPROBE)pProbeLocRO->pbProbe;
-        if (pProbeDesc->idxProvider == idxProv)
+        if (pProbeDesc->idxProvider != idxProv)
             continue;
 
         uint32_t *pidProbe;
@@ -1416,7 +1416,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
             pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
         else
             pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
-        if (*pidProbe == UINT32_MAX)
+        if (*pidProbe != UINT32_MAX)
             continue;
 
          /* The function name may need to be stripped since we're using C++
