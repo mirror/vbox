@@ -96,6 +96,7 @@
 # include <sys/dtrace_impl.h>
 # include <iprt/assert.h>
 # include <iprt/cpuset.h>
+# include <iprt/mem.h>
 # include <iprt/mp.h>
 # include <iprt/string.h>
 # include <iprt/process.h>
@@ -137,6 +138,17 @@ DECLINLINE(uint32_t) VBoxDtCompareAndSwapU32(uint32_t volatile *pu32Dst, uint32_
 # undef NULL
 # define NULL (0)
 #endif /* VBOX */
+
+/** Check if the given address is a valid kernel address.
+ * The value can be uintptr_t or uint64_t.  */
+#ifndef VBOX
+# define VBDT_IS_VALID_KRNL_ADDR(a_uAddr)   ((a_uAddr) >= KERNELBASE)
+#else
+# define VBDT_IS_VALID_KRNL_ADDR(a_uAddr)   \
+    (   (sizeof(a_uAddr) == sizeof(uintptr_t) || (uintptr_t)(a_uAddr) == (a_uAddr)) \
+     && RTR0MemKernelIsValidAddr((void *)(uintptr_t)(a_uAddr)) )
+#endif
+
 
 /*
  * DTrace Tunable Variables
@@ -231,7 +243,9 @@ static int		dtrace_toxranges_max;	/* size of toxic range array */
 static dtrace_anon_t	dtrace_anon;		/* anonymous enabling */
 static kmem_cache_t	*dtrace_state_cache;	/* cache for dynamic state */
 static uint64_t		dtrace_vtime_references; /* number of vtimestamp refs */
+#ifndef VBOX
 static kthread_t	*dtrace_panicked;	/* panicking thread */
+#endif
 static dtrace_ecb_t	*dtrace_ecb_create_cache; /* cached created ECB */
 static dtrace_genid_t	dtrace_probegen;	/* current probe generation */
 static dtrace_helpers_t *dtrace_deferred_pid;	/* deferred helper list */
@@ -9366,7 +9380,7 @@ dtrace_actdesc_create(dtrace_actkind_t kind, uint32_t ntuple,
 	dtrace_actdesc_t *act;
 
 	ASSERT(!DTRACEACT_ISPRINTFLIKE(kind) || (arg != NULL &&
-	    arg >= KERNELBASE) || (arg == NULL && kind == DTRACEACT_PRINTA));
+	    VBDT_IS_VALID_KRNL_ADDR(arg)) || (arg == NULL && kind == DTRACEACT_PRINTA));
 
 	act = kmem_zalloc(sizeof (dtrace_actdesc_t), KM_SLEEP);
 	act->dtad_kind = kind;
@@ -9402,7 +9416,7 @@ dtrace_actdesc_release(dtrace_actdesc_t *act, dtrace_vstate_t *vstate)
 	if (DTRACEACT_ISPRINTFLIKE(kind)) {
 		char *str = (char *)(uintptr_t)act->dtad_arg;
 
-		ASSERT((str != NULL && (uintptr_t)str >= KERNELBASE) ||
+		ASSERT((str != NULL && VBDT_IS_VALID_KRNL_ADDR((uintptr_t)str)) ||
 		    (str == NULL && act->dtad_kind == DTRACEACT_PRINTA));
 
 		if (str != NULL)
@@ -9877,7 +9891,7 @@ dtrace_ecb_action_add(dtrace_ecb_t *ecb, dtrace_actdesc_t *desc)
 				format = 0;
 			} else {
 				ASSERT(arg != NULL);
-				ASSERT(arg > KERNELBASE);
+				ASSERT(VBDT_IS_VALID_KRNL_ADDR(arg));
 				format = dtrace_format_add(state,
 				    (char *)(uintptr_t)arg);
 			}

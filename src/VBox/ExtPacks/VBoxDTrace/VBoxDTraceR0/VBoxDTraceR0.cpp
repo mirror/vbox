@@ -41,6 +41,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
@@ -107,6 +108,8 @@ typedef struct VBoxDtStackData
     } u;
     /** Credentials allocated by VBoxDtGetCurrentCreds. */
     struct VBoxDtCred      *pCred;
+    /** Thread structure currently being held by this thread. */
+    struct VBoxDtThread    *pThread;
     /** Pointer to this structure.
      * This is the final bit of integrity checking. */
     struct VBoxDtStackData *pSelf;
@@ -144,6 +147,8 @@ typedef VBDTSTACKDATA *PVBDTSTACKDATA;
         pStackData->pSelf       = NULL; \
         if (pStackData->pCred) \
             crfree(pStackData->pCred); \
+        if (pStackData->pThread) \
+            VBoxDtReleaseThread(pStackData->pThread); \
     } while (0)
 
 
@@ -677,6 +682,168 @@ void VBoxDtCredFree(struct VBoxDtCred *pCred)
         RTMemFree(pCred);
 }
 
+/** Spinlock protecting the thread structures. */
+static RTSPINLOCK           g_hThreadSpinlock = NIL_RTSPINLOCK;
+/** List of threads by usage age. */
+static RTLISTANCHOR         g_ThreadAgeList;
+/** Hash table for looking up thread structures.  */
+static struct VBoxDtThread *g_apThreadsHash[16384];
+/** Fake kthread_t structures.
+ * The size of this array is making horrible ASSUMPTIONS about the number of
+ * thread in the system that will be subjected to DTracing. */
+static struct VBoxDtThread  g_aThreads[8192];
+
+
+static int vboxDtInitThreadDb(void)
+{
+    int rc = RTSpinlockCreate(&g_hThreadSpinlock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RTListInit(&g_ThreadAgeList);
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aThreads); i++)
+    {
+        g_aThreads[i].hNative = NIL_RTNATIVETHREAD;
+        g_aThreads[i].uPid    = NIL_RTPROCESS;
+        RTListPrepend(&g_ThreadAgeList, &g_aThreads[i].AgeEntry);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static void vboxDtTermThreadDb(void)
+{
+    RTSpinlockDestroy(g_hThreadSpinlock);
+    g_hThreadSpinlock = NIL_RTSPINLOCK;
+    RTListInit(&g_ThreadAgeList);
+}
+
+
+/* curthread implementation, providing a fake kthread_t. */
+struct VBoxDtThread *VBoxDtGetCurrentThread(void)
+{
+    /*
+     * Once we've retrieved a thread, we hold on to it until the thread exits
+     * the VBoxDTrace module.
+     */
+    PVBDTSTACKDATA  pData       = vboxDtGetStackData();
+    if (pData->pThread)
+    {
+        AssertPtr(pData->pThread);
+        Assert(pData->pThread->hNative   == RTThreadNativeSelf());
+        Assert(pData->pThread->uPid      == RTProcSelf());
+        Assert(RTListIsEmpty(&pData->pThread->AgeEntry));
+        return pData->pThread;
+    }
+
+    /*
+     * Lookup the thread in the hash table.
+     */
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    RTPROCESS       uPid        = RTProcSelf();
+    uintptr_t       iHash       = (hNativeSelf * 2654435761) % RT_ELEMENTS(g_apThreadsHash);
+    RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
+
+    RTSpinlockAcquireNoInts(g_hThreadSpinlock, &Tmp);
+
+    struct VBoxDtThread *pThread = g_apThreadsHash[iHash];
+    while (pThread)
+    {
+        if (pThread->hNative == hNativeSelf)
+        {
+            if (pThread->uPid != uPid)
+            {
+                /* Re-initialize the reused thread. */
+                pThread->uPid           = uPid;
+                pThread->t_dtrace_vtime = 0;
+                pThread->t_dtrace_start = 0;
+                pThread->t_dtrace_stop  = 0;
+                pThread->t_dtrace_scrpc = 0;
+                pThread->t_dtrace_astpc = 0;
+                pThread->t_predcache    = 0;
+            }
+
+            /* Hold the thread in the on-stack data, making sure it does not
+               get reused till the thread leaves VBoxDTrace. */
+            RTListNodeRemove(&pThread->AgeEntry);
+            pData->pThread = pThread;
+
+            RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+            return pThread;
+        }
+
+        pThread = pThread->pNext;
+    }
+
+    /*
+     * Unknown thread.  Allocate a new entry, recycling unused or old ones.
+     */
+    pThread = RTListGetLast(&g_ThreadAgeList, struct VBoxDtThread, AgeEntry);
+    AssertFatal(pThread);
+    RTListNodeRemove(&pThread->AgeEntry);
+    if (pThread->hNative != NIL_RTNATIVETHREAD)
+    {
+        uintptr_t   iHash2 = (pThread->hNative * 2654435761) % RT_ELEMENTS(g_apThreadsHash);
+        if (g_apThreadsHash[iHash2] == pThread)
+            g_apThreadsHash[iHash2] = pThread->pNext;
+        else
+        {
+            for (struct VBoxDtThread *pPrev = g_apThreadsHash[iHash2]; ; pPrev = pPrev->pNext)
+            {
+                AssertPtr(pPrev);
+                if (pPrev->pNext == pThread)
+                {
+                    pPrev->pNext = pThread->pNext;
+                    break;
+                }
+            }
+        }
+    }
+
+    /*
+     * Initialize the data.
+     */
+    pThread->t_dtrace_vtime = 0;
+    pThread->t_dtrace_start = 0;
+    pThread->t_dtrace_stop  = 0;
+    pThread->t_dtrace_scrpc = 0;
+    pThread->t_dtrace_astpc = 0;
+    pThread->t_predcache    = 0;
+    pThread->hNative        = hNativeSelf;
+    pThread->uPid           = uPid;
+
+    /*
+     * Add it to the hash as well as the on-stack data.
+     */
+    pThread->pNext = g_apThreadsHash[iHash];
+    g_apThreadsHash[iHash] = pThread->pNext;
+
+    pData->pThread = pThread;
+
+    RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+    return pThread;
+}
+
+
+/**
+ * Called by the stack data destructor.
+ *
+ * @param   pThread         The thread to release.
+ *
+ */
+static void VBoxDtReleaseThread(struct VBoxDtThread *pThread)
+{
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(g_hThreadSpinlock, &Tmp);
+
+    RTListAppend(&g_ThreadAgeList, &pThread->AgeEntry);
+
+    RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+}
+
+
+
 
 /*
  *
@@ -1061,13 +1228,6 @@ void  VBoxDtKMemCacheFree(struct VBoxDtMemCache *pThis, void *pvMem)
 {
     RTMemFreeEx(pvMem, pThis->cbBuf);
 }
-
-
-#if 0
-VBoxDtGetKernelBase
-VBoxDtGetCurrentThread
-#endif
-
 
 
 /*
