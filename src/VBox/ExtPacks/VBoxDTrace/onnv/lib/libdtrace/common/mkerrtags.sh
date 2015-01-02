@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env kmk_ash
 #
 # CDDL HEADER START
 #
@@ -26,6 +26,7 @@
 #
 #ident	"%Z%%M%	%I%	%E% SMI"
 
+
 echo "\
 /*\n\
  * Copyright 2003 Sun Microsystems, Inc.  All rights reserved.\n\
@@ -38,10 +39,13 @@ echo "\
 \n\
 static const char *const _dt_errtags[] = {"
 
-pattern='^	\(D_[A-Z0-9_]*\),*'
-replace='	"\1",'
-
-sed -n "s/$pattern/$replace/p" || exit 1
+# WARNING: Tabs in expressions.
+#pattern='^	\(D_[A-Z0-9_]*\),*'
+#replace='	"\1",'
+#
+#sed -n "s/$pattern/$replace/p" || exit 1
+set -x
+kmk_sed --lang_c -n 's/^[[:space:]]*\(D_[A-Z0-9_]*\),*/	"\1",/p' $1 || exit 1
 
 echo "\
 };\n\
