@@ -1374,38 +1374,36 @@ static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
 {
     PSUPDRVVDTPROVIDERCORE  pProv        = (PSUPDRVVDTPROVIDERCORE)pvProv;
-    dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
-    size_t const            cbFnNmBuf    = _4K + _1K;
-    char                   *pszFnNmBuf;
-    uint16_t                idxProv;
-    PVTGPROBELOC            pProbeLoc;
-    PVTGPROBELOC            pProbeLocEnd;
 
     if (pDtProbeDesc)
         return;  /* We don't generate probes, so never mind these requests. */
 
     if (pProv->TracerData.DTrace.fZombie)
         return;
+        
+    dtrace_provider_id_t const idProvider   = pProv->TracerData.DTrace.idProvider;
+    AssertPtrReturnVoid(idProvider);
 
     AssertPtrReturnVoid(pProv->pHdr);
-    pProbeLoc    = pProv->pHdr->paProbLocs;
-    pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
+    PVTGPROBELOC pProbeLoc    = pProv->pHdr->paProbLocs;
+    PVTGPROBELOC pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
     if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
         return;
 
-     /* Need a buffer for extracting the function names and mangling them in
-        case of collision. */
-     pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
-     if (!pszFnNmBuf)
+    /* Need a buffer for extracting the function names and mangling them in
+       case of collision. */
+    size_t const            cbFnNmBuf    = _4K + _1K;
+    char *pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
+    if (!pszFnNmBuf)
          return;
 
-     /*
-      * Itereate the probe location list and register all probes related to
-      * this provider.
-      */
-     idxProv      = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
-     while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
-     {
+    /*
+     * Itereate the probe location list and register all probes related to
+     * this provider.
+     */
+    uint16_t idxProv = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
+    while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
+    {
          PVTGDESCPROBE pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
          if (   pProbeDesc->idxProvider == idxProv
              && pProbeLoc->idProbe      == UINT32_MAX)
