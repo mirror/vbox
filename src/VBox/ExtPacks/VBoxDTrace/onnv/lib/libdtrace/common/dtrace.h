@@ -27,12 +27,16 @@
 #ifndef	_DTRACE_H
 #define	_DTRACE_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <sys/dtrace.h>
 #include <stdarg.h>
 #include <stdio.h>
+#ifndef VBOX
 #include <gelf.h>
+#endif
 
 #ifdef	__cplusplus
 extern "C" {
@@ -430,6 +434,7 @@ extern void dtrace_proc_continue(dtrace_hdl_t *, struct ps_prochandle *);
  * dtrace_update().  Once dtrace_update() is called, any cached values must
  * be flushed and not used subsequently by the client program.
  */
+#ifndef VBOX
 
 #define	DTRACE_OBJ_EXEC	 ((const char *)0L)	/* primary executable file */
 #define	DTRACE_OBJ_RTLD	 ((const char *)1L)	/* run-time link-editor */
@@ -444,6 +449,7 @@ typedef struct dtrace_objinfo {
 	const char *dto_file;			/* object file path (if any) */
 	int dto_id;				/* object file id (if any) */
 	uint_t dto_flags;			/* object flags (see below) */
+
 	GElf_Addr dto_text_va;			/* address of text section */
 	GElf_Xword dto_text_size;		/* size of text section */
 	GElf_Addr dto_data_va;			/* address of data section */
@@ -471,6 +477,7 @@ extern int dtrace_lookup_by_name(dtrace_hdl_t *, const char *, const char *,
 
 extern int dtrace_lookup_by_addr(dtrace_hdl_t *, GElf_Addr addr,
     GElf_Sym *, dtrace_syminfo_t *);
+#endif /* !VBOX */
 
 typedef struct dtrace_typeinfo {
 	const char *dtt_object;			/* object containing type */
@@ -481,8 +488,10 @@ typedef struct dtrace_typeinfo {
 extern int dtrace_lookup_by_type(dtrace_hdl_t *, const char *, const char *,
     dtrace_typeinfo_t *);
 
+#ifndef VBOX
 extern int dtrace_symbol_type(dtrace_hdl_t *, const GElf_Sym *,
     const dtrace_syminfo_t *, dtrace_typeinfo_t *);
+#endif
 
 extern int dtrace_type_strcompile(dtrace_hdl_t *,
     const char *, dtrace_typeinfo_t *);
@@ -512,6 +521,7 @@ extern int dtrace_probe_iter(dtrace_hdl_t *,
 extern int dtrace_probe_info(dtrace_hdl_t *,
     const dtrace_probedesc_t *, dtrace_probeinfo_t *);
 
+#ifndef VBOX
 /*
  * DTrace Vector Interface
  *
@@ -527,6 +537,7 @@ struct dtrace_vector {
 	int (*dtv_status)(void *, processorid_t);
 	long (*dtv_sysconf)(void *, int);
 };
+#endif /* !VBOX */
 
 /*
  * DTrace Utility Functions

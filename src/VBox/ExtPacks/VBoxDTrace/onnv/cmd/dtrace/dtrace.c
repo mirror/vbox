@@ -24,25 +24,62 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
+#ifndef _MSC_VER
+# include <sys/wait.h>
+#endif
 
 #include <dtrace.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <strings.h>
-#include <unistd.h>
+#ifndef VBOX
+# include <strings.h>
+#endif
+#ifndef _MSC_VER
+# include <unistd.h>
+#else
+# include <direct.h>
+# include <io.h>
+#endif
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
+#ifndef VBOX
 #include <alloca.h>
 #include <libgen.h>
 #include <libproc.h>
+#endif
+
+#ifdef VBOX
+# include <stdio.h>
+
+# include <iprt/alloca.h>
+# include <iprt/getopt.h>
+# include <iprt/initterm.h>
+# include <iprt/path.h>
+# include <iprt/message.h>
+# include <iprt/process.h>
+# include <iprt/string.h>
+
+# undef PATH_MAX
+# define PATH_MAX RTPATH_MAX
+
+# define getpid		                          RTProcSelf
+# define strlcpy(a_pszDst, a_pszSrc, a_cbDst) RTStrCopy(a_pszDst, a_cbDst, a_pszSrc)
+# define basename(a_pszPath)                  RTPathFilename(a_pszPath)
+
+# ifdef _MSC_VER
+#  pragma warning(disable:4267) /* size_t conversion warnings */
+#  pragma warning(disable:4018) /* signed/unsigned mismatch */
+# endif
+#endif
 
 typedef struct dtrace_cmd {
 	void (*dc_func)(struct dtrace_cmd *);	/* function to compile arg */
@@ -65,8 +102,49 @@ typedef struct dtrace_cmd {
 #define	E_ERROR		1
 #define	E_USAGE		2
 
+#ifndef VBOX
 static const char DTRACE_OPTSTR[] =
 	"3:6:aAb:Bc:CD:ef:FGhHi:I:lL:m:n:o:p:P:qs:SU:vVwx:X:Z";
+#else
+static const RTGETOPTDEF g_aOptions[] =
+{
+	{ "-32", 10064, RTGETOPT_REQ_NOTHING },
+	{ "-64", 10032, RTGETOPT_REQ_NOTHING },
+	{ NULL, 'a', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'A', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'b', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'B', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'c', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'C', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'D', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'e', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'f', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'F', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'G', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'h', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'H', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'i', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'I', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'l', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'L', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'M', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'n', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'o', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'p', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'P', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'q', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 's', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'S', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'U', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'v', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'V', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'w', 	RTGETOPT_REQ_NOTHING },
+	{ NULL, 'x', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'X', 	RTGETOPT_REQ_STRING },
+	{ NULL, 'Z', 	RTGETOPT_REQ_NOTHING },
+};
+#endif /* VBOX */
+
 
 static char **g_argv;
 static int g_argc;
@@ -92,7 +170,11 @@ static int g_mode = DMODE_EXEC;
 static int g_status = E_SUCCESS;
 static int g_grabanon = 0;
 static const char *g_ofile = NULL;
+#ifndef _MSC_VER /* stdout isn't a constant usable in C code. */
 static FILE *g_ofp = stdout;
+#else
+static FILE *g_ofp = NULL;
+#endif
 static dtrace_hdl_t *g_dtp;
 static char *g_etcfile = "/etc/system";
 static const char *g_etcbegin = "* vvvv Added by DTrace";
@@ -436,11 +518,13 @@ etcsystem_prune(void)
 
 	(void) close(fd);
 
+#ifndef _MSC_VER
 	if (chown(tmpname, sbuf.st_uid, sbuf.st_gid) != 0) {
 		(void) unlink(tmpname);
 		fatal("failed to chown(2) %s to uid %d, gid %d", tmpname,
 		    (int)sbuf.st_uid, (int)sbuf.st_gid);
 	}
+#endif
 
 	if (rename(tmpname, fname) == -1)
 		fatal("rename of %s to %s failed", tmpname, fname);
@@ -510,8 +594,10 @@ print_probe_info(const dtrace_probeinfo_t *p)
 	oprintf("\n\tArgument Types\n");
 
 	for (i = 0; i < p->dtp_argc; i++) {
+#ifndef VBOX /* no ctf for now  */
 		if (ctf_type_name(p->dtp_argv[i].dtt_ctfp,
 		    p->dtp_argv[i].dtt_type, buf, sizeof (buf)) == NULL)
+#endif
 			(void) strlcpy(buf, "(unknown)", sizeof (buf));
 		oprintf("\t\targs[%d]: %s\n", i, buf);
 	}
@@ -741,6 +827,7 @@ compile_str(dtrace_cmd_t *dcp)
 static void
 prochandler(struct ps_prochandle *P, const char *msg, void *arg)
 {
+#ifndef VBOX
 	const psinfo_t *prp = Ppsinfo(P);
 	int pid = Pstatus(P)->pr_pid;
 	char name[SIG2STR_MAX];
@@ -778,6 +865,7 @@ prochandler(struct ps_prochandle *P, const char *msg, void *arg)
 		g_pslive--;
 		break;
 	}
+#endif /* !VBOX */
 }
 
 /*ARGSUSED*/
@@ -1154,7 +1242,9 @@ int
 main(int argc, char *argv[])
 {
 	dtrace_bufdesc_t buf;
+#ifndef _MSC_VER
 	struct sigaction act, oact;
+#endif
 	dtrace_status_t status[2];
 	dtrace_optval_t opt;
 	dtrace_cmd_t *dcp;
@@ -1164,7 +1254,17 @@ main(int argc, char *argv[])
 	char c, *p, **v;
 	struct ps_prochandle *P;
 	pid_t pid;
+#ifdef VBOX
+	RTGETOPTUNION ValueUnion;
+	RTGETOPTSTATE GetState;
 
+	err = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+	if (RT_FAILURE(err))
+		return RTMsgInitFailure(err);
+#endif
+#ifdef _MSC_VER
+	g_ofp = stdout;
+#endif
 	g_pname = basename(argv[0]);
 
 	if (argc == 1)
@@ -1187,9 +1287,17 @@ main(int argc, char *argv[])
 	 * We also accumulate arguments that are not affiliated with getopt
 	 * options into g_argv[], and abort if any invalid options are found.
 	 */
+#ifndef VBOX
 	for (optind = 1; optind < argc; optind++) {
 		while ((c = getopt(argc, argv, DTRACE_OPTSTR)) != EOF) {
+#else
+	RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0);
+	while ((c = RTGetOpt(&GetState, &ValueUnion))) {
+		{
+			const char *optarg = ValueUnion.psz;
+#endif
 			switch (c) {
+#ifndef VBOX
 			case '3':
 				if (strcmp(optarg, "2") != 0) {
 					(void) fprintf(stderr,
@@ -1197,10 +1305,14 @@ main(int argc, char *argv[])
 					    argv[0], optarg);
 					return (usage(stderr));
 				}
+#else
+			case 10032:
+#endif
 				g_oflags &= ~DTRACE_O_LP64;
 				g_oflags |= DTRACE_O_ILP32;
 				break;
 
+#ifndef VBOX
 			case '6':
 				if (strcmp(optarg, "4") != 0) {
 					(void) fprintf(stderr,
@@ -1208,6 +1320,9 @@ main(int argc, char *argv[])
 					    argv[0], optarg);
 					return (usage(stderr));
 				}
+#else
+			case 10064:
+#endif
 				g_oflags &= ~DTRACE_O_ILP32;
 				g_oflags |= DTRACE_O_LP64;
 				break;
@@ -1254,14 +1369,28 @@ main(int argc, char *argv[])
 				mode++;
 				break;
 
+#ifndef VBOX
 			default:
 				if (strchr(DTRACE_OPTSTR, c) == NULL)
 					return (usage(stderr));
+#else
+			case VINF_GETOPT_NOT_OPTION:
+				g_argv[g_argc++] = (char *)ValueUnion.psz;
+				break;
+
+			default:
+				if (c < 0) { /* Note: Not all options are handled. */
+					RTGetOptPrintError(c, &ValueUnion);
+					return (usage(stderr));
+				}
+#endif
 			}
 		}
 
+#ifndef VBOX
 		if (optind < argc)
 			g_argv[g_argc++] = argv[optind];
+#endif
 	}
 
 	if (mode > 1) {
@@ -1273,6 +1402,7 @@ main(int argc, char *argv[])
 	if (g_mode == DMODE_VERS)
 		return (printf("%s: %s\n", g_pname, _dtrace_version) <= 0);
 
+#ifndef VBOX
 	/*
 	 * If we're in linker mode and the data model hasn't been specified,
 	 * we try to guess the appropriate setting by examining the object
@@ -1322,6 +1452,7 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+#endif /* !VBOX */
 
 	/*
 	 * Open libdtrace.  If we are not actually going to be enabling any
@@ -1370,8 +1501,16 @@ main(int argc, char *argv[])
 	 * We also accumulate any program specifications into our g_cmdv[] at
 	 * this time; these will compiled as part of the fourth processing pass.
 	 */
+#ifndef VBOX
 	for (optind = 1; optind < argc; optind++) {
 		while ((c = getopt(argc, argv, DTRACE_OPTSTR)) != EOF) {
+#else
+	RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0);
+	while ((c = RTGetOpt(&GetState, &ValueUnion))) {
+		{
+			char *optarg = (char *)ValueUnion.psz;
+#endif
+
 			switch (c) {
 			case 'a':
 				if (dtrace_setopt(g_dtp, "grabanon", 0) != 0)
@@ -1503,9 +1642,17 @@ main(int argc, char *argv[])
 				g_cflags |= DTRACE_C_ZDEFS;
 				break;
 
+#ifndef VBOX
 			default:
 				if (strchr(DTRACE_OPTSTR, c) == NULL)
 					return (usage(stderr));
+#else
+			default:
+				if (c < 0) { /* Note: Not all options are handled. */
+					RTGetOptPrintError(c, &ValueUnion);
+					return (usage(stderr));
+				}
+#endif
 			}
 		}
 	}
@@ -1527,8 +1674,15 @@ main(int argc, char *argv[])
 	 * grabbing or creating victim processes.  The behavior of these calls
 	 * may been affected by any library options set by the second pass.
 	 */
+#ifndef VBOX
 	for (optind = 1; optind < argc; optind++) {
 		while ((c = getopt(argc, argv, DTRACE_OPTSTR)) != EOF) {
+#else
+	RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0);
+	while ((c = RTGetOpt(&GetState, &ValueUnion))) {
+		{
+			char *optarg = (char *)ValueUnion.psz;
+#endif
 			switch (c) {
 			case 'c':
 				if ((v = make_argv(optarg)) == NULL)
@@ -1770,6 +1924,7 @@ main(int argc, char *argv[])
 	if (opt != DTRACEOPT_UNSET)
 		notice("allowing destructive actions\n");
 
+#ifndef _MSC_VER
 	(void) sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
 	act.sa_handler = intr;
@@ -1779,6 +1934,10 @@ main(int argc, char *argv[])
 
 	if (sigaction(SIGTERM, NULL, &oact) == 0 && oact.sa_handler != SIG_IGN)
 		(void) sigaction(SIGTERM, &act, NULL);
+#else
+	signal(SIGINT, intr);
+	signal(SIGTERM, intr);
+#endif
 
 	/*
 	 * Now that tracing is active and we are ready to consume trace data,
