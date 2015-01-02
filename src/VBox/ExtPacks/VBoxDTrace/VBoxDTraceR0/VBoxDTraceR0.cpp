@@ -1014,6 +1014,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
 
                     uint32_t iRet = (uint32_t)iBit + pChunk->iFirst + pThis->uBase;
                     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+SUPR0Printf("returning iRet=%u\n", iRet);
                     return (void *)(uintptr_t)iRet;
                 }
             }
@@ -1022,7 +1023,10 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
 
         /* Out of resources? */
         if (cChunks >= pThis->cMaxChunks)
+        {
+SUPR0Printf("cChunks=%u cMaxChunks=%u!!\n", cChunks, pThis->cMaxChunks);
             break;
+        }
 
         /*
          * Allocate another chunk.
@@ -1037,8 +1041,12 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
 
         pChunk = (PVBOXDTVMEMCHUNK)RTMemAllocZ(sizeof(*pChunk));
         if (!pChunk)
+        {
+SUPR0Printf("returning NULL!!\n");
             return NULL;
+        }
 
+SUPR0Printf("Adding chunk %p at bit %u, covering %u bits\n", pChunk, iFirstBit, cFreeBits);
         pChunk->iFirst   = iFirstBit;
         pChunk->cCurFree = cFreeBits;
         if (cFreeBits != VBOXDTVMEMCHUNK_BITS)
@@ -1073,6 +1081,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
     }
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
+SUPR0Printf("returning NULL!\n");
     return NULL;
 }
 
