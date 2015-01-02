@@ -68,11 +68,7 @@
 # include <iprt/process.h>
 # include <iprt/string.h>
 
-# undef PATH_MAX
-# define PATH_MAX RTPATH_MAX
-
-# define getpid		                          RTProcSelf
-# define basename(a_pszPath)                  RTPathFilename(a_pszPath)
+# include "VBoxDTraceLibCWrappers.h"
 
 # ifdef _MSC_VER
 #  pragma warning(disable:4267) /* size_t conversion warnings */

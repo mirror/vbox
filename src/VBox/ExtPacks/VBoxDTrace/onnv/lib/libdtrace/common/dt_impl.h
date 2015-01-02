@@ -40,6 +40,7 @@
 # include <libctf.h>
 # include <dtrace.h>
 # include <errno.h>
+# include "VBoxDTraceLibCWrappers.h"
 #endif /* VBOX*/
 
 

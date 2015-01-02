@@ -36,6 +36,12 @@
 #define	LINK(l, r)	dt_node_link(l, r)
 #define	DUP(s)		strdup(s)
 
+#ifdef VBOX
+# define YYMALLOC RTMemAlloc
+# define YYFREE   RTMemFree
+#endif
+
+
 %}
 
 %union {

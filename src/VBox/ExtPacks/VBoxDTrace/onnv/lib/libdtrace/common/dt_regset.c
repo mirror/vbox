@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #else  /* VBOX */
 # include <iprt/asm.h>
+# include "VBoxDTraceLibCWrappers.h"
 #endif /* VBOX */
 
 #include <dt_regset.h>
