@@ -547,7 +547,6 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 	return (-1);
 }
 
-#ifndef /* VBOX - who needs this? */
 int
 dt_status(dtrace_hdl_t *dtp, processorid_t cpu)
 {
@@ -563,7 +562,6 @@ dt_status(dtrace_hdl_t *dtp, processorid_t cpu)
 
 	return (v->dtv_status(dtp->dt_varg, cpu));
 }
-#endif
 
 #ifndef VBOX
 long

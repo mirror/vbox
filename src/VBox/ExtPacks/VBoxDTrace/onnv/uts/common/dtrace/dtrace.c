@@ -10409,9 +10409,9 @@ dtrace_buffer_alloc(dtrace_buffer_t *bufs, size_t size, int flags,
 
 		buf = &bufs[cp->cpu_id];
 #else
-    for (iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++) {
+	for (iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++) {
 		if (   !RTCpuSetIsMember(&CpuSet, iCpu)
-			|| (cpu != (processorid_t)DTRACE_CPUALL && cpu != iCpu))
+		    || (cpu != (processorid_t)DTRACE_CPUALL && cpu != iCpu))
 			continue;
 
 		buf = &bufs[iCpu];
@@ -12657,7 +12657,7 @@ static int
 dtrace_state_buffer(dtrace_state_t *state, dtrace_buffer_t *buf, int which)
 {
 	dtrace_optval_t *opt = state->dts_options, size;
-	processorid_t cpu;
+	processorid_t cpu VBDTUNASS(DTRACE_CPUALL);
 	int flags = 0, rval;
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
@@ -13628,7 +13628,7 @@ dtrace_helper_destroygen(int gen)
 	 * given generation number.
 	 */
 	for (;;) {
-		dtrace_helper_provider_t *prov;
+		dtrace_helper_provider_t *prov VBDTGCC(NULL);
 
 		/*
 		 * Look for a helper provider with the right generation. We
