@@ -5961,7 +5961,9 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				cred_t *cr;
 				cred_t *s_cr =
 				    ecb->dte_state->dts_cred.dcr_cred;
+#ifndef VBOX
 				proc_t *proc;
+#endif
 
 				ASSERT(s_cr != NULL);
 
