@@ -34,6 +34,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Include sub-makefiles.
 #
+include $(PATH_SUB_CURRENT)/VBoxDTrace/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxDTraceR0/Makefile.kmk
 
 

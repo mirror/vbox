@@ -212,6 +212,42 @@ uintptr_t VBoxDtGetKernelBase(void);
 #define VBDTUNASS(a_Value)      = a_Value
 
 /*
+ * string
+ */
+#define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
+#define bzero(a_pDst, a_cb)         RT_BZERO(a_pDst, a_cb)
+#define bcmp(a_p1, a_p2, a_cb)      memcmp(a_p1, a_p2, a_cb)
+#define snprintf                    RTStrPrintf
+
+
+/*
+ * CTF - probably needs to be ported wholesale or smth.
+ */
+#define CTF_MODEL_NATIVE            1
+typedef struct VBoxDtCtfFile        ctf_file_t;
+typedef intptr_t                    ctf_id_t;
+
+#ifdef IN_RING0
+
+/*
+ * Errno defines compatible with the CRT of the given host...
+ */
+#define EINVAL                  (22)
+#define EBUSY                   (16)
+#define EFBIG                   (27)
+#define ENOMEM                  (12)
+#define ENOSPC                  (28)
+#define ENOENT                  (2)
+#define EFAULT                  (14)
+#define E2BIG                   (7)
+#define EACCES                  (13)
+#define EALREADY                (114)
+#define ENXIO                   (6)
+#define EAGAIN                  (11)
+#define ENOTTY                  (25)
+#define ESRCH                   (3)
+
+/*
  * Memory allocation wrappers.
  */
 #define KM_SLEEP                RT_BIT(0)
@@ -256,33 +292,6 @@ void  VBoxDtVMemDestroy(struct VBoxDtVMem *pVMemArena);
 void *VBoxDtVMemAlloc(struct VBoxDtVMem *pVMemArena, size_t cbMem, uint32_t fFlags);
 void  VBoxDtVMemFree(struct VBoxDtVMem *pVMemArena, void *pvMem, size_t cbMem);
 
-
-/*
- * Errno defines compatible with the CRT of the given host...
- */
-#define EINVAL                  (22)
-#define EBUSY                   (16)
-#define EFBIG                   (27)
-#define ENOMEM                  (12)
-#define ENOSPC                  (28)
-#define ENOENT                  (2)
-#define EFAULT                  (14)
-#define E2BIG                   (7)
-#define EACCES                  (13)
-#define EALREADY                (114)
-#define ENXIO                   (6)
-#define EAGAIN                  (11)
-#define ENOTTY                  (25)
-#define ESRCH                   (3)
-
-/*
- * string
- */
-#define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
-#define bzero(a_pDst, a_cb)         RT_BZERO(a_pDst, a_cb)
-#define bcmp(a_p1, a_p2, a_cb)      memcmp(a_p1, a_p2, a_cb)
-#define snprintf                    RTStrPrintf
-
 /*
  * Copy In/Out
  */
@@ -326,10 +335,7 @@ typedef enum { DDI_DETACH, DDI_SUSPEND }  ddi_detach_cmd_t;
 major_t VBoxDtDdiDriverMajor(struct VBoxDtDevInfo *pDevInfo);
 void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 
-/*
- * CTF - probably needs to be ported wholesale or smth.
- */
-#define CTF_MODEL_NATIVE            1
+#endif /* IN_RING0 */
 
 RT_C_DECLS_END
 #endif
