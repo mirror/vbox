@@ -135,6 +135,7 @@ typedef char                       *caddr_t;
 # define bzero(a_pDst, a_cb)        RT_BZERO(a_pDst, a_cb)
 # define bcmp(a_p1, a_p2, a_cb)     memcmp(a_p1, a_p2, a_cb)
 # define snprintf                   RTStrPrintf
+# define vsnprintf                  RTStrPrintfV
 #endif
 
 /*
@@ -444,6 +445,19 @@ typedef Elf64_Addr  GElf_Addr;
 #define GELF_ST_INFO ELF64_ST_INFO
 #define GELF_ST_TYPE ELF64_ST_TYPE
 #define GELF_ST_BIND ELF64_ST_BIND
+
+/*
+ * MSC stuff.
+ */
+# ifdef _MSC_VER
+#  ifndef SIZE_MAX
+#   if ARCH_BITS == 32
+#    define SIZE_MAX UINT32_MAX
+#   else
+#    define SIZE_MAX UINT64_MAX
+#   endif
+#  endif
+# endif /* _MSC_VER */
 
 #endif /* IN_RING3 */
 

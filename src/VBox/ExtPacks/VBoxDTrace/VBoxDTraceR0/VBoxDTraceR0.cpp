@@ -1387,7 +1387,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
     if (pProv->TracerData.DTrace.fZombie)
         return;
 
-    if (pProv->TracerData.DTrace.cProvidedProbes >= pProbeLocEnd - pProbeLoc)
+    if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
         return;
 
      /* Need a buffer for extracting the function names and mangling them in
