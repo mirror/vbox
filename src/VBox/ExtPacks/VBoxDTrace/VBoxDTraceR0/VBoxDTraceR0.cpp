@@ -691,7 +691,7 @@ static struct VBoxDtThread  g_aThreads[8192];
 
 static int vboxDtInitThreadDb(void)
 {
-    int rc = RTSpinlockCreate(&g_hThreadSpinlock);
+    int rc = RTSpinlockCreate(&g_hThreadSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxDtThreadDb");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -738,9 +738,8 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
     RTPROCESS       uPid        = RTProcSelf();
     uintptr_t       iHash       = (hNativeSelf * 2654435761) % RT_ELEMENTS(g_apThreadsHash);
-    RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
 
-    RTSpinlockAcquireNoInts(g_hThreadSpinlock, &Tmp);
+    RTSpinlockAcquire(g_hThreadSpinlock);
 
     struct VBoxDtThread *pThread = g_apThreadsHash[iHash];
     while (pThread)
@@ -764,7 +763,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
             RTListNodeRemove(&pThread->AgeEntry);
             pData->pThread = pThread;
 
-            RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(g_hThreadSpinlock);
             return pThread;
         }
 
@@ -816,7 +815,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
 
     pData->pThread = pThread;
 
-    RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_hThreadSpinlock);
     return pThread;
 }
 
@@ -829,12 +828,11 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
  */
 static void VBoxDtReleaseThread(struct VBoxDtThread *pThread)
 {
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_hThreadSpinlock, &Tmp);
+    RTSpinlockAcquire(g_hThreadSpinlock);
 
     RTListAppend(&g_ThreadAgeList, &pThread->AgeEntry);
 
-    RTSpinlockReleaseNoInts(g_hThreadSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_hThreadSpinlock);
 }
 
 
@@ -928,7 +926,7 @@ struct VBoxDtVMem *VBoxDtVMemCreate(const char *pszName, void *pvBase, size_t cb
     PVBOXDTVMEM pThis = (PVBOXDTVMEM)RTMemAllocZ(RT_OFFSETOF(VBOXDTVMEM, apChunks[cChunks]));
     if (!pThis)
         return NULL;
-    int rc = RTSpinlockCreate(&pThis->hSpinlock);
+    int rc = RTSpinlockCreate(&pThis->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxDtVMem");
     if (RT_FAILURE(rc))
     {
         RTMemFree(pThis);
@@ -956,10 +954,9 @@ void  VBoxDtVMemDestroy(struct VBoxDtVMem *pThis)
     /*
      * Invalidate the instance.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp); /* paranoia */
+    RTSpinlockAcquire(pThis->hSpinlock); /* paranoia */
     pThis->u32Magic = 0;
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockRelease(pThis->hSpinlock);
     RTSpinlockDestroy(pThis->hSpinlock);
 
     /*
@@ -990,8 +987,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
     /*
      * Allocation loop.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     for (;;)
     {
         PVBOXDTVMEMCHUNK pChunk;
@@ -1006,7 +1002,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
                 {
                     int iBit = ASMBitFirstClear(pChunk->bm, VBOXDTVMEMCHUNK_BITS);
                     AssertMsgReturnStmt(iBit >= 0 && (unsigned)iBit < VBOXDTVMEMCHUNK_BITS, ("%d\n", iBit),
-                                        RTSpinlockRelease(pThis->hSpinlock, &Tmp),
+                                        RTSpinlockRelease(pThis->hSpinlock),
                                         NULL);
 
                     ASMBitSet(pChunk->bm, iBit);
@@ -1014,7 +1010,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
                     pThis->cCurFree--;
 
                     uint32_t iRet = (uint32_t)iBit + pChunk->iFirst + pThis->uBase;
-                    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                    RTSpinlockReleaseNoInts(pThis->hSpinlock);
                     return (void *)(uintptr_t)iRet;
                 }
             }
@@ -1034,7 +1030,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
                                   : VBOXDTVMEMCHUNK_BITS;
         Assert(cFreeBits <= VBOXDTVMEMCHUNK_BITS);
 
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockRelease(pThis->hSpinlock);
 
         pChunk = (PVBOXDTVMEMCHUNK)RTMemAllocZ(sizeof(*pChunk));
         if (!pChunk)
@@ -1053,7 +1049,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
             }
         }
 
-        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+        RTSpinlockAcquire(pThis->hSpinlock);
 
         /*
          * Insert the new chunk.  If someone raced us here, we'll drop it to
@@ -1067,12 +1063,12 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
         }
         else
         {
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+            RTSpinlockRelease(pThis->hSpinlock);
             RTMemFree(pChunk);
-            RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+            RTSpinlockAcquire(pThis->hSpinlock);
         }
     }
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     return NULL;
 }
@@ -1097,21 +1093,20 @@ void VBoxDtVMemFree(struct VBoxDtVMem *pThis, void *pvMem, size_t cbMem)
     /*
      * Free it.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     uint32_t const iChunk = uMem / VBOXDTVMEMCHUNK_BITS;
     if (iChunk < pThis->cCurChunks)
     {
         PVBOXDTVMEMCHUNK pChunk = pThis->apChunks[iChunk];
         uint32_t iBit = uMem - pChunk->iFirst;
-        AssertReturnVoidStmt(iBit < VBOXDTVMEMCHUNK_BITS, RTSpinlockRelease(pThis->hSpinlock, &Tmp));
-        AssertReturnVoidStmt(ASMBitTestAndClear(pChunk->bm, iBit), RTSpinlockRelease(pThis->hSpinlock, &Tmp));
+        AssertReturnVoidStmt(iBit < VBOXDTVMEMCHUNK_BITS, RTSpinlockRelease(pThis->hSpinlock));
+        AssertReturnVoidStmt(ASMBitTestAndClear(pChunk->bm, iBit), RTSpinlockRelease(pThis->hSpinlock));
 
         pChunk->cCurFree++;
         pThis->cCurFree++;
     }
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockRelease(pThis->hSpinlock);
 }
 
 
