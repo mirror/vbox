@@ -685,7 +685,7 @@ void VBoxDtCredFree(struct VBoxDtCred *pCred)
     int32_t cRefs = ASMAtomicDecS32(&pCred->cr_refs);
     Assert(cRefs >= 0);
     if (!cRefs)
-        RTMemFree(pCred);
+        RTMemFreeEx(pCred, sizeof(*pCred));
 }
 
 /** Spinlock protecting the thread structures. */
