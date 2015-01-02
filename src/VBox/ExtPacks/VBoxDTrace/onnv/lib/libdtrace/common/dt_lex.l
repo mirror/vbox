@@ -58,13 +58,18 @@
 		} else { \
 			size_t off = yypcb->pcb_strptr - yypcb->pcb_string; \
 			if (off < yypcb->pcb_strlen) { \
+            off = yypcb->pcb_strlen - off; \
 				result = max_size; \
-				if ((size_t)result > yypcb->pcb_strlen) \
-					result = (int)yypcb->pcb_strlen; \
+				if ((size_t)result > off) \
+					result = (int)off; \
 				memcpy(buf, yypcb->pcb_strptr, result); \
 				yypcb->pcb_strptr += result; \
-			} else \
-				result = 0; \
+            fprintf(stderr, "yy_input -> %d '%.*s'\n", result, result, buf); /* REMOVE ME */ \
+         } else { \
+            buf[0] = '\0'; \
+            result = (YYSTATE) == S0; \
+            fprintf(stderr, "yy_input -> %d\n", result); /* REMOVE ME */ \
+         } \
 		} \
 	} while (0)
 #endif /* USING_FLEX */
@@ -593,10 +598,19 @@ if (yypcb->pcb_token != 0) {
 <S0>";"		return (';');
 <S0>{RGX_WS}	; /* discard */
 <S0>"\\"\n	; /* discard */
+    /* VBOX - START */
+<S0>"\0" {
+            fprintf(stderr, "<S0>\\0\n");
+            return (DT_TOK_EOF);
+         }
+    /* VBOX - END */
 <S0>.		yyerror("syntax error near \"%c\"\n", yytext[0]);
 
 <S1>"/*"	yyerror("/* encountered inside a comment\n");
 <S1>"*/"	BEGIN(yypcb->pcb_cstate);
+ /* VBOX - START */
+<S1>"\0"	yyerror("end-of-file encountered before matching */\n");
+ /* VBOX - END */
 <S1>.|\n	; /* discard */
 
 <S2>{RGX_PSPEC}	{
@@ -656,6 +670,12 @@ if (yypcb->pcb_token != 0) {
 <S2>","		return (DT_TOK_COMMA);
 
 <S2>{RGX_WS}	; /* discard */
+ /* VBOX - START */
+<S2>"\0" {
+            fprintf(stderr, "<S2>\\0\n");
+            return (DT_TOK_EOF);
+         }
+ /* VBOX - END */
 <S2>.		yyerror("syntax error near \"%c\"\n", yytext[0]);
 
 <S3>\n		{
@@ -685,6 +705,9 @@ if (yypcb->pcb_token != 0) {
 			yypragma = dt_node_link(yypragma, dnp);
 		}
 
+ /* VBOX - BEGIN */
+<S3>"\0"	yyerror("end-of-file encountered before end of control line\n");
+ /* VBOX - END */
 <S3>.		yyerror("syntax error near \"%c\"\n", yytext[0]);
 
 %%
