@@ -460,6 +460,7 @@ static kmutex_t dtrace_errlock;
 	((mstate)->dtms_scratch_base + (mstate)->dtms_scratch_size - \
 	(mstate)->dtms_scratch_ptr >= (alloc_sz))
 
+#ifndef VBOX
 #define	DTRACE_LOADFUNC(bits)						\
 /*CSTYLED*/								\
 VBDTSTATIC uint##bits##_t						\
@@ -497,6 +498,51 @@ dtrace_load##bits(uintptr_t addr)					\
 									\
 	return (!(*flags & CPU_DTRACE_FAULT) ? rval : 0);		\
 }
+#else  /* VBOX */
+# define DTRACE_LOADFUNC(bits)						\
+VBDTSTATIC uint##bits##_t						\
+dtrace_load##bits(uintptr_t addr)					\
+{									\
+	size_t const size = bits / NBBY;				\
+	uint##bits##_t rval;						\
+	processorid_t me;						\
+	int i, rc;							\
+									\
+	/*DTRACE_ALIGNCHECK(addr, size, flags);*/			\
+									\
+	for (i = 0; i < dtrace_toxranges; i++) {			\
+		if (addr >= dtrace_toxrange[i].dtt_limit)		\
+			continue;					\
+									\
+		if (addr + size <= dtrace_toxrange[i].dtt_base)		\
+			continue;					\
+									\
+		/*							\
+		 * This address falls within a toxic region; return 0.	\
+		 */							\
+		me = VBDT_GET_CPUID();					\
+		cpu_core[me].cpuc_dtrace_flags |= CPU_DTRACE_BADADDR;	\
+		cpu_core[me].cpuc_dtrace_illval = addr;			\
+		return (0);						\
+	}								\
+									\
+	rc = RTR0MemKernelCopyFrom(&rval, (void const *)addr, size);	\
+	if (RT_SUCCESS(rc))     					\
+		return rval;						\
+									\
+	/*      							\
+	 * If not supported, pray it won't fault...     		\
+	 */     							\
+	if (rc == VERR_NOT_SUPPORTED)					\
+		return *(uint##bits##_t const *)addr;   		\
+									\
+	me = VBDT_GET_CPUID();						\
+	cpu_core[me].cpuc_dtrace_flags |= CPU_DTRACE_BADADDR;		\
+	cpu_core[me].cpuc_dtrace_illval = addr;				\
+	return (0);							\
+}
+
+#endif /* VBOX */
 
 #ifdef _LP64
 #define	dtrace_loadptr	dtrace_load64
