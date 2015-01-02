@@ -308,19 +308,16 @@ dt_aggregate_umod(dtrace_hdl_t *dtp, uint64_t *data)
 static void
 dt_aggregate_sym(dtrace_hdl_t *dtp, uint64_t *data)
 {
-#ifndef VBOX
 	GElf_Sym sym;
 	uint64_t *pc = data;
 
 	if (dtrace_lookup_by_addr(dtp, *pc, &sym, NULL) == 0)
 		*pc = sym.st_value;
-#endif
 }
 
 static void
 dt_aggregate_mod(dtrace_hdl_t *dtp, uint64_t *data)
 {
-#ifndef VBOX
 	uint64_t *pc = data;
 	dt_module_t *dmp;
 
@@ -343,7 +340,6 @@ dt_aggregate_mod(dtrace_hdl_t *dtp, uint64_t *data)
 			return;
 		}
 	}
-#endif
 }
 
 static dtrace_aggvarid_t

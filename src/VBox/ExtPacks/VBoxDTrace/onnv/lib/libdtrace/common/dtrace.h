@@ -450,14 +450,12 @@ typedef struct dtrace_objinfo {
 	int dto_id;				/* object file id (if any) */
 	uint_t dto_flags;			/* object flags (see below) */
 
-#ifndef VBOX
 	GElf_Addr dto_text_va;			/* address of text section */
 	GElf_Xword dto_text_size;		/* size of text section */
 	GElf_Addr dto_data_va;			/* address of data section */
 	GElf_Xword dto_data_size;		/* size of data section */
 	GElf_Addr dto_bss_va;			/* address of BSS */
 	GElf_Xword dto_bss_size;		/* size of BSS */
-#endif
 } dtrace_objinfo_t;
 
 #define	DTRACE_OBJ_F_KERNEL	0x1		/* object is a kernel module */
@@ -474,13 +472,11 @@ typedef struct dtrace_syminfo {
 	ulong_t dts_id;				/* symbol id */
 } dtrace_syminfo_t;
 
-#ifndef VBOX
 extern int dtrace_lookup_by_name(dtrace_hdl_t *, const char *, const char *,
     GElf_Sym *, dtrace_syminfo_t *);
 
 extern int dtrace_lookup_by_addr(dtrace_hdl_t *, GElf_Addr addr,
     GElf_Sym *, dtrace_syminfo_t *);
-#endif /* !VBOX */
 
 typedef struct dtrace_typeinfo {
 	const char *dtt_object;			/* object containing type */
@@ -491,10 +487,8 @@ typedef struct dtrace_typeinfo {
 extern int dtrace_lookup_by_type(dtrace_hdl_t *, const char *, const char *,
     dtrace_typeinfo_t *);
 
-#ifndef VBOX
 extern int dtrace_symbol_type(dtrace_hdl_t *, const GElf_Sym *,
     const dtrace_syminfo_t *, dtrace_typeinfo_t *);
-#endif
 
 extern int dtrace_type_strcompile(dtrace_hdl_t *,
     const char *, dtrace_typeinfo_t *);
@@ -534,10 +528,8 @@ extern int dtrace_probe_info(dtrace_hdl_t *,
  */
 struct dtrace_vector {
 	int (*dtv_ioctl)(void *, int, void *);
-#ifndef VBOX
 	int (*dtv_lookup_by_addr)(void *, GElf_Addr, GElf_Sym *,
 	    dtrace_syminfo_t *);
-#endif /* !VBOX */
 	int (*dtv_status)(void *, processorid_t);
 	long (*dtv_sysconf)(void *, int);
 };

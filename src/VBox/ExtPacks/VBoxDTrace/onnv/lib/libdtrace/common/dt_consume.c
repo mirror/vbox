@@ -836,10 +836,8 @@ int
 dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     caddr_t addr, int depth, int size)
 {
-#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
-#endif
 	int i, indent;
 	char c[PATH_MAX * 2];
 	uint64_t pc;
@@ -879,7 +877,6 @@ dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		if (dt_printf(dtp, fp, "%*s", indent, "") < 0)
 			return (-1);
 
-#ifndef VBOX
 		if (dtrace_lookup_by_addr(dtp, pc, &sym, &dts) == 0) {
 			if (pc > sym.st_value) {
 				(void) snprintf(c, sizeof (c), "%s`%s+0x%llx",
@@ -899,12 +896,9 @@ dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 				(void) snprintf(c, sizeof (c), "%s`0x%llx",
 				    dts.dts_object, pc);
 			} else {
-#endif
 				(void) snprintf(c, sizeof (c), "0x%llx", pc);
-#ifndef VBOX
 			}
 		}
-#endif
 
 		if (dt_printf(dtp, fp, format, c) < 0)
 			return (-1);
@@ -1158,18 +1152,13 @@ dt_print_sym(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 {
 	/* LINTED - alignment */
 	uint64_t pc = *((uint64_t *)addr);
-#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
 	char c[PATH_MAX * 2];
-#else
-	char c[64];
-#endif
 
 	if (format == NULL)
 		format = "  %-50s";
 
-#ifndef VBOX
 	if (dtrace_lookup_by_addr(dtp, pc, &sym, &dts) == 0) {
 		(void) snprintf(c, sizeof (c), "%s`%s",
 		    dts.dts_object, dts.dts_name);
@@ -1187,9 +1176,6 @@ dt_print_sym(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 			    (u_longlong_t)pc);
 		}
 	}
-#else
-	snprintf(c, sizeof (c), "0x%llx", (u_longlong_t)pc);
-#endif
 
 	if (dt_printf(dtp, fp, format, c) < 0)
 		return (-1);
@@ -1202,20 +1188,15 @@ dt_print_mod(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 {
 	/* LINTED - alignment */
 	uint64_t pc = *((uint64_t *)addr);
-#ifndef VBOX
 	dtrace_syminfo_t dts;
-#endif
 	char c[PATH_MAX * 2];
 
 	if (format == NULL)
 		format = "  %-50s";
 
-#ifndef VBOX
 	if (dtrace_lookup_by_addr(dtp, pc, NULL, &dts) == 0) {
 		(void) snprintf(c, sizeof (c), "%s", dts.dts_object);
-	} else
-#endif
-	{
+	} else {
 		(void) snprintf(c, sizeof (c), "0x%llx", (u_longlong_t)pc);
 	}
 

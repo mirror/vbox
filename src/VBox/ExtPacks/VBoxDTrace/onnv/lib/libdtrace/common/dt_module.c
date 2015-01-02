@@ -42,13 +42,30 @@
 #include <errno.h>
 #include <dirent.h>
 #else  /* VBOX */
+# include "../../../../../../Runtime/include/internal/ldrELF32.h"
+# ifdef _MSC_VER
+#  include <process.h>
+#  define getuid() 0
+#  define getgid() 0
+#  define geteuid() 0
+#  define getegid() 0
+#  define getpid() _getpid()
+#  define getppid() 0
+
+#  define getpgid(a) 0
+#  define getsid(a) 0
+# else
+#  include <unistd.h>
+# endif
+# define getprojid() 0
+# define gettaskid() 0
+
 #endif /* VBOX */
 
 #include <dt_strtab.h>
 #include <dt_module.h>
 #include <dt_impl.h>
 
-#ifndef VBOX /** @todo port what is necessary here ! */
 
 static const char *dt_module_strtab; /* active strtab for qsort callbacks */
 
@@ -473,6 +490,7 @@ dt_module_lookup_by_ctf(dtrace_hdl_t *dtp, ctf_file_t *ctfp)
 static int
 dt_module_load_sect(dtrace_hdl_t *dtp, dt_module_t *dmp, ctf_sect_t *ctsp)
 {
+#ifndef VBOX  /** @todo consider this later */
 	const char *s;
 	size_t shstrs;
 	GElf_Shdr sh;
@@ -506,6 +524,7 @@ dt_module_load_sect(dtrace_hdl_t *dtp, dt_module_t *dmp, ctf_sect_t *ctsp)
 	dt_dprintf("loaded %s [%s] (%lu bytes)\n",
 	    dmp->dm_name, ctsp->cts_name, (ulong_t)ctsp->cts_size);
 
+#endif /* !VBOX */
 	return (0);
 }
 
@@ -560,7 +579,7 @@ dt_module_load(dtrace_hdl_t *dtp, dt_module_t *dmp)
 	 * use element indices instead of pointers and zero is our sentinel.
 	 */
 	dmp->dm_nsymelems =
-	    dmp->dm_symtab.cts_size / dmp->dm_symtab.cts_entsize;
+	    VBDTCAST(uint_t)(dmp->dm_symtab.cts_size / dmp->dm_symtab.cts_entsize);
 
 	dmp->dm_nsymbuckets = _dtrace_strbuckets;
 	dmp->dm_symfree = 1;		/* first free element is index 1 */
@@ -701,11 +720,11 @@ dt_module_unload(dtrace_hdl_t *dtp, dt_module_t *dmp)
 	dmp->dm_asrsv = 0;
 	dmp->dm_aslen = 0;
 
-	dmp->dm_text_va = NULL;
+	dmp->dm_text_va = 0/*NULL*/;
 	dmp->dm_text_size = 0;
-	dmp->dm_data_va = NULL;
+	dmp->dm_data_va = 0/*NULL*/;
 	dmp->dm_data_size = 0;
-	dmp->dm_bss_va = NULL;
+	dmp->dm_bss_va = 0/*NULL*/;
 	dmp->dm_bss_size = 0;
 
 	if (dmp->dm_extern != NULL) {
@@ -713,8 +732,10 @@ dt_module_unload(dtrace_hdl_t *dtp, dt_module_t *dmp)
 		dmp->dm_extern = NULL;
 	}
 
+#ifndef VBOX
 	(void) elf_end(dmp->dm_elf);
 	dmp->dm_elf = NULL;
+#endif
 
 	dmp->dm_flags &= ~DT_DM_LOADED;
 }
@@ -811,6 +832,7 @@ dt_module_modelname(dt_module_t *dmp)
 static void
 dt_module_update(dtrace_hdl_t *dtp, const char *name)
 {
+#ifndef VBOX
 	char fname[MAXPATHLEN];
 	struct stat64 st;
 	int fd, err, bits;
@@ -902,6 +924,7 @@ dt_module_update(dtrace_hdl_t *dtp, const char *name)
 
 	dt_dprintf("opened %d-bit module %s (%s) [%d]\n",
 	    bits, dmp->dm_name, dmp->dm_file, dmp->dm_modid);
+#endif /* !VBOX */
 }
 
 /*
@@ -911,6 +934,7 @@ dt_module_update(dtrace_hdl_t *dtp, const char *name)
 void
 dtrace_update(dtrace_hdl_t *dtp)
 {
+#ifndef VBOX
 	dt_module_t *dmp;
 	DIR *dirp;
 
@@ -933,6 +957,7 @@ dtrace_update(dtrace_hdl_t *dtp)
 
 		(void) closedir(dirp);
 	}
+#endif /* !VBOX */
 
 	/*
 	 * Look up all the macro identifiers and set di_id to the latest value.
@@ -1317,4 +1342,3 @@ dtrace_object_info(dtrace_hdl_t *dtp, const char *object, dtrace_objinfo_t *dto)
 	return (0);
 }
 
-#endif /* !VBOX */

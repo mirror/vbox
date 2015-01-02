@@ -1869,16 +1869,13 @@ dt_cg_node(dt_node_t *dnp, dt_irlist_t *dlp, dt_regset_t *drp)
 		case DT_NODE_SYM: {
 			dtrace_hdl_t *dtp = yypcb->pcb_hdl;
 			dtrace_syminfo_t *sip = dnp->dn_ident->di_data;
-#ifndef VBOX
 			GElf_Sym sym;
 
 			if (dtrace_lookup_by_name(dtp,
 			    sip->dts_object, sip->dts_name, &sym, NULL) == -1) {
-#endif
 				xyerror(D_UNKNOWN, "cg failed for symbol %s`%s:"
 				    " %s\n", sip->dts_object, sip->dts_name,
 				    dtrace_errmsg(dtp, dtrace_errno(dtp)));
-#ifndef VBOX
 			}
 
 			if ((dnp->dn_reg = dt_regset_alloc(drp)) == -1)
@@ -1893,7 +1890,6 @@ dt_cg_node(dt_node_t *dnp, dt_irlist_t *dlp, dt_regset_t *drp)
 				dt_irlist_append(dlp,
 				    dt_cg_node_alloc(DT_LBL_NONE, instr));
 			}
-#endif
 			break;
 		}
 
