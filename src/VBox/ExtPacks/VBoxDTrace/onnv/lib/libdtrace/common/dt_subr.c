@@ -498,7 +498,7 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 # if 1
 	rc = SUPR3TracerIoCtl(val, (uintptr_t)arg, &iRetVal);
 	if (RT_FAILURE(rc)) {
-		errno = RTErrConvertFromErrno(rc);
+		errno = RTErrConvertToErrno(rc);
 		return (-1);
 	}
 	return iRetVal;

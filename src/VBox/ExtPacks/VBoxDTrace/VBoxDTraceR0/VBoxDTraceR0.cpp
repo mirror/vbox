@@ -1713,7 +1713,7 @@ static DECLCALLBACK(int) vbdt_TracerIoCtl(PCSUPDRVTRACERREG pThis, PSUPDRVSESSIO
     int rc = dtrace_ioctl((dtrace_state_t *)uSessionData, (intptr_t)uCmd, (intptr_t)uArg, piRetVal);
 
     VBDT_CLEAR_STACK_DATA();
-    return VINF_SUCCESS;
+    return RTErrConvertFromErrno(rc);
 }
 
 
