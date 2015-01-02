@@ -576,6 +576,7 @@ dtrace_panic(const char *format, ...)
 	va_end(alist);
 }
 
+#ifndef VBOX /* We have our own assertion machinery. */
 int
 dtrace_assfail(const char *a, const char *f, int l)
 {
@@ -587,6 +588,7 @@ dtrace_assfail(const char *a, const char *f, int l)
 	 */
 	return (a[(uintptr_t)f]);
 }
+#endif
 
 /*
  * Atomically increment a specified error counter from probe context.
