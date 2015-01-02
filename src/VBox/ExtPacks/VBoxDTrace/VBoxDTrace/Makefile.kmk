@@ -33,6 +33,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxDTrace
 VBoxDTrace_TEMPLATE = VBOXR3NPEXE
+VBoxDTrace_DEFS = RTMEM_WRAP_TO_EF_APIS
 VBoxDTrace_SDKS = VBOX_ZLIB
 VBoxDTrace_INCS = \
 	../include \
@@ -91,18 +92,6 @@ VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_LIBCTF)/common/ctf_subr.c \
 	$(VBOXDT_PATH_LIBCTF)/common/ctf_lib.c
 
-VBoxDTrace_VBOX_TODO = \
-
-VBoxDTrace_VBOX_TODO = \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c \
-
-# TODO generate these(?): \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_names.c \
-
-# Not used: \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c \
-
 if 1
  USES                += yacc
  VBoxDTrace_USES     += yacc
@@ -120,7 +109,7 @@ if 1
  VBoxDTrace_USES     += lex
  VBoxDTrace_LEXTOOL   = FLEX
  VBoxDTrace_LEXFLAGS  = -l
- VBoxDTrace_DEFS      = USING_FLEX
+ VBoxDTrace_DEFS     += USING_FLEX
  VBoxDTrace_SOURCES  += \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
 else
@@ -145,6 +134,13 @@ $$(VBoxDTrace_0_OUTDIR)/dt_names.c: \
 		| $$(dir $$@)
 	$(MSG_GENERATE,VBoxDTrace,$@,$<)
 	$(SED) -n -f $(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed --output $@ $<
+
+
+#
+# Sournce not used or wanted: \
+#	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c
+#	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c
+#
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
