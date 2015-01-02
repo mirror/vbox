@@ -27,6 +27,7 @@
 
 #ifndef	_DT_PID_H
 #define	_DT_PID_H
+#ifndef VBOX
 
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
@@ -57,6 +58,7 @@ extern int dt_pid_create_offset_probe(struct ps_prochandle *, dtrace_hdl_t *,
 extern int dt_pid_create_glob_offset_probes(struct ps_prochandle *,
     dtrace_hdl_t *, fasttrap_probe_spec_t *, const GElf_Sym *, const char *);
 
+#endif /* !VBOX */
 #ifdef	__cplusplus
 }
 #endif

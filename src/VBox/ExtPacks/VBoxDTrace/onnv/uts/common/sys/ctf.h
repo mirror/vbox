@@ -27,9 +27,15 @@
 #ifndef	_CTF_H
 #define	_CTF_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
+#ifndef VBOX
+# pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
-#include <sys/types.h>
+#ifndef VBOX
+# include <sys/types.h>
+#else
+# include "VBoxDTraceTypes.h"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

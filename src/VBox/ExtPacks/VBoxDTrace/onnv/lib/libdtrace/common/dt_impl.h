@@ -27,6 +27,7 @@
 #ifndef	_DT_IMPL_H
 #define	_DT_IMPL_H
 
+#ifndef VBOX
 #include <sys/param.h>
 #include <sys/objfs.h>
 #include <setjmp.h>
@@ -34,6 +35,15 @@
 #include <dtrace.h>
 #include <gelf.h>
 #include <synch.h>
+#else  /* VBOX */
+# include <setjmp.h>
+# include <libctf.h>
+# include <dtrace.h>
+# include <errno.h>
+# include <iprt/assert.h>
+# define assert(expr)	Assert(expr)
+#endif /* VBOX*/
+
 
 #ifdef	__cplusplus
 extern "C" {
@@ -78,10 +88,12 @@ typedef struct dt_intdesc {
 typedef struct dt_modops {
 	uint_t (*do_syminit)(struct dt_module *);
 	void (*do_symsort)(struct dt_module *);
+#ifndef VBOX
 	GElf_Sym *(*do_symname)(struct dt_module *,
 	    const char *, GElf_Sym *, uint_t *);
 	GElf_Sym *(*do_symaddr)(struct dt_module *,
 	    GElf_Addr, GElf_Sym *, uint_t *);
+#endif
 } dt_modops_t;
 
 typedef struct dt_arg {
@@ -104,8 +116,10 @@ typedef struct dt_module {
 	char dm_file[MAXPATHLEN]; /* file path of module (if any) */
 	struct dt_module *dm_next; /* pointer to next module in hash chain */
 	const dt_modops_t *dm_ops; /* pointer to data model's ops vector */
+#ifndef VBOX
 	Elf *dm_elf;		/* libelf handle for module object */
 	objfs_info_t dm_info;	/* object filesystem private info */
+#endif
 	ctf_sect_t dm_symtab;	/* symbol table for module */
 	ctf_sect_t dm_strtab;	/* string table for module */
 	ctf_sect_t dm_ctdata;	/* CTF data for module */
@@ -120,12 +134,14 @@ typedef struct dt_module {
 	uint_t dm_aslen;	/* number of entries in dm_asmap */
 	uint_t dm_flags;	/* module flags (see below) */
 	int dm_modid;		/* modinfo(1M) module identifier */
+#ifndef VBOX
 	GElf_Addr dm_text_va;	/* virtual address of text section */
 	GElf_Xword dm_text_size; /* size in bytes of text section */
 	GElf_Addr dm_data_va;	/* virtual address of data section */
 	GElf_Xword dm_data_size; /* size in bytes of data section */
 	GElf_Addr dm_bss_va;	/* virtual address of BSS */
 	GElf_Xword dm_bss_size;	/* size in bytes of BSS */
+#endif
 	dt_idhash_t *dm_extern;	/* external symbol definitions */
 } dt_module_t;
 
@@ -295,7 +311,9 @@ struct dtrace_hdl {
 	dtrace_handle_buffered_f *dt_bufhdlr; /* buffered handler, if any */
 	void *dt_bufarg;	/* buffered handler argument */
 	dt_dof_t dt_dof;	/* DOF generation buffers (see dt_dof.c) */
+#ifndef VBOX
 	struct utsname dt_uts;	/* uname(2) information for system */
+#endif
 	dt_list_t dt_lib_dep;	/* scratch linked-list of lib dependencies */
 	dt_list_t dt_lib_dep_sorted;	/* dependency sorted library list */
 };
@@ -650,3 +668,4 @@ extern const char *_dtrace_moddir;	/* default kernel module directory */
 #endif
 
 #endif	/* _DT_IMPL_H */
+

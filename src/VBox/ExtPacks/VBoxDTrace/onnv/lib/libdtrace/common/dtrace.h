@@ -29,14 +29,15 @@
 
 #ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
-#endif
 
 #include <sys/dtrace.h>
 #include <stdarg.h>
 #include <stdio.h>
-#ifndef VBOX
 #include <gelf.h>
-#endif
+#else  /* VBOX */
+# include <sys/dtrace.h>
+# include <stdio.h>
+#endif /* VBOX */
 
 #ifdef	__cplusplus
 extern "C" {
@@ -434,7 +435,6 @@ extern void dtrace_proc_continue(dtrace_hdl_t *, struct ps_prochandle *);
  * dtrace_update().  Once dtrace_update() is called, any cached values must
  * be flushed and not used subsequently by the client program.
  */
-#ifndef VBOX
 
 #define	DTRACE_OBJ_EXEC	 ((const char *)0L)	/* primary executable file */
 #define	DTRACE_OBJ_RTLD	 ((const char *)1L)	/* run-time link-editor */
@@ -450,12 +450,14 @@ typedef struct dtrace_objinfo {
 	int dto_id;				/* object file id (if any) */
 	uint_t dto_flags;			/* object flags (see below) */
 
+#ifndef VBOX
 	GElf_Addr dto_text_va;			/* address of text section */
 	GElf_Xword dto_text_size;		/* size of text section */
 	GElf_Addr dto_data_va;			/* address of data section */
 	GElf_Xword dto_data_size;		/* size of data section */
 	GElf_Addr dto_bss_va;			/* address of BSS */
 	GElf_Xword dto_bss_size;		/* size of BSS */
+#endif
 } dtrace_objinfo_t;
 
 #define	DTRACE_OBJ_F_KERNEL	0x1		/* object is a kernel module */
@@ -472,6 +474,7 @@ typedef struct dtrace_syminfo {
 	ulong_t dts_id;				/* symbol id */
 } dtrace_syminfo_t;
 
+#ifndef VBOX
 extern int dtrace_lookup_by_name(dtrace_hdl_t *, const char *, const char *,
     GElf_Sym *, dtrace_syminfo_t *);
 
@@ -574,6 +577,10 @@ extern int dtrace_provider_modules(dtrace_hdl_t *, const char **, int);
 
 extern const char *const _dtrace_version;
 extern int _dtrace_debug;
+
+#ifdef VBOX
+extern void dtrace_init(void);
+#endif
 
 #ifdef	__cplusplus
 }

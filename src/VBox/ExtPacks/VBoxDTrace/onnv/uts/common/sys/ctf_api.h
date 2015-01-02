@@ -40,11 +40,17 @@
 #ifndef	_CTF_API_H
 #define	_CTF_API_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
+#ifndef VBOX
+# pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/elf.h>
+#ifndef VBOX
+# include <sys/types.h>
+# include <sys/param.h>
+# include <sys/elf.h>
+#else
+# include "VBoxDTraceTypes.h"
+#endif
 #include <sys/ctf.h>
 
 #ifdef	__cplusplus
@@ -71,7 +77,11 @@ typedef struct ctf_sect {
 	const void *cts_data;	/* pointer to section data */
 	size_t cts_size;	/* size of data in bytes */
 	size_t cts_entsize;	/* size of each section entry (symtab only) */
+#ifndef VBOX
 	off64_t cts_offset;	/* file offset of this section (if any) */
+#else
+	RTFOFF cts_offset;	/* file offset of this section (if any) */
+#endif
 } ctf_sect_t;
 
 /*

@@ -25,6 +25,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <dt_impl.h>
@@ -32,6 +33,12 @@
 #include <errno.h>
 #include <assert.h>
 #include <time.h>
+#else  /* VBOX */
+# include <dt_impl.h>
+//# include <stddef.h>
+//# include <time.h>
+# include <iprt/semaphore.h>
+#endif /* VBOX */
 
 static const struct {
 	int dtslt_option;
@@ -51,7 +58,9 @@ dtrace_sleep(dtrace_hdl_t *dtp)
 	dt_proc_notify_t *dprn;
 
 	hrtime_t earliest = INT64_MAX;
+#ifndef VBOX
 	struct timespec tv;
+#endif
 	hrtime_t now;
 	int i;
 
@@ -73,24 +82,34 @@ dtrace_sleep(dtrace_hdl_t *dtp)
 			earliest = *((hrtime_t *)a) + interval;
 	}
 
+#ifndef VBOX
 	(void) pthread_mutex_lock(&dph->dph_lock);
+#endif
 
 	now = gethrtime();
 
 	if (earliest < now) {
+#ifndef VBOX
 		(void) pthread_mutex_unlock(&dph->dph_lock);
+#endif
 		return; /* sleep duration has already past */
 	}
 
+#ifndef VBOX
 	tv.tv_sec = (earliest - now) / NANOSEC;
 	tv.tv_nsec = (earliest - now) % NANOSEC;
+#endif
 
 	/*
 	 * Wait for either 'tv' nanoseconds to pass or to receive notification
 	 * that a process is in an interesting state.  Regardless of why we
 	 * awaken, iterate over any pending notifications and process them.
 	 */
+#ifndef VBOX
 	(void) pthread_cond_reltimedwait_np(&dph->dph_cv, &dph->dph_lock, &tv);
+#else
+	RTSemEventWait(dph->dph_event, (earliest - now) / RT_NS_1MS);
+#endif
 
 	while ((dprn = dph->dph_notify) != NULL) {
 		if (dtp->dt_prochdlr != NULL) {
@@ -106,7 +125,9 @@ dtrace_sleep(dtrace_hdl_t *dtp)
 		dt_free(dtp, dprn);
 	}
 
+#ifndef VBOX
 	(void) pthread_mutex_unlock(&dph->dph_lock);
+#endif
 }
 
 int
@@ -123,7 +144,7 @@ dtrace_status(dtrace_hdl_t *dtp)
 		return (DTRACE_STATUS_STOPPED);
 
 	if (dtp->dt_laststatus != 0) {
-		if (now - dtp->dt_laststatus < interval)
+		if (now - dtp->dt_laststatus < VBDTCAST(hrtime_t)interval)
 			return (DTRACE_STATUS_NONE);
 
 		dtp->dt_laststatus += interval;

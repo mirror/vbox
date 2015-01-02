@@ -23,7 +23,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #include <strings.h>
+#endif
 #include <dt_impl.h>
 
 static const struct {

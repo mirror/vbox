@@ -27,7 +27,9 @@
 #ifndef	_DT_BUF_H
 #define	_DT_BUF_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

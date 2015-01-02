@@ -27,7 +27,9 @@
 #ifndef	_DT_INTTAB_H
 #define	_DT_INTTAB_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <dtrace.h>
 

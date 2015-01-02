@@ -27,9 +27,11 @@
 #ifndef	_DT_AS_H
 #define	_DT_AS_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
+#endif
 #include <sys/dtrace.h>
 
 #ifdef	__cplusplus

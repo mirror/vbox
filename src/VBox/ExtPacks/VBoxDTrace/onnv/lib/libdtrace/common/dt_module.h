@@ -27,7 +27,9 @@
 #ifndef	_DT_MODULE_H
 #define	_DT_MODULE_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <dt_impl.h>
 

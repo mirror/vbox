@@ -27,7 +27,9 @@
 #ifndef	_DT_ERRTAGS_H
 #define	_DT_ERRTAGS_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

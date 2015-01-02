@@ -27,12 +27,19 @@
 #ifndef	_DT_PROC_H
 #define	_DT_PROC_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <libproc.h>
 #include <dtrace.h>
 #include <pthread.h>
 #include <dt_list.h>
+#else  /* VBOX */
+# include <dtrace.h>
+# include <dt_list.h>
+# include <iprt/critsect.h>
+#endif /* VBOX */
+
 
 #ifdef	__cplusplus
 extern "C" {
@@ -44,9 +51,14 @@ typedef struct dt_proc {
 	dtrace_hdl_t *dpr_hdl;		/* back pointer to libdtrace handle */
 	struct ps_prochandle *dpr_proc;	/* proc handle for libproc calls */
 	char dpr_errmsg[BUFSIZ];	/* error message */
+#ifndef VBOX
 	rd_agent_t *dpr_rtld;		/* rtld handle for librtld_db calls */
 	pthread_mutex_t dpr_lock;	/* lock for manipulating dpr_hdl */
 	pthread_cond_t dpr_cv;		/* cond for dpr_stop/quit/done */
+#else
+	RTCRITSECT dpr_lock;
+	RTSEMEVENT dpr_cv;
+#endif
 	pid_t dpr_pid;			/* pid of process */
 	uint_t dpr_refs;		/* reference count */
 	uint8_t dpr_cacheable;		/* cache handle using lru list */
@@ -56,7 +68,11 @@ typedef struct dt_proc {
 	uint8_t dpr_usdt;		/* usdt flag: usdt initialized */
 	uint8_t dpr_stale;		/* proc flag: been deprecated */
 	uint8_t dpr_rdonly;		/* proc flag: opened read-only */
+#ifndef VBOX
 	pthread_t dpr_tid;		/* control thread (or zero if none) */
+#else
+	RTTHREAD dpr_tid;
+#endif
 	dt_list_t dpr_bps;		/* list of dt_bkpt_t structures */
 } dt_proc_t;
 
@@ -86,8 +102,12 @@ typedef struct dt_bkpt {
 } dt_bkpt_t;
 
 typedef struct dt_proc_hash {
+#ifndef VBOX
 	pthread_mutex_t dph_lock;	/* lock protecting dph_notify list */
 	pthread_cond_t dph_cv;		/* cond for waiting for dph_notify */
+#else
+	RTSEMEVENT dph_event;
+#endif
 	dt_proc_notify_t *dph_notify;	/* list of pending proc notifications */
 	dt_list_t dph_lrulist;		/* list of dt_proc_t's in lru order */
 	uint_t dph_lrulim;		/* limit on number of procs to hold */

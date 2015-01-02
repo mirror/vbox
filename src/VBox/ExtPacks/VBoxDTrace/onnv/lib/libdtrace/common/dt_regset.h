@@ -27,9 +27,11 @@
 #ifndef	_DT_REGSET_H
 #define	_DT_REGSET_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

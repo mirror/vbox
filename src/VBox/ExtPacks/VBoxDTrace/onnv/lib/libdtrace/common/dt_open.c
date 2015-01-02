@@ -23,10 +23,10 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <sys/modctl.h>
 #include <sys/systeminfo.h>
-#include <sys/resource.h>
 
 #include <libelf.h>
 #include <strings.h>
@@ -39,9 +39,20 @@
 #include <errno.h>
 #include <assert.h>
 
-#define	_POSIX_PTHREAD_SEMANTICS
-#include <dirent.h>
-#undef	_POSIX_PTHREAD_SEMANTICS
+#ifndef _MSC_VER
+# define	_POSIX_PTHREAD_SEMANTICS
+# include <dirent.h>
+# undef	_POSIX_PTHREAD_SEMANTICS
+#endif
+
+#else  /* VBOX */
+# ifndef _MSC_VER
+# include <sys/resource.h>
+# include <unistd.h>
+# else
+# include <io.h>
+# endif
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_program.h>
@@ -661,7 +672,9 @@ int _dtrace_argmax = 32;	/* default maximum number of probe arguments */
 
 int _dtrace_debug = 0;		/* debug messages enabled (off) */
 const char *const _dtrace_version = DT_VERS_STRING; /* API version string */
+#ifndef VBOX
 int _dtrace_rdvers = RD_VERSION; /* rtld_db feature version */
+#endif
 
 typedef struct dt_fdlist {
 	int *df_fds;		/* array of provider driver file descriptors */
@@ -669,16 +682,28 @@ typedef struct dt_fdlist {
 	uint_t df_size;		/* size of df_fds[] */
 } dt_fdlist_t;
 
+
+#ifdef VBOX
+# include <iprt/critsect.h>
+extern RTCRITSECT dt_qsort_lock; /* dt_aggregate.c */
+
+void dtrace_init(void)
+#else  /* !VBOX */
 #pragma init(_dtrace_init)
 void
 _dtrace_init(void)
+#endif /* !VBOX */
 {
 	_dtrace_debug = getenv("DTRACE_DEBUG") != NULL;
 
+#ifndef VBOX
 	for (; _dtrace_rdvers > 0; _dtrace_rdvers--) {
 		if (rd_init(_dtrace_rdvers) == RD_OK)
 			break;
 	}
+#else
+	RTCritSectInit(&dt_qsort_lock);
+#endif
 }
 
 static dtrace_hdl_t *
@@ -691,6 +716,7 @@ set_open_errno(dtrace_hdl_t *dtp, int *errp, int err)
 	return (NULL);
 }
 
+#ifndef VBOX
 static void
 dt_provmod_open(dt_provmod_t **provmod, dt_fdlist_t *dfp)
 {
@@ -744,6 +770,7 @@ dt_provmod_open(dt_provmod_t **provmod, dt_fdlist_t *dfp)
 
 	(void) closedir(dirp);
 }
+#endif /* !VBOX */
 
 static void
 dt_provmod_destroy(dt_provmod_t **provmod)
@@ -762,6 +789,7 @@ dt_provmod_destroy(dt_provmod_t **provmod)
 static const char *
 dt_get_sysinfo(int cmd, char *buf, size_t len)
 {
+#ifndef VBOX
 	ssize_t rv = sysinfo(cmd, buf, len);
 	char *p = buf;
 
@@ -770,7 +798,9 @@ dt_get_sysinfo(int cmd, char *buf, size_t len)
 
 	while ((p = strchr(p, '.')) != NULL)
 		*p++ = '_';
-
+#else
+	snprintf(buf, len, "%s", "Unknown");
+#endif
 	return (buf);
 }
 
@@ -784,7 +814,9 @@ dt_vopen(int version, int flags, int *errp,
 	dt_module_t *dmp;
 	dt_provmod_t *provmod = NULL;
 	int i, err;
+#ifndef _MSC_VER
 	struct rlimit rl;
+#endif
 
 	const dt_intrinsic_t *dinp;
 	const dt_typedef_t *dtyp;
@@ -794,10 +826,14 @@ dt_vopen(int version, int flags, int *errp,
 	ctf_funcinfo_t ctc;
 	ctf_arinfo_t ctr;
 
+#ifndef VBOX
 	dt_fdlist_t df = { NULL, 0, 0 };
+#endif
 
 	char isadef[32], utsdef[32];
+#ifndef VBOX
 	char s1[64], s2[64];
+#endif
 
 	if (version <= 0)
 		return (set_open_errno(dtp, errp, EINVAL));
@@ -829,12 +865,15 @@ dt_vopen(int version, int flags, int *errp,
 	if (vector == NULL && arg != NULL)
 		return (set_open_errno(dtp, errp, EINVAL));
 
+#ifndef VBOX
 	if (elf_version(EV_CURRENT) == EV_NONE)
 		return (set_open_errno(dtp, errp, EDT_ELFVERSION));
+#endif
 
 	if (vector != NULL || (flags & DTRACE_O_NODEV))
 		goto alloc; /* do not attempt to open dtrace device */
 
+#ifndef _MSC_VER
 	/*
 	 * Before we get going, crank our limit on file descriptors up to the
 	 * hard limit.  This is to allow for the fact that libproc keeps file
@@ -847,7 +886,9 @@ dt_vopen(int version, int flags, int *errp,
 		rl.rlim_cur = rl.rlim_max;
 		(void) setrlimit(RLIMIT_NOFILE, &rl);
 	}
+#endif
 
+#ifndef VBOX
 	/*
 	 * Get the device path of each of the providers.  We hold them open
 	 * in the df.df_fds list until we open the DTrace driver itself,
@@ -891,6 +932,9 @@ dt_vopen(int version, int flags, int *errp,
 
 	(void) fcntl(dtfd, F_SETFD, FD_CLOEXEC);
 	(void) fcntl(ftfd, F_SETFD, FD_CLOEXEC);
+#else  /* VBOX */
+	/** @todo open ring-0 dtrace module. */
+#endif /* VBOX */
 
 alloc:
 	if ((dtp = malloc(sizeof (dtrace_hdl_t))) == NULL)
@@ -925,7 +969,9 @@ alloc:
 	dtp->dt_vector = vector;
 	dtp->dt_varg = arg;
 	dt_dof_init(dtp);
+#ifndef VBOX
 	(void) uname(&dtp->dt_uts);
+#endif
 
 	if (dtp->dt_mods == NULL || dtp->dt_provs == NULL ||
 	    dtp->dt_procs == NULL || dtp->dt_ld_path == NULL ||
@@ -940,9 +986,11 @@ alloc:
 	(void) snprintf(isadef, sizeof (isadef), "-D__SUNW_D_%u",
 	    (uint_t)(sizeof (void *) * NBBY));
 
+#ifndef VBOX
 	(void) snprintf(utsdef, sizeof (utsdef), "-D__%s_%s",
 	    dt_get_sysinfo(SI_SYSNAME, s1, sizeof (s1)),
 	    dt_get_sysinfo(SI_RELEASE, s2, sizeof (s2)));
+#endif
 
 	if (dt_cpp_add_arg(dtp, "-D__sun") == NULL ||
 	    dt_cpp_add_arg(dtp, "-D__unix") == NULL ||
