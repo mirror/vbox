@@ -41,8 +41,10 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
+#include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/time.h>
 
 #include <sys/dtrace_impl.h>
@@ -676,6 +678,15 @@ void VBoxDtCredFree(struct VBoxDtCred *pCred)
 }
 
 
+/*
+ *
+ * Virtual Memory / Resource Allocator.
+ * Virtual Memory / Resource Allocator.
+ * Virtual Memory / Resource Allocator.
+ *
+ */
+
+
 /** The number of bits per chunk.
  * @remarks The 32 bytes are for heap headers and such like.  */
 #define VBOXDTVMEMCHUNK_BITS    ( ((_64K - 32 - sizeof(uint32_t) * 2) / sizeof(uint32_t)) * 32)
@@ -940,24 +951,202 @@ void VBoxDtVMemFree(struct VBoxDtVMem *pThis, void *pvMem, size_t cbMem)
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 }
 
+
+/*
+ *
+ * Memory Allocators.
+ * Memory Allocators.
+ * Memory Allocators.
+ *
+ */
+
+
+/* kmem_alloc implementation */
+void *VBoxDtKMemAlloc(size_t cbMem, uint32_t fFlags)
+{
+    void *pvMem;
+    int rc = RTMemAllocEx(cbMem, 0, fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0, &pvMem);
+    AssertRCReturn(rc, NULL);
+    AssertPtr(pvMem);
+    return pvMem;
+}
+
+
+/* kmem_zalloc implementation */
+void *VBoxDtKMemAllocZ(size_t cbMem, uint32_t fFlags)
+{
+    void *pvMem;
+    int rc = RTMemAllocEx(cbMem, 0,
+                          (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED,
+                          &pvMem);
+    AssertRCReturn(rc, NULL);
+    AssertPtr(pvMem);
+    return pvMem;
+}
+
+
+/* kmem_free implementation */
+void  VBoxDtKMemFree(void *pvMem, size_t cbMem)
+{
+    RTMemFreeEx(pvMem, cbMem);
+}
+
+
+/**
+ * Memory cache mockup structure.
+ * No slab allocator here!
+ */
+struct VBoxDtMemCache
+{
+    uint32_t u32Magic;
+    size_t cbBuf;
+    size_t cbAlign;
+};
+
+
+/* Limited kmem_cache_create implementation. */
+struct VBoxDtMemCache *VBoxDtKMemCacheCreate(const char *pszName, size_t cbBuf, size_t cbAlign,
+                                             PFNRT pfnCtor, PFNRT pfnDtor, PFNRT pfnReclaim,
+                                             void *pvUser, void *pvVM, uint32_t fFlags)
+{
+    /*
+     * Check the input.
+     */
+    AssertReturn(cbBuf > 0 && cbBuf < _1G, NULL);
+    AssertReturn(RT_IS_POWER_OF_TWO(cbAlign), NULL);
+    AssertReturn(!pfnCtor, NULL);
+    AssertReturn(!pfnDtor, NULL);
+    AssertReturn(!pfnReclaim, NULL);
+    AssertReturn(!pvUser, NULL);
+    AssertReturn(!pvVM, NULL);
+    AssertReturn(!fFlags, NULL);
+
+    /*
+     * Create a parameter container. Don't bother with anything fancy here yet,
+     * just get something working.
+     */
+    struct VBoxDtMemCache *pThis = (struct VBoxDtMemCache *)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return NULL;
+
+    pThis->cbAlign = cbAlign;
+    pThis->cbBuf   = cbBuf;
+    return pThis;
+}
+
+
+/* Limited kmem_cache_destroy implementation. */
+void  VBoxDtKMemCacheDestroy(struct VBoxDtMemCache *pThis)
+{
+    RTMemFree(pThis);
+}
+
+
+/* kmem_cache_alloc implementation. */
+void *VBoxDtKMemCacheAlloc(struct VBoxDtMemCache *pThis, uint32_t fFlags)
+{
+    void *pvMem;
+    int rc = RTMemAllocEx(pThis->cbBuf,
+                          pThis->cbAlign,
+                          (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED,
+                          &pvMem);
+    AssertRCReturn(rc, NULL);
+    AssertPtr(pvMem);
+    return pvMem;
+}
+
+
+/* kmem_cache_free implementation. */
+void  VBoxDtKMemCacheFree(struct VBoxDtMemCache *pThis, void *pvMem)
+{
+    RTMemFreeEx(pvMem, pThis->cbBuf);
+}
+
+
 #if 0
-VBoxDtMutexIsOwner
-VBoxDtMutexExit
-VBoxDtMutexEnter
-
-VBoxDtKMemFree
-VBoxDtKMemCacheFree
-VBoxDtKMemCacheDestroy
-VBoxDtKMemCacheCreate
-VBoxDtKMemCacheAlloc
-
-VBoxDtKMemAllocZ
-VBoxDtKMemAlloc
-
 VBoxDtGetKernelBase
 VBoxDtGetCurrentThread
-VBoxDtGetCurrentProc
 #endif
+
+
+
+/*
+ *
+ * Mutex Sempahore Wrappers.
+ *
+ */
+
+
+/** Initializes a mutex. */
+int VBoxDtMutexInit(struct VBoxDtMutex *pMtx)
+{
+    AssertReturn(pMtx != &g_DummyMtx, -1);
+    AssertPtr(pMtx);
+
+    pMtx->hOwner = NIL_RTNATIVETHREAD;
+    pMtx->hMtx   = NIL_RTSEMMUTEX;
+    int rc = RTSemMutexCreate(&pMtx->hMtx);
+    if (RT_SUCCESS(rc))
+        return 0;
+    return -1;
+}
+
+
+/** Deletes a mutex. */
+void VBoxDtMutexDelete(struct VBoxDtMutex *pMtx)
+{
+    AssertReturnVoid(pMtx != &g_DummyMtx);
+    AssertPtr(pMtx);
+    if (pMtx->hMtx == NIL_RTSEMMUTEX || pMtx->hMtx == NULL)
+        return;
+
+    Assert(pMtx->hOwner == NIL_RTNATIVETHREAD);
+    int rc = RTSemMutexDestroy(pMtx->hMtx); AssertRC(rc);
+    pMtx->hMtx = NIL_RTSEMMUTEX;
+}
+
+
+/* mutex_enter implementation */
+void VBoxDtMutexEnter(struct VBoxDtMutex *pMtx)
+{
+    AssertPtr(pMtx);
+    if (pMtx == &g_DummyMtx)
+        return;
+
+    RTNATIVETHREAD hSelf = RTThreadNativeSelf();
+
+    int rc = RTSemMutexRequest(pMtx->hMtx, RT_INDEFINITE_WAIT);
+    AssertFatalRC(rc);
+
+    Assert(pMtx->hOwner == NIL_RTNATIVETHREAD);
+    pMtx->hOwner = hSelf;
+}
+
+
+/* mutex_exit implementation */
+void VBoxDtMutexExit(struct VBoxDtMutex *pMtx)
+{
+    AssertPtr(pMtx);
+    if (pMtx == &g_DummyMtx)
+        return;
+
+    Assert(pMtx->hOwner == RTThreadNativeSelf());
+
+    pMtx->hOwner = NIL_RTNATIVETHREAD;
+    int rc = RTSemMutexRelease(pMtx->hMtx);
+    AssertFatalRC(rc);
+}
+
+
+/* MUTEX_HELD implementation */
+bool VBoxDtMutexIsOwner(struct VBoxDtMutex *pMtx)
+{
+    AssertPtrReturn(pMtx, false);
+    if (pMtx == &g_DummyMtx)
+        return true;
+    return pMtx->hOwner == RTThreadNativeSelf();
+}
+
 
 
 /*
@@ -1105,7 +1294,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
              /* Create the probe. */
              AssertCompile(sizeof(pProbeLoc->idProbe) == sizeof(dtrace_id_t));
              pProbeLoc->idProbe = dtrace_probe_create(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName,
-                                                      0 /*aframes*/, pProbeLoc);
+                                                      1 /*aframes*/, pProbeLoc);
              pProv->TracerData.DTrace.cProvidedProbes++;
          }
 

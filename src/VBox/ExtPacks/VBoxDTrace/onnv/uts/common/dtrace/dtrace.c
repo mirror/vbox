@@ -12510,8 +12510,10 @@ dtrace_state_create(cred_t *cr)
 dtrace_state_create(dev_t *devp, cred_t *cr)
 #endif
 {
+#ifndef VBOX
 	minor_t minor;
 	major_t major;
+#endif
 	char c[30];
 	dtrace_state_t *state;
 	dtrace_optval_t *opt;
@@ -12538,7 +12540,11 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 #endif
 	state->dts_epid = DTRACE_EPIDNONE + 1;
 
+#ifndef VBOX
 	(void) snprintf(c, sizeof (c), "dtrace_aggid_%d", minor);
+#else
+	(void) snprintf(c, sizeof (c), "dtrace_aggid_%p", state);
+#endif
 	state->dts_aggid_arena = vmem_create(c, (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 
@@ -14783,6 +14789,17 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	dtrace_provider_id_t id;
 	dtrace_state_t *state = NULL;
 	dtrace_enabling_t *enab;
+
+#ifndef VBOX
+        if (   VBoxDtMutexInit(&dtrace_lock)
+            || VBoxDtMutexInit(&dtrace_provider_lock)
+            || VBoxDtMutexInit(&dtrace_meta_lock)
+# ifdef DEBUG
+            || VBoxDtMutexInit(&dtrace_errlock);
+# endif
+            )
+            return (DDI_FAILURE);
+#endif
 
 	mutex_enter(&cpu_lock);
 	mutex_enter(&dtrace_provider_lock);
