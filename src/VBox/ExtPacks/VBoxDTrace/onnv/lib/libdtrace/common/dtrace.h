@@ -157,6 +157,12 @@ typedef struct dtrace_stmtdesc {
 	void *dtsd_data;			/* callback data pointer */
 	dtrace_attribute_t dtsd_descattr;	/* probedesc attributes */
 	dtrace_attribute_t dtsd_stmtattr;	/* statement attributes */
+#if defined(VBOX) && defined(__GNUC__) && defined(RT_ARCH_AMD64)
+	/* gcc 4.4.5 p1.3 hass been seen doing a 64-bit access to read
+	   dtsd_stmtattr (which is 3 bytes), thereby accessing bytes beyond the
+	   end of the structure. */
+	uint32_t u32Padding;
+#endif
 } dtrace_stmtdesc_t;
 
 typedef int dtrace_stmt_f(dtrace_hdl_t *, dtrace_prog_t *,

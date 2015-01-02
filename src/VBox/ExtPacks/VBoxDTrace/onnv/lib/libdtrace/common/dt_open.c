@@ -1368,6 +1368,7 @@ alloc:
 
 	dt_program_destroy(dtp, pgp);
 
+#ifndef VBOX
 	/*
 	 * Set up the default DTrace library path.  Once set, the next call to
 	 * dt_compile() will compile all the libraries.  We intentionally defer
@@ -1377,6 +1378,7 @@ alloc:
 	 */
 	if (dtrace_setopt(dtp, "libdir", _dtrace_libdir) != 0)
 		return (set_open_errno(dtp, errp, dtp->dt_errno));
+#endif
 
 	return (dtp);
 }
