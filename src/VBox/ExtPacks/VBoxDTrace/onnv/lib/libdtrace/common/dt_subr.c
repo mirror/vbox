@@ -860,7 +860,6 @@ dt_string2str(char *s, char *str, int nbytes)
 int
 dtrace_addr2str(dtrace_hdl_t *dtp, uint64_t addr, char *str, int nbytes)
 {
-#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
 
@@ -892,10 +891,6 @@ dtrace_addr2str(dtrace_hdl_t *dtp, uint64_t addr, char *str, int nbytes)
 			(void) snprintf(s, n, "0x%llx", (u_longlong_t)addr);
 		}
 	}
-#else
-	char s[32];
-	RTStrPrintf(s, sizeof(s), "0x%llx", (uint64_t)addr);
-#endif
 
 	return (dt_string2str(s, str, nbytes));
 }

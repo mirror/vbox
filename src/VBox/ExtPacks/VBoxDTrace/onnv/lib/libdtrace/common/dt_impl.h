@@ -86,12 +86,10 @@ typedef struct dt_intdesc {
 typedef struct dt_modops {
 	uint_t (*do_syminit)(struct dt_module *);
 	void (*do_symsort)(struct dt_module *);
-#ifndef VBOX
 	GElf_Sym *(*do_symname)(struct dt_module *,
 	    const char *, GElf_Sym *, uint_t *);
 	GElf_Sym *(*do_symaddr)(struct dt_module *,
 	    GElf_Addr, GElf_Sym *, uint_t *);
-#endif
 } dt_modops_t;
 
 typedef struct dt_arg {
@@ -132,14 +130,12 @@ typedef struct dt_module {
 	uint_t dm_aslen;	/* number of entries in dm_asmap */
 	uint_t dm_flags;	/* module flags (see below) */
 	int dm_modid;		/* modinfo(1M) module identifier */
-#ifndef VBOX
 	GElf_Addr dm_text_va;	/* virtual address of text section */
 	GElf_Xword dm_text_size; /* size in bytes of text section */
 	GElf_Addr dm_data_va;	/* virtual address of data section */
 	GElf_Xword dm_data_size; /* size in bytes of data section */
 	GElf_Addr dm_bss_va;	/* virtual address of BSS */
 	GElf_Xword dm_bss_size;	/* size in bytes of BSS */
-#endif
 	dt_idhash_t *dm_extern;	/* external symbol definitions */
 } dt_module_t;
 
