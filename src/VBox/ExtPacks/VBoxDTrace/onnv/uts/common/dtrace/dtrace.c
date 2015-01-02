@@ -93,9 +93,14 @@
 #include <netinet/in.h>
 
 #else  /* VBOX */
-# include <iprt/types.h>
 # include <sys/dtrace_impl.h>
+# include <iprt/assert.h>
 # include <iprt/mp.h>
+# include <iprt/process.h>
+# include <iprt/thread.h>
+
+# undef NULL
+# define NULL (0)
 #endif /* VBOX */
 
 /*
@@ -339,6 +344,7 @@ static kmutex_t dtrace_errlock;
  * no way for a global variable key signature to match a thread-local key
  * signature.
  */
+#ifndef VBOX
 #define	DTRACE_TLS_THRKEY(where) { \
 	uint_t intr = 0; \
 	uint_t actv = CPU->cpu_intr_actv >> (LOCK_LEVEL + 1); \
@@ -348,6 +354,12 @@ static kmutex_t dtrace_errlock;
 	(where) = ((curthread->t_did + DIF_VARIABLE_MAX) & \
 	    (((uint64_t)1 << 61) - 1)) | ((uint64_t)intr << 61); \
 }
+#else
+#define	DTRACE_TLS_THRKEY(where) do { \
+	(where) = (((uintptr_t)RTThreadNativeSelf() + DIF_VARIABLE_MAX) & (RT_BIT_64(61) - 1)) \
+			| (RTThreadIsInInterrupt(NIL_RTTHREAD) ? RT_BIT_64(61) : 0); \
+} while (0)
+#endif
 
 #define	DT_BSWAP_8(x)	((x) & 0xff)
 #define	DT_BSWAP_16(x)	((DT_BSWAP_8(x) << 8) | DT_BSWAP_8((x) >> 8))
@@ -1104,7 +1116,7 @@ dtrace_priv_proc_common_nocd()
 {
 	proc_t *proc;
 
-	if ((proc = ttoproc(curthread)) != NULL &&
+	if ((proc = VBDT_GET_PROC()) != NULL &&
 	    !(proc->p_flag & SNOCD))
 		return (1);
 
@@ -2234,7 +2246,7 @@ dtrace_speculation_commit(dtrace_state_t *state, processorid_t cpu,
 	if (which == 0)
 		return;
 
-	if (which > state->dts_nspeculations) {
+	if (which > VBDTCAST(unsigned)state->dts_nspeculations) {
 		cpu_core[cpu].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
 		return;
 	}
@@ -2370,7 +2382,7 @@ dtrace_speculation_discard(dtrace_state_t *state, processorid_t cpu,
 	if (which == 0)
 		return;
 
-	if (which > state->dts_nspeculations) {
+	if (which > VBDTCAST(unsigned)state->dts_nspeculations) {
 		cpu_core[cpu].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
 		return;
 	}
@@ -2433,7 +2445,7 @@ dtrace_speculation_clean_here(dtrace_state_t *state)
 		return;
 	}
 
-	for (i = 0; i < state->dts_nspeculations; i++) {
+	for (i = 0; i < VBDTCAST(unsigned)state->dts_nspeculations; i++) {
 		dtrace_speculation_t *spec = &state->dts_speculations[i];
 		dtrace_buffer_t *src = &spec->dtsp_buffer[cpu];
 
@@ -2471,7 +2483,7 @@ dtrace_speculation_clean(dtrace_state_t *state)
 	int work = 0, rv;
 	dtrace_specid_t i;
 
-	for (i = 0; i < state->dts_nspeculations; i++) {
+	for (i = 0; i < VBDTCAST(unsigned)state->dts_nspeculations; i++) {
 		dtrace_speculation_t *spec = &state->dts_speculations[i];
 
 		ASSERT(!spec->dtsp_cleaning);
@@ -2495,7 +2507,7 @@ dtrace_speculation_clean(dtrace_state_t *state)
 	 * speculation buffers, as appropriate.  We can now set the state
 	 * to inactive.
 	 */
-	for (i = 0; i < state->dts_nspeculations; i++) {
+	for (i = 0; i < VBDTCAST(unsigned)state->dts_nspeculations; i++) {
 		dtrace_speculation_t *spec = &state->dts_speculations[i];
 		dtrace_speculation_state_t current, new;
 
@@ -2532,7 +2544,7 @@ dtrace_speculation_buffer(dtrace_state_t *state, processorid_t cpuid,
 	if (which == 0)
 		return (NULL);
 
-	if (which > state->dts_nspeculations) {
+	if (which > VBDTCAST(unsigned)state->dts_nspeculations) {
 		cpu_core[cpuid].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
 		return (NULL);
 	}
@@ -2681,6 +2693,7 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		return (mstate->dtms_arg[ndx]);
 
 	case DIF_VAR_UREGS: {
+#ifndef VBOX
 		klwp_t *lwp;
 
 		if (!dtrace_priv_proc(state))
@@ -2693,12 +2706,20 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		}
 
 		return (dtrace_getreg(lwp->lwp_regs, ndx));
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 	}
 
 	case DIF_VAR_CURTHREAD:
 		if (!dtrace_priv_kernel(state))
 			return (0);
+#ifndef VBOX
 		return ((uint64_t)(uintptr_t)curthread);
+#else
+		return ((uintptr_t)RTThreadNativeSelf());
+#endif
 
 	case DIF_VAR_TIMESTAMP:
 		if (!(mstate->dtms_present & DTRACE_MSTATE_TIMESTAMP)) {
@@ -2853,6 +2874,7 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * Note that we are assuming that an unanchored probe is
 		 * always due to a high-level interrupt.  (And we're assuming
@@ -2870,11 +2892,15 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		 * they leave that task to whomever reaps them.)
 		 */
 		return ((uint64_t)curthread->t_procp->p_pidp->pid_id);
+#else
+		return (RTProcSelf());
+#endif
 
 	case DIF_VAR_PPID:
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2888,8 +2914,13 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		 * state -- they leave that task to whomever reaps them.)
 		 */
 		return ((uint64_t)curthread->t_procp->p_ppid);
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0); /** @todo parent pid? */
+#endif
 
 	case DIF_VAR_TID:
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2897,11 +2928,15 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 			return (0);
 
 		return ((uint64_t)curthread->t_tid);
+#else
+		return (RTThreadNativeSelf()); /** @todo proper tid? */
+#endif
 
 	case DIF_VAR_EXECNAME:
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2917,11 +2952,16 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		return (dtrace_dif_varstr(
 		    (uintptr_t)curthread->t_procp->p_user.u_comm,
 		    state, mstate));
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0); /** @todo execname */
+#endif
 
 	case DIF_VAR_ZONENAME:
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2937,11 +2977,16 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		return (dtrace_dif_varstr(
 		    (uintptr_t)curthread->t_procp->p_zone->zone_name,
 		    state, mstate));
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 
 	case DIF_VAR_UID:
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2958,11 +3003,16 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		 * credential, since this is never NULL after process birth.
 		 */
 		return ((uint64_t)curthread->t_procp->p_cred->cr_uid);
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 
 	case DIF_VAR_GID:
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -2979,12 +3029,19 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		 * credential, since this is never NULL after process birth.
 		 */
 		return ((uint64_t)curthread->t_procp->p_cred->cr_gid);
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 
 	case DIF_VAR_ERRNO: {
+#ifndef VBOX
 		klwp_t *lwp;
+#endif
 		if (!dtrace_priv_proc(state))
 			return (0);
 
+#ifndef VBOX
 		/*
 		 * See comment in DIF_VAR_PID.
 		 */
@@ -3001,6 +3058,10 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 			return (0);
 
 		return ((uint64_t)lwp->lwp_errno);
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 	}
 	default:
 		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
@@ -3024,6 +3085,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 	volatile uintptr_t *illval = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval;
 	dtrace_vstate_t *vstate = &state->dts_vstate;
 
+#ifndef VBOX
 	union {
 		mutex_impl_t mi;
 		uint64_t mx;
@@ -3033,6 +3095,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		krwlock_t ri;
 		uintptr_t rw;
 	} r;
+#endif
 
 	switch (subr) {
 	case DIF_SUBR_RAND:
@@ -3040,6 +3103,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		break;
 
 	case DIF_SUBR_MUTEX_OWNED:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (kmutex_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3051,9 +3115,14 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 			regs[rd] = MUTEX_OWNER(&m.mi) != MUTEX_NO_OWNER;
 		else
 			regs[rd] = LOCK_HELD(&m.mi.m_spin.m_spinlock);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_MUTEX_OWNER:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (kmutex_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3066,9 +3135,14 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 			regs[rd] = (uintptr_t)MUTEX_OWNER(&m.mi);
 		else
 			regs[rd] = 0;
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_MUTEX_TYPE_ADAPTIVE:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (kmutex_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3077,9 +3151,14 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 		m.mx = dtrace_load64(tupregs[0].dttk_value);
 		regs[rd] = MUTEX_TYPE_ADAPTIVE(&m.mi);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_MUTEX_TYPE_SPIN:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (kmutex_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3088,9 +3167,14 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 		m.mx = dtrace_load64(tupregs[0].dttk_value);
 		regs[rd] = MUTEX_TYPE_SPIN(&m.mi);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_RW_READ_HELD: {
+#ifndef VBOX
 		uintptr_t tmp;
 
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (uintptr_t),
@@ -3101,10 +3185,15 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 		r.rw = dtrace_loadptr(tupregs[0].dttk_value);
 		regs[rd] = _RW_READ_HELD(&r.ri, tmp);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 	}
 
 	case DIF_SUBR_RW_WRITE_HELD:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (krwlock_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3113,9 +3202,14 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 		r.rw = dtrace_loadptr(tupregs[0].dttk_value);
 		regs[rd] = _RW_WRITE_HELD(&r.ri);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_RW_ISWRITER:
+#ifndef VBOX
 		if (!dtrace_canload(tupregs[0].dttk_value, sizeof (krwlock_t),
 		    mstate, vstate)) {
 			regs[rd] = NULL;
@@ -3124,6 +3218,10 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 		r.rw = dtrace_loadptr(tupregs[0].dttk_value);
 		regs[rd] = _RW_ISWRITER(&r.ri);
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_BCOPY: {
@@ -3236,6 +3334,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 
 	case DIF_SUBR_MSGSIZE:
 	case DIF_SUBR_MSGDSIZE: {
+#ifndef VBOX
 		uintptr_t baddr = tupregs[0].dttk_value, daddr;
 		uintptr_t wptr, rptr;
 		size_t count = 0;
@@ -3289,10 +3388,15 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		if (!(*flags & CPU_DTRACE_FAULT))
 			regs[rd] = count;
 
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 	}
 
 	case DIF_SUBR_PROGENYOF: {
+#ifndef VBOX
 		pid_t pid = tupregs[0].dttk_value;
 		proc_t *p;
 		int rval = 0;
@@ -3309,6 +3413,10 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		DTRACE_CPUFLAG_CLEAR(CPU_DTRACE_NOFAULT);
 
 		regs[rd] = rval;
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 	}
 
@@ -3504,13 +3612,13 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 						break;
 					}
 
-					if (pos > len)
+					if (VBDTCAST(uint64_t)pos > len)
 						pos = len;
 				} else {
 					if (pos < 0)
 						pos = 0;
 
-					if (pos >= len) {
+					if (VBDTCAST(uint64_t)pos >= len) {
 						if (sublen == 0)
 							regs[rd] = len;
 						break;
@@ -3688,11 +3796,11 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 			}
 		}
 
-		if (index >= len || index < 0) {
+		if (VBDTCAST(uint64_t)index >= len || index < 0) {
 			remaining = 0;
 		} else if (remaining < 0) {
 			remaining += len - index;
-		} else if (index + remaining > size) {
+		} else if (VBDTCAST(uint64_t)index + remaining > size) {
 			remaining = size - index;
 		}
 
@@ -3709,22 +3817,33 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 	}
 
 	case DIF_SUBR_GETMAJOR:
+#ifndef VBOX
 #ifdef _LP64
 		regs[rd] = (tupregs[0].dttk_value >> NBITSMINOR64) & MAXMAJ64;
 #else
 		regs[rd] = (tupregs[0].dttk_value >> NBITSMINOR) & MAXMAJ;
 #endif
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_GETMINOR:
+#ifndef VBOX
 #ifdef _LP64
 		regs[rd] = tupregs[0].dttk_value & MAXMIN64;
 #else
 		regs[rd] = tupregs[0].dttk_value & MAXMIN;
 #endif
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 
 	case DIF_SUBR_DDI_PATHNAME: {
+#ifndef VBOX
 		/*
 		 * This one is a galactic mess.  We are going to roughly
 		 * emulate ddi_pathname(), but it's made more complicated
@@ -3914,6 +4033,10 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 			mstate->dtms_scratch_ptr += size;
 		}
 
+#else
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 		break;
 	}
 
@@ -4029,7 +4152,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		char *dest = (char *)mstate->dtms_scratch_ptr;
 		uint64_t size = state->dts_options[DTRACEOPT_STRSIZE];
 		uintptr_t src = tupregs[0].dttk_value;
-		int i, j, len = dtrace_strlen((char *)src, size);
+		int i, j, len = VBDTCAST(int)dtrace_strlen((char *)src, size);
 		int lastbase = -1, firstbase = -1, lastdir = -1;
 		int start, end;
 
@@ -4266,6 +4389,7 @@ next:
 	case DIF_SUBR_INET_NTOA:
 	case DIF_SUBR_INET_NTOA6:
 	case DIF_SUBR_INET_NTOP: {
+#ifndef VBOX
 		size_t size;
 		int af, argi, i;
 		char *base, *end;
@@ -4464,6 +4588,10 @@ next:
 
 inetout:	regs[rd] = (uintptr_t)end + 1;
 		mstate->dtms_scratch_ptr += size;
+#else  /* VBOX */
+		regs[rd] = 0;
+		DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif /* VBOX */
 		break;
 	}
 
@@ -4868,7 +4996,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 			id -= DIF_VAR_OTHER_UBASE;
 
-			ASSERT(id < vstate->dtvs_nlocals);
+			ASSERT(VBDTCAST(int64_t)id < vstate->dtvs_nlocals);
 			ASSERT(vstate->dtvs_locals != NULL);
 
 			svar = vstate->dtvs_locals[id];
@@ -4907,7 +5035,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 			ASSERT(id >= DIF_VAR_OTHER_UBASE);
 			id -= DIF_VAR_OTHER_UBASE;
-			ASSERT(id < vstate->dtvs_nlocals);
+			ASSERT(VBDTCAST(int64_t)id < vstate->dtvs_nlocals);
 
 			ASSERT(vstate->dtvs_locals != NULL);
 			svar = vstate->dtvs_locals[id];
@@ -5261,6 +5389,8 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 	return (0);
 }
 
+#ifndef VBOX /* no destructive stuff */
+
 static void
 dtrace_action_breakpoint(dtrace_ecb_t *ecb)
 {
@@ -5432,6 +5562,8 @@ dtrace_action_chill(dtrace_mstate_t *mstate, hrtime_t val)
 	cpu->cpu_dtrace_chilled += val;
 }
 
+#endif /* !VBOX */
+
 static void
 dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
     uint64_t *buf, uint64_t arg)
@@ -5442,7 +5574,11 @@ dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
 	char *str = (char *)&pcs[nframes];
 	int size, offs = 0, i, j;
 	uintptr_t old = mstate->dtms_scratch_ptr, saved;
+#ifndef VBOX
 	uint16_t *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
+#else
+	uint16_t volatile *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
+#endif
 	char *sym;
 
 	/*
@@ -5838,18 +5974,28 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 
 			switch (act->dta_kind) {
 			case DTRACEACT_STOP:
+#ifndef VBOX
 				if (dtrace_priv_proc_destructive(state))
 					dtrace_action_stop();
+#else
+				DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 				continue;
 
 			case DTRACEACT_BREAKPOINT:
+#ifndef VBOX
 				if (dtrace_priv_kernel_destructive(state))
 					dtrace_action_breakpoint(ecb);
+#else
+				DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 				continue;
 
 			case DTRACEACT_PANIC:
+#ifndef VBOX
 				if (dtrace_priv_kernel_destructive(state))
 					dtrace_action_panic(ecb);
+#endif
 				continue;
 
 			case DTRACEACT_STACK:
@@ -5946,13 +6092,21 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				continue;
 
 			case DTRACEACT_CHILL:
+#ifndef VBOX
 				if (dtrace_priv_kernel_destructive(state))
 					dtrace_action_chill(&mstate, val);
+#else
+				DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 				continue;
 
 			case DTRACEACT_RAISE:
+#ifndef VBOX
 				if (dtrace_priv_proc_destructive(state))
 					dtrace_action_raise(val);
+#else
+				DTRACE_CPUFLAG_SET(CPU_DTRACE_ILLOP);
+#endif
 				continue;
 
 			case DTRACEACT_COMMIT:

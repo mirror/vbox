@@ -2235,10 +2235,12 @@ extern void dtrace_getfsr(uint64_t *);
 
 #ifndef VBOX
 # define VBDT_GET_CPUID()		(CPU->cpu_id)
+# define VBDT_GET_PROC()		(ttoproc(curthread))
 #else
 # define VBDT_GET_CPUID()		(RTMpCpuId())
+# define VBDT_GET_PROC()		(VBoxDtGetCurrentProc())
+proc_t *VBoxDtGetCurrentProc(void);
 #endif
-
 
 #define	DTRACE_CPUFLAG_ISSET(flag) \
 	(cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags & (flag))
