@@ -148,8 +148,10 @@ static const RTGETOPTDEF g_aOptions[] =
 
 static char **g_argv;
 static int g_argc;
+#ifndef VBOX /* No linking. */
 static char **g_objv;
 static int g_objc;
+#endif
 static dtrace_cmd_t *g_cmdv;
 static int g_cmdc;
 static struct ps_prochandle **g_psv;
@@ -170,7 +172,7 @@ static int g_mode = DMODE_EXEC;
 static int g_status = E_SUCCESS;
 static int g_grabanon = 0;
 static const char *g_ofile = NULL;
-#ifndef _MSC_VER /* stdout isn't a constant usable in C code. */
+#ifndef VBOX /* stdout isn't a necessarily constant usable like this in C code. */
 static FILE *g_ofp = stdout;
 #else
 static FILE *g_ofp = NULL;
@@ -706,6 +708,7 @@ anon_prog(const dtrace_cmd_t *dcp, dof_hdr_t *dof, int n)
 	dtrace_dof_destroy(g_dtp, dof);
 }
 
+#ifndef VBOX
 /*
  * Link the specified D program in DOF form into an ELF file for use in either
  * helpers, userland provider definitions, or both.  If -o was specified, that
@@ -734,6 +737,7 @@ link_prog(dtrace_cmd_t *dcp)
 	    dcp->dc_ofile, g_objc, g_objv) != 0)
 		dfatal("failed to link %s %s", dcp->dc_desc, dcp->dc_name);
 }
+#endif /* !VBOX */
 
 /*ARGSUSED*/
 static int
@@ -1251,7 +1255,12 @@ main(int argc, char *argv[])
 
 	int done = 0, mode = 0;
 	int err, i;
+#ifndef VBOX
 	char c, *p, **v;
+#else
+	int c;
+	char *p, **v;
+#endif
 	struct ps_prochandle *P;
 	pid_t pid;
 #ifdef VBOX
@@ -1261,8 +1270,7 @@ main(int argc, char *argv[])
 	err = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 	if (RT_FAILURE(err))
 		return RTMsgInitFailure(err);
-#endif
-#ifdef _MSC_VER
+
 	g_ofp = stdout;
 #endif
 	g_pname = basename(argv[0]);
@@ -1351,12 +1359,17 @@ main(int argc, char *argv[])
 				break;
 
 			case 'G':
+#ifndef VBOX
 				g_mode = DMODE_LINK;
 				g_oflags |= DTRACE_O_NODEV;
 				g_cflags |= DTRACE_C_ZDEFS; /* -G implies -Z */
 				g_exec = 0;
 				mode++;
 				break;
+#else
+				fprintf(stderr, "%s: -G is not supported\n", g_pname);
+				return (E_USAGE);
+#endif
 
 			case 'l':
 				g_mode = DMODE_LIST;
@@ -1478,6 +1491,7 @@ main(int argc, char *argv[])
 	 * only to kernel symbols that are defined in a primary kernel module.
 	 */
 	if (g_mode == DMODE_LINK) {
+#ifndef VBOX /* No link mode. */
 		(void) dtrace_setopt(g_dtp, "linkmode", "dynamic");
 		(void) dtrace_setopt(g_dtp, "unodefs", NULL);
 
@@ -1492,6 +1506,9 @@ main(int argc, char *argv[])
 		 * We still use g_argv[0], the name of the executable.
 		 */
 		g_argc = 1;
+#else  /* VBOX */
+		AssertFailed();
+#endif /* VBOX */
 	} else if (g_mode == DMODE_ANON)
 		(void) dtrace_setopt(g_dtp, "linkmode", "primary");
 
@@ -1811,6 +1828,7 @@ main(int argc, char *argv[])
 		return (g_status);
 
 	case DMODE_LINK:
+#ifndef VBOX  /* No link mode. */
 		if (g_cmdc == 0) {
 			(void) fprintf(stderr, "%s: -G requires one or more "
 			    "scripts or enabling options\n", g_pname);
@@ -1834,6 +1852,11 @@ main(int argc, char *argv[])
 
 		dtrace_close(g_dtp);
 		return (g_status);
+#else  /* VBOX */
+		AssertFailed();
+		dtrace_close(g_dtp);
+		return (E_USAGE);
+#endif /* VBOX */
 
 	case DMODE_LIST:
 		if (g_ofile != NULL && (g_ofp = fopen(g_ofile, "a")) == NULL)

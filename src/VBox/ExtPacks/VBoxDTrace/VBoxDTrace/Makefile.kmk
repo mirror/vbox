@@ -32,7 +32,7 @@ SUB_DEPTH = ../../../../../
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxDTrace
-VBoxDTrace_TEMPLATE = VBOXR3NP
+VBoxDTrace_TEMPLATE = VBOXR3NPEXE
 VBoxDTrace_INCS = \
 	../include \
 	$(VBOXDT_PATH_UTS)/common \

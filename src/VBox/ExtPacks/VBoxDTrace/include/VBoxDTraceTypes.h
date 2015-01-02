@@ -38,16 +38,88 @@ RT_C_DECLS_BEGIN
 
 struct modctl;
 
-typedef unsigned char           uchar_t;
-typedef unsigned int            uint_t;
-typedef uintptr_t               ulong_t;
-typedef uintptr_t               pc_t;
-typedef uint32_t                zoneid_t;
-typedef char                   *caddr_t;
-typedef uint64_t                hrtime_t;
-typedef RTCPUID                 processorid_t;
-typedef RTCCUINTREG             greg_t;
-typedef unsigned int            model_t;
+typedef unsigned char               uchar_t;
+typedef unsigned int                uint_t;
+typedef uintptr_t                   ulong_t;
+typedef uintptr_t                   pc_t;
+typedef unsigned int                model_t;
+typedef uint32_t                    zoneid_t;
+typedef RTCPUID                     processorid_t;
+
+#define NANOSEC                     RT_NS_1SEC
+#define MILLISEC                    RT_MS_1SEC
+
+#if defined(RT_ARCH_X86)
+# ifndef __i386
+#  define __i386            1
+# endif
+
+#elif defined(RT_ARCH_AMD64)
+# ifndef __x86_64
+#  define __x86_64          1
+# endif
+
+#else
+# error "unsupported arch!"
+#endif
+
+/** Mark a cast added when porting the code to VBox.
+ * Avoids lots of \#ifdef VBOX otherwise needed to mark up the changes. */
+#define VBDTCAST(a_Type)        (a_Type)
+/** Mark a type change made when porting the code to VBox.
+ * This is usually signed -> unsigned type changes that avoids a whole lot of
+ * comparsion warnings. */
+#define VBDTTYPE(a_VBox, a_Org) a_VBox
+/** Mark missing void in a parameter list. */
+#define VBDTVOID                void
+/** Mark missing static in a function definition. */
+#define VBDTSTATIC              static
+#define VBDTUNASS(a_Value)      = a_Value
+
+/*
+ * string
+ */
+#if defined(_MSC_VER) || defined(IN_RING0)
+# define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
+# define bzero(a_pDst, a_cb)        RT_BZERO(a_pDst, a_cb)
+# define bcmp(a_p1, a_p2, a_cb)     memcmp(a_p1, a_p2, a_cb)
+# define snprintf                   RTStrPrintf
+#endif
+
+
+/*
+ * CTF - probably needs to be ported wholesale or smth.
+ */
+#define CTF_MODEL_NATIVE            1
+typedef struct VBoxDtCtfFile        ctf_file_t;
+typedef intptr_t                    ctf_id_t;
+
+
+#ifdef IN_RING0
+
+/*
+ * Kernel stuff...
+ */
+typedef char                       *caddr_t;
+typedef uint64_t                    hrtime_t;
+typedef RTCCUINTREG                 greg_t;
+typedef RTUID                       uid_t;
+typedef RTPROCESS                   pid_t;
+
+#define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
+#define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
+#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
+#define MIN(a1, a2)                 RT_MIN(a1, a2)
+
+#define NBBY                        8
+#define NCPU                        RTCPUSET_MAX_CPUS
+#define B_FALSE                     (0)
+#define B_TRUE                      (1)
+#define CPU_ON_INTR(a_pCpu)         (false)
+
+#define KERNELBASE                  VBoxDtGetKernelBase()
+uintptr_t VBoxDtGetKernelBase(void);
+
 
 typedef struct VBoxDtCred
 {
@@ -160,74 +232,6 @@ void VBoxDtCmnErr(int iLevel, const char *pszFormat, ...);
 void VBoxDtUPrintf(const char *pszFormat, ...);
 void VBoxDtUPrintfV(const char *pszFormat, va_list va);
 
-
-#if 1 /* */
-
-typedef RTUID                   uid_t;
-typedef RTPROCESS               pid_t;
-#endif
-
-#define B_FALSE                 (0)
-#define B_TRUE                  (1)
-#define NANOSEC                 RT_NS_1SEC
-#define MILLISEC                RT_MS_1SEC
-#define NBBY                    8
-#define NCPU                    RTCPUSET_MAX_CPUS
-#define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
-#define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
-#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
-#define MIN(a1, a2)             RT_MIN(a1, a2)
-
-#define CPU_ON_INTR(a_pCpu)     (false)
-
-#define KERNELBASE              VBoxDtGetKernelBase()
-uintptr_t VBoxDtGetKernelBase(void);
-
-
-#if defined(RT_ARCH_X86)
-# ifndef __i386
-#  define __i386            1
-# endif
-
-#elif defined(RT_ARCH_AMD64)
-# ifndef __x86_64
-#  define __x86_64          1
-# endif
-
-#else
-# error "unsupported arch!"
-#endif
-
-/** Mark a cast added when porting the code to VBox.
- * Avoids lots of \#ifdef VBOX otherwise needed to mark up the changes. */
-#define VBDTCAST(a_Type)        (a_Type)
-/** Mark a type change made when porting the code to VBox.
- * This is usually signed -> unsigned type changes that avoids a whole lot of
- * comparsion warnings. */
-#define VBDTTYPE(a_VBox, a_Org) a_VBox
-/** Mark missing void in a parameter list. */
-#define VBDTVOID                void
-/** Mark missing static in a function definition. */
-#define VBDTSTATIC              static
-#define VBDTUNASS(a_Value)      = a_Value
-
-/*
- * string
- */
-#define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
-#define bzero(a_pDst, a_cb)         RT_BZERO(a_pDst, a_cb)
-#define bcmp(a_p1, a_p2, a_cb)      memcmp(a_p1, a_p2, a_cb)
-#define snprintf                    RTStrPrintf
-
-
-/*
- * CTF - probably needs to be ported wholesale or smth.
- */
-#define CTF_MODEL_NATIVE            1
-typedef struct VBoxDtCtfFile        ctf_file_t;
-typedef intptr_t                    ctf_id_t;
-
-#ifdef IN_RING0
 
 /*
  * Errno defines compatible with the CRT of the given host...
