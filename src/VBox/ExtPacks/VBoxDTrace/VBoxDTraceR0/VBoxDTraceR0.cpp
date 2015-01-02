@@ -1456,8 +1456,8 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
                      }
                      if (iOrd >= 128)
                      {
-                         LogRel(("VBoxDrv: More than 128 duplicate probe location instances in file %s at line %u, function %s [%s], probe %s\n",
-                                 pProbeLoc->pszFile, pProbeLoc->uLine, pProbeLoc->pszFunction, pszFnNmBuf, pszPrbName));
+                         LogRel(("VBoxDrv: More than 128 duplicate probe location instances %s at line %u in function %s [%s], probe %s\n",
+                                 pProbeLoc->uLine, pProbeLoc->pszFunction, pszFnNmBuf, pszPrbName));
                          continue;
                      }
                  }

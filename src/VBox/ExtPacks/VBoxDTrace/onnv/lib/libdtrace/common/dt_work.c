@@ -108,7 +108,10 @@ dtrace_sleep(dtrace_hdl_t *dtp)
 #ifndef VBOX
 	(void) pthread_cond_reltimedwait_np(&dph->dph_cv, &dph->dph_lock, &tv);
 #else
-	RTSemEventWait(dph->dph_event, (earliest - now) / RT_NS_1MS);
+	if (dph->dph_event)
+		RTSemEventWait(dph->dph_event, (earliest - now) / RT_NS_1MS);
+	else
+		RTThreadSleep((earliest - now) / RT_NS_1MS);
 #endif
 
 	while ((dprn = dph->dph_notify) != NULL) {
