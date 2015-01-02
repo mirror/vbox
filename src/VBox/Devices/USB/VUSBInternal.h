@@ -458,7 +458,7 @@ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
 DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
 DECLHIDDEN(int) vusbDevIoThreadExec(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...);
-DECLHIDDEN(void) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode);
+DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode);
 
 void vusbUrbCompletionReadAhead(PVUSBURB pUrb);
 VUSBREADAHEAD vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe);
