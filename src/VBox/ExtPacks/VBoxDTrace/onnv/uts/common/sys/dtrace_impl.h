@@ -1101,7 +1101,9 @@ typedef struct dtrace_cred {
  * dtrace_state structure.
  */
 struct dtrace_state {
+#ifndef VBOX
 	dev_t dts_dev;				/* device */
+#endif
 	int dts_necbs;				/* total number of ECBs */
 	dtrace_ecb_t **dts_ecbs;		/* array of ECBs */
 	dtrace_epid_t dts_epid;			/* next EPID to allocate */

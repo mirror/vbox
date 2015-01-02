@@ -205,10 +205,12 @@ const char	dtrace_zero[256] = { 0 };	/* zero-filled memory */
 /*
  * DTrace Internal Variables
  */
-static dev_info_t	*dtrace_devi;		/* device info */
-static vmem_t		*dtrace_arena;		/* probe ID arena */
-static vmem_t		*dtrace_minor;		/* minor number arena */
 #ifndef VBOX
+static dev_info_t	*dtrace_devi;		/* device info */
+#endif
+static vmem_t		*dtrace_arena;		/* probe ID arena */
+#ifndef VBOX
+static vmem_t		*dtrace_minor;		/* minor number arena */
 static taskq_t		*dtrace_taskq;		/* task queue */
 #endif
 static dtrace_probe_t	**dtrace_probes;	/* array of all probes */
@@ -217,7 +219,9 @@ static dtrace_provider_t *dtrace_provider;	/* provider list */
 static dtrace_meta_t	*dtrace_meta_pid;	/* user-land meta provider */
 static int		dtrace_opens;		/* number of opens */
 static int		dtrace_helpers;		/* number of helpers */
+#ifndef VBOX
 static void		*dtrace_softstate;	/* softstate pointer */
+#endif
 static dtrace_hash_t	*dtrace_bymod;		/* probes hashed by module */
 static dtrace_hash_t	*dtrace_byfunc;		/* probes hashed by function */
 static dtrace_hash_t	*dtrace_byname;		/* probes hashed by name */
@@ -517,9 +521,11 @@ static void dtrace_enabling_provide(dtrace_provider_t *);
 static int dtrace_enabling_match(dtrace_enabling_t *, int *);
 static void dtrace_enabling_matchall(void);
 static dtrace_state_t *dtrace_anon_grab(void);
+#ifndef VBOX
 static uint64_t dtrace_helper(int, dtrace_mstate_t *,
     dtrace_state_t *, uint64_t, uint64_t);
 static dtrace_helpers_t *dtrace_helpers_create(proc_t *);
+#endif
 static void dtrace_buffer_drop(dtrace_buffer_t *);
 static intptr_t dtrace_buffer_reserve(dtrace_buffer_t *, size_t, size_t,
     dtrace_state_t *, dtrace_mstate_t *);
@@ -1151,6 +1157,7 @@ dtrace_priv_proc_common_zone(dtrace_state_t *state)
 static int
 dtrace_priv_proc_common_nocd(VBDTVOID)
 {
+#ifndef VBOX
 	proc_t *proc;
 
 	if ((proc = VBDT_GET_PROC()) != NULL &&
@@ -1158,6 +1165,9 @@ dtrace_priv_proc_common_nocd(VBDTVOID)
 		return (1);
 
 	return (0);
+#else
+	return (1);
+#endif
 }
 
 static int
@@ -2518,6 +2528,15 @@ dtrace_speculation_clean_here(dtrace_state_t *state)
 	dtrace_interrupt_enable(cookie);
 }
 
+#ifdef VBOX
+/** */
+static DECLCALLBACK(void) dtrace_speculation_clean_here_wrapper(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    dtrace_speculation_clean_here((dtrace_state_t *)pvUser1);
+    NOREF(pvUser2); NOREF(idCpu);
+}
+#endif
+
 /*
  * Note:  not called from probe context.  This function is called
  * asynchronously (and at a regular interval) to clean any speculations that
@@ -2548,8 +2567,12 @@ dtrace_speculation_clean(dtrace_state_t *state)
 	if (!work)
 		return;
 
+#ifndef VBOX
 	dtrace_xcall(DTRACE_CPUALL,
 	    (dtrace_xcall_t)dtrace_speculation_clean_here, state);
+#else
+	RTMpOnAll(dtrace_speculation_clean_here_wrapper, state, NULL);
+#endif
 
 	/*
 	 * We now know that all CPUs have committed or discarded their
@@ -5691,9 +5714,13 @@ dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
 		if (offs >= strsize)
 			break;
 
+#ifndef VBOX
 		sym = (char *)(uintptr_t)dtrace_helper(
 		    DTRACE_HELPER_ACTION_USTACK,
 		    mstate, state, pcs[i], fps[i]);
+#else
+		sym = NULL;
+#endif
 
 		/*
 		 * If we faulted while running the helper, we're going to
@@ -5928,8 +5955,13 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				    s_cr->cr_gid != cr->cr_gid ||
 				    s_cr->cr_gid != cr->cr_rgid ||
 				    s_cr->cr_gid != cr->cr_sgid ||
+#ifndef VBOX
 				    (proc = VBDT_GET_PROC()) == NULL ||
 				    (proc->p_flag & SNOCD))
+#else
+				    0)
+
+#endif
 					continue;
 			}
 
@@ -6104,6 +6136,7 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 					continue;
 				}
 
+#ifndef VBOX /* no helpers */
 				if (DTRACE_USTACK_STRSIZE(rec->dtrd_arg) != 0 &&
 				    curproc->p_dtrace_helpers != NULL) {
 					/*
@@ -6118,6 +6151,7 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 					    rec->dtrd_arg);
 					continue;
 				}
+#endif
 
 				DTRACE_CPUFLAG_SET(CPU_DTRACE_NOFAULT);
 				dtrace_getupcstack((uint64_t *)
@@ -7276,7 +7310,9 @@ dtrace_unregister(dtrace_provider_id_t id)
 		 * already held.
 		 */
 		ASSERT(old == dtrace_provider);
+#ifndef VBOX
 		ASSERT(dtrace_devi != NULL);
+#endif
 		ASSERT(MUTEX_HELD(&dtrace_provider_lock));
 		ASSERT(MUTEX_HELD(&dtrace_lock));
 		self = 1;
@@ -7379,8 +7415,10 @@ dtrace_unregister(dtrace_provider_id_t id)
 	}
 
 	if ((prev = dtrace_provider) == old) {
+#ifndef VBOX
 		ASSERT(self || dtrace_devi == NULL);
 		ASSERT(old->dtpv_next == NULL || dtrace_devi == NULL);
+#endif
 		dtrace_provider = old->dtpv_next;
 	} else {
 		while (prev != NULL && prev->dtpv_next != old)
@@ -10347,6 +10385,14 @@ dtrace_buffer_switch(dtrace_buffer_t *buf)
 	dtrace_interrupt_enable(cookie);
 }
 
+#ifdef VBOX
+static DECLCALLBACK(void) dtrace_buffer_switch_wrapper(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    dtrace_buffer_switch((dtrace_buffer_t *)pvUser1);
+    NOREF(pvUser2); NOREF(idCpu);
+}
+#endif
+
 /*
  * Note:  called from cross call context.  This function activates a buffer
  * on a CPU.  As with dtrace_buffer_switch(), the atomicity of the operation
@@ -10373,6 +10419,14 @@ dtrace_buffer_activate(dtrace_state_t *state)
 
 	dtrace_interrupt_enable(cookie);
 }
+
+#ifdef VBOX
+static DECLCALLBACK(void) dtrace_buffer_activate_wrapper(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    dtrace_buffer_activate((dtrace_state_t *)pvUser1);
+    NOREF(pvUser2); NOREF(idCpu);
+}
+#endif
 
 static int
 dtrace_buffer_alloc(dtrace_buffer_t *bufs, size_t size, int flags,
@@ -12450,7 +12504,11 @@ static DECLCALLBACK(void) dtrace_state_deadman_timer(PRTTIMER pTimer, void *pvUs
 #endif
 
 VBDTSTATIC dtrace_state_t *
+#ifdef VBOX
+dtrace_state_create(cred_t *cr)
+#else
 dtrace_state_create(dev_t *devp, cred_t *cr)
+#endif
 {
 	minor_t minor;
 	major_t major;
@@ -12462,6 +12520,7 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 	ASSERT(MUTEX_HELD(&cpu_lock));
 
+#ifndef VBOX
 	minor = (minor_t)(uintptr_t)vmem_alloc(dtrace_minor, 1,
 	    VM_BESTFIT | VM_SLEEP);
 
@@ -12471,12 +12530,19 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 	}
 
 	state = ddi_get_soft_state(dtrace_softstate, minor);
+#else
+	state = kmem_alloc(sizeof (*state), KM_SLEEP);
+	if (!state) {
+	    return (NULL);
+	}
+#endif
 	state->dts_epid = DTRACE_EPIDNONE + 1;
 
 	(void) snprintf(c, sizeof (c), "dtrace_aggid_%d", minor);
 	state->dts_aggid_arena = vmem_create(c, (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 
+#ifndef VBOX
 	if (devp != NULL) {
 		major = getemajor(*devp);
 	} else {
@@ -12487,6 +12553,7 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 
 	if (devp != NULL)
 		*devp = state->dts_dev;
+#endif
 
 	/*
 	 * We allocate NCPU buffers.  On the one hand, this can be quite
@@ -13030,8 +13097,12 @@ dtrace_state_go(dtrace_state_t *state, processorid_t *cpu)
 	 * atomically transition from processing none of a state's ECBs to
 	 * processing all of them.
 	 */
+#ifndef VBOX
 	dtrace_xcall(DTRACE_CPUALL,
 	    (dtrace_xcall_t)dtrace_buffer_activate, state);
+#else
+	RTMpOnAll(dtrace_buffer_activate_wrapper, state, NULL);
+#endif
 	goto out;
 
 err:
@@ -13177,7 +13248,9 @@ dtrace_state_destroy(dtrace_state_t *state)
 {
 	dtrace_ecb_t *ecb;
 	dtrace_vstate_t *vstate = &state->dts_vstate;
+#ifndef VBOX
 	minor_t minor = getminor(state->dts_dev);
+#endif
 	int i, bufsize = NCPU * sizeof (dtrace_buffer_t);
 	dtrace_speculation_t *spec = state->dts_speculations;
 	int nspec = state->dts_nspeculations;
@@ -13284,8 +13357,12 @@ dtrace_state_destroy(dtrace_state_t *state)
 	dtrace_format_destroy(state);
 
 	vmem_destroy(state->dts_aggid_arena);
+#ifndef VBOX
 	ddi_soft_state_free(dtrace_softstate, minor);
 	vmem_free(dtrace_minor, (void *)(uintptr_t)minor, 1);
+#else
+	kmem_free(state, sizeof (*state));
+#endif
 }
 
 /*
@@ -13419,6 +13496,7 @@ dtrace_anon_property(void)
 /*
  * DTrace Helper Functions
  */
+#ifndef VBOX /* No helper stuff */
 static void
 dtrace_helper_trace(dtrace_helper_action_t *helper,
     dtrace_mstate_t *mstate, dtrace_vstate_t *vstate, int where)
@@ -14414,8 +14492,6 @@ dtrace_helpers_duplicate(proc_t *from, proc_t *to)
 		dtrace_helper_provider_register(to, newhelp, NULL);
 }
 
-#ifndef VBOX
-
 /*
  * DTrace Hook Functions
  */
@@ -14696,12 +14772,12 @@ dtrace_toxrange_add(uintptr_t base, uintptr_t limit)
 /*
  * DTrace Driver Cookbook Functions
  */
-#ifndef VBOX
+#ifdef VBOX
+int dtrace_attach(ddi_attach_cmd_t cmd)
+#else
 /*ARGSUSED*/
 static int
 dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
-#else
-int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 #endif
 {
 	dtrace_provider_id_t id;
@@ -14712,6 +14788,7 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	mutex_enter(&dtrace_provider_lock);
 	mutex_enter(&dtrace_lock);
 
+#ifndef VBOX
 	if (ddi_soft_state_init(&dtrace_softstate,
 	    sizeof (dtrace_state_t), 0) != 0) {
 		cmn_err(CE_NOTE, "/dev/dtrace failed to initialize soft state");
@@ -14721,7 +14798,6 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 		return (DDI_FAILURE);
 	}
 
-#ifndef VBOX
 	if (ddi_create_minor_node(devi, DTRACEMNR_DTRACE, S_IFCHR,
 	    DTRACEMNRN_DTRACE, DDI_PSEUDO, NULL) == DDI_FAILURE ||
 	    ddi_create_minor_node(devi, DTRACEMNR_HELPER, S_IFCHR,
@@ -14734,12 +14810,10 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 		mutex_exit(&dtrace_lock);
 		return (DDI_FAILURE);
 	}
-#endif
 
 	ddi_report_dev(devi);
 	dtrace_devi = devi;
 
-#ifndef VBOX
 	dtrace_modload = dtrace_module_loaded;
 	dtrace_modunload = dtrace_module_unloaded;
 	dtrace_cpu_init = dtrace_cpu_setup_initial;
@@ -14759,10 +14833,10 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 
 	dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
+#ifndef VBOX
 	dtrace_minor = vmem_create("dtrace_minor", (void *)DTRACEMNRN_CLONE,
 	    UINT32_MAX - DTRACEMNRN_CLONE, 1, NULL, NULL, NULL, 0,
 	    VM_SLEEP | VMC_IDENTIFIER);
-#ifndef VBOX
 	dtrace_taskq = taskq_create("dtrace_taskq", 1, maxclsyspri,
 	    1, INT_MAX, 0);
 #endif
@@ -14877,15 +14951,20 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	return (DDI_SUCCESS);
 }
 
+#ifdef VBOX
+int dtrace_open(dtrace_state_t **ppState, cred_t *cred_p)
+#else
 /*ARGSUSED*/
 static int
 dtrace_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
+#endif
 {
 	dtrace_state_t *state;
 	uint32_t priv;
 	uid_t uid;
 	zoneid_t zoneid;
 
+#ifndef VBOX
 	if (getminor(*devp) == DTRACEMNRN_HELPER)
 		return (0);
 
@@ -14895,6 +14974,7 @@ dtrace_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
 	 */
 	if (getminor(*devp) != DTRACEMNRN_DTRACE)
 		return (ENXIO);
+#endif /* !VBOX */
 
 	/*
 	 * If no DTRACE_PRIV_* bits are set in the credential, then the
@@ -14929,7 +15009,11 @@ dtrace_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
 	}
 #endif
 
+#ifndef VBOX
 	state = dtrace_state_create(devp, cred_p);
+#else
+	state = dtrace_state_create(cred_p);
+#endif
 	mutex_exit(&cpu_lock);
 
 	if (state == NULL) {
@@ -14943,13 +15027,21 @@ dtrace_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
 
 	mutex_exit(&dtrace_lock);
 
+#ifdef VBOX
+	*ppState = state;
+#endif
 	return (0);
 }
 
+#ifdef VBOX
+int dtrace_close(dtrace_state_t *state)
+#else
 /*ARGSUSED*/
 static int
 dtrace_close(dev_t dev, int flag, int otyp, cred_t *cred_p)
+#endif
 {
+#ifndef VBOX
 	minor_t minor = getminor(dev);
 	dtrace_state_t *state;
 
@@ -14957,6 +15049,7 @@ dtrace_close(dev_t dev, int flag, int otyp, cred_t *cred_p)
 		return (0);
 
 	state = ddi_get_soft_state(dtrace_softstate, minor);
+#endif
 
 	mutex_enter(&cpu_lock);
 	mutex_enter(&dtrace_lock);
@@ -15045,24 +15138,26 @@ dtrace_ioctl_helper(int cmd, intptr_t arg, int *rv)
 }
 #endif /* !VBOX */
 
+#ifdef VBOX
+int dtrace_ioctl(dtrace_state_t *state, int cmd, intptr_t arg, int32_t *rv)
+#else
 /*ARGSUSED*/
-#ifndef VBOX
 static int
 dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
-#else
-int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 #endif
 {
+#ifndef VBOX
 	minor_t minor = getminor(dev);
 	dtrace_state_t *state;
+#endif
 	int rval;
 
 #ifndef VBOX
 	if (minor == DTRACEMNRN_HELPER)
 		return (dtrace_ioctl_helper(cmd, arg, rv));
-#endif
 
 	state = ddi_get_soft_state(dtrace_softstate, minor);
+#endif
 
 	if (state->dts_anon) {
 		ASSERT(dtrace_anon.dta_state == NULL);
@@ -15280,6 +15375,9 @@ int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 		dtrace_enabling_t *enab = NULL;
 		dtrace_vstate_t *vstate;
 		int err = 0;
+#ifdef VBOX
+		cred_t *cr = CRED();
+#endif
 
 		*rv = 0;
 
@@ -15371,6 +15469,9 @@ int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 		uint32_t priv;
 		uid_t uid;
 		zoneid_t zoneid;
+#ifdef VBOX
+		cred_t *cr = CRED();
+#endif
 
 		if (copyin((void *)arg, &desc, sizeof (desc)) != 0)
 			return (EFAULT);
@@ -15628,8 +15729,15 @@ int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 		cached = buf->dtb_tomax;
 		ASSERT(!(buf->dtb_flags & DTRACEBUF_NOSWITCH));
 
+#ifndef VBOX
 		dtrace_xcall(desc.dtbd_cpu,
 		    (dtrace_xcall_t)dtrace_buffer_switch, buf);
+#else
+		if ((int32_t)desc.dtbd_cpu == DTRACE_CPUALL)
+		    RTMpOnAll(dtrace_buffer_switch_wrapper, buf, NULL);
+		else
+		    RTMpOnSpecific(desc.dtbd_cpu, dtrace_buffer_switch_wrapper, buf, NULL);
+#endif
 
 		state->dts_errors += buf->dtb_xamot_errors;
 
@@ -15808,12 +15916,12 @@ int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 	return (ENOTTY);
 }
 
-#ifndef VBOX
+#ifdef VBOX
+int dtrace_detach(ddi_detach_cmd_t cmd)
+#else
 /*ARGSUSED*/
 static int
 dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
-#else
-int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 #endif
 {
 	dtrace_state_t *state;
@@ -15902,7 +16010,9 @@ int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 	dtrace_byname = NULL;
 
 	kmem_cache_destroy(dtrace_state_cache);
+#ifndef VBOX
 	vmem_destroy(dtrace_minor);
+#endif
 	vmem_destroy(dtrace_arena);
 
 	if (dtrace_toxrange != NULL) {
@@ -15915,10 +16025,10 @@ int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 
 #ifndef VBOX
 	ddi_remove_minor_node(dtrace_devi, NULL);
-#endif
 	dtrace_devi = NULL;
 
 	ddi_soft_state_fini(&dtrace_softstate);
+#endif
 
 	ASSERT(dtrace_vtime_references == 0);
 	ASSERT(dtrace_opens == 0);
