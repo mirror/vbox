@@ -775,7 +775,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
             RTListNodeRemove(&pThread->AgeEntry);
             pData->pThread = pThread;
 
-            RTSpinlockReleaseNoInts(g_hThreadSpinlock);
+            RTSpinlockRelease(g_hThreadSpinlock);
             return pThread;
         }
 
@@ -827,7 +827,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
 
     pData->pThread = pThread;
 
-    RTSpinlockReleaseNoInts(g_hThreadSpinlock);
+    RTSpinlockRelease(g_hThreadSpinlock);
     return pThread;
 }
 
@@ -844,7 +844,7 @@ static void VBoxDtReleaseThread(struct VBoxDtThread *pThread)
 
     RTListAppend(&g_ThreadAgeList, &pThread->AgeEntry);
 
-    RTSpinlockReleaseNoInts(g_hThreadSpinlock);
+    RTSpinlockRelease(g_hThreadSpinlock);
 }
 
 
@@ -885,7 +885,7 @@ typedef VBOXDTVMEMCHUNK *PVBOXDTVMEMCHUNK;
  */
 typedef struct VBoxDtVMem
 {
-    /** Spinlock protecting the data. */
+    /** Spinlock protecting the data (interrupt safe). */
     RTSPINLOCK          hSpinlock;
     /** Magic value. */
     uint32_t            u32Magic;
@@ -1022,7 +1022,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
                     pThis->cCurFree--;
 
                     uint32_t iRet = (uint32_t)iBit + pChunk->iFirst + pThis->uBase;
-                    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+                    RTSpinlockRelease(pThis->hSpinlock);
                     return (void *)(uintptr_t)iRet;
                 }
             }
@@ -1080,7 +1080,7 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
             RTSpinlockAcquire(pThis->hSpinlock);
         }
     }
-    RTSpinlockReleaseNoInts(pThis->hSpinlock);
+    RTSpinlockRelease(pThis->hSpinlock);
 
     return NULL;
 }
