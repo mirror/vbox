@@ -1831,11 +1831,8 @@ static SUPDRVTRACERREG g_VBoxDTraceReg =
  */
 DECLEXPORT(void) ModuleTerm(void *hMod)
 {
-SUPR0Printf("ModuleTerm: IF=%RTbool#1\n", ASMIntAreEnabled());
     SUPR0TracerDeregisterImpl(hMod, NULL);
-SUPR0Printf("ModuleTerm: IF=%RTbool#2\n", ASMIntAreEnabled());
     dtrace_detach();
-SUPR0Printf("ModuleTerm: IF=%RTbool#3\n", ASMIntAreEnabled());
 }
 
 
@@ -1846,16 +1843,12 @@ SUPR0Printf("ModuleTerm: IF=%RTbool#3\n", ASMIntAreEnabled());
  */
 DECLEXPORT(int)  ModuleInit(void *hMod)
 {
-SUPR0Printf("ModuleInit: IF=%RTbool#1\n", ASMIntAreEnabled());
-
     int rc = dtrace_attach();
     if (rc == DDI_SUCCESS)
     {
-SUPR0Printf("ModuleInit: IF=%RTbool #2\n", ASMIntAreEnabled());
         rc = SUPR0TracerRegisterImpl(hMod, NULL, &g_VBoxDTraceReg, &g_pVBoxDTraceHlp);
         if (RT_SUCCESS(rc))
         {
-SUPR0Printf("ModuleInit: IF=%RTbool #3\n", ASMIntAreEnabled());
             return rc;
         }
 
