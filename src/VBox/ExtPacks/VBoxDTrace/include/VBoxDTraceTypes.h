@@ -188,6 +188,7 @@ uintptr_t VBoxDtGetKernelBase(void);
 
 typedef struct VBoxDtCred
 {
+    int32_t                 cr_refs;
     RTUID                   cr_uid;
     RTUID                   cr_ruid;
     RTUID                   cr_suid;
@@ -218,8 +219,9 @@ typedef struct VBoxDtThread
     uintptr_t               t_dtrace_scrpc;
     uintptr_t               t_dtrace_astpc;
     uint32_t                t_predcache;
+    struct VBoxDtProcess   *t_proc;
 } kthread_t;
-extern kthread_t *VBoxDtGetCurrentThread(void);
+struct VBoxDtThread *VBoxDtGetCurrentThread(void);
 #define curthread               (VBoxDtGetCurrentThread())
 
 
@@ -228,6 +230,7 @@ typedef struct VBoxDtProcess
     uint32_t                p_flag;
     RTPROCESS               p_pid;
     struct dtrace_helpers  *p_dtrace_helpers;
+    struct VBoxDtCred      *p_cred;
 } proc_t;
 proc_t *VBoxDtGetCurrentProc(void);
 #define curproc		            (VBoxDtGetCurrentProc())
@@ -279,7 +282,7 @@ typedef struct VBoxDtCpuCore
 extern cpucore_t                g_aVBoxDtCpuCores[RTCPUSET_MAX_CPUS];
 #define cpu_core                (g_aVBoxDtCpuCores)
 
-cred_t *VBoxDtGetCurrentCreds(void);
+struct VBoxDtCred *VBoxDtGetCurrentCreds(void);
 #define CRED()                  VBoxDtGetCurrentCreds()
 
 proc_t *VBoxDtThreadToProc(kthread_t *);
@@ -384,6 +387,12 @@ typedef enum { DDI_DETACH, DDI_SUSPEND }  ddi_detach_cmd_t;
 #define ddi_report_dev              VBoxDtDdiReportDev
 major_t VBoxDtDdiDriverMajor(struct VBoxDtDevInfo *pDevInfo);
 void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
+
+/*
+ * DTrace bits we've made external.
+ */
+extern int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd);
+extern int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv);
 
 #endif /* IN_RING0 */
 

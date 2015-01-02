@@ -53,6 +53,24 @@ cpucore_t               g_aVBoxDtCpuCores[RTCPUSET_MAX_CPUS];
 /** Dummy mutex. */
 struct VBoxDtMutex      g_DummyMtx;
 
+void           (*dtrace_cpu_init)(processorid_t);
+void           (*dtrace_modload)(struct modctl *);
+void           (*dtrace_modunload)(struct modctl *);
+void           (*dtrace_helpers_cleanup)(void);
+void           (*dtrace_helpers_fork)(proc_t *, proc_t *);
+void           (*dtrace_cpustart_init)(void);
+void           (*dtrace_cpustart_fini)(void);
+void           (*dtrace_cpc_fire)(uint64_t);
+void           (*dtrace_debugger_init)(void);
+void           (*dtrace_debugger_fini)(void);
+dtrace_cacheid_t dtrace_predcache_id = DTRACE_CACHEIDNONE + 1;
+
+
+void dtrace_toxic_ranges(void (*pfnAddOne)(uintptr_t uBase, uintptr_t cbRange))
+{
+    /** @todo ? */
+}
+
 
 
 /**
@@ -155,6 +173,22 @@ uint64_t dtrace_fuword64(void *pvUserAddr)
         u64 = 0;
     }
     return u64;
+}
+
+
+/** copyin implementation */
+int  VBoxDtCopyIn(void const *pvUser, void *pvDst, size_t cb)
+{
+    int rc = RTR0MemUserCopyFrom(pvDst, (uintptr_t)pvUser, cb);
+    return RT_SUCCESS(rc) ? 0 : -1;
+}
+
+
+/** copyout implementation */
+int  VBoxDtCopyOut(void const *pvSrc, void *pvUser, size_t cb)
+{
+    int rc = RTR0MemUserCopyTo((uintptr_t)pvUser, pvSrc, cb);
+    return RT_SUCCESS(rc) ? 0 : -1;
 }
 
 
@@ -450,19 +484,82 @@ void VBoxDtCmnErr(int iLevel, const char *pszFormat, ...)
     va_end(va);
 }
 
-#if 0
-dtrace_probe_error
 
-VBoxDtGetCurrentCreds
+/** uprintf implementation */
+void VBoxDtUPrintf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    VBoxDtUPrintfV(pszFormat, va);
+    va_end(va);
+}
+
+
+/** vuprintf implementation */
+void VBoxDtUPrintfV(const char *pszFormat, va_list va)
+{
+    SUPR0Printf("%N", pszFormat, va);
+}
+
+
+/* CRED implementation. */
+cred_t *VBoxDtGetCurrentCreds(void)
+{
+    struct VBoxDtThread *pThread = VBoxDtGetCurrentThread();
+    if (!pThread)
+        return NULL;
+    return pThread->t_proc->p_cred;
+}
+
+
+/* crhold implementation */
+void VBoxDtCredHold(struct VBoxDtCred *pCred)
+{
+    int32_t cRefs = ASMAtomicIncS32(&pCred->cr_refs);
+    Assert(cRefs > 1);
+}
+
+
+/* crfree implementation */
+void VBoxDtCredFree(struct VBoxDtCred *pCred)
+{
+    int32_t cRefs = ASMAtomicDecS32(&pCred->cr_refs);
+    Assert(cRefs >= 0);
+    if (!cRefs)
+        RTMemFree(pCred);
+}
+
+
+#if 0
+VBoxDtDdiDriverMajor
+VBoxDtDdiReportDev
+VBoxDtDdiSoftStateAllocZ
+VBoxDtDdiSoftStateFree
+VBoxDtDdiSoftStateGet
+VBoxDtDdiSoftStateInit
+VBoxDtDdiSoftStateTerm
+
 VBoxDtGetCurrentProc
 VBoxDtGetCurrentThread
 VBoxDtGetKernelBase
+
 VBoxDtKMemAlloc
 VBoxDtKMemAllocZ
+VBoxDtKMemCacheAlloc
+VBoxDtKMemCacheCreate
+VBoxDtKMemCacheDestroy
+VBoxDtKMemCacheFree
 VBoxDtKMemFree
 VBoxDtMutexEnter
 VBoxDtMutexExit
 VBoxDtMutexIsOwner
 VBoxDtVMemAlloc
+VBoxDtVMemCreate
+VBoxDtVMemDestroy
 VBoxDtVMemFree
+
+
+dtrace_xcall
+nocrt_strncpy
+RTErrConvertToErrno
 #endif
