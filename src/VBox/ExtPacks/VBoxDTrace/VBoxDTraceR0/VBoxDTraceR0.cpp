@@ -1351,10 +1351,10 @@ static void vboxDtVtgConvAttr(dtrace_attribute_t *pDtAttr, PCVTGDESCATTR pVtgAtt
  * @param   pVtgHdr             The VTG object header.
  * @param   offStrTab           The string table offset.
  */
-static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
+static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr, uint32_t offStrTab)
 {
     Assert(offStrTab < pVtgHdr->cbStrTab);
-    return &pVtgHdr->pachStrTab[offStrTab];
+    return (const char *)pVtgHdr + pVtgHdr->offStrTab + offStrTab;
 }
 
 
@@ -1380,19 +1380,19 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
 
     if (pProv->TracerData.DTrace.fZombie)
         return;
-        
+
     dtrace_provider_id_t const idProvider   = pProv->TracerData.DTrace.idProvider;
     AssertPtrReturnVoid(idProvider);
 
     AssertPtrReturnVoid(pProv->pHdr);
-    PVTGPROBELOC pProbeLoc    = pProv->pHdr->paProbLocs;
-    PVTGPROBELOC pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
-    if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
-        return;
+    AssertReturnVoid(pProv->pHdr->offProbeLocs != 0);
+    uint32_t const  cProbeLocs    = pProv->pHdr->cbProbeLocs / sizeof(VTGPROBELOC);
+    uint32_t const  cbProbeLocRW  = pProv->pHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64);
+
 
     /* Need a buffer for extracting the function names and mangling them in
        case of collision. */
-    size_t const            cbFnNmBuf    = _4K + _1K;
+    size_t const cbFnNmBuf = _4K + _1K;
     char *pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
     if (!pszFnNmBuf)
          return;
@@ -1401,77 +1401,85 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
      * Itereate the probe location list and register all probes related to
      * this provider.
      */
-    uint16_t idxProv = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
-    while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
+    uint16_t const idxProv = (uint16_t)((PVTGDESCPROVIDER)((uintptr_t)pProv->pHdr + pProv->pHdr->offProviders) - pProv->pDesc);
+    for (uint32_t idxProbeLoc = 0; idxProbeLoc < cProbeLocs; idxProbeLoc++)
     {
-         PVTGDESCPROBE pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-         if (   pProbeDesc->idxProvider == idxProv
-             && pProbeLoc->idProbe      == UINT32_MAX)
+        /* Skip probe location belonging to other providers or once that
+           we've already reported. */
+        PCVTGPROBELOC pProbeLocRO = &pProv->paProbeLocsRO[idxProbeLoc];
+        PVTGDESCPROBE pProbeDesc  = (PVTGDESCPROBE)pProbeLocRO->pbProbe;
+        if (pProbeDesc->idxProvider == idxProv)
+            continue;
+
+        uint32_t *pidProbe;
+        if (!pProv->fUmod)
+            pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
+        else
+            pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
+        if (*pidProbe == UINT32_MAX)
+            continue;
+
+         /* The function name may need to be stripped since we're using C++
+            compilers for most of the code.  ASSUMES nobody are brave/stupid
+            enough to use function pointer returns without typedef'ing
+            properly them (e.g. signal). */
+         const char *pszPrbName = vboxDtVtgGetString(pProv->pHdr, pProbeDesc->offName);
+         const char *pszFunc    = pProbeLocRO->pszFunction;
+         const char *psz        = strchr(pProbeLocRO->pszFunction, '(');
+         size_t      cch;
+         if (psz)
          {
-             /* The function name normally needs to be stripped since we're
-                using C++ compilers for most of the code.  ASSUMES nobody are
-                brave/stupid enough to use function pointer returns without
-                typedef'ing properly them. */
-             const char *pszPrbName = vboxDtVtgGetString(pProv->pHdr, pProbeDesc->offName);
-             const char *pszFunc    = pProbeLoc->pszFunction;
-             const char *psz        = strchr(pProbeLoc->pszFunction, '(');
-             size_t      cch;
-             if (psz)
+             /* skip blanks preceeding the parameter parenthesis. */
+             while (   (uintptr_t)psz > (uintptr_t)pProbeLocRO->pszFunction
+                    && RT_C_IS_BLANK(psz[-1]))
+                 psz--;
+
+             /* Find the start of the function name. */
+             pszFunc = psz - 1;
+             while ((uintptr_t)pszFunc > (uintptr_t)pProbeLocRO->pszFunction)
              {
-                 /* skip blanks preceeding the parameter parenthesis. */
-                 while (   (uintptr_t)psz > (uintptr_t)pProbeLoc->pszFunction
-                        && RT_C_IS_BLANK(psz[-1]))
-                     psz--;
-
-                 /* Find the start of the function name. */
-                 pszFunc = psz - 1;
-                 while ((uintptr_t)pszFunc > (uintptr_t)pProbeLoc->pszFunction)
-                 {
-                     char ch = pszFunc[-1];
-                     if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != ':')
-                         break;
-                     pszFunc--;
-                 }
-                 cch = psz - pszFunc;
+                 char ch = pszFunc[-1];
+                 if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != ':')
+                     break;
+                 pszFunc--;
              }
-             else
-                 cch = strlen(pszFunc);
-             RTStrCopyEx(pszFnNmBuf, cbFnNmBuf, pszFunc, cch);
+             cch = psz - pszFunc;
+         }
+         else
+             cch = strlen(pszFunc);
+         RTStrCopyEx(pszFnNmBuf, cbFnNmBuf, pszFunc, cch);
 
-             /* Look up the probe, if we have one in the same function, mangle
-                the function name a little to avoid having to deal with having
-                multiple location entries with the same probe ID. (lazy bird) */
-             Assert(pProbeLoc->idProbe == UINT32_MAX);
+         /* Look up the probe, if we have one in the same function, mangle
+            the function name a little to avoid having to deal with having
+            multiple location entries with the same probe ID. (lazy bird) */
+         Assert(*pidProbe == UINT32_MAX);
+         if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+         {
+             RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u", pProbeLocRO->uLine);
              if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
              {
-                 RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u",  pProbeLoc->uLine);
-                 if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+                 unsigned iOrd = 2;
+                 while (iOrd < 128)
                  {
-                     unsigned iOrd = 2;
-                     while (iOrd < 128)
-                     {
-                         RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u-%u",  pProbeLoc->uLine, iOrd);
-                         if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) == DTRACE_IDNONE)
-                             break;
-                         iOrd++;
-                     }
-                     if (iOrd >= 128)
-                     {
-                         LogRel(("VBoxDrv: More than 128 duplicate probe location instances %s at line %u in function %s [%s], probe %s\n",
-                                 pProbeLoc->uLine, pProbeLoc->pszFunction, pszFnNmBuf, pszPrbName));
-                         continue;
-                     }
+                     RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u-%u", pProbeLocRO->uLine, iOrd);
+                     if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) == DTRACE_IDNONE)
+                         break;
+                     iOrd++;
+                 }
+                 if (iOrd >= 128)
+                 {
+                     LogRel(("VBoxDrv: More than 128 duplicate probe location instances %s at line %u in function %s [%s], probe %s\n",
+                             pProbeLocRO->uLine, pProbeLocRO->pszFunction, pszFnNmBuf, pszPrbName));
+                     continue;
                  }
              }
-
-             /* Create the probe. */
-             AssertCompile(sizeof(pProbeLoc->idProbe) == sizeof(dtrace_id_t));
-             pProbeLoc->idProbe = dtrace_probe_create(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName,
-                                                      1 /*aframes*/, pProbeLoc);
-             pProv->TracerData.DTrace.cProvidedProbes++;
          }
 
-         pProbeLoc++;
+         /* Create the probe. */
+         AssertCompile(sizeof(*pidProbe) == sizeof(dtrace_id_t));
+         *pidProbe = dtrace_probe_create(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName,
+                                         1 /*aframes*/, (void *)(uintptr_t)idxProbeLoc);
+         pProv->TracerData.DTrace.cProvidedProbes++;
      }
 
      RTMemFree(pszFnNmBuf);
@@ -1483,17 +1491,35 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
  */
 static int      vboxDtPOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-    PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
+    PSUPDRVVDTPROVIDERCORE  pProv   = (PSUPDRVVDTPROVIDERCORE)pvProv;
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PVTGPROBELOC32  pProbeLocEn = (PVTGPROBELOC32)(  (uintptr_t)pProv->pvProbeLocsEn + idxProbeLoc * pProv->cbProbeLocsEn);
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE  pProbeDesc  = (PVTGDESCPROBE)pProbeLocRO->pbProbe;
+        uint32_t const  idxProbe    = pProbeDesc->idxEnabled;
 
-        if (!pProbeLoc->fEnabled)
+        if (!pProv->fUmod)
         {
-            pProbeLoc->fEnabled = 1;
-            if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+            if (!pProbeLocEn->fEnabled)
+            {
+                pProbeLocEn->fEnabled = 1;
+                ASMAtomicIncU32(&pProv->pacProbeEnabled[idxProbe]);
+            }
+        }
+        else
+        {
+            /* Update kernel mode structure */
+            if (!pProv->paR0ProbeLocs[idxProbeLoc].fEnabled)
+            {
+                pProv->paR0ProbeLocs[idxProbeLoc].fEnabled = 1;
+                ASMAtomicIncU32(&pProv->paR0Probes[idxProbe].cEnabled);
+            }
+
+            /* Update user mode structure. */
+            pProbeLocEn->fEnabled = 1;
+            pProv->pacProbeEnabled[idxProbe] = pProv->paR0Probes[idxProbe].cEnabled;
         }
     }
 
@@ -1509,14 +1535,32 @@ static void     vboxDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvPr
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PVTGPROBELOC32  pProbeLocEn = (PVTGPROBELOC32)(  (uintptr_t)pProv->pvProbeLocsEn + idxProbeLoc * pProv->cbProbeLocsEn);
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE  pProbeDesc  = (PVTGDESCPROBE)pProbeLocRO->pbProbe;
+        uint32_t const  idxProbe    = pProbeDesc->idxEnabled;
 
-        if (pProbeLoc->fEnabled)
+        if (!pProv->fUmod)
         {
-            pProbeLoc->fEnabled = 0;
-            if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 0;
+            if (pProbeLocEn->fEnabled)
+            {
+                pProbeLocEn->fEnabled = 0;
+                ASMAtomicDecU32(&pProv->pacProbeEnabled[idxProbe]);
+            }
+        }
+        else
+        {
+            /* Update kernel mode structure */
+            if (pProv->paR0ProbeLocs[idxProbeLoc].fEnabled)
+            {
+                pProv->paR0ProbeLocs[idxProbeLoc].fEnabled = 0;
+                ASMAtomicDecU32(&pProv->paR0Probes[idxProbe].cEnabled);
+            }
+
+            /* Update user mode structure. */
+            pProbeLocEn->fEnabled = 0;
+            pProv->pacProbeEnabled[idxProbe] = pProv->paR0Probes[idxProbe].cEnabled;
         }
     }
 }
@@ -1534,11 +1578,14 @@ static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *p
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-        PVTGDESCARGLIST pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
-
+        uint32_t         idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PCVTGPROBELOC    pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        PCVTGDESCPROBE   pProbeDesc  = (PVTGDESCPROBE)pProbeLocRO->pbProbe;
+        PCVTGDESCARGLIST pArgList    = (PCVTGDESCARGLIST)(  (uintptr_t)pProv->pHdr
+                                                          + pProv->pHdr->offArgLists
+                                                          + pProbeDesc->offArgList);
         AssertReturnVoid(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
+
         if (uArg < pArgList->cArgs)
         {
             const char *pszType = vboxDtVtgGetString(pProv->pHdr, pArgList->aArgs[uArg].offType);
@@ -1585,6 +1632,7 @@ static uint64_t vboxDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pv
             AssertFailed();
     }
 
+    NOREF(pvProbe);
     return UINT64_MAX;
 }
 
@@ -1597,10 +1645,22 @@ static void    vboxDtPOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvPro
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     if (!pProv->TracerData.DTrace.fZombie)
     {
-        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-        Assert(!pProbeLoc->fEnabled);
-        Assert(pProbeLoc->idProbe == idProbe); NOREF(idProbe);
-        pProbeLoc->idProbe = UINT32_MAX;
+        uint32_t        idxProbeLoc = (uint32_t)(uintptr_t)pvProbe;
+        PCVTGPROBELOC   pProbeLocRO = (PVTGPROBELOC)&pProv->paProbeLocsRO[idxProbeLoc];
+        uint32_t       *pidProbe;
+        if (!pProv->fUmod)
+        {
+            pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
+            Assert(!pProbeLocRO->fEnabled);
+            Assert(*pidProbe == idProbe);
+        }
+        else
+        {
+            pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
+            Assert(!pProv->paR0ProbeLocs[idxProbeLoc].fEnabled);
+            Assert(*pidProbe == idProbe); NOREF(idProbe);
+        }
+        *pidProbe = UINT32_MAX;
     }
     pProv->TracerData.DTrace.cProvidedProbes--;
 }
