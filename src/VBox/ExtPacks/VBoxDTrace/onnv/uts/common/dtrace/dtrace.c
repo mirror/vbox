@@ -109,7 +109,7 @@
 # include <iprt/asm.h>
 # include <iprt/asm-amd64-x86.h>
 # define dtrace_casptr(a_ppvDst, a_pvOld, a_pvNew) \
-	VBoxDtCompareAndSwapPtr(a_ppvDst, a_pvOld, a_pvNew)
+	VBoxDtCompareAndSwapPtr((void * volatile *)a_ppvDst, a_pvOld, a_pvNew)
 DECLINLINE(void *) VBoxDtCompareAndSwapPtr(void * volatile *ppvDst, void *pvOld, void *pvNew)
 {
 	void *pvRet;
@@ -9793,7 +9793,7 @@ dtrace_ecb_action_add(dtrace_ecb_t *ecb, dtrace_actdesc_t *desc)
 	uint16_t format = 0;
 	dtrace_recdesc_t *rec;
 	dtrace_state_t *state = ecb->dte_state;
-	dtrace_optval_t *opt = state->dts_options, nframes, strsize;
+	dtrace_optval_t *opt = state->dts_options, nframes VBDTUNASS(0), strsize;
 	uint64_t arg = desc->dtad_arg;
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
