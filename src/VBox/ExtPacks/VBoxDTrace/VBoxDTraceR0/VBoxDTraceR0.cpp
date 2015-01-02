@@ -1015,7 +1015,6 @@ void *VBoxDtVMemAlloc(struct VBoxDtVMem *pThis, size_t cbMem, uint32_t fFlags)
 
                     uint32_t iRet = (uint32_t)iBit + pChunk->iFirst + pThis->uBase;
                     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-SUPR0Printf("returning iRet=%u\n", iRet);
                     return (void *)(uintptr_t)iRet;
                 }
             }
@@ -1041,7 +1040,6 @@ SUPR0Printf("returning iRet=%u\n", iRet);
         if (!pChunk)
             return NULL;
 
-SUPR0Printf("Adding chunk %p at bit %u, covering %u bits\n", pChunk, iFirstBit, cFreeBits);
         pChunk->iFirst   = iFirstBit;
         pChunk->cCurFree = cFreeBits;
         if (cFreeBits != VBOXDTVMEMCHUNK_BITS)
@@ -1076,7 +1074,6 @@ SUPR0Printf("Adding chunk %p at bit %u, covering %u bits\n", pChunk, iFirstBit, 
     }
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
-SUPR0Printf("returning NULL!\n");
     return NULL;
 }
 
@@ -1839,7 +1836,11 @@ static SUPDRVTRACERREG g_VBoxDTraceReg =
  */
 DECLEXPORT(void) ModuleTerm(void *hMod)
 {
-
+SUPR0Printf("ModuleTerm: IF=%RTbool#1\n", ASMIntAreEnabled());
+    SUPR0TracerDeregisterImpl(hMod, NULL);
+SUPR0Printf("ModuleTerm: IF=%RTbool#2\n", ASMIntAreEnabled());
+    dtrace_detach();
+SUPR0Printf("ModuleTerm: IF=%RTbool#3\n", ASMIntAreEnabled());
 }
 
 
@@ -1850,12 +1851,16 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  */
 DECLEXPORT(int)  ModuleInit(void *hMod)
 {
+SUPR0Printf("ModuleInit: IF=%RTbool#1\n", ASMIntAreEnabled());
+
     int rc = dtrace_attach();
     if (rc == DDI_SUCCESS)
     {
+SUPR0Printf("ModuleInit: IF=%RTbool #2\n", ASMIntAreEnabled());
         rc = SUPR0TracerRegisterImpl(hMod, NULL, &g_VBoxDTraceReg, &g_pVBoxDTraceHlp);
         if (RT_SUCCESS(rc))
         {
+SUPR0Printf("ModuleInit: IF=%RTbool #3\n", ASMIntAreEnabled());
             return rc;
         }
 
