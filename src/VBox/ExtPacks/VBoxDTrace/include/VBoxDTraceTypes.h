@@ -150,9 +150,9 @@ proc_t *VBoxDtThreadToProc(kthread_t *);
 
 #define ASSERT(a_Expr)          Assert(a_Expr)
 #define panic                   VBoxDtPanic
-void VBoxDtPanic(const char *psz, ...);
+void VBoxDtPanic(const char *pszFormat, ...);
 #define cmn_err                 VBoxDtCmnErr
-void VBoxDtCmnErr(int iLevel, const char *pszMsg, ...);
+void VBoxDtCmnErr(int iLevel, const char *pszFormat, ...);
 #define CE_WARN                 10
 #define CE_NOTE                 11
 #define uprintf                 VBoxDtUPrintf

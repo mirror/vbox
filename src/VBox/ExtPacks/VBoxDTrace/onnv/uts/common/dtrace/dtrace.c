@@ -103,6 +103,37 @@
 # include <iprt/timer.h>
 # include <limits.h>
 
+/*
+ * Use asm.h to implemente some of the simple stuff in dtrace_asm.s.
+ */
+# include <iprt/asm.h>
+# include <iprt/asm-amd64-x86.h>
+# define dtrace_casptr(a_ppvDst, a_pvOld, a_pvNew) \
+	VBoxDtCompareAndSwapPtr(a_ppvDst, a_pvOld, a_pvNew)
+DECLINLINE(void *) VBoxDtCompareAndSwapPtr(void * volatile *ppvDst, void *pvOld, void *pvNew)
+{
+	void *pvRet;
+	ASMAtomicCmpXchgExPtrVoid(ppvDst, pvNew, pvOld, &pvRet);
+	return pvRet;
+}
+
+# define dtrace_cas32(a_pu32Dst, a_pu32Old, a_pu32New) \
+	VBoxDtCompareAndSwapU32(a_pu32Dst, a_pu32Old, a_pu32New)
+DECLINLINE(uint32_t) VBoxDtCompareAndSwapU32(uint32_t volatile *pu32Dst, uint32_t u32Old, uint32_t u32New)
+{
+	uint32_t u32Ret;
+	ASMAtomicCmpXchgExU32(pu32Dst, u32New, u32Old, &u32Ret);
+	return u32Ret;
+}
+
+#define dtrace_membar_consumer()		ASMReadFence()
+#define dtrace_membar_producer()		ASMWriteFence()
+#define dtrace_interrupt_disable()		ASMIntDisableFlags()
+#define dtrace_interrupt_enable(a_EFL)	ASMSetFlags(a_EFL)
+
+/*
+ * NULL must be set to 0 or we'll end up with a billion warnings(=errors).
+ */
 # undef NULL
 # define NULL (0)
 #endif /* VBOX */
@@ -1849,7 +1880,11 @@ dtrace_aggregate_quantize(uint64_t *quanta, uint64_t nval, uint64_t incr)
 		return;
 	}
 
+#ifndef VBOX
 	ASSERT(0);
+#else
+	AssertFatalFailed();
+#endif
 }
 
 static void
@@ -2705,7 +2740,11 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 			if (mstate->dtms_probe != NULL)
 				return (val);
 
+#ifndef VBOX
 			ASSERT(0);
+#else
+			AssertFatalFailed();
+#endif
 		}
 
 		return (mstate->dtms_arg[ndx]);
@@ -2747,8 +2786,13 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 		return (mstate->dtms_timestamp);
 
 	case DIF_VAR_VTIMESTAMP:
+#ifndef VBOX
 		ASSERT(dtrace_vtime_references != 0);
 		return (curthread->t_dtrace_vtime);
+#else
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_ILLOP;
+		return (0);
+#endif
 
 	case DIF_VAR_WALLTIMESTAMP:
 		if (!(mstate->dtms_present & DTRACE_MSTATE_WALLTIMESTAMP)) {
@@ -5699,6 +5743,13 @@ out:
 	mstate->dtms_scratch_ptr = old;
 }
 
+#ifdef VBOX
+extern void dtrace_probe6(dtrace_id_t, uintptr_t arg0, uintptr_t arg1,
+						  uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5);
+# define dtrace_probe_error(a1, a2, a3, a4, a5, a6) \
+	dtrace_probe6(dtrace_probeid_error, (uintptr_t)a1, a2, a3, a4, a5, a6)
+#endif
+
 /*
  * If you're looking for the epicenter of DTrace, you just found it.  This
  * is the function called by the provider to fire a probe -- from which all
@@ -6218,7 +6269,11 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 			}
 
 			default:
+#ifndef VBOX
 				ASSERT(0);
+#else
+				AssertFatalMsgFailed(("%d\n", act->dta_kind));
+#endif
 			}
 
 			if (dp->dtdo_rtype.dtdt_flags & DIF_TF_BYREF) {
@@ -6282,7 +6337,11 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 				 * Any other size should have been returned by
 				 * reference, not by value.
 				 */
+#ifndef VBOX
 				ASSERT(0);
+#else
+				AssertFatalMsgFailed(("%zu\n", size));
+#endif
 				break;
 			}
 		}
@@ -8684,13 +8743,16 @@ dtrace_difo_cacheable(dtrace_difo_t *dp)
 static void
 dtrace_difo_hold(dtrace_difo_t *dp)
 {
+#ifndef VBOX
 	VBDTTYPE(uint_t,int) i;
+#endif
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 
 	dp->dtdo_refcnt++;
 	ASSERT(dp->dtdo_refcnt != 0);
 
+#ifndef VBOX
 	/*
 	 * We need to check this DIF object for references to the variable
 	 * DIF_VAR_VTIMESTAMP.
@@ -8704,6 +8766,7 @@ dtrace_difo_hold(dtrace_difo_t *dp)
 		if (dtrace_vtime_references++ == 0)
 			dtrace_vtime_enable();
 	}
+#endif
 }
 
 /*
@@ -8923,7 +8986,11 @@ dtrace_difo_init(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 			break;
 
 		default:
+#ifndef VBOX
 			ASSERT(0);
+#else
+			AssertFatalMsgFailed(("%d\n", scope));
+#endif
 		}
 
 		while (VBDTCAST(int64_t)id >= (oldsvars = *np)) {
@@ -9039,9 +9106,10 @@ dtrace_difo_destroy(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 			break;
 
 		default:
+#ifndef VBOX
 			ASSERT(0);
-#ifdef VBOX
-			continue;
+#else
+			AssertFatalMsgFailed(("%d\n", scope));
 #endif
 		}
 
@@ -9079,11 +9147,14 @@ dtrace_difo_destroy(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 static void
 dtrace_difo_release(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 {
+#ifndef VBOX
 	VBDTTYPE(uint_t,int)  i;
+#endif
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 	ASSERT(dp->dtdo_refcnt != 0);
 
+#ifndef VBOX
 	for (i = 0; i < dp->dtdo_varlen; i++) {
 		dtrace_difv_t *v = &dp->dtdo_vartab[i];
 
@@ -9094,6 +9165,7 @@ dtrace_difo_release(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 		if (--dtrace_vtime_references == 0)
 			dtrace_vtime_disable();
 	}
+#endif
 
 	if (--dp->dtdo_refcnt == 0)
 		dtrace_difo_destroy(dp, vstate);

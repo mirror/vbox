@@ -33,7 +33,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += VBoxDTraceR0
 VBoxDTraceR0_TEMPLATE = VBoxR0
-VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0
+VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0 IN_RT_R0
 ifeq ($(VBOX_LDR_FMT),elf)
  VBoxDTraceR0_LDFLAGS = -e ???
 endif
@@ -42,6 +42,7 @@ VBoxDTraceR0_INCS = \
 	$(VBOXDT_PATH_UTS)/common
 VBoxDTraceR0_SOURCES = \
 	VBoxDTraceR0.cpp \
+	VBoxDTraceR0A.asm \
 	$(VBOXDT_PATH_UTS)/common/dtrace/dtrace.c
 VBoxDTraceR0_LIBS = \
 	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
