@@ -84,6 +84,7 @@ typedef char                       *caddr_t;
 # ifndef _IPL32
 #  define _IPL32                    1
 # endif
+# define _LITTLE_ENDIAN             1
 
 #elif defined(RT_ARCH_AMD64)
 # ifndef __x86_64
@@ -95,6 +96,7 @@ typedef char                       *caddr_t;
 # ifndef _LP64
 #  define _LP64                     1
 # endif
+# define _LITTLE_ENDIAN             1
 
 #else
 # error "unsupported arch!"
@@ -399,6 +401,7 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 # define strcasecmp(a_psz1, a_psz2) RTStrICmp(a_psz1, a_psz2)
 # define strncasecmp(a_psz1, a_psz2, a_cch) \
                                     RTStrNICmp(a_psz1, a_psz2, a_cch)
+# undef assert
 # define assert(expr)	            Assert(expr)
 
 /* This isn't necessarily making things easier at first, but allows EF and
@@ -410,6 +413,7 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 # define calloc(a_cbItem, a_cItems) RTMemAllocZ((size_t)(a_cbItem) * (a_cItems))
 # define free(a_pvMem)              RTMemFree(a_pvMem)
 # define strdup(a_psz)              RTStrDup(a_psz)
+# define strndup(a_psz, a_cchMax)   RTStrDupN(a_psz, a_cchMax)
 # define strlcpy(a_pszDst, a_pszSrc, a_cbDst) ((void)RTStrCopy(a_pszDst, a_cbDst, a_pszSrc))
 
 

@@ -55,6 +55,7 @@ VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_strtab.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
+	\
 
 VBoxDTrace_VBOX_TODO = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cc.c \
@@ -63,7 +64,6 @@ VBoxDTrace_VBOX_TODO = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_decl.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dis.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dof.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_handle.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_ident.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_inttab.c \
@@ -77,7 +77,36 @@ VBoxDTrace_VBOX_TODO = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pragma.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_provider.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
+	\
+	generated: $(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.c \
+
+if 1
+ USES                += yacc
+ VBoxDTrace_USES     += yacc
+ VBoxDTrace_YACCTOOL  = BISON
+ VBoxDTrace_YACCFLAGS = -d
+ VBoxDTrace_SOURCES  += \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_grammar.y
+ VBoxDTrace_INCS     += $(VBoxDTrace_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common
+else
+ # fixme later
+endif
+
+if 1
+ USES                 = lex
+ VBoxDTrace_USES      = lex
+ VBoxDTrace_LEXTOOL   = FLEX
+ VBoxDTrace_LEXFLAGS  = -l
+ VBoxDTrace_DEFS      = USING_FLEX
+ VBoxDTrace_SOURCES  += \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
+else
+ VBoxDTrace_SOURCES  += \
+	generated/dt_lex.c
+ VBoxDTrace_INCS.win  += \
+	generated/hdrhacks
+endif
 
 VBoxDTrace_LIBS = \
 	$(LIB_RUNTIME)

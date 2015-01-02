@@ -24,28 +24,56 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#else  /* VBOX */
+# include <iprt/ctype.h>
+# define isdigit(a_ch) RT_C_IS_DIGIT(a_ch)
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_grammar.h>
 #include <dt_parser.h>
 #include <dt_string.h>
 
+#ifndef USING_FLEX
 /*
  * We need to undefine lex's input and unput macros so that references to these
  * call the functions provided at the end of this source file.
  */
 #undef input
 #undef unput
+#else  /* USING_FLEX */
+# define YY_INPUT(buf, result, max_size) \
+	do { \
+		if (yypcb->pcb_fileptr != NULL) { \
+			result = (int)fread(buf, 1, max_size, yypcb->pcb_fileptr); \
+			if (!result && ferror(yypcb->pcb_fileptr)) \
+				YY_FATAL_ERROR("input in flex scanner failed"); \
+		} else { \
+			size_t off = yypcb->pcb_strptr - yypcb->pcb_string; \
+			if (off < yypcb->pcb_strlen) { \
+				result = max_size; \
+				if ((size_t)result > yypcb->pcb_strlen) \
+					result = (int)yypcb->pcb_strlen; \
+				memcpy(buf, yypcb->pcb_strptr, result); \
+				yypcb->pcb_strptr += result; \
+			} else \
+				result = 0; \
+		} \
+	} while (0)
+#endif /* USING_FLEX */
 
 static int id_or_type(const char *);
+#ifndef USING_FLEX
 static int input(void);
 static void unput(int);
+#endif
 
 /*
  * We first define a set of labeled states for use in the D lexer and then a
@@ -248,22 +276,32 @@ if (yypcb->pcb_token != 0) {
 			 * digit or a +/- sign, process it as an integer token.
 			 */
 			if (isdigit(v[0]) || v[0] == '-' || v[0] == '+') {
+#ifdef VBOX
+				int rc;
+#endif
 				if (isdigit(v[0]))
 					yyintprefix = 0;
 				else
 					yyintprefix = *v++;
 
+#ifndef VBOX
 				errno = 0;
 				yylval.l_int = strtoull(v, &p, 0);
+#else
+				rc = RTStrToUInt64Ex(v, &p, 0, &yylval.l_int);
+#endif
 				(void) strncpy(yyintsuffix, p,
 				    sizeof (yyintsuffix));
 				yyintdecimal = *v != '0';
 
-				if (errno == ERANGE) {
+#ifndef VBOX
+				if (errno == ERANGE)
+#else
+				if (rc == VWRN_NUMBER_TOO_BIG || rc == VWRN_NEGATIVE_UNSIGNED)
+#endif
 					xyerror(D_MACRO_OFLOW, "macro argument"
 					    " %s constant %s results in integer"
 					    " overflow\n", yytext, v);
-				}
 
 				return (DT_TOK_INT);
 			}
@@ -335,16 +373,23 @@ if (yypcb->pcb_token != 0) {
 <S3>{RGX_INT}	{
 			char *p;
 
+#ifndef VBOX
 			errno = 0;
 			yylval.l_int = strtoull(yytext, &p, 0);
+#else
+			int rc = RTStrToUInt64Ex(yytext, &p, 0, &yylval.l_int);
+#endif
 			yyintprefix = 0;
 			(void) strncpy(yyintsuffix, p, sizeof (yyintsuffix));
 			yyintdecimal = yytext[0] != '0';
 
-			if (errno == ERANGE) {
+#ifndef VBOX
+			if (errno == ERANGE)
+#else
+			if (rc == VWRN_NUMBER_TOO_BIG || rc == VWRN_NEGATIVE_UNSIGNED)
+#endif
 				xyerror(D_INT_OFLOW, "constant %s results in "
 				    "integer overflow\n", yytext);
-			}
 
 			if (*p != '\0' && strchr("uUlL", *p) == NULL) {
 				xyerror(D_INT_DIGIT, "constant %s contains "
@@ -696,7 +741,9 @@ yyinit(dt_pcb_t *pcb)
 	yypcb = pcb;
 	yylineno = 1;
 	yypragma = NULL;
+#ifndef USING_FLEX
 	yysptr = yysbuf;
+#endif
 }
 
 /*
@@ -792,6 +839,8 @@ id_or_type(const char *s)
 	return (ttok);
 }
 
+#ifndef USING_FLEX
+
 static int
 input(void)
 {
@@ -833,3 +882,5 @@ unput(int c)
 	*yysptr++ = c;
 	yytchar = c;
 }
+
+#endif /* USING_FLEX */
