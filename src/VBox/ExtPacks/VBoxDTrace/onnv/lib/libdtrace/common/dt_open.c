@@ -52,6 +52,10 @@
 # else
 # include <io.h>
 # endif
+# include <VBox/sup.h>
+# include <VBox/err.h>
+# include <iprt/path.h>
+# include <iprt/stream.h>
 #endif /* VBOX */
 
 #include <dt_impl.h>
@@ -838,6 +842,12 @@ dt_vopen(int version, int flags, int *errp,
 	char s1[64], s2[64];
 #endif
 
+#ifdef VBOX
+	char szModPath[RTPATH_MAX];
+	void *pvImageBase;
+	int rc;
+#endif
+
 	if (version <= 0)
 		return (set_open_errno(dtp, errp, EINVAL));
 
@@ -935,8 +945,58 @@ dt_vopen(int version, int flags, int *errp,
 
 	(void) fcntl(dtfd, F_SETFD, FD_CLOEXEC);
 	(void) fcntl(ftfd, F_SETFD, FD_CLOEXEC);
+
 #else  /* VBOX */
-	/** @todo open ring-0 dtrace module. */
+
+	rc = SUPR3Init(NULL);
+	if (RT_FAILURE(rc)) {
+		switch (rc) {
+		case VERR_VM_DRIVER_LOAD_ERROR:
+		case VERR_VM_DRIVER_OPEN_ERROR:
+			err = EDT_BUSY;
+			break;
+		case VERR_VM_DRIVER_NOT_INSTALLED:
+			err = EDT_NOENT;
+			break;
+		case VERR_VERSION_MISMATCH:
+		case VERR_VM_DRIVER_VERSION_MISMATCH:
+			err = EDT_VERSION;
+			break;
+		case VERR_VM_DRIVER_NOT_ACCESSIBLE:
+		default:
+			err = EDT_ACCESS;
+			break;
+		}
+		RTStrmPrintf(g_pStdErr, "SUPR3Init: -> %Rrc\n", rc);
+		return (set_open_errno(dtp, errp, err));
+	}
+
+	/** @todo this needs to be changed if this becomes and extension pack. */
+	rc = RTPathAppPrivateArch(szModPath, sizeof(szModPath));
+	if (RT_SUCCESS(rc)) {
+		rc = RTPathAppend(szModPath, sizeof(szModPath), "VBoxDTraceR0.r0");
+		if (RT_SUCCESS(rc))
+		{
+			PRTERRINFO pErrInfo = RTErrInfoAlloc(1024);
+			rc = SUPR3LoadModule(szModPath, "VBoxDTraceR0.r0", &pvImageBase, pErrInfo);
+			if (RT_FAILURE(rc)) {
+				RTStrmPrintf(g_pStdErr, "SUPR3LoadModule: %s -> %Rrc; %s\n", szModPath, rc, pErrInfo->pszMsg);
+				RTErrInfoFree(pErrInfo);
+				return (set_open_errno(dtp, errp, EDT_NOTLOADED));
+			}
+			RTErrInfoFree(pErrInfo);
+		}
+	}
+	if (RT_FAILURE(rc)) {
+		RTStrmPrintf(g_pStdErr, "SUPR3LoadModule: path buffer too small (%Rrc)\n", rc);
+		return (set_open_errno(dtp, errp, EDT_BUFTOOSMALL));
+	}
+
+	rc = SUPR3TracerOpen(RT_MAKE_U32_FROM_U8('V', 'B', 'D', 'T'), 0);
+	if (RT_FAILURE(rc)) {
+		RTStrmPrintf(g_pStdErr, "SUPR3TracerOpen: %Rrc\n", rc);
+		return (set_open_errno(dtp, errp, EDT_ACCESS));
+	}
 #endif /* VBOX */
 
 alloc:
