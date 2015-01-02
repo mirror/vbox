@@ -485,6 +485,7 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 	const dtrace_vector_t *v = dtp->dt_vector;
 #ifdef VBOX
 	int rc;
+	int32_t iRetVal = 0;
 #endif
 
 	if (v != NULL)
@@ -495,10 +496,12 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 		return (ioctl(dtp->dt_fd, val, arg));
 #else
 # if 1
-	rc = SUPR3CallR0Service(RT_STR_TUPLE("VBoxDTrace"), val, (uintptr_t)arg, NULL);
-	if (RT_SUCCESS(rc)) {
-
+	rc = SUPR3TracerIoCtl(val, (uintptr_t)arg, &iRetVal);
+	if (RT_FAILURE(rc)) {
+		errno = RTErrConvertFromErrno(rc);
+		return (-1);
 	}
+	return iRetVal;
 # else
 	/* Fake ioctl */
 	switch (val) {
