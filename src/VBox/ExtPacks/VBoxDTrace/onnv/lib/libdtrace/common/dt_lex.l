@@ -411,8 +411,11 @@ if (yypcb->pcb_token != 0) {
 
 <S0>{RGX_FP}	yyerror("floating-point constants are not permitted\n");
 
+ /* VBOX changed:
 <S0>\"{RGX_STR}$ |
 <S3>\"{RGX_STR}$ xyerror(D_STR_NL, "newline encountered in string literal");
+ input: */
+<S0,S3>\"{RGX_STR}$ xyerror(D_STR_NL, "newline encountered in string literal");
 
 <S0>\"{RGX_STR}\" |
 <S3>\"{RGX_STR}\" {
