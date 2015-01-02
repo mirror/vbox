@@ -187,6 +187,90 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
 
 
 /**
+ * Wrapper between the native KIPI_BROADCAST_WORKER and IPRT's PFNRTMPWORKER for
+ * the RTMpOnAll case.
+ *
+ * @param   uUserCtx            The user context argument (PRTMPARGS).
+ */
+static ULONG_PTR __stdcall rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
+    /*ASMAtomicIncU32(&pArgs->cHits); - not needed */
+    pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
+    return 0;
+}
+
+
+/**
+ * Wrapper between the native KIPI_BROADCAST_WORKER and IPRT's PFNRTMPWORKER for
+ * the RTMpOnOthers case.
+ *
+ * @param   uUserCtx            The user context argument (PRTMPARGS).
+ */
+static ULONG_PTR __stdcall rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
+    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    if (pArgs->idCpu != idCpu)
+    {
+        /*ASMAtomicIncU32(&pArgs->cHits); - not needed */
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+    }
+    return 0;
+}
+
+
+/**
+ * Wrapper between the native KIPI_BROADCAST_WORKER and IPRT's PFNRTMPWORKER for
+ * the RTMpOnSpecific case.
+ *
+ * @param   uUserCtx            The user context argument (PRTMPARGS).
+ */
+static ULONG_PTR __stdcall rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
+    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    if (pArgs->idCpu == idCpu)
+    {
+        ASMAtomicIncU32(&pArgs->cHits);
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+    }
+    return 0;
+}
+
+
+/**
+ * Internal worker for the RTMpOn* APIs using KeIpiGenericCall.
+ *
+ * @returns IPRT status code.
+ * @param   pfnWorker       The callback.
+ * @param   pvUser1         User argument 1.
+ * @param   pvUser2         User argument 2.
+ * @param   enmCpuid        What to do / is idCpu valid.
+ * @param   idCpu           Used if enmCpuid RT_NT_CPUID_SPECIFIC, otherwise ignored.
+ */
+static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
+                                     PKIPI_BROADCAST_WORKER pfnNativeWrapper, RTCPUID idCpu)
+{
+    RTMPARGS Args;
+    Args.pfnWorker = pfnWorker;
+    Args.pvUser1   = pvUser1;
+    Args.pvUser2   = pvUser2;
+    Args.idCpu     = idCpu;
+    Args.cRefs     = 0;
+    Args.cHits     = 0;
+
+    AssertPtr(g_pfnrtKeIpiGenericCall);
+    g_pfnrtKeIpiGenericCall(pfnNativeWrapper, (uintptr_t)&Args);
+
+    if (   pfnNativeWrapper != rtmpNtOnSpecificBroadcastIpiWrapper
+        || Args.cHits > 0)
+        return VINF_SUCCESS;
+    return VERR_CPU_OFFLINE;
+}
+
+
+/**
  * Wrapper between the native nt per-cpu callbacks and PFNRTWORKER
  *
  * @param   Dpc                 DPC object
@@ -194,7 +278,7 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
  * @param   SystemArgument1     Argument specified by KeInsertQueueDpc
  * @param   SystemArgument2     Argument specified by KeInsertQueueDpc
  */
-static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+static VOID __stdcall rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)DeferredContext;
     ASMAtomicIncU32(&pArgs->cHits);
@@ -219,7 +303,7 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
  * @param   enmCpuid        What to do / is idCpu valid.
  * @param   idCpu           Used if enmCpuid RT_NT_CPUID_SPECIFIC, otherwise ignored.
  */
-static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT_CPUID enmCpuid, RTCPUID idCpu)
+static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT_CPUID enmCpuid, RTCPUID idCpu)
 {
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
@@ -330,13 +414,17 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
 
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_ALL, 0);
+    if (g_pfnrtKeIpiGenericCall)
+        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnAllBroadcastIpiWrapper, 0);
+    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_ALL, 0);
 }
 
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-    return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, 0);
+    if (g_pfnrtKeIpiGenericCall)
+        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnOthersBroadcastIpiWrapper, 0);
+    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, 0);
 }
 
 
@@ -347,11 +435,13 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
-    return rtMpCall(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
+    if (g_pfnrtKeIpiGenericCall)
+        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper, 0);
+    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
 }
 
-static KDPC aPokeDpcs[MAXIMUM_PROCESSORS] = {0};
-static bool fPokeDPCsInitialized = false;
+
+
 
 static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
@@ -363,34 +453,74 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 
 #ifndef IPRT_TARGET_NT4
 
-ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
+static ULONG_PTR __stdcall rtMpIpiGenericCall(ULONG_PTR Argument)
 {
     NOREF(Argument);
     return 0;
 }
 
 
+int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
+{
+    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
+    return VINF_SUCCESS;
+}
+
+# if 0
 int rtMpSendIpiVista(RTCPUID idCpu)
 {
+    /* If we start care about Vista, we should investigate a non-broadcast API. */
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
 ////    g_pfnrtNtHalRequestIpi(1 << idCpu);
     return VINF_SUCCESS;
 }
+# endif
 
 
-int rtMpSendIpiWin7(RTCPUID idCpu)
+int rtMpPokeCpuUsingHalSendSoftwareInterrupt(RTCPUID idCpu)
 {
-    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
-////    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
+    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
     return VINF_SUCCESS;
 }
 
 #endif /* IPRT_TARGET_NT4 */
 
 
-int rtMpSendIpiDummy(RTCPUID idCpu)
+int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * APC fallback.
+     */
+    static KDPC s_aPokeDpcs[MAXIMUM_PROCESSORS] = {0};
+    static bool s_fPokeDPCsInitialized = false;
+
+    if (!s_fPokeDPCsInitialized)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aPokeDpcs); i++)
+        {
+            KeInitializeDpc(&s_aPokeDpcs[i], rtMpNtPokeCpuDummy, NULL);
+            KeSetImportanceDpc(&s_aPokeDpcs[i], HighImportance);
+            KeSetTargetProcessorDpc(&s_aPokeDpcs[i], (int)i);
+        }
+        s_fPokeDPCsInitialized = true;
+    }
+
+    /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
+     * KeInsertQueueDpc must also be executed at IRQL >= DISPATCH_LEVEL.
+     */
+    KIRQL oldIrql;
+    KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
+
+    KeSetImportanceDpc(&s_aPokeDpcs[idCpu], HighImportance);
+    KeSetTargetProcessorDpc(&s_aPokeDpcs[idCpu], (int)idCpu);
+
+    /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
+     * @note: not true on at least Vista & Windows 7
+     */
+    BOOLEAN bRet = KeInsertQueueDpc(&s_aPokeDpcs[idCpu], 0, 0);
+
+    KeLowerIrql(oldIrql);
+    return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
 }
 
 
@@ -400,39 +530,8 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
-
-    int rc = g_pfnrtSendIpi(idCpu);
-    if (rc == VINF_SUCCESS)
-        return rc;
-
-    /* Fallback. */
-    if (!fPokeDPCsInitialized)
-    {
-        for (unsigned i = 0; i < RT_ELEMENTS(aPokeDpcs); i++)
-        {
-            KeInitializeDpc(&aPokeDpcs[i], rtMpNtPokeCpuDummy, NULL);
-            KeSetImportanceDpc(&aPokeDpcs[i], HighImportance);
-            KeSetTargetProcessorDpc(&aPokeDpcs[i], (int)i);
-        }
-        fPokeDPCsInitialized = true;
-    }
-
-    /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
-     * KeInsertQueueDpc must also be executed at IRQL >= DISPATCH_LEVEL.
-     */
-    KIRQL oldIrql;
-    KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
-
-    KeSetImportanceDpc(&aPokeDpcs[idCpu], HighImportance);
-    KeSetTargetProcessorDpc(&aPokeDpcs[idCpu], (int)idCpu);
-
-    /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
-     * @note: not true on at least Vista & Windows 7
-     */
-    BOOLEAN bRet = KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
-
-    KeLowerIrql(oldIrql);
-    return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
+    /* Calls rtMpSendIpiFallback, rtMpSendIpiWin7AndLater or rtMpSendIpiVista. */
+    return g_pfnrtMpPokeCpuWorker(idCpu);
 }
 
 
