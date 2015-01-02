@@ -25,7 +25,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <ctf_impl.h>
 

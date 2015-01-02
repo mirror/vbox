@@ -25,7 +25,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <ctf_impl.h>
 
@@ -309,7 +311,7 @@ char *
 ctf_type_name(ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
 {
 	ssize_t rv = ctf_type_lname(fp, type, buf, len);
-	return (rv >= 0 && rv < len ? buf : NULL);
+	return (rv >= 0 && VBDTCAST(size_t)rv < len ? buf : NULL);
 }
 
 /*
@@ -405,13 +407,13 @@ ctf_type_align(ctf_file_t *fp, ctf_id_t type)
 			const ctf_member_t *mp = vmp;
 			for (; n != 0; n--, mp++) {
 				ssize_t am = ctf_type_align(fp, mp->ctm_type);
-				align = MAX(align, am);
+				align = MAX(VBDTCAST(ssize_t)align, am);
 			}
 		} else {
 			const ctf_lmember_t *lmp = vmp;
 			for (; n != 0; n--, lmp++) {
 				ssize_t am = ctf_type_align(fp, lmp->ctlm_type);
-				align = MAX(align, am);
+				align = MAX(VBDTCAST(ssize_t)align, am);
 			}
 		}
 

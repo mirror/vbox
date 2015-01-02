@@ -28,18 +28,26 @@
 #ifndef	_CTF_IMPL_H
 #define	_CTF_IMPL_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/sysmacros.h>
+#else  /* VBOX */
+# include "../../../../../Runtime/include/internal/ldrELF32.h"
+# include "../../../../../Runtime/include/internal/ldrELF64.h"
+# include <errno.h>
+#endif /* VBOX */
 #include <sys/ctf_api.h>
 
 #ifdef _KERNEL
 
+#ifndef VBOX
 #include <sys/systm.h>
 #include <sys/cmn_err.h>
 #include <sys/varargs.h>
+#endif
 
 #define	isspace(c) \
 	((c) == ' ' || (c) == '\t' || (c) == '\n' || \
@@ -49,12 +57,14 @@
 
 #else	/* _KERNEL */
 
+#ifndef VBOX
 #include <strings.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <limits.h>
 #include <ctype.h>
+#endif
 
 #endif	/* _KERNEL */
 
@@ -328,6 +338,12 @@ extern const char _CTF_NULLSTR[];	/* empty string */
 
 extern int _libctf_version;		/* library client version */
 extern int _libctf_debug;		/* debugging messages enabled */
+
+#ifdef VBOX
+# ifndef MAP_FAILED /* returned by ctf_data_alloc on failure. */
+#  define MAP_FAILED ((void *)~(uintptr_t)0)
+# endif
+#endif
 
 #ifdef	__cplusplus
 }

@@ -33,11 +33,13 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxDTrace
 VBoxDTrace_TEMPLATE = VBOXR3NPEXE
+VBoxDTrace_SDKS = VBOX_ZLIB
 VBoxDTrace_INCS = \
 	../include \
 	$(VBOXDT_PATH_UTS)/common \
 	$(VBOXDT_PATH_LIBCTF)/common \
-	$(VBOXDT_PATH_LIBDTRACE)/common
+	$(VBOXDT_PATH_LIBDTRACE)/common \
+	$(VBOXDT_PATH_CMN_CTF)
 VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_CMD)/dtrace/dtrace.c \
 	\
@@ -72,6 +74,21 @@ VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
+	\
+	$(VBOXDT_PATH_CMN_CTF)/ctf_create.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_error.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_decl.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_hash.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_labels.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_lookup.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_open.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_types.c \
+	$(VBOXDT_PATH_CMN_CTF)/ctf_util.c \
+	\
+	$(VBOXDT_PATH_LIBCTF)/common/ctf_subr.c \
+	$(VBOXDT_PATH_LIBCTF)/common/ctf_lib.c
+
+VBoxDTrace_VBOX_TODO = \
 
 VBoxDTrace_VBOX_TODO = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c \
