@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
@@ -36,6 +37,9 @@
 #include <alloca.h>
 #include <unistd.h>
 #include <errno.h>
+#else  /* VBOX */
+# include <iprt/asm.h>
+#endif /* VBOX */
 
 #include <dt_provider.h>
 #include <dt_module.h>

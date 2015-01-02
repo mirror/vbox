@@ -23,11 +23,13 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <strings.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <alloca.h>
 #include <assert.h>
+#endif
 
 #include <dt_decl.h>
 #include <dt_parser.h>
@@ -700,7 +702,11 @@ dt_decl_enumerator(char *s, dt_node_t *dnp)
 	char *name;
 	int value;
 
+#ifndef VBOX
 	name = strdupa(s);
+#else
+	MY_STRDUPA(name, s);
+#endif
 	free(s);
 
 	if (dsp == NULL)

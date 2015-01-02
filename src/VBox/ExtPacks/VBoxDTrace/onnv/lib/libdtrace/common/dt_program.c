@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <unistd.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -30,6 +31,9 @@
 #include <assert.h>
 #include <ctype.h>
 #include <alloca.h>
+#else
+# include <ctype.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_program.h>
@@ -454,7 +458,7 @@ dt_header_probe(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 	dt_probe_t *prp = idp->di_data;
 	char *mname, *fname;
 	const char *p;
-	int i;
+	VBDTTYPE(uint_t,int) i;
 
 	p = prp->pr_name;
 	for (i = 0; (p = strchr(p, '-')) != NULL; i++)

@@ -24,10 +24,12 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <strings.h>
 #include <assert.h>
+#endif
 
 #include <dt_xlator.h>
 #include <dt_parser.h>

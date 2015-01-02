@@ -477,7 +477,12 @@ dt_cg_typecast(const dt_node_t *src, const dt_node_t *dst,
 	size_t dstsize = dt_node_type_size(dst);
 
 	dif_instr_t instr;
+#ifndef VBOX
 	int reg, n;
+#else
+	int reg;
+	uint64_t n;
+#endif
 
 	if (dt_node_is_scalar(dst) && (dstsize < srcsize ||
 	    (src->dn_flags & DT_NF_SIGNED) ^ (dst->dn_flags & DT_NF_SIGNED))) {
@@ -521,7 +526,7 @@ dt_cg_arglist(dt_ident_t *idp, dt_node_t *args,
 {
 	const dt_idsig_t *isp = idp->di_data;
 	dt_node_t *dnp;
-	int i = 0;
+	VBDTTYPE(uint_t,int) i = 0;
 
 	for (dnp = args; dnp != NULL; dnp = dnp->dn_list)
 		dt_cg_node(dnp, dlp, drp);
@@ -1217,7 +1222,12 @@ dt_cg_array_op(dt_node_t *dnp, dt_irlist_t *dlp, dt_regset_t *drp)
 	dif_instr_t instr;
 	uint_t op;
 	size_t size;
+#ifndef VBOX
 	int reg, n;
+#else
+	int reg;
+	uint64_t n;
+#endif
 
 	assert(dnp->dn_kind == DT_NODE_VAR);
 	assert(!(idp->di_flags & DT_IDFLG_LOCAL));
@@ -1859,13 +1869,16 @@ dt_cg_node(dt_node_t *dnp, dt_irlist_t *dlp, dt_regset_t *drp)
 		case DT_NODE_SYM: {
 			dtrace_hdl_t *dtp = yypcb->pcb_hdl;
 			dtrace_syminfo_t *sip = dnp->dn_ident->di_data;
+#ifndef VBOX
 			GElf_Sym sym;
 
 			if (dtrace_lookup_by_name(dtp,
 			    sip->dts_object, sip->dts_name, &sym, NULL) == -1) {
+#endif
 				xyerror(D_UNKNOWN, "cg failed for symbol %s`%s:"
 				    " %s\n", sip->dts_object, sip->dts_name,
 				    dtrace_errmsg(dtp, dtrace_errno(dtp)));
+#ifndef VBOX
 			}
 
 			if ((dnp->dn_reg = dt_regset_alloc(drp)) == -1)
@@ -1880,6 +1893,7 @@ dt_cg_node(dt_node_t *dnp, dt_irlist_t *dlp, dt_regset_t *drp)
 				dt_irlist_append(dlp,
 				    dt_cg_node_alloc(DT_LBL_NONE, instr));
 			}
+#endif
 			break;
 		}
 
