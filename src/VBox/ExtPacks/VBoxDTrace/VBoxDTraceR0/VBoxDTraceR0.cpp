@@ -1790,6 +1790,7 @@ static DECLCALLBACK(int) vbdt_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDR
     else
     {
         AssertMsg(rc == EBUSY, ("%d\n", rc));
+        pCore->TracerData.DTrace.fZombie = true;
         rc = VERR_TRY_AGAIN;
     }
 
@@ -1805,6 +1806,7 @@ static DECLCALLBACK(int) vbdt_ProviderDeregisterZombie(PCSUPDRVTRACERREG pThis, 
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
     AssertReturn(idProvider != UINT32_MAX && idProvider != 0, VERR_INTERNAL_ERROR_4);
+    Assert(pCore->TracerData.DTrace.fZombie);
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_Generic);
 
     int rc = dtrace_unregister(idProvider);
