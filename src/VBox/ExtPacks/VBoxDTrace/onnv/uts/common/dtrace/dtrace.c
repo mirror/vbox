@@ -12552,7 +12552,7 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 
 	state = ddi_get_soft_state(dtrace_softstate, minor);
 #else
-	state = kmem_alloc(sizeof (*state), KM_SLEEP);
+	state = kmem_zalloc(sizeof (*state), KM_SLEEP);
 	if (!state) {
 	    return (NULL);
 	}
@@ -15066,6 +15066,8 @@ dtrace_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
 #ifndef VBOX
 		if (--dtrace_opens == 0 && dtrace_anon.dta_enabling == NULL)
 			(void) kdi_dtrace_set(KDI_DTSET_DTRACE_DEACTIVATE);
+#else
+		dtrace_opens--;
 #endif
 		mutex_exit(&dtrace_lock);
 		return (EAGAIN);
@@ -15118,6 +15120,8 @@ dtrace_close(dev_t dev, int flag, int otyp, cred_t *cred_p)
 	 */
 	if (--dtrace_opens == 0 && dtrace_anon.dta_enabling == NULL)
 		(void) kdi_dtrace_set(KDI_DTSET_DTRACE_DEACTIVATE);
+#else
+	dtrace_opens--;
 #endif
 
 	mutex_exit(&dtrace_lock);
