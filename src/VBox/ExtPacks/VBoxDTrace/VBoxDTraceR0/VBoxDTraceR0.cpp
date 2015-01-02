@@ -57,12 +57,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-struct VBoxDtDevInfo
-{
-    /** The major device cdoe. */
-    RTDEV       uMajor;
-};
-
 
 /** Caller indicator. */
 typedef enum VBOXDTCALLER
@@ -136,6 +130,7 @@ typedef VBDTSTACKDATA *PVBDTSTACKDATA;
     pStackData->u32Magic2   = VBDT_STACK_DATA_MAGIC2; \
     pStackData->enmCaller   = a_enmCaller; \
     pStackData->pCred       = NULL; \
+    pStackData->pThread     = NULL; \
     pStackData->pSelf       = pStackData
 
 /** Passifies the stack data and frees up resource held within it. */
@@ -159,12 +154,12 @@ typedef VBDTSTACKDATA *PVBDTSTACKDATA;
 cpucore_t                       g_aVBoxDtCpuCores[RTCPUSET_MAX_CPUS];
 /** Dummy mutex. */
 struct VBoxDtMutex              g_DummyMtx;
-/** Fake dtrace device info. */
-static struct VBoxDtDevInfo     g_DevInfo =
-{
-    /* .uMajor = */ 127
-};
+/** Pointer to the tracer helpers provided by VBoxDrv. */
+static PCSUPDRVTRACERHLP        g_pVBoxDTraceHlp;
 
+dtrace_cacheid_t dtrace_predcache_id = DTRACE_CACHEIDNONE + 1;
+
+#if 0
 void           (*dtrace_cpu_init)(processorid_t);
 void           (*dtrace_modload)(struct modctl *);
 void           (*dtrace_modunload)(struct modctl *);
@@ -175,7 +170,7 @@ void           (*dtrace_cpustart_fini)(void);
 void           (*dtrace_cpc_fire)(uint64_t);
 void           (*dtrace_debugger_init)(void);
 void           (*dtrace_debugger_fini)(void);
-dtrace_cacheid_t dtrace_predcache_id = DTRACE_CACHEIDNONE + 1;
+#endif
 
 
 /**
@@ -1830,4 +1825,44 @@ static SUPDRVTRACERREG g_VBoxDTraceReg =
     vbdt_ProviderDeregisterZombie,
     SUPDRVTRACERREG_MAGIC
 };
+
+
+
+/**
+ * Module termination code.
+ *
+ * @param   hMod            Opque module handle.
+ */
+DECLEXPORT(void) ModuleTerm(void *hMod)
+{
+
+}
+
+
+/**
+ * Module initialization code.
+ *
+ * @param   hMod            Opque module handle.
+ */
+DECLEXPORT(int)  ModuleInit(void *hMod)
+{
+    int rc = dtrace_attach();
+    if (rc == DDI_SUCCESS)
+    {
+        rc = SUPR0TracerRegisterImpl(hMod, NULL, &g_VBoxDTraceReg, &g_pVBoxDTraceHlp);
+        if (RT_SUCCESS(rc))
+        {
+            return rc;
+        }
+
+        dtrace_detach();
+    }
+    else
+    {
+        SUPR0Printf("dtrace_attach -> %d\n", rc);
+        rc = VERR_INTERNAL_ERROR_5;
+    }
+
+    return rc;
+}
 

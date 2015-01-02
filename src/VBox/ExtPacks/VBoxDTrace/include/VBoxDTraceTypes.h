@@ -395,11 +395,9 @@ int   VBoxDtDdiSoftStateTerm(void **ppvSoftStates);
 int   VBoxDtDdiSoftStateAllocZ(void *pvSoftStates, RTDEV uMinor);
 int   VBoxDtDdiSoftStateFree(void *pvSoftStates, RTDEV uMinor);
 void *VBoxDtDdiSoftStateGet(void *pvSoftStates, RTDEV uMinor);
-# endif
 
 typedef enum { DDI_ATT_CMD_DUMMY }  ddi_attach_cmd_t;
 typedef enum { DDI_DETACH, DDI_SUSPEND }  ddi_detach_cmd_t;
-# if 0 /* not needed */
 typedef struct VBoxDtDevInfo        dev_info_t;
 # define ddi_driver_major           VBoxDtDdiDriverMajor
 # define ddi_report_dev             VBoxDtDdiReportDev
@@ -410,8 +408,8 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 /*
  * DTrace bits we've made external.
  */
-extern int dtrace_attach(ddi_attach_cmd_t cmd);
-extern int dtrace_detach(ddi_detach_cmd_t cmd);
+extern int dtrace_attach(void);
+extern int dtrace_detach(void);
 struct dtrace_state;
 extern int dtrace_open(struct dtrace_state **ppState, struct VBoxDtCred *cred_p);
 extern int dtrace_ioctl(struct dtrace_state *state, int cmd, intptr_t arg, int32_t *rv);
