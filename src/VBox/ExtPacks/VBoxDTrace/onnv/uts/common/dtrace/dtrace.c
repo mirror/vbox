@@ -14871,6 +14871,7 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 #endif
 
 	ASSERT(MUTEX_HELD(&cpu_lock));
+SUPR0Printf("dtrace_attach: IF=%RTbool #1\n", ASMIntAreEnabled());
 
 #ifndef VBOX /* Reduce the area a bit just to be sure our vmem fake doesn't blow up. */
 	dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX, 1,
@@ -14879,6 +14880,7 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
         dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX - 16, 1,
             NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
 #endif
+SUPR0Printf("dtrace_attach: IF=%RTbool #2\n", ASMIntAreEnabled());
 #ifndef VBOX
 	dtrace_minor = vmem_create("dtrace_minor", (void *)DTRACEMNRN_CLONE,
 	    UINT32_MAX - DTRACEMNRN_CLONE, 1, NULL, NULL, NULL, 0,
@@ -14892,9 +14894,11 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	    NULL, NULL, NULL, NULL, NULL, 0);
 
 	ASSERT(MUTEX_HELD(&cpu_lock));
+SUPR0Printf("dtrace_attach: IF=%RTbool #3\n", ASMIntAreEnabled());
 	dtrace_bymod = dtrace_hash_create(offsetof(dtrace_probe_t, dtpr_mod),
 	    offsetof(dtrace_probe_t, dtpr_nextmod),
 	    offsetof(dtrace_probe_t, dtpr_prevmod));
+SUPR0Printf("dtrace_attach: IF=%RTbool #4\n", ASMIntAreEnabled());
 
 	dtrace_byfunc = dtrace_hash_create(offsetof(dtrace_probe_t, dtpr_func),
 	    offsetof(dtrace_probe_t, dtpr_nextfunc),
@@ -14922,14 +14926,17 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	 * Once we've registered, we can assert that dtrace_provider is our
 	 * pseudo provider.
 	 */
+SUPR0Printf("dtrace_attach: IF=%RTbool #5\n", ASMIntAreEnabled());
 	(void) dtrace_register("dtrace", &dtrace_provider_attr,
 	    DTRACE_PRIV_NONE, 0, &dtrace_provider_ops, NULL, &id);
+SUPR0Printf("dtrace_attach: IF=%RTbool #6\n", ASMIntAreEnabled());
 
 	ASSERT(dtrace_provider != NULL);
 	ASSERT((dtrace_provider_id_t)dtrace_provider == id);
 
 	dtrace_probeid_begin = dtrace_probe_create((dtrace_provider_id_t)
 	    dtrace_provider, NULL, NULL, "BEGIN", 0, NULL);
+SUPR0Printf("dtrace_attach: IF=%RTbool #7\n", ASMIntAreEnabled());
 	dtrace_probeid_end = dtrace_probe_create((dtrace_provider_id_t)
 	    dtrace_provider, NULL, NULL, "END", 0, NULL);
 	dtrace_probeid_error = dtrace_probe_create((dtrace_provider_id_t)
@@ -14939,6 +14946,7 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	dtrace_anon_property();
 #endif
 	mutex_exit(&cpu_lock);
+SUPR0Printf("dtrace_attach: IF=%RTbool #8\n", ASMIntAreEnabled());
 
 	/*
 	 * If DTrace helper tracing is enabled, we need to allocate the
