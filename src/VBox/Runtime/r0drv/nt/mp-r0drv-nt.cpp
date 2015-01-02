@@ -198,7 +198,14 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
 {
     PRTMPARGS pArgs = (PRTMPARGS)DeferredContext;
     ASMAtomicIncU32(&pArgs->cHits);
+
     pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
+
+    /* Dereference the argument structure. */
+    int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
+    Assert(cRefs >= 0);
+    if (cRefs == 0)
+        ExFreePool(pArgs);
 }
 
 
@@ -245,6 +252,7 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     pArgs->pvUser2   = pvUser2;
     pArgs->idCpu     = NIL_RTCPUID;
     pArgs->cHits     = 0;
+    pArgs->cRefs     = 1;
 
     paExecCpuDpcs = (KDPC *)(pArgs + 1);
 
@@ -275,8 +283,10 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
      * affinity mask and the process despite the warnings in the docs.
      * If someone knows a better way to get this done, please let bird know.
      */
+    ASMCompilerBarrier(); /* paranoia */
     if (enmCpuid == RT_NT_CPUID_SPECIFIC)
     {
+        ASMAtomicIncS32(&pArgs->cRefs);
         BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
         Assert(ret);
     }
@@ -289,6 +299,7 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
             if (    (i != iSelf)
                 &&  (Mask & RT_BIT_64(i)))
             {
+                ASMAtomicIncS32(&pArgs->cRefs);
                 BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[i], 0, 0);
                 Assert(ret);
             }
@@ -302,9 +313,17 @@ static int rtMpCall(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT
     /* Flush all DPCs and wait for completion. (can take long!) */
     /** @todo Consider changing this to an active wait using some atomic inc/dec
      *  stuff (and check for the current cpu above in the specific case). */
+    /** @todo Seems KeFlushQueuedDpcs doesn't wait for the DPCs to be completely
+     *        executed. Seen pArgs being freed while some CPU was using it before
+     *        cRefs was added. */
     g_pfnrtNtKeFlushQueuedDpcs();
 
-    ExFreePool(pArgs);
+    /* Dereference the argument structure. */
+    int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
+    Assert(cRefs >= 0);
+    if (cRefs == 0)
+        ExFreePool(pArgs);
+
     return VINF_SUCCESS;
 }
 
