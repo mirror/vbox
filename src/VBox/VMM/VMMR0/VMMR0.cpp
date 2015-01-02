@@ -902,6 +902,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 ASMSetFlags(uFlags);
 
+                VBOXVMM_R0_VMM_RETURN_TO_RING3_RC(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
 #ifdef VBOX_WITH_STATISTICS
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
                 vmmR0RecordRC(pVM, pVCpu, rc);
@@ -1003,6 +1004,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             if (!fPreemptRestored)
                 RTThreadPreemptRestore(&PreemptState);
 
+            VBOXVMM_R0_VMM_RETURN_TO_RING3_HM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
