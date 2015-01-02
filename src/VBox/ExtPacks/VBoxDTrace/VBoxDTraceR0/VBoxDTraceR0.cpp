@@ -56,9 +56,9 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
-# define HAVE_RTMEMALLOCEX_FEATURES
-#endif
+//#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+//# define HAVE_RTMEMALLOCEX_FEATURES
+//#endif
 
 
 /*******************************************************************************
@@ -1374,12 +1374,12 @@ static const char *vboxDtVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
 {
     PSUPDRVVDTPROVIDERCORE  pProv        = (PSUPDRVVDTPROVIDERCORE)pvProv;
-    PVTGPROBELOC            pProbeLoc    = pProv->pHdr->paProbLocs;
-    PVTGPROBELOC            pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
     dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
     size_t const            cbFnNmBuf    = _4K + _1K;
     char                   *pszFnNmBuf;
     uint16_t                idxProv;
+    PVTGPROBELOC            pProbeLoc;
+    PVTGPROBELOC            pProbeLocEnd;
 
     if (pDtProbeDesc)
         return;  /* We don't generate probes, so never mind these requests. */
@@ -1387,6 +1387,9 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
     if (pProv->TracerData.DTrace.fZombie)
         return;
 
+    AssertPtrReturnVoid(pProv->pHdr);
+    pProbeLoc    = pProv->pHdr->paProbLocs;
+    pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
     if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
         return;
 
