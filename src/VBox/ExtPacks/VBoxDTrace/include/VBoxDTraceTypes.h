@@ -57,8 +57,11 @@ typedef struct VBoxDtCred
     RTGID                   cr_sgid;
     zoneid_t                cr_zone;
 } cred_t;
+#define PRIV_POLICY_ONLY(a_pCred, a_uPriv, a_fAll) (true)
+#define crgetuid(a_pCred)       ((a_pCred)->cr_uid)
+#define crgetzoneid(a_pCred)    ((a_pCred)->cr_zone)
 
-typedef struct VBoxDtVMem       vmem_t;
+
 typedef struct VBoxDtCyclicId  *cyclic_id_t;
 
 typedef struct VBoxDtThread
@@ -77,7 +80,10 @@ extern kthread_t *VBoxDtGetCurrentThread(void);
 typedef struct VBoxDtProcess
 {
     uint32_t                p_flag;
+    struct dtrace_helpers  *p_dtrace_helpers;
 } proc_t;
+proc_t *VBoxDtGetCurrentProc(void);
+#define curproc		            (VBoxDtGetCurrentProc())
 
 #define SNOCD                   RT_BIT(0)
 
@@ -90,6 +96,16 @@ typedef struct VBoxDtMutex
 {
     RTSPINLOCK hSpinlock;
 } kmutex_t;
+#define mutex_enter             VBoxDtMutexEnter
+#define mutex_exit              VBoxDtMutexExit
+#define MUTEX_HELD(a_pMtx)      VBoxDtMutexIsOwner(a_pMtx)
+#define mod_lock                g_DummyMtx
+#define cpu_lock                g_DummyMtx
+void VBoxDtMutexEnter(struct VBoxDtMutex *pMtx);
+void VBoxDtMutexExit(struct VBoxDtMutex *pMtx);
+bool VBoxDtMutexIsOwner(struct VBoxDtMutex *pMtx);
+extern struct VBoxDtMutex       g_DummyMtx;
+
 
 typedef struct VBoxDtCpuCore
 {
@@ -124,6 +140,17 @@ proc_t *VBoxDtThreadToProc(kthread_t *);
 
 
 #define ASSERT(a_Expr)          Assert(a_Expr)
+#define panic                   VBoxDtPanic
+void VBoxDtPanic(const char *psz, ...);
+#define cmn_err                 VBoxDtCmnErr
+void VBoxDtCmnErr(int iLevel, const char *pszMsg, ...);
+#define CE_WARN                 10
+#define CE_NOTE                 11
+#define uprintf                 VBoxDtUPrintf
+#define vuprintf                VBoxDtUPrintfV
+void VBoxDtUPrintf(const char *pszFormat, ...);
+void VBoxDtUPrintfV(const char *pszFormat, va_list va);
+
 
 #if 1 /* */
 
@@ -136,8 +163,13 @@ typedef RTDEV                   dev_t;
 #define MILLISEC                RT_MS_1SEC
 #define NBBY                    8
 #define NCPU                    RTCPUSET_MAX_CPUS
-#define P2ROUNDUP(uWhat, uAlign) ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
+#define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
+#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
+
 #define CPU_ON_INTR(a_pCpu)     (false)
+
+#define KERNELBASE              VBoxDtGetKernelBase()
+uintptr_t VBoxDtGetKernelBase(void);
 
 
 #if defined(RT_ARCH_X86)
@@ -157,6 +189,51 @@ typedef RTDEV                   dev_t;
 /** Mark a cast added when porting the code to VBox.
  * Avoids lots of \#ifdef VBOX otherwise needed to mark up the changes. */
 #define VBDTCAST(a_Type)        (a_Type)
+/** Mark a type change made when porting the code to VBox.
+ * This is usually signed -> unsigned type changes that avoids a whole lot of
+ * comparsion warnings. */
+#define VBDTTYPE(a_VBox, a_Org) a_VBox
+
+/*
+ * Memory allocation wrappers.
+ */
+#define KM_SLEEP                RT_BIT(0)
+#define KM_NOSLEEP              RT_BIT(1)
+#define kmem_alloc              VBoxDtKMemAlloc
+#define kmem_zalloc             VBoxDtKMemAllocZ
+#define kmem_free               VBoxDtKMemFree
+void *VBoxDtKMemAlloc(size_t cbMem, uint32_t fFlags);
+void *VBoxDtKMemAllocZ(size_t cbMem, uint32_t fFlags);
+void  VBoxDtKMemFree(void *pvMem, size_t cbMem);
+
+typedef struct VBoxDtVMem
+{
+    size_t                  cbTodo;
+    void                   *pvTodo;
+} vmem_t;
+#define VM_SLEEP                RT_BIT(0)
+#define VM_BESTFIT              RT_BIT(1)
+#define vmem_alloc              VBoxDtVMemAlloc
+#define vmem_free               VBoxDtVMemFree
+void *VBoxDtVMemAlloc(struct VBoxDtVMem *pVMemArena, size_t cbMem, uint32_t fFlags);
+void  VBoxDtVMemFree(struct VBoxDtVMem *pVMemArena, void *pvMem, size_t cbMem);
+
+
+/*
+ * Errno defines compatible with the CRT of the given host...
+ */
+#define EINVAL                  (22)
+#define EBUSY                   (16)
+#define EFBIG                   (27)
+#define ENOMEM                  (12)
+#define ENOSPC                  (28)
+#define ENOENT                  (2)
+
+/*
+ * string
+ */
+#define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
+#define bzero(a_pDst, a_cb)         RT_BZERO(a_pDst, a_cb)
 
 RT_C_DECLS_END
 #endif

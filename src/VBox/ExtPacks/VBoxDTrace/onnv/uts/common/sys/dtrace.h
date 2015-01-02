@@ -624,8 +624,8 @@ typedef struct dof_hdr {
 typedef uint32_t dof_secidx_t;	/* section header table index type */
 typedef uint32_t dof_stridx_t;	/* string table index type */
 
-#define	DOF_SECIDX_NONE	(-1U)	/* null value for section indices */
-#define	DOF_STRIDX_NONE	(-1U)	/* null value for string indices */
+#define	DOF_SECIDX_NONE	(~1U)	/* null value for section indices */
+#define	DOF_STRIDX_NONE	(~1U)	/* null value for string indices */
 
 typedef struct dof_sec {
 	uint32_t dofs_type;	/* section type (see below) */
