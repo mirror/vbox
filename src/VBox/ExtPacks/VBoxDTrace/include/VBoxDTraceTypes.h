@@ -63,8 +63,8 @@ typedef struct VBoxDtCred
 #define priv_isequalset(a, b)                       (true)
 #define crgetuid(a_pCred)                           ((a_pCred)->cr_uid)
 #define crgetzoneid(a_pCred)                        ((a_pCred)->cr_zone)
-#define crhold(a_pCred)                             VBoxDtCredHold
-#define crfree(a_pCred)                             VBoxDtCredFree
+#define crhold                                      VBoxDtCredHold
+#define crfree                                      VBoxDtCredFree
 void VBoxDtCredHold(struct VBoxDtCred *pCred);
 void VBoxDtCredFree(struct VBoxDtCred *pCred);
 
