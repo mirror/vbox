@@ -490,6 +490,46 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 	if (dtp->dt_fd >= 0)
 		return (ioctl(dtp->dt_fd, val, arg));
 #else
+	/* Fake ioctl */
+	switch (val) {
+		case DTRACEIOC_CONF: {
+			dtrace_conf_t *pConf = (dtrace_conf_t *)arg;
+			RT_ZERO(*pConf);
+			pConf->dtc_difversion = DIF_VERSION;
+			pConf->dtc_difintregs = DIF_DIR_NREGS;
+			pConf->dtc_diftupregs = DIF_DTR_NREGS;
+			pConf->dtc_ctfmodel = CTF_MODEL_NATIVE;
+			return 0;
+		}
+
+		case DTRACEIOC_PROVIDER: {
+			dtrace_providerdesc_t *pDesc = (dtrace_providerdesc_t *)arg;
+			if (strcmp(pDesc->dtvd_name, "dtrace") == 0) {
+				RT_ZERO(pDesc->dtvd_attr);
+				RT_ZERO(pDesc->dtvd_priv);
+				return 0;
+			}
+			errno = ESRCH;
+			return -1;
+		}
+
+		case DTRACEIOC_PROBES: {
+			/*dtrace_probedesc_t *pDesc = (dtrace_probedesc_t *)arg;*/
+			errno = ESRCH;
+			return -1;
+		}
+
+		case DTRACEIOC_PROBEMATCH: {
+			dtrace_probedesc_t *pDesc = (dtrace_probedesc_t *)arg;
+			if (strcmp(pDesc->dtpd_name, "BEGIN") == 0) {
+				pDesc->dtpd_id = 1;
+				return 0;
+			}
+			errno = ESRCH;
+			return -1;
+		}
+
+	}
 	AssertFailed(); /** @todo FIXME */
 #endif
 
