@@ -38,6 +38,7 @@
 # include "../../../../../Runtime/include/internal/ldrELF32.h"
 # include "../../../../../Runtime/include/internal/ldrELF64.h"
 # include <errno.h>
+# include "VBoxDTraceLibCWrappers.h"
 #endif /* VBOX */
 #include <sys/ctf_api.h>
 

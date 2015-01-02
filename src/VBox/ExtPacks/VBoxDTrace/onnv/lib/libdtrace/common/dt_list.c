@@ -40,6 +40,8 @@
 #ifndef VBOX
 #include <unistd.h>
 #include <assert.h>
+#else
+# include "VBoxDTraceLibCWrappers.h"
 #endif
 #include <dt_list.h>
 

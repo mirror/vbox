@@ -393,39 +393,6 @@ extern int dtrace_close(struct dtrace_state *state);
 /*
  * Make life a little easier in ring-3.
  */
-# include <iprt/alloca.h>
-# include <iprt/assert.h>
-# include <iprt/mem.h>
-# include <iprt/string.h>
-# include <iprt/time.h>
-# include <stdlib.h>
-# include <string.h>
-
-# undef gethrtime
-# define gethrtime()                RTTimeNanoTS()
-# undef strcasecmp
-# define strcasecmp(a_psz1, a_psz2) RTStrICmp(a_psz1, a_psz2)
-# undef strncasecmp
-# define strncasecmp(a_psz1, a_psz2, a_cch) RTStrNICmp(a_psz1, a_psz2, a_cch)
-# undef assert
-# define assert(expr)               Assert(expr)
-
-/* This isn't necessarily making things easier at first, but allows EF and
-   such later on when things doesn't work right. */
-# undef malloc
-# define malloc(a_cbMem)            RTMemAlloc(a_cbMem)
-# undef realloc
-# define realloc(a_pvOld, a_cbMem)  RTMemRealloc(a_pvOld, a_cbMem)
-# undef calloc
-# define calloc(a_cbItem, a_cItems) RTMemAllocZ((size_t)(a_cbItem) * (a_cItems))
-# undef free
-# define free(a_pvMem)              RTMemFree(a_pvMem)
-# undef strdup
-# define strdup(a_psz)              RTStrDup(a_psz)
-# undef strndup
-# define strndup(a_psz, a_cchMax)   RTStrDupN(a_psz, a_cchMax)
-# undef strlcpy
-# define strlcpy(a_pszDst, a_pszSrc, a_cbDst) ((void)RTStrCopy(a_pszDst, a_cbDst, a_pszSrc))
 
 /* Replacement for strndup(), requires editing the code unfortunately. */
 # define MY_STRDUPA(a_pszRes, a_pszSrc) \
