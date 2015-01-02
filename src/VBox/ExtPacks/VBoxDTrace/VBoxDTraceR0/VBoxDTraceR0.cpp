@@ -920,7 +920,7 @@ struct VBoxDtVMem *VBoxDtVMemCreate(const char *pszName, void *pvBase, size_t cb
     /*
      * Allocate the instance.
      */
-    uint32_t cChunks = cb / VBOXDTVMEMCHUNK_BITS;
+    uint32_t cChunks = (uint32_t)cb / VBOXDTVMEMCHUNK_BITS;
     if (cb % VBOXDTVMEMCHUNK_BITS)
         cChunks++;
     PVBOXDTVMEM pThis = (PVBOXDTVMEM)RTMemAllocZ(RT_OFFSETOF(VBOXDTVMEM, apChunks[cChunks]));
