@@ -11637,7 +11637,7 @@ dtrace_dof_difo(dof_hdr_t *dof, dof_sec_t *sec, dtrace_vstate_t *vstate,
 			continue;
 
 		if (t->dtdt_kind == DIF_TYPE_STRING && t->dtdt_size == 0)
-			t->dtdt_size = dtrace_strsize_default;
+			t->dtdt_size = VBDTCAST(uint32_t)dtrace_strsize_default;
 	}
 
 	if (dtrace_difo_validate(dp, vstate, DIF_DIR_NREGS, cr) != 0)
@@ -12693,7 +12693,7 @@ dtrace_state_prereserve(dtrace_state_t *state)
 		if (ecb->dte_state != state)
 			continue;
 
-		state->dts_reserve += ecb->dte_needed + ecb->dte_alignment;
+		state->dts_reserve += VBDTCAST(uint32_t)ecb->dte_needed + ecb->dte_alignment;
 	}
 }
 
@@ -14017,7 +14017,7 @@ dtrace_helper_provider_validate(dof_hdr_t *dof, dof_sec_t *sec)
 				    "argument type too long");
 				return (-1);
 			}
-			typeidx += typesz;
+			typeidx += VBDTCAST(dof_stridx_t)typesz;
 			typestr += typesz;
 		}
 
@@ -14043,7 +14043,7 @@ dtrace_helper_provider_validate(dof_hdr_t *dof, dof_sec_t *sec)
 				return (-1);
 			}
 
-			typeidx += typesz;
+			typeidx += VBDTCAST(dof_stridx_t)typesz;
 			typestr += typesz;
 		}
 	}
@@ -15036,7 +15036,7 @@ dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 
 		epdesc.dtepd_probeid = ecb->dte_probe->dtpr_id;
 		epdesc.dtepd_uarg = ecb->dte_uarg;
-		epdesc.dtepd_size = ecb->dte_size;
+		epdesc.dtepd_size = VBDTCAST(uint32_t)ecb->dte_size;
 
 		nrecs = epdesc.dtepd_nrecs;
 		epdesc.dtepd_nrecs = 0;
@@ -15693,7 +15693,7 @@ dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 		str = state->dts_formats[fmt.dtfd_format - 1];
 		ASSERT(str != NULL);
 
-		len = strlen(str) + 1;
+		len = VBDTCAST(int)strlen(str) + 1;
 
 		if (len > fmt.dtfd_length) {
 			fmt.dtfd_length = len;
