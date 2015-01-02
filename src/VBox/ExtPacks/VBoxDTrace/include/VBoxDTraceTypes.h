@@ -413,7 +413,7 @@ extern int dtrace_close(struct dtrace_state *state);
 # undef strcasecmp
 # define strcasecmp(a_psz1, a_psz2) RTStrICmp(a_psz1, a_psz2)
 # undef strncasecmp
-# define strncasecmp(a_psz1, a_psz2, a_cch) \
+# define strncasecmp(a_psz1, a_psz2, a_cch) RTStrNICmp(a_psz1, a_psz2, a_cch)
 # undef assert
 # define assert(expr)	            Assert(expr)
 
