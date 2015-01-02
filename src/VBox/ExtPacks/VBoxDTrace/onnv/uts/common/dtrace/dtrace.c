@@ -62,6 +62,7 @@
  * [Group] Functions", allowing one to find each block by searching forward
  * on capital-f functions.
  */
+#ifndef VBOX
 #include <sys/errno.h>
 #include <sys/stat.h>
 #include <sys/modctl.h>
@@ -90,6 +91,12 @@
 #include <sys/zone.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#else  /* VBOX */
+# include <iprt/types.h>
+# include <sys/dtrace_impl.h>
+# include <iprt/mp.h>
+#endif /* VBOX */
 
 /*
  * DTrace Tunable Variables
@@ -356,7 +363,7 @@ static kmutex_t dtrace_errlock;
 #define	DTRACE_ALIGNCHECK(addr, size, flags)				\
 	if (addr & (size - 1)) {					\
 		*flags |= CPU_DTRACE_BADALIGN;				\
-		cpu_core[CPU->cpu_id].cpuc_dtrace_illval = addr;	\
+		cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval = addr;	\
 		return (0);						\
 	}
 #else
@@ -394,8 +401,9 @@ dtrace_load##bits(uintptr_t addr)					\
 	/*CSTYLED*/							\
 	uint##bits##_t rval;						\
 	int i;								\
+	processorid_t me = VBDT_GET_CPUID();				\
 	volatile uint16_t *flags = (volatile uint16_t *)		\
-	    &cpu_core[CPU->cpu_id].cpuc_dtrace_flags;			\
+	    &cpu_core[me].cpuc_dtrace_flags;				\
 									\
 	DTRACE_ALIGNCHECK(addr, size, flags);				\
 									\
@@ -410,7 +418,7 @@ dtrace_load##bits(uintptr_t addr)					\
 		 * This address falls within a toxic region; return 0.	\
 		 */							\
 		*flags |= CPU_DTRACE_BADADDR;				\
-		cpu_core[CPU->cpu_id].cpuc_dtrace_illval = addr;	\
+		cpu_core[me].cpuc_dtrace_illval = addr;			\
 		return (0);						\
 	}								\
 									\
@@ -680,7 +688,7 @@ static int
 dtrace_canload(uint64_t addr, size_t sz, dtrace_mstate_t *mstate,
     dtrace_vstate_t *vstate)
 {
-	volatile uintptr_t *illval = &cpu_core[CPU->cpu_id].cpuc_dtrace_illval;
+	volatile uintptr_t *illval = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval;
 
 	/*
 	 * If we hold the privilege to read from kernel memory, then
@@ -772,7 +780,7 @@ dtrace_strncmp(char *s1, char *s2, size_t limit)
 	if (s1 == s2 || limit == 0)
 		return (0);
 
-	flags = (volatile uint16_t *)&cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
+	flags = (volatile uint16_t *)&cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 
 	do {
 		if (s1 == NULL) {
@@ -826,13 +834,13 @@ dtrace_istoxic(uintptr_t kaddr, size_t size)
 
 		if (kaddr - taddr < tsize) {
 			DTRACE_CPUFLAG_SET(CPU_DTRACE_BADADDR);
-			cpu_core[CPU->cpu_id].cpuc_dtrace_illval = kaddr;
+			cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval = kaddr;
 			return (1);
 		}
 
 		if (taddr - kaddr < size) {
 			DTRACE_CPUFLAG_SET(CPU_DTRACE_BADADDR);
-			cpu_core[CPU->cpu_id].cpuc_dtrace_illval = taddr;
+			cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval = taddr;
 			return (1);
 		}
 	}
@@ -916,7 +924,7 @@ dtrace_bcmp(const void *s1, const void *s2, size_t len)
 {
 	volatile uint16_t *flags;
 
-	flags = (volatile uint16_t *)&cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
+	flags = (volatile uint16_t *)&cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 
 	if (s1 == s2)
 		return (0);
@@ -1123,7 +1131,7 @@ dtrace_priv_proc_destructive(dtrace_state_t *state)
 	return (1);
 
 bad:
-	cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
+	cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
 
 	return (0);
 }
@@ -1139,7 +1147,7 @@ dtrace_priv_proc_control(dtrace_state_t *state)
 	    dtrace_priv_proc_common_nocd())
 		return (1);
 
-	cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
+	cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
 
 	return (0);
 }
@@ -1150,7 +1158,7 @@ dtrace_priv_proc(dtrace_state_t *state)
 	if (state->dts_cred.dcr_action & DTRACE_CRA_PROC)
 		return (1);
 
-	cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
+	cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_UPRIV;
 
 	return (0);
 }
@@ -1161,7 +1169,7 @@ dtrace_priv_kernel(dtrace_state_t *state)
 	if (state->dts_cred.dcr_action & DTRACE_CRA_KERNEL)
 		return (1);
 
-	cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= CPU_DTRACE_KPRIV;
+	cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_KPRIV;
 
 	return (0);
 }
@@ -1172,7 +1180,7 @@ dtrace_priv_kernel_destructive(dtrace_state_t *state)
 	if (state->dts_cred.dcr_action & DTRACE_CRA_KERNEL_DESTRUCTIVE)
 		return (1);
 
-	cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= CPU_DTRACE_KPRIV;
+	cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= CPU_DTRACE_KPRIV;
 
 	return (0);
 }
@@ -1331,7 +1339,7 @@ dtrace_dynvar(dtrace_dstate_t *dstate, uint_t nkeys,
 	uint64_t hashval = DTRACE_DYNHASH_VALID;
 	dtrace_dynhash_t *hash = dstate->dtds_hash;
 	dtrace_dynvar_t *free, *new_free, *next, *dvar, *start, *prev = NULL;
-	processorid_t me = CPU->cpu_id, cpu = me;
+	processorid_t me = VBDT_GET_CPUID(), cpu = me;
 	dtrace_dstate_percpu_t *dcpu = &dstate->dtds_percpu[me];
 	size_t bucket, ksize;
 	size_t chunksize = dstate->dtds_chunksize;
@@ -2414,7 +2422,7 @@ static void
 dtrace_speculation_clean_here(dtrace_state_t *state)
 {
 	dtrace_icookie_t cookie;
-	processorid_t cpu = CPU->cpu_id;
+	processorid_t cpu = VBDT_GET_CPUID();
 	dtrace_buffer_t *dest = &state->dts_buffer[cpu];
 	dtrace_specid_t i;
 
@@ -2680,7 +2688,7 @@ dtrace_dif_variable(dtrace_mstate_t *mstate, dtrace_state_t *state, uint64_t v,
 
 		if ((lwp = curthread->t_lwp) == NULL) {
 			DTRACE_CPUFLAG_SET(CPU_DTRACE_BADADDR);
-			cpu_core[CPU->cpu_id].cpuc_dtrace_illval = NULL;
+			cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval = NULL;
 			return (0);
 		}
 
@@ -3012,8 +3020,8 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
     dtrace_key_t *tupregs, int nargs,
     dtrace_mstate_t *mstate, dtrace_state_t *state)
 {
-	volatile uint16_t *flags = &cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
-	volatile uintptr_t *illval = &cpu_core[CPU->cpu_id].cpuc_dtrace_illval;
+	volatile uint16_t *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
+	volatile uintptr_t *illval = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval;
 	dtrace_vstate_t *vstate = &state->dts_vstate;
 
 	union {
@@ -4480,8 +4488,8 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 	dtrace_statvar_t *svar;
 	dtrace_dstate_t *dstate = &vstate->dtvs_dynvars;
 	dtrace_difv_t *v;
-	volatile uint16_t *flags = &cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
-	volatile uintptr_t *illval = &cpu_core[CPU->cpu_id].cpuc_dtrace_illval;
+	volatile uint16_t *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
+	volatile uintptr_t *illval = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval;
 
 	dtrace_key_t tupregs[DIF_DTR_NREGS + 2]; /* +2 for thread and id */
 	uint64_t regs[DIF_DIR_NREGS];
@@ -4873,7 +4881,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 				sz += sizeof (uint64_t);
 				ASSERT(svar->dtsv_size == NCPU * sz);
-				a += CPU->cpu_id * sz;
+				a += VBDT_GET_CPUID() * sz;
 
 				if (*(uint8_t *)a == UINT8_MAX) {
 					/*
@@ -4891,7 +4899,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 			ASSERT(svar->dtsv_size == NCPU * sizeof (uint64_t));
 			tmp = (uint64_t *)(uintptr_t)svar->dtsv_data;
-			regs[rd] = tmp[CPU->cpu_id];
+			regs[rd] = tmp[VBDT_GET_CPUID()];
 			break;
 
 		case DIF_OP_STLS:
@@ -4912,7 +4920,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 				sz += sizeof (uint64_t);
 				ASSERT(svar->dtsv_size == NCPU * sz);
-				a += CPU->cpu_id * sz;
+				a += VBDT_GET_CPUID() * sz;
 
 				if (regs[rd] == NULL) {
 					*(uint8_t *)a = UINT8_MAX;
@@ -4934,7 +4942,7 @@ dtrace_dif_emulate(dtrace_difo_t *difo, dtrace_mstate_t *mstate,
 
 			ASSERT(svar->dtsv_size == NCPU * sizeof (uint64_t));
 			tmp = (uint64_t *)(uintptr_t)svar->dtsv_data;
-			tmp[CPU->cpu_id] = regs[rd];
+			tmp[VBDT_GET_CPUID()] = regs[rd];
 			break;
 
 		case DIF_OP_LDTS: {
@@ -5434,7 +5442,7 @@ dtrace_action_ustack(dtrace_mstate_t *mstate, dtrace_state_t *state,
 	char *str = (char *)&pcs[nframes];
 	int size, offs = 0, i, j;
 	uintptr_t old = mstate->dtms_scratch_ptr, saved;
-	uint16_t *flags = &cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
+	uint16_t *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 	char *sym;
 
 	/*
@@ -5568,7 +5576,7 @@ dtrace_probe(dtrace_id_t id, uintptr_t arg0, uintptr_t arg1,
 
 	cookie = dtrace_interrupt_disable();
 	probe = dtrace_probes[id - 1];
-	cpuid = CPU->cpu_id;
+	cpuid = VBDT_GET_CPUID();
 	onintr = CPU_ON_INTR(CPU);
 
 	if (!onintr && probe->dtpr_predcache != DTRACE_CACHEIDNONE &&
@@ -10073,7 +10081,7 @@ dtrace_buffer_activate(dtrace_state_t *state)
 	dtrace_buffer_t *buf;
 	dtrace_icookie_t cookie = dtrace_interrupt_disable();
 
-	buf = &state->dts_buffer[CPU->cpu_id];
+	buf = &state->dts_buffer[VBDT_GET_CPUID()];
 
 	if (buf->dtb_tomax != NULL) {
 		/*
@@ -12638,7 +12646,7 @@ dtrace_state_go(dtrace_state_t *state, processorid_t *cpu)
 	 * level) and to manually activate the buffer for this CPU.
 	 */
 	cookie = dtrace_interrupt_disable();
-	*cpu = CPU->cpu_id;
+	*cpu = VBDT_GET_CPUID();
 	ASSERT(state->dts_buffer[*cpu].dtb_flags & DTRACEBUF_INACTIVE);
 	state->dts_buffer[*cpu].dtb_flags &= ~DTRACEBUF_INACTIVE;
 
@@ -12739,7 +12747,7 @@ dtrace_state_stop(dtrace_state_t *state, processorid_t *cpu)
 	state->dts_reserve = 0;
 
 	cookie = dtrace_interrupt_disable();
-	*cpu = CPU->cpu_id;
+	*cpu = VBDT_GET_CPUID();
 	dtrace_probe(dtrace_probeid_end,
 	    (uint64_t)(uintptr_t)state, 0, 0, 0, 0);
 	dtrace_interrupt_enable(cookie);
@@ -13054,7 +13062,7 @@ dtrace_helper_trace(dtrace_helper_action_t *helper,
 {
 	uint32_t size, next, nnext, i;
 	dtrace_helptrace_t *ent;
-	uint16_t flags = cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
+	uint16_t flags = cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 
 	if (!dtrace_helptrace_enabled)
 		return;
@@ -13095,7 +13103,7 @@ dtrace_helper_trace(dtrace_helper_action_t *helper,
 	ent->dtht_fltoffs = (mstate->dtms_present & DTRACE_MSTATE_FLTOFFS) ?
 	    mstate->dtms_fltoffs : -1;
 	ent->dtht_fault = DTRACE_FLAGS2FLT(flags);
-	ent->dtht_illval = cpu_core[CPU->cpu_id].cpuc_dtrace_illval;
+	ent->dtht_illval = cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_illval;
 
 	for (i = 0; i < vstate->dtvs_nlocals; i++) {
 		dtrace_statvar_t *svar;
@@ -13105,7 +13113,7 @@ dtrace_helper_trace(dtrace_helper_action_t *helper,
 
 		ASSERT(svar->dtsv_size >= NCPU * sizeof (uint64_t));
 		ent->dtht_locals[i] =
-		    ((uint64_t *)(uintptr_t)svar->dtsv_data)[CPU->cpu_id];
+		    ((uint64_t *)(uintptr_t)svar->dtsv_data)[VBDT_GET_CPUID()];
 	}
 }
 
@@ -13113,7 +13121,7 @@ static uint64_t
 dtrace_helper(int which, dtrace_mstate_t *mstate,
     dtrace_state_t *state, uint64_t arg0, uint64_t arg1)
 {
-	uint16_t *flags = &cpu_core[CPU->cpu_id].cpuc_dtrace_flags;
+	uint16_t *flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 	uint64_t sarg0 = mstate->dtms_arg[0];
 	uint64_t sarg1 = mstate->dtms_arg[1];
 	uint64_t rval;
