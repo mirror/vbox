@@ -1387,7 +1387,6 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
     AssertPtrReturnVoid(pProv->pHdr);
     AssertReturnVoid(pProv->pHdr->offProbeLocs != 0);
     uint32_t const  cProbeLocs    = pProv->pHdr->cbProbeLocs / sizeof(VTGPROBELOC);
-    uint32_t const  cbProbeLocRW  = pProv->pHdr->cBits == 32 ? sizeof(VTGPROBELOC32) : sizeof(VTGPROBELOC64);
 
 
     /* Need a buffer for extracting the function names and mangling them in
@@ -1416,7 +1415,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
             pidProbe = (uint32_t *)&pProbeLocRO->idProbe;
         else
             pidProbe = &pProv->paR0ProbeLocs[idxProbeLoc].idProbe;
-        if (*pidProbe != UINT32_MAX)
+        if (*pidProbe != 0)
             continue;
 
          /* The function name may need to be stripped since we're using C++
@@ -1452,7 +1451,7 @@ static void     vboxDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtPr
          /* Look up the probe, if we have one in the same function, mangle
             the function name a little to avoid having to deal with having
             multiple location entries with the same probe ID. (lazy bird) */
-         Assert(*pidProbe == UINT32_MAX);
+         Assert(!*pidProbe);
          if (dtrace_probe_lookup(idProvider, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
          {
              RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u", pProbeLocRO->uLine);
@@ -1660,7 +1659,7 @@ static void    vboxDtPOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvPro
             Assert(!pProv->paR0ProbeLocs[idxProbeLoc].fEnabled);
             Assert(*pidProbe == idProbe); NOREF(idProbe);
         }
-        *pidProbe = UINT32_MAX;
+        *pidProbe = 0;
     }
     pProv->TracerData.DTrace.cProvidedProbes--;
 }
@@ -1798,8 +1797,7 @@ static DECLCALLBACK(void) vbdt_TracerClose(PCSUPDRVTRACERREG pThis, PSUPDRVSESSI
  */
 static DECLCALLBACK(int) vbdt_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
-    AssertReturn(pCore->TracerData.DTrace.idProvider == UINT32_MAX || pCore->TracerData.DTrace.idProvider == 0,
-                 VERR_INTERNAL_ERROR_3);
+    AssertReturn(pCore->TracerData.DTrace.idProvider == 0, VERR_INTERNAL_ERROR_3);
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_Generic);
 
     PVTGDESCPROVIDER    pDesc = pCore->pDesc;
@@ -1810,19 +1808,17 @@ static DECLCALLBACK(int) vbdt_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVV
     vboxDtVtgConvAttr(&DtAttrs.dtpa_name,     &pDesc->AttrNames);
     vboxDtVtgConvAttr(&DtAttrs.dtpa_args,     &pDesc->AttrArguments);
 
-    dtrace_provider_id_t idProvider;
+    AssertCompile(sizeof(dtrace_provider_id_t) == sizeof(pCore->TracerData.DTrace.idProvider));
     int rc = dtrace_register(pCore->pszName,
                              &DtAttrs,
                              DTRACE_PRIV_KERNEL,
                              NULL /* cred */,
                              &g_vboxDtVtgProvOps,
                              pCore,
-                             &idProvider);
+                             &pCore->TracerData.DTrace.idProvider);
     if (!rc)
     {
-        Assert(idProvider != UINT32_MAX && idProvider != 0);
-        pCore->TracerData.DTrace.idProvider = idProvider;
-        Assert(pCore->TracerData.DTrace.idProvider == idProvider);
+        Assert(pCore->TracerData.DTrace.idProvider != 0);
         rc = VINF_SUCCESS;
     }
     else
@@ -1839,14 +1835,14 @@ static DECLCALLBACK(int) vbdt_ProviderRegister(PCSUPDRVTRACERREG pThis, PSUPDRVV
 static DECLCALLBACK(int) vbdt_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
-    AssertReturn(idProvider != UINT32_MAX && idProvider != 0, VERR_INTERNAL_ERROR_4);
+    AssertReturn(idProvider != 0, VERR_INTERNAL_ERROR_4);
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_Generic);
 
     dtrace_invalidate(idProvider);
     int rc = dtrace_unregister(idProvider);
     if (!rc)
     {
-        pCore->TracerData.DTrace.idProvider = UINT32_MAX;
+        pCore->TracerData.DTrace.idProvider = 0;
         rc = VINF_SUCCESS;
     }
     else
@@ -1867,14 +1863,14 @@ static DECLCALLBACK(int) vbdt_ProviderDeregister(PCSUPDRVTRACERREG pThis, PSUPDR
 static DECLCALLBACK(int) vbdt_ProviderDeregisterZombie(PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore)
 {
     uintptr_t idProvider = pCore->TracerData.DTrace.idProvider;
-    AssertReturn(idProvider != UINT32_MAX && idProvider != 0, VERR_INTERNAL_ERROR_4);
+    AssertReturn(idProvider != 0, VERR_INTERNAL_ERROR_4);
     Assert(pCore->TracerData.DTrace.fZombie);
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_Generic);
 
     int rc = dtrace_unregister(idProvider);
     if (!rc)
     {
-        pCore->TracerData.DTrace.idProvider = UINT32_MAX;
+        pCore->TracerData.DTrace.idProvider = 0;
         rc = VINF_SUCCESS;
     }
     else
