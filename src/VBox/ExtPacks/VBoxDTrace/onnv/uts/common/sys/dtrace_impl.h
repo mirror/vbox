@@ -27,7 +27,9 @@
 #ifndef _SYS_DTRACE_IMPL_H
 #define	_SYS_DTRACE_IMPL_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

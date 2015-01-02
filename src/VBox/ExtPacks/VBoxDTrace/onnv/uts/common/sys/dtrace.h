@@ -44,6 +44,7 @@ extern "C" {
 
 #ifndef _ASM
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <sys/modctl.h>
 #include <sys/processor.h>
@@ -51,6 +52,9 @@ extern "C" {
 #include <sys/ctf_api.h>
 #include <sys/cyclic.h>
 #include <sys/int_limits.h>
+#else
+# include <VBoxDTraceTypes.h>
+#endif
 
 /*
  * DTrace Universal Constants and Typedefs
@@ -814,7 +818,7 @@ typedef struct dtrace_difo {
 	dtrace_diftype_t dtdo_rtype;	/* return type */
 	uint_t dtdo_refcnt;		/* owner reference count */
 	uint_t dtdo_destructive;	/* invokes destructive subroutines */
-#ifndef _KERNEL
+#if !defined(_KERNEL) || defined(IN_RING3)
 	dof_relodesc_t *dtdo_kreltab;	/* kernel relocations */
 	dof_relodesc_t *dtdo_ureltab;	/* user relocations */
 	struct dt_node **dtdo_xlmtab;	/* translator references */
@@ -1292,7 +1296,7 @@ typedef struct dof_helper {
 #define	DTRACEMNRN_HELPER	1		/* minor for helpers */
 #define	DTRACEMNRN_CLONE	2		/* first clone minor */
 
-#ifdef _KERNEL
+#if defined(_KERNEL) || defined(IN_RING0)
 
 /*
  * DTrace Provider API
@@ -2204,7 +2208,11 @@ extern hrtime_t dtrace_gethrtime(void);
 extern void dtrace_sync(void);
 extern void dtrace_toxic_ranges(void (*)(uintptr_t, uintptr_t));
 extern void dtrace_xcall(processorid_t, dtrace_xcall_t, void *);
+#ifdef VBOX
+extern void dtrace_vpanic(const char *, va_list);
+#else
 extern void dtrace_vpanic(const char *, __va_list);
+#endif
 extern void dtrace_panic(const char *, ...);
 
 extern int dtrace_safe_defer_signal(void);
@@ -2225,16 +2233,23 @@ extern int dtrace_blksuword32(uintptr_t, uint32_t *, int);
 extern void dtrace_getfsr(uint64_t *);
 #endif
 
+#ifndef VBOX
+# define VBDT_GET_CPUID()		(CPU->cpu_id)
+#else
+# define VBDT_GET_CPUID()		(RTMpCpuId())
+#endif
+
+
 #define	DTRACE_CPUFLAG_ISSET(flag) \
-	(cpu_core[CPU->cpu_id].cpuc_dtrace_flags & (flag))
+	(cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags & (flag))
 
 #define	DTRACE_CPUFLAG_SET(flag) \
-	(cpu_core[CPU->cpu_id].cpuc_dtrace_flags |= (flag))
+	(cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags |= (flag))
 
 #define	DTRACE_CPUFLAG_CLEAR(flag) \
-	(cpu_core[CPU->cpu_id].cpuc_dtrace_flags &= ~(flag))
+	(cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags &= ~(flag))
 
-#endif /* _KERNEL */
+#endif /* _KERNEL || IN_RING0 */
 
 #endif	/* _ASM */
 
