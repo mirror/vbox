@@ -7578,6 +7578,7 @@ dtrace_probe_create(dtrace_provider_id_t prov, const char *mod,
 	id = (dtrace_id_t)(uintptr_t)vmem_alloc(dtrace_arena, 1,
 	    VM_BESTFIT | VM_SLEEP);
 	probe = kmem_zalloc(sizeof (dtrace_probe_t), KM_SLEEP);
+SUPR0Printf("dtrace_probe_create: %s id=%u %p\n", name, id, probe);
 
 	probe->dtpr_id = id;
 	probe->dtpr_gen = dtrace_probegen++;
@@ -7625,6 +7626,7 @@ dtrace_probe_create(dtrace_provider_id_t prov, const char *mod,
 			dtrace_nprobes <<= 1;
 		}
 
+SUPR0Printf("dtrace_probe_create: dtrace_nprobes=%u\n", dtrace_nprobes);
 		ASSERT(id - 1 < dtrace_nprobes);
 	}
 
