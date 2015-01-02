@@ -1529,6 +1529,7 @@ static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *p
 {
     PSUPDRVVDTPROVIDERCORE  pProv  = (PSUPDRVVDTPROVIDERCORE)pvProv;
     unsigned                uArg   = pArgDesc->dtargd_ndx;
+    pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
 
     if (!pProv->TracerData.DTrace.fZombie)
     {
@@ -1536,21 +1537,21 @@ static void     vboxDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *p
         PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
         PVTGDESCARGLIST pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
 
-        Assert(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
-        if (pArgList->cArgs > uArg)
+        AssertReturnVoid(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
+        if (uArg < pArgList->cArgs)
         {
             const char *pszType = vboxDtVtgGetString(pProv->pHdr, pArgList->aArgs[uArg].offType);
             size_t      cchType = strlen(pszType);
             if (cchType < sizeof(pArgDesc->dtargd_native))
             {
                 memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
-                /** @todo mapping */
+                pArgDesc->dtargd_ndx = uArg;
+                /** @todo mapping? */
                 return;
             }
         }
     }
 
-    pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
 }
 
 
