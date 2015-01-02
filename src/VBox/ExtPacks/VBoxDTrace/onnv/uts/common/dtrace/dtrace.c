@@ -2246,7 +2246,7 @@ dtrace_speculation_commit(dtrace_state_t *state, processorid_t cpu,
 	dtrace_speculation_t *spec;
 	dtrace_buffer_t *src, *dest;
 	uintptr_t daddr, saddr, dlimit;
-	dtrace_speculation_state_t current, new;
+	dtrace_speculation_state_t current, new VBDTUNASS(-1);
 	intptr_t offs;
 
 	if (which == 0)
@@ -2306,7 +2306,11 @@ dtrace_speculation_commit(dtrace_state_t *state, processorid_t cpu,
 			break;
 
 		default:
+#ifndef VBOX
 			ASSERT(0);
+#else
+			AssertFatalMsgFailed(("%d\n",  current));
+#endif
 		}
 	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
 	    current, new) != current);
@@ -2420,7 +2424,11 @@ dtrace_speculation_discard(dtrace_state_t *state, processorid_t cpu,
 			break;
 
 		default:
+#ifndef VBOX
 			ASSERT(0);
+#else
+			AssertFatalMsgFailed(("%d\n", current));
+#endif
 		}
 	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
 	    current, new) != current);
@@ -2544,7 +2552,7 @@ dtrace_speculation_buffer(dtrace_state_t *state, processorid_t cpuid,
     dtrace_specid_t which)
 {
 	dtrace_speculation_t *spec;
-	dtrace_speculation_state_t current, new;
+	dtrace_speculation_state_t current, new VBDTUNASS(-1);
 	dtrace_buffer_t *buf;
 
 	if (which == 0)
@@ -2594,7 +2602,11 @@ dtrace_speculation_buffer(dtrace_state_t *state, processorid_t cpuid,
 			break;
 
 		default:
+#ifndef VBOX
 			ASSERT(0);
+#else
+			AssertFatalMsgFailed(("%d\n", current));
+#endif
 		}
 	} while (dtrace_cas32((uint32_t *)&spec->dtsp_state,
 	    current, new) != current);
@@ -3665,7 +3677,7 @@ dtrace_dif_subr(uint_t subr, uint_t rd, uint64_t *regs,
 		uintptr_t tokaddr = tupregs[1].dttk_value;
 		uint64_t size = state->dts_options[DTRACEOPT_STRSIZE];
 		uintptr_t limit, toklimit = tokaddr + size;
-		uint8_t c, tokmap[32];	 /* 256 / 8 */
+		uint8_t c VBDTUNASS(0), tokmap[32];	 /* 256 / 8 */
 		char *dest = (char *)mstate->dtms_scratch_ptr;
 		VBDTTYPE(unsigned,int) i;
 
@@ -6608,6 +6620,10 @@ dtrace_cred2priv(cred_t *cr, uint32_t *privp, uid_t *uidp, zoneid_t *zoneidp)
 		 * For DTRACE_PRIV_ALL, the uid and zoneid don't matter.
 		 */
 		priv = DTRACE_PRIV_ALL;
+#ifdef VBOX
+		*uidp = ~0;
+		*zoneidp = 0;
+#endif
 	} else {
 		*uidp = crgetuid(cr);
 		*zoneidp = crgetzoneid(cr);
@@ -8013,6 +8029,9 @@ dtrace_meta_unregister(dtrace_meta_provider_id_t id)
 	} else {
 		panic("attempt to unregister non-existent "
 		    "dtrace meta-provider %p\n", (void *)old);
+#ifdef VBOX
+		return EINVAL;
+#endif
 	}
 
 	if (old->dtm_count != 0) {
@@ -9021,6 +9040,9 @@ dtrace_difo_destroy(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 
 		default:
 			ASSERT(0);
+#ifdef VBOX
+			continue;
+#endif
 		}
 
 		if ((id = v->dtdv_id) < DIF_VAR_OTHER_UBASE)
@@ -13391,7 +13413,7 @@ dtrace_helper(int which, dtrace_mstate_t *mstate,
 	VBDTTYPE(uint16_t volatile *, uint16_t *)flags = &cpu_core[VBDT_GET_CPUID()].cpuc_dtrace_flags;
 	uint64_t sarg0 = mstate->dtms_arg[0];
 	uint64_t sarg1 = mstate->dtms_arg[1];
-	uint64_t rval;
+	uint64_t rval VBDTUNASS(666);
 	dtrace_helpers_t *helpers = curproc->p_dtrace_helpers;
 	dtrace_helper_action_t *helper;
 	dtrace_vstate_t *vstate;
