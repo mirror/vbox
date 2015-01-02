@@ -24,7 +24,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <dt_impl.h>
 
@@ -296,7 +298,7 @@ provider_probe:
 			$$ = dt_node_probe($2, 1, $3, NULL);
 		}
 	;
-	
+
 
 probe_definition:
 		probe_specifiers {
@@ -400,11 +402,11 @@ postfix_expression:
 	|	postfix_expression DT_TOK_SUBSUB {
 			$$ = OP1(DT_TOK_POSTDEC, $1);
 		}
-	|	DT_TOK_OFFSETOF DT_TOK_LPAR type_name DT_TOK_COMMA 
+	|	DT_TOK_OFFSETOF DT_TOK_LPAR type_name DT_TOK_COMMA
 		    DT_TOK_IDENT DT_TOK_RPAR {
 			$$ = dt_node_offsetof($3, $5);
 		}
-	|	DT_TOK_OFFSETOF DT_TOK_LPAR type_name DT_TOK_COMMA 
+	|	DT_TOK_OFFSETOF DT_TOK_LPAR type_name DT_TOK_COMMA
 		    DT_TOK_TNAME DT_TOK_RPAR {
 			$$ = dt_node_offsetof($3, $5);
 		}
