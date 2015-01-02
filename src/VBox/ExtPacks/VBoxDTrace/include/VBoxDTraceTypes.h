@@ -45,6 +45,11 @@ typedef uintptr_t                   pc_t;
 typedef unsigned int                model_t;
 typedef uint32_t                    zoneid_t;
 typedef RTCPUID                     processorid_t;
+#if defined(_MSC_VER) || defined(IN_RING0)
+typedef RTUID                       uid_t;
+typedef RTPROCESS                   pid_t;
+typedef char                       *caddr_t;
+#endif
 
 #define NANOSEC                     RT_NS_1SEC
 #define MILLISEC                    RT_MS_1SEC
@@ -100,11 +105,8 @@ typedef intptr_t                    ctf_id_t;
 /*
  * Kernel stuff...
  */
-typedef char                       *caddr_t;
 typedef uint64_t                    hrtime_t;
 typedef RTCCUINTREG                 greg_t;
-typedef RTUID                       uid_t;
-typedef RTPROCESS                   pid_t;
 
 #define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
 #define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
