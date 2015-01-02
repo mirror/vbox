@@ -35,7 +35,7 @@ SYSMODS += VBoxDTraceR0
 VBoxDTraceR0_TEMPLATE = VBoxR0
 VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0 IN_RT_R0
 ifeq ($(VBOX_LDR_FMT),elf)
- VBoxDTraceR0_LDFLAGS = -e ???
+ VBoxDTraceR0_LDFLAGS = -e ModuleInit
 endif
 VBoxDTraceR0_INCS = \
 	../include \
