@@ -69,6 +69,7 @@ typedef char                       *caddr_t;
 #define MAXPATHLEN                  RTPATH_MAX
 #undef PATH_MAX
 #define PATH_MAX                    RTPATH_MAX
+#undef NBBY
 #define NBBY                        (8)
 #define NCPU                        RTCPUSET_MAX_CPUS
 #define B_FALSE                     (0)

@@ -38,6 +38,6 @@ BEGINCODE
 extern NAME(dtrace_probe)
 
 GLOBALNAME dtrace_probe6
-    jmp     dtrace_probe
+    jmp     NAME(dtrace_probe)
 
 

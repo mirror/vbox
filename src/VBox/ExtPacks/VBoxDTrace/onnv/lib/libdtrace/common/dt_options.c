@@ -45,6 +45,9 @@
 #  include <sys/resource.h>
 #  include <unistd.h>
 #  include <signal.h>
+#  if defined(RT_OS_DARWIN)
+#   define open64 open
+#  endif
 # else
 #  include <io.h>
 #  define STDERR_FILENO 2

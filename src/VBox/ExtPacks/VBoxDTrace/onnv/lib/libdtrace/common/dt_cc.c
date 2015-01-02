@@ -100,10 +100,16 @@
 # include <iprt/dir.h>
 # ifdef _MSC_VER
 #  include <io.h>
-#  define ftruncate64   _chsize
-#  define lseek64       lseek
 # else
 #  include <unistd.h>
+# endif
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+#  ifdef _MSC_VER
+#   define ftruncate64  _chsize
+#  else
+#   define ftruncate64  ftruncate
+#  endif
+#  define lseek64       lseek
 # endif
 #endif /* VBOX */
 #include <dt_module.h>

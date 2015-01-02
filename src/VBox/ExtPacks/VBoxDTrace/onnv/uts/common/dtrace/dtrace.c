@@ -8779,7 +8779,7 @@ dtrace_difo_hold(dtrace_difo_t *dp)
 static void
 dtrace_difo_chunksize(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 {
-	uint64_t sval;
+	uint64_t sval VBDTGCC(0);
 	dtrace_key_t tupregs[DIF_DTR_NREGS + 2]; /* +2 for thread and id */
 	const dif_instr_t *text = dp->dtdo_buf;
 	uint_t pc, srd = 0;
@@ -8793,7 +8793,7 @@ dtrace_difo_chunksize(dtrace_difo_t *dp, dtrace_vstate_t *vstate)
 		uint_t rd = DIF_INSTR_RD(instr);
 		uint_t r1 = DIF_INSTR_R1(instr);
 		uint_t nkeys = 0;
-		uchar_t scope;
+		uchar_t scope VBDTGCC(0);
 
 		dtrace_key_t *key = tupregs;
 
