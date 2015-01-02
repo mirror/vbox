@@ -57,11 +57,11 @@ PFNMYEXSETTIMERRESOLUTION           g_pfnrtNtExSetTimerResolution;
 PFNMYKEFLUSHQUEUEDDPCS              g_pfnrtNtKeFlushQueuedDpcs;
 /** HalRequestIpi, introduced in ??. */
 PFNHALREQUESTIPI                    g_pfnrtNtHalRequestIpi;
-/** HalSendSoftwareInterrupt */
+/** HalSendSoftwareInterrupt, introduced in AMD64 version of W2K3. */
 PFNHALSENDSOFTWAREINTERRUPT         g_pfnrtNtHalSendSoftwareInterrupt;
-/** SendIpi handler based on Windows version */
-PFNRTSENDIPI                        g_pfnrtSendIpi;
-/** KeIpiGenericCall - Windows Server 2003+ only */
+/** Worker for RTMpPokeCpu. */
+PFNRTSENDIPI                        g_pfnrtMpPokeCpuWorker;
+/** KeIpiGenericCall - Introduced in Windows Server 2003. */
 PFNRTKEIPIGENERICCALL               g_pfnrtKeIpiGenericCall;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                  g_pfnrtRtlGetVersion;
@@ -385,25 +385,20 @@ DECLHIDDEN(int) rtR0InitNative(void)
 #endif
 
     /*
-     * Special IPI fun.
+     * Special IPI fun for RTMpPokeCpu.
+     *
+     * On Vista and later the DPC fallback doesn't seem to reliably send IPIs,
+     * so we have to use alternative methods.  The NtHalSendSoftwareInterrupt
+     * is preferrable, but if that's not available we'll settle for broadcast
+     * IPIs.
      */
-    g_pfnrtSendIpi = rtMpSendIpiDummy;
+    g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
 #ifndef IPRT_TARGET_NT4
-    if (    g_pfnrtNtHalRequestIpi
-        &&  OsVerInfo.uMajorVer == 6
-        &&  OsVerInfo.uMinorVer == 0)
-    {
-        /* Vista or Windows Server 2008 */
-        g_pfnrtSendIpi = rtMpSendIpiVista;
-    }
-    else if (   g_pfnrtNtHalSendSoftwareInterrupt
-             && OsVerInfo.uMajorVer == 6
-             && OsVerInfo.uMinorVer == 1)
-    {
-        /* Windows 7 or Windows Server 2008 R2 */
-        g_pfnrtSendIpi = rtMpSendIpiWin7;
-    }
-    /* Windows XP should send always send an IPI -> VERIFY */
+    if (g_pfnrtNtHalSendSoftwareInterrupt)
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalSendSoftwareInterrupt;
+    else if (OsVerInfo.uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
+    /* else: Windows XP should send always send an IPI -> VERIFY */
 #endif
 
     return VINF_SUCCESS;
