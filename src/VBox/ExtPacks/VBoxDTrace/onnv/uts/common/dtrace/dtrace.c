@@ -14793,7 +14793,7 @@ dtrace_toxrange_add(uintptr_t base, uintptr_t limit)
  * DTrace Driver Cookbook Functions
  */
 #ifdef VBOX
-int dtrace_attach(ddi_attach_cmd_t cmd)
+int dtrace_attach(void)
 #else
 /*ARGSUSED*/
 static int
@@ -15948,7 +15948,7 @@ dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 }
 
 #ifdef VBOX
-int dtrace_detach(ddi_detach_cmd_t cmd)
+int dtrace_detach(void)
 #else
 /*ARGSUSED*/
 static int
@@ -15957,6 +15957,7 @@ dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 {
 	dtrace_state_t *state;
 
+#ifndef VBOX
 	switch (cmd) {
 	case DDI_DETACH:
 		break;
@@ -15967,6 +15968,7 @@ dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 	default:
 		return (DDI_FAILURE);
 	}
+#endif
 
 	mutex_enter(&cpu_lock);
 	mutex_enter(&dtrace_provider_lock);
@@ -16011,7 +16013,6 @@ dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 	bzero(&dtrace_anon, sizeof (dtrace_anon_t));
 #ifndef VBOX /** @todo CPU hooks */
 	unregister_cpu_setup_func((cpu_setup_func_t *)dtrace_cpu_setup, NULL);
-#endif
 	dtrace_cpu_init = NULL;
 	dtrace_helpers_cleanup = NULL;
 	dtrace_helpers_fork = NULL;
@@ -16021,6 +16022,7 @@ dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 	dtrace_debugger_fini = NULL;
 	dtrace_modload = NULL;
 	dtrace_modunload = NULL;
+#endif
 
 	mutex_exit(&cpu_lock);
 
