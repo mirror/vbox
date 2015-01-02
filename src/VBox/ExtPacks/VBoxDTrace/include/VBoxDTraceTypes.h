@@ -1,31 +1,21 @@
 /* $Id$ */
 /** @file
  * VBoxDTraceTypes.h - Fake a bunch of Solaris types.
+ *
+ * Contributed by: bird
  */
 
 /*
- * Copyright (c) 2012 bird
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the Common
+ * Development and Distribution License Version 1.0 (CDDL) only, as it
+ * comes in the "COPYING.CDDL" file of the VirtualBox OSE distribution.
+ * VirtualBox OSE is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY of any kind.
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #ifndef ___VBoxDTraceTypes_h___
@@ -86,7 +76,7 @@ typedef char                       *caddr_t;
 #define ABS(a_iValue)               RT_ABS(a_iValue)
 #define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
 #define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
-#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
+#define roundup(uWhat, uUnit)       ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
 
 #if defined(RT_ARCH_X86)
 # ifndef __i386
@@ -418,7 +408,7 @@ extern int dtrace_close(struct dtrace_state *state);
 # undef strncasecmp
 # define strncasecmp(a_psz1, a_psz2, a_cch) RTStrNICmp(a_psz1, a_psz2, a_cch)
 # undef assert
-# define assert(expr)	            Assert(expr)
+# define assert(expr)               Assert(expr)
 
 /* This isn't necessarily making things easier at first, but allows EF and
    such later on when things doesn't work right. */
@@ -439,11 +429,11 @@ extern int dtrace_close(struct dtrace_state *state);
 
 /* Replacement for strndup(), requires editing the code unfortunately. */
 # define MY_STRDUPA(a_pszRes, a_pszSrc) \
-	do { \
-		size_t cb = strlen(a_pszSrc) + 1; \
-		(a_pszRes) = (char *)alloca(cb); \
-		memcpy(a_pszRes, a_pszSrc, cb); \
-	} while (0)
+    do { \
+        size_t cb = strlen(a_pszSrc) + 1; \
+        (a_pszRes) = (char *)alloca(cb); \
+        memcpy(a_pszRes, a_pszSrc, cb); \
+    } while (0)
 
 /*
  * gelf
