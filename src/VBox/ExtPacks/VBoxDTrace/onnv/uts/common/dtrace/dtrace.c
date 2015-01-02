@@ -94,6 +94,7 @@
 
 #else  /* VBOX */
 # include <sys/dtrace_impl.h>
+# include <VBox/sup.h>
 # include <iprt/assert.h>
 # include <iprt/cpuset.h>
 # include <iprt/mem.h>
@@ -14806,12 +14807,12 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	dtrace_state_t *state = NULL;
 	dtrace_enabling_t *enab;
 
-#ifndef VBOX
+#ifdef VBOX
         if (   VBoxDtMutexInit(&dtrace_lock)
             || VBoxDtMutexInit(&dtrace_provider_lock)
             || VBoxDtMutexInit(&dtrace_meta_lock)
 # ifdef DEBUG
-            || VBoxDtMutexInit(&dtrace_errlock);
+            || VBoxDtMutexInit(&dtrace_errlock)
 # endif
             )
             return (DDI_FAILURE);
@@ -16071,6 +16072,14 @@ dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 
 	mutex_exit(&dtrace_lock);
 	mutex_exit(&dtrace_provider_lock);
+#ifdef VBOX
+    VBoxDtMutexDelete(&dtrace_lock);
+    VBoxDtMutexDelete(&dtrace_provider_lock);
+    VBoxDtMutexDelete(&dtrace_meta_lock);
+# ifdef DEBUG
+    VBoxDtMutexDelete(&dtrace_errlock);
+# endif
+#endif
 
 	/*
 	 * We don't destroy the task queue until after we have dropped our
