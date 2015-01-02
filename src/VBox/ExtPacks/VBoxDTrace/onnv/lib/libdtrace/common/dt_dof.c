@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <sys/sysmacros.h>
 
@@ -32,6 +33,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
+#else  /* VBOX */
+# include <iprt/asm.h>
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_strtab.h>
@@ -190,7 +194,7 @@ static dof_stridx_t
 dof_add_string(dt_dof_t *ddo, const char *s)
 {
 	dt_buf_t *bp = &ddo->ddo_strs;
-	dof_stridx_t i = dt_buf_len(bp);
+	dof_stridx_t i = VBDTCAST(dof_stridx_t)dt_buf_len(bp);
 
 	if (i != 0 && (s == NULL || *s == '\0'))
 		return (0); /* string table has \0 at offset 0 */
@@ -405,21 +409,21 @@ dof_add_probe(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 
 	dofpr.dofpr_addr = 0;
 	dofpr.dofpr_name = dof_add_string(ddo, prp->pr_name);
-	dofpr.dofpr_nargv = dt_buf_len(&ddo->ddo_strs);
+	dofpr.dofpr_nargv = VBDTCAST(dof_stridx_t)dt_buf_len(&ddo->ddo_strs);
 
 	for (dnp = prp->pr_nargs; dnp != NULL; dnp = dnp->dn_list) {
 		(void) dof_add_string(ddo, ctf_type_name(dnp->dn_ctfp,
 		    dnp->dn_type, buf, sizeof (buf)));
 	}
 
-	dofpr.dofpr_xargv = dt_buf_len(&ddo->ddo_strs);
+	dofpr.dofpr_xargv = VBDTCAST(dof_stridx_t)dt_buf_len(&ddo->ddo_strs);
 
 	for (dnp = prp->pr_xargs; dnp != NULL; dnp = dnp->dn_list) {
 		(void) dof_add_string(ddo, ctf_type_name(dnp->dn_ctfp,
 		    dnp->dn_type, buf, sizeof (buf)));
 	}
 
-	dofpr.dofpr_argidx = dt_buf_len(&ddo->ddo_args) / sizeof (uint8_t);
+	dofpr.dofpr_argidx = VBDTCAST(uint32_t)dt_buf_len(&ddo->ddo_args) / sizeof (uint8_t);
 
 	for (i = 0; i < prp->pr_xargc; i++) {
 		dt_buf_write(dtp, &ddo->ddo_args, &prp->pr_mapping[i],
@@ -445,13 +449,13 @@ dof_add_probe(dt_idhash_t *dhp, dt_ident_t *idp, void *data)
 		assert(pip->pi_noffs + pip->pi_nenoffs > 0);
 
 		dofpr.dofpr_offidx =
-		    dt_buf_len(&ddo->ddo_offs) / sizeof (uint32_t);
+		    VBDTCAST(uint32_t)(dt_buf_len(&ddo->ddo_offs) / sizeof (uint32_t));
 		dofpr.dofpr_noffs = pip->pi_noffs;
 		dt_buf_write(dtp, &ddo->ddo_offs, pip->pi_offs,
 		    pip->pi_noffs * sizeof (uint32_t), sizeof (uint32_t));
 
 		dofpr.dofpr_enoffidx =
-		    dt_buf_len(&ddo->ddo_enoffs) / sizeof (uint32_t);
+		    VBDTCAST(uint32_t)(dt_buf_len(&ddo->ddo_enoffs) / sizeof (uint32_t));
 		dofpr.dofpr_nenoffs = pip->pi_nenoffs;
 		dt_buf_write(dtp, &ddo->ddo_enoffs, pip->pi_enoffs,
 		    pip->pi_nenoffs * sizeof (uint32_t), sizeof (uint32_t));
@@ -662,7 +666,7 @@ dtrace_dof_create(dtrace_hdl_t *dtp, dtrace_prog_t *pgp, uint_t flags)
 		dtrace_actdesc_t *ap = sdp->dtsd_action;
 
 		if (sdp->dtsd_fmtdata != NULL) {
-			i = dtrace_printf_format(dtp,
+			i = VBDTCAST(uint_t)dtrace_printf_format(dtp,
 			    sdp->dtsd_fmtdata, NULL, 0);
 			maxfmt = MAX(maxfmt, i);
 		}
@@ -821,8 +825,10 @@ dtrace_dof_create(dtrace_hdl_t *dtp, dtrace_prog_t *pgp, uint_t flags)
 	if (!(flags & DTRACE_D_STRIP)) {
 		(void) dof_add_usect(ddo, _dtrace_version, DOF_SECT_COMMENTS,
 		    sizeof (char), 0, 0, strlen(_dtrace_version) + 1);
+#ifndef VBOX
 		(void) dof_add_usect(ddo, &dtp->dt_uts, DOF_SECT_UTSNAME,
 		    sizeof (char), 0, 0, sizeof (struct utsname));
+#endif
 	}
 
 	/*

@@ -23,6 +23,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <stddef.h>
@@ -32,6 +33,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <alloca.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_program.h>
@@ -156,7 +158,7 @@ dt_handle_err(dtrace_hdl_t *dtp, dtrace_probedata_t *data)
 	const int slop = 80;
 	const char *faultstr;
 	char *str;
-	int len;
+	VBDTTYPE(size_t,int) len;
 
 	assert(epd->dtepd_uarg == DT_ECB_ERROR);
 
@@ -239,7 +241,7 @@ dt_handle_liberr(dtrace_hdl_t *dtp, const dtrace_probedata_t *data,
 	dtrace_errdata_t err;
 	const int slop = 80;
 	char *str;
-	int len;
+	VBDTTYPE(size_t,int) len;
 
 	err.dteda_edesc = data->dtpda_edesc;
 	err.dteda_pdesc = errpd;
@@ -247,7 +249,7 @@ dt_handle_liberr(dtrace_hdl_t *dtp, const dtrace_probedata_t *data,
 	err.dteda_action = -1;
 	err.dteda_offset = -1;
 	err.dteda_fault = DTRACEFLT_LIBRARY;
-	err.dteda_addr = NULL;
+	err.dteda_addr = 0 /*NULL*/;
 
 	len = strlen(faultstr) +
 	    strlen(errpd->dtpd_provider) + strlen(errpd->dtpd_mod) +
@@ -312,7 +314,7 @@ dt_handle_cpudrop(dtrace_hdl_t *dtp, processorid_t cpu,
 {
 	dtrace_dropdata_t drop;
 	char str[80], *s;
-	int size;
+	VBDTTYPE(size_t,int) size;
 
 	assert(what == DTRACEDROP_PRINCIPAL || what == DTRACEDROP_AGGREGATION);
 
@@ -419,7 +421,7 @@ dt_handle_status(dtrace_hdl_t *dtp, dtrace_status_t *old, dtrace_status_t *new)
 			(void) snprintf(str, sizeof (str), "[%s] ",
 			    dt_droptag(_dt_droptab[i].dtdrt_kind));
 			s = &str[strlen(str)];
-			size = sizeof (str) - (s - str);
+			size = VBDTCAST(int)sizeof (str) - (s - str);
 		} else {
 			s = str;
 			size = sizeof (str);

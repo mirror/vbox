@@ -226,9 +226,6 @@ dtrace_str2attr(const char *str, dtrace_attribute_t *attr)
 	dtrace_stability_t s;
 	dtrace_class_t c;
 	char *p, *q;
-#ifdef VBOX
-	size_t cbStr;
-#endif
 
 	if (str == NULL || attr == NULL)
 		return (-1); /* invalid function arguments */
@@ -237,9 +234,7 @@ dtrace_str2attr(const char *str, dtrace_attribute_t *attr)
 #ifndef VBOX
 	p = strdupa(str);
 #else
-	cbStr = strlen(str) + 1;
-	p = alloca(cbStr);
-	memcpy(p, str, cbStr);
+	MY_STRDUPA(p, str);
 #endif
 
 	if ((p = dt_getstrattr(p, &q)) == NULL)

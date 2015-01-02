@@ -24,9 +24,11 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <assert.h>
+#endif
 
 #include <dt_inttab.h>
 #include <dt_impl.h>

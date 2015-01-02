@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/sysmacros.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -32,6 +33,9 @@
 #include <ctype.h>
 #include <sys/procfs_isa.h>
 #include <limits.h>
+#else  /* VBOX */
+# include <ctype.h>
+#endif /* VBOX */
 
 #include <dt_ident.h>
 #include <dt_parser.h>
@@ -178,7 +182,11 @@ dt_idcook_func(dt_node_t *dnp, dt_ident_t *idp, int argc, dt_node_t *args)
 		int i = 0;
 
 		assert(idp->di_iarg != NULL);
+#ifndef VBOX
 		s = strdupa(idp->di_iarg);
+#else
+		MY_STRDUPA(s, idp->di_iarg);
+#endif
 
 		if ((p2 = strrchr(s, ')')) != NULL)
 			*p2 = '\0'; /* mark end of parameter list string */

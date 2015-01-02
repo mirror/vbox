@@ -44,42 +44,44 @@ VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_as.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_aggregate.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_buf.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_error.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_list.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_open.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_options.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_proc.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_printf.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_regset.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_string.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_strtab.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
-	\
-
-VBoxDTrace_VBOX_TODO = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cc.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_cg.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_consume.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_decl.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dis.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_dof.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_error.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_handle.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_ident.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_inttab.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_program.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_list.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_map.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_module.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_names.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_program.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_open.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_options.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_parser.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pcb.c \
-	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pragma.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_printf.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_proc.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_provider.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_regset.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_string.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_strtab.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_subr.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
-	\
-	generated: $(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.c \
+
+VBoxDTrace_VBOX_TODO = \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_pid.c \
+
+# TODO generate these(?): \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.c \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_names.c \
+
+# Not used: \
+	$(VBOXDT_PATH_LIBDTRACE)/common/dt_link.c \
 
 if 1
  USES                += yacc

@@ -91,6 +91,7 @@
  *    flags cache the corresponding attributes of the underlying CTF type.
  */
 
+#ifndef VBOX
 #include <sys/param.h>
 #include <limits.h>
 #include <setjmp.h>
@@ -102,6 +103,13 @@
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
+#else  /* VBOX */
+# include <ctype.h>
+# ifdef _MSC_VER
+#  pragma warning(disable:4146) /* -unsigned */
+#  pragma warning(disable:4267) /* size_t to int */
+# endif
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_grammar.h>
@@ -760,8 +768,10 @@ dt_node_resolve(const dt_node_t *dnp, uint_t idkind)
 size_t
 dt_node_sizeof(const dt_node_t *dnp)
 {
+#ifndef VBOX
 	dtrace_syminfo_t *sip;
 	GElf_Sym sym;
+#endif
 	dtrace_hdl_t *dtp = yypcb->pcb_hdl;
 
 	/*
@@ -776,6 +786,7 @@ dt_node_sizeof(const dt_node_t *dnp)
 	if (dnp->dn_kind != DT_NODE_SYM)
 		return (dt_node_type_size(dnp));
 
+#ifndef VBOX
 	sip = dnp->dn_ident->di_data;
 
 	if (dtrace_lookup_by_name(dtp, sip->dts_object,
@@ -783,6 +794,9 @@ dt_node_sizeof(const dt_node_t *dnp)
 		return (0);
 
 	return (sym.st_size);
+#else
+	return (0);
+#endif
 }
 
 int
@@ -1422,6 +1436,7 @@ dt_node_decl(void)
 		/*NOTREACHED*/
 
 	case DT_DC_EXTERN: {
+#ifndef VBOX
 		dtrace_typeinfo_t ott;
 		dtrace_syminfo_t dts;
 		GElf_Sym sym;
@@ -1444,7 +1459,10 @@ dt_node_decl(void)
 			xyerror(D_UNKNOWN,
 			    "failed to extern %s: %s\n", dsp->ds_ident,
 			    dtrace_errmsg(dtp, dtrace_errno(dtp)));
-		} else {
+		} else
+#endif
+		{
+
 			dt_dprintf("extern %s`%s type=<%s>\n",
 			    dmp->dm_name, dsp->ds_ident,
 			    dt_type_name(dtt.dtt_ctfp, dtt.dtt_type,
@@ -1752,7 +1770,11 @@ dt_node_offsetof(dt_decl_t *ddp, char *s)
 	ctf_id_t type;
 	uint_t kind;
 
+#ifndef VBOX
 	name = strdupa(s);
+#else
+	MY_STRDUPA(name, s);
+#endif
 	free(s);
 
 	err = dt_decl_type(ddp, &dtt);
@@ -2569,8 +2591,10 @@ dt_xcook_ident(dt_node_t *dnp, dt_idhash_t *dhp, uint_t idkind, int create)
 
 	dtrace_attribute_t attr = _dtrace_defattr;
 	dt_ident_t *idp;
+#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
+#endif
 
 	const char *scope, *mark;
 	uchar_t dnkind;
@@ -2659,6 +2683,7 @@ dt_xcook_ident(dt_node_t *dnp, dt_idhash_t *dhp, uint_t idkind, int create)
 
 		dt_node_attr_assign(dnp, attr);
 
+#ifndef VBOX
 	} else if (dhp == dtp->dt_globals && scope != DTRACE_OBJ_EXEC &&
 	    dtrace_lookup_by_name(dtp, scope, name, &sym, &dts) == 0) {
 
@@ -2727,7 +2752,7 @@ dt_xcook_ident(dt_node_t *dnp, dt_idhash_t *dhp, uint_t idkind, int create)
 			idp->di_flags |= DT_IDFLG_USER;
 			dnp->dn_flags |= DT_NF_USERLAND;
 		}
-
+#endif /* !VBOX */
 	} else if (scope == DTRACE_OBJ_EXEC && create == B_TRUE) {
 		uint_t flags = DT_IDFLG_WRITE;
 		uint_t id;

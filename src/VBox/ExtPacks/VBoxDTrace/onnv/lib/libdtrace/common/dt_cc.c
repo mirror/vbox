@@ -80,6 +80,7 @@
  * on the overall DTrace probe effect before they are undertaken.
  */
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -94,6 +95,17 @@
 #include <limits.h>
 #include <ctype.h>
 #include <dirent.h>
+#else  /* VBOX */
+# include <ctype.h>
+# include <iprt/dir.h>
+# ifdef _MSC_VER
+#  include <io.h>
+#  define ftruncate64   _chsize
+#  define lseek64       lseek
+# else
+#  include <unistd.h>
+# endif
+#endif /* VBOX */
 #include <dt_module.h>
 #include <dt_program.h>
 #include <dt_provider.h>
@@ -1428,11 +1440,14 @@ dt_setcontext(dtrace_hdl_t *dtp, dtrace_probedesc_t *pdp)
 {
 	const dtrace_pattr_t *pap;
 	dt_probe_t *prp;
+#ifndef VBOX
 	dt_provider_t *pvp;
+#endif
 	dt_ident_t *idp;
 	char attrstr[8];
 	int err;
 
+#ifndef VBOX
 	/*
 	 * Both kernel and pid based providers are allowed to have names
 	 * ending with what could be interpreted as a number. We assume it's
@@ -1451,6 +1466,7 @@ dt_setcontext(dtrace_hdl_t *dtp, dtrace_probedesc_t *pdp)
 	    dt_pid_create_probes(pdp, dtp, yypcb) != 0) {
 		longjmp(yypcb->pcb_jmpbuf, EDT_COMPILER);
 	}
+#endif
 
 	/*
 	 * Call dt_probe_info() to get the probe arguments and attributes.  If
@@ -1582,6 +1598,7 @@ dt_reduce(dtrace_hdl_t *dtp, dt_version_t v)
 static FILE *
 dt_preproc(dtrace_hdl_t *dtp, FILE *ifp)
 {
+#ifndef VBOX
 	int argc = dtp->dt_cpp_argc;
 	char **argv = malloc(sizeof (char *) * (argc + 5));
 	FILE *ofp = tmpfile();
@@ -1706,6 +1723,10 @@ err:
 	free(argv);
 	(void) fclose(ofp);
 	return (NULL);
+#else  /* VBOX */
+	(void) dt_set_errno(dtp, EDT_CPPERR);
+	return (NULL);
+#endif /* VBOX */
 }
 
 static void
@@ -1926,9 +1947,16 @@ dt_lib_depend_free(dtrace_hdl_t *dtp)
 static int
 dt_load_libs_dir(dtrace_hdl_t *dtp, const char *path)
 {
+#ifndef VBOX
 	struct dirent *dp;
 	const char *p;
 	DIR *dirp;
+#else
+	PRTDIR pDir;
+	RTDIRENTRY DirEntry;
+	const char *p;
+	int rc;
+#endif
 
 	char fname[PATH_MAX];
 	dtrace_prog_t *pgp;
@@ -1936,13 +1964,28 @@ dt_load_libs_dir(dtrace_hdl_t *dtp, const char *path)
 	void *rv;
 	dt_lib_depend_t *dld;
 
+#ifndef VBOX
 	if ((dirp = opendir(path)) == NULL) {
 		dt_dprintf("skipping lib dir %s: %s\n", path, strerror(errno));
 		return (0);
 	}
+#else
+	rc = RTDirOpen(&pDir, path);
+	if (RT_FAILURE(rc)) {
+		dt_dprintf("skipping lib dir %s: %s\n", path, RTErrGetShort(rc));
+		return (0);
+	}
+#endif
 
 	/* First, parse each file for library dependencies. */
+#ifndef VBOX
 	while ((dp = readdir(dirp)) != NULL) {
+#else
+	while (RT_SUCCESS(RTDirRead(pDir, &DirEntry, 0))) {
+		struct FakeDirEntry {
+			const char *d_name;
+		} FakeDirEntry = { DirEntry.szName }, *dp = &FakeDirEntry;
+#endif
 		if ((p = strrchr(dp->d_name, '.')) == NULL || strcmp(p, ".d"))
 			continue; /* skip any filename not ending in .d */
 
@@ -1976,7 +2019,11 @@ dt_load_libs_dir(dtrace_hdl_t *dtp, const char *path)
 		dtp->dt_filetag = NULL;
 	}
 
+#ifndef VBOX
 	(void) closedir(dirp);
+#else
+	RTDirClose(pDir);
+#endif
 	/*
 	 * Finish building the graph containing the library dependencies
 	 * and perform a topological sort to generate an ordered list

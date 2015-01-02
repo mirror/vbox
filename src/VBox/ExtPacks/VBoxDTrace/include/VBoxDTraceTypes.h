@@ -46,6 +46,7 @@ typedef unsigned char               uchar_t;
 typedef unsigned short              ushort_t;
 typedef unsigned int                uint_t;
 typedef uintptr_t                   ulong_t;
+typedef int64_t                     longlong_t;
 typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
 typedef RTCCUINTREG                 greg_t;
@@ -63,15 +64,18 @@ typedef char                       *caddr_t;
 #define NANOSEC                     RT_NS_1SEC
 #define MICROSEC                    RT_US_1SEC
 #define MILLISEC                    RT_MS_1SEC
-#define SEC                         1
+#define SEC                         (1)
 #define MAXPATHLEN                  RTPATH_MAX
 #define PATH_MAX                    RTPATH_MAX
-#define NBBY                        8
+#define NBBY                        (8)
 #define NCPU                        RTCPUSET_MAX_CPUS
-
+#define B_FALSE                     (0)
+#define B_TRUE                      (1)
 #define MIN(a1, a2)                 RT_MIN(a1, a2)
 #define MAX(a1, a2)                 RT_MAX(a1, a2)
 #define ABS(a_iValue)               RT_ABS(a_iValue)
+#define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
+#define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
 #define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
 
 #if defined(RT_ARCH_X86)
@@ -175,11 +179,6 @@ typedef char                       *caddr_t;
 /*
  * Kernel stuff...
  */
-#define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
-#define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
-
-#define B_FALSE                     (0)
-#define B_TRUE                      (1)
 #define CPU_ON_INTR(a_pCpu)         (false)
 
 #define KERNELBASE                  VBoxDtGetKernelBase()
@@ -416,6 +415,13 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 # define strndup(a_psz, a_cchMax)   RTStrDupN(a_psz, a_cchMax)
 # define strlcpy(a_pszDst, a_pszSrc, a_cbDst) ((void)RTStrCopy(a_pszDst, a_cbDst, a_pszSrc))
 
+/* Replacement for strndup(), requires editing the code unfortunately. */
+# define MY_STRDUPA(a_pszRes, a_pszSrc) \
+	do { \
+		size_t cb = strlen(a_pszSrc) + 1; \
+		(a_pszRes) = (char *)alloca(cb); \
+		memcpy(a_pszRes, a_pszSrc, cb); \
+	} while (0)
 
 #endif
 

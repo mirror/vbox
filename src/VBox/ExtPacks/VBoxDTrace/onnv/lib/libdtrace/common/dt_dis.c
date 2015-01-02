@@ -24,10 +24,12 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <strings.h>
 #include <stdio.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_ident.h>
@@ -119,7 +121,7 @@ dt_dis_scope(const char *name)
 	case 'l': return (DIFV_SCOPE_LOCAL);
 	case 't': return (DIFV_SCOPE_THREAD);
 	case 'g': return (DIFV_SCOPE_GLOBAL);
-	default: return (-1u);
+	default: return (~0u /*VBOX: was -1u*/);
 	}
 }
 

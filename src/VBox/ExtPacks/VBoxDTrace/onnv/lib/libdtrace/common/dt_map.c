@@ -23,6 +23,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <stdlib.h>
@@ -30,6 +31,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <assert.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_printf.h>
@@ -42,7 +44,7 @@ dt_epid_add(dtrace_hdl_t *dtp, dtrace_epid_t id)
 	dtrace_eprobedesc_t *enabled, *nenabled;
 	dtrace_probedesc_t *probe;
 
-	while (id >= (max = dtp->dt_maxprobe) || dtp->dt_pdesc == NULL) {
+	while (id >= (max = VBDTCAST(dtrace_id_t)dtp->dt_maxprobe) || dtp->dt_pdesc == NULL) {
 		dtrace_id_t new_max = max ? (max << 1) : 1;
 		size_t nsize = new_max * sizeof (void *);
 		dtrace_probedesc_t **new_pdesc;
@@ -292,7 +294,7 @@ dt_aggid_add(dtrace_hdl_t *dtp, dtrace_aggid_t id)
 	dtrace_epid_t epid;
 	int rval;
 
-	while (id >= (max = dtp->dt_maxagg) || dtp->dt_aggdesc == NULL) {
+	while (id >= (max = VBDTCAST(dtrace_id_t)dtp->dt_maxagg) || dtp->dt_aggdesc == NULL) {
 		dtrace_id_t new_max = max ? (max << 1) : 1;
 		size_t nsize = new_max * sizeof (void *);
 		dtrace_aggdesc_t **new_aggdesc;
@@ -359,7 +361,7 @@ dt_aggid_add(dtrace_hdl_t *dtp, dtrace_aggid_t id)
 		 * provide the compiler-generated aggregation information.
 		 */
 		if (dtp->dt_options[DTRACEOPT_GRABANON] == DTRACEOPT_UNSET &&
-		    agg->dtagd_rec[0].dtrd_uarg != NULL) {
+		    agg->dtagd_rec[0].dtrd_uarg != 0 /*NULL*/) {
 			dtrace_stmtdesc_t *sdp;
 			dt_ident_t *aid;
 

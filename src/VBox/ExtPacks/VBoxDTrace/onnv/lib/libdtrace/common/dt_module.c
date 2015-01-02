@@ -23,6 +23,7 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <sys/modctl.h>
 #include <sys/kobj.h>
@@ -40,10 +41,14 @@
 #include <assert.h>
 #include <errno.h>
 #include <dirent.h>
+#else  /* VBOX */
+#endif /* VBOX */
 
 #include <dt_strtab.h>
 #include <dt_module.h>
 #include <dt_impl.h>
+
+#ifndef VBOX /** @todo port what is necessary here ! */
 
 static const char *dt_module_strtab; /* active strtab for qsort callbacks */
 
@@ -1311,3 +1316,5 @@ dtrace_object_info(dtrace_hdl_t *dtp, const char *object, dtrace_objinfo_t *dto)
 	(void) dt_module_info(dmp, dto);
 	return (0);
 }
+
+#endif /* !VBOX */

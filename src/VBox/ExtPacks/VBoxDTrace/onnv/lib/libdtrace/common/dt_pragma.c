@@ -23,11 +23,13 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+#ifndef VBOX
 #include <assert.h>
 #include <strings.h>
 #include <alloca.h>
 #include <stdlib.h>
 #include <stdio.h>
+#endif
 
 #include <dt_parser.h>
 #include <dt_impl.h>
@@ -334,7 +336,11 @@ dt_pragma_option(const char *prname, dt_node_t *dnp)
 		    "superfluous arguments specified for #pragma %s\n", prname);
 	}
 
+#ifndef VBOX
 	opt = strdupa(dnp->dn_string);
+#else
+	MY_STRDUPA(opt, dnp->dn_string);
+#endif
 
 	if ((val = strchr(opt, '=')) != NULL)
 		*val++ = '\0';

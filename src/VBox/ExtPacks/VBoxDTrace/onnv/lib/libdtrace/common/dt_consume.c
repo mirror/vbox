@@ -23,6 +23,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #include <stdlib.h>
 #include <strings.h>
 #include <errno.h>
@@ -31,6 +32,18 @@
 #include <assert.h>
 #include <ctype.h>
 #include <alloca.h>
+#else  /* VBOX */
+# include <ctype.h>
+# include <iprt/mp.h>
+# ifdef _MSC_VER
+#  pragma warning(disable:4146) /* -uint64_t warnings */
+#  include <io.h>
+#  define ftruncate 	_chsize
+#  define fseeko		fseek
+# else
+#  include <unistd.h>
+# endif
+#endif /* VBOX */
 #include <dt_impl.h>
 
 #define	DT_MASK_LO 0x00000000FFFFFFFFULL
@@ -384,7 +397,7 @@ dt_flowindent(dtrace_hdl_t *dtp, dtrace_probedata_t *data, dtrace_epid_t last,
 	static const char *e_str[2] = { " -> ", " => " };
 	static const char *r_str[2] = { " <- ", " <= " };
 	static const char *ent = "entry", *ret = "return";
-	static int entlen = 0, retlen = 0;
+	static VBDTTYPE(size_t,int) entlen = 0, retlen = 0;
 	dtrace_epid_t next, id = epd->dtepd_epid;
 	int rval;
 
@@ -823,8 +836,10 @@ int
 dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
     caddr_t addr, int depth, int size)
 {
+#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
+#endif
 	int i, indent;
 	char c[PATH_MAX * 2];
 	uint64_t pc;
@@ -856,7 +871,7 @@ dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 			return (dt_set_errno(dtp, EDT_BADSTACKPC));
 		}
 
-		if (pc == NULL)
+		if (pc == 0 /*VBOX: NULL is a ptr */)
 			break;
 
 		addr += size;
@@ -864,6 +879,7 @@ dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		if (dt_printf(dtp, fp, "%*s", indent, "") < 0)
 			return (-1);
 
+#ifndef VBOX
 		if (dtrace_lookup_by_addr(dtp, pc, &sym, &dts) == 0) {
 			if (pc > sym.st_value) {
 				(void) snprintf(c, sizeof (c), "%s`%s+0x%llx",
@@ -883,9 +899,12 @@ dt_print_stack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 				(void) snprintf(c, sizeof (c), "%s`0x%llx",
 				    dts.dts_object, pc);
 			} else {
+#endif
 				(void) snprintf(c, sizeof (c), "0x%llx", pc);
+#ifndef VBOX
 			}
 		}
+#endif
 
 		if (dt_printf(dtp, fp, format, c) < 0)
 			return (-1);
@@ -909,9 +928,13 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	const char *str = strsize ? strbase : NULL;
 	int err = 0;
 
+#ifndef VBOX
 	char name[PATH_MAX], objname[PATH_MAX], c[PATH_MAX * 2];
 	struct ps_prochandle *P;
 	GElf_Sym sym;
+#else
+	char c[PATH_MAX * 2];
+#endif
 	int i, indent;
 	pid_t pid;
 
@@ -936,6 +959,7 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 	 * determining <symbol, offset> from <pid, address>.  For now, if
 	 * this is a vector open, we just print the raw address or string.
 	 */
+#ifndef VBOX
 	if (dtp->dt_vector == NULL)
 		P = dt_proc_grab(dtp, pid, PGRAB_RDONLY | PGRAB_FORCE, 0);
 	else
@@ -943,13 +967,17 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 
 	if (P != NULL)
 		dt_proc_lock(dtp, P); /* lock handle while we perform lookups */
+#endif
 
-	for (i = 0; i < depth && pc[i] != NULL; i++) {
+	for (i = 0; VBDTCAST(uint_t)i < depth && pc[i] != 0/*NULL*/; i++) {
+#ifndef VBOX
 		const prmap_t *map;
+#endif
 
 		if ((err = dt_printf(dtp, fp, "%*s", indent, "")) < 0)
 			break;
 
+#ifndef VBOX
 		if (P != NULL && Plookup_by_addr(P, pc[i],
 		    name, sizeof (name), &sym) == 0) {
 			(void) Pobjname(P, pc[i], objname, sizeof (objname));
@@ -985,6 +1013,9 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 				(void) snprintf(c, sizeof (c), "%s`0x%llx",
 				    dt_basename(objname), (u_longlong_t)pc[i]);
 			} else {
+#else
+		{	{
+#endif
 				(void) snprintf(c, sizeof (c), "0x%llx",
 				    (u_longlong_t)pc[i]);
 			}
@@ -1022,10 +1053,12 @@ dt_print_ustack(dtrace_hdl_t *dtp, FILE *fp, const char *format,
 		}
 	}
 
+#ifndef VBOX
 	if (P != NULL) {
 		dt_proc_unlock(dtp, P);
 		dt_proc_release(dtp, P);
 	}
+#endif
 
 	return (err);
 }
@@ -1041,6 +1074,7 @@ dt_print_usym(dtrace_hdl_t *dtp, FILE *fp, caddr_t addr, dtrace_actkind_t act)
 	char *s;
 	int n, len = 256;
 
+#ifndef VBOX
 	if (act == DTRACEACT_USYM && dtp->dt_vector == NULL) {
 		struct ps_prochandle *P;
 
@@ -1057,6 +1091,7 @@ dt_print_usym(dtrace_hdl_t *dtp, FILE *fp, caddr_t addr, dtrace_actkind_t act)
 			dt_proc_release(dtp, P);
 		}
 	}
+#endif
 
 	do {
 		n = len;
@@ -1075,12 +1110,17 @@ dt_print_umod(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 	uint64_t pc = ((uint64_t *)addr)[1];
 	int err = 0;
 
+#ifndef VBOX
 	char objname[PATH_MAX], c[PATH_MAX * 2];
 	struct ps_prochandle *P;
+#else
+	char c[64];
+#endif
 
 	if (format == NULL)
 		format = "  %-50s";
 
+#ifndef VBOX
 	/*
 	 * See the comment in dt_print_ustack() for the rationale for
 	 * printing raw addresses in the vectored case.
@@ -1105,6 +1145,10 @@ dt_print_umod(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 		dt_proc_unlock(dtp, P);
 		dt_proc_release(dtp, P);
 	}
+#else  /* VBOX */
+	snprintf(c, sizeof (c), "0x%llx", (u_longlong_t)pc);
+	err = dt_printf(dtp, fp, format, c);
+#endif /* VBOX */
 
 	return (err);
 }
@@ -1114,13 +1158,18 @@ dt_print_sym(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 {
 	/* LINTED - alignment */
 	uint64_t pc = *((uint64_t *)addr);
+#ifndef VBOX
 	dtrace_syminfo_t dts;
 	GElf_Sym sym;
 	char c[PATH_MAX * 2];
+#else
+	char c[64];
+#endif
 
 	if (format == NULL)
 		format = "  %-50s";
 
+#ifndef VBOX
 	if (dtrace_lookup_by_addr(dtp, pc, &sym, &dts) == 0) {
 		(void) snprintf(c, sizeof (c), "%s`%s",
 		    dts.dts_object, dts.dts_name);
@@ -1138,6 +1187,9 @@ dt_print_sym(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 			    (u_longlong_t)pc);
 		}
 	}
+#else
+	snprintf(c, sizeof (c), "0x%llx", (u_longlong_t)pc);
+#endif
 
 	if (dt_printf(dtp, fp, format, c) < 0)
 		return (-1);
@@ -1150,15 +1202,20 @@ dt_print_mod(dtrace_hdl_t *dtp, FILE *fp, const char *format, caddr_t addr)
 {
 	/* LINTED - alignment */
 	uint64_t pc = *((uint64_t *)addr);
+#ifndef VBOX
 	dtrace_syminfo_t dts;
+#endif
 	char c[PATH_MAX * 2];
 
 	if (format == NULL)
 		format = "  %-50s";
 
+#ifndef VBOX
 	if (dtrace_lookup_by_addr(dtp, pc, NULL, &dts) == 0) {
 		(void) snprintf(c, sizeof (c), "%s", dts.dts_object);
-	} else {
+	} else
+#endif
+	{
 		(void) snprintf(c, sizeof (c), "0x%llx", (u_longlong_t)pc);
 	}
 
@@ -1540,7 +1597,12 @@ int
 dt_setopt(dtrace_hdl_t *dtp, const dtrace_probedata_t *data,
     const char *option, const char *value)
 {
+#ifndef VBOX
 	int len, rval;
+#else
+	size_t len;
+	int rval;
+#endif
 	char *msg;
 	const char *errstr;
 	dtrace_setoptdata_t optdata;
@@ -2122,7 +2184,11 @@ dt_consume_begin(dtrace_hdl_t *dtp, FILE *fp, dtrace_bufdesc_t *buf,
 		return (dt_set_errno(dtp, EDT_NOMEM));
 
 	if (max_ncpus == 0)
+#ifndef VBOX
 		max_ncpus = dt_sysconf(dtp, _SC_CPUID_MAX) + 1;
+#else
+		max_ncpus = RTMpGetMaxCpuId() + 1;
+#endif
 
 	for (i = 0; i < max_ncpus; i++) {
 		nbuf.dtbd_cpu = i;
@@ -2188,7 +2254,7 @@ dtrace_consume(dtrace_hdl_t *dtp, FILE *fp,
 	hrtime_t now = gethrtime();
 
 	if (dtp->dt_lastswitch != 0) {
-		if (now - dtp->dt_lastswitch < interval)
+		if (now - dtp->dt_lastswitch < VBDTCAST(hrtime_t)interval)
 			return (0);
 
 		dtp->dt_lastswitch += interval;
@@ -2200,7 +2266,11 @@ dtrace_consume(dtrace_hdl_t *dtp, FILE *fp,
 		return (dt_set_errno(dtp, EINVAL));
 
 	if (max_ncpus == 0)
+#ifndef VBOX
 		max_ncpus = dt_sysconf(dtp, _SC_CPUID_MAX) + 1;
+#else
+		max_ncpus = RTMpGetMaxCpuId() + 1;
+#endif
 
 	if (pf == NULL)
 		pf = (dtrace_consume_probe_f *)dt_nullprobe;

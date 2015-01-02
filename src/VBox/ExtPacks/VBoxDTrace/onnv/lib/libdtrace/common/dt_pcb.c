@@ -24,7 +24,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 /*
  * DTrace Parsing Control Block
@@ -44,9 +46,11 @@
  * in the future by adding locks to libdtrace or switching to Flex and Bison.
  */
 
+#ifndef VBOX
 #include <strings.h>
 #include <stdlib.h>
 #include <assert.h>
+#endif
 
 #include <dt_impl.h>
 #include <dt_program.h>
