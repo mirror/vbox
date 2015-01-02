@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
@@ -35,7 +36,25 @@
 #include <errno.h>
 #include <dlfcn.h>
 #include <gelf.h>
+#else
+# include <libctf.h>
+# include <ctf_impl.h>
+# include <iprt/param.h>
+# include <sys/stat.h>
+# include <stdio.h>
+# include <fcntl.h>
+# ifdef _MSC_VER
+#  include <io.h>
+# else
+#  include <unistd.h>
+# endif
+# define stat64  stat
+# define fstat64 fstat
+# define open64  open
+# define off64_t int64_t
+#endif
 
+#ifndef VBOX /* staticly linked in */
 #ifdef _LP64
 static const char *_libctf_zlib = "/usr/lib/64/libz.so";
 #else
@@ -47,24 +66,119 @@ static struct {
 	const char *(*z_error)(int);
 	void *z_dlp;
 } zlib;
+#endif /* !VBOX */
 
 static size_t _PAGESIZE;
 static size_t _PAGEMASK;
 
+#ifndef VBOX
 #pragma init(_libctf_init)
 void
 _libctf_init(void)
+#else
+void libctf_init(void)
+#endif
 {
+#ifndef VBOX
 	const char *p = getenv("LIBCTF_DECOMPRESSOR");
 
 	if (p != NULL)
 		_libctf_zlib = p; /* use alternate decompression library */
+#endif
 
 	_libctf_debug = getenv("LIBCTF_DEBUG") != NULL;
 
+#ifndef VBOX
 	_PAGESIZE = getpagesize();
+#else
+	_PAGESIZE = PAGE_SIZE;
+#endif
 	_PAGEMASK = ~(_PAGESIZE - 1);
 }
+
+#ifdef VBOX
+/*
+ * Fake MMAP for read only access.
+ */
+# define munmap(a_pvMem, a_cbMem) \
+	RTMemPageFree(a_pvMem, a_cbMem)
+
+# define mmap64(a_pvAddr, a_cb, a_fProt, a_fFlags, a_fd, a_offFile) \
+	VBoxCtfMap64Fake(a_pvAddr, a_cb, a_fProt, a_fFlags, a_fd, a_offFile)
+
+# undef PROT_READ
+# define PROT_READ 		0xfeed
+# undef MAP_PRIVATE
+# define MAP_PRIVATE	0xbeef
+
+static void *VBoxCtfMap64Fake(void *pvAddr, size_t cb, int fProt, int fFlags, int fd, int64_t offFile)
+{
+	off_t const offSaved = lseek(fd, 0, SEEK_CUR);
+	void *pvRet;
+	int err;
+
+	Assert(pvAddr == NULL); NOREF(pvAddr);
+	Assert(fProt == PROT_READ);
+	Assert(fFlags == MAP_PRIVATE);
+	if ((off_t)offFile != offFile) {
+		errno = EIO;
+		return MAP_FAILED;
+	}
+
+	if (lseek(offFile, offFile, SEEK_SET) >= 0) {
+
+		pvRet = RTMemPageAllocZ(cb);
+		if (!pvRet) {
+#ifdef _MSC_VER
+			ssize_t cbRead = read(fd, pvRet, (unsigned int)cb);
+#else
+			ssize_t cbRead = read(fd, pvRet, cb);
+#endif
+			if (cbRead < 0) {
+				RTMemPageFree(pvRet, cb);
+				pvRet = MAP_FAILED;
+			}
+		} else {
+			errno = ENOMEM;
+			pvRet = MAP_FAILED;
+		}
+
+		/* restore original position */
+		err = errno;
+		lseek(offSaved, 0, SEEK_SET);
+		errno = err;
+	}
+
+	return pvRet;
+}
+
+/*
+ * pread64
+ */
+#define pread64(a_fd, a_pvBuf, a_cbToRead, a_offFile) \
+	VBoxCtfPRead64(a_fd, a_pvBuf, a_cbToRead, a_offFile)
+
+static ssize_t VBoxCtfPRead64(int fd, void *pvBuf, size_t cbToRead, int64_t offFile)
+{
+	if ((off_t)offFile != offFile) {
+		errno = EIO;
+		return -1;
+	}
+
+	if (lseek(fd, offFile, SEEK_SET) < 0)
+		return -1;
+#ifndef _MSC_VER
+	return read(fd, pvBuf, cbToRead);
+#else
+	return read(fd, pvBuf, (unsigned int)cbToRead);
+#endif
+}
+
+
+
+#endif /* VBOX */
+
+#ifndef VBOX
 
 /*
  * Attempt to dlopen the decompression library and locate the symbols of
@@ -112,6 +226,8 @@ z_strerror(int err)
 {
 	return (zlib.z_error(err));
 }
+
+#endif /* VBOX */
 
 /*
  * Convert a 32-bit ELF file header into GElf.

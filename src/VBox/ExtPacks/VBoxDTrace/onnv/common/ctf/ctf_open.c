@@ -25,11 +25,22 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
+#ifndef VBOX
 #include <ctf_impl.h>
 #include <sys/mman.h>
 #include <sys/zmod.h>
+#else  /* VBOX */
+# define CTF_OLD_VERSIONS
+# include <ctf_impl.h>
+# include <zlib.h>
+# define z_compress     compress
+# define z_uncompress   uncompress
+# define z_strerror     zError
+#endif /* VBOX */
 
 static const ctf_dmodel_t _libctf_models[] = {
 	{ "ILP32", CTF_MODEL_ILP32, 4, 1, 2, 4, 4 },
@@ -142,7 +153,7 @@ init_symtab(ctf_file_t *fp, const ctf_header_t *hp,
 		if (gsp->st_name == 0 || gsp->st_shndx == SHN_UNDEF ||
 		    strcmp(name, "_START_") == 0 ||
 		    strcmp(name, "_END_") == 0) {
-			*xp = -1u;
+			*xp = ~0u /*VBOX: -1u*/;
 			continue;
 		}
 
@@ -150,7 +161,7 @@ init_symtab(ctf_file_t *fp, const ctf_header_t *hp,
 		case STT_OBJECT:
 			if (objtoff >= hp->cth_funcoff ||
 			    (gsp->st_shndx == SHN_ABS && gsp->st_value == 0)) {
-				*xp = -1u;
+				*xp = ~0u /*VBOX: -1u*/;
 				break;
 			}
 
@@ -160,7 +171,7 @@ init_symtab(ctf_file_t *fp, const ctf_header_t *hp,
 
 		case STT_FUNC:
 			if (funcoff >= hp->cth_typeoff) {
-				*xp = -1u;
+				*xp = ~0u /*VBOX: -1u*/;
 				break;
 			}
 
@@ -182,7 +193,7 @@ init_symtab(ctf_file_t *fp, const ctf_header_t *hp,
 			break;
 
 		default:
-			*xp = -1u;
+			*xp = ~0u /*VBOX: -1u*/;
 			break;
 		}
 	}
@@ -631,12 +642,19 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	 * the data section's buffer pointer into ctf_buf, below.
 	 */
 	if (hp.cth_flags & CTF_F_COMPRESS) {
+#ifndef VBOX
 		size_t srclen, dstlen;
+#else
+		uLong srclen;
+		uLong dstlen;
+#endif
 		const void *src;
 		int rc = Z_OK;
 
+#ifndef VBOX
 		if (ctf_zopen(errp) == NULL)
 			return (NULL); /* errp is set for us */
+#endif
 
 		if ((base = ctf_data_alloc(size + hdrsz)) == MAP_FAILED)
 			return (ctf_set_open_errno(errp, ECTF_ZALLOC));
@@ -646,8 +664,8 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 		buf = (uchar_t *)base + hdrsz;
 
 		src = (uchar_t *)ctfsect->cts_data + hdrsz;
-		srclen = ctfsect->cts_size - hdrsz;
-		dstlen = size;
+		srclen = VBDTCAST(uLong)(ctfsect->cts_size - hdrsz);
+		dstlen = VBDTCAST(uLong)size;
 
 		if ((rc = z_uncompress(buf, &dstlen, src, srclen)) != Z_OK) {
 			ctf_dprintf("zlib inflate err: %s\n", z_strerror(rc));

@@ -55,6 +55,10 @@ extern "C" {
  */
 extern int _libctf_debug;
 
+#ifdef VBOX
+extern void libctf_init(void);
+#endif
+
 #ifdef	__cplusplus
 }
 #endif

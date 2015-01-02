@@ -24,7 +24,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 /*
  * CTF Declaration Stack
@@ -176,7 +178,11 @@ ctf_decl_sprintf(ctf_decl_t *cd, const char *format, ...)
 	size_t n;
 
 	va_start(ap, format);
+#ifndef VBOX
 	n = vsnprintf(cd->cd_ptr, len, format, ap);
+#else
+	n = RTStrPrintfV(cd->cd_ptr, len, format, ap);
+#endif
 	va_end(ap);
 
 	cd->cd_ptr += MIN(n, len);

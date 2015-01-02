@@ -685,6 +685,7 @@ typedef struct dt_fdlist {
 
 #ifdef VBOX
 # include <iprt/critsect.h>
+# include <libctf.h>
 extern RTCRITSECT dt_qsort_lock; /* dt_aggregate.c */
 
 void dtrace_init(void)
@@ -702,6 +703,8 @@ _dtrace_init(void)
 			break;
 	}
 #else
+
+	libctf_init();
 	RTCritSectInit(&dt_qsort_lock);
 #endif
 }

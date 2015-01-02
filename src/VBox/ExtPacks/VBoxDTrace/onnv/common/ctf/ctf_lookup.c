@@ -25,9 +25,13 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/sysmacros.h>
+#else  /* VBOX */
+# include <ctype.h>
+#endif /* VBOX */
 #include <ctf_impl.h>
 
 /*
@@ -197,7 +201,7 @@ ctf_lookup_by_symbol(ctf_file_t *fp, ulong_t symidx)
 			return (ctf_set_errno(fp, ECTF_NOTDATA));
 	}
 
-	if (fp->ctf_sxlate[symidx] == -1u)
+	if (fp->ctf_sxlate[symidx] == ~0u /*VBOX: -1u*/)
 		return (ctf_set_errno(fp, ECTF_NOTYPEDAT));
 
 	type = *(ushort_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);
@@ -260,7 +264,7 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 			return (ctf_set_errno(fp, ECTF_NOTFUNC));
 	}
 
-	if (fp->ctf_sxlate[symidx] == -1u)
+	if (fp->ctf_sxlate[symidx] == ~0u /*VBOX: -1u*/)
 		return (ctf_set_errno(fp, ECTF_NOFUNCDAT));
 
 	dp = (ushort_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);

@@ -25,11 +25,14 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/sysmacros.h>
 #include <sys/param.h>
 #include <sys/mman.h>
+#else  /* VBOX */
+#endif /* VBOX */
 #include <ctf_impl.h>
 
 /*
@@ -93,7 +96,7 @@ ctf_copy_smembers(ctf_dtdef_t *dtd, uint_t soff, uchar_t *t)
 	for (; dmd != NULL; dmd = ctf_list_next(dmd)) {
 		if (dmd->dmd_name) {
 			ctm.ctm_name = soff;
-			soff += strlen(dmd->dmd_name) + 1;
+			soff += VBDTCAST(uint_t)strlen(dmd->dmd_name) + 1;
 		} else
 			ctm.ctm_name = 0;
 
@@ -116,7 +119,7 @@ ctf_copy_lmembers(ctf_dtdef_t *dtd, uint_t soff, uchar_t *t)
 	for (; dmd != NULL; dmd = ctf_list_next(dmd)) {
 		if (dmd->dmd_name) {
 			ctlm.ctlm_name = soff;
-			soff += strlen(dmd->dmd_name) + 1;
+			soff += VBDTCAST(uint_t)strlen(dmd->dmd_name) + 1;
 		} else
 			ctlm.ctlm_name = 0;
 
@@ -141,7 +144,7 @@ ctf_copy_emembers(ctf_dtdef_t *dtd, uint_t soff, uchar_t *t)
 	for (; dmd != NULL; dmd = ctf_list_next(dmd)) {
 		cte.cte_name = soff;
 		cte.cte_value = dmd->dmd_value;
-		soff += strlen(dmd->dmd_name) + 1;
+		soff += VBDTCAST(uint_t)strlen(dmd->dmd_name) + 1;
 		bcopy(&cte, t, sizeof (cte));
 		t += sizeof (cte);
 	}
@@ -257,8 +260,8 @@ ctf_update(ctf_file_t *fp)
 	 * entire CTF buffer we need, and then allocate a new buffer and
 	 * bcopy the finished header to the start of the buffer.
 	 */
-	hdr.cth_stroff = hdr.cth_typeoff + size;
-	hdr.cth_strlen = fp->ctf_dtstrlen;
+	hdr.cth_stroff = hdr.cth_typeoff + VBDTCAST(uint_t)size;
+	hdr.cth_strlen = VBDTCAST(uint_t)fp->ctf_dtstrlen;
 	size = sizeof (ctf_header_t) + hdr.cth_stroff + hdr.cth_strlen;
 
 	if ((buf = ctf_data_alloc(size)) == MAP_FAILED)
@@ -596,7 +599,7 @@ ctf_add_encoded(ctf_file_t *fp, uint_t flag,
 		return (CTF_ERR); /* errno is set for us */
 
 	dtd->dtd_data.ctt_info = CTF_TYPE_INFO(kind, flag, 0);
-	dtd->dtd_data.ctt_size = clp2(P2ROUNDUP(ep->cte_bits, NBBY) / NBBY);
+	dtd->dtd_data.ctt_size = VBDTCAST(ushort_t)clp2(P2ROUNDUP(ep->cte_bits, NBBY) / NBBY);
 	dtd->dtd_u.dtu_enc = *ep;
 
 	return (type);
@@ -776,7 +779,7 @@ ctf_add_enum(ctf_file_t *fp, uint_t flag, const char *name)
 		return (CTF_ERR); /* errno is set for us */
 
 	dtd->dtd_data.ctt_info = CTF_TYPE_INFO(CTF_K_ENUM, flag, 0);
-	dtd->dtd_data.ctt_size = fp->ctf_dmodel->ctd_int;
+	dtd->dtd_data.ctt_size = VBDTCAST(ushort_t)fp->ctf_dmodel->ctd_int;
 
 	return (type);
 }
