@@ -885,8 +885,8 @@ typedef struct VBoxDtVMem
     uint32_t            cCurChunks;
     /** The configured resource base. */
     uint32_t            uBase;
-    /** The configured resource end (base included). */
-    uint32_t            uEnd;
+    /** The configured max number of items. */
+    uint32_t            cMaxItems;
     /** The size of the apChunks array. */
     uint32_t            cMaxChunks;
     /** Array of chunk pointers.
@@ -909,6 +909,7 @@ struct VBoxDtVMem *VBoxDtVMemCreate(const char *pszName, void *pvBase, size_t cb
      * Assert preconditions of this implementation.
      */
     AssertMsgReturn((uintptr_t)pvBase <= UINT32_MAX, ("%p\n", pvBase), NULL);
+    AssertMsgReturn(cb <= UINT32_MAX, ("%zu\n", cb), NULL);
     AssertMsgReturn((uintptr_t)pvBase + cb - 1 <= UINT32_MAX, ("%p %zu\n", pvBase, cb), NULL);
     AssertMsgReturn(cbUnit == 1, ("%zu\n", cbUnit), NULL);
     AssertReturn(!pfnAlloc, NULL);
@@ -921,9 +922,9 @@ struct VBoxDtVMem *VBoxDtVMemCreate(const char *pszName, void *pvBase, size_t cb
     /*
      * Allocate the instance.
      */
-    uint32_t cChunks = (uint32_t)(cb - (uintptr_t)pvBase);
-    cChunks += VBOXDTVMEMCHUNK_BITS - 1;
-    cChunks /= VBOXDTVMEMCHUNK_BITS;
+    uint32_t cChunks = cb / VBOXDTVMEMCHUNK_BITS;
+    if (cb % VBOXDTVMEMCHUNK_BITS)
+        cChunks++;
     PVBOXDTVMEM pThis = (PVBOXDTVMEM)RTMemAllocZ(RT_OFFSETOF(VBOXDTVMEM, apChunks[cChunks]));
     if (!pThis)
         return NULL;
@@ -937,7 +938,7 @@ struct VBoxDtVMem *VBoxDtVMemCreate(const char *pszName, void *pvBase, size_t cb
     pThis->cCurFree     = 0;
     pThis->cCurChunks   = 0;
     pThis->uBase        = (uint32_t)(uintptr_t)pvBase;
-    pThis->uEnd         = (uint32_t)cb;
+    pThis->cMaxItems    = (uint32_t)cb;
     pThis->cMaxChunks   = cChunks;
 
     return pThis;
@@ -1023,17 +1024,14 @@ SUPR0Printf("returning iRet=%u\n", iRet);
 
         /* Out of resources? */
         if (cChunks >= pThis->cMaxChunks)
-        {
-SUPR0Printf("cChunks=%u cMaxChunks=%u!!\n", cChunks, pThis->cMaxChunks);
             break;
-        }
 
         /*
          * Allocate another chunk.
          */
         uint32_t const  iFirstBit = cChunks > 0 ? pThis->apChunks[cChunks - 1]->iFirst + VBOXDTVMEMCHUNK_BITS : 0;
         uint32_t const  cFreeBits = cChunks + 1 == pThis->cMaxChunks
-                                  ? pThis->uEnd - pThis->uBase - iFirstBit
+                                  ? pThis->cMaxItems - (iFirstBit - pThis->uBase)
                                   : VBOXDTVMEMCHUNK_BITS;
         Assert(cFreeBits <= VBOXDTVMEMCHUNK_BITS);
 
@@ -1041,10 +1039,7 @@ SUPR0Printf("cChunks=%u cMaxChunks=%u!!\n", cChunks, pThis->cMaxChunks);
 
         pChunk = (PVBOXDTVMEMCHUNK)RTMemAllocZ(sizeof(*pChunk));
         if (!pChunk)
-        {
-SUPR0Printf("returning NULL!!\n");
             return NULL;
-        }
 
 SUPR0Printf("Adding chunk %p at bit %u, covering %u bits\n", pChunk, iFirstBit, cFreeBits);
         pChunk->iFirst   = iFirstBit;
@@ -1098,9 +1093,9 @@ void VBoxDtVMemFree(struct VBoxDtVMem *pThis, void *pvMem, size_t cbMem)
     AssertReturnVoid((uintptr_t)pvMem < UINT32_MAX);
     uint32_t uMem = (uint32_t)(uintptr_t)pvMem;
     AssertReturnVoid(uMem >= pThis->uBase);
-    AssertReturnVoid(uMem < pThis->uEnd);
-
     uMem -= pThis->uBase;
+    AssertReturnVoid(uMem < pThis->cMaxItems);
+
 
     /*
      * Free it.

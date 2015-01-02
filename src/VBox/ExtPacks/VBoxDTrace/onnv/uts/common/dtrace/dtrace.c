@@ -12564,8 +12564,13 @@ dtrace_state_create(dev_t *devp, cred_t *cr)
 #else
 	(void) snprintf(c, sizeof (c), "dtrace_aggid_%p", state);
 #endif
+#ifndef VBOX /* Avoid idProbe = UINT32_MAX as it is used as invalid value by VTG. */
 	state->dts_aggid_arena = vmem_create(c, (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
+#else
+        state->dts_aggid_arena = vmem_create(c, (void *)1, _1G, 1,
+            NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
+#endif
 
 #ifndef VBOX
 	if (devp != NULL) {
@@ -14867,8 +14872,13 @@ dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 
 	ASSERT(MUTEX_HELD(&cpu_lock));
 
+#ifndef VBOX /* Reduce the area a bit just to be sure our vmem fake doesn't blow up. */
 	dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX, 1,
 	    NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
+#else
+        dtrace_arena = vmem_create("dtrace", (void *)1, UINT32_MAX - 16, 1,
+            NULL, NULL, NULL, 0, VM_SLEEP | VMC_IDENTIFIER);
+#endif
 #ifndef VBOX
 	dtrace_minor = vmem_create("dtrace_minor", (void *)DTRACEMNRN_CLONE,
 	    UINT32_MAX - DTRACEMNRN_CLONE, 1, NULL, NULL, NULL, 0,
