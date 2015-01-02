@@ -27,7 +27,9 @@
 #ifndef	_DT_PROVIDER_H
 #define	_DT_PROVIDER_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <dt_impl.h>
 #include <dt_ident.h>

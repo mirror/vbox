@@ -26,6 +26,7 @@
 #ifndef	_DT_PARSER_H
 #define	_DT_PARSER_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
@@ -34,6 +35,10 @@
 #include <libctf.h>
 #include <stdarg.h>
 #include <stdio.h>
+#else  /* VBOX */
+# include <sys/dtrace.h>
+# include <stdio.h>
+#endif /* VBOX */
 
 #ifdef	__cplusplus
 extern "C" {

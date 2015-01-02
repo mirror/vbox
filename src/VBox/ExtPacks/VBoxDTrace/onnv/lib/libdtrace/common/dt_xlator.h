@@ -27,7 +27,9 @@
 #ifndef	_DT_XLATOR_H
 #define	_DT_XLATOR_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <libctf.h>
 #include <dtrace.h>

@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <stdlib.h>
@@ -34,6 +35,13 @@
 #include <assert.h>
 #include <alloca.h>
 #include <limits.h>
+#else  /* VBOX */
+# include "dt_impl.h"
+# ifdef _MSC_VER
+#  pragma warning(disable:4018) /* signed/unsigned comparsion mismatch warning */
+# endif
+# include <iprt/mp.h>
+#endif /* VBOX */
 
 #define	DTRACE_AHASHSIZE	32779		/* big 'ol prime */
 
@@ -42,7 +50,11 @@
  * function, the variables that affect comparison must regrettably be global;
  * they are protected by a global static lock, dt_qsort_lock.
  */
+#ifndef VBOX
 static pthread_mutex_t dt_qsort_lock = PTHREAD_MUTEX_INITIALIZER;
+#else
+RTCRITSECT dt_qsort_lock;
+#endif
 
 static int dt_revsort;
 static int dt_keysort;
@@ -246,6 +258,7 @@ dt_aggregate_quantizedcmp(int64_t *lhs, int64_t *rhs)
 static void
 dt_aggregate_usym(dtrace_hdl_t *dtp, uint64_t *data)
 {
+#ifndef VBOX
 	uint64_t pid = data[0];
 	uint64_t *pc = &data[1];
 	struct ps_prochandle *P;
@@ -264,11 +277,13 @@ dt_aggregate_usym(dtrace_hdl_t *dtp, uint64_t *data)
 
 	dt_proc_unlock(dtp, P);
 	dt_proc_release(dtp, P);
+#endif
 }
 
 static void
 dt_aggregate_umod(dtrace_hdl_t *dtp, uint64_t *data)
 {
+#ifndef VBOX
 	uint64_t pid = data[0];
 	uint64_t *pc = &data[1];
 	struct ps_prochandle *P;
@@ -287,21 +302,25 @@ dt_aggregate_umod(dtrace_hdl_t *dtp, uint64_t *data)
 
 	dt_proc_unlock(dtp, P);
 	dt_proc_release(dtp, P);
+#endif
 }
 
 static void
 dt_aggregate_sym(dtrace_hdl_t *dtp, uint64_t *data)
 {
+#ifndef VBOX
 	GElf_Sym sym;
 	uint64_t *pc = data;
 
 	if (dtrace_lookup_by_addr(dtp, *pc, &sym, NULL) == 0)
 		*pc = sym.st_value;
+#endif
 }
 
 static void
 dt_aggregate_mod(dtrace_hdl_t *dtp, uint64_t *data)
 {
+#ifndef VBOX
 	uint64_t *pc = data;
 	dt_module_t *dmp;
 
@@ -324,6 +343,7 @@ dt_aggregate_mod(dtrace_hdl_t *dtp, uint64_t *data)
 			return;
 		}
 	}
+#endif
 }
 
 static dtrace_aggvarid_t
@@ -1007,8 +1027,13 @@ dt_aggregate_go(dtrace_hdl_t *dtp)
 	assert(agp->dtat_ncpu == 0);
 	assert(agp->dtat_cpus == NULL);
 
+#ifndef VBOX
 	agp->dtat_maxcpu = dt_sysconf(dtp, _SC_CPUID_MAX) + 1;
 	agp->dtat_ncpu = dt_sysconf(dtp, _SC_NPROCESSORS_MAX);
+#else
+	agp->dtat_maxcpu = RTMpGetMaxCpuId() + 1;
+	agp->dtat_ncpu = RTMpGetCount();
+#endif
 	agp->dtat_cpus = malloc(agp->dtat_ncpu * sizeof (processorid_t));
 
 	if (agp->dtat_cpus == NULL)
@@ -1242,7 +1267,11 @@ dt_aggregate_walk_sorted(dtrace_hdl_t *dtp,
 	for (h = hash->dtah_all, i = 0; h != NULL; h = h->dtahe_nextall)
 		sorted[i++] = h;
 
+#ifndef VBOX
 	(void) pthread_mutex_lock(&dt_qsort_lock);
+#else
+	RTCritSectEnter(&dt_qsort_lock);
+#endif
 
 	if (sfunc == NULL) {
 		dt_aggregate_qsort(dtp, sorted, nentries,
@@ -1256,7 +1285,11 @@ dt_aggregate_walk_sorted(dtrace_hdl_t *dtp,
 		qsort(sorted, nentries, sizeof (dt_ahashent_t *), sfunc);
 	}
 
+#ifndef VBOX
 	(void) pthread_mutex_unlock(&dt_qsort_lock);
+#else
+	RTCritSectLeave(&dt_qsort_lock);
+#endif
 
 	for (i = 0; i < nentries; i++) {
 		h = sorted[i];
@@ -1651,7 +1684,11 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 	 * dt_qsort_lock here, and hold it across all of our subsequent
 	 * comparison and sorting.
 	 */
+#ifndef VBOX
 	(void) pthread_mutex_lock(&dt_qsort_lock);
+#else
+	RTCritSectEnter(&dt_qsort_lock);
+#endif
 
 	qsort(sorted, nentries, sizeof (dt_ahashent_t *),
 	    dt_aggregate_keyvarcmp);
@@ -1680,11 +1717,15 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 		bundlesize = (naggvars + 2) * sizeof (dt_ahashent_t *);
 
 		if ((nbundle = dt_zalloc(dtp, bundlesize)) == NULL) {
+#ifndef VBOX
 			(void) pthread_mutex_unlock(&dt_qsort_lock);
+#else
+			RTCritSectLeave(&dt_qsort_lock);
+#endif
 			goto out;
 		}
 
-		for (j = start; j < i; j++) {
+		for (j = VBDTCAST(int)start; j < i; j++) {
 			dtrace_aggvarid_t id = dt_aggregate_aggvarid(sorted[j]);
 
 			assert(id <= max);
@@ -1730,7 +1771,11 @@ dtrace_aggregate_walk_joined(dtrace_hdl_t *dtp, dtrace_aggvarid_t *aggvars,
 	dt_aggregate_qsort(dtp, bundle, nbundles, sizeof (dt_ahashent_t **),
 	    dt_aggregate_bundlecmp);
 
+#ifndef VBOX
 	(void) pthread_mutex_unlock(&dt_qsort_lock);
+#else
+	RTCritSectLeave(&dt_qsort_lock);
+#endif
 
 	/*
 	 * We're done!  Now we just need to go back over the sorted bundles,

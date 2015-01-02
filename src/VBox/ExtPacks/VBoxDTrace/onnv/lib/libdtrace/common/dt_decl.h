@@ -27,9 +27,11 @@
 #ifndef	_DT_DECL_H
 #define	_DT_DECL_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
+#endif
 #include <libctf.h>
 #include <dtrace.h>
 #include <stdio.h>

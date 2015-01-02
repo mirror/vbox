@@ -40,7 +40,9 @@
 #ifndef	_LIBCTF_H
 #define	_LIBCTF_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
+#ifndef VBOX
+# pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <sys/ctf_api.h>
 

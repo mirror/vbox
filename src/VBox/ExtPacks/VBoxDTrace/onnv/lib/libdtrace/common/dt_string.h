@@ -26,8 +26,12 @@
 #ifndef	_DT_STRING_H
 #define	_DT_STRING_H
 
+#ifndef VBOX
 #include <sys/types.h>
 #include <strings.h>
+#else  /* VBOX */
+# include <iprt/string.h>
+#endif /* VBOX */
 
 #ifdef	__cplusplus
 extern "C" {

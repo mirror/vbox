@@ -27,7 +27,9 @@
 #ifndef	_DT_PCB_H
 #define	_DT_PCB_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
+#ifndef VBOX
+# pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #include <dtrace.h>
 #include <setjmp.h>

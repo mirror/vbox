@@ -27,7 +27,9 @@
 #ifndef	_DT_PROGRAM_H
 #define	_DT_PROGRAM_H
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

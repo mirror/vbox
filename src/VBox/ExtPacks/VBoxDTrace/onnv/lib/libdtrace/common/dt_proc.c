@@ -76,16 +76,20 @@
  * up using this condition and will then call the client handler as necessary.
  */
 
+#ifndef VBOX
 #include <sys/wait.h>
 #include <sys/lwp.h>
 #include <strings.h>
 #include <signal.h>
 #include <assert.h>
 #include <errno.h>
+#endif
 
 #include <dt_proc.h>
 #include <dt_pid.h>
 #include <dt_impl.h>
+
+#ifndef VBOX
 
 #define	IS_SYS_EXEC(w)	(w == SYS_execve)
 #define	IS_SYS_FORK(w)	(w == SYS_vfork || w == SYS_forksys)
@@ -1032,6 +1036,7 @@ dt_proc_unlock(dtrace_hdl_t *dtp, struct ps_prochandle *P)
 	int err = pthread_mutex_unlock(&dpr->dpr_lock);
 	assert(err == 0); /* check for unheld lock */
 }
+#endif /* !VBOX */
 
 void
 dt_proc_hash_create(dtrace_hdl_t *dtp)
@@ -1039,8 +1044,12 @@ dt_proc_hash_create(dtrace_hdl_t *dtp)
 	if ((dtp->dt_procs = dt_zalloc(dtp, sizeof (dt_proc_hash_t) +
 	    sizeof (dt_proc_t *) * _dtrace_pidbuckets - 1)) != NULL) {
 
+#ifndef VBOX /** @todo This needs more work... */
 		(void) pthread_mutex_init(&dtp->dt_procs->dph_lock, NULL);
 		(void) pthread_cond_init(&dtp->dt_procs->dph_cv, NULL);
+#else
+
+#endif
 
 		dtp->dt_procs->dph_hashlen = _dtrace_pidbuckets;
 		dtp->dt_procs->dph_lrulim = _dtrace_pidlrulim;
@@ -1051,14 +1060,18 @@ void
 dt_proc_hash_destroy(dtrace_hdl_t *dtp)
 {
 	dt_proc_hash_t *dph = dtp->dt_procs;
+#ifndef VBOX
 	dt_proc_t *dpr;
 
 	while ((dpr = dt_list_next(&dph->dph_lrulist)) != NULL)
 		dt_proc_destroy(dtp, dpr->dpr_proc);
+#endif
 
 	dtp->dt_procs = NULL;
 	dt_free(dtp, dph);
 }
+
+#ifndef VBOX
 
 struct ps_prochandle *
 dtrace_proc_create(dtrace_hdl_t *dtp, const char *file, char *const *argv)
@@ -1095,3 +1108,4 @@ dtrace_proc_continue(dtrace_hdl_t *dtp, struct ps_prochandle *P)
 {
 	dt_proc_continue(dtp, P);
 }
+#endif /* !VBOX */

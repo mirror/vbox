@@ -596,10 +596,8 @@ print_probe_info(const dtrace_probeinfo_t *p)
 	oprintf("\n\tArgument Types\n");
 
 	for (i = 0; i < p->dtp_argc; i++) {
-#ifndef VBOX /* no ctf for now  */
 		if (ctf_type_name(p->dtp_argv[i].dtt_ctfp,
 		    p->dtp_argv[i].dtt_type, buf, sizeof (buf)) == NULL)
-#endif
 			(void) strlcpy(buf, "(unknown)", sizeof (buf));
 		oprintf("\t\targs[%d]: %s\n", i, buf);
 	}
@@ -1270,6 +1268,7 @@ main(int argc, char *argv[])
 	err = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 	if (RT_FAILURE(err))
 		return RTMsgInitFailure(err);
+	dtrace_init();
 
 	g_ofp = stdout;
 #endif
@@ -1358,17 +1357,14 @@ main(int argc, char *argv[])
 				mode++;
 				break;
 
-			case 'G':
 #ifndef VBOX
+			case 'G':
 				g_mode = DMODE_LINK;
 				g_oflags |= DTRACE_O_NODEV;
 				g_cflags |= DTRACE_C_ZDEFS; /* -G implies -Z */
 				g_exec = 0;
 				mode++;
 				break;
-#else
-				fprintf(stderr, "%s: -G is not supported\n", g_pname);
-				return (E_USAGE);
 #endif
 
 			case 'l':
@@ -1387,6 +1383,12 @@ main(int argc, char *argv[])
 				if (strchr(DTRACE_OPTSTR, c) == NULL)
 					return (usage(stderr));
 #else
+			case 'c':
+			case 'p':
+			case 'G':
+				fprintf(stderr, "%s: -%c is not supported\n", g_pname, c);
+				return (E_USAGE);
+
 			case VINF_GETOPT_NOT_OPTION:
 				g_argv[g_argc++] = (char *)ValueUnion.psz;
 				break;
@@ -1686,6 +1688,7 @@ main(int argc, char *argv[])
 		return (E_USAGE);
 	}
 
+#ifndef VBOX
 	/*
 	 * In our third pass we handle any command-line options related to
 	 * grabbing or creating victim processes.  The behavior of these calls
@@ -1729,6 +1732,7 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+#endif /* !VBOX */
 
 	/*
 	 * In our fourth pass we finish g_cmdv[] by calling dc_func to convert
@@ -1967,8 +1971,10 @@ main(int argc, char *argv[])
 	 * continue any grabbed or created processes, setting them running
 	 * using the /proc control mechanism inside of libdtrace.
 	 */
+#ifndef VBOX
 	for (i = 0; i < g_psc; i++)
 		dtrace_proc_continue(g_dtp, g_psv[i]);
+#endif
 
 	g_pslive = g_psc; /* count for prochandler() */
 

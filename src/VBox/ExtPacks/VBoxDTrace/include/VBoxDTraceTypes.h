@@ -33,15 +33,23 @@
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
+#include <iprt/param.h>
+#ifdef IN_RING3
+# include <sys/types.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
 struct modctl;
 
 typedef unsigned char               uchar_t;
+typedef unsigned short              ushort_t;
 typedef unsigned int                uint_t;
 typedef uintptr_t                   ulong_t;
+typedef uint64_t                    hrtime_t;
+typedef RTCCUINTREG                 greg_t;
 typedef uintptr_t                   pc_t;
+typedef uintptr_t                   id_t;
 typedef unsigned int                model_t;
 typedef uint32_t                    zoneid_t;
 typedef RTCPUID                     processorid_t;
@@ -53,15 +61,25 @@ typedef char                       *caddr_t;
 
 #define NANOSEC                     RT_NS_1SEC
 #define MILLISEC                    RT_MS_1SEC
+#define MAXPATHLEN                  RTPATH_MAX
+#define PATH_MAX                    RTPATH_MAX
+#define NBBY                        8
+#define NCPU                        RTCPUSET_MAX_CPUS
 
 #if defined(RT_ARCH_X86)
 # ifndef __i386
-#  define __i386            1
+#  define __i386                1
+# endif
+# ifndef __x86
+#  define __x86                 1
 # endif
 
 #elif defined(RT_ARCH_AMD64)
 # ifndef __x86_64
-#  define __x86_64          1
+#  define __x86_64              1
+# endif
+# ifndef __x86
+#  define __x86                 1
 # endif
 
 #else
@@ -93,11 +111,26 @@ typedef char                       *caddr_t;
 
 
 /*
- * CTF - probably needs to be ported wholesale or smth.
+ * Errno defines compatible with the CRT of the given host...
  */
-#define CTF_MODEL_NATIVE            1
-typedef struct VBoxDtCtfFile        ctf_file_t;
-typedef intptr_t                    ctf_id_t;
+#ifdef IN_RING0
+# define EINVAL                 (22)
+# define EBUSY                  (16)
+# define EFBIG                  (27)
+# define ENOMEM                 (12)
+# define ENOSPC                 (28)
+# define ENOENT                 (2)
+# define EFAULT                 (14)
+# define E2BIG                  (7)
+# define EACCES                 (13)
+# define ENXIO                  (6)
+# define EAGAIN                 (11)
+# define ENOTTY                 (25)
+# define ESRCH                  (3)
+#endif
+#if defined(_MSC_VER) || defined(IN_RING0)
+# define EALREADY               (114)
+#endif
 
 
 #ifdef IN_RING0
@@ -105,16 +138,11 @@ typedef intptr_t                    ctf_id_t;
 /*
  * Kernel stuff...
  */
-typedef uint64_t                    hrtime_t;
-typedef RTCCUINTREG                 greg_t;
-
 #define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
 #define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
 #define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
 #define MIN(a1, a2)                 RT_MIN(a1, a2)
 
-#define NBBY                        8
-#define NCPU                        RTCPUSET_MAX_CPUS
 #define B_FALSE                     (0)
 #define B_TRUE                      (1)
 #define CPU_ON_INTR(a_pCpu)         (false)
@@ -234,25 +262,6 @@ void VBoxDtCmnErr(int iLevel, const char *pszFormat, ...);
 void VBoxDtUPrintf(const char *pszFormat, ...);
 void VBoxDtUPrintfV(const char *pszFormat, va_list va);
 
-
-/*
- * Errno defines compatible with the CRT of the given host...
- */
-#define EINVAL                  (22)
-#define EBUSY                   (16)
-#define EFBIG                   (27)
-#define ENOMEM                  (12)
-#define ENOSPC                  (28)
-#define ENOENT                  (2)
-#define EFAULT                  (14)
-#define E2BIG                   (7)
-#define EACCES                  (13)
-#define EALREADY                (114)
-#define ENXIO                   (6)
-#define EAGAIN                  (11)
-#define ENOTTY                  (25)
-#define ESRCH                   (3)
-
 /*
  * Memory allocation wrappers.
  */
@@ -342,6 +351,29 @@ major_t VBoxDtDdiDriverMajor(struct VBoxDtDevInfo *pDevInfo);
 void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 
 #endif /* IN_RING0 */
+
+
+#ifdef IN_RING3
+/*
+ * Make life a little easier in ring-3.
+ */
+# include <iprt/alloca.h>
+# include <iprt/mem.h>
+# include <iprt/string.h>
+# include <iprt/time.h>
+# define gethrtime()                RTTimeNanoTS()
+
+/* This isn't necessarily making things easier at first, but allows EF and
+   such later on when things doesn't work right. */
+# include <stdlib.h>
+# include <string.h>
+# define malloc(a_cbMem)            RTMemAlloc(a_cbMem)
+# define realloc(a_pvOld, a_cbMem)  RTMemRealloc(a_pvOld, a_cbMem)
+# define calloc(a_cbItem, a_cItems) RTMemAllocZ((size_t)(a_cbItem) * (a_cItems))
+# define free(a_pvMem)              RTMemFree(a_pvMem)
+# define strdup(a_psz)              RTStrDup(a_psz)
+
+#endif
 
 RT_C_DECLS_END
 #endif
