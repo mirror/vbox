@@ -41,6 +41,9 @@
 #ifdef IN_RING3
 # include <sys/types.h>
 # include <limits.h>
+# if defined(_MSC_VER)
+#  include <stdio.h>
+# endif
 #endif
 
 RT_C_DECLS_BEGIN
