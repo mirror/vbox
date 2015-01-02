@@ -75,6 +75,9 @@ VBoxDTrace_SOURCES = \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_work.c \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_xlator.c \
 	\
+	$(VBoxDTrace_0_OUTDIR)/dt_errtags.c \
+	$(VBoxDTrace_0_OUTDIR)/dt_names.c \
+	\
 	$(VBOXDT_PATH_CMN_CTF)/ctf_create.c \
 	$(VBOXDT_PATH_CMN_CTF)/ctf_error.c \
 	$(VBOXDT_PATH_CMN_CTF)/ctf_decl.c \
@@ -109,26 +112,39 @@ if 1
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_grammar.y
  VBoxDTrace_INCS     += $(VBoxDTrace_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common
 else
- # fixme later
+ # TODO: generate these.
 endif
 
 if 1
- USES                 = lex
- VBoxDTrace_USES      = lex
+ USES                += lex
+ VBoxDTrace_USES     += lex
  VBoxDTrace_LEXTOOL   = FLEX
  VBoxDTrace_LEXFLAGS  = -l
  VBoxDTrace_DEFS      = USING_FLEX
  VBoxDTrace_SOURCES  += \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
 else
- VBoxDTrace_SOURCES  += \
-	generated/dt_lex.c
- VBoxDTrace_INCS.win  += \
-	generated/hdrhacks
+ # TODO: generate this.
 endif
 
 VBoxDTrace_LIBS = \
 	$(LIB_RUNTIME)
+
+
+# Generate sources
+$$(VBoxDTrace_0_OUTDIR)/dt_errtags.c: \
+		$(VBOXDT_PATH_LIBDTRACE)/common/dt_errtags.h \
+		$(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed \
+		| $$(dir $$@)
+	$(MSG_GENERATE,VBoxDTrace,$@,$<)
+	$(SED) -n -f $(VBOXDT_PATH_LIBDTRACE)/common/mkerrtags.sed --output $@ $<
+
+$$(VBoxDTrace_0_OUTDIR)/dt_names.c: \
+		$(VBOXDT_PATH_UTS)/common/sys/dtrace.h \
+		$(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed \
+		| $$(dir $$@)
+	$(MSG_GENERATE,VBoxDTrace,$@,$<)
+	$(SED) -n -f $(VBOXDT_PATH_LIBDTRACE)/common/mknames.sed --output $@ $<
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
