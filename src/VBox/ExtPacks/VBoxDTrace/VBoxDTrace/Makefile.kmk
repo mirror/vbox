@@ -34,6 +34,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxDTrace
 VBoxDTrace_TEMPLATE = VBOXR3NPEXE
 VBoxDTrace_DEFS = RTMEM_WRAP_TO_EF_APIS
+#VBoxDTrace_DEFS += YYDEBUG
 VBoxDTrace_SDKS = VBOX_ZLIB
 ifn1of ($(KBUILD_TARGET), win)
  VBoxDTrace_CFLAGS = -Wno-format
