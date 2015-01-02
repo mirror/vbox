@@ -229,18 +229,18 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void);
 #define curthread               (VBoxDtGetCurrentThread())
 
 
-typedef struct VBoxDtProcess
+typedef struct VBoxDtProcess    proc_t;
+# if 0 /* not needed ? */
+struct VBoxDtProcess    proc_t;
 {
-    uint32_t                p_flag;
+/*    uint32_t                p_flag; - don't bother with this */
     RTPROCESS               p_pid;
     struct dtrace_helpers  *p_dtrace_helpers;
-    struct VBoxDtCred      *p_cred;
-} proc_t;
+}
 proc_t *VBoxDtGetCurrentProc(void);
-#define curproc		            (VBoxDtGetCurrentProc())
-
-#define SNOCD                   RT_BIT(0)
-
+# define curproc                 (VBoxDtGetCurrentProc())
+/*# define SNOCD                  RT_BIT(0) - don't bother with this */
+# endif
 
 typedef struct VBoxDtTaskQueue  taskq_t;
 
@@ -330,11 +330,7 @@ void *VBoxDtKMemCacheAlloc(struct VBoxDtMemCache *pCache, uint32_t fFlags);
 void  VBoxDtKMemCacheFree(struct VBoxDtMemCache *pCache, void *pvMem);
 
 
-typedef struct VBoxDtVMem
-{
-    size_t                  cbTodo;
-    void                   *pvTodo;
-} vmem_t;
+typedef struct VBoxDtVMem       vmem_t;
 #define VM_SLEEP                RT_BIT(0)
 #define VM_BESTFIT              RT_BIT(1)
 #define VMC_IDENTIFIER          RT_BIT(16)
@@ -371,33 +367,40 @@ typedef uint32_t                    minor_t;
 /*
  * DDI
  */
-#define DDI_SUCCESS                 (0)
-#define DDI_FAILURE                 (-1)
-#define ddi_soft_state_init         VBoxDtDdiSoftStateInit
-#define ddi_soft_state_fini         VBoxDtDdiSoftStateTerm
-#define ddi_soft_state_zalloc       VBoxDtDdiSoftStateAllocZ
-#define ddi_get_soft_state          VBoxDtDdiSoftStateGet
-#define ddi_soft_state_free         VBoxDtDdiSoftStateFree
+# define DDI_SUCCESS                (0)
+# define DDI_FAILURE                (-1)
+# if 0 /* not needed */
+# define ddi_soft_state_init        VBoxDtDdiSoftStateInit
+# define ddi_soft_state_fini        VBoxDtDdiSoftStateTerm
+# define ddi_soft_state_zalloc      VBoxDtDdiSoftStateAllocZ
+# define ddi_get_soft_state         VBoxDtDdiSoftStateGet
+# define ddi_soft_state_free        VBoxDtDdiSoftStateFree
 int   VBoxDtDdiSoftStateInit(void **ppvSoftStates, size_t cbSoftState, uint32_t cMaxItems);
 int   VBoxDtDdiSoftStateTerm(void **ppvSoftStates);
 int   VBoxDtDdiSoftStateAllocZ(void *pvSoftStates, RTDEV uMinor);
 int   VBoxDtDdiSoftStateFree(void *pvSoftStates, RTDEV uMinor);
 void *VBoxDtDdiSoftStateGet(void *pvSoftStates, RTDEV uMinor);
+# endif
 
-typedef struct VBoxDtDevInfo        dev_info_t;
 typedef enum { DDI_ATT_CMD_DUMMY }  ddi_attach_cmd_t;
 typedef enum { DDI_DETACH, DDI_SUSPEND }  ddi_detach_cmd_t;
-#define ddi_driver_major            VBoxDtDdiDriverMajor
-#define ddi_report_dev              VBoxDtDdiReportDev
+# if 0 /* not needed */
+typedef struct VBoxDtDevInfo        dev_info_t;
+# define ddi_driver_major           VBoxDtDdiDriverMajor
+# define ddi_report_dev             VBoxDtDdiReportDev
 major_t VBoxDtDdiDriverMajor(struct VBoxDtDevInfo *pDevInfo);
 void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
+# endif
 
 /*
  * DTrace bits we've made external.
  */
-extern int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd);
-extern int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd);
-extern int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv);
+extern int dtrace_attach(ddi_attach_cmd_t cmd);
+extern int dtrace_detach(ddi_detach_cmd_t cmd);
+struct dtrace_state;
+extern int dtrace_open(struct dtrace_state **ppState, struct VBoxDtCred *cred_p);
+extern int dtrace_ioctl(struct dtrace_state *state, int cmd, intptr_t arg, int32_t *rv);
+extern int dtrace_close(struct dtrace_state *state);
 
 #endif /* IN_RING0 */
 
