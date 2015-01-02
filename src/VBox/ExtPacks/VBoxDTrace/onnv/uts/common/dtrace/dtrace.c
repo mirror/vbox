@@ -13313,6 +13313,7 @@ dtrace_anon_grab(void)
 	return (state);
 }
 
+#ifndef VBOX
 static void
 dtrace_anon_property(void)
 {
@@ -13413,6 +13414,7 @@ dtrace_anon_property(void)
 		dtrace_enabling_dump(dtrace_anon.dta_enabling);
 	}
 }
+#endif /* !VBOX */
 
 /*
  * DTrace Helper Functions
@@ -14813,7 +14815,9 @@ int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
 	dtrace_probeid_error = dtrace_probe_create((dtrace_provider_id_t)
 	    dtrace_provider, NULL, NULL, "ERROR", 1, NULL);
 
+#ifndef VBOX
 	dtrace_anon_property();
+#endif
 	mutex_exit(&cpu_lock);
 
 	/*
@@ -14983,6 +14987,7 @@ dtrace_close(dev_t dev, int flag, int otyp, cred_t *cred_p)
 	return (0);
 }
 
+#ifndef VBOX
 /*ARGSUSED*/
 static int
 dtrace_ioctl_helper(int cmd, intptr_t arg, int *rv)
@@ -15038,6 +15043,7 @@ dtrace_ioctl_helper(int cmd, intptr_t arg, int *rv)
 
 	return (ENOTTY);
 }
+#endif /* !VBOX */
 
 /*ARGSUSED*/
 #ifndef VBOX
@@ -15051,8 +15057,10 @@ int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 	dtrace_state_t *state;
 	int rval;
 
+#ifndef VBOX
 	if (minor == DTRACEMNRN_HELPER)
 		return (dtrace_ioctl_helper(cmd, arg, rv));
+#endif
 
 	state = ddi_get_soft_state(dtrace_softstate, minor);
 
