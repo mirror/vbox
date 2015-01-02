@@ -47,6 +47,7 @@
 #  include <unistd.h>
 # endif
 # include <VBox/sup.h>
+# include <VBox/err.h>
 #endif /* VBOX */
 
 #include <dt_impl.h>
@@ -498,7 +499,11 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 # if 1
 	rc = SUPR3TracerIoCtl(val, (uintptr_t)arg, &iRetVal);
 	if (RT_FAILURE(rc)) {
-		errno = RTErrConvertToErrno(rc);
+		switch (rc) {
+		case VERR_SUPDRV_TRACER_NOT_OPENED: errno = EBADF; break;
+		default:
+			errno = RTErrConvertToErrno(rc);
+		}
 		return (-1);
 	}
 	return iRetVal;
