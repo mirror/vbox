@@ -130,9 +130,9 @@ typedef VBDTSTACKDATA *PVBDTSTACKDATA;
 
 /** Plants the stack data. */
 #define VBDT_SETUP_STACK_DATA(a_enmCaller) \
-    uint8_t abBlob[sizeof(VBoxDtStackData) + VBDT_STACK_DATA_ALIGN - 1]; \
-    PVBDTSTACKDATA pStackData = (PVBDTSTACKDATA)(   (uintptr_t)&abBlob[VBDT_STACK_DATA_ALIGN - 1] \
-                                                 &        ~(uintptr_t)(VBDT_STACK_DATA_ALIGN - 1)); \
+    uint8_t abBlob[sizeof(VBDTSTACKDATA) + VBDT_STACK_DATA_ALIGN - 1]; \
+    PVBDTSTACKDATA pStackData = (PVBDTSTACKDATA)(    (uintptr_t)&abBlob[VBDT_STACK_DATA_ALIGN - 1] \
+                                                 &  ~(uintptr_t)(VBDT_STACK_DATA_ALIGN - 1)); \
     pStackData->u32Magic1   = VBDT_STACK_DATA_MAGIC1; \
     pStackData->u32Magic2   = VBDT_STACK_DATA_MAGIC2; \
     pStackData->enmCaller   = a_enmCaller; \
@@ -1873,9 +1873,7 @@ DECLEXPORT(int)  ModuleInit(void *hMod)
     {
         rc = SUPR0TracerRegisterImpl(hMod, NULL, &g_VBoxDTraceReg, &g_pVBoxDTraceHlp);
         if (RT_SUCCESS(rc))
-        {
             return rc;
-        }
 
         dtrace_detach();
     }
