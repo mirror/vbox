@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/resource.h>
@@ -38,6 +39,21 @@
 #include <alloca.h>
 #include <errno.h>
 #include <fcntl.h>
+
+#else  /* VBOX */
+# ifndef _MSC_VER
+#  include <sys/resource.h>
+#  include <unistd.h>
+#  include <signal.h>
+# else
+#  include <io.h>
+#  define STDERR_FILENO 2
+#  define open64 open
+# endif
+# include <fcntl.h>
+# include <stdlib.h>
+
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_string.h>
@@ -83,11 +99,14 @@ dt_coredump(void)
 {
 	const char msg[] = "libdtrace DEBUG: [ forcing coredump ]\n";
 
+#ifndef _MSC_VER
 	struct sigaction act;
 	struct rlimit lim;
+#endif
 
 	(void) write(STDERR_FILENO, msg, sizeof (msg) - 1);
 
+#ifndef _MSC_VER
 	act.sa_handler = SIG_DFL;
 	act.sa_flags = 0;
 
@@ -98,6 +117,7 @@ dt_coredump(void)
 	lim.rlim_max = RLIM_INFINITY;
 
 	(void) setrlimit(RLIMIT_CORE, &lim);
+#endif /* !_MSC_VER */
 	abort();
 }
 
@@ -513,7 +533,9 @@ dt_opt_version(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 static int
 dt_opt_runtime(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 {
+#ifndef VBOX
 	char *end;
+#endif
 	dtrace_optval_t val = 0;
 	int i;
 
@@ -548,11 +570,17 @@ dt_opt_runtime(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 			}
 		}
 
+#ifndef VBOX
 		errno = 0;
 		val = strtoull(arg, &end, 0);
 
 		if (*end != '\0' || errno != 0 || val < 0)
 			return (dt_set_errno(dtp, EDT_BADOPTVAL));
+#else
+		i = RTStrToInt64Full(arg, 0, &val);
+		if (i != VINF_SUCCESS)
+			return (dt_set_errno(dtp, EDT_BADOPTVAL));
+#endif
 	}
 
 out:
@@ -566,9 +594,14 @@ dt_optval_parse(const char *arg, dtrace_optval_t *rval)
 	dtrace_optval_t mul = 1;
 	size_t len;
 	char *end;
+#ifdef VBOX
+	int rc;
+#endif
 
 	len = strlen(arg);
+#ifndef VBOX
 	errno = 0;
+#endif
 
 	switch (arg[len - 1]) {
 	case 't':
@@ -591,12 +624,30 @@ dt_optval_parse(const char *arg, dtrace_optval_t *rval)
 		break;
 	}
 
+#ifndef VBOX
 	errno = 0;
 	*rval = strtoull(arg, &end, 0) * mul;
 
 	if ((mul > 1 && end != &arg[len - 1]) || (mul == 1 && *end != '\0') ||
 	    *rval < 0 || errno != 0)
 		return (-1);
+#else
+	*rval = -1;
+	if (mul == 1) {
+		rc = RTStrToInt64Full(arg, 0, rval);
+		if (rc != VINF_SUCCESS || *rval < 0)
+			return (-1);
+	} else {
+		rc = RTStrToInt64Ex(arg, &end, 0, rval);
+		if (   rc != VWRN_TRAILING_CHARS
+			|| end != &arg[len - 1]
+			|| *rval < 0)
+			return (-1);
+		*rval *= mul;
+		if (*rval < 0)
+			return (-1);
+	}
+#endif
 
 	return (0);
 }
@@ -643,8 +694,14 @@ dt_opt_rate(dtrace_hdl_t *dtp, const char *arg, uintptr_t option)
 	};
 
 	if (arg != NULL) {
+#ifndef VBOX
 		errno = 0;
 		val = strtoull(arg, &end, 0);
+#else
+		int rc = RTStrToInt64Ex(arg, &end, 0, &val);
+		if (rc != VWRN_TRAILING_CHARS)
+			return (dt_set_errno(dtp, EDT_BADOPTVAL));
+#endif
 
 		for (i = 0; suffix[i].name != NULL; i++) {
 			if (strcasecmp(suffix[i].name, end) == 0) {
@@ -786,7 +843,7 @@ dt_options_load(dtrace_hdl_t *dtp)
 	dof_hdr_t hdr, *dof;
 	dof_sec_t *sec;
 	size_t offs;
-	int i;
+	VBDTTYPE(uint32_t,int) i;
 
 	/*
 	 * To load the option values, we need to ask the kernel to provide its

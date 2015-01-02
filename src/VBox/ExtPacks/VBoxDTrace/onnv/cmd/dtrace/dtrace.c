@@ -72,7 +72,6 @@
 # define PATH_MAX RTPATH_MAX
 
 # define getpid		                          RTProcSelf
-# define strlcpy(a_pszDst, a_pszSrc, a_cbDst) RTStrCopy(a_pszDst, a_cbDst, a_pszSrc)
 # define basename(a_pszPath)                  RTPathFilename(a_pszPath)
 
 # ifdef _MSC_VER
@@ -1255,13 +1254,11 @@ main(int argc, char *argv[])
 	int err, i;
 #ifndef VBOX
 	char c, *p, **v;
-#else
-	int c;
-	char *p, **v;
-#endif
 	struct ps_prochandle *P;
 	pid_t pid;
-#ifdef VBOX
+#else
+	int c;
+	char *p;
 	RTGETOPTUNION ValueUnion;
 	RTGETOPTSTATE GetState;
 

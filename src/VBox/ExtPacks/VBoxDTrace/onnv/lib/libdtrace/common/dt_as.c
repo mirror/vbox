@@ -24,12 +24,16 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
 #include <strings.h>
 #include <stdlib.h>
 #include <assert.h>
+#else  /* VBOX */
+# include <iprt/asm.h>
+#endif /* VBOX */
 
 #include <dt_impl.h>
 #include <dt_parser.h>
@@ -236,7 +240,7 @@ dt_as(dt_pcb_t *pcb)
 	switch (dtp->dt_linkmode) {
 	case DT_LINK_KERNEL:
 		kmask = 0;
-		kbits = -1u;
+		kbits = ~0u;
 		umask = DT_IDFLG_USER;
 		ubits = DT_IDFLG_USER;
 		break;
@@ -254,7 +258,7 @@ dt_as(dt_pcb_t *pcb)
 		break;
 	case DT_LINK_STATIC:
 		kmask = umask = 0;
-		kbits = ubits = -1u;
+		kbits = ubits = ~0u;
 		break;
 	default:
 		xyerror(D_UNKNOWN, "internal error -- invalid link mode %u\n",

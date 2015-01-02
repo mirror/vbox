@@ -46,6 +46,7 @@ typedef unsigned char               uchar_t;
 typedef unsigned short              ushort_t;
 typedef unsigned int                uint_t;
 typedef uintptr_t                   ulong_t;
+typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
 typedef RTCCUINTREG                 greg_t;
 typedef uintptr_t                   pc_t;
@@ -60,26 +61,39 @@ typedef char                       *caddr_t;
 #endif
 
 #define NANOSEC                     RT_NS_1SEC
+#define MICROSEC                    RT_US_1SEC
 #define MILLISEC                    RT_MS_1SEC
+#define SEC                         1
 #define MAXPATHLEN                  RTPATH_MAX
 #define PATH_MAX                    RTPATH_MAX
 #define NBBY                        8
 #define NCPU                        RTCPUSET_MAX_CPUS
 
+#define MIN(a1, a2)                 RT_MIN(a1, a2)
+#define MAX(a1, a2)                 RT_MAX(a1, a2)
+#define ABS(a_iValue)               RT_ABS(a_iValue)
+#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
+
 #if defined(RT_ARCH_X86)
 # ifndef __i386
-#  define __i386                1
+#  define __i386                    1
 # endif
 # ifndef __x86
-#  define __x86                 1
+#  define __x86                     1
+# endif
+# ifndef _IPL32
+#  define _IPL32                    1
 # endif
 
 #elif defined(RT_ARCH_AMD64)
 # ifndef __x86_64
-#  define __x86_64              1
+#  define __x86_64                  1
 # endif
 # ifndef __x86
-#  define __x86                 1
+#  define __x86                     1
+# endif
+# ifndef _LP64
+#  define _LP64                     1
 # endif
 
 #else
@@ -109,7 +123,6 @@ typedef char                       *caddr_t;
 # define snprintf                   RTStrPrintf
 #endif
 
-
 /*
  * Errno defines compatible with the CRT of the given host...
  */
@@ -130,6 +143,28 @@ typedef char                       *caddr_t;
 #endif
 #if defined(_MSC_VER) || defined(IN_RING0)
 # define EALREADY               (114)
+# define EOVERFLOW              (79)
+#endif
+
+/*
+ * Bitmap stuff.
+ */
+#define BT_SIZEOFMAP(a_cBits)       ( (a_cBits + 63) / 8 )
+#define BT_SET(a_aulBitmap, iBit)   ASMBitSet(a_aulBitmap, iBit)
+#define BT_CLEAR(a_aulBitmap, iBit) ASMBitClear(a_aulBitmap, iBit)
+#define BT_TEST(a_aulBitmap, iBit)  ASMBitTest(a_aulBitmap, iBit)
+#if ARCH_BITS == 32
+# define BT_NBIPUL                  32
+# define BT_ULSHIFT                 5 /* log2(32) = 5 */
+# define BT_ULMASK                  0x1f
+# define BT_BITOUL(a_cBits)         ( ((a_cBits) + 31) / 32 )
+#elif ARCH_BITS == 64
+# define BT_NBIPUL                  64
+# define BT_ULSHIFT                 6 /* log2(32) = 6 */
+# define BT_ULMASK                  0x3f
+# define BT_BITOUL(a_cBits)         ( ((a_cBits) + 63) / 64 )
+#else
+# error Bad ARCH_BITS...
 #endif
 
 
@@ -140,8 +175,6 @@ typedef char                       *caddr_t;
  */
 #define P2ROUNDUP(uWhat, uAlign)    ( ((uWhat) + (uAlign) - 1) & ~(uAlign - 1) )
 #define IS_P2ALIGNED(uWhat, uAlign) ( !((uWhat) & ((uAlign) - 1)) )
-#define	roundup(uWhat, uUnit)	    ( ( (uWhat) + ((uUnit) - 1)) / (uUnit) * (uUnit) )
-#define MIN(a1, a2)                 RT_MIN(a1, a2)
 
 #define B_FALSE                     (0)
 #define B_TRUE                      (1)
@@ -358,10 +391,15 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
  * Make life a little easier in ring-3.
  */
 # include <iprt/alloca.h>
+# include <iprt/assert.h>
 # include <iprt/mem.h>
 # include <iprt/string.h>
 # include <iprt/time.h>
 # define gethrtime()                RTTimeNanoTS()
+# define strcasecmp(a_psz1, a_psz2) RTStrICmp(a_psz1, a_psz2)
+# define strncasecmp(a_psz1, a_psz2, a_cch) \
+                                    RTStrNICmp(a_psz1, a_psz2, a_cch)
+# define assert(expr)	            Assert(expr)
 
 /* This isn't necessarily making things easier at first, but allows EF and
    such later on when things doesn't work right. */
@@ -372,6 +410,8 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
 # define calloc(a_cbItem, a_cItems) RTMemAllocZ((size_t)(a_cbItem) * (a_cItems))
 # define free(a_pvMem)              RTMemFree(a_pvMem)
 # define strdup(a_psz)              RTStrDup(a_psz)
+# define strlcpy(a_pszDst, a_pszSrc, a_cbDst) ((void)RTStrCopy(a_pszDst, a_cbDst, a_pszSrc))
+
 
 #endif
 

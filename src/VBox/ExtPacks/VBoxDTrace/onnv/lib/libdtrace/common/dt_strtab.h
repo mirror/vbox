@@ -31,6 +31,8 @@
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
+#else
+# include "VBoxDTraceTypes.h"
 #endif
 
 #ifdef	__cplusplus

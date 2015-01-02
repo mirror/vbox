@@ -40,8 +40,6 @@
 # include <libctf.h>
 # include <dtrace.h>
 # include <errno.h>
-# include <iprt/assert.h>
-# define assert(expr)	Assert(expr)
 #endif /* VBOX*/
 
 

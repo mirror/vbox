@@ -29,6 +29,8 @@
 
 #ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#else
+# include "VBoxDTraceTypes.h"
 #endif
 
 #ifdef	__cplusplus

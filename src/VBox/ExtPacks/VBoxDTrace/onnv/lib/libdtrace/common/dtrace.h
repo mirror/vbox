@@ -524,7 +524,6 @@ extern int dtrace_probe_iter(dtrace_hdl_t *,
 extern int dtrace_probe_info(dtrace_hdl_t *,
     const dtrace_probedesc_t *, dtrace_probeinfo_t *);
 
-#ifndef VBOX
 /*
  * DTrace Vector Interface
  *
@@ -535,12 +534,13 @@ extern int dtrace_probe_info(dtrace_hdl_t *,
  */
 struct dtrace_vector {
 	int (*dtv_ioctl)(void *, int, void *);
+#ifndef VBOX
 	int (*dtv_lookup_by_addr)(void *, GElf_Addr, GElf_Sym *,
 	    dtrace_syminfo_t *);
+#endif /* !VBOX */
 	int (*dtv_status)(void *, processorid_t);
 	long (*dtv_sysconf)(void *, int);
 };
-#endif /* !VBOX */
 
 /*
  * DTrace Utility Functions

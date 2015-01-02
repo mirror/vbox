@@ -24,7 +24,9 @@
  * Use is subject to license terms.
  */
 
+#ifndef VBOX
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
+#endif
 
 /*
  * Simple doubly-linked list implementation.  This implementation assumes that
@@ -35,8 +37,10 @@
  * previous and next pointers set to NULL, respectively.
  */
 
+#ifndef VBOX
 #include <unistd.h>
 #include <assert.h>
+#endif
 #include <dt_list.h>
 
 void
