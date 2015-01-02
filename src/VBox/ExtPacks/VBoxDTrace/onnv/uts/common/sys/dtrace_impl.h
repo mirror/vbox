@@ -1275,6 +1275,7 @@ extern void dtrace_copy(uintptr_t, uintptr_t, size_t);
 extern void dtrace_copystr(uintptr_t, uintptr_t, size_t, volatile uint16_t *);
 #endif
 
+#ifndef VBOX  /* got our own assert thing */
 /*
  * DTrace Assertions
  *
@@ -1294,6 +1295,7 @@ extern void dtrace_copystr(uintptr_t, uintptr_t, size_t, volatile uint16_t *);
 #else
 #define	ASSERT(X)	((void)0)
 #endif
+#endif /* !VBOX */
 
 #ifdef	__cplusplus
 }
