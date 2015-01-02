@@ -2144,6 +2144,9 @@ dt_compile(dtrace_hdl_t *dtp, int context, dtrace_probespec_t pspec, void *arg,
 	pcb.pcb_context = context;
 	pcb.pcb_token = context;
 
+#ifdef USING_FLEX /* In case flex starts work too early. Moved from dt_pcb_push. */
+	yyinit(&pcb);
+#endif
 	if (context != DT_CTX_DPROG)
 		yybegin(YYS_EXPR);
 	else if (cflags & DTRACE_C_CTL)
@@ -2170,9 +2173,8 @@ dt_compile(dtrace_hdl_t *dtp, int context, dtrace_probespec_t pspec, void *arg,
 	 * will longjmp back to pcb_jmpbuf to abort.  If parsing succeeds,
 	 * we optionally display the parse tree if debugging is enabled.
 	 */
-fprintf(stderr, "debug: calling yyparse\n"); /* REMOVE ME */
 	if (yyparse() != 0 || yypcb->pcb_root == NULL)
-		xyerror(D_EMPTY, "empty D program translation unit (#1)\n");  /* REMOVE (#1) */
+		xyerror(D_EMPTY, "empty D program translation unit\n");
 
 	yybegin(YYS_DONE);
 
@@ -2203,7 +2205,7 @@ fprintf(stderr, "debug: calling yyparse\n"); /* REMOVE ME */
 
 		if ((dnp = yypcb->pcb_root->dn_list) == NULL &&
 		    !(yypcb->pcb_cflags & DTRACE_C_EMPTY))
-			xyerror(D_EMPTY, "empty D program translation unit (#2)\n"); /* REMOVE (#2) */
+			xyerror(D_EMPTY, "empty D program translation unit\n");
 
 		if ((yypcb->pcb_prog = dt_program_create(dtp)) == NULL)
 			longjmp(yypcb->pcb_jmpbuf, dtrace_errno(dtp));

@@ -100,7 +100,7 @@ if 1
  USES                += yacc
  VBoxDTrace_USES     += yacc
  VBoxDTrace_YACCTOOL  = BISON
- VBoxDTrace_YACCFLAGS = -d
+ VBoxDTrace_YACCFLAGS = -d -y
  VBoxDTrace_SOURCES  += \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_grammar.y
  VBoxDTrace_INCS     += $(VBoxDTrace_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common
@@ -112,7 +112,7 @@ if 1
  USES                += lex
  VBoxDTrace_USES     += lex
  VBoxDTrace_LEXTOOL   = FLEX
- VBoxDTrace_LEXFLAGS  = -l
+ VBoxDTrace_LEXFLAGS  = -l -B #-d -T
  VBoxDTrace_DEFS     += USING_FLEX
  VBoxDTrace_SOURCES  += \
 	$(VBOXDT_PATH_LIBDTRACE)/common/dt_lex.l
