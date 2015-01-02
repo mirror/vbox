@@ -466,7 +466,7 @@ typedef struct dtrace_difv {
 #define	DTRACE_QUANTIZE_NBUCKETS	\
 	(((sizeof (uint64_t) * NBBY) - 1) * 2 + 1)
 
-#define	DTRACE_QUANTIZE_ZEROBUCKET	((sizeof (uint64_t) * NBBY) - 1)
+#define	DTRACE_QUANTIZE_ZEROBUCKET	(VBDTCAST(int)(sizeof (uint64_t) * NBBY) - 1)
 
 #define	DTRACE_QUANTIZE_BUCKETVAL(buck)					\
 	(int64_t)((buck) < DTRACE_QUANTIZE_ZEROBUCKET ?			\
@@ -2195,13 +2195,13 @@ extern void dtrace_membar_consumer(void);
 extern void (*dtrace_cpu_init)(processorid_t);
 extern void (*dtrace_modload)(struct modctl *);
 extern void (*dtrace_modunload)(struct modctl *);
-extern void (*dtrace_helpers_cleanup)();
+extern void (*dtrace_helpers_cleanup)(VBDTVOID);
 extern void (*dtrace_helpers_fork)(proc_t *parent, proc_t *child);
-extern void (*dtrace_cpustart_init)();
-extern void (*dtrace_cpustart_fini)();
+extern void (*dtrace_cpustart_init)(VBDTVOID);
+extern void (*dtrace_cpustart_fini)(VBDTVOID);
 
-extern void (*dtrace_debugger_init)();
-extern void (*dtrace_debugger_fini)();
+extern void (*dtrace_debugger_init)(VBDTVOID);
+extern void (*dtrace_debugger_fini)(VBDTVOID);
 extern dtrace_cacheid_t dtrace_predcache_id;
 
 extern hrtime_t dtrace_gethrtime(void);
