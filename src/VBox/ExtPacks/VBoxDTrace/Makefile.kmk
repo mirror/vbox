@@ -40,4 +40,3 @@ include $(PATH_SUB_CURRENT)/VBoxDTraceR0/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
-
