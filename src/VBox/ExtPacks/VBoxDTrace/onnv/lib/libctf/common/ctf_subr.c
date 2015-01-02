@@ -56,6 +56,7 @@ ctf_data_free(void *buf, size_t size)
 #ifndef VBOX
 	(void) munmap(buf, size);
 #else
+    RTMemProtect(buf, size, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
     RTMemPageFree(buf, size);
 #endif
 }
