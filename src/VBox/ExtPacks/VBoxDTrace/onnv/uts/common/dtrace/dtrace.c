@@ -13091,6 +13091,14 @@ dtrace_state_go(dtrace_state_t *state, processorid_t *cpu)
 	    rval = RTErrConvertToErrno(rval);
 	    goto err;
 	}
+
+	rval = RTTimerStart(state->dts_cleaner, 0);
+	if (RT_SUCCESS(rval))
+	    rval = RTTimerStart(state->dts_deadman, 0);
+	if (RT_FAILURE(rval)) {
+	    rval = RTErrConvertToErrno(rval);
+	    goto err;
+	}
 #endif /* VBOX */
 
 	state->dts_activity = DTRACE_ACTIVITY_WARMUP;
