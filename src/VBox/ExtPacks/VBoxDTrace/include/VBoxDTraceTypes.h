@@ -34,6 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 #include <iprt/param.h>
+#include <iprt/errno.h>
 #ifdef IN_RING0
 # include <iprt/list.h>
 #endif
@@ -134,30 +135,6 @@ typedef char                       *caddr_t;
 # define bzero(a_pDst, a_cb)        RT_BZERO(a_pDst, a_cb)
 # define bcmp(a_p1, a_p2, a_cb)     memcmp(a_p1, a_p2, a_cb)
 # define snprintf                   RTStrPrintf
-#endif
-
-/*
- * Errno defines compatible with the CRT of the given host...
- */
-#ifdef IN_RING0
-# define EINVAL                 (22)
-# define EBUSY                  (16)
-# define EFBIG                  (27)
-# define ENOMEM                 (12)
-# define ENOSPC                 (28)
-# define ENOENT                 (2)
-# define EFAULT                 (14)
-# define E2BIG                  (7)
-# define EACCES                 (13)
-# define ENXIO                  (6)
-# define EAGAIN                 (11)
-# define ENOTTY                 (25)
-# define ESRCH                  (3)
-#endif
-#if defined(_MSC_VER) || defined(IN_RING0)
-# define EALREADY               (114)
-# define EOVERFLOW              (79)
-# define ENOTSUP                (48)
 #endif
 
 /*
