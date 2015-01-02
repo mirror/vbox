@@ -46,6 +46,7 @@
 # else
 #  include <unistd.h>
 # endif
+# include <VBox/sup.h>
 #endif /* VBOX */
 
 #include <dt_impl.h>
@@ -482,6 +483,9 @@ int
 dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 {
 	const dtrace_vector_t *v = dtp->dt_vector;
+#ifdef VBOX
+	int rc;
+#endif
 
 	if (v != NULL)
 		return (v->dtv_ioctl(dtp->dt_varg, val, arg));
@@ -490,6 +494,12 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 	if (dtp->dt_fd >= 0)
 		return (ioctl(dtp->dt_fd, val, arg));
 #else
+# if 1
+	rc = SUPR3CallR0Service(RT_STR_TUPLE("VBoxDTrace"), val, (uintptr_t)arg, NULL);
+	if (RT_SUCCESS(rc)) {
+
+	}
+# else
 	/* Fake ioctl */
 	switch (val) {
 		case DTRACEIOC_CONF: {
@@ -530,13 +540,14 @@ dt_ioctl(dtrace_hdl_t *dtp, int val, void *arg)
 		}
 
 	}
-	AssertFailed(); /** @todo FIXME */
+# endif
 #endif
 
 	errno = EBADF;
 	return (-1);
 }
 
+#ifndef /* VBOX - who needs this? */
 int
 dt_status(dtrace_hdl_t *dtp, processorid_t cpu)
 {
@@ -552,6 +563,7 @@ dt_status(dtrace_hdl_t *dtp, processorid_t cpu)
 
 	return (v->dtv_status(dtp->dt_varg, cpu));
 }
+#endif
 
 #ifndef VBOX
 long

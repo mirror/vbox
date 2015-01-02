@@ -14694,9 +14694,13 @@ dtrace_toxrange_add(uintptr_t base, uintptr_t limit)
 /*
  * DTrace Driver Cookbook Functions
  */
+#ifndef VBOX
 /*ARGSUSED*/
 static int
 dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
+#else
+int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd)
+#endif
 {
 	dtrace_provider_id_t id;
 	dtrace_state_t *state = NULL;
@@ -15036,8 +15040,12 @@ dtrace_ioctl_helper(int cmd, intptr_t arg, int *rv)
 }
 
 /*ARGSUSED*/
+#ifndef VBOX
 static int
 dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
+#else
+int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
+#endif
 {
 	minor_t minor = getminor(dev);
 	dtrace_state_t *state;
@@ -15792,9 +15800,13 @@ dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv)
 	return (ENOTTY);
 }
 
+#ifndef VBOX
 /*ARGSUSED*/
 static int
 dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
+#else
+int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
+#endif
 {
 	dtrace_state_t *state;
 
