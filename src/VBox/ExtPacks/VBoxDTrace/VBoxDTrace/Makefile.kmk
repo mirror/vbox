@@ -35,6 +35,9 @@ PROGRAMS += VBoxDTrace
 VBoxDTrace_TEMPLATE = VBOXR3NPEXE
 VBoxDTrace_DEFS = RTMEM_WRAP_TO_EF_APIS
 VBoxDTrace_SDKS = VBOX_ZLIB
+ifn1of ($(KBUILD_TARGET), win)
+ VBoxDTrace_CFLAGS = -Wno-format
+endif
 VBoxDTrace_INCS = \
 	../include \
 	$(VBOXDT_PATH_UTS)/common \

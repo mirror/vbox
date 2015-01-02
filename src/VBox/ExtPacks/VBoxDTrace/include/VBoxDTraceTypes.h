@@ -36,6 +36,7 @@
 #include <iprt/param.h>
 #ifdef IN_RING3
 # include <sys/types.h>
+# include <limits.h>
 #endif
 
 RT_C_DECLS_BEGIN
@@ -49,9 +50,9 @@ typedef uintptr_t                   ulong_t;
 typedef int64_t                     longlong_t;
 typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
-typedef RTCCUINTREG                 greg_t;
+typedef RTCCINTREG                  greg_t;
 typedef uintptr_t                   pc_t;
-typedef uintptr_t                   id_t;
+typedef uint32_t                    id_t;
 typedef unsigned int                model_t;
 typedef uint32_t                    zoneid_t;
 typedef RTCPUID                     processorid_t;
@@ -66,6 +67,7 @@ typedef char                       *caddr_t;
 #define MILLISEC                    RT_MS_1SEC
 #define SEC                         (1)
 #define MAXPATHLEN                  RTPATH_MAX
+#undef PATH_MAX
 #define PATH_MAX                    RTPATH_MAX
 #define NBBY                        (8)
 #define NCPU                        RTCPUSET_MAX_CPUS
@@ -118,6 +120,7 @@ typedef char                       *caddr_t;
 /** Mark missing static in a function definition. */
 #define VBDTSTATIC              static
 #define VBDTUNASS(a_Value)      = a_Value
+#define VBDTGCC(a_Value)        = a_Value
 
 /*
  * string
@@ -392,6 +395,7 @@ void    VBoxDtDdiReportDev(struct VBoxDtDevInfo *pDevInfo);
  * DTrace bits we've made external.
  */
 extern int dtrace_attach(dev_info_t *devi, ddi_attach_cmd_t cmd);
+extern int dtrace_detach(dev_info_t *dip, ddi_detach_cmd_t cmd);
 extern int dtrace_ioctl(dev_t dev, int cmd, intptr_t arg, int md, cred_t *cr, int *rv);
 
 #endif /* IN_RING0 */

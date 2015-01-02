@@ -634,6 +634,9 @@ extern char yytext[];		/* lex input buffer */
 extern int yylineno;		/* lex line number */
 extern int yydebug;		/* lex debugging */
 extern dt_node_t *yypragma;	/* lex token list for control lines */
+#ifdef VBOX
+extern int yylex(void);
+#endif
 
 extern const dtrace_attribute_t _dtrace_maxattr; /* maximum attributes */
 extern const dtrace_attribute_t _dtrace_defattr; /* default attributes */

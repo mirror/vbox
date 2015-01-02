@@ -652,7 +652,7 @@ dtrace_aggregate_snap(dtrace_hdl_t *dtp)
 		return (0);
 
 	for (i = 0; i < agp->dtat_ncpus; i++) {
-		if (rval = dt_aggregate_snap_cpu(dtp, agp->dtat_cpus[i]))
+		if ((rval = dt_aggregate_snap_cpu(dtp, agp->dtat_cpus[i])))
 			return (rval);
 	}
 
