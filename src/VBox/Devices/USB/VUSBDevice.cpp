@@ -1052,7 +1052,8 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
         Assert(pUrb->VUsb.pDev == pDev);
 
         LogFlow(("%s: vusbDevCancelAllUrbs: CANCELING URB\n", pUrb->pszDesc));
-        vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
+        int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_FAIL);
+        AssertRC(rc);
         pUrb = pNext;
     }
 
