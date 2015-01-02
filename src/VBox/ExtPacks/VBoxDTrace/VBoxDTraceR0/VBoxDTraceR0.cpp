@@ -53,6 +53,13 @@
 #include <VBox/VBoxTpG.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+# define HAVE_RTMEMALLOCEX_FEATURES
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -642,7 +649,11 @@ cred_t *VBoxDtGetCurrentCreds(void)
     if (!pData->pCred)
     {
         struct VBoxDtCred *pCred;
+#ifdef HAVE_RTMEMALLOCEX_FEATURES
         int rc = RTMemAllocEx(sizeof(*pCred), 0, RTMEMALLOCEX_FLAGS_ANY_CTX, (void **)&pCred);
+#else
+        int rc = RTMemAllocEx(sizeof(*pCred), 0, 0, (void **)&pCred);
+#endif
         AssertFatalRC(rc);
         pCred->cr_refs  = 1;
         /** @todo get the right creds on unix systems. */
@@ -1122,8 +1133,13 @@ void VBoxDtVMemFree(struct VBoxDtVMem *pThis, void *pvMem, size_t cbMem)
 /* kmem_alloc implementation */
 void *VBoxDtKMemAlloc(size_t cbMem, uint32_t fFlags)
 {
-    void *pvMem;
-    int rc = RTMemAllocEx(cbMem, 0, fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0, &pvMem);
+    void    *pvMem;
+#ifdef HAVE_RTMEMALLOCEX_FEATURES
+    uint32_t fMemAllocFlags = fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0;
+#else
+    uint32_t fMemAllocFlags = 0;
+#endif
+    int rc = RTMemAllocEx(cbMem, 0, fMemAllocFlags, &pvMem);
     AssertRCReturn(rc, NULL);
     AssertPtr(pvMem);
     return pvMem;
@@ -1133,10 +1149,13 @@ void *VBoxDtKMemAlloc(size_t cbMem, uint32_t fFlags)
 /* kmem_zalloc implementation */
 void *VBoxDtKMemAllocZ(size_t cbMem, uint32_t fFlags)
 {
-    void *pvMem;
-    int rc = RTMemAllocEx(cbMem, 0,
-                          (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED,
-                          &pvMem);
+    void    *pvMem;
+#ifdef HAVE_RTMEMALLOCEX_FEATURES
+    uint32_t fMemAllocFlags = (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED;
+#else
+    uint32_t fMemAllocFlags = RTMEMALLOCEX_FLAGS_ZEROED;
+#endif
+    int rc = RTMemAllocEx(cbMem, 0, fMemAllocFlags, &pvMem);
     AssertRCReturn(rc, NULL);
     AssertPtr(pvMem);
     return pvMem;
@@ -1203,11 +1222,13 @@ void  VBoxDtKMemCacheDestroy(struct VBoxDtMemCache *pThis)
 /* kmem_cache_alloc implementation. */
 void *VBoxDtKMemCacheAlloc(struct VBoxDtMemCache *pThis, uint32_t fFlags)
 {
-    void *pvMem;
-    int rc = RTMemAllocEx(pThis->cbBuf,
-                          pThis->cbAlign,
-                          (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED,
-                          &pvMem);
+    void    *pvMem;
+#ifdef HAVE_RTMEMALLOCEX_FEATURES
+    uint32_t fMemAllocFlags = (fFlags & KM_NOSLEEP ? RTMEMALLOCEX_FLAGS_ANY_CTX : 0) | RTMEMALLOCEX_FLAGS_ZEROED;
+#else
+    uint32_t fMemAllocFlags = RTMEMALLOCEX_FLAGS_ZEROED;
+#endif
+    int rc = RTMemAllocEx(pThis->cbBuf, pThis->cbAlign, fMemAllocFlags, &pvMem);
     AssertRCReturn(rc, NULL);
     AssertPtr(pvMem);
     return pvMem;
