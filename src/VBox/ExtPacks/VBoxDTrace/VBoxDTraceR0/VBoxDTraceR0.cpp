@@ -1515,7 +1515,7 @@ static void     vboxDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvPr
         {
             pProbeLoc->fEnabled = 0;
             if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 0;
         }
     }
 }
