@@ -396,6 +396,21 @@ typedef struct _CLIENT_ID
 typedef CLIENT_ID *PCLIENT_ID;
 #endif
 
+/** Extended affinity type, introduced in Windows 7 (?). */
+typedef struct _KAFFINITY_EX
+{
+    /** Count of valid bitmap entries. */
+    uint16_t                Count;
+    /** Count of allocated bitmap entries. */
+    uint16_t                Size;
+    /** Reserved / aligmment padding. */
+    uint32_t                Reserved;
+    /** Bitmap where one bit corresponds to a CPU. */
+    uintptr_t               Bitmap[20];
+} KAFFINITY_EX;
+typedef KAFFINITY_EX *PKAFFINITY_EX;
+typedef KAFFINITY_EX const *PCKAFFINITY_EX;
+
 /** @name User Shared Data
  * @{ */
 
@@ -2158,6 +2173,44 @@ RT_C_DECLS_END
  * @{ */
 RT_C_DECLS_BEGIN
 
+typedef ULONG KEPROCESSORINDEX; /**< Bitmap indexes != process numbers, apparently. */
+
+NTSYSAPI VOID     NTAPI KeInitializeAffinityEx(PKAFFINITY_EX pAffinity);
+typedef  VOID    (NTAPI *PFNKEINITIALIZEAFFINITYEX)(PKAFFINITY_EX pAffinity);
+NTSYSAPI VOID     NTAPI KeAddProcessorAffinityEx(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+typedef  VOID    (NTAPI *PFNKEADDPROCESSORAFFINITYEX)(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+NTSYSAPI VOID     NTAPI KeRemoveProcessorAffinityEx(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+typedef  VOID    (NTAPI *PFNKEREMOVEPROCESSORAFFINITYEX)(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+NTSYSAPI BOOLEAN  NTAPI KeInterlockedSetProcessorAffinityEx(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+typedef  BOOLEAN (NTAPI *PFNKEINTERLOCKEDSETPROCESSORAFFINITYEX)(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+NTSYSAPI BOOLEAN  NTAPI KeInterlockedClearProcessorAffinityEx(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+typedef  BOOLEAN (NTAPI *PFNKEINTERLOCKEDCLEARPROCESSORAFFINITYEX)(PKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+NTSYSAPI BOOLEAN  NTAPI KeCheckProcessorAffinityEx(PCKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+typedef  BOOLEAN (NTAPI *PFNKECHECKPROCESSORAFFINITYEX)(PCKAFFINITY_EX pAffinity, KEPROCESSORINDEX idxProcessor);
+NTSYSAPI VOID     NTAPI KeCopyAffinityEx(PKAFFINITY_EX pDst, PCKAFFINITY_EX pSrc);
+typedef  VOID    (NTAPI *PFNKECOPYAFFINITYEX)(PKAFFINITY_EX pDst, PCKAFFINITY_EX pSrc);
+NTSYSAPI VOID     NTAPI KeComplementAffinityEx(PKAFFINITY_EX pResult, PCKAFFINITY_EX pIn);
+typedef  VOID    (NTAPI *PFNKECOMPLEMENTAFFINITYEX)(PKAFFINITY_EX pResult, PCKAFFINITY_EX pIn);
+NTSYSAPI BOOLEAN  NTAPI KeAndAffinityEx(PCKAFFINITY_EX pIn1, PCKAFFINITY_EX pIn2, PKAFFINITY_EX pResult OPTIONAL);
+typedef  BOOLEAN (NTAPI *PFNKEANDAFFINITYEX)(PCKAFFINITY_EX pIn1, PCKAFFINITY_EX pIn2, PKAFFINITY_EX pResult OPTIONAL);
+NTSYSAPI BOOLEAN  NTAPI KeOrAffinityEx(PCKAFFINITY_EX pIn1, PCKAFFINITY_EX pIn2, PKAFFINITY_EX pResult OPTIONAL);
+typedef  BOOLEAN (NTAPI *PFNKEORAFFINITYEX)(PCKAFFINITY_EX pIn1, PCKAFFINITY_EX pIn2, PKAFFINITY_EX pResult OPTIONAL);
+/** Works like anding the complemented subtrahend with the minuend. */
+NTSYSAPI BOOLEAN  NTAPI KeSubtractAffinityEx(PCKAFFINITY_EX pMinuend, PCKAFFINITY_EX pSubtrahend, PKAFFINITY_EX pResult OPTIONAL);
+typedef  BOOLEAN (NTAPI *PFNKESUBTRACTAFFINITYEX)(PCKAFFINITY_EX pMinuend, PCKAFFINITY_EX pSubtrahend, PKAFFINITY_EX pResult OPTIONAL);
+NTSYSAPI BOOLEAN  NTAPI KeIsEqualAffinityEx(PCKAFFINITY_EX pLeft, PCKAFFINITY_EX pRight);
+typedef  BOOLEAN (NTAPI *PFNKEISEQUALAFFINITYEX)(PCKAFFINITY_EX pLeft, PCKAFFINITY_EX pRight);
+NTSYSAPI BOOLEAN  NTAPI KeIsEmptyAffinityEx(PCKAFFINITY_EX pAffinity);
+typedef  BOOLEAN (NTAPI *PFNKEISEMPTYAFFINITYEX)(PCKAFFINITY_EX pAffinity);
+NTSYSAPI BOOLEAN  NTAPI KeIsSubsetAffinityEx(PCKAFFINITY_EX pSubset, PCKAFFINITY_EX pSuperSet);
+typedef  BOOLEAN (NTAPI *PFNKEISSUBSETAFFINITYEX)(PCKAFFINITY_EX pSubset, PCKAFFINITY_EX pSuperSet);
+NTSYSAPI ULONG    NTAPI KeCountSetBitsAffinityEx(PCKAFFINITY_EX pAffinity);
+typedef  ULONG   (NTAPI *PFNKECOUNTSETAFFINITYEX)(PCKAFFINITY_EX pAffinity);
+NTSYSAPI KEPROCESSORINDEX  NTAPI KeFindFirstSetLeftAffinityEx(PCKAFFINITY_EX pAffinity);
+typedef  KEPROCESSORINDEX (NTAPI *PFNKEFINDFIRSTSETLEFTAFFINITYEX)(PCKAFFINITY_EX pAffinity);
+typedef  NTSTATUS (NTAPI *PFNKEGETPROCESSORNUMBERFROMINDEX)(KEPROCESSORINDEX idxProcessor, PPROCESSOR_NUMBER pProcNumber);
+typedef  KEPROCESSORINDEX (NTAPI *PFNKEGETPROCESSORINDEXFROMNUMBER)(const PROCESSOR_NUMBER *pProcNumber);
+
 NTSYSAPI BOOLEAN  NTAPI ObFindHandleForObject(PEPROCESS pProcess, PVOID pvObject, POBJECT_TYPE pObjectType,
                                               PVOID pvOptionalConditions, PHANDLE phFound);
 NTSYSAPI NTSTATUS NTAPI ObReferenceObjectByName(PUNICODE_STRING pObjectPath, ULONG fAttributes, PACCESS_STATE pAccessState,
@@ -2169,6 +2222,9 @@ NTSYSAPI BOOLEAN  NTAPI PsIsProcessBeingDebugged(PEPROCESS);
 NTSYSAPI ULONG    NTAPI PsGetProcessSessionId(PEPROCESS);
 extern DECLIMPORT(POBJECT_TYPE *) LpcPortObjectType;            /**< In vista+ this is the ALPC port object type. */
 extern DECLIMPORT(POBJECT_TYPE *) LpcWaitablePortObjectType;    /**< In vista+ this is the ALPC port object type. */
+
+typedef VOID (NTAPI *PFNHALREQUESTIPI_PRE_W7)(KAFFINITY TargetSet);
+typedef VOID (NTAPI *PFNHALREQUESTIPI_W7PLUS)(ULONG uUsuallyZero, PCKAFFINITY_EX pTargetSet);
 
 RT_C_DECLS_END
 /** @ */
