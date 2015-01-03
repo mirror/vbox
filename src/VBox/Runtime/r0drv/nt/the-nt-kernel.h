@@ -40,7 +40,7 @@
 # define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
 # pragma warning(disable : 4163)
 RT_C_DECLS_BEGIN
-# include <ntddk.h>
+# include <iprt/nt/nt.h>
 RT_C_DECLS_END
 # pragma warning(default : 4163)
 # undef  _InterlockedExchange
@@ -49,7 +49,7 @@ RT_C_DECLS_END
 # undef  _InterlockedAddLargeStatistic
 #else
 RT_C_DECLS_BEGIN
-# include <ntddk.h>
+# include <iprt/nt/nt.h>
 RT_C_DECLS_END
 #endif
 

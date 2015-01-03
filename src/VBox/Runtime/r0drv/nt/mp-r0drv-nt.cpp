@@ -453,6 +453,7 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 
 #ifndef IPRT_TARGET_NT4
 
+/** Callback used by rtMpPokeCpuUsingBroadcastIpi. */
 static ULONG_PTR __stdcall rtMpIpiGenericCall(ULONG_PTR Argument)
 {
     NOREF(Argument);
@@ -460,30 +461,75 @@ static ULONG_PTR __stdcall rtMpIpiGenericCall(ULONG_PTR Argument)
 }
 
 
+/**
+ * RTMpPokeCpu worker that uses broadcast IPIs for doing the work.
+ *
+ * @returns VINF_SUCCESS
+ * @param   idCpu           The CPU identifier.
+ */
 int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
 {
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
     return VINF_SUCCESS;
 }
 
-# if 0
-int rtMpSendIpiVista(RTCPUID idCpu)
-{
-    /* If we start care about Vista, we should investigate a non-broadcast API. */
-    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
-////    g_pfnrtNtHalRequestIpi(1 << idCpu);
-    return VINF_SUCCESS;
-}
-# endif
 
-
+/**
+ * RTMpPokeCpu worker that uses HalSendSoftwareInterrupt to get the job done.
+ *
+ * This is only really available on AMD64, at least at the time of writing.
+ *
+ * @returns VINF_SUCCESS
+ * @param   idCpu           The CPU identifier.
+ */
 int rtMpPokeCpuUsingHalSendSoftwareInterrupt(RTCPUID idCpu)
 {
     g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
     return VINF_SUCCESS;
 }
 
-#endif /* IPRT_TARGET_NT4 */
+
+/**
+ * RTMpPokeCpu worker that uses the Windows 7 and later version of
+ * HalRequestIpip to get the job done.
+ *
+ * @returns VINF_SUCCESS
+ * @param   idCpu           The CPU identifier.
+ */
+int rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu)
+{
+    /*
+     * I think we'll let idCpu be an NT processor number and not a HAL processor
+     * index.  KeAddProcessorAffinityEx is for HAL and uses HAL processor
+     * indexes as input from what I can tell.
+     */
+    PROCESSOR_NUMBER ProcNumber = { /*Group=*/ idCpu / 64, /*Number=*/ idCpu % 64, /* Reserved=*/ 0};
+    KAFFINITY_EX     Target;
+    g_pfnrtKeInitializeAffinityEx(&Target);
+    g_pfnrtKeAddProcessorAffinityEx(&Target, g_pfnrtKeGetProcessorIndexFromNumber(&ProcNumber));
+
+    g_pfnrtHalRequestIpiW7Plus(0, &Target);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * RTMpPokeCpu worker that uses the Vista and earlier version of HalRequestIpip
+ * to get the job done.
+ *
+ * @returns VINF_SUCCESS
+ * @param   idCpu           The CPU identifier.
+ */
+int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
+{
+    __debugbreak(); /** @todo this code needs testing!!  */
+    KAFFINITY Target = 1;
+    Target <<= idCpu;
+    g_pfnrtHalRequestIpiPreW7(Target);
+    return VINF_SUCCESS;
+}
+
+#endif /* !IPRT_TARGET_NT4 */
 
 
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu)

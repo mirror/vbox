@@ -55,14 +55,22 @@ RTCPUSET                            g_rtMpNtCpuSet;
 PFNMYEXSETTIMERRESOLUTION           g_pfnrtNtExSetTimerResolution;
 /** KeFlushQueuedDpcs, introduced in XP. */
 PFNMYKEFLUSHQUEUEDDPCS              g_pfnrtNtKeFlushQueuedDpcs;
-/** HalRequestIpi, introduced in ??. */
-PFNHALREQUESTIPI                    g_pfnrtNtHalRequestIpi;
+/** HalRequestIpi, version introduced with windows 7. */
+PFNHALREQUESTIPI_W7PLUS             g_pfnrtHalRequestIpiW7Plus;
+/** HalRequestIpi, version valid up to windows vista?? */
+PFNHALREQUESTIPI_PRE_W7             g_pfnrtHalRequestIpiPreW7;
 /** HalSendSoftwareInterrupt, introduced in AMD64 version of W2K3. */
 PFNHALSENDSOFTWAREINTERRUPT         g_pfnrtNtHalSendSoftwareInterrupt;
 /** Worker for RTMpPokeCpu. */
 PFNRTSENDIPI                        g_pfnrtMpPokeCpuWorker;
 /** KeIpiGenericCall - Introduced in Windows Server 2003. */
 PFNRTKEIPIGENERICCALL               g_pfnrtKeIpiGenericCall;
+/** KeInitializeAffinityEx - Introducted in Windows 7. */
+PFNKEINITIALIZEAFFINITYEX           g_pfnrtKeInitializeAffinityEx;
+/** KeAddProcessorAffinityEx - Introducted in Windows 7. */
+PFNKEADDPROCESSORAFFINITYEX         g_pfnrtKeAddProcessorAffinityEx;
+/** KeGetProcessorIndexFromNumber - Introducted in Windows  7. */
+PFNKEGETPROCESSORINDEXFROMNUMBER    g_pfnrtKeGetProcessorIndexFromNumber;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                  g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
@@ -215,9 +223,13 @@ DECLHIDDEN(int) rtR0InitNative(void)
 #ifdef IPRT_TARGET_NT4
     g_pfnrtNtExSetTimerResolution = NULL;
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
-    g_pfnrtNtHalRequestIpi = NULL;
+    g_pfnrtHalRequestIpiW7Plus = NULL;
+    g_pfnrtHalRequestIpiPreW7 = NULL;
     g_pfnrtNtHalSendSoftwareInterrupt = NULL;
     g_pfnrtKeIpiGenericCall = NULL;
+    g_pfnrtKeInitializeAffinityEx = NULL;
+    g_pfnrtKeAddProcessorAffinityEx = NULL;
+    g_pfnrtKeGetProcessorIndexFromNumber = NULL;
     g_pfnrtRtlGetVersion = NULL;
     g_pfnrtKeQueryInterruptTime = NULL;
     g_pfnrtKeQueryInterruptTimePrecise = NULL;
@@ -232,13 +244,23 @@ DECLHIDDEN(int) rtR0InitNative(void)
     g_pfnrtNtKeFlushQueuedDpcs = (PFNMYKEFLUSHQUEUEDDPCS)MmGetSystemRoutineAddress(&RoutineName);
 
     RtlInitUnicodeString(&RoutineName, L"HalRequestIpi");
-    g_pfnrtNtHalRequestIpi = (PFNHALREQUESTIPI)MmGetSystemRoutineAddress(&RoutineName);
+    g_pfnrtHalRequestIpiW7Plus = (PFNHALREQUESTIPI_W7PLUS)MmGetSystemRoutineAddress(&RoutineName);
+    g_pfnrtHalRequestIpiPreW7 = (PFNHALREQUESTIPI_PRE_W7)g_pfnrtHalRequestIpiW7Plus;
 
     RtlInitUnicodeString(&RoutineName, L"HalSendSoftwareInterrupt");
     g_pfnrtNtHalSendSoftwareInterrupt = (PFNHALSENDSOFTWAREINTERRUPT)MmGetSystemRoutineAddress(&RoutineName);
 
     RtlInitUnicodeString(&RoutineName, L"KeIpiGenericCall");
     g_pfnrtKeIpiGenericCall = (PFNRTKEIPIGENERICCALL)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeInitializeAffinityEx");
+    g_pfnrtKeInitializeAffinityEx = (PFNKEINITIALIZEAFFINITYEX)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeAddProcessorAffinityEx");
+    g_pfnrtKeAddProcessorAffinityEx = (PFNKEADDPROCESSORAFFINITYEX)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeGetProcessorIndexFromNumber");
+    g_pfnrtKeGetProcessorIndexFromNumber = (PFNKEGETPROCESSORINDEXFROMNUMBER)MmGetSystemRoutineAddress(&RoutineName);
 
     RtlInitUnicodeString(&RoutineName, L"RtlGetVersion");
     g_pfnrtRtlGetVersion = (PFNRTRTLGETVERSION)MmGetSystemRoutineAddress(&RoutineName);
@@ -387,15 +409,28 @@ DECLHIDDEN(int) rtR0InitNative(void)
     /*
      * Special IPI fun for RTMpPokeCpu.
      *
-     * On Vista and later the DPC fallback doesn't seem to reliably send IPIs,
+     * On Vista and later the DPC method doesn't seem to reliably send IPIs,
      * so we have to use alternative methods.  The NtHalSendSoftwareInterrupt
-     * is preferrable, but if that's not available we'll settle for broadcast
-     * IPIs.
+     * is preferrable, but it's AMD64 only.  The NalRequestIpip method changed
+     * in Windows 7 with the lots-of-processors-support, but it's the only
+     * targeted IPI game in town if we cannot use KeInsertQueueDpc.  Worst case
+     * we use broadcast IPIs.
      */
+    if (   OsVerInfo.uMajorVer > 6
+        || (OsVerInfo.uMajorVer == 6 && OsVerInfo.uMinorVer > 0))
+        g_pfnrtHalRequestIpiPreW7 = NULL;
+    else
+        g_pfnrtHalRequestIpiW7Plus = NULL;
+
     g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
 #ifndef IPRT_TARGET_NT4
     if (g_pfnrtNtHalSendSoftwareInterrupt)
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalSendSoftwareInterrupt;
+    else if (   g_pfnrtHalRequestIpiW7Plus
+             && g_pfnrtKeInitializeAffinityEx
+             && g_pfnrtKeAddProcessorAffinityEx
+             && g_pfnrtKeGetProcessorIndexFromNumber)
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalReqestIpiW7Plus;
     else if (OsVerInfo.uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
         g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
     /* else: Windows XP should send always send an IPI -> VERIFY */

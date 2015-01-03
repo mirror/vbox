@@ -28,6 +28,7 @@
 #define ___internal_r0drv_h
 
 #include <iprt/cpuset.h>
+#include <iprt/nt/nt.h>
 
 RT_C_DECLS_BEGIN
 
@@ -36,7 +37,6 @@ RT_C_DECLS_BEGIN
 *******************************************************************************/
 typedef ULONG (__stdcall *PFNMYEXSETTIMERRESOLUTION)(ULONG, BOOLEAN);
 typedef VOID (__stdcall *PFNMYKEFLUSHQUEUEDDPCS)(VOID);
-typedef VOID (__stdcall *PFNHALREQUESTIPI)(KAFFINITY TargetSet);
 typedef VOID (__stdcall *PFNHALSENDSOFTWAREINTERRUPT)(ULONG ProcessorNumber, KIRQL Irql);
 typedef int (__stdcall *PFNRTSENDIPI)(RTCPUID idCpu);
 typedef ULONG_PTR (__stdcall *PFNRTKEIPIGENERICCALL)(PKIPI_BROADCAST_WORKER BroadcastFunction, ULONG_PTR  Context);
@@ -55,10 +55,15 @@ typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIMEPRECISE)(PLARGE_INTEGER pTime);
 extern RTCPUSET                         g_rtMpNtCpuSet;
 extern PFNMYEXSETTIMERRESOLUTION        g_pfnrtNtExSetTimerResolution;
 extern PFNMYKEFLUSHQUEUEDDPCS           g_pfnrtNtKeFlushQueuedDpcs;
-extern PFNHALREQUESTIPI                 g_pfnrtNtHalRequestIpi;
+extern PFNHALREQUESTIPI_W7PLUS          g_pfnrtHalRequestIpiW7Plus;
+extern PFNHALREQUESTIPI_PRE_W7          g_pfnrtHalRequestIpiPreW7;
 extern PFNHALSENDSOFTWAREINTERRUPT      g_pfnrtNtHalSendSoftwareInterrupt;
 extern PFNRTSENDIPI                     g_pfnrtMpPokeCpuWorker;
 extern PFNRTKEIPIGENERICCALL            g_pfnrtKeIpiGenericCall;
+extern PFNKEINITIALIZEAFFINITYEX        g_pfnrtKeInitializeAffinityEx;
+extern PFNKEADDPROCESSORAFFINITYEX      g_pfnrtKeAddProcessorAffinityEx;
+extern PFNKEGETPROCESSORINDEXFROMNUMBER g_pfnrtKeGetProcessorIndexFromNumber;
+
 extern PFNRTRTLGETVERSION               g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
 extern PFNRTKEQUERYINTERRUPTTIME        g_pfnrtKeQueryInterruptTime;
@@ -74,6 +79,8 @@ extern uint32_t                         g_offrtNtPbDpcQueueDepth;
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu);
 int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);
 int rtMpPokeCpuUsingHalSendSoftwareInterrupt(RTCPUID idCpu);
+int rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu);
+int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu);
 
 RT_C_DECLS_END
 
