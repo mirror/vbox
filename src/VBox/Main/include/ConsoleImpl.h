@@ -659,8 +659,8 @@ private:
     int i_configGraphicsController(PCFGMNODE pDevices,
                                    const GraphicsControllerType_T graphicsController,
                                    BusAssignmentManager *pBusMgr,
-                                   const ComPtr<IMachine> &pMachine,
-                                   const ComPtr<IBIOSSettings> &biosSettings,
+                                   const ComPtr<IMachine> &ptrMachine,
+                                   const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                    bool fHMEnabled);
     int i_configMediumAttachment(PCFGMNODE pCtlInst,
                                  const char *pcszDevice,
