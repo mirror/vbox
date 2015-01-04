@@ -138,7 +138,7 @@ static bool fInitializedLibrary = false;
 #define SHADER_SET_CURRENT_CONTEXT(ctx) \
     pCurrentContext = (struct wined3d_context *)ctx;
 
-SHADERDECL(int) ShaderInitLib()
+SHADERDECL(int) ShaderInitLib(void)
 {
     struct wined3d_gl_info *gl_info = &adapter.gl_info;
 
@@ -163,7 +163,7 @@ SHADERDECL(int) ShaderInitLib()
     return VINF_SUCCESS;
 }
 
-SHADERDECL(int) ShaderDestroyLib()
+SHADERDECL(int) ShaderDestroyLib(void)
 {
     return VINF_SUCCESS;
 }
