@@ -1248,22 +1248,22 @@ static void shader_trace_init(const struct wined3d_shader_frontend *fe, void *fe
             if (comment_size > 4 && *(const DWORD *)comment == WINEMAKEFOURCC('T', 'E', 'X', 'T'))
             {
                 const char *end = comment + comment_size;
-                const char *ptr = comment + 4;
-                const char *line = ptr;
+                const char *cur = comment + 4;
+                const char *line = cur;
 
                 TRACE("// TEXT\n");
-                while (ptr != end)
+                while (cur != end)
                 {
-                    if (*ptr == '\n')
+                    if (*cur == '\n')
                     {
-                        UINT len = ptr - line;
-                        if (len && *(ptr - 1) == '\r') --len;
+                        UINT len = cur - line;
+                        if (len && *(cur - 1) == '\r') --len;
                         TRACE("// %s\n", debugstr_an(line, len));
-                        line = ++ptr;
+                        line = ++cur;
                     }
-                    else ++ptr;
+                    else ++cur;
                 }
-                if (line != ptr) TRACE("// %s\n", debugstr_an(line, ptr - line));
+                if (line != cur) TRACE("// %s\n", debugstr_an(line, cur - line));
             }
             else TRACE("// %s\n", debugstr_an(comment, comment_size));
             continue;
