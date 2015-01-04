@@ -191,11 +191,11 @@ struct min_lookup
     GLenum mip[WINED3DTEXF_LINEAR + 1];
 };
 
-const struct min_lookup minMipLookup[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
-const struct min_lookup minMipLookup_noFilter[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
-const struct min_lookup minMipLookup_noMip[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
-const GLenum magLookup[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
-const GLenum magLookup_noFilter[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
+extern const struct min_lookup minMipLookup[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
+extern const struct min_lookup minMipLookup_noFilter[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
+extern const struct min_lookup minMipLookup_noMip[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
+extern const GLenum magLookup[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
+extern const GLenum magLookup_noFilter[WINED3DTEXF_LINEAR + 1] DECLSPEC_HIDDEN;
 
 static inline GLenum wined3d_gl_mag_filter(const GLenum mag_lookup[], WINED3DTEXTUREFILTERTYPE mag_filter)
 {
@@ -1589,6 +1589,9 @@ extern long WineD3DAdapterChangeGLRam(IWineD3DDeviceImpl *D3DDevice, long glram)
 #endif
 extern void add_gl_compat_wrappers(struct wined3d_gl_info *gl_info) DECLSPEC_HIDDEN;
 
+extern BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter);
+
+
 /*****************************************************************************
  * High order patch management
  */
@@ -2948,7 +2951,7 @@ struct IWineD3DSwapChainImpl
 #endif
 };
 
-const IWineD3DSwapChainVtbl IWineGDISwapChain_Vtbl DECLSPEC_HIDDEN;
+extern const IWineD3DSwapChainVtbl IWineGDISwapChain_Vtbl DECLSPEC_HIDDEN;
 void x11_copy_to_screen(IWineD3DSwapChainImpl *This, const RECT *rc) DECLSPEC_HIDDEN;
 
 HRESULT WINAPI IWineD3DBaseSwapChainImpl_QueryInterface(IWineD3DSwapChain *iface,
@@ -3428,5 +3431,9 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface,
         ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
 
 #define MAKEDWORD_VERSION(maj, min) (((maj & 0xffff) << 16) | (min & 0xffff))
+
+#ifdef RT_OS_DARWIN
+void *MyNSGLGetProcAddress(const char *name);
+#endif
 
 #endif
