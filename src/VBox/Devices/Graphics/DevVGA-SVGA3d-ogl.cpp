@@ -88,17 +88,20 @@ typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
 #include <float.h>
 
 #ifdef RT_OS_WINDOWS
-# define OGLGETPROCADDRESS       wglGetProcAddress
+# define OGLGETPROCADDRESS      wglGetProcAddress
+
 #elif defined(RT_OS_DARWIN)
 # include <dlfcn.h>
+# define OGLGETPROCADDRESS      MyNSGLGetProcAddress
 void *MyNSGLGetProcAddress(const char *name)
 {
+    /* Another copy in shaderapi.c. */
     static void *s_image = NULL;
     if (s_image == NULL)
         s_image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
     return (s_image ? dlsym(s_image, name) : NULL);
 }
-# define OGLGETPROCADDRESS      MyNSGLGetProcAddress
+
 #else
 # define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
 #endif
@@ -166,6 +169,28 @@ void *MyNSGLGetProcAddress(const char *name)
 #else
 # define VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext)                   do { } while (0)
 #endif
+
+/** Macro wrapping glGetIntegerv for use during initialization.
+ * This will release log errors.  */
+#define VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(a_enmGlValue, a_pDest) \
+    do \
+    { \
+        glGetIntegerv(a_enmGlValue, a_pDest); \
+        GLenum iGlError = glGetError(); \
+        if (RT_UNLIKELY(iGlError != GL_NO_ERROR)) \
+            LogRel(("VMSVGA3d: glGetIntegerv(" #a_enmGlValue " (%#x),) -> %#x\n", (int)a_enmGlValue, iGlError)); \
+    } while (0)
+
+/** Macro for doing something and then checking for errors during initialization. */
+#define VMSVGA3D_INIT_CHECKED(a_Expr) \
+    do \
+    { \
+        a_Expr; \
+        GLenum iGlError = glGetError(); \
+        if (RT_UNLIKELY(iGlError != GL_NO_ERROR)) \
+            LogRel(("VMSVGA3d: " #a_Expr " -> %#x\n", (int)a_enmGlValue, iGlError)); \
+    } while (0)
+
 
 typedef struct
 {
@@ -576,29 +601,152 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
 static void vmsvgaColor2GLFloatArray(uint32_t color, GLfloat *pRed, GLfloat *pGreen, GLfloat *pBlue, GLfloat *pAlpha);
 RT_C_DECLS_END
 
-static bool vmsvga3dCheckGLExtension(const char *pExtensionName)
+
+/**
+ * Checks if the given OpenGL extension is supported.
+ *
+ * @returns true if supported, false if not.
+ * @param   fGLVersion          The OpenGL version.
+ * @param   pszWantedExtension  The name of the OpenGL extension we want.
+ * @remarks Init time only.
+ */
+static bool vmsvga3dCheckGLExtension(float fGLVersion, const char *pszWantedExtension)
 {
+#if defined(RT_OS_DARWIN)
+    /*
+     * OpenGL 3.2+ core profile (glGetString(GL_EXTENSIONS) returns NULL).
+     */
+
+    /* Seems like extensions are assimilated into the OpenGL core, so we do
+       hardcoded checks for these as per gl3.h. */
+    if (   fGLVersion >= 3.0
+        && (   strcmp(pszWantedExtension, "GL_ARB_framebuffer_object") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_map_buffer_range") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
+        return true;
+    if (   fGLVersion >= 3.1
+        && (   strcmp(pszWantedExtension, "GL_ARB_copy_buffer") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_uniform_buffer_object") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
+        return true;
+    if (   fGLVersion >= 3.2
+        && (   strcmp(pszWantedExtension, "GL_ARB_draw_elements_base_vertex") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_provoking_vertex") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_sync") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_multisample") == 0) )
+        return true;
+    if (   fGLVersion >= 3.3
+        && (   strcmp(pszWantedExtension, "GL_ARB_blend_func_extended") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_sampler_objects") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_explicit_attrib_location") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_occlusion_query2") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_shader_bit_encoding") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_rgb10_a2ui") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_swizzle") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_timer_query") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_vertex_type_2_10_10_10_rev") == 0) )
+        return true;
+    if (   fGLVersion >= 4.0
+        && (   strcmp(pszWantedExtension, "GL_ARB_texture_query_lod") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_draw_indirect") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_gpu_shader5") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_gpu_shader_fp64") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_shader_subroutine") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_tessellation_shader") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_buffer_object_rgb32") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_cube_map_array") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_texture_gather") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_transform_feedback2") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_transform_feedback3") == 0) )
+        return true;
+    if (   fGLVersion >= 4.1
+        && (   strcmp(pszWantedExtension, "GL_ARB_ES2_compatibility") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_get_program_binary") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_separate_shader_objects") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_shader_precision") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_vertex_attrib_64bit") == 0
+            || strcmp(pszWantedExtension, "GL_ARB_viewport_array") == 0) )
+        return true;
+
+
+    /* Search the GL_EXTENSIONS array. */
+    static PFNGLGETSTRINGIPROC s_pfnGlGetStringi = NULL;
+    if (!s_pfnGlGetStringi)
+    {
+         s_pfnGlGetStringi = (PFNGLGETSTRINGIPROC)OGLGETPROCADDRESS("glGetStringi");
+         AssertLogRelReturn(s_pfnGlGetStringi, false);
+    }
+
+    GLint cExtensions = 1024;
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_NUM_EXTENSIONS, &cExtensions);
+
+    for (GLint idxCur = 0; idxCur < cExtensions; idxCur++)
+    {
+        const char *pszCur = (const char *)s_pfnGlGetStringi(GL_EXTENSIONS, idxCur);
+        if (pszCur && !strcmp(pszCur, pszWantedExtension))
+            return true;
+    }
+
+#else
+    /*
+     * Old interface.
+     */
     char *pSupportedExtensions = (char *)glGetString(GL_EXTENSIONS);
     char *pExtensionSupported  = pSupportedExtensions;
-    size_t cbExtension         = strlen(pExtensionName);
+    size_t cchWantedExtension  = strlen(pszWantedExtension);
 
     while (true)
     {
-        pExtensionSupported = strstr(pExtensionSupported, pExtensionName);
+        pExtensionSupported = strstr(pExtensionSupported, pszWantedExtension);
         if (pExtensionSupported == NULL)
             break;
 
         if (    (    pExtensionSupported == pSupportedExtensions
-                 || *(pExtensionSupported-1) == ' ')
-            &&  (    pExtensionSupported[cbExtension] == ' '
-                 ||  pExtensionSupported[cbExtension] == 0)
+                 ||  pExtensionSupported[-1] == ' ')
+            &&  (    pExtensionSupported[cchWantedExtension] == ' '
+                 ||  pExtensionSupported[cchWantedExtension] == '\0')
            )
             return true;
 
-        pExtensionSupported += cbExtension;
+        pExtensionSupported += cchWantedExtension;
     }
+#endif
+
     return false;
 }
+
+
+/**
+ * Outputs GL_EXTENSIONS list to the release log.
+ */
+static void vmsvga3dLogRelExtensions(void)
+{
+#if defined(RT_OS_DARWIN)
+    /* OpenGL 3.0 interface (glGetString(GL_EXTENSIONS) return NULL). */
+    PFNGLGETSTRINGIPROC pfnGlGetStringi = (PFNGLGETSTRINGIPROC)OGLGETPROCADDRESS("glGetStringi");
+    AssertLogRelReturnVoid(pfnGlGetStringi);
+
+    bool fBuffered = RTLogRelSetBuffering(true);
+
+    GLint cExtensions = 1024;
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_NUM_EXTENSIONS, &cExtensions);
+    LogRel(("VMSVGA3d: OpenGL extensions (GL_NUM_EXTENSIONS=%d)", cExtensions));
+
+    for (GLint idxCur = 0; idxCur < cExtensions; idxCur++)
+    {
+        const char *pszExt = (const char *)pfnGlGetStringi(GL_EXTENSIONS, idxCur);
+        const char *pszFmt = idxCur % 1 ? "  %s" : "\nVMSVGA3d:  %s";
+        LogRel((pszFmt, pszExt));
+    }
+
+    RTLogRelSetBuffering(fBuffered);
+    LogRel(("\n"));
+#else
+    /* Old interface. */
+    LogRel(("VMSVGA3d: OpenGL extensions: %s\n\n", glGetString(GL_EXTENSIONS)));
+#endif
+}
+
 
 int vmsvga3dInit(PVGASTATE pThis)
 {
@@ -652,10 +800,11 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     LogRel(("VMSVGA3d: OpenGL version: %s\nOpenGL Vendor: %s\nOpenGL Renderer: %s\n", glGetString(GL_VERSION), glGetString(GL_VENDOR), glGetString(GL_RENDERER)));
     LogRel(("VMSVGA3d: OpenGL shader language version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION)));
-    LogRel(("VMSVGA3d: OpenGL extensions: %s\n\n", glGetString(GL_EXTENSIONS)));
-    pState->fGLVersion     = atof((const char *)glGetString(GL_VERSION));
+    vmsvga3dLogRelExtensions();
 
-    if (vmsvga3dCheckGLExtension("GL_ARB_framebuffer_object"))
+    pState->fGLVersion = atof((const char *)glGetString(GL_VERSION));
+
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_framebuffer_object"))
     {
         pState->ext.glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)OGLGETPROCADDRESS("glIsRenderbuffer");
         pState->ext.glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)OGLGETPROCADDRESS("glBindRenderbuffer");
@@ -720,7 +869,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     AssertMsgReturn(pState->ext.glGetProgramivARB, ("glGetProgramivARB missing"), VERR_NOT_IMPLEMENTED);
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension("GL_ARB_draw_elements_base_vertex"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_draw_elements_base_vertex"))
     {
         pState->ext.glDrawElementsBaseVertex          = (PFNGLDRAWELEMENTSBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsBaseVertex");
         pState->ext.glDrawElementsInstancedBaseVertex = (PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsInstancedBaseVertex");
@@ -729,7 +878,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3d: missing extension GL_ARB_draw_elements_base_vertex\n"));
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension("GL_ARB_provoking_vertex"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_provoking_vertex"))
     {
         pState->ext.glProvokingVertex                 = (PFNGLPROVOKINGVERTEXPROC)OGLGETPROCADDRESS("glProvokingVertex");
     }
@@ -737,7 +886,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3d: missing extension GL_ARB_provoking_vertex\n"));
 
     /* Extension support */
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension("GL_EXT_stencil_two_side");
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_EXT_stencil_two_side");
 
     /* First set sensible defaults. */
     pState->caps.maxActiveLights               = 1;
@@ -753,38 +902,27 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->caps.fragmentShaderVersion         = SVGA3DPSVERSION_NONE;
 
     /* Query capabilities */
-    glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &pState->caps.maxTextureBufferSize);
-#ifdef DEBUG_bird
-    if (pState->fGLVersion >= 3.1) /* darwin: Requires GL 3.1, so triggers on older mac os x versions. */
-#endif
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_CLIP_DISTANCES, &pState->caps.maxClipDistances);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &pState->caps.maxColorAttachments);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE, &pState->caps.maxRectangleTextureSize);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-    glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_TEXTURE_BUFFER_SIZE, &pState->caps.maxTextureBufferSize);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_CLIP_DISTANCES, &pState->caps.maxClipDistances);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_COLOR_ATTACHMENTS, &pState->caps.maxColorAttachments);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_RECTANGLE_TEXTURE_SIZE, &pState->caps.maxRectangleTextureSize);
+    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy);
+    VMSVGA3D_INIT_CHECKED(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize));
 
     if (pState->ext.glGetProgramivARB)
     {
-        pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &pState->caps.maxFragmentShaderTemps);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-        pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &pState->caps.maxFragmentShaderInstructions);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-        pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &pState->caps.maxVertexShaderTemps);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
-        pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &pState->caps.maxVertexShaderInstructions);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+        VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
+                                                            &pState->caps.maxFragmentShaderTemps));
+        VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
+                                                            &pState->caps.maxFragmentShaderInstructions));
+        VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
+                                                            &pState->caps.maxVertexShaderTemps));
+        VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
+                                                            &pState->caps.maxVertexShaderInstructions));
     }
-    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension("GL_EXT_texture_compression_s3tc");
+    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_EXT_texture_compression_s3tc");
 
     /* http://http://www.opengl.org/wiki/Detecting_the_Shader_Model
      * ARB Assembly Language
@@ -794,22 +932,22 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      * GL_ARB_fragment_program: SM 2.0 or better.
      * ATI does not support higher than SM 2.0 functionality in assembly shaders.
      *
-     * @todo: distinguish between vertex and pixel shaders???
      */
-    if (vmsvga3dCheckGLExtension("GL_NV_gpu_program4"))
+    /** @todo: distinguish between vertex and pixel shaders??? */
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_NV_gpu_program4"))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
     }
     else
-    if (    vmsvga3dCheckGLExtension("GL_NV_vertex_program3")
-        ||  vmsvga3dCheckGLExtension("GL_ARB_shader_texture_lod"))  /* Wine claims this suggests SM 3.0 support */
+    if (    vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_NV_vertex_program3")
+        ||  vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_shader_texture_lod"))  /* Wine claims this suggests SM 3.0 support */
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_30;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_30;
     }
     else
-    if (vmsvga3dCheckGLExtension("GL_ARB_fragment_program"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_fragment_program"))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_20;
@@ -821,9 +959,9 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_11;
     }
 
-    if (!vmsvga3dCheckGLExtension("GL_ARB_vertex_array_bgra"))
+    if (!vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_vertex_array_bgra"))
     {
-        /* @todo Intel drivers don't support this extension! */
+        /** @todo Intel drivers don't support this extension! */
         LogRel(("VMSVGA3D: WARNING: Missing required extension GL_ARB_vertex_array_bgra (d3dcolor)!!!\n"));
     }
 #if 0
@@ -891,6 +1029,23 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
    SVGA3D_DEVCAP_SURFACEFMT_BC4_UNORM              = 82,
    SVGA3D_DEVCAP_SURFACEFMT_BC5_UNORM              = 83,
 #endif
+
+    LogRel(("VMSVGA3d: Capabilities:\n"));
+    LogRel(("VMSVGA3d:   maxActiveLights=%d  maxTextureBufferSize=%d  maxTextures=%d\n",
+            pState->caps.maxActiveLights, pState->caps.maxTextureBufferSize, pState->caps.maxTextures));
+    LogRel(("VMSVGA3d:   maxClipDistances=%d  maxColorAttachments=%d  maxClipDistances=%d\n",
+            pState->caps.maxClipDistances, pState->caps.maxColorAttachments, pState->caps.maxClipDistances));
+    LogRel(("VMSVGA3d:   maxColorAttachments=%d  maxRectangleTextureSize=%d  maxTextureAnisotropy=%d\n",
+            pState->caps.maxColorAttachments, pState->caps.maxRectangleTextureSize, pState->caps.maxTextureAnisotropy));
+    LogRel(("VMSVGA3d:   maxVertexShaderInstructions=%d  maxFragmentShaderInstructions=%d  maxVertexShaderTemps=%d\n",
+            pState->caps.maxVertexShaderInstructions, pState->caps.maxFragmentShaderInstructions, pState->caps.maxVertexShaderTemps));
+    LogRel(("VMSVGA3d:   maxFragmentShaderTemps=%d  flPointSize={%d.%02u, %d.%02u}\n",
+            pState->caps.maxFragmentShaderTemps,
+            (int)pState->caps.flPointSize[0], (int)(pState->caps.flPointSize[0] * 100) % 100,
+            (int)pState->caps.flPointSize[1], (int)(pState->caps.flPointSize[1] * 100) % 100));
+    LogRel(("VMSVGA3d: fragmentShaderVersion=%d  vertexShaderVersion=%d  fS3TCSupported=%d\n",
+            pState->caps.fragmentShaderVersion, pState->caps.vertexShaderVersion, pState->caps.fS3TCSupported));
+
 
     /* Initialize the shader library. */
     rc = ShaderInitLib();

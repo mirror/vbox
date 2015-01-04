@@ -1830,7 +1830,11 @@ static enum wined3d_pci_device wined3d_guess_card(const struct wined3d_gl_info *
      * memory behind our backs if really needed. Note that the amount of video
      * memory can be overruled using a registry setting. */
 
+#ifndef VBOX
     int i;
+#else
+    size_t i;
+#endif
 
     for (i = 0; i < (sizeof(vendor_card_select_table) / sizeof(*vendor_card_select_table)); ++i)
     {
@@ -1903,13 +1907,32 @@ static const struct blit_shader *select_blit_implementation(struct wined3d_adapt
 }
 #endif
 
+#if defined(RT_OS_DARWIN)
+/** Checks if @a pszExtension is one of the extensions we're looking for and
+ *  updates @a pGlInfo->supported accordingly. */
+static void check_gl_extension(struct wined3d_gl_info *pGlInfo, const char *pszExtension)
+{
+    size_t i;
+    TRACE_(d3d_caps)("- %s\n", debugstr_a(pszExtension));
+    for (i = 0; i < RT_ELEMENTS(EXTENSION_MAP); i++)
+        if (!strcmp(pszExtension, EXTENSION_MAP[i].extension_string))
+        {
+            TRACE_(d3d_caps)(" FOUND: %s support.\n", EXTENSION_MAP[i].extension_string);
+            pGlInfo->supported[EXTENSION_MAP[i].extension] = TRUE;
+            return;
+        }
+}
+#endif
+
 /* Context activation is done by the caller. */
 BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 {
     struct wined3d_driver_info *driver_info = &adapter->driver_info;
     struct wined3d_gl_info *gl_info = &adapter->gl_info;
+#if !defined(RT_OS_DARWIN)
     const char *GL_Extensions    = NULL;
     const char *WGL_Extensions   = NULL;
+#endif
     const char *gl_vendor_str, *gl_renderer_str, *gl_version_str;
     struct fragment_caps fragment_caps;
     enum wined3d_gl_vendor gl_vendor;
@@ -1998,6 +2021,7 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     TRACE_(d3d_caps)("Maximum point size support - max point size=%f\n", gl_floatv[1]);
 
     /* Parse the gl supported features, in theory enabling parts of our code appropriately. */
+#if !defined(RT_OS_DARWIN)
     GL_Extensions = (const char *)glGetString(GL_EXTENSIONS);
     if (!GL_Extensions)
     {
@@ -2009,11 +2033,84 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     LEAVE_GL();
 
     TRACE_(d3d_caps)("GL_Extensions reported:\n");
+#endif
 
     gl_info->supported[WINED3D_GL_EXT_NONE] = TRUE;
 
     gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
 
+#if defined(RT_OS_DARWIN)
+    {
+        /* We work with OpenGL 3.2+ on darwin, so we need to handle extensions differently. */
+        GLint idxExt;
+        GLint cExtensions = 1024;
+        float fGLVersion = atof((const char *)glGetString(GL_VERSION));
+
+# define GL_NUM_EXTENSIONS 0x821D /// FIXME
+        extern const GLubyte * glGetStringi(GLenum name, GLuint index); /// FIXME
+
+        glGetIntegerv(GL_NUM_EXTENSIONS, &cExtensions);
+        for (idxExt = 0; idxExt < cExtensions; idxExt++)
+            check_gl_extension(gl_info, (const char *)glGetStringi(GL_EXTENSIONS, idxExt));
+
+        if (fGLVersion >= 3.0)
+        {
+            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
+            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
+            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
+        }
+        if (fGLVersion >= 3.1)
+        {
+            check_gl_extension(gl_info, "GL_ARB_copy_buffer");
+            check_gl_extension(gl_info, "GL_ARB_uniform_buffer_object");
+        }
+        if (fGLVersion >= 3.2)
+        {
+            check_gl_extension(gl_info, "GL_ARB_draw_elements_base_vertex");
+            check_gl_extension(gl_info, "GL_ARB_provoking_vertex");
+            check_gl_extension(gl_info, "GL_ARB_sync");
+            check_gl_extension(gl_info, "GL_ARB_texture_multisample");
+        }
+        if (fGLVersion >= 3.3)
+        {
+            check_gl_extension(gl_info, "GL_ARB_blend_func_extended");
+            check_gl_extension(gl_info, "GL_ARB_sampler_objects");
+            check_gl_extension(gl_info, "GL_ARB_explicit_attrib_location");
+            check_gl_extension(gl_info, "GL_ARB_occlusion_query2");
+            check_gl_extension(gl_info, "GL_ARB_shader_bit_encoding");
+            check_gl_extension(gl_info, "GL_ARB_texture_rgb10_a2ui");
+            check_gl_extension(gl_info, "GL_ARB_texture_swizzle");
+            check_gl_extension(gl_info, "GL_ARB_timer_query");
+            check_gl_extension(gl_info, "GL_ARB_vertex_type_2_10_10_10_rev");
+        }
+        if (fGLVersion >=4.0)
+        {
+            check_gl_extension(gl_info, "GL_ARB_texture_query_lod");
+            check_gl_extension(gl_info, "GL_ARB_draw_indirect");
+            check_gl_extension(gl_info, "GL_ARB_gpu_shader5");
+            check_gl_extension(gl_info, "GL_ARB_gpu_shader_fp64");
+            check_gl_extension(gl_info, "GL_ARB_shader_subroutine");
+            check_gl_extension(gl_info, "GL_ARB_tessellation_shader");
+            check_gl_extension(gl_info, "GL_ARB_texture_buffer_object_rgb32");
+            check_gl_extension(gl_info, "GL_ARB_texture_cube_map_array");
+            check_gl_extension(gl_info, "GL_ARB_texture_gather");
+            check_gl_extension(gl_info, "GL_ARB_transform_feedback2");
+            check_gl_extension(gl_info, "GL_ARB_transform_feedback3");
+        }
+        if (fGLVersion >=4.1)
+        {
+            check_gl_extension(gl_info, "GL_ARB_ES2_compatibility");
+            check_gl_extension(gl_info, "GL_ARB_get_program_binary");
+            check_gl_extension(gl_info, "GL_ARB_separate_shader_objects");
+            check_gl_extension(gl_info, "GL_ARB_shader_precision");
+            check_gl_extension(gl_info, "GL_ARB_vertex_attrib_64bit");
+            check_gl_extension(gl_info, "GL_ARB_viewport_array");
+        }
+    }
+
+    LEAVE_GL();
+
+#else
     while (*GL_Extensions)
     {
         const char *start;
@@ -2040,16 +2137,16 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
             }
         }
     }
+#endif
 
 #ifdef VBOX_WITH_VMSVGA
 # ifdef RT_OS_WINDOWS
-# define OGLGETPROCADDRESS       wglGetProcAddress
+#  define OGLGETPROCADDRESS      wglGetProcAddress
 # elif RT_OS_DARWIN
-extern void (*MyNSGLGetProcAddress(const char *name))(void);
-# define OGLGETPROCADDRESS       MyNSGLGetProcAddress
+#  define OGLGETPROCADDRESS(x)   MyNSGLGetProcAddress(x)
 # else
 extern void (*glXGetProcAddress(const GLubyte *procname))( void );
-# define OGLGETPROCADDRESS(x)    glXGetProcAddress((const GLubyte *)x)
+#  define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
 # endif
 #endif
 
@@ -2173,7 +2270,7 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         }
         else
         {
-            gl_info->limits.fragment_samplers = max(gl_info->limits.fragment_samplers, gl_max);
+            gl_info->limits.fragment_samplers = max(gl_info->limits.fragment_samplers, (UINT)gl_max);
         }
         TRACE_(d3d_caps)("Max fragment samplers: %d.\n", gl_info->limits.fragment_samplers);
 

@@ -21,6 +21,7 @@
 *******************************************************************************/
 #ifdef IN_VMSVGA3D
 # include <OpenGL/OpenGL.h>
+# include <OpenGL/gl3.h>
 # include "../include/cr_blitter.h"
 # include <iprt/assert.h>
 # define WARN       AssertMsgFailed

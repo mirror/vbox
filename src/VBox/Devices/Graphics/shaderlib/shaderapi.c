@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
  * shaderlib -- interface to WINE's Direct3D shader functions
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,29 +19,30 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
+#define WINED3D_EXTERN
 #include "wined3d_private.h"
 
 #include "shaderlib.h"
 
 #ifdef RT_OS_WINDOWS
-#define OGLGETPROCADDRESS       wglGetProcAddress
+# define OGLGETPROCADDRESS      wglGetProcAddress
+
 #elif RT_OS_DARWIN
-#include <mach-o/dyld.h>
+# include <dlfcn.h>
+# define OGLGETPROCADDRESS(x)   MyNSGLGetProcAddress((const char *)x)
 void *MyNSGLGetProcAddress(const char *name)
 {
-    NSSymbol symbol = NULL;
-    char *symbolName = malloc(strlen(name) + 2);
-    strcpy(symbolName + 1, name);
-    symbolName[0] = '_';
-    if (NSIsSymbolNameDefined(symbolName))
-        symbol = NSLookupAndBindSymbol(symbolName);
-    free(symbolName);
-    return symbol ? NSAddressOfSymbol(symbol) : NULL;
+    /* Another copy in DevVGA-SVGA3d-ogl.cpp. */
+    static void *s_image = NULL;
+    if (s_image == NULL)
+        s_image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
+    return s_image ? dlsym(s_image, name) : NULL;
 }
-#define OGLGETPROCADDRESS(x)   MyNSGLGetProcAddress((const char *)x)
+
 #else
 extern void (*glXGetProcAddress(const GLubyte *procname))( void );
-#define OGLGETPROCADDRESS(x)    glXGetProcAddress((const GLubyte *)x)
+# define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
+
 #endif
 
 #undef GL_EXT_FUNCS_GEN 
@@ -128,8 +130,6 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
             glBindAttribLocationARB,                    ARB_SHADER_OBJECTS,             NULL) \
     USE_GL_FUNC(WINED3D_PFNGLGETATTRIBLOCATIONARBPROC, \
             glGetAttribLocationARB,                     ARB_SHADER_OBJECTS,             NULL) \
-
-extern BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter);
 
 static struct wined3d_context *pCurrentContext = NULL;
 static struct wined3d_adapter adapter = {0};
