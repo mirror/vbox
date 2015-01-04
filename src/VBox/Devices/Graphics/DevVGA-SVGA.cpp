@@ -54,9 +54,6 @@
 //#define DEBUG_GMR_ACCESS
 #endif
 
-/** Converts a display port interface pointer to a vga state pointer. */
-#define IDISPLAYPORT_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, IPort)) )
-
 #include "DevVGA-SVGA.h"
 #include "vmsvga/svga_reg.h"
 #include "vmsvga/svga_escape.h"
@@ -468,7 +465,7 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
  */
 DECLCALLBACK(void) vmsvgaPortSetViewPort(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
-    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IPort);
 
     Log(("vmsvgaPortSetViewPort: screen %d (%d,%d)(%d,%d)\n", uScreenId, x, y, cx, cy));
 
