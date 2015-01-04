@@ -606,87 +606,115 @@ RT_C_DECLS_END
  * Checks if the given OpenGL extension is supported.
  *
  * @returns true if supported, false if not.
- * @param   fGLVersion          The OpenGL version.
+ * @param   fActualGLVersion    The actual OpenGL version we're working against.
+ * @param   fMinGLVersion       The OpenGL version that introduced this feature
+ *                              into the core.
  * @param   pszWantedExtension  The name of the OpenGL extension we want.
  * @remarks Init time only.
  */
-static bool vmsvga3dCheckGLExtension(float fGLVersion, const char *pszWantedExtension)
+static bool vmsvga3dCheckGLExtension(float fActualGLVersion, float fMinGLVersion, const char *pszWantedExtension)
 {
+    bool fRet = false;
+
 #if defined(RT_OS_DARWIN)
     /*
      * OpenGL 3.2+ core profile (glGetString(GL_EXTENSIONS) returns NULL).
+     * It also avoids listing extensions that have been promoted into the core.
      */
 
     /* Seems like extensions are assimilated into the OpenGL core, so we do
        hardcoded checks for these as per gl3.h. */
-    if (   fGLVersion >= 3.0
-        && (   strcmp(pszWantedExtension, "GL_ARB_framebuffer_object") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_map_buffer_range") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
-        return true;
-    if (   fGLVersion >= 3.1
-        && (   strcmp(pszWantedExtension, "GL_ARB_copy_buffer") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_uniform_buffer_object") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
-        return true;
-    if (   fGLVersion >= 3.2
-        && (   strcmp(pszWantedExtension, "GL_ARB_draw_elements_base_vertex") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_provoking_vertex") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_sync") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_multisample") == 0) )
-        return true;
-    if (   fGLVersion >= 3.3
-        && (   strcmp(pszWantedExtension, "GL_ARB_blend_func_extended") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_sampler_objects") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_explicit_attrib_location") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_occlusion_query2") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_shader_bit_encoding") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_rgb10_a2ui") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_swizzle") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_timer_query") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_vertex_type_2_10_10_10_rev") == 0) )
-        return true;
-    if (   fGLVersion >= 4.0
-        && (   strcmp(pszWantedExtension, "GL_ARB_texture_query_lod") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_draw_indirect") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_gpu_shader5") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_gpu_shader_fp64") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_shader_subroutine") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_tessellation_shader") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_buffer_object_rgb32") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_cube_map_array") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_texture_gather") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_transform_feedback2") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_transform_feedback3") == 0) )
-        return true;
-    if (   fGLVersion >= 4.1
-        && (   strcmp(pszWantedExtension, "GL_ARB_ES2_compatibility") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_get_program_binary") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_separate_shader_objects") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_shader_precision") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_vertex_attrib_64bit") == 0
-            || strcmp(pszWantedExtension, "GL_ARB_viewport_array") == 0) )
-        return true;
-
-
-    /* Search the GL_EXTENSIONS array. */
-    static PFNGLGETSTRINGIPROC s_pfnGlGetStringi = NULL;
-    if (!s_pfnGlGetStringi)
+    if (0) { /*nothing*/ }
+    else if (   fActualGLVersion >= 2.0
+             && (   strcmp(pszWantedExtension, "GL_ARB_draw_buffers") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_shader_objects") == 0 /*??*/
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_shader") == 0 /*??*/
+                 || strcmp(pszWantedExtension, "GL_ARB_fragment_shader") == 0 /*??*/
+                 || strcmp(pszWantedExtension, "GL_ARB_shading_language_100") == 0 /*??*/
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_non_power_of_two") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_point_sprite") == 0
+                 || strcmp(pszWantedExtension, "GL_ATI_separate_stencil") == 0
+                 || strcmp(pszWantedExtension, "GL_EXT_stencil_two_side") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 2.1
+             && (   strcmp(pszWantedExtension, "GL_EXT_texture_sRGB") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_pixel_buffer_object") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 3.0
+             && (   strcmp(pszWantedExtension, "GL_ARB_framebuffer_object") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_map_buffer_range") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 3.1
+             && (   strcmp(pszWantedExtension, "GL_ARB_copy_buffer") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_uniform_buffer_object") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_array_object") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 3.2
+             && (   strcmp(pszWantedExtension, "GL_ARB_draw_elements_base_vertex") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_array_bgra") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_provoking_vertex") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_seamless_cube_map") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_fragment_coord_conventions") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_depth_clamp") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_sync") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_multisample") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 3.3
+             && (   strcmp(pszWantedExtension, "GL_ARB_blend_func_extended") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_sampler_objects") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_explicit_attrib_location") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_occlusion_query2") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_shader_bit_encoding") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_rgb10_a2ui") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_swizzle") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_timer_query") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_type_2_10_10_10_rev") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 4.0
+             && (   strcmp(pszWantedExtension, "GL_ARB_texture_query_lod") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_draw_indirect") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_gpu_shader5") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_gpu_shader_fp64") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_shader_subroutine") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_tessellation_shader") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_buffer_object_rgb32") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_cube_map_array") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_texture_gather") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_transform_feedback2") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_transform_feedback3") == 0) )
+        fRet = true;
+    else if (   fActualGLVersion >= 4.1
+             && (   strcmp(pszWantedExtension, "GL_ARB_ES2_compatibility") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_get_program_binary") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_separate_shader_objects") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_shader_precision") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_vertex_attrib_64bit") == 0
+                 || strcmp(pszWantedExtension, "GL_ARB_viewport_array") == 0) )
+        fRet = true;
+    else
     {
-         s_pfnGlGetStringi = (PFNGLGETSTRINGIPROC)OGLGETPROCADDRESS("glGetStringi");
-         AssertLogRelReturn(s_pfnGlGetStringi, false);
+        /* Search the GL_EXTENSIONS array. */
+        static PFNGLGETSTRINGIPROC s_pfnGlGetStringi = NULL;
+        if (!s_pfnGlGetStringi)
+        {
+             s_pfnGlGetStringi = (PFNGLGETSTRINGIPROC)OGLGETPROCADDRESS("glGetStringi");
+             AssertLogRelReturn(s_pfnGlGetStringi, false);
+        }
+
+        GLint cExtensions = 1024;
+        VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_NUM_EXTENSIONS, &cExtensions);
+
+        for (GLint idxCur = 0; idxCur < cExtensions; idxCur++)
+        {
+            const char *pszCur = (const char *)s_pfnGlGetStringi(GL_EXTENSIONS, idxCur);
+            if (pszCur && !strcmp(pszCur, pszWantedExtension))
+            {
+                fRet = true;
+                break;
+            }
+        }
     }
-
-    GLint cExtensions = 1024;
-    VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_NUM_EXTENSIONS, &cExtensions);
-
-    for (GLint idxCur = 0; idxCur < cExtensions; idxCur++)
-    {
-        const char *pszCur = (const char *)s_pfnGlGetStringi(GL_EXTENSIONS, idxCur);
-        if (pszCur && !strcmp(pszCur, pszWantedExtension))
-            return true;
-    }
-
 #else
     /*
      * Old interface.
@@ -706,13 +734,19 @@ static bool vmsvga3dCheckGLExtension(float fGLVersion, const char *pszWantedExte
             &&  (    pExtensionSupported[cchWantedExtension] == ' '
                  ||  pExtensionSupported[cchWantedExtension] == '\0')
            )
-            return true;
+        {
+            fRet = true;
+            break;
+        }
 
         pExtensionSupported += cchWantedExtension;
     }
 #endif
 
-    return false;
+    /* Temporarily.  Later start if (fMinGLVersion != 0.0 && fActualGLVersion >= fMinGLVersion) return true; */
+    AssertMsg(fMinGLVersion == 0.0 || fRet == (fActualGLVersion >= fMinGLVersion),
+              ("%s actual:%d min:%d\n", pszWantedExtension, (int)(fActualGLVersion * 10), (int)(fMinGLVersion * 10) ));
+    return fRet;
 }
 
 
@@ -735,7 +769,7 @@ static void vmsvga3dLogRelExtensions(void)
     for (GLint idxCur = 0; idxCur < cExtensions; idxCur++)
     {
         const char *pszExt = (const char *)pfnGlGetStringi(GL_EXTENSIONS, idxCur);
-        const char *pszFmt = idxCur % 1 ? "  %s" : "\nVMSVGA3d:  %s";
+        const char *pszFmt = idxCur % 3 ? " %-26s" : "\nVMSVGA3d:  %-26s";
         LogRel((pszFmt, pszExt));
     }
 
@@ -804,7 +838,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     pState->fGLVersion = atof((const char *)glGetString(GL_VERSION));
 
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_framebuffer_object"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 3.0, "GL_ARB_framebuffer_object"))
     {
         pState->ext.glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)OGLGETPROCADDRESS("glIsRenderbuffer");
         pState->ext.glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)OGLGETPROCADDRESS("glBindRenderbuffer");
@@ -869,7 +903,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     AssertMsgReturn(pState->ext.glGetProgramivARB, ("glGetProgramivARB missing"), VERR_NOT_IMPLEMENTED);
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_draw_elements_base_vertex"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 3.2, "GL_ARB_draw_elements_base_vertex"))
     {
         pState->ext.glDrawElementsBaseVertex          = (PFNGLDRAWELEMENTSBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsBaseVertex");
         pState->ext.glDrawElementsInstancedBaseVertex = (PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsInstancedBaseVertex");
@@ -878,7 +912,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3d: missing extension GL_ARB_draw_elements_base_vertex\n"));
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_provoking_vertex"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 3.2, "GL_ARB_provoking_vertex"))
     {
         pState->ext.glProvokingVertex                 = (PFNGLPROVOKINGVERTEXPROC)OGLGETPROCADDRESS("glProvokingVertex");
     }
@@ -886,7 +920,12 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3d: missing extension GL_ARB_provoking_vertex\n"));
 
     /* Extension support */
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_EXT_stencil_two_side");
+#ifdef RT_OS_DARWIN
+    /** @todo OpenGL version history suggest this, verify...  */
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState->fGLVersion, 2.0, "GL_EXT_stencil_two_side");
+#else
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_EXT_stencil_two_side");
+#endif
 
     /* First set sensible defaults. */
     pState->caps.maxActiveLights               = 1;
@@ -922,7 +961,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                             &pState->caps.maxVertexShaderInstructions));
     }
-    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_EXT_texture_compression_s3tc");
+    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_EXT_texture_compression_s3tc");
 
     /* http://http://www.opengl.org/wiki/Detecting_the_Shader_Model
      * ARB Assembly Language
@@ -934,20 +973,23 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      *
      */
     /** @todo: distinguish between vertex and pixel shaders??? */
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_NV_gpu_program4"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_NV_gpu_program4"))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
     }
     else
-    if (    vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_NV_vertex_program3")
-        ||  vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_shader_texture_lod"))  /* Wine claims this suggests SM 3.0 support */
+    if (    vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_NV_vertex_program3")
+#if 0 /** @todo this is contrary to the ATI <= SM2.0. */
+        ||  vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_ARB_shader_texture_lod")  /* Wine claims this suggests SM 3.0 support */
+#endif
+        )
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_30;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_30;
     }
     else
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_fragment_program"))
+    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_ARB_fragment_program"))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_20;
@@ -959,7 +1001,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_11;
     }
 
-    if (!vmsvga3dCheckGLExtension(pState->fGLVersion, "GL_ARB_vertex_array_bgra"))
+    if (!vmsvga3dCheckGLExtension(pState->fGLVersion, 3.2, "GL_ARB_vertex_array_bgra"))
     {
         /** @todo Intel drivers don't support this extension! */
         LogRel(("VMSVGA3D: WARNING: Missing required extension GL_ARB_vertex_array_bgra (d3dcolor)!!!\n"));
