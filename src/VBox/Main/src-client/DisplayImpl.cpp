@@ -307,7 +307,9 @@ DECLCALLBACK(void) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pv
         BOOL f3DSnapshot = FALSE;
         BOOL is3denabled;
         that->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-        if (is3denabled && that->mCrOglCallbacks.pfnHasData())
+        if (   is3denabled
+            && that->mCrOglCallbacks.pfnHasData
+            && that->mCrOglCallbacks.pfnHasData())
         {
             VMMDev *pVMMDev = that->mParent->i_getVMMDev();
             if (pVMMDev)
@@ -734,11 +736,13 @@ int Display::i_crOglWindowsShow(bool fShow)
 
     if (!mhCrOglSvc)
     {
-        /* no 3D */
-#ifdef DEBUG
-        BOOL is3denabled;
-        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-        Assert(!is3denabled);
+        /* no 3D or the VMSVGA3d kind. */
+#ifdef VBOX_STRICT
+        BOOL fIs3DEnabled;
+        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
+        GraphicsControllerType_T enmGraphicsController;
+        mParent->i_machine()->COMGETTER(GraphicsControllerType)(&enmGraphicsController);
+        Assert(!fIs3DEnabled || enmGraphicsController != GraphicsControllerType_VBoxVGA);
 #endif
         return VERR_INVALID_STATE;
     }
@@ -1232,8 +1236,8 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     {
         if (mhCrOglSvc)
         {
-            VBOXCRCMDCTL_HGCM *pCtl = (VBOXCRCMDCTL_HGCM*)RTMemAlloc(RT_MAX(cRect, 1) * sizeof(RTRECT)
-                    + sizeof(VBOXCRCMDCTL_HGCM));
+            VBOXCRCMDCTL_HGCM *pCtl;
+            pCtl = (VBOXCRCMDCTL_HGCM*)RTMemAlloc(RT_MAX(cRect, 1) * sizeof(RTRECT) + sizeof(VBOXCRCMDCTL_HGCM));
             if (pCtl)
             {
                 RTRECT *pRectsCopy = (RTRECT*)(pCtl+1);
@@ -1774,7 +1778,9 @@ BOOL Display::i_displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreen
 {
     BOOL is3denabled;
     pDisplay->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-    if (is3denabled && pDisplay->mCrOglCallbacks.pfnHasData())
+    if (   is3denabled
+        && pDisplay->mCrOglCallbacks.pfnHasData
+        && pDisplay->mCrOglCallbacks.pfnHasData())
     {
         VMMDev *pVMMDev = pDisplay->mParent->i_getVMMDev();
         if (pVMMDev)
@@ -2978,7 +2984,8 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
             {
                 if (ASMAtomicCmpXchgU32(&pDisplay->mfCrOglVideoRecState, CRVREC_STATE_SUBMITTED, CRVREC_STATE_IDLE))
                 {
-                    if (pDisplay->mCrOglCallbacks.pfnHasData())
+                    if (   pDisplay->mCrOglCallbacks.pfnHasData
+                        && pDisplay->mCrOglCallbacks.pfnHasData())
                     {
                         /* submit */
                         VBOXCRCMDCTL_HGCM *pData = &pDisplay->mCrOglScreenshotCtl;
@@ -3381,7 +3388,8 @@ int Display::i_crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VB
     int rc = RTCritSectRwEnterShared(&mCrOglLock);
     AssertRCReturn(rc, rc);
 
-    if (mCrOglCallbacks.pfnHasDataForScreen && mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
+    if (   mCrOglCallbacks.pfnHasDataForScreen
+        && mCrOglCallbacks.pfnHasDataForScreen(u32ScreenID))
         rc = i_crCtlSubmitSync(pCmd, cbCmd);
     else
         rc = i_crCtlSubmitAsyncCmdCopy(pCmd, cbCmd);
