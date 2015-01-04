@@ -1552,9 +1552,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /*
          * VGA.
          */
-        GraphicsControllerType_T graphicsController;
-        hrc = pMachine->COMGETTER(GraphicsControllerType)(&graphicsController);             H();
-        switch (graphicsController)
+        GraphicsControllerType_T enmGraphicsController;
+        hrc = pMachine->COMGETTER(GraphicsControllerType)(&enmGraphicsController);          H();
+        switch (enmGraphicsController)
         {
             case GraphicsControllerType_Null:
                 break;
@@ -1562,15 +1562,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef VBOX_WITH_VMSVGA
             case GraphicsControllerType_VMSVGA:
 #endif
-                rc = i_configGraphicsController(pDevices, graphicsController, pBusMgr, pMachine, biosSettings,
+                rc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, biosSettings,
                                                 RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
                     return rc;
                 break;
             default:
-                AssertMsgFailed(("Invalid graphicsController=%d\n", graphicsController));
+                AssertMsgFailed(("Invalid graphicsController=%d\n", enmGraphicsController));
                 return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                    N_("Invalid graphics controller type '%d'"), graphicsController);
+                                    N_("Invalid graphics controller type '%d'"), enmGraphicsController);
         }
 
         /*
@@ -3368,10 +3368,10 @@ int Console::i_configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *p
 }
 
 int Console::i_configGraphicsController(PCFGMNODE pDevices,
-                                        const GraphicsControllerType_T graphicsController,
+                                        const GraphicsControllerType_T enmGraphicsController,
                                         BusAssignmentManager *pBusMgr,
-                                        const ComPtr<IMachine> &pMachine,
-                                        const ComPtr<IBIOSSettings> &biosSettings,
+                                        const ComPtr<IMachine> &ptrMachine,
+                                        const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                         bool fHMEnabled)
 {
     // InsertConfig* throws
@@ -3390,10 +3390,10 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         hrc = pBusMgr->assignPCIDevice(pcszDevice, pInst);                                  H();
         InsertConfigNode(pInst,    "Config", &pCfg);
         ULONG cVRamMBs;
-        hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
+        hrc = ptrMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                   H();
         InsertConfigInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);
         ULONG cMonitorCount;
-        hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
+        hrc = ptrMachine->COMGETTER(MonitorCount)(&cMonitorCount);                          H();
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
@@ -3404,7 +3404,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         i_attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
 
 #ifdef VBOX_WITH_VMSVGA
-        if (graphicsController == GraphicsControllerType_VMSVGA)
+        if (enmGraphicsController == GraphicsControllerType_VMSVGA)
         {
             InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
 #ifdef VBOX_WITH_VMSVGA3D
@@ -3420,7 +3420,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
                 pFramebuffer->Release();
             }
             BOOL f3DEnabled;
-            pMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);
+            hrc = ptrMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);                  H();
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
 #endif
         }
@@ -3432,7 +3432,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         {
             char szExtraDataKey[sizeof("CustomVideoModeXX")];
             RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
-            hrc = pMachine->GetExtraData(Bstr(szExtraDataKey).raw(), bstr.asOutParam());    H();
+            hrc = ptrMachine->GetExtraData(Bstr(szExtraDataKey).raw(), bstr.asOutParam());  H();
             if (bstr.isEmpty())
                 break;
             InsertConfigString(pCfg, szExtraDataKey, bstr);
@@ -3461,16 +3461,16 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
          * BIOS logo
          */
         BOOL fFadeIn;
-        hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                                H();
+        hrc = ptrBiosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                             H();
         InsertConfigInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);
         BOOL fFadeOut;
-        hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                              H();
+        hrc = ptrBiosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                           H();
         InsertConfigInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);
         ULONG logoDisplayTime;
-        hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                   H();
+        hrc = ptrBiosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                H();
         InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
         Bstr logoImagePath;
-        hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
+        hrc = ptrBiosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());        H();
         InsertConfigString(pCfg,   "LogoFile", Utf8Str(!logoImagePath.isEmpty() ? logoImagePath : "") );
 
         /*
@@ -3478,7 +3478,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
          */
         BIOSBootMenuMode_T eBootMenuMode;
         int iShowBootMenu;
-        biosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);
+        hrc = ptrBiosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);                     H();
         switch (eBootMenuMode)
         {
             case BIOSBootMenuMode_Disabled: iShowBootMenu = 0;  break;
