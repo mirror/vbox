@@ -188,7 +188,7 @@ void *MyNSGLGetProcAddress(const char *name)
         a_Expr; \
         GLenum iGlError = glGetError(); \
         if (RT_UNLIKELY(iGlError != GL_NO_ERROR)) \
-            LogRel(("VMSVGA3d: " #a_Expr " -> %#x\n", (int)a_enmGlValue, iGlError)); \
+            LogRel(("VMSVGA3d: " #a_Expr " -> %#x\n", iGlError)); \
     } while (0)
 
 
