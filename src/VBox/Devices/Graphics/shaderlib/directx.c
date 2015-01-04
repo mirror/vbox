@@ -2053,6 +2053,88 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
         for (idxExt = 0; idxExt < cExtensions; idxExt++)
             check_gl_extension(gl_info, (const char *)glGetStringi(GL_EXTENSIONS, idxExt));
 
+        if (fGLVersion >= 1.1)
+        {
+            check_gl_extension(gl_info, "GL_EXT_vertex_array");
+            check_gl_extension(gl_info, "GL_EXT_polygon_offset");
+            check_gl_extension(gl_info, "GL_EXT_blend_logic_op");
+            check_gl_extension(gl_info, "GL_EXT_texture");
+            check_gl_extension(gl_info, "GL_EXT_copy_texture");
+            check_gl_extension(gl_info, "GL_EXT_subtexture");
+            check_gl_extension(gl_info, "GL_EXT_texture_object");
+            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
+            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
+            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
+        }
+        if (fGLVersion >= 1.2)
+        {
+            check_gl_extension(gl_info, "EXT_texture3D");
+            check_gl_extension(gl_info, "EXT_bgra");
+            check_gl_extension(gl_info, "EXT_packed_pixels");
+            check_gl_extension(gl_info, "EXT_rescale_normal");
+            check_gl_extension(gl_info, "EXT_separate_specular_color");
+            check_gl_extension(gl_info, "SGIS_texture_edge_clamp");
+            check_gl_extension(gl_info, "SGIS_texture_lod");
+            check_gl_extension(gl_info, "EXT_draw_range_elements");
+        }
+        if (fGLVersion >= 1.3)
+        {
+            check_gl_extension(gl_info, "GL_ARB_texture_compression");
+            check_gl_extension(gl_info, "GL_ARB_texture_cube_map");
+            check_gl_extension(gl_info, "GL_ARB_multisample");
+            check_gl_extension(gl_info, "GL_ARB_multitexture");
+            check_gl_extension(gl_info, "GL_ARB_texture_env_add");
+            check_gl_extension(gl_info, "GL_ARB_texture_env_combine");
+            check_gl_extension(gl_info, "GL_ARB_texture_env_dot3");
+            check_gl_extension(gl_info, "GL_ARB_texture_border_clamp");
+            check_gl_extension(gl_info, "GL_ARB_transpose_matrix");
+        }
+        if (fGLVersion >= 1.5)
+        {
+            check_gl_extension(gl_info, "GL_SGIS_generate_mipmap");
+            /*check_gl_extension(gl_info, "GL_NV_blend_equare");*/
+            check_gl_extension(gl_info, "GL_ARB_depth_texture");
+            check_gl_extension(gl_info, "GL_ARB_shadow");
+            check_gl_extension(gl_info, "GL_EXT_fog_coord");
+            check_gl_extension(gl_info, "GL_EXT_multi_draw_arrays");
+            check_gl_extension(gl_info, "GL_ARB_point_parameters");
+            check_gl_extension(gl_info, "GL_EXT_secondary_color");
+            check_gl_extension(gl_info, "GL_EXT_blend_func_separate");
+            check_gl_extension(gl_info, "GL_EXT_stencil_wrap");
+            check_gl_extension(gl_info, "GL_ARB_texture_env_crossbar");
+            check_gl_extension(gl_info, "GL_EXT_texture_lod_bias");
+            check_gl_extension(gl_info, "GL_ARB_texture_mirrored_repeat");
+            check_gl_extension(gl_info, "GL_ARB_window_pos");
+        }
+        if (fGLVersion >= 1.6)
+        {
+            check_gl_extension(gl_info, "GL_ARB_vertex_buffer_object");
+            check_gl_extension(gl_info, "GL_ARB_occlusion_query");
+            check_gl_extension(gl_info, "GL_EXT_shadow_funcs");
+        }
+        if (fGLVersion >= 2.0)
+        {
+            check_gl_extension(gl_info, "GL_ARB_shader_objects"); /*??*/
+            check_gl_extension(gl_info, "GL_ARB_vertex_shader"); /*??*/
+            check_gl_extension(gl_info, "GL_ARB_fragment_shader"); /*??*/
+            check_gl_extension(gl_info, "GL_ARB_shading_language_100"); /*??*/
+            check_gl_extension(gl_info, "GL_ARB_draw_buffers");
+            check_gl_extension(gl_info, "GL_ARB_texture_non_power_of_two");
+            check_gl_extension(gl_info, "GL_ARB_point_sprite");
+            check_gl_extension(gl_info, "GL_ATI_separate_stencil");
+            check_gl_extension(gl_info, "GL_EXT_stencil_two_side");
+        }
+        if (fGLVersion >= 2.1)
+        {
+            check_gl_extension(gl_info, "GL_ARB_pixel_buffer_object");
+            check_gl_extension(gl_info, "GL_EXT_texture_sRGB");
+        }
+        if (fGLVersion >= 3.0)
+        {
+            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
+            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
+            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
+        }
         if (fGLVersion >= 3.0)
         {
             check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
