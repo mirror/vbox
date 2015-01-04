@@ -1,21 +1,37 @@
-#ifndef __SHADERLIB_H__
-#define __SHADERLIB_H__
+/* $Id$ */
+/** @file
+ * shaderlib -- interface to WINE's Direct3D shader functions
+ */
+
+/*
+ * Copyright (C) 2014-2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+
+#ifndef ___shaderlib_h___
+#define ___shaderlib_h___
 
 #include <VBox/cdefs.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+RT_C_DECLS_BEGIN
 
 #ifdef IN_SHADERLIB_STATIC
-#  define SHADERDECL(type)           DECLHIDDEN(type) RTCALL
+# define SHADERDECL(type)           DECLHIDDEN(type) RTCALL
 #else
-#  define SHADERDECL(type)           DECLEXPORT(type) RTCALL
+# define SHADERDECL(type)           DECLEXPORT(type) RTCALL
 #endif
 
 
-SHADERDECL(int) ShaderInitLib();
-SHADERDECL(int) ShaderDestroyLib();
+SHADERDECL(int) ShaderInitLib(void);
+SHADERDECL(int) ShaderDestroyLib(void);
 
 SHADERDECL(int) ShaderContextCreate(void **ppShaderContext);
 SHADERDECL(int) ShaderContextDestroy(void *pShaderContext);
@@ -41,8 +57,7 @@ SHADERDECL(int) ShaderUpdateState(void *pShaderContext, uint32_t rtHeight);
 
 SHADERDECL(int) ShaderTransformProjection(unsigned cxViewPort, unsigned cyViewPort, float matrix[16]);
 
-#ifdef __cplusplus
-}
-#endif
+RT_C_DECLS_END
 
-#endif /* __SHADERLIB_H__ */
+#endif /* !___shaderlib_h___ */
+
