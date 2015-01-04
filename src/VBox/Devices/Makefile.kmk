@@ -177,9 +177,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Serial/DrvNamedPipe.cpp \
  	Serial/DrvRawFile.cpp \
  	Storage/DrvBlock.cpp \
- 	Storage/DrvHostBase.cpp \
- 	Storage/DrvHostDVD.cpp \
- 	Storage/DrvHostFloppy.cpp \
  	Storage/DrvMediaISO.cpp \
  	Storage/DrvRawImage.cpp \
  	Storage/Debug.cpp \
@@ -187,6 +184,16 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/ATAPIPassthrough.cpp \
  	Network/DrvNetSniffer.cpp \
  	Network/Pcap.cpp
+ ifn1of ($(KBUILD_TARGET), os2)
+  VBoxDD_SOURCES += Storage/DrvHostBase.cpp
+ endif
+ ifn1of ($(KBUILD_TARGET), os2)
+  VBoxDD_SOURCES += Storage/DrvHostDVD.cpp
+ endif
+ ifn1of ($(KBUILD_TARGET), darwin freebsd os2 solaris)
+  VBoxDD_SOURCES += Storage/DrvHostFloppy.cpp
+ endif
+
  VBoxDD_LIBS             = # more later.
  VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
  	-framework CoreAudio \
@@ -248,12 +255,18 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_LIBS.win      += d3d9.lib $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
    VBoxDD_LDFLAGS.win   += /DELAYLOAD:d3d9.dll
   else
-   VBoxDD_SOURCES       += Graphics/DevVGA-SVGA3d-ogl.cpp
-   if1of ($(KBUILD_TARGET),win)
-    VBoxDD_LIBS         += $(PATH_STAGE_LIB)/VBoxSVGA3D$(VBOX_SUFF_LIB)
-   else
-    VBoxDD_LIBS         += $(PATH_STAGE_BIN)/VBoxSVGA3D$(VBOX_SUFF_DLL)
-   endif
+   VBoxDD_SOURCES       += \
+   	Graphics/DevVGA-SVGA3d-ogl.cpp \
+   	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
+   VBoxDD_CLEAN         += $(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
+   $$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm: \
+   		$(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3D.def \
+   		$(if-expr $(KBUILD_TARGET) == "darwin",$(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3D-darwin.def,) \
+   		$(VBOX_DEF_2_LAZY_LOAD) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxDD,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxSVGA3D --output "$@" $(filter %.def, $^)
    VBoxDD_LIBS.linux    += GL X11
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
@@ -741,47 +754,35 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # --- OS specific driver hacks. ---
 
  ifeq ($(KBUILD_TARGET),darwin)
-  VBoxDD_SOURCES        := \
-  	$(filter-out Storage/DrvHostRaw% Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
-  VBoxDD_SOURCES.darwin += \
-  	Serial/DrvHostSerial.cpp
+  VBoxDD_SOURCES.darwin += Serial/DrvHostSerial.cpp
  endif # darwin
 
  ifeq ($(KBUILD_TARGET),freebsd)
-  VBoxDD_SOURCES        := \
-		$(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
-		Serial/DrvHostSerial.cpp
-  VBoxDD_SOURCES.freebsd += \
-		Network/DrvTAP.cpp
+  VBoxDD_SOURCES += Serial/DrvHostSerial.cpp
+  VBoxDD_SOURCES.freebsd += Network/DrvTAP.cpp
  endif # freebsd
 
- VBoxDD_SOURCES.linux   += \
+ VBoxDD_SOURCES.linux += \
  	Network/DrvTAP.cpp \
  	Parallel/DrvHostParallel.cpp \
  	Serial/DrvHostSerial.cpp
 
- ifeq ($(KBUILD_TARGET),os2)
- VBoxDD_SOURCES        := $(filter-out Storage/DrvHost%, $(VBoxDD_SOURCES))
- endif
-
  ifeq ($(KBUILD_TARGET),solaris)
-  VBoxDD_SOURCES          := $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
-  VBoxDD_SOURCES.solaris  += \
- 	Serial/DrvHostSerial.cpp
+  VBoxDD_SOURCES.solaris += Serial/DrvHostSerial.cpp
   ifdef VBOX_WITH_SUID_WRAPPER
-   VBoxDD_DEFS    += VBOX_WITH_SUID_WRAPPER
+   VBoxDD_DEFS += VBOX_WITH_SUID_WRAPPER
   endif
  endif
 
- VBoxDD_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
- VBoxDD_SOURCES.win   += \
+ VBoxDD_DEFS.win += VBOX_WITH_WIN_PARPORT_SUP
+ VBoxDD_SOURCES.win += \
 	Serial/DrvHostSerial.cpp \
 	Parallel/DrvHostParallel.cpp
 
  if defined(VBOX_WITH_NETFLT)
-  VBoxDD_DEFS          += VBOX_WITH_NETFLT
+  VBoxDD_DEFS += VBOX_WITH_NETFLT
   if defined(VBOX_NETFLT_ONDEMAND_BIND)
-   VBoxDD_DEFS.win     += VBOX_NETFLT_ONDEMAND_BIND
+   VBoxDD_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
   endif
  endif
 

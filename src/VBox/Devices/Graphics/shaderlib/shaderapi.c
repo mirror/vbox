@@ -30,13 +30,13 @@
 #elif RT_OS_DARWIN
 # include <dlfcn.h>
 # define OGLGETPROCADDRESS(x)   MyNSGLGetProcAddress((const char *)x)
-void *MyNSGLGetProcAddress(const char *name)
+void *MyNSGLGetProcAddress(const char *pszSymbol)
 {
     /* Another copy in DevVGA-SVGA3d-ogl.cpp. */
-    static void *s_image = NULL;
-    if (s_image == NULL)
-        s_image = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
-    return s_image ? dlsym(s_image, name) : NULL;
+    static void *s_pvImage = NULL;
+    if (s_pvImage == NULL)
+        s_pvImage = dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", RTLD_LAZY);
+    return s_pvImage ? dlsym(s_pvImage, pszSymbol) : NULL;
 }
 
 #else
