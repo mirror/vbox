@@ -3461,7 +3461,10 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     {
         rc = vmsvga3dInit(pThis);
         if (RT_FAILURE(rc))
+        {
+            LogRel(("VMSVGA3d: 3D support disabled! (vmsvga3dInit -> %Rrc)\n", rc));
             pThis->svga.f3DEnabled = false;
+        }
     }
 #endif
     /* VRAM tracking is enabled by default during bootup. */
