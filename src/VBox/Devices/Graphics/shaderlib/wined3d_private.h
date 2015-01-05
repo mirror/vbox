@@ -73,6 +73,7 @@
 # define VBoxTlsRefGetImpl(_tls) (TlsGetValue((DWORD)(_tls)))
 # define VBoxTlsRefSetImpl(_tls, _val) (TlsSetValue((DWORD)(_tls), (_val)))
 # define VBoxTlsRefAssertImpl Assert
+# undef cdecl /* see windef.h */
 # include <VBox/VBoxVideo3D.h>
 #endif
 
