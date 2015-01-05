@@ -98,6 +98,7 @@ struct Medium::Data
           autoReset(false),
           hostDrive(false),
           implicit(false),
+          fClosing(false),
           uOpenFlagsDef(VD_OPEN_FLAGS_IGNORE_FLUSH),
           numCreateDiffTasks(0),
           vdDiskIfaces(NULL),
@@ -156,6 +157,8 @@ struct Medium::Data
     settings::StringsMap mapProperties;
 
     bool implicit : 1;
+    /** Flag whether the medium is in the process of being closed. */
+    bool fClosing: 1;
 
     /** Default flags passed to VDOpen(). */
     unsigned uOpenFlagsDef;
@@ -4047,6 +4050,8 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
     HRESULT rc = i_canClose();
     if (FAILED(rc)) return rc;
 
+    m->fClosing = true;
+
     if (wasCreated)
     {
         // remove from the list of known media before performing actual
@@ -5414,9 +5419,10 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
     Assert(!isWriteLockOnCurrentThread());
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (   m->state != MediumState_Created
-        && m->state != MediumState_Inaccessible
-        && m->state != MediumState_LockedRead)
+    if (   (   m->state != MediumState_Created
+            && m->state != MediumState_Inaccessible
+            && m->state != MediumState_LockedRead)
+        || m->fClosing)
         return E_FAIL;
 
     HRESULT rc = S_OK;
