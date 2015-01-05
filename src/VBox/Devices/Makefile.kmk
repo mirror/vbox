@@ -255,6 +255,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_LIBS.win      += d3d9.lib $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
    VBoxDD_LDFLAGS.win   += /DELAYLOAD:d3d9.dll
   else
+   ifeq (0,1) # FIXME
    VBoxDD_SOURCES       += \
    	Graphics/DevVGA-SVGA3d-ogl.cpp \
    	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
@@ -267,6 +268,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxDD,$(filter %.def, $^),$@)
 	$(QUIET)$(RM) -f -- "$@"
 	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxSVGA3D --output "$@" $(filter %.def, $^)
+   else
+   VBoxDD_SOURCES       += Graphics/DevVGA-SVGA3d-ogl.cpp
+   VBoxDD_LIBS          += $(PATH_STAGE_BIN)/VBoxSVGA3D$(VBOX_SUFF_DLL)
+   endif
    VBoxDD_LIBS.linux    += GL X11
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
