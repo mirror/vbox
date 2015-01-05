@@ -258,19 +258,22 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_SOURCES       += \
    	Graphics/DevVGA-SVGA3d-ogl.cpp \
    	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
+   VBoxDD_SOURCES.darwin += \
+   	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DObjCLazyLoad.asm
    VBoxDD_CLEAN         += $(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
-   $$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm: \
-   		$(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3D.def \
-   		$(if-expr $(KBUILD_TARGET) == "darwin",$(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3D-darwin.def,) \
-   		$(VBOX_DEF_2_LAZY_LOAD) \
-		| $$(dir $$@)
+   $$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm: $(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3D.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
 	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxDD,$(filter %.def, $^),$@)
 	$(QUIET)$(RM) -f -- "$@"
 	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxSVGA3D --output "$@" $(filter %.def, $^)
+   $$(VBoxDD_0_OUTDIR)/VBoxSVGA3DObjCLazyLoad.asm: $(PATH_SUB_CURRENT)/Graphics/VBoxSVGA3DObjC.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
+	$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxDD,$(filter %.def, $^),$@)
+	$(QUIET)$(RM) -f -- "$@"
+	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxSVGA3DObjC --output "$@" $(filter %.def, $^)
+
    VBoxDD_LIBS.linux    += GL X11
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
-   VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin).
+   VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin and VBoxSVGA3DObjC_DEFS.darwin).
   endif
   Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
  endif
@@ -1452,25 +1455,45 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	Graphics/shaderlib/stateblock.c \
  	Graphics/shaderlib/directx.c \
  	Graphics/shaderlib/libWineStub/debug.c
+ VBoxSVGA3D_LIBS        = $(LIB_RUNTIME)
+ VBoxSVGA3D_LIBS.win   += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+ if1of ($(KBUILD_TARGET), solaris linux freebsd)
+  VBoxSVGA3D_LIBS      += GL
+ endif
+ VBoxSVGA3D_LDFLAGS.darwin += \
+ 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSVGA3D.dylib
+
+ #
+ # The Objective C code needs to be separate since the shaderlib redefines most
+ # GL functions as pointers, making it impossible to mix with code calling OpenGL
+ # functions directly.  This module must be compiled for 10.7 or later, thus it
+ # needs to be separate from VBoxDD.dylib, or at least that's our belief...
+ #
+ DLLS.darwin += VBoxSVGA3DObjC
+ VBoxSVGA3DObjC_TEMPLATE    = VBoxSVGA3D
+ VBoxSVGA3DObjC_DEFS        = $(VBoxSVGA3D_DEFS)
+ VBoxSVGA3DObjC_DEFS.x86    = __i386__
+ VBoxSVGA3DObjC_DEFS.amd64  = __x86_64__
+ VBoxSVGA3DObjC_DEFS.darwin = $(VBoxSVGA3D_DEFS.darwin)
+ VBoxSVGA3DObjC_INCS        = $(VBoxSVGA3D_INCS)
+ VBoxSVGA3DObjC_INCS.darwin = $(VBoxSVGA3D_INCS.darwin)
+ VBoxSVGA3DObjC_LIBS        = $(LIB_RUNTIME)
+ VBoxSVGA3DObjC_LDFLAGS.darwin = \
+ 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSVGA3DObjC.dylib \
+ 	-framework OpenGL
  if 0
- VBoxSVGA3D_SOURCES.darwin += \
+ VBoxSVGA3DObjC_SOURCES.darwin += \
  	Graphics/DevVGA-SVGA3d-cocoa.m
  else
- VBoxSVGA3D_SOURCES.darwin += \
+ VBoxSVGA3DObjC_SOURCES.darwin += \
  	../HostServices/SharedOpenGL/render/renderspu_cocoa_helper.m \
  	../GuestHost/OpenGL/util/vreg.cpp \
  	../GuestHost/OpenGL/util/blitter.cpp \
  	../GuestHost/OpenGL/util/compositor.cpp \
  	../HostServices/SharedOpenGL/OpenGLTest/OpenGLTestDarwin.cpp
  endif
- VBoxSVGA3D_LIBS        = \
- 	$(LIB_RUNTIME)
- VBoxSVGA3D_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
- if1of ($(KBUILD_TARGET), solaris linux freebsd)
-  VBoxSVGA3D_LIBS += GL
- endif
- VBoxSVGA3D_LDFLAGS.darwin += \
- 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSVGA3D.dylib
+
+
 
 endif # defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
 
