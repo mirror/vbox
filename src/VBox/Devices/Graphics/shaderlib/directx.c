@@ -1907,7 +1907,7 @@ static const struct blit_shader *select_blit_implementation(struct wined3d_adapt
 }
 #endif
 
-#if defined(RT_OS_DARWIN)
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
 /** Checks if @a pszExtension is one of the extensions we're looking for and
  *  updates @a pGlInfo->supported accordingly. */
 static void check_gl_extension(struct wined3d_gl_info *pGlInfo, const char *pszExtension)
@@ -1929,7 +1929,7 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 {
     struct wined3d_driver_info *driver_info = &adapter->driver_info;
     struct wined3d_gl_info *gl_info = &adapter->gl_info;
-#if !defined(RT_OS_DARWIN)
+#ifndef VBOX_VMSVGA3D_USE_OPENGL_CORE
     const char *GL_Extensions    = NULL;
     const char *WGL_Extensions   = NULL;
 #endif
@@ -1950,7 +1950,7 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     ENTER_GL();
 
-    gl_renderer_str = (const char *)glGetString(GL_RENDERER);
+    VBOX_CHECK_GL_CALL(gl_renderer_str = (const char *)glGetString(GL_RENDERER));
     TRACE_(d3d_caps)("GL_RENDERER: %s.\n", debugstr_a(gl_renderer_str));
     if (!gl_renderer_str)
     {
@@ -1959,7 +1959,7 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
         return FALSE;
     }
 
-    gl_vendor_str = (const char *)glGetString(GL_VENDOR);
+    VBOX_CHECK_GL_CALL(gl_vendor_str = (const char *)glGetString(GL_VENDOR));
     TRACE_(d3d_caps)("GL_VENDOR: %s.\n", debugstr_a(gl_vendor_str));
     if (!gl_vendor_str)
     {
@@ -1969,7 +1969,7 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     }
 
     /* Parse the GL_VERSION field into major and minor information */
-    gl_version_str = (const char *)glGetString(GL_VERSION);
+    VBOX_CHECK_GL_CALL(gl_version_str = (const char *)glGetString(GL_VERSION));
     TRACE_(d3d_caps)("GL_VERSION: %s.\n", debugstr_a(gl_version_str));
     if (!gl_version_str)
     {
@@ -2003,26 +2003,41 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     gl_info->limits.arb_ps_temps = 0;
 
     /* Retrieve opengl defaults */
-    glGetIntegerv(GL_MAX_CLIP_PLANES, &gl_max);
+    VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_CLIP_PLANES, &gl_max));
     gl_info->limits.clipplanes = min(WINED3DMAXUSERCLIPPLANES, gl_max);
     TRACE_(d3d_caps)("ClipPlanes support - num Planes=%d\n", gl_max);
 
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
     glGetIntegerv(GL_MAX_LIGHTS, &gl_max);
+    if (glGetError() != GL_NO_ERROR)
+        gl_max = 0;
+#else
+    VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_LIGHTS, &gl_max));
+#endif
     gl_info->limits.lights = gl_max;
     TRACE_(d3d_caps)("Lights support - max lights=%d\n", gl_max);
 
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max);
+    VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max));
     gl_info->limits.texture_size = gl_max;
     TRACE_(d3d_caps)("Maximum texture size support - max texture size=%d\n", gl_max);
 
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
     glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, gl_floatv);
+    if (glGetError() != GL_NO_ERROR)
+    {
+        gl_floatv[0] = 1;
+        gl_floatv[1] = 1;
+    }
+#else
+    VBOX_CHECK_GL_CALL(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, gl_floatv));
+#endif
     gl_info->limits.pointsize_min = gl_floatv[0];
     gl_info->limits.pointsize_max = gl_floatv[1];
     TRACE_(d3d_caps)("Maximum point size support - max point size=%f\n", gl_floatv[1]);
 
     /* Parse the gl supported features, in theory enabling parts of our code appropriately. */
-#if !defined(RT_OS_DARWIN)
-    GL_Extensions = (const char *)glGetString(GL_EXTENSIONS);
+#ifndef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    VBOX_CHECK_GL_CALL(GL_Extensions = (const char *)glGetString(GL_EXTENSIONS));
     if (!GL_Extensions)
     {
         LEAVE_GL();
@@ -2039,19 +2054,24 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
 
-#if defined(RT_OS_DARWIN)
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
     {
         /* We work with OpenGL 3.2+ on darwin, so we need to handle extensions differently. */
         GLint idxExt;
         GLint cExtensions = 1024;
-        float fGLVersion = atof((const char *)glGetString(GL_VERSION));
+        float fGLVersion;
+        VBOX_CHECK_GL_CALL(fGLVersion = atof((const char *)glGetString(GL_VERSION)));
 
 # define GL_NUM_EXTENSIONS 0x821D /// FIXME
         extern const GLubyte * glGetStringi(GLenum name, GLuint index); /// FIXME
 
-        glGetIntegerv(GL_NUM_EXTENSIONS, &cExtensions);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_NUM_EXTENSIONS, &cExtensions));
         for (idxExt = 0; idxExt < cExtensions; idxExt++)
-            check_gl_extension(gl_info, (const char *)glGetStringi(GL_EXTENSIONS, idxExt));
+        {
+            const char *pszExt;
+            VBOX_CHECK_GL_CALL((const char *)glGetStringi(GL_EXTENSIONS, idxExt));
+            check_gl_extension(gl_info, pszExt);
+        }
 
         if (fGLVersion >= 1.1)
         {
@@ -2328,26 +2348,32 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
 
     if (gl_info->supported[NV_REGISTER_COMBINERS])
     {
-        glGetIntegerv(GL_MAX_GENERAL_COMBINERS_NV, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_GENERAL_COMBINERS_NV, &gl_max));
         gl_info->limits.general_combiners = gl_max;
         TRACE_(d3d_caps)("Max general combiners: %d.\n", gl_max);
     }
     if (gl_info->supported[ARB_DRAW_BUFFERS])
     {
-        glGetIntegerv(GL_MAX_DRAW_BUFFERS_ARB, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_DRAW_BUFFERS_ARB, &gl_max));
         gl_info->limits.buffers = gl_max;
         TRACE_(d3d_caps)("Max draw buffers: %u.\n", gl_max);
     }
     if (gl_info->supported[ARB_MULTITEXTURE])
     {
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
         glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max);
+        if (glGetError() != GL_NO_ERROR)
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &gl_max));
+#else
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max));
+#endif
         gl_info->limits.textures = min(MAX_TEXTURES, gl_max);
         TRACE_(d3d_caps)("Max textures: %d.\n", gl_info->limits.textures);
 
         if (gl_info->supported[ARB_FRAGMENT_PROGRAM])
         {
             GLint tmp;
-            glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS_ARB, &tmp);
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS_ARB, &tmp));
             gl_info->limits.fragment_samplers = min(MAX_FRAGMENT_SAMPLERS, tmp);
         }
         else
@@ -2359,9 +2385,9 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         if (gl_info->supported[ARB_VERTEX_SHADER])
         {
             GLint tmp;
-            glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS_ARB, &tmp);
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS_ARB, &tmp));
             gl_info->limits.vertex_samplers = tmp;
-            glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS_ARB, &tmp);
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS_ARB, &tmp));
             gl_info->limits.combined_samplers = tmp;
 
             /* Loading GLSL sampler uniforms is much simpler if we can assume that the sampler setup
@@ -2399,54 +2425,54 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_VERTEX_BLEND])
     {
-        glGetIntegerv(GL_MAX_VERTEX_UNITS_ARB, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VERTEX_UNITS_ARB, &gl_max));
         gl_info->limits.blends = gl_max;
         TRACE_(d3d_caps)("Max blends: %u.\n", gl_info->limits.blends);
     }
     if (gl_info->supported[EXT_TEXTURE3D])
     {
-        glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE_EXT, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE_EXT, &gl_max));
         gl_info->limits.texture3d_size = gl_max;
         TRACE_(d3d_caps)("Max texture3D size: %d.\n", gl_info->limits.texture3d_size);
     }
     if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
     {
-        glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &gl_max));
         gl_info->limits.anisotropy = gl_max;
         TRACE_(d3d_caps)("Max anisotropy: %d.\n", gl_info->limits.anisotropy);
     }
     if (gl_info->supported[ARB_FRAGMENT_PROGRAM])
     {
-        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_ps_float_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM float constants: %d.\n", gl_info->limits.arb_ps_float_constants);
-        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_PARAMETERS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_ps_native_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM native float constants: %d.\n",
                 gl_info->limits.arb_ps_native_constants);
-        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &gl_max)));
         gl_info->limits.arb_ps_temps = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM native temporaries: %d.\n", gl_info->limits.arb_ps_temps);
-        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &gl_max)));
         gl_info->limits.arb_ps_instructions = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM native instructions: %d.\n", gl_info->limits.arb_ps_instructions);
-        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_ps_local_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM local parameters: %d.\n", gl_info->limits.arb_ps_instructions);
     }
     if (gl_info->supported[ARB_VERTEX_PROGRAM])
     {
-        GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_vs_float_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM float constants: %d.\n", gl_info->limits.arb_vs_float_constants);
-        GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_PARAMETERS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_vs_native_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM native float constants: %d.\n",
                 gl_info->limits.arb_vs_native_constants);
-        GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB, &gl_max)));
         gl_info->limits.arb_vs_temps = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM native temporaries: %d.\n", gl_info->limits.arb_vs_temps);
-        GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &gl_max));
+        VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &gl_max)));
         gl_info->limits.arb_vs_instructions = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM native instructions: %d.\n", gl_info->limits.arb_vs_instructions);
 #ifndef VBOX_WITH_VMSVGA
@@ -2455,7 +2481,7 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_VERTEX_SHADER])
     {
-        glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &gl_max));
         gl_info->limits.glsl_vs_float_constants = gl_max / 4;
 #ifdef VBOX_WITH_WDDM
         /* AFAICT the " / 4" here comes from that we're going to use the glsl_vs/ps_float_constants to create vec4 arrays,
@@ -2482,7 +2508,7 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_FRAGMENT_SHADER])
     {
-        glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, &gl_max);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, &gl_max));
         gl_info->limits.glsl_ps_float_constants = gl_max / 4;
 #ifdef VBOX_WITH_WDDM
         /* AFAICT the " / 4" here comes from that we're going to use the glsl_vs/ps_float_constants to create vec4 arrays,
@@ -2506,7 +2532,13 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         }
 #endif
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_SHADER float constants: %u.\n", gl_info->limits.glsl_ps_float_constants);
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
         glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max);
+        if (glGetError() != GL_NO_ERROR)
+            gl_max = 60;
+#else
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max));
+#endif
         gl_info->limits.glsl_varyings = gl_max;
         TRACE_(d3d_caps)("Max GLSL varyings: %u (%u 4 component varyings).\n", gl_max, gl_max / 4);
     }
@@ -2523,7 +2555,7 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[NV_LIGHT_MAX_EXPONENT])
     {
-        glGetFloatv(GL_MAX_SHININESS_NV, &gl_info->limits.shininess);
+        VBOX_CHECK_GL_CALL(glGetFloatv(GL_MAX_SHININESS_NV, &gl_info->limits.shininess));
     }
     else
     {

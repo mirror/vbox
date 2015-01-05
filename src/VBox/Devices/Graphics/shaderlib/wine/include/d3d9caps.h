@@ -291,6 +291,7 @@
 #define D3DMIN30SHADERINSTRUCTIONS          512
 #define D3DMAX30SHADERINSTRUCTIONS          32768
 
+#ifndef VBOX_D3D9CAPS_ONLY_DEFINES
 
 typedef struct _D3DVSHADERCAPS2_0 {
   DWORD  Caps;
@@ -400,5 +401,7 @@ typedef struct _D3DCAPS9 {
   DWORD               MaxPixelShader30InstructionSlots;
 
 } D3DCAPS9;
+
+#endif /* !VBOX_D3D9CAPS_ONLY_DEFINES */
 
 #endif

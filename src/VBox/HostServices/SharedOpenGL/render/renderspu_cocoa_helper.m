@@ -2562,7 +2562,11 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
     NSOpenGLPixelFormatAttribute attribs[24] =
     {
 #ifdef IN_VMSVGA3D
+# ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
         NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+# else
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
+# endif
 #endif
         NSOpenGLPFAAccelerated,
         NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24

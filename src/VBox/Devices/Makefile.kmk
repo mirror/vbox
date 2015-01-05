@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2014 Oracle Corporation
+# Copyright (C) 2006-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -270,6 +270,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_LIBS.linux    += GL X11
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
+   VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin).
   endif
   Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
  endif
@@ -1423,7 +1424,8 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  VBoxSVGA3D_DEFS.amd64  += __x86_64__
  VBoxSVGA3D_DEFS.win    += \
  	USE_WIN32_OPENGL \
- 	VBOX_WINE_WITHOUT_LIBWINE \
+ 	VBOX_WINE_WITHOUT_LIBWINE
+ VBoxSVGA3D_DEFS.darwin += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (VBoxSVGA3D_DEFS.darwin).
 
  # WINE relies on a gcc 4.4 feature but we have 4.2 on Darwin
  VBoxSVGA3D_DEFS.darwin += \
