@@ -5051,8 +5051,20 @@ static int glsl_program_key_compare(const void *key, const struct wine_rb_entry 
 
 static BOOL constant_heap_init(struct constant_heap *heap, unsigned int constant_count)
 {
+#ifndef VBOX
     SIZE_T size = (constant_count + 1) * sizeof(*heap->entries) + constant_count * sizeof(*heap->positions);
     void *mem = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+#else
+    SIZE_T size;
+    void *mem;
+
+    /* Don't trash the heap if the input is bogus. */
+    if (constant_count == 0)
+        constant_count = 1;
+
+    size = (constant_count + 1) * sizeof(*heap->entries) + constant_count * sizeof(*heap->positions);
+    mem = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+#endif
 
     if (!mem)
     {
