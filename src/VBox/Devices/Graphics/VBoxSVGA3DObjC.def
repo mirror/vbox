@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VBoxSVGA3D - Definition file for lazy import generation, darwin specific parts.
+; VBoxSVGA3DObjC - Definition file for lazy import generation (darwin specific).
 ;
 
 ;
@@ -15,7 +15,7 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-LIBRARY VBoxSVGA3D
+LIBRARY VBoxSVGA3DObjC
 EXPORTS 
     vmsvga3dCocoaCreateContext              
     vmsvga3dCocoaDestroyContext             
