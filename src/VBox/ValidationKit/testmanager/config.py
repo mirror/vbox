@@ -118,7 +118,7 @@ g_kcMaxTestResultDepth  = 8;
 ## The max length of a test result name.
 g_kcchMaxTestResultName = 64;
 ## The max length of a test result value name.
-g_kcchMaxTestValueName  = 48;
+g_kcchMaxTestValueName  = 52;
 ## The max length of a test result message.
 g_kcchMaxTestMsg        = 128;
 
