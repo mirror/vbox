@@ -832,7 +832,6 @@ int vmsvga3dInit(PVGASTATE pThis)
     AssertCompile(GL_TRUE == 1);
     AssertCompile(GL_FALSE == 0);
 
-#if 0 // FIXME
     /*
      * Load and resolve imports from the external shared library.
      */
@@ -843,7 +842,6 @@ int vmsvga3dInit(PVGASTATE pThis)
         LogRel(("VMSVGA3d: Error loading VBoxSVGA3D and resolving necessary functions: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
         return rc;
     }
-#endif
 
     /*
      * Allocate the state.
