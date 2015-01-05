@@ -3437,4 +3437,22 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface,
 void *MyNSGLGetProcAddress(const char *name);
 #endif
 
+/** @def VBOX_CHECK_GL_CALL
+ * Performs OpenGL call @a a_Expr and check glGetError.
+ * Errors will be asserted in strict builds and hit the release log in
+ * non-strict builds.
+ * @param   a_Expr  The OpenGL call expression.  Always executed!
+ */
+#ifdef VBOX_WITH_VMSVGA
+# define VBOX_CHECK_GL_CALL(a_Expr) \
+        do { \
+            GLint rcCheckCall; \
+            a_Expr; \
+            rcCheckCall = glGetError(); \
+            AssertLogRelMsg(rcCheckCall == GL_NO_ERROR, ("%s -> %#x\n", #a_Expr, rcCheckCall)); \
+        } while (0)
+#else
+# define VBOX_CHECK_GL_CALL(a_Expr) do { a_Expr; } while (0)
+#endif
+
 #endif
