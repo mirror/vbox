@@ -2,7 +2,7 @@
 /** @file
  * VBoxDef2LazyLoad - Lazy Library Loader Generator.
  *
- * @note Only tested on win.amd64.
+ * @note Only tested on win.amd64 & darwin.amd64.
  */
 
 /*
