@@ -405,6 +405,7 @@ typedef struct
     /* OpenGL rendering context */
     NativeNSOpenGLContextRef cocoaContext;
     NativeNSViewRef          cocoaView;
+    bool                    fLegacy;
 #else
     /** XGL rendering context handle */
     GLXContext              glxContext;
@@ -503,7 +504,12 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-typedef struct
+/**
+ * VMSVGA3d state data.
+ *
+ * Allocated on the heap and pointed to by VMSVGAState::p3dState.
+ */
+typedef struct VMSVGA3DSTATE
 {
 #ifdef RT_OS_WINDOWS
     /** Window Thread. */
@@ -597,7 +603,16 @@ typedef struct
 #ifdef DEBUG_GFX_WINDOW_TEST_CONTEXT
     uint32_t                idTestContext;
 #endif
-} VMSVGA3DSTATE, *PVMSVGA3DSTATE;
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    /** Legacy OpenGL profile GL_EXTENSIONS result (RTStrDup).
+     * This is used to detect shader model version since some implementations
+     * (darwin) hides extensions that have made it into core and probably a
+     * bunch of others when using a OpenGL core profile instead of a legacy one */
+    R3PTRTYPE(char *)       pszLegacyExtensions;
+#endif
+} VMSVGA3DSTATE;
+/** Pointer to the VMSVGA3d state. */
+typedef VMSVGA3DSTATE *PVMSVGA3DSTATE;
 
 /**
  * SSM descriptor table for the VMSVGA3DSTATE structure.
@@ -903,13 +918,33 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     AssertReturn(pThis->svga.p3dState, VERR_NO_MEMORY);
     PVMSVGA3DCONTEXT pContext;
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    PVMSVGA3DCONTEXT pLegacyContext;
+#endif
     int              rc;
 
     if (pState->fGLVersion != 0.0)
         return VINF_SUCCESS;    /* already initialized (load state) */
 
-    /* OpenGL function calls aren't possible without a valid current context, so create a fake one here. */
-    rc = vmsvga3dContextDefine(pThis, 1);
+    /*
+     * Initialize the capabilities with sensible defaults.
+     */
+    pState->caps.maxActiveLights               = 1;
+    pState->caps.maxTextureBufferSize          = 65536;
+    pState->caps.maxTextures                   = 1;
+    pState->caps.maxClipDistances              = 4;
+    pState->caps.maxColorAttachments           = 1;
+    pState->caps.maxRectangleTextureSize       = 2048;
+    pState->caps.maxTextureAnisotropy          = 2;
+    pState->caps.maxVertexShaderInstructions   = 1024;
+    pState->caps.maxFragmentShaderInstructions = 1024;
+    pState->caps.vertexShaderVersion           = SVGA3DVSVERSION_NONE;
+    pState->caps.fragmentShaderVersion         = SVGA3DPSVERSION_NONE;
+
+    /*
+     * OpenGL function calls aren't possible without a valid current context, so create a fake one here.
+     */
+    rc = vmsvga3dContextDefine(pThis, 1, false /*fLegacy*/);
     AssertRCReturn(rc, rc);
 
     pContext = &pState->paContext[1];
@@ -920,6 +955,34 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     vmsvga3dLogRelExtensions();
 
     pState->fGLVersion = atof((const char *)glGetString(GL_VERSION));
+
+
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    /*
+     * Get the legacy extension list so we can better figure out the shader model.
+     * We add space before and after the list, so we can use strstr for locating extensions.
+     */
+    rc = vmsvga3dContextDefine(pThis, 2, true /*fLegacy*/);
+    AssertLogRelRCReturn(rc, rc);
+    pContext = &pState->paContext[1]; /* Array may have been reallocated. */
+
+    pLegacyContext = &pState->paContext[2];
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pLegacyContext);
+
+    pState->pszLegacyExtensions = NULL;
+    rc = RTStrAAppendExN(&pState->pszLegacyExtensions, 3,
+                         " ", (size_t)1, (const char *)glGetString(GL_EXTENSIONS), RTSTR_MAX, " ", (size_t)1);
+    AssertLogRelRCReturn(rc, rc);
+
+    LogRel(("VMSVGA3d: Legacy OpenGL version: %s\nOpenGL Vendor: %s\nOpenGL Renderer: %s\n", glGetString(GL_VERSION), glGetString(GL_VENDOR), glGetString(GL_RENDERER)));
+    LogRel(("VMSVGA3d: Legacy OpenGL shader language version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION)));
+    LogRel(("VMSVGA3d: Legacy OpenGL extenions: %s\n", glGetString(GL_EXTENSIONS)));
+
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+#else
+    pState->pszLegacyExtensions = "";
+#endif
+
 
     if (vmsvga3dCheckGLExtension(pState->fGLVersion, 3.0, "GL_ARB_framebuffer_object"))
     {
@@ -1010,24 +1073,17 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_EXT_stencil_two_side");
 #endif
 
-    /* First set sensible defaults. */
-    pState->caps.maxActiveLights               = 1;
-    pState->caps.maxTextureBufferSize          = 65536;
-    pState->caps.maxTextures                   = 1;
-    pState->caps.maxClipDistances              = 4;
-    pState->caps.maxColorAttachments           = 1;
-    pState->caps.maxRectangleTextureSize       = 2048;
-    pState->caps.maxTextureAnisotropy          = 2;
-    pState->caps.maxVertexShaderInstructions   = 1024;
-    pState->caps.maxFragmentShaderInstructions = 1024;
-    pState->caps.vertexShaderVersion           = SVGA3DVSVERSION_NONE;
-    pState->caps.fragmentShaderVersion         = SVGA3DPSVERSION_NONE;
-
     /* Query capabilities */
 #ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
     glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
     if (glGetError() != GL_NO_ERROR)
-        pState->caps.maxActiveLights = 1;
+    {
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pLegacyContext);
+        VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
+        if (glGetError() != GL_NO_ERROR)
+            pState->caps.maxActiveLights = 1;
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+    }
 #else
     VMSVGA3D_INIT_CHECKED_GL_GET_INTEGER_VALUE(GL_MAX_LIGHTS, &pState->caps.maxActiveLights);
 #endif
@@ -1047,8 +1103,14 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize);
     if (glGetError() != GL_NO_ERROR)
     {
-        pState->caps.flPointSize[0] = 1;
-        pState->caps.flPointSize[1] = 1;
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pLegacyContext);
+        VMSVGA3D_INIT_CHECKED(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize));
+        if (glGetError() != GL_NO_ERROR)
+        {
+            pState->caps.flPointSize[0] = 1;
+            pState->caps.flPointSize[1] = 1;
+        }
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
     }
 #else
     VMSVGA3D_INIT_CHECKED(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, pState->caps.flPointSize));
@@ -1056,26 +1118,9 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     if (pState->ext.glGetProgramivARB)
     {
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
-        pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
-                                      &pState->caps.maxFragmentShaderTemps);
-        if (glGetError() != GL_NO_ERROR)
-            pState->caps.maxFragmentShaderTemps = D3DVS20_MAX_NUMTEMPS;
-        pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
-                                      &pState->caps.maxFragmentShaderInstructions);
-        if (glGetError() != GL_NO_ERROR)
-            pState->caps.maxFragmentShaderInstructions = 0;
-
-        pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
-                                      &pState->caps.maxVertexShaderTemps);
-        if (glGetError() != GL_NO_ERROR)
-            pState->caps.maxVertexShaderTemps = D3DVS20_MAX_NUMTEMPS;
-        pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
-                                      &pState->caps.maxVertexShaderInstructions);
-        if (glGetError() != GL_NO_ERROR)
-            pState->caps.maxVertexShaderInstructions = 0;
-
-#else
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE /* None of these queries works with the OpenGL 3.2 Core context on darwin. */
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pLegacyContext);
+#endif
         VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEMPORARIES_ARB,
                                                             &pState->caps.maxFragmentShaderTemps));
         VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
@@ -1084,6 +1129,8 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
                                                             &pState->caps.maxVertexShaderTemps));
         VMSVGA3D_INIT_CHECKED(pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                             &pState->caps.maxVertexShaderInstructions));
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 #endif
     }
     pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_EXT_texture_compression_s3tc");
@@ -1098,15 +1145,18 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      *
      */
     /** @todo: distinguish between vertex and pixel shaders??? */
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_NV_gpu_program4"))
+    if (   vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_NV_gpu_program4")
+        || strstr(pState->pszLegacyExtensions, " GL_NV_gpu_program4 "))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
     }
     else
     if (    vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_NV_vertex_program3")
+        || strstr(pState->pszLegacyExtensions, " GL_NV_vertex_program3 ")
 #if 0 /** @todo this is contrary to the ATI <= SM2.0. */
         ||  vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_ARB_shader_texture_lod")  /* Wine claims this suggests SM 3.0 support */
+        || strstr(pState->pszLegacyExtensions, " GL_ARB_shader_texture_lod ")
 #endif
         )
     {
@@ -1114,7 +1164,8 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_30;
     }
     else
-    if (vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_ARB_fragment_program"))
+    if (   vmsvga3dCheckGLExtension(pState->fGLVersion, 0.0, "GL_ARB_fragment_program")
+        || strstr(pState->pszLegacyExtensions, " GL_ARB_fragment_program "))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_20;
@@ -1198,19 +1249,19 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 #endif
 
     LogRel(("VMSVGA3d: Capabilities:\n"));
-    LogRel(("VMSVGA3d:   maxActiveLights=%d  maxTextureBufferSize=%d  maxTextures=%d\n",
-            pState->caps.maxActiveLights, pState->caps.maxTextureBufferSize, pState->caps.maxTextures));
-    LogRel(("VMSVGA3d:   maxClipDistances=%d  maxColorAttachments=%d  maxClipDistances=%d\n",
+    LogRel(("VMSVGA3d:   maxActiveLights=%-2d       maxTextures=%-2d           maxTextureBufferSize=%d\n",
+            pState->caps.maxActiveLights, pState->caps.maxTextures, pState->caps.maxTextureBufferSize));
+    LogRel(("VMSVGA3d:   maxClipDistances=%-2d      maxColorAttachments=%-2d   maxClipDistances=%d\n",
             pState->caps.maxClipDistances, pState->caps.maxColorAttachments, pState->caps.maxClipDistances));
-    LogRel(("VMSVGA3d:   maxColorAttachments=%d  maxRectangleTextureSize=%d  maxTextureAnisotropy=%d\n",
-            pState->caps.maxColorAttachments, pState->caps.maxRectangleTextureSize, pState->caps.maxTextureAnisotropy));
-    LogRel(("VMSVGA3d:   maxVertexShaderInstructions=%d  maxFragmentShaderInstructions=%d  maxVertexShaderTemps=%d\n",
-            pState->caps.maxVertexShaderInstructions, pState->caps.maxFragmentShaderInstructions, pState->caps.maxVertexShaderTemps));
-    LogRel(("VMSVGA3d:   maxFragmentShaderTemps=%d  flPointSize={%d.%02u, %d.%02u}\n",
+    LogRel(("VMSVGA3d:   maxColorAttachments=%-2d   maxTextureAnisotropy=%-2d  maxRectangleTextureSize=%d\n",
+            pState->caps.maxColorAttachments, pState->caps.maxTextureAnisotropy, pState->caps.maxRectangleTextureSize));
+    LogRel(("VMSVGA3d:   maxVertexShaderTemps=%-2d  maxVertexShaderInstructions=%d maxFragmentShaderInstructions=%d\n",
+            pState->caps.maxVertexShaderTemps, pState->caps.maxVertexShaderInstructions, pState->caps.maxFragmentShaderInstructions));
+    LogRel(("VMSVGA3d:   maxFragmentShaderTemps=%d flPointSize={%d.%02u, %d.%02u}\n",
             pState->caps.maxFragmentShaderTemps,
             (int)pState->caps.flPointSize[0], (int)(pState->caps.flPointSize[0] * 100) % 100,
             (int)pState->caps.flPointSize[1], (int)(pState->caps.flPointSize[1] * 100) % 100));
-    LogRel(("VMSVGA3d: fragmentShaderVersion=%d  vertexShaderVersion=%d  fS3TCSupported=%d\n",
+    LogRel(("VMSVGA3d:   fragmentShaderVersion=%-2d vertexShaderVersion=%-2d   fS3TCSupported=%d\n",
             pState->caps.fragmentShaderVersion, pState->caps.vertexShaderVersion, pState->caps.fS3TCSupported));
 
 
@@ -1221,6 +1272,10 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     /* Cleanup */
     rc = vmsvga3dContextDestroy(pThis, 1);
     AssertRC(rc);
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    rc = vmsvga3dContextDestroy(pThis, 2);
+    AssertRC(rc);
+#endif
 
 #if !defined(RT_OS_DARWIN) || defined(VBOX_VMSVGA3D_USE_OPENGL_CORE)
     /* on the Mac, OpenGL 3 came very late so we have a capable 2.1 implementation */
@@ -1285,7 +1340,7 @@ int vmsvga3dReset(PVGASTATE pThis)
 int vmsvga3dTerminate(PVGASTATE pThis)
 {
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
-    AssertReturn(pThis->svga.p3dState, VERR_NO_MEMORY);
+    AssertReturn(pState, VERR_WRONG_ORDER);
     int            rc;
 
     rc = vmsvga3dReset(pThis);
@@ -1311,6 +1366,11 @@ int vmsvga3dTerminate(PVGASTATE pThis)
     AssertRC(rc);
     XCloseDisplay(pState->display);
 #endif
+
+#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+    RTStrFree(pState->pszLegacyExtensions);
+#endif
+    pState->pszLegacyExtensions = NULL;
 
     return VINF_SUCCESS;
 }
@@ -3187,8 +3247,10 @@ DECLCALLBACK(int) vmsvga3dXEventThread(RTTHREAD ThreadSelf, void *pvUser)
  * @returns VBox status code.
  * @param   pThis           VGA device instance data.
  * @param   cid             Context id
+ * @param   fLegacy         Whether to create a legacy context instead of
+ *                          whatever is default.  Only used at init time.
  */
-int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
+int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid, bool fLegacy)
 {
     int                     rc;
     PVMSVGA3DCONTEXT        pContext;
@@ -3196,13 +3258,16 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(cid < SVGA3D_MAX_CONTEXT_IDS, VERR_INVALID_PARAMETER);
+#if !defined(VBOX_VMSVGA3D_USE_OPENGL_CORE) || !(defined(RT_OS_DARWIN))
+    AssertReturn(!fLegacy, VERR_INTERNAL_ERROR_3);
+#endif
 
     Log(("vmsvga3dContextDefine id %x\n", cid));
 #ifdef DEBUG_DEBUG_GFX_WINDOW_TEST_CONTEXT
     if (pState->idTestContext == SVGA_ID_INVALID)
     {
         pState->idTestContext = 207;
-        rc = vmsvga3dContextDefine(pThis, pState->idTestContext);
+        rc = vmsvga3dContextDefine(pThis, pState->idTestContext, false /*fLegacy*/);
         AssertRCReturn(rc, rc);
     }
 #endif
@@ -3322,19 +3387,22 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
     }
 
 #elif defined(RT_OS_DARWIN)
+    pContext->fLegacy = fLegacy;
+
     /* Find the first active context to share the display list with (necessary for sharing e.g. textures between contexts). */
     NativeNSOpenGLContextRef shareContext = NULL;
     for (uint32_t i = 0; i < pState->cContexts; i++)
     {
         if (    pState->paContext[i].id != SVGA3D_INVALID_ID
-            &&  i != pContext->id)
+            &&  i != pContext->id
+            &&  pState->paContext[i].fLegacy == fLegacy)
         {
             Log(("Sharing display lists between cid=%d and cid=%d\n", pContext->id, i));
             shareContext = pState->paContext[i].cocoaContext;
             break;
         }
     }
-    vmsvga3dCocoaCreateContext(&pContext->cocoaContext, shareContext);
+    vmsvga3dCocoaCreateContext(&pContext->cocoaContext, shareContext, fLegacy);
     NativeNSViewRef pHostView = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateView(&pContext->cocoaView, pHostView);
 
