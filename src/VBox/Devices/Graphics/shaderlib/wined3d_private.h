@@ -62,7 +62,12 @@
 #include "vboxext.h"
 
 #ifdef VBOX_WITH_VMSVGA
-#include "winoverride.h"
+# ifndef LOG_GROUP
+#  define LOG_GROUP LOG_GROUP_DEV_VMSVGA
+# endif
+# include <iprt/assert.h>
+# include <VBox/log.h>
+# include "winoverride.h"
 #endif
 
 #ifdef VBOX_WITH_WDDM
