@@ -2901,8 +2901,9 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
  * @returns VBox status code.
  * @param   pThis           VGA device instance data.
  * @param   cid             Context id
+ * @param   fLegacy         OpenGL(+darwin) specific argument, ignored.
  */
-int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
+int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid, bool fLegacy)
 {
     int                     rc;
     PVMSVGA3DCONTEXT        pContext;

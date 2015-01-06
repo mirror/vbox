@@ -34,7 +34,7 @@ ADD_COCOA_NATIVE_REF(NSOpenGLContext);
 # define VMSVGA3D_DECL(type)  DECLIMPORT(type)
 #endif
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx);
+VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx, bool fLegacy);
 VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx);
 VMSVGA3D_DECL(void) vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView);
 VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyView(NativeNSViewRef pView);

@@ -222,7 +222,7 @@ static void checkGLError(char *pszFile, int iLine)
 #ifdef IN_VMSVGA3D
 
 /* 
- * VMSVGA3D compatability glue.
+ * VMSVGA3D compatibility glue.
  */
 
 # define CR_RGB_BIT             RT_BIT_32(0)
@@ -237,7 +237,8 @@ static void checkGLError(char *pszFile, int iLine)
 
 # define CR_OVERLAY_BIT         RT_BIT_32(8)
 # define CR_PBUFFER_BIT         RT_BIT_32(9)
-# define CR_ALL_BITS            UINT32_C(0x000003ff)
+# define VMSVGA3D_LEGACY_PROFILE_BIT RT_BIT_32(31)
+# define CR_ALL_BITS            UINT32_C(0x800003ff)
 
 typedef struct WindowInfo
 {
@@ -1131,6 +1132,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_pView = NULL;
 
     self = [super initWithFormat:format shareContext:share];
+    Assert(self != nil);
     if (self)
         m_pPixelFormat = format;
 
@@ -2574,6 +2576,17 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
 
     int i = 3;
 
+#ifdef IN_VMSVGA3D
+    if (fVisParams & VMSVGA3D_LEGACY_PROFILE_BIT)
+    {
+# ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+        attribs[1] = NSOpenGLProfileVersionLegacy;
+# else
+        AssertFailed();
+# endif
+    }
+#endif
+
     if (fVisParams & CR_ALPHA_BIT)
     {
         COCOA_LOG_FLOW(("  CR_ALPHA_BIT requested\n"));
@@ -2637,6 +2650,7 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
     if (pFmt)
     {
         *ppCtx = [[OverlayOpenGLContext alloc] initWithFormat:pFmt shareContext:pSharedCtx];
+        Assert(*ppCtx);
 
         /* Enable multi threaded OpenGL engine */
         /*
@@ -2647,7 +2661,10 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
         */
     }
     else
+    {
+        AssertFailed();
         *ppCtx = NULL;
+    }
 
     [pPool release];
     COCOA_LOG_FLOW(("cocoaGLCtxDestroy: returns *ppCtx=%p\n", (void *)*ppCtx));
@@ -2966,9 +2983,10 @@ void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint 
  * VMSVGA3D interface.
  */
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx)
+VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx, bool fLegacy)
 {
-    cocoaGLCtxCreate(ppCtx, CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT, pSharedCtx);
+    cocoaGLCtxCreate(ppCtx, CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT | (fLegacy ? VMSVGA3D_LEGACY_PROFILE_BIT : 0), 
+                     pSharedCtx);
 }
 
 VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx)
