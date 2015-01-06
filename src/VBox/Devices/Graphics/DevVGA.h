@@ -310,7 +310,7 @@ typedef struct
     bool                        fVRAMTracking;
     /** External command to be executed in the FIFO thread. */
     uint8_t                     u8FIFOExtCommand;
-    bool                        Padding6[HC_ARCH_BITS == 64 ? 1 : 5];
+    bool                        Padding6;
 } VMSVGAState;
 #endif /* VBOX_WITH_VMSVGA */
 
