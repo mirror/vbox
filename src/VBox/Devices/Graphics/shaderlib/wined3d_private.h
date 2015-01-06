@@ -68,6 +68,7 @@
 # include <iprt/assert.h>
 # include <VBox/log.h>
 # include "winoverride.h"
+# include "shaderlib.h"
 #endif
 
 #ifdef VBOX_WITH_WDDM
@@ -1595,7 +1596,8 @@ extern long WineD3DAdapterChangeGLRam(IWineD3DDeviceImpl *D3DDevice, long glram)
 #endif
 extern void add_gl_compat_wrappers(struct wined3d_gl_info *gl_info) DECLSPEC_HIDDEN;
 
-extern BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter);
+struct VBOXVMSVGASHADERIF;
+extern BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter, struct VBOXVMSVGASHADERIF *pVBoxShaderIf);
 
 
 /*****************************************************************************

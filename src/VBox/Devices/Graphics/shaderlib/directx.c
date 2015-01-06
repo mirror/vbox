@@ -1907,7 +1907,7 @@ static const struct blit_shader *select_blit_implementation(struct wined3d_adapt
 }
 #endif
 
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_WITH_VMSVGA
 /** Checks if @a pszExtension is one of the extensions we're looking for and
  *  updates @a pGlInfo->supported accordingly. */
 static void check_gl_extension(struct wined3d_gl_info *pGlInfo, const char *pszExtension)
@@ -1925,11 +1925,11 @@ static void check_gl_extension(struct wined3d_gl_info *pGlInfo, const char *pszE
 #endif
 
 /* Context activation is done by the caller. */
-BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
+BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter, struct VBOXVMSVGASHADERIF *pVBoxShaderIf)
 {
     struct wined3d_driver_info *driver_info = &adapter->driver_info;
     struct wined3d_gl_info *gl_info = &adapter->gl_info;
-#ifndef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifndef VBOX_WITH_VMSVGA
     const char *GL_Extensions    = NULL;
     const char *WGL_Extensions   = NULL;
 #endif
@@ -2007,10 +2007,14 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     gl_info->limits.clipplanes = min(WINED3DMAXUSERCLIPPLANES, gl_max);
     TRACE_(d3d_caps)("ClipPlanes support - num Planes=%d\n", gl_max);
 
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
     glGetIntegerv(GL_MAX_LIGHTS, &gl_max);
     if (glGetError() != GL_NO_ERROR)
-        gl_max = 0;
+    {
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_LIGHTS, &gl_max));
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+    }
 #else
     VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_LIGHTS, &gl_max));
 #endif
@@ -2021,12 +2025,15 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     gl_info->limits.texture_size = gl_max;
     TRACE_(d3d_caps)("Maximum texture size support - max texture size=%d\n", gl_max);
 
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
     glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, gl_floatv);
     if (glGetError() != GL_NO_ERROR)
     {
-        gl_floatv[0] = 1;
-        gl_floatv[1] = 1;
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+        VBOX_CHECK_GL_CALL(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, gl_floatv));
+        if (glGetError() != GL_NO_ERROR)
+            gl_floatv[0] = gl_floatv[1] = 1;
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
     }
 #else
     VBOX_CHECK_GL_CALL(glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, gl_floatv));
@@ -2036,8 +2043,8 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     TRACE_(d3d_caps)("Maximum point size support - max point size=%f\n", gl_floatv[1]);
 
     /* Parse the gl supported features, in theory enabling parts of our code appropriately. */
-#ifndef VBOX_VMSVGA3D_USE_OPENGL_CORE
-    VBOX_CHECK_GL_CALL(GL_Extensions = (const char *)glGetString(GL_EXTENSIONS));
+#ifndef VBOX_WITH_VMSVGA
+    GL_Extensions = (const char *)glGetString(GL_EXTENSIONS);
     if (!GL_Extensions)
     {
         LEAVE_GL();
@@ -2054,165 +2061,19 @@ BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
 
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_WITH_VMSVGA
     {
-        /* We work with OpenGL 3.2+ on darwin, so we need to handle extensions differently. */
-        GLint idxExt;
-        GLint cExtensions = 1024;
-        float fGLVersion;
-        VBOX_CHECK_GL_CALL(fGLVersion = atof((const char *)glGetString(GL_VERSION)));
+        void *pvEnumCtx = NULL;
+        char  szCurExt[256];
+        while (pVBoxShaderIf->pfnGetNextExtension(pVBoxShaderIf, &pvEnumCtx, szCurExt, sizeof(szCurExt), false /*fOtherProfile*/))
+            check_gl_extension(gl_info, szCurExt);
 
-# define GL_NUM_EXTENSIONS 0x821D /// FIXME
-        extern const GLubyte * glGetStringi(GLenum name, GLuint index); /// FIXME
-
-        VBOX_CHECK_GL_CALL(glGetIntegerv(GL_NUM_EXTENSIONS, &cExtensions));
-        for (idxExt = 0; idxExt < cExtensions; idxExt++)
-        {
-            const char *pszExt;
-            VBOX_CHECK_GL_CALL((const char *)glGetStringi(GL_EXTENSIONS, idxExt));
-            check_gl_extension(gl_info, pszExt);
-        }
-
-        if (fGLVersion >= 1.1)
-        {
-            check_gl_extension(gl_info, "GL_EXT_vertex_array");
-            check_gl_extension(gl_info, "GL_EXT_polygon_offset");
-            check_gl_extension(gl_info, "GL_EXT_blend_logic_op");
-            check_gl_extension(gl_info, "GL_EXT_texture");
-            check_gl_extension(gl_info, "GL_EXT_copy_texture");
-            check_gl_extension(gl_info, "GL_EXT_subtexture");
-            check_gl_extension(gl_info, "GL_EXT_texture_object");
-            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
-            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
-            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
-        }
-        if (fGLVersion >= 1.2)
-        {
-            check_gl_extension(gl_info, "EXT_texture3D");
-            check_gl_extension(gl_info, "EXT_bgra");
-            check_gl_extension(gl_info, "EXT_packed_pixels");
-            check_gl_extension(gl_info, "EXT_rescale_normal");
-            check_gl_extension(gl_info, "EXT_separate_specular_color");
-            check_gl_extension(gl_info, "SGIS_texture_edge_clamp");
-            check_gl_extension(gl_info, "SGIS_texture_lod");
-            check_gl_extension(gl_info, "EXT_draw_range_elements");
-        }
-        if (fGLVersion >= 1.3)
-        {
-            check_gl_extension(gl_info, "GL_ARB_texture_compression");
-            check_gl_extension(gl_info, "GL_ARB_texture_cube_map");
-            check_gl_extension(gl_info, "GL_ARB_multisample");
-            check_gl_extension(gl_info, "GL_ARB_multitexture");
-            check_gl_extension(gl_info, "GL_ARB_texture_env_add");
-            check_gl_extension(gl_info, "GL_ARB_texture_env_combine");
-            check_gl_extension(gl_info, "GL_ARB_texture_env_dot3");
-            check_gl_extension(gl_info, "GL_ARB_texture_border_clamp");
-            check_gl_extension(gl_info, "GL_ARB_transpose_matrix");
-        }
-        if (fGLVersion >= 1.5)
-        {
-            check_gl_extension(gl_info, "GL_SGIS_generate_mipmap");
-            /*check_gl_extension(gl_info, "GL_NV_blend_equare");*/
-            check_gl_extension(gl_info, "GL_ARB_depth_texture");
-            check_gl_extension(gl_info, "GL_ARB_shadow");
-            check_gl_extension(gl_info, "GL_EXT_fog_coord");
-            check_gl_extension(gl_info, "GL_EXT_multi_draw_arrays");
-            check_gl_extension(gl_info, "GL_ARB_point_parameters");
-            check_gl_extension(gl_info, "GL_EXT_secondary_color");
-            check_gl_extension(gl_info, "GL_EXT_blend_func_separate");
-            check_gl_extension(gl_info, "GL_EXT_stencil_wrap");
-            check_gl_extension(gl_info, "GL_ARB_texture_env_crossbar");
-            check_gl_extension(gl_info, "GL_EXT_texture_lod_bias");
-            check_gl_extension(gl_info, "GL_ARB_texture_mirrored_repeat");
-            check_gl_extension(gl_info, "GL_ARB_window_pos");
-        }
-        if (fGLVersion >= 1.6)
-        {
-            check_gl_extension(gl_info, "GL_ARB_vertex_buffer_object");
-            check_gl_extension(gl_info, "GL_ARB_occlusion_query");
-            check_gl_extension(gl_info, "GL_EXT_shadow_funcs");
-        }
-        if (fGLVersion >= 2.0)
-        {
-            check_gl_extension(gl_info, "GL_ARB_shader_objects"); /*??*/
-            check_gl_extension(gl_info, "GL_ARB_vertex_shader"); /*??*/
-            check_gl_extension(gl_info, "GL_ARB_fragment_shader"); /*??*/
-            check_gl_extension(gl_info, "GL_ARB_shading_language_100"); /*??*/
-            check_gl_extension(gl_info, "GL_ARB_draw_buffers");
-            check_gl_extension(gl_info, "GL_ARB_texture_non_power_of_two");
-            check_gl_extension(gl_info, "GL_ARB_point_sprite");
-            check_gl_extension(gl_info, "GL_ATI_separate_stencil");
-            check_gl_extension(gl_info, "GL_EXT_stencil_two_side");
-        }
-        if (fGLVersion >= 2.1)
-        {
-            check_gl_extension(gl_info, "GL_ARB_pixel_buffer_object");
-            check_gl_extension(gl_info, "GL_EXT_texture_sRGB");
-        }
-        if (fGLVersion >= 3.0)
-        {
-            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
-            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
-            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
-        }
-        if (fGLVersion >= 3.0)
-        {
-            check_gl_extension(gl_info, "GL_ARB_framebuffer_object");
-            check_gl_extension(gl_info, "GL_ARB_map_buffer_range");
-            check_gl_extension(gl_info, "GL_ARB_vertex_array_object");
-        }
-        if (fGLVersion >= 3.1)
-        {
-            check_gl_extension(gl_info, "GL_ARB_copy_buffer");
-            check_gl_extension(gl_info, "GL_ARB_uniform_buffer_object");
-        }
-        if (fGLVersion >= 3.2)
-        {
-            check_gl_extension(gl_info, "GL_ARB_draw_elements_base_vertex");
-            check_gl_extension(gl_info, "GL_ARB_provoking_vertex");
-            check_gl_extension(gl_info, "GL_ARB_sync");
-            check_gl_extension(gl_info, "GL_ARB_texture_multisample");
-        }
-        if (fGLVersion >= 3.3)
-        {
-            check_gl_extension(gl_info, "GL_ARB_blend_func_extended");
-            check_gl_extension(gl_info, "GL_ARB_sampler_objects");
-            check_gl_extension(gl_info, "GL_ARB_explicit_attrib_location");
-            check_gl_extension(gl_info, "GL_ARB_occlusion_query2");
-            check_gl_extension(gl_info, "GL_ARB_shader_bit_encoding");
-            check_gl_extension(gl_info, "GL_ARB_texture_rgb10_a2ui");
-            check_gl_extension(gl_info, "GL_ARB_texture_swizzle");
-            check_gl_extension(gl_info, "GL_ARB_timer_query");
-            check_gl_extension(gl_info, "GL_ARB_vertex_type_2_10_10_10_rev");
-        }
-        if (fGLVersion >=4.0)
-        {
-            check_gl_extension(gl_info, "GL_ARB_texture_query_lod");
-            check_gl_extension(gl_info, "GL_ARB_draw_indirect");
-            check_gl_extension(gl_info, "GL_ARB_gpu_shader5");
-            check_gl_extension(gl_info, "GL_ARB_gpu_shader_fp64");
-            check_gl_extension(gl_info, "GL_ARB_shader_subroutine");
-            check_gl_extension(gl_info, "GL_ARB_tessellation_shader");
-            check_gl_extension(gl_info, "GL_ARB_texture_buffer_object_rgb32");
-            check_gl_extension(gl_info, "GL_ARB_texture_cube_map_array");
-            check_gl_extension(gl_info, "GL_ARB_texture_gather");
-            check_gl_extension(gl_info, "GL_ARB_transform_feedback2");
-            check_gl_extension(gl_info, "GL_ARB_transform_feedback3");
-        }
-        if (fGLVersion >=4.1)
-        {
-            check_gl_extension(gl_info, "GL_ARB_ES2_compatibility");
-            check_gl_extension(gl_info, "GL_ARB_get_program_binary");
-            check_gl_extension(gl_info, "GL_ARB_separate_shader_objects");
-            check_gl_extension(gl_info, "GL_ARB_shader_precision");
-            check_gl_extension(gl_info, "GL_ARB_vertex_attrib_64bit");
-            check_gl_extension(gl_info, "GL_ARB_viewport_array");
-        }
+        /* The cheap way out. */
+        pvEnumCtx = NULL;
+        while (pVBoxShaderIf->pfnGetNextExtension(pVBoxShaderIf, &pvEnumCtx, szCurExt, sizeof(szCurExt), true /*fOtherProfile*/))
+            check_gl_extension(gl_info, szCurExt);
     }
-
-    LEAVE_GL();
-
-#else
+#else /* VBOX_WITH_VMSVGA */
     while (*GL_Extensions)
     {
         const char *start;
@@ -2360,7 +2221,7 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_MULTITEXTURE])
     {
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
         glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_max);
         if (glGetError() != GL_NO_ERROR)
             VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &gl_max));
@@ -2425,7 +2286,17 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_VERTEX_BLEND])
     {
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        glGetIntegerv(GL_MAX_VERTEX_UNITS_ARB, &gl_max);
+        if (glGetError() != GL_NO_ERROR)
+        {
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VERTEX_UNITS_ARB, &gl_max));
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+        }
+#else
         VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VERTEX_UNITS_ARB, &gl_max));
+#endif
         gl_info->limits.blends = gl_max;
         TRACE_(d3d_caps)("Max blends: %u.\n", gl_info->limits.blends);
     }
@@ -2443,6 +2314,11 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[ARB_FRAGMENT_PROGRAM])
     {
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max));
+        if (glGetError() != GL_NO_ERROR)
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+#endif
         VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_ps_float_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM float constants: %d.\n", gl_info->limits.arb_ps_float_constants);
@@ -2459,9 +2335,17 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOCAL_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_ps_local_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_PROGRAM local parameters: %d.\n", gl_info->limits.arb_ps_instructions);
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+#endif
     }
     if (gl_info->supported[ARB_VERTEX_PROGRAM])
     {
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max));
+        if (glGetError() != GL_NO_ERROR)
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+#endif
         VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &gl_max)));
         gl_info->limits.arb_vs_float_constants = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM float constants: %d.\n", gl_info->limits.arb_vs_float_constants);
@@ -2475,6 +2359,9 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         VBOX_CHECK_GL_CALL(GL_EXTCALL(glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &gl_max)));
         gl_info->limits.arb_vs_instructions = gl_max;
         TRACE_(d3d_caps)("Max ARB_VERTEX_PROGRAM native instructions: %d.\n", gl_info->limits.arb_vs_instructions);
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+#endif
 #ifndef VBOX_WITH_VMSVGA
         if (test_arb_vs_offset_limit(gl_info)) gl_info->quirks |= WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT;
 #endif
@@ -2532,10 +2419,14 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
         }
 #endif
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_SHADER float constants: %u.\n", gl_info->limits.glsl_ps_float_constants);
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
         glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max);
         if (glGetError() != GL_NO_ERROR)
-            gl_max = 60;
+        {
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+            VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max));
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+        }
 #else
         VBOX_CHECK_GL_CALL(glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max));
 #endif
@@ -2555,7 +2446,17 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     }
     if (gl_info->supported[NV_LIGHT_MAX_EXPONENT])
     {
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+        glGetFloatv(GL_MAX_SHININESS_NV, &gl_info->limits.shininess);
+        if (glGetError() != GL_NO_ERROR)
+        {
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, true /*fOtherProfile*/);
+            VBOX_CHECK_GL_CALL(glGetFloatv(GL_MAX_SHININESS_NV, &gl_info->limits.shininess));
+            pVBoxShaderIf->pfnSwitchInitProfile(pVBoxShaderIf, false /*fOtherProfile*/);
+        }
+#else
         VBOX_CHECK_GL_CALL(glGetFloatv(GL_MAX_SHININESS_NV, &gl_info->limits.shininess));
+#endif
     }
     else
     {
