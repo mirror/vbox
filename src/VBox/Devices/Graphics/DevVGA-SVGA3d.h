@@ -44,7 +44,8 @@ int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, 
 #define SVGA3D_MAX_LIGHTS                       32
 
 void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR);
-int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType transfer, uint8_t *pDest, int32_t cbDestPitch, SVGAGuestPtr src, uint32_t cbSrcOffset, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight);
+int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pDest, int32_t cbDestPitch,
+                      SVGAGuestPtr src, uint32_t offSrc, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight);
 
 int vmsvga3dInit(PVGASTATE pThis);
 int vmsvga3dPowerOn(PVGASTATE pThis);

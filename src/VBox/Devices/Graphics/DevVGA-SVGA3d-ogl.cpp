@@ -2761,18 +2761,18 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
             pBufferStart = (uint8_t *)pMipLevel->pSurfaceData + uDestOffset;
 #endif
             rc = vmsvgaGMRTransfer(pThis,
-                                    transfer,
-                                    pBufferStart,
+                                   transfer,
+                                   pBufferStart,
 #ifdef MANUAL_FLIP_SURFACE_DATA
-                                    -(int32_t)pMipLevel->cbSurfacePitch,
+                                   -(int32_t)pMipLevel->cbSurfacePitch,
 #else
-                                    (int32_t)pMipLevel->cbSurfacePitch,
+                                   (int32_t)pMipLevel->cbSurfacePitch,
 #endif
-                                    guest.ptr,
-                                    pBoxes[i].srcx * pSurface->cbBlock + (pBoxes[i].srcy + pBoxes[i].srcz * pBoxes[i].h) * cbSrcPitch,
-                                    cbSrcPitch,
-                                    pBoxes[i].w * pSurface->cbBlock,
-                                    pBoxes[i].d * pBoxes[i].h);
+                                   guest.ptr,
+                                   pBoxes[i].srcx * pSurface->cbBlock + (pBoxes[i].srcy + pBoxes[i].srcz * pBoxes[i].h) * cbSrcPitch,
+                                   cbSrcPitch,
+                                   pBoxes[i].w * pSurface->cbBlock,
+                                   pBoxes[i].d * pBoxes[i].h);
 
             Log4(("first line:\n%.*Rhxd\n", pMipLevel->cbSurface, pMipLevel->pSurfaceData));
 
