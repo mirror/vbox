@@ -2870,42 +2870,50 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
  *
  * @returns VBox status code.
  * @param   pThis           VGA device instance data.
- * @param   transfer        Transfer type (read/write)
- * @param   pDest           Host destination pointer
+ * @param   enmTransferType Transfer type (read/write)
+ * @param   pbDst           Host destination pointer
  * @param   cbDestPitch     Destination buffer pitch
  * @param   src             GMR description
- * @param   cbSrcOffset     Source buffer offset
+ * @param   offSrc          Source buffer offset
  * @param   cbSrcPitch      Source buffer pitch
  * @param   cbWidth         Source width in bytes
  * @param   cHeight         Source height
  */
-int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType transfer, uint8_t *pDest, int32_t cbDestPitch, SVGAGuestPtr src, uint32_t cbSrcOffset, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight)
+int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pbDst, int32_t cbDestPitch,
+                      SVGAGuestPtr src, uint32_t offSrc, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight)
 {
     PVMSVGASTATE            pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
     PGMR                    pGMR;
     int                     rc;
     PVMSVGAGMRDESCRIPTOR    pDesc;
-    unsigned                uDescOffset = 0;
+    unsigned                offDesc = 0;
 
-    Log(("vmsvgaGMRTransfer: gmr=%x offset=%x pitch=%d cbWidth=%d cHeight=%d; src offset=%d src pitch=%d\n", src.gmrId, src.offset, cbDestPitch, cbWidth, cHeight, cbSrcOffset, cbSrcPitch));
+    Log(("vmsvgaGMRTransfer: gmr=%x offset=%x pitch=%d cbWidth=%d cHeight=%d; src offset=%d src pitch=%d\n",
+         src.gmrId, src.offset, cbDestPitch, cbWidth, cHeight, offSrc, cbSrcPitch));
     Assert(cbWidth && cHeight);
 
     /* Shortcut for the framebuffer. */
     if (src.gmrId == SVGA_GMR_FRAMEBUFFER)
     {
-        cbSrcOffset += src.offset;
-        AssertReturn(src.offset < pThis->vram_size, VERR_INVALID_PARAMETER);
-        AssertReturn(cbSrcOffset + cbSrcPitch * (cHeight - 1) + cbWidth <= pThis->vram_size, VERR_INVALID_PARAMETER);
+        offSrc += src.offset;
+        AssertMsgReturn(src.offset < pThis->vram_size,
+                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x vram_size=%#x\n",
+                         src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
+                        VERR_INVALID_PARAMETER);
+        AssertMsgReturn(offSrc + cbSrcPitch * (cHeight - 1) + cbWidth <= pThis->vram_size,
+                        ("src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x vram_size=%#x\n",
+                         src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pThis->vram_size),
+                        VERR_INVALID_PARAMETER);
 
-        uint8_t *pSrc  = pThis->CTX_SUFF(vram_ptr) + cbSrcOffset;
+        uint8_t *pSrc  = pThis->CTX_SUFF(vram_ptr) + offSrc;
 
-        if (transfer == SVGA3D_READ_HOST_VRAM)
+        if (enmTransferType == SVGA3D_READ_HOST_VRAM)
         {
             /* switch src & dest */
-            uint8_t *pTemp      = pDest;
+            uint8_t *pTemp      = pbDst;
             int32_t cbTempPitch = cbDestPitch;
 
-            pDest = pSrc;
+            pbDst = pSrc;
             pSrc  = pTemp;
 
             cbDestPitch = cbSrcPitch;
@@ -2916,15 +2924,15 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType transfer, uint8_
             &&  cbWidth == cbDestPitch
             &&  cbSrcPitch == cbDestPitch)
         {
-            memcpy(pDest, pSrc, cbWidth * cHeight);
+            memcpy(pbDst, pSrc, cbWidth * cHeight);
         }
         else
         {
             for(uint32_t i = 0; i < cHeight; i++)
             {
-                memcpy(pDest, pSrc, cbWidth);
+                memcpy(pbDst, pSrc, cbWidth);
 
-                pDest += cbDestPitch;
+                pbDst += cbDestPitch;
                 pSrc  += cbSrcPitch;
             }
         }
@@ -2935,60 +2943,66 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType transfer, uint8_
     pGMR   = &pSVGAState->aGMR[src.gmrId];
     pDesc  = pGMR->paDesc;
 
-    cbSrcOffset += src.offset;
-    AssertReturn(src.offset < pGMR->cbTotal, VERR_INVALID_PARAMETER);
-    AssertReturn(cbSrcOffset + cbSrcPitch * (cHeight - 1) + cbWidth <= pGMR->cbTotal, VERR_INVALID_PARAMETER);
+    offSrc += src.offset;
+    AssertMsgReturn(src.offset < pGMR->cbTotal,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pGMR->cbTotal),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(offSrc + cbSrcPitch * (cHeight - 1) + cbWidth <= pGMR->cbTotal,
+                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbTotal=%#x\n",
+                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, pGMR->cbTotal),
+                    VERR_INVALID_PARAMETER);
 
-    for (unsigned i = 0; i < cHeight; i++)
+    for (uint32_t i = 0; i < cHeight; i++)
     {
-        unsigned cbCurrentWidth = cbWidth;
-        unsigned uCurrentOffset = cbSrcOffset;
-        uint8_t *pCurrentDest   = pDest;
+        uint32_t cbCurrentWidth = cbWidth;
+        uint32_t offCurrent     = offSrc;
+        uint8_t *pCurrentDest   = pbDst;
 
         /* Find the right descriptor */
-        while (uDescOffset + pDesc->numPages * PAGE_SIZE <= uCurrentOffset)
+        while (offDesc + pDesc->numPages * PAGE_SIZE <= offCurrent)
         {
-            uDescOffset += pDesc->numPages * PAGE_SIZE;
-            AssertReturn(uDescOffset < pGMR->cbTotal, VERR_INTERNAL_ERROR); /* overflow protection */
+            offDesc += pDesc->numPages * PAGE_SIZE;
+            AssertReturn(offDesc < pGMR->cbTotal, VERR_INTERNAL_ERROR); /* overflow protection */
             pDesc++;
         }
 
         while (cbCurrentWidth)
         {
-            unsigned cbToCopy;
+            uint32_t cbToCopy;
 
-            if (uCurrentOffset + cbCurrentWidth <= uDescOffset + pDesc->numPages * PAGE_SIZE)
+            if (offCurrent + cbCurrentWidth <= offDesc + pDesc->numPages * PAGE_SIZE)
             {
                 cbToCopy = cbCurrentWidth;
             }
             else
             {
-                cbToCopy = (uDescOffset + pDesc->numPages * PAGE_SIZE - uCurrentOffset);
+                cbToCopy = (offDesc + pDesc->numPages * PAGE_SIZE - offCurrent);
                 AssertReturn(cbToCopy <= cbCurrentWidth, VERR_INVALID_PARAMETER);
             }
 
-            LogFlow(("vmsvgaGMRTransfer: %s phys=%RGp\n", (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", pDesc->GCPhys + uCurrentOffset - uDescOffset));
+            LogFlow(("vmsvgaGMRTransfer: %s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", pDesc->GCPhys + offCurrent - offDesc));
 
-            if (transfer == SVGA3D_WRITE_HOST_VRAM)
-                rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + uCurrentOffset - uDescOffset, pCurrentDest, cbToCopy);
+            if (enmTransferType == SVGA3D_WRITE_HOST_VRAM)
+                rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + offCurrent - offDesc, pCurrentDest, cbToCopy);
             else
-                rc = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + uCurrentOffset - uDescOffset, pCurrentDest, cbToCopy);
+                rc = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + offCurrent - offDesc, pCurrentDest, cbToCopy);
             AssertRCBreak(rc);
 
             cbCurrentWidth -= cbToCopy;
-            uCurrentOffset += cbToCopy;
+            offCurrent     += cbToCopy;
             pCurrentDest   += cbToCopy;
 
             /* Go to the next descriptor if there's anything left. */
             if (cbCurrentWidth)
             {
-                uDescOffset += pDesc->numPages * PAGE_SIZE;
+                offDesc += pDesc->numPages * PAGE_SIZE;
                 pDesc++;
             }
         }
 
-        cbSrcOffset += cbSrcPitch;
-        pDest       += cbDestPitch;
+        offSrc  += cbSrcPitch;
+        pbDst   += cbDestPitch;
     }
 
     return VINF_SUCCESS;
