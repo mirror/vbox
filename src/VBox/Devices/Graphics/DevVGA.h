@@ -278,10 +278,12 @@ typedef struct
     RTIOPORT                    BasePort;
     /** Port io index register. */
     uint32_t                    u32IndexReg;
+    /** The support driver session handle for use with FIFORequestSem. */
+    R3R0PTRTYPE(PSUPDRVSESSION) pSupDrvSession;
     /** FIFO request semaphore. */
-    RTSEMEVENT                  FIFORequestSem;
+    SUPSEMEVENT                 FIFORequestSem;
     /** FIFO external command semaphore. */
-    RTSEMEVENT                  FIFOExtCmdSem;
+    R3PTRTYPE(RTSEMEVENT)       FIFOExtCmdSem;
     /** FIFO IO Thread. */
     R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
     uint32_t                    uWidth;
