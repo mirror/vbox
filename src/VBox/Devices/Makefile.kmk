@@ -1435,9 +1435,6 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	__builtin_ms_va_list=va_list \
  	__stdcall= \
  	ms_abi=
- # WTF IS THIS? -fno-pic?? doubt it.
- VBoxSVGA3D_CFLAGS = \
- 	$(filter-out -pedantic -Wattributes,$(VBoxR3DllWarnNoPic_CFLAGS))
  VBoxSVGA3D_INCS.win    := \
  	Graphics/shaderlib/libWineStub/include
  VBoxSVGA3D_INCS.linux  := \
