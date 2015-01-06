@@ -603,13 +603,11 @@ typedef struct VMSVGA3DSTATE
 #ifdef DEBUG_GFX_WINDOW_TEST_CONTEXT
     uint32_t                idTestContext;
 #endif
-#ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
     /** Legacy OpenGL profile GL_EXTENSIONS result (RTStrDup).
      * This is used to detect shader model version since some implementations
      * (darwin) hides extensions that have made it into core and probably a
      * bunch of others when using a OpenGL core profile instead of a legacy one */
     R3PTRTYPE(char *)       pszLegacyExtensions;
-#endif
 } VMSVGA3DSTATE;
 /** Pointer to the VMSVGA3d state. */
 typedef VMSVGA3DSTATE *PVMSVGA3DSTATE;
@@ -980,7 +978,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 #else
-    pState->pszLegacyExtensions = "";
+    pState->pszLegacyExtensions = (char *)"";
 #endif
 
 
