@@ -564,7 +564,7 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "    push    eax\n"
             "    mov     edx, [ebp + 8] ; symbol name\n"
             "    push    edx\n"
-            "    call    NAME(LazyLoading) ; returns handle in ecx\n"
+            "    call    LazyLoading    ; returns handle in ecx\n"
             "    mov     ecx, [g_hMod]\n"
             "    call    IMP2(RTLdrGetSymbol)\n"
             "    or      eax, eax\n"
