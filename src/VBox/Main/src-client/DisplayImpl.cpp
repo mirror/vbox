@@ -91,7 +91,7 @@ typedef struct DRVMAINDISPLAY
 /////////////////////////////////////////////////////////////////////////////
 
 Display::Display()
-    : mParent(NULL)
+    : mParent(NULL), mfIsCr3DEnabled(false)
 {
 }
 
@@ -305,9 +305,7 @@ DECLCALLBACK(void) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pv
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
         BOOL f3DSnapshot = FALSE;
-        BOOL is3denabled;
-        that->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-        if (   is3denabled
+        if (   that->mfIsCr3DEnabled
             && that->mCrOglCallbacks.pfnHasData
             && that->mCrOglCallbacks.pfnHasData())
         {
@@ -633,6 +631,13 @@ HRESULT Display::init(Console *aParent)
         es->RegisterListener(this, ComSafeArrayAsInParam(eventTypes), true);
     }
 
+    /* Cache the 3D settings. */
+    BOOL fIs3DEnabled = FALSE;
+    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
+    GraphicsControllerType_T enmGpuType = (GraphicsControllerType_T)GraphicsControllerType_VBoxVGA;
+    mParent->i_machine()->COMGETTER(GraphicsControllerType)(&enmGpuType);
+    mfIsCr3DEnabled = fIs3DEnabled && enmGpuType == GraphicsControllerType_VBoxVGA;
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -736,14 +741,8 @@ int Display::i_crOglWindowsShow(bool fShow)
 
     if (!mhCrOglSvc)
     {
-        /* no 3D or the VMSVGA3d kind. */
-#ifdef VBOX_STRICT
-        BOOL fIs3DEnabled;
-        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
-        GraphicsControllerType_T enmGraphicsController;
-        mParent->i_machine()->COMGETTER(GraphicsControllerType)(&enmGraphicsController);
-        Assert(!fIs3DEnabled || enmGraphicsController != GraphicsControllerType_VBoxVGA);
-#endif
+        /* No 3D or the VMSVGA3d kind. */
+        Assert(!mfIsCr3DEnabled);
         return VERR_INVALID_STATE;
     }
 
@@ -790,10 +789,7 @@ int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREE
     if (maFramebuffers[pScreen->u32ViewIndex].fRenderThreadMode)
         return VINF_SUCCESS; /* nop it */
 
-    BOOL is3denabled;
-    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-    if (is3denabled)
+    if (mfIsCr3DEnabled)
     {
         int rc = VERR_INVALID_STATE;
         if (mhCrOglSvc)
@@ -801,8 +797,8 @@ int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREE
             VMMDev *pVMMDev = mParent->i_getVMMDev();
             if (pVMMDev)
             {
-                VBOXCRCMDCTL_HGCM *pCtl =
-                    (VBOXCRCMDCTL_HGCM*)RTMemAlloc(sizeof(CRVBOXHGCMDEVRESIZE) + sizeof(VBOXCRCMDCTL_HGCM));
+                VBOXCRCMDCTL_HGCM *pCtl;
+                pCtl = (VBOXCRCMDCTL_HGCM*)RTMemAlloc(sizeof(CRVBOXHGCMDEVRESIZE) + sizeof(VBOXCRCMDCTL_HGCM));
                 if (pCtl)
                 {
                     CRVBOXHGCMDEVRESIZE *pData = (CRVBOXHGCMDEVRESIZE*)(pCtl+1);
@@ -816,7 +812,7 @@ int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREE
                     pCtl->aParms[0].u.pointer.size = sizeof(*pData);
 
                     rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
-                    if (!RT_SUCCESS(rc))
+                    if (RT_FAILURE(rc))
                     {
                         AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                         RTMemFree(pCtl);
@@ -1227,12 +1223,8 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     }
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    BOOL is3denabled = FALSE;
-
-    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
     VMMDev *vmmDev = mParent->i_getVMMDev();
-    if (is3denabled && vmmDev)
+    if (mfIsCr3DEnabled && vmmDev)
     {
         if (mhCrOglSvc)
         {
@@ -1558,10 +1550,7 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
     if (ptrVM.isOk())
     {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-        BOOL fIs3DEnabled = FALSE;
-        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
-
-        if (fIs3DEnabled)
+        if (mfIsCr3DEnabled)
         {
             VBOXCRCMDCTL_HGCM data;
             RT_ZERO(data);
@@ -1604,10 +1593,7 @@ HRESULT Display::detachFramebuffer(ULONG aScreenId)
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
     {
-        BOOL fIs3DEnabled = FALSE;
-        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&fIs3DEnabled);
-
-        if (fIs3DEnabled)
+        if (mfIsCr3DEnabled)
         {
             VBOXCRCMDCTL_HGCM data;
             RT_ZERO(data);
@@ -1739,12 +1725,8 @@ HRESULT Display::setSeamlessMode(BOOL enabled)
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     if (!enabled)
     {
-        BOOL is3denabled = FALSE;
-
-        mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
         VMMDev *vmmDev = mParent->i_getVMMDev();
-        if (is3denabled && vmmDev)
+        if (mfIsCr3DEnabled && vmmDev)
         {
             VBOXCRCMDCTL_HGCM *pData = (VBOXCRCMDCTL_HGCM*)RTMemAlloc(sizeof(VBOXCRCMDCTL_HGCM));
             if (!pData)
@@ -1776,9 +1758,7 @@ HRESULT Display::setSeamlessMode(BOOL enabled)
 BOOL Display::i_displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreenId, uint8_t *pu8Data,
                                                 uint32_t u32Width, uint32_t u32Height)
 {
-    BOOL is3denabled;
-    pDisplay->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-    if (   is3denabled
+    if (   pDisplay->mfIsCr3DEnabled
         && pDisplay->mCrOglCallbacks.pfnHasData
         && pDisplay->mCrOglCallbacks.pfnHasData())
     {
@@ -2609,18 +2589,10 @@ HRESULT Display::completeVHWACommand(BYTE *aCommand)
 
 HRESULT Display::viewportChanged(ULONG aScreenId, ULONG aX, ULONG aY, ULONG aWidth, ULONG aHeight)
 {
+    AssertMsgReturn(aScreenId < mcMonitors, ("aScreendId=%d mcMonitors=%d\n", aScreenId, mcMonitors), E_INVALIDARG);
+
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-
-    if (mcMonitors <= aScreenId)
-    {
-        AssertMsgFailed(("invalid screen id\n"));
-        return E_INVALIDARG;
-    }
-
-    BOOL is3denabled;
-    mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-
-    if (is3denabled)
+    if (mfIsCr3DEnabled)
     {
         int rc = i_crViewportNotify(aScreenId, aX, aY, aWidth, aHeight);
         if (RT_FAILURE(rc))
@@ -2638,9 +2610,7 @@ HRESULT Display::viewportChanged(ULONG aScreenId, ULONG aX, ULONG aY, ULONG aWid
 #ifdef VBOX_WITH_VMSVGA
     /* The driver might not have been constructed yet */
     if (mpDrv)
-    {
         mpDrv->pUpPort->pfnSetViewPort(mpDrv->pUpPort, aScreenId, aX, aY, aWidth, aHeight);
-    }
 #endif
 
     return S_OK;
@@ -2869,7 +2839,7 @@ void Display::i_destructCrHgsmiData(void)
     mhCrOglSvc = NULL;
     RTCritSectRwLeaveExcl(&mCrOglLock);
 }
-#endif
+#endif /* VBOX_WITH_CRHGSMI */
 
 /**
  * Handle display resize event issued by the VGA device for the primary screen.
@@ -2936,7 +2906,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
  * @see PDMIDISPLAYCONNECTOR::pfnRefresh
  * @thread EMT
  */
-DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterface)
+/*static*/ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterface)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
@@ -2978,9 +2948,7 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
     {
         do {
 # if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-            BOOL is3denabled;
-            pDisplay->mParent->i_machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
-            if (is3denabled)
+            if (pDisplay->mfIsCr3DEnabled)
             {
                 if (ASMAtomicCmpXchgU32(&pDisplay->mfCrOglVideoRecState, CRVREC_STATE_SUBMITTED, CRVREC_STATE_IDLE))
                 {
@@ -2999,8 +2967,7 @@ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
                         rc = pDisplay->i_crCtlSubmit(&pData->Hdr, sizeof(*pData), Display::i_displayVRecCompletion, pDisplay);
                         if (RT_SUCCESS(rc))
                             break;
-                        else
-                            AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+                        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
                     }
 
                     /* no 3D data available, or error has occured,

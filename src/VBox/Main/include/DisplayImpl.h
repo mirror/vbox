@@ -373,6 +373,9 @@ private:
     uint32_t    mfu32SupportedOrders;
     int32_t volatile mcVideoAccelVRDPRefs;
 
+    /** Accelerate3DEnabled = true && GraphicsControllerType == VBoxVGA. */
+    bool        mfIsCr3DEnabled;
+
 #ifdef VBOX_WITH_CROGL
     bool        mfCrOglDataHidden;
 #endif
