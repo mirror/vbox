@@ -2901,9 +2901,9 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
  * @returns VBox status code.
  * @param   pThis           VGA device instance data.
  * @param   cid             Context id
- * @param   fLegacy         OpenGL(+darwin) specific argument, ignored.
+ * @param   fOtherProfile   OpenGL(+darwin) specific argument, ignored.
  */
-int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid, bool fLegacy)
+int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid, bool fOtherProfile)
 {
     int                     rc;
     PVMSVGA3DCONTEXT        pContext;
@@ -2913,6 +2913,7 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid, bool fLegacy)
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(cid < SVGA3D_MAX_CONTEXT_IDS, VERR_INVALID_PARAMETER);
+    NOREF(fOtherProfile);
 
     Log(("vmsvga3dContextDefine id %x\n", cid));
 
@@ -5354,7 +5355,9 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
     return VINF_SUCCESS;
 }
 
-int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl, uint32_t numRanges, SVGA3dPrimitiveRange *pRange, uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor)
+int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecls, SVGA3dVertexDecl *pVertexDecl,
+                           uint32_t numRanges, SVGA3dPrimitiveRange *pRange,
+                           uint32_t cVertexDivisor, SVGA3dVertexDivisor *pVertexDivisor)
 {
     PVMSVGA3DCONTEXT             pContext;
     PVMSVGA3DSTATE               pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;

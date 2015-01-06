@@ -2578,7 +2578,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     {
                         SVGA3dCmdDefineContext *pCmd = (SVGA3dCmdDefineContext *)(pHdr + 1);
 
-                        rc = vmsvga3dContextDefine(pThis, pCmd->cid, false /*fLegacy*/);
+                        rc = vmsvga3dContextDefine(pThis, pCmd->cid, false /*fOtherProfile*/);
                         break;
                     }
 

@@ -622,7 +622,7 @@ m_pView = NULL;
 @end
 
 
-void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pShareCtx, bool fLegacy)
+void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pShareCtx, bool fOtherProfile)
 {
     DEBUG_FUNC_ENTER();
     NSOpenGLPixelFormat *pFmt = nil;

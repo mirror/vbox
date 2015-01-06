@@ -48,7 +48,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         {
             uint32_t cPixelShaderConst, cVertexShaderConst, cPixelShaders, cVertexShaders;
 
-            rc = vmsvga3dContextDefine(pThis, cid, false /*fLegacy*/);
+            rc = vmsvga3dContextDefine(pThis, cid, false /*fOtherProfile*/);
             AssertRCReturn(rc, rc);
 
             pContext = &pState->paContext[i];

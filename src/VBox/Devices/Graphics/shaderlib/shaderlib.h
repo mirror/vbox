@@ -29,8 +29,41 @@ RT_C_DECLS_BEGIN
 # define SHADERDECL(type)           DECLEXPORT(type) RTCALL
 #endif
 
+/** Pointer to shaderlib callback interface. */
+typedef struct VBOXVMSVGASHADERIF *PVBOXVMSVGASHADERIF;
+/**
+ * Interface the shader lib can use to talk back to the VBox VMSVGA OGL 3D code.
+ */
+typedef struct VBOXVMSVGASHADERIF
+{
+    /**
+     * Switches the initialization profile in builds where we have to juggle two
+     * OpenGL profiles to gather all the data (i.e. mac os x).
+     *
+     * @param   pThis           Pointer to this structure.
+     * @param   fOtherProfile   If set, switch to the non-default profile.  If
+     *                          clear, switch back to the default profile.
+     */
+    DECLCALLBACKMEMBER(void, pfnSwitchInitProfile)(PVBOXVMSVGASHADERIF pThis, bool fOtherProfile);
 
-SHADERDECL(int) ShaderInitLib(void);
+    /**
+     * Extension enumeration function.
+     *
+     * @param   pThis           Pointer to this structure.
+     * @param   ppvEnumCtx      Pointer to a void point that's initialized to NULL
+     *                          before the first call.
+     * @param   pszBuf          Where to store the extension name. Garbled on
+     *                          overflow (we assume no overflow).
+     * @param   cbBuf           The size of the buffer @a pszBuf points to.
+     * @param   fOtherProfile   Indicates which profile to get extensions from,
+     *                          we'll use the default profile if CLEAR and the
+     *                          non-default if SET.
+     */
+    DECLCALLBACKMEMBER(bool, pfnGetNextExtension)(PVBOXVMSVGASHADERIF pThis, void **ppvEnumCtx, char *pszBuf, size_t cbBuf,
+                                                  bool fOtherProfile);
+} VBOXVMSVGASHADERIF;
+
+SHADERDECL(int) ShaderInitLib(PVBOXVMSVGASHADERIF pVBoxShaderIf);
 SHADERDECL(int) ShaderDestroyLib(void);
 
 SHADERDECL(int) ShaderContextCreate(void **ppShaderContext);

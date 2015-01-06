@@ -273,7 +273,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_LIBS.linux    += GL X11
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
-   VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin and VBoxSVGA3DObjC_DEFS.darwin).
+   VBoxDD_DEFS.darwin    += VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+   if 0 # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin and VBoxSVGA3DObjC_DEFS.darwin).
+    VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE=3.2 VBOX_VMSVGA3D_OTHER_OGL_PROFILE=2.1
+   else
+    VBoxDD_DEFS.darwin   += VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE=2.1 VBOX_VMSVGA3D_OTHER_OGL_PROFILE=3.2
+   endif
   endif
   Graphics/DevVGA-SVGA3d-ogl.cpp_CXXFLAGS.darwin = -F$(VBOX_PATH_MACOSX_SDK_10_7)/System/Library/Frameworks/
  endif
@@ -1428,7 +1433,12 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  VBoxSVGA3D_DEFS.win    += \
  	USE_WIN32_OPENGL \
  	VBOX_WINE_WITHOUT_LIBWINE
- VBoxSVGA3D_DEFS.darwin += VBOX_VMSVGA3D_USE_OPENGL_CORE  # Use the OpenGL 3.2 Core profile (VBoxSVGA3D_DEFS.darwin).
+ VBoxSVGA3D_DEFS.darwin  += VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
+ if 0 # Use the OpenGL 3.2 Core profile (VBoxSVGA3D_DEFS.darwin).
+  VBoxSVGA3D_DEFS.darwin += VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE=3.2 VBOX_VMSVGA3D_OTHER_OGL_PROFILE=2.1
+ else
+  VBoxSVGA3D_DEFS.darwin += VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE=2.1 VBOX_VMSVGA3D_OTHER_OGL_PROFILE=3.2
+ endif
 
  # WINE relies on a gcc 4.4 feature but we have 4.2 on Darwin
  VBoxSVGA3D_DEFS.darwin += \

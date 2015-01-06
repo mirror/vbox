@@ -237,7 +237,7 @@ static void checkGLError(char *pszFile, int iLine)
 
 # define CR_OVERLAY_BIT         RT_BIT_32(8)
 # define CR_PBUFFER_BIT         RT_BIT_32(9)
-# define VMSVGA3D_LEGACY_PROFILE_BIT RT_BIT_32(31)
+# define VMSVGA3D_NON_DEFAULT_PROFILE_BIT RT_BIT_32(31)
 # define CR_ALL_BITS            UINT32_C(0x800003ff)
 
 typedef struct WindowInfo
@@ -310,13 +310,14 @@ static void renderspuVBoxCompositorRelease(WindowInfo *pWinInfo)
 }
 
 
-#endif
+#endif /* IN_VMSVGA3D */
 
 
 
 static NSOpenGLContext *vboxCtxGetCurrent(void)
 {
 #ifdef IN_VMSVGA3D
+    return [NSOpenGLContext currentContext];
 #else
     GET_CONTEXT(pCtxInfo);
     if (pCtxInfo)
@@ -324,16 +325,16 @@ static NSOpenGLContext *vboxCtxGetCurrent(void)
         Assert(pCtxInfo->context);
         return pCtxInfo->context;
     }
-#endif
-
     return nil;
+#endif
 }
 
 static bool vboxCtxSyncCurrentInfo(void)
 {
-    bool fAdjusted = false;
 #ifdef IN_VMSVGA3D
+    return false;
 #else
+    bool fAdjusted = false;
     GET_CONTEXT(pCtxInfo);
     NSOpenGLContext *pCtx = [NSOpenGLContext currentContext];
     NSView *pView = pCtx ? [pCtx view] : nil;
@@ -353,9 +354,9 @@ static bool vboxCtxSyncCurrentInfo(void)
         [NSOpenGLContext clearCurrentContext];
         fAdjusted = true;
     }
-#endif
     
     return fAdjusted;
+#endif
 }
 
 
@@ -2025,6 +2026,20 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
         COCOA_LOG_FLOW(("%s: returns - request to draw a view w/o a parent\n", __PRETTY_FUNCTION__));
         return;
     }
+
+#ifdef IN_VMSVGA3D
+    if (!m_pSharedGLCtx)
+    {
+        Assert(!m_fDataVisible);
+        Assert(!m_fCleanupNeeded);
+        if (![self vboxSharedCtxCreate])
+        {
+            COCOA_LOG_FLOW(("%s: returns - vboxSharedCtxCreate failed\n", __PRETTY_FUNCTION__));
+            return;
+        }
+        Assert(m_pSharedGLCtx);
+    }
+#endif
     
     const VBOXVR_SCR_COMPOSITOR *pCompositor;
     int rc = renderspuVBoxCompositorLock(m_pWinInfo, &pCompositor);
@@ -2073,7 +2088,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     else
     {
         DEBUG_MSG(("%s: NeedCleanup\n", __PRETTY_FUNCTION__));
+#ifndef IN_VMSVGA3D /** @todo VMSVGA3 */
         Assert(m_fCleanupNeeded);
+#endif
         CrVrScrCompositorInit(&TmpCompositor, NULL);
         pCompositor = &TmpCompositor;
     }
@@ -2564,11 +2581,7 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
     NSOpenGLPixelFormatAttribute attribs[24] =
     {
 #ifdef IN_VMSVGA3D
-# ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
-# else
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
-# endif
+        NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)0,
 #endif
         NSOpenGLPFAAccelerated,
         NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24
@@ -2577,14 +2590,10 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
     int i = 3;
 
 #ifdef IN_VMSVGA3D
-    if (fVisParams & VMSVGA3D_LEGACY_PROFILE_BIT)
-    {
-# ifdef VBOX_VMSVGA3D_USE_OPENGL_CORE
-        attribs[1] = NSOpenGLProfileVersionLegacy;
-# else
-        AssertFailed();
-# endif
-    }
+    if (fVisParams & VMSVGA3D_NON_DEFAULT_PROFILE_BIT)
+        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersionLegacy :  NSOpenGLProfileVersion3_2Core;
+    else
+        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
 #endif
 
     if (fVisParams & CR_ALPHA_BIT)
@@ -2983,9 +2992,10 @@ void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint 
  * VMSVGA3D interface.
  */
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx, bool fLegacy)
+VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx, 
+                                               bool fOtherProfile)
 {
-    cocoaGLCtxCreate(ppCtx, CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT | (fLegacy ? VMSVGA3D_LEGACY_PROFILE_BIT : 0), 
+    cocoaGLCtxCreate(ppCtx, CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT | (fOtherProfile ? VMSVGA3D_NON_DEFAULT_PROFILE_BIT : 0), 
                      pSharedCtx);
 }
 

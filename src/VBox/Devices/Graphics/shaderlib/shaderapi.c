@@ -131,35 +131,59 @@ extern void (*glXGetProcAddress(const GLubyte *procname))( void );
     USE_GL_FUNC(WINED3D_PFNGLGETATTRIBLOCATIONARBPROC, \
             glGetAttribLocationARB,                     ARB_SHADER_OBJECTS,             NULL) \
 
-static struct wined3d_context *pCurrentContext = NULL;
-static struct wined3d_adapter adapter = {0};
-static bool fInitializedLibrary = false;
+static struct wined3d_context *g_pCurrentContext = NULL;
+static struct wined3d_adapter g_adapter = {0};
+static bool g_fInitializedLibrary = false;
 
 #define SHADER_SET_CURRENT_CONTEXT(ctx) \
-    pCurrentContext = (struct wined3d_context *)ctx;
+    g_pCurrentContext = (struct wined3d_context *)ctx;
 
-SHADERDECL(int) ShaderInitLib(void)
+SHADERDECL(int) ShaderInitLib(PVBOXVMSVGASHADERIF pVBoxShaderIf)
 {
-    struct wined3d_gl_info *gl_info = &adapter.gl_info;
+    struct wined3d_gl_info *gl_info = &g_adapter.gl_info;
 
+    /* Dynamically load all GL core functions. */
 #ifdef RT_OS_WINDOWS
-#define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(GetModuleHandle("opengl32.dll"), #pfn);
+# define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(GetModuleHandle("opengl32.dll"), #pfn);
 #else
-#define USE_GL_FUNC(pfn) pfn = (void*)OGLGETPROCADDRESS(#pfn);
+# define USE_GL_FUNC(pfn) pfn = (void*)OGLGETPROCADDRESS(#pfn);
 #endif
-
-    /* Dynamically load all GL core functions */
     GL_FUNCS_GEN;
 #undef USE_GL_FUNC
 
+    /* Dynamically load all GL extension functions. */
 #define USE_GL_FUNC(type, pfn, ext, replace) \
 { \
     gl_info->pfn = (void*)OGLGETPROCADDRESS(#pfn); \
 }
     GL_EXT_FUNCS_GEN;
 
-    IWineD3DImpl_FillGLCaps(&adapter);
-    fInitializedLibrary = true;
+    /* Fill in GL capabilities. */
+    IWineD3DImpl_FillGLCaps(&g_adapter, pVBoxShaderIf);
+
+    LogRel(("shaderlib: GL Limits:\n"));
+    LogRel(("shaderlib:   buffers=%-2u                lights=%-2u                    textures=%-2u            texture_stages=%u\n",
+            gl_info->limits.buffers, gl_info->limits.lights, gl_info->limits.textures, gl_info->limits.texture_stages));
+    LogRel(("shaderlib:   fragment_samplers=%-2u      vertex_samplers=%-2u           combined_samplers=%-3u  general_combiners=%u\n",
+            gl_info->limits.fragment_samplers, gl_info->limits.vertex_samplers, gl_info->limits.combined_samplers, gl_info->limits.general_combiners));
+    LogRel(("shaderlib:   sampler_stages=%-2u         clipplanes=%-2u                texture_size=%-5u     texture3d_size=%u\n",
+            gl_info->limits.sampler_stages, gl_info->limits.clipplanes, gl_info->limits.texture_size, gl_info->limits.texture3d_size));
+    LogRel(("shaderlib:   pointsize_max=%d.%d      pointsize_min=%d.%d            point_sprite_units=%-2u  blends=%u\n",
+            (int)gl_info->limits.pointsize_max, (int)(gl_info->limits.pointsize_max * 10) % 10,
+            (int)gl_info->limits.pointsize_min, (int)(gl_info->limits.pointsize_min * 10) % 10,
+            gl_info->limits.point_sprite_units, gl_info->limits.blends));
+    LogRel(("shaderlib:   anisotropy=%-2u             shininess=%d.%02d\n",
+            gl_info->limits.anisotropy, (int)gl_info->limits.shininess, (int)(gl_info->limits.shininess * 100) % 100));
+    LogRel(("shaderlib:   glsl_varyings=%-3u         glsl_vs_float_constants=%-4u glsl_ps_float_constants=%u\n",
+            gl_info->limits.glsl_varyings, gl_info->limits.glsl_vs_float_constants, gl_info->limits.glsl_ps_float_constants));
+    LogRel(("shaderlib:   arb_vs_instructions=%-4u  arb_vs_native_constants=%-4u qarb_vs_float_constants=%u\n",
+            gl_info->limits.arb_vs_instructions, gl_info->limits.arb_vs_native_constants, gl_info->limits.arb_vs_float_constants));
+    LogRel(("shaderlib:   arb_vs_temps=%-2u           arb_ps_float_constants=%-4u  arb_ps_local_constants=%u\n",
+            gl_info->limits.arb_vs_temps, gl_info->limits.arb_ps_float_constants, gl_info->limits.arb_ps_local_constants));
+    LogRel(("shaderlib:   arb_ps_instructions=%-4u  arb_ps_temps=%-2u              arb_ps_native_constants=%u\n",
+            gl_info->limits.arb_ps_instructions, gl_info->limits.arb_ps_temps, gl_info->limits.arb_ps_native_constants));
+
+    g_fInitializedLibrary = true;
     return VINF_SUCCESS;
 }
 
@@ -175,12 +199,12 @@ struct IWineD3DDeviceImpl *context_get_device(const struct wined3d_context *cont
 
 struct wined3d_context *context_get_current(void)
 {
-    return pCurrentContext;
+    return g_pCurrentContext;
 }
 
 struct wined3d_context *context_acquire(IWineD3DDeviceImpl *This, IWineD3DSurface *target, enum ContextUsage usage)
 {
-    return pCurrentContext;
+    return g_pCurrentContext;
 }
 
 SHADERDECL(int) ShaderContextCreate(void **ppShaderContext)
@@ -193,9 +217,9 @@ SHADERDECL(int) ShaderContextCreate(void **ppShaderContext)
     pContext->pDeviceContext = (IWineD3DDeviceImpl *)RTMemAllocZ(sizeof(IWineD3DDeviceImpl));
     AssertReturn(pContext->pDeviceContext, VERR_NO_MEMORY);
 
-    pContext->gl_info = &adapter.gl_info;
+    pContext->gl_info = &g_adapter.gl_info;
 
-    pContext->pDeviceContext->adapter = &adapter;
+    pContext->pDeviceContext->adapter = &g_adapter;
     pContext->pDeviceContext->shader_backend = &glsl_shader_backend;
     pContext->pDeviceContext->ps_selected_mode = SHADER_GLSL;
     pContext->pDeviceContext->vs_selected_mode = SHADER_GLSL;
@@ -203,7 +227,7 @@ SHADERDECL(int) ShaderContextCreate(void **ppShaderContext)
 
     list_init(&pContext->pDeviceContext->shaders);
 
-    if (fInitializedLibrary)
+    if (g_fInitializedLibrary)
     {
         struct shader_caps shader_caps;
         uint32_t state;
@@ -213,7 +237,7 @@ SHADERDECL(int) ShaderContextCreate(void **ppShaderContext)
         AssertReturn(hr == S_OK, VERR_INTERNAL_ERROR);
 
         memset(&shader_caps, 0, sizeof(shader_caps));
-        pContext->pDeviceContext->shader_backend->shader_get_caps(&adapter.gl_info, &shader_caps);
+        pContext->pDeviceContext->shader_backend->shader_get_caps(&g_adapter.gl_info, &shader_caps);
         pContext->pDeviceContext->d3d_vshader_constantF = shader_caps.MaxVertexShaderConst;
         pContext->pDeviceContext->d3d_pshader_constantF = shader_caps.MaxPixelShaderConst;
         pContext->pDeviceContext->vs_clipping = shader_caps.VSClipping;
@@ -289,7 +313,7 @@ SHADERDECL(int) ShaderCreateVertexShader(void *pShaderContext, const uint32_t *p
     HRESULT hr;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
     if (!object)
@@ -323,7 +347,7 @@ SHADERDECL(int) ShaderCreatePixelShader(void *pShaderContext, const uint32_t *pS
     HRESULT hr;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
     if (!object)
@@ -378,7 +402,7 @@ SHADERDECL(int) ShaderSetVertexShader(void *pShaderContext, void *pShaderObj)
     IWineD3DVertexShader* oldShader;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
     pShader   = (IWineD3DVertexShader* )pShaderObj;
     oldShader = This->updateStateBlock->vertexShader;
 
@@ -395,8 +419,8 @@ SHADERDECL(int) ShaderSetVertexShader(void *pShaderContext, void *pShaderObj)
     if(pShader) IWineD3DVertexShader_AddRef(pShader);
     if(oldShader) IWineD3DVertexShader_Release(oldShader);
 
-    pCurrentContext->fChangedVertexShader = true;
-    pCurrentContext->fChangedVertexShaderConstant = true;    /* force constant reload. */
+    g_pCurrentContext->fChangedVertexShader = true;
+    g_pCurrentContext->fChangedVertexShaderConstant = true;    /* force constant reload. */
 
     return VINF_SUCCESS;
 }
@@ -408,7 +432,7 @@ SHADERDECL(int) ShaderSetPixelShader(void *pShaderContext, void *pShaderObj)
     IWineD3DPixelShader* oldShader;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
     pShader   = (IWineD3DPixelShader* )pShaderObj;
     oldShader = This->updateStateBlock->pixelShader;
 
@@ -425,8 +449,8 @@ SHADERDECL(int) ShaderSetPixelShader(void *pShaderContext, void *pShaderObj)
     if(pShader) IWineD3DPixelShader_AddRef(pShader);
     if(oldShader) IWineD3DPixelShader_Release(oldShader);
 
-    pCurrentContext->fChangedPixelShader = true;
-    pCurrentContext->fChangedPixelShaderConstant = true;    /* force constant reload. */
+    g_pCurrentContext->fChangedPixelShader = true;
+    g_pCurrentContext->fChangedPixelShaderConstant = true;    /* force constant reload. */
     return VINF_SUCCESS;
 }
 
@@ -436,7 +460,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantB(void *pShaderContext, uint32_t st
     unsigned int i, cnt = min(count, MAX_CONST_B - start);
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetVertexShaderConstantB %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -455,7 +479,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantB(void *pShaderContext, uint32_t st
         This->updateStateBlock->changed.vertexShaderConstantsB |= (1 << i);
     }
 
-    pCurrentContext->fChangedVertexShaderConstant = true;
+    g_pCurrentContext->fChangedVertexShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -466,7 +490,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantI(void *pShaderContext, uint32_t st
     unsigned int i, cnt = min(count, MAX_CONST_I - start);
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetVertexShaderConstantI %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -483,7 +507,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantI(void *pShaderContext, uint32_t st
         This->updateStateBlock->changed.vertexShaderConstantsI |= (1 << i);
     }
 
-    pCurrentContext->fChangedVertexShaderConstant = true;
+    g_pCurrentContext->fChangedVertexShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -493,7 +517,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantF(void *pShaderContext, uint32_t st
     IWineD3DDeviceImpl *This;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetVertexShaderConstantF %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -510,7 +534,7 @@ SHADERDECL(int) ShaderSetVertexShaderConstantF(void *pShaderContext, uint32_t st
     memset(This->updateStateBlock->changed.vertexShaderConstantsF + start, 1,
            sizeof(*This->updateStateBlock->changed.vertexShaderConstantsF) * count);
 
-    pCurrentContext->fChangedVertexShaderConstant = true;
+    g_pCurrentContext->fChangedVertexShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -521,7 +545,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantB(void *pShaderContext, uint32_t sta
     unsigned int i, cnt = min(count, MAX_CONST_B - start);
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetPixelShaderConstantB %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -540,7 +564,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantB(void *pShaderContext, uint32_t sta
         This->updateStateBlock->changed.pixelShaderConstantsB |= (1 << i);
     }
 
-    pCurrentContext->fChangedPixelShaderConstant = true;
+    g_pCurrentContext->fChangedPixelShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -551,7 +575,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantI(void *pShaderContext, uint32_t sta
     unsigned int i, cnt = min(count, MAX_CONST_I - start);
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetPixelShaderConstantI %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -568,7 +592,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantI(void *pShaderContext, uint32_t sta
         This->updateStateBlock->changed.pixelShaderConstantsI |= (1 << i);
     }
 
-    pCurrentContext->fChangedPixelShaderConstant = true;
+    g_pCurrentContext->fChangedPixelShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -578,7 +602,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantF(void *pShaderContext, uint32_t sta
     IWineD3DDeviceImpl *This;
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    This = pCurrentContext->pDeviceContext;
+    This = g_pCurrentContext->pDeviceContext;
 
     Log(("(ShaderSetPixelShaderConstantF %p, srcData %p, start %d, count %d)\n",
             srcData, start, count));
@@ -596,7 +620,7 @@ SHADERDECL(int) ShaderSetPixelShaderConstantF(void *pShaderContext, uint32_t sta
     memset(This->updateStateBlock->changed.pixelShaderConstantsF + start, 1,
             sizeof(*This->updateStateBlock->changed.pixelShaderConstantsF) * count);
 
-    pCurrentContext->fChangedPixelShaderConstant = true;
+    g_pCurrentContext->fChangedPixelShaderConstant = true;
 
     return VINF_SUCCESS;
 }
@@ -608,7 +632,7 @@ SHADERDECL(int) ShaderUpdateState(void *pShaderContext, uint32_t rtHeight)
     GLint viewport[4];
 
     SHADER_SET_CURRENT_CONTEXT(pShaderContext);
-    pThis = pCurrentContext->pDeviceContext;
+    pThis = g_pCurrentContext->pDeviceContext;
 
     glGetIntegerv(GL_VIEWPORT, viewport);
 #ifdef DEBUG
@@ -629,16 +653,16 @@ SHADERDECL(int) ShaderUpdateState(void *pShaderContext, uint32_t rtHeight)
      * - stateblock->vertexDecl->position_transformed
      */
 
-    if (    pCurrentContext->fChangedPixelShader 
-        ||  pCurrentContext->fChangedVertexShader)
-        pThis->shader_backend->shader_select(pCurrentContext, !!pThis->updateStateBlock->pixelShader, !!pThis->updateStateBlock->vertexShader);
-    pCurrentContext->fChangedPixelShader = pCurrentContext->fChangedVertexShader = false;
+    if (    g_pCurrentContext->fChangedPixelShader
+        ||  g_pCurrentContext->fChangedVertexShader)
+        pThis->shader_backend->shader_select(g_pCurrentContext, !!pThis->updateStateBlock->pixelShader, !!pThis->updateStateBlock->vertexShader);
+    g_pCurrentContext->fChangedPixelShader = g_pCurrentContext->fChangedVertexShader = false;
 
-    if (    pCurrentContext->fChangedPixelShaderConstant 
-        ||  pCurrentContext->fChangedVertexShaderConstant)
-        pThis->shader_backend->shader_load_constants(pCurrentContext, !!pThis->updateStateBlock->pixelShader, !!pThis->updateStateBlock->vertexShader);
-    pCurrentContext->fChangedPixelShaderConstant  = false;
-    pCurrentContext->fChangedVertexShaderConstant = false;
+    if (    g_pCurrentContext->fChangedPixelShaderConstant
+        ||  g_pCurrentContext->fChangedVertexShaderConstant)
+        pThis->shader_backend->shader_load_constants(g_pCurrentContext, !!pThis->updateStateBlock->pixelShader, !!pThis->updateStateBlock->vertexShader);
+    g_pCurrentContext->fChangedPixelShaderConstant  = false;
+    g_pCurrentContext->fChangedVertexShaderConstant = false;
 
     return VINF_SUCCESS;
 }
