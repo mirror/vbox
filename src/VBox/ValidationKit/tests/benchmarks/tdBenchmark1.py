@@ -93,7 +93,11 @@ class tdBenchmark1(vbox.TestDriver):
         if oSession is not None:
             self.addTask(oSession);
 
-            oRc = self.waitForTasks(15*60*1000);
+            cMsTimeout = 15*60*1000;
+            if not reporter.isLocal(): ## @todo need to figure a better way of handling timeouts on the testboxes ...
+                cMsTimeout = self.adjustTimeoutMs(180 * 60000);
+
+            oRc = self.waitForTasks(cMsTimeout);
             self.removeTask(oSession);
             if oRc == oSession:
                 fRc = oSession.assertPoweredOff();
