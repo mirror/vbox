@@ -126,15 +126,13 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX])
 
     TRACE();
 
-    sf_g = GET_GLOB_INFO(dir->f_dentry->d_inode->i_sb);
+    inode = GET_F_DENTRY(dir)->d_inode;
+    sf_i = GET_INODE_INFO(inode);
+    sf_g = GET_GLOB_INFO(inode->i_sb);
     sf_d = dir->private_data;
 
     BUG_ON(!sf_g);
     BUG_ON(!sf_d);
-
-    inode = dir->f_dentry->d_inode;
-    sf_i = GET_INODE_INFO(inode);
-
     BUG_ON(!sf_i);
 
     if (sf_i->force_reread)

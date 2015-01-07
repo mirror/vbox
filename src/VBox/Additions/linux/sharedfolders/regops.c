@@ -108,7 +108,7 @@ static ssize_t sf_reg_read(struct file *file, char *buf, size_t size, loff_t *of
     size_t tmp_size;
     size_t left = size;
     ssize_t total_bytes_read = 0;
-    struct inode *inode = file->f_dentry->d_inode;
+    struct inode *inode = GET_F_DENTRY(file)->d_inode;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
     struct sf_reg_info *sf_r = file->private_data;
     loff_t pos = *off;
@@ -183,7 +183,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
     size_t tmp_size;
     size_t left = size;
     ssize_t total_bytes_written = 0;
-    struct inode *inode = file->f_dentry->d_inode;
+    struct inode *inode = GET_F_DENTRY(file)->d_inode;
     struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
     struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
     struct sf_reg_info *sf_r = file->private_data;
@@ -454,7 +454,7 @@ static int sf_reg_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vaddr, int *type)
 # define SET_TYPE(t) *type = (t)
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0) */
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) */
 static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vaddr, int unused)
 # define SET_TYPE(t)
 #endif
@@ -465,7 +465,7 @@ static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vadd
     uint32_t nread = PAGE_SIZE;
     int err;
     struct file *file = vma->vm_file;
-    struct inode *inode = file->f_dentry->d_inode;
+    struct inode *inode = GET_F_DENTRY(file)->d_inode;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
     struct sf_reg_info *sf_r = file->private_data;
 
@@ -605,7 +605,7 @@ struct inode_operations sf_reg_iops =
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int sf_readpage(struct file *file, struct page *page)
 {
-    struct inode *inode = file->f_dentry->d_inode;
+    struct inode *inode = GET_F_DENTRY(file)->d_inode;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
     struct sf_reg_info *sf_r = file->private_data;
     uint32_t nread = PAGE_SIZE;
