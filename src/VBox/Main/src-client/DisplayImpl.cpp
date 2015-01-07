@@ -254,9 +254,9 @@ typedef struct
 } VBOX_DISPLAY_SAVESCREENSHOT_DATA;
 
 static DECLCALLBACK(void) displaySaveScreenshotReport(void *pvCtx, uint32_t uScreen,
-        uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
-        uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-        uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
+                                                      uint32_t x, uint32_t y, uint32_t uBitsPerPixel,
+                                                      uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
+                                                      uint8_t *pu8BufferAddress, uint64_t u64TimeStamp)
 {
     VBOX_DISPLAY_SAVESCREENSHOT_DATA *pData = (VBOX_DISPLAY_SAVESCREENSHOT_DATA*)pvCtx;
     displayMakeThumbnail(pu8BufferAddress, uGuestWidth, uGuestHeight, &pData->pu8Thumbnail,
@@ -265,7 +265,7 @@ static DECLCALLBACK(void) displaySaveScreenshotReport(void *pvCtx, uint32_t uScr
                             &pData->cbPNG, &pData->cxPNG, &pData->cyPNG, 1);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("DisplayMakePNG failed %d\n", rc));
+        AssertMsgFailed(("DisplayMakePNG failed (rc=%Rrc)\n", rc));
         if (pData->pu8PNG)
         {
             RTMemFree(pData->pu8PNG);
@@ -356,7 +356,7 @@ DECLCALLBACK(void) Display::i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pv
                             AssertMsgFailed(("no png\n"));
                     }
                     else
-                        AssertMsgFailed(("SHCRGL_HOST_FN_TAKE_SCREENSHOT failed %d\n", rc));
+                        AssertMsgFailed(("SHCRGL_HOST_FN_TAKE_SCREENSHOT failed (rc=%Rrc)\n", rc));
 
 
                     RTMemFree(pScreenshot);
@@ -771,7 +771,7 @@ int Display::i_crOglWindowsShow(bool fShow)
         mfCrOglDataHidden = !fShow;
     else
     {
-        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+        AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
         RTMemFree(pData);
     }
 
@@ -814,7 +814,7 @@ int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREE
                     rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
                     if (RT_FAILURE(rc))
                     {
-                        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+                        AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
                         RTMemFree(pCtl);
                     }
                 }
@@ -1245,7 +1245,7 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 int rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
                 if (!RT_SUCCESS(rc))
                 {
-                    AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+                    AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
                     RTMemFree(pCtl);
                 }
             }
@@ -1745,7 +1745,7 @@ HRESULT Display::setSeamlessMode(BOOL enabled)
             int rc = i_crCtlSubmit(&pData->Hdr, sizeof(*pData), i_displayCrCmdFree, pData);
             if (!RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+                AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
                 RTMemFree(pData);
             }
         }
@@ -1793,11 +1793,8 @@ BOOL Display::i_displayCheckTakeScreenshotCrOgl(Display *pDisplay, ULONG aScreen
 
                 if (RT_SUCCESS(rc))
                     return TRUE;
-                else
-                {
-                    AssertMsgFailed(("failed to get screenshot data from crOgl %d\n", rc));
-                    /* fall back to the non-3d mechanism */
-                }
+                AssertMsgFailed(("failed to get screenshot data from crOgl (rc=%Rrc)\n", rc));
+                /* fall back to the non-3d mechanism */
             }
         }
     }
@@ -2823,7 +2820,7 @@ void Display::i_setupCrHgsmiData(void)
         if (RT_SUCCESS(rc))
             mCrOglCallbacks = Completion.MainInterface;
         else
-            AssertMsgFailed(("VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION failed rc %d", rc));
+            AssertMsgFailed(("VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION failed (rc=%Rrc)\n", rc));
     }
 
     if (RT_FAILURE(rc))
@@ -2967,7 +2964,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                         rc = pDisplay->i_crCtlSubmit(&pData->Hdr, sizeof(*pData), Display::i_displayVRecCompletion, pDisplay);
                         if (RT_SUCCESS(rc))
                             break;
-                        AssertMsgFailed(("crCtlSubmit failed rc %d\n", rc));
+                        AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
                     }
 
                     /* no 3D data available, or error has occured,
@@ -3204,7 +3201,7 @@ void Display::i_handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint
                             pFb->pendingViewportInfo.fPending = false;
                         else
                         {
-                            AssertMsgFailed(("crViewportNotify failed %d\n", rc));
+                            AssertMsgFailed(("crViewportNotify failed (rc=%Rrc)\n", rc));
                             rc = VINF_SUCCESS;
                         }
                     }
@@ -3239,7 +3236,7 @@ DECLCALLBACK(void) Display::i_displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR
 DECLCALLBACK(void) Display::i_displayCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam,
                                                               void *pvContext)
 {
-    AssertMsgFailed(("not expected!"));
+    AssertMsgFailed(("not expected!\n"));
     Display *pDisplay = (Display *)pvContext;
     pDisplay->i_handleCrHgsmiCommandCompletion(result, u32Function, pParam);
 }
@@ -3283,7 +3280,7 @@ int  Display::i_handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
     int rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CTL, &parm, i_displayCrHgcmCtlSubmitCompletion,
                                             pvCompletion);
     if (!RT_SUCCESS(rc))
-        AssertMsgFailed(("hgcmHostFastCallAsync failed rc %d\n", rc));
+        AssertMsgFailed(("hgcmHostFastCallAsync failed (rc=%Rrc)\n", rc));
 
     return rc;
 }
@@ -3342,7 +3339,7 @@ int Display::i_crCtlSubmitAsyncCmdCopy(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd
     int rc = i_crCtlSubmit(pCmdCopy, cbCmd, i_displayCrCmdFree, pCmdCopy);
     if (RT_FAILURE(rc))
     {
-        LogRel(("crCtlSubmit failed %d\n", rc));
+        LogRel(("crCtlSubmit failed (rc=%Rrc)\n", rc));
         RTMemFree(pCmdCopy);
         return rc;
     }
@@ -3447,9 +3444,9 @@ DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface,
 
     if (pThis->maFramebuffers[uScreenId].fVBVAEnabled && pThis->maFramebuffers[uScreenId].fRenderThreadMode != fRenderThreadMode)
     {
-        LogRel(("enabling different vbva mode"));
+        LogRel(("Enabling different vbva mode\n"));
 #ifdef DEBUG_misha
-        AssertMsgFailed(("enabling different vbva mode"));
+        AssertMsgFailed(("enabling different vbva mode\n"));
 #endif
         return VERR_INVALID_STATE;
     }
