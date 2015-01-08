@@ -2266,7 +2266,7 @@ HRESULT Console::reset()
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* release the lock before a VMR3* call (EMT will call us back)! */
+    /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
     int vrc = VMR3Reset(ptrVM.rawUVM());
@@ -2372,13 +2372,15 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM)
         vrc = VMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)i_unplugCpu, 3,
                            this, pUVM, (VMCPUID)aCpu);
-        if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-        {
+    
+        /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
+        alock.release();
+
+        if (vrc == VERR_TIMEOUT)
             vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-            AssertRC(vrc);
-            if (RT_SUCCESS(vrc))
-                vrc = pReq->iStatus;
-        }
+        AssertRC(vrc);
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->iStatus;
         VMR3ReqFree(pReq);
 
         if (RT_SUCCESS(vrc))
@@ -2479,22 +2481,15 @@ HRESULT Console::i_doCPUAdd(ULONG aCpu, PUVM pUVM)
                            (PFNRT)i_plugCpu, 3,
                            this, pUVM, aCpu);
 
-    /* release the lock before a VMR3* call (EMT will call us back)! */
+    /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
-    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-    {
+    if (vrc == VERR_TIMEOUT)
         vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertRC(vrc);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-    }
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->iStatus;
     VMR3ReqFree(pReq);
-
-    rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_VM_ERROR,
-                 tr("Could not add CPU to the machine (%Rrc)"),
-                 vrc);
 
     if (RT_SUCCESS(vrc))
     {
@@ -2505,6 +2500,10 @@ HRESULT Console::i_doCPUAdd(ULONG aCpu, PUVM pUVM)
             vrc = pDevPort->pfnCpuHotPlug(pDevPort, idCpuCore, idCpuPackage);
         /** @todo warning if the guest doesn't support it */
     }
+    else
+        rc = setError(VBOX_E_VM_ERROR,
+                      tr("Could not add CPU to the machine (%Rrc)"),
+                      vrc);
 
     LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -3602,16 +3601,14 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
                            (PFNRT)i_changeRemovableMedium, 8,
                            this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fForce);
 
-    /* release the lock before waiting for a result (EMT will call us back!) */
+    /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
-    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-    {
+    if (vrc == VERR_TIMEOUT)
         vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertRC(vrc);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-    }
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
     if (fResume)
@@ -3798,16 +3795,14 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
                            (PFNRT)i_attachStorageDevice, 8,
                            this, pUVM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fSilent);
 
-    /* release the lock before waiting for a result (EMT will call us back!) */
+    /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
-    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-    {
+    if (vrc == VERR_TIMEOUT)
         vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertRC(vrc);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-    }
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
     if (fResume)
@@ -3990,16 +3985,14 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
                            (PFNRT)i_detachStorageDevice, 7,
                            this, pUVM, pszDevice, uInstance, enmBus, aMediumAttachment, fSilent);
 
-    /* release the lock before waiting for a result (EMT will call us back!) */
+    /* release the lock before waiting for a result (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
-    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-    {
+    if (vrc == VERR_TIMEOUT)
         vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertRC(vrc);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-    }
+    AssertRC(vrc);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
     if (fResume)
@@ -4770,18 +4763,9 @@ HRESULT Console::i_doNetworkAdapterChange(PUVM pUVM,
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCallU(pUVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                           (PFNRT)i_changeNetworkAttachment, 6,
-                           this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
-
-    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
-    {
-        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-        AssertRC(vrc);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-    }
-    VMR3ReqFree(pReq);
+    int vrc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/,
+                               (PFNRT)i_changeNetworkAttachment, 6,
+                               this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
 
     if (fResume)
         i_resumeAfterConfigChange(pUVM);
@@ -6108,7 +6092,7 @@ HRESULT Console::i_pause(Reason_T aReason)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* release the lock before a VMR3* call (EMT will call us back)! */
+    /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
     LogFlowThisFunc(("Sending PAUSE request...\n"));
@@ -6167,7 +6151,7 @@ HRESULT Console::i_resume(Reason_T aReason)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* release the lock before a VMR3* call (EMT will call us back)! */
+    /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
     alock.release();
 
     LogFlowThisFunc(("Sending RESUME request...\n"));
@@ -6246,7 +6230,7 @@ HRESULT Console::i_saveState(Reason_T aReason, IProgress **aProgress)
         if (!ptrVM.isOk())
             return ptrVM.rc();
 
-        /* release the lock before a VMR3* call (EMT will call us back)! */
+        /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
         alock.release();
         VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
         if (aReason == Reason_HostSuspend)
@@ -7422,7 +7406,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     {
         LogFlowThisFunc(("Shutdown HGCM...\n"));
 
-        /* Leave the lock since EMT will call us back as addVMCaller() */
+        /* Leave the lock since EMT might wait for it and will call us back as addVMCaller() */
         alock.release();
 
         m_pVMMDev->hgcmShutdown();
@@ -8768,7 +8752,7 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
         rc = setError(E_FAIL,
             tr("General failure attaching to host interface"));
     }
-    LogFlowThisFunc(("rc=%d\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -9937,6 +9921,9 @@ DECLCALLBACK(int) Console::i_fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser
                  * don't release the lock since reconfigureMediumAttachment
                  * isn't going to need the Console lock.
                  */
+
+                /* TODO: do alock.release here as EMT might wait on it! See other places
+                 * where we do VMR3ReqCall requests. See @bugref{7648}. */
                 vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                                        (PFNRT)i_reconfigureMediumAttachment, 13,
                                        that, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
