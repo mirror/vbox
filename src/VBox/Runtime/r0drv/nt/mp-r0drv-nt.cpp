@@ -435,7 +435,8 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
-    if (g_pfnrtKeIpiGenericCall)
+    if (   g_pfnrtKeIpiGenericCall
+        && RTMpGetOnlineCount() <= 2)
         return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper, 0);
     return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
 }
