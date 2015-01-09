@@ -2354,7 +2354,7 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM)
                 RTThreadSleep(100);
             } while (cTries-- > 0);
         }
-        else if (vrc == VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST)
+        else if (vrc == VERR_VMMDEV_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST)
         {
             /* Query one time. It is possible that the user ejected the CPU. */
             vrc = pApicPort ? pApicPort->pfnGetCpuStatus(pApicPort, aCpu, &fLocked) : VERR_INVALID_POINTER;
