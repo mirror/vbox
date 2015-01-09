@@ -1072,11 +1072,11 @@ int main(int argc, char **argv)
         if (   dwErr == ERROR_ALREADY_EXISTS
             || dwErr == ERROR_ACCESS_DENIED)
         {
-            VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
+            VBoxServiceError("%s is already running! Terminating.\n", g_pszProgName);
             return RTEXITCODE_FAILURE;
         }
 
-        VBoxServiceError("CreateMutex failed with last error %u! Terminating", GetLastError());
+        VBoxServiceError("CreateMutex failed with last error %u! Terminating.\n", GetLastError());
         return RTEXITCODE_FAILURE;
     }
 
