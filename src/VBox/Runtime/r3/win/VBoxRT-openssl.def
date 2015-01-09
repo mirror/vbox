@@ -3165,7 +3165,6 @@
     ssl3_change_cipher_state
     ssl3_check_cert_and_algorithm
     ssl3_check_client_hello
-    ssl3_check_finished
     ssl3_choose_cipher
     ssl3_cleanup_key_block
     ssl3_clear
