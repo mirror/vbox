@@ -2166,11 +2166,11 @@
 #define VERR_COM_DONT_CALL_AGAIN                    (VERR_COM_VBOX_LOWEST + 13)
 /** @} */
 
-/** @name VBox CPU hotplug Status codes
+/** @name VBox VMMDev Status codes
  * @{
  */
 /** CPU hotplug events from VMMDev are not monitored by the guest. */
-#define VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST    (-4700)
+#define VERR_VMMDEV_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST      (-4700)
 /** @} */
 
 /** @name VBox async I/O manager Status Codes
