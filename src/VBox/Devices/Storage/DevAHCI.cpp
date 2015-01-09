@@ -4171,7 +4171,7 @@ static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
     int media = pAhciReq->aATAPICmd[1];
     int format = pAhciReq->aATAPICmd[7];
 
-    uint16_t max_len = ataBE2H_U16(&pAhciReq->aATAPICmd[8]);
+    uint16_t max_len = RT_MIN(ataBE2H_U16(&pAhciReq->aATAPICmd[8]), sizeof(aBuf));
 
     memset(buf, 0, max_len);
 
