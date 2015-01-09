@@ -260,7 +260,7 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
                 break;
 
             default:
-                VBoxServiceError("Token class not implemented: %ld", tkClass);
+                VBoxServiceError("Token class not implemented: %ld\n", tkClass);
                 rc = VERR_NOT_IMPLEMENTED;
                 break;
         }
