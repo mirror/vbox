@@ -34,6 +34,8 @@
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
+#include <iprt/log.h>
+#include <iprt/time.h>
 #include "r0drv/mp-r0drv.h"
 #include "internal-r0drv-nt.h"
 
@@ -47,6 +49,29 @@ typedef enum
     RT_NT_CPUID_OTHERS,
     RT_NT_CPUID_ALL
 } RT_NT_CPUID;
+
+
+/**
+ * Used by the RTMpOnSpecific.
+ */
+typedef struct RTMPNTONSPECIFICARGS
+{
+    /** Set if we're executing. */
+    bool volatile       fExecuting;
+    /** Set when done executing. */
+    bool volatile       fDone;
+    /** Number of references to this heap block. */
+    uint32_t volatile   cRefs;
+    /** Event that the calling thread is waiting on. */
+    KEVENT              DoneEvt;
+    /** The deferred procedure call object. */
+    KDPC                Dpc;
+    /** The callback argument package. */
+    RTMPARGS            CallbackArgs;
+} RTMPNTONSPECIFICARGS;
+/** Pointer to an argument/state structure for RTMpOnSpecific on NT. */
+typedef RTMPNTONSPECIFICARGS *PRTMPNTONSPECIFICARGS;
+
 
 
 /* test a couple of assumption. */
@@ -427,18 +452,188 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, 0);
 }
 
+/**
+ * Releases a reference to a RTMPNTONSPECIFICARGS heap allocation, freeing it
+ * when the last reference is released.
+ */
+DECLINLINE(void) rtMpNtOnSpecificRelease(PRTMPNTONSPECIFICARGS pArgs)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pArgs->cRefs);
+    AssertMsg(cRefs <= 1, ("cRefs=%#x\n", cRefs));
+    if (cRefs == 0)
+        ExFreePool(pArgs);
+}
+
+
+/**
+ * Wrapper between the native nt per-cpu callbacks and PFNRTWORKER
+ *
+ * @param   Dpc                 DPC object
+ * @param   DeferredContext     Context argument specified by KeInitializeDpc
+ * @param   SystemArgument1     Argument specified by KeInsertQueueDpc
+ * @param   SystemArgument2     Argument specified by KeInsertQueueDpc
+ */
+static VOID __stdcall rtMpNtOnSpecificDpcWrapper(IN PKDPC Dpc, IN PVOID DeferredContext,
+                                                 IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+{
+    PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)DeferredContext;
+    ASMAtomicWriteBool(&pArgs->fExecuting, true);
+
+    pArgs->CallbackArgs.pfnWorker(KeGetCurrentProcessorNumber(), pArgs->CallbackArgs.pvUser1, pArgs->CallbackArgs.pvUser2);
+
+    ASMAtomicWriteBool(&pArgs->fDone, true);
+    KeSetEvent(&pArgs->DoneEvt, 1 /*PriorityIncrement*/, FALSE /*Wait*/);
+
+    rtMpNtOnSpecificRelease(pArgs);
+}
+
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
+    /*
+     * Don't try mess with an offline CPU.
+     */
     if (!RTMpIsCpuOnline(idCpu))
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
+    /*
+     * Use the broadcast IPI routine if there are no more than two CPUs online,
+     * or if the current IRQL is unsuitable for KeWaitForSingleObject.
+     */
     if (   g_pfnrtKeIpiGenericCall
-        && RTMpGetOnlineCount() <= 2)
+        && (   RTMpGetOnlineCount() <= 2
+            || KeGetCurrentIrql()   > APC_LEVEL) )
         return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper, 0);
+
+#if 0 /** @todo untested code. needs some tuning. */
+    /*
+     * Initialize the argument package and the objects within it.
+     * The package is referenced counted to avoid unnecessary spinning to
+     * synchronize cleanup and prevent stack corruption.
+     */
+    PRTMPNTONSPECIFICARGS pArgs = (PRTMPNTONSPECIFICARGS)ExAllocatePoolWithTag(NonPagedPool, sizeof(*pArgs), (ULONG)'RTMp');
+    if (!pArgs)
+        return VERR_NO_MEMORY;
+    pArgs->cRefs                  = 2;
+    pArgs->fExecuting             = false;
+    pArgs->fDone                  = false;
+    pArgs->CallbackArgs.pfnWorker = pfnWorker;
+    pArgs->CallbackArgs.pvUser1   = pvUser1;
+    pArgs->CallbackArgs.pvUser2   = pvUser2;
+    pArgs->CallbackArgs.idCpu     = idCpu;
+    pArgs->CallbackArgs.cHits     = 0;
+    pArgs->CallbackArgs.cRefs     = 2;
+    KeInitializeEvent(&pArgs->DoneEvt, SynchronizationEvent, FALSE /* not signalled */);
+    KeInitializeDpc(&pArgs->Dpc, rtMpNtOnSpecificDpcWrapper, pArgs);
+    KeSetImportanceDpc(&pArgs->Dpc, HighImportance);
+    KeSetTargetProcessorDpc(&pArgs->Dpc, (int)idCpu);
+
+    /*
+     * Disable preemption while we check the current processor and inserts the DPC.
+     */
+    KIRQL bOldIrql;
+    KeRaiseIrql(DISPATCH_LEVEL, &bOldIrql);
+    ASMCompilerBarrier(); /* paranoia */
+
+    if (RTMpCpuId() == idCpu)
+    {
+        /* Just execute the callback on the current CPU. */
+        pfnWorker(idCpu, pvUser1, pvUser2);
+        KeLowerIrql(bOldIrql);
+
+        ExFreePool(pArgs);
+        return VINF_SUCCESS;
+    }
+
+    /* Different CPU, so queue it if the CPU is still online. */
+    int rc;
+    if (RTMpIsCpuOnline(idCpu))
+    {
+        BOOLEAN fRc = KeInsertQueueDpc(&pArgs->Dpc, 0, 0);
+        Assert(fRc);
+        KeLowerIrql(bOldIrql);
+
+        uint64_t const nsRealWaitTS = RTTimeNanoTS();
+
+        /*
+         * Wait actively for a while in case the CPU/thread responds quickly.
+         */
+        uint32_t cLoopsLeft = 0x20000;
+        while (cLoopsLeft-- > 0)
+        {
+            if (pArgs->fDone)
+            {
+                rtMpNtOnSpecificRelease(pArgs);
+                return VINF_SUCCESS;
+            }
+            ASMNopPause();
+        }
+
+        /*
+         * It didn't respond, so wait on the event object, poking the CPU if it's slow.
+         */
+        LARGE_INTEGER Timeout;
+        Timeout.QuadPart = -10000; /* 1ms */
+        NTSTATUS rcNt = KeWaitForSingleObject(&pArgs->DoneEvt, Executive, KernelMode, FALSE /* Alertable */, &Timeout);
+        if (rcNt == STATUS_SUCCESS)
+        {
+            rtMpNtOnSpecificRelease(pArgs);
+            return VINF_SUCCESS;
+        }
+
+        /* If it hasn't respondend yet, maybe poke it and wait some more. */
+        if (rcNt == STATUS_TIMEOUT)
+        {
+            if (   !pArgs->fExecuting
+                && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalSendSoftwareInterrupt
+                    || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
+                    || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiPreW7))
+                RTMpPokeCpu(idCpu);
+
+            Timeout.QuadPart = -1280000; /* 128ms */
+            rcNt = KeWaitForSingleObject(&pArgs->DoneEvt, Executive, KernelMode, FALSE /* Alertable */, &Timeout);
+            if (rcNt == STATUS_SUCCESS)
+            {
+                rtMpNtOnSpecificRelease(pArgs);
+                return VINF_SUCCESS;
+            }
+        }
+
+        /*
+         * Something weird is happening, try bail out.
+         */
+        if (KeRemoveQueueDpc(&pArgs->Dpc))
+        {
+            ExFreePool(pArgs); /* DPC was still queued, so we can return without further ado. */
+            LogRel(("RTMpOnSpecific(%#x): Not processed after %llu ns: rcNt=%#x\n", idCpu, RTTimeNanoTS() - nsRealWaitTS, rcNt));
+        }
+        else
+        {
+            /* DPC is running, wait a good while for it to complete. */
+            LogRel(("RTMpOnSpecific(%#x): Still running after %llu ns: rcNt=%#x\n", idCpu, RTTimeNanoTS() - nsRealWaitTS, rcNt));
+
+            Timeout.QuadPart = -30*1000*1000*10; /* 30 seconds */
+            rcNt = KeWaitForSingleObject(&pArgs->DoneEvt, Executive, KernelMode, FALSE /* Alertable */, &Timeout);
+            if (rcNt != STATUS_SUCCESS)
+                LogRel(("RTMpOnSpecific(%#x): Giving up on running worker after %llu ns: rcNt=%#x\n", idCpu, RTTimeNanoTS() - nsRealWaitTS, rcNt));
+        }
+        rc = RTErrConvertFromNtStatus(rcNt);
+    }
+    else
+    {
+        /* CPU is offline.*/
+        KeLowerIrql(bOldIrql);
+        rc = !RTMpIsCpuPossible(idCpu) ? VERR_CPU_NOT_FOUND : VERR_CPU_OFFLINE;
+    }
+
+    rtMpNtOnSpecificRelease(pArgs);
+    return rc;
+
+#else
     return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
+#endif
 }
 
 
