@@ -6007,6 +6007,8 @@ int vmsvga3dQueryWait(PVGASTATE pThis, uint32_t cid, SVGA3dQueryType type, SVGAG
 
 static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)
 {
+    bool const fBufferingSaved = RTLogRelSetBuffering(true /*fBuffered*/);
+
     LogRel(("\nD3D device caps: DevCaps2:\n"));
     if (pCaps->DevCaps2 & D3DDEVCAPS2_ADAPTIVETESSRTPATCH)
         LogRel((" - D3DDEVCAPS2_ADAPTIVETESSRTPATCH\n"));
@@ -6291,5 +6293,12 @@ static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)
     if (pCaps->TextureOpCaps & D3DTEXOPCAPS_LERP)
         LogRel((" - D3DTEXOPCAPS_LERP\n"));
 
+    LogRel(("\n"));
+    LogRel(("  PixelShaderVersion:  %#x (%u.%u)\n",
+            pCaps->PixelShaderVersion,  RT_BYTE2(pCaps->PixelShaderVersion),  RT_BYTE1(pCaps->PixelShaderVersion)));
+    LogRel(("  VertexShaderVersion: %#x (%u.%u)\n",
+            pCaps->VertexShaderVersion, RT_BYTE2(pCaps->VertexShaderVersion), RT_BYTE1(pCaps->VertexShaderVersion)));
+
+    RTLogRelSetBuffering(fBufferingSaved);
 }
 
