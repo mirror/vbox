@@ -710,6 +710,24 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if sExe is None:
             return False;
 
+        # TEMPORARY HACK - START
+        # It seems that running the NDIS cleanup script upon uninstallation is not
+        # a good idea, so let's run it before installing VirtualBox.
+        sHostName = socket.getfqdn();
+        if fRc and not sHostName.startswith('testboxwin3') \
+               and not sHostName.startswith('testboxharp2') \
+               and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
+            reporter.log('Peforming extra NDIS cleanup...');
+            sMagicScript = os.path.abspath(os.path.join(g_ksValidationKitDir, 'testdriver', 'win-vbox-net-uninstall.ps1'));
+            fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-Command', 'set-executionpolicy unrestricted']);
+            if not fRc2:
+                reporter.log('set-executionpolicy failed.');
+            self._sudoExecuteSync(['powershell.exe', '-Command', 'get-executionpolicy']);
+            fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-File', sMagicScript]);
+            if not fRc2:
+                reporter.log('NDIS cleanup failed.');
+        # TEMPORARY HACK - END
+
         # Uninstall any previous vbox version first.
         fRc = self._uninstallVBoxOnWindows();
         if fRc is not True:
@@ -784,21 +802,6 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 else:
                     fRc = False;
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
-
-        # TEMPORARY HACK - START
-        sHostName = socket.getfqdn();
-        if fRc and not sHostName.startswith('testboxwin3') \
-               and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
-            reporter.log('Peforming extra NDIS cleanup...');
-            sMagicScript = os.path.abspath(os.path.join(g_ksValidationKitDir, 'testdriver', 'win-vbox-net-uninstall.ps1'));
-            fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-Command', 'set-executionpolicy unrestricted']);
-            if not fRc2:
-                reporter.log('set-executionpolicy failed.');
-            self._sudoExecuteSync(['powershell.exe', '-Command', 'get-executionpolicy']);
-            fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-File', sMagicScript]);
-            if not fRc2:
-                reporter.log('NDIS cleanup failed.');
-        # TEMPORARY HACK - END
 
         self._waitForTestManagerConnectivity(30);
         if fRc is False and os.path.isfile(sLogFile):
