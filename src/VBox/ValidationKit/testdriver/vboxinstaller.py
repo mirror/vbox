@@ -714,9 +714,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # It seems that running the NDIS cleanup script upon uninstallation is not
         # a good idea, so let's run it before installing VirtualBox.
         sHostName = socket.getfqdn();
-        if fRc and not sHostName.startswith('testboxwin3') \
-               and not sHostName.startswith('testboxharp2') \
-               and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
+        if    not sHostName.startswith('testboxwin3') \
+          and not sHostName.startswith('testboxharp2') \
+          and utils.getHostOsVersion() in ['8', '8.1', '9', '2008Server', '2008ServerR2', '2012Server']:
             reporter.log('Peforming extra NDIS cleanup...');
             sMagicScript = os.path.abspath(os.path.join(g_ksValidationKitDir, 'testdriver', 'win-vbox-net-uninstall.ps1'));
             fRc2, _ = self._sudoExecuteSync(['powershell.exe', '-Command', 'set-executionpolicy unrestricted']);
