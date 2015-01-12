@@ -236,6 +236,8 @@ typedef struct VBOXRec
 extern void vbvxMsg(const char *pszFormat, ...);
 extern void vbvxMsgV(const char *pszFormat, va_list args);
 extern void vbvxAbortServer(void);
+extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
+#define VBOXGetRec vbvxGetRec  /* Temporary */
 
 /* setmode.c */
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
@@ -273,11 +275,6 @@ extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
 #endif
 
 /* Utilities */
-
-static inline VBOXPtr VBOXGetRec(ScrnInfoPtr pScrn)
-{
-    return ((VBOXPtr)pScrn->driverPrivate);
-}
 
 /** Calculate the BPP from the screen depth */
 static inline uint16_t vboxBPP(ScrnInfoPtr pScrn)
