@@ -2,12 +2,10 @@
 /** @file
  * VirtualBox X11 Additions graphics driver X server helper functions
  *
- * This file contains helpers which call back into the X server, but which are
- * expected to use server ABIs which remain constant across all supported server
- * versions.  The longer-term idea is to eliminate X server version dependencies
- * in as many files as possible inside the driver code.  Most files should not
- * directly depend on X server symbols at all, and a single build of this one
- * should work in all server versions.
+ * This file contains helpers which call back into the X server.  The longer-
+ * term idea is to eliminate X server version dependencies in as many files as
+ * possible inside the driver code.  Ideally most files should not directly
+ * depend on X server symbols at all.
  */
 
 /*
@@ -42,4 +40,9 @@ void vbvxMsgV(const char *pszFormat, va_list args)
 void vbvxAbortServer(void)
 {
     FatalError("Assertion");
+}
+
+VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn)
+{
+    return ((VBOXPtr)pScrn->driverPrivate);
 }
