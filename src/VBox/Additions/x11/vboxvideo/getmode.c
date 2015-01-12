@@ -28,7 +28,6 @@
 #include "extnsionst.h"
 #include "windowstr.h"
 #include <X11/extensions/randrproto.h>
-#include <X11/Xatom.h>
 
 #ifdef XORG_7X
 # include <stdio.h>
@@ -257,9 +256,8 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    Atom atom = MakeAtom(SIZE_HINTS_PROPERTY, sizeof(SIZE_HINTS_PROPERTY) - 1,
-                         FALSE);
-    PropertyPtr prop = NULL;
+    size_t cModes;
+    int32_t *paModes;
     unsigned i;
 
 #ifdef VBOXVIDEO_13
@@ -281,25 +279,18 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         return;
     }
 #endif
-    /* We can get called early, before the root window is created. */
-    if (!ROOT_WINDOW(pScrn))
+    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cModes, &paModes) != VINF_SUCCESS)
         return;
-    if (atom != BAD_RESOURCE)
+    for (i = 0; i < cModes && i < pVBox->cScreens; ++i)
     {
-        for (prop = wUserProps(ROOT_WINDOW(pScrn));
-             prop != NULL && prop->propertyName != atom; prop = prop->next);
-    }
-    if (prop && prop->type == XA_INTEGER && prop->format == 32)
-        for (i = 0; i < prop->size && i < pVBox->cScreens; ++i)
+        if (paModes[i] != 0)
         {
-            if (((int32_t *)prop->data)[i] != 0)
-            {
-                pVBox->pScreens[i].aPreferredSize.cx =
-                    ((int32_t *)prop->data)[i] >> 16;
-                pVBox->pScreens[i].aPreferredSize.cy =
-                    ((int32_t *)prop->data)[i] & 0x8fff;
-            }
+            pVBox->pScreens[i].aPreferredSize.cx =
+                paModes[i] >> 16;
+            pVBox->pScreens[i].aPreferredSize.cy =
+                paModes[i] & 0x8fff;
         }
+    }
 }
 
 #ifndef VBOXVIDEO_13

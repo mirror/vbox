@@ -238,6 +238,7 @@ extern void vbvxMsgV(const char *pszFormat, va_list args);
 extern void vbvxAbortServer(void);
 extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
 #define VBOXGetRec vbvxGetRec  /* Temporary */
+extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
 
 /* setmode.c */
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
