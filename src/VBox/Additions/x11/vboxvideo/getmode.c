@@ -140,7 +140,7 @@ unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
 {
     unsigned i;
 
-    XF86ASSERT(cIndex < vboxNumStdModes,
+    VBVXASSERT(cIndex < vboxNumStdModes,
                ("cIndex = %d, vboxNumStdModes = %d\n", cIndex,
                 vboxNumStdModes));
     for (i = cIndex; i < vboxNumStdModes - 1; ++i)

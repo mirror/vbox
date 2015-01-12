@@ -102,6 +102,7 @@ vboxvideo_drv_INCS = \
 vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_SOURCES = \
 	getmode.c \
+	helpers.c \
 	pointer.c \
 	setmode.c \
 	vboxvideo.c \
