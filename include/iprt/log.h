@@ -1005,8 +1005,12 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #endif
 
 
-/** @def LogIt
+/** @def LogRelIt
  * Write to specific logger if group enabled.
+ */
+/** @def LogRelMaxIt
+ * Write to specific logger if group enabled and at less than a_cMax messages
+ * have hit the log.  Uses a static variable to count.
  */
 #ifdef RTLOG_REL_ENABLED
 # if defined(LOG_USE_C99)
@@ -1021,6 +1025,24 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
         _LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, __VA_ARGS__); \
     } while (0)
 #  define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)   _LogRelIt(a_pvInst, a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
+#  define _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, ...) \
+    do \
+    { \
+        PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
+        if (   LogRelIt_pLogger \
+            && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+        { \
+            static uint32_t s_LogRelMaxIt_cLogged = 0; \
+            if (s_LogRelMaxIt_cLogged < (a_cMax)) \
+            { \
+                s_LogRelMaxIt_cLogged++; \
+                RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+            } \
+        } \
+        _LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, __VA_ARGS__); \
+    } while (0)
+#  define LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+    _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
 # else
 #  define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs) \
    do \
@@ -1035,12 +1057,34 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
        } \
        LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, fmtargs); \
   } while (0)
+#  define LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+   do \
+   { \
+       PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
+       if (   LogRelIt_pLogger \
+           && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+       { \
+           unsigned LogIt_fFlags = LogRelIt_pLogger->afGroups[(unsigned)(a_iGroup) < LogRelIt_pLogger->cGroups ? (unsigned)(a_iGroup) : 0]; \
+           if ((LogIt_fFlags & ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) \
+           { \
+               static uint32_t s_LogRelMaxIt_cLogged = 0; \
+               if (s_LogRelMaxIt_cLogged < (a_cMax)) \
+               { \
+                   s_LogRelMaxIt_cLogged++; \
+                   LogRelIt_pLogger->pfnLogger fmtargs; \
+               } \
+           } \
+       } \
+       LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, fmtargs); \
+  } while (0)
 # endif
 #else   /* !RTLOG_REL_ENABLED */
 # define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)    do { } while (0)
+# define LogRelMaxIt(a_pvInst, a_fFlags, a_iGroup, fmtargs) do { } while (0)
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                    __VA_ARGS__
 #  define _LogRelIt(a_pvInst, a_fFlags, a_iGroup, ...)      do { } while (0)
+#  define _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, ...) do { } while (0)
 # endif
 #endif  /* !RTLOG_REL_ENABLED */
 
@@ -1166,6 +1210,91 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * NoName logging.
  */
 #define LogRelNoName(a)    LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
+
+
+/** @def LogRelMax
+ * Level 1 logging.
+ */
+#define LogRelMax(a_cMax, a)        LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
+
+/** @def LogRelMax2
+ * Level 2 logging.
+ */
+#define LogRelMax2(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
+
+/** @def LogRelMax3
+ * Level 3 logging.
+ */
+#define LogRelMax3(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
+
+/** @def LogRelMax4
+ * Level 4 logging.
+ */
+#define LogRelMax4(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
+
+/** @def LogRelMax5
+ * Level 5 logging.
+ */
+#define LogRelMax5(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
+
+/** @def LogRelMax6
+ * Level 6 logging.
+ */
+#define LogRelMax6(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
+
+/** @def LogRelFlow
+ * Logging of execution flow.
+ */
+#define LogRelMaxFlow(a_cMax, a)    LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
+
+/** @def LogRelMaxFunc
+ * Release logging.  Prepends the given log message with the function name
+ * followed by a semicolon and space.
+ */
+#ifdef LOG_USE_C99
+# define LogRelMaxFunc(a_cMax, a) \
+    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
+                 __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define LogFuncMax(a_cMax, a) \
+    _LogItMax(a_cMax, LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
+              __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelMaxFunc(a_cMax, a) \
+    do { LogRelMax(a_cMax, (LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+#endif
+
+/** @def LogRelMaxThisFunc
+ * The same as LogRelFunc but for class functions (methods): the resulting log
+ * line is additionally prepended with a hex value of |this| pointer.
+ * @param   a_cMax  Max number of times this should hit the log.
+ * @param   a       Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define LogRelMaxThisFunc(a_cMax, a) \
+    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", \
+                 this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelMaxThisFunc(a_cMax, a) \
+    do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+#endif
+
+/** @def LogRelMaxFlowFunc
+ * Release logging.  Macro to log the execution flow inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by
+ * a semicolon and space.
+ *
+ * @param   a_cMax  Max number of times this should hit the log.
+ * @param   a       Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define LogRelMaxFlowFunc(a_cMax, a) \
+    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", \
+                 __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelMaxFlowFunc(a_cMax, a) \
+    do { LogRelMaxFlow(a_cMax, (LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a_cMax, a); } while (0)
+#endif
 
 
 /** @def LogRelIsItEnabled
