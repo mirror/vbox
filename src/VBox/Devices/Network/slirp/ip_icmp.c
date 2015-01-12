@@ -56,6 +56,11 @@
 #include "slirp.h"
 #include "ip_icmp.h"
 
+#ifdef VBOX_RAWSOCK_DEBUG_HELPER
+int getrawsock(int type);
+#endif
+
+
 /* The message sent when emulating PING */
 /* Be nice and tell them it's just a psuedo-ping packet */
 static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
@@ -107,8 +112,19 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
     if (pData->icmp_socket.s == -1)
     {
         int rc = RTErrConvertFromErrno(errno);
+#  if defined(RT_OS_DARWIN) || !defined(VBOX_RAWSOCK_DEBUG_HELPER)
         LogRel(("NAT: ICMP/ping not available (could not open ICMP socket, error %Rrc)\n", rc));
         return 1;
+#  else
+        /* try to get it from privileged helper */
+        LogRel(("NAT: ICMP/ping raw socket error %Rrc, asking helper...\n", rc));
+        pData->icmp_socket.s = getrawsock(AF_INET);
+        if (pData->icmp_socket.s == -1)
+        {
+            LogRel(("NAT: ICMP/ping not available\n"));
+            return 1;
+        }
+#  endif /* !RT_OS_DARWIN && VBOX_RAWSOCK_DEBUG_HELPER */
     }
     fd_nonblock(pData->icmp_socket.s);
     NSOCK_INC();
