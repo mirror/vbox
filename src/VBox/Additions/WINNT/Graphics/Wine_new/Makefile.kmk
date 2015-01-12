@@ -211,7 +211,8 @@ wined3d_SOURCES     := \
 	wined3d/sampler.c \
 	vbox/libWineStub/debug.c \
 	vbox/VBoxDbgGl.c \
-	wined3d/wined3d.def
+	wined3d/wined3d.def \
+	vbox/wined3dxpdm.rc
 wined3d_LIBS        = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
@@ -236,7 +237,7 @@ ifdef VBOX_WINE_WITH_PROFILE
 endif
  wined3dwddm_INCS           = $(wined3d_INCS) \
  	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
- wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES))
+ wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(subst wined3dxpdm.rc,wined3dwddm.rc,$(wined3d_SOURCES)))
  wined3dwddm_LIBS           = $(wined3d_LIBS) \
  	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
  	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
@@ -282,7 +283,8 @@ VBoxD3D8_SOURCES     := \
 	d3d8/vertexdeclaration.c \
 	d3d8/volume.c \
 	vbox/libWineStub/debug.c \
-	d3d8/d3d8.def
+	d3d8/d3d8.def \
+	vbox/d3d8.rc
 VBoxD3D8_LIBS         = \
 	$(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
 VBoxD3D8_DEFS       += VBOX_WINE_WITH_IPRT
@@ -320,7 +322,8 @@ VBoxD3D9_SOURCES      := \
 	d3d9/vertexdeclaration.c \
 	d3d9/volume.c \
 	vbox/libWineStub/debug.c \
-	d3d9/d3d9xpdm.def
+	d3d9/d3d9xpdm.def \
+	vbox/d3d9xpdm.rc
 VBoxD3D9_SOURCES.amd64 = d3d9/vboxport.asm
 VBoxD3D9_LIBS             = \
 	$(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
@@ -345,7 +348,7 @@ ifdef VBOX_WITH_WDDM
  	VBOX_WITH_WDDM \
  	IN_VBOXWINEEX \
  	VBOX_WINE_NO_LOCK
- VBoxD3D9wddm_SOURCES  = $(subst d3d9xpdm.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
+ VBoxD3D9wddm_SOURCES  = $(subst d3d9xpdm.def,d3d9wddm.def,$(subst d3d9xpdm.rc,d3d9wddm.rc,$(VBoxD3D9_SOURCES)))
  VBoxD3D9wddm_LIBS     = \
  	$(subst $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS)) \
  	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
