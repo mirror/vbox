@@ -57,44 +57,43 @@
 
 #ifdef DEBUG
 
-#include <xf86.h>
-
 #define TRACE_ENTRY() \
 do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": entering\n"); \
+    vbvxMsg(__PRETTY_FUNCTION__); \
+    vbvxMsg(": entering\n"); \
 } while(0)
 #define TRACE_EXIT() \
 do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": leaving\n"); \
+    vbvxMsg(__PRETTY_FUNCTION__); \
+    vbvxMsg(": leaving\n"); \
 } while(0)
 #define TRACE_LOG(...) \
 do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, __VA_ARGS__); \
+    vbvxMsg("%s: ", __PRETTY_FUNCTION__); \
+    vbvxMsg(__VA_ARGS__); \
 } while(0)
 # define TRACE_LINE() do \
 { \
-    ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
-    } while(0)
-# define XF86ASSERT(expr, out) \
-if (!(expr)) \
-{ \
-    ErrorF ("\nAssertion failed!\n\n"); \
-    ErrorF ("%s\n", #expr); \
-    ErrorF ("at %s (%s:%d)\n", __PRETTY_FUNCTION__, __FILE__, __LINE__); \
-    ErrorF out; \
-    FatalError("Aborting"); \
-}
+    vbvxMsg("%s: line %d\n", __FUNCTION__, __LINE__); \
+} while(0)
 #else  /* !DEBUG */
 
 #define TRACE_ENTRY()         do { } while (0)
 #define TRACE_EXIT()          do { } while (0)
 #define TRACE_LOG(...)        do { } while (0)
-#define XF86ASSERT(expr, out) do { } while (0)
 
 #endif  /* !DEBUG */
+
+/* Not just for debug builds.  If something is wrong we want to know at once. */
+#define VBVXASSERT(expr, out) \
+if (!(expr)) \
+{ \
+    vbvxMsg("\nAssertion failed!\n\n"); \
+    vbvxMsg("%s\n", #expr); \
+    vbvxMsg("at %s (%s:%d)\n", __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+    vbvxMsg out; \
+    vbvxAbortServer(); \
+}
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
@@ -233,6 +232,12 @@ typedef struct VBOXRec
 #endif
 } VBOXRec, *VBOXPtr;
 
+/* helpers.c */
+extern void vbvxMsg(const char *pszFormat, ...);
+extern void vbvxMsgV(const char *pszFormat, va_list args);
+extern void vbvxAbortServer(void);
+
+/* setmode.c */
 extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
 extern void vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
