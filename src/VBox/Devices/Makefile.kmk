@@ -676,6 +676,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifeq ($(KBUILD_TARGET), win)
   VBOX_SLIRP_SOURCES += Network/slirp/ip_icmpwin.c
+ else ifneq ($(KBUILD_TARGET),darwin)
+  # helper for debugging unprivileged
+#  Network/slirp/ip_icmp.c_DEFS += VBOX_RAWSOCK_DEBUG_HELPER
+#  VBOX_SLIRP_SOURCES += ../NetworkServices/NAT/getrawsock.c
  endif
 
  ifneq ($(KBUILD_TARGET), win)
