@@ -38,7 +38,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/uuid.h>
 #ifdef IN_RING3
-#include <iprt/mem.h>
+# include <iprt/mem.h>
 #endif
 
 #include <VBox/VMMDev.h>
@@ -50,9 +50,9 @@
 
 #ifdef DEBUG
 /* Enable to log FIFO register accesses. */
-//#define DEBUG_FIFO_ACCESS
+//# define DEBUG_FIFO_ACCESS
 /* Enable to log GMR page accesses. */
-//#define DEBUG_GMR_ACCESS
+//# define DEBUG_GMR_ACCESS
 #endif
 
 #include "DevVGA-SVGA.h"
@@ -62,7 +62,7 @@
 #include "vmsvga/svga3d_reg.h"
 #include "vmsvga/svga3d_caps.h"
 #ifdef VBOX_WITH_VMSVGA3D
-#include "DevVGA-SVGA3d.h"
+# include "DevVGA-SVGA3d.h"
 #endif
 
 /*******************************************************************************
@@ -200,15 +200,10 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, u8FIFOExtCommand),
     SSMFIELD_ENTRY_TERM()
 };
-#endif /* IN_RING3 */
 
-RT_C_DECLS_BEGIN
-
-#ifdef IN_RING3
 static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces);
-#endif
 
-RT_C_DECLS_END
+#endif /* IN_RING3 */
 
 
 #ifdef LOG_ENABLED
@@ -744,7 +739,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             rc = VINF_IOM_R3_IOPORT_READ;
             break;
 #else
-            /* @todo bit crude */
+            /** @todo bit crude */
             RTThreadSleep(50);
 #endif
         }
@@ -847,7 +842,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         }
         break;
     }
-    Log(("vmsvgaReadPort index=%s (%d) val=%x rc=%x\n", vmsvgaIndexToString(pThis), pThis->svga.u32IndexReg, *pu32, rc));
+    Log(("vmsvgaReadPort index=%s (%d) val=%#x rc=%x\n", vmsvgaIndexToString(pThis), pThis->svga.u32IndexReg, *pu32, rc));
     return rc;
 }
 
@@ -932,7 +927,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
     PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
     int          rc = VINF_SUCCESS;
 
-    Log(("vmsvgaWritePort index=%s (%d) val=%x\n", vmsvgaIndexToString(pThis), pThis->svga.u32IndexReg, u32));
+    Log(("vmsvgaWritePort index=%s (%d) val=%#x\n", vmsvgaIndexToString(pThis), pThis->svga.u32IndexReg, u32));
     switch (pThis->svga.u32IndexReg)
     {
     case SVGA_REG_ID:
@@ -1008,37 +1003,41 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         break;
 
     case SVGA_REG_WIDTH:
-        if (pThis->svga.uWidth == u32)
-            break; /* nop */
-
-        pThis->svga.uWidth = u32;
-        if (pThis->svga.fEnabled)
+        if (pThis->svga.uWidth != u32)
         {
+            if (pThis->svga.fEnabled)
+            {
 #ifdef IN_RING3
-            rc = vmsvgaChangeMode(pThis);
-            AssertRCReturn(rc, rc);
+                pThis->svga.uWidth = u32;
+                rc = vmsvgaChangeMode(pThis);
+                AssertRCReturn(rc, rc);
 #else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-            break;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
+            }
+            else
+                pThis->svga.uWidth = u32;
         }
+        /* else: nop */
         break;
 
     case SVGA_REG_HEIGHT:
-        if (pThis->svga.uHeight == u32)
-            break; /* nop */
-
-        pThis->svga.uHeight = u32;
-        if (pThis->svga.fEnabled)
+        if (pThis->svga.uHeight != u32)
         {
+            if (pThis->svga.fEnabled)
+            {
 #ifdef IN_RING3
-            rc = vmsvgaChangeMode(pThis);
-            AssertRCReturn(rc, rc);
+                pThis->svga.uHeight = u32;
+                rc = vmsvgaChangeMode(pThis);
+                AssertRCReturn(rc, rc);
 #else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-            break;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
+            }
+            else
+                pThis->svga.uHeight = u32;
         }
+        /* else: nop */
         break;
 
     case SVGA_REG_DEPTH:
@@ -1046,20 +1045,22 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         break;
 
     case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
-        if (pThis->svga.uBpp == u32)
-            break; /* nop */
-
-        pThis->svga.uBpp = u32;
-        if (pThis->svga.fEnabled)
+        if (pThis->svga.uBpp != u32)
         {
+            if (pThis->svga.fEnabled)
+            {
 #ifdef IN_RING3
-            rc = vmsvgaChangeMode(pThis);
-            AssertRCReturn(rc, rc);
+                pThis->svga.uBpp = u32;
+                rc = vmsvgaChangeMode(pThis);
+                AssertRCReturn(rc, rc);
 #else
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-            break;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
+            }
+            else
+                pThis->svga.uBpp = u32;
         }
+        /* else: nop */
         break;
 
     case SVGA_REG_PSEUDOCOLOR:
@@ -1153,10 +1154,10 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         break;
 
     case SVGA_REG_GMR_DESCRIPTOR:
-#ifndef IN_RING3
+# ifndef IN_RING3
         rc = VINF_IOM_R3_IOPORT_WRITE;
         break;
-#else
+# else /* IN_RING3 */
     {
         SVGAGuestMemDescriptor desc;
         RTGCPHYS               GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
@@ -1224,7 +1225,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         AssertRC(rc);
         break;
     }
-#endif
+# endif /* IN_RING3 */
 #endif // VBOX_WITH_VMSVGA3D
 
     case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
@@ -1747,8 +1748,9 @@ static DECLCALLBACK(int) vmsvgaR3FIFOAccessHandler(PVM pVM, RTGCPHYS GCPhys, voi
     AssertMsg(rc <= VINF_SUCCESS, ("rc=%Rrc\n", rc));
     return rc;
 }
+
 # endif /* IN_RING3 */
-#endif /* DEBUG */
+#endif /* DEBUG_FIFO_ACCESS */
 
 #ifdef DEBUG_GMR_ACCESS
 /**
@@ -1798,7 +1800,8 @@ end:
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
-#ifdef IN_RING3
+# ifdef IN_RING3
+
 /* Callback handler for VMR3ReqCallWait */
 static DECLCALLBACK(int) vmsvgaRegisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
 {
@@ -1856,16 +1859,13 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
     }
     return VINF_SUCCESS;
 }
-#endif /* IN_RING3 */
 
-
+# endif /* IN_RING3 */
 #endif /* DEBUG_GMR_ACCESS */
 
 /* -=-=-=-=-=- Ring 3 -=-=-=-=-=- */
 
 #ifdef IN_RING3
-
-#include <iprt/mem.h>
 
 static void *vmsvgaFIFOGetCmdBuffer(PPDMTHREAD pThread, uint32_t *pFIFO, uint32_t cbCmd, uint32_t *pSize, void **ppfBounceBuffer)
 {
@@ -1962,40 +1962,40 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             {
             case VMSVGA_FIFO_EXTCMD_RESET:
                 Log(("vmsvgaFIFOLoop: reset the fifo thread.\n"));
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 if (pThis->svga.f3DEnabled)
                 {
                     /* The 3d subsystem must be reset from the fifo thread. */
                     vmsvga3dReset(pThis);
                 }
-#endif
+# endif
                 break;
 
             case VMSVGA_FIFO_EXTCMD_TERMINATE:
                 Log(("vmsvgaFIFOLoop: terminate the fifo thread.\n"));
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 if (pThis->svga.f3DEnabled)
                 {
                     /* The 3d subsystem must be shut down from the fifo thread. */
                     vmsvga3dTerminate(pThis);
                 }
-#endif
+# endif
                 break;
 
             case VMSVGA_FIFO_EXTCMD_SAVESTATE:
                 Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_SAVESTATE.\n"));
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 vmsvga3dSaveExec(pThis, (PSSMHANDLE)pThis->svga.pFIFOExtCmdParam);
-#endif
+# endif
                 break;
 
             case VMSVGA_FIFO_EXTCMD_LOADSTATE:
             {
                 Log(("vmsvgaFIFOLoop: VMSVGA_FIFO_EXTCMD_LOADSTATE.\n"));
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 PVMSVGA_STATE_LOAD pLoadState = (PVMSVGA_STATE_LOAD)pThis->svga.pFIFOExtCmdParam;
                 vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
-#endif
+# endif
                 break;
             }
             }
@@ -2047,11 +2047,11 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             /* First check any pending actions. */
             if (ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT))
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 vmsvga3dChangeMode(pThis);
-#else
-                {}
-#endif
+# else
+                {/*nothing*/}
+# endif
             /* Check for pending external commands. */
             if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
                 break;
@@ -2210,7 +2210,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                 break;
             }
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_GMR2:
             {
                 SVGAFifoCmdDefineGMR2 *pCmd = (SVGAFifoCmdDefineGMR2 *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineGMR2), &size, &pBounceBuffer);
@@ -2296,7 +2296,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                 if (pCmd->flags & SVGA_REMAP_GMR2_VIA_GMR)
                 {
-                    /* @todo */
+                    /** @todo */
                     AssertFailed();
                 }
                 else
@@ -2364,12 +2364,12 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 if (paNewPage64)
                     RTMemFree(paNewPage64);
 
-#ifdef DEBUG_GMR_ACCESS
+#  ifdef DEBUG_GMR_ACCESS
                 VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaRegisterGMR, 2, pThis->pDevInsR3, pCmd->gmrId);
-#endif
+#  endif
                 break;
             }
-#endif // VBOX_WITH_VMSVGA3D
+# endif // VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_SCREEN:
             {
                 /* @note optional size depending on the capabilities */
@@ -2401,7 +2401,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_DESTROY_SCREEN id=%x\n", pCmd->screenId));
                 break;
             }
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_GMRFB:
             {
                 SVGAFifoCmdDefineGMRFB *pCmd = (SVGAFifoCmdDefineGMRFB *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineGMRFB), &size, &pBounceBuffer);
@@ -2467,7 +2467,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertFailed();
                 break;
             }
-#endif // VBOX_WITH_VMSVGA3D
+# endif // VBOX_WITH_VMSVGA3D
             case SVGA_CMD_ANNOTATION_FILL:
             {
                 SVGAFifoCmdAnnotationFill *pCmd = (SVGAFifoCmdAnnotationFill *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdAnnotationFill), &size, &pBounceBuffer);
@@ -2487,7 +2487,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             }
 
             default:
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
                 if (    pFIFO[u32Cmd] >= SVGA_3D_CMD_BASE
                     &&  pFIFO[u32Cmd] < SVGA_3D_CMD_MAX)
                 {
@@ -2511,9 +2511,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                         cMipLevels = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dSize);
                         rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0, SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
-#ifdef DEBUG_GMR_ACCESS
+#  ifdef DEBUG_GMR_ACCESS
                         VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaResetGMRHandlers, 1, pThis);
-#endif
+#  endif
                         break;
                     }
 
@@ -2799,7 +2799,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     }
                 }
                 else
-#endif // VBOX_WITH_VMSVGA3D
+# endif // VBOX_WITH_VMSVGA3D
                     AssertFailed();
             }
             if (pBounceBuffer)
@@ -2851,9 +2851,9 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
     if (pSVGAState->aGMR[idGMR].numDescriptors)
     {
         PGMR pGMR = &pSVGAState->aGMR[idGMR];
-#ifdef DEBUG_GMR_ACCESS
+# ifdef DEBUG_GMR_ACCESS
         VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaUnregisterGMR, 2, pThis->pDevInsR3, idGMR);
-#endif
+# endif
 
         Assert(pGMR->paDesc);
         RTMemFree(pGMR->paDesc);
@@ -3127,7 +3127,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS 
             rc = PDMDevHlpMMIO2Map(pDevIns, iRegion, GCPhysAddress);
             AssertRC(rc);
 
-#ifdef DEBUG_FIFO_ACCESS
+# ifdef DEBUG_FIFO_ACCESS
             if (RT_SUCCESS(rc))
             {
                 rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
@@ -3139,7 +3139,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS 
                                                   "VMSVGA FIFO");
                 AssertRC(rc);
             }
-#endif
+# endif
             if (RT_SUCCESS(rc))
             {
                 pThis->svga.GCPhysFIFO = GCPhysAddress;
@@ -3149,10 +3149,10 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS 
         else
         {
             Assert(pThis->svga.GCPhysFIFO);
-#ifdef DEBUG_FIFO_ACCESS
+# ifdef DEBUG_FIFO_ACCESS
             rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
             AssertRC(rc);
-#endif
+# endif
             pThis->svga.GCPhysFIFO = 0;
         }
 
@@ -3215,7 +3215,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         }
     }
 
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         VMSVGA_STATE_LOAD loadstate;
@@ -3237,7 +3237,7 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         AssertRC(rc);
         PDMR3ThreadSuspend(pThis->svga.pFIFOIOThread);
     }
-#endif
+# endif
 
     return VINF_SUCCESS;
 }
@@ -3312,7 +3312,7 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         }
     }
 
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         /* Save the 3d state in the FIFO thread. */
@@ -3328,7 +3328,7 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         AssertRC(rc);
         PDMR3ThreadSuspend(pThis->svga.pFIFOIOThread);
     }
-#endif
+# endif
     return VINF_SUCCESS;
 }
 
@@ -3365,9 +3365,9 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     pThis->svga.u32RegCaps |= SVGA_CAP_3D;
-#endif
+# endif
 
     /* Setup FIFO capabilities. */
     pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
@@ -3485,9 +3485,9 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
 
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     pThis->svga.u32RegCaps |= SVGA_CAP_3D;
-#endif
+# endif
 
     /* Setup FIFO capabilities. */
     pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
@@ -3496,7 +3496,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
 
     pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION] = pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION_REVISED] = 0;    /* no 3d available. */
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         rc = vmsvga3dInit(pThis);
@@ -3506,7 +3506,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
             pThis->svga.f3DEnabled = false;
         }
     }
-#endif
+# endif
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
 
@@ -3558,7 +3558,7 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     int       rc;
 
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
         rc = vmsvga3dPowerOn(pThis);
@@ -3597,7 +3597,7 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
             pCaps->header.length = 0;
         }
     }
-#endif // VBOX_WITH_VMSVGA3D
+# endif // VBOX_WITH_VMSVGA3D
 }
 
 #endif /* IN_RING3 */
