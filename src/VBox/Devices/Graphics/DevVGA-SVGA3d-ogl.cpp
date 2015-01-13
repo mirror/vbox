@@ -76,8 +76,7 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 # include <GL/gl.h>
 # include <GL/glx.h>
 # include <GL/glext.h>
-//HACK FOR NOW
-typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREPROC) (GLenum texture);
+# define VBOX_VMSVGA3D_GL_HACK_LEVEL 0x103
 #endif
 #include "vmsvga_glext/glext.h"
 
@@ -98,6 +97,17 @@ extern "C" int ExplicitlyLoadVBoxSVGA3DObjC(bool fResolveAllImports, PRTERRINFO 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** @def VBOX_VMSVGA3D_GL_HACK_LEVEL
+ * Turns out that on Linux gl.h may often define the first 2-4 OpenGL versions
+ * worth of extensions, but missing out on a function pointer of fifteen.  This
+ * causes headache for us when we use the function pointers below.  This hack
+ * changes the code to call the known problematic functions directly.
+ * The value is ((x)<<16 | (y))  where x and y are taken from the GL_VERSION_x_y.
+ */
+#ifndef VBOX_VMSVGA3D_GL_HACK_LEVEL
+# define VBOX_VMSVGA3D_GL_HACK_LEVEL   0
+#endif
+
 #ifndef VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE
 # define VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE 1.0
 #endif
@@ -568,12 +578,14 @@ typedef struct VMSVGA3DSTATE
         PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC         glRenderbufferStorageMultisample;
         PFNGLFRAMEBUFFERTEXTURELAYERPROC                glFramebufferTextureLayer;
         PFNGLPOINTPARAMETERFPROC                        glPointParameterf;
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x102
+        PFNGLBLENDCOLORPROC                             glBlendColor;
         PFNGLBLENDEQUATIONPROC                          glBlendEquation;
+#endif
         PFNGLBLENDEQUATIONSEPARATEPROC                  glBlendEquationSeparate;
         PFNGLBLENDFUNCSEPARATEPROC                      glBlendFuncSeparate;
         PFNGLSTENCILOPSEPARATEPROC                      glStencilOpSeparate;
         PFNGLSTENCILFUNCSEPARATEPROC                    glStencilFuncSeparate;
-        PFNGLBLENDCOLORPROC                             glBlendColor;
         PFNGLBINDBUFFERPROC                             glBindBuffer;
         PFNGLDELETEBUFFERSPROC                          glDeleteBuffers;
         PFNGLGENBUFFERSPROC                             glGenBuffers;
@@ -587,7 +599,9 @@ typedef struct VMSVGA3DSTATE
         PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC        glDrawElementsInstancedBaseVertex;
         PFNGLDRAWELEMENTSBASEVERTEXPROC                 glDrawElementsBaseVertex;
         PFNGLACTIVETEXTUREPROC                          glActiveTexture;
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x103
         PFNGLCLIENTACTIVETEXTUREPROC                    glClientActiveTexture;
+#endif
         PFNGLGETPROGRAMIVARBPROC                        glGetProgramivARB;
         PFNGLPROVOKINGVERTEXPROC                        glProvokingVertex;
         bool                                            fEXT_stencil_two_side;
@@ -717,13 +731,17 @@ static bool vmsvga3dCheckGLExtension(PVMSVGA3DSTATE pState, float fMinGLVersion,
         fRet = true;
 
     /* Temporarily.  Later start if (fMinGLVersion != 0.0 && fActualGLVersion >= fMinGLVersion) return true; */
+#ifdef RT_OS_DARWIN
     AssertMsg(   fMinGLVersion == 0.0
               || fRet == (pState->fGLVersion >= fMinGLVersion)
-#ifdef RT_OS_DARWIN
-              || VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE == 2.1
+              || VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE == 2.1,
+              ("%s actual:%d min:%d fRet=%d\n",
+               pszWantedExtension, (int)(pState->fGLVersion * 10), (int)(fMinGLVersion * 10), fRet));
+#else
+    AssertMsg(fMinGLVersion == 0.0 || fRet == (pState->fGLVersion >= fMinGLVersion),
+              ("%s actual:%d min:%d fRet=%d\n",
+               pszWantedExtension, (int)(pState->fGLVersion * 10), (int)(fMinGLVersion * 10), fRet));
 #endif
-              , ("%s actual:%d min:%d fRet=%d\n",
-                 pszWantedExtension, (int)(pState->fGLVersion * 10), (int)(fMinGLVersion * 10), fRet));
     return fRet;
 }
 
@@ -1236,8 +1254,12 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     }
     pState->ext.glPointParameterf           = (PFNGLPOINTPARAMETERFPROC)OGLGETPROCADDRESS("glPointParameterf");
     AssertMsgReturn(pState->ext.glPointParameterf, ("glPointParameterf missing"), VERR_NOT_IMPLEMENTED);
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x102
+    pState->ext.glBlendColor                = (PFNGLBLENDCOLORPROC)OGLGETPROCADDRESS("glBlendColor");
+    AssertMsgReturn(pState->ext.glBlendColor, ("glBlendColor missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glBlendEquation             = (PFNGLBLENDEQUATIONPROC)OGLGETPROCADDRESS("glBlendEquation");
     AssertMsgReturn(pState->ext.glBlendEquation, ("glBlendEquation missing"), VERR_NOT_IMPLEMENTED);
+#endif
     pState->ext.glBlendEquationSeparate     = (PFNGLBLENDEQUATIONSEPARATEPROC)OGLGETPROCADDRESS("glBlendEquationSeparate");
     AssertMsgReturn(pState->ext.glBlendEquationSeparate, ("glBlendEquationSeparate missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glBlendFuncSeparate         = (PFNGLBLENDFUNCSEPARATEPROC)OGLGETPROCADDRESS("glBlendFuncSeparate");
@@ -1246,8 +1268,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     AssertMsgReturn(pState->ext.glStencilOpSeparate, ("glStencilOpSeparate missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glStencilFuncSeparate       = (PFNGLSTENCILFUNCSEPARATEPROC)OGLGETPROCADDRESS("glStencilFuncSeparate");
     AssertMsgReturn(pState->ext.glStencilFuncSeparate, ("glStencilFuncSeparate missing"), VERR_NOT_IMPLEMENTED);
-    pState->ext.glBlendColor                = (PFNGLBLENDCOLORPROC)OGLGETPROCADDRESS("glBlendColor");
-    AssertMsgReturn(pState->ext.glBlendColor, ("glBlendColor missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glBindBuffer                = (PFNGLBINDBUFFERPROC)OGLGETPROCADDRESS("glBindBuffer");
     AssertMsgReturn(pState->ext.glBindBuffer, ("glBindBuffer missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glDeleteBuffers             = (PFNGLDELETEBUFFERSPROC)OGLGETPROCADDRESS("glDeleteBuffers");
@@ -1270,8 +1290,10 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     AssertMsgReturn(pState->ext.glFogCoordPointer, ("glFogCoordPointer missing"), VERR_NOT_IMPLEMENTED);
     pState->ext.glActiveTexture             = (PFNGLACTIVETEXTUREPROC)OGLGETPROCADDRESS("glActiveTexture");
     AssertMsgReturn(pState->ext.glActiveTexture, ("glActiveTexture missing"), VERR_NOT_IMPLEMENTED);
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL < 0x103
     pState->ext.glClientActiveTexture       = (PFNGLCLIENTACTIVETEXTUREPROC)OGLGETPROCADDRESS("glClientActiveTexture");
     AssertMsgReturn(pState->ext.glClientActiveTexture, ("glClientActiveTexture missing"), VERR_NOT_IMPLEMENTED);
+#endif
     pState->ext.glGetProgramivARB           = (PFNGLGETPROGRAMIVARBPROC)OGLGETPROCADDRESS("glGetProgramivARB");
     AssertMsgReturn(pState->ext.glGetProgramivARB, ("glGetProgramivARB missing"), VERR_NOT_IMPLEMENTED);
 
@@ -2211,8 +2233,9 @@ D3DMULTISAMPLE_TYPE vmsvga3dMultipeSampleCount2D3D(uint32_t multisampleCount)
 }
 #endif
 
-int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, SVGA3dSurfaceFormat format, SVGA3dSurfaceFace face[SVGA3D_MAX_SURFACE_FACES],
-                          uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter, uint32_t cMipLevels, SVGA3dSize *pMipLevelSize)
+int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, SVGA3dSurfaceFormat format,
+                          SVGA3dSurfaceFace face[SVGA3D_MAX_SURFACE_FACES], uint32_t multisampleCount,
+                          SVGA3dTextureFilter autogenFilter, uint32_t cMipLevels, SVGA3dSize *pMipLevelSize)
 {
     PVMSVGA3DSURFACE pSurface;
     PVMSVGA3DSTATE   pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
@@ -2328,7 +2351,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
     pSurface->flags             = surfaceFlags;
     pSurface->format            = format;
-    memcpy(pSurface->faces, face, sizeof(face));
+    memcpy(pSurface->faces, face, sizeof(pSurface->faces));
     pSurface->cFaces            = 1;        /* check for cube maps later */
     pSurface->multiSampleCount  = multisampleCount;
     pSurface->autogenFilter     = autogenFilter;
@@ -4467,7 +4490,13 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
                 pState->ext.glBlendEquationSeparate(vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATION].uintValue),
                                                     vmsvga3dBlendEquation2GL(pContext->state.aRenderState[SVGA3D_RS_BLENDEQUATIONALPHA].uintValue));
             else
+            {
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL >= 0x102
+                glBlendEquation(vmsvga3dBlendEquation2GL(pRenderState[i].uintValue));
+#else
                 pState->ext.glBlendEquation(vmsvga3dBlendEquation2GL(pRenderState[i].uintValue));
+#endif
+            }
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
 
@@ -4477,7 +4506,11 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
 
             vmsvgaColor2GLFloatArray(pRenderState[i].uintValue, &red, &green, &blue, &alpha);
 
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL >= 0x102
+            glBlendColor(red, green, blue, alpha);
+#else
             pState->ext.glBlendColor(red, green, blue, alpha);
+#endif
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             break;
         }
@@ -5794,9 +5827,9 @@ int vmsvga3dSetClipPlane(PVGASTATE pThis, uint32_t cid,  uint32_t index, float p
 
     /* Store for vm state save/restore. */
     pContext->state.aClipPlane[index].fValid = true;
-    memcpy(pContext->state.aClipPlane[index].plane, plane, sizeof(plane));
+    memcpy(pContext->state.aClipPlane[index].plane, plane, sizeof(pContext->state.aClipPlane[index].plane));
 
-    /* @todo clip plane affected by model view in OpenGL & view in D3D + vertex shader -> not transformed (see Wine; state.c clipplane) */
+    /** @todo clip plane affected by model view in OpenGL & view in D3D + vertex shader -> not transformed (see Wine; state.c clipplane) */
     oglPlane[0] = (double)plane[0];
     oglPlane[1] = (double)plane[1];
     oglPlane[2] = (double)plane[2];
@@ -6108,7 +6141,8 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             /* Use numbered vertex arrays when shaders are active. */
             pState->ext.glEnableVertexAttribArray(index);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            pState->ext.glVertexAttribPointer(index, size, type, normalized, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+            pState->ext.glVertexAttribPointer(index, size, type, normalized, pVertexDecl[iVertex].array.stride,
+                                              (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             /* case SVGA3D_DECLUSAGE_COLOR:    @todo color component order not identical!! test GL_BGRA!!  */
         }
@@ -6120,7 +6154,8 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             case SVGA3D_DECLUSAGE_POSITION:
                 glEnableClientState(GL_VERTEX_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                glVertexPointer(size, type, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+                glVertexPointer(size, type, pVertexDecl[iVertex].array.stride,
+                                (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
             case SVGA3D_DECLUSAGE_BLENDWEIGHT:
@@ -6132,7 +6167,8 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             case SVGA3D_DECLUSAGE_NORMAL:
                 glEnableClientState(GL_NORMAL_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                glNormalPointer(type, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+                glNormalPointer(type, pVertexDecl[iVertex].array.stride,
+                                (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
             case SVGA3D_DECLUSAGE_PSIZE:
@@ -6140,10 +6176,15 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                 break;
             case SVGA3D_DECLUSAGE_TEXCOORD:
                 /* Specify the affected texture unit. */
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL >= 0x103
+                glClientActiveTexture(GL_TEXTURE0 + pVertexDecl[iVertex].identity.usageIndex);
+#else
                 pState->ext.glClientActiveTexture(GL_TEXTURE0 + pVertexDecl[iVertex].identity.usageIndex);
+#endif
                 glEnableClientState(GL_TEXTURE_COORD_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                glTexCoordPointer(size, type, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+                glTexCoordPointer(size, type, pVertexDecl[iVertex].array.stride,
+                                  (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
             case SVGA3D_DECLUSAGE_TANGENT:
@@ -6158,16 +6199,18 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
             case SVGA3D_DECLUSAGE_POSITIONT:
                 AssertFailed(); /* see position_transformed in Wine */
                 break;
-            case SVGA3D_DECLUSAGE_COLOR:    /* @todo color component order not identical!! test GL_BGRA!! */
+            case SVGA3D_DECLUSAGE_COLOR:    /** @todo color component order not identical!! test GL_BGRA!! */
                 glEnableClientState(GL_COLOR_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                glColorPointer(size, type, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+                glColorPointer(size, type, pVertexDecl[iVertex].array.stride,
+                               (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
             case SVGA3D_DECLUSAGE_FOG:
                 glEnableClientState(GL_FOG_COORD_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                pState->ext.glFogCoordPointer(type, pVertexDecl[iVertex].array.stride, (const GLvoid *)pVertexDecl[iVertex].array.offset);
+                pState->ext.glFogCoordPointer(type, pVertexDecl[iVertex].array.stride,
+                                              (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
             case SVGA3D_DECLUSAGE_DEPTH:
@@ -6221,7 +6264,11 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                 break;
             case SVGA3D_DECLUSAGE_TEXCOORD:
                 /* Specify the affected texture unit. */
+#if VBOX_VMSVGA3D_GL_HACK_LEVEL >= 0x103
+                glClientActiveTexture(GL_TEXTURE0 + pVertexDecl[iVertex].identity.usageIndex);
+#else
                 pState->ext.glClientActiveTexture(GL_TEXTURE0 + pVertexDecl[iVertex].identity.usageIndex);
+#endif
                 glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
@@ -6393,18 +6440,16 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
             /* Render with an index buffer */
             Log(("DrawIndexedPrimitive %x cPrimitives=%d cVertices=%d hint.first=%d hint.last=%d index offset=%d primitivecount=%d index width=%d index bias=%d\n", modeDraw, pRange[iPrimitive].primitiveCount, cVertices, pVertexDecl[0].rangeHint.first,  pVertexDecl[0].rangeHint.last,  pRange[iPrimitive].indexArray.offset, pRange[iPrimitive].primitiveCount,  pRange[iPrimitive].indexWidth, pRange[iPrimitive].indexBias));
             if (pRange[iPrimitive].indexBias == 0)
-            {
                 glDrawElements(modeDraw,
                                cVertices,
                                (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-                               (GLvoid *)(pRange[iPrimitive].indexArray.offset));   /* byte offset in indices buffer */
-            }
+                               (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset);   /* byte offset in indices buffer */
             else
                 pState->ext.glDrawElementsBaseVertex(modeDraw,
                                                      cVertices,
                                                      (pRange[iPrimitive].indexWidth == sizeof(uint16_t)) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-                                                     (GLvoid *)(pRange[iPrimitive].indexArray.offset),   /* byte offset in indices buffer */
-                                                     pRange[iPrimitive].indexBias);        /* basevertex */
+                                                     (GLvoid *)(uintptr_t)pRange[iPrimitive].indexArray.offset, /* byte offset in indices buffer */
+                                                     pRange[iPrimitive].indexBias);  /* basevertex */
 
             /* Unbind the index buffer after usage. */
             pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
