@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxNetFltNobj.h - Notify Object for Bridged Networking Driver.
- * Resource file
+ * VBoxNetFltNobj - Resource file containing version info and icon.
  */
 /*
  * Copyright (C) 2011-2015 Oracle Corporation
