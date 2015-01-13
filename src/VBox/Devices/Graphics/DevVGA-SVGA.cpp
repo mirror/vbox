@@ -792,7 +792,16 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
                 if (pThis->svga.fBusy && cRefs == 1)
                     RTSemEventMultiReset(pSVGAState->hBusyDelayedEmts);
                 if (pThis->svga.fBusy)
-                    RTSemEventMultiWait(pSVGAState->hBusyDelayedEmts, 50);
+                {
+                    /** @todo If this code is going to stay, we need to call into the halt/wait
+                     *        code in VMEmt.cpp here, otherwise all kind of EMT interaction will
+                     *        suffer when the guest is polling on a busy FIFO. */
+                    uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pThis->pDevInsR3));
+                    if (cNsMaxWait >= RT_NS_100US)
+                        RTSemEventMultiWaitEx(pSVGAState->hBusyDelayedEmts,
+                                              RTSEMWAIT_FLAGS_NANOSECS |  RTSEMWAIT_FLAGS_RELATIVE,
+                                              RT_MIN(cNsMaxWait, RT_NS_10MS));
+                }
 
                 ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
             }

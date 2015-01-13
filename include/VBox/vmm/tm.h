@@ -117,7 +117,7 @@ VMM_INT_DECL(uint64_t)  TMVirtualSyncGet(PVM pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheck(PVM pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
 VMM_INT_DECL(uint64_t)  TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pcNsToDeadline);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNsToDeadline(PVM pVM);
+VMMDECL(uint64_t)       TMVirtualSyncGetNsToDeadline(PVM pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);

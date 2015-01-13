@@ -925,7 +925,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pc
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
+VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
 {
     uint64_t cNsToDeadline;
     tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, &cNsToDeadline);
