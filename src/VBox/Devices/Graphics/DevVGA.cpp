@@ -112,7 +112,7 @@
 #include <VBox/vmm/pgm.h>
 #ifdef IN_RING3
 # include <iprt/cdefs.h>
-# include <iprt/alloc.h>
+# include <iprt/mem.h>
 # include <iprt/ctype.h>
 #endif /* IN_RING3 */
 #include <iprt/assert.h>
@@ -2035,7 +2035,7 @@ static int vga_resize_graphic(PVGASTATE pThis, int cx, int cy,
         return VERR_INTERNAL_ERROR;
 
 #if 0 //def VBOX_WITH_VDMA
-    /* @todo: we get a second resize here when VBVA is on, while we actually should not */
+    /** @todo: we get a second resize here when VBVA is on, while we actually should not */
     /* do not do pfnResize in case VBVA is on since all mode changes are performed over VBVA
      * we are checking for VDMA state here to ensure this code works only for WDDM driver,
      * although we should avoid calling pfnResize for XPDM as well, since pfnResize is actually an extra resize
@@ -2098,7 +2098,7 @@ int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned w
         s->pDrv->pfnUpdateRect(s->pDrv, xStart, yStart, width, height);
         return VINF_SUCCESS;
     }
-    /* @todo might crash if a blit follows a resolution change very quickly (seen this many times!) */
+    /** @todo might crash if a blit follows a resolution change very quickly (seen this many times!) */
 
     if (    s->svga.uWidth  == VMSVGA_VAL_UNINITIALIZED
         ||  s->svga.uHeight == VMSVGA_VAL_UNINITIALIZED
