@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxD3D8 - Resource file containing version info and icon.
+ * d3d8 - Resource file containing version info and icon.
  */
 
 /*
