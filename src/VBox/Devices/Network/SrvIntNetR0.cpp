@@ -1610,10 +1610,6 @@ static INTNETSWDECISION intnetR0NetworkPreSwitchUnicast(PINTNETNETWORK pNetwork,
             if (intnetR0IsMacAddrDummy(&pTab->paEntries[iIfMac].MacAddr))
                 break;
 
-            /* Promiscuous mode? */
-            if (pTab->paEntries[iIfMac].fPromiscuousSeeTrunk)
-                break;
-
             /* Paranoia - this shouldn't happen, right? */
             if (    pSrcAddr
                 &&  intnetR0AreMacAddrsEqual(&pTab->paEntries[iIfMac].MacAddr, pSrcAddr))
