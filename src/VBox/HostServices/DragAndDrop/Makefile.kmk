@@ -39,6 +39,9 @@ VBoxDragAndDropSvc_SOURCES = \
 	service.cpp \
 	dndmanager.cpp
 
+VBoxDragAndDropSvc_SOURCES.win = \
+	VBoxDragAndDropSvc.rc
+
 VBoxDragAndDropSvc_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \

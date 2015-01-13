@@ -36,7 +36,7 @@ BEGIN
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox Shared Folders Minirdr NP\0"
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-         VALUE "InternalName",     "VBoxMRXNP.DLL\0"
+         VALUE "InternalName",     "VBoxMRXNP\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
 #ifdef VBOX_WOW64
          VALUE "OriginalFilename", "VBoxMRXNP-x86.DLL\0"

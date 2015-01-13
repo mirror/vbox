@@ -33,7 +33,8 @@ VBoxSharedClipboard_INCS.win  = \
 VBoxSharedClipboard_SOURCES = \
 	service.cpp
 VBoxSharedClipboard_SOURCES.win = \
-	VBoxClipboard-win.cpp
+	VBoxClipboard-win.cpp \
+	VBoxSharedClipboard.rc
 VBoxSharedClipboard_SOURCES.darwin = \
 	darwin.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \

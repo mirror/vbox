@@ -36,7 +36,7 @@ BEGIN
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox Wine D3D9 (XPDM)\0"
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-         VALUE "InternalName",     "VBoxD3D9.dll\0"
+         VALUE "InternalName",     "VBoxD3D9\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxD3D9.dll\0"
          VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"

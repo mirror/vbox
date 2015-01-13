@@ -54,12 +54,16 @@ ifdef VBOX_WITH_HARDENING
 endif
 
 
+ifeq ($(KBUILD_TARGET),win)
 # Icon include file.
-VBoxHeadless_SOURCES.win += $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
-VBoxHeadless_CLEAN.win   += $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
+VBoxHeadless_SOURCES   += VBoxHeadless.rc
+VBoxHeadless.rc_INCS    = $(VBoxHeadless_0_OUTDIR)
+VBoxHeadless.rc_DEPS    = $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
+VBoxHeadless.rc_CLEAN   = $(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc
 $$(VBoxHeadless_0_OUTDIR)/VBoxHeadless-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxHeadless_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+endif # win
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

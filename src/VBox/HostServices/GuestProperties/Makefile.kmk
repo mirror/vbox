@@ -36,6 +36,9 @@ VBoxGuestPropSvc_INCS.win  = \
 VBoxGuestPropSvc_SOURCES = \
 	service.cpp
 
+VBoxGuestPropSvc_SOURCES.win = \
+	VBoxGuestPropSvc.rc
+
 VBoxGuestPropSvc_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \

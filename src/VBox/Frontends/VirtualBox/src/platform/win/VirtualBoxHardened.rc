@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 #include <VBox/version.h>
 
 #if 0 /* Causes more DLLs to be loaded, don't enable it! */
-VS_VERSION_INFO    VERSIONINFO
+VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
@@ -36,14 +36,14 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-    VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
-    VALUE "FileDescription", VBOX_PRODUCT " Manager\0"
-    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-    VALUE "InternalName",    "VirtualBox.exe\0"
-    VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
-    VALUE "OriginalFilename","VirtualBox.exe\0"
-    VALUE "ProductName",     VBOX_PRODUCT "\0"
-    VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+      VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
+      VALUE "FileDescription", "VirtualBox Manager\0"
+      VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+      VALUE "InternalName",    "VirtualBox\0"
+      VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
+      VALUE "OriginalFilename","VirtualBox.exe\0"
+      VALUE "ProductName",     VBOX_PRODUCT "\0"
+      VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     END
   END
   BLOCK "VarFileInfo"

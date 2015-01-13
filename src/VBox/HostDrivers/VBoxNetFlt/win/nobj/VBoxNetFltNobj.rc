@@ -4,7 +4,7 @@
  * Resource file
  */
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 
 #include "VBoxNetFltNobjRc.h"
 
-VS_VERSION_INFO    VERSIONINFO
+VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
@@ -29,7 +29,7 @@ VS_VERSION_INFO    VERSIONINFO
 #else
   FILEFLAGS        0 // final version
 #endif
-  FILEOS           VOS__WINDOWS32
+  FILEOS           VOS_NT_WINDOWS32
   FILETYPE         VFT_DLL
   FILESUBTYPE      VFT2_UNKNOWN
 BEGIN
@@ -37,14 +37,14 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-    VALUE "CompanyName",     VBOX_RC_COMPANY_NAME
-    VALUE "FileDescription", "VirtualBox Bridged Networking Driver Notify Object v1.1\0"
-    VALUE "FileVersion",     VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-    VALUE "InternalName",    "VBoxNetFltNobj.dll\0"
-    VALUE "LegalCopyright",  VBOX_RC_LEGAL_COPYRIGHT
-    VALUE "OriginalFilename","VBoxNetFltNobj.dll\0"
-    VALUE "ProductName",     VBOX_PRODUCT "\0"
-    VALUE "ProductVersion",  VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+      VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+      VALUE "FileDescription",  "VirtualBox Bridged Networking Driver Notify Object v1.1\0"
+      VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+      VALUE "InternalName",     "VBoxNetFltNobj\0"
+      VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
+      VALUE "OriginalFilename", "VBoxNetFltNobj.dll\0"
+      VALUE "ProductName",      VBOX_PRODUCT "\0"
+      VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     END
   END
   BLOCK "VarFileInfo"

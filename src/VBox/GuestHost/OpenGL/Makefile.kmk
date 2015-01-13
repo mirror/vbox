@@ -89,9 +89,10 @@ VBoxOGLcrutil_SOURCES       = \
 	util/bmpscale.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
+VBoxOGLcrutil_SOURCES.win = \
+	util/VBoxOGLcrutil.rc
 VBoxOGLcrutil_SOURCES.win.x86 = \
-	util/util.def \
-	util/util.rc
+	util/util.def
 VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib \
@@ -109,7 +110,7 @@ VBoxOGLcrutil_DEFS.win    += VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_WDDM
-VBoxOGLcrutil_DEFS.win   += VBOX_WITH_WDDM
+VBoxOGLcrutil_DEFS.win    += VBOX_WITH_WDDM
 VBoxOGLcrutil_DEFS.win    += CR_DEBUG_BACKDOOR_ENABLE
 VBoxOGLcrutil_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB)
@@ -625,9 +626,10 @@ endif
 VBoxOGLerrorspu_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \
 	error/errorspu_init.c
+VBoxOGLerrorspu_SOURCES.win = \
+	error/VBoxOGLerrorspu.rc
 VBoxOGLerrorspu_SOURCES.win.x86 = \
-	error/error.def \
-	error/errorspu.rc
+	error/error.def
 VBoxOGLerrorspu_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
 VBoxOGLerrorspu_LIBS = \
