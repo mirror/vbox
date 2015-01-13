@@ -66,6 +66,20 @@
 #endif
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/**
+ * Macro for checking if a fixed FIFO register is valid according to the
+ * current FIFO configuration.
+ *
+ * @returns true / false.
+ * @param   a_iIndex        The fifo register index (like SVGA_FIFO_CAPABILITIES).
+ * @param   a_offFifoMin    A valid SVGA_FIFO_MIN value.
+ */
+#define VMSVGA_IS_VALID_FIFO_REG(a_iIndex, a_offFifoMin) ( ((a_iIndex) + 1) * sizeof(uint32_t) <= (a_offFifoMin) )
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /* 64-bit GMR descriptor */
@@ -105,6 +119,15 @@ typedef struct
         void               *pData;
     } Cursor;
     SVGAColorBGRX           colorAnnotation;
+
+    /** Number of EMTs waiting on hBusyDelayedEmts. */
+    uint32_t volatile       cBusyDelayedEmts;
+    /** Semaphore that EMTs wait on when reading SVGA_REG_BUSY and the FIFO is
+     *  busy (ugly).  */
+    RTSEMEVENTMULTI         hBusyDelayedEmts;
+    /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
+    STAMPROFILE             StatBusyDelayEmts;
+
     STAMPROFILE             StatR3CmdPresent;
     STAMPROFILE             StatR3CmdDrawPrimitive;
     STAMPROFILE             StatR3CmdSurfaceDMA;
@@ -157,9 +180,18 @@ static SSMFIELD const g_aVMSVGASTATEFields[] =
     SSMFIELD_ENTRY(             VMSVGASTATE, Cursor.cbData),
     SSMFIELD_ENTRY_IGN_HCPTR(   VMSVGASTATE, Cursor.pData),
     SSMFIELD_ENTRY(             VMSVGASTATE, colorAnnotation),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, cBusyDelayedEmts),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, hBusyDelayedEmts),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatBusyDelayEmts),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatR3CmdPresent),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatR3CmdDrawPrimitive),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatR3CmdSurfaceDMA),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoCommands),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoErrors),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoUnkCmds),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoTodoTimeout),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoTodoWoken),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatFifoStalls),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -743,14 +775,31 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         if (pThis->svga.fBusy)
         {
 #ifndef IN_RING3
+            /* Go to ring-3 and yield the CPU a bit. */
             rc = VINF_IOM_R3_IOPORT_READ;
             break;
 #else
-            /** @todo bit crude */
-            RTThreadSleep(50);
+            /* Delay the EMT a bit so the FIFO and others can get some work done.
+               This used to be a crude 50 ms sleep. The current code tries to be
+               more efficient, but the consept is still very crude. */
+            PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
+            STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
+            RTThreadYield();
+            if (pThis->svga.fBusy)
+            {
+                uint32_t cRefs = ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
+
+                if (pThis->svga.fBusy && cRefs == 1)
+                    RTSemEventMultiReset(pSVGAState->hBusyDelayedEmts);
+                if (pThis->svga.fBusy)
+                    RTSemEventMultiWait(pSVGAState->hBusyDelayedEmts, 50);
+
+                ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
+            }
+            STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
 #endif
         }
-        *pu32 = pThis->svga.fBusy;
+        *pu32 = pThis->svga.fBusy != 0;
         break;
 
     case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
@@ -921,6 +970,31 @@ int vmsvgaChangeMode(PVGASTATE pThis)
     return VINF_SUCCESS;
 }
 #endif /* IN_RING3 */
+
+#if defined(IN_RING0) || defined(IN_RING3)
+/**
+ * Safely updates the SVGA_FIFO_BUSY register (in shared memory).
+ *
+ * @param   pThis               The VMSVGA state.
+ * @param   fState              The busy state.
+ */
+DECLINLINE(void) vmsvgaSafeFifoBusyRegUpdate(PVGASTATE pThis, bool fState)
+{
+    ASMAtomicWriteU32(&pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY], fState);
+
+    if (RT_UNLIKELY(fState != (pThis->svga.fBusy != 0)))
+    {
+        /* Race / unfortunately scheduling. Highly unlikly. */
+        uint32_t cLoops = 64;
+        do
+        {
+            ASMNopPause();
+            fState = (pThis->svga.fBusy != 0);
+            ASMAtomicWriteU32(&pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY], fState != 0);
+        } while (cLoops-- > 0 && fState != (pThis->svga.fBusy != 0));
+    }
+}
+#endif
 
 /**
  * Write port register
@@ -1093,8 +1167,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         {
 #if defined(IN_RING3) || defined(IN_RING0)
             Log(("SVGA_REG_SYNC: SVGA_FIFO_BUSY=%d\n", pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY]));
-            pThis->svga.fBusy = true;
-            pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            ASMAtomicWriteU32(&pThis->svga.fBusy, VMSVGA_BUSY_F_EMT_FORCE | VMSVGA_BUSY_F_FIFO);
+            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pThis->svga.CTX_SUFF(pFIFO)[SVGA_FIFO_MIN]))
+                vmsvgaSafeFifoBusyRegUpdate(pThis, true);
 
             /* Kick the FIFO thread to start processing commands again. */
             SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
@@ -1875,6 +1950,27 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 #ifdef IN_RING3
 
 /**
+ * Marks the FIFO non-busy, notifying any waiting EMTs.
+ *
+ * @param   pThis           The VGA state.
+ * @param   pSVGAState      Pointer to the ring-3 only SVGA state data.
+ * @param   offFifoMin      The start byte offset of the command FIFO.
+ */
+static void vmsvgaFifoSetNotBusy(PVGASTATE pThis, PVMSVGASTATE pSVGAState, uint32_t offFifoMin)
+{
+    ASMAtomicAndU32(&pThis->svga.fBusy, ~VMSVGA_BUSY_F_FIFO);
+    if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, offFifoMin))
+        vmsvgaSafeFifoBusyRegUpdate(pThis, pThis->svga.fBusy != 0);
+
+    /* Wake up any waiting EMTs. */
+    if (pSVGAState->cBusyDelayedEmts > 0)
+    {
+        int rc2 = RTSemEventMultiSignal(pSVGAState->hBusyDelayedEmts);
+        AssertRC(rc2);
+    }
+}
+
+/**
  * Reads (more) payload into the command buffer.
  *
  * @returns pbBounceBuf on success
@@ -1891,6 +1987,7 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
  * @param   pcbAlreadyRead  How much payload we've already read into the bounce
  *                          buffer. (We will NEVER re-read anything.)
  * @param   pThread         The calling PDM thread handle.
+ * @param   pThis           The VGA state.
  * @param   pSVGAState      Pointer to the ring-3 only SVGA state data. For
  *                          statistics collection.
  */
@@ -2028,16 +2125,6 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
     return pbBounceBuf;
 }
 
-/**
- * Macro for checking if a fixed FIFO register is valid according to the
- * current FIFO configuration.
- *
- * @returns true / false.
- * @param   a_iIndex        The fifo register index (like SVGA_FIFO_CAPABILITIES).
- * @param   a_offFifoMin    A valid SVGA_FIFO_MIN value.
- */
-#define VMSVGA_IS_VALID_FIFO_REG(a_iIndex, a_offFifoMin) ( ((a_iIndex) + 1) * sizeof(uint32_t) <= (a_offFifoMin) )
-
 /* The async FIFO handling thread. */
 static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -2066,7 +2153,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
 
-        /* Wait for at most 250 ms to start polling. */
+        /*
+         * Wait for at most 250 ms to start polling.
+         */
         rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, 250);
         AssertBreak(RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED);
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
@@ -2089,6 +2178,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         Log(("vmsvgaFIFOLoop: min  %x max  %x\n", pFIFO[SVGA_FIFO_MIN], pFIFO[SVGA_FIFO_MAX]));
         Log(("vmsvgaFIFOLoop: next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
 
+        /*
+         * Handle external commands.
+         */
         if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
         {
             switch (pThis->svga.u8FIFOExtCommand)
@@ -2143,9 +2235,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (    !pThis->svga.fEnabled
             ||  !pThis->svga.fConfigured)
         {
-            pThis->svga.fBusy = false;
-            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pFIFO[SVGA_FIFO_MIN]))
-                pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            vmsvgaFifoSetNotBusy(pThis, pSVGAState, pFIFO[SVGA_FIFO_MIN]);
             continue;   /* device not enabled. */
         }
 
@@ -2161,16 +2251,19 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (RT_UNLIKELY(   !VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_STOP, offFifoMin)
                         || offFifoMax <= offFifoMin
                         || offFifoMax > VMSVGA_FIFO_SIZE
+                        || (offFifoMax & 3) != 0
+                        || (offFifoMin & 3) != 0
                         || offCurrentCmd < offFifoMin
                         || offCurrentCmd > offFifoMax))
         {
-            LogRelMax(8, ("vmsvgaFIFOLoop: Bad fifo: min=%#x stop=%#x max=%#x\n", offFifoMin, offCurrentCmd, offFifoMax));
-            /** @todo Should we clear SVGA_FIFO_BUSY here like we do above? */
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
+            LogRelMax(8, ("vmsvgaFIFOLoop: Bad fifo: min=%#x stop=%#x max=%#x\n", offFifoMin, offCurrentCmd, offFifoMax));
+            vmsvgaFifoSetNotBusy(pThis, pSVGAState, offFifoMin);
             continue;
         }
         if (RT_UNLIKELY(offCurrentCmd & 3))
         {
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(8, ("vmsvgaFIFOLoop: Misaligned offCurrentCmd=%#x?\n", offCurrentCmd));
             offCurrentCmd = ~UINT32_C(3);
         }
@@ -2205,9 +2298,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         /*
          * Mark the FIFO as busy.
          */
-        pThis->svga.fBusy = true;
+        ASMAtomicWriteU32(&pThis->svga.fBusy, VMSVGA_BUSY_F_FIFO);
         if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, offFifoMin))
-            pFIFO[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_BUSY], true);
 
         /*
          * Execute all queued FIFO commands.
@@ -3073,9 +3166,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (fDone)
         {
             Log(("vmsvgaFIFOLoop: emptied the FIFO next=%x stop=%x\n", pFIFO[SVGA_FIFO_NEXT_CMD], offCurrentCmd));
-            pThis->svga.fBusy = false;
-            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, offFifoMin))
-                pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            vmsvgaFifoSetNotBusy(pThis, pSVGAState, offFifoMin);
         }
     }
 
@@ -3170,9 +3261,9 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
             cbSrcPitch  = cbTempPitch;
         }
 
-        if (    pThis->svga.cbScanline == cbDestPitch
-            &&  cbWidth == cbDestPitch
-            &&  cbSrcPitch == cbDestPitch)
+        if (   pThis->svga.cbScanline == (uint32_t)cbDestPitch
+            && cbWidth                == (uint32_t)cbDestPitch
+            && cbSrcPitch             == cbDestPitch)
         {
             memcpy(pbDst, pSrc, cbWidth * cHeight);
         }
@@ -3665,6 +3756,12 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
 
     if (pSVGAState)
     {
+        if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
+        {
+            RTSemEventMultiDestroy(pSVGAState->hBusyDelayedEmts);
+            pSVGAState->hBusyDelayedEmts = NIL_RTSEMEVENT;
+        }
+
         if (pSVGAState->Cursor.fActive)
             RTMemFree(pSVGAState->Cursor.pData);
 
@@ -3733,6 +3830,10 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
         return rc;
     }
 
+    /* Create semaphore for delaying EMTs wait for the FIFO to stop being busy. */
+    rc = RTSemEventMultiCreate(&pSVGAState->hBusyDelayedEmts);
+    AssertRCReturn(rc, rc);
+
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
 # ifdef VBOX_WITH_VMSVGA3D
@@ -3790,6 +3891,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     STAM_REG(pVM, &pSVGAState->StatR3CmdPresent,        STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/Present",  STAMUNIT_TICKS_PER_CALL, "Profiling of Present.");
     STAM_REG(pVM, &pSVGAState->StatR3CmdDrawPrimitive,  STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/DrawPrimitive",  STAMUNIT_TICKS_PER_CALL, "Profiling of DrawPrimitive.");
     STAM_REG(pVM, &pSVGAState->StatR3CmdSurfaceDMA,     STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/SurfaceDMA",  STAMUNIT_TICKS_PER_CALL, "Profiling of SurfaceDMA.");
+    STAM_REL_REG(pVM, &pSVGAState->StatBusyDelayEmts,   STAMTYPE_PROFILE, "/Devices/VMSVGA/EmtDelayOnBusyFifo",  STAMUNIT_TICKS_PER_CALL, "Time we've delayed EMTs because of busy FIFO thread.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoCommands,    STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCommands",  STAMUNIT_OCCURENCES, "FIFO command counter.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoErrors,      STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoErrors",  STAMUNIT_OCCURENCES, "FIFO error counter.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoUnkCmds,     STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoUnknownCommands",  STAMUNIT_OCCURENCES, "FIFO unknown command counter.");
