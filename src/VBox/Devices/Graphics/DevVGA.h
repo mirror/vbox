@@ -276,6 +276,7 @@ typedef struct
     uint32_t                    u32CurrentGMRId;
     /** Register caps. */
     uint32_t                    u32RegCaps;
+    uint32_t                    Padding2;
     /** Physical address of command mmio range. */
     RTIOPORT                    BasePort;
     /** Port io index register. */
