@@ -799,7 +799,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
                     uint64_t cNsMaxWait = TMVirtualSyncGetNsToDeadline(PDMDevHlpGetVM(pThis->pDevInsR3));
                     if (cNsMaxWait >= RT_NS_100US)
                         RTSemEventMultiWaitEx(pSVGAState->hBusyDelayedEmts,
-                                              RTSEMWAIT_FLAGS_NANOSECS |  RTSEMWAIT_FLAGS_RELATIVE,
+                                              RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NORESUME,
                                               RT_MIN(cNsMaxWait, RT_NS_10MS));
                 }
 
@@ -2803,7 +2803,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  */
 #  define VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(a_cbMin) \
     AssertMsgBreak((a_cbMin) <= pHdr->size, ("size=%#x a_cbMin=%#zx\n", pHdr->size, (size_t)(a_cbMin)))
-                    switch (enmCmdId)
+                    switch ((int)enmCmdId)
                     {
                     case SVGA_3D_CMD_SURFACE_DEFINE:
                     {
