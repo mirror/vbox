@@ -122,8 +122,8 @@ VBoxOGLcrutil_LDFLAGS += -Wl,-z,nodelete
 endif
 
 # vc7 hangs during compilation of this file when optimizations are enabled.
-VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
-VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
+#VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
+#VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
@@ -149,8 +149,8 @@ VBoxOGLcrutil-x86_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
 endif
 # vc7 hangs during compilation of this file when optimizations are enabled.
-VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
-VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
+#VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
+#VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 endif
 
 #
