@@ -1867,60 +1867,157 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 
 #ifdef IN_RING3
 
-static void *vmsvgaFIFOGetCmdBuffer(PPDMTHREAD pThread, uint32_t *pFIFO, uint32_t cbCmd, uint32_t *pSize, void **ppfBounceBuffer)
+/**
+ * Reads (more) payload into the command buffer.
+ *
+ * @returns pbBounceBuf on success
+ * @retval  (void *)1 if the thread was requested to stop.
+ * @retval  NULL on FIFO error.
+ *
+ * @param   pThread         The calling PDM thread handle.
+ * @param   cbPayloadReq    The number of bytes of payload requested.
+ * @param   pFIFO           The FIFO.
+ * @param   offCurrentCmd   The FIFO byte offset of the current command.
+ * @param   offFifoMin      The start byte offset of the command FIFO.
+ * @param   offFifoMax      The end byte offset of the command FIFO.
+ * @param   pbBounceBuf     The bounch buffer. Same size as the entire FIFO, so
+ *                          always sufficient size.
+ * @param   pcbAlreadyRead  How much payload we've already read into the bounce
+ *                          buffer. (We will NEVER re-read anything.)
+ */
+static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, uint32_t volatile *pFIFO,
+                                    uint32_t offCurrentCmd, uint32_t offFifoMin, uint32_t offFifoMax,
+                                    uint8_t *pbBounceBuf, uint32_t *pcbAlreadyRead)
 {
-    uint32_t cbLeft;
-    uint32_t cbFIFOCmd = pFIFO[SVGA_FIFO_MAX] - pFIFO[SVGA_FIFO_MIN];
-    uint32_t u32Current = pFIFO[SVGA_FIFO_STOP] + sizeof(uint32_t);     /* skip command dword */
-    uint8_t *pCmdBuffer;
+    Assert(pbBounceBuf);
+    Assert(pcbAlreadyRead);
+    Assert(offFifoMin < offFifoMax);
+    Assert(offCurrentCmd >= offFifoMin && offCurrentCmd < offFifoMax);
+    Assert(offFifoMax <= VMSVGA_FIFO_SIZE);
 
-    Assert(ppfBounceBuffer);
-    /* Commands bigger than the fifo buffer are invalid. */
-    AssertReturn(cbCmd <= cbFIFOCmd, NULL);
-
-    *pSize          += cbCmd;
-    *ppfBounceBuffer = NULL;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    /*
+     * Check if the requested payload size has already been satisfied                                                                                                .
+     *                                                                                                                                                       .
+     * When called to read more, the caller is responsible for making sure the                                                                               .
+     * new command size (cbRequsted) never is smaller than what has already                                                                                  .
+     * been read.
+     */
+    uint32_t cbAlreadyRead = *pcbAlreadyRead;
+    if (cbPayloadReq <= cbAlreadyRead)
     {
-        Assert(pFIFO[SVGA_FIFO_NEXT_CMD] != pFIFO[SVGA_FIFO_STOP]);
-
-        if (pFIFO[SVGA_FIFO_NEXT_CMD] >= u32Current)
-            cbLeft = pFIFO[SVGA_FIFO_NEXT_CMD] - u32Current;
-        else
-            cbLeft = cbFIFOCmd - (u32Current - pFIFO[SVGA_FIFO_NEXT_CMD]);
-
-        if (cbCmd <= cbLeft)
-            break;
-
-        /* Guest still busy copying into the FIFO; wait a bit. */
-        Log(("Guest still copying (%x vs %x) current %x next %x stop %x; sleep a bit\n", cbCmd, cbLeft, u32Current, pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
-        RTThreadSleep(2);
+        AssertLogRelReturn(cbPayloadReq == cbAlreadyRead, NULL);
+        return pbBounceBuf;
     }
 
-    if (u32Current + cbCmd <= pFIFO[SVGA_FIFO_MAX])
+    /*
+     * Commands bigger than the fifo buffer are invalid.
+     */
+    uint32_t const cbFifoCmd = offFifoMax - offFifoMin;
+    AssertMsgReturn(cbPayloadReq <= cbFifoCmd, ("cbPayloadReq=%#x cbFifoCmd=%#x\n", cbPayloadReq, cbFifoCmd), NULL);
+
+    /*
+     * Move offCurrentCmd past the command dword.
+     */
+    offCurrentCmd += sizeof(uint32_t);
+    if (offCurrentCmd >= offFifoMax)
+        offCurrentCmd = offFifoMin;
+
+    /*
+     * Do we have sufficient payload data available already?
+     */
+    uint32_t cbAfter, cbBefore;
+    uint32_t offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
+    if (offNextCmd > offCurrentCmd)
     {
-        pCmdBuffer = (uint8_t *)pFIFO + u32Current;
+        if (RT_LIKELY(offNextCmd < offFifoMax))
+            cbAfter = offNextCmd - offCurrentCmd;
+        else
+        {
+            LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
+                           offNextCmd, offFifoMin, offFifoMax));
+            /** @todo release counter.   */
+            cbAfter = offFifoMax - offCurrentCmd;
+        }
+        cbBefore = 0;
     }
     else
     {
-        /* command data split; allocate memory and copy. */
-        uint8_t *pFIFOMin = (uint8_t *)pFIFO + pFIFO[SVGA_FIFO_MIN];
-        uint32_t cbPart1 = pFIFO[SVGA_FIFO_MAX] - u32Current;
-        uint32_t cbPart2 = cbCmd - cbPart1;
+        cbAfter  = offFifoMax - offCurrentCmd;
+        if (offNextCmd >= offFifoMin)
+            cbBefore = offNextCmd - offFifoMin;
+        else
+        {
+            LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
+                           offNextCmd, offFifoMin, offFifoMax));
+            /** @todo release counter.   */
+            cbBefore = 0;
+        }
+    }
+    if (cbAfter + cbBefore < cbPayloadReq)
+    {
+        /*
+         * Insufficient, must wait for it to arrive.
+         */
+        for (;;)
+        {
+            if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+                return (void *)(uintptr_t)1;
+            Log(("Guest still copying (%x vs %x) current %x next %x stop %x; sleep a bit\n",
+                 cbPayloadReq, cbAfter + cbBefore, offCurrentCmd, offNextCmd, pFIFO[SVGA_FIFO_STOP]));
+            RTThreadSleep(1);
+            /** @todo release counter.   */
 
-        LogFlow(("Split data buffer at %x (%d-%d)\n", u32Current, cbPart1, cbPart2));
-        pCmdBuffer = (uint8_t *)RTMemAlloc(cbCmd);
-        AssertReturn(pCmdBuffer, NULL);
-        *ppfBounceBuffer = (void *)pCmdBuffer;
+            offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
+            if (offNextCmd > offCurrentCmd)
+            {
+                cbAfter = RT_MIN(offNextCmd, offFifoMax) - offCurrentCmd;
+                cbBefore = 0;
+            }
+            else
+            {
+                cbAfter  = offFifoMax - offCurrentCmd;
+                cbBefore = RT_MAX(offNextCmd, offFifoMin) - offFifoMin;
+            }
 
-        memcpy(pCmdBuffer,           (uint8_t *)pFIFO + u32Current, cbPart1);
-        memcpy(pCmdBuffer + cbPart1,  pFIFOMin,                     cbPart2);
+            if (cbAfter + cbBefore >= cbPayloadReq)
+                break;
+        }
     }
 
-    return pCmdBuffer;
+    /*
+     * Copy out the memory and update what pcbAlreadyRead points to.
+     */
+    if (cbAfter >= cbPayloadReq)
+        memcpy(pbBounceBuf + cbAlreadyRead,
+               (uint8_t *)pFIFO + offCurrentCmd + cbAlreadyRead,
+               cbPayloadReq - cbAlreadyRead);
+    else
+    {
+        LogFlow(("Split data buffer at %x (%u-%u)\n", offCurrentCmd, cbAfter, cbBefore));
+        if (cbAlreadyRead < cbAfter)
+        {
+            memcpy(pbBounceBuf + cbAlreadyRead,
+                   (uint8_t *)pFIFO + offCurrentCmd + cbAlreadyRead,
+                   cbAfter - cbAlreadyRead);
+            cbAlreadyRead += cbAfter - cbAlreadyRead;
+        }
+        memcpy(pbBounceBuf + cbAlreadyRead,
+               (uint8_t *)pFIFO + offFifoMin + cbAlreadyRead - cbAfter,
+               cbPayloadReq - cbAlreadyRead);
+    }
+    *pcbAlreadyRead = cbPayloadReq;
+    return pbBounceBuf;
 }
 
+/**
+ * Macro for checking if a fixed FIFO register is valid according to the
+ * current FIFO configuration.
+ *
+ * @returns true / false.
+ * @param   a_iIndex        The fifo register index (like SVGA_FIFO_CAPABILITIES).
+ * @param   a_offFifoMin    A valid SVGA_FIFO_MIN value.
+ */
+#define VMSVGA_IS_VALID_FIFO_REG(a_iIndex, a_offFifoMin) ( ((a_iIndex) + 1) * sizeof(uint32_t) <= (a_offFifoMin) )
 
 /* The async FIFO handling thread. */
 static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
@@ -1932,10 +2029,17 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
+    /*
+     * Allocate a bounce buffer for command we get from the FIFO.
+     * (All code must return via the end of the function to free this buffer.)
+     */
+    uint8_t *pbBounceBuf = (uint8_t *)RTMemAllocZ(VMSVGA_FIFO_SIZE);
+    AssertReturn(pbBounceBuf, VERR_NO_MEMORY);
+
     LogFlow(("vmsvgaFIFOLoop: started loop\n"));
+    uint32_t volatile * const pFIFO = pThis->svga.pFIFOR3;
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        uint32_t *pFIFO = pThis->svga.pFIFOR3;
 
         /* Wait for at most 250 ms to start polling. */
         rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, 250);
@@ -1943,7 +2047,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (pThread->enmState != PDMTHREADSTATE_RUNNING)
         {
             LogFlow(("vmsvgaFIFOLoop: thread state %x\n", pThread->enmState));
-            return VINF_SUCCESS;
+            break;
         }
         if (rc == VERR_TIMEOUT)
         {
@@ -2011,39 +2115,84 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             ||  !pThis->svga.fConfigured)
         {
             pThis->svga.fBusy = false;
-            pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, pFIFO[SVGA_FIFO_MIN]))
+                pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
             continue;   /* device not enabled. */
         }
 
-        if (pFIFO[SVGA_FIFO_STOP] >= pFIFO[SVGA_FIFO_MAX])
+        /*
+         * Get and check the min/max values.  We ASSUME that they will remain
+         * unchanged while we process requests.  A further ASSUMPTION is that
+         * the guest won't mess with SVGA_FIFO_NEXT_CMD while we're busy, so
+         * we don't read it back while in the loop.
+         */
+        uint32_t const offFifoMin    = pFIFO[SVGA_FIFO_MIN];
+        uint32_t const offFifoMax    = pFIFO[SVGA_FIFO_MAX];
+        uint32_t       offCurrentCmd = pFIFO[SVGA_FIFO_STOP];
+        if (RT_UNLIKELY(   !VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_STOP, offFifoMin)
+                        || offFifoMax <= offFifoMin
+                        || offFifoMax > VMSVGA_FIFO_SIZE
+                        || offCurrentCmd < offFifoMin
+                        || offCurrentCmd > offFifoMax))
         {
-            Log(("vmsvgaFIFOLoop: Invalid stop %x max=%x\n", pFIFO[SVGA_FIFO_STOP], pFIFO[SVGA_FIFO_MAX]));
-            continue;   /* invalid. */
+            LogRelMax(8, ("vmsvgaFIFOLoop: Bad fifo: min=%#x stop=%#x max=%#x\n", offFifoMin, offCurrentCmd, offFifoMax));
+            /** @todo Should we clear SVGA_FIFO_BUSY here like we do above? */
+            continue;
+        }
+        if (RT_UNLIKELY(offCurrentCmd & 3))
+        {
+            LogRelMax(8, ("vmsvgaFIFOLoop: Misaligned offCurrentCmd=%#x?\n", offCurrentCmd));
+            offCurrentCmd = ~UINT32_C(3);
         }
 
-        if (pFIFO[SVGA_FIFO_MAX] < VMSVGA_FIFO_SIZE)
-        {
-            Log(("vmsvgaFIFOLoop: Invalid max %x fifo max=%x\n", pFIFO[SVGA_FIFO_MAX], VMSVGA_FIFO_SIZE));
-            continue;   /* invalid. */
-        }
+/**
+ * Macro for shortening calls to vmsvgaFIFOGetCmdPayload.
+ *
+ * Will break out of the switch on failure.
+ * Will restart and quit the loop if the thread was requested to stop.
+ *
+ * @param   a_cbPayloadReq  How much payload to fetch.
+ * @remarks Access a bunch of variables in the current scope!
+ */
+# define VMSVGAFIFO_GET_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
+            if (1) { \
+                (a_PtrVar) = (a_Type *)vmsvgaFIFOGetCmdPayload(pThread, (a_cbPayloadReq), pFIFO, \
+                                                               offCurrentCmd, offFifoMin, offFifoMax, \
+                                                               pbBounceBuf, &cbPayload); \
+                if (RT_UNLIKELY((uintptr_t)(a_PtrVar) < 2)) { if ((uintptr_t)(a_PtrVar) == 1) continue; break; } \
+            } else do {} while (0)
+/**
+ * Macro for shortening calls to vmsvgaFIFOGetCmdPayload for refetching the
+ * buffer after figuring out the actual command size.
+ * Will break out of the switch on failure.
+ * @param   a_cbPayloadReq  How much payload to fetch.
+ * @remarks Access a bunch of variables in the current scope!
+ */
+# define VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
+            if (1) { \
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq); \
+            } else do {} while (0)
 
-        if (pFIFO[SVGA_FIFO_STOP] < pFIFO[SVGA_FIFO_MIN])
-        {
-            Log(("vmsvgaFIFOLoop: Invalid stop %x min=%x\n", pFIFO[SVGA_FIFO_STOP], pFIFO[SVGA_FIFO_MIN]));
-            continue;   /* invalid. */
-        }
+        /*
+         * Mark the FIFO as busy.
+         */
         pThis->svga.fBusy = true;
-        pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+        if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, offFifoMin))
+            pFIFO[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
 
-        /* Execute all queued FIFO commands. */
-        while (     pThread->enmState == PDMTHREADSTATE_RUNNING
-               &&   pFIFO[SVGA_FIFO_NEXT_CMD] != pFIFO[SVGA_FIFO_STOP])
+        /*
+         * Execute all queued FIFO commands.
+         * Quit if pending external command or changes in the thread state.
+         */
+        bool fDone = false;
+        while (   !(fDone = pFIFO[SVGA_FIFO_NEXT_CMD] == offCurrentCmd)
+               && pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
-            uint32_t u32Cmd;
-            uint32_t u32Current, size;
+            uint32_t cbPayload = 0;
             uint32_t u32IrqStatus = 0;
             bool     fTriggerIrq = false;
-            void    *pBounceBuffer = NULL;
+
+            Assert(offCurrentCmd < offFifoMax && offCurrentCmd >= offFifoMin);
 
             /* First check any pending actions. */
             if (ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT))
@@ -2056,13 +2205,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
                 break;
 
-            u32Current = pFIFO[SVGA_FIFO_STOP];
-
-            u32Cmd = u32Current / sizeof(uint32_t);
-            LogFlow(("vmsvgaFIFOLoop: FIFO command (iCmd=0x%x) %s 0x%x\n", u32Cmd, vmsvgaFIFOCmdToString(pFIFO[u32Cmd]), pFIFO[u32Cmd]));
-            size = sizeof(uint32_t);    /* command dword */
-
-            switch (pFIFO[u32Cmd])
+            /*
+             * Process the command.
+             */
+            SVGAFifoCmdId const enmCmdId = (SVGAFifoCmdId)pFIFO[offCurrentCmd / sizeof(uint32_t)];
+            LogFlow(("vmsvgaFIFOLoop: FIFO command (iCmd=0x%x) %s 0x%x\n",
+                     offCurrentCmd / sizeof(uint32_t), vmsvgaFIFOCmdToString(enmCmdId), enmCmdId));
+            switch (enmCmdId)
             {
             case SVGA_CMD_INVALID_CMD:
                 /* Nothing to do. */
@@ -2070,29 +2219,36 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_FENCE:
             {
-                SVGAFifoCmdFence *pCmdFence = (SVGAFifoCmdFence *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdFence), &size, &pBounceBuffer);
-
-                Log(("vmsvgaFIFOLoop: SVGA_CMD_FENCE %x\n", pCmdFence->fence));
-                pFIFO[SVGA_FIFO_FENCE] = pCmdFence->fence;
-                if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_ANY_FENCE)
+                SVGAFifoCmdFence *pCmdFence;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmdFence, SVGAFifoCmdFence, sizeof(*pCmdFence));
+                if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE, offFifoMin))
                 {
-                    Log(("vmsvgaFIFOLoop: any fence irq\n"));
-                    u32IrqStatus |= SVGA_IRQFLAG_ANY_FENCE;
+                    Log(("vmsvgaFIFOLoop: SVGA_CMD_FENCE %x\n", pCmdFence->fence));
+                    pFIFO[SVGA_FIFO_FENCE] = pCmdFence->fence;
+
+                    if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_ANY_FENCE)
+                    {
+                        Log(("vmsvgaFIFOLoop: any fence irq\n"));
+                        u32IrqStatus |= SVGA_IRQFLAG_ANY_FENCE;
+                    }
+                    else
+                    if (    VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE_GOAL, offFifoMin)
+                        &&  (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FENCE_GOAL)
+                        &&  pFIFO[SVGA_FIFO_FENCE_GOAL] == pCmdFence->fence)
+                    {
+                        Log(("vmsvgaFIFOLoop: fence goal reached irq (fence=%x)\n", pCmdFence->fence));
+                        u32IrqStatus |= SVGA_IRQFLAG_FENCE_GOAL;
+                    }
                 }
                 else
-                if (    (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FENCE_GOAL)
-                    &&  pFIFO[SVGA_FIFO_FENCE_GOAL] == pCmdFence->fence)
-                {
-                    Log(("vmsvgaFIFOLoop: fence goal reached irq (fence=%x)\n", pCmdFence->fence));
-                    u32IrqStatus |= SVGA_IRQFLAG_FENCE_GOAL;
-                }
+                    Log(("SVGA_CMD_FENCE is bogus when offFifoMin is %#x!\n", offFifoMin));
                 break;
             }
             case SVGA_CMD_UPDATE:
             case SVGA_CMD_UPDATE_VERBOSE:
             {
-                SVGAFifoCmdUpdate *pUpdate = (SVGAFifoCmdUpdate *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdUpdate), &size, &pBounceBuffer);
-
+                SVGAFifoCmdUpdate *pUpdate;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pUpdate, SVGAFifoCmdUpdate, sizeof(*pUpdate));
                 Log(("vmsvgaFIFOLoop: UPDATE (%d,%d)(%d,%d)\n", pUpdate->x, pUpdate->y, pUpdate->width, pUpdate->height));
                 vgaR3UpdateDisplay(pThis, pUpdate->x, pUpdate->y, pUpdate->width, pUpdate->height);
                 break;
@@ -2101,31 +2257,31 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             case SVGA_CMD_DEFINE_CURSOR:
             {
                 /* Followed by bitmap data. */
-                SVGAFifoCmdDefineCursor *pCursor = (SVGAFifoCmdDefineCursor *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineCursor), &size, &pBounceBuffer);
-
-                AssertFailed();
+                SVGAFifoCmdDefineCursor *pCursor;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCursor, SVGAFifoCmdDefineCursor, sizeof(*pCursor));
+                AssertFailed(); /** @todo implement when necessary. */
                 break;
             }
 
             case SVGA_CMD_DEFINE_ALPHA_CURSOR:
             {
                 /* Followed by bitmap data. */
-                SVGAFifoCmdDefineAlphaCursor *pCursor = (SVGAFifoCmdDefineAlphaCursor *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineAlphaCursor), &size, &pBounceBuffer);
                 uint32_t cbCursorShape, cbAndMask;
                 uint8_t *pCursorCopy;
                 uint32_t cbCmd;
 
+                SVGAFifoCmdDefineAlphaCursor *pCursor;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCursor, SVGAFifoCmdDefineAlphaCursor, sizeof(*pCursor));
+
                 Log(("vmsvgaFIFOLoop: ALPHA_CURSOR id=%d size (%d,%d) hotspot (%d,%d)\n", pCursor->id, pCursor->width, pCursor->height, pCursor->hotspotX, pCursor->hotspotY));
 
                 /* Check against a reasonable upper limit to prevent integer overflows in the sanity checks below. */
-                AssertReturn(pCursor->height < 2048 && pCursor->width < 2048, VERR_INVALID_PARAMETER);
+                AssertBreak(pCursor->height < 2048 && pCursor->width < 2048);
 
-                /* Refetch the command buffer with the added bitmap data; undo size increase (ugly) */
+                /* Refetch the bitmap data as well. */
                 cbCmd = sizeof(SVGAFifoCmdDefineAlphaCursor) + pCursor->width * pCursor->height * sizeof(uint32_t) /* 32-bit BRGA format */;
-                size  = sizeof(uint32_t);    /* command dword */
-                if (pBounceBuffer)
-                    RTMemFree(pBounceBuffer);
-                pCursor = (SVGAFifoCmdDefineAlphaCursor *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, cbCmd, &size, &pBounceBuffer);
+                VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCursor, SVGAFifoCmdDefineAlphaCursor, cbCmd);
+                /** @todo Would be more efficient to copy the data straight into pCursorCopy (memcpy below). */
 
                 /* The mouse pointer interface always expects an AND mask followed by the color data (XOR mask). */
                 cbAndMask     = (pCursor->width + 7) / 8 * pCursor->height;                         /* size of the AND mask */
@@ -2168,19 +2324,17 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             case SVGA_CMD_ESCAPE:
             {
                 /* Followed by nsize bytes of data. */
-                SVGAFifoCmdEscape *pEscape = (SVGAFifoCmdEscape *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdEscape), &size, &pBounceBuffer);
-                uint32_t cbCmd;
+                SVGAFifoCmdEscape *pEscape;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pEscape, SVGAFifoCmdEscape, sizeof(*pEscape));
 
                 /* Refetch the command buffer with the variable data; undo size increase (ugly) */
-                cbCmd = sizeof(SVGAFifoCmdEscape) + pEscape->size;
-                size  = sizeof(uint32_t);    /* command dword */
-                if (pBounceBuffer)
-                    RTMemFree(pBounceBuffer);
-                pEscape = (SVGAFifoCmdEscape *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, cbCmd, &size, &pBounceBuffer);
+                AssertBreak(pEscape->size < VMSVGA_FIFO_SIZE);
+                uint32_t cbCmd = sizeof(SVGAFifoCmdEscape) + pEscape->size;
+                VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pEscape, SVGAFifoCmdEscape, cbCmd);
 
                 if (pEscape->nsid == SVGA_ESCAPE_NSID_VMWARE)
                 {
-                    Assert(pEscape->size >= sizeof(uint32_t));
+                    AssertBreak(pEscape->size >= sizeof(uint32_t));
                     uint32_t cmd = *(uint32_t *)(pEscape + 1);
                     Log(("vmsvgaFIFOLoop: ESCAPE (%x %x) VMWARE cmd=%x\n", pEscape->nsid, pEscape->size, cmd));
 
@@ -2189,6 +2343,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_ESCAPE_VMWARE_VIDEO_SET_REGS:
                     {
                         SVGAEscapeVideoSetRegs *pVideoCmd = (SVGAEscapeVideoSetRegs *)(pEscape + 1);
+                        AssertBreak(pEscape->size >= sizeof(pVideoCmd->header));
                         uint32_t cRegs = (pEscape->size - sizeof(pVideoCmd->header)) / sizeof(pVideoCmd->items[0]);
 
                         Log(("SVGA_ESCAPE_VMWARE_VIDEO_SET_REGS: stream %x\n", pVideoCmd->header.streamId));
@@ -2201,6 +2356,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_ESCAPE_VMWARE_VIDEO_FLUSH:
                         SVGAEscapeVideoFlush *pVideoCmd = (SVGAEscapeVideoFlush *)(pEscape + 1);
+                        AssertBreak(pEscape->size >= sizeof(*pVideoCmd));
                         Log(("SVGA_ESCAPE_VMWARE_VIDEO_FLUSH: stream %x\n", pVideoCmd->streamId));
                         break;
                     }
@@ -2213,7 +2369,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # ifdef VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_GMR2:
             {
-                SVGAFifoCmdDefineGMR2 *pCmd = (SVGAFifoCmdDefineGMR2 *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineGMR2), &size, &pBounceBuffer);
+                SVGAFifoCmdDefineGMR2 *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineGMR2, sizeof(*pCmd));
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_DEFINE_GMR2 id=%x %x pages\n", pCmd->gmrId, pCmd->numPages));
 
                 /* Validate current GMR id. */
@@ -2235,15 +2392,17 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_REMAP_GMR2:
             {
-                /* Followed by page descriptors. */
-                SVGAFifoCmdRemapGMR2 *pCmd = (SVGAFifoCmdRemapGMR2 *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdRemapGMR2), &size, &pBounceBuffer);
+                /* Followed by page descriptors or guest ptr. */
+                SVGAFifoCmdRemapGMR2 *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdRemapGMR2, sizeof(*pCmd));
                 uint32_t cbPageDesc = (pCmd->flags & SVGA_REMAP_GMR2_PPN64) ? sizeof(uint64_t) : sizeof(uint32_t);
                 uint32_t cbCmd;
                 uint64_t *paNewPage64 = NULL;
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_REMAP_GMR2 id=%x flags=%x offset=%x npages=%x\n", pCmd->gmrId, pCmd->flags, pCmd->offsetPages, pCmd->numPages));
+                AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
 
-                /* Refetch the command buffer with the variable data; undo size increase (ugly) */
+                /* Calculate the size of what comes after next and fetch it. */
                 cbCmd = sizeof(SVGAFifoCmdRemapGMR2);
                 if (pCmd->flags & SVGA_REMAP_GMR2_VIA_GMR)
                     cbCmd += sizeof(SVGAGuestPtr);
@@ -2254,18 +2413,15 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     pCmd->numPages = 1;
                 }
                 else
+                {
+                    AssertBreak(pCmd->numPages <= VMSVGA_FIFO_SIZE);
                     cbCmd += cbPageDesc * pCmd->numPages;
-                size = sizeof(uint32_t);    /* command dword */
-
-                if (pBounceBuffer)
-                    RTMemFree(pBounceBuffer);
-                pCmd = (SVGAFifoCmdRemapGMR2 *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, cbCmd, &size, &pBounceBuffer);
-                AssertReturn(pCmd, VERR_INTERNAL_ERROR);
-
-                PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
+                }
+                VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdRemapGMR2, cbCmd);
 
                 /* Validate current GMR id. */
                 AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
+                PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
                 AssertBreak(pCmd->offsetPages + pCmd->numPages <= pGMR->cMaxPages);
                 AssertBreak(!pCmd->offsetPages || pGMR->paDesc); /* @todo */
 
@@ -2372,9 +2528,12 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # endif // VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_SCREEN:
             {
-                /* @note optional size depending on the capabilities */
+                /* Note! The size of this command is specified by the guest and depends on capabilities. */
                 Assert(!(pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_SCREEN_OBJECT));
-                SVGAFifoCmdDefineScreen *pCmd = (SVGAFifoCmdDefineScreen *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineScreen), &size, &pBounceBuffer);
+                SVGAFifoCmdDefineScreen *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, sizeof(pCmd->screen.structSize));
+                RT_BZERO(&pCmd->screen.id, sizeof(*pCmd) - RT_OFFSETOF(SVGAFifoCmdDefineScreen, screen.structSize));
+                VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, RT_MAX(sizeof(pCmd->screen.structSize), pCmd->screen.structSize));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_DEFINE_SCREEN id=%x flags=%x size=(%d,%d) root=(%d,%d)\n", pCmd->screen.id, pCmd->screen.flags, pCmd->screen.size.width, pCmd->screen.size.height, pCmd->screen.root.x, pCmd->screen.root.y));
                 if (pCmd->screen.flags & SVGA_SCREEN_HAS_ROOT)
@@ -2388,6 +2547,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 if (pCmd->screen.flags & SVGA_SCREEN_BLANKING)
                     Log(("vmsvgaFIFOLoop: SVGA_CMD_DEFINE_SCREEN flags SVGA_SCREEN_BLANKING\n"));
 
+                /** @todo multi monitor support and screen object capabilities.   */
                 pThis->svga.uWidth  = pCmd->screen.size.width;
                 pThis->svga.uHeight = pCmd->screen.size.height;
                 vmsvgaChangeMode(pThis);
@@ -2396,7 +2556,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_DESTROY_SCREEN:
             {
-                SVGAFifoCmdDestroyScreen *pCmd = (SVGAFifoCmdDestroyScreen *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDestroyScreen), &size, &pBounceBuffer);
+                SVGAFifoCmdDestroyScreen *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDestroyScreen, sizeof(*pCmd));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_DESTROY_SCREEN id=%x\n", pCmd->screenId));
                 break;
@@ -2404,7 +2565,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # ifdef VBOX_WITH_VMSVGA3D
             case SVGA_CMD_DEFINE_GMRFB:
             {
-                SVGAFifoCmdDefineGMRFB *pCmd = (SVGAFifoCmdDefineGMRFB *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdDefineGMRFB), &size, &pBounceBuffer);
+                SVGAFifoCmdDefineGMRFB *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineGMRFB, sizeof(*pCmd));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_DEFINE_GMRFB gmr=%x offset=%x bytesPerLine=%x bpp=%d color depth=%d\n", pCmd->ptr.gmrId, pCmd->ptr.offset, pCmd->bytesPerLine, pCmd->format.s.bitsPerPixel, pCmd->format.s.colorDepth));
                 pSVGAState->GMRFB.ptr          = pCmd->ptr;
@@ -2415,12 +2577,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_BLIT_GMRFB_TO_SCREEN:
             {
-                SVGAFifoCmdBlitGMRFBToScreen *pCmd = (SVGAFifoCmdBlitGMRFBToScreen *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdBlitGMRFBToScreen), &size, &pBounceBuffer);
                 uint32_t width, height;
+                SVGAFifoCmdBlitGMRFBToScreen *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdBlitGMRFBToScreen, sizeof(*pCmd));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_BLIT_GMRFB_TO_SCREEN src=(%d,%d) dest id=%d (%d,%d)(%d,%d)\n", pCmd->srcOrigin.x, pCmd->srcOrigin.y, pCmd->destScreenId, pCmd->destRect.left, pCmd->destRect.top, pCmd->destRect.right, pCmd->destRect.bottom));
 
-                /* @todo */
+                /** @todo Support GMRFB.format.s.bitsPerPixel != pThis->svga.uBpp   */
                 AssertBreak(pSVGAState->GMRFB.format.s.bitsPerPixel == pThis->svga.uBpp);
                 AssertBreak(pCmd->destScreenId == 0);
 
@@ -2450,7 +2613,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 unsigned offsetDest   = (pCmd->destRect.left * RT_ALIGN(pThis->svga.uBpp, 8)) / 8 + pThis->svga.cbScanline * pCmd->destRect.top;
                 unsigned cbCopyWidth  = (width * RT_ALIGN(pThis->svga.uBpp, 8)) / 8;
 
-                AssertReturn(offsetDest < pThis->vram_size, VERR_INVALID_PARAMETER);
+                AssertBreak(offsetDest < pThis->vram_size);
 
                 rc = vmsvgaGMRTransfer(pThis, SVGA3D_WRITE_HOST_VRAM, pThis->CTX_SUFF(vram_ptr) + offsetDest, pThis->svga.cbScanline, pSVGAState->GMRFB.ptr, offsetSource, pSVGAState->GMRFB.bytesPerLine, cbCopyWidth, height);
                 AssertRC(rc);
@@ -2460,9 +2623,10 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_BLIT_SCREEN_TO_GMRFB:
             {
-                SVGAFifoCmdBlitScreenToGMRFB *pCmd = (SVGAFifoCmdBlitScreenToGMRFB *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdBlitScreenToGMRFB), &size, &pBounceBuffer);
+                SVGAFifoCmdBlitScreenToGMRFB *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdBlitScreenToGMRFB, sizeof(*pCmd));
 
-                /* @note this can fetch 3d render results as well!! */
+                /* Note! This can fetch 3d render results as well!! */
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_BLIT_SCREEN_TO_GMRFB dest=(%d,%d) src id=%d (%d,%d)(%d,%d)\n", pCmd->destOrigin.x, pCmd->destOrigin.y, pCmd->srcScreenId, pCmd->srcRect.left, pCmd->srcRect.top, pCmd->srcRect.right, pCmd->srcRect.bottom));
                 AssertFailed();
                 break;
@@ -2470,7 +2634,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # endif // VBOX_WITH_VMSVGA3D
             case SVGA_CMD_ANNOTATION_FILL:
             {
-                SVGAFifoCmdAnnotationFill *pCmd = (SVGAFifoCmdAnnotationFill *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdAnnotationFill), &size, &pBounceBuffer);
+                SVGAFifoCmdAnnotationFill *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdAnnotationFill, sizeof(*pCmd));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_ANNOTATION_FILL red=%x green=%x blue=%x\n", pCmd->color.s.r, pCmd->color.s.g, pCmd->color.s.b));
                 pSVGAState->colorAnnotation = pCmd->color;
@@ -2479,7 +2644,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             case SVGA_CMD_ANNOTATION_COPY:
             {
-                SVGAFifoCmdAnnotationCopy *pCmd = (SVGAFifoCmdAnnotationCopy*)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGAFifoCmdAnnotationCopy), &size, &pBounceBuffer);
+                SVGAFifoCmdAnnotationCopy *pCmd;
+                VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdAnnotationCopy, sizeof(*pCmd));
 
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_ANNOTATION_COPY\n"));
                 AssertFailed();
@@ -2488,26 +2654,29 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             default:
 # ifdef VBOX_WITH_VMSVGA3D
-                if (    pFIFO[u32Cmd] >= SVGA_3D_CMD_BASE
-                    &&  pFIFO[u32Cmd] < SVGA_3D_CMD_MAX)
+                if (    enmCmdId >= SVGA_3D_CMD_BASE
+                    &&  enmCmdId <  SVGA_3D_CMD_MAX)
                 {
                     /* All 3d commands start with a common header, which defines the size of the command. */
-                    SVGA3dCmdHeader *pHdr = (SVGA3dCmdHeader *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, sizeof(SVGA3dCmdHeader), &size, &pBounceBuffer);
-                    uint32_t cbCmd;
+                    SVGA3dCmdHeader *pHdr;
+                    VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pHdr, SVGA3dCmdHeader, sizeof(*pHdr));
+                    AssertBreak(pHdr->size < VMSVGA_FIFO_SIZE);
+                    uint32_t cbCmd = sizeof(SVGA3dCmdHeader) + pHdr->size;
+                    VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pHdr, SVGA3dCmdHeader, cbCmd);
 
-                    /* Refetch the command buffer with the variable data; undo size increase (ugly) */
-                    cbCmd = sizeof(SVGA3dCmdHeader) + pHdr->size;
-                    size  = sizeof(uint32_t);    /* command dword */
-                    if (pBounceBuffer)
-                        RTMemFree(pBounceBuffer);
-                    pHdr = (SVGA3dCmdHeader *)vmsvgaFIFOGetCmdBuffer(pThread, pFIFO, cbCmd, &size, &pBounceBuffer);
-
-                    switch (pFIFO[u32Cmd])
+/**
+ * Check that the 3D command has at least a_cbMin of payload bytes after the
+ * header.  Will break out of the switch if it doesn't.
+ */
+#  define VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(a_cbMin) \
+    AssertMsgBreak((a_cbMin) <= pHdr->size, ("size=%#x a_cbMin=%#zx\n", pHdr->size, (size_t)(a_cbMin)))
+                    switch (enmCmdId)
                     {
                     case SVGA_3D_CMD_SURFACE_DEFINE:
                     {
-                        SVGA3dCmdDefineSurface *pCmd = (SVGA3dCmdDefineSurface *)(pHdr + 1);
                         uint32_t                cMipLevels;
+                        SVGA3dCmdDefineSurface *pCmd = (SVGA3dCmdDefineSurface *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cMipLevels = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dSize);
                         rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0, SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
@@ -2519,8 +2688,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_3D_CMD_SURFACE_DEFINE_V2:
                     {
-                        SVGA3dCmdDefineSurface_v2 *pCmd = (SVGA3dCmdDefineSurface_v2 *)(pHdr + 1);
                         uint32_t                   cMipLevels;
+                        SVGA3dCmdDefineSurface_v2 *pCmd = (SVGA3dCmdDefineSurface_v2 *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cMipLevels = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dSize);
                         rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, pCmd->surfaceFlags, pCmd->format, pCmd->face, pCmd->multisampleCount, pCmd->autogenFilter, cMipLevels, (SVGA3dSize *)(pCmd + 1));
@@ -2530,14 +2700,16 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SURFACE_DESTROY:
                     {
                         SVGA3dCmdDestroySurface *pCmd = (SVGA3dCmdDestroySurface *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         rc = vmsvga3dSurfaceDestroy(pThis, pCmd->sid);
                         break;
                     }
 
                     case SVGA_3D_CMD_SURFACE_COPY:
                     {
-                        SVGA3dCmdSurfaceCopy *pCmd = (SVGA3dCmdSurfaceCopy *)(pHdr + 1);
                         uint32_t              cCopyBoxes;
+                        SVGA3dCmdSurfaceCopy *pCmd = (SVGA3dCmdSurfaceCopy *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cCopyBoxes = (pHdr->size - sizeof(pCmd)) / sizeof(SVGA3dCopyBox);
                         rc = vmsvga3dSurfaceCopy(pThis, pCmd->dest, pCmd->src, cCopyBoxes, (SVGA3dCopyBox *)(pCmd + 1));
@@ -2547,6 +2719,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SURFACE_STRETCHBLT:
                     {
                         SVGA3dCmdSurfaceStretchBlt *pCmd = (SVGA3dCmdSurfaceStretchBlt *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSurfaceStretchBlt(pThis, pCmd->dest, pCmd->boxDest, pCmd->src, pCmd->boxSrc, pCmd->mode);
                         break;
@@ -2554,8 +2727,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_3D_CMD_SURFACE_DMA:
                     {
-                        SVGA3dCmdSurfaceDMA *pCmd = (SVGA3dCmdSurfaceDMA *)(pHdr + 1);
                         uint32_t             cCopyBoxes;
+                        SVGA3dCmdSurfaceDMA *pCmd = (SVGA3dCmdSurfaceDMA *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cCopyBoxes = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dCopyBox);
                         STAM_PROFILE_START(&pSVGAState->StatR3CmdSurfaceDMA, a);
@@ -2566,8 +2740,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN:
                     {
-                        SVGA3dCmdBlitSurfaceToScreen *pCmd = (SVGA3dCmdBlitSurfaceToScreen *)(pHdr + 1);
                         uint32_t                      cRects;
+                        SVGA3dCmdBlitSurfaceToScreen *pCmd = (SVGA3dCmdBlitSurfaceToScreen *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cRects = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGASignedRect);
                         rc = vmsvga3dSurfaceBlitToScreen(pThis, pCmd->destScreenId, pCmd->destRect, pCmd->srcImage, pCmd->srcRect, cRects, (SVGASignedRect *)(pCmd + 1));
@@ -2577,6 +2752,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_CONTEXT_DEFINE:
                     {
                         SVGA3dCmdDefineContext *pCmd = (SVGA3dCmdDefineContext *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dContextDefine(pThis, pCmd->cid, false /*fOtherProfile*/);
                         break;
@@ -2585,6 +2761,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_CONTEXT_DESTROY:
                     {
                         SVGA3dCmdDestroyContext *pCmd = (SVGA3dCmdDestroyContext *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dContextDestroy(pThis, pCmd->cid);
                         break;
@@ -2593,6 +2770,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETTRANSFORM:
                     {
                         SVGA3dCmdSetTransform *pCmd = (SVGA3dCmdSetTransform *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetTransform(pThis, pCmd->cid, pCmd->type, pCmd->matrix);
                         break;
@@ -2601,6 +2779,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETZRANGE:
                     {
                         SVGA3dCmdSetZRange *pCmd = (SVGA3dCmdSetZRange *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetZRange(pThis, pCmd->cid, pCmd->zRange);
                         break;
@@ -2608,8 +2787,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_3D_CMD_SETRENDERSTATE:
                     {
-                        SVGA3dCmdSetRenderState *pCmd = (SVGA3dCmdSetRenderState *)(pHdr + 1);
                         uint32_t                 cRenderStates;
+                        SVGA3dCmdSetRenderState *pCmd = (SVGA3dCmdSetRenderState *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cRenderStates = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dRenderState);
                         rc = vmsvga3dSetRenderState(pThis, pCmd->cid, cRenderStates, (SVGA3dRenderState *)(pCmd + 1));
@@ -2619,6 +2799,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETRENDERTARGET:
                     {
                         SVGA3dCmdSetRenderTarget *pCmd = (SVGA3dCmdSetRenderTarget *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetRenderTarget(pThis, pCmd->cid, pCmd->type, pCmd->target);
                         break;
@@ -2626,8 +2807,9 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     case SVGA_3D_CMD_SETTEXTURESTATE:
                     {
-                        SVGA3dCmdSetTextureState *pCmd = (SVGA3dCmdSetTextureState *)(pHdr + 1);
                         uint32_t                  cTextureStates;
+                        SVGA3dCmdSetTextureState *pCmd = (SVGA3dCmdSetTextureState *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         cTextureStates = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dTextureState);
                         rc = vmsvga3dSetTextureState(pThis, pCmd->cid, cTextureStates, (SVGA3dTextureState *)(pCmd + 1));
@@ -2637,6 +2819,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETMATERIAL:
                     {
                         SVGA3dCmdSetMaterial *pCmd = (SVGA3dCmdSetMaterial *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetMaterial(pThis, pCmd->cid, pCmd->face, &pCmd->material);
                         break;
@@ -2645,6 +2828,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETLIGHTDATA:
                     {
                         SVGA3dCmdSetLightData *pCmd = (SVGA3dCmdSetLightData *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetLightData(pThis, pCmd->cid, pCmd->index, &pCmd->data);
                         break;
@@ -2653,6 +2837,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETLIGHTENABLED:
                     {
                         SVGA3dCmdSetLightEnabled *pCmd = (SVGA3dCmdSetLightEnabled *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetLightEnabled(pThis, pCmd->cid, pCmd->index, pCmd->enabled);
                         break;
@@ -2661,6 +2846,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETVIEWPORT:
                     {
                         SVGA3dCmdSetViewport *pCmd = (SVGA3dCmdSetViewport *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetViewPort(pThis, pCmd->cid, &pCmd->rect);
                         break;
@@ -2669,6 +2855,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETCLIPPLANE:
                     {
                         SVGA3dCmdSetClipPlane *pCmd = (SVGA3dCmdSetClipPlane *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetClipPlane(pThis, pCmd->cid, pCmd->index, pCmd->plane);
                         break;
@@ -2677,6 +2864,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_CLEAR:
                     {
                         SVGA3dCmdClear  *pCmd = (SVGA3dCmdClear *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         uint32_t         cRects;
 
                         cRects = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dRect);
@@ -2687,6 +2875,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_PRESENT:
                     {
                         SVGA3dCmdPresent *pCmd = (SVGA3dCmdPresent *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         uint32_t          cRects;
 
                         cRects = (pHdr->size - sizeof(*pCmd)) / sizeof(SVGA3dCopyRect);
@@ -2700,6 +2889,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SHADER_DEFINE:
                     {
                         SVGA3dCmdDefineShader *pCmd = (SVGA3dCmdDefineShader *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         uint32_t               cbData;
 
                         cbData = (pHdr->size - sizeof(*pCmd));
@@ -2710,6 +2900,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SHADER_DESTROY:
                     {
                         SVGA3dCmdDestroyShader *pCmd = (SVGA3dCmdDestroyShader *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dShaderDestroy(pThis, pCmd->cid, pCmd->shid, pCmd->type);
                         break;
@@ -2718,6 +2909,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SET_SHADER:
                     {
                         SVGA3dCmdSetShader *pCmd = (SVGA3dCmdSetShader *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dShaderSet(pThis, pCmd->cid, pCmd->type, pCmd->shid);
                         break;
@@ -2726,6 +2918,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SET_SHADER_CONST:
                     {
                         SVGA3dCmdSetShaderConst *pCmd = (SVGA3dCmdSetShaderConst *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         uint32_t cRegisters = (pHdr->size - sizeof(*pCmd)) / sizeof(pCmd->values) + 1;
                         rc = vmsvga3dShaderSetConst(pThis, pCmd->cid, pCmd->reg, pCmd->type, pCmd->ctype, cRegisters, pCmd->values);
@@ -2735,6 +2928,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_DRAW_PRIMITIVES:
                     {
                         SVGA3dCmdDrawPrimitives *pCmd = (SVGA3dCmdDrawPrimitives *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
                         uint32_t                 cVertexDivisor;
 
                         cVertexDivisor = (pHdr->size - sizeof(*pCmd) - sizeof(SVGA3dVertexDecl) * pCmd->numVertexDecls - sizeof(SVGA3dPrimitiveRange) * pCmd->numRanges);
@@ -2755,6 +2949,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_SETSCISSORRECT:
                     {
                         SVGA3dCmdSetScissorRect *pCmd = (SVGA3dCmdSetScissorRect *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dSetScissorRect(pThis, pCmd->cid, &pCmd->rect);
                         break;
@@ -2763,6 +2958,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_BEGIN_QUERY:
                     {
                         SVGA3dCmdBeginQuery *pCmd = (SVGA3dCmdBeginQuery *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dQueryBegin(pThis, pCmd->cid, pCmd->type);
                         break;
@@ -2771,6 +2967,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_END_QUERY:
                     {
                         SVGA3dCmdEndQuery *pCmd = (SVGA3dCmdEndQuery *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dQueryEnd(pThis, pCmd->cid, pCmd->type, pCmd->guestResult);
                         break;
@@ -2779,6 +2976,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_WAIT_FOR_QUERY:
                     {
                         SVGA3dCmdWaitForQuery *pCmd = (SVGA3dCmdWaitForQuery *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dQueryWait(pThis, pCmd->cid, pCmd->type, pCmd->guestResult);
                         break;
@@ -2787,6 +2985,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_GENERATE_MIPMAPS:
                     {
                         SVGA3dCmdGenerateMipmaps *pCmd = (SVGA3dCmdGenerateMipmaps *)(pHdr + 1);
+                        VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
                         rc = vmsvga3dGenerateMipmaps(pThis, pCmd->sid, pCmd->filter);
                         break;
@@ -2802,14 +3001,17 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 # endif // VBOX_WITH_VMSVGA3D
                     AssertFailed();
             }
-            if (pBounceBuffer)
-                RTMemFree(pBounceBuffer);
 
             /* Go to the next slot */
-            if (u32Current + size >= pFIFO[SVGA_FIFO_MAX])
-                ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_STOP], pFIFO[SVGA_FIFO_MIN] + u32Current + size - pFIFO[SVGA_FIFO_MAX]);
-            else
-                ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_STOP], u32Current + size);
+            Assert(cbPayload + sizeof(uint32_t) <= offFifoMax - offFifoMin);
+            offCurrentCmd += RT_ALIGN_32(cbPayload + sizeof(uint32_t), sizeof(uint32_t));
+            if (offCurrentCmd >= offFifoMax)
+            {
+                offCurrentCmd -= offFifoMax - offFifoMin;
+                Assert(offCurrentCmd >= offFifoMin);
+                Assert(offCurrentCmd <  offFifoMax);
+            }
+            ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_STOP], offCurrentCmd);
 
             /* FIFO progress might trigger an interrupt. */
             if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)
@@ -2826,14 +3028,22 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
             }
         }
-        /* Done? */
-        if (pFIFO[SVGA_FIFO_NEXT_CMD] == pFIFO[SVGA_FIFO_STOP])
+
+        /* If really done, clear the busy flag. */
+        if (fDone)
         {
-            Log(("vmsvgaFIFOLoop: emptied the FIFO next=%x stop=%x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
+            Log(("vmsvgaFIFOLoop: emptied the FIFO next=%x stop=%x\n", pFIFO[SVGA_FIFO_NEXT_CMD], offCurrentCmd));
             pThis->svga.fBusy = false;
-            pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
+            if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_BUSY, offFifoMin))
+                pThis->svga.pFIFOR3[SVGA_FIFO_BUSY] = pThis->svga.fBusy;
         }
     }
+
+    /*
+     * Free the bounce buffer. (There are no returns above!)
+     */
+    RTMemFree(pbBounceBuf);
+
     return VINF_SUCCESS;
 }
 
