@@ -108,6 +108,14 @@ typedef struct
     STAMPROFILE             StatR3CmdPresent;
     STAMPROFILE             StatR3CmdDrawPrimitive;
     STAMPROFILE             StatR3CmdSurfaceDMA;
+
+    STAMCOUNTER             StatFifoCommands;
+    STAMCOUNTER             StatFifoErrors;
+    STAMCOUNTER             StatFifoUnkCmds;
+    STAMCOUNTER             StatFifoTodoTimeout;
+    STAMCOUNTER             StatFifoTodoWoken;
+    STAMPROFILE             StatFifoStalls;
+
 } VMSVGASTATE, *PVMSVGASTATE;
 
 #ifdef IN_RING3
@@ -1040,7 +1048,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         break;
 
     case SVGA_REG_DEPTH:
-        /* @todo read-only?? */
+        /** @todo read-only?? */
         break;
 
     case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
@@ -1873,7 +1881,6 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
  * @retval  (void *)1 if the thread was requested to stop.
  * @retval  NULL on FIFO error.
  *
- * @param   pThread         The calling PDM thread handle.
  * @param   cbPayloadReq    The number of bytes of payload requested.
  * @param   pFIFO           The FIFO.
  * @param   offCurrentCmd   The FIFO byte offset of the current command.
@@ -1883,10 +1890,14 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
  *                          always sufficient size.
  * @param   pcbAlreadyRead  How much payload we've already read into the bounce
  *                          buffer. (We will NEVER re-read anything.)
+ * @param   pThread         The calling PDM thread handle.
+ * @param   pSVGAState      Pointer to the ring-3 only SVGA state data. For
+ *                          statistics collection.
  */
-static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, uint32_t volatile *pFIFO,
-                                    uint32_t offCurrentCmd, uint32_t offFifoMin, uint32_t offFifoMax,
-                                    uint8_t *pbBounceBuf, uint32_t *pcbAlreadyRead)
+static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *pFIFO,
+                                     uint32_t offCurrentCmd, uint32_t offFifoMin, uint32_t offFifoMax,
+                                     uint8_t *pbBounceBuf, uint32_t *pcbAlreadyRead,
+                                     PPDMTHREAD pThread, PVGASTATE pThis, PVMSVGASTATE pSVGAState)
 {
     Assert(pbBounceBuf);
     Assert(pcbAlreadyRead);
@@ -1912,7 +1923,9 @@ static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, 
      * Commands bigger than the fifo buffer are invalid.
      */
     uint32_t const cbFifoCmd = offFifoMax - offFifoMin;
-    AssertMsgReturn(cbPayloadReq <= cbFifoCmd, ("cbPayloadReq=%#x cbFifoCmd=%#x\n", cbPayloadReq, cbFifoCmd), NULL);
+    AssertMsgReturnStmt(cbPayloadReq <= cbFifoCmd, ("cbPayloadReq=%#x cbFifoCmd=%#x\n", cbPayloadReq, cbFifoCmd),
+                        STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors),
+                        NULL);
 
     /*
      * Move offCurrentCmd past the command dword.
@@ -1932,6 +1945,7 @@ static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, 
             cbAfter = offNextCmd - offCurrentCmd;
         else
         {
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
                            offNextCmd, offFifoMin, offFifoMax));
             /** @todo release counter.   */
@@ -1946,6 +1960,7 @@ static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, 
             cbBefore = offNextCmd - offFifoMin;
         else
         {
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
                            offNextCmd, offFifoMin, offFifoMax));
             /** @todo release counter.   */
@@ -1957,14 +1972,18 @@ static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, 
         /*
          * Insufficient, must wait for it to arrive.
          */
-        for (;;)
+        STAM_REL_PROFILE_START(&pSVGAState->StatFifoStalls, Stall);
+        for (uint32_t i = 0;; i++)
         {
             if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+            {
+                STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoStalls, Stall);
                 return (void *)(uintptr_t)1;
-            Log(("Guest still copying (%x vs %x) current %x next %x stop %x; sleep a bit\n",
-                 cbPayloadReq, cbAfter + cbBefore, offCurrentCmd, offNextCmd, pFIFO[SVGA_FIFO_STOP]));
-            RTThreadSleep(1);
-            /** @todo release counter.   */
+            }
+            Log(("Guest still copying (%x vs %x) current %x next %x stop %x loop %u; sleep a bit\n",
+                 cbPayloadReq, cbAfter + cbBefore, offCurrentCmd, offNextCmd, pFIFO[SVGA_FIFO_STOP], i));
+
+            SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, i < 16 ? 1 : 2);
 
             offNextCmd = pFIFO[SVGA_FIFO_NEXT_CMD];
             if (offNextCmd > offCurrentCmd)
@@ -1981,6 +2000,7 @@ static void *vmsvgaFIFOGetCmdPayload(PPDMTHREAD pThread, uint32_t cbPayloadReq, 
             if (cbAfter + cbBefore >= cbPayloadReq)
                 break;
         }
+        STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoStalls, Stall);
     }
 
     /*
@@ -2029,6 +2049,12 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         return VINF_SUCCESS;
 
     /*
+     * Signal the semaphore to make sure we don't wait for 250 after a
+     * suspend & resume scenario (see vmsvgaFIFOGetCmdPayload).
+     */
+    SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+
+    /*
      * Allocate a bounce buffer for command we get from the FIFO.
      * (All code must return via the end of the function to free this buffer.)
      */
@@ -2052,9 +2078,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         {
             if (pFIFO[SVGA_FIFO_NEXT_CMD] == pFIFO[SVGA_FIFO_STOP])
                 continue;
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoTodoTimeout);
 
             Log(("vmsvgaFIFOLoop: timeout\n"));
         }
+        else if (pFIFO[SVGA_FIFO_NEXT_CMD] != pFIFO[SVGA_FIFO_STOP])
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoTodoWoken);
+
         Log(("vmsvgaFIFOLoop: enabled=%d configured=%d busy=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured, pThis->svga.pFIFOR3[SVGA_FIFO_BUSY]));
         Log(("vmsvgaFIFOLoop: min  %x max  %x\n", pFIFO[SVGA_FIFO_MIN], pFIFO[SVGA_FIFO_MAX]));
         Log(("vmsvgaFIFOLoop: next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
@@ -2136,6 +2166,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         {
             LogRelMax(8, ("vmsvgaFIFOLoop: Bad fifo: min=%#x stop=%#x max=%#x\n", offFifoMin, offCurrentCmd, offFifoMax));
             /** @todo Should we clear SVGA_FIFO_BUSY here like we do above? */
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             continue;
         }
         if (RT_UNLIKELY(offCurrentCmd & 3))
@@ -2155,9 +2186,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  */
 # define VMSVGAFIFO_GET_CMD_BUFFER_BREAK(a_PtrVar, a_Type, a_cbPayloadReq) \
             if (1) { \
-                (a_PtrVar) = (a_Type *)vmsvgaFIFOGetCmdPayload(pThread, (a_cbPayloadReq), pFIFO, \
-                                                               offCurrentCmd, offFifoMin, offFifoMax, \
-                                                               pbBounceBuf, &cbPayload); \
+                (a_PtrVar) = (a_Type *)vmsvgaFIFOGetCmdPayload((a_cbPayloadReq), pFIFO, offCurrentCmd, offFifoMin, offFifoMax, \
+                                                               pbBounceBuf, &cbPayload, pThread, pThis, pSVGAState); \
                 if (RT_UNLIKELY((uintptr_t)(a_PtrVar) < 2)) { if ((uintptr_t)(a_PtrVar) == 1) continue; break; } \
             } else do {} while (0)
 /**
@@ -2422,7 +2452,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
                 PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
                 AssertBreak(pCmd->offsetPages + pCmd->numPages <= pGMR->cMaxPages);
-                AssertBreak(!pCmd->offsetPages || pGMR->paDesc); /* @todo */
+                AssertBreak(!pCmd->offsetPages || pGMR->paDesc); /** @todo */
 
                 /* Save the old page descriptors as an array of page addresses (>> PAGE_SHIFT) */
                 if (pGMR->paDesc)
@@ -2650,6 +2680,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertFailed();
                 break;
             }
+
+            /** @todo SVGA_CMD_RECT_COPY  - see with ubuntu */
 
             default:
 # ifdef VBOX_WITH_VMSVGA3D
@@ -2994,11 +3026,19 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     case SVGA_3D_CMD_DEACTIVATE_SURFACE:
                         /* context id + surface id? */
                         break;
+
+                    default:
+                        STAM_REL_COUNTER_INC(&pSVGAState->StatFifoUnkCmds);
+                        AssertFailed();
+                        break;
                     }
                 }
                 else
 # endif // VBOX_WITH_VMSVGA3D
+                {
+                    STAM_REL_COUNTER_INC(&pSVGAState->StatFifoUnkCmds);
                     AssertFailed();
+                }
             }
 
             /* Go to the next slot */
@@ -3011,6 +3051,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 Assert(offCurrentCmd <  offFifoMax);
             }
             ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_STOP], offCurrentCmd);
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCommands);
 
             /* FIFO progress might trigger an interrupt. */
             if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)
@@ -3746,9 +3787,15 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     /*
      * Statistics.
      */
-    STAM_REG(pVM, &pSVGAState->StatR3CmdPresent,       STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/Present",  STAMUNIT_TICKS_PER_CALL, "Profiling of Present.");
-    STAM_REG(pVM, &pSVGAState->StatR3CmdDrawPrimitive, STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/DrawPrimitive",  STAMUNIT_TICKS_PER_CALL, "Profiling of DrawPrimitive.");
-    STAM_REG(pVM, &pSVGAState->StatR3CmdSurfaceDMA,    STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/SurfaceDMA",  STAMUNIT_TICKS_PER_CALL, "Profiling of SurfaceDMA.");
+    STAM_REG(pVM, &pSVGAState->StatR3CmdPresent,        STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/Present",  STAMUNIT_TICKS_PER_CALL, "Profiling of Present.");
+    STAM_REG(pVM, &pSVGAState->StatR3CmdDrawPrimitive,  STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/DrawPrimitive",  STAMUNIT_TICKS_PER_CALL, "Profiling of DrawPrimitive.");
+    STAM_REG(pVM, &pSVGAState->StatR3CmdSurfaceDMA,     STAMTYPE_PROFILE, "/Devices/VMSVGA/3d/Cmd/SurfaceDMA",  STAMUNIT_TICKS_PER_CALL, "Profiling of SurfaceDMA.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCommands,    STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCommands",  STAMUNIT_OCCURENCES, "FIFO command counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoErrors,      STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoErrors",  STAMUNIT_OCCURENCES, "FIFO error counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoUnkCmds,     STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoUnknownCommands",  STAMUNIT_OCCURENCES, "FIFO unknown command counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoTimeout, STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoTimeout",  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after a wait timeout.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoWoken,   STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoWoken",  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after being woken up.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoStalls,      STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoStalls",  STAMUNIT_TICKS_PER_CALL, "Profiling of FIFO stalls (waiting for guest to finish copying data).");
 
     return VINF_SUCCESS;
 }
