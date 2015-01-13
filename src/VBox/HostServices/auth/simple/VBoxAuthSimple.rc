@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxC - Resource file containing version info and icon.
+ * VBoxVMM - Resource file containing version info and icon.
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,49 +18,33 @@
 #include <windows.h>
 #include <VBox/version.h>
 
-#include "win/resource.h"
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
-#ifdef _DEBUG
-  FILEFLAGS        VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
-#else
-  FILEFLAGS        0 // final version
-#endif
+  FILEFLAGS        0x0L
   FILEOS           VOS_NT_WINDOWS32
   FILETYPE         VFT_DLL
-  FILESUBTYPE      0   // not used
+  FILESUBTYPE      VFT2_UNKNOWN
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
-    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    BLOCK "040904b0" // Lang=US English, CharSet=Unicode
     BEGIN
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
-      VALUE "FileDescription",  "VirtualBox Interface (32-bit)\0"
+      VALUE "FileDescription",  "VirtualBox Simple Authentication Host Service\0"
       VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-      VALUE "InternalName",     "VBoxClient-x86\0"
+      VALUE "InternalName",     "VBoxAuthSimple\0"
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-      VALUE "OriginalFilename", "VBoxClient-x86.dll\0"
+      VALUE "OriginalFilename", "VBoxAuthSimple.dll\0"
       VALUE "ProductName",      VBOX_PRODUCT "\0"
       VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
-
-      VALUE "OLESelfRegister",  "\0"
     END
   END
   BLOCK "VarFileInfo"
   BEGIN
-    VALUE "Translation", 0x409, 1252
+    VALUE "Translation", 0x409, 1200
   END
 END
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// REGISTRY
-//
-
-IDR_VIRTUALBOX REGISTRY "VBoxClient-x86.rgs"
-
-1 TYPELIB "VirtualBox-x86.tlb"
-

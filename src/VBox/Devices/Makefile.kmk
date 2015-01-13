@@ -1466,6 +1466,8 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	Graphics/shaderlib/stateblock.c \
  	Graphics/shaderlib/directx.c \
  	Graphics/shaderlib/libWineStub/debug.c
+ VBoxSVGA3D_SOURCES.win := \
+	Graphics/VBoxSVGA3D.rc
  VBoxSVGA3D_LIBS        = $(LIB_RUNTIME)
  VBoxSVGA3D_LIBS.win   += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  if1of ($(KBUILD_TARGET), solaris linux freebsd)

@@ -31,6 +31,9 @@ VBoxHostChannel_SOURCES = \
 	service.cpp \
 	HostChannel.cpp
 
+VBoxHostChannel_SOURCES.win = \
+	VBoxHostChannel.rc
+
 VBoxHostChannel_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)

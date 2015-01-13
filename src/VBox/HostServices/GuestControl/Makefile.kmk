@@ -37,6 +37,9 @@ VBoxGuestControlSvc_SOURCES = \
 	gctrl.cpp \
 	service.cpp
 
+VBoxGuestControlSvc_SOURCES.win = \
+	VBoxGuestControlSvc.rc
+
 VBoxGuestControlSvc_LIBS = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME) \

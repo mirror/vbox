@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxC - Resource file containing version info and icon.
+ * VBox Qt GUI - Windows resource file for VirtualBox.exe.
  */
 
 /*
- * Copyright (C) 2006-2015 Oracle Corporation
+ * Copyright (C) 2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,8 +18,6 @@
 #include <windows.h>
 #include <VBox/version.h>
 
-#include "win/resource.h"
-
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
   PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
@@ -30,7 +28,11 @@ VS_VERSION_INFO VERSIONINFO
   FILEFLAGS        0 // final version
 #endif
   FILEOS           VOS_NT_WINDOWS32
+#ifdef VBOXR3_HARDENED_DLL
+  FILETYPE         VFT_APP
+#else
   FILETYPE         VFT_DLL
+#endif
   FILESUBTYPE      0   // not used
 BEGIN
   BLOCK "StringFileInfo"
@@ -38,15 +40,21 @@ BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
-      VALUE "FileDescription",  "VirtualBox Interface (32-bit)\0"
+      VALUE "FileDescription",  "VirtualBox Headless Frontend\0"
       VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-      VALUE "InternalName",     "VBoxClient-x86\0"
+#ifdef VBOXR3_HARDENED_DLL
+      VALUE "InternalName",     "VBoxHeadless\0"
+#else
+      VALUE "InternalName",     "VBoxHeadless\0"
+#endif
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-      VALUE "OriginalFilename", "VBoxClient-x86.dll\0"
+#ifdef VBOXR3_HARDENED_DLL
+      VALUE "OriginalFilename", "VBoxHeadless.dll\0"
+#else
+      VALUE "OriginalFilename", "VBoxHeadless.exe\0"
+#endif
       VALUE "ProductName",      VBOX_PRODUCT "\0"
       VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
-
-      VALUE "OLESelfRegister",  "\0"
     END
   END
   BLOCK "VarFileInfo"
@@ -55,12 +63,6 @@ BEGIN
   END
 END
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// REGISTRY
-//
-
-IDR_VIRTUALBOX REGISTRY "VBoxClient-x86.rgs"
-
-1 TYPELIB "VirtualBox-x86.tlb"
+/* Creates the application icon. */
+#include "VBoxHeadless-icon.rc"
 

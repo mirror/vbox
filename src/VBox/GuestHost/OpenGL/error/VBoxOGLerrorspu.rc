@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxUSBMon - Resource file containing version info and icon.
+ * VBoxVMM - Resource file containing version info and icon.
  */
 
 /*
- * Copyright (C) 2011-2015 Oracle Corporation
+ * Copyright (C) 2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,20 @@
 #include <windows.h>
 #include <VBox/version.h>
 
+#ifdef IN_GUEST
+ #define DESCRIPTION_STR    "VirtualBox crOpenGL ICD\0"
+ #ifdef VBOX_WDDM_WOW64
+  #define FILENAME_STR       "VBoxOGLerrorspu-x86"
+ #else
+  #define FILENAME_STR       "VBoxOGLerrorspu"
+ #endif
+ #define PRODUCT_STR        VBOX_PRODUCT " Guest Additions\0"
+#else
+ #define DESCRIPTION_STR    "VirtualBox crOpenGL ICD\0"
+ #define FILENAME_STR       "VBoxOGLerrorspu"
+ #define PRODUCT_STR        VBOX_PRODUCT "\0"
+#endif
+
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
@@ -26,20 +40,20 @@ VS_VERSION_INFO VERSIONINFO
   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
   FILEFLAGS        0x0L
   FILEOS           VOS_NT_WINDOWS32
-  FILETYPE         VFT_DRV
-  FILESUBTYPE      VFT2_DRV_SYSTEM
+  FILETYPE         VFT_DLL
+  FILESUBTYPE      VFT2_UNKNOWN
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904b0" // Lang=US English, CharSet=Unicode
     BEGIN
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
-      VALUE "FileDescription",  "VirtualBox USB Monitor Driver\0"
+      VALUE "FileDescription",  DESCRIPTION_STR
       VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-      VALUE "InternalName",     "VBoxUSBMon\0"
+      VALUE "InternalName",     FILENAME_STR "\0"
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-      VALUE "OriginalFilename", "VBoxUSBMon.sys\0"
-      VALUE "ProductName",      VBOX_PRODUCT "\0"
+      VALUE "OriginalFilename", FILENAME_STR ".dll\0"
+      VALUE "ProductName",      PRODUCT_STR
       VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
     END
   END
@@ -48,3 +62,20 @@ BEGIN
     VALUE "Translation", 0x409, 1200
   END
 END
+
+// XXX is this really required?
+#if defined(VBOX_WDDM_WOW64) && defined(IN_GUEST)
+1 RCDATA
+BEGIN
+// Machine dependent parameters
+    17,     // Height of vertical thumb
+    17,     // Width of horizontal thumb
+    2,      // Icon horiz compression factor
+    2,      // Icon vert compression factor
+    1,      // Cursor horz compression factor
+    1,      // Cursor vert compression factor
+    0,      // Kanji window height
+    1,      // cxBorder (thickness of vertical lines)
+    1       // cyBorder (thickness of horizontal lines)
+END
+#endif

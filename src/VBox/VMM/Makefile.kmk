@@ -269,6 +269,8 @@ VBoxVMM_SOURCES.x86 += \
 	VMMSwitcher/X86Stub.asm
 VBoxVMM_SOURCES.amd64 += \
 	VMMSwitcher/AMD64Stub.asm
+VBoxVMM_SOURCES.win += \
+	VMMR3/VMMR3.rc
 
 VBoxVMM_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)

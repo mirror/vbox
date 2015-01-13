@@ -18,7 +18,7 @@
 #include <VBox/version.h>
 
 #define DESCRIPTION_STR    "VirtualBox NDIS 6.0 Host-Only Network Adapter Driver\0"
-#define FILENAME_STR       "VBoxNetAdp6.sys\0"
+#define FILENAME_STR       "VBoxNetAdp6"
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
@@ -38,9 +38,9 @@ BEGIN
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  DESCRIPTION_STR
          VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
-         VALUE "InternalName",     FILENAME_STR
+         VALUE "InternalName",     FILENAME_STR "\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-         VALUE "OriginalFilename", FILENAME_STR
+         VALUE "OriginalFilename", FILENAME_STR ".sys\0"
          VALUE "ProductName",      VBOX_PRODUCT "\0"
          VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
       END
