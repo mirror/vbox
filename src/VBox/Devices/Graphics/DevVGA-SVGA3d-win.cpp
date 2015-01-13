@@ -2304,7 +2304,8 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
     return VINF_SUCCESS;
 }
 
-int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host, SVGA3dTransferType transfer, uint32_t cCopyBoxes, SVGA3dCopyBox *pBoxes)
+int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host, SVGA3dTransferType transfer,
+                       uint32_t cCopyBoxes, SVGA3dCopyBox *pBoxes)
 {
     PVMSVGA3DSTATE          pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     PVMSVGA3DSURFACE        pSurface;
@@ -2558,7 +2559,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                 uDestOffset = pBoxes[i].x * pSurface->cbBlock + pBoxes[i].y * pSurface->pMipmapLevels[host.mipmap].cbSurfacePitch;
                 AssertReturn(uDestOffset + pBoxes[i].w * pSurface->cbBlock + (pBoxes[i].h - 1) * pSurface->pMipmapLevels[host.mipmap].cbSurfacePitch <= pSurface->pMipmapLevels[host.mipmap].cbSurface, VERR_INTERNAL_ERROR);
 
-                /* @todo lock only as much as we really need */
+                /** @todo lock only as much as we really need */
                 if (fVertex)
                     hr = pSurface->u.pVertexBuffer->Lock(0, 0, (void **)&pData, dwFlags);
                 else
@@ -6294,11 +6295,12 @@ static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)
         LogRel((" - D3DTEXOPCAPS_LERP\n"));
 
     LogRel(("\n"));
-    LogRel(("  PixelShaderVersion:  %#x (%u.%u)\n",
-            pCaps->PixelShaderVersion,  RT_BYTE2(pCaps->PixelShaderVersion),  RT_BYTE1(pCaps->PixelShaderVersion)));
-    LogRel(("  VertexShaderVersion: %#x (%u.%u)\n",
-            pCaps->VertexShaderVersion, RT_BYTE2(pCaps->VertexShaderVersion), RT_BYTE1(pCaps->VertexShaderVersion)));
+    LogRel(("PixelShaderVersion:  %#x (%u.%u)\n", pCaps->PixelShaderVersion,
+            D3DSHADER_VERSION_MAJOR(pCaps->PixelShaderVersion), D3DSHADER_VERSION_MINOR(pCaps->PixelShaderVersion)));
+    LogRel(("VertexShaderVersion: %#x (%u.%u)\n", pCaps->VertexShaderVersion,
+            D3DSHADER_VERSION_MAJOR(pCaps->VertexShaderVersion), D3DSHADER_VERSION_MINOR(pCaps->VertexShaderVersion)));
 
+    LogRel(("\n"));
     RTLogRelSetBuffering(fBufferingSaved);
 }
 
