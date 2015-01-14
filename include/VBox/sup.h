@@ -328,9 +328,13 @@ typedef struct SUPGLOBALINFOPAGE
     uint16_t            u16Padding0;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
+    /** Whether the host OS has already normalized the hardware TSC deltas across
+     *  CPUs. */
+    bool                fOsTscDeltasInSync;
+    uint8_t             au8Padding0[3];
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[27];
+    uint32_t            au32Padding1[26];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
@@ -427,6 +431,10 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
  * @returns Pointer to the GIP or NULL.
  */
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
+
+/** Whether the application of TSC-deltas is required. */
+#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip) \
+    ((a_pGip)->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pGip)->fOsTscDeltasInSync))
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
@@ -1545,6 +1553,7 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
     /* Validate. */
     Assert(puTsc);
     Assert(pGip);
+    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
 
     AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), ("idApic=%u\n", idApic), VERR_INVALID_CPU_ID);
     iCpu = pGip->aiCpuFromApicId[idApic];
@@ -1586,6 +1595,7 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
 DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
 {
 # ifdef IN_RING3
+    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage));
     return SUPR3ReadTsc(puTsc, pidApic);
 # else
     RTCCUINTREG uFlags;
@@ -1622,7 +1632,7 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
  */
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
-    if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+    if (GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage))
     {
         uint64_t u64Tsc = UINT64_MAX;
         int rc = SUPGetTsc(&u64Tsc, NULL /* pidApic */);

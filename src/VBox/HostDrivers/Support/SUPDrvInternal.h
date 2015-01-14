@@ -709,9 +709,6 @@ typedef struct SUPDRVDEVEXT
     uint32_t volatile               cMpOnOffEvents;
     /** Aligned pointer to the TSC delta sync. struct. */
     PSUPTSCDELTASYNC                pTscDeltaSync;
-    /** Whether the host OS has already normalized the hardware TSC deltas across
-     *  CPUs. */
-    bool                            fOsTscDeltasInSync;
     /** @}  */
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
