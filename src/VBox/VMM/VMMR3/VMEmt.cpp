@@ -1022,7 +1022,7 @@ VMMR3_INT_DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
  * This function is called by thread other than EMT to make
  * sure EMT wakes up and promptly service an FF request.
  *
- * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   pUVCpu          Pointer to the user mode per CPU VM structure.
  * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
  * @internal
  */
@@ -1045,6 +1045,7 @@ VMMR3_INT_DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
+ * @remarks Made visible for implementing vmsvga sync register.
  * @internal
  */
 VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
@@ -1293,5 +1294,62 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
      * This needs to be done while the other EMTs are not sleeping or otherwise messing around.
      */
     return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3SetHaltMethodCallback, (void *)(uintptr_t)i);
+}
+
+
+/**
+ * Special interface for implementing a HLT-like port on a device.
+ *
+ * This can be called directly from device code, provide the device is trusted
+ * to access the VMM directly.  Since we may not have an accurate register set
+ * and the caller certainly shouldn't (device code does not access CPU
+ * registers), this function will return when interrupts are pending regardless
+ * of the actual EFLAGS.IF state.
+ *
+ * @returns VBox error status (never informational statuses).
+ * @param   pVM                 The VM handle.
+ * @param   idCpu               The id of the calling EMT.
+ */
+VMMR3DECL(int) VMR3WaitForDeviceReady(PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Validate caller and resolve the CPU ID.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
+
+    /*
+     * Tag along with the HLT mechanics for now.
+     */
+    int rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
+    if (RT_SUCCESS(rc))
+        return VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Wakes up a CPU that has called VMR3WaitForDeviceReady.
+ *
+ * @returns VBox error status (never informational statuses).
+ * @param   pVM                 The VM handle.
+ * @param   idCpu               The id of the calling EMT.
+ */
+VMMR3DECL(int) VMR3NotifyCpuDeviceReady(PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Validate caller and resolve the CPU ID.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+    /*
+     * Pretend it was an FF that got set since we've got logic for that already.
+     */
+    VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
+    return VINF_SUCCESS;
 }
 
