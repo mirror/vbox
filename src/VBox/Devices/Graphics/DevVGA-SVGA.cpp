@@ -36,7 +36,6 @@
 #ifdef VMSVGA_USE_EMT_HALT_CODE
 # include <VBox/vmm/vmapi.h>
 # include <VBox/vmm/vmcpuset.h>
-# include <VBox/vmm/vm.h> /* Need VMCPU::idCpu. */
 #endif
 #include <VBox/sup.h>
 
@@ -801,7 +800,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
             STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
             PVM         pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
-            VMCPUID     idCpu = PDMDevHlpGetVMCPU(pThis->pDevInsR3)->idCpu; /** @todo add a separate dev helper for this. */
+            VMCPUID     idCpu = PDMDevHlpGetCurrentCpuId(pThis->pDevInsR3);
             VMCPUSET_ATOMIC_ADD(&pSVGAState->BusyDelayedEmts, idCpu);
             ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
             if (pThis->svga.fBusy)
