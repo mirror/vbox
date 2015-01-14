@@ -182,7 +182,9 @@ public:
     /** Unlocks frame-buffer access. */
     void unlock() const { RTCritSectLeave(&m_critSect); }
 
-    /** Returns host-to-guest scale ratio. */
+    /** Returns the scale-factor used by the scaled-size. */
+    double scaleFactor() const { return m_dScaleFactor; }
+    /** Returns the frame-buffer's scaled-size. */
     QSize scaledSize() const { return m_scaledSize; }
     /** Defines host-to-guest scale ratio as @a size. */
     void setScaledSize(const QSize &size = QSize()) { m_scaledSize = size; }

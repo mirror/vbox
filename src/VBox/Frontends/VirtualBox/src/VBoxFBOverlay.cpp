@@ -3858,8 +3858,9 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
     }
 
     ulong bytesPerPixel = bitsPerPixel/8;
-    ulong displayWidth = bytesPerLine/bytesPerPixel;
-    ulong displayHeight = size.height();
+    const QSize scaledSize = size.scaledSize();
+    const ulong displayWidth = scaledSize.isValid() ? scaledSize.width() : bytesPerLine / bytesPerPixel;
+    const ulong displayHeight = scaledSize.isValid() ? scaledSize.height() : size.height();
 
 #ifdef VBOXQGL_DBG_SURF
     for(int i = 0; i < RT_ELEMENTS(g_apSurf); i++)
@@ -4405,14 +4406,34 @@ void VBoxQGLOverlay::onVHWACommandEvent(QEvent * pEvent)
     mGlCurrent = false;
 }
 
-bool VBoxQGLOverlay::onNotifyUpdate(ULONG aX, ULONG aY,
-                         ULONG aW, ULONG aH)
+bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
+                                    ULONG uW, ULONG uH)
 {
+    /* Prepare corresponding viewport part: */
+    QRect rect;
+
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = mSizeInfo.scaleFactor();
+    if (dScaleFactor == 1.0)
+    {
+        /* Adjust corresponding viewport part: */
+        rect.moveTo(uX, uY);
+        rect.setSize(QSize(uW, uH));
+    }
+    else
+    {
+        /* Adjust corresponding viewport part: */
+        rect.moveTo(uX * dScaleFactor - 1,
+                    uY * dScaleFactor - 1);
+        rect.setSize(QSize(uW * dScaleFactor + 2 * dScaleFactor + 1,
+                           uH * dScaleFactor + 2 * dScaleFactor + 1));
+    }
+
     /* we do not to miss notify updates, because we have to update bg textures for it,
      * so no not check for m_fUnused here,
      * mOverlay will store the required info for us */
-    QRect r(aX, aY, aW, aH);
-    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &rect);
+
     return true;
 }
 
