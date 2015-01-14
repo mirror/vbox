@@ -2312,6 +2312,16 @@ static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetCurrentCpuId} */
+static DECLCALLBACK(VMCPUID) pdmR3DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VMCPUID idCpu = VMMGetCpuId(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_GetCurrentCpuId: caller='%s'/%d for CPU %u\n", pDevIns->pReg->szName, pDevIns->iInstance, idCpu));
+    return idCpu;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIBusRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
 {
@@ -3552,6 +3562,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_GetUVM,
     pdmR3DevHlp_GetVM,
     pdmR3DevHlp_GetVMCPU,
+    pdmR3DevHlp_GetCurrentCpuId,
     pdmR3DevHlp_RegisterVMMDevHeap,
     pdmR3DevHlp_UnregisterVMMDevHeap,
     pdmR3DevHlp_VMReset,
@@ -3595,6 +3606,15 @@ static DECLCALLBACK(PVMCPU) pdmR3DevHlp_Untrusted_GetVMCPU(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return NULL;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetCurrentCpuId} */
+static DECLCALLBACK(VMCPUID) pdmR3DevHlp_Untrusted_GetCurrentCpuId(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return NIL_VMCPUID;
 }
 
 
@@ -3793,6 +3813,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_GetUVM,
     pdmR3DevHlp_Untrusted_GetVM,
     pdmR3DevHlp_Untrusted_GetVMCPU,
+    pdmR3DevHlp_Untrusted_GetCurrentCpuId,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_VMReset,
