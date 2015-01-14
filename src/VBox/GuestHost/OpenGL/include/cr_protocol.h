@@ -53,7 +53,7 @@ typedef struct CR_CAPS_INFO
 /* flush command blocks for execution  */
 #define CR_VBOX_CAP_CMDBLOCKS_FLUSH      0x00000010
 /* Notify guest if host reports minimal OpenGL capabilities. */
-#define CR_VBOX_CAP_MINIMAL_HOST_CAPS    0x00000020
+#define CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT 0x00000020
 
 #define CR_VBOX_CAPS_ALL                 0x0000003f
 
