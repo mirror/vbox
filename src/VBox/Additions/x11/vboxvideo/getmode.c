@@ -458,7 +458,7 @@ void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
                 || ioctl(fd, EVIOCGNAME(sizeof(pszDevice)), pszDevice) == -1
                 || strcmp(pszDevice, "Video Bus") != 0)
                 continue;
-            if (   ioctl(fd, EVIOCGBIT(EV_KEY, KEY_MAX), afKeys) == -1
+            if (   ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(afKeys)), afKeys) == -1
                 || ((   afKeys[KEY_SWITCHVIDEOMODE / BITS_PER_BLOCK]
                      >> KEY_SWITCHVIDEOMODE % BITS_PER_BLOCK) & 1) == 0)
                 break;
