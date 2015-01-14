@@ -18,6 +18,10 @@
 #include <windows.h>
 #include <VBox/version.h>
 
+/* stupid windres! */
+#define RT_STR(x) #x
+#define RT_XSTR(x) RT_STR(x)
+
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
@@ -35,12 +39,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileDescription",  "VirtualBox Recompiler\0"
-      VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+      VALUE "FileVersion",      RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) "." RT_XSTR(VBOX_SVN_REV) "\0"
       VALUE "InternalName",     "VBoxREM\0"
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "OriginalFilename", "VBoxREM.dll\0"
       VALUE "ProductName",      VBOX_PRODUCT "\0"
-      VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+      VALUE "ProductVersion",   RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) ".r" RT_XSTR(VBOX_SVN_REV) "\0"
     END
   END
   BLOCK "VarFileInfo"
