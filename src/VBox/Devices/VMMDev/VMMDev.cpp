@@ -743,9 +743,7 @@ static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader
         PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, pStatus->facility);
         if (!pEntry)
         {
-            static int g_cLogEntries = 0;
-            if (g_cLogEntries++ < 10)
-                LogRel(("VMM: Facility table is full - facility=%u status=%u.\n", pStatus->facility, pStatus->status));
+            LogRelMax(10, ("VMM: Facility table is full - facility=%u status=%u.\n", pStatus->facility, pStatus->status));
             return VERR_OUT_OF_RESOURCES;
         }
 
@@ -2725,24 +2723,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
         else
         {
-            static int s_cRelWarn;
-            if (s_cRelWarn < 10)
-            {
-                s_cRelWarn++;
-                LogRel(("VMMDev: the guest has not yet reported to us -- refusing operation of request #%d\n",
+            LogRelMax(10, ("VMMDev: the guest has not yet reported to us -- refusing operation of request #%d\n",
                         requestHeader.requestType));
-            }
             requestHeader.rc = VERR_NOT_SUPPORTED;
         }
     }
     else
     {
-        static int s_cRelWarn;
-        if (s_cRelWarn < 50)
-        {
-            s_cRelWarn++;
-            LogRel(("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
-        }
+        LogRelMax(50, ("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
         requestHeader.rc = VERR_NOT_SUPPORTED;
     }
 

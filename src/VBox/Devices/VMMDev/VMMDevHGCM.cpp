@@ -651,12 +651,7 @@ int vmmdevHGCMCall (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCal
      */
     if (cParms > VMMDEV_MAX_HGCM_PARMS)
     {
-        static int s_cRelWarn;
-        if (s_cRelWarn < 50)
-        {
-            s_cRelWarn++;
-            LogRel(("VMMDev: request packet with too many parameters (%d). Refusing operation.\n", cParms));
-        }
+        LogRelMax(50, ("VMMDev: request packet with too many parameters (%d). Refusing operation.\n", cParms));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1200,12 +1195,7 @@ static int vmmdevHGCMCallSaved (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, RTGCPH
      */
     if (cParms > VMMDEV_MAX_HGCM_PARMS)
     {
-        static int s_cRelWarn;
-        if (s_cRelWarn < 50)
-        {
-            s_cRelWarn++;
-            LogRel(("VMMDev: request packet with too many parameters (%d). Refusing operation.\n", cParms));
-        }
+        LogRelMax(50, ("VMMDev: request packet with too many parameters (%d). Refusing operation.\n", cParms));
         return VERR_INVALID_PARAMETER;
     }
 
