@@ -1335,6 +1335,7 @@ VBoxRT_SOURCES.amd64 := $(RuntimeR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
 	r3/win/fileaio-win.cpp \
+	r3/win/VBoxRT.rc \
 	$(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_SOURCES.linux          += \
 	r3/linux/fileaio-linux.cpp

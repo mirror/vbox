@@ -29,6 +29,7 @@ endif
 VBoxInstallHelper_SOURCES  = \
 	VBoxInstallHelper.cpp \
 	VBoxInstallHelper.def \
+	VBoxInstallHelper.rc \
 	VBoxCommon.cpp
 ifndef VBOX_OSE
  VBoxInstallHelper_SOURCES += internal/VBoxSerial.cpp
