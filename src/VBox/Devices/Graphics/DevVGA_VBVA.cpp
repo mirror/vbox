@@ -1821,6 +1821,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 {
                     rc = SSMR3GetU32 (pSSM, &pVGAState->fGuestCaps);
                     AssertRCReturn(rc, rc);
+                    pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, pVGAState->fGuestCaps);
                     cbExtra -= 4;
                 }
 #endif
