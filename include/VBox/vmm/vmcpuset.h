@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,10 @@
 #define VMCPUSET_ADD(pSet, idCpu)           ASMBitSet(  &(pSet)->au32Bitmap[0], (idCpu))
 /** Deletes a CPU from the set. */
 #define VMCPUSET_DEL(pSet, idCpu)           ASMBitClear(&(pSet)->au32Bitmap[0], (idCpu))
+/** Adds a CPU to the set, atomically. */
+#define VMCPUSET_ATOMIC_ADD(pSet, idCpu)    ASMAtomicBitSet(  &(pSet)->au32Bitmap[0], (idCpu))
+/** Deletes a CPU from the set, atomically. */
+#define VMCPUSET_ATOMIC_DEL(pSet, idCpu)    ASMAtomicBitClear(&(pSet)->au32Bitmap[0], (idCpu))
 /** Empties the set. */
 #define VMCPUSET_EMPTY(pSet)                memset(&(pSet)->au32Bitmap[0], '\0', sizeof((pSet)->au32Bitmap))
 /** Fills the set. */
