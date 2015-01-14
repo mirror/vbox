@@ -52,8 +52,10 @@ typedef struct CR_CAPS_INFO
 #define CR_VBOX_CAP_GETATTRIBSLOCATIONS  0x00000008
 /* flush command blocks for execution  */
 #define CR_VBOX_CAP_CMDBLOCKS_FLUSH      0x00000010
+/* Notify guest if host reports minimal OpenGL capabilities. */
+#define CR_VBOX_CAP_MINIMAL_HOST_CAPS    0x00000020
 
-#define CR_VBOX_CAPS_ALL                 0x0000001f
+#define CR_VBOX_CAPS_ALL                 0x0000003f
 
 
 #define CR_PRESENT_SCREEN_MASK 0xffff

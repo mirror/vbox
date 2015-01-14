@@ -57,6 +57,30 @@ setDefaults(void)
     cr_server.pfnNotifyEventCB = NULL;
 }
 
+/* Check if host reports minimal OpenGL capabilities.
+ * For example, on Windows host this may happen if host has no graphics
+ * card drivers installed or drivers were not properly signed or VBox
+ * is running via remote desktop session etc. Currently, we take care
+ * about Windows host only when specific RENDERER and VERSION strings
+ * returned in this case. Later this check should be expanded to the
+ * rest of hosts. */
+static bool crServerHasMinimalCaps()
+{
+    const char *sRealRender;
+    const char *sRealVersion;
+
+    if (!cr_server.head_spu)
+        return true;
+
+    sRealRender  = cr_server.head_spu->dispatch_table.GetString(GL_REAL_RENDERER);
+    sRealVersion = cr_server.head_spu->dispatch_table.GetString(GL_REAL_VERSION);
+
+    if (sRealRender && RTStrCmp(sRealRender, "GDI Generic") == 0)
+        if (sRealVersion && RTStrCmp(sRealVersion, "1.1.0") == 0)
+            return true;
+    return false;
+}
+
 void crServerSetVBoxConfiguration()
 {
     CRMuralInfo *defaultMural;
@@ -151,6 +175,12 @@ void crServerSetVBoxConfiguration()
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
                 | CR_VBOX_CAP_CMDBLOCKS_FLUSH
                 ;
+    }
+
+    if (crServerHasMinimalCaps())
+    {
+        crDebug("Cfg: report minimal OpenGL capabilities");
+        cr_server.u32Caps |= CR_VBOX_CAP_MINIMAL_HOST_CAPS;
     }
 
     crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
@@ -303,6 +333,12 @@ void crServerSetVBoxConfigurationHGCM()
                 | CR_VBOX_CAP_GETATTRIBSLOCATIONS
                 | CR_VBOX_CAP_CMDBLOCKS_FLUSH
                 ;
+    }
+
+    if (crServerHasMinimalCaps())
+    {
+        crDebug("Cfg: report minimal OpenGL capabilities");
+        cr_server.u32Caps |= CR_VBOX_CAP_MINIMAL_HOST_CAPS;
     }
 
     crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
