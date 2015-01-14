@@ -1346,6 +1346,8 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   VBoxEhciR3_SOURCES  = \
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
+  VBoxEhciR3_SOURCES.win = \
+ 	build/VBoxEhciR3.rc
 
   SYSMODS += VBoxEhciR0
   VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
@@ -1372,18 +1374,20 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH)
   DLLS += VBoxPciRawR3
-  VBoxPciRawR3_TEMPLATE = VBoxR3ExtPackPuel
-  VBoxPciRawR3_SOURCES  = Bus/DevPciRaw.cpp
+  VBoxPciRawR3_TEMPLATE     = VBoxR3ExtPackPuel
+  VBoxPciRawR3_SOURCES      = Bus/DevPciRaw.cpp
+  VBoxPciRawR3_SOURCES.win  = build/VBoxPciRawR3.rc
 
   DLLS += VBoxPciRawDrv
-  VBoxPciRawDrv_TEMPLATE = VBoxR3ExtPackPuel
-  VBoxPciRawDrv_SOURCES = Bus/DrvPciRaw.cpp
+  VBoxPciRawDrv_TEMPLATE    = VBoxR3ExtPackPuel
+  VBoxPciRawDrv_SOURCES     = Bus/DrvPciRaw.cpp
+  VBoxPciRawDrv_SOURCES.win = build/VBoxPciRawDrv.rc
 
   SYSMODS += VBoxPciRawR0
-  VBoxPciRawR0_TEMPLATE = VBoxR0ExtPackPuel
-  VBoxPciRawR0_SOURCES  = Bus/DevPciRaw.cpp
+  VBoxPciRawR0_TEMPLATE     = VBoxR0ExtPackPuel
+  VBoxPciRawR0_SOURCES      = Bus/DevPciRaw.cpp
 
-  Bus/DevPciRaw.cpp_INCS   = Bus
+  Bus/DevPciRaw.cpp_INCS    = Bus
  endif
 
 
