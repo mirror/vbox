@@ -64,7 +64,7 @@ setDefaults(void)
  * about Windows host only when specific RENDERER and VERSION strings
  * returned in this case. Later this check should be expanded to the
  * rest of hosts. */
-static bool crServerHasMinimalCaps()
+static bool crServerHasInsufficientCaps()
 {
     const char *sRealRender;
     const char *sRealVersion;
@@ -177,7 +177,7 @@ void crServerSetVBoxConfiguration()
                 ;
     }
 
-    if (crServerHasMinimalCaps())
+    if (crServerHasInsufficientCaps())
     {
         crDebug("Cfg: report minimal OpenGL capabilities");
         cr_server.u32Caps |= CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT;
@@ -335,7 +335,7 @@ void crServerSetVBoxConfigurationHGCM()
                 ;
     }
 
-    if (crServerHasMinimalCaps())
+    if (crServerHasInsufficientCaps())
     {
         crDebug("Cfg: report minimal OpenGL capabilities");
         cr_server.u32Caps |= CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT;
