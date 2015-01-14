@@ -180,7 +180,7 @@ void crServerSetVBoxConfiguration()
     if (crServerHasMinimalCaps())
     {
         crDebug("Cfg: report minimal OpenGL capabilities");
-        cr_server.u32Caps |= CR_VBOX_CAP_MINIMAL_HOST_CAPS;
+        cr_server.u32Caps |= CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT;
     }
 
     crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
@@ -338,7 +338,7 @@ void crServerSetVBoxConfigurationHGCM()
     if (crServerHasMinimalCaps())
     {
         crDebug("Cfg: report minimal OpenGL capabilities");
-        cr_server.u32Caps |= CR_VBOX_CAP_MINIMAL_HOST_CAPS;
+        cr_server.u32Caps |= CR_VBOX_CAP_HOST_CAPS_NOT_SUFFICIENT;
     }
 
     crInfo("Cfg: u32Caps(%#x), fVisualBitsDefault(%#x)",
