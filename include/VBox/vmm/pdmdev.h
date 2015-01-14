@@ -3518,6 +3518,14 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /**
+     * The the VM CPU ID of the current thread (restricted API).
+     *
+     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
+
+    /**
      * Registers the VMM device heap
      *
      * @returns VBox status code.
@@ -3656,7 +3664,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 12, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 14, 1)
 
 
 /**
@@ -3829,6 +3837,14 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /**
+     * The the VM CPU ID of the current thread (restricted API).
+     *
+     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
+
+    /**
      * Get the current virtual clock time in a VM. The clock frequency must be
      * queried separately.
      *
@@ -3873,7 +3889,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 3, 1)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 4, 1)
 
 
 /**
@@ -4054,6 +4070,14 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /**
+     * The the VM CPU ID of the current thread (restricted API).
+     *
+     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
+
+    /**
      * Get the current virtual clock time in a VM. The clock frequency must be
      * queried separately.
      *
@@ -4098,7 +4122,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 3, 1)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 4, 1)
 
 
 
@@ -5152,6 +5176,14 @@ DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnGetVMCPU(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGetCurrentCpuId
+ */
+DECLINLINE(VMCPUID) PDMDevHlpGetCurrentCpuId(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnGetCurrentCpuId(pDevIns);
 }
 
 /**

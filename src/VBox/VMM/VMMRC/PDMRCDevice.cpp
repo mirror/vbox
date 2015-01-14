@@ -318,6 +318,16 @@ static DECLCALLBACK(PVMCPU) pdmRCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPRC,pfnGetCurrentCpuId} */
+static DECLCALLBACK(VMCPUID) pdmRCDevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VMCPUID idCpu = VMMGetCpuId(pDevIns->Internal.s.pVMRC);
+    LogFlow(("pdmRCDevHlp_GetCurrentCpuId: caller='%p'/%d for CPU %u\n", pDevIns, pDevIns->iInstance, idCpu));
+    return idCpu;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPRC,pfnTMTimeVirtGet} */
 static DECLCALLBACK(uint64_t) pdmRCDevHlp_TMTimeVirtGet(PPDMDEVINS pDevIns)
 {
@@ -376,6 +386,7 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
     pdmRCDevHlp_PATMSetMMIOPatchInfo,
     pdmRCDevHlp_GetVM,
     pdmRCDevHlp_GetVMCPU,
+    pdmRCDevHlp_GetCurrentCpuId,
     pdmRCDevHlp_TMTimeVirtGet,
     pdmRCDevHlp_TMTimeVirtGetFreq,
     pdmRCDevHlp_TMTimeVirtGetNano,
