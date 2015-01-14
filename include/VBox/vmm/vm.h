@@ -694,10 +694,10 @@ typedef struct VMCPU
 # define VMCPU_ASSERT_EMT_RETURN(pVCpu, rc) AssertReturn(VMCPU_IS_EMT(pVCpu), (rc))
 #else
 # define VMCPU_ASSERT_EMT_RETURN(pVCpu, rc) \
-    AssertMsg(VMCPU_IS_EMT(pVCpu), \
-              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
-               RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu), \
-              (rc))
+    AssertMsgReturn(VMCPU_IS_EMT(pVCpu), \
+                    ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+                     RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu), \
+                    (rc))
 #endif
 
 /** @def VMCPU_ASSERT_EMT_OR_GURU
