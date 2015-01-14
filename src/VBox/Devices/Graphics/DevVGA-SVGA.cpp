@@ -27,11 +27,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
+#define VMSVGA_USE_EMT_HALT_CODE
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/version.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vmm/pgm.h>
+#ifdef VMSVGA_USE_EMT_HALT_CODE
+# include <VBox/vmm/vmapi.h>
+# include <VBox/vmm/vmcpuset.h>
+# include <VBox/vmm/vm.h> /* Need VMCPU::idCpu. */
+#endif
 #include <VBox/sup.h>
 
 #include <iprt/assert.h>
@@ -120,11 +126,18 @@ typedef struct
     } Cursor;
     SVGAColorBGRX           colorAnnotation;
 
+#ifdef VMSVGA_USE_EMT_HALT_CODE
+    /** Number of EMTs in BusyDelayedEmts (quicker than scanning the set). */
+    uint32_t volatile       cBusyDelayedEmts;
+    /** Set of EMTs that are   */
+    VMCPUSET                BusyDelayedEmts;
+#else
     /** Number of EMTs waiting on hBusyDelayedEmts. */
     uint32_t volatile       cBusyDelayedEmts;
     /** Semaphore that EMTs wait on when reading SVGA_REG_BUSY and the FIFO is
      *  busy (ugly).  */
     RTSEMEVENTMULTI         hBusyDelayedEmts;
+#endif
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;
 
@@ -181,7 +194,11 @@ static SSMFIELD const g_aVMSVGASTATEFields[] =
     SSMFIELD_ENTRY_IGN_HCPTR(   VMSVGASTATE, Cursor.pData),
     SSMFIELD_ENTRY(             VMSVGASTATE, colorAnnotation),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, cBusyDelayedEmts),
+#ifdef VMSVGA_USE_EMT_HALT_CODE
+    SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, BusyDelayedEmts),
+#else
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, hBusyDelayedEmts),
+#endif
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatBusyDelayEmts),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatR3CmdPresent),
     SSMFIELD_ENTRY_IGNORE(      VMSVGASTATE, StatR3CmdDrawPrimitive),
@@ -775,10 +792,24 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         if (pThis->svga.fBusy)
         {
 #ifndef IN_RING3
-            /* Go to ring-3 and yield the CPU a bit. */
+            /* Go to ring-3 and halt the CPU. */
             rc = VINF_IOM_R3_IOPORT_READ;
             break;
+#elif defined(VMSVGA_USE_EMT_HALT_CODE)
+            /* The guest is basically doing a HLT via the device here, but with
+               a special wake up condition on FIFO completion. */
+            PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
+            STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
+            PVM         pVM   = PDMDevHlpGetVM(pThis->pDevInsR3);
+            VMCPUID     idCpu = PDMDevHlpGetVMCPU(pThis->pDevInsR3)->idCpu; /** @todo add a separate dev helper for this. */
+            VMCPUSET_ATOMIC_ADD(&pSVGAState->BusyDelayedEmts, idCpu);
+            ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
+            if (pThis->svga.fBusy)
+                rc = VMR3WaitForDeviceReady(pVM, idCpu);
+            ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
+            VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
 #else
+
             /* Delay the EMT a bit so the FIFO and others can get some work done.
                This used to be a crude 50 ms sleep. The current code tries to be
                more efficient, but the consept is still very crude. */
@@ -807,8 +838,10 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             }
             STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
 #endif
+            *pu32 = pThis->svga.fBusy != 0;
         }
-        *pu32 = pThis->svga.fBusy != 0;
+        else
+            *pu32 = false;
         break;
 
     case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
@@ -1974,8 +2007,20 @@ static void vmsvgaFifoSetNotBusy(PVGASTATE pThis, PVMSVGASTATE pSVGAState, uint3
     /* Wake up any waiting EMTs. */
     if (pSVGAState->cBusyDelayedEmts > 0)
     {
+#ifdef VMSVGA_USE_EMT_HALT_CODE
+        PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
+        VMCPUID idCpu = VMCpuSetFindLastPresentInternal(&pSVGAState->BusyDelayedEmts);
+        if (idCpu != NIL_VMCPUID)
+        {
+            VMR3NotifyCpuDeviceReady(pVM, idCpu);
+            while (idCpu-- > 0)
+                if (VMCPUSET_IS_PRESENT(&pSVGAState->BusyDelayedEmts, idCpu))
+                    VMR3NotifyCpuDeviceReady(pVM, idCpu);
+        }
+#else
         int rc2 = RTSemEventMultiSignal(pSVGAState->hBusyDelayedEmts);
         AssertRC(rc2);
+#endif
     }
 }
 
@@ -3765,12 +3810,13 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
 
     if (pSVGAState)
     {
+# ifndef VMSVGA_USE_EMT_HALT_CODE
         if (pSVGAState->hBusyDelayedEmts != NIL_RTSEMEVENTMULTI)
         {
             RTSemEventMultiDestroy(pSVGAState->hBusyDelayedEmts);
             pSVGAState->hBusyDelayedEmts = NIL_RTSEMEVENT;
         }
-
+# endif
         if (pSVGAState->Cursor.fActive)
             RTMemFree(pSVGAState->Cursor.pData);
 
@@ -3839,9 +3885,11 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
         return rc;
     }
 
+# ifndef VMSVGA_USE_EMT_HALT_CODE
     /* Create semaphore for delaying EMTs wait for the FIFO to stop being busy. */
     rc = RTSemEventMultiCreate(&pSVGAState->hBusyDelayedEmts);
     AssertRCReturn(rc, rc);
+# endif
 
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
