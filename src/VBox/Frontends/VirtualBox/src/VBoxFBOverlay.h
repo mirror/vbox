@@ -1340,34 +1340,42 @@ private:
 class VBoxFBSizeInfo
 {
 public:
+
     VBoxFBSizeInfo() {}
-    template<class T> VBoxFBSizeInfo(T * fb) :
-        mPixelFormat(fb->pixelFormat()), mVRAM(fb->address()), mBitsPerPixel(fb->bitsPerPixel()),
-        mBytesPerLine(fb->bytesPerLine()), mWidth(fb->width()), mHeight(fb->height()),
+    template<class T> VBoxFBSizeInfo(T *pFb) :
+        mPixelFormat(pFb->pixelFormat()), mVRAM(pFb->address()), mBitsPerPixel(pFb->bitsPerPixel()),
+        mBytesPerLine(pFb->bytesPerLine()), mWidth(pFb->width()), mHeight(pFb->height()),
+        m_dScaleFactor(pFb->scaleFactor()), m_scaledSize(pFb->scaledSize()),
         mUsesGuestVram(true) {}
 
     VBoxFBSizeInfo(ulong aPixelFormat, uchar *aVRAM,
-                     ulong aBitsPerPixel, ulong aBytesPerLine,
-                     ulong aWidth, ulong aHeight,
-                     bool bUsesGuestVram) :
-        mPixelFormat (aPixelFormat), mVRAM (aVRAM), mBitsPerPixel (aBitsPerPixel),
-        mBytesPerLine (aBytesPerLine), mWidth (aWidth), mHeight (aHeight),
+                   ulong aBitsPerPixel, ulong aBytesPerLine,
+                   ulong aWidth, ulong aHeight,
+                   bool bUsesGuestVram) :
+        mPixelFormat(aPixelFormat), mVRAM(aVRAM), mBitsPerPixel(aBitsPerPixel),
+        mBytesPerLine(aBytesPerLine), mWidth(aWidth), mHeight(aHeight),
         mUsesGuestVram(bUsesGuestVram) {}
+
     ulong pixelFormat() const { return mPixelFormat; }
     uchar *VRAM() const { return mVRAM; }
     ulong bitsPerPixel() const { return mBitsPerPixel; }
     ulong bytesPerLine() const { return mBytesPerLine; }
     ulong width() const { return mWidth; }
     ulong height() const { return mHeight; }
+    double scaleFactor() const { return m_dScaleFactor; }
+    QSize scaledSize() const { return m_scaledSize; }
     bool usesGuestVram() const {return mUsesGuestVram;}
 
 private:
+
     ulong mPixelFormat;
     uchar *mVRAM;
     ulong mBitsPerPixel;
     ulong mBytesPerLine;
     ulong mWidth;
     ulong mHeight;
+    double m_dScaleFactor;
+    QSize m_scaledSize;
     bool mUsesGuestVram;
 };
 
