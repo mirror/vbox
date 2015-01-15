@@ -495,8 +495,6 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
     {
         pVBVA->hostFlags.u32HostEvents = 0;
         pVBVA->hostFlags.u32SupportedOrders = 0;
-        pVGAState->fGuestCaps = 0;
-        pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, 0);
 
         rc = pVGAState->pDrv->pfnVBVAEnable (pVGAState->pDrv, uScreenId, &pVBVA->hostFlags, false);
     }
