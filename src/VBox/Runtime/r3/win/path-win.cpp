@@ -164,28 +164,26 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
     AssertReturn(cchPath, VERR_INVALID_PARAMETER);
 
     RTUTF16 wszPath[RTPATH_MAX];
-    DWORD   dwAttr;
     bool    fValidFolderPath = false;
 
     /*
      * Try with Windows XP+ functionality first.
      */
+    RTLDRMOD hShell32;
+    int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
+    if (RT_SUCCESS(rc))
     {
-        RTLDRMOD hShell32;
-        int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
+        PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
+        rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
         if (RT_SUCCESS(rc))
         {
-            PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
-            rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
-            if (RT_SUCCESS(rc))
-            {
-                HRESULT hrc = pfnSHGetFolderPathW(0, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, wszPath);
-		fValidFolderPath = (hrc == S_OK);
-	    }
-            RTLdrClose(hShell32);
+            HRESULT hrc = pfnSHGetFolderPathW(0, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, wszPath);
+            fValidFolderPath = (hrc == S_OK);
         }
+        RTLdrClose(hShell32);
     }
 
+    DWORD   dwAttr;
     if (    !fValidFolderPath
         ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
         ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
