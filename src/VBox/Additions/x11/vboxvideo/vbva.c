@@ -281,6 +281,14 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
                    "Failed to enable screen update reporting for at least one virtual monitor.\n");
          vboxDisableVbva(pScrn);
     }
+#ifdef VBOXVIDEO_13
+# ifdef RT_OS_LINUX
+    if (rc && pVBox->hACPIEventHandler != NULL)
+        /* We ignore the return value as the fall-back should be active
+         * anyway. */
+        VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS);
+# endif
+#endif
     return rc;
 }
 

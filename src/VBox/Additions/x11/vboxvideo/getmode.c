@@ -468,9 +468,6 @@ void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
                 = xf86AddGeneralHandler(fd, acpiEventHandler, pScreen);
             if (pVBox->hACPIEventHandler == NULL)
                 break;
-            /* We ignore the return value as the fall-back should be active
-             * anyway. */
-            VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS);
             pVBox->fdACPIDevices = fd;
             fd = -1;
             break;

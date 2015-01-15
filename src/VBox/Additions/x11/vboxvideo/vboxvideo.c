@@ -1072,6 +1072,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     xf86SetBlackWhitePixels(pScreen);
     pScrn->vtSema = TRUE;
 
+#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
+    VBoxSetUpLinuxACPI(pScreen);
+#endif
+
     vbox_open (pScrn, pScreen, pVBox);
     vboxEnableVbva(pScrn);
     VBoxInitialiseSizeHints(pScrn);
@@ -1168,10 +1172,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     /* We probably do want to support power management - even if we just use
        a dummy function. */
     xf86DPMSInit(pScreen, VBOXDisplayPowerManagementSet, 0);
-#endif
-
-#if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
-    VBoxSetUpLinuxACPI(pScreen);
 #endif
 
     /* Report any unused options (only for the first generation) */
