@@ -51,7 +51,7 @@
 int audioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead, PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesRead);
 inline uint32_t audioMixBufBytesToSamples(PPDMAUDIOMIXBUF pMixBuf);
 void audioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf);
-void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples);
+void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear);
 uint32_t audioMixBufFree(PPDMAUDIOMIXBUF pMixBuf);
 size_t audioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf);
 int audioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS pProps, uint32_t cSamples);
@@ -65,6 +65,7 @@ int audioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf, uint32_t offSamples, void *pvBuf,
 int audioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, uint32_t offSamples, void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
 int audioMixBufReadCirc(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, size_t cbBuf, uint32_t *pcRead);
 int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, void *pvBuf, size_t cbBuf, uint32_t *pcRead);
+void audioMixBufReset(PPDMAUDIOMIXBUF pMixBuf);
 uint32_t audioMixBufSize(PPDMAUDIOMIXBUF pMixBuf);
 size_t audioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf);
 void audioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf);

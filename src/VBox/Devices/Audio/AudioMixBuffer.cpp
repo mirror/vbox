@@ -37,7 +37,6 @@ static uint64_t s_cSamplesMixedTotal = 0;
 static int audioMixBufInitCommon(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS pProps);
 static void audioMixBufFreeBuf(PPDMAUDIOMIXBUF pMixBuf);
 static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf);
-static void audioMixBufReset(PPDMAUDIOMIXBUF pMixBuf);
 
 typedef uint32_t (AUDMIXBUF_FN_CONVFROM) (PPDMAUDIOSAMPLE paDst, const void *pvSrc, size_t cbSrc, uint32_t cSamples);
 typedef AUDMIXBUF_FN_CONVFROM *PAUDMIXBUF_FN_CONVFROM;
@@ -50,11 +49,16 @@ int audioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
                        PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesRead)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertReturn(cSamplesToRead, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvSamples, VERR_INVALID_POINTER);
     AssertPtrReturn(pcSamplesRead, VERR_INVALID_POINTER);
 
     int rc;
+
+    if (!cSamplesToRead)
+    {
+        *pcSamplesRead = 0;
+        return VINF_SUCCESS;
+    }
 
     uint32_t cSamplesRead;
     if (pMixBuf->offReadWrite + cSamplesToRead > pMixBuf->cSamples)
@@ -85,11 +89,11 @@ int audioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
  * keeps track to eventually assigned children buffers.
  *
  * @param   pMixBuf
- * @param   cSamples
+ * @param   cSamplesToClear
  */
-void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
+void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear)
 {
-    LogFlowFunc(("cSamples=%RU32\n", cSamples));
+    LogFlowFunc(("cSamples=%RU32\n", cSamplesToClear));
     LogFlowFunc(("%s: offReadWrite=%RU32, cProcessed=%RU32\n",
                  pMixBuf->pszName, pMixBuf->offReadWrite, pMixBuf->cProcessed));
 
@@ -97,14 +101,14 @@ void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     RTListForEach(&pMixBuf->lstBuffers, pIter, PDMAUDIOMIXBUF, Node)
     {
         LogFlowFunc(("\t%s: cMixed=%RU32 -> %RU32\n",
-                     pIter->pszName, pIter->cMixed, pIter->cMixed - cSamples));
+                     pIter->pszName, pIter->cMixed, pIter->cMixed - cSamplesToClear));
 
-        Assert(pIter->cMixed >= cSamples);
-        pIter->cMixed -= cSamples;
+        Assert(pIter->cMixed >= cSamplesToClear);
+        pIter->cMixed -= cSamplesToClear;
         pIter->offReadWrite = 0;
     }
 
-    uint32_t cLeft = RT_MIN(cSamples, pMixBuf->cSamples);
+    uint32_t cLeft = RT_MIN(cSamplesToClear, pMixBuf->cSamples);
     uint32_t offClear;
 
     if (cLeft > pMixBuf->offReadWrite) /* Zero end of buffer first (wrap-around). */
@@ -148,6 +152,7 @@ void audioMixBufDestroy(PPDMAUDIOMIXBUF pMixBuf)
     audioMixBufFreeBuf(pMixBuf);
 }
 
+/** @todo Rename this function! Too confusing in combination with audioMixBufFreeBuf(). */
 uint32_t audioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
@@ -592,8 +597,8 @@ int audioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName,
     pMixBuf->cSamples = 0;
 
     pMixBuf->offReadWrite = 0;
-    pMixBuf->cMixed = 0;
-    pMixBuf->cProcessed = 0;
+    pMixBuf->cMixed       = 0;
+    pMixBuf->cProcessed   = 0;
 
     /* Prevent division by zero.
      * Do a 1:1 conversion according to AUDIOMIXBUF_S2B_RATIO. */
@@ -840,7 +845,7 @@ int audioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
 
 static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf)
 {
-#ifdef DEBUG
+#ifdef DEBUG_DISABLED
     PPDMAUDIOMIXBUF pParent = pMixBuf;
     if (pMixBuf->pParent)
         pParent = pMixBuf->pParent;
@@ -1019,15 +1024,15 @@ int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     return rc;
 }
 
-static void audioMixBufReset(PPDMAUDIOMIXBUF pMixBuf)
+void audioMixBufReset(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturnVoid(pMixBuf);
 
     LogFlowFunc(("%s\n", pMixBuf->pszName));
 
     pMixBuf->offReadWrite = 0;
-    pMixBuf->cMixed = 0;
-    pMixBuf->cProcessed = 0;
+    pMixBuf->cMixed       = 0;
+    pMixBuf->cProcessed   = 0;
 
     RT_BZERO(pMixBuf->pSamples, AUDIOMIXBUF_S2B(pMixBuf, pMixBuf->cSamples));
 }
