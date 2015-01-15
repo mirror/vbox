@@ -28,9 +28,16 @@ CrFbWindow::CrFbWindow(uint64_t parentId) :
     mWidth(0),
     mHeight(0),
     mParentId(parentId),
-    mScaleFactorStorage(1)
+    mScaleFactorWStorage(1.0),
+    mScaleFactorHStorage(1.0)
 {
+    int rc;
+
     mFlags.Value = 0;
+
+    rc = RTSemRWCreate(&scaleFactorLock);
+    if (!RT_SUCCESS(rc))
+        WARN(("Unable to initialize scaling factor data lock."));
 }
 
 
@@ -130,11 +137,15 @@ int CrFbWindow::SetSize(uint32_t width, uint32_t height)
 
     if (mWidth != width || mHeight != height)
     {
-        GLdouble scaleFactor = GetScaleFactor();
+        GLdouble scaleFactorW, scaleFactorH;
+
+        /* Reset to default values if operation was unsuccessfull. */
+        if (!GetScaleFactor(&scaleFactorW, &scaleFactorH))
+            scaleFactorW = scaleFactorH = 1.0;
 
         mFlags.fCompositoEntriesModified = 1;
-        mWidth  = scaleFactor ? (uint32_t)((GLdouble)width  * scaleFactor) : width;
-        mHeight = scaleFactor ? (uint32_t)((GLdouble)height * scaleFactor) : height;
+        mWidth  = scaleFactorW ? (uint32_t)((GLdouble)width  * scaleFactorW) : width;
+        mHeight = scaleFactorH ? (uint32_t)((GLdouble)height * scaleFactorH) : height;
 
         LOG(("CrWIN: Size [%d ; %d]", width, height));
 
@@ -196,15 +207,37 @@ int CrFbWindow::SetCompositor(const struct VBOXVR_SCR_COMPOSITOR * pCompositor)
 }
 
 
-void CrFbWindow::SetScaleFactor(GLdouble scaleFactor)
+bool CrFbWindow::SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH)
 {
-    ASMAtomicWriteU32(&mScaleFactorStorage, (uint32_t)scaleFactor);
+    int rc;
+
+    rc = RTSemRWRequestWrite(scaleFactorLock, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        mScaleFactorWStorage = scaleFactorW;
+        mScaleFactorHStorage = scaleFactorH;
+        RTSemRWReleaseWrite(scaleFactorLock);
+        return true;
+    }
+
+    return false;
 }
 
 
-GLdouble CrFbWindow::GetScaleFactor()
+bool CrFbWindow::GetScaleFactor(GLdouble *scaleFactorW, GLdouble *scaleFactorH)
 {
-    return (GLdouble)ASMAtomicReadU32(&mScaleFactorStorage);
+    int rc;
+
+    rc = RTSemRWRequestRead(scaleFactorLock, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        *scaleFactorW = mScaleFactorWStorage;
+        *scaleFactorH = mScaleFactorHStorage;
+        RTSemRWReleaseRead(scaleFactorLock);
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -241,12 +274,15 @@ void CrFbWindow::UpdateEnd()
         bool fPresentNeeded = isPresentNeeded();
         if (fPresentNeeded || mFlags.fForcePresentOnReenable)
         {
-            GLdouble scaleFactor = GetScaleFactor();
+            GLdouble scaleFactorW, scaleFactorH;
+            /* Reset to default values if operation was unseccessfull. */
+            if (!GetScaleFactor(&scaleFactorW, &scaleFactorH))
+                scaleFactorW = scaleFactorH = 1.0;
 
             mFlags.fForcePresentOnReenable = false;
             if (mpCompositor)
             {
-                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)mpCompositor, scaleFactor, scaleFactor);
+                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)mpCompositor, scaleFactorW, scaleFactorH);
                 cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
             }
             else
@@ -258,7 +294,7 @@ void CrFbWindow::UpdateEnd()
                 Rect.xRight = mWidth;
                 Rect.yBottom = mHeight;
                 CrVrScrCompositorInit(&TmpCompositor, &Rect);
-                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)&TmpCompositor, scaleFactor, scaleFactor);
+                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)&TmpCompositor, scaleFactorW, scaleFactorH);
                 /* this is a cleanup operation
                  * empty compositor is guarantid to be released on VBoxPresentComposition return */
                 cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, &TmpCompositor, NULL);
@@ -315,7 +351,13 @@ int CrFbWindow::Create()
 
 CrFbWindow::~CrFbWindow()
 {
+    int rc;
+
     Destroy();
+
+    rc = RTSemRWDestroy(scaleFactorLock);
+    if (!RT_SUCCESS(rc))
+        WARN(("Unable to release scaling factor data lock."));
 }
 
 
