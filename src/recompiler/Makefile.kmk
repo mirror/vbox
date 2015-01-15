@@ -249,6 +249,7 @@ ifdef VBOX_REM_WRAPPER
  endif
  VBoxREMWrapper_SOURCES    = \
  	VBoxREMWrapper.cpp
+ VBoxREMWrapper_SOURCES.win = VBoxREM.rc
  if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64" && !defined(VBOX_USE_MINGWW64)
   VBoxREMWrapper_SOURCES  += \
   	VBoxREMWrapperA.asm
@@ -324,7 +325,7 @@ $$(VBoxREMImp_0_OUTDIR)/VBoxREMRes.o: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.rc $(M
 	    -DVBOX_VERSION_MAJOR_NR=$(VBOX_VERSION_MAJOR) \
 	    -DVBOX_VERSION_MINOR_NR=$(VBOX_VERSION_MINOR) \
 	    -DVBOX_VERSION_BUILD_NR=$(VBOX_VERSION_BUILD) \
-	    -DVBOX_SVN_REV=$(VBOX_SVN_REV) $< $@
+	    -DVBOX_SVN_REV_NR=$(VBOX_SVN_REV) $< $@
 
 #
 # The math testcase as a standalone program for testing and debugging purposes.
