@@ -150,7 +150,9 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	../QCOW.cpp \
 	../VHDX.cpp \
 	../VCICache.cpp \
-       ../VDIfVfs.cpp
+	../VDIfVfs.cpp
+ vbox-img_SOURCES.win = \
+	vbox-img.rc
  vbox-img_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)

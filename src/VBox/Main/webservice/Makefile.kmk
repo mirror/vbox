@@ -314,6 +314,8 @@ endif
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
 	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
     $(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
+ vboxwebsrv_SOURCES.win = \
+	VBoxWebSrv.rc
  vboxwebsrv_CLEAN = \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
 	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
