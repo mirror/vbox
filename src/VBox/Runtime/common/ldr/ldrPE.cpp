@@ -3216,9 +3216,10 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
  * @param   pOptHdr     Pointer to the optional header (valid).
  * @param   cbRawImage  The raw image size.
  * @param   fFlags      Loader flags, RTLDR_O_XXX.
+ * @param   fNoCode     Verify that the image contains no code.
  */
 static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
-                                         const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags)
+                                         const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags, bool fNoCode)
 {
     const uint32_t              cbImage  = pOptHdr->SizeOfImage;
     const IMAGE_SECTION_HEADER *pSH      = &paSections[0];
@@ -3304,6 +3305,19 @@ static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections,
 
         uRvaPrev = pSH->VirtualAddress + pSH->Misc.VirtualSize;
     }
+
+    /*
+     * Do a separate run if we need to validate the no-code claim from the
+     * optional header.
+     */
+    if (fNoCode)
+    {
+        pSH = &paSections[0];
+        for (unsigned cSHdrsLeft = cSections; cSHdrsLeft > 0; cSHdrsLeft--, pSH++)
+            if (pSH->Characteristics & (IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE))
+                return VERR_LDR_ARCH_MISMATCH;
+    }
+
 
     /** @todo r=bird: more sanity checks! */
     return VINF_SUCCESS;
@@ -3617,9 +3631,15 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     /*
      * Match the CPU architecture.
      */
-    if (    enmArch != RTLDRARCH_WHATEVER
-        &&  enmArch != enmArchImage)
-        return VERR_LDR_ARCH_MISMATCH;
+    bool fArchNoCodeCheckPending = false;
+    if (    enmArch != enmArchImage
+        &&  (   enmArch != RTLDRARCH_WHATEVER
+             && !(fFlags & RTLDR_O_WHATEVER_ARCH)) )
+    {
+        if (!(fFlags & RTLDR_O_IGNORE_ARCH_IF_NO_CODE))
+            return VERR_LDR_ARCH_MISMATCH;
+        fArchNoCodeCheckPending = true;
+    }
 
     /*
      * Read and validate the "optional" header. Convert 32->64 if necessary.
@@ -3633,6 +3653,8 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     rc = rtldrPEValidateOptionalHeader(&OptHdr, pszLogName, offNtHdrs, &FileHdr, pReader->pfnSize(pReader), fFlags);
     if (RT_FAILURE(rc))
         return rc;
+    if (fArchNoCodeCheckPending && OptHdr.SizeOfCode != 0)
+        return VERR_LDR_ARCH_MISMATCH;
 
     /*
      * Read and validate section headers.
@@ -3646,7 +3668,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     if (RT_SUCCESS(rc))
     {
         rc = rtldrPEValidateSectionHeaders(paSections, FileHdr.NumberOfSections, pszLogName,
-                                           &OptHdr, pReader->pfnSize(pReader), fFlags);
+                                           &OptHdr, pReader->pfnSize(pReader), fFlags, fArchNoCodeCheckPending);
         if (RT_SUCCESS(rc))
         {
             /*
