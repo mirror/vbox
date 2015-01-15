@@ -1059,13 +1059,14 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, 
 
     while (cbToWrite)
     {
-        uint32_t cbWritten;
         uint32_t cbWrittenMin = UINT32_MAX;
 
         cbToRead = RT_MIN(cbToWrite, pThis->cbReadWriteBuf);
         PDMDevHlpPhysRead(pDevIns, addr, pThis->pvReadWriteBuf, cbToRead); /** @todo Check rc? */
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        uint32_t cbWritten;
+
         /* Just multiplex the output to the connected backends.
          * No need to utilize the virtual mixer here (yet). */
         PAC97DRIVER pDrv;
@@ -1368,6 +1369,8 @@ static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
             {
                 pReg->sr |= SR_DCH; /* CELV? */
                 pThis->bup_flag = 0;
+
+                rc = VINF_SUCCESS;
                 break;
             }
 
@@ -1410,6 +1413,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
 
             default:
                 AssertMsgFailed(("Index %ld not supported\n", index));
+                rc = VERR_NOT_SUPPORTED;
                 break;
         }
 

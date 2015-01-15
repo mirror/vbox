@@ -2687,11 +2687,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 # ifdef VBOX_WITH_WINMM
                 case AudioDriverType_WinMM:
                 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
                     #error "Port WinMM audio backend!" /** @todo Still needed? */
-#else
+#  else
                     InsertConfigString(pCfg, "AudioDriver", "winmm");
-#endif
+#  endif
                     break;
                 }
 # endif
@@ -2708,11 +2708,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef RT_OS_SOLARIS
                 case AudioDriverType_SolAudio:
                 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                    #error "Port Solaris audio backend!" /** @todo Port Solaris driver. */
-#else
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+                    /** @todo Hack alert: Find a better solution. */
+                    LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
+                    LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
+                    /* Manually set backend to OSS for now. */
+                    InsertConfigString(pLunL1, "Driver", "OSSAudio"); 
+# else
                     InsertConfigString(pCfg, "AudioDriver", "solaudio");
-#endif
+# endif
                     break;
                 }
 #endif

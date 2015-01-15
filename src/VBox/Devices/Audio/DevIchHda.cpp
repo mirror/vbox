@@ -1571,7 +1571,9 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         {
             Assert((!fReset && !fInReset));
 
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             PHDADRIVER pDrv;
+# endif
             switch (iReg)
             {
                 case HDA_REG_SD0CTL:
@@ -2196,9 +2198,9 @@ static bool hdaDoNextTransferCycle(PHDASTATE pThis, PHDABDLEDESC pBdle, PHDASTRE
  * Note: This function writes to the DMA buffer immediately,
  *       but "reports bytes" when all conditions are met (FIFOW).
  */
-static uint32_t hdaReadAudio(PHDASTATE pThis, PAUDMIXSINK pSink,
-                             PHDASTREAMTRANSFERDESC pStreamDesc,
-                             uint32_t u32CblLimit, uint32_t *pcbAvail, uint32_t *pcbRead)
+static int hdaReadAudio(PHDASTATE pThis, PAUDMIXSINK pSink,
+                        PHDASTREAMTRANSFERDESC pStreamDesc,
+                        uint32_t u32CblLimit, uint32_t *pcbAvail, uint32_t *pcbRead)
 {
     PHDABDLEDESC pBdle = &pThis->StInBdle; /** @todo Add support for mic in. */
 
@@ -2251,7 +2253,8 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PAUDMIXSINK pSink,
     return rc;
 }
 #else
-static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
+static int hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc,
+                        uint32_t u32CblLimit, uint32_t *pu32Avail, uint32_t *pcbRead)
 {
     PHDABDLEDESC pBdle = &pThis->StInBdle;
 
@@ -2259,12 +2262,16 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
     uint32_t cb2Copy = 0;
     uint32_t cbBackendCopy = 0;
 
+    int rc;
+
     Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
 
     cb2Copy = hdaCalculateTransferBufferLength(pBdle, pStreamDesc, *pu32Avail, u32CblLimit);
     if (!cb2Copy)
+    {
         /* if we enter here we can't report "unreported bits" */
-        *fStop = true;
+        rc = VERR_NO_DATA;
+    }
     else
     {
         /*
@@ -2277,23 +2284,29 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
          */
         PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer,
                               cbBackendCopy);
-        STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbBackendCopy);
 
         /* Don't see any reason why cb2Copy would differ from cbBackendCopy */
         Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
 
         if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pThis, 0))
+        {
             hdaBackendReadTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
+            rc = VINF_SUCCESS;
+        }
         else
         {
             hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cbBackendCopy, pu32Avail);
-            *fStop = true;
+            rc = VERR_NO_DATA;
         }
     }
 
     Assert((cbTransferred <= (SDFIFOS(pThis, 0) + 1)));
     Log(("hda:ra: CVI(pos:%d, len:%d) cbTransferred: %d\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransferred));
-    return cbTransferred;
+
+    if (pcbRead)
+        *pcbRead = cbTransferred;
+
+    return rc;
 }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
@@ -2325,7 +2338,9 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
                           pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos,
                           pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         STAM_COUNTER_ADD(&pThis->StatBytesRead, cb2Copy);
+#endif
 
         /*
          * Write to audio backend. We should ensure that we have enough bytes to copy to the backend.
@@ -2610,11 +2625,11 @@ static DECLCALLBACK(int) hdaTransfer(PHDASTATE pThis,
 
     LogFlowFunc(("pThis=%p, cbAvail=%RU32\n", pThis, cbAvail));
 #else
-static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, int cbAvail)
+static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, uint32_t cbAvail)
 {
-    AssertPtrReturnVoid(pCodec, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCodec, VERR_INVALID_POINTER);
     PHDASTATE pThis = pCodec->pHDAState;
-    AssertPtrReturnVoid(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     int rc;
 
@@ -2681,15 +2696,11 @@ static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, in
                 pSink = pThis->pSinkLineIn;
                 rc = hdaReadAudio(pThis, pSink, &StreamDesc, u32CblLimit, &cbAvail, &cbWritten);
 #else
-                rc = hdaReadAudio(pThis, &StreamDesc, u32CblLimit, &cbAvail, &cbWritten);
+                rc = hdaReadAudio(pThis, &StreamDesc, u32CblLimit, (uint32_t *)&cbAvail, &cbWritten);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
                 break;
             case PO_INDEX:
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
                 rc = hdaWriteAudio(pThis, &StreamDesc, u32CblLimit, &cbAvail, &cbWritten);
-#else
-                rc = hdaWriteAudio(pThis, &StreamDesc, u32CblLimit, &cbAvail, &cbWritten);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
                 break;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 # ifdef VBOX_WITH_HDA_MIC_IN

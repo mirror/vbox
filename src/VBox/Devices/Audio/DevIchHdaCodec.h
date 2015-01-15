@@ -116,8 +116,6 @@ typedef struct HDACODEC
     DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
-    /* Callbacks for host driver backends. */
-    DECLR3CALLBACKMEMBER(void, pfnTransfer, (PHDADRIVER pDrv, ENMSOUNDSOURCE enmSource, uint32_t cbAvail));
 #else
     QEMUSoundCard           card;
     /** PCM in */
@@ -125,7 +123,7 @@ typedef struct HDACODEC
     /** PCM out */
     SWVoiceOut             *SwVoiceOut;
     /* Callbacks for host driver backends. */
-    DECLR3CALLBACKMEMBER(void, pfnTransfer, (PHDACODEC pCodec, ENMSOUNDSOURCE enmSource, int cbAvail));
+    DECLR3CALLBACKMEMBER(int, pfnTransfer, (PHDACODEC pCodec, ENMSOUNDSOURCE enmSource, uint32_t cbAvail));
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     /* Callbacks by codec implementation. */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));

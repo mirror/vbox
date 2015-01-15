@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -105,6 +105,8 @@
 #endif
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
+#undef LOG_GROUP
+#include "../Audio/DevIchAc97.cpp"
 #undef LOG_GROUP
 #include "../Audio/DevIchHda.cpp"
 
@@ -1833,6 +1835,28 @@ int main()
     GEN_CHECK_OFF(HPETTIMER, u64Period);
     GEN_CHECK_OFF(HPETTIMER, u8Wrap);
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    GEN_CHECK_SIZE(AC97DRIVER);
+    GEN_CHECK_OFF(AC97DRIVER, Node);
+    GEN_CHECK_OFF(AC97DRIVER, pAC97State);
+    GEN_CHECK_OFF(AC97DRIVER, Flags);
+    GEN_CHECK_OFF(AC97DRIVER, uLUN);
+    GEN_CHECK_OFF(AC97DRIVER, pConnector);
+    GEN_CHECK_OFF(AC97DRIVER, LineIn);
+    GEN_CHECK_OFF(AC97DRIVER, MicIn);
+    GEN_CHECK_OFF(AC97DRIVER, Out);
+
+    GEN_CHECK_SIZE(HDADRIVER);
+    GEN_CHECK_OFF(HDADRIVER, Node);
+    GEN_CHECK_OFF(HDADRIVER, pHDAState);
+    GEN_CHECK_OFF(HDADRIVER, Flags);
+    GEN_CHECK_OFF(HDADRIVER, uLUN);
+    GEN_CHECK_OFF(HDADRIVER, pConnector);
+    GEN_CHECK_OFF(HDADRIVER, LineIn);
+    GEN_CHECK_OFF(HDADRIVER, MicIn);
+    GEN_CHECK_OFF(HDADRIVER, Out);
+#endif
+
     GEN_CHECK_SIZE(HDASTATE);
     GEN_CHECK_OFF(HDASTATE, PciDev);
     GEN_CHECK_OFF(HDASTATE, pDevInsR3);
@@ -1843,9 +1867,6 @@ int main()
     GEN_CHECK_OFF(HDASTATE, MMIOBaseAddr);
     GEN_CHECK_OFF(HDASTATE, au32Regs[0]);
     GEN_CHECK_OFF(HDASTATE, au32Regs[HDA_NREGS]);
-    GEN_CHECK_OFF(HDASTATE, StInBdle);
-    GEN_CHECK_OFF(HDASTATE, StOutBdle);
-    GEN_CHECK_OFF(HDASTATE, StMicBdle);
     GEN_CHECK_OFF(HDASTATE, u64CORBBase);
     GEN_CHECK_OFF(HDASTATE, u64RIRBBase);
     GEN_CHECK_OFF(HDASTATE, u64DPBase);
@@ -1858,17 +1879,21 @@ int main()
     GEN_CHECK_OFF(HDASTATE, fR0Enabled);
     GEN_CHECK_OFF(HDASTATE, fRCEnabled);
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    GEN_CHECK_OFF(HDASTATE, cLUNs);
+    GEN_CHECK_OFF(HDASTATE, pTimer);
+    GEN_CHECK_OFF(HDASTATE, uTicks);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(HDASTATE, StatTimer);
+# endif
     GEN_CHECK_OFF(HDASTATE, pCodec);
-    GEN_CHECK_OFF(HDASTATE, paDrv);
+    GEN_CHECK_OFF(HDASTATE, lstDrv);
     GEN_CHECK_OFF(HDASTATE, pMixer);
     GEN_CHECK_OFF(HDASTATE, pSinkLineIn);
     GEN_CHECK_OFF(HDASTATE, pSinkMicIn);
 #else
     GEN_CHECK_OFF(HDASTATE, pCodec);
+#endif
     GEN_CHECK_OFF(HDASTATE, u64BaseTS);
     GEN_CHECK_OFF(HDASTATE, u8Counter);
-#endif
 
     return (0);
 }
