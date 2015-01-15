@@ -916,6 +916,8 @@ ifdef VBOX_WITH_EXTPACK
  VBoxExtPackHelperApp_SOURCES = \
 	src-helper-apps/VBoxExtPackHelperApp.cpp \
 	src-all/ExtPackUtil.cpp
+ VBoxExtPackHelperApp_SOURCES.win = \
+	src-helper-apps/VBoxExtPackHelperApp.rc
  VBoxExtPackHelperApp_LIBS = \
 	$(LIB_RUNTIME)
 endif # VBOX_WITH_EXTPACK
