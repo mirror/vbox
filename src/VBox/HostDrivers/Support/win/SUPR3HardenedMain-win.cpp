@@ -1796,6 +1796,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
      */
     NTSTATUS        rcNtResolve     = STATUS_SUCCESS;
     bool            fSkipValidation = false;
+    bool            fCheckIfLoaded  = false;
     WCHAR           wszPath[260];
     static UNICODE_STRING const s_DefaultSuffix = RTNT_CONSTANT_UNISTR(L".dll");
     UNICODE_STRING  UniStrStatic   = { 0, (USHORT)sizeof(wszPath) - sizeof(WCHAR), wszPath };
@@ -1932,6 +1933,8 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
             /*
              * Search for the DLL.  Only System32 is allowed as the target of
              * a search on the API level, all VBox calls will have full paths.
+             * If the DLL is not in System32, we will resort to check if it's
+             * refering to an already loaded DLL (fCheckIfLoaded).
              */
             AssertCompile(sizeof(g_System32WinPath.awcBuffer) <= sizeof(wszPath));
             cwc = g_System32WinPath.UniStr.Length / sizeof(RTUTF16); Assert(cwc > 2);
@@ -1954,6 +1957,7 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
                 memcpy(&wszPath[cwc], L".dll", 5 * sizeof(WCHAR));
                 cwc += 4;
             }
+            fCheckIfLoaded = true;
         }
 
         ResolvedName.Buffer = wszPath;
@@ -2030,9 +2034,27 @@ supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_S
         else
         {
             DWORD dwErr = RtlGetLastWin32Error();
-            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls; Input=%.*ls)\n",
+
+            /*
+             * Deal with special case where the caller (first case was MS LifeCam)
+             * is using LoadLibrary instead of GetModuleHandle to find a loaded DLL.
+             */
+            NTSTATUS rcNtGetDll = STATUS_SUCCESS;
+            if (   fCheckIfLoaded
+                 && (   rcNt == STATUS_OBJECT_NAME_NOT_FOUND
+                     || rcNt == STATUS_OBJECT_PATH_NOT_FOUND))
+            {
+                rcNtGetDll = LdrGetDllHandle(NULL /*DllPath*/, NULL /*pfFlags*/, pOrgName, phMod);
+                if (NT_SUCCESS(rcNtGetDll))
+                {
+                    RtlRestoreLastWin32Error(dwSavedLastError);
+                    return rcNtGetDll;
+                }
+            }
+
+            SUP_DPRINTF(("supR3HardenedMonitor_LdrLoadDll: error opening '%ls': %u (NtPath=%.*ls; Input=%.*ls; rcNtGetDll=%#x\n",
                          wszPath, dwErr, NtPathUniStr.Length / sizeof(RTUTF16), NtPathUniStr.Buffer,
-                         pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer));
+                         pOrgName->Length / sizeof(WCHAR), pOrgName->Buffer, rcNtGetDll));
         }
         RTNtPathFree(&NtPathUniStr, &hRootDir);
     }
