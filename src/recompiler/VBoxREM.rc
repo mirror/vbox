@@ -39,12 +39,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileDescription",  "VirtualBox Recompiler\0"
-      VALUE "FileVersion",      RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) "." RT_XSTR(VBOX_SVN_REV) "\0"
+      VALUE "FileVersion",      RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) "." RT_XSTR(VBOX_SVN_REV_NR) "\0"
       VALUE "InternalName",     "VBoxREM\0"
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "OriginalFilename", "VBoxREM.dll\0"
       VALUE "ProductName",      VBOX_PRODUCT "\0"
-      VALUE "ProductVersion",   RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) ".r" RT_XSTR(VBOX_SVN_REV) "\0"
+      VALUE "ProductVersion",   RT_XSTR(VBOX_VERSION_MAJOR_NR) "." RT_XSTR(VBOX_VERSION_MINOR_NR) "." RT_XSTR(VBOX_VERSION_BUILD_NR) ".r" RT_XSTR(VBOX_SVN_REV_NR) "\0"
     END
   END
   BLOCK "VarFileInfo"
