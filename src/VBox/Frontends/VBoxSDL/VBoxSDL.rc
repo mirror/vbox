@@ -1,0 +1,68 @@
+/* $Id$ */
+/** @file
+ * VBox purge SDL frontent - Windows resource file.
+ */
+
+/*
+ * Copyright (C) 2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+#include <windows.h>
+#include <VBox/version.h>
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+  PRODUCTVERSION   VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
+  FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG|VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0 // final version
+#endif
+  FILEOS           VOS_NT_WINDOWS32
+#ifdef VBOXR3_HARDENED_DLL
+  FILETYPE         VFT_APP
+#else
+  FILETYPE         VFT_DLL
+#endif
+  FILESUBTYPE      0   // not used
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    BEGIN
+      VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+      VALUE "FileDescription",  "VirtualBox Pure SDL Frontend\0"
+      VALUE "FileVersion",      VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD "." VBOX_SVN_REV "\0"
+#ifdef VBOXR3_HARDENED_DLL
+      VALUE "InternalName",     "VBoxSDL\0"
+#else
+      VALUE "InternalName",     "VBoxSDL\0"
+#endif
+      VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
+#ifdef VBOXR3_HARDENED_DLL
+      VALUE "OriginalFilename", "VBoxSDL.dll\0"
+#else
+      VALUE "OriginalFilename", "VBoxSDL.exe\0"
+#endif
+      VALUE "ProductName",      VBOX_PRODUCT "\0"
+      VALUE "ProductVersion",   VBOX_VERSION_MAJOR "." VBOX_VERSION_MINOR "." VBOX_VERSION_BUILD ".r" VBOX_SVN_REV "\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+
+/* Creates the application icon. */
+#include "VBoxSDL-icon.rc"
+
