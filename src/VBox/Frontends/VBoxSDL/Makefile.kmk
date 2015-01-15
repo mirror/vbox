@@ -104,10 +104,16 @@ $$(VBoxSDL_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x0
 	$(call MSG_TOOL,bin2c,VBoxSDL,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
+ifeq ($(KBUILD_TARGET),win)
+VBoxSDL_SOURCES   += VBoxSDL.rc
+VBoxSDL.rc_INCS    = $(VBoxSDL_0_OUTDIR)
+VBoxSDL.rc_DEPS    = $(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc
+VBoxSDL.rc_CLEAN   = $(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc
 # Icon include file.
 $$(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxSDL_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+endif
 
 
 
