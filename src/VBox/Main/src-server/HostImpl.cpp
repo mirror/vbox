@@ -130,7 +130,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 #endif
 
 #ifdef VBOX_WITH_CROGL
-#include <VBox/VBoxOGLTest.h>
+#include <VBox/VBoxOGL.h>
 #endif /* VBOX_WITH_CROGL */
 
 #include <iprt/asm-amd64-x86.h>

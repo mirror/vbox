@@ -142,7 +142,7 @@
 #include <QSettings>
 #include <QStyleOptionSpinBox>
 
-#include <VBox/VBoxOGLTest.h>
+#include <VBox/VBoxOGL.h>
 #include <VBox/vd.h>
 
 #include <iprt/ctype.h>
