@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -157,16 +157,42 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
  */
 RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 {
+    /*
+     * Validate input
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cchPath, VERR_INVALID_PARAMETER);
+
     RTUTF16 wszPath[RTPATH_MAX];
     DWORD   dwAttr;
+    bool    fValidFolderPath = false;
 
     /*
-     * There are multiple definitions for what WE think of as user home...
+     * Try with Windows XP+ functionality first.
      */
-    if (    !GetEnvironmentVariableW(L"HOME", &wszPath[0], RTPATH_MAX)
+    {
+        RTLDRMOD hShell32;
+        int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
+        if (RT_SUCCESS(rc))
+        {
+            PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
+            rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
+            if (RT_SUCCESS(rc))
+            {
+                HRESULT hrc = pfnSHGetFolderPathW(0, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, wszPath);
+		fValidFolderPath = (hrc == S_OK);
+	    }
+            RTLdrClose(hShell32);
+        }
+    }
+
+    if (    !fValidFolderPath
         ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
         ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
     {
+        /*
+         * Fall back to Windows specific environment variables. HOME is not used.
+         */
         if (    !GetEnvironmentVariableW(L"USERPROFILE", &wszPath[0], RTPATH_MAX)
             ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
             ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
