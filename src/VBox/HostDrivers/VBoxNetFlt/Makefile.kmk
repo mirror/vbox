@@ -154,7 +154,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  endif
  VBoxNetLwf_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetLwf_INCS = .
- VBoxNetLwf_SOURCES = VBoxNetFlt.c
+ VBoxNetLwf_SOURCES = VBoxNetFlt.c VBoxNetFlt.rc
  VBoxNetLwf_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
  VBoxNetLwf_SOURCES.win = \
  	win/ndis6/VBoxNetLwf-win.cpp
