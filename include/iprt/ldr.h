@@ -359,11 +359,15 @@ typedef RTLDRARCH *PRTLDRARCH;
  * @{ */
 /** Open for debugging or introspection reasons.
  * This will skip a few of the stricter validations when loading images. */
-#define RTLDR_O_FOR_DEBUG       RT_BIT_32(0)
+#define RTLDR_O_FOR_DEBUG                   RT_BIT_32(0)
 /** Open for signature validation. */
-#define RTLDR_O_FOR_VALIDATION  RT_BIT_32(1)
+#define RTLDR_O_FOR_VALIDATION              RT_BIT_32(1)
+/** The arch specification is just a guideline for FAT binaries. */
+#define RTLDR_O_WHATEVER_ARCH               RT_BIT_32(2)
+/** Ignore the architecture specification if there is no code. */
+#define RTLDR_O_IGNORE_ARCH_IF_NO_CODE      RT_BIT_32(3)
 /** Mask of valid flags. */
-#define RTLDR_O_VALID_MASK      UINT32_C(0x00000003)
+#define RTLDR_O_VALID_MASK                  UINT32_C(0x0000000f)
 /** @} */
 
 /**
