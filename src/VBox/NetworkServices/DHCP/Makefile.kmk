@@ -18,6 +18,8 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+VBOX_PATH_NET_DHCP_SRC := $(PATH_SUB_CURRENT)
+
 #
 # Targets.
 #
@@ -47,22 +49,24 @@ VBoxNetDHCP_SOURCES = \
 	VBoxNetDHCP.cpp \
 	Config.cpp \
 	NetworkManagerDhcp.cpp \
-	../NetLib/VBoxNetIntIf.cpp \
-	../NetLib/VBoxNetUDP.cpp \
-	../NetLib/VBoxNetARP.cpp \
-	../NetLib/VBoxNetBaseService.cpp \
-	../NetLib/ComHostUtils.cpp
+	$(VBOX_PATH_NET_DHCP_SRC)/../NetLib/VBoxNetIntIf.cpp \
+	$(VBOX_PATH_NET_DHCP_SRC)/../NetLib/VBoxNetUDP.cpp \
+	$(VBOX_PATH_NET_DHCP_SRC)/../NetLib/VBoxNetARP.cpp \
+	$(VBOX_PATH_NET_DHCP_SRC)/../NetLib/VBoxNetBaseService.cpp \
+	$(VBOX_PATH_NET_DHCP_SRC)/../NetLib/ComHostUtils.cpp
 VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
 
+ifeq ($(KBUILD_TARGET),win)
 # Icon include file.
-VBoxNetDHCP_SOURCES.win += $(VBoxNetDHCP_0_OUTDIR)/VBoxNetDHCP-icon.rc
-VBoxNetDHCP_CLEAN.win   += $(VBoxNetDHCP_0_OUTDIR)/VBoxNetDHCP-icon.rc
+VBoxNetDHCP_SOURCES     += VBoxNetDHCP.rc
+VBoxNetDHCP.rc_INCS      = $(VBoxNetDHCP_0_OUTDIR)
+VBoxNetDHCP.rc_DEPS      = $(VBoxNetDHCP_0_OUTDIR)/VBoxNetDHCP-icon.rc
+VBoxNetDHCP.rc_CLEAN     = $(VBoxNetDHCP_0_OUTDIR)/VBoxNetDHCP-icon.rc
 $$(VBoxNetDHCP_0_OUTDIR)/VBoxNetDHCP-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxNetDHCP_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
-
-
+endif # win
 
 include $(FILE_KBUILD_SUB_FOOTER)
