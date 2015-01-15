@@ -17,10 +17,12 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
+
 ifdef VBOX_WITH_LWIP_NAT
 # XXX: do not depend on order
 ifndef LWIP_SOURCES
-  include ../../Devices/Network/lwip-new/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Makefile.kmk
 endif
 
 ifdef VBOX_WITH_HARDENING
@@ -46,12 +48,12 @@ VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} IPv6
 # VBoxNetLwipNAT_DEFS.linux += WITH_VALGRIND # instrument lwip memp.c
 VBoxNetLwipNAT_DEFS.win += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
 VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
-	../NetLib/VBoxNetBaseService.cpp \
-	../NetLib/VBoxNetPortForwardString.cpp \
-	../NetLib/VBoxNetIntIf.cpp \
-	../NetLib/VBoxNetUDP.cpp \
-	../NetLib/VBoxNetARP.cpp \
-	../NetLib/ComHostUtils.cpp
+	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetBaseService.cpp \
+	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetPortForwardString.cpp \
+	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetIntIf.cpp \
+	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetUDP.cpp \
+	$(VBOX_PATH_NAT_SRC)/../NetLib/VBoxNetARP.cpp \
+	$(VBOX_PATH_NAT_SRC)/../NetLib/ComHostUtils.cpp
 
 VBoxNetLwipNAT_LIBS = \
 	$(LIB_RUNTIME)
@@ -127,15 +129,18 @@ VBoxNetLwipNAT_SOURCES.win += \
 
 VBoxNetLwipNAT_INCS += . # for lwipopts.h
 $(eval $(call def_vbox_lwip_public, \
-    VBoxNetLwipNAT, ../../Devices/Network/lwip-new))
+    VBoxNetLwipNAT, $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new))
 endif
 
+ifeq ($(KBUILD_TARGET),win)
 # Icon include file.
-VBoxNetLwipNAT_SOURCES.win += $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
-VBoxNetLwipNAT_CLEAN.win   += $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
+VBoxNetLwipNAT_SOURCES  += VBoxNetNAT.rc
+VBoxNetNAT.rc_INCS       = $(VBoxNetLwipNAT_0_OUTDIR))
+VBoxNetNAT.rc_SOURCES    = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
+VBoxNetNAT.rc_CLEAN      = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
 $$(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxNetLwipNAT_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
-
+endif # win
 
 include $(FILE_KBUILD_SUB_FOOTER)
