@@ -2284,6 +2284,63 @@ typedef NTSTATUS (NTAPI *PFNLDRREGISTERDLLNOTIFICATION)(ULONG, PLDR_DLL_NOTIFICA
 NTSYSAPI NTSTATUS NTAPI LdrUnregisterDllNotification(PVOID pvCookie);
 typedef NTSTATUS (NTAPI *PFNLDRUNREGISTERDLLNOTIFICATION)(PVOID);
 
+NTSYSAPI NTSTATUS NTAPI LdrLoadDll(IN PWSTR pwszSearchPathOrFlags OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                   IN PCUNICODE_STRING pName, OUT PHANDLE phMod);
+typedef NTSTATUS (NTAPI *PFNLDRLOADDLL)(IN PWSTR pwszSearchPathOrFlags OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                        IN PCUNICODE_STRING pName, OUT PHANDLE phMod);
+NTSYSAPI NTSTATUS NTAPI LdrUnloadDll(IN HANDLE hMod);
+typedef NTSTATUS (NTAPI *PFNLDRUNLOADDLL)(IN HANDLE hMod);
+NTSYSAPI NTSTATUS NTAPI LdrGetDllHandle(IN PCWSTR pwszDllPath OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                        IN PCUNICODE_STRING pName, OUT PHANDLE phDll);
+typedef NTSTATUS (NTAPI *PFNLDRGETDLLHANDLE)(IN PCWSTR pwszDllPath OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                             IN PCUNICODE_STRING pName, OUT PHANDLE phDll);
+#define LDRGETDLLHANDLEEX_F_UNCHANGED_REFCOUNT  RT_BIT_32(0)
+#define LDRGETDLLHANDLEEX_F_PIN                 RT_BIT_32(1)
+/** @since Windows XP. */
+NTSYSAPI NTSTATUS NTAPI LdrGetDllHandleEx(IN ULONG fFlags, IN PCWSTR pwszDllPath OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                          IN PCUNICODE_STRING pName, OUT PHANDLE phDll);
+/** @since Windows XP. */
+typedef NTSTATUS (NTAPI *PFNLDRGETDLLHANDLEEX)(IN ULONG fFlags, IN PCWSTR pwszDllPath OPTIONAL, IN PULONG pfFlags OPTIONAL,
+                                               IN PCUNICODE_STRING pName, OUT PHANDLE phDll);
+/** @since Windows 7. */
+NTSYSAPI NTSTATUS NTAPI LdrGetDllHandleByMapping(IN PVOID pvBase, OUT PHANDLE phDll);
+/** @since Windows 7. */
+typedef NTSTATUS (NTAPI *PFNLDRGETDLLHANDLEBYMAPPING)(IN PVOID pvBase, OUT PHANDLE phDll);
+/** @since Windows 7. */
+NTSYSAPI NTSTATUS NTAPI LdrGetDllHandleByName(IN PCUNICODE_STRING pName OPTIONAL, IN PCUNICODE_STRING pFullName OPTIONAL,
+                                              OUT PHANDLE phDll);
+/** @since Windows 7. */
+typedef NTSTATUS (NTAPI *PFNLDRGETDLLHANDLEBYNAME)(IN PCUNICODE_STRING pName OPTIONAL, IN PCUNICODE_STRING pFullName OPTIONAL,
+                                                   OUT PHANDLE phDll);
+#define LDRADDREFDLL_F_PIN                      RT_BIT_32(0)
+NTSYSAPI NTSTATUS NTAPI LdrAddRefDll(IN ULONG fFlags, IN HANDLE hDll);
+typedef NTSTATUS (NTAPI *PFNLDRADDREFDLL)(IN ULONG fFlags, IN HANDLE hDll);
+NTSYSAPI NTSTATUS NTAPI LdrGetProcedureAddress(IN HANDLE hDll, IN ANSI_STRING const *pSymbol OPTIONAL,
+                                               IN ULONG uOrdinal OPTIONAL, OUT PVOID *ppvSymbol);
+typedef NTSTATUS (NTAPI *PFNLDRGETPROCEDUREADDRESS)(IN HANDLE hDll, IN PCANSI_STRING pSymbol OPTIONAL,
+                                                    IN ULONG uOrdinal OPTIONAL, OUT PVOID *ppvSymbol);
+#define LDRGETPROCEDUREADDRESSEX_F_DONT_RECORD_FORWARDER RT_BIT_32(0)
+/** @since Windows Vista. */
+NTSYSAPI NTSTATUS NTAPI LdrGetProcedureAddressEx(IN HANDLE hDll, IN ANSI_STRING const *pSymbol OPTIONAL,
+                                                 IN ULONG uOrdinal OPTIONAL, OUT PVOID *ppvSymbol, ULONG fFlags);
+/** @since Windows Vista. */
+typedef NTSTATUS (NTAPI *PFNLDRGETPROCEDUREADDRESSEX)(IN HANDLE hDll, IN ANSI_STRING const *pSymbol OPTIONAL,
+                                                      IN ULONG uOrdinal OPTIONAL, OUT PVOID *ppvSymbol, ULONG fFlags);
+#define LDRLOCKLOADERLOCK_F_RAISE_ERRORS    RT_BIT_32(0)
+#define LDRLOCKLOADERLOCK_F_NO_WAIT         RT_BIT_32(1)
+#define LDRLOCKLOADERLOCK_DISP_INVALID      UINT32_C(0)
+#define LDRLOCKLOADERLOCK_DISP_ACQUIRED     UINT32_C(1)
+#define LDRLOCKLOADERLOCK_DISP_NOT_ACQUIRED UINT32_C(2)
+/** @since Windows XP. */
+NTSYSAPI NTSTATUS NTAPI LdrLockLoaderLock(IN ULONG fFlags, OUT PULONG puDisposition OPTIONAL, OUT PVOID *ppvCookie);
+/** @since Windows XP. */
+typedef NTSTATUS (NTAPI *PFNLDRLOCKLOADERLOCK)(IN ULONG fFlags, OUT PULONG puDisposition OPTIONAL, OUT PVOID *ppvCookie);
+#define LDRUNLOCKLOADERLOCK_F_RAISE_ERRORS  RT_BIT_32(0)
+/** @since Windows XP. */
+NTSYSAPI NTSTATUS NTAPI LdrUnlockLoaderLock(IN ULONG fFlags, OUT PVOID pvCookie);
+/** @since Windows XP. */
+typedef NTSTATUS (NTAPI *PFNLDRUNLOCKLOADERLOCK)(IN ULONG fFlags, OUT PVOID pvCookie);
+
 NTSYSAPI NTSTATUS NTAPI RtlExpandEnvironmentStrings_U(PVOID, PUNICODE_STRING, PUNICODE_STRING, PULONG);
 NTSYSAPI VOID NTAPI     RtlExitUserProcess(NTSTATUS rcExitCode); /**< Vista and later. */
 NTSYSAPI VOID NTAPI     RtlExitUserThread(NTSTATUS rcExitCode);
