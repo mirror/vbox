@@ -60,8 +60,8 @@ VBoxManage_SOURCES    = \
 	VBoxManageUSB.cpp \
 	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
 	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,)
-VBoxManage_SOURCES.win = \
-	VBoxManage.rc
+#VBoxManage_SOURCES.win = \
+#	VBoxManage.rc
 VBoxManage_LIBS      += $(LIB_DDU)
 
 VBoxManage_DEFS      += \

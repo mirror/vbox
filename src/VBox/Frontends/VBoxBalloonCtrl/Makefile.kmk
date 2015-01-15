@@ -28,7 +28,7 @@ PROGRAMS += VBoxBalloonCtrl
 	VBoxWatchdogUtils.cpp \
 	VBoxModAPIMonitor.cpp \
 	VBoxModBallooning.cpp
- VBoxBalloonCtrl_SOURCES.win = \
-	VBoxBalloonCtrl.rc
+# VBoxBalloonCtrl_SOURCES.win = \
+#	VBoxBalloonCtrl.rc
 
 include $(FILE_KBUILD_SUB_FOOTER)
