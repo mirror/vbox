@@ -27,7 +27,8 @@ CrFbWindow::CrFbWindow(uint64_t parentId) :
     myPos(0),
     mWidth(0),
     mHeight(0),
-    mParentId(parentId)
+    mParentId(parentId),
+    mScaleFactorStorage(1)
 {
     mFlags.Value = 0;
 }
@@ -127,15 +128,18 @@ int CrFbWindow::SetSize(uint32_t width, uint32_t height)
         return VERR_INVALID_STATE;
     }
 
-    LOG(("CrWIN: Size [%d ; %d]", width, height));
-
     if (mWidth != width || mHeight != height)
     {
+        GLdouble scaleFactor = GetScaleFactor();
+
         mFlags.fCompositoEntriesModified = 1;
-        mWidth = width;
-        mHeight = height;
+        mWidth  = scaleFactor ? (uint32_t)((GLdouble)width  * scaleFactor) : width;
+        mHeight = scaleFactor ? (uint32_t)((GLdouble)height * scaleFactor) : height;
+
+        LOG(("CrWIN: Size [%d ; %d]", width, height));
+
         if (mSpuWindow)
-            cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, width, height);
+            cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, mWidth, mHeight);
     }
 
     return VINF_SUCCESS;
@@ -192,6 +196,18 @@ int CrFbWindow::SetCompositor(const struct VBOXVR_SCR_COMPOSITOR * pCompositor)
 }
 
 
+void CrFbWindow::SetScaleFactor(GLdouble scaleFactor)
+{
+    ASMAtomicWriteU32(&mScaleFactorStorage, (uint32_t)scaleFactor);
+}
+
+
+GLdouble CrFbWindow::GetScaleFactor()
+{
+    return (GLdouble)ASMAtomicReadU32(&mScaleFactorStorage);
+}
+
+
 int CrFbWindow::UpdateBegin()
 {
     ++mcUpdates;
@@ -225,9 +241,14 @@ void CrFbWindow::UpdateEnd()
         bool fPresentNeeded = isPresentNeeded();
         if (fPresentNeeded || mFlags.fForcePresentOnReenable)
         {
+            GLdouble scaleFactor = GetScaleFactor();
+
             mFlags.fForcePresentOnReenable = false;
             if (mpCompositor)
+            {
+                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)mpCompositor, scaleFactor, scaleFactor);
                 cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, mpCompositor, NULL);
+            }
             else
             {
                 VBOXVR_SCR_COMPOSITOR TmpCompositor;
@@ -237,6 +258,7 @@ void CrFbWindow::UpdateEnd()
                 Rect.xRight = mWidth;
                 Rect.yBottom = mHeight;
                 CrVrScrCompositorInit(&TmpCompositor, &Rect);
+                CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)&TmpCompositor, scaleFactor, scaleFactor);
                 /* this is a cleanup operation
                  * empty compositor is guarantid to be released on VBoxPresentComposition return */
                 cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, &TmpCompositor, NULL);
