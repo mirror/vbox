@@ -254,7 +254,8 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
             for (unsigned i = 0; i < RT_ELEMENTS(apcszUserHome); ++i)
             {
                 vrc = composeHomePath(aDir, aDirLen, apcszUserHome[i]);
-                if (RTDirExists(aDir))
+                if (   RT_SUCCESS(vrc)
+                    && RTDirExists(aDir))
                 {
                     fFound = true;
                     break;
