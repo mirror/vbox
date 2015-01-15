@@ -40,6 +40,7 @@
 #define APIC_REG_LVT_ERR                        0x0370
 #define APIC_REG_LVT_PC                         0x0340
 #define APIC_REG_LVT_THMR                       0x0330
+#define APIC_REG_LVT_CMCI                       0x02F0
 #define APIC_REG_LVT_MODE_MASK                  (RT_BIT(8) | RT_BIT(9) | RT_BIT(10))
 #define APIC_REG_LVT_MODE_FIXED                 0
 #define APIC_REG_LVT_MODE_NMI                   RT_BIT(10)

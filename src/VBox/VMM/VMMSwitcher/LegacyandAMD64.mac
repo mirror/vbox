@@ -194,6 +194,10 @@ gth_nopc:
     jnc     gth_notherm
     and     dword [edx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
 gth_notherm:
+    shr     ecx, 1
+    jnc     gth_nocmci
+    and     dword [edx + APIC_REG_LVT_CMCI], ~APIC_REG_LVT_MASKED
+gth_nocmci:
     jmp     gth_apic_done
 
 gth_x2apic:
@@ -230,6 +234,13 @@ gth_x2_nopc:
     and     eax, ~APIC_REG_LVT_MASKED
     wrmsr
 gth_x2_notherm:
+    shr     ebx, 1
+    jnc     gth_x2_nocmci
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_CMCI >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth_x2_nocmci:
     pop     edx
     pop     ebx
     pop     eax
@@ -354,6 +365,17 @@ htg_nopc:
     shr     eax, 16
     cmp     al, 5
     jb      htg_notherm
+    je      htg_nocmci
+    mov     eax, [ebx + APIC_REG_LVT_CMCI]
+    mov     ecx, eax
+    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ecx, APIC_REG_LVT_MODE_NMI
+    jne     htg_nocmci
+    or      edi, 0x10
+    or      eax, APIC_REG_LVT_MASKED
+    mov     [ebx + APIC_REG_LVT_CMCI], eax
+    mov     eax, [ebx + APIC_REG_LVT_CMCI] ; write completion
+htg_nocmci:
     mov     eax, [ebx + APIC_REG_LVT_THMR]
     mov     ecx, eax
     and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
@@ -406,6 +428,17 @@ htg_x2_nopc:
     shr     eax, 16
     cmp     al, 5
     jb      htg_x2_notherm
+    je      htg_x2_nocmci
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_CMCI >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nocmci
+    or      edi, 0x10
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nocmci:
     mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_THMR >> 4)
     rdmsr
     mov     ebx, eax
