@@ -1345,7 +1345,7 @@ public:
     template<class T> VBoxFBSizeInfo(T *pFb) :
         mPixelFormat(pFb->pixelFormat()), mVRAM(pFb->address()), mBitsPerPixel(pFb->bitsPerPixel()),
         mBytesPerLine(pFb->bytesPerLine()), mWidth(pFb->width()), mHeight(pFb->height()),
-        m_dScaleFactor(pFb->scaleFactor()), m_scaledSize(pFb->scaledSize()),
+        m_dScaleFactor(pFb->scaleFactor()), m_scaledSize(pFb->scaledSize()), m_fUseUnscaledHiDPIOutput(pFb->useUnscaledHiDPIOutput()),
         mUsesGuestVram(true) {}
 
     VBoxFBSizeInfo(ulong aPixelFormat, uchar *aVRAM,
@@ -1354,6 +1354,7 @@ public:
                    bool bUsesGuestVram) :
         mPixelFormat(aPixelFormat), mVRAM(aVRAM), mBitsPerPixel(aBitsPerPixel),
         mBytesPerLine(aBytesPerLine), mWidth(aWidth), mHeight(aHeight),
+        m_dScaleFactor(1.0), m_scaledSize(QSize()), m_fUseUnscaledHiDPIOutput(false),
         mUsesGuestVram(bUsesGuestVram) {}
 
     ulong pixelFormat() const { return mPixelFormat; }
@@ -1364,6 +1365,7 @@ public:
     ulong height() const { return mHeight; }
     double scaleFactor() const { return m_dScaleFactor; }
     QSize scaledSize() const { return m_scaledSize; }
+    bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
     bool usesGuestVram() const {return mUsesGuestVram;}
 
 private:
@@ -1376,6 +1378,7 @@ private:
     ulong mHeight;
     double m_dScaleFactor;
     QSize m_scaledSize;
+    bool m_fUseUnscaledHiDPIOutput;
     bool mUsesGuestVram;
 };
 
