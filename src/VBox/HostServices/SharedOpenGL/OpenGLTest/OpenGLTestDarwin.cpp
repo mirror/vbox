@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/VBoxOGLTest.h>
+#include <VBox/VBoxOGL.h>
 
 #include <IOKit/IOKitLib.h>
 #include <OpenGL/OpenGL.h>

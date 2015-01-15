@@ -279,7 +279,7 @@
 #include <VBox/VBoxCocoa.h>
 #include <VBox/VBoxGL2D.h>
 //#include <VBox/VBoxKeyboard.h> - includes X11/X.h which causes trouble.
-//#include <VBox/VBoxOGLTest.h> - only used once
+//#include <VBox/VBoxOGL.h> - only used once
 //#include <VBox/VBoxVideo.h> - only used twice
 #ifdef VBOX_WITH_VIDEOHWACCEL
 //# include <VBox/VBoxVideo3D.h> - only used once

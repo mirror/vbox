@@ -27,7 +27,7 @@
 #include <iprt/env.h>
 #include <iprt/log.h>
 
-#include <VBox/VBoxOGLTest.h>
+#include <VBox/VBoxOGL.h>
 
 bool RTCALL VBoxOglIs3DAccelerationSupported(void)
 {

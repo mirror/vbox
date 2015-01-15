@@ -86,7 +86,7 @@
 #include <iprt/time.h>
 #include <iprt/thread.h>
 
-#include <VBox/VBoxOGLTest.h>
+#include <VBox/VBoxOGL.h>
 #include <VBox/log.h>
 
 #ifdef IN_VMSVGA3D
