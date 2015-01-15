@@ -50,5 +50,5 @@ BEGIN
 END
 
 /* Creates the application icon. */
-#include "VBoxNetNAT-icon.rc"
+#include "VBoxNetLwipNAT-icon.rc"
 
