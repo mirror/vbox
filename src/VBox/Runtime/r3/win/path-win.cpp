@@ -45,7 +45,7 @@
 #include "internal/fs.h"
 
 /* Needed for lazy loading SHGetFolderPathW in RTPathUserDocuments(). */
-typedef HRESULT FNSHGETFOLDERPATHW(HWND, int, HANDLE, DWORD, LPWSTR);
+typedef HRESULT WINAPI FNSHGETFOLDERPATHW(HWND, int, HANDLE, DWORD, LPWSTR);
 typedef FNSHGETFOLDERPATHW *PFNSHGETFOLDERPATHW;
 
 /**
