@@ -211,6 +211,10 @@ bool CrFbWindow::SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH)
 {
     int rc;
 
+    /* Simple check for input values. */
+    if ( !(scaleFactorW > 0 && scaleFactorW > 0) )
+        return false;
+
     rc = RTSemRWRequestWrite(scaleFactorLock, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
