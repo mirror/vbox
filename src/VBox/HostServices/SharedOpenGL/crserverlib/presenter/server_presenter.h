@@ -214,8 +214,8 @@ class CrFbWindow
         int SetPosition(int32_t x, int32_t y);
         int SetVisibleRegionsChanged();
         int SetCompositor(const struct VBOXVR_SCR_COMPOSITOR * pCompositor);
-        void SetScaleFactor(GLdouble scaleFactor);
-        GLdouble GetScaleFactor();
+        bool SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH);
+        bool GetScaleFactor(GLdouble *scaleFactorW, GLdouble *scaleFactorH);
         int UpdateBegin();
         void UpdateEnd();
         uint64_t GetParentId();
@@ -251,7 +251,10 @@ class CrFbWindow
         uint32_t mHeight;
         CR_FBWIN_FLAGS mFlags;
         uint64_t mParentId;
-        volatile uint32_t mScaleFactorStorage;
+
+        RTSEMRW scaleFactorLock;
+        GLdouble mScaleFactorWStorage;
+        GLdouble mScaleFactorHStorage;
 };
 
 
