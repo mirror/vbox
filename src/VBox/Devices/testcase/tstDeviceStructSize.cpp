@@ -105,9 +105,11 @@
 #endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-# undef LOG_GROUP
 # include <VBox/vmm/pdmaudioifs.h>
 #endif
+#undef LOG_GROUP
+#include "../Audio/DevIchAc97.cpp"
+#undef LOG_GROUP
 #include "../Audio/DevIchHda.cpp"
 
 #include <stdio.h>
@@ -129,8 +131,8 @@
             printf("tstDeviceStructSize: error! %#010x %s  Off by %d!! (off=%#x)\n", RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), off); \
             rc++; \
         } \
-        /*else */ \
-            /*printf("%#08x %s\n", RT_OFFSETOF(type, m), #m);*/ \
+        else  \
+            printf("%#08x (%d) %s\n", RT_OFFSETOF(type, m), RT_OFFSETOF(type, m), #type "." #m); \
     } while (0)
 
 /**

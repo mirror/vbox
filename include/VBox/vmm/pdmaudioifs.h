@@ -413,6 +413,8 @@ typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
  */
 typedef struct PDMIAUDIOCONNECTOR
 {
+    DECLR3CALLBACKMEMBER(int, pfnQueryData, (PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcbAvailIn, uint32_t *pcbFreeOut, uint32_t *pcSamplesLive));
+
     /**
      * Reads PCM audio data from the host (input).
      *
@@ -456,7 +458,7 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(bool, pfnIsOutputOK, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut));
 
     /**
-     * Initializes the NULL audio driver as a fallback.
+     * Initializes the NULL audio driver as a fallback in case no host backend is available.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -558,6 +560,8 @@ typedef struct PDMIAUDIOCONNECTOR
                                            PPDMAUDIOSTREAMCFG pCfg,
                                            PPDMAUDIOGSTSTRMOUT *ppGstStrmOut));
 
+    DECLR3CALLBACKMEMBER(int, pfnPlayOut, (PPDMIAUDIOCONNECTOR pInterface));
+
     /**
      * Checks whether a specific guest input stream is active or not.
      *
@@ -639,7 +643,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnControlIn, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
-     * End the host audio input streamm.
+     * Ends the host audio input streamm.
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
@@ -648,7 +652,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnFiniIn, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn));
 
     /**
-     * End the host output stream.
+     * Ends the host output stream.
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
@@ -657,7 +661,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnFiniOut, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut));
 
     /**
-     * Play audio out from stream buffer.
+     * Plays an audio stream.
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
