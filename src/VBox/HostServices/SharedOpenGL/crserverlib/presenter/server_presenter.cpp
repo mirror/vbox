@@ -1844,6 +1844,12 @@ extern "C" DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScal
         {
             bool rc;
             rc = pWin->SetScaleFactor((GLdouble)dScaleFactorW, (GLdouble)dScaleFactorH);
+
+            /* Sync framebuffer with scaling factor changes. */
+            HCR_FRAMEBUFFER pFb = pDpInfo->iFb >= 0 ? CrPMgrFbGet(pDpInfo->iFb) : NULL;
+            if (pFb && pFb->pDisplay)
+                pFb->pDisplay->FramebufferChanged(pFb);
+
             return rc ? 0 : VERR_LOCK_FAILED;
         }
     }
