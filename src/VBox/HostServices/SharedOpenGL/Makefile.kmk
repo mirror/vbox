@@ -301,6 +301,7 @@ LIBRARIES += VBoxOGLTest
 VBoxOGLTest_TEMPLATE = VBOXR3
 ifneq ($(KBUILD_TARGET),darwin)
   VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
+  VBoxOGLTest_SOURCES.win = OpenGLTest/OpenGLTest.rc
 endif
 VBoxOGLTest_SOURCES.darwin = OpenGLTest/OpenGLTestDarwin.cpp
 
