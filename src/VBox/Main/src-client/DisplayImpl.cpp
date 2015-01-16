@@ -3399,12 +3399,12 @@ void  Display::i_handleVRecCompletion()
     ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
 }
 
-HRESULT Display::notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMultiplied, ULONG u32ScaleFactorHMultiplied)
+HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMultiplied, ULONG aScaleFactorHMultiplied)
 {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     HRESULT hr = E_UNEXPECTED;
 
-    if (uScreen >= mcMonitors)
+    if (aScreenId >= mcMonitors)
         return E_INVALIDARG;
 
     /* 3D acceleration enabled in VM config. */
@@ -3423,9 +3423,9 @@ HRESULT Display::notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMul
                     CRVBOXHGCMSETSCALEFACTOR *pData = (CRVBOXHGCMSETSCALEFACTOR *)(pCtl + 1);
                     int rc;
 
-                    pData->u32Screen                 = (uint32_t)uScreen;
-                    pData->u32ScaleFactorWMultiplied = (uint32_t)u32ScaleFactorWMultiplied;
-                    pData->u32ScaleFactorHMultiplied = (uint32_t)u32ScaleFactorHMultiplied;
+                    pData->u32Screen                 = aScreenId;
+                    pData->u32ScaleFactorWMultiplied = aScaleFactorWMultiplied;
+                    pData->u32ScaleFactorHMultiplied = aScaleFactorHMultiplied;
 
                     pCtl->Hdr.enmType              = VBOXCRCMDCTL_TYPE_HGCM;
                     pCtl->Hdr.u32Function          = SHCRGL_HOST_FN_SET_SCALE_FACTOR;

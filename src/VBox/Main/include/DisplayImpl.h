@@ -169,7 +169,6 @@ public:
     bool i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
     void i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
     void i_handleVRecCompletion();
-    virtual HRESULT notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMultiplied, ULONG u32ScaleFactorHMultiplied);
 #endif
 
     int i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
@@ -254,6 +253,9 @@ private:
                                     ULONG aHeight);
     virtual HRESULT querySourceBitmap(ULONG aScreenId,
                                       ComPtr<IDisplaySourceBitmap> &aDisplaySourceBitmap);
+    virtual HRESULT notifyScaleFactorChange(ULONG aScreenId,
+                                            ULONG aScaleFactorWMultiplied,
+                                            ULONG aScaleFactorHMultiplied);
 
     // Wrapped IEventListener properties
 

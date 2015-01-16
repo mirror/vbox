@@ -16115,7 +16115,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="notifyScaleFactorChange">
       <desc>
-         Obtains the guest screen bitmap parameters.
+         Notify OpenGL HGCM host service about graphics content scaling factor change.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="u32ScaleFactorWMultiplied" type="unsigned long" dir="in"/>
