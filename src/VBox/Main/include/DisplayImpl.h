@@ -169,7 +169,7 @@ public:
     bool i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
     void i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
     void i_handleVRecCompletion();
-    HRESULT notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMultiplied, ULONG u32ScaleFactorHMultiplied);
+    virtual HRESULT notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMultiplied, ULONG u32ScaleFactorHMultiplied);
 #endif
 
     int i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
