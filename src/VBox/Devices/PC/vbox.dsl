@@ -925,6 +925,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                 }
 
+                Method (_DOS, 1) { }
+
                 Method (_DOD, 0, NotSerialized)
                 {
                     Return (Package()
