@@ -301,7 +301,6 @@ LIBRARIES += VBoxOGLTest
 VBoxOGLTest_TEMPLATE = VBOXR3
 ifneq ($(KBUILD_TARGET),darwin)
   VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
-  VBoxOGLTest_SOURCES.win = OpenGLTest/OpenGLTest.rc
 endif
 VBoxOGLTest_SOURCES.darwin = OpenGLTest/OpenGLTestDarwin.cpp
 
@@ -319,6 +318,7 @@ if (   defined(VBOX_WITH_QTGUI) \
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE),VBOXMAINEXE)
   VBoxTestOGL_SOURCES = OpenGLTest/OpenGLTestApp.cpp
+  VBoxTestOGL_SOURCES.win = OpenGLTest/VBoxTestOGL.rc
   VBoxTestOGL_LIBS = \
   	$(if $(VBOX_WITH_CROGL), \
   	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
