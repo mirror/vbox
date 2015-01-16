@@ -42,6 +42,10 @@ RT_C_DECLS_BEGIN
  * for scaling factor manipulations. */
 #define VBOX_OGL_SCALE_FACTOR_MULTIPLIER    100.0
 
+/* 3D content scale factor range bounds. */
+#define VBOX_OGL_SCALE_FACTOR_MIN           0.5
+#define VBOX_OGL_SCALE_FACTOR_MAX           2.0
+
 bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void);
 bool RTCALL VBoxOglIs3DAccelerationSupported(void);
 
