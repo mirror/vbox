@@ -26,7 +26,6 @@
 # include <QPainter>
 # include <QScrollBar>
 # include <QMainWindow>
-# include <iprt/asm.h>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -43,7 +42,6 @@
 # include "UIMachineViewSeamless.h"
 # include "UIMachineViewScale.h"
 # include "UIExtraDataManager.h"
-
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "UIDnDHandler.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -52,24 +50,23 @@
 # include "CSession.h"
 # include "CConsole.h"
 # include "CDisplay.h"
+# include "CFramebuffer.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CDnDSource.h"
 #  include "CDnDTarget.h"
 #  include "CGuest.h"
+#  include "CGuestDnDSource.h"
+#  include "CGuestDnDTarget.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <VBox/VBoxVideo.h>
-
-#include "CFramebuffer.h"
-#ifdef VBOX_WITH_DRAG_AND_DROP
-# include "CGuestDnDTarget.h"
-# include "CGuestDnDSource.h"
-#endif
-
 
 /* Other VBox includes: */
+#include <iprt/asm.h>
+#include <VBox/VBoxOGL.h>
+#include <VBox/VBoxVideo.h>
+
 #ifdef Q_WS_X11
 # include <X11/XKBlib.h>
 # include <QX11Info>
@@ -242,6 +239,9 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
             /* Assign new frame-buffer logical-size taking the scale-factor into account: */
             const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
             frameBuffer()->setScaledSize(dScaleFactor == 1.0 ? QSize() : QSize(iWidth * dScaleFactor, iHeight * dScaleFactor));
+            display().NotifyScaleFactorChange(m_uScreenId,
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
         }
 
         /* Perform frame-buffer mode-change: */
@@ -513,6 +513,9 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->setScaledSize(dScaleFactor == 1.0 ? QSize() :
                                       QSize(m_pFrameBuffer->width() * dScaleFactor,
                                             m_pFrameBuffer->height() * dScaleFactor));
+        display().NotifyScaleFactorChange(m_uScreenId,
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
 
@@ -558,6 +561,9 @@ void UIMachineView::prepareFrameBuffer()
         frameBuffer()->setScaledSize(dScaleFactor == 1 ? QSize() :
                                      QSize(frameBuffer()->width() * dScaleFactor,
                                            frameBuffer()->height() * dScaleFactor));
+        display().NotifyScaleFactorChange(m_uScreenId,
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
     }
 }
 
