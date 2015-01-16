@@ -3399,6 +3399,71 @@ void  Display::i_handleVRecCompletion()
     ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
 }
 
+HRESULT Display::notifyScaleFactorChange(uint32_t uScreen, uint32_t u32ScaleFactorWMultiplied, uint32_t u32ScaleFactorHMultiplied)
+{
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    HRESULT hr = E_UNEXPECTED;
+
+    if (uScreen >= mcMonitors)
+        return E_INVALIDARG;
+
+    /* 3D acceleration enabled in VM config. */
+    if (mfIsCr3DEnabled)
+    {
+        /* VBoxSharedCrOpenGL HGCM host service is running. */
+        if (mhCrOglSvc)
+        {
+            VMMDev *pVMMDev = mParent->i_getVMMDev();
+            if (pVMMDev)
+            {
+                VBOXCRCMDCTL_HGCM *pCtl;
+                pCtl = (VBOXCRCMDCTL_HGCM *)RTMemAlloc(sizeof(CRVBOXHGCMSETSCALEFACTOR) + sizeof(VBOXCRCMDCTL_HGCM));
+                if (pCtl)
+                {
+                    CRVBOXHGCMSETSCALEFACTOR *pData = (CRVBOXHGCMSETSCALEFACTOR *)(pCtl + 1);
+                    int rc;
+
+                    pData->u32Screen                 = uScreen;
+                    pData->u32ScaleFactorWMultiplied = u32ScaleFactorWMultiplied;
+                    pData->u32ScaleFactorHMultiplied = u32ScaleFactorHMultiplied;
+
+                    pCtl->Hdr.enmType              = VBOXCRCMDCTL_TYPE_HGCM;
+                    pCtl->Hdr.u32Function          = SHCRGL_HOST_FN_SET_SCALE_FACTOR;
+                    pCtl->aParms[0].type           = VBOX_HGCM_SVC_PARM_PTR;
+                    pCtl->aParms[0].u.pointer.addr = pData;
+                    pCtl->aParms[0].u.pointer.size = sizeof(*pData);
+
+                    rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
+                    if (RT_FAILURE(rc))
+                    {
+                        AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
+                        RTMemFree(pCtl);
+                    }
+                    else
+                        hr = S_OK;
+                }
+                else
+                {
+                    Log(("Running out of memory on attempt to set OpenGL content scale factor. Ignored.\n"));
+                    hr = E_OUTOFMEMORY;
+                }
+            }
+            else
+                Log(("Internal error occurred on attempt to set OpenGL content scale factor. Ignored.\n"));
+        }
+        else
+            Log(("Attempt to specify OpenGL content scale factor while corresponding HGCM host service not yet runing. Ignored.\n"));
+    }
+    else
+        Log(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
+
+    return hr;
+#else
+    Log(("Attempt to specify OpenGL content scale factor while corresponding functionality is disabled."));
+    return E_UNEXPECTED;
+#endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
+}
+
 DECLCALLBACK(void) Display::i_displayCrVRecScreenshotPerform(void *pvCtx, uint32_t uScreen,
                                                              uint32_t x, uint32_t y,
                                                              uint32_t uBitsPerPixel, uint32_t uBytesPerLine,

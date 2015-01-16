@@ -37,6 +37,7 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/VBoxOGL.h>
 
 #include "cr_mem.h"
 #include "cr_server.h"
@@ -1362,6 +1363,33 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             rc = crServerVBoxWindowsShow(!!paParms[0].u.uint32);
             if (!RT_SUCCESS(rc))
                 WARN(("crServerVBoxWindowsShow failed rc %d", rc));
+
+            break;
+        }
+        case SHCRGL_HOST_FN_SET_SCALE_FACTOR:
+        {
+            /* Verify parameter count and types. */
+            if (cParms != 1
+             || paParms[0].type != VBOX_HGCM_SVC_PARM_PTR
+             || paParms[0].u.pointer.size != sizeof(CRVBOXHGCMSETSCALEFACTOR)
+             || !paParms[0].u.pointer.addr)
+            {
+                WARN(("invalid parameter"));
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            CRVBOXHGCMSETSCALEFACTOR *pData = (CRVBOXHGCMSETSCALEFACTOR *)paParms[0].u.pointer.addr;
+            double dScaleFactorW = (double)(pData->u32ScaleFactorWMultiplied) / VBOX_OGL_SCALE_FACTOR_MULTIPLIER;
+            double dScaleFactorH = (double)(pData->u32ScaleFactorHMultiplied) / VBOX_OGL_SCALE_FACTOR_MULTIPLIER;
+
+            rc = VBoxOglSetScaleFactor(pData->u32Screen, dScaleFactorW, dScaleFactorH);
+
+            /* Log scaling factor rounded to nearest 'int' value (not so precise). */
+            LogRel(("OpenGL: Set 3D content scale factor to (%u, %u), multiplier %d.\n",
+                pData->u32ScaleFactorWMultiplied,
+                pData->u32ScaleFactorHMultiplied,
+                (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
 
             break;
         }
