@@ -26,11 +26,26 @@
 #define ___VBoxOGL_h
 
 #include <iprt/cdefs.h>
+#include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
 
+/* GUI and VBox OpenGL code require scaling factor value to be stored in container
+ * of type of 'double'. Communication between them is done via Main. In the same time,
+ * currently, Main does not like type of 'double' to be used for an interface method parameter.
+ * An integer type should be used instead. This value is used in order to specify scaling factor in type
+ * of 'integer' units. It is assumed that GUI feeds Main with its internal scaling factor value
+ * (which is originally of type of 'double') multiplied by this constant and converted resulting
+ * value to type of 'uint32_t'. Then Main provides this data to OpenGL HGCM thread. Finally, VBox OpenGL
+ * code divides received scalar by this constant and converts result to type of 'double'.
+ * This constant can be increased (multiplied by 10^n) in order to get better precision
+ * for scaling factor manipulations. */
+#define VBOX_OGL_SCALE_FACTOR_MULTIPLIER    100.0
+
 bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void);
 bool RTCALL VBoxOglIs3DAccelerationSupported(void);
+
+DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScaleFactorW, double dScaleFactorH);
 
 RT_C_DECLS_END
 

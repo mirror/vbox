@@ -15811,7 +15811,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="dc19253d-e6b8-4b2c-8923-c8ecf80d1909"
+    uuid="772FBD91-65B5-4CFB-814C-E40E61AC7070"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -16111,6 +16111,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="displaySourceBitmap" type="IDisplaySourceBitmap" dir="out"/>
+    </method>
+
+    <method name="notifyScaleFactorChange">
+      <desc>
+         Obtains the guest screen bitmap parameters.
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
+      <param name="u32ScaleFactorWMultiplied" type="unsigned long" dir="in"/>
+      <param name="u32ScaleFactorHMultiplied" type="unsigned long" dir="in"/>
     </method>
 
   </interface>

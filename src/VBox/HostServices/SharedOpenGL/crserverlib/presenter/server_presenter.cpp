@@ -1828,6 +1828,29 @@ static int crPMgrCheckInitWindowDisplays(uint32_t idScreen)
     return VINF_SUCCESS;
 }
 
+extern "C" DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScaleFactorW, double dScaleFactorH)
+{
+    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    {
+        WARN(("invalid idScreen %d", idScreen));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[idScreen];
+    if (pDpInfo->pDpWin)
+    {
+        CrFbWindow *pWin = pDpInfo->pDpWin->getWindow();
+        if (pWin)
+        {
+            bool rc;
+            rc = pWin->SetScaleFactor((GLdouble)dScaleFactorW, (GLdouble)dScaleFactorH);
+            return rc ? 0 : VERR_LOCK_FAILED;
+        }
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
 int CrPMgrScreenChanged(uint32_t idScreen)
 {
     if (idScreen >= CR_MAX_GUEST_MONITORS)
