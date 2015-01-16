@@ -17,7 +17,7 @@
  */
 
 #include "server_presenter.h"
-
+#include <VBox/VBoxOGL.h>
 
 CrFbWindow::CrFbWindow(uint64_t parentId) :
     mSpuWindow(0),
@@ -212,7 +212,8 @@ bool CrFbWindow::SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH)
     int rc;
 
     /* Simple check for input values. */
-    if ( !(scaleFactorW > 0 && scaleFactorW > 0) )
+    if ( !(  (scaleFactorW >= VBOX_OGL_SCALE_FACTOR_MIN && scaleFactorW <= VBOX_OGL_SCALE_FACTOR_MAX)
+          && (scaleFactorH >= VBOX_OGL_SCALE_FACTOR_MIN && scaleFactorH <= VBOX_OGL_SCALE_FACTOR_MAX)))
         return false;
 
     rc = RTSemRWRequestWrite(scaleFactorLock, RT_INDEFINITE_WAIT);
