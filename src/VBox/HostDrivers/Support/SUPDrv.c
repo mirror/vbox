@@ -6372,10 +6372,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 }
                 else
                 {
-#if 0  /** @todo Hitting this on mac pro runing maverics. panicing on driver load is annoying.*/
                     for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-                        AssertMsg(!pGip->aCPUs[iCpu].i64TSCDelta, ("i=%u iCpu=%u %lld mode=%d\n", i, iCpu, pGip->aCPUs[iCpu].i64TSCDelta, pGip->enmMode);
-#endif
+                        AssertMsg(!pGip->aCPUs[iCpu].i64TSCDelta, ("iCpu=%u %lld mode=%d\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta, pGip->u32Mode));
                 }
 #endif
                 if (RT_SUCCESS(rc))
@@ -7406,7 +7404,7 @@ static void supdrvGipInitCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, PSU
     pCpu->u64NanoTS          = u64NanoTS;
     pCpu->u64TSC             = ASMReadTSC();
     pCpu->u64TSCSample       = GIP_TSC_DELTA_RSVD;
-    pCpu->i64TSCDelta        = pGip->fOsTscDeltasInSync ? 0 : INT64_MAX;
+    pCpu->i64TSCDelta        = GIP_ARE_TSC_DELTAS_APPLICABLE(pGip) ? INT64_MAX : 0;
 
     ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
     ASMAtomicWriteSize(&pCpu->idCpu,    NIL_RTCPUID);
