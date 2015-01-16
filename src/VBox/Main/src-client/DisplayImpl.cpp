@@ -3399,7 +3399,7 @@ void  Display::i_handleVRecCompletion()
     ASMAtomicWriteU32(&mfCrOglVideoRecState, CRVREC_STATE_IDLE);
 }
 
-HRESULT Display::notifyScaleFactorChange(uint32_t uScreen, uint32_t u32ScaleFactorWMultiplied, uint32_t u32ScaleFactorHMultiplied)
+HRESULT Display::notifyScaleFactorChange(ULONG uScreen, ULONG u32ScaleFactorWMultiplied, ULONG u32ScaleFactorHMultiplied)
 {
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     HRESULT hr = E_UNEXPECTED;
@@ -3423,9 +3423,9 @@ HRESULT Display::notifyScaleFactorChange(uint32_t uScreen, uint32_t u32ScaleFact
                     CRVBOXHGCMSETSCALEFACTOR *pData = (CRVBOXHGCMSETSCALEFACTOR *)(pCtl + 1);
                     int rc;
 
-                    pData->u32Screen                 = uScreen;
-                    pData->u32ScaleFactorWMultiplied = u32ScaleFactorWMultiplied;
-                    pData->u32ScaleFactorHMultiplied = u32ScaleFactorHMultiplied;
+                    pData->u32Screen                 = (uint32_t)uScreen;
+                    pData->u32ScaleFactorWMultiplied = (uint32_t)u32ScaleFactorWMultiplied;
+                    pData->u32ScaleFactorHMultiplied = (uint32_t)u32ScaleFactorHMultiplied;
 
                     pCtl->Hdr.enmType              = VBOXCRCMDCTL_TYPE_HGCM;
                     pCtl->Hdr.u32Function          = SHCRGL_HOST_FN_SET_SCALE_FACTOR;
