@@ -2315,7 +2315,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
 {
     PHDABDLEDESC pBdle = &pThis->StOutBdle;
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     uint32_t cbTransferred = 0;
     uint32_t cbWrittenMin = 0; /* local byte counter, how many bytes copied to backend */
