@@ -136,7 +136,7 @@ ifeq ($(KBUILD_TARGET),win)
 # Icon include file.
 VBoxNetLwipNAT_SOURCES  += VBoxNetNAT.rc
 VBoxNetNAT.rc_INCS       = $(VBoxNetLwipNAT_0_OUTDIR)
-VBoxNetNAT.rc_SOURCES    = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
+VBoxNetNAT.rc_DEPS       = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
 VBoxNetNAT.rc_CLEAN      = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc
 $$(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetLwipNAT-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxNetLwipNAT_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
