@@ -911,7 +911,8 @@ typedef struct VBVAHOSTCMD
 /* VBVACONF32::u32Index */
 #define VBOX_VBVA_CONF32_MONITOR_COUNT  0
 #define VBOX_VBVA_CONF32_HOST_HEAP_SIZE 1
-/** Returns VINF_SUCCESS if the host can report mode hints via VBVA. */
+/** Returns VINF_SUCCESS if the host can report mode hints via VBVA.
+ * Set value to VERR_NOT_SUPPORTED before calling. */
 #define VBOX_VBVA_CONF32_MODE_HINT_REPORTING  2
 
 typedef struct VBVACONF32
