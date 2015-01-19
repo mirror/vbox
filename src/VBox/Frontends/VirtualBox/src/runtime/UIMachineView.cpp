@@ -881,6 +881,12 @@ void UIMachineView::takePausePixmapLive()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
+#ifdef Q_WS_MAC
+    /* Adjust-backing-scale-factor if necessary: */
+    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
+    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+#endif /* Q_WS_MAC */
 
     /* Update scaled pause pixmap: */
     updateScaledPausePixmap();
@@ -910,6 +916,12 @@ void UIMachineView::takePausePixmapSnapshot()
 
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
+#ifdef Q_WS_MAC
+    /* Adjust-backing-scale-factor if necessary: */
+    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
+    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+#endif /* Q_WS_MAC */
 
     /* Update scaled pause pixmap: */
     updateScaledPausePixmap();
@@ -928,6 +940,12 @@ void UIMachineView::updateScaledPausePixmap()
 
     /* Update pause pixmap finally: */
     m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#ifdef Q_WS_MAC
+    /* Adjust-backing-scale-factor if necessary: */
+    const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
+    if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
+        m_pausePixmapScaled.setDevicePixelRatio(dBackingScaleFactor);
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineView::updateSliders()
@@ -1182,11 +1200,9 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
         if (gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()) == 1.0)
-            painter.drawPixmap(rect, pausePixmap(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
-                                                          rect.width(), rect.height()));
+            painter.drawPixmap(rect.topLeft(), pausePixmap());
         else
-            painter.drawPixmap(rect, pausePixmapScaled(), QRect(rect.x() + contentsX(), rect.y() + contentsY(),
-                                                                rect.width(), rect.height()));
+            painter.drawPixmap(rect.topLeft(), pausePixmapScaled());
 #ifdef Q_WS_MAC
         /* Update the dock icon: */
         updateDockIcon();
