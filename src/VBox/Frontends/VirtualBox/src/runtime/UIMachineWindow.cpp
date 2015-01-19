@@ -225,9 +225,11 @@ const QString& UIMachineWindow::machineName() const
 
 void UIMachineWindow::adjustMachineViewSize()
 {
-    /* By default, the only thing we need is to
-     * adjust guest-screen size if necessary: */
+    /* We need to adjust guest-screen size if necessary: */
     machineView()->adjustGuestScreenSize();
+
+    /* And to adjust machine-view size according scale-factors: */
+    machineView()->adjustAccordingScaleFactor();
 }
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
