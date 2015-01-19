@@ -90,6 +90,9 @@ public:
       * @note Reimplemented in sub-classes. Base implementation does nothing. */
     virtual void adjustGuestScreenSize() {}
 
+    /** Adjusts machine-view according scale-factor. */
+    void adjustAccordingScaleFactor();
+
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;
 
