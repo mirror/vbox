@@ -78,10 +78,10 @@ signals:
     /** Notifies about the scale-factor change. */
     void sigScaleFactorChange(const QString &strMachineID);
 
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Notifies about unscaled HiDPI output mode change. */
+    /** Notifies about unscaled HiDPI output mode change. */
     void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 
+#ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'presentation mode' status change. */
     void sigPresentationModeChange(bool fEnabled);
     /** Mac OS X: Notifies about 'dock icon' appearance change. */

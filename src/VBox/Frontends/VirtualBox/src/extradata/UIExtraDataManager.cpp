@@ -3587,10 +3587,8 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         /* Scale-factor change: */
         else if (strKey == GUI_ScaleFactor)
             emit sigScaleFactorChange(strMachineID);
-#ifdef RT_OS_DARWIN
         else if (strKey == GUI_HiDPI_UnscaledOutput)
             emit sigUnscaledHiDPIOutputModeChange(strMachineID);
-#endif /* RT_OS_DARWIN */
     }
 
     /* Notify listeners: */
