@@ -182,8 +182,6 @@ public:
     /** Unlocks frame-buffer access. */
     void unlock() const { RTCritSectLeave(&m_critSect); }
 
-    /** Returns the scale-factor used by the scaled-size. */
-    double scaleFactor() const { return m_dScaleFactor; }
     /** Returns the frame-buffer's scaled-size. */
     QSize scaledSize() const { return m_scaledSize; }
     /** Defines host-to-guest scale ratio as @a size. */
@@ -223,15 +221,17 @@ public:
     /** Define HiDPI frame-buffer optimization type: */
     void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType) { m_hiDPIOptimizationType = optimizationType; }
 
+    /** Returns the scale-factor used by the frame-buffer. */
+    double scaleFactor() const { return m_dScaleFactor; }
+    /** Define the scale-factor used by the frame-buffer. */
+    void setScaleFactor(double dScaleFactor);
+
     /** Return backing scale factor used by HiDPI frame-buffer. */
     double backingScaleFactor() const { return m_dBackingScaleFactor; }
     /** Define backing scale factor used by HiDPI frame-buffer. */
     void setBackingScaleFactor(double dBackingScaleFactor);
 
 protected slots:
-
-    /** Handles the scale-factor change. */
-    void sltHandleScaleFactorChange(const QString &strMachineID);
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Handles the unscaled HiDPI output mode change. */
