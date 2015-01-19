@@ -127,31 +127,46 @@ int CrFbWindow::SetVisible(bool fVisible)
 }
 
 
-int CrFbWindow::SetSize(uint32_t width, uint32_t height)
+int CrFbWindow::SetSize(uint32_t width, uint32_t height, bool fForced)
 {
-    if (!checkInitedUpdating())
+    if (!checkInitedUpdating() && !fForced)
     {
-        WARN(("err"));
+        crDebug("CrFbWindow: SetSize request dropped because window is currently updating"
+                "(width=%d, height=%d, mWidth=%d, mHeight=%d).", width, height, mWidth, mHeight);
         return VERR_INVALID_STATE;
     }
 
-    if (mWidth != width || mHeight != height)
+    if (mWidth != width || mHeight != height || fForced)
     {
         GLdouble scaleFactorW, scaleFactorH;
+        uint32_t scaledWidth, scaledHeight;
 
         /* Reset to default values if operation was unsuccessfull. */
         if (!GetScaleFactor(&scaleFactorW, &scaleFactorH))
             scaleFactorW = scaleFactorH = 1.0;
 
         mFlags.fCompositoEntriesModified = 1;
-        mWidth  = scaleFactorW ? (uint32_t)((GLdouble)width  * scaleFactorW) : width;
-        mHeight = scaleFactorH ? (uint32_t)((GLdouble)height * scaleFactorH) : height;
 
-        LOG(("CrWIN: Size [%d ; %d]", width, height));
+        /* Keep mWidth and mHeight unchanged (not multiplied by scale factor scalar). */
+        mWidth  = width;
+        mHeight = height;
+
+        scaledWidth  = (uint32_t)((GLdouble)width  * scaleFactorW);
+        scaledHeight = (uint32_t)((GLdouble)height * scaleFactorH);
 
         if (mSpuWindow)
-            cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, mWidth, mHeight);
+        {
+            cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, scaledWidth, scaledHeight);
+            crDebug("CrFbWindow: SetSize request performed successfully "
+                    "(width=%d, height=%d, scaledWidth=%d, scaledHeight=%d).", width, height, scaledWidth, scaledHeight);
+        }
+        else
+            crDebug("CrFbWindow: SetSize request skipped because mSpuWindow not yet constructed "
+                    "(width=%d, height=%d, scaledWidth=%d, scaledHeight=%d).", width, height, scaledWidth, scaledHeight);
     }
+    else
+        crDebug("CrFbWindow: SetSize request skipped because window arleady has requested size "
+                "(width=%d, height=%d, mWidth=%d, mHeight=%d).", width, height, mWidth, mHeight);
 
     return VINF_SUCCESS;
 }
@@ -161,7 +176,7 @@ int CrFbWindow::SetPosition(int32_t x, int32_t y)
 {
     if (!checkInitedUpdating())
     {
-        WARN(("err"));
+        crDebug("CrFbWindow: SetPosition request dropped because window is currently updating (x=%d, y=%d).", x, y);
         return VERR_INVALID_STATE;
     }
 
@@ -173,6 +188,7 @@ int CrFbWindow::SetPosition(int32_t x, int32_t y)
         myPos = y;
         if (mSpuWindow)
             cr_server.head_spu->dispatch_table.WindowPosition(mSpuWindow, x, y);
+        crDebug("CrFbWindow: SetPosition performed successfully (x=%d, y=%d).", x, y);
     }
 
     return VINF_SUCCESS;
@@ -214,7 +230,13 @@ bool CrFbWindow::SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH)
     /* Simple check for input values. */
     if ( !(  (scaleFactorW >= VBOX_OGL_SCALE_FACTOR_MIN && scaleFactorW <= VBOX_OGL_SCALE_FACTOR_MAX)
           && (scaleFactorH >= VBOX_OGL_SCALE_FACTOR_MIN && scaleFactorH <= VBOX_OGL_SCALE_FACTOR_MAX)))
+    {
+        crDebug("CrFbWindow: attempt to set scale factor out of valid values range: scaleFactorW=%d, scaleFactorH=%d, multiplier=%d.",
+            (int)(scaleFactorW * VBOX_OGL_SCALE_FACTOR_MULTIPLIER), (int)(scaleFactorH * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+            (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER);
+
         return false;
+    }
 
     rc = RTSemRWRequestWrite(scaleFactorLock, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
@@ -222,8 +244,22 @@ bool CrFbWindow::SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH)
         mScaleFactorWStorage = scaleFactorW;
         mScaleFactorHStorage = scaleFactorH;
         RTSemRWReleaseWrite(scaleFactorLock);
+
+        crDebug("CrFbWindow: set scale factor: scaleFactorW=%d, scaleFactorH=%d, multiplier=%d.",
+            (int)(scaleFactorW * VBOX_OGL_SCALE_FACTOR_MULTIPLIER), (int)(scaleFactorH * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+            (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER);
+
+        /* Update window geometry. Do not wait for GAs to send SetSize() and SetPosition()
+         * events since they might not be running or installed at all. */
+        SetSize(mWidth, mHeight, true);
+        SetPosition(mxPos, myPos);
+
         return true;
     }
+
+    crDebug("CrFbWindow: unable to set scale factor because RW lock cannot be aquired: scaleFactorW=%d, scaleFactorH=%d, multiplier=%d.",
+            (int)(scaleFactorW * VBOX_OGL_SCALE_FACTOR_MULTIPLIER), (int)(scaleFactorH * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+            (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER);
 
     return false;
 }
@@ -294,10 +330,10 @@ void CrFbWindow::UpdateEnd()
             {
                 VBOXVR_SCR_COMPOSITOR TmpCompositor;
                 RTRECT Rect;
-                Rect.xLeft = 0;
-                Rect.yTop = 0;
-                Rect.xRight = mWidth;
-                Rect.yBottom = mHeight;
+                Rect.xLeft   = 0;
+                Rect.yTop    = 0;
+                Rect.xRight  = (uint32_t)((GLdouble)mWidth  * scaleFactorW);
+                Rect.yBottom = (uint32_t)((GLdouble)mHeight * scaleFactorH);
                 CrVrScrCompositorInit(&TmpCompositor, &Rect);
                 CrVrScrCompositorSetStretching((VBOXVR_SCR_COMPOSITOR *)&TmpCompositor, scaleFactorW, scaleFactorH);
                 /* this is a cleanup operation
@@ -342,7 +378,17 @@ int CrFbWindow::Create()
         return VERR_GENERAL_FAILURE;
     }
 
-    cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, mWidth, mHeight);
+    GLdouble scaleFactorW, scaleFactorH;
+    /* Reset to default values if operation was unseccessfull. */
+    if (!GetScaleFactor(&scaleFactorW, &scaleFactorH))
+        scaleFactorW = scaleFactorH = 1.0;
+
+    uint32_t scaledWidth, scaledHeight;
+
+    scaledWidth  = (uint32_t)((GLdouble)mWidth  * scaleFactorW);
+    scaledHeight = (uint32_t)((GLdouble)mHeight * scaleFactorH);
+
+    cr_server.head_spu->dispatch_table.WindowSize(mSpuWindow, scaledWidth, scaledHeight);
     cr_server.head_spu->dispatch_table.WindowPosition(mSpuWindow, mxPos, myPos);
 
     checkRegions();
