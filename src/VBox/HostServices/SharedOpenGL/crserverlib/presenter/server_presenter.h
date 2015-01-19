@@ -210,7 +210,7 @@ class CrFbWindow
         void Destroy();
         int Reparent(uint64_t parentId);
         int SetVisible(bool fVisible);
-        int SetSize(uint32_t width, uint32_t height);
+        int SetSize(uint32_t width, uint32_t height, bool fForced=false);
         int SetPosition(int32_t x, int32_t y);
         int SetVisibleRegionsChanged();
         int SetCompositor(const struct VBOXVR_SCR_COMPOSITOR * pCompositor);
