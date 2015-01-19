@@ -476,92 +476,104 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
-    /* Take scale-factor and unscaled video output mode into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
-
-    /* Prepare frame-buffer: */
+    /* Check whether we already have corresponding frame-buffer: */
     UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
+
+    /* If we do: */
     if (pFrameBuffer)
     {
+        /* Assign it's view: */
         pFrameBuffer->setView(this);
-        /* Mark framebuffer as used again: */
+        /* Mark frame-buffer as used again: */
         LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
         pFrameBuffer->setMarkAsUnused(false);
+        /* And remember our choice: */
         m_pFrameBuffer = pFrameBuffer;
     }
+    /* If we do not: */
     else
     {
-# ifdef VBOX_WITH_VIDEOHWACCEL
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        /* If 2D video acceleration is activated: */
         if (m_fAccelerate2DVideo)
         {
+            /* Create new frame-buffer on the basis
+             * of VBoxOverlayFrameBuffer template: */
             ComObjPtr<VBoxOverlayFrameBuffer> pOFB;
             pOFB.createObject();
             pOFB->init(this, &session(), (uint32_t)screenId());
             m_pFrameBuffer = pOFB;
         }
+        /* If 2D video acceleration is not activated: */
         else
         {
+            /* Create new default frame-buffer: */
             m_pFrameBuffer.createObject();
             m_pFrameBuffer->init(this);
         }
-# else /* VBOX_WITH_VIDEOHWACCEL */
+#else /* VBOX_WITH_VIDEOHWACCEL */
+        /* Create new default frame-buffer: */
         m_pFrameBuffer.createObject();
         m_pFrameBuffer->init(this);
-# endif /* !VBOX_WITH_VIDEOHWACCEL */
+#endif /* !VBOX_WITH_VIDEOHWACCEL */
+
+        /* Take HiDPI optimization type into account: */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
+
+        /* Take scale-factor into account: */
+        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+
+        /* Take unscaled HiDPI output mode into account: */
+        const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
+        /* Associate uisession with frame-buffer finally: */
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
 
-    /* If frame-buffer was prepared: */
-    if (m_pFrameBuffer)
-    {
-        /* Prepare display: */
-        CFramebuffer fb = display().QueryFramebuffer(m_uScreenId);
-        /* Always perform AttachFramebuffer to ensure 3D gets notified: */
-        if (!fb.isNull())
-            display().DetachFramebuffer(m_uScreenId);
-        display().AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
-    }
+    /* Make sure frame-buffer was prepared: */
+    AssertReturnVoid(m_pFrameBuffer);
 
+    /* Prepare display: */
+    CFramebuffer fb = display().QueryFramebuffer(m_uScreenId);
+    /* Always perform AttachFramebuffer to ensure 3D gets notified: */
+    if (!fb.isNull())
+        display().DetachFramebuffer(m_uScreenId);
+    display().AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+
+    /* Calculate frame-buffer size: */
     QSize size;
+    {
 #ifdef Q_WS_X11
-    /* Processing pseudo resize-event to synchronize frame-buffer with stored
-     * framebuffer size. On X11 this will be additional done when the machine
-     * state was 'saved'. */
-    if (machine().GetState() == KMachineState_Saved)
-        size = guestSizeHint();
+        /* Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size.
+         * On X11 this will be additional done when the machine state was 'saved'. */
+        if (machine().GetState() == KMachineState_Saved)
+            size = guestSizeHint();
 #endif /* Q_WS_X11 */
-    /* If there is a preview image saved, we will resize the framebuffer to the
-     * size of that image. */
-    ULONG buffer = 0, width = 0, height = 0;
-    machine().QuerySavedScreenshotPNGSize(0, buffer, width, height);
-    if (buffer > 0)
-    {
-        /* Init with the screenshot size */
-        size = QSize(width, height);
-        /* Try to get the real guest dimensions from the save state */
-        ULONG guestOriginX = 0, guestOriginY = 0, guestWidth = 0, guestHeight = 0;
-        BOOL fEnabled = true;
-        machine().QuerySavedGuestScreenInfo(m_uScreenId, guestOriginX, guestOriginY, guestWidth, guestHeight, fEnabled);
-        if (   guestWidth  > 0
-            && guestHeight > 0)
-            size = QSize(guestWidth, guestHeight);
-    }
-    /* If we have a valid size, resize the framebuffer. */
-    if (size.width() > 0 && size.height() > 0)
-    {
-        frameBuffer()->resizeEvent(size.width(), size.height());
-        frameBuffer()->setScaleFactor(dScaleFactor);
-        display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-        frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
+        /* If there is a preview image saved,
+         * we will resize the framebuffer to the size of that image: */
+        ULONG uBuffer = 0, uWidth = 0, uHeight = 0;
+        machine().QuerySavedScreenshotPNGSize(0, uBuffer, uWidth, uHeight);
+        if (uBuffer > 0)
+        {
+            /* Init with the screenshot size: */
+            size = QSize(uWidth, uHeight);
+            /* Try to get the real guest dimensions from the save-state: */
+            ULONG uGuestOriginX = 0, uGuestOriginY = 0, uGuestWidth = 0, uGuestHeight = 0;
+            BOOL fEnabled = true;
+            machine().QuerySavedGuestScreenInfo(m_uScreenId, uGuestOriginX, uGuestOriginY, uGuestWidth, uGuestHeight, fEnabled);
+            if (uGuestWidth  > 0 && uGuestHeight > 0)
+                size = QSize(uGuestWidth, uGuestHeight);
+        }
+
+        /* If we have a valid size, resize the framebuffer. */
+        if (size.width() > 0 && size.height() > 0)
+            frameBuffer()->resizeEvent(size.width(), size.height());
     }
 }
 
