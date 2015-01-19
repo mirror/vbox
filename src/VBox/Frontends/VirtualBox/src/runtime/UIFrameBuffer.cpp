@@ -765,23 +765,22 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
+void UIFrameBuffer::setScaleFactor(double dScaleFactor)
 {
-    /* Remember new backing-scale-factor: */
-    m_dBackingScaleFactor = dBackingScaleFactor;
+    /* Remember new scale-factor: */
+    m_dScaleFactor = dScaleFactor;
+
+    /* Update scaled-size according scale-factor: */
+    setScaledSize(m_dScaleFactor == 1.0 ? QSize() : QSize(m_iWidth * dScaleFactor, m_iHeight * dScaleFactor));
 
     /* Update coordinate-system: */
     updateCoordinateSystem();
 }
 
-void UIFrameBuffer::sltHandleScaleFactorChange(const QString &strMachineID)
+void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
 {
-    /* Skip unrelated machine IDs: */
-    if (strMachineID != vboxGlobal().managedVMUuid())
-        return;
-
-    /* Fetch new scale-factor: */
-    m_dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    /* Remember new backing-scale-factor: */
+    m_dBackingScaleFactor = dBackingScaleFactor;
 
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -819,8 +818,6 @@ void UIFrameBuffer::prepareConnections()
             Qt::QueuedConnection);
 
     /* Extra-data manager connections: */
-    connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
-            this, SLOT(sltHandleScaleFactorChange(const QString&)));
 #ifdef Q_WS_MAC
     connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
             this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
@@ -840,8 +837,6 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
 
     /* Extra-data manager connections: */
-    disconnect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
-               this, SLOT(sltHandleScaleFactorChange(const QString&)));
 #ifdef Q_WS_MAC
     disconnect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
                this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));

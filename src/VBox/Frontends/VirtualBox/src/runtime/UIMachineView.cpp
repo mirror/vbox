@@ -238,7 +238,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         {
             /* Assign new frame-buffer logical-size taking the scale-factor into account: */
             const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-            frameBuffer()->setScaledSize(dScaleFactor == 1.0 ? QSize() : QSize(iWidth * dScaleFactor, iHeight * dScaleFactor));
+            frameBuffer()->setScaleFactor(dScaleFactor);
             display().NotifyScaleFactorChange(m_uScreenId,
                                               (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                               (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
@@ -510,9 +510,7 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->init(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
-        m_pFrameBuffer->setScaledSize(dScaleFactor == 1.0 ? QSize() :
-                                      QSize(m_pFrameBuffer->width() * dScaleFactor,
-                                            m_pFrameBuffer->height() * dScaleFactor));
+        m_pFrameBuffer->setScaleFactor(dScaleFactor);
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
@@ -558,9 +556,7 @@ void UIMachineView::prepareFrameBuffer()
     if (size.width() > 0 && size.height() > 0)
     {
         frameBuffer()->resizeEvent(size.width(), size.height());
-        frameBuffer()->setScaledSize(dScaleFactor == 1 ? QSize() :
-                                     QSize(frameBuffer()->width() * dScaleFactor,
-                                           frameBuffer()->height() * dScaleFactor));
+        frameBuffer()->setScaleFactor(dScaleFactor);
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
