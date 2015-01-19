@@ -116,10 +116,8 @@ protected slots:
     /** Handles the scale-factor change. */
     void sltHandleScaleFactorChange(const QString &strMachineID);
 
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Handles the unscaled HiDPI output mode change. */
+    /** Handles the unscaled HiDPI output mode change. */
     void sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID);
-#endif /* RT_OS_DARWIN */
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();

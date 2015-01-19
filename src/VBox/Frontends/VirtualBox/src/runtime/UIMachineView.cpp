@@ -233,16 +233,6 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
             /* Assign new frame-buffer logical-size: */
             frameBuffer()->setScaledSize(size());
         }
-        /* Adjust other modes to current NotifyChange event size: */
-        else
-        {
-            /* Assign new frame-buffer logical-size taking the scale-factor into account: */
-            const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-            frameBuffer()->setScaleFactor(dScaleFactor);
-            display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-        }
 
         /* Perform frame-buffer mode-change: */
         frameBuffer()->notifyChange(iWidth, iHeight);
@@ -354,6 +344,13 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     if (strMachineID != vboxGlobal().managedVMUuid())
         return;
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    frameBuffer()->setScaleFactor(dScaleFactor);
+    display().NotifyScaleFactorChange(m_uScreenId,
+                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+
     /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
     sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
     frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
@@ -361,20 +358,22 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     adjustGuestScreenSize();
 }
 
-#ifdef RT_OS_DARWIN
 void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
     if (strMachineID != vboxGlobal().managedVMUuid())
         return;
 
+    /* Take unscaled HiDPI output mode into account: */
+    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
     /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
     sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
     frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
     machineWindow()->normalizeGeometry(true /* adjust position */);
     adjustGuestScreenSize();
 }
-#endif /* RT_OS_DARWIN */
 
 void UIMachineView::sltMachineStateChanged()
 {
@@ -477,8 +476,9 @@ void UIMachineView::prepareViewport()
 
 void UIMachineView::prepareFrameBuffer()
 {
-    /* Take scale-factor into account: */
+    /* Take scale-factor and unscaled video output mode into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
 
     /* Prepare frame-buffer: */
     UIFrameBuffer *pFrameBuffer = uisession()->frameBuffer(screenId());
@@ -514,6 +514,7 @@ void UIMachineView::prepareFrameBuffer()
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
 
@@ -560,6 +561,7 @@ void UIMachineView::prepareFrameBuffer()
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
     }
 }
 
@@ -603,11 +605,9 @@ void UIMachineView::prepareConnections()
     /* Scale-factor change: */
     connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QString&)),
             this, SLOT(sltHandleScaleFactorChange(const QString&)));
-#ifdef Q_WS_MAC
     /* Unscaled HiDPI output mode change: */
     connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
             this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
-#endif /* Q_WS_MAC */
 }
 
 void UIMachineView::prepareConsoleConnections()
@@ -1135,7 +1135,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 #ifdef Q_WS_MAC
             case QEvent::Move:
             {
-                /* Update backing scale factor for underlying frame-buffer: */
+                /* Update backing-scale-factor for underlying frame-buffer: */
                 if (m_pFrameBuffer)
                     m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
                 break;

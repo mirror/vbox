@@ -225,18 +225,13 @@ public:
 
     /** Returns whether frame-buffer should use unscaled HiDPI output. */
     bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
+    /** Defines whether frame-buffer should use unscaled HiDPI output. */
+    void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput);
 
     /** Return HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** Define HiDPI frame-buffer optimization type: */
     void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType) { m_hiDPIOptimizationType = optimizationType; }
-
-protected slots:
-
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Handles the unscaled HiDPI output mode change. */
-    void sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID);
-#endif /* RT_OS_DARWIN */
 
 protected:
 

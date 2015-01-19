@@ -789,20 +789,14 @@ void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
     updateCoordinateSystem();
 }
 
-#ifdef RT_OS_DARWIN
-void UIFrameBuffer::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
+void UIFrameBuffer::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput)
 {
-    /* Skip unrelated machine IDs: */
-    if (strMachineID != vboxGlobal().managedVMUuid())
-        return;
-
-    /* Fetch new unscaled HiDPI output mode value: */
-    m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+    /* Remember new use-unscaled-HiDPI-output value: */
+    m_fUseUnscaledHiDPIOutput = fUseUnscaledHiDPIOutput;
 
     /* Update coordinate-system: */
     updateCoordinateSystem();
 }
-#endif /* RT_OS_DARWIN */
 
 void UIFrameBuffer::prepareConnections()
 {
@@ -819,12 +813,6 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
             m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)),
             Qt::QueuedConnection);
-
-    /* Extra-data manager connections: */
-#ifdef Q_WS_MAC
-    connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
-            this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
-#endif /* Q_WS_MAC */
 }
 
 void UIFrameBuffer::cleanupConnections()
@@ -838,12 +826,6 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
     disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
-
-    /* Extra-data manager connections: */
-#ifdef Q_WS_MAC
-    disconnect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
-               this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
-#endif /* Q_WS_MAC */
 }
 
 void UIFrameBuffer::updateCoordinateSystem()
