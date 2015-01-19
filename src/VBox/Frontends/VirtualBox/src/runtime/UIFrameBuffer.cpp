@@ -61,10 +61,10 @@ UIFrameBuffer::UIFrameBuffer()
     , m_fUpdatesAllowed(true)
     , m_fUnused(false)
     , m_fAutoEnabled(false)
-    , m_dScaleFactor(gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()))
-    , m_fUseUnscaledHiDPIOutput(gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
+    , m_dScaleFactor(1.0)
     , m_dBackingScaleFactor(1.0)
+    , m_fUseUnscaledHiDPIOutput(false)
+    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
 {
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -694,6 +694,9 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
     }
 
     unlock();
+
+    /* Update scaled-size according scale-factor: */
+    setScaledSize(scaleFactor() == 1.0 ? scaledSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
 }
 
 void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
@@ -771,7 +774,7 @@ void UIFrameBuffer::setScaleFactor(double dScaleFactor)
     m_dScaleFactor = dScaleFactor;
 
     /* Update scaled-size according scale-factor: */
-    setScaledSize(m_dScaleFactor == 1.0 ? QSize() : QSize(m_iWidth * dScaleFactor, m_iHeight * dScaleFactor));
+    setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
 
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -974,7 +977,7 @@ void UIFrameBuffer::eraseImageRect(QPainter &painter, const QRect &rect,
     /* Prepare sub-pixmap: */
     QPixmap subPixmap = QPixmap(rect.width(), rect.height());
 
-    /* If HiDPI 'backing scale factor' defined: */
+    /* If HiDPI 'backing-scale-factor' defined: */
     if (dBackingScaleFactor > 1.0)
     {
         /* Should we
@@ -1034,7 +1037,7 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
 
-    /* If HiDPI 'backing scale factor' defined: */
+    /* If HiDPI 'backing-scale-factor' defined: */
     if (dBackingScaleFactor > 1.0)
     {
         /* Should we

@@ -213,6 +213,16 @@ public:
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+    /** Returns the scale-factor used by the frame-buffer. */
+    double scaleFactor() const { return m_dScaleFactor; }
+    /** Define the scale-factor used by the frame-buffer. */
+    void setScaleFactor(double dScaleFactor);
+
+    /** Returns backing-scale-factor used by HiDPI frame-buffer. */
+    double backingScaleFactor() const { return m_dBackingScaleFactor; }
+    /** Defines backing-scale-factor used by HiDPI frame-buffer. */
+    void setBackingScaleFactor(double dBackingScaleFactor);
+
     /** Returns whether frame-buffer should use unscaled HiDPI output. */
     bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
 
@@ -220,16 +230,6 @@ public:
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** Define HiDPI frame-buffer optimization type: */
     void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType) { m_hiDPIOptimizationType = optimizationType; }
-
-    /** Returns the scale-factor used by the frame-buffer. */
-    double scaleFactor() const { return m_dScaleFactor; }
-    /** Define the scale-factor used by the frame-buffer. */
-    void setScaleFactor(double dScaleFactor);
-
-    /** Return backing scale factor used by HiDPI frame-buffer. */
-    double backingScaleFactor() const { return m_dBackingScaleFactor; }
-    /** Define backing scale factor used by HiDPI frame-buffer. */
-    void setBackingScaleFactor(double dBackingScaleFactor);
 
 protected slots:
 
@@ -329,12 +329,12 @@ protected:
 
     /** @name HiDPI screens related variables.
      * @{ */
+    /** Holds backing-scale-factor used by HiDPI frame-buffer. */
+    double m_dBackingScaleFactor;
     /** Holds whether frame-buffer should use unscaled HiDPI output. */
     bool m_fUseUnscaledHiDPIOutput;
     /** Holds HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType m_hiDPIOptimizationType;
-    /** Holds backing scale factor used by HiDPI frame-buffer. */
-    double m_dBackingScaleFactor;
     /** @} */
 
 private:
