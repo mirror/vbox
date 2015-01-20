@@ -5,7 +5,7 @@
         XSLT stylesheet that generates C++ API wrappers (server side) from
         VirtualBox.xidl.
 
-    Copyright (C) 2010-2014 Oracle Corporation
+    Copyright (C) 2010-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,17 @@
 
 <xsl:variable name="G_root" select="/"/>
 
+<xsl:variable name="G_sNewLine">
+    <xsl:choose>
+        <xsl:when test="$KBUILD_HOST = 'win'">
+            <xsl:value-of select="'&#13;&#10;'"/>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="'&#10;'"/>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:variable>
+
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -43,19 +54,19 @@ templates for file separation
 <xsl:template match="interface" mode="listfile">
     <xsl:param name="file"/>
 
-    <xsl:value-of select="concat('&#9;', $file, ' \&#10;')"/>
+    <xsl:value-of select="concat('&#9;', $file, ' \', $G_sNewLine)"/>
 </xsl:template>
 
 <xsl:template match="interface" mode="startfile">
     <xsl:param name="file"/>
 
-    <xsl:value-of select="concat('&#10;// ##### BEGINFILE &quot;', $file, '&quot;&#10;')"/>
+    <xsl:value-of select="concat($G_sNewLine, '// ##### BEGINFILE &quot;', $file, '&quot;', $G_sNewLine)"/>
 </xsl:template>
 
 <xsl:template match="interface" mode="endfile">
     <xsl:param name="file"/>
 
-    <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;')"/>
+    <xsl:value-of select="concat($G_sNewLine, '// ##### ENDFILE &quot;', $file, '&quot;', $G_sNewLine)"/>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -68,7 +79,6 @@ templates for file headers/footers
     <xsl:param name="type"/>
 
     <xsl:text>/** @file
- *
 </xsl:text>
     <xsl:value-of select="concat(' * VirtualBox API class wrapper ', $type, ' for I', $class, '.')"/>
     <xsl:text>
@@ -79,7 +89,7 @@ templates for file headers/footers
  */
 
 /**
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +106,7 @@ templates for file headers/footers
 <xsl:template name="emitCOMInterfaces">
     <xsl:param name="iface"/>
 
-    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $iface/@name, ')&#10;')"/>
+    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $iface/@name, ')' , $G_sNewLine)"/>
     <!-- now recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="$iface/@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
@@ -108,7 +118,7 @@ templates for file headers/footers
 
 <xsl:template match="interface" mode="classheader">
     <xsl:param name="addinterfaces"/>
-    <xsl:value-of select="concat('#ifndef ', substring(@name, 2), 'Wrap_H_&#10;')"/>
+    <xsl:value-of select="concat('#ifndef ', substring(@name, 2), 'Wrap_H_', $G_sNewLine)"/>
     <xsl:value-of select="concat('#define ', substring(@name, 2), 'Wrap_H_')"/>
     <xsl:text>
 
@@ -124,31 +134,31 @@ templates for file headers/footers
     <xsl:if test="count(exsl:node-set($addinterfaces)/token) > 0">
         <xsl:text>,</xsl:text>
     </xsl:if>
-    <xsl:text>&#10;</xsl:text>
+    <xsl:value-of select="$G_sNewLine"/>
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
         <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', text(), ')')"/>
         <xsl:if test="not(position()=last())">
             <xsl:text>,</xsl:text>
         </xsl:if>
-        <xsl:text>&#10;</xsl:text>
+        <xsl:value-of select="$G_sNewLine"/>
     </xsl:for-each>
     <xsl:text>{
     Q_OBJECT
 
 public:
 </xsl:text>
-    <xsl:value-of select="concat('    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(', substring(@name, 2), 'Wrap, ', @name, ')&#10;')"/>
-    <xsl:value-of select="concat('    DECLARE_NOT_AGGREGATABLE(', substring(@name, 2), 'Wrap)&#10;')"/>
+    <xsl:value-of select="concat('    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(', substring(@name, 2), 'Wrap, ', @name, ')', $G_sNewLine)"/>
+    <xsl:value-of select="concat('    DECLARE_NOT_AGGREGATABLE(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>
     <xsl:text>    DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 </xsl:text>
-    <xsl:value-of select="concat('    BEGIN_COM_MAP(', substring(@name, 2), 'Wrap)&#10;')"/>
+    <xsl:value-of select="concat('    BEGIN_COM_MAP(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>
     <xsl:text>        COM_INTERFACE_ENTRY(ISupportErrorInfo)
 </xsl:text>
     <xsl:call-template name="emitCOMInterfaces">
         <xsl:with-param name="iface" select="."/>
     </xsl:call-template>
-    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')&#10;')"/>
+    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')', $G_sNewLine)"/>
     <xsl:variable name="manualAddInterfaces">
         <xsl:call-template name="checkoption">
             <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
@@ -173,7 +183,7 @@ public:
     END_COM_MAP()
 
 </xsl:text>
-    <xsl:value-of select="concat('    DECLARE_EMPTY_CTOR_DTOR(', substring(@name, 2), 'Wrap)&#10;')"/>
+    <xsl:value-of select="concat('    DECLARE_EMPTY_CTOR_DTOR(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>
 </xsl:template>
 
 <xsl:template match="interface" mode="classfooter">
@@ -181,13 +191,13 @@ public:
     <xsl:text>};
 
 </xsl:text>
-    <xsl:value-of select="concat('#endif // !', substring(@name, 2), 'Wrap_H_&#10;')"/>
+    <xsl:value-of select="concat('#endif // !', substring(@name, 2), 'Wrap_H_', $G_sNewLine)"/>
 </xsl:template>
 
 <xsl:template match="interface" mode="codeheader">
     <xsl:param name="addinterfaces"/>
-    <xsl:value-of select="concat('#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_', translate(substring(@name, 2), $G_lowerCase, $G_upperCase), '&#10;&#10;')"/>
-    <xsl:value-of select="concat('#include &quot;', substring(@name, 2), 'Wrap.h&quot;&#10;')"/>
+    <xsl:value-of select="concat('#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_', translate(substring(@name, 2), $G_lowerCase, $G_upperCase), $G_sNewLine, $G_sNewLine)"/>
+    <xsl:value-of select="concat('#include &quot;', substring(@name, 2), 'Wrap.h&quot;', $G_sNewLine)"/>
     <xsl:text>#include "Logging.h"
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
 # include "dtrace/VBoxAPI.h"
@@ -233,7 +243,7 @@ public:
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS', $depth, '_CI(', $classname, ', ', $interfacelist, ')&#10;')"/>
+                    <xsl:value-of select="concat('NS_IMPL_THREADSAFE_ISUPPORTS', $depth, '_CI(', $classname, ', ', $interfacelist, ')', $G_sNewLine)"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:otherwise>
@@ -244,7 +254,7 @@ public:
     <xsl:param name="addinterfaces"/>
     <xsl:text>#ifdef VBOX_WITH_XPCOM
 </xsl:text>
-    <xsl:value-of select="concat('NS_DECL_CLASSINFO(', substring(@name, 2), 'Wrap)&#10;')"/>
+    <xsl:value-of select="concat('NS_DECL_CLASSINFO(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>
 
     <xsl:variable name="manualAddInterfaces">
         <xsl:call-template name="checkoption">
@@ -1441,7 +1451,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:text>
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="concat('&#10;    // ', $pmode, ' ', $iface/@name, ' properties&#10;')"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' properties', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
@@ -1985,7 +1995,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:text>
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="concat('&#10;    // ', $pmode, ' ', $iface/@name, ' methods&#10;')"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' methods', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
@@ -2130,7 +2140,7 @@ private:</xsl:text>
     <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
 
-    <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)&#10;&#10;')"/>
+    <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)', $G_sNewLine, $G_sNewLine)"/>
 
     <xsl:variable name="dtracetopclass">
         <xsl:choose>
@@ -2292,7 +2302,7 @@ private:</xsl:text>
         <xsl:when test="$filelistonly=''">
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="concat($filelistonly, ' := \&#10;')"/>
+            <xsl:value-of select="concat($filelistonly, ' := \', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:apply-templates/>

@@ -1165,14 +1165,18 @@ $(VBoxAPIWrap_VBOX_RAWSRC) \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
 	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam filelistonly "" \
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
 $(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_PATH_MAIN_SRC)/Makefile.kmk
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES -o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES \
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(APPEND) -n "$@" "" "" \
 		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
 		'VBOX_MAIN_APIWRAPPER_GEN_HDRS := $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
