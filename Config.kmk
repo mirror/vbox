@@ -709,6 +709,7 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to enable user mode dtrace probes.
 if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBOX_WITH_DTRACE_R3 = 1
+ VBOX_WITH_DTRACE_R3_MAIN = 1
 endif
 # Set this to enable kernel driver dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
