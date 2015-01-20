@@ -184,7 +184,9 @@ ifndef VBOX_ONLY_SDK
 #
 LIBRARIES += VBoxAPIWrap
 VBoxAPIWrap_TEMPLATE        = VBoxMainLib
-VBoxAPIWrap_SOURCES         = $(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES))
+VBoxAPIWrap_SOURCES         = \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
+	$(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES))
 VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
 VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxAPIWrap_INCS           += \
@@ -192,6 +194,8 @@ VBoxAPIWrap_INCS           += \
 VBoxAPIWrap_CLEAN           = \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	$(VBoxAPIWrap_VBOX_RAWSRC)
 
 # Two VBox variables used here and/or in the rules generating wrappers.
@@ -199,6 +203,7 @@ VBoxAPIWrap_VBOX_RAWSRC     = \
 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
 VBoxAPIWrap_VBOX_XSLT       = \
 	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
+
 
 # This include file (generated at the bottom of this file), defines
 # VBOX_MAIN_APIWRAPPER_GEN_FILES and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
@@ -209,6 +214,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
 LIBRARIES += VBoxAPIWrap-x86
 VBoxAPIWrap-x86_TEMPLATE = VBoxMainLib-x86
 VBoxAPIWrap-x86_EXTENDS  = VBoxAPIWrap
+VBoxAPIWrap-x86_DTRACE_HDR_FLAGS = -32 # ugly, should be fixed in the tool in Config.kmk
 endif
 
 endif # !VBOX_ONLY_SDK
@@ -1149,6 +1155,7 @@ javagluesample_SOURCES = \
 $(VBoxAPIWrap_VBOX_RAWSRC) \
 +| $(VBOX_MAIN_APIWRAPPER_GEN_FILES): \
 		$(VBOX_XIDL_FILE) \
+               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
 		$(VBoxAPIWrap_VBOX_XSLT) \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
@@ -1166,6 +1173,21 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FIL
 		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
 		'VBOX_MAIN_APIWRAPPER_GEN_HDRS = $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
+
+$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
++| $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d: \
+		$(VBOX_MAIN_APIWRAPPER_GEN_FILES) \
+		$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d \
+		$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d
+	$(call MSG_L1,Collecting automatically generated dtrace probes)
+	$(RM) -f -- $@
+	$(CP) -f -- $(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d $@
+	$(SED) -ne 's/^ *\/\* dtrace \(probe .*;\) \*\//    \1/p' --append $@ \
+		-- $(filter %.cpp, $(VBOX_MAIN_APIWRAPPER_GEN_FILES))
+	$(SED) -e "" --append $@ $(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d
+	$(QUIET)$(CP) --changed -fv -- $@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d
+
+
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
