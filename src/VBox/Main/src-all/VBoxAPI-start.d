@@ -18,6 +18,6 @@
 provider vboxapi
 {
     /* Manually defined probes: */
-
+    probe machine__state__changed(void *a_pMachine, int a_enmNewState, int a_enmOldState, const char *pszMachineUuid);
 
     /* The following probes are automatically generated and changes with the API: */

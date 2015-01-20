@@ -313,6 +313,7 @@ VBoxSVC_INCS = \
 	$(VBoxSVC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
+       $(VBOX_MAIN_APIWRAPPER_DIR)/dtrace \
 	.
 VBoxSVC_INCS.win = \
 	$(VBoxCOM_0_OUTDIR)
@@ -653,7 +654,8 @@ VBoxC_INCS          = \
 	include \
 	$(VBoxC_0_OUTDIR) \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
-	$(dir $(VBOX_XML_SCHEMADEFS_H))
+	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
+       $(VBOX_MAIN_APIWRAPPER_DIR)/dtrace
 VBoxC_INCS.win      = \
 	$(VBoxCOM_0_OUTDIR) \
 	.
@@ -829,6 +831,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  VBoxClient-x86_EXTENDS  = VBoxC
  VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT $(VBoxC_DEFS)
  VBoxClient-x86_INST.win = $(INST_DLL)x86/
+ VBoxClient-x86_INCS = $(patsubst $(VBOX_MAIN_APIWRAPPER_DIR)%,$(VBOX_MAIN_APIWRAPPER_DIR)-x86%, $(VBoxC_INCS))
  VBoxClient-x86_INCS.win = \
  	$(VBoxClient-x86_0_OUTDIR) \
  	$(VBoxCOM-x86_0_OUTDIR) \

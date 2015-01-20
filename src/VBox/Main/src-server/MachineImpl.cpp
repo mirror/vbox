@@ -86,6 +86,10 @@
 
 #include <algorithm>
 
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+# include "dtrace/VBoxAPI.h"
+#endif
+
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 # define HOSTSUFF_EXE ".exe"
 #else /* !RT_OS_WINDOWS */
@@ -8317,12 +8321,15 @@ HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
     /* wait for state dependents to drop to zero */
     i_ensureNoStateDependencies();
 
-    if (mData->mMachineState != aMachineState)
+    MachineState_T const enmOldState = mData->mMachineState;
+    if (enmOldState != aMachineState)
     {
         mData->mMachineState = aMachineState;
-
         RTTimeNow(&mData->mLastStateChange);
 
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        VBOXAPI_MACHINE_STATE_CHANGED(this, aMachineState, enmOldState, mData->mUuid.toStringCurly().c_str());
+#endif
         mParent->i_onMachineStateChange(mData->mUuid, aMachineState);
     }
 
