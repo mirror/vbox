@@ -26,7 +26,6 @@
 #include "Global.h"
 #include "AutoCaller.h"
 #include "ConsoleImpl.h"
-#include "MachineImpl.h"
 #include "ProgressImpl.h"
 
 #include <memory> /* For auto_ptr. */
