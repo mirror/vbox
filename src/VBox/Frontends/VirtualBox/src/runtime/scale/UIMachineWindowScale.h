@@ -42,7 +42,7 @@ private:
     /* Cleanup helpers: */
     void saveSettings();
 #ifdef Q_WS_MAC
-    void cleanupVisualState();
+    //void cleanupVisualState() {}
 #endif /* Q_WS_MAC */
     //void cleanupMainLayout() {}
 
