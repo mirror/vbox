@@ -19,7 +19,6 @@
 #include "PCIRawDevImpl.h"
 #include "PCIDeviceAttachmentImpl.h"
 #include "ConsoleImpl.h"
-#include "MachineImpl.h"
 
 // generated header for events
 #include "VBoxEvents.h"
