@@ -204,6 +204,7 @@ tstGuestCtrlContextID_INCS     = ../include \
 # tstUSBProxyLinux
 #
 tstUSBProxyLinux_TEMPLATE  = VBOXMAINCLIENTTSTEXE
+tstUSBProxyLinux_INTERMEDIATES = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 tstUSBProxyLinux_SOURCES   = \
 	tstUSBProxyLinux.cpp \
 	../src-server/linux/USBProxyServiceLinux.cpp \
