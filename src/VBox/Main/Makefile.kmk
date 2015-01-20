@@ -313,7 +313,6 @@ VBoxSVC_INCS = \
 	$(VBoxSVC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
-       $(VBOX_MAIN_APIWRAPPER_DIR)/dtrace \
 	.
 VBoxSVC_INCS.win = \
 	$(VBoxCOM_0_OUTDIR)
@@ -345,6 +344,7 @@ VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
 VBoxSVC_SOURCES = \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/DisplayUtils.cpp \
@@ -703,6 +703,7 @@ VBoxC_INTERMEDIATES = \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
 VBoxC_SOURCES = \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
 	src-all/DisplayUtils.cpp \
@@ -1174,7 +1175,7 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FIL
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES -o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(APPEND) -n "$@" "" "" \
 		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
-		'VBOX_MAIN_APIWRAPPER_GEN_HDRS = $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
+		'VBOX_MAIN_APIWRAPPER_GEN_HDRS := $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
 
 $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
