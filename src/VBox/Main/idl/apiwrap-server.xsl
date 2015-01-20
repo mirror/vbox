@@ -189,6 +189,9 @@ public:
     <xsl:value-of select="concat('#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_', translate(substring(@name, 2), $G_lowerCase, $G_upperCase), '&#10;&#10;')"/>
     <xsl:value-of select="concat('#include &quot;', substring(@name, 2), 'Wrap.h&quot;&#10;')"/>
     <xsl:text>#include "Logging.h"
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+# include "dtrace/VBoxAPI.h"
+#endif
 
 </xsl:text>
 </xsl:template>
@@ -443,6 +446,45 @@ public:
     </xsl:choose>
 </xsl:template>
 
+<xsl:template name="translatedtracetype">
+    <xsl:param name="type"/>
+    <xsl:param name="dir"/>
+    <xsl:param name="mod"/>
+
+    <!-- get dtrace probe type from IDL type from table in typemap-shared.inc.xsl -->
+    <xsl:variable name="dtracetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@dtracename"/>
+    <xsl:choose>
+        <xsl:when test="string-length($dtracetypefield)">
+            <xsl:value-of select="$dtracetypefield"/>
+        </xsl:when>
+        <xsl:when test="//enum[@name=$type]">
+            <!-- <xsl:value-of select="concat($type, '_T')"/> - later we can emit enums into dtrace the library -->
+            <xsl:text>int</xsl:text>
+        </xsl:when>
+        <xsl:when test="$type='$unknown'">
+            <!-- <xsl:text>struct IUnknown *</xsl:text> -->
+            <xsl:text>void *</xsl:text>
+        </xsl:when>
+        <xsl:when test="//interface[@name=$type]">
+            <!--
+            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+            <xsl:variable name="thatifname" select="$thatif/@name"/>
+            <xsl:value-of select="concat('struct ', $thatifname, ' *')"/>
+            -->
+            <xsl:text>void *</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:call-template name="fatalError">
+                <xsl:with-param name="msg" select="concat('translatedtracetype Type &quot;', $type, '&quot; is not supported.')"/>
+            </xsl:call-template>
+        </xsl:otherwise>
+    </xsl:choose>
+    <xsl:if test="$mod='ptr'">
+        <xsl:text> *</xsl:text>
+    </xsl:if>
+</xsl:template>
+
+
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   templates for handling entire interfaces and their contents
  - - - - - - - - - - - - - - - - - - - - - - -->
@@ -626,7 +668,166 @@ public:
     </xsl:choose>
 </xsl:template>
 
-<xsl:template match="attribute/@type | param/@type" mode="paramvalconversion">
+<xsl:template match="attribute/@type | param/@type" mode="dtraceparamval">
+    <xsl:param name="dir"/>
+
+    <xsl:variable name="viatmpvar">
+        <xsl:call-template name="paramconversionviatmp">
+            <xsl:with-param name="dir" select="$dir"/>
+        </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="type" select="."/>
+    <xsl:choose>
+        <xsl:when test="$viatmpvar = 'yes'">
+            <xsl:variable name="tmpname">
+                <xsl:text>Tmp</xsl:text>
+                <xsl:call-template name="capitalize">
+                    <xsl:with-param name="str" select="../@name"/>
+                </xsl:call-template>
+            </xsl:variable>
+
+            <xsl:choose>
+                <xsl:when test="../@safearray = 'yes'">
+                    <xsl:text>(uint32_t)</xsl:text>
+                    <xsl:value-of select="$tmpname"/>
+                    <xsl:text>.array().size(), </xsl:text>
+                    <!-- Later:
+                    <xsl:value-of select="concat($tmpname, '.array().data(), ')"/>
+                    -->
+                    <xsl:text>NULL /*for now*/</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = 'wstring'">
+                    <xsl:value-of select="$tmpname"/>
+                    <xsl:text>.str().c_str()</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = 'uuid'">
+                    <xsl:value-of select="$tmpname"/>
+                    <xsl:text>.uuid().toStringCurly().c_str()</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = '$unknown'">
+                    <xsl:text>(void *)</xsl:text>
+                    <xsl:value-of select="$tmpname"/>
+                    <xsl:text>.ptr()</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+                    <xsl:choose>
+                        <xsl:when test="$thatif">
+                            <xsl:text>(void *)</xsl:text>
+                            <xsl:value-of select="$tmpname"/>
+                            <xsl:text>.ptr()</xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="$tmpname"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:when>
+
+        <xsl:otherwise>
+            <xsl:if test="$dir != 'in'">
+                <xsl:text>*</xsl:text>
+            </xsl:if>
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="../@name"/>
+            </xsl:call-template>
+
+            <xsl:if test="$type = 'boolean'">
+                <xsl:text> != FALSE</xsl:text>
+            </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<!-- Same as dtraceparamval except no temporary variables are used (they are out of scope). -->
+<xsl:template match="attribute/@type | param/@type" mode="dtraceparamvalnotmp">
+    <xsl:param name="dir"/>
+
+    <xsl:variable name="viatmpvar">
+        <xsl:call-template name="paramconversionviatmp">
+            <xsl:with-param name="dir" select="$dir"/>
+        </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="type" select="."/>
+    <xsl:choose>
+        <xsl:when test="$viatmpvar = 'yes'">
+            <xsl:if test="../@safearray = 'yes'">
+                <xsl:text>0, </xsl:text>
+            </xsl:if>
+            <xsl:text>0</xsl:text>
+        </xsl:when>
+
+        <xsl:otherwise>
+            <xsl:if test="$dir != 'in'">
+                <xsl:text>*</xsl:text>
+            </xsl:if>
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="../@name"/>
+            </xsl:call-template>
+
+            <xsl:if test="$type = 'boolean'">
+                <xsl:text> != FALSE</xsl:text>
+            </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<xsl:template match="attribute/@type | param/@type" mode="dtraceparamdecl">
+    <xsl:param name="dir"/>
+
+    <xsl:variable name="gluetype">
+        <xsl:call-template name="translatedtracetype">
+            <xsl:with-param name="type" select="."/>
+            <xsl:with-param name="dir" select="$dir"/>
+            <xsl:with-param name="mod" select="../@mod"/>
+        </xsl:call-template>
+    </xsl:variable>
+
+    <!-- Safe arrays get an extra size parameter. -->
+    <xsl:if test="../@safearray='yes'">
+        <xsl:text>uint32_t a_c</xsl:text>
+        <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="../@name"/>
+        </xsl:call-template>
+        <xsl:text>, </xsl:text>
+    </xsl:if>
+
+    <xsl:value-of select="$gluetype"/>
+    <xsl:choose>
+        <xsl:when test="../@safearray='yes'">
+            <xsl:text> *a_pa</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:if test="substring($gluetype,string-length($gluetype))!='*'">
+                <xsl:text> </xsl:text>
+            </xsl:if>
+            <xsl:text>a_</xsl:text>
+        </xsl:otherwise>
+    </xsl:choose>
+
+    <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="../@name"/>
+    </xsl:call-template>
+</xsl:template>
+
+<!-- Call this to determine whether a temporary conversion variable is used for the current parameter.
+Returns empty if not needed, non-empty ('yes') if needed. -->
+<xsl:template name="paramconversionviatmp">
+    <xsl:param name="dir"/>
+    <xsl:variable name="type" select="."/>
+    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+    <xsl:if test="$thatif or $type = 'wstring' or $type = '$unknown' or $type = 'uuid' or ../@safearray = 'yes'">
+        <xsl:text>yes</xsl:text>
+    </xsl:if>
+</xsl:template>
+
+<!-- Call this to get the argument conversion class, if any is needed. -->
+<xsl:template name="paramconversionclass">
     <xsl:param name="dir"/>
 
     <xsl:variable name="gluetype">
@@ -638,6 +839,7 @@ public:
     </xsl:variable>
     <xsl:variable name="type" select="."/>
     <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+
     <xsl:choose>
         <xsl:when test="$type='$unknown'">
             <xsl:if test="../@safearray='yes'">
@@ -645,28 +847,18 @@ public:
             </xsl:if>
             <xsl:choose>
                 <xsl:when test="$dir='in'">
-                    <xsl:text>ComTypeInConverter&lt;IUnknown&gt;(</xsl:text>
+                    <xsl:text>ComTypeInConverter&lt;IUnknown&gt;</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:text>ComTypeOutConverter&lt;IUnknown&gt;(</xsl:text>
+                    <xsl:text>ComTypeOutConverter&lt;IUnknown&gt;</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>ComSafeArrayInArg(</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>ComSafeArrayOutArg(</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
         </xsl:when>
+
         <xsl:when test="$thatif">
             <xsl:if test="../@safearray='yes'">
                 <xsl:text>Array</xsl:text>
             </xsl:if>
-            <xsl:variable name="thatifname" select="$thatif/@name"/>
             <xsl:choose>
                 <xsl:when test="$dir='in'">
                     <xsl:text>ComTypeInConverter</xsl:text>
@@ -675,128 +867,145 @@ public:
                     <xsl:text>ComTypeOutConverter</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:value-of select="concat('&lt;', $thatifname, '&gt;(')"/>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>ComSafeArrayInArg(</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>ComSafeArrayOutArg(</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
+            <xsl:variable name="thatifname" select="$thatif/@name"/>
+            <xsl:value-of select="concat('&lt;', $thatifname, '&gt;')"/>
         </xsl:when>
+
         <xsl:when test="$type='wstring'">
             <xsl:if test="../@safearray='yes'">
                 <xsl:text>Array</xsl:text>
             </xsl:if>
             <xsl:choose>
                 <xsl:when test="$dir='in'">
-                    <xsl:text>BSTRInConverter(</xsl:text>
+                    <xsl:text>BSTRInConverter</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:text>BSTROutConverter(</xsl:text>
+                    <xsl:text>BSTROutConverter</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>ComSafeArrayInArg(</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>ComSafeArrayOutArg(</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
         </xsl:when>
+
         <xsl:when test="$type='uuid'">
             <xsl:if test="../@safearray='yes'">
                 <xsl:text>Array</xsl:text>
             </xsl:if>
             <xsl:choose>
                 <xsl:when test="$dir='in'">
-                    <xsl:text>UuidInConverter(</xsl:text>
+                    <xsl:text>UuidInConverter</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:text>UuidOutConverter(</xsl:text>
+                    <xsl:text>UuidOutConverter</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>ComSafeArrayInArg(</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>ComSafeArrayOutArg(</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
         </xsl:when>
-        <xsl:otherwise>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:text>Array</xsl:text>
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>InConverter</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>OutConverter</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-                <xsl:value-of select="concat('&lt;', $gluetype, '&gt;(')"/>
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                        <xsl:text>ComSafeArrayInArg(</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>ComSafeArrayOutArg(</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </xsl:if>
-        </xsl:otherwise>
+
+        <xsl:when test="../@safearray='yes'">
+            <xsl:text>Array</xsl:text>
+            <xsl:choose>
+                <xsl:when test="$dir='in'">
+                    <xsl:text>InConverter</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>OutConverter</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:value-of select="concat('&lt;', $gluetype, '&gt;')"/>
+        </xsl:when>
     </xsl:choose>
-    <xsl:text>a</xsl:text>
-    <xsl:call-template name="capitalize">
-        <xsl:with-param name="str" select="../@name"/>
-    </xsl:call-template>
+</xsl:template>
+
+<!-- Emits code for converting the parameter to a temporary variable. -->
+<xsl:template match="attribute/@type | param/@type" mode="paramvalconversion2tmpvar">
+    <xsl:param name="dir"/>
+
+    <xsl:variable name="conversionclass">
+        <xsl:call-template name="paramconversionclass">
+            <xsl:with-param name="dir" select="$dir"/>
+        </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:if test="$conversionclass != ''">
+        <xsl:value-of select="$conversionclass"/>
+        <xsl:text> Tmp</xsl:text>
+        <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="../@name"/>
+        </xsl:call-template>
+        <xsl:text>(</xsl:text>
+        <xsl:if test="../@safearray = 'yes'">
+            <xsl:choose>
+                <xsl:when test="$dir = 'in'">
+                    <xsl:text>ComSafeArrayInArg(</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>ComSafeArrayOutArg(</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
+        <xsl:text>a</xsl:text>
+        <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="../@name"/>
+        </xsl:call-template>
+        <xsl:if test="../@safearray = 'yes'">
+            <xsl:text>)</xsl:text>
+        </xsl:if>
+        <xsl:text>);</xsl:text>
+    </xsl:if>
+
+</xsl:template>
+
+<!-- Partner to paramvalconversion2tmpvar that emits the parameter when calling call the internal worker method. -->
+<xsl:template match="attribute/@type | param/@type" mode="paramvalconversionusingtmp">
+    <xsl:param name="dir"/>
+
+    <xsl:variable name="viatmpvar">
+        <xsl:call-template name="paramconversionviatmp">
+            <xsl:with-param name="dir" select="$dir"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="type" select="."/>
+
     <xsl:choose>
-        <xsl:when test="$type='$unknown' or $thatif">
+        <xsl:when test="$viatmpvar = 'yes'">
+            <xsl:text>Tmp</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="../@name"/>
+            </xsl:call-template>
+
             <xsl:choose>
                 <xsl:when test="../@safearray='yes'">
-                    <xsl:text>)).array()</xsl:text>
+                    <xsl:text>.array()</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = 'wstring'">
+                    <xsl:text>.str()</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = 'uuid'">
+                    <xsl:text>.uuid()</xsl:text>
+                </xsl:when>
+                <xsl:when test="$type = '$unknown'">
+                    <xsl:text>.ptr()</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:text>).ptr()</xsl:text>
+                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+                    <xsl:if test="$thatif">
+                        <xsl:text>.ptr()</xsl:text>
+                    </xsl:if>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:when>
-        <xsl:when test="$type='wstring'">
-            <xsl:choose>
-                <xsl:when test="../@safearray='yes'">
-                    <xsl:text>)).array()</xsl:text>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>).str()</xsl:text>
-                </xsl:otherwise>
-            </xsl:choose>
-        </xsl:when>
-        <xsl:when test="$type='uuid'">
-            <xsl:choose>
-                <xsl:when test="../@safearray='yes'">
-                    <xsl:text>)).array()</xsl:text>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>).uuid()</xsl:text>
-                </xsl:otherwise>
-            </xsl:choose>
-        </xsl:when>
+
         <xsl:otherwise>
-            <xsl:if test="../@safearray='yes'">
-                <xsl:text>)).array()</xsl:text>
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="../@name"/>
+            </xsl:call-template>
+
+            <!-- Make sure BOOL values we pass down are either TRUE or FALSE. -->
+            <xsl:if test="$type = 'boolean' and $dir = 'in'">
+                <xsl:text> != FALSE</xsl:text>
             </xsl:if>
         </xsl:otherwise>
     </xsl:choose>
+
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -885,6 +1094,7 @@ public:
 
 <xsl:template match="attribute" mode="code">
     <xsl:param name="topclass"/>
+    <xsl:param name="dtracetopclass"/>
     <xsl:param name="target"/>
 
     <xsl:call-template name="emitTargetBegin">
@@ -901,6 +1111,17 @@ public:
             <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
             <xsl:with-param name="option" select="'limitedcaller'"/>
         </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="dtraceattrname">
+        <xsl:choose>
+            <xsl:when test="@dtracename">
+                <xsl:value-of select="@dtracename"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="$attrbasename"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMGETTER(', $attrbasename, ')(')"/>
@@ -931,6 +1152,23 @@ public:
         CheckComArgOutPointerValidThrow(a</xsl:text>
     <xsl:value-of select="$attrbasename"/>
     <xsl:text>);
+        </xsl:text>
+    <xsl:apply-templates select="@type" mode="paramvalconversion2tmpvar">
+        <xsl:with-param name="dir" select="'out'"/>
+    </xsl:apply-templates>
+    <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
+        <xsl:text>
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(struct ', $topclass)"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(void')"/>
+        <xsl:text> *a_pThis); */
+        </xsl:text>
+        <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_ENTER('), $G_lowerCase, $G_upperCase)"/>
+        <xsl:text>this);
+#endif</xsl:text>
+    </xsl:if>
+    <xsl:text>
 
         </xsl:text>
     <xsl:choose>
@@ -956,18 +1194,69 @@ public:
     <xsl:if test="$passAutoCaller = 'true'">
         <xsl:text>autoCaller, </xsl:text>
     </xsl:if>
-    <xsl:apply-templates select="@type" mode="paramvalconversion">
+    <xsl:apply-templates select="@type" mode="paramvalconversionusingtmp">
         <xsl:with-param name="dir" select="'out'"/>
     </xsl:apply-templates>
     <xsl:text>);
+</xsl:text>
+    <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
+        <xsl:text>
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(void *a_pThis')"/>
+        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir">out</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>); */
+            </xsl:text>
+        <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+        <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamval">
+            <xsl:with-param name="dir">out</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>);
+#endif
+</xsl:text>
+    </xsl:if>
+    <xsl:text>
     }
     catch (HRESULT hrc2)
     {
-        hrc = hrc2;
+        hrc = hrc2;</xsl:text>
+    <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
+        <xsl:text>
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 1 /*hrc exception*/,</xsl:text>
+    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+        <xsl:with-param name="dir">out</xsl:with-param>
+    </xsl:apply-templates>
+    <xsl:text>);
+#endif
+</xsl:text>
+    </xsl:if>
+    <xsl:text>
     }
     catch (...)
     {
-        hrc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+        hrc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);</xsl:text>
+    <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
+        <xsl:text>
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 9 /*unhandled exception*/,</xsl:text>
+    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+        <xsl:with-param name="dir">out</xsl:with-param>
+    </xsl:apply-templates>
+    <xsl:text>);
+#endif
+</xsl:text>
+    </xsl:if>
+    <xsl:text>
     }
 
     LogRelFlow(("{%p} %s: leave </xsl:text>
@@ -976,7 +1265,7 @@ public:
         <xsl:with-param name="isref" select="''"/>
     </xsl:apply-templates>
     <xsl:text> hrc=%Rhrc\n", this, </xsl:text>
-    <xsl:value-of select="concat('&quot;', $topclass, '::get', $attrbasename, '&quot;, ')"/>
+    <xsl:value-of select="concat('&quot;', $topclass, '::get', $dtraceattrname, '&quot;, ')"/>
     <xsl:apply-templates select="@type" mode="logparamval">
         <xsl:with-param name="dir" select="'out'"/>
         <xsl:with-param name="isref" select="''"/>
@@ -1015,6 +1304,29 @@ public:
     try
     {
         </xsl:text>
+        <xsl:apply-templates select="@type" mode="paramvalconversion2tmpvar">
+            <xsl:with-param name="dir" select="'in'"/>
+        </xsl:apply-templates>
+        <xsl:text>
+
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+        <!-- <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(struct ', $topclass, ' *a_pThis, ')"/>-->
+        <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(void *a_pThis, ')"/>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'in'"/>
+        </xsl:apply-templates>
+        <xsl:text>); */
+        </xsl:text>
+        <xsl:value-of select="translate(concat('VBOXAPI_', $topclass, '_SET_', $dtraceattrname, '_ENTER('), $G_lowerCase, $G_upperCase)"/>
+        <xsl:text>this, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamval">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>);
+#endif
+
+        </xsl:text>
         <xsl:choose>
           <xsl:when test="$limitedAutoCaller = 'true'">
             <xsl:text>AutoLimitedCaller</xsl:text>
@@ -1032,18 +1344,54 @@ public:
         <xsl:if test="$passAutoCaller = 'true'">
             <xsl:text>autoCaller, </xsl:text>
         </xsl:if>
-        <xsl:apply-templates select="@type" mode="paramvalconversion">
+        <xsl:apply-templates select="@type" mode="paramvalconversionusingtmp">
             <xsl:with-param name="dir" select="'in'"/>
         </xsl:apply-templates>
         <xsl:text>);
+
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(void *a_pThis')"/>
+        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>); */
+            </xsl:text>
+        <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+        <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamval">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>);
+#endif
     }
     catch (HRESULT hrc2)
     {
         hrc = hrc2;
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 1 /*hrc exception*/,</xsl:text>
+    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+        <xsl:with-param name="dir">in</xsl:with-param>
+    </xsl:apply-templates>
+    <xsl:text>);
+#endif
     }
     catch (...)
     {
         hrc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 9 /*unhandled exception*/,</xsl:text>
+    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+        <xsl:with-param name="dir">in</xsl:with-param>
+    </xsl:apply-templates>
+    <xsl:text>);
+#endif
     }
 
     LogRelFlow(("{%p} %s: leave hrc=%Rhrc\n", this, </xsl:text>
@@ -1068,6 +1416,7 @@ public:
 <xsl:template name="emitAttributes">
     <xsl:param name="iface"/>
     <xsl:param name="topclass"/>
+    <xsl:param name="dtracetopclass"/>
     <xsl:param name="pmode"/>
 
     <!-- first recurse to emit all base interfaces -->
@@ -1077,6 +1426,7 @@ public:
             <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
             <xsl:with-param name="topclass" select="$topclass"/>
             <xsl:with-param name="pmode" select="$pmode"/>
+            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         </xsl:call-template>
     </xsl:if>
 
@@ -1108,6 +1458,7 @@ public:
         <xsl:when test="$pmode='code'">
             <xsl:apply-templates select="$iface/attribute | $iface/if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
@@ -1240,6 +1591,7 @@ public:
 
 <xsl:template match="method" mode="code">
     <xsl:param name="topclass"/>
+    <xsl:param name="dtracetopclass"/>
     <xsl:param name="target"/>
 
     <xsl:call-template name="emitTargetBegin">
@@ -1266,6 +1618,16 @@ public:
             <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
             <xsl:with-param name="option" select="'limitedcaller'"/>
         </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="dtracemethodname">
+        <xsl:choose>
+            <xsl:when test="@dtracename">
+                <xsl:value-of select="@dtracename"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="@name"/>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::', $methodbasename, '(')"/>
@@ -1318,7 +1680,44 @@ public:
 </xsl:text>
         </xsl:if>
     </xsl:for-each>
+<xsl:text>
+</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>
+        </xsl:text>
+        <xsl:apply-templates select="@type" mode="paramvalconversion2tmpvar">
+            <xsl:with-param name="dir" select="@dir"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
     <xsl:text>
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+    <xsl:variable name="dtracenamehack"> <!-- Ugly hack to deal with Session::assignMachine and similar. -->
+        <xsl:if test="name(..) = 'if'">
+            <xsl:value-of select="concat('__', ../@target)"/>
+        </xsl:if>
+    </xsl:variable>
+    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(struct ', $dtracetopclass, ' *a_pThis')"/> -->
+    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(void *a_pThis')"/>
+    <xsl:for-each select="param[@dir='in']">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'@dir'"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>); */
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_ENTER('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this</xsl:text>
+    <xsl:for-each select="param[@dir='in']">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamval">
+            <xsl:with-param name="dir" select="@dir"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+#endif
+
         </xsl:text>
     <xsl:choose>
       <xsl:when test="$limitedAutoCaller = 'true'">
@@ -1349,7 +1748,7 @@ public:
         </xsl:if>
     </xsl:if>
     <xsl:for-each select="param">
-        <xsl:apply-templates select="@type" mode="paramvalconversion">
+        <xsl:apply-templates select="@type" mode="paramvalconversionusingtmp">
             <xsl:with-param name="dir" select="@dir"/>
         </xsl:apply-templates>
         <xsl:if test="not(position()=last())">
@@ -1359,14 +1758,62 @@ public:
         </xsl:if>
     </xsl:for-each>
     <xsl:text>);
+
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        /* dtrace probe </xsl:text>
+    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, '__return(struct ', $dtracetopclass, ' *a_pThis')"/> -->
+    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__return(void *a_pThis')"/>
+    <xsl:text>, uint32_t a_hrc, int32_t enmWhy</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'@dir'"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>); */
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 0 /*normal*/</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamval">
+            <xsl:with-param name="dir" select="@dir"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+#endif
     }
     catch (HRESULT hrc2)
     {
         hrc = hrc2;
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 1 /*hrc exception*/</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+            <xsl:with-param name="dir" select="@dir"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+#endif
     }
     catch (...)
     {
         hrc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
+#ifdef VBOX_WITH_DTRACE_R3_MAIN
+        </xsl:text>
+    <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_RETURN('), $G_lowerCase, $G_upperCase)"/>
+    <xsl:text>this, hrc, 9 /*unhandled exception*/</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
+            <xsl:with-param name="dir" select="@dir"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+#endif
     }
 
     LogRelFlow(("{%p} %s: leave</xsl:text>
@@ -1408,6 +1855,7 @@ public:
     <xsl:param name="target"/>
     <xsl:param name="topclass"/>
     <xsl:param name="emitmode"/>
+    <xsl:param name="dtracetopclass"/>
 
     <xsl:if test="($target = 'xpidl') or ($target = 'midl')">
         <xsl:choose>
@@ -1449,12 +1897,14 @@ public:
                                 <xsl:apply-templates select="method" mode="code">
                                     <xsl:with-param name="target" select="$target"/>
                                     <xsl:with-param name="topclass" select="$topclass"/>
+                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                                 </xsl:apply-templates>
                             </xsl:when>
                             <xsl:when test="$emitmode='attribute'">
                                 <xsl:apply-templates select="attribute" mode="code">
                                     <xsl:with-param name="target" select="$target"/>
                                     <xsl:with-param name="topclass" select="$topclass"/>
+                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                                 </xsl:apply-templates>
                             </xsl:when>
                             <xsl:otherwise/>
@@ -1493,12 +1943,14 @@ public:
 <xsl:template match="if" mode="code">
     <xsl:param name="topclass"/>
     <xsl:param name="emitmode"/>
+    <xsl:param name="dtracetopclass"/>
 
     <xsl:call-template name="emitIf">
         <xsl:with-param name="passmode" select="'code'"/>
         <xsl:with-param name="target" select="@target"/>
         <xsl:with-param name="emitmode" select="$emitmode"/>
         <xsl:with-param name="topclass" select="$topclass"/>
+        <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
     </xsl:call-template>
 </xsl:template>
 
@@ -1509,6 +1961,7 @@ public:
     <xsl:param name="iface"/>
     <xsl:param name="topclass"/>
     <xsl:param name="pmode"/>
+    <xsl:param name="dtracetopclass"/>
 
     <!-- first recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="$iface/@extends"/>
@@ -1517,6 +1970,7 @@ public:
             <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
             <xsl:with-param name="topclass" select="$topclass"/>
             <xsl:with-param name="pmode" select="$pmode"/>
+            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         </xsl:call-template>
     </xsl:if>
 
@@ -1548,6 +2002,7 @@ public:
         <xsl:when test="$pmode='code'">
             <xsl:apply-templates select="$iface/method | $iface/if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
         </xsl:when>
@@ -1677,10 +2132,18 @@ private:</xsl:text>
 
     <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)&#10;&#10;')"/>
 
+    <xsl:variable name="dtracetopclass">
+        <xsl:choose>
+            <xsl:when test="$iface/@dtracename"><xsl:value-of select="$iface/@dtracename"/></xsl:when>
+            <xsl:otherwise><xsl:value-of select="substring($iface/@name, 2)"/></xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+
     <!-- attributes -->
     <xsl:call-template name="emitAttributes">
         <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+        <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         <xsl:with-param name="pmode" select="'code'"/>
     </xsl:call-template>
 
@@ -1695,6 +2158,7 @@ private:</xsl:text>
         <xsl:call-template name="emitAttributes">
             <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
             <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
             <xsl:with-param name="pmode" select="'code'"/>
         </xsl:call-template>
     </xsl:for-each>
@@ -1703,6 +2167,7 @@ private:</xsl:text>
     <xsl:call-template name="emitMethods">
         <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+        <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         <xsl:with-param name="pmode" select="'code'"/>
     </xsl:call-template>
 
@@ -1717,6 +2182,7 @@ private:</xsl:text>
         <xsl:call-template name="emitMethods">
             <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
             <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
             <xsl:with-param name="pmode" select="'code'"/>
         </xsl:call-template>
     </xsl:for-each>

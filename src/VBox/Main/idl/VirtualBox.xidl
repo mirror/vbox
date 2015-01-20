@@ -1506,7 +1506,7 @@
         IPv6Enabled is false.
       </desc>
     </attribute>
-    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean"/>
+    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean" dtracename="advertiseDefaultIPv6Route"/>
     <attribute name="needDhcpServer" type="boolean"/>
     <attribute name="eventSource" type="IEventSource" readonly="yes"/>
     <attribute name="portForwardRules4" type="wstring" readonly="yes" safearray="yes">
@@ -9490,7 +9490,7 @@
       </param>
     </method>
 
-    <method name="getDefaultIoCacheSettingForStorageController">
+    <method name="getDefaultIoCacheSettingForStorageController" dtracename="getDefaultStorageCtrlCacheSetting">
       <desc>Returns the default I/O cache setting for the
         given storage controller</desc>
 
@@ -22375,7 +22375,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="enabled" type="boolean" readonly="yes"/>
     <attribute name="network" type="wstring" readonly="yes"/>
     <attribute name="gateway" type="wstring" readonly="yes"/>
-    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean" readonly="yes"/>
+    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean" readonly="yes" dtracename="advertiseDefIPv6Route"/>
     <attribute name="needDhcpServer" type="boolean" readonly="yes"/>
   </interface>
   <interface name="INATNetworkPortForwardEvent" extends="INATNetworkAlterEvent"
@@ -22395,6 +22395,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IHostNameResolutionConfigurationChangeEvent" extends="IEvent"
     uuid="f9b9e1cf-cb63-47a1-84fb-02c4894b89a9"
     wsmap="managed" autogen="VBoxEvent" id="OnHostNameResolutionConfigurationChange"
+    dtracename="HostNameResCfgChangeEvent"
     >
     <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>

@@ -4468,6 +4468,22 @@ TEMPLATE_VBOXMAINEXE_DEFS                = IN_RING3 UNICODE NDEBUG=1
 TEMPLATE_VBOXMAINEXE_DEFS.win            = _UNICODE
 TEMPLATE_VBOXMAINEXE_RCDEFS              = $(TEMPLATE_VBOXR3EXE_RCDEFS)
 TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
+TEMPLATE_VBOXMAINEXE_USES                = dtrace
+if defined(VBOX_WITH_DTRACE_R3_MAIN) && defined(VBOX_WITH_NATIVE_DTRACE)
+ TEMPLATE_VBOXMAINEXE_DTRACETOOL         = DTraceAndVBoxTpG
+ TEMPLATE_VBOXMAINEXE_DTRACE_OBJ_FLAGS   = -C
+ TEMPLATE_VBOXMAINEXE_DTRACE_HDR_FLAGS   = -C
+ TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN VBOX_WITH_NATIVE_DTRACE
+else
+  TEMPLATE_VBOXMAINEXE_DTRACE_HDR_FLAGS  = --ring-3-context
+  TEMPLATE_VBOXMAINEXE_DTRACE_OBJ_FLAGS  = --ring-3-context --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
+ if defined(VBOX_WITH_DTRACE_R3_MAIN)
+  TEMPLATE_VBOXMAINEXE_DTRACETOOL        = VBoxTpG
+  TEMPLATE_VBOXMAINEXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_DTRACE_R3_MAIN
+ else
+  TEMPLATE_VBOXMAINEXE_DTRACETOOL        = VBoxTpG-Disabled
+ endif
+endif
 
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_SDKS               = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
@@ -4498,6 +4514,9 @@ ifeq ($(KBUILD_TARGET),win)
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
   TEMPLATE_VBOXMAINEXE_LDFLAGS          += -IntegrityCheck
  endif
+ ifdef VBOX_WITH_DTRACE_R3_MAIN
+  TEMPLATE_VBOXMAINEXE_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
+ endif
  TEMPLATE_VBOXMAINEXE_LIBS               = \
 	$(LIB_RUNTIME)
  TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
@@ -4519,6 +4538,9 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) -Wno-long-long -Wno-non-virtual-dtor -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_std)
+ifdef VBOX_WITH_DTRACE_R3_MAIN
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
+endif
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
