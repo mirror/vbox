@@ -3458,7 +3458,7 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
 
     return hr;
 #else
-    Log(("Attempt to specify OpenGL content scale factor while corresponding functionality is disabled."));
+    LogRel(("Attempt to specify OpenGL content scale factor while corresponding functionality is disabled."));
     return E_UNEXPECTED;
 #endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
 }
