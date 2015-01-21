@@ -83,6 +83,9 @@ public:
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
+    /** Applies machine-window scale-factor. */
+    void applyMachineWindowScaleFactor();
+
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /* Virtual caller for base class setMask: */
     virtual void setMask(const QRegion &region);

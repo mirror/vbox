@@ -227,9 +227,12 @@ void UIMachineWindow::adjustMachineViewSize()
 {
     /* We need to adjust guest-screen size if necessary: */
     machineView()->adjustGuestScreenSize();
+}
 
-    /* And to adjust machine-view size according scale-factors: */
-    machineView()->adjustAccordingScaleFactor();
+void UIMachineWindow::applyMachineWindowScaleFactor()
+{
+    /* We need to apply machine-view scale-factor if necessary: */
+    machineView()->applyMachineViewScaleFactor();
 }
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS

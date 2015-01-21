@@ -168,7 +168,7 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
     delete pMachineView;
 }
 
-void UIMachineView::adjustAccordingScaleFactor()
+void UIMachineView::applyMachineViewScaleFactor()
 {
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());

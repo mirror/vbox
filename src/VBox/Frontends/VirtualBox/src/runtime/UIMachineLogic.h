@@ -121,6 +121,9 @@ public:
     /** Adjusts machine-window(s) geometry if necessary. */
     virtual void adjustMachineWindowsGeometry();
 
+    /** Applies machine-window(s) scale-factor. */
+    void applyMachineWindowsScaleFactor();
+
     /* Wrapper to open Machine settings / Network page: */
     void openNetworkSettingsDialog() { sltOpenNetworkSettingsDialog(); }
 
