@@ -51,12 +51,6 @@
 templates for file separation
  - - - - - - - - - - - - - - - - - - - - - - -->
 
-<xsl:template match="interface" mode="listfile">
-    <xsl:param name="file"/>
-
-    <xsl:value-of select="concat('&#9;', $file, ' \', $G_sNewLine)"/>
-</xsl:template>
-
 <xsl:template match="interface" mode="startfile">
     <xsl:param name="file"/>
 
@@ -550,13 +544,8 @@ public:
         </xsl:when>
 
         <xsl:when test="$generating = 'filelist'">
-            <!-- Just output the name of the header and source filenames for this interface. -->
-            <xsl:apply-templates select="$iface" mode="listfile">
-                <xsl:with-param name="file" select="concat(substring(@name, 2), 'Wrap.h')"/>
-            </xsl:apply-templates>
-            <xsl:apply-templates select="$iface" mode="listfile">
-                <xsl:with-param name="file" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
-            </xsl:apply-templates>
+            <xsl:value-of select="concat('&#9;', substring(@name, 2), 'Wrap.h \', $G_sNewLine)"/>
+            <xsl:value-of select="concat('&#9;', substring(@name, 2), 'Wrap.cpp \', $G_sNewLine)"/>
         </xsl:when>
     </xsl:choose>
 </xsl:template>
