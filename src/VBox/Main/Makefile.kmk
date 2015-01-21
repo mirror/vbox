@@ -196,11 +196,10 @@ VBoxAPIWrap_CLEAN           = \
 	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
-	$(VBoxAPIWrap_VBOX_RAWSRC)
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources
 
 # Two VBox variables used here and/or in the rules generating wrappers.
-VBoxAPIWrap_VBOX_RAWSRC     = \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
 VBoxAPIWrap_VBOX_XSLT       = \
 	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
 
@@ -1155,8 +1154,23 @@ javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile=>Makefile
 
 # Moved those rules to the end so that VBoxAPIWrap_0_OUTDIR can be expanded without $$ trickery.
-$(VBoxAPIWrap_VBOX_RAWSRC) \
-+| $(VBOX_MAIN_APIWRAPPER_GEN_FILES): \
+$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
++| $(VBOX_MAIN_APIWRAPPER_GEN_HDRS): \
+		$(VBOX_XIDL_FILE) \
+               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
+		$(VBoxAPIWrap_VBOX_XSLT) \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_L1,Generating C++ Server API wrapper header files from XIDL)
+	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam generating "headers" \
+		--stringparam filelistonly "" \
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
+
+$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources \
++| $(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES)): \
 		$(VBOX_XIDL_FILE) \
                $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
 		$(VBoxAPIWrap_VBOX_XSLT) \
@@ -1165,6 +1179,7 @@ $(VBoxAPIWrap_VBOX_RAWSRC) \
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
 	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam generating "sources" \
 		--stringparam filelistonly "" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
@@ -1174,7 +1189,8 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FIL
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
-		--stringparam filelistonly VBOX_MAIN_APIWRAPPER_GEN_FILES \
+		--stringparam generating "filelist" \
+		--stringparam filelistonly "VBOX_MAIN_APIWRAPPER_GEN_FILES" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(APPEND) -n "$@" "" "" \
 		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
@@ -1183,17 +1199,23 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FIL
 
 $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 +| $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d: \
-		$(VBOX_MAIN_APIWRAPPER_GEN_FILES) \
-		$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d \
-		$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d
-	$(call MSG_L1,Collecting automatically generated dtrace probes)
-	$(RM) -f -- $@
-	$(CP) -f -- $(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d $@
-	$(SED) -ne 's/^ *\/\* dtrace \(probe .*;\) \*\//    \1/p' --append $@ \
-		-- $(filter %.cpp, $(VBOX_MAIN_APIWRAPPER_GEN_FILES))
-	$(SED) -e "" --append $@ $(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d
-	$(QUIET)$(CP) --changed -fv -- $@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d
-
+		$(VBOX_XIDL_FILE) \
+               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
+		$(VBoxAPIWrap_VBOX_XSLT) \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_L1,Generating DTrace Provider for the VBox API (from XIDL))
+	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
+	$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam generating "dtrace-probes" \
+		--stringparam filelistonly "" \
+		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(SED) -e '' -o $@.tmp \
+		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d" \
+		"$@.tmp" \
+		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d"
+	$(QUIET)$(MV) -- "$@.tmp" "$@"
+	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d"
 
 
 updatenls::
