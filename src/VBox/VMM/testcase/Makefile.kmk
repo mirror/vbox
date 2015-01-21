@@ -460,6 +460,10 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  tstPDMAsyncCompletionStress_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 endif
 
+PROGRAMS += tstSSM-2
+tstSSM-2_TEMPLATE       = VBOXR3TSTEXE
+tstSSM-2_SOURCES        = tstSSM-2.cpp
+tstSSM-2_LIBS           = $(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB)
 
 #
 # Generate VM structure tests.
