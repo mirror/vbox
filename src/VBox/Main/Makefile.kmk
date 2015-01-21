@@ -1204,7 +1204,7 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating DTrace Provider for the VBox API (from XIDL))
 	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
-	$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "dtrace-probes" \
 		--stringparam filelistonly "" \
 		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $<
