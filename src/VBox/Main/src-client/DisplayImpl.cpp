@@ -3433,14 +3433,13 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
                     pCtl->aParms[0].u.pointer.addr = pData;
                     pCtl->aParms[0].u.pointer.size = sizeof(*pData);
 
-                    rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
+                    rc = i_crCtlSubmitSync(&pCtl->Hdr, sizeof(*pCtl));
                     if (RT_FAILURE(rc))
-                    {
-                        AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
-                        RTMemFree(pCtl);
-                    }
+                        AssertMsgFailed(("crCtlSubmitSync failed (rc=%Rrc)\n", rc));
                     else
                         hr = S_OK;
+
+                    RTMemFree(pCtl);
                 }
                 else
                 {
