@@ -123,7 +123,7 @@
 #if 0 || defined(DOXYGEN_RUNNING)
 # define CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 # define SHOW_WINDOW_BACKGROUND 1
-# define DEBUG_VERBOSE      
+# define DEBUG_VERBOSE
 #endif
 
 #ifdef DEBUG_VERBOSE
@@ -132,12 +132,12 @@
 #  define DEBUG_INFO(text) do { LogRel(text); AssertFailed(); } while (0)
 #  define DEBUG_WARN(text) do { LogRel(text); AssertFailed(); } while (0)
 # else
-#  define DEBUG_INFO(text) do { crWarning text; AssertFailed(); } while (0)
-#  define DEBUG_WARN(text) do { crWarning text; AssertFailed(); } while (0)
+#  define DEBUG_INFO(text) do { LogRel(text); AssertFailed(); } while (0)
+#  define DEBUG_WARN(text) do { LogRel(text); AssertFailed(); } while (0)
 # endif
 
-# define DEBUG_MSG(text)   do { printf text; } while (0)
-# define DEBUG_MSG_1(text) do { printf text; } while (0)
+# define DEBUG_MSG(text)   do { LogRel(text); } while (0)
+# define DEBUG_MSG_1(text) do { LogRel(text); } while (0)
 
 #else
 
@@ -1542,7 +1542,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
     if (m_fEverSized)
         [self vboxReshapePerform];
-        
+
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
 
@@ -1688,7 +1688,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)vboxReshapeOnResizePerform
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
-    
+
     [self vboxReshapePerform];
     [self createDockTile];
 
@@ -1726,39 +1726,41 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     NSPoint childPos   = NSZeroPoint;
     NSRect childFrame  = NSZeroRect;
     NSRect newFrame    = NSZeroRect;
-    
+
+    DEBUG_MSG(("vboxReshapePerform: m_Pos=[%d, %d], m_Size=[%dx%d]\n", (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
+
     parentFrame = [m_pParentView frame];
-    DEBUG_MSG(("FIXED parentFrame [%f:%f], [%f:%f]\n", parentFrame.origin.x, parentFrame.origin.y, parentFrame.size.width, parentFrame.size.height));    
+    DEBUG_MSG(("vboxReshapePerform: FIXED parentFrame [%d:%d], [%d:%d]\n", (int)parentFrame.origin.x, (int)parentFrame.origin.y, (int)parentFrame.size.width, (int)parentFrame.size.height));
     parentPos = parentFrame.origin;
     parentPos.y += parentFrame.size.height;
-    DEBUG_MSG(("FIXED(view) parentPos [%f:%f]\n", parentPos.x, parentPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED(view) parentPos [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
     parentPos = [m_pParentView convertPoint:parentPos toView:nil];
-    DEBUG_MSG(("FIXED parentPos(win) [%f:%f]\n", parentPos.x, parentPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED parentPos(win) [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
     parentPos = [[m_pParentView window] convertBaseToScreen:parentPos];
-    DEBUG_MSG(("FIXED parentPos(screen) [%f:%f]\n", parentPos.x, parentPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED parentPos(screen) [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
     parentFrame.origin = parentPos;
-    
+
     childPos = NSMakePoint(m_Pos.x, m_Pos.y + m_Size.height);
-    DEBUG_MSG(("FIXED(view) childPos [%f:%f]\n", childPos.x, childPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED(view) childPos [%d:%d]\n", (int)childPos.x, (int)childPos.y));
     childPos = [m_pParentView convertPoint:childPos toView:nil];
-    DEBUG_MSG(("FIXED(win) childPos [%f:%f]\n", childPos.x, childPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED(win) childPos [%d:%d]\n", (int)childPos.x, (int)childPos.y));
     childPos = [[m_pParentView window] convertBaseToScreen:childPos];
-    DEBUG_MSG(("FIXED childPos(screen) [%f:%f]\n", childPos.x, childPos.y));
+    DEBUG_MSG(("vboxReshapePerform: FIXED childPos(screen) [%d:%d]\n", (int)childPos.x, (int)childPos.y));
     childFrame = NSMakeRect(childPos.x, childPos.y, m_Size.width, m_Size.height);
-    DEBUG_MSG(("FIXED childFrame [%f:%f], [%f:%f]\n", childFrame.origin.x, childFrame.origin.y, childFrame.size.width, childFrame.size.height));        
+    DEBUG_MSG(("vboxReshapePerform: FIXED childFrame [%d:%d], [%d:%d]\n", (int)childFrame.origin.x, (int)childFrame.origin.y, (int)childFrame.size.width, (int)childFrame.size.height));
 
     /* We have to make sure that the overlay window will not be displayed out
      * of the parent window. So intersect both frames & use the result as the new
      * frame for the window. */
     newFrame = NSIntersectionRect(parentFrame, childFrame);
 
-    DEBUG_MSG(("[%#p]: parentFrame pos[%f : %f] size[%f : %f]\n",
-               (void *)self, parentFrame.origin.x, parentFrame.origin.y, parentFrame.size.width, parentFrame.size.height));
-    DEBUG_MSG(("[%#p]: childFrame pos[%f : %f] size[%f : %f]\n",
-               (void *)self, childFrame.origin.x, childFrame.origin.y, childFrame.size.width, childFrame.size.height));
-         
-    DEBUG_MSG(("[%#p]: newFrame pos[%f : %f] size[%f : %f]\n",
-               (void *)self, newFrame.origin.x, newFrame.origin.y, newFrame.size.width, newFrame.size.height));
+    DEBUG_MSG(("vboxReshapePerform: [%#p]: parentFrame pos[%d : %d] size[%d : %d]\n",
+               (void *)self, (int)parentFrame.origin.x, (int)parentFrame.origin.y, (int)parentFrame.size.width, (int)parentFrame.size.height));
+    DEBUG_MSG(("vboxReshapePerform: [%#p]: childFrame pos[%d : %d] size[%d : %d]\n",
+               (void *)self, (int)childFrame.origin.x, (int)childFrame.origin.y, (int)childFrame.size.width, (int)childFrame.size.height));
+
+    DEBUG_MSG(("vboxReshapePerform: [%#p]: newFrame pos[%d : %d] size[%d : %d]\n",
+               (void *)self, (int)newFrame.origin.x, (int)newFrame.origin.y, (int)newFrame.size.width, (int)newFrame.size.height));
 
     /* Later we have to correct the texture position in the case the window is
      * out of the parents window frame. So save the shift values for later use. */ 
@@ -1766,24 +1768,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_RootRect.origin.y =  childFrame.size.height + childFrame.origin.y - (newFrame.size.height + newFrame.origin.y);
     m_RootRect.size = newFrame.size;
     m_yInvRootOffset = newFrame.origin.y - childFrame.origin.y;
-    
-    DEBUG_MSG(("[%#p]: m_RootRect pos[%f : %f] size[%f : %f]\n",
-               (void *)self, m_RootRect.origin.x, m_RootRect.origin.y, m_RootRect.size.width, m_RootRect.size.height));
-    
-        
-    /*
-    NSScrollView *pScrollView = [[[m_pParentView window] contentView] enclosingScrollView];
-    if (pScrollView)
-    {
-        NSRect scrollRect = [pScrollView documentVisibleRect];
-        NSRect scrollRect = [m_pParentView visibleRect];
-        printf ("sc rect: %d %d %d %d\n", (int) scrollRect.origin.x,(int) scrollRect.origin.y,(int) scrollRect.size.width,(int) scrollRect.size.height);
-        NSRect b = [[m_pParentView superview] bounds];
-        printf ("bound rect: %d %d %d %d\n", (int) b.origin.x,(int) b.origin.y,(int) b.size.width,(int) b.size.height);
-        newFrame.origin.x += scrollRect.origin.x;
-        newFrame.origin.y += scrollRect.origin.y;
-    }
-    */
+
+    DEBUG_MSG(("vboxReshapePerform: [%#p]: m_RootRect pos[%d : %d] size[%d : %d]\n",
+               (void *)self, (int)m_RootRect.origin.x, (int)m_RootRect.origin.y, (int)m_RootRect.size.width, (int)m_RootRect.size.height));
 
     /* Set the new frame. */
     [[self window] setFrame:newFrame display:YES];
@@ -1797,9 +1784,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     {
         VBOX_CR_RENDER_CTX_INFO CtxInfo; 
         vboxCtxEnter(m_pSharedGLCtx, &CtxInfo);
-    
+
         [self updateViewportCS];
-    
+
         vboxCtxLeave(&CtxInfo);
     }
 
@@ -1812,7 +1799,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     NSView *pDockScreen = nil;
 
     [self deleteDockTile];
-	
+
     /* Is there a dock tile preview enabled in the GUI? If so setup a
      * additional thumbnail view for the dock tile. */
     pDockScreen = [self dockTileScreen];
@@ -2868,7 +2855,7 @@ static DECLCALLBACK(void) vboxRcdGetGeomerty(void *pvUser)
     CR_RCD_GETGEOMETRY *pGetGeometry = (CR_RCD_GETGEOMETRY *)pvUser;
     pGetGeometry->rect = [[pGetGeometry->pView window] frame];
     COCOA_LOG_FLOW(("vboxRcdGetGeomerty: (x,y)=(%d,%d) (cx,cy)=(%d,%d)\n", pGetGeometry->rect.origin.x, pGetGeometry->rect.origin.y, 
-                    pGetGeometry->rect.size.width, pGetGeometry->rect.heigth));
+                    pGetGeometry->rect.size.width, pGetGeometry->rect.size.height));
 }
 
 #endif /* !IN_VMSVGA3D */
