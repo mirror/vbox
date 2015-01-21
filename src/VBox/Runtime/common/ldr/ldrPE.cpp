@@ -2930,9 +2930,13 @@ static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 
     /*
      * volatile everywhere! Trying to prevent the compiler being a smarta$$ and reorder stuff.
      */
-    IMAGE_LOAD_CONFIG_DIRECTORY32_V3 volatile *pLoadCfg32 = (IMAGE_LOAD_CONFIG_DIRECTORY32_V3 volatile *)pLoadCfg;
-    IMAGE_LOAD_CONFIG_DIRECTORY64_V3 volatile *pLoadCfg64 = pLoadCfg;
+    IMAGE_LOAD_CONFIG_DIRECTORY32_V4 volatile *pLoadCfg32 = (IMAGE_LOAD_CONFIG_DIRECTORY32_V4 volatile *)pLoadCfg;
+    IMAGE_LOAD_CONFIG_DIRECTORY64_V4 volatile *pLoadCfg64 = pLoadCfg;
 
+    pLoadCfg64->CodeIntegrity.Reserved      = pLoadCfg32->CodeIntegrity.Reserved;
+    pLoadCfg64->CodeIntegrity.CatalogOffset = pLoadCfg32->CodeIntegrity.CatalogOffset;
+    pLoadCfg64->CodeIntegrity.Catalog       = pLoadCfg32->CodeIntegrity.Catalog;
+    pLoadCfg64->CodeIntegrity.Flags         = pLoadCfg32->CodeIntegrity.Flags;
     pLoadCfg64->GuardFlags                  = pLoadCfg32->GuardFlags;
     pLoadCfg64->GuardCFFunctionCount        = pLoadCfg32->GuardCFFunctionCount;
     pLoadCfg64->GuardCFFunctionTable        = pLoadCfg32->GuardCFFunctionTable;
@@ -3432,6 +3436,9 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
     IMAGE_DATA_DIRECTORY Dir = pOptHdr->DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
     if (Dir.Size)
     {
+        const size_t cbExpectV4 = !pModPe->f64Bit
+                                ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V4)
+                                : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V4);
         const size_t cbExpectV3 = !pModPe->f64Bit
                                 ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V3)
                                 : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V3);
@@ -3442,19 +3449,20 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
                                 ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V1)
                                 : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V2) /*No V1*/;
 
-        if (   Dir.Size != cbExpectV3
+        if (   Dir.Size != cbExpectV4
+            && Dir.Size != cbExpectV3
             && Dir.Size != cbExpectV2
             && Dir.Size != cbExpectV1)
         {
-            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %d bytes, expected %d, %d, or %d.\n",
-                 pszLogName, Dir.Size, cbExpectV3, cbExpectV2, cbExpectV1));
+            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %d bytes, expected %d, %d, %d, or %d.\n",
+                 pszLogName, Dir.Size, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1));
             return VERR_LDRPE_LOAD_CONFIG_SIZE;
         }
 
         /*
          * Read and convert to 64-bit.
          */
-        memset(&u.Cfg64, 0, sizeof(u.Cfg64));
+        RT_ZERO(u.Cfg64);
         int rc = rtldrPEReadRVA(pModPe, &u.Cfg64, Dir.Size, Dir.VirtualAddress);
         if (RT_FAILURE(rc))
             return rc;
