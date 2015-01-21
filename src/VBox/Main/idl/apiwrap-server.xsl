@@ -478,13 +478,13 @@ public:
         <xsl:when test="string-length($dtracetypefield)">
             <xsl:value-of select="$dtracetypefield"/>
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
-            <!-- <xsl:value-of select="concat($type, '_T')"/> - later we can emit enums into dtrace the library -->
-            <xsl:text>int</xsl:text>
-        </xsl:when>
         <xsl:when test="$type='$unknown'">
             <!-- <xsl:text>struct IUnknown *</xsl:text> -->
             <xsl:text>void *</xsl:text>
+        </xsl:when>
+        <xsl:when test="//enum[@name=$type]">
+            <!-- <xsl:value-of select="concat($type, '_T')"/> - later we can emit enums into dtrace the library -->
+            <xsl:text>int</xsl:text>
         </xsl:when>
         <xsl:when test="//interface[@name=$type]">
             <!--
@@ -609,6 +609,9 @@ public:
             <xsl:with-param name="safearray" select="../@safearray"/>
         </xsl:call-template>
     </xsl:variable>
+    <xsl:variable name="lastchar">
+        <xsl:value-of select="substring($wraptype, string-length($wraptype))"/>
+    </xsl:variable>
 
     <xsl:choose>
         <xsl:when test="../@safearray='yes'">
@@ -617,21 +620,16 @@ public:
             </xsl:if>
             <xsl:text>std::vector&lt;</xsl:text>
             <xsl:choose>
-                <xsl:when test="substring($wraptype,string-length($wraptype))='&amp;'">
+                <xsl:when test="$lastchar = '&amp;'">
                     <xsl:variable name="wraptype2">
-                        <xsl:value-of select="substring($wraptype,1,string-length($wraptype)-2)"/>
+                        <xsl:value-of select="substring($wraptype, 1, string-length($wraptype)-2)"/>
                     </xsl:variable>
-
-                    <xsl:choose>
-                        <xsl:when test="substring($wraptype2,string-length($wraptype2))='&gt;'">
-                            <xsl:value-of select="concat($wraptype2, ' ')"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="$wraptype2"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
+                    <xsl:value-of select="$wraptype2"/>
+                    <xsl:if test="substring($wraptype2,string-length($wraptype2)) = '&gt;'">
+                        <xsl:text> </xsl:text>
+                    </xsl:if>
                 </xsl:when>
-                <xsl:when test="substring($wraptype,string-length($wraptype))='&gt;'">
+                <xsl:when test="lastchar = '&gt;'">
                     <xsl:value-of select="concat($wraptype, ' ')"/>
                 </xsl:when>
                 <xsl:otherwise>
@@ -642,8 +640,8 @@ public:
         </xsl:when>
         <xsl:otherwise>
             <xsl:value-of select="$wraptype"/>
-            <xsl:if test="substring($wraptype,string-length($wraptype))!='&amp;'">
-                <xsl:if test="substring($wraptype,string-length($wraptype))!='*'">
+            <xsl:if test="$lastchar != '&amp;'">
+                <xsl:if test="$lastchar != '*'">
                     <xsl:text> </xsl:text>
                 </xsl:if>
                 <xsl:choose>
@@ -862,7 +860,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="dir"/>
     <xsl:variable name="type" select="."/>
     <xsl:choose>
-        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or ../@safearray = 'yes'">
+        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid'">
+            <xsl:text>yes</xsl:text>
+        </xsl:when>
+        <xsl:when test="$type = 'boolean' or $type = 'long' or $type = 'long' or $type = 'long long'"/>
+        <xsl:when test="../@safearray = 'yes'">
             <xsl:text>yes</xsl:text>
         </xsl:when>
         <!-- Micro optimizations: Postpone calculating $thatif. -->
