@@ -325,6 +325,14 @@ void UIMachineLogic::adjustMachineWindowsGeometry()
         pMachineWindow->adjustMachineViewSize();
 }
 
+void UIMachineLogic::applyMachineWindowsScaleFactor()
+{
+    /* By default, the only thing we need is to
+     * apply machine-window scale-factor(s) if necessary: */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->applyMachineWindowScaleFactor();
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogic::updateDockIcon()
 {
