@@ -48,6 +48,14 @@
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  keys for more efficiently looking up types.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
 templates for file separation
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -97,16 +105,15 @@ templates for file headers/footers
 </xsl:text>
 </xsl:template>
 
+<!-- Emits COM_INTERFACE_ENTRY statements for the current interface node and whatever it inherits from. -->
 <xsl:template name="emitCOMInterfaces">
-    <xsl:param name="iface"/>
-
-    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', $iface/@name, ')' , $G_sNewLine)"/>
+    <xsl:value-of select="concat('        COM_INTERFACE_ENTRY(', @name, ')' , $G_sNewLine)"/>
     <!-- now recurse to emit all base interfaces -->
-    <xsl:variable name="extends" select="$iface/@extends"/>
+    <xsl:variable name="extends" select="@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
-        <xsl:call-template name="emitCOMInterfaces">
-            <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
-        </xsl:call-template>
+        <xsl:for-each select="key('G_keyInterfacesByName', $extends)">
+            <xsl:call-template name="emitCOMInterfaces"/>
+        </xsl:for-each>
     </xsl:if>
 </xsl:template>
 
@@ -149,9 +156,7 @@ public:
     <xsl:value-of select="concat('    BEGIN_COM_MAP(', substring(@name, 2), 'Wrap)', $G_sNewLine)"/>
     <xsl:text>        COM_INTERFACE_ENTRY(ISupportErrorInfo)
 </xsl:text>
-    <xsl:call-template name="emitCOMInterfaces">
-        <xsl:with-param name="iface" select="."/>
-    </xsl:call-template>
+    <xsl:call-template name="emitCOMInterfaces"/>
     <xsl:value-of select="concat('        COM_INTERFACE_ENTRY2(IDispatch, ', @name, ')', $G_sNewLine)"/>
     <xsl:variable name="manualAddInterfaces">
         <xsl:call-template name="checkoption">
@@ -161,16 +166,18 @@ public:
     </xsl:variable>
     <xsl:if test="not($manualAddInterfaces = 'true')">
         <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-            <!-- This is super tricky, as the for-each switches to the node
-                 set, which means the normal document isn't available any more.
-                 So need to use the global root node to get back into the
-                 documemt to find corresponding interface data. -->
+            <!-- This is super tricky, as the for-each switches to the node set,
+                 which means the normal document isn't available any more.  We get
+                 the data we need, uses a for-each to switch document and then a
+                 key() to look up the interface by name. -->
             <xsl:variable name="addifname">
                 <xsl:value-of select="string(.)"/>
             </xsl:variable>
-            <xsl:call-template name="emitCOMInterfaces">
-                <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-            </xsl:call-template>
+            <xsl:for-each select="$G_root">
+                <xsl:for-each select="key('G_keyInterfacesByName', $addifname)">
+                    <xsl:call-template name="emitCOMInterfaces"/>
+                </xsl:for-each>
+            </xsl:for-each>
         </xsl:for-each>
     </xsl:if>
     <xsl:text>        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
@@ -209,7 +216,7 @@ public:
 
     <xsl:choose>
         <xsl:when test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
-            <xsl:variable name="newextends" select="//interface[@name=$extends]/@extends"/>
+            <xsl:variable name="newextends" select="key('G_keyInterfacesByName', $extends)/@extends"/>
             <xsl:variable name="newiflist" select="concat($interfacelist, ', ', $extends)"/>
             <xsl:call-template name="emitISupports">
                 <xsl:with-param name="classname" select="$classname"/>
@@ -224,7 +231,7 @@ public:
             <xsl:choose>
                 <xsl:when test="count($addinterfaces_ns/token) > 0">
                     <xsl:variable name="addifname" select="$addinterfaces_ns/token[1]"/>
-                    <xsl:variable name="addif" select="//interface[@name=$addifname]/@extends"/>
+                    <xsl:variable name="addif" select="key('G_keyInterfacesByName', $addifname)/@extends"/>
                     <xsl:variable name="newextends" select="$addif/@extends"/>
                     <xsl:variable name="newaddinterfaces" select="$addinterfaces_ns/token[position() > 1]"/>
                     <xsl:variable name="newiflist" select="concat($interfacelist, ', ', $addifname)"/>
@@ -345,13 +352,11 @@ public:
                     <xsl:value-of select="$gluetypefield"/>
                 </xsl:when>
 
-                <xsl:when test="//interface[@name=$type]">
-                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-                    <xsl:variable name="thatifname" select="$thatif/@name"/>
-                    <xsl:value-of select="concat($thatifname, ' *')"/>
+                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+                    <xsl:value-of select="concat($type, ' *')"/>
                 </xsl:when>
 
-                <xsl:when test="//enum[@name=$type]">
+                <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
                     <xsl:value-of select="concat($type, '_T')"/>
                 </xsl:when>
 
@@ -405,16 +410,14 @@ public:
                     <xsl:value-of select="$wraptypefield"/>
                 </xsl:when>
 
-                <xsl:when test="//interface[@name=$type]">
-                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-                    <xsl:variable name="thatifname" select="$thatif/@name"/>
+                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
                     <xsl:if test="$dir='in' and not($safearray='yes')">
                         <xsl:text>const </xsl:text>
                     </xsl:if>
-                    <xsl:value-of select="concat('ComPtr&lt;', $thatifname, '&gt; &amp;')"/>
+                    <xsl:value-of select="concat('ComPtr&lt;', $type, '&gt; &amp;')"/>
                 </xsl:when>
 
-                <xsl:when test="//enum[@name=$type]">
+                <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
                     <xsl:value-of select="concat($type, '_T')"/>
                 </xsl:when>
 
@@ -450,13 +453,13 @@ public:
         <xsl:when test="string-length($wrapfmt)">
             <xsl:value-of select="$wrapfmt"/>
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
-            <xsl:text>%RU32</xsl:text>
-        </xsl:when>
         <xsl:when test="$type='$unknown'">
             <xsl:text>%p</xsl:text>
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
+            <xsl:text>%RU32</xsl:text>
+        </xsl:when>
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
             <xsl:text>%p</xsl:text>
         </xsl:when>
         <xsl:otherwise>
@@ -482,15 +485,13 @@ public:
             <!-- <xsl:text>struct IUnknown *</xsl:text> -->
             <xsl:text>void *</xsl:text>
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
             <!-- <xsl:value-of select="concat($type, '_T')"/> - later we can emit enums into dtrace the library -->
             <xsl:text>int</xsl:text>
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
             <!--
-            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-            <xsl:variable name="thatifname" select="$thatif/@name"/>
-            <xsl:value-of select="concat('struct ', $thatifname, ' *')"/>
+            <xsl:value-of select="concat('struct ', $type, ' *')"/>
             -->
             <xsl:text>void *</xsl:text>
         </xsl:when>
@@ -510,33 +511,30 @@ public:
   templates for handling entire interfaces and their contents
  - - - - - - - - - - - - - - - - - - - - - - -->
 
+<!-- Called on interface node. -->
 <xsl:template name="emitInterface">
-    <xsl:param name="iface"/>
-
     <xsl:choose>
         <xsl:when test="$generating != 'filelist'">
             <!-- sources, headers and dtrace-probes all needs attribute lists -->
             <xsl:variable name="addinterfaces">
                 <xsl:call-template name="getattrlist">
-                    <xsl:with-param name="val" select="$iface/@wrap-hint-server-addinterfaces"/>
+                    <xsl:with-param name="val" select="@wrap-hint-server-addinterfaces"/>
                 </xsl:call-template>
             </xsl:variable>
+
             <xsl:choose>
                 <xsl:when test="$generating = 'sources'">
                     <xsl:call-template name="emitCode">
-                        <xsl:with-param name="iface" select="$iface"/>
                         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:when test="$generating = 'headers'">
                     <xsl:call-template name="emitHeader">
-                        <xsl:with-param name="iface" select="$iface"/>
                         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:when test="$generating = 'dtrace-probes'">
                     <xsl:call-template name="emitDTraceProbes">
-                        <xsl:with-param name="iface" select="$iface"/>
                         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                     </xsl:call-template>
                 </xsl:when>
@@ -749,18 +747,13 @@ public:
                     <xsl:value-of select="$tmpname"/>
                     <xsl:text>.ptr()</xsl:text>
                 </xsl:when>
+                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+                    <xsl:text>(void *)</xsl:text>
+                    <xsl:value-of select="$tmpname"/>
+                    <xsl:text>.ptr()</xsl:text>
+                </xsl:when>
                 <xsl:otherwise>
-                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-                    <xsl:choose>
-                        <xsl:when test="$thatif">
-                            <xsl:text>(void *)</xsl:text>
-                            <xsl:value-of select="$tmpname"/>
-                            <xsl:text>.ptr()</xsl:text>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="$tmpname"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
+                    <xsl:value-of select="$tmpname"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:when>
@@ -866,14 +859,10 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:when test="../@safearray = 'yes'">
             <xsl:text>yes</xsl:text>
         </xsl:when>
-        <!-- Micro optimizations: Postpone calculating $thatif. -->
-        <xsl:when test="$type = 'boolean' or $type = 'long' or $type = 'long' or $type = 'long long'"/>
-        <xsl:otherwise>
-            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-            <xsl:if test="$thatif">
-                <xsl:text>yes</xsl:text>
-            </xsl:if>
-        </xsl:otherwise>
+        <xsl:when test="$type = 'boolean' or $type = 'long' or $type = 'long' or $type = 'long long'"/> <!-- XXX: drop this? -->
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:text>yes</xsl:text>
+        </xsl:when>
     </xsl:choose>
 </xsl:template>
 
@@ -925,47 +914,40 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             </xsl:choose>
         </xsl:when>
 
-        <!-- Micro optimizations: Delay calculating thatif. -->
-        <xsl:otherwise>
-            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:if test="../@safearray='yes'">
+                <xsl:text>Array</xsl:text>
+            </xsl:if>
             <xsl:choose>
-                <xsl:when test="$thatif">
-                    <xsl:if test="../@safearray='yes'">
-                        <xsl:text>Array</xsl:text>
-                    </xsl:if>
-                    <xsl:choose>
-                        <xsl:when test="$dir='in'">
-                            <xsl:text>ComTypeInConverter</xsl:text>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:text>ComTypeOutConverter</xsl:text>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                    <xsl:variable name="thatifname" select="$thatif/@name"/>
-                    <xsl:value-of select="concat('&lt;', $thatifname, '&gt;')"/>
+                <xsl:when test="$dir='in'">
+                    <xsl:text>ComTypeInConverter</xsl:text>
                 </xsl:when>
-
-                <xsl:when test="../@safearray='yes'">
-                    <xsl:text>Array</xsl:text>
-                    <xsl:choose>
-                        <xsl:when test="$dir='in'">
-                            <xsl:text>InConverter</xsl:text>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:text>OutConverter</xsl:text>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                    <xsl:variable name="gluetype">
-                        <xsl:call-template name="translatepublictype">
-                            <xsl:with-param name="type" select="."/>
-                            <xsl:with-param name="dir" select="$dir"/>
-                            <xsl:with-param name="mod" select="../@mod"/>
-                        </xsl:call-template>
-                    </xsl:variable>
-                    <xsl:value-of select="concat('&lt;', $gluetype, '&gt;')"/>
-                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>ComTypeOutConverter</xsl:text>
+                </xsl:otherwise>
             </xsl:choose>
-        </xsl:otherwise>
+            <xsl:value-of select="concat('&lt;', $type, '&gt;')"/>
+        </xsl:when>
+
+        <xsl:when test="../@safearray='yes'">
+            <xsl:text>Array</xsl:text>
+            <xsl:choose>
+                <xsl:when test="$dir='in'">
+                    <xsl:text>InConverter</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>OutConverter</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:variable name="gluetype">
+                <xsl:call-template name="translatepublictype">
+                    <xsl:with-param name="type" select="."/>
+                    <xsl:with-param name="dir" select="$dir"/>
+                    <xsl:with-param name="mod" select="../@mod"/>
+                </xsl:call-template>
+            </xsl:variable>
+            <xsl:value-of select="concat('&lt;', $gluetype, '&gt;')"/>
+        </xsl:when>
     </xsl:choose>
 </xsl:template>
 
@@ -1039,11 +1021,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:when test="$type = '$unknown'">
                     <xsl:text>.ptr()</xsl:text>
                 </xsl:when>
+                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+                    <xsl:text>.ptr()</xsl:text>
+                </xsl:when>
                 <xsl:otherwise>
-                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-                    <xsl:if test="$thatif">
-                        <xsl:text>.ptr()</xsl:text>
-                    </xsl:if>
+                    <xsl:message terminate="yes">Oops #1</xsl:message>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:when>
@@ -1496,30 +1478,30 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit all attributes of an interface
+  Emit all attributes of an interface (current node).
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitAttributes">
-    <xsl:param name="iface"/>
     <xsl:param name="topclass"/>
     <xsl:param name="dtracetopclass"/>
     <xsl:param name="pmode"/>
 
     <!-- first recurse to emit all base interfaces -->
-    <xsl:variable name="extends" select="$iface/@extends"/>
+    <xsl:variable name="extends" select="@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
-        <xsl:call-template name="emitAttributes">
-            <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
-            <xsl:with-param name="topclass" select="$topclass"/>
-            <xsl:with-param name="pmode" select="$pmode"/>
-            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-        </xsl:call-template>
+        <xsl:for-each select="key('G_keyInterfacesByName', $extends)">
+            <xsl:call-template name="emitAttributes">
+                <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="pmode" select="$pmode"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+            </xsl:call-template>
+        </xsl:for-each>
     </xsl:if>
 
     <xsl:choose>
         <xsl:when test="$pmode='code'">
             <xsl:text>//
 </xsl:text>
-            <xsl:value-of select="concat('// ', $iface/@name, ' properties')"/>
+            <xsl:value-of select="concat('// ', @name, ' properties')"/>
             <xsl:text>
 //
 
@@ -1528,29 +1510,29 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:when test="$pmode = 'dtrace-probes'">
         </xsl:when>
         <xsl:otherwise>
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' properties', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', @name, ' properties', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
         <xsl:when test="$pmode='public'">
-            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="public">
+            <xsl:apply-templates select="./attribute | ./if" mode="public">
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
-            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="wrapped">
+            <xsl:apply-templates select="./attribute | ./if" mode="wrapped">
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='code'">
-            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="code">
+            <xsl:apply-templates select="./attribute | ./if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode = 'dtrace-probes'">
-            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="dtrace-probes">
+            <xsl:apply-templates select="./attribute | ./if" mode="dtrace-probes">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'attribute'"/>
@@ -2111,30 +2093,30 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit all methods of an interface
+  emit all methods of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitMethods">
-    <xsl:param name="iface"/>
     <xsl:param name="topclass"/>
     <xsl:param name="pmode"/>
     <xsl:param name="dtracetopclass"/>
 
     <!-- first recurse to emit all base interfaces -->
-    <xsl:variable name="extends" select="$iface/@extends"/>
+    <xsl:variable name="extends" select="@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
-        <xsl:call-template name="emitMethods">
-            <xsl:with-param name="iface" select="//interface[@name=$extends]"/>
-            <xsl:with-param name="topclass" select="$topclass"/>
-            <xsl:with-param name="pmode" select="$pmode"/>
-            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-        </xsl:call-template>
+        <xsl:for-each select="key('G_keyInterfacesByName', $extends)">
+            <xsl:call-template name="emitMethods">
+                <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="pmode" select="$pmode"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+            </xsl:call-template>
+        </xsl:for-each>
     </xsl:if>
 
     <xsl:choose>
         <xsl:when test="$pmode='code'">
             <xsl:text>//
 </xsl:text>
-            <xsl:value-of select="concat('// ', $iface/@name, ' methods')"/>
+            <xsl:value-of select="concat('// ', @name, ' methods')"/>
             <xsl:text>
 //
 
@@ -2142,29 +2124,29 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:when test="$pmode='dtrace-probes'"/>
         <xsl:otherwise>
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' methods', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', @name, ' methods', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
         <xsl:when test="$pmode='public'">
-            <xsl:apply-templates select="$iface/method | $iface/if" mode="public">
+            <xsl:apply-templates select="./method | ./if" mode="public">
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
-            <xsl:apply-templates select="$iface/method | $iface/if" mode="wrapped">
+            <xsl:apply-templates select="./method | ./if" mode="wrapped">
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='code'">
-            <xsl:apply-templates select="$iface/method | $iface/if" mode="code">
+            <xsl:apply-templates select="./method | ./if" mode="code">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
         </xsl:when>
         <xsl:when test="$pmode='dtrace-probes'">
-            <xsl:apply-templates select="$iface/method | $iface/if" mode="dtrace-probes">
+            <xsl:apply-templates select="./method | ./if" mode="dtrace-probes">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'method'"/>
@@ -2175,49 +2157,38 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit all attributes and methods declarations of an interface
+  emit all attributes and methods declarations of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitInterfaceDecls">
-    <xsl:param name="iface"/>
     <xsl:param name="pmode"/>
 
     <!-- attributes -->
     <xsl:call-template name="emitAttributes">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 
     <!-- methods -->
     <xsl:call-template name="emitMethods">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit auxiliary method declarations of an interface
+  emit auxiliary method declarations of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitAuxMethodDecls">
-    <xsl:param name="iface"/>
     <!-- currently nothing, maybe later some generic FinalConstruct/... helper declaration for ComObjPtr -->
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit the header file of an interface
+  emit the header file of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitHeader">
-    <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
-
-    <xsl:if test="$generating != 'headers'"> <!-- Paranoia -->
-        <xsl:message terminate="yes">
-            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitHeader template.
-        </xsl:message>
-    </xsl:if>
 
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.h')"/>
 
-    <xsl:apply-templates select="$iface" mode="startfile">
+    <xsl:apply-templates select="." mode="startfile">
         <xsl:with-param name="file" select="$filename"/>
     </xsl:apply-templates>
     <xsl:call-template name="fileheader">
@@ -2225,34 +2196,34 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:with-param name="class" select="substring(@name, 2)"/>
         <xsl:with-param name="type" select="'header'"/>
     </xsl:call-template>
-    <xsl:apply-templates select="$iface" mode="classheader">
+    <xsl:apply-templates select="." mode="classheader">
         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:apply-templates>
 
     <!-- interface attributes/methods (public) -->
     <xsl:call-template name="emitInterfaceDecls">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="pmode" select="'public'"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-        <!-- This is super tricky, as the for-each switches to the node
-             set, which means the normal document isn't available any
-             more. So need to use the global root node to get back into
-             the documemt to find corresponding interface data. -->
+        <!-- This is super tricky, as the for-each switches to the node set,
+             which means the normal document isn't available any more.  We get
+             the data we need, uses a for-each to switch document and then a
+             key() to look up the interface by name. -->
         <xsl:variable name="addifname">
             <xsl:value-of select="string(.)"/>
         </xsl:variable>
-        <xsl:call-template name="emitInterfaceDecls">
-            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-            <xsl:with-param name="pmode" select="'public'"/>
-        </xsl:call-template>
+        <xsl:for-each select="$G_root">
+            <xsl:for-each select="key('G_keyInterfacesByName', $addifname)">
+                <xsl:call-template name="emitInterfaceDecls">
+                    <xsl:with-param name="pmode" select="'public'"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:for-each>
     </xsl:for-each>
 
     <!-- auxiliary methods (public) -->
-    <xsl:call-template name="emitAuxMethodDecls">
-        <xsl:with-param name="iface" select="$iface"/>
-    </xsl:call-template>
+    <xsl:call-template name="emitAuxMethodDecls"/>
 
     <!-- switch to private -->
     <xsl:text>
@@ -2260,124 +2231,122 @@ private:</xsl:text>
 
     <!-- wrapped interface attributes/methods (private) -->
     <xsl:call-template name="emitInterfaceDecls">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="pmode" select="'wrapped'"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-        <!-- This is super tricky, as the for-each switches to the node
-             set, which means the normal document isn't available any
-             more. So need to use the global root node to get back into
-             the documemt to find corresponding interface data. -->
+        <!-- This is super tricky, as the for-each switches to the node set,
+             which means the normal document isn't available any more.  We get
+             the data we need, uses a for-each to switch document and then a
+             key() to look up the interface by name. -->
         <xsl:variable name="addifname">
             <xsl:value-of select="string(.)"/>
         </xsl:variable>
-        <xsl:call-template name="emitInterfaceDecls">
-            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-            <xsl:with-param name="pmode" select="'wrapped'"/>
-        </xsl:call-template>
+        <xsl:for-each select="$G_root">
+            <xsl:for-each select="key('G_keyInterfacesByName', $addifname)">
+                <xsl:call-template name="emitInterfaceDecls">
+                    <xsl:with-param name="pmode" select="'wrapped'"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:for-each>
     </xsl:for-each>
 
-    <xsl:apply-templates select="$iface" mode="classfooter"/>
-    <xsl:apply-templates select="$iface" mode="endfile">
+    <xsl:apply-templates select="." mode="classfooter"/>
+    <xsl:apply-templates select="." mode="endfile">
         <xsl:with-param name="file" select="$filename"/>
     </xsl:apply-templates>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit all attributes and methods definitions (pmode=code) or probes (pmode=dtrace-probes) of an interface
+  emit all attributes and methods definitions (pmode=code) or probes (pmode=dtrace-probes) of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitInterfaceDefs">
-    <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
     <xsl:param name="pmode" select="'code'"/>
 
-    <xsl:if test="$pmode = 'code'">
-        <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)', $G_sNewLine, $G_sNewLine)"/>
-    </xsl:if>
-
+    <xsl:variable name="topclass" select="substring(@name, 2)"/>
     <xsl:variable name="dtracetopclass">
         <xsl:choose>
-            <xsl:when test="$iface/@dtracename"><xsl:value-of select="$iface/@dtracename"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="substring($iface/@name, 2)"/></xsl:otherwise>
+            <xsl:when test="@dtracename"><xsl:value-of select="@dtracename"/></xsl:when>
+            <xsl:otherwise><xsl:value-of select="$topclass"/></xsl:otherwise>
         </xsl:choose>
     </xsl:variable>
 
+    <xsl:if test="$pmode = 'code'">
+        <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', $topclass, 'Wrap)', $G_sNewLine, $G_sNewLine)"/>
+    </xsl:if>
+
     <!-- attributes -->
     <xsl:call-template name="emitAttributes">
-        <xsl:with-param name="iface" select="$iface"/>
-        <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+        <xsl:with-param name="topclass" select="$topclass"/>
         <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
         <!-- This is super tricky, as the for-each switches to the node set,
-             which means the normal document isn't available any more. So need
-             to use the global root node to get back into the documemt to find
-             corresponding interface data. -->
+             which means the normal document isn't available any more.  We get
+             the data we need, uses a for-each to switch document and then a
+             key() to look up the interface by name. -->
         <xsl:variable name="addifname">
             <xsl:value-of select="string(.)"/>
         </xsl:variable>
-        <xsl:call-template name="emitAttributes">
-            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-            <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
-            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-            <xsl:with-param name="pmode" select="$pmode"/>
-        </xsl:call-template>
+        <xsl:for-each select="$G_root">
+            <xsl:for-each select="key('G_keyInterfacesByName', $addifname)">
+                <xsl:call-template name="emitAttributes">
+                    <xsl:with-param name="topclass" select="$topclass"/>
+                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                    <xsl:with-param name="pmode" select="$pmode"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:for-each>
     </xsl:for-each>
 
     <!-- methods -->
     <xsl:call-template name="emitMethods">
-        <xsl:with-param name="iface" select="$iface"/>
-        <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
+        <xsl:with-param name="topclass" select="$topclass"/>
         <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
         <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
         <!-- This is super tricky, as the for-each switches to the node set,
-             which means the normal document isn't available any more. So need
-             to use the global root node to get back into the documemt to find
-             corresponding interface data. -->
+             which means the normal document isn't available any more.  We get
+             the data we need, uses a for-each to switch document and then a
+             key() to look up the interface by name. -->
         <xsl:variable name="addifname">
             <xsl:value-of select="string(.)"/>
         </xsl:variable>
-        <xsl:call-template name="emitMethods">
-            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-            <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
-            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-            <xsl:with-param name="pmode" select="$pmode"/>
-        </xsl:call-template>
+        <xsl:for-each select="$G_root">
+            <xsl:for-each select="key('G_keyInterfacesByName', $addifname)">
+                <xsl:call-template name="emitMethods">
+                    <xsl:with-param name="topclass" select="$topclass"/>
+                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                    <xsl:with-param name="pmode" select="$pmode"/>
+                </xsl:call-template>
+            </xsl:for-each>
+        </xsl:for-each>
     </xsl:for-each>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit auxiliary method declarations of an interface
+  emit auxiliary method declarations of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitAuxMethodDefs">
-    <xsl:param name="iface"/>
     <xsl:param name="pmode" select="'code'"/>
     <!-- currently nothing, maybe later some generic FinalConstruct/... implementation -->
 </xsl:template>
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit the code file of an interface
+  emit the code file of the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitCode">
-    <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
-
-    <xsl:if test="$generating != 'sources'"> <!-- Paranoia -->
-        <xsl:message terminate="yes">
-            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitCode template.
-        </xsl:message>
-    </xsl:if>
 
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
 
-    <xsl:apply-templates select="$iface" mode="startfile">
+    <xsl:apply-templates select="." mode="startfile">
         <xsl:with-param name="file" select="$filename"/>
     </xsl:apply-templates>
     <xsl:call-template name="fileheader">
@@ -2385,52 +2354,40 @@ private:</xsl:text>
         <xsl:with-param name="class" select="substring(@name, 2)"/>
         <xsl:with-param name="type" select="'code'"/>
     </xsl:call-template>
-    <xsl:apply-templates select="$iface" mode="codeheader">
+    <xsl:apply-templates select="." mode="codeheader">
         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:apply-templates>
 
     <!-- interface attributes/methods (public) -->
     <xsl:call-template name="emitInterfaceDefs">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:call-template>
 
     <!-- auxiliary methods (public) -->
-    <xsl:call-template name="emitAuxMethodDefs">
-        <xsl:with-param name="iface" select="$iface"/>
-    </xsl:call-template>
+    <xsl:call-template name="emitAuxMethodDefs"/>
 
-    <xsl:apply-templates select="$iface" mode="codefooter">
+    <xsl:apply-templates select="." mode="codefooter">
         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
     </xsl:apply-templates>
-    <xsl:apply-templates select="$iface" mode="endfile">
+    <xsl:apply-templates select="." mode="endfile">
         <xsl:with-param name="file" select="$filename"/>
     </xsl:apply-templates>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit the DTrace probes for an interface
+  emit the DTrace probes for the current interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitDTraceProbes">
-    <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
-
-    <xsl:if test="$generating != 'dtrace-probes'"> <!-- Paranoia -->
-        <xsl:message terminate="yes">
-            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitDTraceProbes template.
-        </xsl:message>
-    </xsl:if>
 
     <!-- interface attributes/methods (public) -->
     <xsl:call-template name="emitInterfaceDefs">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
         <xsl:with-param name="pmode">dtrace-probes</xsl:with-param>
     </xsl:call-template>
 
     <!-- auxiliary methods (public) -->
     <xsl:call-template name="emitAuxMethodDefs">
-        <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="pmode">dtrace-probes</xsl:with-param>
     </xsl:call-template>
 
@@ -2459,9 +2416,7 @@ private:</xsl:text>
 
 <xsl:template match="interface">
     <xsl:if test="not(@internal='yes') and not(@supportsErrorInfo='no')">
-        <xsl:call-template name="emitInterface">
-            <xsl:with-param name="iface" select="."/>
-        </xsl:call-template>
+        <xsl:call-template name="emitInterface"/>
     </xsl:if>
 </xsl:template>
 

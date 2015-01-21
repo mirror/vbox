@@ -1225,11 +1225,16 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_SRCS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+	$(QUIET)$(VBOX_XSLTPROC) --profile --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "sources" \
 		--stringparam filelistonly "" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
+
+testapiwrappers:: \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
+	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources
 
 
 #
