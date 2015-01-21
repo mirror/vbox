@@ -1389,8 +1389,8 @@ static int svcHostCallPerform(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVC
             LogRel(("OpenGL: Set 3D content scale factor to (%u, %u), multiplier %d (rc=%Rrc).\n",
                 pData->u32ScaleFactorWMultiplied,
                 pData->u32ScaleFactorHMultiplied,
-                (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                rc);
+                (int)VBOX_OGL_SCALE_FACTOR_MULTIPLIER,
+                rc));
 
             break;
         }
