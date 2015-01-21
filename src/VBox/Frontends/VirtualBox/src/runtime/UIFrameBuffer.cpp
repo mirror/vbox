@@ -478,7 +478,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         ++rects;
     }
     /* Tune according scale-factor: */
-    if (m_dScaleFactor != 1.0 || backingScaleFactor() > 1.0)
+    if (scaleFactor() != 1.0 || backingScaleFactor() > 1.0)
         region = m_transform.map(region);
 
     if (m_fUpdatesAllowed)
@@ -695,8 +695,9 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
 
     unlock();
 
-    /* Update scaled-size according scale-factor: */
-    setScaledSize(scaleFactor() == 1.0 ? scaledSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
+    /* Update scaled-size according scale-factor for modes except the 'Scale' one: */
+    if (m_pMachineView->machineLogic()->visualStateType() != UIVisualStateType_Scale)
+        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
 }
 
 void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
@@ -834,8 +835,8 @@ void UIFrameBuffer::updateCoordinateSystem()
     m_transform = QTransform();
 
     /* Apply the scale-factor if necessary: */
-    if (m_dScaleFactor != 1.0)
-        m_transform = m_transform.scale(m_dScaleFactor, m_dScaleFactor);
+    if (scaleFactor() != 1.0)
+        m_transform = m_transform.scale(scaleFactor(), scaleFactor());
 
     /* Apply the backing-scale-factor if necessary: */
     if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
