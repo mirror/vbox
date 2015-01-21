@@ -462,6 +462,7 @@ endif
 
 PROGRAMS += tstSSM-2
 tstSSM-2_TEMPLATE       = VBOXR3TSTEXE
+tstSSM-2_DEFS           = IN_VMM_STATIC
 tstSSM-2_SOURCES        = tstSSM-2.cpp
 tstSSM-2_LIBS           = $(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB)
 
