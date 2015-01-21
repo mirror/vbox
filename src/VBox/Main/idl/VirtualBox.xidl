@@ -57,10 +57,11 @@
 
 
    Note! SlickEdit users can use the 'xml_validate' command on the SlickEdit
-         command line to verify the document against the DTD.
+         command line to verify the document against the DTD.  Uncomment the
+         DOCTYPE below first (java doesn't seem to like it).
 -->
 
-<!DOCTYPE idl SYSTEM "VirtualBox.dtd">
+<!-- <!DOCTYPE idl SYSTEM "VirtualBox.dtd"> -->
 
 <idl>
 
