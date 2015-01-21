@@ -1167,7 +1167,7 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+	$(QUIET)kmk_time $(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "filelist" \
 		--stringparam filelistonly "VBOX_MAIN_APIWRAPPER_GEN_FILES" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
@@ -1188,7 +1188,7 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating C++ Server API wrapper header files from XIDL)
 	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_HDRS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+	$(QUIET)kmk_time $(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "headers" \
 		--stringparam filelistonly "" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
@@ -1204,7 +1204,7 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 		| $$(dir $$@)
 	$(call MSG_L1,Generating DTrace Provider for the VBox API (from XIDL))
 	$(QUIET)$(RM) -f -- "$@" "$@.tmp"
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+	$(QUIET)kmk_time $(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
 		--stringparam generating "dtrace-probes" \
 		--stringparam filelistonly "" \
 		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $<
