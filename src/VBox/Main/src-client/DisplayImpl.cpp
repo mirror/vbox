@@ -3443,18 +3443,18 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
                 }
                 else
                 {
-                    Log(("Running out of memory on attempt to set OpenGL content scale factor. Ignored.\n"));
+                    LogRel(("Running out of memory on attempt to set OpenGL content scale factor. Ignored.\n"));
                     hr = E_OUTOFMEMORY;
                 }
             }
             else
-                Log(("Internal error occurred on attempt to set OpenGL content scale factor. Ignored.\n"));
+                LogRel(("Internal error occurred on attempt to set OpenGL content scale factor. Ignored.\n"));
         }
         else
-            Log(("Attempt to specify OpenGL content scale factor while corresponding HGCM host service not yet runing. Ignored.\n"));
+            LogRel(("Attempt to specify OpenGL content scale factor while corresponding HGCM host service not yet runing. Ignored.\n"));
     }
     else
-        Log(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
+        LogRel(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
 
     return hr;
 #else

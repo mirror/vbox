@@ -1832,7 +1832,7 @@ extern "C" DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScal
 {
     if (idScreen >= CR_MAX_GUEST_MONITORS)
     {
-        WARN(("invalid idScreen %d", idScreen));
+        crDebug("Can't set scale factor because specified screen ID (%u) is out of range (max=%d).", idScreen, CR_MAX_GUEST_MONITORS);
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1846,7 +1846,11 @@ extern "C" DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScal
             rc = pWin->SetScaleFactor((GLdouble)dScaleFactorW, (GLdouble)dScaleFactorH);
             return rc ? 0 : VERR_LOCK_FAILED;
         }
+        else
+            crDebug("Can't set scale factor bacause overlay window obgect not yet created.");
     }
+    else
+        crDebug("Can't set scale factor because specified screen ID cannot be mapped to list of available displays.");
 
     return VERR_INVALID_PARAMETER;
 }
