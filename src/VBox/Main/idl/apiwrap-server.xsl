@@ -343,6 +343,14 @@ public:
             <xsl:text>IUnknown *</xsl:text>
         </xsl:when>
 
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:value-of select="concat($type, ' *')"/>
+        </xsl:when>
+
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
+            <xsl:value-of select="concat($type, '_T')"/>
+        </xsl:when>
+
         <!-- Micro optimizations: Put off wraptypefield calculation as long as possible; Check interfaces before enums. -->
         <xsl:otherwise>
             <!-- get C++ glue type from IDL type from table in typemap-shared.inc.xsl -->
@@ -350,14 +358,6 @@ public:
             <xsl:choose>
                 <xsl:when test="string-length($gluetypefield)">
                     <xsl:value-of select="$gluetypefield"/>
-                </xsl:when>
-
-                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
-                    <xsl:value-of select="concat($type, ' *')"/>
-                </xsl:when>
-
-                <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
-                    <xsl:value-of select="concat($type, '_T')"/>
                 </xsl:when>
 
                 <xsl:otherwise>
@@ -401,6 +401,17 @@ public:
             <xsl:text>ComPtr&lt;IUnknown&gt; &amp;</xsl:text>
         </xsl:when>
 
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:if test="$dir='in' and not($safearray='yes')">
+                <xsl:text>const </xsl:text>
+            </xsl:if>
+            <xsl:value-of select="concat('ComPtr&lt;', $type, '&gt; &amp;')"/>
+        </xsl:when>
+
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
+            <xsl:value-of select="concat($type, '_T')"/>
+        </xsl:when>
+
         <!-- Micro optimizations: Put off wraptypefield calculation as long as possible; Check interfaces before enums. -->
         <xsl:otherwise>
             <!-- get C++ wrap type from IDL type from table in typemap-shared.inc.xsl -->
@@ -408,17 +419,6 @@ public:
             <xsl:choose>
                 <xsl:when test="string-length($wraptypefield)">
                     <xsl:value-of select="$wraptypefield"/>
-                </xsl:when>
-
-                <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
-                    <xsl:if test="$dir='in' and not($safearray='yes')">
-                        <xsl:text>const </xsl:text>
-                    </xsl:if>
-                    <xsl:value-of select="concat('ComPtr&lt;', $type, '&gt; &amp;')"/>
-                </xsl:when>
-
-                <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
-                    <xsl:value-of select="concat($type, '_T')"/>
                 </xsl:when>
 
                 <xsl:otherwise>
@@ -538,6 +538,7 @@ public:
                         <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                     </xsl:call-template>
                 </xsl:when>
+                <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitInterface</xsl:message></xsl:otherwise>
             </xsl:choose>
         </xsl:when>
 
@@ -548,52 +549,49 @@ public:
     </xsl:choose>
 </xsl:template>
 
-<xsl:template match="attribute/@type | param/@type" mode="public">
+<!-- Called on a method param or attribute node. -->
+<xsl:template name="emitPublicParameter">
     <xsl:param name="dir"/>
 
     <xsl:variable name="gluetype">
         <xsl:call-template name="translatepublictype">
-            <xsl:with-param name="type" select="."/>
+            <xsl:with-param name="type" select="@type"/>
             <xsl:with-param name="dir" select="$dir"/>
-            <xsl:with-param name="mod" select="../@mod"/>
+            <xsl:with-param name="mod" select="@mod"/>
         </xsl:call-template>
     </xsl:variable>
 
-    <xsl:if test="../@safearray='yes'">
-        <xsl:choose>
-            <xsl:when test="$dir='in'">
-                <xsl:text>ComSafeArrayIn(</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:text>ComSafeArrayOut(</xsl:text>
-            </xsl:otherwise>
-        </xsl:choose>
-    </xsl:if>
-    <xsl:value-of select="$gluetype"/>
     <xsl:choose>
-        <xsl:when test="../@safearray='yes'">
-            <xsl:text>, </xsl:text>
+        <xsl:when test="@safearray='yes'">
+            <xsl:choose>
+                <xsl:when test="$dir='in'">
+                    <xsl:text>ComSafeArrayIn(</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>ComSafeArrayOut(</xsl:text>
+                </xsl:otherwise>
+            </xsl:choose>
+            <xsl:value-of select="$gluetype"/>
+            <xsl:text>, a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
+            <xsl:text>)</xsl:text>
         </xsl:when>
         <xsl:otherwise>
+            <xsl:value-of select="$gluetype"/>
             <xsl:if test="substring($gluetype,string-length($gluetype))!='*'">
                 <xsl:text> </xsl:text>
             </xsl:if>
-            <xsl:choose>
-                <xsl:when test="$dir='in'">
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:value-of select="'*'"/>
-                </xsl:otherwise>
-            </xsl:choose>
+            <xsl:if test="$dir != 'in'">
+                <xsl:text>*</xsl:text>
+            </xsl:if>
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
         </xsl:otherwise>
     </xsl:choose>
-    <xsl:text>a</xsl:text>
-    <xsl:call-template name="capitalize">
-        <xsl:with-param name="str" select="../@name"/>
-    </xsl:call-template>
-    <xsl:if test="../@safearray='yes'">
-        <xsl:value-of select="')'"/>
-    </xsl:if>
 </xsl:template>
 
 <xsl:template match="attribute/@type | param/@type" mode="wrapped">
@@ -642,13 +640,9 @@ public:
                 <xsl:if test="$lastchar != '*'">
                     <xsl:text> </xsl:text>
                 </xsl:if>
-                <xsl:choose>
-                    <xsl:when test="$dir='in'">
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:value-of select="'*'"/>
-                    </xsl:otherwise>
-                </xsl:choose>
+                <xsl:if test="$dir != 'in'">
+                    <xsl:text>*</xsl:text>
+                </xsl:if>
             </xsl:if>
         </xsl:otherwise>
     </xsl:choose>
@@ -705,27 +699,31 @@ public:
     </xsl:choose>
 </xsl:template>
 
-<xsl:template match="attribute/@type | param/@type" mode="dtraceparamval">
+<!-- Emits the DTrace probe parameter value (using tmps), invoked on param or attribute node. -->
+<xsl:template name="emitDTraceParamValue">
     <xsl:param name="dir"/>
 
     <xsl:variable name="viatmpvar">
-        <xsl:call-template name="paramconversionviatmp">
-            <xsl:with-param name="dir" select="$dir"/>
-        </xsl:call-template>
+        <xsl:for-each select="@type">
+            <xsl:call-template name="paramconversionviatmp">
+                <xsl:with-param name="dir" select="$dir"/>
+            </xsl:call-template>
+        </xsl:for-each>
     </xsl:variable>
 
-    <xsl:variable name="type" select="."/>
+    <xsl:variable name="type" select="@type"/>
     <xsl:choose>
+        <!-- Doesn't help to inline paramconversionviatmp: <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or @safearray = 'yes' or count(key('G_keyInterfacesByName', $type)) > 0"> -->
         <xsl:when test="$viatmpvar = 'yes'">
             <xsl:variable name="tmpname">
                 <xsl:text>Tmp</xsl:text>
                 <xsl:call-template name="capitalize">
-                    <xsl:with-param name="str" select="../@name"/>
+                    <xsl:with-param name="str" select="@name"/>
                 </xsl:call-template>
             </xsl:variable>
 
             <xsl:choose>
-                <xsl:when test="../@safearray = 'yes'">
+                <xsl:when test="@safearray = 'yes'">
                     <xsl:text>(uint32_t)</xsl:text>
                     <xsl:value-of select="$tmpname"/>
                     <xsl:text>.array().size(), </xsl:text>
@@ -764,7 +762,7 @@ public:
             </xsl:if>
             <xsl:text>a</xsl:text>
             <xsl:call-template name="capitalize">
-                <xsl:with-param name="str" select="../@name"/>
+                <xsl:with-param name="str" select="@name"/>
             </xsl:call-template>
 
             <xsl:if test="$type = 'boolean'">
@@ -774,34 +772,72 @@ public:
     </xsl:choose>
 </xsl:template>
 
-<!-- Same as dtraceparamval except no temporary variables are used (they are out of scope). -->
-<xsl:template match="attribute/@type | param/@type" mode="dtraceparamvalnotmp">
-    <xsl:param name="dir"/>
-
-    <xsl:variable name="viatmpvar">
-        <xsl:call-template name="paramconversionviatmp">
-            <xsl:with-param name="dir" select="$dir"/>
-        </xsl:call-template>
-    </xsl:variable>
-
-    <xsl:variable name="type" select="."/>
+<!--
+Same as emitDTraceParamValue except no temporary variables are used (they are out of scope).
+Note! There are two other instances of this code with different @dir values, see below.
+-->
+<xsl:template name="emitDTraceParamValNoTmp">
+    <!-- To speed this up, the logic of paramconversionviatmp has been duplicated/inlined here. -->
+    <xsl:variable name="type" select="@type"/>
     <xsl:choose>
-        <xsl:when test="$viatmpvar = 'yes'">
-            <xsl:if test="../@safearray = 'yes'">
-                <xsl:text>0, </xsl:text>
-            </xsl:if>
+        <xsl:when test="@safearray = 'yes'">
+            <xsl:text>0, 0</xsl:text>
+        </xsl:when>
+        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or count(key('G_keyInterfacesByName', $type)) > 0">
             <xsl:text>0</xsl:text>
         </xsl:when>
-
         <xsl:otherwise>
-            <xsl:if test="$dir != 'in'">
+            <xsl:if test="@dir != 'in'">
                 <xsl:text>*</xsl:text>
             </xsl:if>
             <xsl:text>a</xsl:text>
             <xsl:call-template name="capitalize">
-                <xsl:with-param name="str" select="../@name"/>
+                <xsl:with-param name="str" select="@name"/>
             </xsl:call-template>
+            <xsl:if test="$type = 'boolean'">
+                <xsl:text> != FALSE</xsl:text>
+            </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
 
+<!-- Copy of emitDTraceParamValNoTmp with @dir = 'in' for speeding up the code (noticable difference). -->
+<xsl:template name="emitDTraceParamValNoTmp-DirIn">
+    <xsl:variable name="type" select="@type"/>
+    <xsl:choose>
+        <xsl:when test="@safearray = 'yes'">
+            <xsl:text>0, 0</xsl:text>
+        </xsl:when>
+        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:text>0</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
+            <xsl:if test="$type = 'boolean'">
+                <xsl:text> != FALSE</xsl:text>
+            </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<!-- Copy of emitDTraceParamValNoTmp with @dir != 'in' for speeding up attributes (noticable difference). -->
+<xsl:template name="emitDTraceParamValNoTmp-DirNotIn">
+    <xsl:variable name="type" select="@type"/>
+    <xsl:choose>
+        <xsl:when test="@safearray = 'yes'">
+            <xsl:text>0, 0</xsl:text>
+        </xsl:when>
+        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or count(key('G_keyInterfacesByName', $type)) > 0">
+            <xsl:text>0</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:text>*a</xsl:text>
+            <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
             <xsl:if test="$type = 'boolean'">
                 <xsl:text> != FALSE</xsl:text>
             </xsl:if>
@@ -1024,9 +1060,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
                     <xsl:text>.ptr()</xsl:text>
                 </xsl:when>
-                <xsl:otherwise>
-                    <xsl:message terminate="yes">Oops #1</xsl:message>
-                </xsl:otherwise>
+                <xsl:otherwise><xsl:message terminate="yes">Oops #1</xsl:message></xsl:otherwise>
             </xsl:choose>
         </xsl:when>
 
@@ -1063,17 +1097,17 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:variable>
 
     <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $attrbasename, '))(')"/>
-    <xsl:apply-templates select="@type" mode="public">
-        <xsl:with-param name="dir" select="'out'"/>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitPublicParameter">
+        <xsl:with-param name="dir">out</xsl:with-param>
+    </xsl:call-template>
     <xsl:text>);
 </xsl:text>
 
     <xsl:if test="not(@readonly) or @readonly!='yes'">
         <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $attrbasename, '))(')"/>
-        <xsl:apply-templates select="@type" mode="public">
-            <xsl:with-param name="dir" select="'in'"/>
-        </xsl:apply-templates>
+        <xsl:call-template name="emitPublicParameter">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:call-template>
         <xsl:text>);
 </xsl:text>
     </xsl:if>
@@ -1162,9 +1196,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMGETTER(', $attrbasename, ')(')"/>
-    <xsl:apply-templates select="@type" mode="public">
-        <xsl:with-param name="dir" select="'out'"/>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitPublicParameter">
+        <xsl:with-param name="dir">out</xsl:with-param>
+    </xsl:call-template>
     <xsl:text>)
 {
     LogRelFlow(("{%p} %s: enter </xsl:text>
@@ -1238,9 +1272,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamval">
+        <xsl:call-template name="emitDTraceParamValue">
             <xsl:with-param name="dir">out</xsl:with-param>
-        </xsl:apply-templates>
+        </xsl:call-template>
         <xsl:text>);
 #endif
 </xsl:text>
@@ -1256,9 +1290,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this, hrc, 1 /*hrc exception*/,</xsl:text>
-    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-        <xsl:with-param name="dir">out</xsl:with-param>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitDTraceParamValNoTmp-DirNotIn"/>
     <xsl:text>);
 #endif
 </xsl:text>
@@ -1274,9 +1306,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this, hrc, 9 /*unhandled exception*/,</xsl:text>
-    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-        <xsl:with-param name="dir">out</xsl:with-param>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitDTraceParamValNoTmp-DirNotIn"/>
     <xsl:text>);
 #endif
 </xsl:text>
@@ -1303,9 +1333,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>
 </xsl:text>
         <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMSETTER(', $attrbasename, ')(')"/>
-        <xsl:apply-templates select="@type" mode="public">
-            <xsl:with-param name="dir" select="'in'"/>
-        </xsl:apply-templates>
+        <xsl:call-template name="emitPublicParameter">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:call-template>
         <!-- @todo check in parameters if possible -->
         <xsl:text>)
 {
@@ -1338,9 +1368,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $topclass, '_SET_', $dtraceattrname, '_ENTER('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamval">
+        <xsl:call-template name="emitDTraceParamValue">
             <xsl:with-param name="dir">in</xsl:with-param>
-        </xsl:apply-templates>
+        </xsl:call-template>
         <xsl:text>);
 #endif
 
@@ -1371,9 +1401,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamval">
+        <xsl:call-template name="emitDTraceParamValue">
             <xsl:with-param name="dir">in</xsl:with-param>
-        </xsl:apply-templates>
+        </xsl:call-template>
         <xsl:text>);
 #endif
     }
@@ -1384,9 +1414,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this, hrc, 1 /*hrc exception*/,</xsl:text>
-    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-        <xsl:with-param name="dir">in</xsl:with-param>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitDTraceParamValNoTmp-DirIn"/>
     <xsl:text>);
 #endif
     }
@@ -1397,9 +1425,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this, hrc, 9 /*unhandled exception*/,</xsl:text>
-    <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-        <xsl:with-param name="dir">in</xsl:with-param>
-    </xsl:apply-templates>
+    <xsl:call-template name="emitDTraceParamValNoTmp-DirIn"/>
     <xsl:text>);
 #endif
     }
@@ -1507,11 +1533,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
 </xsl:text>
         </xsl:when>
-        <xsl:when test="$pmode = 'dtrace-probes'">
-        </xsl:when>
-        <xsl:otherwise>
+        <xsl:when test="$pmode != 'dtrace-probes'">
             <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', @name, ' properties', $G_sNewLine)"/>
-        </xsl:otherwise>
+        </xsl:when>
     </xsl:choose>
     <xsl:choose>
         <xsl:when test="$pmode='public'">
@@ -1538,7 +1562,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
         </xsl:when>
-        <xsl:otherwise/>
+        <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitAttributes</xsl:message></xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
@@ -1546,6 +1570,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="target"/>
 
     <xsl:choose>
+        <xsl:when test="$target = ''"/>
         <xsl:when test="$target = 'xpidl'">
             <xsl:text>#ifdef VBOX_WITH_XPCOM
 </xsl:text>
@@ -1554,7 +1579,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:text>#ifndef VBOX_WITH_XPCOM
 </xsl:text>
         </xsl:when>
-        <xsl:otherwise/>
+        <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitTargetBegin: target=<xsl:value-of select="$target"/></xsl:message></xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
@@ -1562,6 +1587,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="target"/>
 
     <xsl:choose>
+        <xsl:when test="$target = ''"/>
         <xsl:when test="$target = 'xpidl'">
             <xsl:text>#endif /* VBOX_WITH_XPCOM */
 </xsl:text>
@@ -1570,7 +1596,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:text>#endif /* !VBOX_WITH_XPCOM */
 </xsl:text>
         </xsl:when>
-        <xsl:otherwise/>
+        <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitTargetEnd target=<xsl:value-of select="$target"/></xsl:message></xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
@@ -1598,9 +1624,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:call-template>
     <xsl:text>)(</xsl:text>
     <xsl:for-each select="param">
-        <xsl:apply-templates select="@type" mode="public">
+        <xsl:call-template name="emitPublicParameter">
             <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        </xsl:call-template>
         <xsl:if test="not(position()=last())">
             <xsl:text>,
                 </xsl:text>
@@ -1713,9 +1739,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::', $methodbasename, '(')"/>
     <xsl:for-each select="param">
-        <xsl:apply-templates select="@type" mode="public">
+        <xsl:call-template name="emitPublicParameter">
             <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        </xsl:call-template>
         <xsl:if test="not(position()=last())">
             <xsl:text>,
                     </xsl:text>
@@ -1777,9 +1803,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this</xsl:text>
     <xsl:for-each select="param[@dir='in']">
         <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamval">
+        <xsl:call-template name="emitDTraceParamValue">
             <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        </xsl:call-template>
     </xsl:for-each>
     <xsl:text>);
 #endif
@@ -1831,9 +1857,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this, hrc, 0 /*normal*/</xsl:text>
     <xsl:for-each select="param">
         <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamval">
+        <xsl:call-template name="emitDTraceParamValue">
             <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        </xsl:call-template>
     </xsl:for-each>
     <xsl:text>);
 #endif
@@ -1847,9 +1873,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this, hrc, 1 /*hrc exception*/</xsl:text>
     <xsl:for-each select="param">
         <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-            <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        <xsl:call-template name="emitDTraceParamValNoTmp"/>
     </xsl:for-each>
     <xsl:text>);
 #endif
@@ -1863,9 +1887,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this, hrc, 9 /*unhandled exception*/</xsl:text>
     <xsl:for-each select="param">
         <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamvalnotmp">
-            <xsl:with-param name="dir" select="@dir"/>
-        </xsl:apply-templates>
+        <xsl:call-template name="emitDTraceParamValNoTmp"/>
     </xsl:for-each>
     <xsl:text>);
 #endif
