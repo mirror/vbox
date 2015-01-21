@@ -330,37 +330,43 @@ public:
     <xsl:param name="dir"/>
     <xsl:param name="mod"/>
 
-    <!-- get C++ glue type from IDL type from table in typemap-shared.inc.xsl -->
-    <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename"/>
     <xsl:choose>
         <xsl:when test="$type='wstring' or $type='uuid'">
-            <xsl:choose>
-                <xsl:when test="$dir='in'">
-                    <xsl:text>IN_BSTR</xsl:text>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>BSTR</xsl:text>
-                </xsl:otherwise>
-            </xsl:choose>
+            <xsl:if test="$dir='in'">
+                <xsl:text>IN_</xsl:text>
+            </xsl:if>
+            <xsl:text>BSTR</xsl:text>
         </xsl:when>
-        <xsl:when test="string-length($gluetypefield)">
-            <xsl:value-of select="$gluetypefield"/>
-        </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
-            <xsl:value-of select="concat($type, '_T')"/>
-        </xsl:when>
+
         <xsl:when test="$type='$unknown'">
             <xsl:text>IUnknown *</xsl:text>
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
-            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-            <xsl:variable name="thatifname" select="$thatif/@name"/>
-            <xsl:value-of select="concat($thatifname, ' *')"/>
-        </xsl:when>
+
+        <!-- Micro optimizations: Put off wraptypefield calculation as long as possible; Check interfaces before enums. -->
         <xsl:otherwise>
-            <xsl:call-template name="fatalError">
-                <xsl:with-param name="msg" select="concat('translatepublictype: Type &quot;', $type, '&quot; is not supported.')"/>
-            </xsl:call-template>
+            <!-- get C++ glue type from IDL type from table in typemap-shared.inc.xsl -->
+            <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename"/>
+            <xsl:choose>
+                <xsl:when test="string-length($gluetypefield)">
+                    <xsl:value-of select="$gluetypefield"/>
+                </xsl:when>
+
+                <xsl:when test="//interface[@name=$type]">
+                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+                    <xsl:variable name="thatifname" select="$thatif/@name"/>
+                    <xsl:value-of select="concat($thatifname, ' *')"/>
+                </xsl:when>
+
+                <xsl:when test="//enum[@name=$type]">
+                    <xsl:value-of select="concat($type, '_T')"/>
+                </xsl:when>
+
+                <xsl:otherwise>
+                    <xsl:call-template name="fatalError">
+                        <xsl:with-param name="msg" select="concat('translatepublictype: Type &quot;', $type, '&quot; is not supported.')"/>
+                    </xsl:call-template>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:if test="$mod='ptr'">
@@ -374,8 +380,6 @@ public:
     <xsl:param name="mod"/>
     <xsl:param name="safearray"/>
 
-    <!-- get C++ wrap type from IDL type from table in typemap-shared.inc.xsl -->
-    <xsl:variable name="wraptypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename"/>
     <xsl:choose>
         <xsl:when test="$type='wstring'">
             <xsl:if test="$dir='in' and not($safearray='yes')">
@@ -383,36 +387,49 @@ public:
             </xsl:if>
             <xsl:text>com::Utf8Str &amp;</xsl:text>
         </xsl:when>
+
         <xsl:when test="$type='uuid'">
             <xsl:if test="$dir='in'">
                 <xsl:text>const </xsl:text>
             </xsl:if>
             <xsl:text>com::Guid &amp;</xsl:text>
         </xsl:when>
-        <xsl:when test="string-length($wraptypefield)">
-            <xsl:value-of select="$wraptypefield"/>
-        </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
-            <xsl:value-of select="concat($type, '_T')"/>
-        </xsl:when>
+
         <xsl:when test="$type='$unknown'">
             <xsl:if test="$dir='in' and not($safearray='yes')">
                 <xsl:text>const </xsl:text>
             </xsl:if>
             <xsl:text>ComPtr&lt;IUnknown&gt; &amp;</xsl:text>
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
-            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-            <xsl:variable name="thatifname" select="$thatif/@name"/>
-            <xsl:if test="$dir='in' and not($safearray='yes')">
-                <xsl:text>const </xsl:text>
-            </xsl:if>
-            <xsl:value-of select="concat('ComPtr&lt;', $thatifname, '&gt; &amp;')"/>
-        </xsl:when>
+
+        <!-- Micro optimizations: Put off wraptypefield calculation as long as possible; Check interfaces before enums. -->
         <xsl:otherwise>
-            <xsl:call-template name="fatalError">
-                <xsl:with-param name="msg" select="concat('translatewrappedtype: Type &quot;', $type, '&quot; is not supported.')"/>
-            </xsl:call-template>
+            <!-- get C++ wrap type from IDL type from table in typemap-shared.inc.xsl -->
+            <xsl:variable name="wraptypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename"/>
+            <xsl:choose>
+                <xsl:when test="string-length($wraptypefield)">
+                    <xsl:value-of select="$wraptypefield"/>
+                </xsl:when>
+
+                <xsl:when test="//interface[@name=$type]">
+                    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+                    <xsl:variable name="thatifname" select="$thatif/@name"/>
+                    <xsl:if test="$dir='in' and not($safearray='yes')">
+                        <xsl:text>const </xsl:text>
+                    </xsl:if>
+                    <xsl:value-of select="concat('ComPtr&lt;', $thatifname, '&gt; &amp;')"/>
+                </xsl:when>
+
+                <xsl:when test="//enum[@name=$type]">
+                    <xsl:value-of select="concat($type, '_T')"/>
+                </xsl:when>
+
+                <xsl:otherwise>
+                    <xsl:call-template name="fatalError">
+                        <xsl:with-param name="msg" select="concat('translatewrappedtype: Type &quot;', $type, '&quot; is not supported.')"/>
+                    </xsl:call-template>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:if test="$mod='ptr'">
@@ -855,26 +872,25 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 <xsl:template name="paramconversionviatmp">
     <xsl:param name="dir"/>
     <xsl:variable name="type" select="."/>
-    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-    <xsl:if test="$thatif or $type = 'wstring' or $type = '$unknown' or $type = 'uuid' or ../@safearray = 'yes'">
-        <xsl:text>yes</xsl:text>
-    </xsl:if>
+    <xsl:choose>
+        <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid' or ../@safearray = 'yes'">
+            <xsl:text>yes</xsl:text>
+        </xsl:when>
+        <!-- Micro optimizations: Postpone calculating $thatif. -->
+        <xsl:otherwise>
+            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
+            <xsl:if test="$thatif">
+                <xsl:text>yes</xsl:text>
+            </xsl:if>
+        </xsl:otherwise>
+    </xsl:choose>
 </xsl:template>
 
 <!-- Call this to get the argument conversion class, if any is needed. -->
 <xsl:template name="paramconversionclass">
     <xsl:param name="dir"/>
 
-    <xsl:variable name="gluetype">
-        <xsl:call-template name="translatepublictype">
-            <xsl:with-param name="type" select="."/>
-            <xsl:with-param name="dir" select="$dir"/>
-            <xsl:with-param name="mod" select="../@mod"/>
-        </xsl:call-template>
-    </xsl:variable>
     <xsl:variable name="type" select="."/>
-    <xsl:variable name="thatif" select="//interface[@name=$type]"/>
-
     <xsl:choose>
         <xsl:when test="$type='$unknown'">
             <xsl:if test="../@safearray='yes'">
@@ -888,22 +904,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                     <xsl:text>ComTypeOutConverter&lt;IUnknown&gt;</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
-        </xsl:when>
-
-        <xsl:when test="$thatif">
-            <xsl:if test="../@safearray='yes'">
-                <xsl:text>Array</xsl:text>
-            </xsl:if>
-            <xsl:choose>
-                <xsl:when test="$dir='in'">
-                    <xsl:text>ComTypeInConverter</xsl:text>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>ComTypeOutConverter</xsl:text>
-                </xsl:otherwise>
-            </xsl:choose>
-            <xsl:variable name="thatifname" select="$thatif/@name"/>
-            <xsl:value-of select="concat('&lt;', $thatifname, '&gt;')"/>
         </xsl:when>
 
         <xsl:when test="$type='wstring'">
@@ -934,18 +934,47 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             </xsl:choose>
         </xsl:when>
 
-        <xsl:when test="../@safearray='yes'">
-            <xsl:text>Array</xsl:text>
+        <!-- Micro optimizations: Delay calculating thatif. -->
+        <xsl:otherwise>
+            <xsl:variable name="thatif" select="//interface[@name=$type]"/>
             <xsl:choose>
-                <xsl:when test="$dir='in'">
-                    <xsl:text>InConverter</xsl:text>
+                <xsl:when test="$thatif">
+                    <xsl:if test="../@safearray='yes'">
+                        <xsl:text>Array</xsl:text>
+                    </xsl:if>
+                    <xsl:choose>
+                        <xsl:when test="$dir='in'">
+                            <xsl:text>ComTypeInConverter</xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text>ComTypeOutConverter</xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    <xsl:variable name="thatifname" select="$thatif/@name"/>
+                    <xsl:value-of select="concat('&lt;', $thatifname, '&gt;')"/>
                 </xsl:when>
-                <xsl:otherwise>
-                    <xsl:text>OutConverter</xsl:text>
-                </xsl:otherwise>
+
+                <xsl:when test="../@safearray='yes'">
+                    <xsl:text>Array</xsl:text>
+                    <xsl:choose>
+                        <xsl:when test="$dir='in'">
+                            <xsl:text>InConverter</xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:text>OutConverter</xsl:text>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                    <xsl:variable name="gluetype">
+                        <xsl:call-template name="translatepublictype">
+                            <xsl:with-param name="type" select="."/>
+                            <xsl:with-param name="dir" select="$dir"/>
+                            <xsl:with-param name="mod" select="../@mod"/>
+                        </xsl:call-template>
+                    </xsl:variable>
+                    <xsl:value-of select="concat('&lt;', $gluetype, '&gt;')"/>
+                </xsl:when>
             </xsl:choose>
-            <xsl:value-of select="concat('&lt;', $gluetype, '&gt;')"/>
-        </xsl:when>
+        </xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
