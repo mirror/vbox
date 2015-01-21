@@ -54,7 +54,13 @@
    7. src/VBox/Runtime/common/err/errmsgvboxcom.xsl =>
       out/<platform>/obj/Runtime/errmsgvboxcomdata.h
       (<result> extraction for the %Rhrc format specifier)
+
+
+   Note! SlickEdit users can use the 'xml_validate' command on the SlickEdit
+         command line to verify the document against the DTD.
 -->
+
+<!DOCTYPE idl SYSTEM "VirtualBox.dtd">
 
 <idl>
 

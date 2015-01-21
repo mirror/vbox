@@ -71,8 +71,10 @@
     <!ATTLIST interface waitable (yes|no) "no">
                 <!-- waitable is only relevant for event interfaces, and
                      specifies that this event can be waited for. -->
-    <!-- dtrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
-    <!ATTLIST interface dtrace CDATA #IMPLIED>
+    <!ATTLIST interface wrap-hint-server-addinterfaces CDATA #IMPLIED>
+    <!ATTLIST interface wrap-hint-server CDATA #IMPLIED>
+    <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
+    <!ATTLIST interface dtracename CDATA #IMPLIED>
   <!ELEMENT class (interface)>                                <!-- done -->
     <!ATTLIST class name CDATA #REQUIRED>
     <!ATTLIST class uuid CDATA #REQUIRED>
@@ -86,15 +88,17 @@
     <!ATTLIST attribute internal (yes|no) "no">
     <!ATTLIST attribute safearray (yes|no) "no">
     <!ATTLIST attribute wsmap (managed|suppress) "managed">
-    <!-- dtrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
-    <!ATTLIST attribute dtrace CDATA #IMPLIED>
+    <!ATTLIST attribute wrap-hint-server CDATA #IMPLIED>
+    <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
+    <!ATTLIST attribute dtracename CDATA #IMPLIED>
   <!ELEMENT method (desc?,param*,result*)>                    <!-- done -->
     <!ATTLIST method name CDATA #REQUIRED>
     <!ATTLIST method const CDATA "no">
     <!ATTLIST method internal (yes|no) "no">
     <!ATTLIST method wsmap (managed|suppress) "managed">
-    <!-- dtrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
-    <!ATTLIST attribute dtrace CDATA #IMPLIED>
+    <!ATTLIST method wrap-hint-server CDATA #IMPLIED>
+    <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
+    <!ATTLIST method dtracename CDATA #IMPLIED>
   <!ELEMENT param (desc?)>                                    <!-- done -->
     <!ATTLIST param name CDATA #REQUIRED>
     <!ATTLIST param type CDATA #REQUIRED>
