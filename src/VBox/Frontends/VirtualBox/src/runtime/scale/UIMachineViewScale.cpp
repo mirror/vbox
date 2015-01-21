@@ -37,6 +37,9 @@
 # include "CConsole.h"
 # include "CDisplay.h"
 
+/* Other VBox includes: */
+#include <VBox/VBoxOGL.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -62,8 +65,8 @@ UIMachineViewScale::~UIMachineViewScale()
     /* Save machine view settings: */
     saveMachineViewSettings();
 
-    /* Disable scaling: */
-    frameBuffer()->setScaledSize(QSize());
+    /* Return scaled-size to 'normal' mode: */
+    applyMachineViewScaleFactor();
 
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
@@ -71,9 +74,18 @@ UIMachineViewScale::~UIMachineViewScale()
 
 void UIMachineViewScale::sltPerformGuestScale()
 {
-    /* Check if scale is requested: */
-    /* Set new frame-buffer scale-factor: */
+    /* Adjust frame-buffer scaled-size: */
     frameBuffer()->setScaledSize(viewport()->size());
+
+    /* Propagate scale-factor to 3D service if necessary: */
+    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    {
+        const double xRatio = (double)frameBuffer()->scaledSize().width() / frameBuffer()->width();
+        const double yRatio = (double)frameBuffer()->scaledSize().height() / frameBuffer()->height();
+        display().NotifyScaleFactorChange(m_uScreenId,
+                                          (uint32_t)(xRatio * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(yRatio * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+    }
 
     /* Scale the pause-pixmap: */
     updateScaledPausePixmap();
