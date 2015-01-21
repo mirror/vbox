@@ -1143,10 +1143,6 @@ IPC_WaitMessage(PRUint32             aSenderID,
   if (NS_FAILED(rv))
     return rv;
 
-  // if the requested sender has died while waiting, return an error
-  if (data.senderDead)
-    return NS_ERROR_ABORT; // XXX better error code?
-
   // if the selector has accepted some message, then we pass it to aConsumer
   // for safe processing.  The IPC susbsystem is quite stable here (i.e. we're
   // not inside any of the monitors, and the message has been already removed
@@ -1160,6 +1156,10 @@ IPC_WaitMessage(PRUint32             aSenderID,
   }
 
   delete msg;
+
+  // if the requested sender has died while waiting, return an error
+  if (data.senderDead)
+    return NS_ERROR_ABORT; // XXX better error code?
 
   return NS_OK;
 }
