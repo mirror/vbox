@@ -539,6 +539,17 @@ typedef IMAGE_THUNK_DATA32 const *PCIMAGE_THUNK_DATA32;
 #pragma pack()
 
 
+/** @since Windows 10 (preview 9879) */
+typedef struct _IMAGE_LOAD_CONFIG_CODE_INTEGRITY
+{
+    uint16_t  Flags;
+    uint16_t  Catalog;
+    uint32_t  CatalogOffset;
+    uint32_t  Reserved;
+} IMAGE_LOAD_CONFIG_CODE_INTEGRITY;
+AssertCompileSize(IMAGE_LOAD_CONFIG_CODE_INTEGRITY, 12);
+typedef IMAGE_LOAD_CONFIG_CODE_INTEGRITY *PIMAGE_LOAD_CONFIG_CODE_INTEGRITY;
+typedef IMAGE_LOAD_CONFIG_CODE_INTEGRITY const *PCIMAGE_LOAD_CONFIG_CODE_INTEGRITY;
 
 typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V1
 {
@@ -624,9 +635,43 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V3, 0x5c);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V3;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V3;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V3   IMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V3  PIMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V3 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
+/** @since Windows 10 (preview 9879) */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V4
+{
+    uint32_t  Size;
+    uint32_t  TimeDateStamp;
+    uint16_t  MajorVersion;
+    uint16_t  MinorVersion;
+    uint32_t  GlobalFlagsClear;
+    uint32_t  GlobalFlagsSet;
+    uint32_t  CriticalSectionDefaultTimeout;
+    uint32_t  DeCommitFreeBlockThreshold;
+    uint32_t  DeCommitTotalFreeThreshold;
+    uint32_t  LockPrefixTable;
+    uint32_t  MaximumAllocationSize;
+    uint32_t  VirtualMemoryThreshold;
+    uint32_t  ProcessHeapFlags;
+    uint32_t  ProcessAffinityMask;
+    uint16_t  CSDVersion;
+    uint16_t  Reserved1;
+    uint32_t  EditList;
+    uint32_t  SecurityCookie;
+    uint32_t  SEHandlerTable;
+    uint32_t  SEHandlerCount;
+    uint32_t  GuardCFCCheckFunctionPointer;
+    uint32_t  Reserved2;
+    uint32_t  GuardCFFunctionTable;
+    uint32_t  GuardCFFunctionCount;
+    uint32_t  GuardFlags;
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY  CodeIntegrity;
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V4;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V4, 0x68);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V4 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V4;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V4 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V4;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V4   IMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V4  PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V4 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
 
 /* No _IMAGE_LOAD_CONFIG_DIRECTORY64_V1 exists. */
 
@@ -691,9 +736,44 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V3, 0x94);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V3;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V3;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V3   IMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V3  PIMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V3 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
+/** @since  Windows 10 (Preview (9879). */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V4
+{
+    uint32_t  Size;
+    uint32_t  TimeDateStamp;
+    uint16_t  MajorVersion;
+    uint16_t  MinorVersion;
+    uint32_t  GlobalFlagsClear;
+    uint32_t  GlobalFlagsSet;
+    uint32_t  CriticalSectionDefaultTimeout;
+    uint64_t  DeCommitFreeBlockThreshold;
+    uint64_t  DeCommitTotalFreeThreshold;
+    uint64_t  LockPrefixTable;
+    uint64_t  MaximumAllocationSize;
+    uint64_t  VirtualMemoryThreshold;
+    uint64_t  ProcessAffinityMask;
+    uint32_t  ProcessHeapFlags;
+    uint16_t  CSDVersion;
+    uint16_t  Reserved1;
+    uint64_t  EditList;
+    uint64_t  SecurityCookie;
+    uint64_t  SEHandlerTable;
+    uint64_t  SEHandlerCount;
+    uint64_t  GuardCFCCheckFunctionPointer;
+    uint64_t  Reserved2;
+    uint64_t  GuardCFFunctionTable;
+    uint64_t  GuardCFFunctionCount;
+    uint32_t  GuardFlags;
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY  CodeIntegrity;
+} IMAGE_LOAD_CONFIG_DIRECTORY64_V4;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V4, 0xa0);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V4 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V4;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V4 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V4;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V4   IMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V4  PIMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V4 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
+
 
 typedef struct _IMAGE_DEBUG_DIRECTORY
 {
