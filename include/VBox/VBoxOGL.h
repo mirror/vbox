@@ -40,11 +40,11 @@ RT_C_DECLS_BEGIN
  * code divides received scalar by this constant and converts result to type of 'double'.
  * This constant can be increased (multiplied by 10^n) in order to get better precision
  * for scaling factor manipulations. */
-#define VBOX_OGL_SCALE_FACTOR_MULTIPLIER    100.0
+#define VBOX_OGL_SCALE_FACTOR_MULTIPLIER    10000.0
 
 /* 3D content scale factor range bounds. */
-#define VBOX_OGL_SCALE_FACTOR_MIN           0.5
-#define VBOX_OGL_SCALE_FACTOR_MAX           2.0
+#define VBOX_OGL_SCALE_FACTOR_MIN           0.01
+#define VBOX_OGL_SCALE_FACTOR_MAX           10.0
 
 bool RTCALL VBoxOglIsOfflineRenderingAppropriate(void);
 bool RTCALL VBoxOglIs3DAccelerationSupported(void);
