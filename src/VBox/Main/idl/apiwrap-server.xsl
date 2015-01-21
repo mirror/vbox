@@ -502,33 +502,46 @@ public:
 <xsl:template name="emitInterface">
     <xsl:param name="iface"/>
 
-    <xsl:variable name="addinterfaces">
-        <xsl:call-template name="getattrlist">
-            <xsl:with-param name="val" select="$iface/@wrap-hint-server-addinterfaces"/>
-        </xsl:call-template>
-    </xsl:variable>
+    <xsl:choose>
+        <xsl:when test="$generating != 'filelist'">
+            <!-- sources, headers and dtrace-probes all needs attribute lists -->
+            <xsl:variable name="addinterfaces">
+                <xsl:call-template name="getattrlist">
+                    <xsl:with-param name="val" select="$iface/@wrap-hint-server-addinterfaces"/>
+                </xsl:call-template>
+            </xsl:variable>
+            <xsl:choose>
+                <xsl:when test="$generating = 'sources'">
+                    <xsl:call-template name="emitCode">
+                        <xsl:with-param name="iface" select="$iface"/>
+                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:when test="$generating = 'headers'">
+                    <xsl:call-template name="emitHeader">
+                        <xsl:with-param name="iface" select="$iface"/>
+                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:when test="$generating = 'dtrace-probes'">
+                    <xsl:call-template name="emitDTraceProbes">
+                        <xsl:with-param name="iface" select="$iface"/>
+                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+                    </xsl:call-template>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:when>
 
-    <xsl:if test="$generating = 'headers' or $generating = 'filelist'">
-        <xsl:call-template name="emitHeader">
-            <xsl:with-param name="iface" select="$iface"/>
-            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-        </xsl:call-template>
-    </xsl:if>
-
-    <xsl:if test="$generating = 'sources' or $generating = 'filelist'">
-        <xsl:call-template name="emitCode">
-            <xsl:with-param name="iface" select="$iface"/>
-            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-        </xsl:call-template>
-    </xsl:if>
-
-    <xsl:if test="$generating = 'dtrace-probes'">
-        <xsl:call-template name="emitDTraceProbes">
-            <xsl:with-param name="iface" select="$iface"/>
-            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-        </xsl:call-template>
-    </xsl:if>
-
+        <xsl:when test="$generating = 'filelist'">
+            <!-- Just output the name of the header and source filenames for this interface. -->
+            <xsl:apply-templates select="$iface" mode="listfile">
+                <xsl:with-param name="file" select="concat(substring(@name, 2), 'Wrap.h')"/>
+            </xsl:apply-templates>
+            <xsl:apply-templates select="$iface" mode="listfile">
+                <xsl:with-param name="file" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
+            </xsl:apply-templates>
+        </xsl:when>
+    </xsl:choose>
 </xsl:template>
 
 <xsl:template match="attribute/@type | param/@type" mode="public">
@@ -2176,89 +2189,79 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
 
+    <xsl:if test="$generating != 'headers'"> <!-- Paranoia -->
+        <xsl:message terminate="yes">
+            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitHeader template.
+        </xsl:message>
+    </xsl:if>
+
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.h')"/>
 
-    <xsl:choose>
-        <xsl:when test="$generating = 'headers'">
-            <xsl:apply-templates select="$iface" mode="startfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-            <xsl:call-template name="fileheader">
-                <xsl:with-param name="name" select="$filename"/>
-                <xsl:with-param name="class" select="substring(@name, 2)"/>
-                <xsl:with-param name="type" select="'header'"/>
-            </xsl:call-template>
-            <xsl:apply-templates select="$iface" mode="classheader">
-                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-            </xsl:apply-templates>
+    <xsl:apply-templates select="$iface" mode="startfile">
+        <xsl:with-param name="file" select="$filename"/>
+    </xsl:apply-templates>
+    <xsl:call-template name="fileheader">
+        <xsl:with-param name="name" select="$filename"/>
+        <xsl:with-param name="class" select="substring(@name, 2)"/>
+        <xsl:with-param name="type" select="'header'"/>
+    </xsl:call-template>
+    <xsl:apply-templates select="$iface" mode="classheader">
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+    </xsl:apply-templates>
 
-            <!-- interface attributes/methods (public) -->
-            <xsl:call-template name="emitInterfaceDecls">
-                <xsl:with-param name="iface" select="$iface"/>
-                <xsl:with-param name="pmode" select="'public'"/>
-            </xsl:call-template>
+    <!-- interface attributes/methods (public) -->
+    <xsl:call-template name="emitInterfaceDecls">
+        <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="pmode" select="'public'"/>
+    </xsl:call-template>
 
-            <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-                <!-- This is super tricky, as the for-each switches to the node
-                     set, which means the normal document isn't available any
-                     more. So need to use the global root node to get back into
-                     the documemt to find corresponding interface data. -->
-                <xsl:variable name="addifname">
-                    <xsl:value-of select="string(.)"/>
-                </xsl:variable>
-                <xsl:call-template name="emitInterfaceDecls">
-                    <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-                    <xsl:with-param name="pmode" select="'public'"/>
-                </xsl:call-template>
-            </xsl:for-each>
+    <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+        <!-- This is super tricky, as the for-each switches to the node
+             set, which means the normal document isn't available any
+             more. So need to use the global root node to get back into
+             the documemt to find corresponding interface data. -->
+        <xsl:variable name="addifname">
+            <xsl:value-of select="string(.)"/>
+        </xsl:variable>
+        <xsl:call-template name="emitInterfaceDecls">
+            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+            <xsl:with-param name="pmode" select="'public'"/>
+        </xsl:call-template>
+    </xsl:for-each>
 
-            <!-- auxiliary methods (public) -->
-            <xsl:call-template name="emitAuxMethodDecls">
-                <xsl:with-param name="iface" select="$iface"/>
-            </xsl:call-template>
+    <!-- auxiliary methods (public) -->
+    <xsl:call-template name="emitAuxMethodDecls">
+        <xsl:with-param name="iface" select="$iface"/>
+    </xsl:call-template>
 
-            <!-- switch to private -->
-            <xsl:text>
+    <!-- switch to private -->
+    <xsl:text>
 private:</xsl:text>
 
-            <!-- wrapped interface attributes/methods (private) -->
-            <xsl:call-template name="emitInterfaceDecls">
-                <xsl:with-param name="iface" select="$iface"/>
-                <xsl:with-param name="pmode" select="'wrapped'"/>
-            </xsl:call-template>
+    <!-- wrapped interface attributes/methods (private) -->
+    <xsl:call-template name="emitInterfaceDecls">
+        <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="pmode" select="'wrapped'"/>
+    </xsl:call-template>
 
-            <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-                <!-- This is super tricky, as the for-each switches to the node
-                     set, which means the normal document isn't available any
-                     more. So need to use the global root node to get back into
-                     the documemt to find corresponding interface data. -->
-                <xsl:variable name="addifname">
-                    <xsl:value-of select="string(.)"/>
-                </xsl:variable>
-                <xsl:call-template name="emitInterfaceDecls">
-                    <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
-                    <xsl:with-param name="pmode" select="'wrapped'"/>
-                </xsl:call-template>
-            </xsl:for-each>
+    <xsl:for-each select="exsl:node-set($addinterfaces)/token">
+        <!-- This is super tricky, as the for-each switches to the node
+             set, which means the normal document isn't available any
+             more. So need to use the global root node to get back into
+             the documemt to find corresponding interface data. -->
+        <xsl:variable name="addifname">
+            <xsl:value-of select="string(.)"/>
+        </xsl:variable>
+        <xsl:call-template name="emitInterfaceDecls">
+            <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
+            <xsl:with-param name="pmode" select="'wrapped'"/>
+        </xsl:call-template>
+    </xsl:for-each>
 
-            <xsl:apply-templates select="$iface" mode="classfooter"/>
-            <xsl:apply-templates select="$iface" mode="endfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-        </xsl:when>
-
-        <xsl:when test="$generating = 'filelist'">
-            <xsl:apply-templates select="$iface" mode="listfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-        </xsl:when>
-
-        <xsl:otherwise>
-            <xsl:message terminate="yes">
-                Did not expect generating='<xsl:value-of select="$generating"/>' in the emitHeader template.
-            </xsl:message>
-        </xsl:otherwise>
-    </xsl:choose>
+    <xsl:apply-templates select="$iface" mode="classfooter"/>
+    <xsl:apply-templates select="$iface" mode="endfile">
+        <xsl:with-param name="file" select="$filename"/>
+    </xsl:apply-templates>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -2346,51 +2349,43 @@ private:</xsl:text>
     <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
 
+    <xsl:if test="$generating != 'sources'"> <!-- Paranoia -->
+        <xsl:message terminate="yes">
+            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitCode template.
+        </xsl:message>
+    </xsl:if>
+
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
 
-    <xsl:choose>
-        <xsl:when test="$generating = 'sources'">
-            <xsl:apply-templates select="$iface" mode="startfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-            <xsl:call-template name="fileheader">
-                <xsl:with-param name="name" select="$filename"/>
-                <xsl:with-param name="class" select="substring(@name, 2)"/>
-                <xsl:with-param name="type" select="'code'"/>
-            </xsl:call-template>
-            <xsl:apply-templates select="$iface" mode="codeheader">
-                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-            </xsl:apply-templates>
+    <xsl:apply-templates select="$iface" mode="startfile">
+        <xsl:with-param name="file" select="$filename"/>
+    </xsl:apply-templates>
+    <xsl:call-template name="fileheader">
+        <xsl:with-param name="name" select="$filename"/>
+        <xsl:with-param name="class" select="substring(@name, 2)"/>
+        <xsl:with-param name="type" select="'code'"/>
+    </xsl:call-template>
+    <xsl:apply-templates select="$iface" mode="codeheader">
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+    </xsl:apply-templates>
 
-            <!-- interface attributes/methods (public) -->
-            <xsl:call-template name="emitInterfaceDefs">
-                <xsl:with-param name="iface" select="$iface"/>
-                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-            </xsl:call-template>
+    <!-- interface attributes/methods (public) -->
+    <xsl:call-template name="emitInterfaceDefs">
+        <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+    </xsl:call-template>
 
-            <!-- auxiliary methods (public) -->
-            <xsl:call-template name="emitAuxMethodDefs">
-                <xsl:with-param name="iface" select="$iface"/>
-            </xsl:call-template>
+    <!-- auxiliary methods (public) -->
+    <xsl:call-template name="emitAuxMethodDefs">
+        <xsl:with-param name="iface" select="$iface"/>
+    </xsl:call-template>
 
-            <xsl:apply-templates select="$iface" mode="codefooter">
-                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-            </xsl:apply-templates>
-            <xsl:apply-templates select="$iface" mode="endfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-        </xsl:when>
-        <xsl:when test="$generating = 'filelist'">
-            <xsl:apply-templates select="$iface" mode="listfile">
-                <xsl:with-param name="file" select="$filename"/>
-            </xsl:apply-templates>
-        </xsl:when>
-        <xsl:otherwise>
-            <xsl:message terminate="yes">
-                Did not expect generating='<xsl:value-of select="$generating"/>' in the emitCode template.
-            </xsl:message>
-        </xsl:otherwise>
-    </xsl:choose>
+    <xsl:apply-templates select="$iface" mode="codefooter">
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+    </xsl:apply-templates>
+    <xsl:apply-templates select="$iface" mode="endfile">
+        <xsl:with-param name="file" select="$filename"/>
+    </xsl:apply-templates>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -2400,7 +2395,7 @@ private:</xsl:text>
     <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
 
-    <xsl:if test="$generating != 'dtrace-probes'">
+    <xsl:if test="$generating != 'dtrace-probes'"> <!-- Paranoia -->
         <xsl:message terminate="yes">
             Did not expect generating='<xsl:value-of select="$generating"/>' in the emitDTraceProbes template.
         </xsl:message>

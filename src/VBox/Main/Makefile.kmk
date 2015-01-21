@@ -1184,7 +1184,11 @@ $(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
-$(VBoxAPIWrap_VBOX_KMK_FILE).ts +| $(VBoxAPIWrap_VBOX_KMK_FILE): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_VBOX_XSLT) $(VBOX_PATH_MAIN_SRC)/Makefile.kmk
+$(VBoxAPIWrap_VBOX_KMK_FILE).ts \
++| $(VBoxAPIWrap_VBOX_KMK_FILE): \
+		$(VBOX_XIDL_FILE) \
+		$(VBoxAPIWrap_VBOX_XSLT) \
+		$(VBOX_PATH_MAIN_SRC)/Makefile.kmk
 	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
