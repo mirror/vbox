@@ -508,15 +508,27 @@ public:
         </xsl:call-template>
     </xsl:variable>
 
-    <xsl:call-template name="emitHeader">
-        <xsl:with-param name="iface" select="$iface"/>
-        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-    </xsl:call-template>
+    <xsl:if test="$generating = 'headers' or $generating = 'filelist'">
+        <xsl:call-template name="emitHeader">
+            <xsl:with-param name="iface" select="$iface"/>
+            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+        </xsl:call-template>
+    </xsl:if>
 
-    <xsl:call-template name="emitCode">
-        <xsl:with-param name="iface" select="$iface"/>
-        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-    </xsl:call-template>
+    <xsl:if test="$generating = 'sources' or $generating = 'filelist'">
+        <xsl:call-template name="emitCode">
+            <xsl:with-param name="iface" select="$iface"/>
+            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+        </xsl:call-template>
+    </xsl:if>
+
+    <xsl:if test="$generating = 'dtrace-probes'">
+        <xsl:call-template name="emitDTraceProbes">
+            <xsl:with-param name="iface" select="$iface"/>
+            <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+        </xsl:call-template>
+    </xsl:if>
+
 </xsl:template>
 
 <xsl:template match="attribute/@type | param/@type" mode="public">
@@ -1169,10 +1181,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
         <xsl:text>
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(struct ', $topclass)"/> -->
-        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(void')"/>
-        <xsl:text> *a_pThis); */
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_ENTER('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this);
@@ -1212,15 +1220,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:if test="$attrbasename != 'MidlDoesNotLikEmptyInterfaces'">
         <xsl:text>
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
-        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(void *a_pThis')"/>
-        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
-            <xsl:with-param name="dir">out</xsl:with-param>
-        </xsl:apply-templates>
-        <xsl:text>); */
-            </xsl:text>
+        </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_GET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
         <xsl:apply-templates select="@type" mode="dtraceparamval">
@@ -1320,13 +1320,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:text>
 
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-        <!-- <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(struct ', $topclass, ' *a_pThis, ')"/>-->
-        <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(void *a_pThis, ')"/>
-        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
-            <xsl:with-param name="dir" select="'in'"/>
-        </xsl:apply-templates>
-        <xsl:text>); */
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $topclass, '_SET_', $dtraceattrname, '_ENTER('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, </xsl:text>
@@ -1360,15 +1353,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:text>);
 
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-        <!-- <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
-        <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(void *a_pThis')"/>
-        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
-            <xsl:with-param name="dir">in</xsl:with-param>
-        </xsl:apply-templates>
-        <xsl:text>); */
-            </xsl:text>
+        </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
         <xsl:text>this, hrc, 0 /*normal*/,</xsl:text>
         <xsl:apply-templates select="@type" mode="dtraceparamval">
@@ -1421,6 +1406,63 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+   Emit DTrace probes for the given attribute.
+  - - - - - - - - - - - - - - - - - - - - - - -->
+<xsl:template match="attribute" mode="dtrace-probes">
+    <xsl:param name="topclass"/>
+    <xsl:param name="dtracetopclass"/>
+    <xsl:param name="target"/>
+
+    <xsl:variable name="dtraceattrname">
+        <xsl:choose>
+            <xsl:when test="@dtracename">
+                <xsl:value-of select="@dtracename"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <!-- attrbasename -->
+                <xsl:call-template name="capitalize">
+                    <xsl:with-param name="str" select="@name"/>
+                </xsl:call-template>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+
+    <xsl:if test="@name != 'midlDoesNotLikEmptyInterfaces'">
+        <xsl:text>    probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(struct ', $topclass)"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__enter(void')"/>
+        <xsl:text> *a_pThis);
+    probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__get__', $dtraceattrname, '__return(void *a_pThis')"/>
+        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir">out</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>);
+</xsl:text>
+    </xsl:if>
+    <xsl:if test="(not(@readonly) or @readonly!='yes') and @name != 'midlDoesNotLikEmptyInterfaces'">
+        <xsl:text>    probe </xsl:text>
+        <!-- <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(struct ', $topclass, ' *a_pThis, ')"/>-->
+        <xsl:value-of select="concat($topclass, '__set__', $dtraceattrname, '__enter(void *a_pThis, ')"/>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'in'"/>
+        </xsl:apply-templates>
+        <xsl:text>);
+    probe </xsl:text>
+        <!-- <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(struct ', $topclass, ' *a_pThis')"/> -->
+        <xsl:value-of select="concat($dtracetopclass, '__set__', $dtraceattrname, '__return(void *a_pThis')"/>
+        <xsl:text>, uint32_t a_hrc, int32_t enmWhy, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir">in</xsl:with-param>
+        </xsl:apply-templates>
+        <xsl:text>);
+</xsl:text>
+    </xsl:if>
+</xsl:template>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   emit all attributes of an interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitAttributes">
@@ -1450,6 +1492,8 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
 </xsl:text>
         </xsl:when>
+        <xsl:when test="$pmode = 'dtrace-probes'">
+        </xsl:when>
         <xsl:otherwise>
             <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' properties', $G_sNewLine)"/>
         </xsl:otherwise>
@@ -1467,6 +1511,13 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:when test="$pmode='code'">
             <xsl:apply-templates select="$iface/attribute | $iface/if" mode="code">
+                <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                <xsl:with-param name="emitmode" select="'attribute'"/>
+            </xsl:apply-templates>
+        </xsl:when>
+        <xsl:when test="$pmode = 'dtrace-probes'">
+            <xsl:apply-templates select="$iface/attribute | $iface/if" mode="dtrace-probes">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'attribute'"/>
@@ -1639,6 +1690,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             </xsl:otherwise>
         </xsl:choose>
     </xsl:variable>
+    <xsl:variable name="dtracenamehack"> <!-- Ugly hack to deal with Session::assignMachine and similar. -->
+        <xsl:if test="name(..) = 'if'">
+            <xsl:value-of select="concat('__', ../@target)"/>
+        </xsl:if>
+    </xsl:variable>
 
     <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::', $methodbasename, '(')"/>
     <xsl:for-each select="param">
@@ -1701,21 +1757,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:for-each>
     <xsl:text>
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-    <xsl:variable name="dtracenamehack"> <!-- Ugly hack to deal with Session::assignMachine and similar. -->
-        <xsl:if test="name(..) = 'if'">
-            <xsl:value-of select="concat('__', ../@target)"/>
-        </xsl:if>
-    </xsl:variable>
-    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(struct ', $dtracetopclass, ' *a_pThis')"/> -->
-    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(void *a_pThis')"/>
-    <xsl:for-each select="param[@dir='in']">
-        <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
-            <xsl:with-param name="dir" select="'@dir'"/>
-        </xsl:apply-templates>
-    </xsl:for-each>
-    <xsl:text>); */
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_ENTER('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this</xsl:text>
@@ -1770,17 +1811,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>);
 
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
-        /* dtrace probe </xsl:text>
-    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, '__return(struct ', $dtracetopclass, ' *a_pThis')"/> -->
-    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__return(void *a_pThis')"/>
-    <xsl:text>, uint32_t a_hrc, int32_t enmWhy</xsl:text>
-    <xsl:for-each select="param">
-        <xsl:text>, </xsl:text>
-        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
-            <xsl:with-param name="dir" select="'@dir'"/>
-        </xsl:apply-templates>
-    </xsl:for-each>
-    <xsl:text>); */
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_RETURN('), $G_lowerCase, $G_upperCase)"/>
     <xsl:text>this, hrc, 0 /*normal*/</xsl:text>
@@ -1860,6 +1890,56 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:text>
 </xsl:template>
 
+<!--  - - - - - - - - - - - - - - - - - - - - - -
+  Emits the DTrace probes for a method.
+  - - - - - - - - - - - - - - - - - - - - - - -->
+<xsl:template match="method" mode="dtrace-probes">
+    <xsl:param name="topclass"/>
+    <xsl:param name="dtracetopclass"/>
+    <xsl:param name="target"/>
+
+    <xsl:variable name="dtracemethodname">
+        <xsl:choose>
+            <xsl:when test="@dtracename">
+                <xsl:value-of select="@dtracename"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="@name"/>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="dtracenamehack"> <!-- Ugly hack to deal with Session::assignMachine and similar. -->
+        <xsl:if test="name(..) = 'if'">
+            <xsl:value-of select="concat('__', ../@target)"/>
+        </xsl:if>
+    </xsl:variable>
+
+    <xsl:text>    probe </xsl:text>
+    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(struct ', $dtracetopclass, ' *a_pThis')"/> -->
+    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__enter(void *a_pThis')"/>
+    <xsl:for-each select="param[@dir='in']">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'@dir'"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+    probe </xsl:text>
+    <!-- <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, '__return(struct ', $dtracetopclass, ' *a_pThis')"/> -->
+    <xsl:value-of select="concat($dtracetopclass, '__', $dtracemethodname, $dtracenamehack, '__return(void *a_pThis')"/>
+    <xsl:text>, uint32_t a_hrc, int32_t enmWhy</xsl:text>
+    <xsl:for-each select="param">
+        <xsl:text>, </xsl:text>
+        <xsl:apply-templates select="@type" mode="dtraceparamdecl">
+            <xsl:with-param name="dir" select="'@dir'"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
+    <xsl:text>);
+</xsl:text>
+
+</xsl:template>
+
+
 <xsl:template name="emitIf">
     <xsl:param name="passmode"/>
     <xsl:param name="target"/>
@@ -1869,7 +1949,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
     <xsl:if test="($target = 'xpidl') or ($target = 'midl')">
         <xsl:choose>
-            <xsl:when test="$filelistonly=''">
+            <xsl:when test="$generating != 'filelist'">
                 <xsl:choose>
                     <xsl:when test="$passmode='public'">
                         <xsl:choose>
@@ -1912,6 +1992,25 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                             </xsl:when>
                             <xsl:when test="$emitmode='attribute'">
                                 <xsl:apply-templates select="attribute" mode="code">
+                                    <xsl:with-param name="target" select="$target"/>
+                                    <xsl:with-param name="topclass" select="$topclass"/>
+                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:otherwise/>
+                        </xsl:choose>
+                    </xsl:when>
+                    <xsl:when test="$passmode = 'dtrace-probes'">
+                        <xsl:choose>
+                            <xsl:when test="$emitmode = 'method'">
+                                <xsl:apply-templates select="method" mode="dtrace-probes">
+                                    <xsl:with-param name="target" select="$target"/>
+                                    <xsl:with-param name="topclass" select="$topclass"/>
+                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                                </xsl:apply-templates>
+                            </xsl:when>
+                            <xsl:when test="$emitmode = 'attribute'">
+                                <xsl:apply-templates select="attribute" mode="dtrace-probes">
                                     <xsl:with-param name="target" select="$target"/>
                                     <xsl:with-param name="topclass" select="$topclass"/>
                                     <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
@@ -1964,6 +2063,20 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:call-template>
 </xsl:template>
 
+<xsl:template match="if" mode="dtrace-probes">
+    <xsl:param name="topclass"/>
+    <xsl:param name="emitmode"/>
+    <xsl:param name="dtracetopclass"/>
+
+    <xsl:call-template name="emitIf">
+        <xsl:with-param name="passmode" select="'dtrace-probes'"/>
+        <xsl:with-param name="target" select="@target"/>
+        <xsl:with-param name="emitmode" select="$emitmode"/>
+        <xsl:with-param name="topclass" select="$topclass"/>
+        <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+    </xsl:call-template>
+</xsl:template>
+
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   emit all methods of an interface
   - - - - - - - - - - - - - - - - - - - - - - -->
@@ -1994,6 +2107,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
 </xsl:text>
         </xsl:when>
+        <xsl:when test="$pmode='dtrace-probes'"/>
         <xsl:otherwise>
             <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $iface/@name, ' methods', $G_sNewLine)"/>
         </xsl:otherwise>
@@ -2011,6 +2125,13 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:when test="$pmode='code'">
             <xsl:apply-templates select="$iface/method | $iface/if" mode="code">
+                <xsl:with-param name="topclass" select="$topclass"/>
+                <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                <xsl:with-param name="emitmode" select="'method'"/>
+            </xsl:apply-templates>
+        </xsl:when>
+        <xsl:when test="$pmode='dtrace-probes'">
+            <xsl:apply-templates select="$iface/method | $iface/if" mode="dtrace-probes">
                 <xsl:with-param name="topclass" select="$topclass"/>
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'method'"/>
@@ -2058,7 +2179,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.h')"/>
 
     <xsl:choose>
-        <xsl:when test="$filelistonly=''">
+        <xsl:when test="$generating = 'headers'">
             <xsl:apply-templates select="$iface" mode="startfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
@@ -2125,22 +2246,32 @@ private:</xsl:text>
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
         </xsl:when>
-        <xsl:otherwise>
+
+        <xsl:when test="$generating = 'filelist'">
             <xsl:apply-templates select="$iface" mode="listfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
+        </xsl:when>
+
+        <xsl:otherwise>
+            <xsl:message terminate="yes">
+                Did not expect generating='<xsl:value-of select="$generating"/>' in the emitHeader template.
+            </xsl:message>
         </xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  emit all attributes and methods definitions of an interface
+  emit all attributes and methods definitions (pmode=code) or probes (pmode=dtrace-probes) of an interface
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitInterfaceDefs">
     <xsl:param name="iface"/>
     <xsl:param name="addinterfaces"/>
+    <xsl:param name="pmode" select="'code'"/>
 
-    <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)', $G_sNewLine, $G_sNewLine)"/>
+    <xsl:if test="$pmode = 'code'">
+        <xsl:value-of select="concat('DEFINE_EMPTY_CTOR_DTOR(', substring($iface/@name, 2), 'Wrap)', $G_sNewLine, $G_sNewLine)"/>
+    </xsl:if>
 
     <xsl:variable name="dtracetopclass">
         <xsl:choose>
@@ -2154,7 +2285,7 @@ private:</xsl:text>
         <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
         <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-        <xsl:with-param name="pmode" select="'code'"/>
+        <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
@@ -2169,7 +2300,7 @@ private:</xsl:text>
             <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
             <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
             <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-            <xsl:with-param name="pmode" select="'code'"/>
+            <xsl:with-param name="pmode" select="$pmode"/>
         </xsl:call-template>
     </xsl:for-each>
 
@@ -2178,7 +2309,7 @@ private:</xsl:text>
         <xsl:with-param name="iface" select="$iface"/>
         <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
         <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-        <xsl:with-param name="pmode" select="'code'"/>
+        <xsl:with-param name="pmode" select="$pmode"/>
     </xsl:call-template>
 
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
@@ -2193,7 +2324,7 @@ private:</xsl:text>
             <xsl:with-param name="iface" select="$G_root//interface[@name=$addifname]"/>
             <xsl:with-param name="topclass" select="substring($iface/@name, 2)"/>
             <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-            <xsl:with-param name="pmode" select="'code'"/>
+            <xsl:with-param name="pmode" select="$pmode"/>
         </xsl:call-template>
     </xsl:for-each>
 </xsl:template>
@@ -2203,6 +2334,7 @@ private:</xsl:text>
   - - - - - - - - - - - - - - - - - - - - - - -->
 <xsl:template name="emitAuxMethodDefs">
     <xsl:param name="iface"/>
+    <xsl:param name="pmode" select="'code'"/>
     <!-- currently nothing, maybe later some generic FinalConstruct/... implementation -->
 </xsl:template>
 
@@ -2217,7 +2349,7 @@ private:</xsl:text>
     <xsl:variable name="filename" select="concat(substring(@name, 2), 'Wrap.cpp')"/>
 
     <xsl:choose>
-        <xsl:when test="$filelistonly=''">
+        <xsl:when test="$generating = 'sources'">
             <xsl:apply-templates select="$iface" mode="startfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
@@ -2248,12 +2380,45 @@ private:</xsl:text>
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
         </xsl:when>
-        <xsl:otherwise>
+        <xsl:when test="$generating = 'filelist'">
             <xsl:apply-templates select="$iface" mode="listfile">
                 <xsl:with-param name="file" select="$filename"/>
             </xsl:apply-templates>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:message terminate="yes">
+                Did not expect generating='<xsl:value-of select="$generating"/>' in the emitCode template.
+            </xsl:message>
         </xsl:otherwise>
     </xsl:choose>
+</xsl:template>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  emit the DTrace probes for an interface
+  - - - - - - - - - - - - - - - - - - - - - - -->
+<xsl:template name="emitDTraceProbes">
+    <xsl:param name="iface"/>
+    <xsl:param name="addinterfaces"/>
+
+    <xsl:if test="$generating != 'dtrace-probes'">
+        <xsl:message terminate="yes">
+            Did not expect generating='<xsl:value-of select="$generating"/>' in the emitDTraceProbes template.
+        </xsl:message>
+    </xsl:if>
+
+    <!-- interface attributes/methods (public) -->
+    <xsl:call-template name="emitInterfaceDefs">
+        <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+        <xsl:with-param name="pmode">dtrace-probes</xsl:with-param>
+    </xsl:call-template>
+
+    <!-- auxiliary methods (public) -->
+    <xsl:call-template name="emitAuxMethodDefs">
+        <xsl:with-param name="iface" select="$iface"/>
+        <xsl:with-param name="pmode">dtrace-probes</xsl:with-param>
+    </xsl:call-template>
+
 </xsl:template>
 
 
@@ -2299,19 +2464,23 @@ private:</xsl:text>
 
 <xsl:template match="/idl">
     <xsl:choose>
-        <xsl:when test="$filelistonly=''">
-        </xsl:when>
-        <xsl:otherwise>
+        <xsl:when test="$generating = 'filelist'">
             <xsl:value-of select="concat($filelistonly, ' := \', $G_sNewLine)"/>
-        </xsl:otherwise>
-    </xsl:choose>
-    <xsl:apply-templates/>
-    <xsl:choose>
-        <xsl:when test="$filelistonly=''">
+            <xsl:apply-templates/>
+        </xsl:when>
+        <xsl:when test="$generating = 'headers'">
+            <xsl:apply-templates/>
+        </xsl:when>
+        <xsl:when test="$generating = 'sources'">
+            <xsl:apply-templates/>
+        </xsl:when>
+        <xsl:when test="$generating = 'dtrace-probes'">
+            <xsl:apply-templates/>
         </xsl:when>
         <xsl:otherwise>
-            <xsl:text>
-</xsl:text>
+            <xsl:message terminate="yes">
+                Unknown string parameter value: generating='<xsl:value-of select="$generating"/>'
+            </xsl:message>
         </xsl:otherwise>
     </xsl:choose>
 </xsl:template>
