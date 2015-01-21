@@ -863,11 +863,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:when test="$type = 'wstring' or $type = '$unknown' or $type = 'uuid'">
             <xsl:text>yes</xsl:text>
         </xsl:when>
-        <xsl:when test="$type = 'boolean' or $type = 'long' or $type = 'long' or $type = 'long long'"/>
         <xsl:when test="../@safearray = 'yes'">
             <xsl:text>yes</xsl:text>
         </xsl:when>
         <!-- Micro optimizations: Postpone calculating $thatif. -->
+        <xsl:when test="$type = 'boolean' or $type = 'long' or $type = 'long' or $type = 'long long'"/>
         <xsl:otherwise>
             <xsl:variable name="thatif" select="//interface[@name=$type]"/>
             <xsl:if test="$thatif">
