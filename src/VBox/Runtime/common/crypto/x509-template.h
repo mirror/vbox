@@ -111,6 +111,23 @@ RTASN1TMPL_SEQ_OF(RTCRX509RELATIVEDISTINGUISHEDNAME, RTCrX509RelativeDistinguish
 #undef RTASN1TMPL_INT_NAME
 
 /*
+ * One X.509 OtherName.
+ * Note! This is simplified and might not work correctly for all types with
+ *       non-DER compatible encodings.
+ */
+#define RTASN1TMPL_TYPE         RTCRX509OTHERNAME
+#define RTASN1TMPL_EXT_NAME     RTCrX509OtherName
+#define RTASN1TMPL_INT_NAME     rtCrX509OtherName
+RTASN1TMPL_BEGIN_SEQCORE();
+RTASN1TMPL_MEMBER(              TypeId,             RTASN1OBJID,                    RTAsn1ObjId);
+RTASN1TMPL_MEMBER(              Value,              RTASN1DYNTYPE,                  RTAsn1DynType);
+RTASN1TMPL_END_SEQCORE();
+#undef RTASN1TMPL_TYPE
+#undef RTASN1TMPL_EXT_NAME
+#undef RTASN1TMPL_INT_NAME
+
+
+/*
  * One X.509 GeneralName.
  * Note! This is simplified and might not work correctly for all types with
  *       non-DER compatible encodings.
@@ -119,7 +136,7 @@ RTASN1TMPL_SEQ_OF(RTCRX509RELATIVEDISTINGUISHEDNAME, RTCrX509RelativeDistinguish
 #define RTASN1TMPL_EXT_NAME     RTCrX509GeneralName
 #define RTASN1TMPL_INT_NAME     rtCrX509GeneralName
 RTASN1TMPL_BEGIN_PCHOICE();
-RTASN1TMPL_PCHOICE_XTAG(        0, RTCRX509GENERALNAMECHOICE_OTHER_NAME,     u.pT0, CtxTag0, Other,         RTASN1DYNTYPE, RTAsn1DynType); /** @todo */
+RTASN1TMPL_PCHOICE_ITAG(        0, RTCRX509GENERALNAMECHOICE_OTHER_NAME,     u.pT0_OtherName, OtherName,    RTCRX509OTHERNAME, RTCrX509OtherName);
 RTASN1TMPL_PCHOICE_ITAG_CP(     1, RTCRX509GENERALNAMECHOICE_RFC822_NAME,    u.pT1_Rfc822,   Rfc822,        RTASN1STRING,  RTAsn1Ia5String);
 RTASN1TMPL_PCHOICE_ITAG_CP(     2, RTCRX509GENERALNAMECHOICE_DNS_NAME,       u.pT2_DnsName,  DnsType,       RTASN1STRING,  RTAsn1Ia5String);
 RTASN1TMPL_PCHOICE_XTAG(        3, RTCRX509GENERALNAMECHOICE_X400_ADDRESS,   u.pT3, CtxTag3, X400Address,   RTASN1DYNTYPE, RTAsn1DynType); /** @todo */
