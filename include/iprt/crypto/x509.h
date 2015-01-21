@@ -196,6 +196,24 @@ RTDECL(bool) RTCrX509Name_MatchWithString(PCRTCRX509NAME pThis, const char *pszS
 RTDECL(int) RTCrX509Name_FormatAsString(PCRTCRX509NAME pThis, char *pszBuf, size_t cbBuf, size_t *pcbActual);
 
 
+/**
+ * One X.509 OtherName (IPRT representation).
+ */
+typedef struct RTCRX509OTHERNAME
+{
+    /** The sequence core. */
+    RTASN1SEQUENCECORE                  SeqCore;
+    /** The name type identifier. */
+    RTASN1OBJID                         TypeId;
+    /** The name value (explicit tag 0). */
+    RTASN1DYNTYPE                       Value;
+} RTCRX509OTHERNAME;
+/** Pointer to a X.509 OtherName (IPRT representation). */
+typedef RTCRX509OTHERNAME *PRTCRX509OTHERNAME;
+/** Pointer to a const X.509 OtherName (IPRT representation). */
+typedef RTCRX509OTHERNAME const *PCRTCRX509OTHERNAME;
+RTASN1TYPE_STANDARD_PROTOTYPES(RTCRX509OTHERNAME, RTDECL, RTCrX509OtherName, SeqCore.Asn1Core);
+
 
 typedef enum RTCRX509GENERALNAMECHOICE
 {
@@ -230,14 +248,8 @@ typedef struct RTCRX509GENERALNAME
     /** The value union. */
     union
     {
-        /** Tag 0: Other.  */
-        struct
-        {
-            /** Context tag 0. */
-            RTASN1CONTEXTTAG0           CtxTag0;
-            /** User defined. */
-            RTASN1DYNTYPE               Other;
-        } *pT0;
+        /** Tag 0: Other Name.  */
+        PRTCRX509OTHERNAME              pT0_OtherName;
         /** Tag 1: RFC-822 Name.  */
         PRTASN1STRING                   pT1_Rfc822;
         /** Tag 2: DNS name.  */
