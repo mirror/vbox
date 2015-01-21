@@ -186,7 +186,7 @@ LIBRARIES += VBoxAPIWrap
 VBoxAPIWrap_TEMPLATE        = VBoxMainLib
 VBoxAPIWrap_SOURCES         = \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
-	$(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES))
+	$(VBOX_MAIN_APIWRAPPER_GEN_SRCS)
 VBoxAPIWrap_DEFS.win.x86   += _WIN32_WINNT=0x0500
 VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxAPIWrap_INCS           += \
@@ -205,8 +205,8 @@ VBoxAPIWrap_VBOX_XSLT       = \
 
 
 # This include file (generated at the bottom of this file), defines
-# VBOX_MAIN_APIWRAPPER_GEN_FILES and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
-VBoxAPIWrap_VBOX_KMK_FILE   = $(PATH_OUT)/vboxapiwrap.kmk
+# VBOX_MAIN_APIWRAPPER_GEN_SRCS and VBOX_MAIN_APIWRAPPER_GEN_HDRS.
+VBoxAPIWrap_VBOX_KMK_FILE = $(PATH_OUT)/vboxapiwrap.kmk
 include $(VBoxAPIWrap_VBOX_KMK_FILE)
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
@@ -1153,37 +1153,12 @@ javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile=>Makefile
 
-# Moved those rules to the end so that VBoxAPIWrap_0_OUTDIR can be expanded without $$ trickery.
-$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
-+| $(VBOX_MAIN_APIWRAPPER_GEN_HDRS): \
-		$(VBOX_XIDL_FILE) \
-               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
-		$(VBoxAPIWrap_VBOX_XSLT) \
-		$(VBOX_FILESPLIT) \
-		| $$(dir $$@)
-	$(call MSG_L1,Generating C++ Server API wrapper header files from XIDL)
-	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
-		--stringparam generating "headers" \
-		--stringparam filelistonly "" \
-		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
-	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
+#
+# Rules associated with VBoxAPIWrap (in typical invocation order).
+# We keep them down here to simplify the use of VBoxAPIWrap_0_OUTDIR.
+#
 
-$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources \
-+| $(filter %.cpp,$(VBOX_MAIN_APIWRAPPER_GEN_FILES)): \
-		$(VBOX_XIDL_FILE) \
-               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
-		$(VBoxAPIWrap_VBOX_XSLT) \
-		$(VBOX_FILESPLIT) \
-		| $$(dir $$@)
-	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
-	$(QUIET)$(RM) -f $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_FILES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
-		--stringparam generating "sources" \
-		--stringparam filelistonly "" \
-		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
-	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
-
+# Generate a make include file which lists the wrapper header and source files.
 $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 +| $(VBoxAPIWrap_VBOX_KMK_FILE): \
 		$(VBOX_XIDL_FILE) \
@@ -1197,10 +1172,29 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 		--stringparam filelistonly "VBOX_MAIN_APIWRAPPER_GEN_FILES" \
 		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
 	$(QUIET)$(APPEND) -n "$@" "" "" \
-		'VBOX_MAIN_APIWRAPPER_GEN_FILES := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))' \
-		'VBOX_MAIN_APIWRAPPER_GEN_HDRS := $$(filter %.h,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES))'
+		'VBOX_MAIN_APIWRAPPER_GEN_SRCS  := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(filter %.cpp,$$(VBOX_MAIN_APIWRAPPER_GEN_FILES)))' \
+		'VBOX_MAIN_APIWRAPPER_GEN_HDRS  := $$(addprefix $$(VBOX_MAIN_APIWRAPPER_DIR)/,$$(filter %.h,  $$(VBOX_MAIN_APIWRAPPER_GEN_FILES)))' \
+               'VBOX_MAIN_APIWRAPPER_GEN_FILES := ' \
+		""
 	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_VBOX_KMK_FILE)
 
+# Generate the header files for the wrappers.
+$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
++| $(VBOX_MAIN_APIWRAPPER_GEN_HDRS): \
+		$(VBOX_XIDL_FILE) \
+               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
+		$(VBoxAPIWrap_VBOX_XSLT) \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_L1,Generating C++ Server API wrapper header files from XIDL)
+	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_HDRS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam generating "headers" \
+		--stringparam filelistonly "" \
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
+
+# Generate the DTrace probes for the wrappers and combine them with handcoded probes.
 $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 +| $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d: \
 		$(VBOX_XIDL_FILE) \
@@ -1214,18 +1208,40 @@ $(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 		--stringparam generating "dtrace-probes" \
 		--stringparam filelistonly "" \
 		-o "$@" $(VBoxAPIWrap_VBOX_XSLT) $<
-	$(QUIET)$(SED) -e '' -o $@.tmp \
+	$(QUIET)$(SED) -e '' -o "$@.tmp" \
 		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-start.d" \
-		"$@.tmp" \
+		"$@" \
 		"$(VBOX_PATH_MAIN_SRC)/src-all/VBoxAPI-end.d"
 	$(QUIET)$(MV) -- "$@.tmp" "$@"
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d"
 
+# Generate the wrapper source files.
+$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources \
++| $(VBOX_MAIN_APIWRAPPER_GEN_SRCS): \
+		$(VBOX_XIDL_FILE) \
+               $(VBOX_PATH_MAIN_SRC)/idl/typemap-shared.inc.xsl \
+		$(VBoxAPIWrap_VBOX_XSLT) \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
+	$(QUIET)$(RM) -f -- $(filter-out $(VBOX_MAIN_APIWRAPPER_GEN_SRCS), $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp))
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
+		--stringparam generating "sources" \
+		--stringparam filelistonly "" \
+		-o $@ $(VBoxAPIWrap_VBOX_XSLT) $<
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
 
+
+#
+# NLS stuff.
+#
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
 	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_VBOX_HEADERS) -ts $(VBoxC_VBOX_TRANSLATIONS)
 
+#
+# Most likely outdated stuff.
+#
 testconverter:: $(VBOX_USER_HOME)/VirtualBox.xml
 	$(call MSG_TOOL,xsltproc,Test Settings Converter,$<,$(VBOX_USER_HOME)/VirtualBox.xml.test)
 	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_USER_HOME)/VirtualBox.xml.test xml/SettingsConverter.xsl $<
