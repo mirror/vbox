@@ -34,6 +34,8 @@
 <xsl:variable name="G_setSuppressedInterfaces"
               select="//interface[@wsmap='suppress']" />
 
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
 <xsl:template name="emitOutParam">
   <xsl:param name="type" />
   <xsl:param name="value" />
@@ -171,7 +173,7 @@
       <xsl:when test="($extends = '$unknown') or ($extends = '$errorinfo')">
          <xsl:value-of select="concat('class ', $ifname, ' extends VBox_ManagedObject&#10;{&#10;')" />
       </xsl:when>
-      <xsl:when test="//interface[@name=$extends]">
+      <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
          <xsl:value-of select="concat('class ', $ifname, ' extends ', $extends, '&#10;{&#10;')" />
       </xsl:when>
    </xsl:choose>
