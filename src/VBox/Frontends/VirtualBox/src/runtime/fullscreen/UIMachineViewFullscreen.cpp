@@ -19,16 +19,16 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
 # include <QApplication>
 # include <QDesktopWidget>
 # include <QMainWindow>
 # include <QTimer>
 # ifdef Q_WS_MAC
 #  include <QMenuBar>
-# endif
+# endif /* Q_WS_MAC */
 
-/* Local includes */
+/* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UISession.h"
 # include "UIActionPoolRuntime.h"
@@ -37,12 +37,15 @@
 # include "UIMachineViewFullscreen.h"
 # include "UIFrameBuffer.h"
 # include "UIExtraDataManager.h"
+# ifdef Q_WS_MAC
+#  include "VBoxUtils-darwin.h"
+# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef Q_WS_X11
 # include <limits.h>
-#endif
+#endif /* Q_WS_X11 */
 
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
@@ -148,8 +151,22 @@ void UIMachineViewFullscreen::adjustGuestScreenSize()
     const QSize workingAreaSize = workingArea().size();
     /* Acquire frame-buffer size: */
     QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
+
     /* Take the scale-factor into account: */
-    frameBufferSize *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        frameBufferSize = QSize(frameBufferSize.width() * dScaleFactor, frameBufferSize.height() * dScaleFactor);
+
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            frameBufferSize = QSize(frameBufferSize.width() / dBackingScaleFactor, frameBufferSize.height() / dBackingScaleFactor);
+    }
+#endif /* Q_WS_MAC */
+
     /* Check if we should adjust guest-screen to new size: */
     if (frameBuffer()->isAutoEnabled() ||
         frameBufferSize != workingAreaSize)

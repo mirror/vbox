@@ -61,7 +61,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 /* Other VBox includes: */
 #include <iprt/asm.h>
 #include <VBox/VBoxOGL.h>
@@ -192,8 +191,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     /* If this slot is invoked directly then use the passed size otherwise get
      * the available size for the guest display. We assume here that centralWidget()
      * contains this view only and gives it all available space: */
-    QSize newSize(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
-    AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
+    QSize size(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
+    AssertMsg(size.isValid(), ("Size should be valid!\n"));
 
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
@@ -201,23 +200,25 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     {
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
-            newSize *= dBackingScaleFactor;
+            size = QSize(size.width() * dBackingScaleFactor, size.height() * dBackingScaleFactor);
     }
 #endif /* Q_WS_MAC */
 
     /* Take the scale-factor into account: */
-    newSize /= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        size = QSize(size.width() / dScaleFactor, size.height() / dScaleFactor);
 
     /* Expand current limitations: */
-    setMaxGuestSize(newSize);
+    setMaxGuestSize(size);
 
     /* Send new size-hint to the guest: */
     LogRel(("UIMachineView::sltPerformGuestResize: "
             "Sending guest size-hint to screen %d as %dx%d\n",
-            (int)screenId(), newSize.width(), newSize.height()));
+            (int)screenId(), size.width(), size.height()));
     display().SetVideoModeHint(screenId(),
                                uisession()->isScreenVisible(screenId()),
-                               false, 0, 0, newSize.width(), newSize.height(), 0);
+                               false, 0, 0, size.width(), size.height(), 0);
 
     /* And track whether we have a "normal" or "fullscreen"/"seamless" size-hint sent: */
     gEDataManager->markLastGuestSizeHintAsFullScreen(m_uScreenId, isFullscreenOrSeamless(), vboxGlobal().managedVMUuid());
@@ -323,8 +324,10 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
         {
-            rect.moveTo(rect.topLeft() / dBackingScaleFactor - QPoint(1, 1));
-            rect.setSize(rect.size() / dBackingScaleFactor + QSize(2, 2));
+            rect.moveTo(rect.x() / dBackingScaleFactor - 1,
+                        rect.y() / dBackingScaleFactor - 1);
+            rect.setSize(QSize(rect.width()  / dBackingScaleFactor + 2,
+                               rect.height() / dBackingScaleFactor + 2));
         }
     }
 #endif /* Q_WS_MAC */
@@ -740,18 +743,20 @@ QSize UIMachineView::sizeHint() const
     /* Get frame-buffer size-hint: */
     QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
+
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
-            size /= dBackingScaleFactor;
+            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
     }
 #endif /* Q_WS_MAC */
-
-    /* Take the scale-factor into account: */
-    size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // TODO: Fix all DEBUGGER stuff!
@@ -833,18 +838,20 @@ QSize UIMachineView::guestSizeHint()
     if (!size.isValid())
         size = QSize(800, 600);
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
+
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
-            size /= dBackingScaleFactor;
+            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
     }
 #endif /* Q_WS_MAC */
-
-    /* Take the scale-factor into account: */
-    size *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
     /* Return size: */
     return size;
@@ -969,18 +976,20 @@ void UIMachineView::updateSliders()
 
     QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
 
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        v = QSize(v.width() * dScaleFactor, v.height() * dScaleFactor);
+
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
-            v /= dBackingScaleFactor;
+            v = QSize(v.width() / dBackingScaleFactor, v.height() / dBackingScaleFactor);
     }
 #endif /* Q_WS_MAC */
-
-    /* Take the scale-factor into account: */
-    v *= gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
 
     /* No scroll bars needed: */
     if (m.expandedTo(v) == m)
