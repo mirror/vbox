@@ -43,6 +43,18 @@
 
 <xsl:strip-space elements="*"/>
 
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of types.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
@@ -114,7 +126,8 @@
 <xsl:template name="endFile">
   <xsl:param name="file" />
   <xsl:if test="$filelistonly=''">
-    <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;&#10;')" />
+    <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;')" />
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
   </xsl:if>
 </xsl:template>
 
@@ -270,13 +283,13 @@
   <xsl:param name="identifier"/>
 
   <xsl:choose>
-    <xsl:when test="//enum[@name=$context]/const[@name=$identifier]">
+    <xsl:when test="key('G_keyEnumsByName', $context)/const[@name=$identifier]">
       <xsl:value-of select="$identifier"/>
     </xsl:when>
-    <xsl:when test="//interface[@name=$context]/method[@name=$identifier]">
+    <xsl:when test="key('G_keyInterfacesByName', $context)/method[@name=$identifier]">
       <xsl:value-of select="$identifier"/>
       <xsl:text>(</xsl:text>
-      <xsl:for-each select="//interface[@name=$context]/method[@name=$identifier]/param">
+      <xsl:for-each select="key('G_keyInterfacesByName', $context)/method[@name=$identifier]/param">
         <xsl:if test="@dir!='return'">
           <xsl:if test="position() > 1">
             <xsl:text>,</xsl:text>
@@ -297,7 +310,7 @@
       </xsl:for-each>
       <xsl:text>)</xsl:text>
     </xsl:when>
-    <xsl:when test="//interface[@name=$context]/attribute[@name=$identifier]">
+    <xsl:when test="key('G_keyInterfacesByName', $context)/attribute[@name=$identifier]">
       <xsl:call-template name="makeGetterName">
         <xsl:with-param name="attrname" select="$identifier" />
       </xsl:call-template>
@@ -724,10 +737,10 @@
   <xsl:param name="collPrefix" />
 
   <xsl:choose>
-    <xsl:when test="//enum[@name=$name] or //enum[@name=$origname]">
+    <xsl:when test="(count(key('G_keyEnumsByName', $name)) > 0) or (count(key('G_keyEnumsByName', $origname)) > 0)">
       <xsl:value-of select="concat($G_virtualBoxPackage, concat('.', $name))" />
     </xsl:when>
-    <xsl:when test="//interface[@name=$name]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $name)) > 0">
       <xsl:value-of select="concat($G_virtualBoxPackage, concat('.', $name))" />
     </xsl:when>
     <xsl:otherwise>
@@ -853,19 +866,19 @@
           <xsl:text>String</xsl:text>
         </xsl:when>
 
-        <xsl:when test="//interface[@name=$type]/@wsmap='struct'">
+        <xsl:when test="key('G_keyInterfacesByName', $type)/@wsmap='struct'">
           <xsl:call-template name="wrappedName">
             <xsl:with-param name="ifname" select="$type" />
           </xsl:call-template>
         </xsl:when>
 
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <xsl:call-template name="wrappedName">
             <xsl:with-param name="ifname" select="$type" />
           </xsl:call-template>
         </xsl:when>
 
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
           <xsl:text>long</xsl:text>
         </xsl:when>
 
@@ -896,15 +909,15 @@
           <xsl:text>String</xsl:text>
         </xsl:when>
 
-        <xsl:when test="//interface[@name=$type]/@wsmap='managed'">
+        <xsl:when test="key('G_keyInterfacesByName', $type)/@wsmap='managed'">
           <xsl:text>String</xsl:text>
         </xsl:when>
 
-        <xsl:when test="//interface[@name=$type]/@wsmap='struct'">
+        <xsl:when test="key('G_keyInterfacesByName', $type)/@wsmap='struct'">
           <xsl:value-of select="concat($G_virtualBoxPackageCom, '.', $type)" />
         </xsl:when>
 
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
           <xsl:value-of select="concat($G_virtualBoxPackageCom, '.', $type)" />
         </xsl:when>
 
@@ -972,7 +985,7 @@
   <xsl:param name="idltype"/>
   <xsl:param name="safearray"/>
   <xsl:variable name="isstruct"
-                select="//interface[@name=$idltype]/@wsmap='struct'" />
+                select="key('G_keyInterfacesByName', $idltype)/@wsmap='struct'" />
 
   <xsl:variable name="gluetype">
     <xsl:call-template name="typeIdl2Glue">
@@ -992,7 +1005,7 @@
   </xsl:variable>
 
   <xsl:choose>
-    <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
+    <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:variable name="elembacktype">
@@ -1010,7 +1023,7 @@
       </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$idltype]">
+    <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:variable name="elembacktype">
@@ -1075,11 +1088,11 @@
       </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
+    <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
       <xsl:value-of select="concat('Helper.wrapDispatch(', $gluetype, '.class, ', $value, '.getDispatch())')"/>
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$idltype]">
+    <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
       <xsl:value-of select="concat($gluetype, '.fromValue(', $value, '.getInt())')"/>
     </xsl:when>
 
@@ -1135,7 +1148,7 @@
   <xsl:param name="safearray"/>
 
   <xsl:variable name="isstruct"
-                select="//interface[@name=$idltype]/@wsmap='struct'" />
+                select="key('G_keyInterfacesByName', $idltype)/@wsmap='struct'" />
 
   <xsl:variable name="gluetype">
     <xsl:call-template name="typeIdl2Glue">
@@ -1164,10 +1177,10 @@
         <xsl:when test="$isstruct">
           <xsl:value-of select="concat('Helper.wrap2(', $elemgluetype, '.class, ', $elembacktype, '.class, port, ', $value, ')')"/>
         </xsl:when>
-        <xsl:when test="//enum[@name=$idltype]">
+        <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
           <xsl:value-of select="concat('Helper.convertEnums(', $elembacktype, '.class, ', $elemgluetype, '.class, ', $value, ')')"/>
         </xsl:when>
-        <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
+        <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
           <xsl:value-of select="concat('Helper.wrap(', $elemgluetype, '.class, port, ', $value, ')')"/>
         </xsl:when>
         <xsl:when test="$idltype='octet'">
@@ -1181,7 +1194,7 @@
 
     <xsl:otherwise>
       <xsl:choose>
-        <xsl:when test="//enum[@name=$idltype]">
+        <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
           <xsl:value-of select="concat($gluetype, '.fromValue(', $value, '.value())')"/>
         </xsl:when>
         <xsl:when test="$idltype='boolean'">
@@ -1214,7 +1227,7 @@
         <xsl:when test="$isstruct">
           <xsl:value-of select="concat('(', $value, ' != null) ? new ', $gluetype, '(', $value, ', port) : null')" />
         </xsl:when>
-        <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
+        <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
           <!-- if the MOR string is empty, that means NULL, so return NULL instead of an object then -->
           <xsl:value-of select="concat('(', $value, '.length() > 0) ? new ', $gluetype, '(', $value, ', port) : null')" />
         </xsl:when>
@@ -1268,7 +1281,7 @@
   <xsl:param name="idltype"/>
   <xsl:param name="safearray"/>
   <xsl:variable name="isstruct"
-                select="//interface[@name=$idltype]/@wsmap='struct'" />
+                select="key('G_keyInterfacesByName', $idltype)/@wsmap='struct'" />
   <xsl:variable name="gluetype">
     <xsl:call-template name="typeIdl2Glue">
       <xsl:with-param name="type" select="$idltype" />
@@ -1294,7 +1307,7 @@
   </xsl:variable>
 
   <xsl:choose>
-    <xsl:when test="//interface[@name=$idltype]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:variable name="elembacktype">
@@ -1323,7 +1336,7 @@
       </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$idltype]">
+    <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:value-of select="concat('Helper.unwrapEnum(', $elemgluetype, '.class, ', $value, ')')"/>
@@ -1400,7 +1413,7 @@
   </xsl:variable>
 
   <xsl:choose>
-    <xsl:when test="//interface[@name=$idltype]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:variable name="elembacktype">
@@ -1432,7 +1445,7 @@
       </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$idltype]">
+    <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:value-of select="concat('Helper.unwrapEnum(', $elemgluetype, '.class, ', $value, ')')"/>
@@ -1517,7 +1530,7 @@
   <xsl:param name="idltype"/>
   <xsl:param name="safearray"/>
   <xsl:variable name="isstruct"
-                select="//interface[@name=$idltype]/@wsmap='struct'" />
+                select="key('G_keyInterfacesByName', $idltype)/@wsmap='struct'" />
 
   <xsl:variable name="gluetype">
     <xsl:call-template name="typeIdl2Glue">
@@ -1537,7 +1550,7 @@
   </xsl:variable>
 
   <xsl:choose>
-    <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
+    <xsl:when test="$idltype = '$unknown' or (count(key('G_keyInterfacesByName', $idltype)) > 0)">
       <xsl:choose>
         <xsl:when test="@safearray='yes'">
           <xsl:value-of select="concat('Helper.unwrap(', $value, ')')"/>
@@ -1548,7 +1561,7 @@
       </xsl:choose>
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$idltype]">
+    <xsl:when test="count(key('G_keyEnumsByName', $idltype)) > 0">
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
           <xsl:variable name="elembacktype">
@@ -1705,7 +1718,7 @@
         </xsl:call-template>
       </xsl:variable>
       <xsl:variable name="portArg">
-        <xsl:if test="not(//interface[@name=$ifname]/@wsmap='global')">
+        <xsl:if test="not(key('G_keyInterfacesByName', $ifname)/@wsmap='global')">
           <xsl:text>obj</xsl:text>
         </xsl:if>
       </xsl:variable>
@@ -2535,13 +2548,13 @@
       </xsl:when>
 
       <xsl:otherwise>
-        <xsl:variable name="extends" select="//interface[@name=$ifname]/@extends" />
+        <xsl:variable name="extends" select="key('G_keyInterfacesByName', $ifname)/@extends" />
         <xsl:choose>
           <xsl:when test="($extends = '$unknown') or ($extends = '$errorinfo')">
             <xsl:value-of select="concat('public class ', $ifname, ' extends IUnknown&#10;')" />
             <xsl:text>{&#10;&#10;</xsl:text>
           </xsl:when>
-          <xsl:when test="//interface[@name=$extends]">
+          <xsl:when test="count(key('G_keyInterfacesByName', $extends)) > 0">
             <xsl:value-of select="concat('public class ', $ifname, ' extends ', $extends, '&#10;')" />
             <xsl:text>{&#10;&#10;</xsl:text>
           </xsl:when>
