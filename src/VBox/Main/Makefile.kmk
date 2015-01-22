@@ -197,7 +197,8 @@ VBoxAPIWrap_CLEAN           = \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d.ts \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-headers \
-	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd
 
 # Two VBox variables used here and/or in the rules generating wrappers.
 VBoxAPIWrap_VBOX_XSLT       = \
