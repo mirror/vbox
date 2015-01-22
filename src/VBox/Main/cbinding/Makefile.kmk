@@ -63,6 +63,7 @@ $$(CAPIHeaders_0_OUTDIR)/VBoxCAPIGlue.h: \
 
 $$(CAPIHeaders_0_OUTDIR)/VBoxCAPI.h: \
 		$(PATH_SUB_CURRENT)/capiidl.xsl \
+		$(PATH_SUB_CURRENT)/../idl/typemap-shared.inc.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,CAPIHeaders,$<,$@)
