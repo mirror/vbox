@@ -627,7 +627,7 @@ $(VBOXWEB_WS_PERL): $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(REDIRECT) -C $(@D) -- $(VBOX_STUBMAKER) file://$(VBOXWEBSERVICE_WSDL)
 # Ugly, ugly, ugly, make me right once
-	$(QUIET)$(SED) -e "s+http://www.virtualbox.org/Service+http://www.virtualbox.org/+" < $(VBOXWEB_WS_PERL) > $(VBOXWEB_WS_PERL).tmp
+	$(QUIET)$(SED) -e "s+http://www.virtualbox.org/Service+http://www.virtualbox.org/+" --output $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
 	$(QUIET)$(MV) $(VBOXWEB_WS_PERL).tmp $(VBOXWEB_WS_PERL)
 	$(QUIET)$(APPEND) $@ ''
 
