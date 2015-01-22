@@ -131,75 +131,63 @@
   </xsl:if>
 </xsl:template>
 
-
-<xsl:template name="string-replace">
-  <xsl:param name="haystack"/>
-  <xsl:param name="needle"/>
-  <xsl:param name="replacement"/>
-  <xsl:param name="onlyfirst" select="false"/>
-  <xsl:choose>
-    <xsl:when test="contains($haystack, $needle)">
-      <xsl:value-of select="substring-before($haystack, $needle)"/>
-      <xsl:value-of select="$replacement"/>
-      <xsl:choose>
-        <xsl:when test="$onlyfirst = 'true'">
-          <xsl:value-of select="substring-after($haystack, $needle)"/>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:call-template name="string-replace">
-            <xsl:with-param name="haystack" select="substring-after($haystack, $needle)"/>
-            <xsl:with-param name="needle" select="$needle"/>
-            <xsl:with-param name="replacement" select="$replacement"/>
-          </xsl:call-template>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:value-of select="$haystack"/>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
-
-<xsl:template name="string-trim">
+<!-- strip-and-normalize-desc
+ Removes leading and trailing white space on each line in the given text.
+ -->
+<xsl:template name="strip-and-normalize-desc">
   <xsl:param name="text"/>
 
-  <xsl:variable name="begin" select="substring($text, 1, 1)"/>
+  <!-- Strip the whole string first so we won't leave trailing new line chars behind. -->
+  <xsl:variable name="sStrippedText">
+    <xsl:call-template name="strip-string">
+      <xsl:with-param name="text" select="$text"/>
+    </xsl:call-template>
+  </xsl:variable>
+
   <xsl:choose>
-    <xsl:when test="$begin = ' ' or $begin = '&#10;' or $begin = '&#13;'">
-      <xsl:call-template name="string-trim">
-        <xsl:with-param name="text" select="substring($text, 2)"/>
+    <!-- If there are multiple lines, strip them one by one on a recursive fasion. -->
+    <xsl:when test="contains($sStrippedText, '&#10;')">
+      <xsl:call-template name="strip-string-right">
+        <xsl:with-param name="text" select="substring-before($sStrippedText, '&#10;')"/>
+      </xsl:call-template>
+      <xsl:value-of select="'&#10;'"/>
+      <xsl:call-template name="strip-and-normalize-desc-recursive">
+        <xsl:with-param name="text" select="substring-after($sStrippedText, '&#10;')"/>
       </xsl:call-template>
     </xsl:when>
+
+    <!-- Single line, we're done. -->
     <xsl:otherwise>
-      <xsl:variable name="end" select="substring($text, string-length($text), 1)"/>
-      <xsl:choose>
-        <xsl:when test="$end = ' ' or $end = '&#10;' or $end = '&#13;'">
-          <xsl:call-template name="string-trim">
-            <xsl:with-param name="text" select="substring($text, 1, string-length($text) - 1)"/>
-          </xsl:call-template>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:choose>
-            <xsl:when test="contains($text, '&#10; ')">
-              <xsl:variable name="tmptext">
-                <xsl:call-template name="string-replace">
-                  <xsl:with-param name="haystack" select="$text"/>
-                  <xsl:with-param name="needle" select="'&#10; '"/>
-                  <xsl:with-param name="replacement" select="'&#10;'"/>
-                </xsl:call-template>
-              </xsl:variable>
-              <xsl:call-template name="string-trim">
-                <xsl:with-param name="text" select="$tmptext"/>
-              </xsl:call-template>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:value-of select="$text"/>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:otherwise>
-      </xsl:choose>
+      <xsl:value-of select="$sStrippedText"/>
     </xsl:otherwise>
   </xsl:choose>
+
+</xsl:template>
+
+<!-- Internal worker for strip-and-normalize-desc, don't use. -->
+<xsl:template name="strip-and-normalize-desc-recursive">
+  <xsl:param name="text"/>
+
+  <xsl:choose>
+    <!-- If there are multiple lines, strip them one by one on a recursive fasion. -->
+    <xsl:when test="contains($text, '&#10;')">
+      <xsl:call-template name="strip-string">
+        <xsl:with-param name="text" select="substring-before($text, '&#10;')"/>
+      </xsl:call-template>
+      <xsl:value-of select="'&#10;'"/>
+      <xsl:call-template name="strip-and-normalize-desc-recursive">
+        <xsl:with-param name="text" select="substring-after($text, '&#10;')"/>
+      </xsl:call-template>
+    </xsl:when>
+
+    <!-- Single line: Left strip it. -->
+    <xsl:otherwise>
+      <xsl:call-template name="strip-string-left">
+        <xsl:with-param name="text" select="$text"/>
+      </xsl:call-template>
+    </xsl:otherwise>
+  </xsl:choose>
+
 </xsl:template>
 
 <!-- descriptions -->
@@ -255,7 +243,7 @@
   </xsl:variable>
 
   <xsl:variable name="rep7">
-    <xsl:call-template name="string-trim">
+    <xsl:call-template name="strip-and-normalize-desc">
       <xsl:with-param name="text" select="$rep6"/>
     </xsl:call-template>
   </xsl:variable>
@@ -335,11 +323,10 @@
 
 <xsl:template match="link" mode="middle">
   <xsl:variable name="linktext">
-    <xsl:call-template name="string-replace">
+    <xsl:call-template name="string-replace-first">
       <xsl:with-param name="haystack" select="@to"/>
       <xsl:with-param name="needle" select="'_'"/>
       <xsl:with-param name="replacement" select="'#'"/>
-      <xsl:with-param name="onlyfirst" select="'true'"/>
     </xsl:call-template>
   </xsl:variable>
   <xsl:choose>
@@ -429,11 +416,16 @@
  * common comment prologue (handles group IDs)
 -->
 <xsl:template match="desc" mode="begin">
+  <!-- TODO,XXX: This is a hot spot. The whole $id crap isn't working though,
+                 so it's been disabled to save precious time. -->
+<!--
   <xsl:param name="id" select="@group | preceding::descGroup[1]/@id"/>
   <xsl:text>&#10;/**&#10;</xsl:text>
   <xsl:if test="$id">
     <xsl:value-of select="concat(' @ingroup ', $id, '&#10;')"/>
   </xsl:if>
+-->
+  <xsl:value-of select="concat($G_sNewLine, '/**', $G_sNewLine)"/>
 </xsl:template>
 
 <!--
