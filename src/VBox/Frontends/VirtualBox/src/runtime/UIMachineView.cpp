@@ -941,22 +941,43 @@ void UIMachineView::updateScaledPausePixmap()
 
 void UIMachineView::updateSliders()
 {
-    QSize p = viewport()->size();
-    QSize m = maximumViewportSize();
-
-    QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
+    /* Get current viewport size: */
+    QSize curViewportSize = viewport()->size();
+    /* Get maximum viewport size: */
+    const QSize maxViewportSize = maximumViewportSize();
+    /* Get current frame-buffer size: */
+    QSize frameBufferSize = QSize(frameBuffer()->width(), frameBuffer()->height());
 
     /* Take the scale-factor(s) into account: */
-    v = scaledForward(v);
+    frameBufferSize = scaledForward(frameBufferSize);
 
-    /* No scroll bars needed: */
-    if (m.expandedTo(v) == m)
-        p = m;
+    /* If maximum viewport size can cover whole frame-buffer => no scroll-bars required: */
+    if (maxViewportSize.expandedTo(frameBufferSize) == maxViewportSize)
+        curViewportSize = maxViewportSize;
 
-    horizontalScrollBar()->setRange(0, v.width() - p.width());
-    verticalScrollBar()->setRange(0, v.height() - p.height());
-    horizontalScrollBar()->setPageStep(p.width());
-    verticalScrollBar()->setPageStep(p.height());
+    /* What length we want scroll-bars of? */
+    int xRange = frameBufferSize.width()  - curViewportSize.width();
+    int yRange = frameBufferSize.height() - curViewportSize.height();
+
+#ifdef Q_WS_MAC
+    /* Due to Qt 4.x doesn't supports HiDPI directly
+     * we should take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+        {
+            xRange *= dBackingScaleFactor;
+            yRange *= dBackingScaleFactor;
+        }
+    }
+#endif /* Q_WS_MAC */
+
+    /* Configure scroll-bars: */
+    horizontalScrollBar()->setRange(0, xRange);
+    verticalScrollBar()->setRange(0, yRange);
+    horizontalScrollBar()->setPageStep(curViewportSize.width());
+    verticalScrollBar()->setPageStep(curViewportSize.height());
 }
 
 QPoint UIMachineView::viewportToContents(const QPoint &vp) const
