@@ -1165,7 +1165,7 @@ static IO_READ_PROTO (dsp_read)
         retval = (!s->out_data_len || s->highspeed) ? 0 : 0x80;
         if (s->mixer_regs[0x82] & 1) {
             ack = 1;
-            s->mixer_regs[0x82] &= 1;
+            s->mixer_regs[0x82] &= ~1;
 #ifndef VBOX
             qemu_irq_lower (s->pic[s->irq]);
 #else
@@ -1178,7 +1178,7 @@ static IO_READ_PROTO (dsp_read)
         retval = 0xff;
         if (s->mixer_regs[0x82] & 2) {
             ack = 1;
-            s->mixer_regs[0x82] &= 2;
+            s->mixer_regs[0x82] &= ~2;
 #ifndef VBOX
             qemu_irq_lower (s->pic[s->irq]);
 #else
