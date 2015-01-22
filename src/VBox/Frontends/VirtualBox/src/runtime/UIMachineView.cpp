@@ -903,10 +903,12 @@ void UIMachineView::takePausePixmapLive()
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
 #ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust-backing-scale-factor if necessary: */
     const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
     if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+# endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* Q_WS_MAC */
 
     /* Update scaled pause pixmap: */
@@ -938,10 +940,12 @@ void UIMachineView::takePausePixmapSnapshot()
     /* Finally copy the screen-shot to pause-pixmap: */
     m_pausePixmap = QPixmap::fromImage(screenShot);
 #ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust-backing-scale-factor if necessary: */
     const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
     if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmap.setDevicePixelRatio(dBackingScaleFactor);
+# endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* Q_WS_MAC */
 
     /* Update scaled pause pixmap: */
@@ -962,10 +966,12 @@ void UIMachineView::updateScaledPausePixmap()
     /* Update pause pixmap finally: */
     m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 #ifdef Q_WS_MAC
+# ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust-backing-scale-factor if necessary: */
     const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
     if (dBackingScaleFactor > 1.0 && frameBuffer()->useUnscaledHiDPIOutput())
         m_pausePixmapScaled.setDevicePixelRatio(dBackingScaleFactor);
+# endif /* VBOX_GUI_WITH_HIDPI */
 #endif /* Q_WS_MAC */
 }
 
