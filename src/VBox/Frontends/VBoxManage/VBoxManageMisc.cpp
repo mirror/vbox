@@ -606,15 +606,14 @@ int handleStartVM(HandlerArg *a)
                         CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
                         if (SUCCEEDED(rc))
                         {
-                            if (FAILED(iRc))
+                            if (SUCCEEDED(rc))
+                                RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
+                            else
                             {
                                 ProgressErrorInfo info(progress);
                                 com::GluePrintErrorInfo(info);
                             }
-                            else
-                            {
-                                RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
-                            }
+                            rc = iRc;
                         }
                     }
                 }
