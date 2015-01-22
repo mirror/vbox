@@ -21,42 +21,7 @@
 
 <xsl:strip-space elements="*"/>
 
-
-<!--
-//  helper definitions
-/////////////////////////////////////////////////////////////////////////////
--->
-
-<!--
- *  uncapitalizes the first letter only if the second one is not capital
- *  otherwise leaves the string unchanged
--->
-<xsl:template name="uncapitalize">
-  <xsl:param name="str" select="."/>
-  <xsl:choose>
-    <xsl:when test="not(contains('ABCDEFGHIJKLMNOPQRSTUVWXYZ', substring($str,2,1)))">
-      <xsl:value-of select="
-        concat(
-          translate(substring($str,1,1),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),
-          substring($str,2)
-        )
-      "/>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:value-of select="string($str)"/>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
-
-<!--
- *  translates the string to uppercase
--->
-<xsl:template name="uppercase">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="
-    translate($str,'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-  "/>
-</xsl:template>
+<xsl:include href="typemap-shared.inc.xsl" />
 
 
 <!--
@@ -269,7 +234,7 @@
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
-<tt>{<xsl:call-template name="uppercase">
+<tt>{<xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>}</tt>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>
@@ -337,7 +302,7 @@ owns the object will most likely fail or crash your application.
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
-<tt>{<xsl:call-template name="uppercase">
+<tt>{<xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>}</tt>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>

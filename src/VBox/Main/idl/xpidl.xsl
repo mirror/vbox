@@ -24,20 +24,6 @@
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!--
-//  helper definitions
-/////////////////////////////////////////////////////////////////////////////
--->
-
-<!--
- *  translates the string to uppercase
--->
-<xsl:template name="uppercase">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="translate($str, $G_lowerCase, $G_upperCase)"/>
-</xsl:template>
-
-
-<!--
 //  templates
 /////////////////////////////////////////////////////////////////////////////
 -->
@@ -234,7 +220,7 @@
   <xsl:text>#define COM_FORWARD_</xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text>_TO(smth) NS_FORWARD_</xsl:text>
-  <xsl:call-template name="uppercase">
+  <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="@name"/>
   </xsl:call-template>
   <xsl:text> (smth)&#x0A;</xsl:text>
@@ -630,7 +616,7 @@
   <xsl:value-of select="@name"/>
   <xsl:text>:&#x0A;</xsl:text>
   <xsl:text>#define NS_</xsl:text>
-  <xsl:call-template name="uppercase">
+  <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="@name"/>
   </xsl:call-template>
   <xsl:text>_CID { \&#x0A;</xsl:text>
@@ -648,7 +634,7 @@
   <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,35,2)"/>
   <xsl:text> } \&#x0A;}&#x0A;</xsl:text>
   <xsl:text>#define NS_</xsl:text>
-  <xsl:call-template name="uppercase">
+  <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="@name"/>
   </xsl:call-template>
   <!-- Contract ID -->

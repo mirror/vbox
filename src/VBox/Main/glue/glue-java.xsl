@@ -464,21 +464,13 @@
 </xsl:template>
 
 <!--
- * translates the string to uppercase
--->
-<xsl:template name="uppercase">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="translate($str, $G_lowerCase, $G_upperCase)"/>
-</xsl:template>
-
-<!--
  * comment for interfaces
 -->
 <xsl:template match="desc" mode="interface">
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
   <xsl:text>&#10;&#10;Interface ID: &lt;tt&gt;{</xsl:text>
-  <xsl:call-template name="uppercase">
+  <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>
   <xsl:text>}&lt;/tt&gt;&#10;*/&#10;</xsl:text>
@@ -565,7 +557,7 @@
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
   <xsl:text>&#10;Interface ID: &lt;tt&gt;{</xsl:text>
-  <xsl:call-template name="uppercase">
+  <xsl:call-template name="string-to-upper">
     <xsl:with-param name="str" select="../@uuid"/>
   </xsl:call-template>
   <xsl:text>}&lt;/tt&gt;&#10;*/&#10;</xsl:text>
