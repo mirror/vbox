@@ -35,14 +35,8 @@
 <xsl:variable name="G_root" select="/"/>
 
 <xsl:variable name="G_sNewLine">
-    <xsl:choose>
-        <xsl:when test="$KBUILD_HOST = 'win'">
-            <xsl:value-of select="'&#13;&#10;'"/>
-        </xsl:when>
-        <xsl:otherwise>
-            <xsl:value-of select="'&#10;'"/>
-        </xsl:otherwise>
-    </xsl:choose>
+    <xsl:text>
+</xsl:text>
 </xsl:variable>
 
 <xsl:include href="typemap-shared.inc.xsl"/>
@@ -513,39 +507,32 @@ public:
 
 <!-- Called on interface node. -->
 <xsl:template name="emitInterface">
+    <!-- sources, headers and dtrace-probes all needs attribute lists -->
+    <xsl:variable name="addinterfaces">
+        <xsl:call-template name="getattrlist">
+            <xsl:with-param name="val" select="@wrap-hint-server-addinterfaces"/>
+        </xsl:call-template>
+    </xsl:variable>
+
     <xsl:choose>
-        <xsl:when test="$generating != 'filelist'">
-            <!-- sources, headers and dtrace-probes all needs attribute lists -->
-            <xsl:variable name="addinterfaces">
-                <xsl:call-template name="getattrlist">
-                    <xsl:with-param name="val" select="@wrap-hint-server-addinterfaces"/>
+        <xsl:when test="$generating = 'sources'">
+            <xsl:if test="(position() mod 2) = $reminder">
+                <xsl:call-template name="emitCode">
+                    <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
                 </xsl:call-template>
-            </xsl:variable>
-
-            <xsl:choose>
-                <xsl:when test="$generating = 'sources'">
-                    <xsl:call-template name="emitCode">
-                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-                    </xsl:call-template>
-                </xsl:when>
-                <xsl:when test="$generating = 'headers'">
-                    <xsl:call-template name="emitHeader">
-                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-                    </xsl:call-template>
-                </xsl:when>
-                <xsl:when test="$generating = 'dtrace-probes'">
-                    <xsl:call-template name="emitDTraceProbes">
-                        <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
-                    </xsl:call-template>
-                </xsl:when>
-                <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitInterface</xsl:message></xsl:otherwise>
-            </xsl:choose>
+            </xsl:if>
         </xsl:when>
-
-        <xsl:when test="$generating = 'filelist'">
-            <xsl:value-of select="concat('&#9;', substring(@name, 2), 'Wrap.h \', $G_sNewLine)"/>
-            <xsl:value-of select="concat('&#9;', substring(@name, 2), 'Wrap.cpp \', $G_sNewLine)"/>
+        <xsl:when test="$generating = 'headers'">
+            <xsl:call-template name="emitHeader">
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+            </xsl:call-template>
         </xsl:when>
+        <xsl:when test="$generating = 'dtrace-probes'">
+            <xsl:call-template name="emitDTraceProbes">
+                <xsl:with-param name="addinterfaces" select="$addinterfaces"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitInterface</xsl:message></xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
@@ -1986,82 +1973,75 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 
     <xsl:if test="($target = 'xpidl') or ($target = 'midl')">
         <xsl:choose>
-            <xsl:when test="$generating != 'filelist'">
+            <xsl:when test="$passmode='public'">
                 <xsl:choose>
-                    <xsl:when test="$passmode='public'">
-                        <xsl:choose>
-                            <xsl:when test="$emitmode='method'">
-                                <xsl:apply-templates select="method" mode="public">
-                                    <xsl:with-param name="target" select="$target"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:when test="$emitmode='attribute'">
-                                <xsl:apply-templates select="attribute" mode="public">
-                                    <xsl:with-param name="target" select="$target"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:otherwise/>
-                        </xsl:choose>
+                    <xsl:when test="$emitmode='method'">
+                        <xsl:apply-templates select="method" mode="public">
+                            <xsl:with-param name="target" select="$target"/>
+                        </xsl:apply-templates>
                     </xsl:when>
-                    <xsl:when test="$passmode='wrapped'">
-                        <xsl:choose>
-                            <xsl:when test="$emitmode='method'">
-                                <xsl:apply-templates select="method" mode="wrapped">
-                                    <xsl:with-param name="target" select="$target"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:when test="$emitmode='attribute'">
-                                <xsl:apply-templates select="attribute" mode="wrapped">
-                                    <xsl:with-param name="target" select="$target"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:otherwise/>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="$passmode='code'">
-                        <xsl:choose>
-                            <xsl:when test="$emitmode='method'">
-                                <xsl:apply-templates select="method" mode="code">
-                                    <xsl:with-param name="target" select="$target"/>
-                                    <xsl:with-param name="topclass" select="$topclass"/>
-                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:when test="$emitmode='attribute'">
-                                <xsl:apply-templates select="attribute" mode="code">
-                                    <xsl:with-param name="target" select="$target"/>
-                                    <xsl:with-param name="topclass" select="$topclass"/>
-                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:otherwise/>
-                        </xsl:choose>
-                    </xsl:when>
-                    <xsl:when test="$passmode = 'dtrace-probes'">
-                        <xsl:choose>
-                            <xsl:when test="$emitmode = 'method'">
-                                <xsl:apply-templates select="method" mode="dtrace-probes">
-                                    <xsl:with-param name="target" select="$target"/>
-                                    <xsl:with-param name="topclass" select="$topclass"/>
-                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:when test="$emitmode = 'attribute'">
-                                <xsl:apply-templates select="attribute" mode="dtrace-probes">
-                                    <xsl:with-param name="target" select="$target"/>
-                                    <xsl:with-param name="topclass" select="$topclass"/>
-                                    <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
-                                </xsl:apply-templates>
-                            </xsl:when>
-                            <xsl:otherwise/>
-                        </xsl:choose>
+                    <xsl:when test="$emitmode='attribute'">
+                        <xsl:apply-templates select="attribute" mode="public">
+                            <xsl:with-param name="target" select="$target"/>
+                        </xsl:apply-templates>
                     </xsl:when>
                     <xsl:otherwise/>
                 </xsl:choose>
             </xsl:when>
-            <xsl:otherwise>
-                <xsl:apply-templates/>
-            </xsl:otherwise>
+            <xsl:when test="$passmode='wrapped'">
+                <xsl:choose>
+                    <xsl:when test="$emitmode='method'">
+                        <xsl:apply-templates select="method" mode="wrapped">
+                            <xsl:with-param name="target" select="$target"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:when test="$emitmode='attribute'">
+                        <xsl:apply-templates select="attribute" mode="wrapped">
+                            <xsl:with-param name="target" select="$target"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:otherwise/>
+                </xsl:choose>
+            </xsl:when>
+            <xsl:when test="$passmode='code'">
+                <xsl:choose>
+                    <xsl:when test="$emitmode='method'">
+                        <xsl:apply-templates select="method" mode="code">
+                            <xsl:with-param name="target" select="$target"/>
+                            <xsl:with-param name="topclass" select="$topclass"/>
+                            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:when test="$emitmode='attribute'">
+                        <xsl:apply-templates select="attribute" mode="code">
+                            <xsl:with-param name="target" select="$target"/>
+                            <xsl:with-param name="topclass" select="$topclass"/>
+                            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:otherwise/>
+                </xsl:choose>
+            </xsl:when>
+            <xsl:when test="$passmode = 'dtrace-probes'">
+                <xsl:choose>
+                    <xsl:when test="$emitmode = 'method'">
+                        <xsl:apply-templates select="method" mode="dtrace-probes">
+                            <xsl:with-param name="target" select="$target"/>
+                            <xsl:with-param name="topclass" select="$topclass"/>
+                            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:when test="$emitmode = 'attribute'">
+                        <xsl:apply-templates select="attribute" mode="dtrace-probes">
+                            <xsl:with-param name="target" select="$target"/>
+                            <xsl:with-param name="topclass" select="$topclass"/>
+                            <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
+                        </xsl:apply-templates>
+                    </xsl:when>
+                    <xsl:otherwise/>
+                </xsl:choose>
+            </xsl:when>
+            <xsl:otherwise/>
         </xsl:choose>
     </xsl:if>
 </xsl:template>
@@ -2415,7 +2395,6 @@ private:</xsl:text>
 
 </xsl:template>
 
-
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   wildcard match, ignore everything which has no explicit match
  - - - - - - - - - - - - - - - - - - - - - - -->
@@ -2456,10 +2435,6 @@ private:</xsl:text>
 
 <xsl:template match="/idl">
     <xsl:choose>
-        <xsl:when test="$generating = 'filelist'">
-            <xsl:value-of select="concat($filelistonly, ' := \', $G_sNewLine)"/>
-            <xsl:apply-templates/>
-        </xsl:when>
         <xsl:when test="$generating = 'headers'">
             <xsl:apply-templates/>
         </xsl:when>
