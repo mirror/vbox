@@ -118,7 +118,7 @@
       </xsl:choose>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="concat('&#9;', $G_vboxDirPrefix, $file, ' \&#10;')"/>
+      <xsl:value-of select="concat(' \', $G_sNewLine, '&#9;', $G_vboxDirPrefix, $file)"/>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -4716,7 +4716,7 @@ public class VirtualBoxManager
   </xsl:if>
 
   <xsl:if test="not($filelistonly='')">
-    <xsl:value-of select="concat($filelistonly, ' := \&#10;')"/>
+    <xsl:value-of select="concat($filelistonly, ' :=')"/>
   </xsl:if>
 
   <!-- Handwritten files -->
@@ -4779,7 +4779,7 @@ public class VirtualBoxManager
   </xsl:for-each>
 
   <xsl:if test="not($filelistonly='')">
-    <xsl:value-of select="'&#10;'"/>
+    <xsl:value-of select="concat($G_sNewLine, $G_sNewLine)"/>
   </xsl:if>
 
 </xsl:template>
