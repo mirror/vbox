@@ -42,12 +42,34 @@
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
-  keys for more efficiently looking up types.
+  Keys for more efficiently looking up types.
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
 <xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
 
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  Utility templates.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<!-- Hack Alert! This template helps xsltproc split up the output text elements
+                 and avoid reallocating them into the MB range. Calls to this
+                 template is made occationally while generating larger output
+                 file.  It's not necessary for small stuff like header.
+
+                 The trick we're playing on xsltproc has to do with CDATA
+                 and/or the escape setting of the xsl:text element.  It forces
+                 xsltproc to allocate a new output element, thus preventing
+                 things from growing out of proportions and slowing us down.
+
+                 This was successfully employed to reduce a 18+ seconds run to
+                 around one second (possibly less due to kmk overhead).
+ -->
+<xsl:template name="xsltprocNewlineOutputHack">
+    <xsl:text disable-output-escaping="yes"><![CDATA[
+]]></xsl:text>
+</xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
 templates for file separation
@@ -56,6 +78,7 @@ templates for file separation
 <xsl:template match="interface" mode="startfile">
     <xsl:param name="file"/>
 
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:value-of select="concat($G_sNewLine, '// ##### BEGINFILE &quot;', $file, '&quot;', $G_sNewLine)"/>
 </xsl:template>
 
@@ -1317,7 +1340,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 }
 </xsl:text>
     <xsl:if test="not(@readonly) or @readonly!='yes'">
-    <xsl:text>
+        <xsl:text>
 </xsl:text>
         <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMSETTER(', $attrbasename, ')(')"/>
         <xsl:call-template name="emitPublicParameter">
@@ -1429,8 +1452,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:with-param name="target" select="$target"/>
     </xsl:call-template>
 
-    <xsl:text>
-</xsl:text>
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -2305,6 +2327,7 @@ private:</xsl:text>
     </xsl:for-each>
 
     <!-- methods -->
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:call-template name="emitMethods">
         <xsl:with-param name="topclass" select="$topclass"/>
         <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
