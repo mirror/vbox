@@ -255,6 +255,11 @@ protected:
     bool x11Event(XEvent *event);
 #endif
 
+    /** Scales passed size forward. */
+    QSize scaledForward(QSize size) const;
+    /** Scales passed size backward. */
+    QSize scaledBackward(QSize size) const;
+
     /* Protected members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
