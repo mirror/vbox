@@ -385,6 +385,23 @@
 ]]></xsl:text>
 </xsl:template>
 
+
+<!--
+    string-to-upper - translates the string to uppercase.
+    -->
+<xsl:template name="string-to-upper">
+  <xsl:param name="str" select="."/>
+  <xsl:value-of select="translate($str, $G_lowerCase, $G_upperCase)"/>
+</xsl:template>
+
+<!--
+    string-to-lower - translates the string to lowercase.
+    -->
+<xsl:template name="string-to-lower">
+  <xsl:param name="str" select="."/>
+  <xsl:value-of select="translate($str, $G_upperCase, $G_lowerCase)"/>
+</xsl:template>
+
 <!--
     string-replace - Replace all occurencees of needle in haystack.
     -->
