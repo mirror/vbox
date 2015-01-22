@@ -34,11 +34,6 @@
 
 <xsl:variable name="G_root" select="/"/>
 
-<xsl:variable name="G_sNewLine">
-    <xsl:text>
-</xsl:text>
-</xsl:variable>
-
 <xsl:include href="typemap-shared.inc.xsl"/>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
