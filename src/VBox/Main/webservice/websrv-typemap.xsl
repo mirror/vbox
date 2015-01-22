@@ -60,10 +60,10 @@ xsd__unsignedInt = | unsigned long
 # Main namespace (which is mapped to vbox__ prefixes):
 ]]></xsl:text>
   <xsl:value-of select="concat('vbox = &quot;', $G_targetNamespace, '&quot;')" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:text># Namespaces for the interfaces in xidl that need to be mapped according to their wsmap attribs:</xsl:text>
-  <xsl:call-template name="emitNewline" />
+  <xsl:text>
+
+# Namespaces for the interfaces in xidl that need to be mapped according to their wsmap attribs:
+</xsl:text>
   <xsl:apply-templates />
 </xsl:template>
 
@@ -146,8 +146,8 @@ xsd__unsignedInt = | unsigned long
     <xsl:when test="$wsmap='struct'" />
     <xsl:when test="$wsmap='suppress'" />
     <xsl:otherwise>
-      <xsl:value-of select="concat($ifname, ' = ', $G_targetNamespace, $G_targetNamespaceSeparator, $ifname, $G_bindingSuffix)" />
-      <xsl:call-template name="emitNewline" />
+      <xsl:value-of select="concat($ifname, ' = ', $G_targetNamespace, $G_targetNamespaceSeparator,
+                                   $ifname, $G_bindingSuffix, $G_sNewLine)" />
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
