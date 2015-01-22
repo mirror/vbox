@@ -47,6 +47,13 @@
               select="//interface[@wsmap='suppress']" />
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of types.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   root match
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -271,7 +278,7 @@ const char *g_pcszIUnknown = "IUnknown";
     <xsl:text>        }&#10;</xsl:text>
     <xsl:call-template name="emitNewline" />
 
-    <xsl:for-each select="//interface[@name=$structname]/attribute">
+    <xsl:for-each select="key('G_keyInterfacesByName', $structname)/attribute">
       <xsl:if test="not(@wsmap = 'suppress')">
         <xsl:value-of select="concat('        // -- ', $structname, '.', @name)" />
         <xsl:call-template name="emitNewline" />
@@ -389,7 +396,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:with-param name="safearray" select="$safearray"/>
       </xsl:call-template>
     </xsl:when>
-    <xsl:when test="//enum[@name=$type]">
+    <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
       <xsl:call-template name="emitTypeOrArray">
         <xsl:with-param name="type" select="concat($type, '_T ')"/>
         <xsl:with-param name="safearray" select="$safearray"/>
@@ -405,8 +412,8 @@ const char *g_pcszIUnknown = "IUnknown";
         </xsl:otherwise>
       </xsl:choose>
     </xsl:when>
-    <xsl:when test="//interface[@name=$type]">
-      <xsl:variable name="thatif" select="//interface[@name=$type]" />
+    <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
+      <xsl:variable name="thatif" select="key('G_keyInterfacesByName', $type)" />
       <xsl:variable name="thatifname" select="$thatif/@name" />
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
@@ -578,7 +585,7 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    IUnknown *tmpObject2(tmpObject); tmpObject2->AddRef(); comcall_', $name, '[i] = tmpObject;')" />
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <xsl:value-of select="concat('    ComPtr&lt;', $type, '&gt; tmpObject;')" />
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    if ((rc = findComPtrFromId(soap, ', $structprefix, $name, '[i], tmpObject, true)))')" />
@@ -608,7 +615,7 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $structprefix, $name, '[i];')" />
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $G_funcPrefixInputEnumConverter, $type, '(', $structprefix, $name, '[i]);')" />
         </xsl:when>
@@ -633,7 +640,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="$type='wstring' or $type='uuid'">
           <xsl:value-of select="concat(' comcall_', $name, '(', $structprefix, $name, '.c_str())')" />
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
           <xsl:value-of select="concat(' comcall_', $name, ' = ', $G_funcPrefixInputEnumConverter, $type, '(', $structprefix, $name, ')')" />
         </xsl:when>
         <xsl:when test="$type='$unknown'">
@@ -643,9 +650,9 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:text>    break</xsl:text>
         </xsl:when>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <!-- the type is one of our own interfaces: then it must have a wsmap attr -->
-          <xsl:variable name="thatif" select="//interface[@name=$type]" />
+          <xsl:variable name="thatif" select="key('G_keyInterfacesByName', $type)" />
           <xsl:variable name="wsmap" select="$thatif/@wsmap" />
           <xsl:variable name="thatifname" select="$thatif/@name" />
           <xsl:choose>
@@ -770,7 +777,7 @@ const char *g_pcszIUnknown = "IUnknown";
                         or ($type='long long')
                         or ($type='unsigned long long')
                         or ($type='result')
-                        or (//enum[@name=$type])">
+                        or (count(key('G_keyEnumsByName', $type)) > 0)">
           <xsl:text>&amp;</xsl:text><xsl:value-of select="$varname" />
         </xsl:when>
         <xsl:otherwise>
@@ -899,15 +906,15 @@ const char *g_pcszIUnknown = "IUnknown";
                     or ($type='result')">
       <xsl:value-of select="$varname" />
     </xsl:when>
-    <xsl:when test="//enum[@name=$type]">
+    <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
       <xsl:value-of select="concat($G_funcPrefixOutputEnumConverter, $type, '(', $varname, ')')" />
     </xsl:when>
     <xsl:when test="$type='$unknown'">
       <xsl:value-of select="concat('createOrFindRefFromComPtr(idThis, g_pcszIUnknown, ', $varname, ')')" />
     </xsl:when>
-    <xsl:when test="//interface[@name=$type]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
       <!-- the type is one of our own interfaces: then it must have a wsmap attr -->
-      <xsl:variable name="thatif" select="//interface[@name=$type]" />
+      <xsl:variable name="thatif" select="key('G_keyInterfacesByName', $type)" />
       <xsl:variable name="wsmap" select="$thatif/@wsmap" />
       <xsl:variable name="thatifname" select="$thatif/@name" />
       <xsl:choose>
@@ -992,10 +999,10 @@ const char *g_pcszIUnknown = "IUnknown";
       <!-- look up C++ glue type from IDL type from table array in typemap-shared.inc.xsl -->
       <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename" />
       <xsl:choose>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
           <xsl:value-of select="concat('    ComPtr&lt;', $type, '&gt; tmpObject(', $varname, '[i]);')" />
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
           <xsl:value-of select="concat('    ', $type, '_T tmpObject(', $varname, '[i]);')" />
         </xsl:when>
         <xsl:when test="$type='$unknown'">
@@ -1267,8 +1274,8 @@ const char *g_pcszIUnknown = "IUnknown";
 <xsl:copy-of select="$ifname" />
 <xsl:text>
  *
- ****************************************************************************/
-</xsl:text>
+ ****************************************************************************/</xsl:text>
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
 
     <!--
       here come the attributes
