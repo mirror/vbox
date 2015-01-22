@@ -52,6 +52,15 @@
 
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of stuff
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyMessagesByName" match="//wsdl:message[@name]" use="@name"/>
+<xsl:key name="G_keySimpleTypesByName" match="//xsd:simpleType[@name]" use="@name"/>
+<xsl:key name="G_keyComplexTypesByName" match="//xsd:complexType[@name]" use="@name"/>
+
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
   root match
  - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -91,8 +100,8 @@ struct SOAP_ENV__Detail
     int __type;
     void *fault;
     _XML __any;
-};</xsl:text>
-  <xsl:call-template name="emitNewline" />
+};
+</xsl:text>
 
   <xsl:apply-templates />
 </xsl:template>
@@ -101,12 +110,10 @@ struct SOAP_ENV__Detail
   <xsl:param name="xmltype" />
   <xsl:param name="ctype" />
 
-  <xsl:value-of select="concat('class ', $ctype)" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:text>{</xsl:text>
-  <xsl:call-template name="emitNewline" />
-  <xsl:text>    public:</xsl:text>
-  <xsl:call-template name="emitNewline" />
+  <xsl:value-of select="concat('class ', $ctype, $G_sNewLine)" />
+  <xsl:text>{
+    public:
+</xsl:text>
   <xsl:for-each select="xsd:element">
     <xsl:variable name="typefield" select="@type" />
     <xsl:variable name="xmltypefield" select="substring($typefield, 5)" /><!-- remove "xsd:" prefix-->
@@ -126,7 +133,7 @@ struct SOAP_ENV__Detail
         </xsl:choose>
       </xsl:when>
       <!-- is there an enum of this type? (look up in simple types) -->
-      <xsl:when test="//xsd:simpleType[@name=$withoutvboxtypefield]">
+      <xsl:when test="count(key('G_keySimpleTypesByName', $withoutvboxtypefield)) > 0">
         <xsl:variable name="enumname">
           <xsl:value-of select="concat('enum vbox__', $withoutvboxtypefield)" />
         </xsl:variable>
@@ -140,7 +147,7 @@ struct SOAP_ENV__Detail
         </xsl:choose>
       </xsl:when>
       <!-- is this one of the vbox types? (look up in complex types) -->
-      <xsl:when test="//xsd:complexType[@name=$withoutvboxtypefield]">
+      <xsl:when test="count(key('G_keyComplexTypesByName', $withoutvboxtypefield)) > 0">
         <!-- array or simple type: depends on whether maxOccurs="unbounded" is in WSDL -->
         <xsl:choose>
           <xsl:when test="@maxOccurs='unbounded'">
@@ -160,14 +167,13 @@ struct SOAP_ENV__Detail
             <xsl:with-param name="string" select="@name" />
         </xsl:call-template>
     </xsl:variable>
-    <xsl:value-of select="concat(' ', $underscoredname, ' 1;')" />
-    <xsl:call-template name="emitNewline" />
+    <xsl:value-of select="concat(' ', $underscoredname, ' 1;', $G_sNewLine)" />
   </xsl:for-each>
-  <xsl:text>        struct soap *soap;</xsl:text>
-  <xsl:call-template name="emitNewline" />
-  <xsl:text>};</xsl:text>
-  <xsl:call-template name="emitNewline" />
-  <xsl:call-template name="emitNewline" />
+  <xsl:text>        struct soap *soap;
+};
+</xsl:text>
+<xsl:call-template name="xsltprocNewlineOutputHack"/>
+
 </xsl:template>
 
 <xsl:template match="wsdl:types/xsd:schema">
@@ -177,9 +183,9 @@ struct SOAP_ENV__Detail
     <xsl:variable name="ctype" select="concat('vbox__', @name)" />
     <xsl:for-each select="xsd:restriction">
       <xsl:value-of select="concat('enum ', $ctype)" />
-      <xsl:call-template name="emitNewline" />
-      <xsl:text>{</xsl:text>
-      <xsl:call-template name="emitNewline" />
+      <xsl:text>
+{
+</xsl:text>
       <xsl:for-each select="xsd:enumeration">
         <xsl:variable name="underscoredname">
           <xsl:call-template name="escapeUnderscores">
@@ -190,11 +196,12 @@ struct SOAP_ENV__Detail
         <xsl:if test = "not(position()=last())" >
           <xsl:text >,</xsl:text>
         </xsl:if>
-        <xsl:call-template name="emitNewline" />
+        <xsl:text>
+</xsl:text>
       </xsl:for-each>
-      <xsl:text>};</xsl:text>
-      <xsl:call-template name="emitNewline" />
-      <xsl:call-template name="emitNewline" />
+      <xsl:text>};
+
+</xsl:text>
     </xsl:for-each>
   </xsl:for-each>
 
@@ -232,14 +239,10 @@ struct SOAP_ENV__Detail
 
 <xsl:template match="wsdl:portType">
 
-  <xsl:value-of select="concat('//gsoap vbox service name: vbox', $G_bindingSuffix)" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:value-of select="concat('//gsoap vbox service type: vbox', $G_portTypeSuffix)" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:value-of select="concat('//gsoap vbox service namespace: ', $G_targetNamespace, $G_targetNamespaceSeparator)" />
-  <xsl:call-template name="emitNewline" />
-  <xsl:value-of select="concat('//gsoap vbox service transport: ', 'http://schemas.xmlsoap.org/soap/http')" />
-  <xsl:call-template name="emitNewline" />
+  <xsl:value-of select="concat('//gsoap vbox service name: vbox', $G_bindingSuffix, $G_sNewLine)" />
+  <xsl:value-of select="concat('//gsoap vbox service type: vbox', $G_portTypeSuffix, $G_sNewLine)" />
+  <xsl:value-of select="concat('//gsoap vbox service namespace: ', $G_targetNamespace, $G_targetNamespaceSeparator, $G_sNewLine)" />
+  <xsl:value-of select="concat('//gsoap vbox service transport: ', 'http://schemas.xmlsoap.org/soap/http', $G_sNewLine)" />
 
   <xsl:for-each select="wsdl:operation">
     <xsl:variable name="methodname" select="@name" />
@@ -251,22 +254,15 @@ struct SOAP_ENV__Detail
     <xsl:variable name="requestmsg" select="concat($methodname, $G_methodRequest)" />
     <xsl:variable name="responsemsg" select="concat($methodname, $G_methodResponse)" />
 
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('//gsoap vbox service method-style:    ', $cmethodname, ' ', $G_basefmt)" />
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('//gsoap vbox service method-encoding: ', $cmethodname, ' ', $G_parmfmt)" />
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('//gsoap vbox service method-action:   ', $cmethodname, ' &quot;&quot;')" />
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('//gsoap vbox service method-fault:    ', $cmethodname, ' vbox__InvalidObjectFault')" />
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('//gsoap vbox service method-fault:    ', $cmethodname, ' vbox__RuntimeFault')" />
-    <xsl:call-template name="emitNewline" />
-    <xsl:value-of select="concat('int __vbox__', $cmethodname, '(')" />
-    <xsl:call-template name="emitNewline" />
+    <xsl:value-of select="concat($G_sNewLine, '//gsoap vbox service method-style:    ', $cmethodname, ' ', $G_basefmt)" />
+    <xsl:value-of select="concat($G_sNewLine, '//gsoap vbox service method-encoding: ', $cmethodname, ' ', $G_parmfmt)" />
+    <xsl:value-of select="concat($G_sNewLine, '//gsoap vbox service method-action:   ', $cmethodname, ' &quot;&quot;')" />
+    <xsl:value-of select="concat($G_sNewLine, '//gsoap vbox service method-fault:    ', $cmethodname, ' vbox__InvalidObjectFault')" />
+    <xsl:value-of select="concat($G_sNewLine, '//gsoap vbox service method-fault:    ', $cmethodname, ' vbox__RuntimeFault')" />
+    <xsl:value-of select="concat($G_sNewLine, 'int __vbox__', $cmethodname, '(', $G_sNewLine)" />
 
     <!-- request element -->
-    <xsl:variable name="reqtype" select="//wsdl:message[@name=$requestmsg]/wsdl:part/@element" />
+    <xsl:variable name="reqtype" select="key('G_keyMessagesByName', $requestmsg)/wsdl:part/@element" />
     <xsl:if test="not($reqtype)">
       <xsl:call-template name="fatalError">
         <xsl:with-param name="msg" select="concat('wsdl:portType match: Cannot find message with &quot;name&quot;=&quot;', $requestmsg, '&quot;.')" />
@@ -277,10 +273,9 @@ struct SOAP_ENV__Detail
         <xsl:with-param name="string" select="substring($reqtype, 6)" />
       </xsl:call-template>
     </xsl:variable>
-    <xsl:value-of select="concat('    _vbox__', $creqtype, '* vbox__', $creqtype, ',')"/>
-    <xsl:call-template name="emitNewline" />
+    <xsl:value-of select="concat('    _vbox__', $creqtype, '* vbox__', $creqtype, ',', $G_sNewLine)"/>
     <!-- response element -->
-    <xsl:variable name="resptype" select="//wsdl:message[@name=$responsemsg]/wsdl:part/@element" />
+    <xsl:variable name="resptype" select="key('G_keyMessagesByName', $responsemsg)/wsdl:part/@element" />
     <xsl:if test="not($resptype)">
       <xsl:call-template name="fatalError">
         <xsl:with-param name="msg" select="concat('wsdl:portType match: Cannot find message with &quot;name&quot;=&quot;', $responsemsg, '&quot;.')" />
@@ -291,11 +286,10 @@ struct SOAP_ENV__Detail
         <xsl:with-param name="string" select="substring($resptype, 6)" />
       </xsl:call-template>
     </xsl:variable>
-    <xsl:value-of select="concat('    _vbox__', $cresptype, '* vbox__', $cresptype)"/>
-    <xsl:call-template name="emitNewline" />
+    <xsl:value-of select="concat('    _vbox__', $cresptype, '* vbox__', $cresptype, $G_sNewLine)"/>
 
     <xsl:text>);</xsl:text>
-    <xsl:call-template name="emitNewline" />
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
 
   </xsl:for-each>
 </xsl:template>
