@@ -1843,16 +1843,21 @@ extern "C" DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScal
         if (pWin)
         {
             bool rc;
+            crDebug("Set scale factor for initialized display.");
             rc = pWin->SetScaleFactor((GLdouble)dScaleFactorW, (GLdouble)dScaleFactorH);
             return rc ? 0 : VERR_LOCK_FAILED;
         }
         else
-            crDebug("Can't set scale factor bacause overlay window obgect not yet created.");
+            crDebug("Can't apply scale factor at the moment bacause overlay window obgect not yet created. Will be chached.");
     }
     else
-        crDebug("Can't set scale factor because specified screen ID cannot be mapped to list of available displays.");
+        crDebug("Can't apply scale factor at the moment bacause display not yet initialized. Will be chached.");
 
-    return VERR_INVALID_PARAMETER;
+    /* Display output not yet initialized. Let's cache values. */
+    pDpInfo->dInitialScaleFactorW = dScaleFactorW;
+    pDpInfo->dInitialScaleFactorH = dScaleFactorH;
+
+    return 0;
 }
 
 int CrPMgrScreenChanged(uint32_t idScreen)
@@ -2105,6 +2110,15 @@ static void crPMgrDpWinRootVrCreate(CR_FBDISPLAY_INFO *pDpInfo)
         pDpInfo->pDpWinRootVr = new CrFbDisplayWindowRootVr(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID);
         pDpInfo->pDpWin = pDpInfo->pDpWinRootVr;
         pDpInfo->pDpWinRootVr->windowAttach(pDpInfo->pWindow);
+
+        /* Set scale factor once it was previously cached when display output was not yet initialized. */
+        if (pDpInfo->dInitialScaleFactorW || pDpInfo->dInitialScaleFactorH)
+        {
+            crDebug("Set cached scale factor for seamless mode.");
+            pDpInfo->pWindow->SetScaleFactor((GLdouble)pDpInfo->dInitialScaleFactorW, (GLdouble)pDpInfo->dInitialScaleFactorH);
+            /* Invalidate cache. */
+            pDpInfo->dInitialScaleFactorW = pDpInfo->dInitialScaleFactorH = 0;
+        }
     }
 }
 
@@ -2128,6 +2142,15 @@ static void crPMgrDpWinCreate(CR_FBDISPLAY_INFO *pDpInfo)
 
         pDpInfo->pDpWin = new CrFbDisplayWindow(&cr_server.screenVieport[pDpInfo->u32Id].Rect, cr_server.screen[pDpInfo->u32Id].winID);
         pDpInfo->pDpWin->windowAttach(pDpInfo->pWindow);
+
+        /* Set scale factor once it was previously cached when display output was not yet initialized. */
+        if (pDpInfo->dInitialScaleFactorW || pDpInfo->dInitialScaleFactorH)
+        {
+            crDebug("Set cached scale factor for host window.");
+            pDpInfo->pWindow->SetScaleFactor((GLdouble)pDpInfo->dInitialScaleFactorW, (GLdouble)pDpInfo->dInitialScaleFactorH);
+            /* Invalidate cache. */
+            pDpInfo->dInitialScaleFactorW = pDpInfo->dInitialScaleFactorH = 0;
+        }
     }
 }
 
