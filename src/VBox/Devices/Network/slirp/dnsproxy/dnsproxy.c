@@ -365,14 +365,8 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         req->dnsgen = pData->dnsgen;
         if (req->dns_server == NULL)
         {
-            static int fail_counter = 0;
             RTMemFree(req);
-
-            if (fail_counter++ % 100 == 0)
-              LogRel(("NAT/dnsproxy: Empty DNS entry (suppressed 100 times)\n"));
-
             return;
-
         }
         retransmit = 0;
         so->so_timeout = timeout;
