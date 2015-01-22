@@ -28,6 +28,10 @@
 
 <xsl:variable name="G_lowerCase" select="'abcdefghijklmnopqrstuvwxyz'" />
 <xsl:variable name="G_upperCase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
+<xsl:variable name="G_sNewLine">
+  <xsl:text>
+</xsl:text>
+</xsl:variable>
 
 <!-- target namespace; this must match the xmlns:vbox in stylesheet opening tags! -->
 <xsl:variable name="G_targetNamespace"
