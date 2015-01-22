@@ -927,14 +927,32 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             /* Get mouse-pointer location: */
             QPoint cpnt = m_views[uScreenId]->viewportToContents(relativePos);
 
-            /* Determine scaling: */
-            UIFrameBuffer *pFrameBuffer = m_views[uScreenId]->frameBuffer();
-            QSize scaledSize = pFrameBuffer->scaledSize();
-            double xRatio = scaledSize.isValid() ? (double)pFrameBuffer->width() / (double)scaledSize.width() : 1;
-            double yRatio = scaledSize.isValid() ? (double)pFrameBuffer->height() / (double)scaledSize.height() : 1;
-            /* Set scaling if scale-factor is present: */
-            cpnt.setX((int)(cpnt.x() * xRatio));
-            cpnt.setY((int)(cpnt.y() * yRatio));
+            /* Take the scale-factor(s) into account: */
+            const UIFrameBuffer *pFrameBuffer = m_views[uScreenId]->frameBuffer();
+            if (pFrameBuffer)
+            {
+                const QSize scaledSize = pFrameBuffer->scaledSize();
+                if (scaledSize.isValid())
+                {
+                    const double xScaleFactor = (double)scaledSize.width()  / pFrameBuffer->width();
+                    const double yScaleFactor = (double)scaledSize.height() / pFrameBuffer->height();
+                    cpnt.setX(cpnt.x() / xScaleFactor);
+                    cpnt.setY(cpnt.y() / yScaleFactor);
+                }
+            }
+
+#ifdef Q_WS_MAC
+            /* Take the backing-scale-factor into account: */
+            if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+            {
+                const double dBackingScaleFactor = darwinBackingScaleFactor(m_windows.value(uScreenId));
+                if (dBackingScaleFactor > 1.0)
+                {
+                    cpnt.setX(cpnt.x() * dBackingScaleFactor);
+                    cpnt.setY(cpnt.y() * dBackingScaleFactor);
+                }
+            }
+#endif /* Q_WS_MAC */
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -968,16 +986,6 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             /* Set shifting: */
             cpnt.setX(cpnt.x() + xShift);
             cpnt.setY(cpnt.y() + yShift);
-
-#ifdef Q_WS_MAC
-            /* Take the backing-scale-factor into account: */
-            if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-            {
-                const double dBackingScaleFactor = darwinBackingScaleFactor(m_windows.value(uScreenId));
-                if (dBackingScaleFactor > 1.0)
-                    cpnt *= dBackingScaleFactor;
-            }
-#endif /* Q_WS_MAC */
 
             /* Post absolute mouse-event into guest: */
             mouse().PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, iWheelVertical, iWheelHorizontal, iMouseButtonsState);

@@ -961,7 +961,8 @@ void UIMachineView::updateSliders()
 
 #ifdef Q_WS_MAC
     /* Due to Qt 4.x doesn't supports HiDPI directly
-     * we should take the backing-scale-factor into account: */
+     * we should take the backing-scale-factor into account.
+     * See also viewportToContents()... */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
@@ -982,7 +983,27 @@ void UIMachineView::updateSliders()
 
 QPoint UIMachineView::viewportToContents(const QPoint &vp) const
 {
-    return QPoint(vp.x() + contentsX(), vp.y() + contentsY());
+    /* Get physical contents shifts of scroll-bars: */
+    int iContentsX = contentsX();
+    int iContentsY = contentsY();
+
+#ifdef Q_WS_MAC
+    /* Due to Qt 4.x doesn't supports HiDPI directly
+     * we should take the backing-scale-factor into account.
+     * See also updateSliders()... */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+        {
+            iContentsX /= dBackingScaleFactor;
+            iContentsY /= dBackingScaleFactor;
+        }
+    }
+#endif /* Q_WS_MAC */
+
+    /* Return point shifted according scroll-bars: */
+    return QPoint(vp.x() + iContentsX, vp.y() + iContentsY);
 }
 
 void UIMachineView::scrollBy(int dx, int dy)
