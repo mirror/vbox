@@ -194,20 +194,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize size(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
     AssertMsg(size.isValid(), ("Size should be valid!\n"));
 
-#ifdef Q_WS_MAC
-    /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
-        if (dBackingScaleFactor > 1.0)
-            size = QSize(size.width() * dBackingScaleFactor, size.height() * dBackingScaleFactor);
-    }
-#endif /* Q_WS_MAC */
-
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
-        size = QSize(size.width() / dScaleFactor, size.height() / dScaleFactor);
+    /* Take the scale-factor(s) into account: */
+    size = scaledBackward(size);
 
     /* Expand current limitations: */
     setMaxGuestSize(size);
@@ -743,20 +731,8 @@ QSize UIMachineView::sizeHint() const
     /* Get frame-buffer size-hint: */
     QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
 
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
-        size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
-
-#ifdef Q_WS_MAC
-    /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
-        if (dBackingScaleFactor > 1.0)
-            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
-    }
-#endif /* Q_WS_MAC */
+    /* Take the scale-factor(s) into account: */
+    size = scaledForward(size);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     // TODO: Fix all DEBUGGER stuff!
@@ -838,20 +814,8 @@ QSize UIMachineView::guestSizeHint()
     if (!size.isValid())
         size = QSize(800, 600);
 
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
-        size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
-
-#ifdef Q_WS_MAC
-    /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
-        if (dBackingScaleFactor > 1.0)
-            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
-    }
-#endif /* Q_WS_MAC */
+    /* Take the scale-factor(s) into account: */
+    size = scaledForward(size);
 
     /* Return size: */
     return size;
@@ -982,20 +946,8 @@ void UIMachineView::updateSliders()
 
     QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
 
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
-        v = QSize(v.width() * dScaleFactor, v.height() * dScaleFactor);
-
-#ifdef Q_WS_MAC
-    /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
-        if (dBackingScaleFactor > 1.0)
-            v = QSize(v.width() / dBackingScaleFactor, v.height() / dBackingScaleFactor);
-    }
-#endif /* Q_WS_MAC */
+    /* Take the scale-factor(s) into account: */
+    v = scaledForward(v);
 
     /* No scroll bars needed: */
     if (m.expandedTo(v) == m)
@@ -1419,4 +1371,46 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 }
 
 #endif /* Q_WS_X11 */
+
+QSize UIMachineView::scaledForward(QSize size) const
+{
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
+
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
+    }
+#endif /* Q_WS_MAC */
+
+    /* Return result: */
+    return size;
+}
+
+QSize UIMachineView::scaledBackward(QSize size) const
+{
+#ifdef Q_WS_MAC
+    /* Take the backing-scale-factor into account: */
+    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    {
+        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        if (dBackingScaleFactor > 1.0)
+            size = QSize(size.width() * dBackingScaleFactor, size.height() * dBackingScaleFactor);
+    }
+#endif /* Q_WS_MAC */
+
+    /* Take the scale-factor into account: */
+    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    if (dScaleFactor != 1.0)
+        size = QSize(size.width() / dScaleFactor, size.height() / dScaleFactor);
+
+    /* Return result: */
+    return size;
+}
 

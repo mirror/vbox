@@ -36,9 +36,6 @@
 # include "UIMachineViewNormal.h"
 # include "UIExtraDataManager.h"
 # include "UIFrameBuffer.h"
-# ifdef Q_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* Q_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -174,22 +171,8 @@ void UIMachineViewNormal::adjustGuestScreenSize()
     const QSize centralWidgetSize = machineWindow()->centralWidget()->size();
     /* Acquire frame-buffer size: */
     QSize frameBufferSize(frameBuffer()->width(), frameBuffer()->height());
-
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
-        frameBufferSize = QSize(frameBufferSize.width() * dScaleFactor, frameBufferSize.height() * dScaleFactor);
-
-#ifdef Q_WS_MAC
-    /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
-    {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
-        if (dBackingScaleFactor > 1.0)
-            frameBufferSize = QSize(frameBufferSize.width() / dBackingScaleFactor, frameBufferSize.height() / dBackingScaleFactor);
-    }
-#endif /* Q_WS_MAC */
-
+    /* Take the scale-factor(s) into account: */
+    frameBufferSize = scaledForward(frameBufferSize);
     /* Check if we should adjust guest-screen to new size: */
     if (frameBufferSize != centralWidgetSize)
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
