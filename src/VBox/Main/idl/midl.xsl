@@ -24,45 +24,7 @@
 <!-- Whether to generate proxy code and type library ('yes'), or just the type-library. -->
 <xsl:param name="g_fGenProxy" select="'no'"/>
 
-
-<!--
-//  helper definitions
-/////////////////////////////////////////////////////////////////////////////
--->
-
-<!--
- *  capitalizes the first letter
--->
-<xsl:template name="capitalize">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="
-    concat(
-      translate(substring($str,1,1),'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-      substring($str,2)
-    )
-  "/>
-</xsl:template>
-
-<!--
- *  uncapitalizes the first letter only if the second one is not capital
- *  otherwise leaves the string unchanged
--->
-<xsl:template name="uncapitalize">
-  <xsl:param name="str" select="."/>
-  <xsl:choose>
-    <xsl:when test="not(contains('ABCDEFGHIJKLMNOPQRSTUVWXYZ', substring($str,2,1)))">
-      <xsl:value-of select="
-        concat(
-          translate(substring($str,1,1),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),
-          substring($str,2)
-        )
-      "/>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:value-of select="string($str)"/>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
+<xsl:include href="typemap-shared.inc.xsl"/>
 
 
 <!--
@@ -248,7 +210,8 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
     -->
     <xsl:otherwise><xsl:value-of select="@extends"/></xsl:otherwise>
   </xsl:choose>
-  <xsl:text>&#x0A;{&#x0A;</xsl:text>
+  <xsl:call-template name="xsltprocNewlineOutputHack"/>
+  <xsl:text>{&#x0A;</xsl:text>
   <!-- attributes (properties) -->
   <xsl:apply-templates select="attribute"/>
   <!-- methods -->
