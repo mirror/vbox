@@ -9,7 +9,7 @@
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
 
-    Copyright (C) 2006-2013 Oracle Corporation
+    Copyright (C) 2006-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -133,6 +133,14 @@
 <xsl:variable name="G_typeIsGlobalResponseElementMarker"
               select="'&lt;&lt;&lt;&lt;Response'" />
 
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of types.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
+
 <!--**********************************************************************
  *
  *  shared helpers
@@ -159,17 +167,12 @@
     <xsl:when test="$type='managed'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
     <xsl:when test="$type='explicit'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
     <!-- enums are easy, these are defined in schema at the top of the wsdl -->
-    <xsl:when test="//enum[@name=$type]"><xsl:value-of select="concat('vbox:', $type)" /></xsl:when>
+    <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0"><xsl:value-of select="concat('vbox:', $type)" /></xsl:when>
     <!-- otherwise test for an interface with this name -->
-    <xsl:when test="//interface[@name=$type]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
       <!-- the type is one of our own interfaces: then it must have a wsmap attr -->
-      <xsl:variable name="wsmap" select="//interface[@name=$type]/@wsmap" />
+      <xsl:variable name="wsmap" select="key('G_keyInterfacesByName', $type)/@wsmap" />
       <xsl:choose>
-        <xsl:when test="not($wsmap)">
-          <xsl:call-template name="fatalError">
-            <xsl:with-param name="msg" select="concat('emitConvertedType: Type &quot;', $type, '&quot; in method &quot;', $ifname, '::', $methodname, '&quot; lacks wsmap attribute value in XIDL.')" />
-          </xsl:call-template>
-        </xsl:when>
         <xsl:when test="$wsmap='struct'"><xsl:value-of select="concat('vbox:', $type)" /></xsl:when>
         <xsl:when test="$wsmap='global'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
         <xsl:when test="$wsmap='managed'"><xsl:value-of select="$G_typeObjectRef" /></xsl:when>
