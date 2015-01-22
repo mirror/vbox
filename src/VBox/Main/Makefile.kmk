@@ -1252,14 +1252,3 @@ updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
 	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_VBOX_HEADERS) -ts $(VBoxC_VBOX_TRANSLATIONS)
 
-#
-# Most likely outdated stuff.
-#
-testconverter:: $(VBOX_USER_HOME)/VirtualBox.xml
-	$(call MSG_TOOL,xsltproc,Test Settings Converter,$<,$(VBOX_USER_HOME)/VirtualBox.xml.test)
-	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_USER_HOME)/VirtualBox.xml.test xml/SettingsConverter.xsl $<
-
-testconverter2:: $(VBOX_USER_HOME)/Machines/dos/dos.xml
-	$(call MSG_TOOL,xsltproc,Test Settings Converter,$<,$<.test)
-	$(QUIET)$(VBOX_XSLTPROC) -o $<.test xml/SettingsConverter.xsl $<
-
