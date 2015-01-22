@@ -73,10 +73,11 @@ class VirtualBoxReflectionInfo:
         <xsl:text>
         },</xsl:text>
     </xsl:for-each>
-    <xsl:text>
+    <!-- hack alert: force new output element to avoid large reallocations. -->
+    <xsl:text disable-output-escaping="yes"><![CDATA[
     }
 
-    __dValuesSym = {</xsl:text>
+    __dValuesSym = {]]></xsl:text>
     <xsl:for-each select="//enum">
         <xsl:text>
         '</xsl:text> <xsl:value-of select="@name"/> <xsl:text>': { </xsl:text>
@@ -89,10 +90,11 @@ class VirtualBoxReflectionInfo:
         <xsl:text>
         },</xsl:text>
     </xsl:for-each>
-<xsl:text>
+    <!-- hack alert: force new output element to avoid large reallocations. -->
+    <xsl:text disable-output-escaping="yes"><![CDATA[
     }
 
-    __dValuesFlat = {</xsl:text>
+    __dValuesFlat = {]]></xsl:text>
     <xsl:for-each select="//enum">
         <xsl:variable name="ename">
             <xsl:value-of select="@name"/>
@@ -104,14 +106,16 @@ class VirtualBoxReflectionInfo:
             <xsl:value-of select="@value"/><xsl:text>,</xsl:text>
         </xsl:for-each>
     </xsl:for-each>
-    <xsl:text>
-        # Result constants:</xsl:text>
+    <!-- hack alert: force new output element to avoid large reallocations. -->
+    <xsl:text disable-output-escaping="yes"><![CDATA[
+        # Result constants:]]></xsl:text>
     <xsl:for-each select="//result[@value]">
         <xsl:text>
         '</xsl:text> <xsl:value-of select="@name"/> <xsl:text>': </xsl:text>
         <xsl:value-of select="@value"/><xsl:text>,</xsl:text>
     </xsl:for-each>
-<xsl:text>
+    <!-- hack alert: force new output element to avoid large reallocations. -->
+    <xsl:text>
     }
 
     __dValuesFlatSym = {</xsl:text>
