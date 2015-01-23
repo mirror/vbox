@@ -1833,15 +1833,19 @@ endif
 VBOX_IASLCMD   ?= $(firstword $(wildcard $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
 
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
-ifeq ($(KBUILD_HOST),win)
-# VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
- VBOX_XSLTPROC  ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
-else ifeq ($(KBUILD_HOST),os2)
- VBOX_XSLTPROC  ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
-else ifeq ($(KBUILD_HOST),haiku)
- VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/haiku.x86/bin/xsltproc
-else
- VBOX_XSLTPROC  ?= xsltproc$(HOSTSUFF_EXE)
+ifeq ($(VBOX_XSLTPROC),)
+ ifeq ($(KBUILD_HOST),win)
+   VBOX_XSLTPROC := $(wildcard $(PATH_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xsltproc.exe)
+   ifeq ($(VBOX_XSLTPROC),)
+    VBOX_XSLTPROC := $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
+   endif
+ else ifeq ($(KBUILD_HOST),os2)
+  VBOX_XSLTPROC  := BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
+ else ifeq ($(KBUILD_HOST),haiku)
+  VBOX_XSLTPROC  := $(PATH_DEVTOOLS)/haiku.x86/bin/xsltproc
+ else
+  VBOX_XSLTPROC  := xsltproc$(HOSTSUFF_EXE)
+ endif
 endif
 
 # bin2c (convert binary files into C arrays)
