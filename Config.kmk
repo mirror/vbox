@@ -1968,6 +1968,10 @@ endif
 # 32bit X11 LIBPATH for building 32bit guest additions
 VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 
+# Good windows shell.
+VBOX_GOOD_COMSPEC = $(subst \,/,$(SystemRoot))/System32/cmd.exe
+VBOX_GOOD_COMSPEC_BS ?= $(subst /,\,$(VBOX_GOOD_COMSPEC))
+
 #
 # Macros dealing with the darwin version we're targeting.
 # The DEF in VBOX_DEF_MACOSX_VERSION_MIN mean default.  The default min
