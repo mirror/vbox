@@ -1605,8 +1605,12 @@ static int vusbUrbSubmitCtrl(PVUSBURB pUrb)
     }
     PVUSBSETUP      pSetup = pExtra->pMsg;
 
-    AssertMsgReturn(!pPipe->async, ("%u\n", pPipe->async), VERR_GENERAL_FAILURE);
-
+    if (pPipe->async)
+    {
+        AssertMsgFailed(("%u\n", pPipe->async));
+        RTCritSectLeave(&pPipe->CritSectCtrl);
+        return VERR_GENERAL_FAILURE;
+    }
 
     /*
      * A setup packet always resets the transaction and the
