@@ -67,7 +67,7 @@ UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 bool UIMachineLogicFullscreen::checkAvailability()
 {
     /* Check if there is enough physical memory to enter fullscreen: */
-    if (uisession()->isGuestAdditionsActive())
+    if (uisession()->isGuestSupportsGraphics())
     {
         quint64 availBits = machine().GetVRAMSize() /* VRAM */ * _1M /* MiB to bytes */ * 8 /* to bits */;
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
