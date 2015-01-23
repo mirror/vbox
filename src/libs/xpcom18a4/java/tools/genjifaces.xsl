@@ -32,6 +32,34 @@
 
 <xsl:variable name="G_xsltFilename" select="'genjifaces.xsl'" />
 
+
+<!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of types.
+- - - - - - - - - - - - - - - - - - - - - - -->
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
+
+<!--
+     xsltprocNewlineOutputHack - emits a single new line.
+
+     Hack Alert! This template helps xsltproc split up the output text elements
+                 and avoid reallocating them into the MB range. Calls to this
+                 template is made occationally while generating larger output
+                 file.  It's not necessary for small stuff like header.
+
+                 The trick we're playing on xsltproc has to do with CDATA
+                 and/or the escape setting of the xsl:text element.  It forces
+                 xsltproc to allocate a new output element, thus preventing
+                 things from growing out of proportions and slowing us down.
+
+                 This was successfully employed to reduce a 18+ seconds run to
+                 around one second (possibly less due to kmk overhead).
+ -->
+<xsl:template name="xsltprocNewlineOutputHack">
+    <xsl:text disable-output-escaping="yes"><![CDATA[
+]]></xsl:text>
+</xsl:template>
+
 <xsl:template name="uppercase">
   <xsl:param name="str" select="."/>
   <xsl:value-of select="translate($str, 'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
@@ -67,7 +95,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/**
- *  Copyright (C) 2010-2013 Oracle Corporation
+ *  Copyright (C) 2010-2015 Oracle Corporation
  *
  *  This file is part of VirtualBox Open Source Edition (OSE), as
  *  available from http://www.virtualbox.org. This file is free software;
@@ -102,7 +130,8 @@
 
 <xsl:template name="endFile">
  <xsl:param name="file" />
- <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;&#10;')" />
+ <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;')" />
+ <xsl:call-template name="xsltprocNewlineOutputHack"/>
 </xsl:template>
 
 
@@ -370,11 +399,11 @@ public interface nsILocalFile extends nsIFile
       <xsl:value-of select="'String'" />
     </xsl:when>
 
-    <xsl:when test="//interface[@name=$type]">
+    <xsl:when test="count(key('G_keyInterfacesByName', $type)) > 0">
       <xsl:value-of select="$type" />
     </xsl:when>
 
-    <xsl:when test="//enum[@name=$type]">
+    <xsl:when test="count(key('G_keyEnumsByName', $type)) > 0">
       <xsl:value-of select="'long'" />
     </xsl:when>
 
@@ -394,7 +423,7 @@ public interface nsILocalFile extends nsIFile
     <xsl:with-param name="file" select="$filename" />
   </xsl:call-template>
 
-  <xsl:variable name="extendsidl" select="//interface[@name=$ifname]/@extends" />
+  <xsl:variable name="extendsidl" select="key('G_keyInterfacesByName', $ifname)/@extends" />
 
   <xsl:variable name="extends">
     <xsl:choose>
