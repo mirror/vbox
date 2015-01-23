@@ -667,9 +667,11 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
                                     ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
 
         /* Remind user if necessary, ignore text and VGA modes: */
+        /* This check (supports graphics) is not quite right due to past mistakes
+         * in the Guest Additions protocol, but in practice it should be fine. */
         if (   ulGuestBitsPerPixel != ulBitsPerPixel
             && ulGuestBitsPerPixel != 0
-            && m_pMachineView->uisession()->isGuestAdditionsActive())
+            && m_pMachineView->uisession()->isGuestSupportsGraphics())
             popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
                                                      ulGuestBitsPerPixel, ulBitsPerPixel);
         else
