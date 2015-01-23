@@ -22,51 +22,14 @@
 <xsl:output method="text"/>
 <xsl:strip-space elements="*"/>
 
-
-<!--
- *  Capitalizes the first letter:
--->
-<xsl:template name="capitalize">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="
-    concat(
-      translate(substring($str,1,1),'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-      substring($str,2)
-    )
-  "/>
-</xsl:template>
-
-<!--
- *  Uncapitalizes the first letter only if the second one is not capital
- *  otherwise leaves the string unchanged:
--->
-<xsl:template name="uncapitalize">
-  <xsl:param name="str" select="."/>
-  <xsl:choose>
-    <xsl:when test="not(contains('ABCDEFGHIJKLMNOPQRSTUVWXYZ', substring($str,2,1)))">
-      <xsl:value-of select="
-        concat(
-          translate(substring($str,1,1),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),
-          substring($str,2)
-        )
-      "/>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:value-of select="string($str)"/>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
+<xsl:include href="../../../../Main/idl/typemap-shared.inc.xsl" />
 
 
 <!--
- *  Translates the string to uppercase:
+ * Keys for more efficiently looking up of types.
 -->
-<xsl:template name="uppercase">
-  <xsl:param name="str" select="."/>
-  <xsl:value-of select="
-    translate($str,'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-  "/>
-</xsl:template>
+<xsl:key name="G_keyEnumsByName" match="//enum[@name]" use="@name"/>
+<xsl:key name="G_keyInterfacesByName" match="//interface[@name]" use="@name"/>
 
 
 <!--
@@ -82,7 +45,8 @@
 -->
 <xsl:template name="endFile">
   <xsl:param name="file" />
-  <xsl:value-of select="concat('&#10;// ##### ENDFILE &quot;', $file, '&quot;&#10;&#10;')" />
+  <xsl:call-template name="xsltprocNewlineOutputHack"/>
+  <xsl:value-of select="concat('// ##### ENDFILE &quot;', $file, '&quot;&#10;&#10;')" />
 </xsl:template>
 
 
@@ -681,7 +645,8 @@
 
   <xsl:text>// </xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text> wrapper&#x0A;&#x0A;</xsl:text>
+  <xsl:text> wrapper&#x0A;</xsl:text>
+  <xsl:call-template name="xsltprocNewlineOutputHack"/>
 
   <xsl:if test="name()='interface'">
     <xsl:call-template name="defineMembers"/>
@@ -1267,10 +1232,12 @@
 -->
 <xsl:template name="tryComposeFetchErrorInfo">
   <xsl:param name="mode" select="''"/>
+
   <xsl:variable name="ifaceSupportsErrorInfo" select="
     ancestor-or-self::interface[1]/@supportsErrorInfo
   "/>
   <xsl:variable name="librarySupportsErrorInfo" select="ancestor::library/@supportsErrorInfo"/>
+
   <xsl:choose>
     <xsl:when test="$ifaceSupportsErrorInfo">
       <xsl:call-template name="composeFetchErrorInfo">
@@ -1290,6 +1257,7 @@
 <xsl:template name="composeFetchErrorInfo">
   <xsl:param name="supports" select="''"/>
   <xsl:param name="mode" select="''"/>
+
   <xsl:choose>
     <xsl:when test="$mode='getBaseClassName'">
       <xsl:if test="$supports='strict' or $supports='yes'">
@@ -1311,11 +1279,8 @@
 </xsl:template>
 
 <xsl:template name="composeMethodCallParam">
-
   <xsl:param name="isIn" select="@dir='in'"/>
   <xsl:param name="isOut" select="@dir='out' or @dir='return'"/>
-
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
   <xsl:choose>
     <!-- safearrays -->
@@ -1353,10 +1318,7 @@
       </xsl:choose>
     </xsl:when>
     <!-- enum types -->
-    <xsl:when test="
-      (ancestor::library/enum[@name=current()/@type]) or
-      (ancestor::library/if[@target=$self_target]/enum[@name=current()/@type])
-    ">
+    <xsl:when test="count(key('G_keyEnumsByName', current()/@type)) > 0">
       <xsl:choose>
         <xsl:when test="$isIn">
           <xsl:text>(</xsl:text>
@@ -1380,12 +1342,7 @@
       </xsl:choose>
     </xsl:when>
     <!-- interface types -->
-    <xsl:when test="
-      @type='$unknown' or
-      ((ancestor::library/interface[@name=current()/@type]) or
-       (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
-      )
-    ">
+    <xsl:when test="@type='$unknown' or (count(key('G_keyInterfacesByName', current()/@type)) > 0)">
       <xsl:choose>
         <xsl:when test="$isIn">
           <xsl:text>a</xsl:text>
@@ -1432,8 +1389,6 @@
  *  attribute/parameter type conversion (returns plain Qt type name)
 -->
 <xsl:template match="attribute/@type | param/@type">
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
   <xsl:choose>
     <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
@@ -1522,31 +1477,17 @@
         <xsl:when test=".='uuid'">QUuid</xsl:when>
         <!-- system interface types -->
         <xsl:when test=".='$unknown'">CUnknown</xsl:when>
+        <!-- enum types -->
+        <xsl:when test="count(key('G_keyEnumsByName', current())) > 0">
+          <xsl:value-of select="concat('K',string(.))"/>
+        </xsl:when>
+        <!-- custom interface types -->
+        <xsl:when test="count(key('G_keyInterfacesByName', current())) > 0">
+          <xsl:value-of select="concat('C',substring(.,2))"/>
+        </xsl:when>
+        <!-- other types -->
         <xsl:otherwise>
-          <xsl:choose>
-            <!-- enum types -->
-            <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
-            ">
-              <xsl:value-of select="concat('K',string(.))"/>
-            </xsl:when>
-            <!-- custom interface types -->
-            <xsl:when test="
-              ((ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              )
-            ">
-              <xsl:value-of select="concat('C',substring(.,2))"/>
-            </xsl:when>
-            <!-- other types -->
-            <xsl:otherwise>
-              <xsl:message terminate="yes">
-                <xsl:text>Unknown parameter type: </xsl:text>
-                <xsl:value-of select="."/>
-              </xsl:message>
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:message terminate="yes"><xsl:text>Unknown parameter type: </xsl:text><xsl:value-of select="."/></xsl:message>
         </xsl:otherwise>
       </xsl:choose>
       <xsl:if test="../@safearray">
@@ -1563,9 +1504,6 @@
  *  types.
 -->
 <xsl:template match="attribute/@type | param/@type" mode="initializer">
-
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
   <xsl:choose>
     <!-- safearrays don't need initializers -->
     <xsl:when test="../@safearray">
@@ -1637,17 +1575,10 @@
         <xsl:when test=".='char'"> = 0</xsl:when>
         <xsl:when test=".='string'"> = NULL</xsl:when>
         <xsl:when test=".='wchar'"> = 0</xsl:when>
-        <xsl:otherwise>
-          <xsl:choose>
-            <!-- enum types initialized with 0 -->
-            <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
-            ">
-              <xsl:value-of select="concat(' = (K',string(.),') 0')"/>
-            </xsl:when>
-          </xsl:choose>
-        </xsl:otherwise>
+        <!-- enum types initialized with 0 -->
+        <xsl:when test="count(key('G_keyEnumsByName', current())) > 0">
+          <xsl:value-of select="concat(' = (K',string(.),') 0')"/>
+        </xsl:when>
       </xsl:choose>
     </xsl:otherwise>
   </xsl:choose>
@@ -1658,22 +1589,15 @@
  *  attribute/parameter type conversion (for method declaration)
 -->
 <xsl:template match="attribute/@type | param/@type" mode="param">
-
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
   <xsl:choose>
     <!-- class types -->
     <xsl:when test="
-      .='string' or
-      .='wstring' or
-      ../@safearray='yes' or
-      ((ancestor::library/enum[@name=current()]) or
-       (ancestor::library/if[@target=$self_target]/enum[@name=current()])
-      ) or
-      .='$unknown' or
-      ((ancestor::library/interface[@name=current()]) or
-       (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-      )
+         . = 'string'
+      or . = 'wstring'
+      or . = '$unknown'
+      or ../@safearray = 'yes'
+      or (count(key('G_keyEnumsByName',      current())) > 0)
+      or (count(key('G_keyInterfacesByName', current())) > 0)
     ">
       <xsl:choose>
         <!-- <attribute> context -->
@@ -1726,9 +1650,6 @@
  *  (basically, copied from midl.xsl)
 -->
 <xsl:template match="attribute/@type | param/@type" mode="com">
-
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
   <xsl:choose>
     <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
@@ -1802,31 +1723,20 @@
         <xsl:when test=".='uuid'">GUID</xsl:when>
         <!-- system interface types -->
         <xsl:when test=".='$unknown'">IUnknown *</xsl:when>
+        <!-- enum types -->
+        <xsl:when test="count(key('G_keyEnumsByName', current())) > 0">
+          <xsl:value-of select="."/>
+        </xsl:when>
+        <!-- custom interface types -->
+        <xsl:when test="count(key('G_keyInterfacesByName', current())) > 0">
+          <xsl:value-of select="."/><xsl:text> *</xsl:text>
+        </xsl:when>
+        <!-- other types -->
         <xsl:otherwise>
-          <xsl:choose>
-            <!-- enum types -->
-            <xsl:when test="
-              (ancestor::library/enum[@name=current()]) or
-              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
-            ">
-              <xsl:value-of select="."/>
-            </xsl:when>
-            <!-- custom interface types -->
-            <xsl:when test="
-              ((ancestor::library/interface[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              )
-            ">
-              <xsl:value-of select="."/><xsl:text> *</xsl:text>
-            </xsl:when>
-            <!-- other types -->
-            <xsl:otherwise>
-              <xsl:message terminate="yes">
-                <xsl:text>Unknown parameter type: </xsl:text>
-                <xsl:value-of select="."/>
-              </xsl:message>
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:message terminate="yes">
+            <xsl:text>Unknown parameter type: </xsl:text>
+            <xsl:value-of select="."/>
+          </xsl:message>
         </xsl:otherwise>
       </xsl:choose>
     </xsl:otherwise>
@@ -1846,23 +1756,10 @@
  *                  call.
 -->
 <xsl:template name="hooks">
-
   <xsl:param name="when" select="''"/>
   <xsl:param name="isSetter" select="''"/>
 
-  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
-  <xsl:variable name="is_iface" select="(
-    ((ancestor::library/interface[@name=current()/@type]) or
-     (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
-    )
-  )"/>
-
-  <xsl:variable name="is_enum" select="(
-    (ancestor::library/enum[@name=current()/@type]) or
-    (ancestor::library/if[@target=$self_target]/enum[@name=current()/@type])
-  )"/>
-
+  <xsl:variable name="is_iface" select="count(key('G_keyInterfacesByName', current()/@type)) > 0"/>
   <xsl:variable name="is_out" select="(
       (name()='attribute' and not($isSetter)) or
       (name()='param' and (@dir='out' or @dir='return'))
@@ -1870,6 +1767,7 @@
 
   <xsl:choose>
     <xsl:when test="$when='pre-call'">
+      <xsl:variable name="is_enum" select="count(key('G_keyEnumsByName', current()/@type)) > 0"/>
       <xsl:choose>
         <xsl:when test="@safearray='yes'">
           <!-- declare a SafeArray variable -->
