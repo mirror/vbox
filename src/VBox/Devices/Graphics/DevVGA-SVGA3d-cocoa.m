@@ -1,6 +1,6 @@
 /** @file
- * VirtualBox OpenGL Cocoa Window System Helper Implementation. 
- *  
+ * VirtualBox OpenGL Cocoa Window System Helper Implementation.
+ *
  * @remarks Inspired by HostServices/SharedOpenGL/render/renderspu_cocoa_helper.m.
  */
 
