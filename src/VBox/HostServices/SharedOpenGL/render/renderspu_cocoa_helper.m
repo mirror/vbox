@@ -1,8 +1,8 @@
 /* $Id$ */
 /** @file
- * VirtualBox OpenGL Cocoa Window System Helper Implementation. 
- *  
- * This source file is shared between the SharedOpenGL HGCM service and the 
+ * VirtualBox OpenGL Cocoa Window System Helper Implementation.
+ *
+ * This source file is shared between the SharedOpenGL HGCM service and the
  * SVGA3d emulation.
  */
 
