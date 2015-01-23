@@ -84,7 +84,8 @@ VBOX_SUP_WIN_CERTS := \
        SpcRootMicrosoft3=SpcRoot-MicrosoftRootCertificateAuthority2010-28cc3a25bfba44ac449a9b586b4339aa.taf \
        SpcRootMicrosoft4=SpcRoot-MicrosoftRootCertificateAuthority2011-3f8bc8b5fc9fb29643b569d66c42e144.taf \
        SpcRootMicrosoft5=SpcRoot-MicrosoftDigitalMediaAuthority2005-6eff330eb6e7569740680870104baaba.taf \
-       NtRootMicrosoft6=NtRoot-MicrosoftCodeVerificationRoot-729404101f3e0ca347837fca175a8438.taf \
+       SpcRootMicrosoft6=SpcRoot-MicrosoftDevelopmentRootCertificateAuthority2014-078f0a9d03df119e434e4fec1bf0235a.taf \
+       NtRootMicrosoft7=NtRoot-MicrosoftCodeVerificationRoot-729404101f3e0ca347837fca175a8438.taf \
        TimeRootMicrosoft0=Timestamp-CopyrightC1997MicrosoftCorp-01.taf \
        TrustedCertVBox0=Trusted-OracleCorporationVirtualBox-51ca009816fdbd80f120e015ee75823e.taf
 VBOX_SUP_WIN_CERT_NAMES := $(foreach cert,$(VBOX_SUP_WIN_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
