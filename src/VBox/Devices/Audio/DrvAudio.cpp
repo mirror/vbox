@@ -15,7 +15,7 @@
  * General Public License (GPL) as published by the Free Software
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be1 useful, but WITHOUT ANY WARRANTY of any kind.
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  *
  * This code is based on: audio.c from QEMU AUDIO subsystem.
