@@ -65,8 +65,8 @@ UIMachineViewScale::~UIMachineViewScale()
     /* Save machine view settings: */
     saveMachineViewSettings();
 
-    /* Return scaled-size to 'normal' mode: */
-    applyMachineViewScaleFactor();
+    /* Return scaled-size to 'default' mode: */
+    UIMachineView::applyMachineViewScaleFactor();
 
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
@@ -77,14 +77,19 @@ void UIMachineViewScale::sltPerformGuestScale()
     /* Adjust frame-buffer scaled-size: */
     frameBuffer()->setScaledSize(viewport()->size());
 
-    /* Propagate scale-factor to 3D service if necessary: */
-    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    /* If scaled-size is valid: */
+    const QSize scaledSize = frameBuffer()->scaledSize();
+    if (scaledSize.isValid())
     {
-        const double xRatio = (double)frameBuffer()->scaledSize().width() / frameBuffer()->width();
-        const double yRatio = (double)frameBuffer()->scaledSize().height() / frameBuffer()->height();
-        display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(xRatio * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(yRatio * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        /* Propagate scale-factor to 3D service if necessary: */
+        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        {
+            const double xScaleFactor = (double)scaledSize.width()  / frameBuffer()->width();
+            const double yScaleFactor = (double)scaledSize.height() / frameBuffer()->height();
+            display().NotifyScaleFactorChange(m_uScreenId,
+                                              (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        }
     }
 
     /* Scale the pause-pixmap: */
@@ -100,20 +105,18 @@ void UIMachineViewScale::sltPerformGuestScale()
 void UIMachineViewScale::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
 {
     /* Initialize variables for scale mode: */
-    QSize scaledSize = frameBuffer()->scaledSize();
-    double xRatio = (double)scaledSize.width() / frameBuffer()->width();
-    double yRatio = (double)scaledSize.height() / frameBuffer()->height();
-    AssertMsg(contentsX() == 0, ("This can't be, else notify Dsen!\n"));
-    AssertMsg(contentsY() == 0, ("This can't be, else notify Dsen!\n"));
+    const QSize scaledSize = frameBuffer()->scaledSize();
+    const double xScaleFactor = (double)scaledSize.width()  / frameBuffer()->width();
+    const double yScaleFactor = (double)scaledSize.height() / frameBuffer()->height();
 
     /* Update corresponding viewport part,
      * But make sure we update always a bigger rectangle than requested to
      * catch all rounding errors. (use 1 time the ratio factor and
      * round down on top/left, but round up for the width/height) */
-    viewport()->update((int)(iX * xRatio) - ((int)xRatio) - 1,
-                       (int)(iY * yRatio) - ((int)yRatio) - 1,
-                       (int)(iW * xRatio) + ((int)xRatio + 2) * 2,
-                       (int)(iH * yRatio) + ((int)yRatio + 2) * 2);
+    viewport()->update((int)(iX * xScaleFactor) - ((int)xScaleFactor) - 1,
+                       (int)(iY * yScaleFactor) - ((int)yScaleFactor) - 1,
+                       (int)(iW * xScaleFactor) + ((int)xScaleFactor + 2) * 2,
+                       (int)(iH * yScaleFactor) + ((int)yScaleFactor + 2) * 2);
 }
 
 bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -141,6 +144,28 @@ void UIMachineViewScale::saveMachineViewSettings()
     /* If guest screen-still visible => store it's size-hint: */
     if (uisession()->isScreenVisible(screenId()))
         storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
+}
+
+void UIMachineViewScale::applyMachineViewScaleFactor()
+{
+    /* If scaled-size is valid: */
+    const QSize scaledSize = frameBuffer()->scaledSize();
+    if (scaledSize.isValid())
+    {
+        /* Propagate scale-factor to 3D service if necessary: */
+        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        {
+            const double xScaleFactor = (double)scaledSize.width()  / frameBuffer()->width();
+            const double yScaleFactor = (double)scaledSize.height() / frameBuffer()->height();
+            display().NotifyScaleFactorChange(m_uScreenId,
+                                              (uint32_t)(xScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(yScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        }
+    }
+
+    /* Take unscaled HiDPI output mode into account: */
+    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 }
 
 void UIMachineViewScale::maybeResendSizeHint()

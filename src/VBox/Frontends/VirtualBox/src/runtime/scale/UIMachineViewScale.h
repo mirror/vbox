@@ -55,6 +55,9 @@ private:
     /* Cleanup helpers: */
     void saveMachineViewSettings();
 
+    /** Applies machine-view scale-factor. */
+    void applyMachineViewScaleFactor();
+
     /** Resends guest size-hint if necessary. */
     void maybeResendSizeHint();
 
