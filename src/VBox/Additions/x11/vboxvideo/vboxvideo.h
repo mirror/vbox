@@ -164,6 +164,8 @@ struct VBoxScreen
     RTRECTSIZE aPreferredSize;
     /** Has this screen been enabled by the host? */
     Bool afConnected;
+    /** The last mode hint data read from the X11 property. */
+    int32_t lastModeHintFromProperty;
 };
 
 typedef struct VBOXRec
@@ -193,10 +195,12 @@ typedef struct VBOXRec
     OptionInfoPtr Options;
     /** @todo we never actually free this */
     xf86CursorInfoPtr pCurs;
-    Bool useDevice;
-    Bool forceSWCursor;
-    /** Do we know that the guest can handle absolute co-ordinates? */
-    Bool guestCanAbsolute;
+    /** Do we currently want to use the host cursor? */
+    Bool fUseHardwareCursor;
+    /** Do we want to force a reset of the current mode because the host cursor support changed?  Only used by old servers. */
+    Bool fForceModeSet;
+    /** The last cursor capabilities data read from the X11 property. */
+    int32_t fLastCursorCapabilitiesFromProperty;
     /** Number of screens attached */
     uint32_t cScreens;
     /** Information about each virtual screen. */
@@ -211,6 +215,8 @@ typedef struct VBOXRec
     int fdACPIDevices;
     /** Input handler handle for ACPI hot-plug listener. */
     void *hACPIEventHandler;
+    /** Have we read all available HGSMI mode hint data? */
+    bool fHaveReadHGSMIModeHintData;
 # endif
 #else
     /** The original CreateScreenResources procedure which we wrap with our own.
@@ -241,11 +247,9 @@ extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
 extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
 
 /* setmode.c */
-extern Bool vbox_init(int scrnIndex, VBOXPtr pVBox);
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
 extern void vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
-extern Bool vbox_device_available(VBOXPtr pVBox);
 
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern void vboxDisableVbva(ScrnInfoPtr pScrn);

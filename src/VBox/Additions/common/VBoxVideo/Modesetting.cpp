@@ -279,6 +279,49 @@ RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     }
 }
 
+
+/** Report the rectangle relative to which absolute pointer events should be
+ *  expressed.  This information remains valid until the next VBVA resize event
+ *  for any screen, at which time it is reset to the bounding rectangle of all
+ *  virtual screens. 
+ * @param  pCtx      The context containing the heap to use.
+ * @param  cOriginX  Upper left X co-ordinate relative to the first screen.
+ * @param  cOriginY  Upper left Y co-ordinate relative to the first screen.
+ * @param  cWidth    Rectangle width.
+ * @param  cHeight   Rectangle height.
+ * @returns  iprt status code.
+ * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
+ */
+RTDECL(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int32_t  cOriginX, int32_t  cOriginY,
+                                             uint32_t cWidth, uint32_t cHeight)
+{
+    int rc = VINF_SUCCESS;
+    VBVAREPORTINPUTMAPPING *p;
+    LogRelFlowFunc(("cOriginX=%u, cOriginY=%u, cWidth=%u, cHeight=%u\n",
+                    (unsigned)cOriginX, (unsigned)cOriginX,
+                    (unsigned)cWidth, (unsigned)cHeight));
+
+    /* Allocate the IO buffer. */
+    p = (VBVAREPORTINPUTMAPPING *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAREPORTINPUTMAPPING), HGSMI_CH_VBVA,
+                                                       VBVA_REPORT_INPUT_MAPPING);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        p->x  = cOriginX;
+        p->y  = cOriginY;
+        p->cx = cWidth;
+        p->cy = cHeight;
+        rc = VBoxHGSMIBufferSubmit(pCtx, p);
+        /* Free the IO buffer. */
+        VBoxHGSMIBufferFree(pCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    LogFunc(("rc = %d\n", rc));
+    return rc;
+}
+
+
 /**
  * Get most recent video mode hints.
  * @param  pCtx      the context containing the heap to use

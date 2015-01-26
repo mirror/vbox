@@ -256,6 +256,8 @@ RTDECL(int)      VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cHeight,
                                              uint8_t *pPixels,
                                              uint32_t cbLength);
+RTDECL(int)      VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
+                                         uint32_t *pxHost, uint32_t *pyHost);
 
 /** @}  */
 
@@ -328,6 +330,8 @@ RTDECL(void)     VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cHeight,
                                              uint16_t cBPP,
                                              uint16_t fFlags);
+RTDECL(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int32_t  cOriginX, int32_t  cOriginY,
+                                             uint32_t cWidth, uint32_t cHeight);
 RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                   unsigned cScreens, VBVAMODEHINT *paHints);
 
