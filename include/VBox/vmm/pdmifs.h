@@ -679,12 +679,33 @@ typedef struct PDMIDISPLAYPORT
                          (PPDMIDISPLAYPORT pInterface, uint32_t cx, uint32_t cy,
                           uint32_t cBPP, uint32_t iDisplay, uint32_t dx,
                           uint32_t dy, uint32_t fEnabled, uint32_t fNotifyGuest));
+
+    /**
+     * Send the guest a notification about host cursor capabilities changes.
+     *
+     * @param   pInterface            Pointer to this interface.
+     * @param   fCapabilitiesAdded    New supported capabilities.
+     * @param   fCapabilitiesRemoved  No longer supported capabilities.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorCapabilities, (PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
+                                                                 uint32_t fCapabilitiesRemoved));
+
+    /**
+     * Tell the graphics device about the host cursor position.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   x           X offset into the cursor range.
+     * @param   y           Y offset into the cursor range.
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y));
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
 #ifdef VBOX_WITH_VMSVGA
-#define PDMIDISPLAYPORT_IID                     "f7ed5b9a-3940-4862-9310-1de7e3d118a4"
+#define PDMIDISPLAYPORT_IID                     "e8da6d7e-8490-11e4-91d8-ab609a010f13"
 #else
-#define PDMIDISPLAYPORT_IID                     "613ed6c0-817a-11e4-bc1e-931613071d2c"
+#define PDMIDISPLAYPORT_IID                     "db067c60-8490-11e4-8424-032afeb83818"
 #endif
 
 
@@ -848,7 +869,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   uScreenId           The screen updates are for.
      * @param   fRenderThreadMode   if true - the graphics device has a separate thread that does all rendering.
      *                              This means that:
-     *                              1. all pfnVBVAXxx callbacks (including the current pfnVBVAEnable call), except displayVBVAMousePointerShape
+     *                              1. most pfnVBVAXxx callbacks (see the individual documentation for each one)
      *                                 will be called in the context of the render thread rather than the emulation thread
      *                              2. PDMIDISPLAYCONNECTOR implementor (i.e. DisplayImpl) must NOT notify crogl backend
      *                                 about vbva-originated events (e.g. resize), because crogl is working in CrCmd mode,
@@ -969,9 +990,21 @@ typedef struct PDMIDISPLAYCONNECTOR
     /** The display height. */
     uint32_t        cy;
     /** @} */
+
+    /**
+     * The guest display input mapping rectangle was updated.
+     *
+     * @param   pInterface  Pointer to this interface.
+     * @param   xOrigin     Upper left X co-ordinate relative to the first screen.
+     * @param   yOrigin     Upper left Y co-ordinate relative to the first screen.
+     * @param   cx          Rectangle width.
+     * @param   cy          Rectangle height.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAInputMappingUpdate,(PPDMIDISPLAYCONNECTOR pInterface, int32_t xOrigin, int32_t yOrigin, uint32_t cx, uint32_t cy));
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "33a332b3-0850-4b0f-a697-dcc140bb2e05"
+#define PDMIDISPLAYCONNECTOR_IID                "e883a720-85fb-11e4-a307-0b06689c9661"
 
 
 /** Pointer to a block port interface. */

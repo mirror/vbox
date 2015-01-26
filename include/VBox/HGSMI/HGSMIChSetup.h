@@ -57,6 +57,9 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 #define HGSMIHOSTFLAGS_VSYNC               0x10
 /** monitor hotplug flag, should be accessed under VGAState::lock only */
 #define HGSMIHOSTFLAGS_HOTPLUG             0x20
+/** Cursor capability state change flag, should be accessed under
+ * VGAState::lock only.  @see VBVACONF32. */
+#define HGSMIHOSTFLAGS_CURSOR_CAPABILITIES 0x40
 
 typedef struct _HGSMIHOSTFLAGS
 {
