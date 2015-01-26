@@ -359,6 +359,10 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
     machineWindow()->normalizeGeometry(true /* adjust position */);
     adjustGuestScreenSize();
+
+    /* Update scaled pause pixmap, if necessary: */
+    updateScaledPausePixmap();
+    viewport()->update();
 }
 
 void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
@@ -376,6 +380,10 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
     frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
     machineWindow()->normalizeGeometry(true /* adjust position */);
     adjustGuestScreenSize();
+
+    /* Update scaled pause pixmap, if necessary: */
+    updateScaledPausePixmap();
+    viewport()->update();
 }
 
 void UIMachineView::sltMachineStateChanged()
