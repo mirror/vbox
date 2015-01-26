@@ -284,26 +284,21 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
 {
     /* Prepare corresponding viewport part: */
-    QRect rect;
+    QRect rect(iX, iY, iWidth, iHeight);
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor == 1.0)
+    if (dScaleFactor != 1.0)
     {
-        /* Adjust corresponding viewport part: */
-        rect.moveTo(iX - contentsX(),
-                    iY - contentsY());
-        rect.setSize(QSize(iWidth,
-                           iHeight));
+        rect.moveTo(floor((double)rect.x() * dScaleFactor) - 1,
+                    floor((double)rect.y() * dScaleFactor) - 1);
+        rect.setSize(QSize(ceil((double)rect.width()  * dScaleFactor) + 2,
+                           ceil((double)rect.height() * dScaleFactor) + 2));
     }
-    else
-    {
-        /* Adjust corresponding viewport part: */
-        rect.moveTo(iX * dScaleFactor - 1 - contentsX(),
-                    iY * dScaleFactor - 1 - contentsY());
-        rect.setSize(QSize(iWidth  * dScaleFactor + 2 * dScaleFactor + 1,
-                           iHeight * dScaleFactor + 2 * dScaleFactor + 1));
-    }
+
+    /* Shift has to be scaled by the backing-scale-factor
+     * but not scaled by the scale-factor. */
+    rect.translate(-contentsX(), -contentsY());
 
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
@@ -312,10 +307,10 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
         const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
         if (dBackingScaleFactor > 1.0)
         {
-            rect.moveTo(rect.x() / dBackingScaleFactor - 1,
-                        rect.y() / dBackingScaleFactor - 1);
-            rect.setSize(QSize(rect.width()  / dBackingScaleFactor + 2,
-                               rect.height() / dBackingScaleFactor + 2));
+            rect.moveTo(floor((double)rect.x() / dBackingScaleFactor) - 1,
+                        floor((double)rect.y() / dBackingScaleFactor) - 1);
+            rect.setSize(QSize(ceil((double)rect.width()  / dBackingScaleFactor) + 2,
+                               ceil((double)rect.height() / dBackingScaleFactor) + 2));
         }
     }
 #endif /* Q_WS_MAC */
