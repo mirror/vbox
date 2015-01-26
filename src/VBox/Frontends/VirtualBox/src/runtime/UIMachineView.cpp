@@ -89,6 +89,9 @@ const int XKeyRelease = KeyRelease;
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
+/* Other includes: */
+#include <math.h>
+
 
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , ulong uScreenId
