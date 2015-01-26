@@ -598,7 +598,7 @@ RTDECL(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReport
 {
     int rc = VINF_SUCCESS;
     VBVACURSORPOSITION *p;
-    LogRelFlowFunc(("x=%u, y=%u\n", (unsigned)x, (unsigned)y));
+    Log(("%s: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
 
     /* Allocate the IO buffer. */
     p = (VBVACURSORPOSITION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVACURSORPOSITION), HGSMI_CH_VBVA, VBVA_CURSOR_POSITION);
@@ -615,7 +615,7 @@ RTDECL(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReport
                 *pxHost = p->x;
             if (pyHost)
                 *pyHost = p->y;
-            LogRelFlowFunc(("return: x=%u, y=%u\n", (unsigned)x, (unsigned)y));
+            Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
         }
         /* Free the IO buffer. */
         VBoxHGSMIBufferFree(pCtx, p);
