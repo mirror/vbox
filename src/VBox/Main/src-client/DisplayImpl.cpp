@@ -506,6 +506,10 @@ Display::i_displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
         SSMR3PutS32(pSSM, that->maFramebuffers[i].yOrigin);
         SSMR3PutU32(pSSM, that->maFramebuffers[i].flags);
     }
+    SSMR3PutS32(pSSM, that->xInputMappingOrigin);
+    SSMR3PutS32(pSSM, that->yInputMappingOrigin);
+    SSMR3PutU32(pSSM, that->cxInputMapping);
+    SSMR3PutU32(pSSM, that->cyInputMapping);
 }
 
 DECLCALLBACK(int)
@@ -515,7 +519,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
 
     if (!(   uVersion == sSSMDisplayVer
           || uVersion == sSSMDisplayVer2
-          || uVersion == sSSMDisplayVer3))
+          || uVersion == sSSMDisplayVer3
+          || uVersion == sSSMDisplayVer4))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -530,7 +535,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
         if (   uVersion == sSSMDisplayVer2
-            || uVersion == sSSMDisplayVer3)
+            || uVersion == sSSMDisplayVer3
+            || uVersion == sSSMDisplayVer4)
         {
             uint32_t w;
             uint32_t h;
@@ -539,7 +545,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
             that->maFramebuffers[i].w = w;
             that->maFramebuffers[i].h = h;
         }
-        if (uVersion == sSSMDisplayVer3)
+        if (   uVersion == sSSMDisplayVer3
+            || uVersion == sSSMDisplayVer4)
         {
             int32_t xOrigin;
             int32_t yOrigin;
@@ -552,6 +559,13 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
             that->maFramebuffers[i].flags = (uint16_t)flags;
             that->maFramebuffers[i].fDisabled = (that->maFramebuffers[i].flags & VBVA_SCREEN_F_DISABLED) != 0;
         }
+    }
+    if (uVersion == sSSMDisplayVer4)
+    {
+        SSMR3GetS32(pSSM, &that->xInputMappingOrigin);
+        SSMR3GetS32(pSSM, &that->yInputMappingOrigin);
+        SSMR3GetU32(pSSM, &that->cxInputMapping);
+        SSMR3GetU32(pSSM, &that->cyInputMapping);
     }
 
     return VINF_SUCCESS;
@@ -693,7 +707,7 @@ int Display::i_registerSSM(PUVM pUVM)
     /* Version 2 adds width and height of the framebuffer; version 3 adds
      * the framebuffer offset in the virtual desktop and the framebuffer flags.
      */
-    int rc = SSMR3RegisterExternal(pUVM, "DisplayData", 0, sSSMDisplayVer3,
+    int rc = SSMR3RegisterExternal(pUVM, "DisplayData", 0, sSSMDisplayVer4,
                                    mcMonitors * sizeof(uint32_t) * 8 + sizeof(uint32_t),
                                    NULL, NULL, NULL,
                                    NULL, i_displaySSMSave, NULL,
@@ -1081,6 +1095,16 @@ void Display::i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities)
     mParent->i_onAdditionsStateChange();
 }
 
+void Display::i_handleUpdateVBVAInputMapping(int32_t xOrigin, int32_t yOrigin, uint32_t cx, uint32_t cy)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    xInputMappingOrigin = xOrigin;
+    yInputMappingOrigin = yOrigin;
+    cxInputMapping      = cx;
+    cyInputMapping      = cy;
+}
+
 /**
  * Returns the upper left and lower right corners of the virtual framebuffer.
  * The lower right is "exclusive" (i.e. first pixel beyond the framebuffer),
@@ -1109,22 +1133,67 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
         x2 = mpDrv->IConnector.cx + (int32_t)maFramebuffers[0].xOrigin;
         y2 = mpDrv->IConnector.cy + (int32_t)maFramebuffers[0].yOrigin;
     }
-    for (unsigned i = 1; i < mcMonitors; ++i)
+    if (cxInputMapping && cyInputMapping)
     {
-        if (!maFramebuffers[i].fDisabled)
-        {
-            x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
-            y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
-            x2 = RT_MAX(x2,   maFramebuffers[i].xOrigin
-                            + (int32_t)maFramebuffers[i].w);
-            y2 = RT_MAX(y2,   maFramebuffers[i].yOrigin
-                            + (int32_t)maFramebuffers[i].h);
-        }
+        x1 = xInputMappingOrigin;
+        y1 = yInputMappingOrigin;
+        x2 = xInputMappingOrigin + cxInputMapping;
+        y2 = xInputMappingOrigin + cyInputMapping;
     }
+    else
+        for (unsigned i = 1; i < mcMonitors; ++i)
+        {
+            if (!maFramebuffers[i].fDisabled)
+            {
+                x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
+                y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
+                x2 = RT_MAX(x2, maFramebuffers[i].xOrigin + (int32_t)maFramebuffers[i].w);
+                y2 = RT_MAX(y2, maFramebuffers[i].yOrigin + (int32_t)maFramebuffers[i].h);
+            }
+        }
     *px1 = x1;
     *py1 = y1;
     *px2 = x2;
     *py2 = y2;
+}
+
+HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved)
+{
+    /* Do we need this to access mParent?  I presume that the safe VM pointer
+     * ensures that mpDrv will remain valid. */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+    CHECK_CONSOLE_DRV(mpDrv);
+    alock.release();  /* Release before calling up for lock order reasons. */
+    mpDrv->pUpPort->pfnReportHostCursorCapabilities (mpDrv->pUpPort, fCapabilitiesAdded, fCapabilitiesRemoved);
+    if (   mfGuestVBVACapabilities & VBVACAPS_DISABLE_CURSOR_INTEGRATION
+        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
+    {
+        HRESULT hrc = mParent->i_sendACPIMonitorHotPlugEvent();
+        if (FAILED(hrc))
+            return hrc;
+    }
+    return S_OK;
+}
+
+HRESULT Display::i_reportHostCursorPosition(int32_t x, int32_t y)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    uint32_t xAdj = (uint32_t)RT_MAX(x - xInputMappingOrigin, 0);
+    uint32_t yAdj = (uint32_t)RT_MAX(y - yInputMappingOrigin, 0);
+    xAdj = RT_MIN(xAdj, cxInputMapping);
+    yAdj = RT_MIN(yAdj, cyInputMapping);
+
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+    CHECK_CONSOLE_DRV(mpDrv);
+    alock.release();  /* Release before calling up for lock order reasons. */
+    mpDrv->pUpPort->pfnReportHostCursorPosition(mpDrv->pUpPort, xAdj, yAdj);
+    return S_OK;
 }
 
 static bool displayIntersectRect(RTRECT *prectResult,
@@ -3835,6 +3904,11 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
 
     pFBInfo->flags = pScreen->u16Flags;
 
+    pThis->xInputMappingOrigin = 0;
+    pThis->yInputMappingOrigin = 0;
+    pThis->cxInputMapping = 0;
+    pThis->cyInputMapping = 0;
+
     if (fNewOrigin)
     {
         fireGuestMonitorChangedEvent(pThis->mParent->i_getEventSource(),
@@ -3895,6 +3969,18 @@ DECLCALLBACK(void) Display::i_displayVBVAGuestCapabilityUpdate(PPDMIDISPLAYCONNE
 
     pThis->i_handleUpdateGuestVBVACapabilities(fCapabilities);
 }
+
+DECLCALLBACK(void) Display::i_displayVBVAInputMappingUpdate(PPDMIDISPLAYCONNECTOR pInterface, int32_t xOrigin, int32_t yOrigin,
+                                                            uint32_t cx, uint32_t cy)
+{
+    LogFlowFunc(("\n"));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    pThis->i_handleUpdateVBVAInputMapping(xOrigin, yOrigin, cx, cy);
+}
+
 #endif /* VBOX_WITH_HGSMI */
 
 /**
@@ -3996,6 +4082,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IConnector.pfnVBVAResize            = Display::i_displayVBVAResize;
     pThis->IConnector.pfnVBVAMousePointerShape = Display::i_displayVBVAMousePointerShape;
     pThis->IConnector.pfnVBVAGuestCapabilityUpdate = Display::i_displayVBVAGuestCapabilityUpdate;
+    pThis->IConnector.pfnVBVAInputMappingUpdate = Display::i_displayVBVAInputMappingUpdate;
 #endif
 
     /*

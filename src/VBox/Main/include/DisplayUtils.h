@@ -22,6 +22,7 @@ using namespace com;
 #define sSSMDisplayVer 0x00010001
 #define sSSMDisplayVer2 0x00010002
 #define sSSMDisplayVer3 0x00010003
+#define sSSMDisplayVer4 0x00010004
 
 int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32ScreenId,
                              uint32_t *pu32OriginX, uint32_t *pu32OriginY,

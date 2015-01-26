@@ -123,6 +123,8 @@ public:
                                           ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin) = 0;
     virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                             int32_t *px2, int32_t *py2) = 0;
+    virtual HRESULT i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved) = 0;
+    virtual HRESULT i_reportHostCursorPosition(int32_t x, int32_t y) = 0;
 };
 
 class VMMDev;
@@ -149,6 +151,7 @@ public:
     void i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int h);
     void i_handleUpdateVMMDevSupportsGraphics(bool fSupportsGraphics);
     void i_handleUpdateGuestVBVACapabilities(uint32_t fNewCapabilities);
+    void i_handleUpdateVBVAInputMapping(int32_t xOrigin, int32_t yOrigin, uint32_t cx, uint32_t cy);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     int  i_handleVHWACommandProcess(PVBOXVHWACMD pCommand);
 #endif
@@ -199,6 +202,8 @@ public:
     }
     virtual void i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                             int32_t *px2, int32_t *py2);
+    virtual HRESULT i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved);
+    virtual HRESULT i_reportHostCursorPosition(int32_t x, int32_t y);
 
     static const PDMDRVREG  DrvReg;
 
@@ -332,6 +337,9 @@ private:
                                                               uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy,
                                                               const void *pvShape);
     static DECLCALLBACK(void)  i_displayVBVAGuestCapabilityUpdate(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fCapabilities);
+
+    static DECLCALLBACK(void)  i_displayVBVAInputMappingUpdate(PPDMIDISPLAYCONNECTOR pInterface, int32_t xOrigin, int32_t yOrigin,
+                                                               uint32_t cx, uint32_t cy);
 #endif
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -361,6 +369,12 @@ private:
     bool                    mfVMMDevInited;
 
     unsigned mcMonitors;
+    /** Input mapping rectangle top left X relative to the first screen. */
+    int32_t     xInputMappingOrigin;
+    /** Input mapping rectangle top left Y relative to the first screen. */
+    int32_t     yInputMappingOrigin;
+    uint32_t    cxInputMapping;  /**< Input mapping rectangle width. */
+    uint32_t    cyInputMapping;  /**< Input mapping rectangle height. */
     DISPLAYFBINFO maFramebuffers[SchemaDefs::MaxGuestMonitors];
     /** Does the VMM device have the "supports graphics" capability set?
      *  Does not go into the saved state as it is refreshed on restore. */
@@ -368,6 +382,9 @@ private:
     /** Mirror of the current guest VBVA capabilities.
      *  Does not go into the saved state as it is refreshed on restore. */
     uint32_t    mfGuestVBVACapabilities;
+    /** Mirror of the current host cursor integration support capability.
+     *  Does not go into the saved state as it is refreshed on restore. */
+    uint32_t    mfHostSupportsCursorIntegration;
 
     bool mfSourceBitmapEnabled;
     bool volatile fVGAResizing;

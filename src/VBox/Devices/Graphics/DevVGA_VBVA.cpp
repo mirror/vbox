@@ -82,6 +82,8 @@ typedef struct VBVACONTEXT
     VBVAVIEW aViews[64 /* @todo SchemaDefs::MaxGuestMonitors*/];
     VBVAMOUSESHAPEINFO mouseShapeInfo;
     bool fPaused;
+    uint32_t xCursor;
+    uint32_t yCursor;
     VBVAMODEHINT aModeHints[VBOX_VIDEO_MAX_SCREENS];
 } VBVACONTEXT;
 
@@ -2178,9 +2180,14 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 /* @todo a value calculated from the vram size */
                 pConf32->u32Value = 64*_1K;
             }
-            else if (pConf32->u32Index == VBOX_VBVA_CONF32_MODE_HINT_REPORTING)
+            else if (   pConf32->u32Index == VBOX_VBVA_CONF32_MODE_HINT_REPORTING
+                     || pConf32->u32Index == VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING)
             {
                 pConf32->u32Value = VINF_SUCCESS;
+            }
+            else if (pConf32->u32Index == VBOX_VBVA_CONF32_CURSOR_CAPABILITIES)
+            {
+                pConf32->u32Value = pVGAState->fHostCursorCapabilities;
             }
             else
             {
@@ -2484,6 +2491,39 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             }
         } break;
 
+        case VBVA_REPORT_INPUT_MAPPING:
+        {
+            if (cbBuffer != sizeof(VBVAREPORTINPUTMAPPING))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            VBVAREPORTINPUTMAPPING *pReport = (VBVAREPORTINPUTMAPPING *)pvBuffer;
+            LogRelFlowFunc(("VBVA_REPORT_INPUT_MAPPING: x=%u, y=%u, cx=%u, cy=%u\n", (unsigned)pReport->x, (unsigned)pReport->y,
+                            (unsigned)pReport->cx, (unsigned)pReport->cy));
+            pVGAState->pDrv->pfnVBVAInputMappingUpdate(pVGAState->pDrv, pReport->x, pReport->y, pReport->cx, pReport->cy);
+        } break;
+
+        case VBVA_CURSOR_POSITION:
+        {
+            if (cbBuffer != sizeof(VBVACURSORPOSITION))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            VBVACURSORPOSITION *pReport
+                = (VBVACURSORPOSITION *)pvBuffer;
+            LogRelFlowFunc(("VBVA_CURSOR_POSITION: fReportPosition=%RTbool",
+                            RT_BOOL(pReport->fReportPosition)));
+            if (RT_BOOL(pReport->fReportPosition))
+                LogRelFlowFunc(("VBVA_CURSOR_POSITION: fReportPosition=true, x=%u, y=%u\n",
+                               (unsigned)pReport->x, (unsigned)pReport->y));
+            else
+                LogRelFlowFunc(("VBVA_CURSOR_POSITION: fReportPosition=false\n"));
+            pReport->x = pCtx->xCursor;
+            pReport->y = pCtx->yCursor;
+        } break;
+
         default:
             Log(("Unsupported VBVA guest command %d!!!\n",
                  u16ChannelInfo));
@@ -2621,6 +2661,31 @@ DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
     return rc;
 }
 
+DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
+                                                        uint32_t fCapabilitiesRemoved)
+{
+    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
+    pThis->fHostCursorCapabilities |= fCapabilitiesAdded;
+    pThis->fHostCursorCapabilities &= ~fCapabilitiesRemoved;
+    if (pThis->fGuestCaps & VBVACAPS_IRQ)
+        VBVARaiseIrqNoWait(pThis, HGSMIHOSTFLAGS_CURSOR_CAPABILITIES);
+    PDMCritSectLeave(&pThis->CritSect);
+}
+
+DECLCALLBACK(void) vbvaPortReportHostCursorPosition
+                       (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y)
+{
+    PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pThis->pHGSMI);
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertRC(rc);
+    pCtx->xCursor = x;
+    pCtx->yCursor = y;
+    PDMCritSectLeave(&pThis->CritSect);
+}
+
 static HGSMICHANNELHANDLER sOldChannelHandler;
 
 int VBVAInit (PVGASTATE pVGAState)
@@ -2652,6 +2717,7 @@ int VBVAInit (PVGASTATE pVGAState)
              pCtx->cViews = pVGAState->cMonitors;
              pCtx->fPaused = true;
              memset(pCtx->aModeHints, ~0, sizeof(*pCtx->aModeHints));
+             pVGAState->fHostCursorCapabilities = 0;
          }
      }
 

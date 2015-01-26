@@ -556,7 +556,7 @@ typedef struct VGAState {
      * adapter, the way it can handle async HGSMI command completion, etc. */
     uint32_t                    fGuestCaps;
     uint32_t                    fScanLineCfg;
-    uint8_t                     Padding10[4];
+    uint32_t                    fHostCursorCapabilities;
 #  else
     uint8_t                     Padding10[14];
 #  endif
@@ -691,6 +691,9 @@ DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
                                        uint32_t cDisplay, uint32_t dx,
                                        uint32_t dy, uint32_t fEnabled,
                                        uint32_t fNotifyGuest);
+DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
+                                                        uint32_t fCapabilitiesRemoved);
+DECLCALLBACK(void) vbvaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y);
 
 # ifdef VBOX_WITH_VDMA
 typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
