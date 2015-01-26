@@ -229,12 +229,6 @@ void UIMachineWindow::adjustMachineViewSize()
     machineView()->adjustGuestScreenSize();
 }
 
-void UIMachineWindow::applyMachineWindowScaleFactor()
-{
-    /* We need to apply machine-view scale-factor if necessary: */
-    machineView()->applyMachineViewScaleFactor();
-}
-
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindow::setMask(const QRegion &region)
 {
