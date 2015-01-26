@@ -215,9 +215,9 @@ typedef struct VBOXRec
     int fdACPIDevices;
     /** Input handler handle for ACPI hot-plug listener. */
     void *hACPIEventHandler;
+# endif
     /** Have we read all available HGSMI mode hint data? */
     bool fHaveReadHGSMIModeHintData;
-# endif
 #else
     /** The original CreateScreenResources procedure which we wrap with our own.
      */
