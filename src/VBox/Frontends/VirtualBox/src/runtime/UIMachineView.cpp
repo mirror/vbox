@@ -289,14 +289,21 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
     /* Prepare corresponding viewport part: */
     QRect rect(iX, iY, iWidth, iHeight);
 
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    if (dScaleFactor != 1.0)
+    /* Take the scaling into account: */
+    const double dScaleFactor = frameBuffer()->scaleFactor();
+    const QSize scaledSize = frameBuffer()->scaledSize();
+    if (scaledSize.isValid())
     {
-        rect.moveTo(floor((double)rect.x() * dScaleFactor) - 1,
-                    floor((double)rect.y() * dScaleFactor) - 1);
-        rect.setSize(QSize(ceil((double)rect.width()  * dScaleFactor) + 2,
-                           ceil((double)rect.height() * dScaleFactor) + 2));
+        /* Calculate corresponding scale-factors: */
+        const double xScaleFactor = visualStateType() == UIVisualStateType_Scale ?
+                                    (double)scaledSize.width()  / frameBuffer()->width()  : dScaleFactor;
+        const double yScaleFactor = visualStateType() == UIVisualStateType_Scale ?
+                                    (double)scaledSize.height() / frameBuffer()->height() : dScaleFactor;
+        /* Adjust corresponding viewport part: */
+        rect.moveTo(floor((double)rect.x() * xScaleFactor) - 1,
+                    floor((double)rect.y() * yScaleFactor) - 1);
+        rect.setSize(QSize(ceil((double)rect.width()  * xScaleFactor) + 2,
+                           ceil((double)rect.height() * yScaleFactor) + 2));
     }
 
     /* Shift has to be scaled by the backing-scale-factor
@@ -305,9 +312,9 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
 
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    if (frameBuffer()->useUnscaledHiDPIOutput())
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
         {
             rect.moveTo(floor((double)rect.x() / dBackingScaleFactor) - 1,
@@ -973,7 +980,7 @@ void UIMachineView::updateSliders()
      * See also viewportToContents()... */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
         {
             xRange *= dBackingScaleFactor;
@@ -1001,7 +1008,7 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
      * See also updateSliders()... */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
         {
             iContentsX /= dBackingScaleFactor;
@@ -1230,7 +1237,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
-        if (gEDataManager->scaleFactor(vboxGlobal().managedVMUuid()) == 1.0)
+        if (frameBuffer()->scaleFactor() == 1.0)
             painter.drawPixmap(rect.topLeft(), pausePixmap());
         else
             painter.drawPixmap(rect.topLeft(), pausePixmapScaled());
@@ -1425,7 +1432,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 QSize UIMachineView::scaledForward(QSize size) const
 {
     /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const double dScaleFactor = frameBuffer()->scaleFactor();
     if (dScaleFactor != 1.0)
         size = QSize(size.width() * dScaleFactor, size.height() * dScaleFactor);
 
@@ -1433,7 +1440,7 @@ QSize UIMachineView::scaledForward(QSize size) const
     /* Take the backing-scale-factor into account: */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
             size = QSize(size.width() / dBackingScaleFactor, size.height() / dBackingScaleFactor);
     }
@@ -1449,14 +1456,14 @@ QSize UIMachineView::scaledBackward(QSize size) const
     /* Take the backing-scale-factor into account: */
     if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
     {
-        const double dBackingScaleFactor = darwinBackingScaleFactor(machineWindow());
+        const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
             size = QSize(size.width() * dBackingScaleFactor, size.height() * dBackingScaleFactor);
     }
 #endif /* Q_WS_MAC */
 
     /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const double dScaleFactor = frameBuffer()->scaleFactor();
     if (dScaleFactor != 1.0)
         size = QSize(size.width() / dScaleFactor, size.height() / dScaleFactor);
 
