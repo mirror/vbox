@@ -91,7 +91,7 @@ public:
     virtual void adjustGuestScreenSize() {}
 
     /** Applies machine-view scale-factor. */
-    void applyMachineViewScaleFactor();
+    virtual void applyMachineViewScaleFactor();
 
     /* Framebuffer aspect ratio: */
     double aspectRatio() const;
