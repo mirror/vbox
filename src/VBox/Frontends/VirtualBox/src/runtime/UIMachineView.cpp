@@ -431,6 +431,8 @@ void UIMachineView::sltMachineStateChanged()
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
                     display().InvalidateAndUpdate();
+                    /* Reapply machine-view scale-factor if necessary: */
+                    applyMachineViewScaleFactor();
                 }
             }
             break;
