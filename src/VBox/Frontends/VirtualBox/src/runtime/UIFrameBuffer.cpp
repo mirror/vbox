@@ -699,7 +699,7 @@ void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
 
     /* Update scaled-size according scale-factor for modes except the 'Scale' one: */
     if (m_pMachineView->machineLogic()->visualStateType() != UIVisualStateType_Scale)
-        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
+        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
 }
 
 void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
@@ -777,7 +777,7 @@ void UIFrameBuffer::setScaleFactor(double dScaleFactor)
     m_dScaleFactor = dScaleFactor;
 
     /* Update scaled-size according scale-factor: */
-    setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize(m_iWidth * scaleFactor(), m_iHeight * scaleFactor()));
+    setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
 
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -970,8 +970,8 @@ void UIFrameBuffer::eraseImageRect(QPainter &painter, const QRect &rect,
         if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Adjust sub-pixmap: */
-            subPixmap = QPixmap(rect.width() * dBackingScaleFactor,
-                                rect.height() * dBackingScaleFactor);
+            subPixmap = QPixmap((int)(rect.width() * dBackingScaleFactor),
+                                (int)(rect.height() * dBackingScaleFactor));
         }
 
 #ifdef Q_WS_MAC
