@@ -74,7 +74,8 @@ int main(int argc, char **argv)
     if (argc != 4)
     {
         RTPrintf("Usage: %s <SSM filename> <SSM unitname> <outfile>\n", RTPathFilename(argv[0]));
-        return RTEXITCODE_FAILURE;
+        /* don't fail by default */
+        return RTEXITCODE_SUCCESS;
     }
     return extractUnit(argv[1], argv[2], argv[3]);
 }
