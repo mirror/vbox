@@ -102,23 +102,6 @@ void UIMachineViewScale::sltPerformGuestScale()
     updateSliders();
 }
 
-void UIMachineViewScale::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
-{
-    /* Initialize variables for scale mode: */
-    const QSize scaledSize = frameBuffer()->scaledSize();
-    const double xScaleFactor = (double)scaledSize.width()  / frameBuffer()->width();
-    const double yScaleFactor = (double)scaledSize.height() / frameBuffer()->height();
-
-    /* Update corresponding viewport part,
-     * But make sure we update always a bigger rectangle than requested to
-     * catch all rounding errors. (use 1 time the ratio factor and
-     * round down on top/left, but round up for the width/height) */
-    viewport()->update((int)(iX * xScaleFactor) - ((int)xScaleFactor) - 1,
-                       (int)(iY * yScaleFactor) - ((int)yScaleFactor) - 1,
-                       (int)(iW * xScaleFactor) + ((int)xScaleFactor + 2) * 2,
-                       (int)(iH * yScaleFactor) + ((int)yScaleFactor + 2) * 2);
-}
-
 bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     if (pWatched != 0 && pWatched == viewport())

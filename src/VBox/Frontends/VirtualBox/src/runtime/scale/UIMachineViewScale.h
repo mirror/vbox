@@ -41,9 +41,6 @@ private slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestScale();
 
-    /* Handler: Frame-buffer NotifyUpdate stuff: */
-    void sltHandleNotifyUpdate(int iX, int iY, int iW, int iH);
-
 private:
 
     /* Event handlers: */
