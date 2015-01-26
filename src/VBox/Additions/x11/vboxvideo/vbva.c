@@ -240,12 +240,6 @@ vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         FatalError("failed to initialise vboxvideo graphics acceleration.\n");
 }
 
-Bool
-vbox_device_available(VBOXPtr pVBox)
-{
-    return pVBox->useDevice;
-}
-
 /**
  * Inform VBox that we will supply it with dirty rectangle information
  * and install the dirty rectangle handler.
@@ -286,7 +280,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
     if (rc && pVBox->hACPIEventHandler != NULL)
         /* We ignore the return value as the fall-back should be active
          * anyway. */
-        VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS);
+        VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
 # endif
 #endif
     return rc;
