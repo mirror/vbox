@@ -52,14 +52,18 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Other VBox includes: */
 #include <iprt/memcache.h>
 #include <VBox/err.h>
-
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBox/VBoxVideo.h>
 # include <VBox/vmm/ssm.h>
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+/* Other includes: */
+#include <math.h>
+
 
 #ifdef VBOXQGL_PROF_BASE
 # ifdef VBOXQGL_DBG_SURF
@@ -4414,23 +4418,23 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
                                     ULONG uW, ULONG uH)
 {
     /* Prepare corresponding viewport part: */
-    QRect rect;
+    QRect rect(uX, uY, uW, uH);
 
-    /* Take the scale-factor into account: */
+    /* Take the scaling into account: */
     const double dScaleFactor = mSizeInfo.scaleFactor();
-    if (dScaleFactor == 1.0)
+    const QSize scaledSize = mSizeInfo.scaledSize();
+    if (scaledSize.isValid())
     {
+        /* Calculate corresponding scale-factors: */
+        const double xScaleFactor = mSizeInfo.visualState() == UIVisualStateType_Scale ?
+                                    (double)scaledSize.width()  / mSizeInfo.width()  : dScaleFactor;
+        const double yScaleFactor = mSizeInfo.visualState() == UIVisualStateType_Scale ?
+                                    (double)scaledSize.height() / mSizeInfo.height() : dScaleFactor;
         /* Adjust corresponding viewport part: */
-        rect.moveTo(uX, uY);
-        rect.setSize(QSize(uW, uH));
-    }
-    else
-    {
-        /* Adjust corresponding viewport part: */
-        rect.moveTo(uX * dScaleFactor - 1,
-                    uY * dScaleFactor - 1);
-        rect.setSize(QSize(uW * dScaleFactor + 2 * dScaleFactor + 1,
-                           uH * dScaleFactor + 2 * dScaleFactor + 1));
+        rect.moveTo(floor((double)rect.x() * xScaleFactor) - 1,
+                    floor((double)rect.y() * yScaleFactor) - 1);
+        rect.setSize(QSize(ceil((double)rect.width()  * xScaleFactor) + 2,
+                           ceil((double)rect.height() * yScaleFactor) + 2));
     }
 
 #ifdef Q_WS_MAC
@@ -4440,8 +4444,10 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
         const double dBackingScaleFactor = darwinBackingScaleFactor(mpViewport->window());
         if (dBackingScaleFactor > 1.0)
         {
-            rect.moveTo(rect.topLeft() / dBackingScaleFactor - QPoint(1, 1));
-            rect.setSize(rect.size() / dBackingScaleFactor + QSize(2, 2));
+            rect.moveTo(floor((double)rect.x() / dBackingScaleFactor) - 1,
+                        floor((double)rect.y() / dBackingScaleFactor) - 1);
+            rect.setSize(QSize(ceil((double)rect.width()  / dBackingScaleFactor) + 2,
+                               ceil((double)rect.height() / dBackingScaleFactor) + 2));
         }
     }
 #endif /* Q_WS_MAC */

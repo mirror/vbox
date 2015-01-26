@@ -1343,6 +1343,7 @@ public:
 
     VBoxFBSizeInfo() {}
     template<class T> VBoxFBSizeInfo(T *pFb) :
+        m_visualState(pFb->visualState()),
         mPixelFormat(pFb->pixelFormat()), mVRAM(pFb->address()), mBitsPerPixel(pFb->bitsPerPixel()),
         mBytesPerLine(pFb->bytesPerLine()), mWidth(pFb->width()), mHeight(pFb->height()),
         m_dScaleFactor(pFb->scaleFactor()), m_scaledSize(pFb->scaledSize()), m_fUseUnscaledHiDPIOutput(pFb->useUnscaledHiDPIOutput()),
@@ -1352,11 +1353,13 @@ public:
                    ulong aBitsPerPixel, ulong aBytesPerLine,
                    ulong aWidth, ulong aHeight,
                    bool bUsesGuestVram) :
+        m_visualState(UIVisualStateType_Invalid),
         mPixelFormat(aPixelFormat), mVRAM(aVRAM), mBitsPerPixel(aBitsPerPixel),
         mBytesPerLine(aBytesPerLine), mWidth(aWidth), mHeight(aHeight),
         m_dScaleFactor(1.0), m_scaledSize(QSize()), m_fUseUnscaledHiDPIOutput(false),
         mUsesGuestVram(bUsesGuestVram) {}
 
+    UIVisualStateType visualState() const { return m_visualState; }
     ulong pixelFormat() const { return mPixelFormat; }
     uchar *VRAM() const { return mVRAM; }
     ulong bitsPerPixel() const { return mBitsPerPixel; }
@@ -1370,6 +1373,7 @@ public:
 
 private:
 
+    UIVisualStateType m_visualState;
     ulong mPixelFormat;
     uchar *mVRAM;
     ulong mBitsPerPixel;
