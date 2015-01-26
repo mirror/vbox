@@ -76,6 +76,9 @@ public:
       * @note Calls to this and any other EMT callback are synchronized (from GUI side). */
     void setMarkAsUnused(bool fUnused);
 
+    /** Returns the visual-state this frame-buffer created for. */
+    UIVisualStateType visualState() const { return m_visualState; }
+
     /** Returns whether frame-buffer is <b>auto-enabled</b>.
       * @note Refer to m_fAutoEnabled for more information. */
     bool isAutoEnabled() const { return m_fAutoEnabled; }
@@ -259,6 +262,9 @@ protected:
                               bool fUseUnscaledHiDPIOutput,
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
+
+    /** Holds the visual-state this frame-buffer created for. */
+    UIVisualStateType m_visualState;
 
     /** Holds the QImage buffer. */
     QImage m_image;
