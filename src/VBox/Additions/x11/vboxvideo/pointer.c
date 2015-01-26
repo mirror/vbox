@@ -14,7 +14,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
 #ifndef PCIACCESS
@@ -111,55 +110,6 @@ vbox_show_shape(unsigned short w, unsigned short h, CARD32 bg, unsigned char *im
 #endif
 
 /**************************************************************************
-* Helper functions and macros                                             *
-**************************************************************************/
-
-/* This is called by the X server every time it loads a new cursor to see
- * whether our "cursor hardware" can handle the cursor.  This provides us with
- * a mechanism (the only one!) to switch back from a software to a hardware
- * cursor. */
-static Bool
-vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
-{
-    Bool rc = TRUE;
-    uint32_t fFeatures = 0;
-    VBOXPtr pVBox = pScrn->driverPrivate;
-
-    /* We may want to force the use of a software cursor.  Currently this is
-     * needed if the guest uses a large virtual resolution, as in this case
-     * the host and guest tend to disagree about the pointer location. */
-    if (pVBox->forceSWCursor)
-        rc = FALSE;
-    /* Query information about mouse integration from the host. */
-    if (rc) {
-        int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-        if (RT_FAILURE(vrc))
-            rc = FALSE;
-    }
-    /* If we got the information from the host then make sure the host wants
-     * to draw the pointer. */
-    if (rc)
-    {
-        if (   (fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
-                /* As of this version (server 1.6) all major Linux releases
-                 * are known to handle USB tablets correctly. */
-            || (fFeatures & VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
-#endif
-            )
-            /* Assume this will never be unloaded as long as the X session is
-             * running. */
-            pVBox->guestCanAbsolute = TRUE;
-        if (   (fFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-            || !pVBox->guestCanAbsolute
-            || !(fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
-           )
-            rc = FALSE;
-    }
-    return rc;
-}
-
-/**************************************************************************
 * Main functions                                                          *
 **************************************************************************/
 
@@ -173,40 +123,13 @@ vbox_close(ScrnInfoPtr pScrn, VBOXPtr pVBox)
     TRACE_EXIT();
 }
 
-Bool
-vbox_init(int scrnIndex, VBOXPtr pVBox)
-{
-    Bool rc = TRUE;
-    int vrc;
-    uint32_t fMouseFeatures = 0;
-
-    TRACE_ENTRY();
-    vrc = VbglR3Init();
-    if (RT_FAILURE(vrc))
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Failed to initialize the VirtualBox device (rc=%d) - make sure that the VirtualBox guest additions are properly installed.  If you are not sure, try reinstalling them.  The X Window graphics drivers will run in compatibility mode.\n",
-                   vrc);
-        rc = FALSE;
-    }
-    pVBox->useDevice = rc;
-    return rc;
-}
-
 static void
 vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, 0, 0, 0, 0, 0, NULL, 0);
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not hide the virtual mouse pointer, VBox error %d.\n", rc);
-        /* Play safe, and disable the hardware cursor until the next mode
-         * switch, since obviously something happened that we didn't
-         * anticipate. */
-        pVBox->forceSWCursor = TRUE;
-    }
+    VBVXASSERT(rc == VINF_SUCCESS, ("Could not hide the virtual mouse pointer, VBox error %d.\n", rc));
 }
 
 static void
@@ -214,17 +137,11 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    if (!vbox_host_uses_hwcursor(pScrn))
+    if (!pVBox->fUseHardwareCursor)
         return;
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, VBOX_MOUSE_POINTER_VISIBLE,
                                      0, 0, 0, 0, NULL, 0);
-    if (RT_FAILURE(rc)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Could not unhide the virtual mouse pointer.\n");
-        /* Play safe, and disable the hardware cursor until the next mode
-         * switch, since obviously something happened that we didn't
-         * anticipate. */
-        pVBox->forceSWCursor = TRUE;
-    }
+    VBVXASSERT(rc == VINF_SUCCESS, ("Could not unhide the virtual mouse pointer.\n"));
 }
 
 static void
@@ -242,13 +159,7 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     rc = VBoxHGSMIUpdatePointerShape(&pVBox->guestCtx, pImage->fFlags,
              pImage->cHotX, pImage->cHotY, pImage->cWidth, pImage->cHeight,
              pImage->pPixels, pImage->cbLength);
-    if (RT_FAILURE(rc)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,  "Unable to set the virtual mouse pointer image.\n");
-        /* Play safe, and disable the hardware cursor until the next mode
-         * switch, since obviously something happened that we didn't
-         * anticipate. */
-        pVBox->forceSWCursor = TRUE;
-    }
+    VBVXASSERT(rc == VINF_SUCCESS, ("Unable to set the virtual mouse pointer image.\n"));
 }
 
 static void
@@ -264,11 +175,10 @@ vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
 static void
 vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
-    /* Nothing to do here, as we are telling the guest where the mouse is,
-     * not vice versa. */
-    NOREF(pScrn);
-    NOREF(x);
-    NOREF(y);
+    VBOXPtr pVBox = pScrn->driverPrivate;
+
+    /* This currently does nothing. */
+    VBoxHGSMICursorPosition(&pVBox->guestCtx, true, x, y, NULL, NULL);
 }
 
 static void
@@ -299,7 +209,8 @@ static Bool
 vbox_use_hw_cursor(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    return vbox_host_uses_hwcursor(pScrn);
+    VBOXPtr pVBox = pScrn->driverPrivate;
+    return pVBox->fUseHardwareCursor;
 }
 
 static unsigned char
@@ -432,18 +343,15 @@ static Bool
 vbox_use_hw_cursor_argb(ScreenPtr pScreen, CursorPtr pCurs)
 {
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    Bool rc = TRUE;
+    VBOXPtr pVBox = pScrn->driverPrivate;
 
-    if (!vbox_host_uses_hwcursor(pScrn))
-        rc = FALSE;
-    if (   rc
-        && (   (pCurs->bits->height > VBOX_MAX_CURSOR_HEIGHT)
-            || (pCurs->bits->width > VBOX_MAX_CURSOR_WIDTH)
-            || (pScrn->bitsPerPixel <= 8)
-           )
-       )
-        rc = FALSE;
-    return rc;
+    if (!pVBox->fUseHardwareCursor)
+        return FALSE;
+    if (   (pCurs->bits->height > VBOX_MAX_CURSOR_HEIGHT)
+        || (pCurs->bits->width > VBOX_MAX_CURSOR_WIDTH)
+        || (pScrn->bitsPerPixel <= 8))
+        return FALSE;
+    return TRUE;
 }
 
 
@@ -564,10 +472,6 @@ vbox_cursor_init(ScreenPtr pScreen)
         pCurs->LoadCursorARGB    = vbox_load_cursor_argb;
 #endif
 
-        /* Hide the host cursor before we initialise if we wish to use a
-         * software cursor. */
-        if (pVBox->forceSWCursor)
-            vbox_vmm_hide_cursor(pScrn, pVBox);
         rc = xf86InitCursor(pScreen, pCurs);
     }
     if (!rc)

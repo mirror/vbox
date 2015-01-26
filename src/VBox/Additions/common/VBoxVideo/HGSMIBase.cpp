@@ -580,6 +580,53 @@ RTDECL(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
+/** 
+ * Report the guest cursor position.  The host may wish to use this information
+ * to re-position its own cursor (though this is currently unlikely).  The
+ * current host cursor position is returned.
+ * @param  pCtx             The context containing the heap used.
+ * @param  fReportPosition  Are we reporting a position?
+ * @param  x                Guest cursor X position.
+ * @param  y                Guest cursor Y position.
+ * @param  pxHost           Host cursor X position is stored here.  Optional.
+ * @param  pyHost           Host cursor Y position is stored here.  Optional.
+ * @returns  iprt status code.
+ * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
+ */
+RTDECL(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fReportPosition, uint32_t x, uint32_t y,
+                                    uint32_t *pxHost, uint32_t *pyHost)
+{
+    int rc = VINF_SUCCESS;
+    VBVACURSORPOSITION *p;
+    LogRelFlowFunc(("x=%u, y=%u\n", (unsigned)x, (unsigned)y));
+
+    /* Allocate the IO buffer. */
+    p = (VBVACURSORPOSITION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVACURSORPOSITION), HGSMI_CH_VBVA, VBVA_CURSOR_POSITION);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        p->fReportPosition = fReportPosition ? 1 : 0;
+        p->x = x;
+        p->y = y;
+        rc = VBoxHGSMIBufferSubmit(pCtx, p);
+        if (RT_SUCCESS(rc))
+        {
+            if (pxHost)
+                *pxHost = p->x;
+            if (pyHost)
+                *pyHost = p->y;
+            LogRelFlowFunc(("return: x=%u, y=%u\n", (unsigned)x, (unsigned)y));
+        }
+        /* Free the IO buffer. */
+        VBoxHGSMIBufferFree(pCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    LogFunc(("rc = %d\n", rc));
+    return rc;
+}
+
+
 /** @todo Mouse pointer position to be read from VMMDev memory, address of the memory region
  * can be queried from VMMDev via an IOCTL. This VMMDev memory region will contain
  * host information which is needed by the guest.

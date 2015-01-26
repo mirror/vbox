@@ -101,6 +101,7 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     uint32_t offStart, cwReal = cWidth;
     bool fEnabled;
     uint16_t fFlags;
+    int rc;
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
@@ -131,6 +132,13 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
     VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x, y,
                                 offStart, pVBox->cbLine, cwReal, cHeight,
                                 fEnabled ? vboxBPP(pScrn) : 0, fFlags);
+    if (cDisplay == 0)
+    {
+        rc = VBoxHGSMIUpdateInputMapping(&pVBox->guestCtx, 0 - pVBox->pScreens[0].aScreenLocation.x,
+                                         0 - pVBox->pScreens[0].aScreenLocation.y, pScrn->virtualX, pScrn->virtualY);
+        if (RT_FAILURE(rc))
+            FatalError("Failed to update the input mapping.\n");
+    }
     return TRUE;
 }
 
@@ -144,6 +152,7 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     uint64_t cbLine = vboxLineLength(pScrn, width);
     int displayWidth = vboxDisplayPitch(pScrn, cbLine);
+    int rc;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
     if (   width == pScrn->virtualX
@@ -176,6 +185,7 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
 #endif
 #ifdef VBOXVIDEO_13
     /* Write the new values to the hardware */
+    /** @todo why is this only for VBOXVIDEO_13? */
     {
         unsigned i;
         for (i = 0; i < pVBox->cScreens; ++i)
@@ -184,6 +194,11 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
                             pVBox->pScreens[i].aScreenLocation.x,
                             pVBox->pScreens[i].aScreenLocation.y);
     }
+#else
+    rc = VBoxHGSMIUpdateInputMapping(&pVBox->guestCtx, 0 - pVBox->pScreens[0].aScreenLocation.x,
+                                     0 - pVBox->pScreens[0].aScreenLocation.y, pScrn->virtualX, pScrn->virtualY);
+    if (RT_FAILURE(rc))
+        FatalError("Failed to update the input mapping.\n");
 #endif
 #ifdef RT_OS_SOLARIS
     /* Tell the virtual mouse device about the new virtual desktop size. */

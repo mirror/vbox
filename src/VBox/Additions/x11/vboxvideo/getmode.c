@@ -16,6 +16,7 @@
  */
 
 #include "vboxvideo.h"
+#include <VBox/VMMDev.h>
 
 #define NEED_XF86_TYPES
 #include <iprt/string.h>
@@ -248,49 +249,98 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
                         pVBox->pScreens[0].aPreferredSize.cy);
 }
 
-# define SIZE_HINTS_PROPERTY "VBOX_SIZE_HINTS"
+static void updateUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities)
+{
+    bool fGuestCanReportAbsolutePosition = false;
+    bool fHostWishesToReportAbsolutePosition = false;
+
+    if (   (fCursorCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
+            /* As of this version (server 1.6) all major Linux releases
+             * are known to handle USB tablets correctly. */
+        || (fCursorCapabilities & VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
+#endif
+        )
+        fGuestCanReportAbsolutePosition = true;
+    if (   !(fCursorCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
+        && (fCursorCapabilities & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
+        fHostWishesToReportAbsolutePosition = true;
+    pVBox->fUseHardwareCursor = fGuestCanReportAbsolutePosition && fHostWishesToReportAbsolutePosition;
+}
+
+# define SIZE_HINTS_PROPERTY         "VBOX_SIZE_HINTS"
+# define MOUSE_CAPABILITIES_PROPERTY "VBOX_MOUSE_CAPABILITIES"
 
 /** Read in information about the most recent size hints requested for the
  * guest screens.  A client application sets the hint information as a root
  * window property. */
+/* TESTING: dynamic resizing and absolute pointer toggling work on old guest X servers and recent ones on Linux at the log-in screen. */
+/** @note we try to maximise code coverage by typically using all code paths (HGSMI and properties) in a single X session. */
 void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    size_t cModes;
-    int32_t *paModes;
+    size_t cModesFromProperty, cDummy;
+    int32_t *paModeHints, *pfCursorCapabilities;
     unsigned i;
+    uint32_t fCursorCapabilities;
+    bool fOldUseHardwareCursor = pVBox->fUseHardwareCursor;
 
+    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cModesFromProperty, &paModeHints) != VINF_SUCCESS)
+        paModeHints = NULL;
+    if (   vbvxGetIntegerPropery(pScrn, MOUSE_CAPABILITIES_PROPERTY, &cDummy, &pfCursorCapabilities) != VINF_SUCCESS
+        || cDummy != 1)
+        pfCursorCapabilities = NULL;
 #ifdef VBOXVIDEO_13
-    if (RT_SUCCESS(VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens,
-                                         pVBox->paVBVAModeHints)))
+    if (!pVBox->fHaveReadHGSMIModeHintData && RT_SUCCESS(VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens,
+                                                         pVBox->paVBVAModeHints)))
     {
         for (i = 0; i < pVBox->cScreens; ++i)
         {
             if (pVBox->paVBVAModeHints[i].magic == VBVAMODEHINT_MAGIC)
             {
-                pVBox->pScreens[i].aPreferredSize.cx =
-                    pVBox->paVBVAModeHints[i].cx;
-                pVBox->pScreens[i].aPreferredSize.cy =
-                    pVBox->paVBVAModeHints[i].cy;
-                pVBox->pScreens[i].afConnected =
-                    pVBox->paVBVAModeHints[i].fEnabled;
+                pVBox->pScreens[i].aPreferredSize.cx = pVBox->paVBVAModeHints[i].cx;
+                pVBox->pScreens[i].aPreferredSize.cy = pVBox->paVBVAModeHints[i].cy;
+                pVBox->pScreens[i].afConnected = pVBox->paVBVAModeHints[i].fEnabled;
+                /* Do not re-read this if we have data from HGSMI. */
+                if (paModeHints != NULL && i < cModesFromProperty)
+                    pVBox->pScreens[i].lastModeHintFromProperty = paModeHints[i];
             }
         }
-        return;
     }
-#endif
-    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cModes, &paModes) != VINF_SUCCESS)
-        return;
-    for (i = 0; i < cModes && i < pVBox->cScreens; ++i)
+    if (!pVBox->fHaveReadHGSMIModeHintData)
     {
-        if (paModes[i] != 0)
-        {
-            pVBox->pScreens[i].aPreferredSize.cx =
-                paModes[i] >> 16;
-            pVBox->pScreens[i].aPreferredSize.cy =
-                paModes[i] & 0x8fff;
-        }
+        if (RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &fCursorCapabilities)))
+            updateUseHardwareCursor(pVBox, fCursorCapabilities);
+        else
+            pVBox->fUseHardwareCursor = false;
+        /* Do not re-read this if we have data from HGSMI. */
+        if (pfCursorCapabilities != NULL)
+            pVBox->fLastCursorCapabilitiesFromProperty = *pfCursorCapabilities;
     }
+    pVBox->fHaveReadHGSMIModeHintData = true;
+#endif
+    if (paModeHints != NULL)
+        for (i = 0; i < cModesFromProperty && i < pVBox->cScreens; ++i)
+        {
+            if (paModeHints[i] != 0 && paModeHints[i] != pVBox->pScreens[i].lastModeHintFromProperty)
+            {
+                if (paModeHints[i] == -1)
+                    pVBox->pScreens[i].afConnected = false;
+                else
+                {
+                    pVBox->pScreens[i].aPreferredSize.cx = paModeHints[i] >> 16;
+                    pVBox->pScreens[i].aPreferredSize.cy = paModeHints[i] & 0x8fff;
+                    pVBox->pScreens[i].afConnected = true;
+                }
+                pVBox->pScreens[i].lastModeHintFromProperty = paModeHints[i];
+            }
+        }
+    if (pfCursorCapabilities != NULL && *pfCursorCapabilities != pVBox->fLastCursorCapabilitiesFromProperty)
+    {
+        updateUseHardwareCursor(pVBox, (uint32_t)*pfCursorCapabilities);
+        pVBox->fLastCursorCapabilitiesFromProperty = *pfCursorCapabilities;
+    }
+    pVBox->fForceModeSet = (pVBox->fUseHardwareCursor != fOldUseHardwareCursor);
 }
 
 #ifndef VBOXVIDEO_13
@@ -301,6 +351,7 @@ static int (*g_pfnVBoxRandRProc)(ClientPtr) = NULL;
 /** The swapped RandR "proc" vector. */
 static int (*g_pfnVBoxRandRSwappedProc)(ClientPtr) = NULL;
 
+/* TESTING: dynamic resizing and toggling cursor integration work with older guest X servers (1.2 and older). */
 static void vboxRandRDispatchCore(ClientPtr pClient)
 {
     xRRGetScreenInfoReq *pReq = (xRRGetScreenInfoReq *)pClient->requestBuffer;
@@ -317,12 +368,24 @@ static void vboxRandRDispatchCore(ClientPtr pClient)
         return;
     pScrn = xf86Screens[pWin->drawable.pScreen->myNum];
     pVBox = VBOXGetRec(pScrn);
+    TRACE_LOG("pVBox->fForceModeSet=%u, pVBox->fUseHardwareCursor=%u\n", (unsigned)pVBox->fForceModeSet,
+              pVBox->fUseHardwareCursor);
     VBoxUpdateSizeHints(pScrn);
     pMode = pScrn->modes;
     if (pScrn->currentMode == pMode)
-        pMode = pMode->next;
+    {
+        if (pVBox->fForceModeSet)  /* Swap modes so that the new mode is before the current one. */
+        {
+            pScrn->currentMode = pMode->next;
+            pMode->next->HDisplay = pMode->HDisplay;
+            pMode->next->VDisplay = pMode->VDisplay;
+        }
+        else
+            pMode = pMode->next;
+    }
     pMode->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
     pMode->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
+    pVBox->fForceModeSet = false;
 }
 
 static int vboxRandRDispatch(ClientPtr pClient)
@@ -412,21 +475,27 @@ void VBoxSetUpRandR11(ScreenPtr pScreen)
 
 #ifdef VBOXVIDEO_13
 # ifdef RT_OS_LINUX
+/* TESTING: dynamic resizing works on recent Linux guest X servers at the log-in screen. */
+/** @note to maximise code coverage we only read data from HGSMI once, and only when responding to an ACPI event. */
 static void acpiEventHandler(int fd, void *pvData)
 {
+    ScreenPtr pScreen = (ScreenPtr)pvData;
+    VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
     struct input_event event;
     ssize_t rc;
 
-    RRGetInfo((ScreenPtr)pvData
+    pVBox->fHaveReadHGSMIModeHintData = false;
+    RRGetInfo(pScreen
 # if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
               , TRUE
 # endif
              );
+    VBVXASSERT(pVBox->fHaveReadHGSMIModeHintData == true, ("fHaveReadHGSMIModeHintData not set.\n"));
     do
         rc = read(fd, &event, sizeof(event));
     while (rc > 0 || (rc == -1 && errno == EINTR));
-    if (rc == -1 && errno != EAGAIN)  /* Why not just return 0? */
-        FatalError("Reading ACPI input event failed.\n");
+    /* Why do they return EAGAIN instead of zero bytes read like everyone else does? */
+    VBVXASSERT(rc != -1 || errno == EAGAIN, ("Reading ACPI input event failed.\n"));
 }
 
 void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
