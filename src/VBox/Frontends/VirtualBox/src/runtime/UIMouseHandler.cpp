@@ -936,8 +936,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 {
                     const double xScaleFactor = (double)scaledSize.width()  / pFrameBuffer->width();
                     const double yScaleFactor = (double)scaledSize.height() / pFrameBuffer->height();
-                    cpnt.setX(cpnt.x() / xScaleFactor);
-                    cpnt.setY(cpnt.y() / yScaleFactor);
+                    cpnt.setX((int)(cpnt.x() / xScaleFactor));
+                    cpnt.setY((int)(cpnt.y() / yScaleFactor));
                 }
             }
 
@@ -948,8 +948,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                 const double dBackingScaleFactor = darwinBackingScaleFactor(m_windows.value(uScreenId));
                 if (dBackingScaleFactor > 1.0)
                 {
-                    cpnt.setX(cpnt.x() * dBackingScaleFactor);
-                    cpnt.setY(cpnt.y() * dBackingScaleFactor);
+                    cpnt.setX((int)(cpnt.x() * dBackingScaleFactor));
+                    cpnt.setY((int)(cpnt.y() * dBackingScaleFactor));
                 }
             }
 #endif /* Q_WS_MAC */
