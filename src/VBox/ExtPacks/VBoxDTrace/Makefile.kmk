@@ -39,7 +39,7 @@ VBOXDT_PATH_LIBDTRACE      := $(VBOXDT_PATH_ONNV)/lib/libdtrace
 VBOXDT_PATH_CMN_DTRACE     := $(VBOXDT_PATH_ONNV)/common/dtrace
 
 
-ifndef VBOX_ONLY_ADDITIONS
+ifndef VBOX_ONLY_EXTPACKS
  #
  # The generic wrapper that selects native or extpack dtrace cmd and adds our
  # library path to the command line.
