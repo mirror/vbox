@@ -32,9 +32,7 @@
 # include <syslimits.h>     /* PATH_MAX */
 # include <libgen.h>        /* basename */
 # include <unistd.h>
-# ifdef RT_OS_SOLARIS
-#  include <strings.h>      /* bzero & bcopy.*/
-# endif
+# include <strings.h>       /* bzero & bcopy.*/
 #endif
 
 #include <iprt/mem.h>
