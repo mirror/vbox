@@ -749,7 +749,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
      */
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
     RTPROCESS       uPid        = RTProcSelf();
-    uintptr_t       iHash       = (hNativeSelf * 2654435761) % RT_ELEMENTS(g_apThreadsHash);
+    uintptr_t       iHash       = (hNativeSelf * 2654435761U) % RT_ELEMENTS(g_apThreadsHash);
 
     RTSpinlockAcquire(g_hThreadSpinlock);
 
@@ -790,7 +790,7 @@ struct VBoxDtThread *VBoxDtGetCurrentThread(void)
     RTListNodeRemove(&pThread->AgeEntry);
     if (pThread->hNative != NIL_RTNATIVETHREAD)
     {
-        uintptr_t   iHash2 = (pThread->hNative * 2654435761) % RT_ELEMENTS(g_apThreadsHash);
+        uintptr_t   iHash2 = (pThread->hNative * 2654435761U) % RT_ELEMENTS(g_apThreadsHash);
         if (g_apThreadsHash[iHash2] == pThread)
             g_apThreadsHash[iHash2] = pThread->pNext;
         else
@@ -1799,7 +1799,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
     /*
      * Convert arguments from uintptr_t to uint64_t.
      */
-    PVTGDESCPROBE   pProbe   = (PVTGDESCPROBE)((PVTGPROBELOC)pVtgProbeLoc)->pbProbe;
+    PVTGDESCPROBE   pProbe   = pVtgProbeLoc->pProbe;
     AssertPtrReturnVoid(pProbe);
     PVTGOBJHDR      pVtgHdr  = (PVTGOBJHDR)((uintptr_t)pProbe + pProbe->offObjHdr);
     AssertPtrReturnVoid(pVtgHdr);
@@ -1826,7 +1826,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
         while (iDstArg < RT_ELEMENTS(au64DstArgs))
             au64DstArgs[iDstArg++] = auSrcArgs[iSrcArg++];
 
-        pStackData->u.ProbeFireK.pauStackArgs = &auSrcArgs[iSrcArg];
+        pStackData->u.ProbeFireKernel.pauStackArgs = &auSrcArgs[iSrcArg];
         dtrace_probe(pVtgProbeLoc->idProbe, au64DstArgs[0], au64DstArgs[1], au64DstArgs[2], au64DstArgs[3], au64DstArgs[4]);
     }
 #else
