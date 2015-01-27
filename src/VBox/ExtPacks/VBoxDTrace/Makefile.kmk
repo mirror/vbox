@@ -54,7 +54,7 @@ ifndef VBOX_ONLY_ADDITIONS
 endif
 
 
-ifdef VBOX_WITH_EXTPACK_VBOXDTRACE
+if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
 
  #
  # Extend the extension pack templates.
@@ -100,7 +100,7 @@ ifdef VBOX_WITH_EXTPACK_VBOXDTRACE
  #VBoxDTraceCmd_DEFS += YYDEBUG
  VBoxDTraceCmd_SDKS = VBOX_ZLIB
  ifn1of ($(KBUILD_TARGET), win)
-  VBoxDTraceCmd_CFLAGS = -Wno-format -Wno-overlength-strings -Wno-sign-compare -Wno-strict-prototypes -Wno-missing-prototypes -Wno-missing-declarations -Wno-shadow
+  VBoxDTraceCmd_CFLAGS = -Wno-format $(VBOX_GCC_Wno-overlength-strings) -Wno-sign-compare -Wno-strict-prototypes -Wno-missing-prototypes -Wno-missing-declarations -Wno-shadow
  endif
  VBoxDTraceCmd_INCS = \
  	include \
