@@ -290,7 +290,9 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsFS[2] =
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    NULL,
+        /* .cbSsepc = */    0
     },
     {
         {
@@ -303,7 +305,9 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsFS[2] =
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    NULL,
+        /* .cbSsepc = */    0
     }
 };
 
@@ -320,7 +324,9 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsHS[2] =
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    NULL,
+        /* .cbSsepc = */    0
     },
     {
         {
@@ -333,7 +339,9 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsHS[2] =
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
-        /* .cbClass = */    0
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    NULL,
+        /* .cbSsepc = */    0
     }
 };
 
@@ -358,8 +366,10 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsSS[2] =
             /* .bInterval = */          0 /* no NAKs */
         },
         /* .pvMore = */     NULL,
-        /* .pvClass = */    &g_aUsbMsdEpCompanionSS,
-        /* .cbClass = */    sizeof(g_aUsbMsdEpCompanionSS)
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    &g_aUsbMsdEpCompanionSS,
+        /* .cbSsepc = */    sizeof(g_aUsbMsdEpCompanionSS)
     },
     {
         {
@@ -371,8 +381,10 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsSS[2] =
             /* .bInterval = */          0 /* no NAKs */
         },
         /* .pvMore = */     NULL,
-        /* .pvClass = */    &g_aUsbMsdEpCompanionSS,
-        /* .cbClass = */    sizeof(g_aUsbMsdEpCompanionSS)
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0,
+        /* .pvSsepc = */    &g_aUsbMsdEpCompanionSS,
+        /* .cbSsepc = */    sizeof(g_aUsbMsdEpCompanionSS)
     }
 };
 

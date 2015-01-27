@@ -69,6 +69,7 @@ RT_C_DECLS_BEGIN
 #define VUSB_DT_CONFIG_STRING_MIN_LEN   2
 #define VUSB_DT_INTERFACE_MIN_LEN       9
 #define VUSB_DT_ENDPOINT_MIN_LEN        7
+#define VUSB_DT_SSEP_COMPANION_MIN_LEN  6
 /** @} */
 
 /** @name USB Device Capability Type Codes (from spec)
@@ -398,10 +399,15 @@ typedef struct VUSBDESCENDPOINTEX
     VUSBDESCENDPOINT Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCENDPOINT. */
     const void *pvMore;
-    /** Pointer to additional class- or vendor-specific interface descriptors. */
+    /** Pointer to additional class- or vendor-specific endpoint descriptors. */
     const void *pvClass;
     /** Size of class- or vendor-specific descriptors. */
     uint16_t cbClass;
+    /** Pointer to SuperSpeed endpoint companion descriptor (SS endpoints only). */
+    const void *pvSsepc;
+    /** Size of SuperSpeed endpoint companion descriptor.
+     * @remark Must be non-zero for SuperSpeed endpoints. */
+    uint16_t cbSsepc;
 } VUSBDESCENDPOINTEX;
 /** Pointer to a parsed USB endpoint descriptor. */
 typedef VUSBDESCENDPOINTEX *PVUSBDESCENDPOINTEX;
