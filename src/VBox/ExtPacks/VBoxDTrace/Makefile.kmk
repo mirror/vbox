@@ -46,6 +46,14 @@ $(call VBOX_EDIT_VERSION_RULE_FN,VBoxDTraceIns,ExtPack.xml)
 
 
 #
+# VBoxSkeletonMain - The module which the VirtualBox Main API talks to.
+#
+DLLS += VBoxDTraceMain
+VBoxDTraceMain_TEMPLATE = VBoxR3ExtPackDTrace
+VBoxDTraceMain_SOURCES = VBoxDTraceMain.cpp
+
+
+#
 # The ring-3 VBoxDTrace command implementation (library).
 #
 DLLS += VBoxDTraceCmd
