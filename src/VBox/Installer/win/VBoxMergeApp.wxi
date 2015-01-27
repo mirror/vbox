@@ -183,6 +183,10 @@
         <File Id="file_VBoxExtPackHelperApp.exe" Name="VBoxExtPackHelperApp.exe"
               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
 <?endif ?>
+<?if $(env.VBOX_WITH_DTRACE) = "yes" ?>
+        <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe"
+          Source="$(env.PATH_OUT)\bin\VBoxDTrace.exe" />
+<?endif ?>
         <!-- VBox DLL files -->
         <File Id="file_VBoxDD.dll" Name="VBoxDD.dll"
               Source="$(env.PATH_OUT)\bin\VBoxDD.dll" />

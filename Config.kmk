@@ -1243,6 +1243,11 @@ else
  VBOX_GUI_USE_QGL=
 endif
 
+# Collection macro mainly for deciding whether VBoxDTrace needs shipping.
+VBOX_WITH_DTRACE := $(if-expr defined(VBOX_WITH_DTRACE_R0) || defined(VBOX_WITH_DTRACE_R0DRV) \
+	       	            || defined(VBOX_WITH_DTRACE_R3) || defined(VBOX_WITH_DTRACE_RC),1,)
+
+
 #
 # Image and object format config.
 #

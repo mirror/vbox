@@ -172,6 +172,7 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)\
 	VBoxTunctl \
 	helpers/generate_service_file
 

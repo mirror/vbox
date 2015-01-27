@@ -21,12 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_WITH_EXTPACK_PUEL_BUILD
  include $(PATH_SUB_CURRENT)/Puel/Makefile.kmk
 endif
-if    defined(VBOX_WITH_EXTPACK_VBOXDTRACE) \
-   || defined(VBOX_WITH_DTRACE) \
-   || defined(VBOX_WITH_DTRACE_R3) \
-   || defined(VBOX_WITH_DTRACE_R0) \
-   || defined(VBOX_WITH_DTRACE_R0DRV) \
-   || defined(VBOX_WITH_DTRACE_RC)
+if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) || defined(VBOX_WITH_DTRACE)
  include $(PATH_SUB_CURRENT)/VBoxDTrace/Makefile.kmk
 endif
 ifdef VBOX_WITH_EXTPACK_VNC

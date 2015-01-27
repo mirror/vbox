@@ -214,7 +214,8 @@ SOLARIS_STRIP_EXES = \
 	VBoxSVC \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
-	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
+	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,) \
+       $(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 
 SOLARIS_DRIVER_BINS = \
 	vboxdrv \
@@ -308,7 +309,8 @@ SOLARIS_USRBIN_LINKS = \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	$(if $(VBOX_WITH_HEADLESS),VBoxHeadless,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
-	VBoxManage
+	VBoxManage \
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 
 SOLARIS_COMMON_EXES = \
 	vboxconfig.sh \
