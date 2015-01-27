@@ -10381,7 +10381,7 @@ dtrace_ecb_create_enable(dtrace_probe_t *probe, void *arg)
 static dtrace_ecb_t *
 dtrace_epid2ecb(dtrace_state_t *state, dtrace_epid_t id)
 {
-	dtrace_ecb_t *ecb;
+	dtrace_ecb_t *ecb; NOREF(ecb);
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 
@@ -10397,7 +10397,7 @@ dtrace_epid2ecb(dtrace_state_t *state, dtrace_epid_t id)
 static dtrace_aggregation_t *
 dtrace_aggid2agg(dtrace_state_t *state, dtrace_aggid_t id)
 {
-	dtrace_aggregation_t *agg;
+	dtrace_aggregation_t *agg; NOREF(agg);
 
 	ASSERT(MUTEX_HELD(&dtrace_lock));
 
