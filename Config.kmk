@@ -2521,6 +2521,8 @@ ifdef VBOX_PATH_PREFIX_MINGW64
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-maybe-uninitialized     ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-maybe-uninitialized,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_USER_LABEL_PREFIX           ?= $(shell echo "__USER_LABEL_PREFIX__" | $(VBOX_PATH_PREFIX_MINGW64)g++ -m64 -E -xc++ - | $(SED) -e "/^$(HASH)/d")'
 endif
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX  ?= $(if $(which flex),1,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON ?= $(if $(which bison),1,)'
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
