@@ -64,6 +64,8 @@ typedef RTCPUID                     processorid_t;
 #if defined(_MSC_VER) || defined(IN_RING0)
 typedef RTUID                       uid_t;
 typedef RTPROCESS                   pid_t;
+#endif
+#if defined(_MSC_VER) || defined(IN_RING0) || defined(RT_OS_LINUX)
 typedef char                       *caddr_t;
 #endif
 
