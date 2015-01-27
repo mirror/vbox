@@ -33,82 +33,19 @@
 #include <iprt/assert.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
-#include <iprt/string.h>
 #if defined(VBOX_VBGLR3_XFREE86)
 extern "C" {
 # define XFree86LOADER
 # include <xf86_ansic.h>
-# include <errno.h>
 # undef size_t
 }
 #else
-# include <ctype.h>
-# include <errno.h>
 # include <stdarg.h>
-# include <stdio.h>
 # include <stdlib.h>
 # define xalloc malloc
-# define xf86vsnprintf vsnprintf
-# define xf86errno errno
-# define xf86strtoul strtoul
-# define xf86isspace isspace
 # define xfree free
 extern "C" void ErrorF(const char *f, ...);
-extern "C" void VErrorF(const char *f, va_list args);
 #endif
-
-/* This is risky as it restricts call to the ANSI format type specifiers. */
-RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
-{
-    va_list args;
-    int cbRet;
-    va_start(args, pszFormat);
-    cbRet = xf86vsnprintf(pszBuffer, cchBuffer, pszFormat, args);
-    va_end(args);
-    return cbRet >= 0 ? cbRet : 0;
-}
-
-RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint32_t *pu32)
-{
-    char *pszNext = NULL;
-    xf86errno = 0;
-    unsigned long ul = xf86strtoul(pszValue, &pszNext, uBase);
-    if (ppszNext)
-        *ppszNext = pszNext;
-    if (RT_UNLIKELY(pszValue == pszNext))
-        return VERR_NO_DIGITS;
-    if (RT_UNLIKELY(ul > UINT32_MAX))
-        ul = UINT32_MAX;
-    if (pu32)
-        *pu32 = (uint32_t) ul;
-    if (RT_UNLIKELY(xf86errno == EINVAL))
-        return VERR_INVALID_PARAMETER;
-    if (RT_UNLIKELY(xf86errno == ERANGE))
-        return VWRN_NUMBER_TOO_BIG;
-    if (RT_UNLIKELY(xf86errno))
-        /* RTErrConvertFromErrno() is not available */
-        return VERR_UNRESOLVED_ERROR;
-    if (RT_UNLIKELY(*pszValue == '-'))
-        return VWRN_NEGATIVE_UNSIGNED;
-    if (RT_UNLIKELY(*pszNext))
-    {
-        while (*pszNext)
-            if (!xf86isspace(*pszNext))
-                return VWRN_TRAILING_CHARS;
-        return VWRN_TRAILING_SPACES;
-    }
-    return VINF_SUCCESS;
-}
-
-RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu32)
-{
-    char *psz;
-    int rc = RTStrToUInt32Ex(pszValue, &psz, uBase, pu32);
-    if (RT_SUCCESS(rc) && *psz)
-        if (rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES)
-            rc = -rc;
-    return rc;
-}
 
 RTDECL(void)    RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
@@ -119,10 +56,7 @@ RTDECL(void)    RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char
 
 RTDECL(void)    RTAssertMsg2Weak(const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    VErrorF(pszFormat, args);
-    va_end(args);
+    NOREF(pszFormat);
 }
 
 RTDECL(bool)    RTAssertShouldPanic(void)
@@ -137,10 +71,7 @@ RTDECL(PRTLOGGER) RTLogRelDefaultInstance(void)
 
 RTDECL(void) RTLogLoggerEx(PRTLOGGER, unsigned, unsigned, const char *pszFormat, ...)
 {
-    va_list args;
-    va_start(args, pszFormat);
-    VErrorF(pszFormat, args);
-    va_end(args);
+    NOREF(pszFormat);
 }
 
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag)
@@ -153,4 +84,3 @@ RTDECL(void)    RTMemTmpFree(void *pv)
 {
     xfree(pv);
 }
-
