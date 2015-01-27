@@ -66,10 +66,10 @@ INSTALLS += linux-bin
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
-        scripts/install.sh=>scripts/install.sh \
-        scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
-        VBoxSysInfo.sh \
-        VBoxCreateUSBNode.sh \
+	scripts/install.sh=>scripts/install.sh \
+	scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
+	VBoxSysInfo.sh \
+	VBoxCreateUSBNode.sh \
 	VBox.sh=>VBox.sh \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
 
@@ -77,13 +77,13 @@ INSTALLS += linux-scripts
 linux-scripts_INST = $(VBOX_LNX_INST_STAGE_DIR_REL)/
 linux-scripts_MODE = a+rx,u+w
 linux-scripts_SOURCES = \
-		deffiles \
-		routines.sh \
-		uninstall.sh \
-        vboxautostart-service.sh \
-		vboxballoonctrl-service.sh \
-		vboxdrv-pardus.py \
-		vboxweb-service.sh
+	deffiles \
+	routines.sh \
+	uninstall.sh \
+	vboxautostart-service.sh \
+	vboxballoonctrl-service.sh \
+	vboxdrv-pardus.py \
+	vboxweb-service.sh
 
 INSTALLS += linux-misc
 linux-misc_INST = bin/
@@ -95,8 +95,8 @@ linux-misc_SOURCES = \
 	$(linux-misc_0_OUTDIR)/generated.sh=>scripts/generated.sh \
 	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,)
 linux-misc_CLEAN = \
-    $(linux-misc_0_OUTDIR)/generated.sh \
-    $(linux-misc_0_OUTDIR)/virtualbox.desktop
+	$(linux-misc_0_OUTDIR)/generated.sh \
+	$(linux-misc_0_OUTDIR)/virtualbox.desktop
 
 $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_ON_MAKEFILE) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
