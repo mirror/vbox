@@ -28,6 +28,7 @@
 # include <process.h>
 #else
 # include <sys/types.h>
+# include <limits.h>        /* Workaround for syslimit.h bug in gcc 4.8.3 on gentoo. */
 # include <syslimits.h>     /* PATH_MAX */
 # include <libgen.h>        /* basename */
 # include <unistd.h>
