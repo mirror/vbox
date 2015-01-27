@@ -517,10 +517,10 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
 {
     Display *that = static_cast<Display*>(pvUser);
 
-    if (!(   uVersion == sSSMDisplayVer
-          || uVersion == sSSMDisplayVer2
-          || uVersion == sSSMDisplayVer3
-          || uVersion == sSSMDisplayVer4))
+    if (   uVersion != sSSMDisplayVer
+        && uVersion != sSSMDisplayVer2
+        && uVersion != sSSMDisplayVer3
+        && uVersion != sSSMDisplayVer4)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
