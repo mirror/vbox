@@ -1235,8 +1235,12 @@ intr(int signo)
 		g_impatient = 1;
 }
 
+#ifdef VBOX
+DECLEXPORT(int) RTCALL VBoxDTraceMain(int argc, char **argv)
+#else
 int
 main(int argc, char *argv[])
+#endif
 {
 	dtrace_bufdesc_t buf;
 #ifndef _MSC_VER
@@ -1252,20 +1256,22 @@ main(int argc, char *argv[])
 	char c, *p, **v;
 	struct ps_prochandle *P;
 	pid_t pid;
+
+	g_pname = basename(argv[0]);
 #else
 	int c;
 	char *p;
 	RTGETOPTUNION ValueUnion;
 	RTGETOPTSTATE GetState;
 
-	err = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+	err = RTR3InitDll(0);
 	if (RT_FAILURE(err))
 		return RTMsgInitFailure(err);
 	dtrace_init();
 
 	g_ofp = stdout;
+	g_pname = RTProcShortName();
 #endif
-	g_pname = basename(argv[0]);
 
 	if (argc == 1)
 		return (usage(stderr));

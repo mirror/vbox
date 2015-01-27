@@ -23,6 +23,7 @@
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
+#include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/errno.h>
 #ifdef IN_RING0
@@ -31,6 +32,9 @@
 #ifdef IN_RING3
 # include <sys/types.h>
 # include <limits.h>
+# ifdef RT_OS_LINUX
+#  include <sys/ucontext.h> /* avoid greg_t trouble */
+# endif
 # if defined(_MSC_VER)
 #  include <stdio.h>
 # endif
@@ -47,7 +51,11 @@ typedef uintptr_t                   ulong_t;
 typedef int64_t                     longlong_t;
 typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
+#if !defined(NGREG) || !defined(RT_OS_LINUX)
 typedef RTCCINTREG                  greg_t;
+#else
+AssertCompileSize(greg_t, sizeof(RTCCINTREG));
+#endif
 typedef uintptr_t                   pc_t;
 typedef uint32_t                    id_t;
 typedef unsigned int                model_t;

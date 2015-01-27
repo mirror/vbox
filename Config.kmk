@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (C) 2006-2014 Oracle Corporation
+# Copyright (C) 2006-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -60,8 +60,9 @@ PROPS_DLLS_ACCUMULATE_L      += INTERMEDIATES
 PROPS_SYSMODS_ACCUMULATE_L   += INTERMEDIATES
 PROPS_MISCBINS_ACCUMULATE_L  += INTERMEDIATES
 
-# Misc names used bye the install paths below.
+# Misc names used by the install paths below.
 VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
+VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME := Oracle_VBoxDTrace_Extension_Pack
 
 # Install paths
 ## @todo This will change after 4.1 is branched off!
@@ -144,6 +145,7 @@ INST_DOC              = doc/
 INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
 INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
 INST_EXTPACK_PUEL     = $(INST_EXTPACK)$(VBOX_PUEL_MANGLED_NAME)/
+INST_EXTPACK_VBOXDTRACE = $(INST_EXTPACK)$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/
 INST_PACKAGES         = packages/
 
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SDK))
@@ -693,6 +695,8 @@ VBOX_WITH_EXTPACK_PUEL_BUILD = 1
 #VBOX_WITH_EXTPACK_BUSMOUSESAMPLE = 1
 # Enable the VNC server extension pack (GPL only).
 #VBOX_WITH_EXTPACK_VNC = 1
+# Enables the VBoxDTrace extension pack.
+VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 ## @}
 
 ## @name Misc
@@ -4879,7 +4883,23 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxInsExtPackPuel = For the install targets of an extension pack.
   TEMPLATE_VBoxInsExtPackPuel_EXTENDS = VBoxR0ExtPack
   TEMPLATE_VBoxInsExtPackPuel_INST = $(INST_EXTPACK_PUEL)
+ endif
+
+ # For each individual extension pack
+ ifdef VBOX_WITH_EXTPACK_VBOXDTRACE
+  TEMPLATE_VBoxR3ExtPackDTrace = For the ring-3 context modules in the VBoxDTrace extension pack.
+  TEMPLATE_VBoxR3ExtPackDTrace_EXTENDS = VBoxR3ExtPack
+  TEMPLATE_VBoxR3ExtPackDTrace_INST = $(INST_EXTPACK_VBOXDTRACE)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
+
+  TEMPLATE_VBoxR0ExtPackDTrace = For the ring-0 context modules in the VBoxDTrace extension pack.
+  TEMPLATE_VBoxR0ExtPackDTrace_EXTENDS = VBoxR0ExtPack
+  TEMPLATE_VBoxR0ExtPackDTrace_INST = $(INST_EXTPACK_VBOXDTRACE)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
+
+  TEMPLATE_VBoxInsExtPackDTrace = For the install targets for the VBoxDTrace extension pack.
+  TEMPLATE_VBoxInsExtPackDTrace_EXTENDS = VBoxR0ExtPack
+  TEMPLATE_VBoxInsExtPackDTrace_INST = $(INST_EXTPACK_VBOXDTRACE)
 endif
+
 endif # VBOX_WITH_EXTPACK
 
 
