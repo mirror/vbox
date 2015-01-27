@@ -109,7 +109,8 @@ VBOX_FBSD_STRIP_BIN = \
 		VBoxOGLrenderspu.so \
 		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
-	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,)
+	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 
 # Do not remove relocation information of these binaries
 VBOX_FBSD_STRIP_OBJ = \
@@ -140,7 +141,8 @@ VBOX_FBSD_SYMLINKS = \
 	$(if $(VBOX_WITH_MAIN), \
 		VBoxManage \
 		VBoxSVC) \
-	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,)
+	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
+	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 
 # Qt4 GUI
 ifdef VBOX_WITH_QTGUI
@@ -313,6 +315,7 @@ $(VBOX_FBSD_INST_OUT_DIR)/pkg_plist: \
 	$(QUIET)$(SED) \
 		-e "s;_VBOX_REM_32BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,);g" \
 		-e "s;_VBOX_REM_64BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,);g" \
+		$(if $(VBOX_WITH_DTRACE),,-e "/VBoxDTrace/d") \
 		--output $@ \
 		$<
 

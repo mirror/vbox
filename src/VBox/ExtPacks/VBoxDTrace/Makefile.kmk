@@ -30,17 +30,19 @@ VBOX_PATH_EXTPACK_VBOXDTRACE = $(PATH_STAGE)/$(INST_EXTPACK)$(VBOX_EXTPACK_VBOXD
 INST_EXTPACK_VBOXDTRACE = $(INST_EXTPACK)$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/
 
 
-#
-# The generic wrapper that selects native or extpack dtrace cmd and adds our
-# library path to the command line.
-#
-# Note! This is not installed as part of the extension pack, but always shipped
-#       with the base VBox installation.
-#
-PROGRAMS += VBoxDTrace
-VBoxDTrace_TEMPLATE := VBOXR3EXE
-VBoxDTrace_SOURCES := VBoxDTraceWrapper.cpp
-VBoxDTrace_LIBS = $(LIB_RUNTIME)
+ifndef VBOX_ONLY_ADDITIONS
+ #
+ # The generic wrapper that selects native or extpack dtrace cmd and adds our
+ # library path to the command line.
+ #
+ # Note! This is not installed as part of the extension pack, but always shipped
+ #       with the base VBox installation.
+ #
+ PROGRAMS += VBoxDTrace
+ VBoxDTrace_TEMPLATE := VBOXR3EXE
+ VBoxDTrace_SOURCES := VBoxDTraceWrapper.cpp
+ VBoxDTrace_LIBS = $(LIB_RUNTIME)
+endif
 
 
 ifdef VBOX_WITH_EXTPACK_VBOXDTRACE
