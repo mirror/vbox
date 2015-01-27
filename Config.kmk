@@ -694,7 +694,7 @@ VBOX_WITH_EXTPACK_PUEL_BUILD = 1
 # Enable the VNC server extension pack (GPL only).
 #VBOX_WITH_EXTPACK_VNC = 1
 # Enables the VBoxDTrace extension pack.
-VBOX_WITH_EXTPACK_VBOXDTRACE = 1
+#VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 ## @}
 
 ## @name Misc
