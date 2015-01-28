@@ -68,13 +68,15 @@
  * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
  * @param   fRespawn    Restart the daemonised process after five seconds if it
  *                      terminates abnormally.
+ * @param   pcRespawn   Where to store a count of how often we have respawned,
+ *                      intended for avoiding error spamming.  Optional.
  *
  * @todo    Use RTProcDaemonize instead of this.
  * @todo    Implement fRespawn on OS/2.
  * @todo    Make the respawn interval configurable.  But not until someone
  *          actually needs that.
  */
-VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn)
+VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn, unsigned *pcRespawn)
 {
 #if defined(RT_OS_OS2)
     PPIB pPib;
@@ -218,13 +220,17 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn)
 # endif /* RT_OS_LINUX */
 
     if (fRespawn)
+    {
         /* We implement re-spawning as a third fork(), with the parent process
          * monitoring the child and re-starting it after a delay if it exits
          * abnormally. */
+        unsigned cRespawn = 0;
         for (;;)
         {
             int iStatus, rcWait;
 
+            if (pcRespawn != NULL)
+                *pcRespawn = cRespawn;
             pid = fork();
             if (pid == -1)
                 return RTErrConvertFromErrno(errno);
@@ -238,7 +244,9 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose, bool fRespawn)
             if (WIFEXITED(iStatus) && WEXITSTATUS(iStatus) == 0)
                 exit(0);
             sleep(5);
+            ++cRespawn;
         }
+    }
     return VINF_SUCCESS;
 #endif
 }
