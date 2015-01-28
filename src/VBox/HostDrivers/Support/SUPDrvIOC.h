@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - (none).
  */
-#define SUPDRV_IOC_VERSION                              0x001d0000
+#define SUPDRV_IOC_VERSION                              0x001d0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -476,6 +476,17 @@ typedef struct SUPLDRFREE
         } In;
     } u;
 } SUPLDRFREE, *PSUPLDRFREE;
+/** @} */
+
+
+/** @name SUP_IOCTL_LDR_LOCK_DOWN
+ * Lock down the image loader interface.
+ * @{
+ */
+#define SUP_IOCTL_LDR_LOCK_DOWN                         SUP_CTL_CODE_SIZE(38, SUP_IOCTL_LDR_LOCK_DOWN_SIZE)
+#define SUP_IOCTL_LDR_LOCK_DOWN_SIZE                    sizeof(SUPREQHDR)
+#define SUP_IOCTL_LDR_LOCK_DOWN_SIZE_IN                 sizeof(SUPREQHDR)
+#define SUP_IOCTL_LDR_LOCK_DOWN_SIZE_OUT                sizeof(SUPREQHDR)
 /** @} */
 
 

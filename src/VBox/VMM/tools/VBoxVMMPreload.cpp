@@ -51,6 +51,7 @@ static struct
 };
 
 static uint32_t     g_cVerbose = 1;
+static bool         g_fLockDown = false;
 
 
 /**
@@ -70,6 +71,7 @@ static RTEXITCODE ParseOptions(int argc, char **argv, bool *pfExit)
     {
         { "--only",     'o', RTGETOPT_REQ_STRING  },
         { "--quiet",    'q', RTGETOPT_REQ_NOTHING },
+        { "--lock" ,    'l', RTGETOPT_REQ_NOTHING },
         { "--verbose",  'v', RTGETOPT_REQ_NOTHING },
     };
 
@@ -114,12 +116,16 @@ static RTEXITCODE ParseOptions(int argc, char **argv, bool *pfExit)
                 g_cVerbose = 0;
                 break;
 
+            case 'l':
+                g_fLockDown = true;
+                break;
+
             case 'h':
                 RTPrintf(VBOX_PRODUCT " VMM ring-0 Module Preloader Version " VBOX_VERSION_STRING
                          "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                          "All rights reserved.\n"
                          "\n"
-                         "Usage: VBoxVMMPreload [-hqvV] [-o|--only <mod>]\n"
+                         "Usage: VBoxVMMPreload [-hlqvV] [-o|--only <mod>]\n"
                          "\n");
                 *pfExit = true;
                 return RTEXITCODE_SUCCESS;
@@ -144,6 +150,8 @@ static RTEXITCODE ParseOptions(int argc, char **argv, bool *pfExit)
  */
 static RTEXITCODE LoadModules(void)
 {
+    RTERRINFOSTATIC ErrInfo;
+
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aModules); i++)
     {
         if (g_aModules[i].fPreload)
@@ -155,7 +163,6 @@ static RTEXITCODE LoadModules(void)
             if (RT_FAILURE(rc))
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAppPrivateArch or RTPathAppend returned %Rrc", rc);
 
-            RTERRINFOSTATIC ErrInfo;
             RTErrInfoInitStatic(&ErrInfo);
             rc = SUPR3LoadModule(szPath, g_aModules[i].pszName, &g_aModules[i].pvImageBase, &ErrInfo.Core);
             if (RT_FAILURE(rc))
@@ -164,6 +171,17 @@ static RTEXITCODE LoadModules(void)
             if (g_cVerbose >= 1)
                 RTMsgInfo("Loaded '%s' ('%s') at %p\n", szPath, g_aModules[i].pszName, g_aModules[i].pvImageBase);
         }
+    }
+
+    if (g_fLockDown)
+    {
+        RTErrInfoInitStatic(&ErrInfo);
+        int rc = SUPR3LockDownLoader(&ErrInfo.Core);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "SUPR3LockDownLoader failed: %s (rc=%Rrc)",
+                                  ErrInfo.Core.pszMsg, rc);
+        if (g_cVerbose >= 1)
+            RTMsgInfo("Locked down module loader interface!\n");
     }
 
     RTStrmFlush(g_pStdOut);
