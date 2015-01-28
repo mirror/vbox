@@ -356,6 +356,10 @@ static int init(struct VBCLSERVICE **ppInterface)
 
     if (pSelf->mIsInitialised)
         return VERR_INTERNAL_ERROR;
+    /* Initialise the guest library. */
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     rc = pSelf->mSeamless.init();
     if (RT_FAILURE(rc))
         return rc;
@@ -403,6 +407,7 @@ static void cleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
     VbglR3SeamlessSetCap(false);
+    VbglR3Term();
 }
 
 struct VBCLSERVICE vbclSeamlessInterface =

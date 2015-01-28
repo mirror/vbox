@@ -2199,6 +2199,10 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
 
 int DragAndDropService::x11DragAndDropInit(void)
 {
+    /* Initialise the guest library. */
+    int rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     /* Connect to the x11 server. */
     m_pDisplay = XOpenDisplay(NULL);
     if (!m_pDisplay)
@@ -2209,7 +2213,6 @@ int DragAndDropService::x11DragAndDropInit(void)
     if (!pHelpers)
         return VERR_NO_MEMORY;
 
-    int rc = VINF_SUCCESS;
     do
     {
         rc = RTSemEventCreate(&m_hEventSem);
@@ -2408,6 +2411,12 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     return pSelf->mDragAndDrop.run(fDaemonised);
 }
 
+static void cleanup(struct VBCLSERVICE **ppInterface)
+{
+    NOREF(ppInterface);
+    VbglR3Term();
+}
+
 struct VBCLSERVICE vbclDragAndDropInterface =
 {
     getPidFilePath,
@@ -2415,7 +2424,7 @@ struct VBCLSERVICE vbclDragAndDropInterface =
     run,
     VBClServiceDefaultHandler, /* pause */
     VBClServiceDefaultHandler, /* resume */
-    VBClServiceDefaultCleanup
+    cleanup
 };
 
 /* Static factory */

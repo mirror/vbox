@@ -130,6 +130,10 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     LogFlowFunc(("\n"));
 
     NOREF(ppInterface);
+    /* Initialise the guest library. */
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     /* Because we need desktop notifications to be displayed, wait
      * some time to make the desktop environment load (as a work around). */
     if (fDaemonised)
@@ -192,6 +196,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
     }
 # endif /* VBOX_WITH_GUEST_PROPS */
+    VbglR3Term();
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }

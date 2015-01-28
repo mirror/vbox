@@ -88,6 +88,9 @@ int VbglR3InterruptEventWaits(void)
     return RTSemEventSignal(eventSem);
 }
 
+VBGLR3DECL(int)     VbglR3InitUser(void) { return VINF_SUCCESS; }
+VBGLR3DECL(void)    VbglR3Term(void) {}
+
 /**
  * Xlib error handler for certain errors that we can't avoid.
  */
