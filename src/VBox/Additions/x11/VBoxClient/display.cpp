@@ -272,6 +272,7 @@ static void runDisplay(struct DISPLAYSTATE *pState)
     /* Make sure that we have an entry for screen 1 at least. */
     updateScreenInformation(pState, 1024, 768, 0, 1, 0, 0, true, false);
     if (rc == VINF_SUCCESS)
+    {
         /* The "8" is for the sanity test below. */
         for (i = 0; i < RT_MAX(cScreensTracked + 1, 8); ++i)
         {
@@ -286,6 +287,7 @@ static void runDisplay(struct DISPLAYSTATE *pState)
             if (rc == VINF_SUCCESS)
                 updateScreenInformation(pState, cx, cy, cBPP, i, x, y, fEnabled, true);
         }
+    }
     while (true)
     {
         uint32_t fEvents;
@@ -318,7 +320,7 @@ static void runDisplay(struct DISPLAYSTATE *pState)
             if (iDisplay > INT32_MAX)
                 VBClFatalError(("Received a size hint for too high display number %u\n",
                             (unsigned) iDisplay));
-            updateScreenInformation(pState, cx, cy, cBPP, i, x, y, fEnabled, fUpdatePosition);
+            updateScreenInformation(pState, cx, cy, cBPP, iDisplay, x, y, fEnabled, fUpdatePosition);
             rc = VbglR3SeamlessGetLastEvent(&Mode);
             if (RT_FAILURE(rc))
                 VBClFatalError(("Failed to check seamless mode, rc=%Rrc\n", rc));
