@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_FREEBSD)
 #  include <malloc.h>
 # endif
-# ifdef RT_OS_SOLARIS
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
 #  include <alloca.h>
 # endif
 #endif
