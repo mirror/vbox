@@ -163,12 +163,8 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
     st.rcps_flags = RCPSF_IGNORE_IPV6;
     rc = rcp_parse(&st, RESOLV_CONF_FILE);
 
-    /* for historical reasons: Slirp returns 0 and fall down to host resolver if wasn't able open resolv.conf file */
-    if(rc == -1)
-    {
-        pData->fUseHostResolver = 1;
-        return 0;
-    }
+    if (rc < 0)
+        return -1;
 
     /* for historical reasons: Slirp returns -1 if no nameservers were found */
     if (st.rcps_num_nameserver == 0)
@@ -197,7 +193,6 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
                 /* We detects that using some address in 127/8 network */
                 LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy\n", address->IPv4));
                 pData->fUseDnsProxy = 1;
-                pData->fUseHostResolver = 0;
             }
         }
 
