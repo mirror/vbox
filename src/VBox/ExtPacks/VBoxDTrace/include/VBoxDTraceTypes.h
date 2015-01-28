@@ -48,18 +48,20 @@ typedef unsigned char               uchar_t;
 typedef unsigned short              ushort_t;
 typedef unsigned int                uint_t;
 typedef uintptr_t                   ulong_t;
+#ifndef RT_OS_SOLARIS
 typedef int64_t                     longlong_t;
 typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
+typedef uint32_t                    id_t;
+typedef uint32_t                    zoneid_t;
+#endif
 #if !defined(NGREG) || !defined(RT_OS_LINUX)
 typedef RTCCINTREG                  greg_t;
 #else
 AssertCompileSize(greg_t, sizeof(RTCCINTREG));
 #endif
 typedef uintptr_t                   pc_t;
-typedef uint32_t                    id_t;
 typedef unsigned int                model_t;
-typedef uint32_t                    zoneid_t;
 typedef RTCPUID                     processorid_t;
 #if defined(_MSC_VER) || defined(IN_RING0)
 typedef RTUID                       uid_t;
@@ -69,10 +71,18 @@ typedef RTPROCESS                   pid_t;
 typedef char                       *caddr_t;
 #endif
 
-#define NANOSEC                     RT_NS_1SEC
-#define MICROSEC                    RT_US_1SEC
-#define MILLISEC                    RT_MS_1SEC
-#define SEC                         (1)
+#if !defined(NANOSEC) || !defined(RT_OS_SOLARIS)
+# define NANOSEC                    RT_NS_1SEC
+#endif
+#if !defined(MICROSEC) || !defined(RT_OS_SOLARIS)
+# define MICROSEC                   RT_US_1SEC
+#endif
+#if !defined(MILLISEC) || !defined(RT_OS_SOLARIS)
+# define MILLISEC                   RT_MS_1SEC
+#endif
+#if !defined(SEC) || !defined(RT_OS_SOLARIS)
+# define SEC                        (1)
+#endif
 #define MAXPATHLEN                  RTPATH_MAX
 #undef PATH_MAX
 #define PATH_MAX                    RTPATH_MAX
@@ -98,7 +108,9 @@ typedef char                       *caddr_t;
 # ifndef _IPL32
 #  define _IPL32                    1
 # endif
-# define _LITTLE_ENDIAN             1
+# if !defined(_LITTLE_ENDIAN) || !defined(RT_OS_SOLARIS)
+#  define _LITTLE_ENDIAN            1
+# endif
 
 #elif defined(RT_ARCH_AMD64)
 # ifndef __x86_64
@@ -110,7 +122,9 @@ typedef char                       *caddr_t;
 # ifndef _LP64
 #  define _LP64                     1
 # endif
-# define _LITTLE_ENDIAN             1
+# if !defined(_LITTLE_ENDIAN) || !defined(RT_OS_SOLARIS)
+#  define _LITTLE_ENDIAN            1
+# endif
 
 #else
 # error "unsupported arch!"
