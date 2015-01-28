@@ -133,10 +133,13 @@ typedef char                       *caddr_t;
 /*
  * string
  */
+#undef bcopy
+#define bcopy(a_pSrc, a_pDst, a_cb) ((void)memmove(a_pDst, a_pSrc, a_cb))
+#undef bzero
+#define bzero(a_pDst, a_cb)         ((void)memset(a_pDst, 0, a_cb))
+#undef bcmp
+#define bcmp(a_p1, a_p2, a_cb)      (memcmp(a_p1, a_p2, a_cb))
 #if defined(_MSC_VER) || defined(IN_RING0)
-# define bcopy(a_pSrc, a_pDst, a_cb) memmove(a_pDst, a_pSrc, a_cb)
-# define bzero(a_pDst, a_cb)        RT_BZERO(a_pDst, a_cb)
-# define bcmp(a_p1, a_p2, a_cb)     memcmp(a_p1, a_p2, a_cb)
 # define snprintf                   RTStrPrintf
 # define vsnprintf                  RTStrPrintfV
 #endif
