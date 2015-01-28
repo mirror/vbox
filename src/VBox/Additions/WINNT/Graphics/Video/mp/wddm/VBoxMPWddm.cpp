@@ -7425,24 +7425,18 @@ DriverEntry(
     {
         if (major > 6)
         {
-            WARN(("Unknow win version, newer major release, assuming 3D check is required"));
+            /* Windows 10 and newer. */
             f3DRequired = TRUE;
         }
         else if (major == 6)
         {
-            if (minor > 4)
+            if (minor >= 2)
             {
-                WARN(("Unknow win version, newer minor release, assuming 3D check is required"));
-                f3DRequired = TRUE;
-            }
-            else if (minor >= 2)
-            {
-                LOG(("3D check is required!"));
+                /* Windows 8, 8.1 and 10 preview. */
                 f3DRequired = TRUE;
             }
             else
             {
-                LOG(("3D is NOT required!"));
                 f3DRequired = FALSE;
             }
         }
@@ -7451,6 +7445,8 @@ DriverEntry(
             WARN(("Unsupported OLDER win version, ignore and assume 3D is NOT required"));
             f3DRequired = FALSE;
         }
+
+        LOG(("3D is %srequired!", f3DRequired? "": "NOT "));
 
         Status = STATUS_SUCCESS;
 #ifdef VBOX_WITH_CROGL

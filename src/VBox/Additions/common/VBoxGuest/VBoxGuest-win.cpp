@@ -107,14 +107,28 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     ULONG ulMinorVer;
     ULONG ulBuildNo;
     BOOLEAN fCheckedBuild = PsGetVersion(&ulMajorVer, &ulMinorVer, &ulBuildNo, NULL);
-    LogRelFunc(("Running on Windows NT version %u.%u, build %u\n", ulMajorVer, ulMinorVer, ulBuildNo));
+
+    /* Use RTLogBackdoorPrintf to make sure that this goes to VBox.log */
+    RTLogBackdoorPrintf("VBoxGuest: Windows version %u.%u, build %u\n", ulMajorVer, ulMinorVer, ulBuildNo);
     if (fCheckedBuild)
-        LogRelFunc(("Running on a Windows checked build (debug)!\n"));
+        RTLogBackdoorPrintf("VBoxGuest: Windows checked build\n");
+
 #ifdef DEBUG
     vbgdNtDoTests();
 #endif
     switch (ulMajorVer)
     {
+        case 10:
+            switch (ulMinorVer)
+            {
+                case 0:
+                    /* Windows 10 Preview builds starting with 9926. */
+                default:
+                    /* Also everything newer. */
+                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
+                    break;
+            }
+            break;
         case 6: /* Windows Vista or Windows 7 (based on minor ver) */
             switch (ulMinorVer)
             {
@@ -131,17 +145,17 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     g_enmVbgdNtVer = VBGDNTVER_WIN81;
                     break;
                 case 4:
-                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
-                    break;
+                    /* Windows 10 Preview builds. */
                 default:
-                    LogRelFunc(("Unknown version of Windows (%u.%u), refusing!\n", ulMajorVer, ulMinorVer));
-                    rc = STATUS_DRIVER_UNABLE_TO_LOAD;
+                    /* Also everything newer. */
+                    g_enmVbgdNtVer = VBGDNTVER_WIN10;
                     break;
             }
             break;
         case 5:
             switch (ulMinorVer)
             {
+                default:
                 case 2:
                     g_enmVbgdNtVer = VBGDNTVER_WIN2K3;
                     break;
@@ -151,20 +165,25 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 case 0:
                     g_enmVbgdNtVer = VBGDNTVER_WIN2K;
                     break;
-                default:
-                    LogRelFunc(("Unknown version of Windows (%u.%u), refusing!\n", ulMajorVer, ulMinorVer));
-                    rc = STATUS_DRIVER_UNABLE_TO_LOAD;
             }
             break;
         case 4:
             g_enmVbgdNtVer = VBGDNTVER_WINNT4;
             break;
         default:
-            if (ulMajorVer < 4)
-                LogRelFunc(("At least Windows NT4 required! (%u.%u)\n", ulMajorVer, ulMinorVer));
+            if (ulMajorVer > 6)
+            {
+                /* "Windows 10 mode" for Windows 8.1+. */
+                g_enmVbgdNtVer = VBGDNTVER_WIN10;
+            }
             else
-                LogRelFunc(("Too new version %u.%u!\n", ulMajorVer, ulMinorVer));
-            rc = STATUS_DRIVER_UNABLE_TO_LOAD;
+            {
+                if (ulMajorVer < 4)
+                    LogRelFunc(("At least Windows NT4 required! (%u.%u)\n", ulMajorVer, ulMinorVer));
+                else
+                    LogRelFunc(("Unknown version %u.%u!\n", ulMajorVer, ulMinorVer));
+                rc = STATUS_DRIVER_UNABLE_TO_LOAD;
+            }
             break;
     }
 
