@@ -1098,7 +1098,7 @@ int main(int argc, char **argv)
 #else
         VBoxServiceVerbose(1, "Daemonizing...\n");
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */,
-                             false /* fRespawn */);
+                             false /* fRespawn */, NULL /* pcRespawn */);
         if (RT_FAILURE(rc))
             return VBoxServiceError("Daemon failed: %Rrc\n", rc);
         /* in-child */

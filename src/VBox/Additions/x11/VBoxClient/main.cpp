@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
     if (fDaemonise)
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, NULL);
     if (RT_FAILURE(rc))
         VBClFatalError(("Daemonizing: %Rrc\n", rc));
     if (g_szPidFile[0])
