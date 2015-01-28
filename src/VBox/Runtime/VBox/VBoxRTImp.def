@@ -1498,3 +1498,8 @@ EXPORTS
     SUPSemEventWaitNoResume
     SUPSemEventClose
     SUPSemEventCreate
+    SUPR3Init
+    SUPR3LoadModule
+    SUPR3TracerOpen
+    SUPR3TracerIoCtl
+
