@@ -296,8 +296,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      */
     Display* pDisplay = pConsole->i_getDisplay();
     AssertPtrReturnVoid(pDisplay);
-    pDisplay->i_handleUpdateVMMDevSupportsGraphics(newCapabilities
-                                             & VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    pDisplay->i_handleUpdateVMMDevSupportsGraphics(RT_BOOL(newCapabilities & VMMDEV_GUEST_SUPPORTS_GRAPHICS));
 
     /*
      * Tell the console interface about the event
