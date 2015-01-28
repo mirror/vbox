@@ -621,6 +621,9 @@ void UIMachineView::prepareFilters()
     /* Enable MouseMove events: */
     viewport()->setMouseTracking(true);
 
+    /* We have to watch for own events too: */
+    installEventFilter(this);
+
     /* QScrollView does the below on its own, but let's
      * do it anyway for the case it will not do it in the future: */
     viewport()->installEventFilter(this);
@@ -1180,6 +1183,26 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
+
+    if (pWatched == this)
+    {
+        switch (pEvent->type())
+        {
+            case QEvent::Move:
+            {
+                /* In some cases viewport resize-events can provoke the
+                 * machine-view position changes inside the machine-window.
+                 * We have to notify interested listeners like 3D service. */
+                display().ViewportChanged(screenId(),
+                                          contentsX(), contentsY(),
+                                          visibleWidth(), visibleHeight());
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
     if (pWatched == machineWindow())
     {
         switch (pEvent->type())
