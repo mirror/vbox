@@ -147,6 +147,7 @@ static int                  supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPT
 static int                  supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
 static int                  supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int                  supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
+static int                  supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int                  supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
 static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt,void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
@@ -1706,6 +1707,16 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrFree(pDevExt, pSession, pReq);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LDR_LOCK_DOWN):
+        {
+            /* validate */
+            REQ_CHECK_SIZES(SUP_IOCTL_LDR_LOCK_DOWN);
+
+            /* execute */
+            pReqHdr->rc = supdrvIOCtl_LdrLockDown(pDevExt);
             return 0;
         }
 
@@ -4556,6 +4567,14 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     }
     /* (not found - add it!) */
 
+    /* If the loader interface is locked down, make userland fail early */
+    if (pDevExt->fLdrLockedDown)
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("supdrvIOCtl_LdrOpen: Not adding '%s' to image list, loader interface is locked down!\n", pReq->u.In.szName));
+        return VERR_PERMISSION_DENIED;
+    }
+
     /*
      * Allocate memory.
      */
@@ -4719,6 +4738,14 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (uState != SUP_IOCTL_LDR_LOAD)
             AssertMsgFailed(("SUP_IOCTL_LDR_LOAD: invalid image state %d (%#x)!\n", uState, uState));
         return VERR_ALREADY_LOADED;
+    }
+
+    /* If the loader interface is locked down, don't load new images */
+    if (pDevExt->fLdrLockedDown)
+    {
+        supdrvLdrUnlock(pDevExt);
+        Log(("SUP_IOCTL_LDR_LOAD: Not loading '%s' image bits, loader interface is locked down!\n", pImage->szName));
+        return VERR_PERMISSION_DENIED;
     }
 
     switch (pReq->u.In.eEPType)
@@ -4979,6 +5006,28 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 
     supdrvLdrUnlock(pDevExt);
     return rc;
+}
+
+
+/**
+ * Lock down the image loader interface.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt     Device globals.
+ */
+static int supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt)
+{
+    LogFlow(("supdrvIOCtl_LdrLockDown:\n"));
+
+    supdrvLdrLock(pDevExt);
+    if (!pDevExt->fLdrLockedDown)
+    {
+        pDevExt->fLdrLockedDown = true;
+        Log(("supdrvIOCtl_LdrLockDown: Image loader interface locked down\n"));
+    }
+    supdrvLdrUnlock(pDevExt);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -5251,6 +5300,13 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     PSUPDRVLDRIMAGE pImagePrev;
     LogFlow(("supdrvLdrFree: pImage=%p\n", pImage));
+
+    /*
+     * Warn if we're releasing images while the image loader interface is
+     * locked down -- we won't be able to reload them!
+     */
+    if (pDevExt->fLdrLockedDown)
+        Log(("supdrvLdrFree: Warning: unloading '%s' image, while loader interface is locked down!\n", pImage->szName));
 
     /* find it - arg. should've used doubly linked list. */
     Assert(pDevExt->pLdrImages);
