@@ -94,7 +94,9 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  #
  # The ring-3 VBoxDTrace command implementation (library).
  #
- DLLS += VBoxDTraceCmd
+ ifneq ($(KBUILD_TARGET),solaris) # disabled on solaris - neiter needed nor currently able to build it here.
+  DLLS += VBoxDTraceCmd
+ endif
  VBoxDTraceCmd_TEMPLATE = VBoxR3ExtPackDTrace
  VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS
  #VBoxDTraceCmd_DEFS += YYDEBUG
@@ -225,7 +227,9 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  #
  # The ring-0 part of VBoxDTrace.
  #
- SYSMODS += VBoxDTraceR0
+ ifneq ($(KBUILD_TARGET),solaris) # disabled on solaris - neiter needed nor currently able to build it here.
+  SYSMODS += VBoxDTraceR0
+ endif
  VBoxDTraceR0_TEMPLATE = VBoxR0ExtPackDTrace
  VBoxDTraceR0_DEFS = IN_VBOXDTRACE_R0 IN_RT_R0
  ifeq ($(VBOX_LDR_FMT),elf)
@@ -262,8 +266,10 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  # Build the file list.  The macro takes 1=darwin.x86, 2=dist/VirtualBox.app/Contents/MacOS, 3=dylib
  VBOX_VBOXDTRACE_FILES_MACRO = \
  	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceMain.$(3)=>$(1)/VBoxDTraceMain.$(3) \
- 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
- 	$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0
+       $(if $(intersects $1, solaris.x86 solaris.amd64 \
+ 	,$(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceCmd.$(3)=>$(1)/VBoxDTraceCmd.$(3) \
+ 	 $(PATH_OUT_BASE)/$(1)/$(KBUILD_TYPE)/$(2)/ExtensionPacks/$(VBOX_EXTPACK_VBOXDTRACE_MANGLED_NAME)/$(1)/VBoxDTraceR0.r0=>$(1)/VBoxDTraceR0.r0 \
+       )
 
  VBOX_VBOXDTRACE_FILES := \
  	$(VBOX_PATH_EXTPACK_VBOXDTRACE)/ExtPack.xml=>ExtPack.xml \
