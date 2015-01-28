@@ -88,7 +88,6 @@ void VBClCleanUp()
         (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
-    VbglR3Term();
     exit(0);
 }
 
@@ -286,11 +285,6 @@ int main(int argc, char *argv[])
     pcszFileName = RTPathFilename(argv[0]);
     if (!pcszFileName)
         pcszFileName = "VBoxClient";
-    /* Initialise the guest library. */
-    rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("%s: failed to connect to the VirtualBox kernel service, rc=%Rrc\n",
-                 pcszFileName, rc));
 
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */

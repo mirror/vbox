@@ -284,9 +284,14 @@ static const char *getPidFilePath()
 
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
-    int rc = vboxClipboardConnect();
+    int rc;
 
     NOREF(ppInterface);
+    /* Initialise the guest library. */
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
+    rc = vboxClipboardConnect();
     if (RT_SUCCESS(rc))
         rc = vboxClipboardMain();
     if (rc == VERR_NOT_SUPPORTED)
@@ -296,6 +301,12 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     return rc;
 }
 
+static void cleanup(struct VBCLSERVICE **ppInterface)
+{
+    NOREF(ppInterface);
+    VbglR3Term();
+}
+
 struct VBCLSERVICE vbclClipboardInterface =
 {
     getPidFilePath,
@@ -303,7 +314,7 @@ struct VBCLSERVICE vbclClipboardInterface =
     run,
     VBClServiceDefaultHandler, /* pause */
     VBClServiceDefaultHandler, /* resume */
-    VBClServiceDefaultCleanup
+    cleanup
 };
 
 struct CLIPBOARDSERVICE
