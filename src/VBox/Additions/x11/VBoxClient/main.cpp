@@ -59,14 +59,16 @@ static RTFILE g_hPidFile;
  * during clean-up (e.g. pausing and resuming the service).
  */
 RTCRITSECT g_critSect;
+/** Counter of how often our deamon has been respawned. */
+unsigned cRespawn = 0;
 
 /** Exit with a fatal error. */
 void vbclFatalError(char *pszMessage)
 {
     char *pszCommand;
-    if (pszMessage)
+    if (pszMessage && cRespawn == 0)
     {
-        pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"",
+        pszCommand = RTStrAPrintf2("notify-send -t 5 \"VBoxClient: %s\"",
                                    pszMessage);
         if (pszCommand)
             system(pszCommand);
@@ -370,7 +372,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         VBClFatalError(("Creating pid-file path: %Rrc\n", rc));
     if (fDaemonise)
-        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, NULL);
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
     if (RT_FAILURE(rc))
         VBClFatalError(("Daemonizing: %Rrc\n", rc));
     if (g_szPidFile[0])
