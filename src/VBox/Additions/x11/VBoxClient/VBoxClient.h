@@ -31,7 +31,7 @@ do { \
 } while(0)
 
 /** Exit with a fatal error. */
-extern void vbclFatalError(char *pszMessage);
+extern DECLNORETURN(void) vbclFatalError(char *pszMessage);
 
 /** Call clean-up for the current service and exit. */
 extern void VBClCleanUp();
