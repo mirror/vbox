@@ -146,10 +146,10 @@ OTHER_CLEAN += \
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
+	$(VBOX_WIN_INST_OUT_DIR)/DirComponentsAndFiles_DTrace.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
-	$(VBOX_WIN_INST_OUT_DIR)/Files_DTrace.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -305,22 +305,42 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
-$(VBOX_WIN_INST_OUT_DIR)/Files_DTrace.wxi: $(MAKEFILE_CURRENT) $(PATH_SUB_CURRENT)/../Config.kmk | $$(dir $$@)
+$(VBOX_WIN_INST_OUT_DIR)/DirComponentsAndFiles_DTrace.wxi: $(MAKEFILE_CURRENT) $(PATH_SUB_CURRENT)/../Config.kmk | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-	$(APPEND) -t $@ '<?xml version="1.0" ?>'
-	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
+	$(QUIET)$(APPEND) -nt "$@" \
+		'<?xml version="1.0" ?> \
+		'<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
 ifdef VBOX_WITH_DTRACE
-	$(APPEND) $@ -n \
-		$(foreach file, \
-			$(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
-			$(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
-                	, '<File Id="file_$(subst /,_,$(file))" Name="$(file)" Vital="yes" Source="$(PATH_STAGE_BIN)/$(file)" />') \
-		$(foreach file, \
-			$(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
-                	, '<File Id="file_$(subst /,_,$(file))" Name="$(file)" Vital="yes" Source="$(PATH_STAGE_BIN)/$(file)" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" />') \
-	        '<File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe" Source="$(PATH_STAGE_BIN)/VBoxDTrace.exe" />'
+	$(QUIET)$(APPEND) -n "$@" \
+		'<Directory Id="dir_DTrace" Name="dtrace">' \
+		'  <Directory Id="dir_DTrace_lib" Name="lib">' \
+		'    <Directory Id="dir_DTrace_lib_arch" Name="$(KBUILD_TARGET_ARCH)">' \
+               '      <Component Id="cp_dir_DTrace_lib_arch" Guid="7476CDF6-4157-2E17-5CCC-FF92528D2854" WIN64="$$(var.Property_Win64)">' \
+		$(foreach file, $(VBOXINST_DTRACE_LIB_ARCH_FILES) \
+                	, '        <File Id="file_dtrace_lib_arch_$(file)" Name="$(file)" Vital="yes" ' \
+			  '              Source="$(PATH_STAGE_BIN)/dtrace/lib/$(KBUILD_TARGET_ARCH)/$(file)" />' ) \
+		'      </Component>' \
+		'    </Directory>' \
+		'  </Directory>' \
+		'  <Directory Id="dir_DTrace_testcase" Name="testcase">' \
+		'    <Directory Id="dir_DTrace_testcase_arch" Name="$(KBUILD_TARGET_ARCH)">' \
+               '      <Component Id="cp_dir_DTrace_testcase_arch" Guid="45DF7014-4431-6C40-6DB0-35AF7C690EE1" WIN64="$$(var.Property_Win64)">' \
+		$(foreach file, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES) \
+                	, '        <File Id="file_dtrace_testcase_arch_$(file)" Name="$(file)" Vital="yes" ' \
+			  '              Source="$(PATH_STAGE_BIN)/dtrace/testcase/$(KBUILD_TARGET_ARCH)/$(file)" />' ) \
+		'      </Component>' \
+		'    </Directory>' \
+		'  </Directory>' \
+		'  <Directory Id="dir_DTrace_scripts" Name="scripts">' \
+               '    <Component Id="cp_dir_DTrace_scripts" Guid="AE07F9D5-4FD9-ACC7-C760-E9923CE01E16" WIN64="$$(var.Property_Win64)">' \
+		$(foreach file, $(VBOXINST_DTRACE_SCRIPTS_FILES) \
+                	, '      <File Id="file_dtrace_scripts_(file)" Name="$(file)" Vital="yes" ' \
+			  '            Source="$(PATH_STAGE_BIN)/dtrace/scripts/$(file)" />' ) \
+		'    </Component>' \
+		'  </Directory>' \
+		'</Directory>'
 endif
-	$(APPEND) $@ '</Include>'
+	$(QUIET)$(APPEND) "$@" '</Include>'
 
 
 $(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
@@ -518,7 +538,7 @@ $(PATH_SUB_CURRENT)/VirtualBox.wxs: \
 
 $(PATH_SUB_CURRENT)/VBoxMergeApp.wxi: \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
-	$(VBOX_WIN_INST_OUT_DIR)/Files_DTrace.wxi \
+	$(VBOX_WIN_INST_OUT_DIR)/DirComponentsAndFiles_DTrace.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
