@@ -578,10 +578,10 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh \
                $(if-expr defined(VBOX_WITH_DTRACE), \
-                $(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES) \
+                $(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES), \
 		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/lib/x86/$f) \
 		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/lib/amd64/$f)) \
-                $(foreach f, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES) \
+                $(foreach f, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES), \
 		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/testcase/x86/$f) \
 		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/testcase/amd64/$f)) \
                 $(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
