@@ -52,7 +52,6 @@ bin/VBoxManage
 bin/VBoxSVC
 bin/VBoxHeadless
 bin/VBoxSDL
-bin/VBoxDTrace
 bin/vboxwebsrv
 @mode 644
 lib/virtualbox/VBoxDDGC.gc

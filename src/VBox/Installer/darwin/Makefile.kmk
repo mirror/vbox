@@ -30,9 +30,11 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBOX_PATH_DIST_32 = $(VBOX_PATH_DIST)
   VBOX_PATH_DIST_64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/dist
+  VBOX_PATH_DIST_OTHER = $(VBOX_PATH_DIST_64)
  else
   VBOX_PATH_DIST_64 = $(VBOX_PATH_DIST)
   VBOX_PATH_DIST_32 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist
+  VBOX_PATH_DIST_OTHER = $(VBOX_PATH_DIST_32)
  endif
  VBOX_DI_FN_DEP_BOTH = $(VBOX_PATH_DIST_32)/$1 $(VBOX_PATH_DIST_64)/$2
  VBOX_DI_FN_DEP_32   = $(VBOX_PATH_DIST_32)/$1
@@ -47,6 +49,7 @@ else
   VBOX_DI_FN_DEP_64  = $(VBOX_PATH_DIST)/$1
   VBOX_DI_FN_DEP_32  =
  endif
+ VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 endif
 
 # Unset this to speed up things during makefile hacking.
@@ -574,6 +577,15 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxballoonctrl.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/org.virtualbox.vboxautostart.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/VBoxAutostartDarwin.sh \
+               $(if-expr defined(VBOX_WITH_DTRACE), \
+                $(foreach f, $(VBOXINST_DTRACE_LIB_ARCH_FILES) \
+		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/lib/x86/$f) \
+		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/lib/amd64/$f)) \
+                $(foreach f, $(VBOXINST_DTRACE_TESTCASE_ARCH_FILES) \
+		 	$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/MacOS/dtrace/testcase/x86/$f) \
+		 	$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/MacOS/dtrace/testcase/amd64/$f)) \
+                $(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
+		 ,) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -742,6 +754,28 @@ if 1
 				) \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
 endif
+ifdef VBOX_WITH_DTRACE
+	@# DTrace library, testcases and scripts.
+       $(MKDIR) -p -m 0755 -- \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/lib/$(KBUILD_TARGET_ARCH)/ \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/testcase/$(KBUILD_TARGET_ARCH)/ \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/scripts/
+	$(foreach file, $(addprefix lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+			$(addprefix testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+       		$(addprefix scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
+		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
+			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB))
+ ifdef VBOX_WITH_COMBINED_PACKAGE
+       $(MKDIR) -p -m 0755 -- \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/lib/$(VBOX_CP_OTHER_ARCH)/ \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/testcase/$(VBOX_CP_OTHER_ARCH)/
+	$(foreach file, $(addprefix lib/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+			$(addprefix testcase/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST_OTHER)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
+			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB)) \
+ endif
+endif
+
 	@# Signed the binaries and the application bundle.
 	@# Note #1 - We cannot sign the application binary here, since we switch to match the kernel bitness.
 	@# Note #2 - Must sign -amd64/-x86 suffixed binaries without the suffix, or verification fails. (Too lazy to do this for *.gc.)

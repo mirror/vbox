@@ -320,6 +320,15 @@ ifdef VBOX_WITH_EFIFW_PACKING
  	VBoxEFI64.fd
 endif
 
+# DTrace library and scripts.
+ifdef VBOX_WITH_DTRACE
+ VBOX_LNX_NO_STRIP += \
+ 	$(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+ 	$(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+ 	$(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
+endif
+
+# Icons
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
 	    $(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \

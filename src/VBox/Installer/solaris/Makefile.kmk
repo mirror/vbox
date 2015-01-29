@@ -172,20 +172,20 @@ BLDDIRS += \
 	$(SOLARIS_USR_DIR)/share \
 	$(SOLARIS_USR_DIR)/share/icons \
 	$(SOLARIS_USRSHR_ICONS_DIR) \
-    $(foreach s,16 20 24 32 48 64 72 96 128 256,\
-	    $(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s) \
-	    $(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s)/mimetypes)
+	$(foreach s,16 20 24 32 48 64 72 96 128 256,\
+		$(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s) \
+		$(SOLARIS_USRSHR_ICONS_DIR)/$(s)x$(s)/mimetypes)
 
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
-	    $(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
-	        $(foreach s,16 20 24 32 48 64 72 96 128 256,\
-	            virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png)))
+		$(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
+			$(foreach s,16 20 24 32 48 64 72 96 128 256,\
+				virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/mimetypes/virtualbox-$(f).png)))
 
 SOLARIS_COMMON_ICONS = \
 	$(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
-	    $(foreach s,16 20 24 32 48 64 72 96 128 256,\
-	        $(s)x$(s)/mimetypes/virtualbox-$(f).png))
+		$(foreach s,16 20 24 32 48 64 72 96 128 256,\
+			$(s)x$(s)/mimetypes/virtualbox-$(f).png))
 
 
 #
@@ -420,6 +420,15 @@ ifdef VBOX_WITH_EFIFW_PACKING
  SOLARIS_COMMON += \
 	VBoxEFI32.fd \
 	VBoxEFI64.fd
+endif
+
+# DTrace library, testcase and scripts (as the rest of this file, this makes bold
+# ASSUMPTIONS about VBPX_INST_XXX variable values).
+ifdef VBOX_WITH_DTRACE
+ SOLARIS_COMMON += \
+	$(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+	$(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+       $(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
 endif
 
 SOLARIS_ARCH_FILES := \

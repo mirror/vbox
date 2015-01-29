@@ -184,8 +184,8 @@
               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
 <?endif ?>
 <?if $(env.VBOX_WITH_DTRACE) = "yes" ?>
-        <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe"
-          Source="$(env.PATH_OUT)\bin\VBoxDTrace.exe" />
+        <!-- Include list of DTrace related files generate by the the maekfile. -->
+        <?include $(env.PATH_TARGET)\Files_DTrace.wxi ?>
 <?endif ?>
         <!-- VBox DLL files -->
         <File Id="file_VBoxDD.dll" Name="VBoxDD.dll"
