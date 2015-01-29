@@ -94,9 +94,8 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  #
  # The ring-3 VBoxDTrace command implementation (library).
  #
- ifneq ($(KBUILD_TARGET),solaris) # disabled on solaris - neiter needed nor currently able to build it here.
-  DLLS += VBoxDTraceCmd
- endif
+ ifneq ($(KBUILD_TARGET),solaris) # Temporarily disabled on Solaris (not really needed)...
+ DLLS += VBoxDTraceCmd
  VBoxDTraceCmd_TEMPLATE = VBoxR3ExtPackDTrace
  VBoxDTraceCmd_DEFS = RTMEM_WRAP_TO_EF_APIS
  #VBoxDTraceCmd_DEFS += YYDEBUG
@@ -222,7 +221,7 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  		-e 's,$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/,,g' \
  		--output $(VBOXDT_PATH)/generated/$(file) \
  		$(VBoxDTraceCmd_0_OUTDIR)/src/VBox/ExtPacks/VBoxDTrace/onnv/lib/libdtrace/common/$(file))
-
+ endif # Temporarily disabled on Solaris.
 
  #
  # The ring-0 part of VBoxDTrace.
