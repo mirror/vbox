@@ -508,12 +508,12 @@ BLDDIRS += $(foreach d,\
 	archive/additions \
 	install \
        $(if $(VBOX_WITH_DTRACE),\
-	  dtrace \
-	  dtrace/lib \
-	  dtrace/lib/$(KBUILD_TARGET_ARCH) \
-	  dtrace/testcase/ \
-	  dtrace/testcase/$(KBUILD_TARGET_ARCH) \
-	  dtrace/scripts,) \
+	  archive/dtrace \
+	  archive/dtrace/lib \
+	  archive/dtrace/lib/$(KBUILD_TARGET_ARCH) \
+	  archive/dtrace/testcase/ \
+	  archive/dtrace/testcase/$(KBUILD_TARGET_ARCH) \
+	  archive/dtrace/scripts,) \
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
 
 
