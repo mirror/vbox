@@ -455,11 +455,11 @@ vbox_output_detect (xf86OutputPtr output)
 }
 
 static DisplayModePtr vbox_output_add_mode(VBOXPtr pVBox, DisplayModePtr *pModes, const char *pszName, int x, int y,
-                                           Bool isPreferred, Bool fDifferentRefresh, Bool isUserDef)
+                                           Bool isPreferred, Bool isUserDef)
 {
     TRACE_LOG("pszName=%s, x=%d, y=%d\n", pszName ? pszName : "(null)", x, y);
     DisplayModePtr pMode = xnfcalloc(1, sizeof(DisplayModeRec));
-    int cRefresh = fDifferentRefresh ? 70 : 60;
+    int cRefresh = 60;
 
     pMode->status        = MODE_OK;
     /* We don't ask the host whether it likes user defined modes,
@@ -503,7 +503,7 @@ vbox_output_get_modes (xf86OutputPtr output)
     iScreen = (uintptr_t)output->driver_private;
     VBoxUpdateSizeHints(pScrn);
     pMode = vbox_output_add_mode(pVBox, &pModes, NULL, pVBox->pScreens[iScreen].aPreferredSize.cx,
-                                 pVBox->pScreens[iScreen].aPreferredSize.cy, TRUE, pVBox->fUseHardwareCursor, FALSE);
+                                 pVBox->pScreens[iScreen].aPreferredSize.cy, TRUE, FALSE);
     VBOXEDIDSet(output, pMode);
     /* Add standard modes supported by the host */
     for ( ; ; )
@@ -511,7 +511,7 @@ vbox_output_get_modes (xf86OutputPtr output)
         cIndex = vboxNextStandardMode(pScrn, cIndex, &x, &y);
         if (cIndex == 0)
             break;
-        vbox_output_add_mode(pVBox, &pModes, NULL, x, y, FALSE, FALSE, FALSE);
+        vbox_output_add_mode(pVBox, &pModes, NULL, x, y, FALSE, FALSE);
     }
 
     /* Also report any modes the user may have requested in the xorg.conf
@@ -519,7 +519,7 @@ vbox_output_get_modes (xf86OutputPtr output)
     for (i = 0; pScrn->display->modes[i] != NULL; i++)
     {
         if (2 == sscanf(pScrn->display->modes[i], "%ux%u", &x, &y))
-            vbox_output_add_mode(pVBox, &pModes, pScrn->display->modes[i], x, y, FALSE, FALSE, TRUE);
+            vbox_output_add_mode(pVBox, &pModes, pScrn->display->modes[i], x, y, FALSE, TRUE);
     }
     TRACE_EXIT();
     return pModes;

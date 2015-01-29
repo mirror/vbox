@@ -197,8 +197,6 @@ typedef struct VBOXRec
     xf86CursorInfoPtr pCurs;
     /** Do we currently want to use the host cursor? */
     Bool fUseHardwareCursor;
-    /** Do we want to force a reset of the current mode because the host cursor support changed?  Only used by old servers. */
-    Bool fForceModeSet;
     /** The last cursor capabilities data read from the X11 property. */
     int32_t fLastCursorCapabilitiesFromProperty;
     /** Number of screens attached */
@@ -245,6 +243,7 @@ extern void vbvxAbortServer(void);
 extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
 #define VBOXGetRec vbvxGetRec  /* Temporary */
 extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
+extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
 
 /* setmode.c */
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
