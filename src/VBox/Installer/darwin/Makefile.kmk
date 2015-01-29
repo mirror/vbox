@@ -756,7 +756,7 @@ if 1
 endif
 ifdef VBOX_WITH_DTRACE
 	@# DTrace library, testcases and scripts.
-       $(MKDIR) -p -m 0755 -- \
+	$(MKDIR) -p -m 0755 -- \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/lib/$(KBUILD_TARGET_ARCH)/ \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/testcase/$(KBUILD_TARGET_ARCH)/ \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/scripts/
@@ -766,7 +766,7 @@ ifdef VBOX_WITH_DTRACE
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB))
  ifdef VBOX_WITH_COMBINED_PACKAGE
-       $(MKDIR) -p -m 0755 -- \
+	$(MKDIR) -p -m 0755 -- \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/lib/$(VBOX_CP_OTHER_ARCH)/ \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/testcase/$(VBOX_CP_OTHER_ARCH)/
 	$(foreach file, $(addprefix lib/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
