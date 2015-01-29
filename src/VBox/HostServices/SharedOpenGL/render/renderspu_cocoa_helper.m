@@ -889,6 +889,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)vboxSetSize:(NSSize)size;
 - (NSSize)size;
 - (void)updateViewportCS;
+- (NSRect)safeConvertToScreen:(NSRect *)pRect;
 - (void)vboxReshapePerform;
 - (void)vboxReshapeOnResizePerform;
 - (void)vboxReshapeOnReparentPerform;
@@ -1538,6 +1539,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     COCOA_LOG_FLOW(("%s: self=%p pos=%d,%d (old pos=%d,%d)\n", __PRETTY_FUNCTION__, (void *)self, (int)pos.x, (int)pos.y, 
                     (int)m_Pos.x, (int)m_Pos.y));
 
+    DEBUG_MSG(("vboxSetPosUI: [%d, %d].\n", (int)pos.x, (int)pos.y));
+
     m_Pos = pos;
 
     if (m_fEverSized)
@@ -1714,66 +1717,126 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)vboxReshapeOnReparentPerform
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
+    [self vboxReshapePerform];
     [self createDockTile];
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
+}
+
+- (NSRect)safeConvertToScreen:(NSRect *)pRect
+{
+    NSRect resultingRect = NSZeroRect;
+
+    NSWindow *pWindow = [m_pParentView window];
+    if (pWindow)
+    {
+        if ([pWindow respondsToSelector:@selector(convertRectToScreen:)])
+        {
+            NSMethodSignature *pSignature = [pWindow methodSignatureForSelector:@selector(convertRectToScreen:)];
+            if (pSignature)
+            {
+                NSInvocation *pInvocation = [NSInvocation invocationWithMethodSignature:pSignature];
+                if (pInvocation)
+                {
+                    [pInvocation setSelector:@selector(convertRectToScreen:)];
+                    [pInvocation setTarget:pWindow];
+                    [pInvocation setArgument:pRect atIndex:2];
+                    [pInvocation invoke];
+                    [pInvocation getReturnValue:&resultingRect];
+
+                    DEBUG_MSG(("safeConvertToScreen: convert [X, Y, WxH]: [%d, %d, %dx%d] -> [%d, %d, %dx%d]\n",
+                        (int)pRect       ->origin.x, (int)pRect       ->origin.y, (int)pRect       ->size.width, (int)pRect       ->size.width,
+                        (int)resultingRect.origin.x, (int)resultingRect.origin.y, (int)resultingRect.size.width, (int)resultingRect.size.width));
+
+                    return resultingRect;
+                }
+            }
+        }
+
+        /* If we failed, let's use deprecated @selector(convertBaseToScreen:). It is a bit hacky,
+         * but what to do if we stick to SDK 10.6. */
+        resultingRect.origin = [[m_pParentView window] convertBaseToScreen:pRect->origin];
+        resultingRect.size   = pRect->size;
+    }
+    else
+        /* Should never happen. */
+        DEBUG_WARN(("safeConvertToScreen: parent widget has no window.\n"));
+
+    DEBUG_MSG(("safeConvertToScreen (deprecated method): convert [X, Y, WxH]: [%d, %d, %dx%d] -> [%d, %d, %dx%d]\n",
+        (int)pRect       ->origin.x, (int)pRect       ->origin.y, (int)pRect       ->size.width, (int)pRect       ->size.width,
+        (int)resultingRect.origin.x, (int)resultingRect.origin.y, (int)resultingRect.size.width, (int)resultingRect.size.width));
+
+    return resultingRect;
 }
 
 - (void)vboxReshapePerform
 {
     COCOA_LOG_FLOW(("%s: self=%p - m_DockTileView=%p\n", __PRETTY_FUNCTION__, (void *)self, (void *)m_DockTileView));
-    NSRect parentFrame = NSZeroRect;
-    NSPoint parentPos  = NSZeroPoint;
-    NSPoint childPos   = NSZeroPoint;
-    NSRect childFrame  = NSZeroRect;
-    NSRect newFrame    = NSZeroRect;
 
-    DEBUG_MSG(("vboxReshapePerform: m_Pos=[%d, %d], m_Size=[%dx%d]\n", (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
+    /* NOTE: Please consider the next naming convention for variables.
+     *
+     * Rectangle variables:
+     *
+     *      <object to represent><coordinate system>:
+     *          <object to represent>:
+     *              parentFrame - a frame of the parent container (NSView) object
+     *              childFrame  - a frame required to display guest content
+     *              windowFrame - resulting window frame constructed as an intersection of parentFrame and childFrame
+     *          <coordinate system>:
+     *              VCS - View Coordinate System
+     *              WCS - Window Coordinate System
+     *              SCS - Screen Coordinate System
+     *
+     * The same convention applied to offset variables naming as well which are of format:
+     *
+     *      <object to represent><coordinate><coordinate system>.
+     *
+     * https://developer.apple.com/library/mac/documentation/Cocoa/Conceptual/CocoaDrawingGuide/Transforms/Transforms.html
+     */
 
-    parentFrame = [m_pParentView frame];
-    DEBUG_MSG(("vboxReshapePerform: FIXED parentFrame [%d:%d], [%d:%d]\n", (int)parentFrame.origin.x, (int)parentFrame.origin.y, (int)parentFrame.size.width, (int)parentFrame.size.height));
-    parentPos = parentFrame.origin;
-    parentPos.y += parentFrame.size.height;
-    DEBUG_MSG(("vboxReshapePerform: FIXED(view) parentPos [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
-    parentPos = [m_pParentView convertPoint:parentPos toView:nil];
-    DEBUG_MSG(("vboxReshapePerform: FIXED parentPos(win) [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
-    parentPos = [[m_pParentView window] convertBaseToScreen:parentPos];
-    DEBUG_MSG(("vboxReshapePerform: FIXED parentPos(screen) [%d:%d]\n", (int)parentPos.x, (int)parentPos.y));
-    parentFrame.origin = parentPos;
+    NSRect parentFrameVCS, parentFrameWCS, parentFrameSCS;
+    NSRect childFrameWCS, childFrameSCS;
+    NSRect windowFrameSCS;
 
-    childPos = NSMakePoint(m_Pos.x, m_Pos.y + m_Size.height);
-    DEBUG_MSG(("vboxReshapePerform: FIXED(view) childPos [%d:%d]\n", (int)childPos.x, (int)childPos.y));
-    childPos = [m_pParentView convertPoint:childPos toView:nil];
-    DEBUG_MSG(("vboxReshapePerform: FIXED(win) childPos [%d:%d]\n", (int)childPos.x, (int)childPos.y));
-    childPos = [[m_pParentView window] convertBaseToScreen:childPos];
-    DEBUG_MSG(("vboxReshapePerform: FIXED childPos(screen) [%d:%d]\n", (int)childPos.x, (int)childPos.y));
-    childFrame = NSMakeRect(childPos.x, childPos.y, m_Size.width, m_Size.height);
-    DEBUG_MSG(("vboxReshapePerform: FIXED childFrame [%d:%d], [%d:%d]\n", (int)childFrame.origin.x, (int)childFrame.origin.y, (int)childFrame.size.width, (int)childFrame.size.height));
+    CGFloat childFrameXWCS, childFrameYWCS;
 
-    /* We have to make sure that the overlay window will not be displayed out
-     * of the parent window. So intersect both frames & use the result as the new
-     * frame for the window. */
-    newFrame = NSIntersectionRect(parentFrame, childFrame);
+    /* We need to construct a new window frame (windowFrameSCS) for entire NSWindow object in
+     * screen coordinates. In order to make 3D overlay window to do not overlap Cocoa and Qt GUI elements (titlebar,
+     * Qt statusbar, scroll bars etc) let's do the next. Get parent view visible area (parentFrameSCS) in (NS)Screen
+     * coordinates. Then get the area required to diaplay guest content (childFrameSCS) in (NS)Screen coordinates as well.
+     * The intersection of these two areas in screen coordinates will be a new frame for entire NSWindow object. */
 
-    DEBUG_MSG(("vboxReshapePerform: [%#p]: parentFrame pos[%d : %d] size[%d : %d]\n",
-               (void *)self, (int)parentFrame.origin.x, (int)parentFrame.origin.y, (int)parentFrame.size.width, (int)parentFrame.size.height));
-    DEBUG_MSG(("vboxReshapePerform: [%#p]: childFrame pos[%d : %d] size[%d : %d]\n",
-               (void *)self, (int)childFrame.origin.x, (int)childFrame.origin.y, (int)childFrame.size.width, (int)childFrame.size.height));
+    parentFrameVCS = [m_pParentView frame];
+    parentFrameWCS = [m_pParentView convertRect:parentFrameVCS toView:nil];
+    parentFrameSCS = [self safeConvertToScreen:&parentFrameWCS];
 
-    DEBUG_MSG(("vboxReshapePerform: [%#p]: newFrame pos[%d : %d] size[%d : %d]\n",
-               (void *)self, (int)newFrame.origin.x, (int)newFrame.origin.y, (int)newFrame.size.width, (int)newFrame.size.height));
+    /* Choose childFrame origin in a bit special way. Its pop-left corner should stick to its parent top-left corner. */
+    childFrameXWCS = parentFrameWCS.origin.x + m_Pos.x;
+    childFrameYWCS = parentFrameWCS.origin.y - m_Pos.y - (m_Size.height - parentFrameWCS.size.height);
+    childFrameWCS  = NSMakeRect(childFrameXWCS, childFrameYWCS, m_Size.width, m_Size.height);
+    childFrameSCS  = [self safeConvertToScreen:&childFrameWCS];
 
-    /* Later we have to correct the texture position in the case the window is
+    windowFrameSCS = NSIntersectionRect(parentFrameSCS, childFrameSCS);
+
+    DEBUG_MSG(("vboxReshapePerform: a new overlay frame [%d, %d, %dx%d] has been constructed from intersection of window frame "
+               "[%d, %d, %dx%d] and guest content rectangle [%d, %d, %dx%d]; m_Pos=[%d, %d], m_Size=%dx%d.\n",
+               (int)windowFrameSCS      .origin.x, (int)windowFrameSCS      .origin.y, (int)windowFrameSCS      .size.width, (int)windowFrameSCS      .size.width,
+               (int)parentFrameSCS.origin.x, (int)parentFrameSCS.origin.y, (int)parentFrameSCS.size.width, (int)parentFrameSCS.size.width,
+               (int)childFrameSCS .origin.x, (int)childFrameSCS .origin.y, (int)childFrameSCS .size.width, (int)childFrameSCS .size.width,
+               (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
+
+    /* @todo galitsyn: drop this!
+     * Later we have to correct the texture position in the case the window is
      * out of the parents window frame. So save the shift values for later use. */ 
-    m_RootRect.origin.x = newFrame.origin.x - childFrame.origin.x;
-    m_RootRect.origin.y =  childFrame.size.height + childFrame.origin.y - (newFrame.size.height + newFrame.origin.y);
-    m_RootRect.size = newFrame.size;
-    m_yInvRootOffset = newFrame.origin.y - childFrame.origin.y;
+    m_RootRect.origin.x = windowFrameSCS.origin.x - childFrameSCS.origin.x;
+    m_RootRect.origin.y =  childFrameSCS.size.height + childFrameSCS.origin.y - (windowFrameSCS.size.height + windowFrameSCS.origin.y);
+    m_RootRect.size = windowFrameSCS.size;
+    m_yInvRootOffset = windowFrameSCS.origin.y - childFrameSCS.origin.y;
 
     DEBUG_MSG(("vboxReshapePerform: [%#p]: m_RootRect pos[%d : %d] size[%d : %d]\n",
                (void *)self, (int)m_RootRect.origin.x, (int)m_RootRect.origin.y, (int)m_RootRect.size.width, (int)m_RootRect.size.height));
 
     /* Set the new frame. */
-    [[self window] setFrame:newFrame display:YES];
+    [[self window] setFrame:windowFrameSCS display:YES];
 
     /* Inform the dock tile view as well. */
     [self reshapeDockTile];
