@@ -340,7 +340,8 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         updateUseHardwareCursor(pVBox, (uint32_t)*pfCursorCapabilities);
         pVBox->fLastCursorCapabilitiesFromProperty = *pfCursorCapabilities;
     }
-    pVBox->fForceModeSet = (pVBox->fUseHardwareCursor != fOldUseHardwareCursor);
+    if (pVBox->fUseHardwareCursor != fOldUseHardwareCursor)
+        vbvxReprobeCursor(pScrn);
 }
 
 #ifndef VBOXVIDEO_13
@@ -368,24 +369,13 @@ static void vboxRandRDispatchCore(ClientPtr pClient)
         return;
     pScrn = xf86Screens[pWin->drawable.pScreen->myNum];
     pVBox = VBOXGetRec(pScrn);
-    TRACE_LOG("pVBox->fForceModeSet=%u, pVBox->fUseHardwareCursor=%u\n", (unsigned)pVBox->fForceModeSet,
-              pVBox->fUseHardwareCursor);
+    TRACE_LOG("pVBox->fUseHardwareCursor=%u\n", pVBox->fUseHardwareCursor);
     VBoxUpdateSizeHints(pScrn);
     pMode = pScrn->modes;
     if (pScrn->currentMode == pMode)
-    {
-        if (pVBox->fForceModeSet)  /* Swap modes so that the new mode is before the current one. */
-        {
-            pScrn->currentMode = pMode->next;
-            pMode->next->HDisplay = pMode->HDisplay;
-            pMode->next->VDisplay = pMode->VDisplay;
-        }
-        else
-            pMode = pMode->next;
-    }
+        pMode = pMode->next;
     pMode->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
     pMode->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
-    pVBox->fForceModeSet = false;
 }
 
 static int vboxRandRDispatch(ClientPtr pClient)
