@@ -129,7 +129,7 @@ int CrFbWindow::SetVisible(bool fVisible)
 
 int CrFbWindow::SetSize(uint32_t width, uint32_t height, bool fForced)
 {
-    if (!checkInitedUpdating() && !fForced)
+    if (!fForced && !checkInitedUpdating())
     {
         crDebug("CrFbWindow: SetSize request dropped because window is currently updating"
                 "(width=%d, height=%d, mWidth=%d, mHeight=%d).", width, height, mWidth, mHeight);
