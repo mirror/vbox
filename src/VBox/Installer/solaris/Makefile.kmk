@@ -496,6 +496,10 @@ BLDDIRS += $(foreach d,\
 	 sdk/bindings/xpcom/python/xpcom/client,) \
 	$(if $(VBOX_WITH_JXPCOM), \
 	 sdk/bindings/xpcom/java,) \
+	$(if $(VBOX_WITH_DTRACE), \
+        dtrace/lib/$(KBUILD_TARGET_ARCH)\
+        dtrace/testcase/$(KBUILD_TARGET_ARCH)\
+        dtrace/scripts,)\
 ,$(SOLARIS_VBOXINST_DIR)/$(d)/)
 
 BLDDIRS += $(foreach d,\
