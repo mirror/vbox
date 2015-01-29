@@ -76,9 +76,7 @@
 
     </Component>
 
-<?if $(env.VBOX_WITH_DTRACE = "yes" ?>
     <?include $(env.PATH_TARGET)\DirComponentsAndFiles_DTrace.wxi ?>
-<?endif ?>
 
     <!--
 
