@@ -507,7 +507,7 @@ BLDDIRS += $(foreach d,\
 	  archive/ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),) \
 	archive/additions \
 	install \
-       $(if VBOX_WITH_DTRACE),\
+       $(if $(VBOX_WITH_DTRACE),\
 	  dtrace \
 	  dtrace/lib \
 	  dtrace/lib/$(KBUILD_TARGET_ARCH) \
