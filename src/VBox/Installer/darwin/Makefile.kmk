@@ -772,7 +772,7 @@ ifdef VBOX_WITH_DTRACE
 	$(foreach file, $(addprefix lib/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
 			$(addprefix testcase/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST_OTHER)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB)) \
+			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB))
  endif
 endif
 
