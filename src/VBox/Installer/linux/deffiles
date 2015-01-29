@@ -26,6 +26,7 @@
 DEFAULT_FILE_NAMES=" \
     VBoxDD.so \
     VBoxDD2.so \
+    VBoxDTrace \
     VBoxKeyboard.so \
     VBoxManage \
     VBoxNetDHCP \
@@ -80,6 +81,20 @@ DEFAULT_FILE_NAMES=" \
     components/VBoxXPCOMBase.xpt \
     components/VBoxXPCOMIPCC.so \
     components/VirtualBox_XPCOM.xpt \
+    dtrace/lib/amd64/vbox-types.d \
+    dtrace/lib/amd64/vbox-arch-types.d \
+    dtrace/lib/amd64/vm.d \
+    dtrace/lib/amd64/cpumctx.d \
+    dtrace/lib/amd64/CPUMInternal.d \
+    dtrace/lib/amd64/x86.d \
+    dtrace/lib/x86/vbox-types.d \
+    dtrace/lib/x86/vbox-arch-types.d \
+    dtrace/lib/x86/vm.d \
+    dtrace/lib/x86/cpumctx.d \
+    dtrace/lib/x86/CPUMInternal.d \
+    dtrace/lib/x86/x86.d \
+    dtrace/testcase/amd64/vbox-vm-struct-test.d \
+    dtrace/testcase/x86/vbox-vm-struct-test.d \
     VBox.sh \
     VBox.png \
     virtualbox.desktop \

@@ -131,9 +131,9 @@ VBOX_FBSD_NO_STRIP = \
 
 # EFI firmware
 ifdef VBOX_WITH_EFIFW_PACKING
-  VBOX_FBSD_NO_STRIP += \
-	VBoxEFI32.fd \
-        VBoxEFI64.fd
+ VBOX_FBSD_NO_STRIP += \
+ 	VBoxEFI32.fd \
+ 	VBoxEFI64.fd
 endif
 
 # Symlinks residing in bin/
@@ -213,6 +213,15 @@ ifdef VBOX_WITH_WEBSERVICES
 	vboxwebsrv
 endif
 
+# DTrace library, testcase and scripts (as the rest of this file, this makes bold
+# ASSUMPTIONS about VBPX_INST_XXX variable values).
+ifdef VBOX_WITH_DTRACE
+ VBOX_FBSD_NO_STRIP += \
+       $(addprefix dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+       $(addprefix dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+       $(addprefix dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES))
+endif
+
 #
 # All the bin files that goes into the archives.
 #
@@ -231,7 +240,7 @@ $(PATH_STAGE_BIN)/vboxdrv.tar.gz: \
 
 #
 # The generic installer.
-# @todo r=aeichner: Create pkg_plist dynamically based on the available features
+## @todo r=aeichner: Create pkg_plist dynamically based on the available features
 #
 $(PATH_STAGE_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
 		$(VBOX_VERSION_STAMP) \
@@ -315,9 +324,16 @@ $(VBOX_FBSD_INST_OUT_DIR)/pkg_plist: \
 	$(QUIET)$(SED) \
 		-e "s;_VBOX_REM_32BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,);g" \
 		-e "s;_VBOX_REM_64BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,);g" \
-		$(if $(VBOX_WITH_DTRACE),,-e "/VBoxDTrace/d") \
 		--output $@ \
 		$<
+ifdef VBOX_WITH_DTRACE
+	$(QUIET)$(APPEND) -n "$@" "@mode 644" \
+		$(addprefix lib/virtualbox/dtrace/lib/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
+		$(addprefix lib/virtualbox/dtrace/testcase/$(KBUILD_TARGET_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
+		$(addprefix lib/virtualbox/dtrace/scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
+		"@mode 755" \
+		"bin/VBoxDTrace"
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

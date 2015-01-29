@@ -115,7 +115,7 @@ cd icons
 cd -
 rmdir icons
 mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
-for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart vbox-img; do
+for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxDTrace VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart vbox-img; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 if %WEBSVC%; then
   for i in vboxwebsrv webtest; do
@@ -189,6 +189,8 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxsdl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxheadless
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxDTrace
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxdtrace
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxBalloonCtrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxballoonctrl
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart

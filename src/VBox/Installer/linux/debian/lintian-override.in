@@ -33,6 +33,7 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
 %VERPKG%: binary-without-manpage usr/bin/VBox
 %VERPKG%: binary-without-manpage usr/bin/VBoxBalloonCtrl
+%VERPKG%: binary-without-manpage usr/bin/VBoxDTrace
 %VERPKG%: binary-without-manpage usr/bin/VBoxHeadless
 %VERPKG%: binary-without-manpage usr/bin/VBoxManage
 %VERPKG%: binary-without-manpage usr/bin/VBoxSDL
@@ -41,6 +42,7 @@
 %VERPKG%: binary-without-manpage usr/bin/VirtualBox
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
 %VERPKG%: binary-without-manpage usr/bin/vboxballoonctrl
+%VERPKG%: binary-without-manpage usr/bin/vboxdtrace
 %VERPKG%: binary-without-manpage usr/bin/vboxheadless
 %VERPKG%: binary-without-manpage usr/bin/vboxmanage
 %VERPKG%: binary-without-manpage usr/bin/vboxsdl
@@ -74,6 +76,7 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD2.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDDU.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDbg.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDTrace /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxGuestPropSvc.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxGuestControlSvc.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxHostChannel.so /usr/lib/virtualbox
