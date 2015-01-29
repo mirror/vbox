@@ -78,6 +78,7 @@
 
     <?include $(env.PATH_TARGET)\DirComponentsAndFiles_DTrace.wxi ?>
 
+
     <!--
 
     <Component Id="cp_StartMenuShortcut" Guid="1C137D24-E599-47BD-98D0-2F62F202A8EA" Win64="$(var.Property_Win64)">
@@ -186,7 +187,7 @@
               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
 <?endif ?>
 <?if $(env.VBOX_WITH_DTRACE) = "yes" ?>
-	 <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe" Source="$(env.PATH_OUT)\VBoxDTrace.exe" />
+	 <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe" Source="$(env.PATH_OUT)\bin\VBoxDTrace.exe" />
 <?endif ?>
         <!-- VBox DLL files -->
         <File Id="file_VBoxDD.dll" Name="VBoxDD.dll"
