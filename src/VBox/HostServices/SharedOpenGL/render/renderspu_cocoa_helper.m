@@ -1819,7 +1819,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
     DEBUG_MSG(("vboxReshapePerform: a new overlay frame [%d, %d, %dx%d] has been constructed from intersection of window frame "
                "[%d, %d, %dx%d] and guest content rectangle [%d, %d, %dx%d]; m_Pos=[%d, %d], m_Size=%dx%d.\n",
-               (int)windowFrameSCS      .origin.x, (int)windowFrameSCS      .origin.y, (int)windowFrameSCS      .size.width, (int)windowFrameSCS      .size.width,
+               (int)windowFrameSCS.origin.x, (int)windowFrameSCS.origin.y, (int)windowFrameSCS.size.width, (int)windowFrameSCS.size.width,
                (int)parentFrameSCS.origin.x, (int)parentFrameSCS.origin.y, (int)parentFrameSCS.size.width, (int)parentFrameSCS.size.width,
                (int)childFrameSCS .origin.x, (int)childFrameSCS .origin.y, (int)childFrameSCS .size.width, (int)childFrameSCS .size.width,
                (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
