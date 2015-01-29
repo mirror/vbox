@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2014 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,6 +82,18 @@ VBoxUtf8ToUtf16(const char *pszString, BSTR *ppwszString)
     RTUtf16Free(pwsz);
     return vrc;
 #endif /* !VBOX_WITH_XPCOM */
+}
+
+static void
+VBoxUtf8Clear(char *pszString)
+{
+    RT_BZERO(pszString, strlen(pszString));
+}
+
+static void
+VBoxUtf16Clear(BSTR pwszString)
+{
+    RT_BZERO(pwszString, RTUtf16Len(pwszString) * sizeof(RTUTF16));
 }
 
 static void
@@ -759,105 +771,14 @@ VBoxGetCAPIFunctions(unsigned uVersion)
         VBoxProcessEventQueue,
         VBoxInterruptEventQueueProcessing,
 
+        VBoxUtf8Clear,
+        VBoxUtf16Clear,
+
         VBOX_CAPI_VERSION
     };
 
     if ((uVersion & 0xffff0000U) == (VBOX_CAPI_VERSION & 0xffff0000U))
         return &s_Functions;
-
-    /*
-     * Legacy interface version 4.0.
-     */
-    static const struct VBOXCAPIV4
-    {
-        /** The size of the structure. */
-        unsigned cb;
-        /** The structure version. */
-        unsigned uVersion;
-
-        unsigned int (*pfnGetVersion)(void);
-        unsigned int (*pfnGetAPIVersion)(void);
-
-        HRESULT (*pfnClientInitialize)(const char *pszVirtualBoxClientIID,
-                                       IVirtualBoxClient **ppVirtualBoxClient);
-        HRESULT (*pfnClientThreadInitialize)(void);
-        HRESULT (*pfnClientThreadUninitialize)(void);
-        void (*pfnClientUninitialize)(void);
-
-        void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
-                                  IVirtualBox **ppVirtualBox,
-                                  const char *pszSessionIID,
-                                  ISession **ppSession);
-
-        void  (*pfnComUninitialize)(void);
-
-        void (*pfnComUnallocString)(BSTR pwsz);
-
-        int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
-        int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
-        void  (*pfnUtf8Free)(char *pszString);
-        void  (*pfnUtf16Free)(BSTR pwszString);
-
-        SAFEARRAY *(*pfnSafeArrayCreateVector)(VARTYPE vt, LONG lLbound, ULONG cElements);
-        SAFEARRAY *(*pfnSafeArrayOutParamAlloc)(void);
-        HRESULT (*pfnSafeArrayCopyInParamHelper)(SAFEARRAY *psa, const void *pv, ULONG cb);
-        HRESULT (*pfnSafeArrayCopyOutParamHelper)(void **ppv, ULONG *pcb, VARTYPE vt, SAFEARRAY *psa);
-        HRESULT (*pfnSafeArrayCopyOutIfaceParamHelper)(IUnknown ***ppaObj, ULONG *pcObj, SAFEARRAY *psa);
-        HRESULT (*pfnSafeArrayDestroy)(SAFEARRAY *psa);
-
-#ifdef VBOX_WITH_XPCOM
-        void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
-#endif /* VBOX_WITH_XPCOM */
-        HRESULT (*pfnGetException)(IErrorInfo **ppException);
-        HRESULT (*pfnClearException)(void);
-        int (*pfnProcessEventQueue)(LONG64 iTimeoutMS);
-        int (*pfnInterruptEventQueueProcessing)(void);
-
-        /** Tail version, same as uVersion. */
-        unsigned uEndVersion;
-    } s_Functions_v4_0 =
-    {
-        sizeof(s_Functions_v4_0),
-        0x00040000U,
-
-        VBoxVersion,
-        VBoxAPIVersion,
-
-        VBoxClientInitialize,
-        VBoxClientThreadInitialize,
-        VBoxClientThreadUninitialize,
-        VBoxClientUninitialize,
-
-        VBoxComInitialize,
-        VBoxComUninitialize,
-
-        VBoxComUnallocString,
-
-        VBoxUtf16ToUtf8,
-        VBoxUtf8ToUtf16,
-        VBoxUtf8Free,
-        VBoxUtf16Free,
-
-        VBoxSafeArrayCreateVector,
-        VBoxSafeArrayOutParamAlloc,
-        VBoxSafeArrayCopyInParamHelper,
-        VBoxSafeArrayCopyOutParamHelper,
-        VBoxSafeArrayCopyOutIfaceParamHelper,
-        VBoxSafeArrayDestroy,
-
-#ifdef VBOX_WITH_XPCOM
-        VBoxGetEventQueue,
-#endif /* VBOX_WITH_XPCOM */
-        VBoxGetException,
-        VBoxClearException,
-        VBoxProcessEventQueue,
-        VBoxInterruptEventQueueProcessing,
-
-        0x00040000U
-    };
-
-    if ((uVersion & 0xffff0000U) == 0x00040000U)
-        return (PCVBOXCAPI)&s_Functions_v4_0;
 
     /*
      * Legacy interface version 3.0.
@@ -877,22 +798,22 @@ VBoxGetCAPIFunctions(unsigned uVersion)
                                        IVirtualBoxClient **ppVirtualBoxClient);
         void (*pfnClientUninitialize)(void);
 
-        void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
-                                  IVirtualBox **ppVirtualBox,
-                                  const char *pszSessionIID,
-                                  ISession **ppSession);
+        void (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                                 IVirtualBox **ppVirtualBox,
+                                 const char *pszSessionIID,
+                                 ISession **ppSession);
 
-        void  (*pfnComUninitialize)(void);
+        void (*pfnComUninitialize)(void);
 
-        void  (*pfnComUnallocMem)(void *pv);
+        void (*pfnComUnallocMem)(void *pv);
 
-        int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
-        int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
-        void  (*pfnUtf8Free)(char *pszString);
-        void  (*pfnUtf16Free)(BSTR pwszString);
+        int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+        int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
+        void (*pfnUtf8Free)(char *pszString);
+        void (*pfnUtf16Free)(BSTR pwszString);
 
 #ifdef VBOX_WITH_XPCOM
-        void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+        void (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
 #endif /* VBOX_WITH_XPCOM */
         HRESULT (*pfnGetException)(IErrorInfo **ppException);
         HRESULT (*pfnClearException)(void);
@@ -944,22 +865,22 @@ VBoxGetCAPIFunctions(unsigned uVersion)
 
         unsigned int (*pfnGetVersion)(void);
 
-        void  (*pfnComInitialize)(const char *pszVirtualBoxIID,
-                                  IVirtualBox **ppVirtualBox,
-                                  const char *pszSessionIID,
-                                  ISession **ppSession);
+        void (*pfnComInitialize)(const char *pszVirtualBoxIID,
+                                 IVirtualBox **ppVirtualBox,
+                                 const char *pszSessionIID,
+                                 ISession **ppSession);
 
-        void  (*pfnComUninitialize)(void);
+        void (*pfnComUninitialize)(void);
 
-        void  (*pfnComUnallocMem)(void *pv);
-        void  (*pfnUtf16Free)(BSTR pwszString);
-        void  (*pfnUtf8Free)(char *pszString);
+        void (*pfnComUnallocMem)(void *pv);
+        void (*pfnUtf16Free)(BSTR pwszString);
+        void (*pfnUtf8Free)(char *pszString);
 
-        int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
-        int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
+        int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+        int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
 
 #ifdef VBOX_WITH_XPCOM
-        void  (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
+        void (*pfnGetEventQueue)(nsIEventQueue **ppEventQueue);
 #endif /* VBOX_WITH_XPCOM */
 
         /** Tail version, same as uVersion. */
@@ -1003,15 +924,15 @@ VBoxGetCAPIFunctions(unsigned uVersion)
 
         unsigned int (*pfnGetVersion)(void);
 
-        void  (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
-        void  (*pfnComUninitialize)(void);
+        void (*pfnComInitialize)(IVirtualBox **virtualBox, ISession **session);
+        void (*pfnComUninitialize)(void);
 
-        void  (*pfnComUnallocMem)(void *pv);
-        void  (*pfnUtf16Free)(BSTR pwszString);
-        void  (*pfnUtf8Free)(char *pszString);
+        void (*pfnComUnallocMem)(void *pv);
+        void (*pfnUtf16Free)(BSTR pwszString);
+        void (*pfnUtf8Free)(char *pszString);
 
-        int   (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
-        int   (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
+        int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+        int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);
 
         /** Tail version, same as uVersion. */
         unsigned uEndVersion;

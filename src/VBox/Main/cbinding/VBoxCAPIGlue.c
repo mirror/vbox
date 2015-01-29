@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2014 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -163,66 +163,74 @@ static int tryLoadLibrary(const char *pszHome, int fSetAppHome)
 
 #ifndef WIN32
     g_hVBoxCAPI = dlopen(szName, RTLD_NOW | RTLD_LOCAL);
+#else /* WIN32 */
+    g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */, 0 /* dwFlags */);
+#endif /* WIN32 */
     if (g_hVBoxCAPI)
     {
         PFNVBOXGETCAPIFUNCTIONS pfnGetFunctions;
+#ifndef WIN32
         pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)(uintptr_t)
             dlsym(g_hVBoxCAPI, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME);
-#ifdef VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME
+# ifdef VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME
         if (!pfnGetFunctions)
             pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)(uintptr_t)
                 dlsym(g_hVBoxCAPI, VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME);
-#endif /* VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME */
-        if (pfnGetFunctions)
-        {
-            g_pVBoxFuncs = pfnGetFunctions(VBOX_CAPI_VERSION);
-            if (g_pVBoxFuncs)
-            {
-                g_pfnGetFunctions = pfnGetFunctions;
-                return 0;
-            }
-
-            /* bail out */
-            setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
-                      szName, VBOX_CAPI_VERSION);
-        }
-        else
-            setErrMsg(1, "dlsym(%.80s/%.32s): %.128s",
-                      szName, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME, dlerror());
-        dlclose(g_hVBoxCAPI);
-        g_hVBoxCAPI = NULL;
-    }
-    else
-        setErrMsg(0, "dlopen(%.80s): %.160s", szName, dlerror());
-#else /* !WIN32 */
-    g_hVBoxCAPI = LoadLibraryExA(szName, NULL /* hFile */, 0 /* dwFlags */);
-    if (g_hVBoxCAPI)
-    {
-        PFNVBOXGETCAPIFUNCTIONS pfnGetFunctions;
+# endif /* VBOX_GET_XPCOM_FUNCTIONS_SYMBOL_NAME */
+#else /* WIN32 */
         pfnGetFunctions = (PFNVBOXGETCAPIFUNCTIONS)
             GetProcAddress(g_hVBoxCAPI, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME);
+#endif /* WIN32 */
         if (pfnGetFunctions)
         {
             g_pVBoxFuncs = pfnGetFunctions(VBOX_CAPI_VERSION);
             if (g_pVBoxFuncs)
             {
-                g_pfnGetFunctions = pfnGetFunctions;
-                return 0;
+                if (   (   VBOX_CAPI_MAJOR(g_pVBoxFuncs->uVersion)
+                        == VBOX_CAPI_MAJOR(VBOX_CAPI_VERSION))
+                    && (   VBOX_CAPI_MINOR(g_pVBoxFuncs->uVersion)
+                        >= VBOX_CAPI_MINOR(VBOX_CAPI_VERSION)))
+                {
+                    g_pfnGetFunctions = pfnGetFunctions;
+                    return 0;
+                }
+                setErrMsg(1, "%.80s: pfnGetFunctions(%#x) returned incompatible version %#x",
+                          szName, VBOX_CAPI_VERSION, g_pVBoxFuncs->uVersion);
+                g_pVBoxFuncs = NULL;
             }
-
-            /* bail out */
-            setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
-                      szName, VBOX_CAPI_VERSION);
+            else
+            {
+                /* bail out */
+                setErrMsg(1, "%.80s: pfnGetFunctions(%#x) failed",
+                          szName, VBOX_CAPI_VERSION);
+            }
         }
         else
+        {
+#ifndef WIN32
+            setErrMsg(1, "dlsym(%.80s/%.32s): %.128s",
+                      szName, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME, dlerror());
+#else /* WIN32 */
             setErrMsg(1, "GetProcAddress(%.80s/%.32s): %d",
                       szName, VBOX_GET_CAPI_FUNCTIONS_SYMBOL_NAME, GetLastError());
+#endif /* WIN32 */
+        }
+
+#ifndef WIN32
+        dlclose(g_hVBoxCAPI);
+#else /* WIN32 */
         FreeLibrary(g_hVBoxCAPI);
+#endif /* WIN32 */
         g_hVBoxCAPI = NULL;
     }
     else
+    {
+#ifndef WIN32
+        setErrMsg(0, "dlopen(%.80s): %.160s", szName, dlerror());
+#else /* WIN32 */
         setErrMsg(0, "LoadLibraryEx(%.80s): %d", szName, GetLastError());
-#endif /* !WIN32 */
+#endif /* WIN32 */
+    }
 
     return -1;
 }
