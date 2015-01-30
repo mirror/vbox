@@ -561,6 +561,7 @@ $(PATH_STAGE_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(SOLARIS_ARCH_DEPFILES)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_STAGE_BIN)/VirtualBox-*-r*.tar.gz)
 	$(call MSG_L1,Installing binaries $(SOLARIS_VBOXINST_DIR))
+       $(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(MKDIR) -p -m 0755 $(SOLARIS_VBOXINST_DIR)/additions/)
 	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_VBOXINST_DIR)/additions/)
 	$(call MSG_L1,Installing files $(SOLARIS_VBOXINST_DIR))
 	$(QUIET)$(SED) \
@@ -807,3 +808,4 @@ $(addprefix $(SOLARIS_DBG_DIR_64)/,$(SOLARIS_DRIVER_BINS)): \
 		$(SOLARIS_DBG_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
 	$(SOL_DBG_OBJCOPY) $< $@
 
+$(error BLDDIRS=$(foreach d,$(sort $(BLDDIRS)),$(NLTAB)'$d'))
