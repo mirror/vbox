@@ -72,7 +72,7 @@ public:
         m_pSearchLabel->setBuddy(m_pSearchEditor);
 
         /* Next/Previous buttons: */
-        m_pNextPrevButtons = new UIRoundRectSegmentedButton(2, this);
+        m_pNextPrevButtons = new UIRoundRectSegmentedButton(this, 2);
         m_pNextPrevButtons->setEnabled(0, false);
         m_pNextPrevButtons->setEnabled(1, false);
 #ifndef Q_WS_MAC
