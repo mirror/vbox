@@ -2871,10 +2871,10 @@ ifdef VBOX_SIGNING_MODE
  endif
 
 #
-# Warn about windows hardening without code signing enabled.
+# Complain if windows hardening is enabled but not code signing.
 #
 else if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && !defined(VBOX_ONLY_BUILD)
- $(warning You need to enable code signing for a hardened windows build to work.)
+ $(error You need to enable code signing for a hardened windows build to work.)
 endif
 
 #
