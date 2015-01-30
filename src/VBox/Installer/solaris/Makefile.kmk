@@ -808,4 +808,3 @@ $(addprefix $(SOLARIS_DBG_DIR_64)/,$(SOLARIS_DRIVER_BINS)): \
 		$(SOLARIS_DBG_DIR_64)/% : $(SOLARIS_OUT_BIN_64)/% | $$(dir $$@)
 	$(SOL_DBG_OBJCOPY) $< $@
 
-$(error BLDDIRS=$(foreach d,$(sort $(BLDDIRS)),$(NLTAB)'$d'))
