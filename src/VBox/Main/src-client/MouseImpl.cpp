@@ -1130,22 +1130,15 @@ bool Mouse::i_supportsMT(void)
  */
 void Mouse::i_sendMouseCapsNotifications(void)
 {
-    bool fAbsDev, fRelDev, fMTDev, fCanAbs, fNeedsHostCursor;
+    bool fRelDev, fMTDev, fCanAbs, fNeedsHostCursor;
 
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        i_getDeviceCaps(&fAbsDev, &fRelDev, &fMTDev);
+        i_getDeviceCaps(NULL, &fRelDev, &fMTDev);
         fCanAbs = i_supportsAbs();
         fNeedsHostCursor = i_guestNeedsHostCursor();
     }
-    if (fAbsDev)
-        i_updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_HAS_ABS_DEV, 0);
-    else
-        i_updateVMMDevMouseCaps(0, VMMDEV_MOUSE_HOST_HAS_ABS_DEV);
-    /** @todo this call takes the Console lock in order to update the cached
-     * callback data atomically.  However I can't see any sign that the cached
-     * data is ever used again. */
     mParent->i_onMouseCapabilityChange(fCanAbs, fRelDev, fMTDev, fNeedsHostCursor);
 }
 
