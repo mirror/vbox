@@ -433,7 +433,9 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
             default:
                 AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
+        return VBOXSTRICTRC_VAL(rcStrict);
     }
+
     /** @todo what to do about errors? */
     Assert(RT_FAILURE_NP(rcStrict));
     return VBOXSTRICTRC_VAL(rcStrict);
