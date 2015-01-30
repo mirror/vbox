@@ -538,10 +538,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_PDM_AUDIO_DRIVER
   VBoxDD_DEFS            += VBOX_WITH_PDM_AUDIO_DRIVER
   VBoxDD_SOURCES         += \
-	Audio/AudioMixBuffer.cpp   \
-	Audio/AudioMixer.cpp       \
-	Audio/DrvAudio.cpp         \
-	Audio/DrvAudioCommon.cpp   \
+	Audio/AudioMixBuffer.cpp \
+	Audio/AudioMixer.cpp \
+	Audio/DrvAudio.cpp \
+	Audio/DrvAudioCommon.cpp \
 	Audio/DrvHostNullAudio.cpp
 
   ## @todo Darwin CoreAudio driver missing!
@@ -645,16 +645,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    endif
   endif
 
-  ifeq ($(KBUILD_TARGET),solaris)
-   VBoxDD_SOURCES += \
- 	Audio/solaudio.c
-   ifdef VBOX_WITH_SOLARIS_OSS
-    VBoxDD_SOURCES += Audio/ossaudio.c
-    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
-   endif
-  endif
-
- endif # VBOX_WITH_PDM_AUDIO_DRIVER
+ endif # !VBOX_WITH_PDM_AUDIO_DRIVER
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
  VBOX_SLIRP_SOURCES = \
