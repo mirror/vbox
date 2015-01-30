@@ -124,6 +124,7 @@ HRESULT Display::FinalConstruct()
     mu32UpdateVBVAFlags = 0;
     mfVMMDevSupportsGraphics = false;
     mfGuestVBVACapabilities = 0;
+    mfHostCursorCapabilities = 0;
 #endif
 #ifdef VBOX_WITH_VPX
     mpVideoRecCtx = NULL;
@@ -510,6 +511,8 @@ Display::i_displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
     SSMR3PutS32(pSSM, that->yInputMappingOrigin);
     SSMR3PutU32(pSSM, that->cxInputMapping);
     SSMR3PutU32(pSSM, that->cyInputMapping);
+    SSMR3PutU32(pSSM, that->mfGuestVBVACapabilities);
+    SSMR3PutU32(pSSM, that->mfHostCursorCapabilities);
 }
 
 DECLCALLBACK(int)
@@ -520,7 +523,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
     if (   uVersion != sSSMDisplayVer
         && uVersion != sSSMDisplayVer2
         && uVersion != sSSMDisplayVer3
-        && uVersion != sSSMDisplayVer4)
+        && uVersion != sSSMDisplayVer4
+        && uVersion != sSSMDisplayVer5)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -536,7 +540,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
         SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
         if (   uVersion == sSSMDisplayVer2
             || uVersion == sSSMDisplayVer3
-            || uVersion == sSSMDisplayVer4)
+            || uVersion == sSSMDisplayVer4
+            || uVersion == sSSMDisplayVer5)
         {
             uint32_t w;
             uint32_t h;
@@ -546,7 +551,8 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
             that->maFramebuffers[i].h = h;
         }
         if (   uVersion == sSSMDisplayVer3
-            || uVersion == sSSMDisplayVer4)
+            || uVersion == sSSMDisplayVer4
+            || uVersion == sSSMDisplayVer5)
         {
             int32_t xOrigin;
             int32_t yOrigin;
@@ -560,12 +566,18 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
             that->maFramebuffers[i].fDisabled = (that->maFramebuffers[i].flags & VBVA_SCREEN_F_DISABLED) != 0;
         }
     }
-    if (uVersion == sSSMDisplayVer4)
+    if (   uVersion == sSSMDisplayVer4
+        || uVersion == sSSMDisplayVer5)
     {
         SSMR3GetS32(pSSM, &that->xInputMappingOrigin);
         SSMR3GetS32(pSSM, &that->yInputMappingOrigin);
         SSMR3GetU32(pSSM, &that->cxInputMapping);
         SSMR3GetU32(pSSM, &that->cyInputMapping);
+    }
+    if (uVersion == sSSMDisplayVer5)
+    {
+        SSMR3GetU32(pSSM, &that->mfGuestVBVACapabilities);
+        SSMR3GetU32(pSSM, &that->mfHostCursorCapabilities);
     }
 
     return VINF_SUCCESS;
@@ -705,9 +717,11 @@ void Display::uninit()
 int Display::i_registerSSM(PUVM pUVM)
 {
     /* Version 2 adds width and height of the framebuffer; version 3 adds
-     * the framebuffer offset in the virtual desktop and the framebuffer flags.
+     * the framebuffer offset in the virtual desktop and the framebuffer flags;
+     * version 4 adds guest to host input event mapping and version 5 adds
+     * guest VBVA and host cursor capabilities.
      */
-    int rc = SSMR3RegisterExternal(pUVM, "DisplayData", 0, sSSMDisplayVer4,
+    int rc = SSMR3RegisterExternal(pUVM, "DisplayData", 0, sSSMDisplayVer5,
                                    mcMonitors * sizeof(uint32_t) * 8 + sizeof(uint32_t),
                                    NULL, NULL, NULL,
                                    NULL, i_displaySSMSave, NULL,
@@ -1162,6 +1176,8 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
     /* Do we need this to access mParent?  I presume that the safe VM pointer
      * ensures that mpDrv will remain valid. */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    uint32_t fHostCursorCapabilities =   (mfHostCursorCapabilities | fCapabilitiesAdded)
+                                       & ~fCapabilitiesRemoved;
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
@@ -1170,12 +1186,14 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
     alock.release();  /* Release before calling up for lock order reasons. */
     mpDrv->pUpPort->pfnReportHostCursorCapabilities (mpDrv->pUpPort, fCapabilitiesAdded, fCapabilitiesRemoved);
     if (   mfGuestVBVACapabilities & VBVACAPS_DISABLE_CURSOR_INTEGRATION
-        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
+        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ)
+        && fHostCursorCapabilities != mfHostCursorCapabilities)
     {
         HRESULT hrc = mParent->i_sendACPIMonitorHotPlugEvent();
         if (FAILED(hrc))
             return hrc;
     }
+    mfHostCursorCapabilities = fHostCursorCapabilities;
     return S_OK;
 }
 
