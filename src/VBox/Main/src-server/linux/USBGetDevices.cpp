@@ -1474,6 +1474,8 @@ static PUSBDEVICE testGetUsbfsDevices(const char *pcszUsbfsRoot, bool testfs)
             pNext->pszAddress = RTStrDup(*pcsz);
         if (!pNext || !pNext->pszAddress)
         {
+            if (pNext)
+                RTMemFree(pNext);
             deviceListFree(&pList);
             return NULL;
         }
