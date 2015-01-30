@@ -118,7 +118,7 @@ $$(VBOX_SUP_WIN_CERTS_FILE): $(MAKEFILE_CURRENT) \
 		"$(VBOX_PATH_SUPR3_CERTIFICATES)/$(lastword $(subst =,$(SP) ,$(cert)))" \
 		"$@")
 # The build certificate.
-if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)
+if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) && defined(VBOX_SIGNING_MODE)
 	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --exe $(VBOX_RTSIGNTOOL) --output "$@.cer" --der
 	$(VBOX_BIN2C) -ascii --append SUPBuildCert "$@.cer" $@
 	$(QUIET)$(RM) -f -- $@.cer
