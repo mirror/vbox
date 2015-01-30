@@ -251,21 +251,11 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 
 static void updateUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities)
 {
-    bool fGuestCanReportAbsolutePosition = false;
-    bool fHostWishesToReportAbsolutePosition = false;
-
-    if (   (fCursorCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
-            /* As of this version (server 1.6) all major Linux releases
-             * are known to handle USB tablets correctly. */
-        || (fCursorCapabilities & VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
-#endif
-        )
-        fGuestCanReportAbsolutePosition = true;
     if (   !(fCursorCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
         && (fCursorCapabilities & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
-        fHostWishesToReportAbsolutePosition = true;
-    pVBox->fUseHardwareCursor = fGuestCanReportAbsolutePosition && fHostWishesToReportAbsolutePosition;
+        pVBox->fUseHardwareCursor = true;
+    else
+        pVBox->fUseHardwareCursor = false;
 }
 
 # define SIZE_HINTS_PROPERTY         "VBOX_SIZE_HINTS"
