@@ -496,9 +496,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 
                     if (cBlkDesc)
                     {
-                        PRTRANGE paRanges;
-
-                        paRanges = (PRTRANGE)RTMemAllocZ(cBlkDesc * sizeof(RTRANGE));
+                        PRTRANGE paRanges = (PRTRANGE)RTMemAllocZ(cBlkDesc * sizeof(RTRANGE));
                         if (paRanges)
                         {
                             for (unsigned i = 0; i < cBlkDesc; i++)
@@ -518,6 +516,9 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 
                             if (rcReq == SCSI_STATUS_OK)
                                 rc = vscsiIoReqUnmapEnqueue(pVScsiLun, pVScsiReq, paRanges, cBlkDesc);
+                            if (   rcReq != SCSI_STATUS_OK
+                                || RT_FAILURE(rc))
+                                RTMemFree(paRanges);
                         }
                         else /* Out of memory. */
                             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_HARDWARE_ERROR, SCSI_ASC_SYSTEM_RESOURCE_FAILURE,
