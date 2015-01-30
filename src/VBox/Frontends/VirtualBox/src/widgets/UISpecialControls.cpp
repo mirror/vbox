@@ -40,7 +40,7 @@ UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
   : QAbstractButton(pParent)
 {
     setShortcut(QKeySequence(Qt::Key_Escape));
-    m_pButton = new UICocoaButton(UICocoaButton::CancelButton, this);
+    m_pButton = new UICocoaButton(this, UICocoaButton::CancelButton);
     connect(m_pButton, SIGNAL(clicked()),
             this, SIGNAL(clicked()));
     setFixedSize(m_pButton->size());
@@ -59,7 +59,7 @@ void UIMiniCancelButton::resizeEvent(QResizeEvent * /* pEvent */)
 UIResetButton::UIResetButton(QWidget *pParent /* = 0 */)
   : QAbstractButton(pParent)
 {
-    m_pButton = new UICocoaButton(UICocoaButton::ResetButton, this);
+    m_pButton = new UICocoaButton(this, UICocoaButton::ResetButton);
     connect(m_pButton, SIGNAL(clicked()),
             this, SIGNAL(clicked()));
     setFixedSize(m_pButton->size());
@@ -79,7 +79,7 @@ UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
   : QPushButton(pParent)
 {
     setShortcut(QKeySequence(QKeySequence::HelpContents));
-    m_pButton = new UICocoaButton(UICocoaButton::HelpButton, this);
+    m_pButton = new UICocoaButton(this, UICocoaButton::HelpButton);
     connect(m_pButton, SIGNAL(clicked()),
             this, SIGNAL(clicked()));
     setFixedSize(m_pButton->size());
@@ -90,13 +90,13 @@ UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
  * A segmented button in the native Cocoa version.
  *
  ********************************************************************************/
-UIRoundRectSegmentedButton::UIRoundRectSegmentedButton(int cCount, QWidget *pParent /* = 0 */)
-  : UICocoaSegmentedButton(cCount, UICocoaSegmentedButton::RoundRectSegment, pParent)
+UIRoundRectSegmentedButton::UIRoundRectSegmentedButton(QWidget *pParent, int cCount)
+  : UICocoaSegmentedButton(pParent, cCount, UICocoaSegmentedButton::RoundRectSegment)
 {
 }
 
-UITexturedSegmentedButton::UITexturedSegmentedButton(int cCount, QWidget *pParent /* = 0 */)
-  : UICocoaSegmentedButton(cCount, UICocoaSegmentedButton::TexturedRoundedSegment, pParent)
+UITexturedSegmentedButton::UITexturedSegmentedButton(QWidget *pParent, int cCount)
+  : UICocoaSegmentedButton(pParent, cCount, UICocoaSegmentedButton::TexturedRoundedSegment)
 {
 }
 
@@ -125,7 +125,7 @@ UISearchField::UISearchField(QWidget *pParent /* = 0 */)
  * A mini cancel button for the other OS's.
  *
  ********************************************************************************/
-UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
+UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /*= 0*/)
   : QIWithRetranslateUI<QIToolButton>(pParent)
 {
     setAutoRaise(true);
@@ -145,7 +145,7 @@ static const int PushButtonTopOffset = 4;
 static const int PushButtonRightOffset = 12;
 static const int PushButtonBottomOffset = 4;
 
-UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
+UIHelpButton::UIHelpButton(QWidget *pParent /*= 0*/)
     : QIWithRetranslateUI<QPushButton>(pParent)
 {
 #ifdef Q_WS_MAC
@@ -239,7 +239,7 @@ void UIHelpButton::leaveEvent(QEvent * pEvent)
  * A segmented button for the other OS's.
  *
  ********************************************************************************/
-UIRoundRectSegmentedButton::UIRoundRectSegmentedButton(int aCount, QWidget *pParent /* = 0 */)
+UIRoundRectSegmentedButton::UIRoundRectSegmentedButton(QWidget *pParent, int aCount)
   : QWidget(pParent)
 {
     m_pSignalMapper = new QSignalMapper(this);
@@ -293,8 +293,8 @@ void UIRoundRectSegmentedButton::animateClick(int iSegment)
     m_pButtons.at(iSegment)->animateClick();
 }
 
-UITexturedSegmentedButton::UITexturedSegmentedButton(int cCount, QWidget *pParent /* = 0 */)
-  : UIRoundRectSegmentedButton(cCount, pParent)
+UITexturedSegmentedButton::UITexturedSegmentedButton(QWidget *pParent, int cCount)
+  : UIRoundRectSegmentedButton(pParent, cCount)
 {
     for (int i=0; i < m_pButtons.size(); ++i)
     {
@@ -308,7 +308,7 @@ UITexturedSegmentedButton::UITexturedSegmentedButton(int cCount, QWidget *pParen
  * A search field  for the other OS's.
  *
  ********************************************************************************/
-UISearchField::UISearchField(QWidget *pParent /* = 0 */)
+UISearchField::UISearchField(QWidget *pParent)
   : QLineEdit(pParent)
 {
     m_baseBrush = palette().base();
