@@ -3674,17 +3674,7 @@ DECLCALLBACK(int) Console::i_changeRemovableMedium(Console *pThis,
     VMSTATE enmVMState = VMR3GetStateU(pUVM);
     AssertReturn(enmVMState == VMSTATE_SUSPENDED, VERR_INVALID_STATE);
 
-    /* Determine the base path for the device instance. */
-    PCFGMNODE pCtlInst;
-    if (strcmp(pcszDevice, "Msd"))
-        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
-    else
-        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice, uInstance);
-    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
-
-    PCFGMNODE pLunL0 = NULL;
-    int rc = pThis->i_configMediumAttachment(pCtlInst,
-                                             pcszDevice,
+    int rc = pThis->i_configMediumAttachment(pcszDevice,
                                              uInstance,
                                              enmBus,
                                              fUseHostIOCache,
@@ -3700,10 +3690,7 @@ DECLCALLBACK(int) Console::i_changeRemovableMedium(Console *pThis,
                                              false  /* fHotplug */,
                                              pUVM,
                                              NULL /* paLedDevType */,
-                                             &pLunL0);
-    /* Dump the changed LUN if possible, dump the complete device otherwise */
-    CFGMR3Dump(pLunL0 ? pLunL0 : pCtlInst);
-
+                                             NULL /* ppLunL0 */);
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }
@@ -3862,22 +3849,7 @@ DECLCALLBACK(int) Console::i_attachStorageDevice(Console *pThis,
     VMSTATE enmVMState = VMR3GetStateU(pUVM);
     AssertReturn(enmVMState == VMSTATE_SUSPENDED, VERR_INVALID_STATE);
 
-    /*
-     * Determine the base path for the device instance. USB Msd devices are handled different
-     * because the PDM USB API requires a differnet CFGM tree when attaching a new USB device.
-     */
-    PCFGMNODE pCtlInst;
-
-    if (enmBus == StorageBus_USB)
-        pCtlInst = CFGMR3CreateTree(pUVM);
-    else
-        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
-
-    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
-
-    PCFGMNODE pLunL0 = NULL;
-    int rc = pThis->i_configMediumAttachment(pCtlInst,
-                                             pcszDevice,
+    int rc = pThis->i_configMediumAttachment(pcszDevice,
                                              uInstance,
                                              enmBus,
                                              fUseHostIOCache,
@@ -3893,11 +3865,7 @@ DECLCALLBACK(int) Console::i_attachStorageDevice(Console *pThis,
                                              !fSilent /* fHotplug */,
                                              pUVM,
                                              NULL /* paLedDevType */,
-                                             &pLunL0);
-    /* Dump the changed LUN if possible, dump the complete device otherwise */
-    if (enmBus != StorageBus_USB)
-        CFGMR3Dump(pLunL0 ? pLunL0 : pCtlInst);
-
+                                             NULL);
     LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }
@@ -9701,20 +9669,8 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
     if (lType != DeviceType_HardDisk)
         return VINF_SUCCESS;
 
-    /* Determine the base path for the device instance. */
-    PCFGMNODE pCtlInst;
-
-    if (enmBus == StorageBus_USB)
-        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice);
-    else
-        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
-
-    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
-
     /* Update the device instance configuration. */
-    PCFGMNODE pLunL0 = NULL;
-    int rc = pThis->i_configMediumAttachment(pCtlInst,
-                                             pcszDevice,
+    int rc = pThis->i_configMediumAttachment(pcszDevice,
                                              uInstance,
                                              enmBus,
                                              fUseHostIOCache,
@@ -9730,9 +9686,7 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
                                              false /* fHotplug */,
                                              pUVM,
                                              NULL /* paLedDevType */,
-                                             &pLunL0);
-    /* Dump the changed LUN if possible, dump the complete device otherwise */
-    CFGMR3Dump(pLunL0 ? pLunL0 : pCtlInst);
+                                             NULL /* ppLunL0)*/);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("rc=%Rrc\n", rc));

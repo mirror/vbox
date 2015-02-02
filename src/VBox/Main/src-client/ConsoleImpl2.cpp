@@ -2221,8 +2221,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             for (size_t j = 0; j < atts.size(); ++j)
             {
                 IMediumAttachment *pMediumAtt = atts[j];
-                rc = i_configMediumAttachment(pCtlInst,
-                                              pszCtrlDev,
+                rc = i_configMediumAttachment(pszCtrlDev,
                                               ulInstance,
                                               enmBus,
                                               !!fUseHostIOCache,
@@ -3545,8 +3544,7 @@ static uint64_t formatDiskSize(uint64_t u64Size, const char **pszUnit)
     }
 }
 
-int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
-                                      const char *pcszDevice,
+int Console::i_configMediumAttachment(const char *pcszDevice,
                                       unsigned uInstance,
                                       StorageBus_T enmBus,
                                       bool fUseHostIOCache,
@@ -3570,6 +3568,7 @@ int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
         int rc = VINF_SUCCESS;
         HRESULT hrc;
         Bstr    bstr;
+        PCFGMNODE pCtlInst = NULL;
 
 // #define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
 #define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
@@ -3588,6 +3587,19 @@ int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
         unsigned uLUN;
         PCFGMNODE pLunL0 = NULL;
         hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
+
+        /* Determine the base path for the device instance. */
+        if (enmBus != StorageBus_USB)
+            pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+        else
+        {
+            /* If we hotplug a USB device create a new CFGM tree. */
+            if (!fHotplug)
+                pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice, uInstance);
+            else
+                pCtlInst = CFGMR3CreateTree(pUVM);
+        }
+        AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
         if (enmBus == StorageBus_USB)
         {
@@ -4006,6 +4018,11 @@ int Console::i_configMediumAttachment(PCFGMNODE pCtlInst,
 
         if (paLedDevType)
             paLedDevType[uLUN] = lType;
+
+        /* Dump the changed LUN if possible, dump the complete device otherwise */
+        if (   aMachineState != MachineState_Starting
+            && aMachineState != MachineState_Restoring)
+            CFGMR3Dump(pLunL0 ? pLunL0 : pCtlInst);
     }
     catch (ConfigError &x)
     {
