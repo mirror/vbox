@@ -1181,7 +1181,7 @@ int main()
     GEN_CHECK_OFF(XHCI, RootHub3);
     GEN_CHECK_OFF(XHCI, aPorts);
     GEN_CHECK_OFF(XHCI, aPorts[1]);
-    GEN_CHECK_OFF(XHCI, aPorts[XHCI_NDP - 1]);
+    GEN_CHECK_OFF(XHCI, aPorts[XHCI_NDP_MAX - 1]);
     GEN_CHECK_OFF(XHCI, cap_length);
     GEN_CHECK_OFF(XHCI, hci_version);
     GEN_CHECK_OFF(XHCI, hcs_params3);
