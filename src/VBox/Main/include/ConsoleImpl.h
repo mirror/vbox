@@ -662,8 +662,7 @@ private:
                                    const ComPtr<IMachine> &ptrMachine,
                                    const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                    bool fHMEnabled);
-    int i_configMediumAttachment(PCFGMNODE pCtlInst,
-                                 const char *pcszDevice,
+    int i_configMediumAttachment(const char *pcszDevice,
                                  unsigned uInstance,
                                  StorageBus_T enmBus,
                                  bool fUseHostIOCache,
