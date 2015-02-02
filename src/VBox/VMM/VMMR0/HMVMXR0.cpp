@@ -5754,11 +5754,11 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
     int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
+    rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
-        rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-        AssertRCReturn(rc, rc);
-
         uint32_t uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
         uint32_t uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 
@@ -5892,8 +5892,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 break;
         }
     }
-    else if (    VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
-             &&  uExitVector != X86_XCPT_DF
+    else if (   VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo)
+             && VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
+             && uExitVector != X86_XCPT_DF
              && (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI))
     {
         /*
@@ -5902,7 +5903,11 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
          * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
          */
         if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        {
+            Log4(("hmR0VmxCheckExitDueToEventDelivery: vcpu[%RU32] Setting VMCPU_FF_BLOCK_NMIS. Valid=%RTbool uExitReason=%u\n",
+                  pVCpu->idCpu, VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo), pVmxTransient->uExitReason));
             VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
     }
 
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET);
