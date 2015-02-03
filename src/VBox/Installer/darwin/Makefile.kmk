@@ -526,17 +526,8 @@ VBOX_DI_VBAPP_SYMLINKS = \
 ifdef VBOX_WITH_PYTHON
  # Python XPCOM glue
  VBOX_DI_VBAPP_PYTHON_FILES = \
- 	$(foreach f,$(notdir $(wildcard $(VBOX_PATH_DIST)/sdk/bindings/xpcom/python/xpcom/*.py)),sdk/bindings/xpcom/python/xpcom/$(f)) \
- 	sdk/bindings/xpcom/python/xpcom/client/__init__.py \
- 	sdk/bindings/xpcom/python/xpcom/server/__init__.py \
- 	sdk/bindings/xpcom/python/xpcom/server/enumerator.py \
- 	sdk/bindings/xpcom/python/xpcom/server/factory.py \
- 	sdk/bindings/xpcom/python/xpcom/server/loader.py \
- 	sdk/bindings/xpcom/python/xpcom/server/module.py \
- 	sdk/bindings/xpcom/python/xpcom/server/policy.py \
- 	sdk/installer/vboxapisetup.py \
- 	sdk/installer/vboxapi/__init__.py \
- 	sdk/installer/vboxapi/VirtualBox_constants.py
+ 	$(VBOXINST_SDK_BINDINGS_XPCOM_PYTHON_FILES) \
+ 	$(VBOXINST_SDK_INSTALLER_PYTHON_FILES)
 endif
 
 

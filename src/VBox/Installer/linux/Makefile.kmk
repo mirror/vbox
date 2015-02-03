@@ -90,7 +90,7 @@ linux-misc_INST = bin/
 linux-misc_MODE = a+r,u+w
 linux-misc_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
-	$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml \
+	$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.xml \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(linux-misc_0_OUTDIR)/generated.sh=>scripts/generated.sh \
 	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,)
@@ -106,7 +106,7 @@ $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_
 	$(QUIET)$(APPEND) '$@' 'VBOX_C_YEAR="$(VBOX_C_YEAR)"'
 	$(QUIET)$(APPEND) '$@' 'VBOX_VENDOR="$(VBOX_VENDOR)"'
 
-$$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(PATH_ROOT)/src/VBox/Installer/common/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
+$$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 ifdef VBOX_PATH_PACKAGE_DOCS
 	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_PATH_PACKAGE_DOCS)+" \
@@ -274,17 +274,8 @@ endif
 # Python XPCOM glue
 ifdef VBOX_WITH_PYTHON
  VBOX_LNX_NO_STRIP += \
- 	$(foreach f,$(notdir $(wildcard $(PATH_STAGE_BIN)/sdk/bindings/xpcom/python/xpcom/*.py)),sdk/bindings/xpcom/python/xpcom/$(f)) \
- 	sdk/bindings/xpcom/python/xpcom/client/__init__.py \
- 	sdk/bindings/xpcom/python/xpcom/server/__init__.py \
- 	sdk/bindings/xpcom/python/xpcom/server/enumerator.py \
- 	sdk/bindings/xpcom/python/xpcom/server/factory.py \
- 	sdk/bindings/xpcom/python/xpcom/server/loader.py \
- 	sdk/bindings/xpcom/python/xpcom/server/module.py \
- 	sdk/bindings/xpcom/python/xpcom/server/policy.py \
- 	sdk/installer/vboxapisetup.py \
- 	sdk/installer/vboxapi/__init__.py \
- 	sdk/installer/vboxapi/VirtualBox_constants.py
+ 	$(VBOXINST_SDK_BINDINGS_XPCOM_PYTHON_FILES) \
+ 	$(VBOXINST_SDK_INSTALLER_PYTHON_FILES)
 endif
 
 # Java XPCOM bridge

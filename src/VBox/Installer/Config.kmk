@@ -22,6 +22,35 @@ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
  include $(PATH_ROOT)/Config.kmk
 endif
 
+#
+# Generic stuff.
+#
+VBOX_PATH_INST_COMMON_SRC := $(PATH_SUB_CURRENT)/common
+
+
+ifdef VBOX_WITH_PYTHON
+ VBOXINST_SDK_BINDINGS_XPCOM_PYTHON_FILES = \
+ 	sdk/bindings/xpcom/python/xpcom/__init__.py \
+ 	sdk/bindings/xpcom/python/xpcom/primitives.py \
+ 	sdk/bindings/xpcom/python/xpcom/file.py \
+ 	sdk/bindings/xpcom/python/xpcom/xpcom_consts.py \
+ 	sdk/bindings/xpcom/python/xpcom/nsError.py \
+ 	sdk/bindings/xpcom/python/xpcom/xpt.py \
+ 	sdk/bindings/xpcom/python/xpcom/components.py \
+ 	sdk/bindings/xpcom/python/xpcom/vboxxpcom.py \
+ 	sdk/bindings/xpcom/python/xpcom/client/__init__.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/__init__.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/enumerator.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/factory.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/loader.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/module.py \
+ 	sdk/bindings/xpcom/python/xpcom/server/policy.py
+ VBOXINST_SDK_INSTALLER_PYTHON_FILES = \
+ 	sdk/installer/vboxapisetup.py \
+ 	sdk/installer/vboxapi/__init__.py \
+ 	sdk/installer/vboxapi/VirtualBox_constants.py
+endif
+
 
 #
 # DTrace globals.
