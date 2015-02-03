@@ -6646,6 +6646,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             && !ASMAtomicDecU32(&pAhci->cThreadsActive))
         {
             ahciHBAReset(pAhci);
+            if (pAhci->fSignalIdle)
+                PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
             continue;
         }
 
@@ -6861,6 +6863,9 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (   (u32RegHbaCtrl & AHCI_HBA_CTRL_HR)
             && !cThreadsActive)
             ahciHBAReset(pAhci);
+
+        if (!cThreadsActive && pAhci->fSignalIdle)
+            PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
     } /* While running */
 
     ahciLog(("%s: Port %d async IO thread exiting\n", __FUNCTION__, pAhciPort->iLUN));
