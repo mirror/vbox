@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -173,7 +173,7 @@ int tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu)
 /**
  * Record why we refused to use offsetted TSC.
  *
- * Used by TMCpuTickCanUseRealTSC and TMCpuTickGetDeadlineAndTscOffset.
+ * Used by TMCpuTickCanUseRealTSC() and TMCpuTickGetDeadlineAndTscOffset().
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current CPU.
@@ -212,20 +212,18 @@ DECLINLINE(void) tmCpuTickRecordOffsettedTscRefusal(PVM pVM, PVMCPU pVCpu)
  * @returns true/false accordingly.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
- *                          Can be NULL.
- * @param   pfParavirtTsc   Where to store whether paravirt. TSC can be used or
- *                          not.
- * @thread EMT(pVCpu).
+ * @param   pfParavirtTsc   Where to store whether paravirt. TSC is enabled.
+ *
+ * @thread  EMT(pVCpu).
+ * @see     TMCpuTickGetDeadlineAndTscOffset().
  */
 VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    bool fParavirtTsc = false;
+    bool fOffsettedTsc = false;
 
     /*
      * We require:
-     *     1. Use of a paravirtualized TSC is enabled by the guest.
-     *     (OR)
      *     1. A fixed TSC, this is checked at init time.
      *     2. That the TSC is ticking (we shouldn't be here if it isn't)
      *     3. Either that we're using the real TSC as time source or
@@ -233,35 +231,32 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, b
      *          b) the virtual sync clock hasn't been halted by an expired timer, and
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
-    *pfParavirtTsc = GIMIsParavirtTscEnabled(pVM);
-    if (    pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
-        &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
-             || (   !pVM->tm.s.fVirtualSyncCatchUp
-                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
-                 && !pVM->tm.s.fVirtualWarpDrive)))
+    Assert(pVCpu->tm.s.fTSCTicking);
+    *pfParavirtTsc = pVM->tm.s.fParavirtTscEnabled;
+
+    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
     {
-        if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
-        {
-            /* The source is the timer synchronous virtual clock. */
-            if (poffRealTSC)
-            {
-                uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
-                                - pVCpu->tm.s.offTSCRawSrc;
-                /** @todo When we start collecting statistics on how much time we spend executing
-                 * guest code before exiting, we should check this against the next virtual sync
-                 * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase
-                 * the chance that we'll get interrupted right after the timer expired. */
-                *poffRealTSC = u64Now - ASMReadTSC();
-            }
-        }
-        else if (poffRealTSC)
-        {
-            /* The source is the real TSC. */
-            *poffRealTSC = 0 - pVCpu->tm.s.offTSCRawSrc;
-        }
-        /** @todo count this? */
-        return true;
+        /* The source is the real TSC. */
+        *poffRealTSC = 0 - pVCpu->tm.s.offTSCRawSrc;
+        return true;    /** @todo count this? */
+    }
+
+    if (   pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
+        && !pVM->tm.s.fVirtualSyncCatchUp
+        && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+        && !pVM->tm.s.fVirtualWarpDrive)
+    {
+        /* The source is the timer synchronous virtual clock. */
+        uint64_t u64Now = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                        - pVCpu->tm.s.offTSCRawSrc;
+        /** @todo When we start collecting statistics on how much time we spend executing
+         * guest code before exiting, we should check this against the next virtual sync
+         * timer timeout. If it's lower than the avg. length, we should trap rdtsc to increase
+         * the chance that we'll get interrupted right after the timer expired. */
+        uint64_t u64TSC = ASMReadTSC();     /** @todo should be replaced with SUPReadTSC() eventually. */
+        *poffRealTSC = u64Now - u64TSC;
+        fOffsettedTsc = u64Now >= pVCpu->tm.s.u64TSCLastSeen;
+        return true;    /** @todo count this? */
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -303,23 +298,21 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(uint64_t cNsToDeadline)
  *
  * @returns The number of host CPU clock ticks to the next timer deadline.
  * @param   pVCpu           The current CPU.
- * @param   pfParavirtTsc   Where to store whether paravirt. TSC can be used or
- *                          not.
  * @param   poffRealTSC     The offset against the TSC of the current CPU.
+ * @param   pfOffsettedTsc  Where to store whether TSC offsetting can be used.
+ * @param   pfParavirtTsc   Where to store whether paravirt. TSC is enabled.
  *
  * @thread  EMT(pVCpu).
- * @remarks Superset of TMCpuTickCanUseRealTSC().
+ * @see     TMCpuTickCanUseRealTSC().
  */
-VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOffsettedTsc, bool *pfParavirtTsc,
-                                                        uint64_t *poffRealTSC)
+VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc,
+                                                        bool *pfParavirtTsc)
 {
-    PVM         pVM = pVCpu->CTX_SUFF(pVM);
-    uint64_t    cTicksToDeadline;
+    PVM      pVM = pVCpu->CTX_SUFF(pVM);
+    uint64_t cTicksToDeadline;
 
     /*
      * We require:
-     *     1. Use of a paravirtualized TSC is enabled by the guest.
-     *     (OR)
      *     1. A fixed TSC, this is checked at init time.
      *     2. That the TSC is ticking (we shouldn't be here if it isn't)
      *     3. Either that we're using the real TSC as time source or
@@ -327,44 +320,42 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
      *          b) the virtual sync clock hasn't been halted by an expired timer, and
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
-    *pfParavirtTsc = GIMIsParavirtTscEnabled(pVM);
-    if (    pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
-        &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
-        &&  (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
-             || (   !pVM->tm.s.fVirtualSyncCatchUp
-                 && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
-                 && !pVM->tm.s.fVirtualWarpDrive)))
+    Assert(pVCpu->tm.s.fTSCTicking);
+    *pfParavirtTsc = pVM->tm.s.fParavirtTscEnabled;
+
+    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
     {
+        /* The source is the real TSC. */
+        *poffRealTSC    = 0 - pVCpu->tm.s.offTSCRawSrc;
         *pfOffsettedTsc = true;
-        if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
-        {
-            /* The source is the timer synchronous virtual clock. */
-            uint64_t cNsToDeadline;
-            uint64_t u64NowVirtSync = TMVirtualSyncGetWithDeadlineNoCheck(pVM, &cNsToDeadline);
-            uint64_t u64Now = u64NowVirtSync != TMCLOCK_FREQ_VIRTUAL /* what's the use of this? */
-                            ? ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL)
-                            : u64NowVirtSync;
-            u64Now -= pVCpu->tm.s.offTSCRawSrc;
-            *poffRealTSC = u64Now - ASMReadTSC();
-            cTicksToDeadline = tmCpuCalcTicksToDeadline(cNsToDeadline);
-        }
-        else
-        {
-            /* The source is the real TSC. */
-            *poffRealTSC = 0 - pVCpu->tm.s.offTSCRawSrc;
-            cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
-        }
-    }
-    else
-    {
-#ifdef VBOX_WITH_STATISTICS
-        tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
-#endif
-        *pfOffsettedTsc  = false;
-        *poffRealTSC     = 0;
         cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
+        return cTicksToDeadline;
     }
 
+    if (   pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
+        && !pVM->tm.s.fVirtualSyncCatchUp
+        && RT_LIKELY(pVM->tm.s.fVirtualSyncTicking)
+        && !pVM->tm.s.fVirtualWarpDrive)
+    {
+        /* The source is the timer synchronous virtual clock. */
+        uint64_t cNsToDeadline;
+        uint64_t u64NowVirtSync = TMVirtualSyncGetWithDeadlineNoCheck(pVM, &cNsToDeadline);
+        uint64_t u64Now = u64NowVirtSync != TMCLOCK_FREQ_VIRTUAL /* what's the use of this? */
+                        ? ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL)
+                        : u64NowVirtSync;
+        u64Now -= pVCpu->tm.s.offTSCRawSrc;
+        *poffRealTSC     = u64Now - ASMReadTSC();        /** @todo replace with SUPReadTSC() eventually. */
+        *pfOffsettedTsc  = u64Now >= pVCpu->tm.s.u64TSCLastSeen;
+        cTicksToDeadline = tmCpuCalcTicksToDeadline(cNsToDeadline);
+        return cTicksToDeadline;
+    }
+
+#ifdef VBOX_WITH_STATISTICS
+    tmCpuTickRecordOffsettedTscRefusal(pVM, pVCpu);
+#endif
+    *pfOffsettedTsc  = false;
+    *poffRealTSC     = 0;
+    cTicksToDeadline = tmCpuCalcTicksToDeadline(TMVirtualSyncGetNsToDeadline(pVM));
     return cTicksToDeadline;
 }
 
@@ -394,7 +385,7 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
         else
         {
             STAM_COUNTER_INC(&pVM->tm.s.StatTSCUnderflow);
-            pVCpu->tm.s.u64TSCLastSeen += 64;   /* @todo choose a good increment here */
+            pVCpu->tm.s.u64TSCLastSeen += 64;   /** @todo choose a good increment here */
             u64 = pVCpu->tm.s.u64TSCLastSeen;
         }
     }
@@ -502,9 +493,8 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu)
  */
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
 {
-    /** @todo revisit this, not sure why we need to get the rate from GIP for
-     *        real-tsc-offset. */
-    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
+    if (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
+        && g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_INVARIANT_TSC)
     {
         uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
         if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))

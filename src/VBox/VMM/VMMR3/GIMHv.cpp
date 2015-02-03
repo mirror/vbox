@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -585,9 +585,12 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         }
         pRefTsc->u32TscSequence  = u32TscSeq;
         pRefTsc->u64TscScale     = ((INT64_C(10000) << 32) / u64TscKHz) << 32;
+        pRefTsc->i64TscOffset    = 0;
 
-        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp - u64TscScale=%#RX64 u64TscKHz=%#RX64 (%'RU64)\n", GCPhysTscPage,
-                pRefTsc->u64TscScale, u64TscKHz, u64TscKHz));
+        LogRel(("GIM: HyperV: Enabled TSC page at %#RGp - u64TscScale=%#RX64 u64TscKHz=%#RX64 (%'RU64) Seq=%#RU32\n",
+                GCPhysTscPage, pRefTsc->u64TscScale, u64TscKHz, u64TscKHz, pRefTsc->u32TscSequence));
+
+        TMR3CpuTickParavirtEnable(pVM);
         return VINF_SUCCESS;
     }
     else
@@ -612,6 +615,8 @@ VMMR3_INT_DECL(int) GIMR3HvDisableTscPage(PVM pVM)
         GIMR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
         LogRel(("GIM: HyperV: Disabled TSC-page\n"));
+
+        TMR3CpuTickParavirtDisable(pVM);
         return VINF_SUCCESS;
     }
     return VERR_GIM_PVTSC_NOT_ENABLED;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -5605,8 +5605,8 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     PVM pVM            = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
-        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &fParavirtTsc,
-                                                                     &pVCpu->hm.s.vmx.u64TSCOffset);
+        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fOffsettedTsc,
+                                                                     &fParavirtTsc);
 
         /* Make sure the returned values have sane upper and lower boundaries. */
         uint64_t u64CpuHz  = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
@@ -5615,11 +5615,13 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
 
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
-        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);            AssertRC(rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);        AssertRC(rc);
     }
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
 
+    /** @todo later optimize this to be done elsewhere and not before every
+     *        VM-entry. */
     if (fParavirtTsc)
     {
         rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
@@ -5629,29 +5631,18 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 
     if (fOffsettedTsc)
     {
-        uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
-        {
-            /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);     AssertRC(rc);
+        /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
+        rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);     AssertRC(rc);
 
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
-        }
-        else
-        {
-            /* VM-exit on RDTSC(P) as we would otherwise pass decreasing TSC values to the guest. */
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
-        }
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
         /* We can't use TSC-offsetting (non-fixed TSC, warp drive active etc.), VM-exit on RDTSC(P). */
         pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);                AssertRC(rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 }
@@ -8712,10 +8703,8 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
-    /** @todo Last-seen-tick shouldn't be necessary when TM supports invariant
-     *        mode. */
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);     /** @todo use SUPReadTSC() eventually. */
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
@@ -8838,7 +8827,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return rc;
         }
 
-        /* Profiling the VM-exit. */
+        /* Profile the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
@@ -8921,7 +8910,8 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0VmxReportWorldSwitchError(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict), pCtx, &VmxTransient);
             return VBOXSTRICTRC_TODO(rcStrict);
         }
-        /* Profiling the VM-exit. */
+
+        /* Profile the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
@@ -10460,6 +10450,8 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
         rc = VINF_EM_HALT;
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
+    if (rc != VINF_SUCCESS)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHltToR3);
     return rc;
 }
 

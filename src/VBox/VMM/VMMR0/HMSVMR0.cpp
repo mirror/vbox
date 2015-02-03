@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2256,42 +2256,32 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  */
 static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
 {
-    bool     fParavirtTsc = false;
+    bool fParavirtTsc;
+    bool fCanUseRealTsc;
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    if (TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc))
+    fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
+    if (fCanUseRealTsc)
     {
-        uint64_t u64CurTSC   = ASMReadTSC();
-        uint64_t u64LastTick = TMCpuTickGetLastSeen(pVCpu);
-
-        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
-        {
-            pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
-            pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
-        }
-        else
-        {
-            pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
-            pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
-        }
+        pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
+        pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
-        Assert(!fParavirtTsc);
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
         pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
+    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
+    /** @todo later optimize this to be done elsewhere and not before every
+     *        VM-entry. */
     if (fParavirtTsc)
     {
         int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), 0 /* u64Offset */);
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
-
-    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 }
 
 
@@ -3199,10 +3189,8 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
             ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
     }
 
-    /** @todo Last-seen-tick shouldn't be necessary when TM supports invariant
-     *        mode. */
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);     /** @todo use SUPReadTSC() eventually. */
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
@@ -4356,6 +4344,8 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     int rc = EMShouldContinueAfterHalt(pVCpu, pCtx) ? VINF_SUCCESS : VINF_EM_HALT;
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
+    if (rc != VINF_SUCCESS)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHltToR3);
     return rc;
 }
 
