@@ -633,7 +633,7 @@ $(VBOX_PATH_SI_SCRATCH)/$(PKG_FILENAME).pkg: \
 # Desktop stuff in /usr/share/mime/packages/ (S10 cannot deal with icon information in virtualbox.xml).
 	$(SED)	-e '/<icon/d' \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/mime/packages/virtualbox.xml \
-		$(VBOX_PATH_INST_COMMON_SRC)/common/virtualbox.xml
+		$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.xml
 	$(CHMOD) 0644 $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/mime/packages/virtualbox.xml
 
 # Desktop stuff in /usr/share/application-registry.
