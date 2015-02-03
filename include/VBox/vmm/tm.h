@@ -133,7 +133,7 @@ VMM_INT_DECL(uint64_t)  TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 VMMDECL(uint64_t)       TMCpuTickGet(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPU pVCpu);
 VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOffsettedTsc, bool *pfParavirtTsc, uint64_t *poffRealTSC);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
 VMM_INT_DECL(int)       TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
 VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPU pVCpu);
@@ -268,6 +268,9 @@ VMMR3DECL(int)          TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCr
 VMMR3DECL(void)         TMR3TimerQueuesDo(PVM pVM);
 VMMR3_INT_DECL(void)    TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime);
+
+VMMR3_INT_DECL(int)     TMR3CpuTickParavirtEnable(PVM pVM);
+VMMR3_INT_DECL(int)     TMR3CpuTickParavirtDisable(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 

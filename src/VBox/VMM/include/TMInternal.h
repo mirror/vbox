@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -323,11 +323,11 @@ typedef TMCPULOADSTATE *PTMCPULOADSTATE;
  */
 typedef enum TMTSCMODE
 {
-    /** The guest TSC is an emulated virtual TSC. */
+    /** The guest TSC is an emulated, virtual TSC. */
     TMTSCMODE_VIRT_TSC_EMULATED = 1,
     /** The guest TSC is an offset of the real TSC. */
     TMTSCMODE_REAL_TSC_OFFSET,
-    /** The guest TSC is dynamically derived through emulation or offsetting. */
+    /** The guest TSC is dynamically derived through emulating or offsetting. */
     TMTSCMODE_DYNAMIC
 } TMTSCMODE;
 AssertCompileSize(TMTSCMODE, sizeof(uint32_t));
@@ -354,14 +354,20 @@ typedef struct TM
     /** The current TSC mode of the VM.
      *  Config variable: Mode (string). */
     TMTSCMODE                   enmTSCMode;
+    /** The original TSC mode of the VM. */
+    TMTSCMODE                   enmOriginalTSCMode;
+    /** Alignment padding. */
+    uint32_t                    u32Alignment0;
     /** Whether the TSC is tied to the execution of code.
      * Config variable: TSCTiedToExecution (bool) */
     bool                        fTSCTiedToExecution;
     /** Modifier for fTSCTiedToExecution which pauses the TSC while halting if true.
      * Config variable: TSCNotTiedToHalt (bool) */
     bool                        fTSCNotTiedToHalt;
-    /** Alignment padding. */
-    bool                        afAlignment0[2];
+    /** Whether TM TSC mode switching is allowed at runtime. */
+    bool                        fTSCModeSwitchAllowed;
+    /** Whether the guest has enabled use of paravirtualized TSC. */
+    bool                        fParavirtTscEnabled;
     /** The ID of the virtual CPU that normally runs the timers. */
     VMCPUID                     idTimerCpu;
 
@@ -684,8 +690,8 @@ typedef struct TMCPU
     bool                        fTSCTicking;
     bool                        afAlignment0[3]; /**< alignment padding */
 
-    /** The offset between the raw TSC source and the Guest TSC.
-     * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
+    /** The offset between the host tick (TSC/virtual depending on the TSC mode) and
+     *  the guest tick. */
     uint64_t                    offTSCRawSrc;
 
     /** The guest TSC when fTicking is cleared. */
