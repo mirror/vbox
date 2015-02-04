@@ -147,16 +147,17 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 /**
  * Exception bitmap mask for real-mode guests (real-on-v86).
  *
- * We need to intercept all exceptions manually (except #PF). #NM is also
- * handled separately, see hmR0VmxLoadSharedCR0(). #PF need not be intercepted
- * even in real-mode if we have Nested Paging support.
+ * We need to intercept all exceptions manually except:
+ * - #NM, #MF handled separately, see hmR0VmxLoadSharedCR0().
+ * - #PF need not be intercepted even in real-mode if we have Nested Paging
+ * support.
  */
 #define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
                                       | RT_BIT(X86_XCPT_BP)             | RT_BIT(X86_XCPT_OF)    | RT_BIT(X86_XCPT_BR)    \
                                       | RT_BIT(X86_XCPT_UD)            /* RT_BIT(X86_XCPT_NM) */ | RT_BIT(X86_XCPT_DF)    \
                                       | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS)    | RT_BIT(X86_XCPT_NP)    \
                                       | RT_BIT(X86_XCPT_SS)             | RT_BIT(X86_XCPT_GP)   /* RT_BIT(X86_XCPT_PF) */ \
-                                      | RT_BIT(X86_XCPT_MF)             | RT_BIT(X86_XCPT_AC)    | RT_BIT(X86_XCPT_MC)    \
+                                     /* RT_BIT(X86_XCPT_MF) */          | RT_BIT(X86_XCPT_AC)    | RT_BIT(X86_XCPT_MC)    \
                                       | RT_BIT(X86_XCPT_XF))
 
 /**
@@ -2620,8 +2621,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Sets up the initial exception bitmap in the VMCS based on static conditions
- * (i.e. conditions that cannot ever change after starting the VM).
+ * Sets up the initial exception bitmap in the VMCS based on static conditions.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -3772,8 +3772,6 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             fInterceptNM = true;
             fInterceptMF = true;
         }
-        else
-            pVCpu->hm.s.vmx.u32XcptBitmap &= ~HMVMX_REAL_MODE_XCPT_MASK;
 
         if (fInterceptNM)
             pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_NM);
@@ -8213,11 +8211,13 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Loads the guest state into the VMCS guest-state area. The CPU state will be
- * loaded from these fields on every successful VM-entry.
+ * Loads the guest state into the VMCS guest-state area.
  *
- * Sets up the VM-entry MSR-load and VM-exit MSR-store areas.
- * Sets up the VM-entry controls.
+ * The will typically be done before VM-entry when the guest-CPU state and the
+ * VMCS state may potentially be out of sync.
+ *
+ * Sets up the VM-entry MSR-load and VM-exit MSR-store areas. Sets up the
+ * VM-entry controls.
  * Sets up the appropriate VMX non-root function to execute guest code based on
  * the guest CPU mode.
  *
@@ -10977,6 +10977,15 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     {
         int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
+    }
+    else if (rc == VINF_PGM_CHANGE_MODE)
+    {
+        /*
+         * Clear the exception-mask here rather than messing with it in hmR0VmxLoadSharedCR0(). Since the fRealOnV86Active
+         * state may be changed now. Re-evaluate the necessary intercepts when we return to VT-x execution via
+         * hmR0VmxLoadSharedCR0() and hmR0VmxLoadSharedDebugState(), see @bugref{7626}.
+         */
+        hmR0VmxInitXcptBitmap(pVM, pVCpu);
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
