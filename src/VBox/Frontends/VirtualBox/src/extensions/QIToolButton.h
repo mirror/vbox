@@ -31,9 +31,24 @@ public:
         : QToolButton(pParent)
     {
 #ifdef Q_WS_MAC
-        setStyleSheet("QToolButton { border: 0px none black; margin: 2px 4px 0px 4px; } QToolButton::menu-indicator {image: none;}");
+        /* Keep size-hint alive: */
+        const QSize sh = sizeHint();
+        setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        setFixedSize(sh);
 #else /* !Q_WS_MAC */
         setAutoRaise(true);
+#endif /* !Q_WS_MAC */
+    }
+
+    /** Sets the auto-raise status. */
+    virtual void setAutoRaise(bool fEnable)
+    {
+#ifdef Q_WS_MAC
+        /* Ignore for Mac OS X: */
+        Q_UNUSED(fEnable);
+#else /* !Q_WS_MAC */
+        /* Call to base-class: */
+        QToolButton::setAutoRaise(fEnable);
 #endif /* !Q_WS_MAC */
     }
 

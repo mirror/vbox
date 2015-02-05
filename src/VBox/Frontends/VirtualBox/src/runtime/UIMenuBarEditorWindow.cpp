@@ -251,7 +251,6 @@ void UIMenuBarEditorWidget::prepare()
             {
                 /* Configure close-button: */
                 m_pButtonClose->setFocusPolicy(Qt::StrongFocus);
-                m_pButtonClose->setMinimumSize(QSize(1, 1));
                 m_pButtonClose->setShortcut(Qt::Key_Escape);
                 m_pButtonClose->setIcon(UIIconPool::iconSet(":/ok_16px.png"));
                 connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
