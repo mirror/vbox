@@ -80,7 +80,7 @@ HKR, Ndi,            ClsID,              0, {f374d1a0-bf08-4bdc-9cb2-c15ddaeef95
 ;HKR, Ndi,            ComponentDll,        , VBoxNetLwfNobj.dll
 HKR, Ndi,            FilterClass,         , compression
 HKR, Ndi,            FilterType,   0x10001, 0x2
-HKR, Ndi,            FilterRunType,0x10001, 1
+HKR, Ndi,            FilterRunType,0x10001, 2 ; OPTIONAL, to prevent unbinding of protocol drivers
 HKR, Ndi,            Service,             , VBoxNetLwf
 HKR, Ndi,            CoServices,   0x10000, VBoxNetLwf
 HKR, Ndi\Interfaces, UpperRange,          , noupper
