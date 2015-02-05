@@ -1418,20 +1418,13 @@ ifndef VBOX_VCC_TOOL
  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
 endif
 
-#
-# The kBuild tools and SDKs are using PATH_DEVTOOLS, PATH_DEVTOOLS_BLD
-# and PATH_DEVTOOLS_TRG to find things if we give them specific locations.
-#
-PATH_DEVTOOLS ?= $(PATH_ROOT)/tools
-PATH_DEVTOOLS := $(abspath $(PATH_DEVTOOLS))
-PATH_DEVTOOLS_BLD ?= $(PATH_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)
-PATH_DEVTOOLS_TRG ?= $(PATH_DEVTOOLS)/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)
 
 ## @todo Remove the default tool crap here!
 TOOL = $(VBOX_GCC_TOOL)
 TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
 TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
 ASTOOL = $(VBOX_ASTOOL)
+
 
 #
 # Setup the global defines and includes.
@@ -1730,7 +1723,7 @@ endif
 # Python
 ifndef VBOX_BLD_PYTHON
  if1of ($(KBUILD_HOST), win)
-  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) \
+  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) \
   				   python-not-found.exe)
  else
   VBOX_BLD_PYTHON := $(firstword $(which python$(HOSTSUFF_EXE)) $(which python2.7$(HOSTSUFF_EXE)) \
@@ -1824,7 +1817,7 @@ LIB_PTHREAD      ?= pthread
 # Xcursor (consider an SDK for this).
 ifeq ($(VBOX_XCURSOR_LIBS),)
  ifeq ($(KBUILD_TARGET),solaris)
-  VBOX_XCURSOR_LIBS := $(lastword $(wildcard $(PATH_DEVTOOLS_TRG)/libXcursor/*/lib/libXcursor.a))
+  VBOX_XCURSOR_LIBS := $(lastword $(wildcard $(KBUILD_DEVTOOLS_TRG)/libXcursor/*/lib/libXcursor.a))
   ifneq ($(VBOX_XCURSOR_LIBS),)
    VBOX_XCURSOR_INCS := $(patsubst %/lib/libXcursor.a,%/include, $(VBOX_XCURSOR_LIBS))
    VBOX_XCURSOR_LIBS += X11 Xrender Xfixes
@@ -1837,19 +1830,19 @@ endif
 
 
 # Intel ASL compiler for ACPI
-VBOX_IASLCMD   ?= $(firstword $(wildcard $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
+VBOX_IASLCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
 
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
 ifeq ($(VBOX_XSLTPROC),)
  ifeq ($(KBUILD_HOST),win)
-   VBOX_XSLTPROC := $(wildcard $(PATH_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xsltproc.exe)
+   VBOX_XSLTPROC := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xsltproc.exe)
    ifeq ($(VBOX_XSLTPROC),)
-    VBOX_XSLTPROC := $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
+    VBOX_XSLTPROC := $(KBUILD_DEVTOOLS)/win.x86/bin/xsltproc.exe
    endif
  else ifeq ($(KBUILD_HOST),os2)
-  VBOX_XSLTPROC  := BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
+  VBOX_XSLTPROC  := BEGINLIBPATH="$(KBUILD_DEVTOOLS_HST)/bin;$$BEGINLIBPATH" $(KBUILD_DEVTOOLS_HST)/bin/xsltproc.exe
  else ifeq ($(KBUILD_HOST),haiku)
-  VBOX_XSLTPROC  := $(PATH_DEVTOOLS)/haiku.x86/bin/xsltproc
+  VBOX_XSLTPROC  := $(KBUILD_DEVTOOLS)/haiku.x86/bin/xsltproc
  else
   VBOX_XSLTPROC  := xsltproc$(HOSTSUFF_EXE)
  endif
@@ -1900,45 +1893,45 @@ endif
 
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
- VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe
+ VBOX_MKISOFS  ?= $(KBUILD_DEVTOOLS_HST)/bin/mkisofs.exe
 else
  VBOX_MKISOFS  ?= mkisofs
 endif
 
 # Makeself for the linux installers.
-VBOX_MAKESELF  ?= $(PATH_DEVTOOLS)/common/makeself/v2.1.5/makeself.sh
+VBOX_MAKESELF  ?= $(KBUILD_DEVTOOLS)/common/makeself/v2.1.5/makeself.sh
 
 # Microsoft HTML Help Workshop.
-VBOX_PATH_HTML_HELP_WORKSHOP ?= $(PATH_DEVTOOLS)/win.x86/HTML_Help_Workshop/v1.3/
+VBOX_PATH_HTML_HELP_WORKSHOP ?= $(KBUILD_DEVTOOLS)/win.x86/HTML_Help_Workshop/v1.3/
 
 # Path to the null soft installer.
-VBOX_PATH_NSIS ?= $(PATH_DEVTOOLS)/win.x86/nsis/v2.46-log-nsscm-r1
+VBOX_PATH_NSIS ?= $(KBUILD_DEVTOOLS)/win.x86/nsis/v2.46-log-nsscm-r1
 
 # Path to AutoIt3.
-VBOX_PATH_AUTOIT3 ?= $(PATH_DEVTOOLS)/win.x86/autoit/v3.2.10.0
+VBOX_PATH_AUTOIT3 ?= $(KBUILD_DEVTOOLS)/win.x86/autoit/v3.2.10.0
 
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
-VBOX_PATH_WIX       ?= $(PATH_DEVTOOLS)/win.x86/wix/v3.8.1128.0
-VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiTran.Exe
-VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
-VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
-VBOX_PATH_WISUMINFO ?= $(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
-VBOX_PATH_DIFX      ?= $(PATH_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
-VBOX_PATH_CABSDK    ?= $(PATH_DEVTOOLS)/win.x86/cabsdk/r1
+VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.8.1128.0
+VBOX_PATH_MSITRAN   ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiTran.Exe
+VBOX_PATH_MSIDB     ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
+VBOX_PATH_WISUBSTG  ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
+VBOX_PATH_WISUMINFO ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
+VBOX_PATH_DIFX      ?= $(KBUILD_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
+VBOX_PATH_CABSDK    ?= $(KBUILD_DEVTOOLS)/win.x86/cabsdk/r1
 VBOX_PATH_MAKECAB   ?= $(VBOX_PATH_CABSDK)/BIN/MAKECAB.EXE
 
 # We need to export YASM for OSE, but since it was converted to .zip we need to
 # allow for the location used by the zip to be properly cleaned up first.
 if1of ($(KBUILD_HOST).$(KBUILD_HOST_ARCH), linux.x86 solaris.x86 win.x86)
- PATH_TOOL_YASM ?= $(PATH_DEVTOOLS_BLD)/bin
+ PATH_TOOL_YASM ?= $(KBUILD_DEVTOOLS_HST)/bin
 endif
 
 # The Microsoft IDL compiler (the SDK build needs this on non-Windows).
 VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard $(addsuffix /[Mm][Ii][Dd][Ll].[Ee][Xx][Ee], \
-	$(PATH_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "win.amd64",/x64,) \
-	$(PATH_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
-	$(PATH_DEVTOOLS)/win.x86/bin \
+	$(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "win.amd64",/x64,) \
+	$(KBUILD_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
+	$(KBUILD_DEVTOOLS)/win.x86/bin \
 	$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
 	$(PATH_SDK_$(VBOX_WINPSDK)) \
 	$(PATH_SDK_WINPSDK_BIN) \
@@ -1994,9 +1987,9 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Check for the Xcode 4.1 bits in tools/darwin.x86.
  if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
    && !defined(VBOX_XCODE_VERSION) \
-   && exists "$(PATH_DEVTOOLS)/darwin.x86/xcode/v4.1"
+   && exists "$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1"
   VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL := 1
-  VBOX_PATH_MACOSX_DEVEL_ROOT := $(PATH_DEVTOOLS)/darwin.x86/xcode/v4.1
+  VBOX_PATH_MACOSX_DEVEL_ROOT := $(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1
   VBOX_XCODE_VERSION := 4.1
  endif
 
@@ -2139,7 +2132,7 @@ ifeq ($(KBUILD_TARGET),darwin)
    ifneq ($(wildcard $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.7.sdk),)
     VBOX_PATH_MACOSX_SDK_10_7           = $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.7.sdk
    else
-    VBOX_PATH_MACOSX_SDK_10_7           = $(PATH_DEVTOOLS)/darwin.x86/SDKs/MacOSX10.7.sdk
+    VBOX_PATH_MACOSX_SDK_10_7           = $(KBUILD_DEVTOOLS)/darwin.x86/SDKs/MacOSX10.7.sdk
    endif
   endif
   VBOX_DARWIN_DEF_SDK_10_7_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1070 MAC_OS_X_VERSION_MAX_ALLOWED=1070
@@ -2281,9 +2274,9 @@ else
   VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
   VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
   VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
-  TOOL_VCC80X86_RC    := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC80AMD64_RC  := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC70_RC       := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC80X86_RC    := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC80AMD64_RC  := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC70_RC       := $(KBUILD_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
  else
   VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
   VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-winxp.ico
@@ -2670,12 +2663,12 @@ ifdef VBOX_SIGNING_MODE
 
   # VBOX_PATH_SELFSIGN points to the Vista WDK bin/SelfSign directory.
   ifndef VBOX_PATH_SELFSIGN
-   VBOX_PATH_SELFSIGN := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS)/win.x86/selfsign/*)))
+   VBOX_PATH_SELFSIGN := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS)/win.x86/selfsign/*)))
    ifeq ($(VBOX_PATH_SELFSIGN),)
-    VBOX_PATH_SELFSIGN := $(PATH_DEVTOOLS)/win.x86/selfsign/r1
+    VBOX_PATH_SELFSIGN := $(KBUILD_DEVTOOLS)/win.x86/selfsign/r1
    endif
   endif
-  VBOX_SIGNTOOL ?= $(PATH_DEVTOOLS)/bin/retry.cmd $(VBOX_PATH_SELFSIGN)/SignTool.exe
+  VBOX_SIGNTOOL ?= $(KBUILD_DEVTOOLS)/bin/retry.cmd $(VBOX_PATH_SELFSIGN)/SignTool.exe
   VBOX_INF2CAT  ?= $(VBOX_PATH_SELFSIGN)/Inf2Cat.exe
 
   ifeq ($(VBOX_SIGNING_MODE),test)
@@ -4426,7 +4419,7 @@ ifeq (disabled-by-mingw-w64 $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
  TEMPLATE_VBoxNoCrtGccLib_TOOL             = XGCCAMD64LINUX
  TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = YASM
  TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = -f elf64 -DASM_FORMAT_ELF -D__YASM__ -w+orphan-labels -g dwarf2
- TEMPLATE_VBoxNoCrtGccLib_LIBS             = $(PATH_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701-r2/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
+ TEMPLATE_VBoxNoCrtGccLib_LIBS             = $(KBUILD_DEVTOOLS)/win.x86/x86_64-unknown-linux-gnu/20060701-r2/lib/gcc/x86_64-unknown-linux-gnu/3.4.6/libgcc.a
  TEMPLATE_VBoxNoCrtGccLib_LDFLAGS          = -nostdlib
 
 else if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
@@ -4922,7 +4915,7 @@ ifdef VBOX_WITH_QTGUI
  #
  ifeq ($(VBOX_PATH_QT4),)
   ifeq ($(KBUILD_TARGET),darwin)
-   VBOX_PATH_QT4 := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
+   VBOX_PATH_QT4 := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
    ifeq ($(VBOX_PATH_QT4),)
     ifneq ($(wildcard /Library/Frameworks/QtCore.framework),)
      # Using the global installation (for OSE).
@@ -4931,9 +4924,9 @@ ifdef VBOX_WITH_QTGUI
     endif
    endif
   else if1of ($(KBUILD_TARGET), win)
-   VBOX_PATH_QT4 ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*))))
+   VBOX_PATH_QT4 ?= $(lastword $(filter %-$(tolower $(VBOX_VCC_TOOL_STEM)),$(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*))))
   else if1of ($(KBUILD_TARGET), linux solaris)
-   VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
+   VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/qt/v4*)))
    ifneq ($(VBOX_PATH_QT4),)
     VBOX_WITH_QT4_SUN = 1
    endif
@@ -5357,10 +5350,10 @@ TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
 # (Some (old) Wine versions fails loading msvcrt.dll from the VCC bin directory.)
 #
 ifneq ($(KBUILD_HOST),win)
- TOOL_VCC80X86_RC    := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- TOOL_VCC80AMD64_RC  := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- TOOL_VCC70_RC       := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- WIN32_MC = $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/mc.exe
+ TOOL_VCC80X86_RC    := $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC80AMD64_RC  := $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC70_RC       := $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win.x86/bin/rc.exe
+ WIN32_MC = $(EXEC_X86_WIN32) $(KBUILD_DEVTOOLS)/win.x86/bin/mc.exe
 else
  WIN32_MC = $(EXEC_X86_WIN32) $(firstword $(wildcard \
 	$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/MC.Exe\
@@ -5368,7 +5361,7 @@ else
 	$(PATH_SDK_WINPSDK)/Bin/MC.Exe\
 	$(PATH_SDK_WIN32SDK_BIN)/MC.Exe\
 	$(PATH_SDK_WIN64SDK_BIN)/MC.Exe\
-	$(PATH_DEVTOOLS)/win.x86/bin/mc.exe\
+	$(KBUILD_DEVTOOLS)/win.x86/bin/mc.exe\
 	) Sorry_Cannot_find_mc_in_the_PSDK)
 endif
 
@@ -6009,7 +6002,7 @@ else
   ifeq ($(origin VBOX_JAVA_HOME),undefined)
    # Add correct detection for you distro after the /usr/../java-6-sun line.
    VBOX_JAVA_HOME := $(firstword $(wildcard \
-	$(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
+	$(KBUILD_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
 	/usr/lib/jvm/java-6-sun  \
 	/usr/lib/jvm/java-6-openjdk \
 	/usr/lib/jvm/java-6-openjdk-i386 \
