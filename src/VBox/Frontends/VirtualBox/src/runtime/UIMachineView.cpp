@@ -1266,7 +1266,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         QRect rect = pPaintEvent->rect().intersect(viewport()->rect());
         QPainter painter(viewport());
         /* Take the scale-factor into account: */
-        if (frameBuffer()->scaleFactor() == 1.0)
+        if (frameBuffer()->scaleFactor() == 1.0 && !frameBuffer()->scaledSize().isValid())
             painter.drawPixmap(rect.topLeft(), pausePixmap());
         else
             painter.drawPixmap(rect.topLeft(), pausePixmapScaled());
