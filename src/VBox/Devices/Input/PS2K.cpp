@@ -622,6 +622,10 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
 
     LogFlowFunc(("new cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 
+    if (pThis->u8CurrCmd == KCMD_RESET)
+        /* In reset mode, do not respond at all. */
+        return VINF_SUCCESS;
+
     switch (cmd)
     {
         case KCMD_ECHO:
