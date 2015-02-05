@@ -3980,6 +3980,10 @@ void VBoxGlobal::prepare()
                 m_strPidfile = QString(qApp->argv()[i]);
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
+        else if (!::strcmp(arg, "-normal") || !::strcmp(arg, "--normal"))
+        {
+            visualStateType = UIVisualStateType_Normal;
+        }
         else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
         {
             visualStateType = UIVisualStateType_Fullscreen;
