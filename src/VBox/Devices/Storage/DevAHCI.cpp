@@ -6637,6 +6637,14 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, false);
         ASMAtomicIncU32(&pAhci->cThreadsActive);
 
+        /* Check whether the thread should be suspended. */
+        if (pAhci->fSignalIdle)
+        {
+            if (!ASMAtomicDecU32(&pAhci->cThreadsActive))
+                PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
+            continue;
+        }
+
         /*
          * Check whether the global host controller bit is set and go to sleep immediately again
          * if it is set.
