@@ -3155,33 +3155,39 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtToggle(PVM pVM, PVMCPU pVCp
     {
         if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
         {
-            uint64_t u64NowVirtSync = TMVirtualSyncGetNoCheck(pVM);
-            uint64_t u64Now = ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
-            uint32_t cCpus  = pVM->cCpus;
-            uint64_t u64RealTSC = ASMReadTSC();
-            for (uint32_t i = 0; i < cCpus; i++)
+            if (tmR3HasFixedTSC(pVM))
             {
-                PVMCPU   pVCpu = &pVM->aCpus[i];
-                uint64_t u64TickOld = u64Now - pVCpu->tm.s.offTSCRawSrc;
+                uint64_t u64NowVirtSync = TMVirtualSyncGetNoCheck(pVM);
+                uint64_t u64Now = ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
+                uint32_t cCpus  = pVM->cCpus;
+                uint64_t u64RealTSC = ASMReadTSC();
+                for (uint32_t i = 0; i < cCpus; i++)
+                {
+                    PVMCPU   pVCpu = &pVM->aCpus[i];
+                    uint64_t u64TickOld = u64Now - pVCpu->tm.s.offTSCRawSrc;
 
-                /*
-                 * The return value of TMCpuTickGet() and the guest's TSC value (u64Tick) must
-                 * remain constant across the TM TSC mode-switch.
-                 * OldTick = VrSync - CurOff
-                 * NewTick = RealTsc - NewOff
-                 * NewTick = OldTick
-                 *  => RealTsc - NewOff = VrSync - CurOff
-                 *  => NewOff = CurOff + RealTsc - VrSync
-                 */
-                pVCpu->tm.s.offTSCRawSrc = pVCpu->tm.s.offTSCRawSrc + u64RealTSC  - u64Now;
+                    /*
+                     * The return value of TMCpuTickGet() and the guest's TSC value (u64Tick) must
+                     * remain constant across the TM TSC mode-switch.
+                     * OldTick = VrSync - CurOff
+                     * NewTick = RealTsc - NewOff
+                     * NewTick = OldTick
+                     *  => RealTsc - NewOff = VrSync - CurOff
+                     *  => NewOff = CurOff + RealTsc - VrSync
+                     */
+                    pVCpu->tm.s.offTSCRawSrc = pVCpu->tm.s.offTSCRawSrc + u64RealTSC  - u64Now;
 
-                /* If the new offset results in the TSC going backwards, re-adjust the offset. */
-                if (u64RealTSC - pVCpu->tm.s.offTSCRawSrc < u64TickOld)
-                    pVCpu->tm.s.offTSCRawSrc += u64TickOld - u64RealTSC;
-                Assert(u64RealTSC - pVCpu->tm.s.offTSCRawSrc >= u64TickOld);
+                    /* If the new offset results in the TSC going backwards, re-adjust the offset. */
+                    if (u64RealTSC - pVCpu->tm.s.offTSCRawSrc < u64TickOld)
+                        pVCpu->tm.s.offTSCRawSrc += u64TickOld - u64RealTSC;
+                    Assert(u64RealTSC - pVCpu->tm.s.offTSCRawSrc >= u64TickOld);
+                }
+                pVM->tm.s.enmTSCMode = TMTSCMODE_REAL_TSC_OFFSET;
+                LogRel(("TM: Switched TSC mode. New enmTSCMode=%d (%s)\n", pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM)));
             }
-            pVM->tm.s.enmTSCMode = TMTSCMODE_REAL_TSC_OFFSET;
-            LogRel(("TM: Switched TSC mode. New enmTSCMode=%d (%s)\n", pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM)));
+            else
+                LogRel(("TM: Host is not suitable for using TSC mode (%d - %s). Request to change TSC mode ignored.\n",
+                        TMTSCMODE_REAL_TSC_OFFSET, tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
         }
     }
     else
@@ -3459,6 +3465,24 @@ static const char *tmR3GetTSCModeName(PVM pVM)
 {
     Assert(pVM);
     switch (pVM->tm.s.enmTSCMode)
+    {
+        case TMTSCMODE_REAL_TSC_OFFSET:    return "RealTscOffset";
+        case TMTSCMODE_VIRT_TSC_EMULATED:  return "VirtTscEmulated";
+        case TMTSCMODE_DYNAMIC:            return "Dynamic";
+        default:                           return "???";
+    }
+}
+
+
+/**
+ * Gets the descriptive TM TSC mode name given the enum value.
+ *
+ * @returns The name.
+ * @param   pVM      Pointer to the VM.
+ */
+static const char *tmR3GetTSCModeNameEx(TMTSCMODE enmMode)
+{
+    switch (enmMode)
     {
         case TMTSCMODE_REAL_TSC_OFFSET:    return "RealTscOffset";
         case TMTSCMODE_VIRT_TSC_EMULATED:  return "VirtTscEmulated";
