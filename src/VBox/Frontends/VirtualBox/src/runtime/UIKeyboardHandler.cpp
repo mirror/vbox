@@ -1486,9 +1486,10 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     LONG aCodesBuffer[16];
     LONG *pCodes = aCodesBuffer;
     uint uCodesCount = 0;
+    uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
     if ((!m_bIsHostComboPressed && !isHostComboStateChanged) ||
         ( m_bIsHostComboPressed &&  isHostComboStateChanged) ||
-        !(fFlags & KeyPressed))
+        (!(fFlags & KeyPressed) && (m_pressedKeys[uScan] & uWhatPressed)))
     {
         /* Special flags handling (KeyPrint): */
         if (fFlags & KeyPrint)
