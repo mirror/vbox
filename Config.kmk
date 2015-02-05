@@ -1982,7 +1982,7 @@ VBOX_GOOD_COMSPEC_BS ?= $(subst /,\,$(VBOX_GOOD_COMSPEC))
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+ VBOX_DEF_MACOSX_VERSION_MIN ?= 10.7
 
  # Check for the Xcode 4.1 bits in tools/darwin.x86.
  if   !defined(VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL) \
