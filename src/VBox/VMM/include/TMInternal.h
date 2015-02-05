@@ -767,6 +767,10 @@ int                     tmVirtualResumeLocked(PVM pVM);
 DECLEXPORT(void)        tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
 
+#ifdef IN_RING3
+static const char *     tmR3GetTSCModeNameEx(TMTSCMODE enmMode);
+#endif
+
 
 /**
  * Try take the timer lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
