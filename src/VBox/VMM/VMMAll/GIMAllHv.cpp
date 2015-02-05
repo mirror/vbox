@@ -219,6 +219,13 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 #ifndef IN_RING3
             return VINF_CPUM_R3_MSR_WRITE;
 #else  /* IN_RING3 */
+            /*
+             * For now ignore writes to the hypercall MSR (i.e. keeps it disabled).
+             * This is required to boot FreeBSD 10.1 (with Hyper-V enabled ofc),
+             * see @bugref{7270} comment #116.
+             */
+            return VINF_SUCCESS;
+# if 0
             /* First, update all but the hypercall enable bit. */
             pHv->u64HypercallMsr = (uRawValue & ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT);
 
@@ -248,6 +255,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             }
 
             return VERR_CPUM_RAISE_GP_0;
+# endif
 #endif /* IN_RING3 */
         }
 
