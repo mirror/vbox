@@ -943,7 +943,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 
 #ifdef Q_WS_MAC
             /* Take the backing-scale-factor into account: */
-            if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+            if (pFrameBuffer->useUnscaledHiDPIOutput())
             {
                 const double dBackingScaleFactor = pFrameBuffer->backingScaleFactor();
                 if (dBackingScaleFactor > 1.0)

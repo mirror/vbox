@@ -548,6 +548,9 @@ void UIMachineView::prepareFrameBuffer()
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
 
+        /* Take backing scale-factor into account: */
+        m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+
         /* Take unscaled HiDPI output mode into account: */
         const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
@@ -982,7 +985,7 @@ void UIMachineView::updateSliders()
     /* Due to Qt 4.x doesn't supports HiDPI directly
      * we should take the backing-scale-factor into account.
      * See also viewportToContents()... */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
@@ -1010,7 +1013,7 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
     /* Due to Qt 4.x doesn't supports HiDPI directly
      * we should take the backing-scale-factor into account.
      * See also updateSliders()... */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
@@ -1462,7 +1465,7 @@ QSize UIMachineView::scaledForward(QSize size) const
 
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
@@ -1478,7 +1481,7 @@ QSize UIMachineView::scaledBackward(QSize size) const
 {
 #ifdef Q_WS_MAC
     /* Take the backing-scale-factor into account: */
-    if (gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid()))
+    if (frameBuffer()->useUnscaledHiDPIOutput())
     {
         const double dBackingScaleFactor = frameBuffer()->backingScaleFactor();
         if (dBackingScaleFactor > 1.0)
