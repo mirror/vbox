@@ -495,17 +495,17 @@ void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
         if (strncmp(pDirent->d_name, "event", sizeof("event") - 1) == 0)
         {
 #define BITS_PER_BLOCK (sizeof(unsigned long) * 8)
-            char pszFile[64] = "/dev/input/";
-            char pszDevice[64] = "";
+            char szFile[64] = "/dev/input/";
+            char szDevice[64] = "";
             unsigned long afKeys[KEY_MAX / BITS_PER_BLOCK];
 
-            strncat(pszFile, pDirent->d_name, sizeof(pszFile));
+            strncat(szFile, pDirent->d_name, sizeof(szFile) - sizeof("/dev/input/"));
             if (fd != -1)
                 close(fd);
-            fd = open(pszFile, O_RDONLY | O_NONBLOCK);
+            fd = open(szFile, O_RDONLY | O_NONBLOCK);
             if (   fd == -1
-                || ioctl(fd, EVIOCGNAME(sizeof(pszDevice)), pszDevice) == -1
-                || strcmp(pszDevice, "Video Bus") != 0)
+                || ioctl(fd, EVIOCGNAME(sizeof(szDevice)), szDevice) == -1
+                || strcmp(szDevice, "Video Bus") != 0)
                 continue;
             if (   ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(afKeys)), afKeys) == -1
                 || ((   afKeys[KEY_SWITCHVIDEOMODE / BITS_PER_BLOCK]
