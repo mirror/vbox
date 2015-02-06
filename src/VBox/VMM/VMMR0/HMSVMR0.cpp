@@ -1777,9 +1777,9 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Loads the guest state into the VMCB. The CPU state will be loaded from these
- * fields on every successful VM-entry.
+ * Loads the guest state into the VMCB.
  *
+ * The CPU state will be loaded from these fields on every successful VM-entry.
  * Also sets up the appropriate VMRUN function to execute guest code based on
  * the guest CPU mode.
  *
@@ -3970,9 +3970,11 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Determines if an exception is a contributory exception. Contributory
- * exceptions are ones which can cause double-faults. Page-fault is
- * intentionally not included here as it's a conditional contributory exception.
+ * Determines if an exception is a contributory exception.
+ *
+ * Contributory exceptions are ones which can cause double-faults unless the
+ * original exception was a benign exception. Page-fault is intentionally not
+ * included here as it's a conditional contributory exception.
  *
  * @returns true if the exception is contributory, false otherwise.
  * @param   uVector     The exception vector.
