@@ -182,6 +182,9 @@ void UIMachineView::applyMachineViewScaleFactor()
     /* Take unscaled HiDPI output mode into account: */
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
+    /* Perform frame-buffer rescaling: */
+    frameBuffer()->performRescale();
 }
 
 double UIMachineView::aspectRatio() const
@@ -233,18 +236,17 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         const bool fActualResize = frameBuffer()->width() != (ulong)iWidth ||
                                    frameBuffer()->height() != (ulong)iHeight;
 
-        /* Adjust 'scale' mode to current machine-view size: */
+        /* Perform frame-buffer mode-change: */
+        frameBuffer()->handleNotifyChange(iWidth, iHeight);
+
+        /* For 'scale' mode: */
         if (visualStateType() == UIVisualStateType_Scale)
         {
             /* Assign new frame-buffer logical-size: */
             frameBuffer()->setScaledSize(size());
         }
-
-        /* Perform frame-buffer mode-change: */
-        frameBuffer()->handleNotifyChange(iWidth, iHeight);
-
-        /* Scale-mode doesn't need this.. */
-        if (visualStateType() != UIVisualStateType_Scale)
+        /* For other than 'scale' mode: */
+        else
         {
             /* Adjust maximum-size restriction for machine-view: */
             setMaximumSize(sizeHint());
@@ -266,6 +268,9 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
             if (visualStateType() == UIVisualStateType_Normal && fActualResize)
                 machineWindow()->normalizeGeometry(true /* adjust position */);
         }
+
+        /* Perform frame-buffer rescaling: */
+        frameBuffer()->performRescale();
 
 #ifdef Q_WS_MAC
         /* Update MacOS X dock icon size: */
@@ -361,10 +366,9 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
                                       (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                       (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
 
-    /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
-    sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
-    frameBuffer()->performResize(frameBuffer()->width(), frameBuffer()->height());
-    machineWindow()->normalizeGeometry(true /* adjust position */);
+    /* Handle scale attributes change: */
+    handleScaleChange();
+    /* Adjust guest-screen size: */
     adjustGuestScreenSize();
 
     /* Update scaled pause pixmap, if necessary: */
@@ -382,10 +386,9 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
-    /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
-    sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
-    frameBuffer()->performResize(frameBuffer()->width(), frameBuffer()->height());
-    machineWindow()->normalizeGeometry(true /* adjust position */);
+    /* Handle scale attributes change: */
+    handleScaleChange();
+    /* Adjust guest-screen size: */
     adjustGuestScreenSize();
 
     /* Update scaled pause pixmap, if necessary: */
@@ -557,6 +560,9 @@ void UIMachineView::prepareFrameBuffer()
         const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
+        /* Perform frame-buffer rescaling: */
+        m_pFrameBuffer->performRescale();
+
         /* Associate uisession with frame-buffer finally: */
         uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
     }
@@ -597,9 +603,12 @@ void UIMachineView::prepareFrameBuffer()
                 size = QSize(uGuestWidth, uGuestHeight);
         }
 
-        /* If we have a valid size, resize the framebuffer. */
+        /* If we have a valid size, resize/rescale the frame-buffer. */
         if (size.width() > 0 && size.height() > 0)
+        {
             frameBuffer()->performResize(size.width(), size.height());
+            frameBuffer()->performRescale();
+        }
     }
 }
 
@@ -843,6 +852,52 @@ QSize UIMachineView::guestSizeHint()
 
     /* Return size: */
     return size;
+}
+
+void UIMachineView::handleScaleChange()
+{
+    LogRel(("UIMachineView::handleScaleChange: Screen=%d.\n",
+            (unsigned long)m_uScreenId));
+
+    /* If machine-window is visible: */
+    if (uisession()->isScreenVisible(m_uScreenId))
+    {
+        /* For 'scale' mode: */
+        if (visualStateType() == UIVisualStateType_Scale)
+        {
+            /* Assign new frame-buffer logical-size: */
+            frameBuffer()->setScaledSize(size());
+        }
+        /* For other than 'scale' mode: */
+        else
+        {
+            /* Adjust maximum-size restriction for machine-view: */
+            setMaximumSize(sizeHint());
+
+            /* Disable the resize hint override hack: */
+            m_sizeHintOverride = QSize(-1, -1);
+
+            /* Force machine-window update own layout: */
+            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+
+            /* Update machine-view sliders: */
+            updateSliders();
+
+            /* By some reason Win host forgets to update machine-window central-widget
+             * after main-layout was updated, let's do it for all the hosts: */
+            machineWindow()->centralWidget()->update();
+
+            /* Normalize 'normal' machine-window geometry: */
+            if (visualStateType() == UIVisualStateType_Normal)
+                machineWindow()->normalizeGeometry(true /* adjust position */);
+        }
+
+        /* Perform frame-buffer rescaling: */
+        frameBuffer()->performRescale();
+    }
+
+    LogRelFlow(("UIMachineView::handleScaleChange: Complete for Screen=%d.\n",
+                (unsigned long)m_uScreenId));
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &size)
@@ -1232,9 +1287,13 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 #ifdef Q_WS_MAC
             case QEvent::Move:
             {
-                /* Update backing-scale-factor for underlying frame-buffer: */
                 if (m_pFrameBuffer)
+                {
+                    /* Update backing-scale-factor for underlying frame-buffer: */
                     m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
+                    /* Perform frame-buffer rescaling: */
+                    m_pFrameBuffer->performRescale();
+                }
                 break;
             }
 #endif /* Q_WS_MAC */

@@ -87,8 +87,9 @@ HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
     if (m_pMachineView)
         prepareConnections();
 
-    /* Resize frame-buffer to default size: */
+    /* Resize/rescale frame-buffer to the default size: */
     performResize(640, 480);
+    performRescale();
 
 #ifdef Q_OS_WIN
     CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
@@ -760,10 +761,31 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
     }
 
     unlock();
+}
 
-    /* Update scaled-size according scale-factor for modes except the 'Scale' one: */
-    if (m_pMachineView->machineLogic()->visualStateType() != UIVisualStateType_Scale)
-        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
+void UIFrameBuffer::performRescale()
+{
+//    printf("UIFrameBuffer::performRescale\n");
+
+    /* Make sure machine-view is assigned: */
+    AssertPtrReturnVoid(m_pMachineView);
+
+    /* Depending on current visual state: */
+    switch (m_pMachineView->machineLogic()->visualStateType())
+    {
+        case UIVisualStateType_Scale:
+            m_scaledSize = m_scaledSize.width() == m_iWidth && m_scaledSize.height() == m_iHeight ? QSize() : m_scaledSize;
+            break;
+        default:
+            m_scaledSize = scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor()));
+            break;
+    }
+
+    /* Update coordinate-system: */
+    updateCoordinateSystem();
+
+//    printf("UIFrameBuffer::performRescale: Complete: Scale-factor=%f, Scaled-size=%dx%d\n",
+//           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -775,36 +797,6 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
     // TODO: Is this required? ^
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-
-void UIFrameBuffer::setScaleFactor(double dScaleFactor)
-{
-    /* Remember new scale-factor: */
-    m_dScaleFactor = dScaleFactor;
-
-    /* Update scaled-size according scale-factor: */
-    setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
-
-    /* Update coordinate-system: */
-    updateCoordinateSystem();
-}
-
-void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
-{
-    /* Remember new backing-scale-factor: */
-    m_dBackingScaleFactor = dBackingScaleFactor;
-
-    /* Update coordinate-system: */
-    updateCoordinateSystem();
-}
-
-void UIFrameBuffer::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput)
-{
-    /* Remember new use-unscaled-HiDPI-output value: */
-    m_fUseUnscaledHiDPIOutput = fUseUnscaledHiDPIOutput;
-
-    /* Update coordinate-system: */
-    updateCoordinateSystem();
-}
 
 void UIFrameBuffer::prepareConnections()
 {
