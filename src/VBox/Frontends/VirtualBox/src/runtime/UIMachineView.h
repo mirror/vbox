@@ -195,6 +195,9 @@ protected:
      */
     QSize guestSizeHint();
 
+    /** Handles machine-view scale changes. */
+    void handleScaleChange();
+
     /* Protected setters: */
     /** Store a guest size hint value to extra data, called on switching to
      * fullscreen. */

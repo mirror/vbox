@@ -207,6 +207,8 @@ public:
 
     /** Performs frame-buffer resizing. */
     virtual void performResize(int iWidth, int iHeight);
+    /** Performs frame-buffer rescaling. */
+    virtual void performRescale();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /** Performs Video HW Acceleration command. */
@@ -220,17 +222,17 @@ public:
     /** Returns the scale-factor used by the frame-buffer. */
     double scaleFactor() const { return m_dScaleFactor; }
     /** Define the scale-factor used by the frame-buffer. */
-    void setScaleFactor(double dScaleFactor);
+    void setScaleFactor(double dScaleFactor) { m_dScaleFactor = dScaleFactor; }
 
     /** Returns backing-scale-factor used by HiDPI frame-buffer. */
     double backingScaleFactor() const { return m_dBackingScaleFactor; }
     /** Defines backing-scale-factor used by HiDPI frame-buffer. */
-    void setBackingScaleFactor(double dBackingScaleFactor);
+    void setBackingScaleFactor(double dBackingScaleFactor) { m_dBackingScaleFactor = dBackingScaleFactor; }
 
     /** Returns whether frame-buffer should use unscaled HiDPI output. */
     bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
     /** Defines whether frame-buffer should use unscaled HiDPI output. */
-    void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput);
+    void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput) { m_fUseUnscaledHiDPIOutput = fUseUnscaledHiDPIOutput; }
 
     /** Return HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
