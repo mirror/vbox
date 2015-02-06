@@ -118,7 +118,7 @@ int main(int argc, char **argv)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error constructing extension pack path: %Rrc", rc);
         if (!RTFileExists(szDTraceCmd))
             return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "Unable to find a DTrace implementation.");
+                                  "Unable to find a DTrace implementation. VBoxDTrace Extension Pack installed?");
         fIsNativeDTrace = false;
     }
 
