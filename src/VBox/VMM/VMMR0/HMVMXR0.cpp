@@ -5651,9 +5651,11 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 
 
 /**
- * Determines if an exception is a contributory exception. Contributory
- * exceptions are ones which can cause double-faults. Page-fault is
- * intentionally not included here as it's a conditional contributory exception.
+ * Determines if an exception is a contributory exception.
+ *
+ * Contributory exceptions are ones which can cause double-faults unless the
+ * original exception was a benign exception. Page-fault is intentionally not
+ * included here as it's a conditional contributory exception.
  *
  * @returns true if the exception is contributory, false otherwise.
  * @param   uVector     The exception vector.
