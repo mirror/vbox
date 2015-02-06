@@ -226,6 +226,8 @@ test -n "${NO_VBOX_IMG}" &&
     test ! -r "${INSTALL_SOURCE}/vbox-img"
 test -n "${NO_WEB_SERVICE}" &&
     test ! -r "${INSTALL_SOURCE}/webtest"
+test -r "${INSTALL_SOURCE}/VBoxDTrace" &&
+    mv "${INSTALL_SOURCE}/VBoxDTrace" "${PREFIX}/bin"
 mv "${INSTALL_SOURCE}/VBoxTunctl" "${PREFIX}/bin"
 test -n "${OSE}" || test -n "${NO_QT}" &&
     test ! -r ${INSTALL_SOURCE}/kchmviewer
