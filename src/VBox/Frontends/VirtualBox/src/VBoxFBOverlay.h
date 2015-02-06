@@ -1349,14 +1349,16 @@ public:
         m_dScaleFactor(pFb->scaleFactor()), m_scaledSize(pFb->scaledSize()), m_fUseUnscaledHiDPIOutput(pFb->useUnscaledHiDPIOutput()),
         mUsesGuestVram(true) {}
 
-    VBoxFBSizeInfo(ulong aPixelFormat, uchar *aVRAM,
+    VBoxFBSizeInfo(UIVisualStateType visualState,
+                   ulong aPixelFormat, uchar *aVRAM,
                    ulong aBitsPerPixel, ulong aBytesPerLine,
                    ulong aWidth, ulong aHeight,
+                   double dScaleFactor, const QSize &scaledSize, bool fUseUnscaledHiDPIOutput,
                    bool bUsesGuestVram) :
-        m_visualState(UIVisualStateType_Invalid),
+        m_visualState(visualState),
         mPixelFormat(aPixelFormat), mVRAM(aVRAM), mBitsPerPixel(aBitsPerPixel),
         mBytesPerLine(aBytesPerLine), mWidth(aWidth), mHeight(aHeight),
-        m_dScaleFactor(1.0), m_scaledSize(QSize()), m_fUseUnscaledHiDPIOutput(false),
+        m_dScaleFactor(dScaleFactor), m_scaledSize(scaledSize), m_fUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput),
         mUsesGuestVram(bUsesGuestVram) {}
 
     UIVisualStateType visualState() const { return m_visualState; }
@@ -1908,6 +1910,13 @@ public:
     void performResize(int iWidth, int iHeight)
     {
         UIFrameBuffer::performResize(iWidth, iHeight);
+        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
+                QPoint(mpView->contentsX(), mpView->contentsY()));
+    }
+
+    void performRescale()
+    {
+        UIFrameBuffer::performRescale();
         mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
