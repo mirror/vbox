@@ -55,8 +55,7 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
 #endif /* Q_WS_X11 */
 
 UIFrameBuffer::UIFrameBuffer()
-    : m_visualState(UIVisualStateType_Invalid)
-    , m_iWidth(0), m_iHeight(0)
+    : m_iWidth(0), m_iHeight(0)
     , m_pMachineView(NULL)
     , m_iWinId(0)
     , m_fUpdatesAllowed(true)
@@ -74,9 +73,6 @@ UIFrameBuffer::UIFrameBuffer()
 HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
 {
     LogRel2(("UIFrameBuffer::init %p\n", this));
-
-    /* Fetch visual-state: */
-    m_visualState = pMachineView->visualStateType();
 
     /* Assign mahine-view: */
     m_pMachineView = pMachineView;
@@ -149,6 +145,11 @@ void UIFrameBuffer::setMarkAsUnused(bool fUnused)
     lock();
     m_fUnused = fUnused;
     unlock();
+}
+
+UIVisualStateType UIFrameBuffer::visualState() const
+{
+    return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid;
 }
 
 STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
