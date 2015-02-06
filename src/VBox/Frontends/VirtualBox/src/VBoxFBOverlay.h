@@ -1905,9 +1905,9 @@ public:
         return hr;
     }
 
-    void resizeEvent(int iWidth, int iHeight)
+    void performResize(int iWidth, int iHeight)
     {
-        UIFrameBuffer::resizeEvent(iWidth, iHeight);
+        UIFrameBuffer::performResize(iWidth, iHeight);
         mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }

@@ -217,8 +217,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
-    LogRelFlow(("UIMachineView::HandleNotifyChange: Screen=%d, Size=%dx%d.\n",
-                (unsigned long)m_uScreenId, iWidth, iHeight));
+    LogRel(("UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d.\n",
+            (unsigned long)m_uScreenId, iWidth, iHeight));
 
     // TODO: Move to appropriate place!
     /* Some situations require frame-buffer resize-events to be ignored at all,
@@ -241,7 +241,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
         }
 
         /* Perform frame-buffer mode-change: */
-        frameBuffer()->notifyChange(iWidth, iHeight);
+        frameBuffer()->handleNotifyChange(iWidth, iHeight);
 
         /* Scale-mode doesn't need this.. */
         if (visualStateType() != UIVisualStateType_Scale)
@@ -280,7 +280,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
      * the viewport through IFramebuffer::NotifyUpdate): */
     display().InvalidateAndUpdateScreen(m_uScreenId);
 
-    LogRelFlow(("UIMachineView::ResizeHandled: Screen=%d, Size=%dx%d.\n",
+    LogRelFlow(("UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
 }
 
@@ -363,7 +363,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
 
     /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
     sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
-    frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
+    frameBuffer()->performResize(frameBuffer()->width(), frameBuffer()->height());
     machineWindow()->normalizeGeometry(true /* adjust position */);
     adjustGuestScreenSize();
 
@@ -384,7 +384,7 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
 
     /* Adjust frame-buffer, machine-window and guest-screen size if necessary: */
     sltHandleNotifyChange(frameBuffer()->width(), frameBuffer()->height());
-    frameBuffer()->resizeEvent(frameBuffer()->width(), frameBuffer()->height());
+    frameBuffer()->performResize(frameBuffer()->width(), frameBuffer()->height());
     machineWindow()->normalizeGeometry(true /* adjust position */);
     adjustGuestScreenSize();
 
@@ -599,7 +599,7 @@ void UIMachineView::prepareFrameBuffer()
 
         /* If we have a valid size, resize the framebuffer. */
         if (size.width() > 0 && size.height() > 0)
-            frameBuffer()->resizeEvent(size.width(), size.height());
+            frameBuffer()->performResize(size.width(), size.height());
     }
 }
 
@@ -1279,7 +1279,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 
     /* Delegate the paint function to the UIFrameBuffer interface: */
     if (m_pFrameBuffer)
-        m_pFrameBuffer->paintEvent(pPaintEvent);
+        m_pFrameBuffer->handlePaintEvent(pPaintEvent);
 #ifdef Q_WS_MAC
     /* Update the dock icon if we are in the running state: */
     if (uisession()->isRunning())

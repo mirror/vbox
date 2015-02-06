@@ -92,7 +92,7 @@ HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
         prepareConnections();
 
     /* Resize frame-buffer to default size: */
-    resizeEvent(640, 480);
+    performResize(640, 480);
 
 #ifdef Q_OS_WIN
     CoCreateFreeThreadedMarshaler(this, &m_pUnkMarshaler.p);
@@ -570,9 +570,9 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data
     return E_INVALIDARG;
 }
 
-void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
+void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("UIFrameBuffer::notifyChange: Size=%dx%d\n", iWidth, iHeight));
+    LogRel(("UIFrameBuffer::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -584,7 +584,7 @@ void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
     if (!vboxGlobal().isSeparateProcess() && m_pendingSourceBitmap.isNull())
     {
         /* Do nothing, change-event already processed: */
-        LogRel2(("UIFrameBuffer::notifyChange: Already processed.\n"));
+        LogRel2(("UIFrameBuffer::handleNotifyChange: Already processed.\n"));
         /* Unlock access to frame-buffer: */
         unlock();
         /* Return immediately: */
@@ -599,116 +599,12 @@ void UIFrameBuffer::notifyChange(int iWidth, int iHeight)
     unlock();
 
     /* Perform frame-buffer resize: */
-    resizeEvent(iWidth, iHeight);
+    performResize(iWidth, iHeight);
 }
 
-void UIFrameBuffer::resizeEvent(int iWidth, int iHeight)
+void UIFrameBuffer::handlePaintEvent(QPaintEvent *pEvent)
 {
-    LogRel(("UIFrameBuffer::resizeEvent: Size=%dx%d\n", iWidth, iHeight));
-
-    /* Make sure machine-view is assigned: */
-    AssertPtrReturnVoid(m_pMachineView);
-
-    /* Invalidate visible-region (if necessary): */
-    if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
-        (m_iWidth != iWidth || m_iHeight != iHeight))
-    {
-        lock();
-        m_syncVisibleRegion = QRegion();
-        m_asyncVisibleRegion = QRegion();
-        unlock();
-    }
-
-    /* If source-bitmap invalid: */
-    if (m_sourceBitmap.isNull())
-    {
-        LogRel(("UIFrameBuffer::resizeEvent: "
-                "Using FALLBACK buffer due to source-bitmap is not provided..\n"));
-
-        /* Remember new size came from hint: */
-        m_iWidth = iWidth;
-        m_iHeight = iHeight;
-
-        /* And recreate fallback buffer: */
-        m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
-        m_image.fill(0);
-    }
-    /* If source-bitmap valid: */
-    else
-    {
-        LogRel(("UIFrameBuffer::resizeEvent: "
-                "Directly using source-bitmap content\n"));
-
-        /* Acquire source-bitmap attributes: */
-        BYTE *pAddress = NULL;
-        ULONG ulWidth = 0;
-        ULONG ulHeight = 0;
-        ULONG ulBitsPerPixel = 0;
-        ULONG ulBytesPerLine = 0;
-        ULONG ulPixelFormat = 0;
-        m_sourceBitmap.QueryBitmapInfo(pAddress,
-                                       ulWidth,
-                                       ulHeight,
-                                       ulBitsPerPixel,
-                                       ulBytesPerLine,
-                                       ulPixelFormat);
-        Assert(ulBitsPerPixel == 32);
-
-        /* Remember new actual size: */
-        m_iWidth = (int)ulWidth;
-        m_iHeight = (int)ulHeight;
-
-        /* Recreate QImage on the basis of source-bitmap content: */
-        m_image = QImage(pAddress, m_iWidth, m_iHeight, ulBytesPerLine, QImage::Format_RGB32);
-
-        /* Check whether guest color depth differs from the bitmap color depth: */
-        ULONG ulGuestBitsPerPixel = 0;
-        LONG xOrigin = 0;
-        LONG yOrigin = 0;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        CDisplay display = m_pMachineView->uisession()->session().GetConsole().GetDisplay();
-        display.GetScreenResolution(m_pMachineView->screenId(),
-                                    ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
-
-        /* Remind user if necessary, ignore text and VGA modes: */
-        /* This check (supports graphics) is not quite right due to past mistakes
-         * in the Guest Additions protocol, but in practice it should be fine. */
-        if (   ulGuestBitsPerPixel != ulBitsPerPixel
-            && ulGuestBitsPerPixel != 0
-            && m_pMachineView->uisession()->isGuestSupportsGraphics())
-            popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
-                                                     ulGuestBitsPerPixel, ulBitsPerPixel);
-        else
-            popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
-    }
-
-    lock();
-
-    /* Enable screen updates: */
-    m_fUpdatesAllowed = true;
-
-    if (!m_pendingSyncVisibleRegion.isEmpty())
-    {
-        /* Directly update synchronous visible-region: */
-        m_syncVisibleRegion = m_pendingSyncVisibleRegion;
-        m_pendingSyncVisibleRegion = QRegion();
-
-        /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBuffer::resizeEvent: Rectangle count=%lu, Sending to async-handler\n",
-                 (unsigned long)m_syncVisibleRegion.rectCount()));
-        emit sigSetVisibleRegion(m_syncVisibleRegion);
-    }
-
-    unlock();
-
-    /* Update scaled-size according scale-factor for modes except the 'Scale' one: */
-    if (m_pMachineView->machineLogic()->visualStateType() != UIVisualStateType_Scale)
-        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
-}
-
-void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
-{
-    LogRel2(("UIFrameBuffer::paintEvent: Origin=%lux%lu, Size=%dx%d\n",
+    LogRel2(("UIFrameBuffer::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
              pEvent->rect().x(), pEvent->rect().y(),
              pEvent->rect().width(), pEvent->rect().height()));
 
@@ -745,7 +641,7 @@ void UIFrameBuffer::paintEvent(QPaintEvent *pEvent)
     unlock();
 }
 
-void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
+void UIFrameBuffer::handleSetVisibleRegion(const QRegion &region)
 {
     /* Make sure async visible-region has changed: */
     if (m_asyncVisibleRegion == region)
@@ -763,6 +659,110 @@ void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
     /* We have to use async visible-region to apply to [Q]Widget [set]Mask: */
     m_pMachineView->machineWindow()->setMask(m_asyncVisibleRegion);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
+}
+
+void UIFrameBuffer::performResize(int iWidth, int iHeight)
+{
+    LogRel(("UIFrameBuffer::performResize: Size=%dx%d\n", iWidth, iHeight));
+
+    /* Make sure machine-view is assigned: */
+    AssertPtrReturnVoid(m_pMachineView);
+
+    /* Invalidate visible-region (if necessary): */
+    if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
+        (m_iWidth != iWidth || m_iHeight != iHeight))
+    {
+        lock();
+        m_syncVisibleRegion = QRegion();
+        m_asyncVisibleRegion = QRegion();
+        unlock();
+    }
+
+    /* If source-bitmap invalid: */
+    if (m_sourceBitmap.isNull())
+    {
+        LogRel(("UIFrameBuffer::performResize: "
+                "Using FALLBACK buffer due to source-bitmap is not provided..\n"));
+
+        /* Remember new size came from hint: */
+        m_iWidth = iWidth;
+        m_iHeight = iHeight;
+
+        /* And recreate fallback buffer: */
+        m_image = QImage(m_iWidth, m_iHeight, QImage::Format_RGB32);
+        m_image.fill(0);
+    }
+    /* If source-bitmap valid: */
+    else
+    {
+        LogRel(("UIFrameBuffer::performResize: "
+                "Directly using source-bitmap content\n"));
+
+        /* Acquire source-bitmap attributes: */
+        BYTE *pAddress = NULL;
+        ULONG ulWidth = 0;
+        ULONG ulHeight = 0;
+        ULONG ulBitsPerPixel = 0;
+        ULONG ulBytesPerLine = 0;
+        ULONG ulPixelFormat = 0;
+        m_sourceBitmap.QueryBitmapInfo(pAddress,
+                                       ulWidth,
+                                       ulHeight,
+                                       ulBitsPerPixel,
+                                       ulBytesPerLine,
+                                       ulPixelFormat);
+        Assert(ulBitsPerPixel == 32);
+
+        /* Remember new actual size: */
+        m_iWidth = (int)ulWidth;
+        m_iHeight = (int)ulHeight;
+
+        /* Recreate QImage on the basis of source-bitmap content: */
+        m_image = QImage(pAddress, m_iWidth, m_iHeight, ulBytesPerLine, QImage::Format_RGB32);
+
+        /* Check whether guest color depth differs from the bitmap color depth: */
+        ULONG ulGuestBitsPerPixel = 0;
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+        CDisplay display = m_pMachineView->uisession()->display();
+        display.GetScreenResolution(m_pMachineView->screenId(),
+                                    ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
+
+        /* Remind user if necessary, ignore text and VGA modes: */
+        /* This check (supports graphics) is not quite right due to past mistakes
+         * in the Guest Additions protocol, but in practice it should be fine. */
+        if (   ulGuestBitsPerPixel != ulBitsPerPixel
+            && ulGuestBitsPerPixel != 0
+            && m_pMachineView->uisession()->isGuestSupportsGraphics())
+            popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
+                                                     ulGuestBitsPerPixel, ulBitsPerPixel);
+        else
+            popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
+    }
+
+    lock();
+
+    /* Enable screen updates: */
+    m_fUpdatesAllowed = true;
+
+    if (!m_pendingSyncVisibleRegion.isEmpty())
+    {
+        /* Directly update synchronous visible-region: */
+        m_syncVisibleRegion = m_pendingSyncVisibleRegion;
+        m_pendingSyncVisibleRegion = QRegion();
+
+        /* And send async-signal to update asynchronous one: */
+        LogRel2(("UIFrameBuffer::performResize: Rectangle count=%lu, Sending to async-handler\n",
+                 (unsigned long)m_syncVisibleRegion.rectCount()));
+        emit sigSetVisibleRegion(m_syncVisibleRegion);
+    }
+
+    unlock();
+
+    /* Update scaled-size according scale-factor for modes except the 'Scale' one: */
+    if (m_pMachineView->machineLogic()->visualStateType() != UIVisualStateType_Scale)
+        setScaledSize(scaleFactor() == 1.0 ? QSize() : QSize((int)(m_iWidth * scaleFactor()), (int)(m_iHeight * scaleFactor())));
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
