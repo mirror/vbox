@@ -199,13 +199,14 @@ public:
     inline int convertHostYTo(int y) const  { return m_scaledSize.isValid() ? qRound((double)m_iHeight / m_scaledSize.height() * y) : y; }
 
     /** Handles frame-buffer notify-change-event. */
-    virtual void notifyChange(int iWidth, int iHeight);
-    /** Handles frame-buffer resize-event. */
-    virtual void resizeEvent(int iWidth, int iHeight);
+    virtual void handleNotifyChange(int iWidth, int iHeight);
     /** Handles frame-buffer paint-event. */
-    virtual void paintEvent(QPaintEvent *pEvent);
-    /** Handles frame-buffer apply-visible-region-event. */
-    virtual void applyVisibleRegion(const QRegion &region);
+    virtual void handlePaintEvent(QPaintEvent *pEvent);
+    /** Handles frame-buffer set-visible-region-event. */
+    virtual void handleSetVisibleRegion(const QRegion &region);
+
+    /** Performs frame-buffer resizing. */
+    virtual void performResize(int iWidth, int iHeight);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /** Performs Video HW Acceleration command. */

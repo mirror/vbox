@@ -84,7 +84,7 @@ void UIMachineViewSeamless::sltAdditionsStateChanged()
 void UIMachineViewSeamless::sltHandleSetVisibleRegion(QRegion region)
 {
     /* Apply new seamless-region: */
-    m_pFrameBuffer->applyVisibleRegion(region);
+    m_pFrameBuffer->handleSetVisibleRegion(region);
 }
 
 bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
