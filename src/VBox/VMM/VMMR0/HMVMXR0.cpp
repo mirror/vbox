@@ -4688,12 +4688,12 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Loads certain guest MSRs into the VM-entry MSR-load and VM-exit MSR-store
- * areas. These MSRs will automatically be loaded to the host CPU on every
- * successful VM-entry and stored from the host CPU on every successful VM-exit.
+ * areas.
  *
- * This also creates/updates MSR slots for the host MSRs. The actual host
- * MSR values are -not- updated here for performance reasons. See
- * hmR0VmxSaveHostMsrs().
+ * These MSRs will automatically be loaded to the host CPU on every successful
+ * VM-entry and stored from the host CPU on every successful VM-exit. This also
+ * creates/updates MSR slots for the host MSRs. The actual host MSR values are
+ * -not- updated here for performance reasons. See hmR0VmxSaveHostMsrs().
  *
  * Also loads the sysenter MSRs into the guest-state area in the VMCS.
  *
@@ -5322,10 +5322,12 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 
 /**
- * Initialize the VMCS-Read cache. The VMCS cache is used for 32-bit hosts
- * running 64-bit guests (except 32-bit Darwin which runs with 64-bit paging in
- * 32-bit mode) for 64-bit fields that cannot be accessed in 32-bit mode. Some
- * 64-bit fields -can- be accessed (those that have a 32-bit FULL & HIGH part).
+ * Initialize the VMCS-Read cache.
+ *
+ * The VMCS cache is used for 32-bit hosts running 64-bit guests (except 32-bit
+ * Darwin which runs with 64-bit paging in 32-bit mode) for 64-bit fields that
+ * cannot be accessed in 32-bit mode. Some 64-bit fields -can- be accessed
+ * (those that have a 32-bit FULL & HIGH part).
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -5515,8 +5517,8 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
 
 /**
- * Queue up a VMWRITE by using the VMCS write cache. This is only used on 32-bit
- * hosts (except darwin) for 64-bit guests.
+ * Queue up a VMWRITE by using the VMCS write cache.
+ * This is only used on 32-bit hosts (except darwin) for 64-bit guests.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxField    The VMCS field encoding.
@@ -5590,9 +5592,10 @@ VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
 
 
 /**
- * Sets up the usage of TSC-offsetting and updates the VMCS. If offsetting is
- * not possible, cause VM-exits on RDTSC(P)s. Also sets up the VMX preemption
- * timer.
+ * Sets up the usage of TSC-offsetting and updates the VMCS.
+ *
+ * If offsetting is not possible, cause VM-exits on RDTSC(P)s. Also sets up the
+ * VMX preemption timer.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
