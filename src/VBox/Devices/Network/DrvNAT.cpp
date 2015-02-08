@@ -958,6 +958,20 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 }
 
 
+/**
+ * @interface_method_impl{PDMINETWORKNATCONFIG,pfnNotifyDnsChanged}
+ *
+ * We are notified that host's resolver configuration has changed.  In
+ * the current setup we don't get any details and just reread that
+ * information ourselves.
+ */
+static DECLCALLBACK(void) drvNATNotifyDnsChanged(PPDMINETWORKNATCONFIG pInterface)
+{
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkNATCfg);
+    drvNATUpdateDNS(pThis, /* fFlapLink */ true);
+}
+
+
 #ifdef RT_OS_DARWIN
 /**
  * Callback for the SystemConfiguration framework to notify us whenever the DNS
@@ -1084,8 +1098,8 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
     {
         case VMRESUMEREASON_HOST_RESUME:
             bool fFlapLink;
-#if RT_OS_DARWIN
-            /* let drvNatDnsChanged event handler do it if necessary */
+#if HAVE_NOTIFICATION_FOR_DNS_UPDATE
+            /* let event handler do it if necessary */
             fFlapLink = false;
 #else
             /* XXX: when in doubt, use brute force */
@@ -1404,7 +1418,18 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     /* NAT engine configuration */
     pThis->INetworkNATCfg.pfnRedirectRuleCommand = drvNATNetworkNatConfig_RedirectRuleCommand;
+#if HAVE_NOTIFICATION_FOR_DNS_UPDATE && !defined(RT_OS_DARWIN)
+    /* 
+     * On OS X we stick to the old OS X specific notifications for
+     * now.  Elsewhere use IHostNameResolutionConfigurationChangeEvent
+     * by enbaling HAVE_NOTIFICATION_FOR_DNS_UPDATE in libslirp.h.
+     * This code is still in a bit of flux and is implemented and
+     * enabled in steps to simplify more conservative backporting.
+     */
+    pThis->INetworkNATCfg.pfnNotifyDnsChanged = drvNATNotifyDnsChanged;
+#else
     pThis->INetworkNATCfg.pfnNotifyDnsChanged = NULL;
+#endif
 
     /*
      * Validate the config.
