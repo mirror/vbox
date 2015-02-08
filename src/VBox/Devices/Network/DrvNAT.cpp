@@ -1401,6 +1401,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     /* NAT engine configuration */
     pThis->INetworkNATCfg.pfnRedirectRuleCommand = drvNATNetworkNatConfig_RedirectRuleCommand;
+    pThis->INetworkNATCfg.pfnNotifyDnsChanged = NULL;
 
     /*
      * Validate the config.

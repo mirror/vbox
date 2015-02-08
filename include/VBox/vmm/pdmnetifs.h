@@ -425,10 +425,16 @@ typedef struct PDMINETWORKNATCONFIG
     DECLR3CALLBACKMEMBER(int, pfnRedirectRuleCommand ,(PPDMINETWORKNATCONFIG pInterface, bool fRemove,
                                                        bool fUdp, const char *pHostIp, uint16_t u16HostPort,
                                                        const char *pGuestIp, uint16_t u16GuestPort));
+    /**
+     * Inform NAT about host DNS settings change.
+     *
+     * IHostNameResolutionConfigurationChangeEvent.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyDnsChanged, (PPDMINETWORKNATCONFIG pInterface));
 
 } PDMINETWORKNATCONFIG;
 /** PDMINETWORKNATCONFIG interface ID. */
-#define PDMINETWORKNATCONFIG_IID                "0f001d62-4d2f-11df-93b3-2fd0b3a36a6b"
+#define PDMINETWORKNATCONFIG_IID                "dc961028-3523-4b52-a93b-e38168a4a9fa"
 /** @} */
 
 RT_C_DECLS_END

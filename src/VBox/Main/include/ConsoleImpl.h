@@ -261,6 +261,7 @@ public:
     // Called from event listener
     HRESULT i_onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
                                       NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);
+    HRESULT i_onNATDnsChanged();
 
     // Mouse interface
     VMMDevMouseInterface *i_getVMMDevMouseInterface();
@@ -349,6 +350,8 @@ private:
                      const com::Utf8Str &aPassword,
                      ULONG aMaxDowntime,
                      ComPtr<IProgress> &aProgress);
+
+    void notifyNatDnsChange(PUVM pUVM, const char *pszDevice, ULONG ulInstanceMax);
 
     /**
      *  Base template for AutoVMCaller and SafeVMPtr. Template arguments
