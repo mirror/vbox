@@ -175,6 +175,9 @@ typedef struct DRVNAT
     RTPIPE                  hPipeWrite;
     /** The read end of the control pipe. */
     RTPIPE                  hPipeRead;
+# if HC_ARCH_BITS == 32
+    uint32_t                u32Padding;
+# endif
 #else
     /** for external notification */
     HANDLE                  hWakeupEvent;
