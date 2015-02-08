@@ -350,6 +350,12 @@ public:
             }
             break;
 
+            case VBoxEventType_OnHostNameResolutionConfigurationChange:
+            {
+                mConsole->i_onNATDnsChanged();
+                break;
+            }
+
             case VBoxEventType_OnHostPCIDevicePlug:
             {
                 // handle if needed
@@ -629,6 +635,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
             mVmListener = aVmListener;
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnNATRedirect);
+            eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
             eventTypes.push_back(VBoxEventType_OnHostPCIDevicePlug);
             eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
             rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
@@ -4291,6 +4298,97 @@ HRESULT Console::i_onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
 }
+
+
+/*
+ * IHostNameResolutionConfigurationChangeEvent
+ *
+ * Currently this event doesn't carry actual resolver configuration,
+ * so we have to go back to VBoxSVC and ask...  This is not ideal.
+ */
+HRESULT Console::i_onNATDnsChanged()
+{
+    HRESULT hrc;
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComPtr<IVirtualBox> pVirtualBox;
+    hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+    if (FAILED(hrc))
+        return S_OK;
+
+    ComPtr<IHost> pHost;
+    hrc = pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
+    if (FAILED(hrc))
+        return S_OK;
+
+    SafeArray<BSTR> aNameServers;
+    hrc = pHost->COMGETTER(NameServers)(ComSafeArrayAsOutParam(aNameServers));
+    if (FAILED(hrc))
+        return S_OK;
+
+    const size_t cNameServers = aNameServers.size();
+    Log(("DNS change - %zu nameservers\n", cNameServers));
+
+    for (size_t i = 0; i < cNameServers; ++i)
+    {
+        com::Utf8Str strNameServer(aNameServers[i]);
+        Log(("- nameserver[%zu] = \"%s\"\n", i, strNameServer.c_str()));
+    }
+
+    com::Bstr domain;
+    pHost->COMGETTER(DomainName)(domain.asOutParam());
+    Log(("domain name = \"%s\"\n", com::Utf8Str(domain).c_str()));
+
+
+    ChipsetType_T enmChipsetType;
+    hrc = mMachine->COMGETTER(ChipsetType)(&enmChipsetType);
+    if (!FAILED(hrc))
+    {
+        SafeVMPtrQuiet ptrVM(this);
+        if (ptrVM.isOk())
+        {
+            ULONG ulInstanceMax = (ULONG)Global::getMaxNetworkAdapters(enmChipsetType);
+
+            notifyNatDnsChange(ptrVM.rawUVM(), "pcnet", ulInstanceMax);
+            notifyNatDnsChange(ptrVM.rawUVM(), "e1000", ulInstanceMax);
+            notifyNatDnsChange(ptrVM.rawUVM(), "virtio-net", ulInstanceMax);
+        }
+    }
+
+    return S_OK;
+}
+
+
+/*
+ * This routine walks over all network device instances, checking if
+ * device instance has DrvNAT attachment and triggering DrvNAT DNS
+ * change callback.
+ */
+void Console::notifyNatDnsChange(PUVM pUVM, const char *pszDevice, ULONG ulInstanceMax)
+{
+    Log(("notifyNatDnsChange: looking for DrvNAT attachment on %s device instances\n", pszDevice));
+    for (ULONG ulInstance = 0; ulInstance < ulInstanceMax; ulInstance++)
+    {
+        PPDMIBASE pBase;
+        int rc = PDMR3QueryDriverOnLun(pUVM, pszDevice, ulInstance, 0 /* iLun */, "NAT", &pBase);
+        if (RT_FAILURE(rc))
+            continue;
+
+        Log(("Instance %s#%d has DrvNAT attachment; do actual notify\n", pszDevice, ulInstance));
+        if (pBase)
+        {
+            PPDMINETWORKNATCONFIG pNetNatCfg = NULL;
+            pNetNatCfg = (PPDMINETWORKNATCONFIG)pBase->pfnQueryInterface(pBase, PDMINETWORKNATCONFIG_IID);
+            if (pNetNatCfg && pNetNatCfg->pfnNotifyDnsChanged)
+                pNetNatCfg->pfnNotifyDnsChanged(pNetNatCfg);
+        }
+    }
+}
+
 
 VMMDevMouseInterface *Console::i_getVMMDevMouseInterface()
 {
