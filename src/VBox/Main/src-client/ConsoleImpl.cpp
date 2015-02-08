@@ -4315,6 +4315,7 @@ HRESULT Console::i_onNATDnsChanged()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+#if 0 /* XXX: We don't yet pass this down to pfnNotifyDnsChanged */
     ComPtr<IVirtualBox> pVirtualBox;
     hrc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
     if (FAILED(hrc))
@@ -4342,7 +4343,7 @@ HRESULT Console::i_onNATDnsChanged()
     com::Bstr domain;
     pHost->COMGETTER(DomainName)(domain.asOutParam());
     Log(("domain name = \"%s\"\n", com::Utf8Str(domain).c_str()));
-
+#endif /* 0 */
 
     ChipsetType_T enmChipsetType;
     hrc = mMachine->COMGETTER(ChipsetType)(&enmChipsetType);
