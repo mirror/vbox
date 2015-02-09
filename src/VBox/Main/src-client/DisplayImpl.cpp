@@ -3541,11 +3541,11 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
             LogRel(("Attempt to specify OpenGL content scale factor while corresponding HGCM host service not yet runing. Ignored.\n"));
     }
     else
-        LogRel(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
+        AssertMsgFailed(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
 
     return hr;
 #else
-    LogRel(("Attempt to specify OpenGL content scale factor while corresponding functionality is disabled."));
+    AssertMsgFailed(("Attempt to specify OpenGL content scale factor while corresponding functionality is disabled."));
     return E_UNEXPECTED;
 #endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
 }
