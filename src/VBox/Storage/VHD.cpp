@@ -2461,10 +2461,10 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
         if (pfnParentRead)
         {
             pvParent = RTMemTmpAlloc(pImage->cbDataBlock);
-            AssertBreakStmt(VALID_PTR(pvParent), rc = VERR_NO_MEMORY);
+            AssertBreakStmt(pvParent, rc = VERR_NO_MEMORY);
         }
         pvBuf = RTMemTmpAlloc(pImage->cbDataBlock);
-        AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+        AssertBreakStmt(pvBuf, rc = VERR_NO_MEMORY);
 
         unsigned cBlocksAllocated = 0;
         unsigned cBlocksToMove    = 0;
@@ -2489,7 +2489,7 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
         }
 
         paBlocks = (uint32_t *)RTMemTmpAllocZ(cBlocksAllocated * sizeof(uint32_t));
-        AssertBreakStmt(VALID_PTR(paBlocks), rc = VERR_NO_MEMORY);
+        AssertBreakStmt(paBlocks, rc = VERR_NO_MEMORY);
 
         /* Invalidate the back resolving array. */
         for (unsigned i = 0; i < cBlocksAllocated; i++)
@@ -2571,7 +2571,7 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
             /* Allocate data buffer to hold the data block and allocation bitmap in front of the actual data. */
             RTMemTmpFree(pvBuf);
             pvBuf = RTMemTmpAllocZ(cbBlock);
-            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+            AssertBreakStmt(pvBuf, rc = VERR_NO_MEMORY);
 
             for (unsigned i = 0; i < cBlocksAllocated; i++)
             {

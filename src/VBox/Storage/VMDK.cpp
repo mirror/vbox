@@ -563,14 +563,14 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
 
     /* If we get here, there's no matching entry in the cache. */
     pVmdkFile = (PVMDKFILE)RTMemAllocZ(sizeof(VMDKFILE));
-    if (!VALID_PTR(pVmdkFile))
+    if (!pVmdkFile)
     {
         *ppVmdkFile = NULL;
         return VERR_NO_MEMORY;
     }
 
     pVmdkFile->pszFilename = RTStrDup(pszFilename);
-    if (!VALID_PTR(pVmdkFile->pszFilename))
+    if (!pVmdkFile->pszFilename)
     {
         RTMemFree(pVmdkFile);
         *ppVmdkFile = NULL;

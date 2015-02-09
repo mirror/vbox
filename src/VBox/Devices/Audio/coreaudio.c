@@ -299,7 +299,7 @@ static OSStatus caSetFrameBufferSize(AudioDeviceID device, bool fInput, UInt32 c
     if (RT_UNLIKELY(err != noErr))
         return err;
     pRange = RTMemAllocZ(cSize);
-    if (RT_VALID_PTR(pRange))
+    if (pRange)
     {
         err = AudioDeviceGetProperty(device,
                                      0,
