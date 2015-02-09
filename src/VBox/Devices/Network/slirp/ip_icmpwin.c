@@ -140,8 +140,7 @@ icmpwin_ping(PNATState pData, struct mbuf *m, int hlen)
     int status;
 
     ttl = ip->ip_ttl;
-    AssertReturnVoid(ttl > 1); /* should've been dealt with in the caller */
-    --ttl;
+    AssertReturnVoid(ttl > 0);
 
     reqsize = ip->ip_len - hlen - sizeof(struct icmp_echo);
 
