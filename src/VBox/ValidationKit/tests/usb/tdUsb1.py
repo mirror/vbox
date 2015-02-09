@@ -33,6 +33,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os;
 import sys;
+import socket;
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -54,19 +55,48 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
     USB benchmark.
     """
 
+    # The available test devices
+    #
+    # The first key is the hostname of the host the test is running on.
+    # It contains a new dictionary with the attached gadgets based on the
+    # USB speed we want to test (Low, Full, High, Super).
+    # The parameters consist of the hostname of the gadget in the network
+    # and the hardware type.
+    kdGadgetParams = {
+        # The following is for local testing and not for the test lab.
+        'adaris': {
+            'Low':   ('beaglebone', 'BeagleBoneBlack'),
+            'Full':  ('beaglebone', 'BeagleBoneBlack'),
+            'High':  ('beaglebone', 'BeagleBoneBlack'),
+            'Super': ('odroidxu3', 'ODroid-XU3')
+        },
+    };
+
+    # Mappings of USB controllers to supported USB device speeds.
+    kdUsbSpeedMappings = {
+        'OHCI': ['Low', 'Full'],
+        'EHCI': ['High'],
+        'XHCI': ['Low', 'Full', 'High', 'Super']
+    };
+
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.asRsrcs           = None;
         self.oGuestToGuestVM   = None;
         self.oGuestToGuestSess = None;
         self.oGuestToGuestTxs  = None;
-        self.asTestVMsDef      = ['tst-debian', 'tst-arch'];
+        self.asTestVMsDef      = ['tst-arch'];
         self.asTestVMs         = self.asTestVMsDef;
         self.asSkipVMs         = [];
-        self.asVirtModesDef    = ['hwvirt', 'hwvirt-np', 'raw',]
-        self.asVirtModes       = self.asVirtModesDef
-        self.acCpusDef         = [1, 2,]
+        self.asVirtModesDef    = ['hwvirt', 'hwvirt-np', 'raw'];
+        self.asVirtModes       = self.asVirtModesDef;
+        self.acCpusDef         = [1, 2,];
         self.acCpus            = self.acCpusDef;
+        self.asUsbCtrlsDef     = ['OHCI', 'EHCI', 'XHCI'];
+        self.asUsbCtrls        = self.asUsbCtrlsDef;
+        self.asUsbSpeedDef     = ['Low', 'Full', 'High', 'Super'];
+        self.asUsbSpeed        = self.asUsbSpeedDef;
+        self.sHostname         = socket.gethostname().lower();
 
     #
     # Overridden methods.
@@ -85,6 +115,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestVMsDef)));
         reporter.log('  --skip-vms      <vm1[:vm2[:...]]>');
         reporter.log('      Skip the specified VMs when testing.');
+        reporter.log('  --usb-ctrls     <u1[:u2[:]]');
+        reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbCtrlsDef)));
+        reporter.log('  --usb-speed     <s1[:s2[:]]');
+        reporter.log('      Default: %s' % (':'.join(str(c) for c in self.asUsbSpeedDef)));
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -120,6 +154,20 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             for s in self.asSkipVMs:
                 if s not in self.asTestVMsDef:
                     reporter.log('warning: The "--test-vms" value "%s" does not specify any of our test VMs.' % (s));
+        elif asArgs[iArg] == '--usb-ctrls':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-ctrls" takes a colon separated list of USB controllers');
+            self.asUsbCtrls = asArgs[iArg].split(':');
+            for s in self.asUsbCtrls:
+                if s not in self.asUsbCtrlsDef:
+                    reporter.log('warning: The "--usb-ctrls" value "%s" is not a valid USB controller.' % (s));
+        elif asArgs[iArg] == '--usb-speed':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-speed" takes a colon separated list of USB speeds');
+            self.asUsbSpeed = asArgs[iArg].split(':');
+            for s in self.asUsbSpeed:
+                if s not in self.asUsbSpeedDef:
+                    reporter.log('warning: The "--usb-speed" value "%s" is not a valid USB speed.' % (s));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -136,8 +184,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         # Construct the resource list the first time it's queried.
         if self.asRsrcs is None:
             self.asRsrcs = [];
-            if 'tst-debian' in self.asTestVMs:
-                self.asRsrcs.append('4.2/storage/debian.vdi');
 
             if 'tst-arch' in self.asTestVMs:
                 self.asRsrcs.append('4.2/usb/tst-arch.vdi');
@@ -179,13 +225,6 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         #
 
         # Linux VMs
-        if 'tst-debian' in self.asTestVMs:
-            oVM = self.createTestVM('tst-debian', 1, '4.2/storage/debian.vdi', sKind = 'Debian_64', fIoApic = True, \
-                                    eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-                                    sDvdImage = sVBoxValidationKit_iso);
-            if oVM is None:
-                return False;
-
         if 'tst-arch' in self.asTestVMs:
             oVM = self.createTestVM('tst-arch', 1, '4.2/usb/tst-arch.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
@@ -202,34 +241,42 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         fRc = self.testUsb();
         return fRc;
 
+    def getGadgetParams(self, sHostname, sSpeed):
+        """
+        Returns the gadget hostname and type from the
+        given hostname the test is running on and device speed we want to test.
+        """
+        kdGadgetsConfigured = self.kdGadgetParams.get(sHostname);
+        if kdGadgetsConfigured is not None:
+            return kdGadgetsConfigured.get(sSpeed);
+
+        return None;
 
     #
     # Test execution helpers.
     #
-    def testUsbCompliance(self, oSession, oTxsSession, sVmName):
+    def testUsbCompliance(self, oSession, oTxsSession, sVmName, sSpeed):
         """
-        Test VirtualBoxs autostart feature in a VM.
+        Test VirtualBoxs USB stack in a VM.
         """
-        reporter.testStart('USB ' + sVmName);
+        # Get configured USB test devices from hostname we are running on
+        sGadgetHost, sGadgetType = self.getGadgetParams(self.sHostname, sSpeed);
 
         # Create device filter
         fRc = oSession.addUsbDeviceFilter('Compliance device', '0525', 'a4a0');
         if fRc is True:
             oUsbGadget = UsbGadget();
-            fRc = oUsbGadget.connectTo(30 * 1000, '192.168.2.213');
+            fRc = oUsbGadget.connectTo(30 * 1000, sGadgetType, sGadgetHost);
             if fRc is True:
                 fRc = oUsbGadget.impersonate('Test');
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
-                    self.sleep(2);
+                    self.sleep(3);
 
-                    reporter.testStart('USB Test');
-
-                    fRc = self.txsRunTest(oTxsSession, 'USB compliance test', 240 * 1000, \
+                    fRc = self.txsRunTest(oTxsSession, 'Compliance', 3600 * 1000, \
                         '${CDROM}/${OS/ARCH}/UsbTest${EXESUFF}', ('UsbTest', ));
 
-                    reporter.testDone();
                 else:
                     reporter.testFailure('Failed to impersonate test device');
 
@@ -239,10 +286,9 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         else:
             reporter.testFailure('Failed to create USB device filter');
 
-        reporter.testDone(not fRc);
         return fRc;
 
-    def testUsbOneCfg(self, sVmName):
+    def testUsbOneCfg(self, sVmName, sUsbCtrl, sSpeed):
         """
         Runs the specified VM thru test #1.
 
@@ -257,7 +303,18 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         if oSession is not None:
             fRc = fRc and oSession.enableVirtEx(True);
             fRc = fRc and oSession.enableNestedPaging(True);
-            fRc = fRc and oSession.enableUsbEhci(True);
+
+            # Make sure controllers are disabled initially.
+            fRc = fRc and oSession.enableUsbOhci(False);
+            fRc = fRc and oSession.enableUsbEhci(False);
+            fRc = fRc and oSession.enableUsbXhci(False);
+
+            if sUsbCtrl == 'OHCI':
+                fRc = fRc and oSession.enableUsbOhci(True);
+            elif sUsbCtrl == 'EHCI':
+                fRc = fRc and oSession.enableUsbEhci(True);
+            elif sUsbCtrl == 'XHCI':
+                fRc = fRc and oSession.enableUsbXhci(True);
             fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc and True; # pychecker hack.
             oSession = None;
@@ -274,7 +331,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 # Fudge factor - Allow the guest to finish starting up.
                 self.sleep(5);
 
-                fRc = self.testUsbCompliance(oSession, oTxsSession, sVmName);
+                fRc = self.testUsbCompliance(oSession, oTxsSession, sVmName, sSpeed);
 
                 # cleanup.
                 self.removeTask(oTxsSession);
@@ -288,15 +345,24 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Runs one VM thru the various configurations.
         """
         reporter.testStart(sVmName);
-        fRc = True;
-        self.testUsbOneCfg(sVmName);
+        for sUsbCtrl in self.asUsbCtrls:
+            reporter.testStart(sUsbCtrl)
+            for sUsbSpeed in self.asUsbSpeed:
+                asSupportedSpeeds = self.kdUsbSpeedMappings.get(sUsbCtrl);
+                if sUsbSpeed in asSupportedSpeeds:
+                    reporter.testStart(sUsbSpeed)
+                    fRc = self.testUsbOneCfg(sVmName, sUsbCtrl, sUsbSpeed);
+                    reporter.testDone(not fRc);
+            reporter.testDone();
         reporter.testDone();
         return fRc;
 
     def testUsb(self):
         """
-        Executes autostart test.
+        Executes USB test.
         """
+
+        reporter.log("Running on host: " + self.sHostname);
 
         # Loop thru the test VMs.
         for sVM in self.asTestVMs:
