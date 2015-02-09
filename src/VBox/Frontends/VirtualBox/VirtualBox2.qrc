@@ -1,8 +1,8 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_type_16px.png">images/os_type_16px.png</file>
-        <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
         <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
+        <file alias="os_win10.png">images/os_win10.png</file>
+        <file alias="os_win10_64.png">images/os_win10_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
         <file alias="os_win2k3.png">images/os_win2k3.png</file>
@@ -13,11 +13,9 @@
         <file alias="os_win7.png">images/os_win7.png</file>
         <file alias="os_win7_64.png">images/os_win7_64.png</file>
         <file alias="os_win8.png">images/os_win8.png</file>
-        <file alias="os_win8_64.png">images/os_win8_64.png</file>
         <file alias="os_win81.png">images/os_win81.png</file>
         <file alias="os_win81_64.png">images/os_win81_64.png</file>
-        <file alias="os_win10.png">images/os_win10.png</file>
-        <file alias="os_win10_64.png">images/os_win10_64.png</file>
+        <file alias="os_win8_64.png">images/os_win8_64.png</file>
         <file alias="os_win95.png">images/os_win95.png</file>
         <file alias="os_win98.png">images/os_win98.png</file>
         <file alias="os_win_other.png">images/os_win_other.png</file>

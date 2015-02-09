@@ -1,7 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
-        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
         <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
         <file alias="os_oraclesolaris_hidpi.png">images/hidpi/os_oraclesolaris_hidpi.png</file>
         <file alias="os_os2_other_hidpi.png">images/hidpi/os_os2_other_hidpi.png</file>
@@ -20,6 +18,8 @@
         <file alias="os_turbolinux_hidpi.png">images/hidpi/os_turbolinux_hidpi.png</file>
         <file alias="os_ubuntu_64_hidpi.png">images/hidpi/os_ubuntu_64_hidpi.png</file>
         <file alias="os_ubuntu_hidpi.png">images/hidpi/os_ubuntu_hidpi.png</file>
+        <file alias="os_win10_64_hidpi.png">images/hidpi/os_win10_64_hidpi.png</file>
+        <file alias="os_win10_hidpi.png">images/hidpi/os_win10_hidpi.png</file>
         <file alias="os_win2k12_64_hidpi.png">images/hidpi/os_win2k12_64_hidpi.png</file>
         <file alias="os_win2k3_64_hidpi.png">images/hidpi/os_win2k3_64_hidpi.png</file>
         <file alias="os_win2k3_hidpi.png">images/hidpi/os_win2k3_hidpi.png</file>
@@ -29,6 +29,8 @@
         <file alias="os_win31_hidpi.png">images/hidpi/os_win31_hidpi.png</file>
         <file alias="os_win7_64_hidpi.png">images/hidpi/os_win7_64_hidpi.png</file>
         <file alias="os_win7_hidpi.png">images/hidpi/os_win7_hidpi.png</file>
+        <file alias="os_win81_64_hidpi.png">images/hidpi/os_win81_64_hidpi.png</file>
+        <file alias="os_win81_hidpi.png">images/hidpi/os_win81_hidpi.png</file>
         <file alias="os_win8_64_hidpi.png">images/hidpi/os_win8_64_hidpi.png</file>
         <file alias="os_win8_hidpi.png">images/hidpi/os_win8_hidpi.png</file>
         <file alias="os_win95_hidpi.png">images/hidpi/os_win95_hidpi.png</file>
