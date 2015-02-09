@@ -44,6 +44,7 @@ class UsbGadget(object):
     def __init__(self):
         self.oTxsSession = None;
         self.sImpersonation = 'Invalid';
+        self.sGadgetType    = 'Invalid';
 
     def _loadModule(self, sModule):
         """
@@ -54,6 +55,9 @@ class UsbGadget(object):
         fRc = False;
         if self.oTxsSession is not None:
             fRc = self.oTxsSession.syncExecEx('/usr/bin/modprobe', ('/usr/bin/modprobe', sModule));
+            # For the ODroid-XU3 gadget we have to do a soft connect for the attached host to recognise the device.
+            if self.sGadgetType == 'ODroid-XU3':
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
 
         return fRc;
 
@@ -65,6 +69,9 @@ class UsbGadget(object):
         """
         fRc = False;
         if self.oTxsSession is not None:
+            # For the ODroid-XU3 gadget we do a soft disconnect before unloading the gadget driver.
+            if self.sGadgetType == 'ODroid-XU3':
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
             fRc = self.oTxsSession.syncExecEx('/usr/bin/rmmod', ('/usr/bin/rmmod', sModule));
 
         return fRc;
@@ -118,7 +125,7 @@ class UsbGadget(object):
 
         return False;
 
-    def connectTo(self, cMsTimeout, sHostname, uPort = None):
+    def connectTo(self, cMsTimeout, sGadgetType, sHostname, uPort = None):
         """
         Connects to the specified target device.
         Returns True on Success.
@@ -137,6 +144,9 @@ class UsbGadget(object):
             fRc = True;
         else:
             fRc = False;
+
+        if fRc is True:
+            self.sGadgetType = sGadgetType;
 
         return fRc;
 
