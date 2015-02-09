@@ -175,9 +175,13 @@ void UIMachineView::applyMachineViewScaleFactor()
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     frameBuffer()->setScaleFactor(dScaleFactor);
-    display().NotifyScaleFactorChange(m_uScreenId,
-                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+    /* Propagate scale-factor to 3D service if necessary: */
+    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    {
+        display().NotifyScaleFactorChange(m_uScreenId,
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+    }
 
     /* Take unscaled HiDPI output mode into account: */
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
@@ -362,9 +366,13 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     frameBuffer()->setScaleFactor(dScaleFactor);
-    display().NotifyScaleFactorChange(m_uScreenId,
-                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                      (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+    /* Propagate scale-factor to 3D service if necessary: */
+    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    {
+        display().NotifyScaleFactorChange(m_uScreenId,
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+    }
 
     /* Handle scale attributes change: */
     handleScaleChange();
@@ -547,9 +555,13 @@ void UIMachineView::prepareFrameBuffer()
         /* Take scale-factor into account: */
         const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
-        display().NotifyScaleFactorChange(m_uScreenId,
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                          (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        /* Propagate scale-factor to 3D service if necessary: */
+        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        {
+            display().NotifyScaleFactorChange(m_uScreenId,
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        }
 
 #ifdef Q_WS_MAC
         /* Take backing scale-factor into account: */
