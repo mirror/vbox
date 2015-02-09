@@ -3036,7 +3036,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                  * A bit hackish but avoids the need to allocate memory twice.
                  */
                 PRTSGBUF pTmp = (PRTSGBUF)RTMemAlloc(cbPreRead + cbThisWrite + cbPostRead + sizeof(RTSGSEG) + sizeof(RTSGBUF));
-                AssertBreakStmt(VALID_PTR(pTmp), rc = VERR_NO_MEMORY);
+                AssertBreakStmt(pTmp, rc = VERR_NO_MEMORY);
                 PRTSGSEG pSeg = (PRTSGSEG)(pTmp + 1);
 
                 pSeg->pvSeg = pSeg + 1;

@@ -2426,10 +2426,10 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
         if (pfnParentRead)
         {
             pvBuf = RTMemTmpAlloc(cbBlock);
-            AssertBreakStmt(VALID_PTR(pvBuf), rc = VERR_NO_MEMORY);
+            AssertBreakStmt(pvBuf, rc = VERR_NO_MEMORY);
         }
         pvTmp = RTMemTmpAlloc(cbBlock);
-        AssertBreakStmt(VALID_PTR(pvTmp), rc = VERR_NO_MEMORY);
+        AssertBreakStmt(pvTmp, rc = VERR_NO_MEMORY);
 
         uint64_t cbFile;
         rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
@@ -2444,7 +2444,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
 
         /* Allocate block array for back resolving. */
         paBlocks2 = (unsigned *)RTMemAlloc(sizeof(unsigned *) * cBlocksAllocated);
-        AssertBreakStmt(VALID_PTR(paBlocks2), rc = VERR_NO_MEMORY);
+        AssertBreakStmt(paBlocks2, rc = VERR_NO_MEMORY);
         /* Fill out back resolving, check/fix allocation errors before
          * compacting the image, just to be on the safe side. Update the
          * image contents straight away, as this enables cancelling. */
