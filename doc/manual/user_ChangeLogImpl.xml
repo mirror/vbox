@@ -2197,7 +2197,7 @@
       <listitem>
         <para>Shared Folders: if the host folder of a shared folder mapping does
           not exist, keep it active but mark it as invalid to prevent
-          inconsitent saved states (bug #11147)</para>
+          inconsistent saved states (bug #11147)</para>
       </listitem>
 
       <listitem>
@@ -2797,7 +2797,7 @@
 
       <listitem>
         <para>AHCI: fixed a rare bug which can cause a guest memory corruption
-          after the guest storage controler has been reset</para>
+          after the guest storage controller has been reset</para>
       </listitem>
 
       <listitem>
