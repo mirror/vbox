@@ -250,12 +250,12 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         if kdGadgetsConfigured is not None:
             return kdGadgetsConfigured.get(sSpeed);
 
-        return None;
+        return (None, None);
 
     #
     # Test execution helpers.
     #
-    def testUsbCompliance(self, oSession, oTxsSession, sVmName, sSpeed):
+    def testUsbCompliance(self, oSession, oTxsSession, sSpeed):
         """
         Test VirtualBoxs USB stack in a VM.
         """
@@ -331,7 +331,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 # Fudge factor - Allow the guest to finish starting up.
                 self.sleep(5);
 
-                fRc = self.testUsbCompliance(oSession, oTxsSession, sVmName, sSpeed);
+                fRc = self.testUsbCompliance(oSession, oTxsSession, sSpeed);
 
                 # cleanup.
                 self.removeTask(oTxsSession);

@@ -1068,9 +1068,9 @@ class SessionWrapper(TdTaskBase):
         fRc = True;
         try:
             if fEnable:
-                    cXhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_XHCI);
-                    if cXhciCtls == 0:
-                        self.o.machine.addUSBController('XHCI', vboxcon.USBControllerType_XHCI);
+                cXhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_XHCI);
+                if cXhciCtls == 0:
+                    self.o.machine.addUSBController('XHCI', vboxcon.USBControllerType_XHCI);
             else:
                 cXhciCtls = self.o.machine.getUSBControllerCountByType(vboxcon.USBControllerType_XHCI);
                 if cXhciCtls == 1:
