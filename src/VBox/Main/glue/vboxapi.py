@@ -883,7 +883,7 @@ class PlatformWEBSERVICE(PlatformBase):
 
     def deinit(self):
         try:
-            disconnect()
+            self.disconnect()
         except:
             pass
 
@@ -1001,11 +1001,6 @@ class VirtualBoxManager(object):
             else:
                 raise e
 
-        ## @deprecated
-        # This used to refer to a session manager class with only one method
-        # called getSessionObject.  The method has moved into this call.
-        self.mgr = self
-
     def __del__(self):
         self.deinit()
 
@@ -1015,6 +1010,15 @@ class VirtualBoxManager(object):
         This will be incremented when features are added to this file.
         """
         return 3
+
+    @deprecated
+    @property
+    def mgr(self):
+        """
+        This used to be an attribute referring to a session manager class with
+        only one method called getSessionObject. It moved into this class.
+        """
+        return self;
 
     #
     # Wrappers for self.platform methods.
@@ -1076,11 +1080,11 @@ class VirtualBoxManager(object):
     #
     def openMachineSession(self, oIMachine, fPermitSharing=True):
         """
-        Attemts to open the a session to the machine.
+        Attempts to open the a session to the machine.
         Returns a session object on success.
         Raises exception on failure.
         """
-        oSession = self.mgr.getSessionObject(self.vbox)
+        oSession = self.getSessionObject(self.vbox);
         if fPermitSharing:
             type_ = self.constants.LockType_Shared
         else:
