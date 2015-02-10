@@ -645,10 +645,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBOX_WITH_DRAG_AND_DROP_GH = 1
  endif
 endif
-# Enable support for VRDP redirection of Windows Media Player content
-ifeq ($(KBUILD_TARGET),win)
- VBOX_WITH_MMR = 1
-endif
 # Enables use of merge modules in the windows installer. This will increase
 # the overall installer size significantly because merge modules are not able
 # to use a common .cab file to reduce their size.
