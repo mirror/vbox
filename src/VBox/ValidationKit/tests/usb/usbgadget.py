@@ -57,7 +57,8 @@ class UsbGadget(object):
             fRc = self.oTxsSession.syncExecEx('/usr/bin/modprobe', ('/usr/bin/modprobe', sModule));
             # For the ODroid-XU3 gadget we have to do a soft connect for the attached host to recognise the device.
             if self.sGadgetType == 'ODroid-XU3':
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                        ('/usr/bin/sh', '-c', 'echo connect > /sys/class/udc/12400000.dwc3/soft_connect'));
 
         return fRc;
 
@@ -71,7 +72,8 @@ class UsbGadget(object):
         if self.oTxsSession is not None:
             # For the ODroid-XU3 gadget we do a soft disconnect before unloading the gadget driver.
             if self.sGadgetType == 'ODroid-XU3':
-                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
+                fRc = self.oTxsSession.syncExecEx('/usr/bin/sh', \
+                        ('/usr/bin/sh', '-c', 'echo disconnect > /sys/class/udc/12400000.dwc3/soft_connect'));
             fRc = self.oTxsSession.syncExecEx('/usr/bin/rmmod', ('/usr/bin/rmmod', sModule));
 
         return fRc;
