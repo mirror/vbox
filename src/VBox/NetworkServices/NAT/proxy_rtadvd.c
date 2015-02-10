@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * NAT Network - IPv6 router advertisement daemon. 
+ * NAT Network - IPv6 router advertisement daemon.
  */
 
 /*
