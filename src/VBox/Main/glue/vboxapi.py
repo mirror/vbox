@@ -1011,7 +1011,6 @@ class VirtualBoxManager(object):
         """
         return 3
 
-    @deprecated
     @property
     def mgr(self):
         """
