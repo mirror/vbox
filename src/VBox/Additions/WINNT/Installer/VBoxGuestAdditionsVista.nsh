@@ -66,11 +66,7 @@ FunctionEnd
 
 Function Vista_Prepare
 
-  ${If} $g_bWithVBoxMMR == "true"
-     Call StopVBoxMMR
-  ${Else}
-     Call VBoxMMR_Uninstall
-  ${EndIf}
+  Call VBoxMMR_Uninstall
 
 FunctionEnd
 
@@ -85,18 +81,6 @@ Function Vista_CopyFiles
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.inf"
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.sys"
 
-!if $%VBOX_WITH_MMR% == "1"
-  ${If} $g_bWithVBoxMMR == "true"
-    !if $%BUILD_TARGET_ARCH% == "amd64"
-      FILE "$%PATH_OUT%\bin\additions\VBoxMMR-x86.exe"
-      FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook-x86.dll"
-    !else
-      FILE "$%PATH_OUT%\bin\additions\VBoxMMR.exe"
-      FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll"
-    !endif
-  ${EndIf}
-!endif
-
 FunctionEnd
 
 Function Vista_InstallFiles
@@ -105,32 +89,6 @@ Function Vista_InstallFiles
 
   SetOutPath "$INSTDIR"
   ; Nothing here yet
-
-!if $%VBOX_WITH_MMR% == "1"
-
-  ${If} $g_bWithVBoxMMR == "true"
-
-    !if $%BUILD_TARGET_ARCH% == "amd64"
-
-      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMR-x86.exe" "$g_strSystemDir\VBoxMMR.exe" "$INSTDIR"
-      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook-x86.dll" "$g_strSysWow64\VBoxMMRHook.dll" "$INSTDIR"
-      AccessControl::GrantOnFile "$g_strSysWow64\VBoxMMRHook.dll" "(BU)" "GenericRead"
-
-    !else
-
-      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMR.exe" "$g_strSystemDir\VBoxMMR.exe" "$INSTDIR"
-      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll" "$g_strSystemDir\VBoxMMRHook.dll" "$INSTDIR"
-      AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMRHook.dll" "(BU)" "GenericRead"
-
-    !endif
-
-    AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMR.exe" "(BU)" "GenericRead"
-
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxMMR" '"$SYSDIR\VBoxMMR.exe"'
-
-  ${EndIf}
-
-!endif
 
   Goto done
 
@@ -183,7 +141,7 @@ FunctionEnd
 !macro VBoxMMR_Uninstall un
 Function ${un}VBoxMMR_Uninstall
 
-  ; Remove VBoxMMR even if VBOX_WITH_MMR is not defined
+  ; Remove VBoxMMR always
 
   DetailPrint "Uninstalling VBoxMMR."
   Call ${un}StopVBoxMMR
