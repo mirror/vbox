@@ -198,7 +198,9 @@
 <?endif ?>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="INSTALLDIR">
+        <Directory Id="$(var.Property_ProgramFiles)" Name="PFiles">
+            <Directory Id="VENDOR" Name="$(env.VBOX_VENDOR_SHORT)">
+                <Directory Id="INSTALLDIR" Name="VirtualBox">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1" />
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
@@ -322,8 +324,9 @@
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
                                    Type="string" Value="installed" KeyPath="yes" />
                 </Component>
-
+                </Directory>
             </Directory>
+        </Directory>
     </Directory> <!-- TARGETDIR -->
 
     <!-- Note: Feature IDs *must not* be renamed to use any prefixes or such,
@@ -479,8 +482,8 @@
         <!-- First install the new version and then remove the old version. This is more efficient -->
         <RemoveExistingProducts After="InstallValidate"><![CDATA[PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED]]></RemoveExistingProducts>
 
-        <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
-        <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
+        <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR)]]></Custom>
+        <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT INSTALLDIR AND EXISTINGINSTALLDIR]]></Custom>
 
         <!-- Check + unininstall old TAP instances - we  don't need them anymore -->
         <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
