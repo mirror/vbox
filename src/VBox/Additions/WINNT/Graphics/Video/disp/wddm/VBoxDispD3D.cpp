@@ -4695,7 +4695,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         if (pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT)
         {
             IDirect3DSurface9 *pSrcSurfIf = NULL;
-            hr = VBoxD3DIfSurfGet(pSrcRc, pData->DstSubResourceIndex, &pSrcSurfIf);
+            hr = VBoxD3DIfSurfGet(pSrcRc, pData->SrcSubResourceIndex, &pSrcSurfIf);
             if (SUCCEEDED(hr))
             {
                 pAdapter->D3D.D3D.pfnVBoxWineExD3DSurf9SyncToHost(pSrcSurfIf);
