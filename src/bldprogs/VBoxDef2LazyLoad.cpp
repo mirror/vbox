@@ -643,7 +643,7 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
                 "    call    IMP2(SUPR3HardenedLdrLoadAppPriv)\n"
                 "\n"
                 "%%elifdef ASM_CALL64_MSC\n"
-                "    xor     r9, [xBP - xCB * 4]        ; pErrInfo\n"
+                "    mov     r9, [xBP - xCB * 4]        ; pErrInfo\n"
                 "    xor     r8, r8                     ; fFlags (local load)\n"
                 "    lea     rdx, [g_hMod wrt rip]      ; phLdrMod\n"
                 "    lea     rcx, [g_szLibrary wrt rip] ; pszFilename\n"
