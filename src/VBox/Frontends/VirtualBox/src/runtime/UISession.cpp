@@ -1463,7 +1463,7 @@ void UISession::cleanupSession()
         m_machine.detach();
 
     /* Close session: */
-    if (!m_session.isNull())
+    if (!m_session.isNull() && vboxGlobal().isVBoxSVCAvailable())
     {
         m_session.UnlockMachine();
         m_session.detach();

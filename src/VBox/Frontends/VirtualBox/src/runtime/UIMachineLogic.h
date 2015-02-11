@@ -143,6 +143,9 @@ public:
 
 protected slots:
 
+    /** Handles the VBoxSVC availability change. */
+    void sltHandleVBoxSVCAvailabilityChange();
+
     /** Checks if some visual-state type was requested. */
     virtual void sltCheckForRequestedVisualStateType() {}
 

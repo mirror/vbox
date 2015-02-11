@@ -428,6 +428,13 @@ void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
     emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
 }
 
+void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
+{
+    /* Handle the VBoxSVC availability change: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        powerOff(false);
+}
+
 void UIMachineLogic::sltChangeVisualStateToNormal()
 {
     uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
@@ -827,6 +834,10 @@ void UIMachineLogic::prepareRequiredFeatures()
 
 void UIMachineLogic::prepareSessionConnections()
 {
+    /* We should watch for the VBoxSVC availability changes: */
+    connect(&vboxGlobal(), SIGNAL(sigVBoxSVCAvailabilityChange()),
+            this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
+
     /* We should check for entering/exiting requested modes: */
     connect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()));
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
