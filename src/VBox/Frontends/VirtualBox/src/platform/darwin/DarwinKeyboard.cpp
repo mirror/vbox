@@ -253,7 +253,10 @@ static const uint16_t g_aDarwinToSet1[] =
     0x4d|K_EX,                  /* QZ_RIGHT        0x7C */
     0x50|K_EX,                  /* QZ_DOWN         0x7D */
     0x48|K_EX,                  /* QZ_UP           0x7E */
-    0x5e|K_EX,                  /* QZ_POWER        0x7F */ /* have different break key! */
+       0,/*0x5e|K_EX*/,         /* QZ_POWER        0x7F */ /* have different break key! */
+                                                           /* do NEVER deliver the Power
+                                                            * scancode as e.g. Windows will
+                                                            * handle it, @bugref{7692}. */
 };
 
 
