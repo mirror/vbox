@@ -317,6 +317,7 @@ public:
     UIIndicatorNetwork(UISession *pSession)
         : UISessionStateStatusBarIndicator(pSession)
         , m_pTimerAutoUpdate(0)
+        , m_cMaxNetworkAdapters(0)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/nw_16px.png"));
@@ -326,6 +327,10 @@ public:
         /* Configure machine state-change listener: */
         connect(m_pSession, SIGNAL(sigMachineStateChange()),
                 this, SLOT(sltHandleMachineStateChange()));
+        /* Fetch maximum network adapters count: */
+        const CVirtualBox vbox = vboxGlobal().virtualBox();
+        const CMachine machine = m_pSession->machine();
+        m_cMaxNetworkAdapters = vbox.GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
         /* Create auto-update timer: */
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
@@ -387,11 +392,10 @@ private:
         LONG64 iTimestamp;
         machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, iTimestamp, strFlags);
         bool fPropsValid = (u64Now - iTimestamp < UINT64_C(60000000000)); /* timeout beacon */
-        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
         QStringList ipList, macList;
         if (fPropsValid)
         {
-            const int cAdapters = RT_MIN(strCount.toInt(), (int)uMaxCount);
+            const int cAdapters = RT_MIN(strCount.toInt(), m_cMaxNetworkAdapters);
             for (int i = 0; i < cAdapters; ++i)
             {
                 ipList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
@@ -399,10 +403,10 @@ private:
             }
         }
 
-        /* Enumerate up to uMaxCount adapters: */
+        /* Enumerate up to m_cMaxNetworkAdapters adapters: */
         bool fAdaptersPresent = false;
         bool fCablesDisconnected = true;
-        for (ulong uSlot = 0; uSlot < uMaxCount; ++uSlot)
+        for (ulong uSlot = 0; uSlot < m_cMaxNetworkAdapters; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
@@ -452,6 +456,8 @@ private:
 
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
+    /** Holds the maximum amount of the network adapters. */
+    int m_cMaxNetworkAdapters;
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
