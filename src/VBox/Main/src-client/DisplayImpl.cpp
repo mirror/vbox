@@ -3535,7 +3535,17 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
             LogRel(("Attempt to specify OpenGL content scale factor while corresponding HGCM host service not yet runing. Ignored.\n"));
     }
     else
+# if 0 /** @todo Thank you so very much from anyone using VMSVGA3d!  */
         AssertMsgFailed(("Attempt to specify OpenGL content scale factor while 3D acceleration is disabled in VM config. Ignored.\n"));
+# else
+    {
+        hr = S_OK;
+        /* Need an interface like this here (and the #ifdefs needs adjusting):
+        PPDMIDISPLAYPORT pUpPort = mpDrv ? mpDrv->pUpPort : NULL;
+        if (pUpPort && pUpPort->pfnSetScaleFactor)
+            pUpPort->pfnSetScaleFactor(pUpPort, aScreeId, aScaleFactorWMultiplied, aScaleFactorHMultiplied); */
+    }
+# endif
 
     return hr;
 #else
