@@ -2282,7 +2282,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
         }
     }
 
-    LogFlowFunc(("returns rc=%Rrc\n"));
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -3595,7 +3595,7 @@ static int iscsiCommandSync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq, bool fRetry, 
                 rc = IScsiCmdSync.rcCmd;
 
                 if (RT_FAILURE(rc) || pScsiReq->cbSense > 0)
-                        rc = rcSense;
+                    rc = rcSense;
             }
         }
 
@@ -3617,7 +3617,7 @@ static int iscsiCommandSync(PISCSIIMAGE pImage, PSCSIREQ pScsiReq, bool fRetry, 
         else
         {
             rc = iscsiCommand(pImage, pScsiReq);
-            if (RT_SUCCESS(rc) && pScsiReq->cbSense > 0)
+            if (RT_FAILURE(rc) || pScsiReq->cbSense > 0)
                 rc = rcSense;
         }
     }
