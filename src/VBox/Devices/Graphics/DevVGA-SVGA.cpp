@@ -3958,6 +3958,97 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+# ifdef VBOX_WITH_VMSVGA3D
+/** Names for the vmsvga 3d capabilities, prefixed with format type hint char. */
+static const char * const g_apszVmSvgaDevCapNames[] =
+{
+    "x3D",                           /* = 0 */
+    "xMAX_LIGHTS",
+    "xMAX_TEXTURES",
+    "xMAX_CLIP_PLANES",
+    "xVERTEX_SHADER_VERSION",
+    "xVERTEX_SHADER",
+    "xFRAGMENT_SHADER_VERSION",
+    "xFRAGMENT_SHADER",
+    "xMAX_RENDER_TARGETS",
+    "xS23E8_TEXTURES",
+    "xS10E5_TEXTURES",
+    "xMAX_FIXED_VERTEXBLEND",
+    "xD16_BUFFER_FORMAT",
+    "xD24S8_BUFFER_FORMAT",
+    "xD24X8_BUFFER_FORMAT",
+    "xQUERY_TYPES",
+    "xTEXTURE_GRADIENT_SAMPLING",
+    "rMAX_POINT_SIZE",
+    "xMAX_SHADER_TEXTURES",
+    "xMAX_TEXTURE_WIDTH",
+    "xMAX_TEXTURE_HEIGHT",
+    "xMAX_VOLUME_EXTENT",
+    "xMAX_TEXTURE_REPEAT",
+    "xMAX_TEXTURE_ASPECT_RATIO",
+    "xMAX_TEXTURE_ANISOTROPY",
+    "xMAX_PRIMITIVE_COUNT",
+    "xMAX_VERTEX_INDEX",
+    "xMAX_VERTEX_SHADER_INSTRUCTIONS",
+    "xMAX_FRAGMENT_SHADER_INSTRUCTIONS",
+    "xMAX_VERTEX_SHADER_TEMPS",
+    "xMAX_FRAGMENT_SHADER_TEMPS",
+    "xTEXTURE_OPS",
+    "xSURFACEFMT_X8R8G8B8",
+    "xSURFACEFMT_A8R8G8B8",
+    "xSURFACEFMT_A2R10G10B10",
+    "xSURFACEFMT_X1R5G5B5",
+    "xSURFACEFMT_A1R5G5B5",
+    "xSURFACEFMT_A4R4G4B4",
+    "xSURFACEFMT_R5G6B5",
+    "xSURFACEFMT_LUMINANCE16",
+    "xSURFACEFMT_LUMINANCE8_ALPHA8",
+    "xSURFACEFMT_ALPHA8",
+    "xSURFACEFMT_LUMINANCE8",
+    "xSURFACEFMT_Z_D16",
+    "xSURFACEFMT_Z_D24S8",
+    "xSURFACEFMT_Z_D24X8",
+    "xSURFACEFMT_DXT1",
+    "xSURFACEFMT_DXT2",
+    "xSURFACEFMT_DXT3",
+    "xSURFACEFMT_DXT4",
+    "xSURFACEFMT_DXT5",
+    "xSURFACEFMT_BUMPX8L8V8U8",
+    "xSURFACEFMT_A2W10V10U10",
+    "xSURFACEFMT_BUMPU8V8",
+    "xSURFACEFMT_Q8W8V8U8",
+    "xSURFACEFMT_CxV8U8",
+    "xSURFACEFMT_R_S10E5",
+    "xSURFACEFMT_R_S23E8",
+    "xSURFACEFMT_RG_S10E5",
+    "xSURFACEFMT_RG_S23E8",
+    "xSURFACEFMT_ARGB_S10E5",
+    "xSURFACEFMT_ARGB_S23E8",
+    "xMISSING62",
+    "xMAX_VERTEX_SHADER_TEXTURES",
+    "xMAX_SIMULTANEOUS_RENDER_TARGETS",
+    "xSURFACEFMT_V16U16",
+    "xSURFACEFMT_G16R16",
+    "xSURFACEFMT_A16B16G16R16",
+    "xSURFACEFMT_UYVY",
+    "xSURFACEFMT_YUY2",
+    "xMULTISAMPLE_NONMASKABLESAMPLES",
+    "xMULTISAMPLE_MASKABLESAMPLES",
+    "xALPHATOCOVERAGE",
+    "xSUPERSAMPLE",
+    "xAUTOGENMIPMAPS",
+    "xSURFACEFMT_NV12",
+    "xSURFACEFMT_AYUV",
+    "xMAX_CONTEXT_IDS",
+    "xMAX_SURFACE_IDS",
+    "xSURFACEFMT_Z_DF16",
+    "xSURFACEFMT_Z_DF24",
+    "xSURFACEFMT_Z_D24S8_INT",
+    "xSURFACEFMT_BC4_UNORM",
+    "xSURFACEFMT_BC5_UNORM", /* 83 */
+};
+# endif
+
 
 /**
  * Power On notification.
@@ -3979,6 +4070,7 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 
         if (RT_SUCCESS(rc))
         {
+            bool              fSavedBuffering = RTLogRelSetBuffering(true);
             SVGA3dCapsRecord *pCaps;
             SVGA3dCapPair    *pData;
             uint32_t          idxCap  = 0;
@@ -4002,13 +4094,22 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
                     pData[idxCap][0] = i;
                     pData[idxCap][1] = val;
                     idxCap++;
+                    if (g_apszVmSvgaDevCapNames[i][0] == 'x')
+                        LogRel(("VMSVGA3d: cap[%u]=%#010x {%s}\n", i, val, &g_apszVmSvgaDevCapNames[i][1]));
+                    else
+                        LogRel(("VMSVGA3d: cap[%u]=%d.%04u {%s}\n", i, (int)(float)val, (unsigned)((float)val * 10000) % 10000,
+                                &g_apszVmSvgaDevCapNames[i][1]));
                 }
+                else
+                    LogRel(("VMSVGA3d: cap[%u]=failed rc=%Rrc! {%s}\n", i, rc, &g_apszVmSvgaDevCapNames[i][1]));
             }
             pCaps->header.length = (sizeof(pCaps->header) + idxCap * sizeof(SVGA3dCapPair)) / sizeof(uint32_t);
             pCaps = (SVGA3dCapsRecord *)((uint32_t *)pCaps + pCaps->header.length);
 
             /* Mark end of record array. */
             pCaps->header.length = 0;
+
+            RTLogRelSetBuffering(fSavedBuffering);
         }
     }
 # endif // VBOX_WITH_VMSVGA3D
