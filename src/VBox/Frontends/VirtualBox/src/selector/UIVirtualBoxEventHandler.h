@@ -28,6 +28,8 @@ class UIVirtualBoxEventHandler : public QObject
 
 signals:
 
+    /** Notifies listeners about the VBoxSVC become @a fAvailable. */
+    void sigVBoxSVCAvailabilityChange(bool fAvailable);
     /** Notifies listeners about @a state change event for the machine with @a strId. */
     void sigMachineStateChange(QString strId, KMachineState state);
     /** Notifies listeners about data change event for the machine with @a strId. */

@@ -72,6 +72,7 @@
 # include "UIMedium.h"
 # include "UIModalWindowManager.h"
 # include "UIIconPool.h"
+# include "UIVirtualBoxEventHandler.h"
 
 # ifdef Q_WS_X11
 #  include "UIHostComboEditor.h"
@@ -219,6 +220,7 @@ void VBoxGlobal::destroy()
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
+    , m_fVBoxSVCAvailable(true)
     , mSelectorWnd (NULL)
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
@@ -3882,6 +3884,10 @@ void VBoxGlobal::prepare()
     m_host = virtualBox().GetHost();
     m_strHomeFolder = virtualBox().GetHomeFolder();
 
+    /* Watch for the VBoxSVC availability changes: */
+    connect(gVBoxEvents, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
+            this, SLOT(sltHandleVBoxSVCAvailabilityChange(bool)));
+
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
 
@@ -4294,6 +4300,19 @@ void VBoxGlobal::cleanup()
     UIMessageCenter::destroy();
 
     mValid = false;
+}
+
+void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
+{
+    /* Make sure the VBoxSVC availability changed: */
+    if (m_fVBoxSVCAvailable == fAvailable)
+        return;
+
+    /* Cache the new VBoxSVC availability value: */
+    m_fVBoxSVCAvailable = fAvailable;
+
+    /* Notify listeners about the VBoxSVC availability change: */
+    emit sigVBoxSVCAvailabilityChange();
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

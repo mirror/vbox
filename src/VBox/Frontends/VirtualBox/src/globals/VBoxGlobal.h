@@ -111,6 +111,9 @@ public:
     /** Returns the symbolic VirtualBox home-folder representation. */
     QString homeFolder() const { return m_strHomeFolder; }
 
+    /** Returns the VBoxSVC availability value. */
+    bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
+
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
 
@@ -395,6 +398,9 @@ public:
 
 signals:
 
+    /** Notifies listeners about the VBoxSVC availability change. */
+    void sigVBoxSVCAvailabilityChange();
+
     /* Notifiers: Medium-processing stuff: */
     void sigMediumCreated(const QString &strMediumID);
     void sigMediumDeleted(const QString &strMediumID);
@@ -416,6 +422,9 @@ protected slots:
     /* Handlers: Prepare/cleanup stuff: */
     void prepare();
     void cleanup();
+
+    /** Handles the VBoxSVC availability change. */
+    void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);
 
 protected:
 
@@ -443,6 +452,9 @@ private:
     CHost m_host;
     /** Holds the symbolic VirtualBox home-folder representation. */
     QString m_strHomeFolder;
+
+    /** Holds the VBoxSVC availability value. */
+    bool m_fVBoxSVCAvailable;
 
     VBoxGlobalSettings gset;
 
