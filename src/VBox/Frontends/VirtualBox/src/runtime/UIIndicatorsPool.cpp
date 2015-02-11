@@ -395,7 +395,7 @@ private:
         QStringList ipList, macList;
         if (fPropsValid)
         {
-            const int cAdapters = RT_MIN(strCount.toInt(), m_cMaxNetworkAdapters);
+            const int cAdapters = RT_MIN(strCount.toInt(), (int)m_cMaxNetworkAdapters);
             for (int i = 0; i < cAdapters; ++i)
             {
                 ipList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
@@ -457,7 +457,7 @@ private:
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
     /** Holds the maximum amount of the network adapters. */
-    int m_cMaxNetworkAdapters;
+    ulong m_cMaxNetworkAdapters;
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: USB indicator. */
