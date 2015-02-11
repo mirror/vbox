@@ -68,15 +68,15 @@ class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatu
 public:
 
     /** Constructor which remembers passed @a session object. */
-    UISessionStateStatusBarIndicator(CSession &session) : m_session(session) {}
+    UISessionStateStatusBarIndicator(UISession *pSession) : m_pSession(pSession) {}
 
     /** Abstract update routine. */
     virtual void updateAppearance() = 0;
 
 protected:
 
-    /** Holds the session reference. */
-    CSession &m_session;
+    /** Holds the session UI reference. */
+    UISession *m_pSession;
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Hard-drive indicator. */
@@ -86,9 +86,9 @@ class UIIndicatorHardDrive : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorHardDrive(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorHardDrive(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
@@ -111,7 +111,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -159,9 +159,9 @@ class UIIndicatorOpticalDisks : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorOpticalDisks(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorOpticalDisks(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
@@ -184,7 +184,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -236,9 +236,9 @@ class UIIndicatorFloppyDisks : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorFloppyDisks(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorFloppyDisks(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
@@ -261,7 +261,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -313,10 +313,9 @@ class UIIndicatorNetwork : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorNetwork(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession->session())
-        , m_pSession(pSession)
+        : UISessionStateStatusBarIndicator(pSession)
         , m_pTimerAutoUpdate(0)
     {
         /* Assign state-icons: */
@@ -373,7 +372,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -451,8 +450,6 @@ private:
         setState(fAdaptersPresent && !fCablesDisconnected ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
 
-    /** Holds the session UI reference. */
-    UISession *m_pSession;
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
 };
@@ -464,9 +461,9 @@ class UIIndicatorUSB : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorUSB(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorUSB(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
@@ -489,7 +486,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -504,7 +501,7 @@ private:
         if (fUSBEnabled)
         {
             /* Enumerate all the USB devices: */
-            const CConsole &console = m_session.GetConsole();
+            const CConsole console = m_pSession->console();
             foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
                 strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usbDevice));
             /* Handle 'no-usb-devices' case: */
@@ -530,9 +527,9 @@ class UIIndicatorSharedFolders : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorSharedFolders(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorSharedFolders(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
@@ -554,9 +551,10 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
-        const CConsole console = m_session.GetConsole();
+        /* Get objects: */
+        const CMachine machine = m_pSession->machine();
+        const CConsole console = m_pSession->console();
+        const CGuest guest = m_pSession->guest();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -575,7 +573,7 @@ private:
         for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++it)
         {
             /* Select slashes depending on the OS type: */
-            if (VBoxGlobal::isDOSType(console.GetGuest().GetOSTypeId()))
+            if (VBoxGlobal::isDOSType(guest.GetOSTypeId()))
                 strFullData += QString("<br><nobr><b>\\\\vboxsvr\\%1&nbsp;</b></nobr><nobr>%2</nobr>")
                                        .arg(it.key(), it.value());
             else
@@ -600,9 +598,9 @@ class UIIndicatorDisplay : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorDisplay(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorDisplay(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/display_software_16px.png"));
@@ -624,7 +622,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
@@ -682,9 +680,9 @@ class UIIndicatorVideoCapture : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorVideoCapture(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorVideoCapture(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
     {
@@ -755,7 +753,7 @@ private:
     void updateAppearance()
     {
         /* Get machine: */
-        const CMachine machine = m_session.GetMachine();
+        const CMachine machine = m_pSession->machine();
 
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool", "<nobr>Indicates video capturing activity:</nobr><br>%1");
@@ -804,9 +802,9 @@ class UIIndicatorFeatures : public UISessionStateStatusBarIndicator
 
 public:
 
-    /** Constructor, passes @a session to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorFeatures(CSession &session)
-        : UISessionStateStatusBarIndicator(session)
+    /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
+    UIIndicatorFeatures(UISession *pSession)
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
@@ -826,15 +824,9 @@ private:
     /** Update routine. */
     void updateAppearance()
     {
-        /* Get console: */
-        const CConsole console = m_session.GetConsole();
-        if (console.isNull())
-            return;
-
-        /* Get debugger: */
-        const CMachineDebugger debugger = console.GetDebugger();
-        if (debugger.isNull())
-            return;
+        /* Get objects: */
+        const CMachine machine = m_pSession->machine();
+        const CMachineDebugger debugger = m_pSession->debugger();
 
         /* VT-x/AMD-V feature: */
         bool bVirtEnabled = debugger.GetHWVirtExEnabled();
@@ -853,11 +845,6 @@ private:
         QString unrestrictExec = bUXEnabled ?
             VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
             VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
-
-        /* Get machine: */
-        const CMachine machine = console.GetMachine();
-        if (machine.isNull())
-            return;
 
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
@@ -897,7 +884,7 @@ public:
 
     /** Constructor, using @a pSession for state-update routine. */
     UIIndicatorMouse(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession->session())
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
@@ -957,7 +944,7 @@ public:
 
     /** Constructor, using @a pSession for state-update routine. */
     UIIndicatorKeyboard(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession->session())
+        : UISessionStateStatusBarIndicator(pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
@@ -1028,7 +1015,6 @@ private:
 UIIndicatorsPool::UIIndicatorsPool(UISession *pSession, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pSession(pSession)
-    , m_session(m_pSession->session())
     , m_fEnabled(false)
     , m_pTimerAutoUpdate(0)
 {
@@ -1102,8 +1088,8 @@ void UIIndicatorsPool::sltAutoUpdateIndicatorStates()
         deviceTypes.append(KDeviceType_Graphics3D);
 
     /* Acquire current states from the console: */
-    CConsole console = m_session.GetConsole();
-    if (!m_session.isOk() || console.isNull())
+    CConsole console = m_pSession->console();
+    if (console.isNull() || !console.isOk())
         return;
     const QVector<KDeviceActivity> states = console.GetDeviceActivity(deviceTypes);
     AssertReturnVoid(console.isOk());
@@ -1257,18 +1243,18 @@ void UIIndicatorsPool::updatePool()
             /* Create indicator: */
             switch (indicatorType)
             {
-                case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_session);     break;
-                case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_session);  break;
-                case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_session);   break;
+                case IndicatorType_HardDisks:         m_pool[indicatorType] = new UIIndicatorHardDrive(m_pSession);     break;
+                case IndicatorType_OpticalDisks:      m_pool[indicatorType] = new UIIndicatorOpticalDisks(m_pSession);  break;
+                case IndicatorType_FloppyDisks:       m_pool[indicatorType] = new UIIndicatorFloppyDisks(m_pSession);   break;
                 case IndicatorType_Network:           m_pool[indicatorType] = new UIIndicatorNetwork(m_pSession);       break;
-                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_session);           break;
-                case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_session); break;
-                case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_session);       break;
-                case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_session);  break;
-                case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_session);      break;
-                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pSession);        break;
-                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pSession);     break;
-                case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;        break;
+                case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_pSession);           break;
+                case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_pSession); break;
+                case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_pSession);       break;
+                case IndicatorType_VideoCapture:      m_pool[indicatorType] = new UIIndicatorVideoCapture(m_pSession);  break;
+                case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_pSession);      break;
+                case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pSession);         break;
+                case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pSession);      break;
+                case IndicatorType_KeyboardExtension: m_pool[indicatorType] = new UIIndicatorKeyboardExtension;         break;
                 default: break;
             }
             /* Configure indicator: */
