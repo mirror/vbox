@@ -2729,12 +2729,19 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
                 vboxWddmAllocationCleanup(pDevExt, pAllocation);
                 vboxWddmAllocationDestroy(pAllocation);
             }
+            break;
         }
     }
 
-    pCreateAllocation->hResource = pResource;
-    if (pResource && Status != STATUS_SUCCESS)
-        vboxWddmResourceRelease(pResource);
+    if (Status == STATUS_SUCCESS)
+    {
+        pCreateAllocation->hResource = pResource;
+    }
+    else
+    {
+        if (pResource)
+            vboxWddmResourceRelease(pResource);
+    }
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
