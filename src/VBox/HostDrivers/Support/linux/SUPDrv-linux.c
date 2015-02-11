@@ -48,6 +48,12 @@
 # include <iprt/power.h>
 # define VBOX_WITH_SUSPEND_NOTIFICATION
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
+# include <asm/smap.h>
+#else
+static inline void clac(void) { }
+static inline void stac(void) { }
+#endif
 
 #include <linux/sched.h>
 #ifdef CONFIG_DEVFS_FS
@@ -648,6 +654,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
 #endif
 {
     PSUPDRVSESSION pSession = (PSUPDRVSESSION)pFilp->private_data;
+    int rc;
 
     /*
      * Deal with the two high-speed IOCtl that takes it's arguments from
@@ -658,12 +665,15 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
                       || uCmd == SUP_IOCTL_FAST_DO_HM_RUN
                       || uCmd == SUP_IOCTL_FAST_DO_NOP)
                   && pSession->fUnrestricted == true))
-        return supdrvIOCtlFast(uCmd, ulArg, &g_DevExt, pSession);
+    {
+        stac();
+        rc = supdrvIOCtlFast(uCmd, ulArg, &g_DevExt, pSession);
+        clac();
+        return rc;
+    }
     return VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg, pSession);
 
 #else   /* !HAVE_UNLOCKED_IOCTL */
-
-    int rc;
     unlock_kernel();
     if (RT_LIKELY(   (   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
                       || uCmd == SUP_IOCTL_FAST_DO_HM_RUN
@@ -741,7 +751,9 @@ static int VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned
     /*
      * Process the IOCtl.
      */
+    stac();
     rc = supdrvIOCtl(uCmd, &g_DevExt, pSession, pHdr, cbBuf);
+    clac();
 
     /*
      * Copy ioctl data and output buffer back to user space.
