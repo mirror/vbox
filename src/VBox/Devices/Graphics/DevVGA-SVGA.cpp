@@ -4097,7 +4097,7 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
                     if (g_apszVmSvgaDevCapNames[i][0] == 'x')
                         LogRel(("VMSVGA3d: cap[%u]=%#010x {%s}\n", i, val, &g_apszVmSvgaDevCapNames[i][1]));
                     else
-                        LogRel(("VMSVGA3d: cap[%u]=%d.%04u {%s}\n", i, (int)(float)val, (unsigned)((float)val * 10000) % 10000,
+                        LogRel(("VMSVGA3d: cap[%u]=%d.%04u {%s}\n", i, (int)*(float *)&val, (unsigned)(*(float *)&val * 10000) % 10000,
                                 &g_apszVmSvgaDevCapNames[i][1]));
                 }
                 else
