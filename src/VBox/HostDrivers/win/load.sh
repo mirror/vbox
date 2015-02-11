@@ -34,7 +34,7 @@ set +e
 #
 # Query the status of the drivers.
 #
-for drv in VBoxNetAdp VBoxNetFlt VBoxUSBMon VBoxUSB VBoxDrv;
+for drv in VBoxNetAdp VBoxNetAdp6 VBoxNetFlt VBoxNetLwf VBoxUSBMon VBoxUSB VBoxDrv;
 do
     if sc query $drv > /dev/null; then
         STATE=`sc query $drv \
@@ -55,7 +55,7 @@ set -x
 #
 # Invoke the uninstallers.
 #
-for uninst in NetAdpUninstall.exe NetFltUninstall.exe USBUninstall.exe SUPUninstall.exe;
+for uninst in NetAdpUninstall.exe NetAdp6Uninstall.exe USBUninstall.exe NetFltUninstall.exe NetLwfUninstall.exe SUPUninstall.exe;
 do
     if test -f ${MY_DIR}/$uninst; then
         ${MY_DIR}/$uninst
