@@ -1098,6 +1098,7 @@ HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFor
         HRESULT hr = vboxDispD3DGlobalDoOpen(&g_VBoxDispD3DGlobalD3D);
         if (!SUCCEEDED(hr))
         {
+            vboxDispD3DGlobalUnlock();
             WARN(("vboxDispD3DGlobalDoOpen failed hr = 0x%x", hr));
             return hr;
         }
