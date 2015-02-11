@@ -1363,7 +1363,6 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.svm.u32Rev));
     LogRel(("HM: AMD-V max ASID                    = %RU32\n",  pVM->hm.s.uMaxAsid));
     LogRel(("HM: AMD-V features                    = %#x\n",    pVM->hm.s.svm.u32Features));
-    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
 
     /*
      * Enumerate AMD-V features.
@@ -1402,6 +1401,8 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
      */
     if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
         pVM->hm.s.fNestedPaging = pVM->hm.s.fAllowNestedPaging;
+
+    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
 
     /*
      * Call ring-0 to set up the VM.
