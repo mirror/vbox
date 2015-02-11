@@ -4107,11 +4107,17 @@ static void supR3HardenedWinDoReSpawn(int iWhich)
     /*
      * Apply anti debugger notification trick to the thread.  (Also done in
      * supR3HardenedWinInit.)  This may fail with STATUS_ACCESS_DENIED and
-     * maybe other errors.
+     * maybe other errors.  (Unfortunately, recent (SEP 12.1) of symantec's
+     * sysplant.sys driver will cause process deadlocks and a shutdown/reboot
+     * denial of service problem if we hide the initial thread, so we postpone
+     * this action if we've detected SEP.)
      */
-    rcNt = NtSetInformationThread(This.hThread, ThreadHideFromDebugger, NULL, 0);
-    if (!NT_SUCCESS(rcNt))
-        SUP_DPRINTF(("supR3HardenedWinReSpawn: NtSetInformationThread/ThreadHideFromDebugger failed: %#x (harmless)\n", rcNt));
+    if (!(g_fSupAdversaries & (SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT | SUPHARDNT_ADVERSARY_SYMANTEC_N360)))
+    {
+        rcNt = NtSetInformationThread(This.hThread, ThreadHideFromDebugger, NULL, 0);
+        if (!NT_SUCCESS(rcNt))
+            SUP_DPRINTF(("supR3HardenedWinReSpawn: NtSetInformationThread/ThreadHideFromDebugger failed: %#x (harmless)\n", rcNt));
+    }
 #endif
 
     /*
@@ -5100,6 +5106,8 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         const char *pszDriver;
     } s_aDrivers[] =
     {
+        { SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT,    "SysPlant" },
+
         { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SRTSPX" },
         { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymDS" },
         { SUPHARDNT_ADVERSARY_SYMANTEC_N360,        "SymEvent" },
@@ -5186,9 +5194,9 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         PCRTUTF16   pwszFile;
     } s_aFiles[] =
     {
-        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\SysPlant.sys" },
-        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\sysfer.dll" },
-        { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\sysferThunk.dll" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT, L"\\SystemRoot\\System32\\drivers\\SysPlant.sys" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT, L"\\SystemRoot\\System32\\sysfer.dll" },
+        { SUPHARDNT_ADVERSARY_SYMANTEC_SYSPLANT, L"\\SystemRoot\\System32\\sysferThunk.dll" },
 
         { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\ccsetx64.sys" },
         { SUPHARDNT_ADVERSARY_SYMANTEC_N360, L"\\SystemRoot\\System32\\drivers\\N360x64\\1505000.013\\ironx64.sys" },
