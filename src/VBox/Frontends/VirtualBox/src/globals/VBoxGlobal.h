@@ -37,6 +37,7 @@
 /* COM includes: */
 #include "VBox/com/Guid.h"
 #include "CHost.h"
+#include "CVirtualBoxClient.h"
 #include "CVirtualBox.h"
 #include "CSession.h"
 #include "CGuestOSType.h"
@@ -101,9 +102,14 @@ public:
     static MacOSXRelease osRelease();
 #endif /* Q_WS_MAC */
 
-    CVirtualBox virtualBox() const { return mVBox; }
-    CHost host() const { return mHost; }
-    QString homeFolder() const { return mHomeFolder; }
+    /** Returns the copy of VirtualBox client wrapper. */
+    CVirtualBoxClient virtualBoxClient() const { return m_client; }
+    /** Returns the copy of VirtualBox object wrapper. */
+    CVirtualBox virtualBox() const { return m_vbox; }
+    /** Returns the copy of VirtualBox host-object wrapper. */
+    CHost host() const { return m_host; }
+    /** Returns the symbolic VirtualBox home-folder representation. */
+    QString homeFolder() const { return m_strHomeFolder; }
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
@@ -429,9 +435,14 @@ private:
 
     bool mValid;
 
-    CVirtualBox mVBox;
-    CHost mHost;
-    QString mHomeFolder;
+    /** Holds the instance of VirtualBox client wrapper. */
+    CVirtualBoxClient m_client;
+    /** Holds the copy of VirtualBox object wrapper. */
+    CVirtualBox m_vbox;
+    /** Holds the copy of VirtualBox host-object wrapper. */
+    CHost m_host;
+    /** Holds the symbolic VirtualBox home-folder representation. */
+    QString m_strHomeFolder;
 
     VBoxGlobalSettings gset;
 

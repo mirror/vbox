@@ -282,17 +282,17 @@ uint VBoxGlobal::qtCTVersion()
 
 QString VBoxGlobal::vboxVersionString() const
 {
-    return mVBox.GetVersion();
+    return m_vbox.GetVersion();
 }
 
 QString VBoxGlobal::vboxVersionStringNormalized() const
 {
-    return mVBox.GetVersionNormalized();
+    return m_vbox.GetVersionNormalized();
 }
 
 bool VBoxGlobal::isBeta() const
 {
-    return mVBox.GetVersion().contains("BETA", Qt::CaseInsensitive);
+    return m_vbox.GetVersion().contains("BETA", Qt::CaseInsensitive);
 }
 
 #ifdef Q_WS_MAC
@@ -329,11 +329,11 @@ MacOSXRelease VBoxGlobal::osRelease()
  */
 bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
 {
-    gs.save (mVBox);
+    gs.save(m_vbox);
 
-    if (!mVBox.isOk())
+    if (!m_vbox.isOk())
     {
-        msgCenter().cannotSaveGlobalConfig (mVBox);
+        msgCenter().cannotSaveGlobalConfig(m_vbox);
         return false;
     }
 
@@ -994,7 +994,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         /* Boot order */
         QString bootOrder;
-        for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); ++ i)
+        for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++ i)
         {
             KDeviceType device = aMachine.GetBootOrder (i);
             if (device == KDeviceType_Null)
@@ -1242,7 +1242,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        ulong count = mVBox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+        ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
         int rows = 2; /* including section header and footer */
         for (ulong slot = 0; slot < count; slot ++)
         {
@@ -1299,7 +1299,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        ulong count = mVBox.GetSystemProperties().GetSerialPortCount();
+        ulong count = m_vbox.GetSystemProperties().GetSerialPortCount();
         int rows = 2; /* including section header and footer */
         for (ulong slot = 0; slot < count; slot ++)
         {
@@ -1344,7 +1344,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        ulong count = mVBox.GetSystemProperties().GetParallelPortCount();
+        ulong count = m_vbox.GetSystemProperties().GetParallelPortCount();
         int rows = 2; /* including section header and footer */
         for (ulong slot = 0; slot < count; slot ++)
         {
@@ -1457,10 +1457,10 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
         }
 
         /* Search for the corresponding machine: */
-        CMachine machine = mVBox.FindMachine(strId);
+        CMachine machine = m_vbox.FindMachine(strId);
         if (machine.isNull())
         {
-            msgCenter().cannotFindMachineById(mVBox, strId);
+            msgCenter().cannotFindMachineById(m_vbox, strId);
             break;
         }
 
@@ -1634,7 +1634,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
 
     /* Initialize variables: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = virtualBox();
 
     /* Remember the path of the last chosen medium: */
     switch (mediumType)
@@ -3813,7 +3813,7 @@ bool VBoxGlobal::processArgs()
             const QString& strFile = list.at(i).toLocalFile();
             if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
-                CVirtualBox vbox = vboxGlobal().virtualBox();
+                CVirtualBox vbox = virtualBox();
                 CMachine machine = vbox.FindMachine(strFile);
                 if (!machine.isNull())
                 {
@@ -3869,23 +3869,27 @@ void VBoxGlobal::prepare()
         return;
     }
 
-    mVBox.createInstance (CLSID_VirtualBox);
-    if (!mVBox.isOk())
+    /* Create VirtualBox client instance: */
+    m_client.createInstance(CLSID_VirtualBoxClient);
+    /* And make sure it was created: */
+    if (!m_client.isOk())
     {
-        msgCenter().cannotCreateVirtualBox (mVBox);
+        msgCenter().cannotCreateVirtualBoxClient(m_client);
         return;
     }
-    mHost = virtualBox().GetHost();
-    mHomeFolder = virtualBox().GetHomeFolder();
+    /* Fetch corresponding objects/values: */
+    m_vbox = virtualBoxClient().GetVirtualBox();
+    m_host = virtualBox().GetHost();
+    m_strHomeFolder = virtualBox().GetHomeFolder();
 
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
 
     /* try to load global settings */
-    gset.load (mVBox);
-    if (!mVBox.isOk() || !gset)
+    gset.load(m_vbox);
+    if (!m_vbox.isOk() || !gset)
     {
-        msgCenter().cannotLoadGlobalConfig (mVBox, gset.lastError());
+        msgCenter().cannotLoadGlobalConfig(m_vbox, gset.lastError());
         return;
     }
 
@@ -3900,7 +3904,7 @@ void VBoxGlobal::prepare()
             this, SLOT(sltGUILanguageChange(QString)));
 
     /* Initialize guest OS Type list. */
-    CGuestOSTypeVector coll = mVBox.GetGuestOSTypes();
+    CGuestOSTypeVector coll = m_vbox.GetGuestOSTypes();
     int osTypeCount = coll.size();
     AssertMsg(osTypeCount > 0, ("Number of OS types must not be zero"));
     if (osTypeCount > 0)
@@ -4116,16 +4120,16 @@ void VBoxGlobal::prepare()
 
         /* Search for corresponding VM: */
         QUuid uuid = QUuid(vmNameOrUuid);
-        const CMachine machine = mVBox.FindMachine(vmNameOrUuid);
+        const CMachine machine = m_vbox.FindMachine(vmNameOrUuid);
         if (!uuid.isNull())
         {
             if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineById(mVBox, vmNameOrUuid);
+                return msgCenter().cannotFindMachineById(m_vbox, vmNameOrUuid);
         }
         else
         {
             if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineByName(mVBox, vmNameOrUuid);
+                return msgCenter().cannotFindMachineByName(m_vbox, vmNameOrUuid);
         }
         vmUuid = machine.GetId();
     }
@@ -4156,7 +4160,7 @@ void VBoxGlobal::prepare()
     }
 
     if (mSettingsPwSet)
-        mVBox.SetSettingsSecret(mSettingsPw);
+        m_vbox.SetSettingsSecret(mSettingsPw);
 
     if (visualStateType != UIVisualStateType_Invalid && !vmUuid.isEmpty())
         gEDataManager->setRequestedVisualState(visualStateType, vmUuid);
@@ -4274,8 +4278,8 @@ void VBoxGlobal::cleanup()
     mTypes.clear();
 
     /* the last steps to ensure we don't use COM any more */
-    mHost.detach();
-    mVBox.detach();
+    m_host.detach();
+    m_vbox.detach();
 
     /* There may be UIMedium(s)EnumeratedEvent instances still in the message
      * queue which reference COM objects. Remove them to release those objects
@@ -4323,7 +4327,7 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
     else if (rc != VERR_ENV_VAR_NOT_FOUND)
         strEnvValue = "veto";
 
-    QString     strExtraValue = mVBox.GetExtraData(pszExtraDataName).toLower().trimmed();
+    QString strExtraValue = m_vbox.GetExtraData(pszExtraDataName).toLower().trimmed();
     if (strExtraValue.isEmpty())
         strExtraValue = QString();
 

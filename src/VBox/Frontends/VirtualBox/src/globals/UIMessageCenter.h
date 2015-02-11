@@ -156,7 +156,7 @@ public:
     /* API: COM startup warnings: */
     void cannotInitUserHome(const QString &strUserHome) const;
     void cannotInitCOM(HRESULT rc) const;
-    void cannotCreateVirtualBox(const CVirtualBox &vbox) const;
+    void cannotCreateVirtualBoxClient(const CVirtualBoxClient &client) const;
 
     /* API: Global warnings: */
     void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
