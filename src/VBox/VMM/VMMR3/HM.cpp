@@ -348,17 +348,6 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Misc initialisation.
-     */
-#if 0
-    pVM->hm.s.vmx.fSupported = false;
-    pVM->hm.s.svm.fSupported = false;
-    pVM->hm.s.vmx.fEnabled   = false;
-    pVM->hm.s.svm.fEnabled   = false;
-    pVM->hm.s.fNestedPaging  = false;
-#endif
-
-    /*
      * Read configuration.
      */
     PCFGMNODE pCfgHM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM/");
@@ -444,6 +433,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * ring-3.  The return value of RTThreadPreemptIsPendingTrusty in ring-0
      * determines the default value. */
     rc = CFGMR3QueryU32Def(pCfgHM, "MaxResumeLoops", &pVM->hm.s.cMaxResumeLoops, 0 /* set by R0 later */);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/HM/UseVmxPreemptTimer, bool}
+     * Whether to make use of the VMX-preemption timer feature of the CPU if it's
+     * available. */
+    rc = CFGMR3QueryBoolDef(pCfgHM, "UseVmxPreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -1336,15 +1331,6 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU\n"));
 
-    /*
-     * Check for preemption timer config override and log the state of it.
-     */
-    if (pVM->hm.s.vmx.fUsePreemptTimer)
-    {
-        PCFGMNODE pCfgHm = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM");
-        rc = CFGMR3QueryBoolDef(pCfgHm, "UsePreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
-        AssertLogRelRCReturn(rc, rc);
-    }
     if (pVM->hm.s.vmx.fUsePreemptTimer)
         LogRel(("HM: VMX-preemption timer enabled (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
     else
@@ -1377,6 +1363,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.svm.u32Rev));
     LogRel(("HM: AMD-V max ASID                    = %RU32\n",  pVM->hm.s.uMaxAsid));
     LogRel(("HM: AMD-V features                    = %#x\n",    pVM->hm.s.svm.u32Features));
+    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
 
     /*
      * Enumerate AMD-V features.

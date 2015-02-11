@@ -1234,6 +1234,9 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
+ *
+ * @remarks This is called after HMR3Init(), see vmR3CreateU() and
+ *          vmR3InitRing3().
  */
 VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
 {
@@ -1253,7 +1256,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.fSupported            = g_HvmR0.vmx.fSupported;
     pVM->hm.s.svm.fSupported            = g_HvmR0.svm.fSupported;
 
-    pVM->hm.s.vmx.fUsePreemptTimer      = g_HvmR0.vmx.fUsePreemptTimer;
+    pVM->hm.s.vmx.fUsePreemptTimer     &= g_HvmR0.vmx.fUsePreemptTimer;     /* Can be overridden by CFGM. See HMR3Init(). */
     pVM->hm.s.vmx.cPreemptTimerShift    = g_HvmR0.vmx.cPreemptTimerShift;
     pVM->hm.s.vmx.u64HostCr4            = g_HvmR0.vmx.u64HostCr4;
     pVM->hm.s.vmx.u64HostEfer           = g_HvmR0.vmx.u64HostEfer;
