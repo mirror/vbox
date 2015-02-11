@@ -1187,13 +1187,6 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
     CHECK_CONSOLE_DRV(mpDrv);
     alock.release();  /* Release before calling up for lock order reasons. */
     mpDrv->pUpPort->pfnReportHostCursorCapabilities (mpDrv->pUpPort, fCapabilitiesAdded, fCapabilitiesRemoved);
-    if (   mfGuestVBVACapabilities & VBVACAPS_DISABLE_CURSOR_INTEGRATION
-        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
-    {
-        HRESULT hrc = mParent->i_sendACPIMonitorHotPlugEvent();
-        if (FAILED(hrc))
-            return hrc;
-    }
     mfHostCursorCapabilities = fHostCursorCapabilities;
     return S_OK;
 }
