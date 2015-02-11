@@ -143,7 +143,7 @@ void UIMachineViewSeamless::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
 void UIMachineViewSeamless::prepareSeamless()

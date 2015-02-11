@@ -128,7 +128,7 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)

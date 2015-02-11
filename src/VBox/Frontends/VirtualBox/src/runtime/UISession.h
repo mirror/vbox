@@ -266,6 +266,7 @@ signals:
     void sigKeyboardLedsChange();
     void sigMachineStateChange();
     void sigAdditionsStateChange();
+    void sigAdditionsStateActualChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
     void sigVRDEChange();
