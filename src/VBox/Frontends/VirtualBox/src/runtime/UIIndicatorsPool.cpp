@@ -409,7 +409,7 @@ private:
         for (ulong uSlot = 0; uSlot < m_cMaxNetworkAdapters; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
-            if (adapter.GetEnabled())
+            if (machine.isOk() && !adapter.isNull() && adapter.GetEnabled())
             {
                 fAdaptersPresent = true;
                 QString strGuestIp;
