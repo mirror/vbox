@@ -334,6 +334,9 @@ void UIMachineLogicFullscreen::sltChangeVisualStateToScale()
 
 void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
 {
+    LogRel(("UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
+            uisession()->requestedVisualState(), uisession()->machineState()));
+
     /* Do not try to change visual-state type if machine was not started yet: */
     if (!uisession()->isRunning() && !uisession()->isPaused())
         return;
