@@ -59,15 +59,28 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
     pListener->init(new UIMainEventListener, this);
     m_mainEventListener = CEventListener(pListener);
 
+    /* Get VirtualBoxClient: */
+    const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
+    AssertWrapperOk(vboxClient);
+    /* Get event-source: */
+    CEventSource eventSourceVirtualBoxClient = vboxClient.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBoxClient);
+    /* Register listener for expected event-types: */
+    QVector<KVBoxEventType> vboxClientEvents;
+    vboxClientEvents
+        << KVBoxEventType_OnVBoxSVCAvailabilityChanged;
+    eventSourceVirtualBoxClient.RegisterListener(m_mainEventListener, vboxClientEvents, TRUE);
+    AssertWrapperOk(eventSourceVirtualBoxClient);
+
     /* Get VirtualBox: */
     const CVirtualBox vbox = vboxGlobal().virtualBox();
     AssertWrapperOk(vbox);
     /* Get event-source: */
-    CEventSource eventSource = vbox.GetEventSource();
-    AssertWrapperOk(eventSource);
+    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBox);
     /* Register listener for expected event-types: */
-    QVector<KVBoxEventType> events;
-    events
+    QVector<KVBoxEventType> vboxEvents;
+    vboxEvents
         << KVBoxEventType_OnMachineStateChanged
         << KVBoxEventType_OnMachineDataChanged
         << KVBoxEventType_OnMachineRegistered
@@ -75,10 +88,13 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
         << KVBoxEventType_OnSnapshotTaken
         << KVBoxEventType_OnSnapshotDeleted
         << KVBoxEventType_OnSnapshotChanged;
-    eventSource.RegisterListener(m_mainEventListener, events, TRUE);
-    AssertWrapperOk(eventSource);
+    eventSourceVirtualBox.RegisterListener(m_mainEventListener, vboxEvents, TRUE);
+    AssertWrapperOk(eventSourceVirtualBox);
 
     /* Prepare connections: */
+    connect(pListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
+            this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
+            Qt::QueuedConnection);
     connect(pListener->getWrapped(), SIGNAL(sigMachineStateChange(QString, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QString, KMachineState)),
             Qt::QueuedConnection);
@@ -108,9 +124,18 @@ UIVirtualBoxEventHandler::~UIVirtualBoxEventHandler()
     const CVirtualBox vbox = vboxGlobal().virtualBox();
     AssertWrapperOk(vbox);
     /* Get event-source: */
-    CEventSource eventSource = vbox.GetEventSource();
-    AssertWrapperOk(eventSource);
+    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBox);
     /* Unregister listener: */
-    eventSource.UnregisterListener(m_mainEventListener);
+    eventSourceVirtualBox.UnregisterListener(m_mainEventListener);
+
+    /* Get VirtualBoxClient: */
+    const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
+    AssertWrapperOk(vboxClient);
+    /* Get event-source: */
+    CEventSource eventSourceVirtualBoxClient = vboxClient.GetEventSource();
+    AssertWrapperOk(eventSourceVirtualBoxClient);
+    /* Unregister listener: */
+    eventSourceVirtualBoxClient.UnregisterListener(m_mainEventListener);
 }
 

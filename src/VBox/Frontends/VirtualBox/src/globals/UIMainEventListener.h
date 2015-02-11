@@ -80,6 +80,7 @@ signals:
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
     void sigCPUExecutionCapChange();
+    void sigVBoxSVCAvailabilityChange(bool fAvailable);
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 };
 
