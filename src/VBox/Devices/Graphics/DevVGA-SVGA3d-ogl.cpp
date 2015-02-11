@@ -1148,7 +1148,7 @@ int vmsvga3dInit(PVGASTATE pThis)
 
         /* bail out. */
         LogRel(("VMSVGA3d: RTThreadCreate failed: %Rrc\n", rc));
-        RTSemEventDestroy(&pState->WndRequestSem);
+        RTSemEventDestroy(pState->WndRequestSem);
     }
     else
         LogRel(("VMSVGA3d: RTSemEventCreate failed: %Rrc\n", rc));
