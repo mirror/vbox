@@ -869,7 +869,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
     } s_aPromotedExtensions[] =
     {
         {
-            1.1,
+            1.1f,
             " GL_EXT_vertex_array \0"
             " GL_EXT_polygon_offset \0"
             " GL_EXT_blend_logic_op \0"
@@ -883,7 +883,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            1.2,
+            1.2f,
             " EXT_texture3D \0"
             " EXT_bgra \0"
             " EXT_packed_pixels \0"
@@ -895,7 +895,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            1.3,
+            1.3f,
             " GL_ARB_texture_compression \0"
             " GL_ARB_texture_cube_map \0"
             " GL_ARB_multisample \0"
@@ -908,7 +908,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            1.5,
+            1.5f,
             " GL_SGIS_generate_mipmap \0"
             /*" GL_NV_blend_equare \0"*/
             " GL_ARB_depth_texture \0"
@@ -926,13 +926,13 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            1.6,
+            1.6f,
             " GL_ARB_vertex_buffer_object \0"
             " GL_ARB_occlusion_query \0"
             " GL_EXT_shadow_funcs \0"
         },
         {
-            2.0,
+            2.0f,
             " GL_ARB_shader_objects \0" /*??*/
             " GL_ARB_vertex_shader \0" /*??*/
             " GL_ARB_fragment_shader \0" /*??*/
@@ -945,26 +945,26 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            2.1,
+            2.1f,
             " GL_ARB_pixel_buffer_object \0"
             " GL_EXT_texture_sRGB \0"
             "\0"
         },
         {
-            3.0,
+            3.0f,
             " GL_ARB_framebuffer_object \0"
             " GL_ARB_map_buffer_range \0"
             " GL_ARB_vertex_array_object \0"
             "\0"
         },
         {
-            3.1,
+            3.1f,
             " GL_ARB_copy_buffer \0"
             " GL_ARB_uniform_buffer_object \0"
             "\0"
         },
         {
-            3.2,
+            3.2f,
             " GL_ARB_vertex_array_bgra \0"
             " GL_ARB_draw_elements_base_vertex \0"
             " GL_ARB_fragment_coord_conventions \0"
@@ -977,7 +977,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            3.3,
+            3.3f,
             " GL_ARB_blend_func_extended \0"
             " GL_ARB_sampler_objects \0"
             " GL_ARB_explicit_attrib_location \0"
@@ -990,7 +990,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            4.0,
+            4.0f,
             " GL_ARB_texture_query_lod \0"
             " GL_ARB_draw_indirect \0"
             " GL_ARB_gpu_shader5 \0"
@@ -1005,7 +1005,7 @@ static int vmsvga3dGatherExtensions(char **ppszExtensions, float fGLProfileVersi
             "\0"
         },
         {
-            4.1,
+            4.1f,
             " GL_ARB_ES2_compatibility \0"
             " GL_ARB_get_program_binary \0"
             " GL_ARB_separate_shader_objects \0"
@@ -1298,7 +1298,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     AssertMsgReturn(pState->ext.glGetProgramivARB, ("glGetProgramivARB missing"), VERR_NOT_IMPLEMENTED);
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState, 3.2, " GL_ARB_draw_elements_base_vertex "))
+    if (vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_draw_elements_base_vertex "))
     {
         pState->ext.glDrawElementsBaseVertex          = (PFNGLDRAWELEMENTSBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsBaseVertex");
         pState->ext.glDrawElementsInstancedBaseVertex = (PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC)OGLGETPROCADDRESS("glDrawElementsInstancedBaseVertex");
@@ -1307,7 +1307,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3d: missing extension GL_ARB_draw_elements_base_vertex\n"));
 
     /* OpenGL 3.2 core */
-    if (vmsvga3dCheckGLExtension(pState, 3.2, " GL_ARB_provoking_vertex "))
+    if (vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_provoking_vertex "))
     {
         pState->ext.glProvokingVertex                 = (PFNGLPROVOKINGVERTEXPROC)OGLGETPROCADDRESS("glProvokingVertex");
     }
@@ -1408,7 +1408,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_11;
     }
 
-    if (!vmsvga3dCheckGLExtension(pState, 3.2, " GL_ARB_vertex_array_bgra "))
+    if (!vmsvga3dCheckGLExtension(pState, 3.2f, " GL_ARB_vertex_array_bgra "))
     {
         /** @todo Intel drivers don't support this extension! */
         LogRel(("VMSVGA3D: WARNING: Missing required extension GL_ARB_vertex_array_bgra (d3dcolor)!!!\n"));
