@@ -1886,6 +1886,10 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QString
 
 void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QString &strID /* = GlobalID */)
 {
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
     /* Hot-load machine extra-data map if necessary: */
     if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
@@ -1936,6 +1940,10 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
 
 void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = GlobalID */)
 {
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
     /* Hot-load machine extra-data map if necessary: */
     if (strID != GlobalID && !m_data.contains(strID))
         hotloadMachineExtraDataMap(strID);
@@ -3636,7 +3644,7 @@ void UIExtraDataManager::prepareExtraDataEventHandler()
 void UIExtraDataManager::prepareMainEventListener()
 {
     /* Register Main event-listener:  */
-    const CVirtualBox &vbox = vboxGlobal().virtualBox();
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
     ComObjPtr<UIMainEventListenerImpl> pListener;
     pListener.createObject();
     pListener->init(new UIMainEventListener, this);
@@ -3667,8 +3675,12 @@ void UIExtraDataManager::cleanupWindow()
 
 void UIExtraDataManager::cleanupMainEventListener()
 {
-    /* Unregister Main event-listener:  */
-    const CVirtualBox &vbox = vboxGlobal().virtualBox();
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Unregister Main event-listener: */
+    const CVirtualBox vbox = vboxGlobal().virtualBox();
     vbox.GetEventSource().UnregisterListener(m_listener);
 }
 
