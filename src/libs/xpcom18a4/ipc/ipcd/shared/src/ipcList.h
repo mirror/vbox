@@ -174,6 +174,19 @@ public:
         mTail = NULL;
     }
 
+    // gets count of list elements
+    PRUint32 Count()
+    {
+        T *obj = mHead;
+        PRUint32 count = 0;
+        while (obj) {
+            count++;
+            obj = obj->mNext;
+        }
+
+        return count;
+    }
+
 protected:
     void AdvanceHead()
     {
