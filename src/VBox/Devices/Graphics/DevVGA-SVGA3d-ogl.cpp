@@ -1345,7 +1345,13 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &pState->caps.maxTextureBufferSize));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures));
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE /* The alternative profile has a higher number here (ati/darwin). */
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pOtherCtx);
+    VMSVGA3D_INIT_CHECKED_BOTH(pState, pOtherCtx, pContext, glGetIntegerv(GL_MAX_CLIP_DISTANCES, &pState->caps.maxClipDistances));
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+#else
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_CLIP_DISTANCES, &pState->caps.maxClipDistances));
+#endif
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &pState->caps.maxColorAttachments));
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE, &pState->caps.maxRectangleTextureSize));
     VMSVGA3D_INIT_CHECKED(glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &pState->caps.maxTextureAnisotropy));
