@@ -11203,7 +11203,7 @@ void Machine::i_commitMedia(bool aOnline /*= false*/)
                         AssertComRC(rc);
                         fMediaNeedsLocking = true;
                     }
-                    rc = pMediumLockList->Update(pMedium->getParent(), false);
+                    rc = pMediumLockList->Update(pMedium->i_getParent(), false);
                     AssertComRC(rc);
                     rc = pMediumLockList->Append(pMedium, true);
                     AssertComRC(rc);
