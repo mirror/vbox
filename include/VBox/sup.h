@@ -1648,7 +1648,7 @@ DECLINLINE(uint64_t) SUPReadTsc(void)
     {
         uint64_t u64Tsc = UINT64_MAX;
         int rc = SUPGetTsc(&u64Tsc, NULL /* pidApic */);
-#ifndef DEBUG_michael
+#ifdef DEBUG_ramshankar
         AssertRC(rc);
 #endif
         return u64Tsc;
