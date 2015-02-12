@@ -103,6 +103,12 @@ static struct drm_driver driver =
 {
     /* .driver_features = DRIVER_USE_MTRR, */
     .load = vboxvideo_driver_load,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+    /* If this is missing a warning gets printed to dmesg.  We will not
+     * attempt to make kernels work to which the change (915b4d11b) got back-
+     * ported, as the problem is only cosmetic. */
+    .set_busid = drm_pci_set_busid,
+#endif
 # ifndef DRM_FOPS_AS_POINTER
     .fops =
     {
