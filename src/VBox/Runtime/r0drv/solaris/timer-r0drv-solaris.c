@@ -45,7 +45,6 @@
 #include <iprt/thread.h>
 #include "internal/magics.h"
 
-#define SOL_TIMER_ANY_CPU       (-1)
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -68,7 +67,7 @@ typedef struct RTTIMER
     /** Whether the timer must run on a specific CPU or not. */
     uint8_t                 fSpecificCpu;
     /** The CPU it must run on if fSpecificCpu is set. */
-    uint8_t                 iCpu;
+    uint32_t                iCpu;
     /** The nano second interval for repeating timers. */
     uint64_t                cNsInterval;
     /** Cyclic timer Id. */
@@ -322,7 +321,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     {
         pTimer->fAllCpus = true;
         pTimer->fSpecificCpu = false;
-        pTimer->iCpu = 255;
+        pTimer->iCpu = UINT32_MAX;
     }
     else if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
     {
@@ -334,7 +333,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     {
         pTimer->fAllCpus = false;
         pTimer->fSpecificCpu = false;
-        pTimer->iCpu = 255;
+        pTimer->iCpu = UINT32_MAX;
     }
     pTimer->cNsInterval = u64NanoInterval;
     pTimer->pfnTimer = pfnTimer;
@@ -392,21 +391,16 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     }
     else
     {
-        int iCpu = SOL_TIMER_ANY_CPU;
-        if (pTimer->fSpecificCpu)
-        {
-            iCpu = pTimer->iCpu;
-            if (!RTMpIsCpuOnline(iCpu))    /* ASSUMES: index == cpuid */
-                return VERR_CPU_OFFLINE;
-        }
+        if (pTimer->fSpecificCpu && !RTMpIsCpuOnline(pTimer->iCpu)) /* ASSUMES: index == cpuid */
+            return VERR_CPU_OFFLINE;
 
         pTimer->u.Single.hHandler.cyh_func  = (cyc_func_t)rtTimerSolSingleCallbackWrapper;
         pTimer->u.Single.hHandler.cyh_arg   = pTimer;
         pTimer->u.Single.hHandler.cyh_level = CY_LOCK_LEVEL;
 
         mutex_enter(&cpu_lock);
-        if (RT_UNLIKELY(   iCpu != SOL_TIMER_ANY_CPU
-                        && !cpu_is_online(cpu[iCpu])))
+        if (RT_UNLIKELY(   pTimer->fSpecificCpu
+                        && !cpu_is_online(cpu[pTimer->iCpu])))
         {
             mutex_exit(&cpu_lock);
             return VERR_CPU_OFFLINE;
@@ -426,8 +420,8 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
             pTimer->u.Single.hFireTime.cyt_interval = pTimer->cNsInterval;
 
         pTimer->hCyclicId = cyclic_add(&pTimer->u.Single.hHandler, &pTimer->u.Single.hFireTime);
-        if (iCpu != SOL_TIMER_ANY_CPU)
-            cyclic_bind(pTimer->hCyclicId, cpu[iCpu], NULL /* cpupart */);
+        if (pTimer->fSpecificCpu)
+            cyclic_bind(pTimer->hCyclicId, cpu[pTimer->iCpu], NULL /* cpupart */);
 
         mutex_exit(&cpu_lock);
     }
