@@ -68,8 +68,7 @@ void vbclFatalError(char *pszMessage)
     char *pszCommand;
     if (pszMessage && cRespawn == 0)
     {
-        pszCommand = RTStrAPrintf2("notify-send -t 5 \"VBoxClient: %s\"",
-                                   pszMessage);
+        pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"", pszMessage);
         if (pszCommand)
             system(pszCommand);
     }
