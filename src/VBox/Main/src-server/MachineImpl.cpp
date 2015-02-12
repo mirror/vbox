@@ -11090,6 +11090,9 @@ HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,
             {
                 llMedia.push_back(pMedium);
                 ComObjPtr<Medium> pParent = pMedium->i_getParent();
+                /* Not allowed to keep this lock as below we need the parent
+                 * medium lock, and the lock order is parent to child. */
+                lock.release();
                 /*
                  * Search for medias which are not attached to any machine, but
                  * in the chain to an attached disk. Mediums are only consided
