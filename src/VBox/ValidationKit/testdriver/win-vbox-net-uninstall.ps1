@@ -198,4 +198,20 @@ switch ($result)
         1 {"Removal cancelled."}
     }
 
+# Clean up uninstalled connections
+if ( (Get-ChildItem "HKLM\SYSTEM\CurrentControlSet\Control\Network\Uninstalled" | Measure-Object).Count -gt 10 ) {
+   $result = AskForConfirmation "Delete Uninstalled Network Connection Registry Keys" `
+          "There are over 10 uninstalled network connections accumulated in the registry. Do you want to delete them?" `
+          "Deletes uninstalled connection keys from the registry." `
+          "No modifications to the registry will be made."
+
+   switch ($result)
+       {
+           0 {Remove-Item -Path "HKLM\SYSTEM\CurrentControlSet\Control\Network\Uninstalled\*" -Recurse}
+           1 {"Removal cancelled."}
+       }
+} else {
+   Write-Host "Less than 10 uninstalled connections -- no action yet required."
+}
+
 Pop-Location
