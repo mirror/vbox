@@ -17,7 +17,7 @@
 #ifndef __DevVGA_SVGA3d_cocoa_h
 #define __DevVGA_SVGA3d_cocoa_h
 
-#include <iprt/cdefs.h>
+#include <iprt/types.h>
 #include <VBox/VBoxCocoa.h>
 #include <OpenGL/OpenGL.h>
 

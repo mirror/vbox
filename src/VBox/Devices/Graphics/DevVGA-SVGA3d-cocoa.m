@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VirtualBox OpenGL Cocoa Window System Helper Implementation.
  *
@@ -21,6 +22,7 @@
 #import <OpenGL/gl.h>
 
 #include <iprt/thread.h>
+#include <iprt/assert.h>
 
 /* Debug macros */
 #if 0 /*def DEBUG_VERBOSE*/
@@ -628,38 +630,31 @@ void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLC
     NSOpenGLPixelFormat *pFmt = nil;
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-#if 1
-    // @todo galitsyn: NSOpenGLPFAWindow was deprecated starting from OSX 10.9.
     // Consider to remove it and check if it's harmless.
     NSOpenGLPixelFormatAttribute attribs[] =
     {
-        NSOpenGLPFAWindow,
-        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)0,
+        //NSOpenGLPFAWindow, - obsolete/deprecated, try work without it...
         NSOpenGLPFAAccelerated,
+        NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24,
         NSOpenGLPFAAlphaSize, (NSOpenGLPixelFormatAttribute)8,
         NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute)24,
         0
     };
-#else
-    NSOpenGLPixelFormatAttribute attribs[] =
-    {
-        NSOpenGLPFADoubleBuffer,
-        NSOpenGLPFAAccelerated,
-        NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24,
-        NSOpenGLPFADepthSize, 24,
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
-        0
-    };
-#endif
+    attribs[1] = fOtherProfile ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
 
     /* Choose a pixel format */
     pFmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
-
     if (pFmt)
     {
         *ppCtx = [[VMSVGA3DOpenGLContext alloc] initWithFormat:pFmt shareContext:pShareCtx];
         DEBUG_MSG(("New context %p\n", (void *)*ppCtx));
+    }
+    else
+    {
+        AssertFailed();
+        *ppCtx = NULL;
     }
 
     [pPool release];
@@ -764,3 +759,4 @@ void vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pC
     [pPool release];
     DEBUG_FUNC_LEAVE();
 }
+
