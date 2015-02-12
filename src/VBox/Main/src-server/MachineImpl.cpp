@@ -11190,9 +11190,6 @@ void Machine::i_commitMedia(bool aOnline /*= false*/)
                  && pAttach->i_getType() == DeviceType_HardDisk
                )
             {
-                ComObjPtr<Medium> parent = pMedium->i_getParent();
-                AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
-
                 /* update the appropriate lock list */
                 MediumLockList *pMediumLockList;
                 rc = mData->mSession.mLockedMedia.Get(pAttach, pMediumLockList);
@@ -11206,7 +11203,7 @@ void Machine::i_commitMedia(bool aOnline /*= false*/)
                         AssertComRC(rc);
                         fMediaNeedsLocking = true;
                     }
-                    rc = pMediumLockList->Update(parent, false);
+                    rc = pMediumLockList->Update(pMedium->getParent(), false);
                     AssertComRC(rc);
                     rc = pMediumLockList->Append(pMedium, true);
                     AssertComRC(rc);
