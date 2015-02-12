@@ -173,7 +173,7 @@ static void updateScreenInformation(struct DISPLAYSTATE *pState, unsigned cx, un
 
 static void updateSizeHintsProperty(struct DISPLAYSTATE *pState)
 {
-    int32_t *paSizeHints = (int32_t *)RTMemTmpAllocZ(pState->cScreensTracked * sizeof(int32_t));
+    unsigned long *paSizeHints = (unsigned long *)RTMemTmpAllocZ(pState->cScreensTracked * sizeof(unsigned long));
     unsigned i;
 
     if (paSizeHints == NULL)
