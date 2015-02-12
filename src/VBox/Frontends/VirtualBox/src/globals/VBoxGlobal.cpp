@@ -4286,6 +4286,7 @@ void VBoxGlobal::cleanup()
     /* the last steps to ensure we don't use COM any more */
     m_host.detach();
     m_vbox.detach();
+    m_client.detach();
 
     /* There may be UIMedium(s)EnumeratedEvent instances still in the message
      * queue which reference COM objects. Remove them to release those objects
