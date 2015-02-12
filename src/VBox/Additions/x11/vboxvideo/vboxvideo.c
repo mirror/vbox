@@ -1223,8 +1223,15 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 static void VBOXLeaveVT(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+#ifdef VBOXVIDEO_13
+    unsigned i;
+#endif
 
     TRACE_ENTRY();
+#ifdef VBOXVIDEO_13
+    for (i = 0; i < pVBox->cScreens; ++i)
+        vbox_output_dpms(pVBox->pScreens[i].paOutputs, DPMSModeOff);
+#endif
     vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
 #ifdef VBOX_DRI_OLD
@@ -1250,6 +1257,12 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
 #endif
     if (pScrn->vtSema)
     {
+#ifdef VBOXVIDEO_13
+        int i;
+
+        for (i = 0; i < pVBox->cScreens; ++i)
+            vbox_output_dpms(pVBox->pScreens[i].paOutputs, DPMSModeOff);
+#endif
         vboxDisableVbva(pScrn);
         vboxClearVRAM(pScrn, 0, 0);
     }
