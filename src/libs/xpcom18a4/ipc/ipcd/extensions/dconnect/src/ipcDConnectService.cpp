@@ -3553,7 +3553,7 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
   PR_Sleep(PR_INTERVAL_NO_WAIT);
   mon.Enter();
   // examine the queue
-  if (!mPendingQ.IsEmpty() && !mWaitingWorkers)
+  if (mPendingQ.Count() > mWaitingWorkers)
   {
     // wait a little while to let the workers empty the queue.
     mon.Exit();
@@ -3564,7 +3564,7 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
     }
     mon.Enter();
     // examine the queue again
-    if (!mPendingQ.IsEmpty() && !mWaitingWorkers)
+    if (mPendingQ.Count() > mWaitingWorkers)
     {
       // we need one more worker
       nsresult rv = CreateWorker();
