@@ -27,6 +27,7 @@
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
+#include "CDisplay.h"
 #include "CDisplaySourceBitmap.h"
 
 /* Other VBox includes: */
@@ -66,6 +67,9 @@ public:
     /** Frame-buffer initialization.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
     HRESULT init(UIMachineView *pMachineView);
+
+    /** Returns the copy of the IDisplay wrapper. */
+    CDisplay display() const { return m_display; }
 
     /** Assigns machine-view frame-buffer will be bounded to.
       * @param pMachineView defines machine-view this frame-buffer is bounded to. */
@@ -273,6 +277,8 @@ protected:
     /** Holds frame-buffer height. */
     int m_iHeight;
 
+    /** Holds the copy of the IDisplay wrapper. */
+    CDisplay m_display;
     /** Source bitmap from IDisplay. */
     CDisplaySourceBitmap m_sourceBitmap;
     /** Source bitmap from IDisplay (acquired but not yet applied). */
