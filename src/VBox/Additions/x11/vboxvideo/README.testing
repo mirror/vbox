@@ -4,16 +4,17 @@ known to fail in the past to this file as we discover them.
 
  * Test XFree86 guests (CentOS 3), early X.Org (CentOS 5) and recent
    (CentOS 6 and 7, current Ubuntu/Fedora).  Test Solaris guests (10 and 11?).
- * Dynamic resizing with and without VBoxClient running.  The driver will
-   currently always use HGSMI for mode hints, but should check data sent by
-   VBoxClient.  On Solaris guests, dynamic resizing is only expected to
-   react immediately if VBoxClient and the kernel driver are running.
- * Disabling and enabling virtual screens.
+ * Dynamic resizing should work, on CentOS 6 and later Linux guests it should
+   work without VBoxClient running.
+ * Disabling and enabling virtual screens (only possible as of 4.4).
  * Dynamic resizing with one of more virtual screens disabled.
  * Test switching to virtual terminals and back from windowed, full screen and
    seamless modes.
+ * Test switching directly between normal, full-screen, seamless and scaled
+   modes.
  * Test enabling and disabling guest screens from the host.
  * execute "xprop -root | grep VBOX" after resizing a screen: VBOX_SIZE_HINTS
-   should be set, and VBOX_SIZE_HINTS_MISMATCH should equal 0.
+   should be set, and VBOX_SIZE_HINTS_MISMATCH should equal 0 on CentOS 6 and
+   later.
  * Shutting down and re-starting a virtual machine should restore the last size
    for all monitors (note: currently only after log-in).
