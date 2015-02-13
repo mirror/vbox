@@ -62,7 +62,7 @@ typedef struct RTTIMER
     /** Whether the timer must run on a specific CPU or not. */
     uint8_t                 fSpecificCpu;
     /** The CPU it must run on if fSpecificCpu is set. */
-    uint8_t                 iCpu;
+    uint32_t                iCpu;
     /** The FreeBSD callout structure. */
     struct callout          Callout;
     /** Callback. */
