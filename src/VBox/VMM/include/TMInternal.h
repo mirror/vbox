@@ -652,6 +652,7 @@ typedef struct TM
     STAMPROFILE                 StatVirtualSyncFF;
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;
+    STAMCOUNTER                 StatTimerCallback;
 
     /** Calls to TMCpuTickSet. */
     STAMCOUNTER                 StatTSCSet;

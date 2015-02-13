@@ -773,6 +773,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,                       STAMTYPE_COUNTER, "/TM/VirtualResume",                   STAMUNIT_OCCURENCES, "The number of times TMR3TimerResume was called.");
 
     STAM_REG(pVM, &pVM->tm.s.StatTimerCallbackSetFF,                  STAMTYPE_COUNTER, "/TM/CallbackSetFF",                   STAMUNIT_OCCURENCES, "The number of times the timer callback set FF.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerCallback,                       STAMTYPE_COUNTER, "/TM/Callback",                        STAMUNIT_OCCURENCES, "The number of times the timer callback is invoked.");
 
     STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE010,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupLE010",      STAMUNIT_OCCURENCES, "In catch-up mode, 10% or lower.");
     STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE025,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupLE025",      STAMUNIT_OCCURENCES, "In catch-up mode, 25%-11%.");
@@ -2017,6 +2018,8 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
     NOREF(pTimer);
 
     AssertCompile(TMCLOCK_MAX == 4);
+    STAM_COUNTER_INC(&pVM->tm.s.StatTimerCallback);
+
 #ifdef DEBUG_Sander /* very annoying, keep it private. */
     if (VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
         Log(("tmR3TimerCallback: timer event still pending!!\n"));
@@ -2037,7 +2040,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
 #ifdef VBOX_WITH_REM
         REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
-        VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM /** @todo | VMNOTIFYFF_FLAGS_POKE ?*/);
+        VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
         STAM_COUNTER_INC(&pVM->tm.s.StatTimerCallbackSetFF);
     }
 }
