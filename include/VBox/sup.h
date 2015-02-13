@@ -1567,6 +1567,8 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
     Assert(pGip);
     Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
 
+    /** @todo convert these to AssertMsg() after sufficient testing before public
+     *        release. */
     AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), ("idApic=%u\n", idApic), VERR_INVALID_CPU_ID);
     iCpu = pGip->aiCpuFromApicId[idApic];
     AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
@@ -1627,7 +1629,7 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
         *pidApic = idApic;
 
     rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
-    AssertRCReturn(rc, rc);
+    AssertRC(rc);
     return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
 # endif
 }
