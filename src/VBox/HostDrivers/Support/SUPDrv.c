@@ -215,8 +215,10 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPR0SuspendVTxOnCpu",                   (void *)SUPR0SuspendVTxOnCpu },
     { "SUPR0ResumeVTxOnCpu",                    (void *)SUPR0ResumeVTxOnCpu },
-    { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
     { "SUPR0GetKernelFeatures",                 (void *)SUPR0GetKernelFeatures },
+    { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
+    { "SUPR0GetSvmUsability",                   (void *)SUPR0GetSvmUsability },
+    { "SUPR0GetVmxUsability",                   (void *)SUPR0GetVmxUsability },
     { "SUPR0LockMem",                           (void *)SUPR0LockMem },
     { "SUPR0LowAlloc",                          (void *)SUPR0LowAlloc },
     { "SUPR0LowFree",                           (void *)SUPR0LowFree },
@@ -3740,6 +3742,133 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
 
 
 /**
+ * Checks if Intel VT-x feature is usable on this CPU.
+ *
+ * @returns VBox status code.
+ * @param   fIsSmxModeAmbiguous   Where to write whether the SMX mode causes
+ *                                ambiguity that makes us unsure whether we
+ *                                really can use VT-x or not.
+ *
+ * @remarks Must be called with preemption disabled.
+ */
+SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    uint64_t   u64FeatMsr          = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+    bool const fMaybeSmxMode       = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
+    bool       fMsrLocked          = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+    bool       fSmxVmxAllowed      = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+    bool       fVmxAllowed         = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+    bool       fIsSmxModeAmbiguous = false;
+    int        rc                  = VERR_INTERNAL_ERROR_5;
+
+    /* Check if the LOCK bit is set but excludes the required VMXON bit. */
+    if (fMsrLocked)
+    {
+        if (fVmxAllowed && fSmxVmxAllowed)
+            rc = VINF_SUCCESS;
+        else if (!fVmxAllowed && !fSmxVmxAllowed)
+            rc = VERR_VMX_MSR_ALL_VMXON_DISABLED;
+        else if (!fMaybeSmxMode)
+        {
+            if (fVmxAllowed)
+                rc = VINF_SUCCESS;
+            else
+                rc = VERR_VMX_MSR_VMXON_DISABLED;
+        }
+        else
+        {
+            /*
+             * CR4.SMXE is set but this doesn't mean the CPU is necessarily in SMX mode. We shall assume
+             * that it is -not- and that it is a stupid BIOS/OS setting CR4.SMXE for no good reason.
+             * See @bugref{6873}.
+             */
+            Assert(fMaybeSmxMode == true);
+            fIsSmxModeAmbiguous = true;
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        /*
+         * MSR is not yet locked; we can change it ourselves here.
+         * Once the lock bit is set, this MSR can no longer be modified.
+         *
+         * Set both the VMXON and SMX_VMXON bits as we can't determine SMX mode
+         * accurately. See @bugref{6873}.
+         */
+        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
+                    | MSR_IA32_FEATURE_CONTROL_SMX_VMXON
+                    | MSR_IA32_FEATURE_CONTROL_VMXON;
+        ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
+
+        /* Verify. */
+        u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+        fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+        fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+        if (fSmxVmxAllowed && fVmxAllowed)
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_VMX_MSR_LOCKING_FAILED;
+    }
+
+    if (pfIsSmxModeAmbiguous)
+        *pfIsSmxModeAmbiguous = fIsSmxModeAmbiguous;
+
+    return rc;
+}
+
+
+/**
+ * Checks if AMD-V SVM feature is usable on this CPU.
+ *
+ * @returns VBox status code.
+ * @param   fInitSvm    If usable, try to initialize SVM on this CPU.
+ *
+ * @remarks Must be called with preemption disabled.
+ */
+SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm)
+{
+    int      rc;
+    uint64_t fVmCr;
+    uint64_t fEfer;
+
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    fVmCr = ASMRdMsr(MSR_K8_VM_CR);
+    if (!(fVmCr & MSR_K8_VM_CR_SVM_DISABLE))
+    {
+        rc = VINF_SUCCESS;
+        if (fInitSvm)
+        {
+            /* Turn on SVM in the EFER MSR. */
+            fEfer = ASMRdMsr(MSR_K6_EFER);
+            if (fEfer & MSR_K6_EFER_SVME)
+                rc = VERR_SVM_IN_USE;
+            else
+            {
+                ASMWrMsr(MSR_K6_EFER, fEfer | MSR_K6_EFER_SVME);
+
+                /* Paranoia. */
+                fEfer = ASMRdMsr(MSR_K6_EFER);
+                if (fEfer & MSR_K6_EFER_SVME)
+                {
+                    /* Restore previous value. */
+                    ASMWrMsr(MSR_K6_EFER, fEfer & ~MSR_K6_EFER_SVME);
+                }
+                else
+                    rc = VERR_SVM_ILLEGAL_EFER_MSR;
+            }
+        }
+    }
+    else
+        rc = VERR_SVM_DISABLED;
+    return rc;
+}
+
+
+/**
  * Queries the AMD-V and VT-x capabilities of the calling CPU.
  *
  * @returns VBox status code.
@@ -3788,64 +3917,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                  && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                /** @todo Unify code with hmR0InitIntelCpu(). */
-                uint64_t   u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-                bool const fMaybeSmxMode  = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
-                bool       fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-                bool       fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-                bool       fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-
-                /* Check if the LOCK bit is set but excludes the required VMXON bit. */
-                if (fMsrLocked)
-                {
-                    if (fVmxAllowed && fSmxVmxAllowed)
-                        rc = VINF_SUCCESS;
-                    else if (!fVmxAllowed && !fSmxVmxAllowed)
-                        rc = VERR_VMX_MSR_ALL_VMXON_DISABLED;
-                    else if (!fMaybeSmxMode)
-                    {
-                        if (fVmxAllowed)
-                            rc = VINF_SUCCESS;
-                        else
-                            rc = VERR_VMX_MSR_VMXON_DISABLED;
-                    }
-                    else
-                    {
-                        /*
-                         * CR4.SMXE is set but this doesn't mean the CPU is necessarily in SMX mode. We shall assume
-                         * that it is -not- and that it is a stupid BIOS/OS setting CR4.SMXE for no good reason.
-                         * See @bugref{6873}.
-                         */
-                        Assert(fMaybeSmxMode == true);
-                        fIsSmxModeAmbiguous = true;
-                        rc = VINF_SUCCESS;
-                    }
-                }
-                else
-                {
-                    /*
-                     * MSR is not yet locked; we can change it ourselves here.
-                     * Once the lock bit is set, this MSR can no longer be modified.
-                     *
-                     * Set both the VMXON and SMX_VMXON bits as we can't determine SMX mode
-                     * accurately. See @bugref{6873}.
-                     */
-                    u64FeatMsr |=   MSR_IA32_FEATURE_CONTROL_LOCK
-                                  | MSR_IA32_FEATURE_CONTROL_SMX_VMXON
-                                  | MSR_IA32_FEATURE_CONTROL_VMXON;
-                    ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
-
-                    /* Verify. */
-                    u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-                    fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-                    fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-                    fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-                    if (fSmxVmxAllowed && fVmxAllowed)
-                        rc = VINF_SUCCESS;
-                    else
-                        rc = VERR_VMX_MSR_LOCKING_FAILED;
-                }
-
+                rc = SUPR0GetVmxUsability(&fIsSmxModeAmbiguous);
                 if (rc == VINF_SUCCESS)
                 {
                     VMXCAPABILITY vtCaps;
@@ -3870,6 +3942,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
             uint32_t fExtFeaturesEcx, uExtMaxId;
             ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
             ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &uDummy);
+
+            /* Check if SVM is available. */
             if (   ASMIsValidExtRange(uExtMaxId)
                 && uExtMaxId >= 0x8000000a
                 && (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
@@ -3877,9 +3951,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 && (fFeaturesEDX    & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                /* Check if SVM is disabled */
-                uint64_t u64FeatMsr = ASMRdMsr(MSR_K8_VM_CR);
-                if (!(u64FeatMsr & MSR_K8_VM_CR_SVM_DISABLE))
+                rc = SUPR0GetSvmUsability(false /* fInitSvm */);
+                if (RT_SUCCESS(rc))
                 {
                     uint32_t fSvmFeatures;
                     *pfCaps |= SUPVTCAPS_AMD_V;
@@ -3888,11 +3961,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                     ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
                     if (fSvmFeatures & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
-
-                    rc = VINF_SUCCESS;
                 }
-                else
-                    rc = VERR_SVM_DISABLED;
             }
             else
                 rc = VERR_SVM_NO_SVM;
