@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -81,17 +81,32 @@ static uint32_t             g_iWorker = 0;
  * This array is indexed by g_iWorker. */
 static const PFNTIMENANOTSINTERNAL g_apfnWorkers[] =
 {
-# define RTTIMENANO_WORKER_DETECT        0
+# define RTTIMENANO_WORKER_DETECT                   0
     rtTimeNanoTSInternalRediscover,
-# define RTTIMENANO_WORKER_SYNC_CPUID    1
-    RTTimeNanoTSLegacySync,
-# define RTTIMENANO_WORKER_ASYNC_CPUID   2
+
+# define RTTIMENANO_WORKER_LEGACY_SYNC_NO_DELTA     1
+    RTTimeNanoTSLegacySyncNoDelta,
+# define RTTIMENANO_WORKER_LEGACY_SYNC_WITH_DELTA   2
+    RTTimeNanoTSLegacySyncWithDelta,
+# define RTTIMENANO_WORKER_LEGACY_ASYNC             3
     RTTimeNanoTSLegacyAsync,
-# define RTTIMENANO_WORKER_SYNC_LFENCE   3
-    RTTimeNanoTSLFenceSync,
-# define RTTIMENANO_WORKER_ASYNC_LFENCE  4
+# define RTTIMENANO_WORKER_LEGACY_INVAR_NO_DELTA    4
+    RTTimeNanoTSLFenceInvariantNoDelta,
+# define RTTIMENANO_WORKER_LEGACY_INVAR_WITH_DELTA  5
+    RTTimeNanoTSLFenceInvariantWithDelta,
+
+# define RTTIMENANO_WORKER_LFENCE_SYNC_NO_DELTA     6
+    RTTimeNanoTSLFenceSyncNoDelta,
+# define RTTIMENANO_WORKER_LFENCE_SYNC_WITH_DELTA   7
+    RTTimeNanoTSLFenceSyncWithDelta,
+# define RTTIMENANO_WORKER_LFENCE_ASYNC             8
     RTTimeNanoTSLFenceAsync,
-# define RTTIMENANO_WORKER_FALLBACK      5
+# define RTTIMENANO_WORKER_LFENCE_INVAR_NO_DELTA    9
+    RTTimeNanoTSLFenceInvariantNoDelta,
+# define RTTIMENANO_WORKER_LFENCE_INVAR_WITH_DELTA  10
+    RTTimeNanoTSLFenceInvariantWithDelta,
+
+# define RTTIMENANO_WORKER_FALLBACK                 11
     rtTimeNanoTSInternalFallback,
 };
 
@@ -137,6 +152,30 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
 
 
 /**
+ * Checks if we really need to apply the delta values.
+ *
+ * Getting the delta for a CPU is _very_ expensive, it more than doubles the
+ * execution time for RTTimeNanoTS.
+ *
+ * @returns true if deltas needs to be applied, false if not.
+ * @param   pGip                The GIP.
+ */
+static bool rtTimeNanoTsInternalReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip)
+{
+    if (!pGip->fOsTscDeltasInSync)
+    {
+        uint32_t i = pGip->cCpus;
+        while (i-- > 0)
+            if (   pGip->aCPUs[i].enmState == SUPGIPCPUSTATE_ONLINE
+                && (   pGip->aCPUs[i].i64TSCDelta > 384
+                    || pGip->aCPUs[i].i64TSCDelta < -384) )
+                return true;
+    }
+    return false;
+}
+
+
+/**
  * Called the first time somebody asks for the time or when the GIP
  * is mapped/unmapped.
  */
@@ -151,18 +190,26 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
              || pGip->u32Mode == SUPGIPMODE_ASYNC_TSC))
     {
         if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
-            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? RTTIMENANO_WORKER_SYNC_LFENCE
-                    : RTTIMENANO_WORKER_ASYNC_LFENCE;
+            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+                    ? rtTimeNanoTsInternalReallyNeedDeltas(pGip)
+                      ? RTTIMENANO_WORKER_LFENCE_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LFENCE_INVAR_NO_DELTA
+                    : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+                    ? false /** @todo !rtTimeNanoTsInternalReallyNeedDeltas(pGip) */
+                      ? RTTIMENANO_WORKER_LFENCE_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LFENCE_SYNC_NO_DELTA
+                    : RTTIMENANO_WORKER_LFENCE_ASYNC;
         else
-            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC || pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? RTTIMENANO_WORKER_SYNC_CPUID
-                    : RTTIMENANO_WORKER_ASYNC_CPUID;
+            iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+                    ? rtTimeNanoTsInternalReallyNeedDeltas(pGip)
+                      ? RTTIMENANO_WORKER_LEGACY_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LEGACY_INVAR_NO_DELTA
+                    : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
+                    ? false /** @todo rtTimeNanoTsInternalReallyNeedDeltas(pGip) */
+                      ? RTTIMENANO_WORKER_LEGACY_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LEGACY_SYNC_NO_DELTA
+                    : RTTIMENANO_WORKER_LEGACY_ASYNC;
     }
     else
         iWorker = RTTIMENANO_WORKER_FALLBACK;
 
-    ASMAtomicXchgU32((uint32_t volatile *)&g_iWorker, iWorker);
+    ASMAtomicWriteU32((uint32_t volatile *)&g_iWorker, iWorker);
     return g_apfnWorkers[iWorker](pData);
 }
 

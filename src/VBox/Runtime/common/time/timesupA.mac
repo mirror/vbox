@@ -71,7 +71,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
 
 
     ;
-    ; Load pGip and calc pGipCPU, setting u32ApicIdPlus if necessary.
+    ; Load pGip.
     ;
 %ifdef IMPORTED_SUPLIB
  %ifdef IN_RING0
@@ -87,28 +87,34 @@ BEGINPROC rtTimeNanoTSInternalAsm
     jz      .Rediscover
     cmp     dword [esi + SUPGLOBALINFOPAGE.u32Magic], SUPGLOBALINFOPAGE_MAGIC
     jne     .Rediscover
-%ifdef ASYNC_GIP
+
+    ;
+    ; Calc pGipCPU, setting u32ApicIdPlus if necessary.
+    ;
+%ifdef NEED_APIC_ID
     ; u8ApicId = ASMGetApicId();
     mov     eax, 1
     cpuid                               ; expensive
  %ifdef NEED_TRANSACTION_ID
     mov     u32ApicIdPlus, ebx
  %endif
-    ; pGipCpu = &pGip->aCPU[pGip->aiCpuFromApicId[u8ApicId]];
+    ; pGipCpu/pGipCpuDelta = &pGip->aCPU[pGip->aiCpuFromApicId[u8ApicId]];
     shr     ebx, 24
     movzx   ebx, word [esi + ebx * 2 + SUPGLOBALINFOPAGE.aiCpuFromApicId]
     mov     eax, SUPGIPCPU_size
     mul     ebx
     lea     edi, [esi + eax + SUPGLOBALINFOPAGE.aCPUs]  ; edi == &pGip->aCPU[u8ApicId];
-%else
-    lea     edi, [esi + SUPGLOBALINFOPAGE.aCPUs]        ; edi == &pGip->aCPU[0];
 %endif
 
 %ifdef NEED_TRANSACTION_ID
     ;
     ; Serialized loading of u32TransactionId.
     ;
+ %ifdef ASYNC_GIP
     mov     ebx, [edi + SUPGIPCPU.u32TransactionId]
+ %else
+    mov     ebx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32TransactionId]
+ %endif
     mov     u32TransactionId, ebx
  %ifdef USE_LFENCE
     lfence
@@ -118,34 +124,63 @@ BEGINPROC rtTimeNanoTSInternalAsm
 %endif
 
     ;
-    ; Load the data and TSC.
+    ; Load the data and TSC with delta applied.
     ;
     mov     eax, [esi + SUPGLOBALINFOPAGE.u32UpdateIntervalNS]
-    mov     u32UpdateIntervalNS, eax    ; esi is now free
+    mov     u32UpdateIntervalNS, eax
+%ifdef ASYNC_GIP                        ; esi is now free.
     mov     edx, [edi + SUPGIPCPU.u32UpdateIntervalTSC]
+%else
+    mov     edx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32UpdateIntervalTSC]
+%endif
     mov     u32UpdateIntervalTSC, edx
+
     rdtsc
-;; @todo r-bird: Deltas are only valid in INVARIANT mode according to SUPDrv.c macro.
-;; edi is pointing to aCpu[0] in INVARIANT and SYNC.  Code does more harm than good atm => disabled.
-;; (Just drop the SUPTscDeltaApply macro btw.)  Sketched what is needed for invariant in timesupA.asm, more work .cpp files in IPRT and VMM.
-;    SUPTscDeltaApply edi        ; Apply inter-cpu TSC-delta to have the normalized TSC value in edx:eax
+%ifdef WITH_TSC_DELTA
+    cmp     dword [edi + SUPGIPCPU.i64TSCDelta], 0xffffffff
+    je      .TscDeltaPossiblyInvalid
+.TscDeltaValid:
+    sub     eax, dword [edi + SUPGIPCPU.i64TSCDelta]
+    sbb     edx, dword [edi + SUPGIPCPU.i64TSCDelta + 4]
+.TscDeltaNotValid:                      ; edi is now free.
+%endif
+
+%ifdef ASYNC_GIP
     mov     ecx, [edi + SUPGIPCPU.u64NanoTS]
-    mov     u64CurNanoTS, ecx
     mov     esi, [edi + SUPGIPCPU.u64NanoTS + 4]
-    mov     u64CurNanoTS_Hi, esi
-    mov     ebx, [edi + SUPGIPCPU.u64TSC]
-    mov     u64TSC, ebx
-    mov     ecx, [edi + SUPGIPCPU.u64TSC + 4]
-    mov     u64TSC_Hi, ecx
+%else
+    mov     ecx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64NanoTS]
+    mov     ebx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64NanoTS + 4]
+%endif
+    mov     u64CurNanoTS, ecx
+    mov     u64CurNanoTS_Hi, ebx
+%ifdef ASYNC_GIP
+    mov     ecx, [edi + SUPGIPCPU.u64TSC]
+    mov     ebx, [edi + SUPGIPCPU.u64TSC + 4]
+%else
+    mov     ecx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64TSC]
+    mov     ebx, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64TSC + 4]
+%endif
+    mov     u64TSC, ecx
+    mov     u64TSC_Hi, ebx
 
     ; u64PrevNanoTS = ASMAtomicReadU64(pu64Prev);
     ;   This serializes load/save. And with the dependency on the
     ;   RDTSC result, we try to make sure it has completed as well.
+%ifdef ASYNC_GIP
     mov     esi, pData
     mov     esi, [esi + RTTIMENANOTSDATA.pu64Prev]
+%else
+    mov     edi, pData
+    mov     edi, [esi + RTTIMENANOTSDATA.pu64Prev]
+%endif
     mov     ebx, eax
     mov     ecx, edx
+%ifdef ASYNC_GIP
     lock cmpxchg8b [esi]
+%else
+    lock cmpxchg8b [edi]
+%endif
     mov     u64PrevNanoTS, eax
     mov     u64PrevNanoTS_Hi, edx
 
@@ -155,7 +190,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ; Check that the GIP and CPU didn't change.
     ; We've already serialized all the loads and stores at this point.
     ;
- %ifdef ASYNC_GIP
+ %ifdef NEED_APIC_ID
     mov     u64RetNanoTS, ebx
     mov     u64RetNanoTS_Hi, ecx
   %define SAVED_u64RetNanoTS
@@ -164,7 +199,11 @@ BEGINPROC rtTimeNanoTSInternalAsm
     cmp     u32ApicIdPlus, ebx
     jne     .ReadGip
  %endif
+ %ifdef ASYNC_GIP
     mov     esi, [edi + SUPGIPCPU.u32TransactionId]
+ %else
+    mov     esi, [esi + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32TransactionId]
+ %endif
     cmp     esi, u32TransactionId
     jne     .ReadGip
     test    esi, 1
@@ -385,6 +424,17 @@ BEGINPROC rtTimeNanoTSInternalAsm
     add     esp, 4h
     jmp     .Done
 
+
+%ifdef WITH_TSC_DELTA
+    ;;
+    ;; Unlikely branch for when we think the TSC delta might be invalid.
+    ;;
+.TscDeltaPossiblyInvalid:
+    cmp     dword [edi + SUPGIPCPU.i64TSCDelta + 4], 0x7fffffff
+    jne     .TscDeltaValid
+    jmp     .TscDeltaNotValid
+%endif
+
     ;
     ; Cleanup variables
     ;
@@ -422,7 +472,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
 %define TmpVar                  [rbp - 30h]
 %define TmpVar2                 [rbp - 38h]
 %ifdef NEED_TRANSACTION_ID
- %ifdef ASYNC_GIP
+ %ifdef NEED_APIC_ID
   %define SavedR14              [rbp - 40h]
   %define SavedR15              [rbp - 48h]
  %endif
@@ -430,9 +480,19 @@ BEGINPROC rtTimeNanoTSInternalAsm
 
 %define pData                   rdi
 
-%define u64TSC                  rsi
-%define pGip                    rsi
-%define pGipCPU                 r8
+%ifdef ASYNC_GIP
+ %define u64TSC                 rsi
+ %define pGip                   rsi
+ %ifdef NEED_APIC_ID
+  %define pGipCPU               r8
+ %endif
+%else
+ %define u64TSC                 r8
+ %define pGip                   rsi
+ %ifdef NEED_APIC_ID
+  %define pGipCPU               r8
+ %endif
+%endif
 %define u32TransactionId        r9d
 %define u64CurNanoTS            r10
 %define u64PrevNanoTS           r11     ; not parameter register
@@ -443,7 +503,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
 %undef u64SavedRetNanoTS
 %undef u32ApicIdPlus
 %ifdef NEED_TRANSACTION_ID
- %ifdef ASYNC_GIP
+ %ifdef NEED_APIC_ID
   %define u64SavedRetNanoTS     r14
   %define u32ApicIdPlus         r15d
  %endif
@@ -484,8 +544,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
 .ReadGip:
 
     ;
-    ; Load pGip and calc pGipCPU, setting u32ApicIdPlus if necessary.
-    ; Finding the GIP is fun...
+    ; Load pGip - finding the GIP is fun...
     ;
 %ifdef RT_OS_WINDOWS
  %ifdef IMPORTED_SUPLIB
@@ -513,27 +572,32 @@ BEGINPROC rtTimeNanoTSInternalAsm
     cmp     dword [pGip + SUPGLOBALINFOPAGE.u32Magic], SUPGLOBALINFOPAGE_MAGIC
     jne     .Rediscover
 
-%ifdef ASYNC_GIP
+    ;
+    ; pGipCPU, setting u32ApicIdPlus if necessary.
+    ;
+%ifdef NEED_APIC_ID
     ; u8ApicId = ASMGetApicId();
     mov     eax, 1
     cpuid                               ; expensive
  %ifdef NEED_TRANSACTION_ID
     mov     u32ApicIdPlus, ebx
  %endif
-    ; pGipCpu = &pGip->aCPU[pGip->aiCpuFromApicId[u8ApicId]];
+    ; pGipCPU = &pGip->aCPU[pGip->aiCpuFromApicId[u8ApicId]];
     shr     ebx, 24
     movzx   eax, word [pGip + rbx * 2 + SUPGLOBALINFOPAGE.aiCpuFromApicId]
     imul    eax, SUPGIPCPU_size
     lea     pGipCPU, [pGip + rax + SUPGLOBALINFOPAGE.aCPUs]
-%else
-    lea     pGipCPU, [pGip + SUPGLOBALINFOPAGE.aCPUs]
 %endif
 
 %ifdef NEED_TRANSACTION_ID
     ;
     ; Serialized loading of u32TransactionId.
     ;
+ %ifdef ASYNC_GIP
     mov     u32TransactionId, [pGipCPU + SUPGIPCPU.u32TransactionId]
+ %else
+    mov     u32TransactionId, [pGip + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32TransactionId]
+ %endif
  %ifdef USE_LFENCE
     lfence
  %else
@@ -544,24 +608,38 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ;
     ; Load the data and TSC.
     ;
-    mov     u32UpdateIntervalNS,  [pGip + SUPGLOBALINFOPAGE.u32UpdateIntervalNS] ; before u64TSC
+    mov     u32UpdateIntervalNS,  [pGip + SUPGLOBALINFOPAGE.u32UpdateIntervalNS]
+%ifdef ASYNC_GIP
     mov     u32UpdateIntervalTSC, [pGipCPU + SUPGIPCPU.u32UpdateIntervalTSC]
+%else
+    mov     u32UpdateIntervalTSC, [pGip + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32UpdateIntervalTSC]
+%endif
+
     rdtsc
-;; @todo r-bird: Deltas are only valid in INVARIANT mode according to SUPDrv.c macro.
-;; pGipCPU is pointing to aCpu[0] in INVARIANT and SYNC.  Code is 32-bit, i.e. inefficient. Code does more harm than good atm => disabled.
-;; (Just drop the SUPTscDeltaApply macro btw.)  Sketched what is needed for invariant in timesupA.asm, more work .cpp files in IPRT and VMM.
-;    SUPTscDeltaApply pGipCPU
     mov     u64PrevNanoTS,        [pData + RTTIMENANOTSDATA.pu64Prev]
     mov     u64PrevNanoTS,        [u64PrevNanoTS]
     shl     rdx, 32
- %ifdef u64SavedRetNanoTS               ; doing this here saves a tick or so.
-    mov     u64SavedRetNanoTS, rax
-    or      u64SavedRetNanoTS, rdx
- %else
     or      rax, rdx                    ; rax is u64RetNanoTS.
- %endif
+%ifdef WITH_TSC_DELTA
+    mov     rdx, [pGipCPU + SUPGIPCPU.i64TSCDelta]
+    mov     u64CurNanoTS, 0x7fffffffffffffff ; INT64_MAX - temporarily borrowing u64CurNanoTS
+    cmp     rdx, u64CurNanoTS
+    je      .TscDeltaNotValid
+    sub     rax, rdx
+.TscDeltaNotValid:
+%endif
+%ifdef u64SavedRetNanoTS                ; doing this here may save a tick or so?
+    mov     u64SavedRetNanoTS, rax
+%endif
+
+%ifdef ASYNC_GIP
     mov     u64CurNanoTS,         [pGipCPU + SUPGIPCPU.u64NanoTS]
-    mov     u64TSC,               [pGipCPU + SUPGIPCPU.u64TSC]
+    mov     u64TSC,               [pGipCPU + SUPGIPCPU.u64TSC]                              ; transhes pGIP!
+%else
+    mov     u64CurNanoTS,         [pGip + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64NanoTS]
+    mov     u64TSC,               [pGip + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u64TSC]       ; trashes pGipCPU!
+%endif
+
 
 %ifdef NEED_TRANSACTION_ID
     ;
@@ -572,7 +650,7 @@ BEGINPROC rtTimeNanoTSInternalAsm
     ; dependency on the RDTSC result should do the trick, I think.
     ; CPUID is serializing, so the async path is safe by default.
     ;
- %ifdef ASYNC_GIP
+ %ifdef NEED_APIC_ID
     mov     eax, 1
     cpuid
     cmp     u32ApicIdPlus, ebx
@@ -580,7 +658,11 @@ BEGINPROC rtTimeNanoTSInternalAsm
  %else
     lock xor qword TmpVar, rax
  %endif
+ %ifdef ASYNC_GIP
     cmp     u32TransactionId, [pGipCPU + SUPGIPCPU.u32TransactionId]
+ %else
+    cmp     u32TransactionId, [pGip + SUPGLOBALINFOPAGE.aCPUs + SUPGIPCPU.u32TransactionId]
+ %endif
     jne     .ReadGip
     test    u32TransactionId, 1
     jnz     .ReadGip

@@ -419,9 +419,9 @@ typedef struct TM
     RTTIMENANOTSDATARC          VirtualGetRawDataRC;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
     R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR3;
-    /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
+    /** Pointer to the ring-0 tmVirtualGetRawNanoTS worker function. */
     R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR0;
-    /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
+    /** Pointer to the raw-mode tmVirtualGetRawNanoTS worker function. */
     RCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawRC;
     /** Alignment. */
     RTRCPTR                     AlignmentRCPtr;

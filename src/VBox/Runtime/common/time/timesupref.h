@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,6 +44,9 @@
 RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 {
     uint64_t    u64Delta;
+#if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
+    int64_t     i64TscDelta;
+#endif
     uint32_t    u32NanoTSFactor0;
     uint64_t    u64TSC;
     uint64_t    u64NanoTS;
@@ -60,38 +63,58 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
             return pData->pfnRediscover(pData);
 #endif
-
-#ifdef ASYNC_GIP
-        uint8_t    u8ApicId = ASMGetApicId();
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[pGip->aiCpuFromApicId[u8ApicId]];
-#else
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[0];
+#if GIP_MODE == GIP_MODE_ASYNC || IS_GIP_MODE_WITH_DELTA(GIP_MODE)
+        uint8_t const u8ApicId  = ASMGetApicId();
+        PSUPGIPCPU pGipCpu      = &pGip->aCPUs[pGip->aiCpuFromApicId[u8ApicId]];
 #endif
 
 #ifdef NEED_TRANSACTION_ID
+# if GIP_MODE == GIP_MODE_ASYNC
         uint32_t u32TransactionId = pGipCpu->u32TransactionId;
-        uint32_t volatile Tmp1;
-        ASMAtomicXchgU32(&Tmp1, u32TransactionId);
+# else
+        uint32_t u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+# endif
+# ifdef USE_LFENCE
+        ASMReadFenceSSE2();
+# else
+        ASMReadFence();
+# endif
 #endif
 
-        u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
-        u64NanoTS = pGipCpu->u64NanoTS;
-        u64TSC = pGipCpu->u64TSC;
-        u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-        u64Delta = ASMReadTSC();
-        u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
+#if GIP_MODE == GIP_MODE_ASYNC
+        u32UpdateIntervalTSC    = pGipCpu->u32UpdateIntervalTSC;
+        u64NanoTS               = pGipCpu->u64NanoTS;
+        u64TSC                  = pGipCpu->u64TSC;
+#else
+        u32UpdateIntervalTSC    = pGip->aCPUs[0].u32UpdateIntervalTSC;
+        u64NanoTS               = pGip->aCPUs[0].u64NanoTS;
+        u64TSC                  = pGip->aCPUs[0].u64TSC;
+# if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
+        i64TscDelta             = pGipCpu->i64TSCDelta;
+# endif
+#endif
+        u32NanoTSFactor0        = pGip->u32UpdateIntervalNS;
+        u64Delta                = ASMReadTSC();
+        u64PrevNanoTS           = ASMAtomicReadU64(pData->pu64Prev);
 
 #ifdef NEED_TRANSACTION_ID
-# ifdef ASYNC_GIP
+# if GIP_MODE == GIP_MODE_ASYNC || IS_GIP_MODE_WITH_DELTA(GIP_MODE)
         if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
             continue;
-# elif !defined(RT_ARCH_X86)
-        uint32_t volatile Tmp2;
-        ASMAtomicXchgU32(&Tmp2, u64Delta);
+# elif defined(USE_LFENCE)
+        ASMWriteFenceSSE();
+# else
+        ASMWriteFence();
 # endif
-        if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
-                        ||  (u32TransactionId & 1)))
+# if GIP_MODE == GIP_MODE_ASYNC
+        if (RT_UNLIKELY(   pGipCpu->u32TransactionId != u32TransactionId
+                        || (u32TransactionId & 1)))
             continue;
+# else
+        if (RT_UNLIKELY(   pGip->aCPUs[0].u32TransactionId != u32TransactionId
+                        || (u32TransactionId & 1)))
+            continue;
+# endif
 #endif
         break;
     }
@@ -100,6 +123,10 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
      * Calc NanoTS delta.
      */
     u64Delta -= u64TSC;
+#if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
+    if (RT_LIKELY(i64TscDelta != INT64_MAX))
+        u64Delta -= i64TscDelta;
+#endif
     if (RT_UNLIKELY(u64Delta > u32UpdateIntervalTSC))
     {
         /*
