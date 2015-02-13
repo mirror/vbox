@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,17 +39,34 @@
 #include "internal/time.h"
 
 
+#define GIP_MODE_SYNC_NO_DELTA          1
+#define GIP_MODE_SYNC_WITH_DELTA        2
+#define GIP_MODE_ASYNC                  3
+#define GIP_MODE_INVARIANT_NO_DELTA     4
+#define GIP_MODE_INVARIANT_WITH_DELTA   5
+#define IS_GIP_MODE_WITH_DELTA(a_enmMode) \
+    ((a_enmMode) == GIP_MODE_SYNC_WITH_DELTA || (a_enmMode) == GIP_MODE_INVARIANT_WITH_DELTA)
+
+
 /*
  * Use the CPUID instruction for some kind of serialization.
  */
-#undef  ASYNC_GIP
+#define GIP_MODE GIP_MODE_SYNC_NO_DELTA
 #undef  USE_LFENCE
 #define NEED_TRANSACTION_ID
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySync
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncNoDelta
 #include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySync);
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncNoDelta);
 
-#define ASYNC_GIP
+#undef  GIP_MODE
+#define GIP_MODE  GIP_MODE_SYNC_NO_DELTA
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncWithDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncWithDelta);
+
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_ASYNC
 #ifdef IN_RC
 # undef NEED_TRANSACTION_ID
 #endif
@@ -58,20 +75,45 @@ RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySync);
 #include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsync);
 
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_INVARIANT_NO_DELTA
+#undef  NEED_TRANSACTION_ID
+#define NEED_TRANSACTION_ID
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyInvariantNoDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyInvariantNoDelta);
+
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_INVARIANT_WITH_DELTA
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyInvariantWithDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyInvariantWithDelta);
+
 
 /*
  * Use LFENCE for load serialization.
  */
-#undef  ASYNC_GIP
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_SYNC_NO_DELTA
 #define USE_LFENCE
 #undef  NEED_TRANSACTION_ID
 #define NEED_TRANSACTION_ID
 #undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSync
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncNoDelta
 #include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSync);
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncNoDelta);
 
-#define ASYNC_GIP
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_SYNC_WITH_DELTA
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncWithDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncWithDelta);
+
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_ASYNC
 #ifdef IN_RC
 # undef NEED_TRANSACTION_ID
 #endif
@@ -79,6 +121,22 @@ RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSync);
 #define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsync
 #include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsync);
+
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_INVARIANT_NO_DELTA
+#undef  NEED_TRANSACTION_ID
+#define NEED_TRANSACTION_ID
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceInvariantNoDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceInvariantNoDelta);
+
+#undef  GIP_MODE
+#define GIP_MODE GIP_MODE_INVARIANT_WITH_DELTA
+#undef  rtTimeNanoTSInternalRef
+#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceInvariantWithDelta
+#include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceInvariantWithDelta);
 
 
 #endif /* !IN_GUEST && !RT_NO_GIP */

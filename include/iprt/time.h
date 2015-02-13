@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -914,10 +914,17 @@ typedef DECLCALLBACK(uint64_t) FNTIMENANOTSINTERNAL(PRTTIMENANOTSDATA pData);
 /** Pointer to an internal RTTimeNanoTS worker (assembly). */
 typedef FNTIMENANOTSINTERNAL *PFNTIMENANOTSINTERNAL;
 
-RTDECL(uint64_t) RTTimeNanoTSLegacySync(PRTTIMENANOTSDATA pData);
 RTDECL(uint64_t) RTTimeNanoTSLegacyAsync(PRTTIMENANOTSDATA pData);
-RTDECL(uint64_t) RTTimeNanoTSLFenceSync(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacyInvariantNoDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacyInvariantWithDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncNoDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLegacySyncWithDelta(PRTTIMENANOTSDATA pData);
 RTDECL(uint64_t) RTTimeNanoTSLFenceAsync(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceInvariantNoDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceInvariantWithDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncNoDelta(PRTTIMENANOTSDATA pData);
+RTDECL(uint64_t) RTTimeNanoTSLFenceSyncWithDelta(PRTTIMENANOTSDATA pData);
+
 /** @} */
 
 

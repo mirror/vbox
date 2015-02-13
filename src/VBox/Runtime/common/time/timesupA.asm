@@ -73,7 +73,6 @@ BEGINDATA
  %endif
 %endif
 
-
 BEGINCODE
 
 ;
@@ -82,50 +81,63 @@ BEGINCODE
 ;
 %undef  ASYNC_GIP
 %undef  USE_LFENCE
+%undef  WITH_TSC_DELTA
+%undef  NEED_APIC_ID
 %define NEED_TRANSACTION_ID
-%define NEED_TO_SAVE_REGS
-%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacySync
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacySyncNoDelta
+%include "timesupA.mac"
+
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacyInvariantNoDelta
+%include "timesupA.mac"
+
+%define WITH_TSC_DELTA
+%define NEED_APIC_ID
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacySyncWithDelta
+%include "timesupA.mac"
+
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacyInvariantWithDelta
 %include "timesupA.mac"
 
 %define ASYNC_GIP
+%undef  WITH_TSC_DELTA
+%define NEED_APIC_ID
 %ifdef IN_RC
  %undef NEED_TRANSACTION_ID
 %endif
 %define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacyAsync
 %include "timesupA.mac"
 
-%undef ASYNC_GIP
-%define INVARIANT_GIP
-%ifdef IN_RC
- %undef NEED_TRANSACTION_ID
-%endif
-%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacyInvariant
-;%include "timesupA.mac"
-;; @todo r=bird: later.
 
 ;
 ; Alternative implementation that employs lfence instead of cpuid.
 ;
-%undef  INVARIANT_GIP
+%undef  ASYNC_GIP
 %define USE_LFENCE
+%undef  WITH_TSC_DELTA
+%undef  NEED_APIC_ID
 %define NEED_TRANSACTION_ID
-%undef  NEED_TO_SAVE_REGS
-%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceSync
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceSyncNoDelta
+%include "timesupA.mac"
+
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceInvariantNoDelta
+%include "timesupA.mac"
+
+%define WITH_TSC_DELTA
+%define NEED_APIC_ID
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceSyncWithDelta
+%include "timesupA.mac"
+
+%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceInvariantWithDelta
 %include "timesupA.mac"
 
 %define ASYNC_GIP
+%undef  WITH_TSC_DELTA
+%define NEED_APIC_ID
 %ifdef IN_RC
  %undef NEED_TRANSACTION_ID
 %endif
 %define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceAsync
 %include "timesupA.mac"
-
-%undef  ASYNC_GIP
-%define INVARIANT_GIP
-%define NEED_TRANSACTION_ID
-%define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceInvariant
-;%include "timesupA.mac"
-;; @todo r=bird: later.
 
 
 %endif ; !IN_GUEST
