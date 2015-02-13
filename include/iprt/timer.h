@@ -122,22 +122,22 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 /** Any CPU is fine. (Must be 0.) */
 #define RTTIMER_FLAGS_CPU_ANY       UINT32_C(0)
 /** One specific CPU */
-#define RTTIMER_FLAGS_CPU_SPECIFIC  RT_BIT(8)
+#define RTTIMER_FLAGS_CPU_SPECIFIC  RT_BIT(16)
 /** Omni timer, run on all online CPUs.
  * @remarks The timer callback isn't necessarily running at the time same time on each CPU. */
 #define RTTIMER_FLAGS_CPU_ALL       ( RTTIMER_FLAGS_CPU_MASK | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** CPU mask. */
-#define RTTIMER_FLAGS_CPU_MASK      UINT32_C(0xff)
+#define RTTIMER_FLAGS_CPU_MASK      UINT32_C(0xffff)
 /** Desire a high resolution timer that works with RTTimerChangeInterval and
  * isn't subject to RTTimerGetSystemGranularity rounding.
  * @remarks This is quietly ignored if the feature isn't supported. */
-#define RTTIMER_FLAGS_HIGH_RES      RT_BIT(9)
+#define RTTIMER_FLAGS_HIGH_RES      RT_BIT(17)
 /** Convert a CPU set index (0-based) to RTTimerCreateEx flags.
  * This will automatically OR in the RTTIMER_FLAGS_CPU_SPECIFIC flag. */
 #define RTTIMER_FLAGS_CPU(iCpu)     ( (iCpu) | RTTIMER_FLAGS_CPU_SPECIFIC )
 /** Macro that validates the flags. */
 #define RTTIMER_FLAGS_ARE_VALID(fFlags) \
-    ( !((fFlags) & ~((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? UINT32_C(0x3ff) : UINT32_C(0x300))) )
+    ( !((fFlags) & ~((fFlags) & RTTIMER_FLAGS_CPU_SPECIFIC ? UINT32_C(0x3ffff) : UINT32_C(0x30000))) )
 /** @} */
 
 /**
