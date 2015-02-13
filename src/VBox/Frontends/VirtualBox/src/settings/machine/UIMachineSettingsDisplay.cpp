@@ -25,9 +25,7 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsDisplay.h"
-# include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
-# include "UIActionPool.h"
 # include "UIConverter.h"
 # include "VBoxGlobal.h"
 
@@ -50,16 +48,9 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_CRHGSMI
     , m_fWddmModeSupported(false)
 #endif /* VBOX_WITH_CRHGSMI */
-    , m_pActionPool(0)
 {
     /* Prepare: */
     prepare();
-}
-
-UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
-{
-    /* Cleanup: */
-    cleanup();
 }
 
 void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
@@ -140,14 +131,6 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     displayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
     displayData.m_screens = m_machine.GetVideoCaptureScreens();
 
-    /* Cache Machine Window data: */
-    displayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
-#ifdef Q_WS_MAC
-    displayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
-#endif /* Q_WS_MAC */
-    displayData.m_fShowMiniToolBar = gEDataManager->miniToolbarEnabled(m_machine.GetId());
-    displayData.m_fMiniToolBarAtTop = gEDataManager->miniToolbarAlignment(m_machine.GetId()) == Qt::AlignTop;
-
     /* Initialize other variables: */
     m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
 
@@ -195,18 +178,6 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoCaptureBitRate->setValue(displayData.m_iVideoCaptureBitRate);
     m_pScrollerVideoCaptureScreens->setValue(displayData.m_screens);
 
-    /* Prepare Machine Window data: */
-    const QString strMachineID = m_machine.GetId();
-    m_pMenuBarEditor->setMachineID(strMachineID);
-    m_pStatusBarEditor->setMachineID(strMachineID);
-    m_pMenuBarEditor->setActionPool(m_pActionPool);
-    m_pEditorGuestScreenScale->setValue(displayData.m_dScaleFactor * 100);
-#ifdef Q_WS_MAC
-    m_pCheckBoxUnscaledHiDPIOutput->setChecked(displayData.m_fUseUnscaledHiDPIOutput);
-#endif /* Q_WS_MAC */
-    m_pCheckBoxShowMiniToolBar->setChecked(displayData.m_fShowMiniToolBar);
-    m_pComboToolBarAlignment->setChecked(displayData.m_fMiniToolBarAtTop);
-
     /* Polish page finally: */
     polishPage();
 
@@ -218,7 +189,7 @@ void UIMachineSettingsDisplay::getFromCache()
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsDisplay::putToCache()
 {
-    /* Prepare audio data: */
+    /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData = m_cache.base();
 
     /* Gather Video data from page: */
@@ -248,14 +219,6 @@ void UIMachineSettingsDisplay::putToCache()
     displayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
     displayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
     displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
-
-    /* Gather Machine Window data from page: */
-    displayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
-#ifdef Q_WS_MAC
-    displayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
-#endif /* Q_WS_MAC */
-    displayData.m_fShowMiniToolBar = m_pCheckBoxShowMiniToolBar->isChecked();
-    displayData.m_fMiniToolBarAtTop = m_pComboToolBarAlignment->isChecked();
 
     /* Cache display data: */
     m_cache.cacheCurrentData(displayData);
@@ -337,17 +300,6 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
             m_machine.SetVideoCaptureFPS(displayData.m_iVideoCaptureFrameRate);
             m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
             m_machine.SetVideoCaptureScreens(displayData.m_screens);
-        }
-
-        /* Store Machine Window data: */
-        if (isMachineInValidMode())
-        {
-            gEDataManager->setScaleFactor(displayData.m_dScaleFactor, m_machine.GetId());
-#ifdef Q_WS_MAC
-            gEDataManager->setUseUnscaledHiDPIOutput(displayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
-#endif /* Q_WS_MAC */
-            gEDataManager->setMiniToolbarEnabled(displayData.m_fShowMiniToolBar, m_machine.GetId());
-            gEDataManager->setMiniToolbarAlignment(displayData.m_fMiniToolBarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
         }
     }
 
@@ -480,7 +432,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
 
 void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 {
-    /* Video tab-order */
+    /* Video tab-order: */
     setTabOrder(pWidget, m_pTabWidget->focusProxy());
     setTabOrder(m_pTabWidget->focusProxy(), m_pSliderVideoMemorySize);
     setTabOrder(m_pSliderVideoMemorySize, m_pEditorVideoMemorySize);
@@ -510,18 +462,11 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
     setTabOrder(m_pEditorVideoCaptureFrameRate, m_pSliderVideoCaptureQuality);
     setTabOrder(m_pSliderVideoCaptureQuality, m_pEditorVideoCaptureBitRate);
-
-    /* Machine Window tab-order: */
-    setTabOrder(m_pEditorVideoCaptureBitRate, m_pSliderGuestScreenScale);
-    setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
-    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxUnscaledHiDPIOutput);
-    setTabOrder(m_pCheckBoxUnscaledHiDPIOutput, m_pCheckBoxShowMiniToolBar);
-    setTabOrder(m_pCheckBoxShowMiniToolBar, m_pComboToolBarAlignment);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
-    /* Translate uic generated strings */
+    /* Translate uic generated strings: */
     Ui::UIMachineSettingsDisplay::retranslateUi(this);
 
     /* Video stuff: */
@@ -570,25 +515,6 @@ void UIMachineSettingsDisplay::polishPage()
     /* Video Capture tab: */
     m_pContainerVideoCapture->setEnabled(isMachineInValidMode());
     sltHandleVideoCaptureCheckboxToggle();
-
-    /* Machine-window tab: */
-    m_pMenuBarEditor->setEnabled(isMachineInValidMode());
-    m_pLabelGuestScreenScale->setEnabled(isMachineInValidMode());
-    m_pSliderGuestScreenScale->setEnabled(isMachineInValidMode());
-    m_pLabelGuestScreenScaleMin->setEnabled(isMachineInValidMode());
-    m_pLabelGuestScreenScaleMax->setEnabled(isMachineInValidMode());
-    m_pEditorGuestScreenScale->setEnabled(isMachineInValidMode());
-#ifdef Q_WS_MAC
-    m_pLabelHiDPI->setEnabled(isMachineInValidMode());
-    m_pCheckBoxUnscaledHiDPIOutput->setEnabled(isMachineInValidMode());
-#else /* !Q_WS_MAC */
-    m_pLabelHiDPI->hide();
-    m_pCheckBoxUnscaledHiDPIOutput->hide();
-#endif /* !Q_WS_MAC */
-    m_pLabelMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pCheckBoxShowMiniToolBar->setEnabled(isMachineInValidMode());
-    m_pComboToolBarAlignment->setEnabled(isMachineInValidMode() && m_pCheckBoxShowMiniToolBar->isChecked());
-    m_pStatusBarEditor->setEnabled(isMachineInValidMode());
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoMemorySizeSliderChange()
@@ -757,22 +683,6 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
     updateVideoCaptureSizeHint();
 }
 
-void UIMachineSettingsDisplay::sltHandleGuestScreenScaleSliderChange()
-{
-    /* Apply proposed scale-factor: */
-    m_pEditorGuestScreenScale->blockSignals(true);
-    m_pEditorGuestScreenScale->setValue(m_pSliderGuestScreenScale->value());
-    m_pEditorGuestScreenScale->blockSignals(false);
-}
-
-void UIMachineSettingsDisplay::sltHandleGuestScreenScaleEditorChange()
-{
-    /* Apply proposed scale-factor: */
-    m_pSliderGuestScreenScale->blockSignals(true);
-    m_pSliderGuestScreenScale->setValue(m_pEditorGuestScreenScale->value());
-    m_pSliderGuestScreenScale->blockSignals(false);
-}
-
 void UIMachineSettingsDisplay::prepare()
 {
     /* Apply UI decorations: */
@@ -782,7 +692,6 @@ void UIMachineSettingsDisplay::prepare()
     prepareVideoTab();
     prepareRemoteDisplayTab();
     prepareVideoCaptureTab();
-    prepareMachineWindowTab();
 
     /* Prepare validation: */
     prepareValidation();
@@ -931,27 +840,6 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
 }
 
-void UIMachineSettingsDisplay::prepareMachineWindowTab()
-{
-    /* Create personal action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
-
-    /* Prepare scale-factor slider: */
-    m_pSliderGuestScreenScale->setMinimum(100);
-    m_pSliderGuestScreenScale->setMaximum(200);
-    m_pSliderGuestScreenScale->setPageStep(10);
-    m_pSliderGuestScreenScale->setSingleStep(1);
-    m_pSliderGuestScreenScale->setTickInterval(10);
-    m_pSliderGuestScreenScale->setSnappingEnabled(true);
-    connect(m_pSliderGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleSliderChange()));
-
-    /* Prepare scale-factor editor: */
-    m_pEditorGuestScreenScale->setMinimum(100);
-    m_pEditorGuestScreenScale->setMaximum(200);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
-    connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
-}
-
 void UIMachineSettingsDisplay::prepareValidation()
 {
     /* Configure validation: */
@@ -962,18 +850,6 @@ void UIMachineSettingsDisplay::prepareValidation()
     connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
     connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
     connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
-}
-
-void UIMachineSettingsDisplay::cleanupMachineWindowTab()
-{
-    /* Destroy personal action-pool: */
-    UIActionPool::destroy(m_pActionPool);
-}
-
-void UIMachineSettingsDisplay::cleanup()
-{
-    /* Cleanup tabs: */
-    cleanupMachineWindowTab();
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()

@@ -1075,17 +1075,18 @@ template<> QString toInternalString(const MachineSettingsPageType &machineSettin
     QString strResult;
     switch (machineSettingsPageType)
     {
-        case MachineSettingsPageType_General:  strResult = "General"; break;
-        case MachineSettingsPageType_System:   strResult = "System"; break;
-        case MachineSettingsPageType_Display:  strResult = "Display"; break;
-        case MachineSettingsPageType_Storage:  strResult = "Storage"; break;
-        case MachineSettingsPageType_Audio:    strResult = "Audio"; break;
-        case MachineSettingsPageType_Network:  strResult = "Network"; break;
-        case MachineSettingsPageType_Ports:    strResult = "Ports"; break;
-        case MachineSettingsPageType_Serial:   strResult = "Serial"; break;
-        case MachineSettingsPageType_Parallel: strResult = "Parallel"; break;
-        case MachineSettingsPageType_USB:      strResult = "USB"; break;
-        case MachineSettingsPageType_SF:       strResult = "SharedFolders"; break;
+        case MachineSettingsPageType_General:   strResult = "General"; break;
+        case MachineSettingsPageType_System:    strResult = "System"; break;
+        case MachineSettingsPageType_Display:   strResult = "Display"; break;
+        case MachineSettingsPageType_Storage:   strResult = "Storage"; break;
+        case MachineSettingsPageType_Audio:     strResult = "Audio"; break;
+        case MachineSettingsPageType_Network:   strResult = "Network"; break;
+        case MachineSettingsPageType_Ports:     strResult = "Ports"; break;
+        case MachineSettingsPageType_Serial:    strResult = "Serial"; break;
+        case MachineSettingsPageType_Parallel:  strResult = "Parallel"; break;
+        case MachineSettingsPageType_USB:       strResult = "USB"; break;
+        case MachineSettingsPageType_SF:        strResult = "SharedFolders"; break;
+        case MachineSettingsPageType_Interface: strResult = "Interface"; break;
         default:
         {
             AssertMsgFailed(("No text for settings page type=%d", machineSettingsPageType));
@@ -1112,6 +1113,7 @@ template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(c
     keys << "Parallel";      values << MachineSettingsPageType_Parallel;
     keys << "USB";           values << MachineSettingsPageType_USB;
     keys << "SharedFolders"; values << MachineSettingsPageType_SF;
+    keys << "Interface";     values << MachineSettingsPageType_Interface;
     /* Invalid type for unknown words: */
     if (!keys.contains(strMachineSettingsPageType, Qt::CaseInsensitive))
         return MachineSettingsPageType_Invalid;
@@ -1124,17 +1126,18 @@ template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
 {
     switch (type)
     {
-        case MachineSettingsPageType_General:  return UIIconPool::pixmap(":/machine_warning_16px.png");
-        case MachineSettingsPageType_System:   return UIIconPool::pixmap(":/chipset_warning_16px.png");
-        case MachineSettingsPageType_Display:  return UIIconPool::pixmap(":/vrdp_warning_16px.png");
-        case MachineSettingsPageType_Storage:  return UIIconPool::pixmap(":/hd_warning_16px.png");
-        case MachineSettingsPageType_Audio:    return UIIconPool::pixmap(":/sound_warning_16px.png");
-        case MachineSettingsPageType_Network:  return UIIconPool::pixmap(":/nw_warning_16px.png");
-        case MachineSettingsPageType_Ports:    return UIIconPool::pixmap(":/serial_port_warning_16px.png");
-        case MachineSettingsPageType_Serial:   return UIIconPool::pixmap(":/serial_port_warning_16px.png");
-        case MachineSettingsPageType_Parallel: return UIIconPool::pixmap(":/parallel_port_warning_16px.png");
-        case MachineSettingsPageType_USB:      return UIIconPool::pixmap(":/usb_warning_16px.png");
-        case MachineSettingsPageType_SF:       return UIIconPool::pixmap(":/sf_warning_16px.png");
+        case MachineSettingsPageType_General:   return UIIconPool::pixmap(":/machine_warning_16px.png");
+        case MachineSettingsPageType_System:    return UIIconPool::pixmap(":/chipset_warning_16px.png");
+        case MachineSettingsPageType_Display:   return UIIconPool::pixmap(":/vrdp_warning_16px.png");
+        case MachineSettingsPageType_Storage:   return UIIconPool::pixmap(":/hd_warning_16px.png");
+        case MachineSettingsPageType_Audio:     return UIIconPool::pixmap(":/sound_warning_16px.png");
+        case MachineSettingsPageType_Network:   return UIIconPool::pixmap(":/nw_warning_16px.png");
+        case MachineSettingsPageType_Ports:     return UIIconPool::pixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Serial:    return UIIconPool::pixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Parallel:  return UIIconPool::pixmap(":/parallel_port_warning_16px.png");
+        case MachineSettingsPageType_USB:       return UIIconPool::pixmap(":/usb_warning_16px.png");
+        case MachineSettingsPageType_SF:        return UIIconPool::pixmap(":/sf_warning_16px.png");
+        case MachineSettingsPageType_Interface: return UIIconPool::pixmap(":/interface_warning_16px.png");
         default: AssertMsgFailed(("No pixmap for %d", type)); break;
     }
     return QPixmap();

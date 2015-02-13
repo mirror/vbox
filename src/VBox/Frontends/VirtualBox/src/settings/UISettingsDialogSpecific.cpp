@@ -59,6 +59,7 @@
 # include "UIMachineSettingsParallel.h"
 # include "UIMachineSettingsUSB.h"
 # include "UIMachineSettingsSF.h"
+# include "UIMachineSettingsInterface.h"
 
 /* COM includes: */
 # include "CUSBController.h"
@@ -701,6 +702,14 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                             iPageIndex, "#sharedFolders", pSettingsPage);
                     break;
                 }
+                /* Interface page: */
+                case MachineSettingsPageType_Interface:
+                {
+                    pSettingsPage = new UIMachineSettingsInterface(m_machine.GetId());
+                    addItem(":/interface_32px.png", ":/interface_24px.png", ":/interface_16px.png",
+                            iPageIndex, "#interface", pSettingsPage);
+                    break;
+                }
                 default:
                     break;
             }
@@ -922,6 +931,9 @@ void UISettingsDialogMachine::retranslateUi()
 
     /* SFolders page: */
     m_pSelector->setItemText(MachineSettingsPageType_SF, tr("Shared Folders"));
+
+    /* Interface page: */
+    m_pSelector->setItemText(MachineSettingsPageType_Interface, tr("Interface"));
 
     /* Polish the selector: */
     m_pSelector->polish();

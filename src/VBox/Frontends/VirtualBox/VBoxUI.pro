@@ -47,6 +47,7 @@ FORMS = \
     src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
     src/settings/machine/UIMachineSettingsSF.ui \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
+    src/settings/machine/UIMachineSettingsInterface.ui \
     src/widgets/UIApplianceEditorWidget.ui \
     src/selector/VBoxSnapshotsWgt.ui
 

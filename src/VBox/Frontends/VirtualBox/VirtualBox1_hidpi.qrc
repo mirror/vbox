@@ -177,6 +177,10 @@
         <file alias="ide_collapse_16px_hidpi.png">images/hidpi/ide_collapse_16px_hidpi.png</file>
         <file alias="ide_expand_16px_hidpi.png">images/hidpi/ide_expand_16px_hidpi.png</file>
         <file alias="import_16px_hidpi.png">images/hidpi/import_16px_hidpi.png</file>
+        <file alias="interface_16px_hidpi.png">images/hidpi/interface_16px_hidpi.png</file>
+        <file alias="interface_24px_hidpi.png">images/hidpi/interface_24px_hidpi.png</file>
+        <file alias="interface_32px_hidpi.png">images/hidpi/interface_32px_hidpi.png</file>
+        <file alias="interface_warning_16px_hidpi.png">images/hidpi/interface_warning_16px_hidpi.png</file>
         <file alias="keyboard_16px_hidpi.png">images/hidpi/keyboard_16px_hidpi.png</file>
         <file alias="keyboard_24px_hidpi.png">images/hidpi/keyboard_24px_hidpi.png</file>
         <file alias="keyboard_32px_hidpi.png">images/hidpi/keyboard_32px_hidpi.png</file>
@@ -253,7 +257,5 @@
         <file alias="os_openbsd_hidpi.png">images/hidpi/os_openbsd_hidpi.png</file>
         <file alias="os_opensuse_64_hidpi.png">images/hidpi/os_opensuse_64_hidpi.png</file>
         <file alias="os_opensuse_hidpi.png">images/hidpi/os_opensuse_hidpi.png</file>
-        <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
-        <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
     </qresource>
 </RCC>

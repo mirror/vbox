@@ -51,12 +51,6 @@ struct UIDataSettingsMachineDisplay
         , m_iVideoCaptureFrameHeight(0)
         , m_iVideoCaptureFrameRate(0)
         , m_iVideoCaptureBitRate(0)
-        , m_dScaleFactor(1)
-#ifdef Q_WS_MAC
-        , m_fUseUnscaledHiDPIOutput(false)
-#endif /* Q_WS_MAC */
-        , m_fShowMiniToolBar(false)
-        , m_fMiniToolBarAtTop(false)
     {}
 
     /* Functions: */
@@ -80,13 +74,7 @@ struct UIDataSettingsMachineDisplay
                (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight) &&
                (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
                (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
-               (m_screens == other.m_screens) &&
-               (m_dScaleFactor == other.m_dScaleFactor) &&
-#ifdef Q_WS_MAC
-               (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput) &&
-#endif /* Q_WS_MAC */
-               (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
-               (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
+               (m_screens == other.m_screens);
     }
 
     /* Operators: */
@@ -118,14 +106,6 @@ struct UIDataSettingsMachineDisplay
     int m_iVideoCaptureFrameRate;
     int m_iVideoCaptureBitRate;
     QVector<BOOL> m_screens;
-
-    /* Variables: Machine Window stuff: */
-    double m_dScaleFactor;
-#ifdef Q_WS_MAC
-    bool m_fUseUnscaledHiDPIOutput;
-#endif /* Q_WS_MAC */
-    bool m_fShowMiniToolBar;
-    bool m_fMiniToolBarAtTop;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
@@ -139,8 +119,6 @@ public:
 
     /** Constructor. */
     UIMachineSettingsDisplay();
-    /** Destructor. */
-    ~UIMachineSettingsDisplay();
 
     /* API: Correlation stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
@@ -197,10 +175,6 @@ private slots:
     void sltHandleVideoCaptureQualitySliderChange();
     void sltHandleVideoCaptureBitRateEditorChange();
 
-    /* Handlers: Guest-screen scale-factor stuff: */
-    void sltHandleGuestScreenScaleSliderChange();
-    void sltHandleGuestScreenScaleEditorChange();
-
 private:
 
     /** Prepare routine. */
@@ -211,15 +185,8 @@ private:
     void prepareRemoteDisplayTab();
     /** Prepare routine: Video Capture tab. */
     void prepareVideoCaptureTab();
-    /** Prepare routine: Machine Window tab. */
-    void prepareMachineWindowTab();
     /** Prepare routine: Validation. */
     void prepareValidation();
-
-    /** Cleanup routine: Machine Window tab. */
-    void cleanupMachineWindowTab();
-    /** Cleanup routine. */
-    void cleanup();
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
@@ -256,9 +223,6 @@ private:
 
     /* Cache: */
     UICacheSettingsMachineDisplay m_cache;
-
-    /** Holds the action-pool instance. */
-    UIActionPool *m_pActionPool;
 };
 
 #endif // __UIMachineSettingsDisplay_h__
