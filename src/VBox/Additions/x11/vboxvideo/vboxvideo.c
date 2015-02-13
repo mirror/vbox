@@ -1258,7 +1258,7 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
     if (pScrn->vtSema)
     {
 #ifdef VBOXVIDEO_13
-        int i;
+        unsigned i;
 
         for (i = 0; i < pVBox->cScreens; ++i)
             vbox_output_dpms(pVBox->pScreens[i].paOutputs, DPMSModeOff);
