@@ -60,8 +60,15 @@ typedef struct RTTIMER
     uint32_t volatile       u32Magic;
     /** Reference counter. */
     uint32_t volatile       cRefs;
-    /** Flag indicating that the timer is suspended. */
-    uint8_t volatile        fSuspended;
+    /** Flag indicating that the timer is suspended (hCyclicId should be
+     *  CYCLIC_NONE). */
+    bool volatile           fSuspended;
+    /** Flag indicating that the timer was suspended from the timer callback and
+     * therefore the hCyclicId may still be valid. */
+    bool volatile           fSuspendedFromTimer;
+    /** Flag indicating that the timer interval was changed and that it requires
+     * manual expiration time programming for each callout. */
+    bool volatile           fIntervalChanged;
     /** Whether the timer must run on all CPUs or not. */
     uint8_t                 fAllCpus;
     /** Whether the timer must run on a specific CPU or not. */
@@ -69,8 +76,11 @@ typedef struct RTTIMER
     /** The CPU it must run on if fSpecificCpu is set. */
     uint32_t                iCpu;
     /** The nano second interval for repeating timers. */
-    uint64_t                cNsInterval;
-    /** Cyclic timer Id. */
+    uint64_t volatile       cNsInterval;
+    /** Cyclic timer Id.  This is CYCLIC_NONE if no active timer.
+     * @remarks Please keep in mind that cyclic may call us back before the
+     *          cyclic_add/cyclic_add_omni functions returns, so don't use this
+     *          unguarded with cyclic_reprogram. */
     cyclic_id_t             hCyclicId;
     /** The user callback. */
     PFNRTTIMER              pfnTimer;
@@ -83,21 +93,32 @@ typedef struct RTTIMER
         struct
         {
             /** Cyclic handler. */
-            cyc_handler_t   hHandler;
+            cyc_handler_t   Handler;
             /** Cyclic time and interval representation. */
-            cyc_time_t      hFireTime;
+            cyc_time_t      FireTime;
             /** Timer ticks. */
             uint64_t        u64Tick;
+            /** The next tick when fIntervalChanged is true, otherwise 0. */
+            uint64_t        nsNextTick;
+            /** The (interrupt) thread currently active in the callback. */
+            kthread_t * volatile pActiveThread;
         } Single;
 
         /** Omni timer (fAllCpus == true). */
         struct
         {
-             /** Absolute timestamp of when the timer should fire next. */
+            /** Absolute timestamp of when the timer should fire first when starting up. */
             uint64_t        u64When;
-            /** Array of timer ticks per CPU. Reinitialized when a CPU is online'd
-             *  (variable size). */
-            uint64_t        au64Ticks[1];
+            /** Array of per CPU data (variable size). */
+            struct
+            {
+                /** Timer ticks (reinitialized when online'd). */
+                uint64_t    u64Tick;
+                /** The (interrupt) thread currently active in the callback. */
+                kthread_t * volatile pActiveThread;
+                /** The next tick when fIntervalChanged is true, otherwise 0. */
+                uint64_t    nsNextTick;
+            } aPerCpu[1];
         } Omni;
     } u;
 } RTTIMER;
@@ -115,6 +136,12 @@ typedef struct RTTIMER
             VERR_INVALID_HANDLE); \
     } while (0)
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void rtTimerSolSingleCallbackWrapper(void *pvArg);
+static void rtTimerSolStopIt(PRTTIMER pTimer);
 
 
 /**
@@ -171,20 +198,10 @@ static void rtTimerSolMpCallbackWrapper(RTCPUID idCpu, void *pvUser1, void *pvUs
     PRTTIMER pTimer = (PRTTIMER)pvUser1;
     AssertPtrReturnVoid(pTimer);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    Assert(pTimer->iCpu == RTMpCpuId());    /* ASSUMES: index == cpuid */
-    Assert(!pTimer->fAllCpus);
-    NOREF(pvUser2);
+    AssertReturnVoid(pTimer->iCpu == RTMpCpuId()); /* ASSUMES: index == cpuid */
 
-    /* Make sure one-shots do not fire another time. */
-    Assert(   !pTimer->fSuspended
-           || pTimer->cNsInterval != 0);
-
-    /* For one-shot specific timers, allow RTTimer to restart them. */
-    if (pTimer->cNsInterval == 0)
-        pTimer->fSuspended = true;
-
-    uint64_t u64Tick = ++pTimer->u.Single.u64Tick;
-    pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+    /* This avoids some code duplication. */
+    rtTimerSolSingleCallbackWrapper(pTimer);
 }
 
 
@@ -208,21 +225,56 @@ static void rtTimerSolSingleCallbackWrapper(void *pvArg)
     Assert(   !pTimer->fSuspended
            || pTimer->cNsInterval != 0);
 
-    /* For specific timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
-       Redirect these shots to the right CPU as we are temporarily rebinding to the right CPU. */
-    if (   pTimer->fSpecificCpu
-        && pTimer->iCpu != RTMpCpuId())          /* ASSUMES: index == cpuid */
+    if (!pTimer->fSuspendedFromTimer)
     {
-        RTMpOnSpecific(pTimer->iCpu, rtTimerSolMpCallbackWrapper, pTimer, NULL);
-        return;
+        /* For specific timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
+           Redirect these shots to the right CPU as we are temporarily rebinding to the right CPU. */
+        if (RT_UNLIKELY(   pTimer->fSpecificCpu
+                        && pTimer->iCpu != RTMpCpuId())) /* ASSUMES: index == cpuid */
+        {
+            RTMpOnSpecific(pTimer->iCpu, rtTimerSolMpCallbackWrapper, pTimer, NULL);
+            return;
+        }
+
+        /* For one-shot, we may allow the callback to restart them. */
+        if (pTimer->cNsInterval == 0)
+            pTimer->fSuspendedFromTimer = true;
+
+        /*
+         * Perform the callout.
+         */
+        pTimer->u.Single.pActiveThread = curthread;
+
+        uint64_t u64Tick = ++pTimer->u.Single.u64Tick;
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+
+        pTimer->u.Single.pActiveThread = NULL;
+
+        if (RT_LIKELY(!pTimer->fSuspendedFromTimer))
+        {
+            if (   !pTimer->fIntervalChanged
+                || RT_UNLIKELY(pTimer->hCyclicId == CYCLIC_NONE))
+                return;
+
+            /*
+             * The interval was changed, we need to set the expiration time
+             * our selves before returning.  This comes at a slight cost,
+             * which is why we don't do it all the time.
+             */
+            if (pTimer->u.Single.nsNextTick)
+                pTimer->u.Single.nsNextTick += ASMAtomicUoReadU64(&pTimer->cNsInterval);
+            else
+                pTimer->u.Single.nsNextTick = RTTimeSystemNanoTS() + ASMAtomicUoReadU64(&pTimer->cNsInterval);
+            cyclic_reprogram(pTimer->hCyclicId, pTimer->u.Single.nsNextTick);
+            return;
+        }
+
+        /*
+         * The timer has been suspended, set expiration time to infinitiy.
+         */
     }
-
-    /* For one-shot any-cpu timers, allow RTTimer to restart them. */
-    if (pTimer->cNsInterval == 0)
-        pTimer->fSuspended = true;
-
-    uint64_t u64Tick = ++pTimer->u.Single.u64Tick;
-    pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+    if (RT_LIKELY(pTimer->hCyclicId != CYCLIC_NONE))
+        cyclic_reprogram(pTimer->hCyclicId, CY_INFINITY);
 }
 
 
@@ -242,8 +294,48 @@ static void rtTimerSolOmniCallbackWrapper(void *pvArg)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(pTimer->fAllCpus);
 
-    uint64_t u64Tick = ++pTimer->u.Omni.au64Ticks[CPU->cpu_id];
-    pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+    if (!pTimer->fSuspendedFromTimer)
+    {
+        /*
+         * Perform the callout.
+         */
+        uint32_t const iCpu = CPU->cpu_id;
+
+        pTimer->u.Omni.aPerCpu[iCpu].pActiveThread = curthread;
+        uint64_t u64Tick = ++pTimer->u.Omni.aPerCpu[iCpu].u64Tick;
+
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+
+        pTimer->u.Omni.aPerCpu[iCpu].pActiveThread = NULL;
+
+        if (RT_LIKELY(!pTimer->fSuspendedFromTimer))
+        {
+            if (   !pTimer->fIntervalChanged
+                || RT_UNLIKELY(pTimer->hCyclicId == CYCLIC_NONE))
+                return;
+
+            /*
+             * The interval was changed, we need to set the expiration time
+             * our selves before returning.  This comes at a slight cost,
+             * which is why we don't do it all the time.
+             *
+             * Note! The cyclic_reprogram call only affects the omni cyclic
+             *       component for this CPU.
+             */
+            if (pTimer->u.Omni.aPerCpu[iCpu].nsNextTick)
+                pTimer->u.Omni.aPerCpu[iCpu].nsNextTick += ASMAtomicUoReadU64(&pTimer->cNsInterval);
+            else
+                pTimer->u.Omni.aPerCpu[iCpu].nsNextTick = RTTimeSystemNanoTS() + ASMAtomicUoReadU64(&pTimer->cNsInterval);
+            cyclic_reprogram(pTimer->hCyclicId, pTimer->u.Omni.aPerCpu[iCpu].nsNextTick);
+            return;
+        }
+
+        /*
+         * The timer has been suspended, set expiration time to infinitiy.
+         */
+    }
+    if (RT_LIKELY(pTimer->hCyclicId != CYCLIC_NONE))
+        cyclic_reprogram(pTimer->hCyclicId, CY_INFINITY);
 }
 
 
@@ -267,8 +359,11 @@ static void rtTimerSolOmniCpuOnline(void *pvArg, cpu_t *pCpu, cyc_handler_t *pCy
     AssertPtrReturnVoid(pCpu);
     AssertPtrReturnVoid(pCyclicHandler);
     AssertPtrReturnVoid(pCyclicTime);
+    uint32_t const iCpu = pCpu->cpu_id; /* Note! CPU is not necessarily the same as pCpu. */
 
-    pTimer->u.Omni.au64Ticks[pCpu->cpu_id] = 0;
+    pTimer->u.Omni.aPerCpu[iCpu].u64Tick = 0;
+    pTimer->u.Omni.aPerCpu[iCpu].nsNextTick = 0;
+
     pCyclicHandler->cyh_func  = (cyc_func_t)rtTimerSolOmniCallbackWrapper;
     pCyclicHandler->cyh_arg   = pTimer;
     pCyclicHandler->cyh_level = CY_LOCK_LEVEL;
@@ -309,7 +404,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
      * variable sized array of ticks counts, thus the size calculation.
      */
     PRTTIMER pTimer = (PRTTIMER)RTMemAllocZ(  (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL
-                                            ? RT_OFFSETOF(RTTIMER, u.Omni.au64Ticks[RTMpGetCount()])
+                                            ? RT_OFFSETOF(RTTIMER, u.Omni.aPerCpu[RTMpGetCount()])
                                             : sizeof(RTTIMER));
     if (!pTimer)
         return VERR_NO_MEMORY;
@@ -317,6 +412,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->u32Magic = RTTIMER_MAGIC;
     pTimer->cRefs = 1;
     pTimer->fSuspended = true;
+    pTimer->fSuspendedFromTimer = false;
+    pTimer->fIntervalChanged = false;
     if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL)
     {
         pTimer->fAllCpus = true;
@@ -345,6 +442,24 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 }
 
 
+/**
+ * Checks if the calling thread is currently executing the timer proceduce for
+ * the given timer.
+ *
+ * @returns true if it is, false if it isn't.
+ * @param   pTimer              The timer in question.
+ */
+DECLINLINE(bool) rtTimerSolIsCallingFromTimerProc(PRTTIMER pTimer)
+{
+    kthread_t *pCurThread = curthread;
+    AssertReturn(pCurThread, false); /* serious paranoia */
+
+    if (!pTimer->fAllCpus)
+        return pTimer->u.Single.pActiveThread == pCurThread;
+    return pTimer->u.Omni.aPerCpu[CPU->cpu_id].pActiveThread == pCurThread;
+}
+
+
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 {
     if (pTimer == NULL)
@@ -353,10 +468,19 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     RT_ASSERT_INTS_ON();
 
     /*
-     * Free the associated resources.
+     * It is not possible to destroy a timer from it's callback function.
+     * Cyclic makes that impossible (or at least extremely risky).
      */
-    RTTimerStop(pTimer);
+    AssertReturn(!rtTimerSolIsCallingFromTimerProc(pTimer), VERR_INVALID_CONTEXT);
+
+    /*
+     * Invalidate the handle, make sure it's stopped nad free the associated resources.
+     */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+
+    if (   !pTimer->fSuspended
+        || pTimer->hCyclicId != CYCLIC_NONE) /* 2nd check shouldn't happen */
+        rtTimerSolStopIt(pTimer);
 
     rtTimerSolRelease(pTimer);
     return VINF_SUCCESS;
@@ -368,65 +492,105 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     RTTIMER_ASSERT_VALID_RET(pTimer);
     RT_ASSERT_INTS_ON();
 
+    /*
+     * It's not possible to restart a one-shot time from it's callback function,
+     * at least not at the moment.
+     */
+    AssertReturn(!rtTimerSolIsCallingFromTimerProc(pTimer), VERR_INVALID_CONTEXT);
+
+
+    mutex_enter(&cpu_lock);
+
+    /*
+     * Make sure it's not active already.  If it was suspended from a timer
+     * callback function, we need to do some cleanup work here before we can
+     * restart the timer.
+     */
     if (!pTimer->fSuspended)
-        return VERR_TIMER_ACTIVE;
+    {
+        if (!pTimer->fSuspendedFromTimer)
+        {
+            mutex_exit(&cpu_lock);
+            return VERR_TIMER_ACTIVE;
+        }
+        cyclic_remove(pTimer->hCyclicId);
+        pTimer->hCyclicId = CYCLIC_NONE;
+    }
 
     pTimer->fSuspended = false;
+    pTimer->fSuspendedFromTimer = false;
+    pTimer->fIntervalChanged = false;
     if (pTimer->fAllCpus)
     {
         /*
          * Setup omni (all CPU) timer. The Omni-CPU online event will fire
          * and from there we setup periodic timers per CPU.
          */
-        pTimer->u.Omni.u64When  = pTimer->cNsInterval + RTTimeSystemNanoTS();
+        pTimer->u.Omni.u64When  = RTTimeSystemNanoTS() + (u64First ? u64First : pTimer->cNsInterval);
 
         cyc_omni_handler_t HandlerOmni;
         HandlerOmni.cyo_online  = rtTimerSolOmniCpuOnline;
         HandlerOmni.cyo_offline = NULL;
         HandlerOmni.cyo_arg     = pTimer;
 
-        mutex_enter(&cpu_lock);
         pTimer->hCyclicId = cyclic_add_omni(&HandlerOmni);
-        mutex_exit(&cpu_lock);
     }
     else
     {
-        if (pTimer->fSpecificCpu && !RTMpIsCpuOnline(pTimer->iCpu)) /* ASSUMES: index == cpuid */
-            return VERR_CPU_OFFLINE;
-
-        pTimer->u.Single.hHandler.cyh_func  = (cyc_func_t)rtTimerSolSingleCallbackWrapper;
-        pTimer->u.Single.hHandler.cyh_arg   = pTimer;
-        pTimer->u.Single.hHandler.cyh_level = CY_LOCK_LEVEL;
-
-        mutex_enter(&cpu_lock);
-        if (RT_UNLIKELY(   pTimer->fSpecificCpu
-                        && !cpu_is_online(cpu[pTimer->iCpu])))
+        /*
+         * Setup a single CPU timer.   If a specific CPU was requested, it
+         * must be online or the timer cannot start.
+         */
+        if (   pTimer->fSpecificCpu
+            && !RTMpIsCpuOnline(pTimer->iCpu)) /* ASSUMES: index == cpuid */
         {
+            pTimer->fSuspended = true;
+
             mutex_exit(&cpu_lock);
             return VERR_CPU_OFFLINE;
         }
 
-        pTimer->u.Single.hFireTime.cyt_when = u64First + RTTimeSystemNanoTS();
-        if (pTimer->cNsInterval == 0)
-        {
-            /*
-             * cylic_add() comment: "The caller is responsible for assuring that cyt_when + cyt_interval <= INT64_MAX"
-             * but it contradicts itself because cyclic_reprogram() updates only the interval and accepts CY_INFINITY as
-             * a valid, special value. See cyclic_fire().
-             */
-            pTimer->u.Single.hFireTime.cyt_interval = CY_INFINITY;
-        }
-        else
-            pTimer->u.Single.hFireTime.cyt_interval = pTimer->cNsInterval;
+        /** @todo we probably don't need to have cyc_handler_t and cyc_time_t in the
+         *        timer structure... */
+        pTimer->u.Single.Handler.cyh_func  = (cyc_func_t)rtTimerSolSingleCallbackWrapper;
+        pTimer->u.Single.Handler.cyh_arg   = pTimer;
+        pTimer->u.Single.Handler.cyh_level = CY_LOCK_LEVEL;
 
-        pTimer->hCyclicId = cyclic_add(&pTimer->u.Single.hHandler, &pTimer->u.Single.hFireTime);
+        pTimer->u.Single.FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
+        pTimer->u.Single.FireTime.cyt_interval = pTimer->cNsInterval != 0
+                                               ? pTimer->cNsInterval
+                                               : CY_INFINITY /* Special value, see cyclic_fire. */;
+        pTimer->u.Single.u64Tick = 0;
+        pTimer->u.Single.nsNextTick = 0;
+
+        pTimer->hCyclicId = cyclic_add(&pTimer->u.Single.Handler, &pTimer->u.Single.FireTime);
         if (pTimer->fSpecificCpu)
             cyclic_bind(pTimer->hCyclicId, cpu[pTimer->iCpu], NULL /* cpupart */);
-
-        mutex_exit(&cpu_lock);
     }
 
+    mutex_exit(&cpu_lock);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker common for RTTimerStop and RTTimerDestroy.
+ *
+ * @param   pTimer      The timer to stop.
+ */
+static void rtTimerSolStopIt(PRTTIMER pTimer)
+{
+    mutex_enter(&cpu_lock);
+
+    pTimer->fSuspended = true;
+    if (pTimer->hCyclicId != CYCLIC_NONE)
+    {
+        cyclic_remove(pTimer->hCyclicId);
+        pTimer->hCyclicId = CYCLIC_NONE;
+    }
+    pTimer->fSuspendedFromTimer = false;
+
+    mutex_exit(&cpu_lock);
 }
 
 
@@ -438,15 +602,13 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     if (pTimer->fSuspended)
         return VERR_TIMER_SUSPENDED;
 
-    /** @remarks Do -not- call this function from a timer callback,
-     *           cyclic_remove() will deadlock the system. */
-    mutex_enter(&cpu_lock);
-
-    pTimer->fSuspended = true;
-    cyclic_remove(pTimer->hCyclicId);
-    pTimer->hCyclicId = CYCLIC_NONE;
-
-    mutex_exit(&cpu_lock);
+    /* Trying the cpu_lock stuff and calling cyclic_remove may deadlock
+       the system, so just mark the timer as suspened and deal with it in
+       the callback wrapper function above. */
+    if (rtTimerSolIsCallingFromTimerProc(pTimer))
+        pTimer->fSuspendedFromTimer = true;
+    else
+        rtTimerSolStopIt(pTimer);
 
     return VINF_SUCCESS;
 }
@@ -458,15 +620,25 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
      * Validate.
      */
     RTTIMER_ASSERT_VALID_RET(pTimer);
-    AssertReturn(u64NanoInterval, VERR_INVALID_PARAMETER);
+    AssertReturn(u64NanoInterval > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(u64NanoInterval < UINT64_MAX / 8, VERR_INVALID_PARAMETER);
+    AssertReturn(pTimer->cNsInterval, VERR_INVALID_STATE);
 
-    if (pTimer->fSuspended)
-    {
+    if (pTimer->fSuspended || pTimer->fSuspendedFromTimer)
         pTimer->cNsInterval = u64NanoInterval;
-        return VINF_SUCCESS;
+    else
+    {
+        ASMAtomicWriteU64(&pTimer->cNsInterval, u64NanoInterval);
+        ASMAtomicWriteBool(&pTimer->fIntervalChanged, true);
+
+        if (   !pTimer->fAllCpus
+            && !pTimer->u.Single.nsNextTick
+            && pTimer->hCyclicId != CYCLIC_NONE
+            && rtTimerSolIsCallingFromTimerProc(pTimer))
+            pTimer->u.Single.nsNextTick = RTTimeSystemNanoTS();
     }
 
-    return VERR_NOT_SUPPORTED;
+    return VINF_SUCCESS;
 }
 
 
