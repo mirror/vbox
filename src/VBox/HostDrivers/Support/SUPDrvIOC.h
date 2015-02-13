@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - (none).
  */
-#define SUPDRV_IOC_VERSION                              0x001d0001
+#define SUPDRV_IOC_VERSION                              0x001d0002
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
