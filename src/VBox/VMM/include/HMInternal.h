@@ -895,7 +895,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitClts;
     STAMCOUNTER             StatExitXdtrAccess;
     STAMCOUNTER             StatExitHlt;
-    STAMCOUNTER             StatExitHltToR3;
     STAMCOUNTER             StatExitMwait;
     STAMCOUNTER             StatExitMonitor;
     STAMCOUNTER             StatExitLmsw;
@@ -904,7 +903,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitIOStringWrite;
     STAMCOUNTER             StatExitIOStringRead;
     STAMCOUNTER             StatExitIntWindow;
-    STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatExitExtInt;
     STAMCOUNTER             StatExitHostNmiInGC;
     STAMCOUNTER             StatExitPreemptTimer;
@@ -912,7 +910,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitTaskSwitch;
     STAMCOUNTER             StatExitMtf;
     STAMCOUNTER             StatExitApicAccess;
-    STAMCOUNTER             StatExitApicAccessToR3;
     STAMCOUNTER             StatPendingHostIrq;
 
     STAMCOUNTER             StatPreemptPreempting;
@@ -937,6 +934,9 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchHmToR3FF;
     STAMCOUNTER             StatSwitchExitToR3;
     STAMCOUNTER             StatSwitchLongJmpToR3;
+    STAMCOUNTER             StatSwitchMaxResumeLoops;
+    STAMCOUNTER             StatSwitchHltToR3;
+    STAMCOUNTER             StatSwitchApicAccessToR3;
 
     STAMCOUNTER             StatTscParavirt;
     STAMCOUNTER             StatTscOffset;

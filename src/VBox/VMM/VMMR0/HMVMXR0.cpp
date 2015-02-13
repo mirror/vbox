@@ -8866,7 +8866,7 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
         if (cLoops > pVM->hm.s.cMaxResumeLoops)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
@@ -8946,7 +8946,7 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
         if (cLoops > pVM->hm.s.cMaxResumeLoops)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rcStrict = VINF_EM_RAW_INTERRUPT;
             break;
         }
@@ -10464,7 +10464,7 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
     if (rc != VINF_SUCCESS)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHltToR3);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHltToR3);
     return rc;
 }
 
@@ -11363,7 +11363,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccess);
     if (rc != VINF_SUCCESS)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitApicAccessToR3);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchApicAccessToR3);
     return rc;
 }
 
