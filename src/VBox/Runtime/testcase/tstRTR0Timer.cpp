@@ -486,7 +486,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             break;
         }
 
-#if 1 /* might have to disable this for some host... */
+#if !defined(RT_OS_SOLARIS) /* Not expected to work on all hosts. */
         case TSTRTR0TIMER_ONE_SHOT_RESTART:
         case TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES:
         {
@@ -519,7 +519,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
         }
 #endif
 
-#if 1 /* might have to disable this for some host... */
+#if !defined(RT_OS_SOLARIS) /* Not expected to work on all hosts. */
         case TSTRTR0TIMER_ONE_SHOT_DESTROY:
         case TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES:
         {
