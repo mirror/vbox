@@ -159,10 +159,9 @@ DECLINLINE(uint32_t) rtTimerSolRetain(PRTTIMER pTimer)
 /**
  * Destroys the timer when the reference counter has reached zero.
  *
- * @returns 0 (new references counter value).
  * @param   pTimer              The timer.
  */
-static uint32_t rtTimeSolReleaseCleanup(PRTTIMER pTimer)
+static void rtTimeSolReleaseCleanup(PRTTIMER pTimer)
 {
     Assert(pTimer->hCyclicId == CYCLIC_NONE);
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
@@ -180,7 +179,7 @@ DECLINLINE(uint32_t) rtTimerSolRelease(PRTTIMER pTimer)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pTimer->cRefs);
     if (!cRefs)
-        return rtTimeSolReleaseCleanup(pTimer);
+        rtTimeSolReleaseCleanup(pTimer);
     return cRefs;
 }
 
@@ -258,7 +257,7 @@ static void rtTimerSolSingleCallbackWrapper(void *pvArg)
 
             /*
              * The interval was changed, we need to set the expiration time
-             * our selves before returning.  This comes at a slight cost,
+             * ourselves before returning.  This comes at a slight cost,
              * which is why we don't do it all the time.
              */
             if (pTimer->u.Single.nsNextTick)
@@ -268,11 +267,11 @@ static void rtTimerSolSingleCallbackWrapper(void *pvArg)
             cyclic_reprogram(pTimer->hCyclicId, pTimer->u.Single.nsNextTick);
             return;
         }
-
-        /*
-         * The timer has been suspended, set expiration time to infinitiy.
-         */
     }
+
+    /*
+     * The timer has been suspended, set expiration time to infinitiy.
+     */
     if (RT_LIKELY(pTimer->hCyclicId != CYCLIC_NONE))
         cyclic_reprogram(pTimer->hCyclicId, CY_INFINITY);
 }
@@ -559,7 +558,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         pTimer->u.Single.FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
         pTimer->u.Single.FireTime.cyt_interval = pTimer->cNsInterval != 0
                                                ? pTimer->cNsInterval
-                                               : CY_INFINITY /* Special value, see cyclic_fire. */;
+                                               : CY_INFINITY /* Special value, see cyclic_fire(). */;
         pTimer->u.Single.u64Tick = 0;
         pTimer->u.Single.nsNextTick = 0;
 
