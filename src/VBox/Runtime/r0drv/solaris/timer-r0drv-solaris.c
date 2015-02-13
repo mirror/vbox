@@ -662,7 +662,6 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 
 RTDECL(bool) RTTimerCanDoHighResolution(void)
 {
-    /** @todo return true; - when missing bits have been implemented and tested*/
-    return false;
+    return true;
 }
 
