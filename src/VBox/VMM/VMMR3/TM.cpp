@@ -1059,41 +1059,45 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
 
 
 /**
+ * Translation of pfnVirtualGetRawR3 to symbol names.
+ *
+ * @remarks This is a global variable because some gcc versions have their
+ *          attribute/visibility warnings messed up.
+ */
+static const struct
+{
+    PFNTIMENANOTSINTERNAL   pfnR3Worker;
+    const char             *pszName;
+} g_aNanoTsWorkers[] =
+{
+#define ENTRY(a) { a, #a }
+    ENTRY(RTTimeNanoTSLegacyAsync),
+    ENTRY(RTTimeNanoTSLegacyInvariantNoDelta),
+    ENTRY(RTTimeNanoTSLegacyInvariantWithDelta),
+    ENTRY(RTTimeNanoTSLegacySyncNoDelta),
+    ENTRY(RTTimeNanoTSLegacySyncWithDelta),
+    ENTRY(RTTimeNanoTSLFenceAsync),
+    ENTRY(RTTimeNanoTSLFenceInvariantNoDelta),
+    ENTRY(RTTimeNanoTSLFenceInvariantWithDelta),
+    ENTRY(RTTimeNanoTSLFenceSyncNoDelta),
+    ENTRY(RTTimeNanoTSLFenceSyncWithDelta),
+#undef ENTRY
+};
+
+
+/**
  * Translates TM::pfnVirtualGetRawR3 to a symbol name that we can find in ring-0
  * and raw-mode context.
  *
  * @returns Symbol name.
  * @param   pfnWorkerR3         The TM::pfnVirtualGetRawR3 value.
  */
-static const char *tmR3GetRTTimeNanoName(PFNTIMENANOTSINTERNAL pfnWorkerR3)
+static const char *tmR3GetRTTimeNanoName(PFNTIMENANOTSINTERNAL pfnR3Worker)
 {
-    /*
-     * Translation of pfnVirtualGetRawR3 to symbol names.
-     */
-    static const struct
-    {
-        PFNTIMENANOTSINTERNAL   pfnR3Worker;
-        const char             *pszName;
-    } s_aNanoTsWorkers[] =
-    {
-#define ENTRY(a) { a, #a }
-        ENTRY(RTTimeNanoTSLegacyAsync),
-        ENTRY(RTTimeNanoTSLegacyInvariantNoDelta),
-        ENTRY(RTTimeNanoTSLegacyInvariantWithDelta),
-        ENTRY(RTTimeNanoTSLegacySyncNoDelta),
-        ENTRY(RTTimeNanoTSLegacySyncWithDelta),
-        ENTRY(RTTimeNanoTSLFenceAsync),
-        ENTRY(RTTimeNanoTSLFenceInvariantNoDelta),
-        ENTRY(RTTimeNanoTSLFenceInvariantWithDelta),
-        ENTRY(RTTimeNanoTSLFenceSyncNoDelta),
-        ENTRY(RTTimeNanoTSLFenceSyncWithDelta),
-#undef ENTRY
-    };
-    uint32_t iNanoTs;
-    for (iNanoTs = 0; iNanoTs < RT_ELEMENTS(s_aNanoTsWorkers); iNanoTs++)
-        if (pfnWorkerR3 == s_aNanoTsWorkers[iNanoTs].pfnR3Worker)
-            return s_aNanoTsWorkers[iNanoTs].pszName;
-    AssertFatal(iNanoTs < RT_ELEMENTS(s_aNanoTsWorkers));
+    for (uint32_t iNanoTs = 0; iNanoTs < RT_ELEMENTS(g_aNanoTsWorkers); iNanoTs++)
+        if (pfnR3Worker == g_aNanoTsWorkers[iNanoTs].pfnR3Worker)
+            return g_aNanoTsWorkers[iNanoTs].pszName;
+    AssertFatalFailed();
     return NULL;
 }
 
