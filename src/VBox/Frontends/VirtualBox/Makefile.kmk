@@ -368,7 +368,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsAudio.h \
 	src/settings/machine/UIMachineSettingsDisplay.h \
 	src/settings/machine/UIMachineSettingsGeneral.h \
-	src/settings/machine/UIMachineSettingsNetwork.h \
+    src/settings/machine/UIMachineSettingsInterface.h \
+    src/settings/machine/UIMachineSettingsNetwork.h \
 	src/settings/machine/UIMachineSettingsParallel.h \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsSF.h \
@@ -646,7 +647,8 @@ VirtualBox_SOURCES = \
 	src/settings/machine/UIMachineSettingsAudio.cpp \
 	src/settings/machine/UIMachineSettingsDisplay.cpp \
 	src/settings/machine/UIMachineSettingsGeneral.cpp \
-	src/settings/machine/UIMachineSettingsNetwork.cpp \
+    src/settings/machine/UIMachineSettingsInterface.cpp \
+    src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsParallel.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsSF.cpp \

@@ -524,6 +524,7 @@
 #include "UIMachineSettingsAudio.h"
 #include "UIMachineSettingsDisplay.h"
 #include "UIMachineSettingsGeneral.h"
+#include "UIMachineSettingsInterface.h"
 #include "UIMachineSettingsNetwork.h"
 #include "UIMachineSettingsParallel.h"
 #include "UIMachineSettingsPortForwardingDlg.h"

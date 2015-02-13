@@ -479,6 +479,7 @@ enum MachineSettingsPageType
     MachineSettingsPageType_Parallel,
     MachineSettingsPageType_USB,
     MachineSettingsPageType_SF,
+    MachineSettingsPageType_Interface,
     MachineSettingsPageType_Max
 };
 Q_DECLARE_METATYPE(MachineSettingsPageType);
