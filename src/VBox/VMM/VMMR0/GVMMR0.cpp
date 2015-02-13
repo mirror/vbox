@@ -84,7 +84,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(DOXYGEN_RUNNING)
 /** Define this to enable the periodic preemption timer. */
 # define GVMM_SCHED_WITH_PPT
 #endif
