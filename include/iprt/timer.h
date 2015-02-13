@@ -193,6 +193,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer);
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
  * @retval  VERR_NOT_SUPPORTED if not supported.
+ * @retval  VERR_INVALID_STATE if not a periodic timer.
  *
  * @param   pTimer              The timer to activate.
  * @param   u64NanoInterval     The interval between timer ticks specified in
