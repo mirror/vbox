@@ -2643,7 +2643,6 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(!TRPMHasTrap(pVCpu));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Log4Func(("\n"));
 
     bool const fIntShadow = RT_BOOL(hmR0SvmGetGuestIntrShadow(pVCpu, pCtx));
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
@@ -3295,7 +3294,7 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
         if (cLoops > pVM->hm.s.cMaxResumeLoops)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
@@ -3373,7 +3372,7 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
         if (cLoops > pVM->hm.s.cMaxResumeLoops)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
@@ -4342,12 +4341,13 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
     hmR0SvmUpdateRip(pVCpu, pCtx, 1);
     int rc = EMShouldContinueAfterHalt(pVCpu, pCtx) ? VINF_SUCCESS : VINF_EM_HALT;
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
     if (rc != VINF_SUCCESS)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHltToR3);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHltToR3);
     return rc;
 }
 
