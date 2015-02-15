@@ -178,6 +178,109 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
     } else do { } while (0)
 #endif
 
+/** @def VMSVGA3D_CLEAR_LAST_ERRORS
+ * Clears all pending OpenGL errors.
+ *
+ * If I understood this correctly, OpenGL maintains a bitmask internally and
+ * glGetError gets the next bit (clearing it) from the bitmap and translates it
+ * into a GL_XXX constant value which it then returns.  A single OpenGL call can
+ * set more than one bit, and they stick around across calls, from what I
+ * understand.
+ *
+ * So in order to be able to use glGetError to check whether a function
+ * succeeded, we need to call glGetError until all error bits have been cleared.
+ * This macro does that (in all types of builds).
+ *
+ * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS
+ */
+#define VMSVGA3D_CLEAR_GL_ERRORS() \
+    do { \
+        if (RT_UNLIKELY(glGetError() != GL_NO_ERROR)) /* predict no errors pending */ \
+        { \
+            uint32_t iErrorClearingLoopsLeft = 64; \
+            while (glGetError() != GL_NO_ERROR && iErrorClearingLoopsLeft > 0) \
+                iErrorClearingLoopsLeft--; \
+        } \
+    } while (0)
+
+/** @def VMSVGA3D_GET_LAST_GL_ERROR
+ * Gets the last OpenGL error, stores it in a_pContext->lastError and returns
+ * it.
+ *
+ * @returns Same as glGetError.
+ * @param   a_pContext  The context to store the error in.
+ *
+ * @sa VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_GET_GL_ERROR(a_pContext) ((a_pContext)->lastError = glGetError())
+
+/** @def VMSVGA3D_GL_SUCCESS
+ * Checks whether VMSVGA3D_GET_LAST_GL_ERROR() return GL_NO_ERROR.
+ *
+ * Will call glGetError() and store the result in a_pContext->lastError.
+ * Will predict GL_NO_ERROR outcome.
+ *
+ * @returns True on success, false on error.
+ * @parm    a_pContext  The context to store the error in.
+ *
+ * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_GL_IS_SUCCESS(a_pContext) RT_LIKELY((((a_pContext)->lastError = glGetError()) == GL_NO_ERROR))
+
+/** @def VMSVGA3D_GL_COMPLAIN
+ * Complains about one or more OpenGL errors (first in a_pContext->lastError).
+ *
+ * Strict builds will trigger an assertion, while other builds will put the
+ * first few occurences in the release log.
+ *
+ * All GL errors will be cleared after invocation.  Assumes lastError
+ * is an error, will not check for GL_NO_ERROR.
+ *
+ * @param   a_pState        The 3D state structure.
+ * @param   a_pContext      The context that holds the first error.
+ * @param   a_LogRelDetails Argument list for LogRel or similar that describes
+ *                          the operation in greater detail.
+ *
+ * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS
+ */
+#ifdef VBOX_STRICT
+# define VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails) \
+    do { \
+        AssertMsg((a_pState)->idActiveContext == (a_pContext)->id, \
+                  ("idActiveContext=%#x id=%#x\n", (a_pState)->idActiveContext, (a_pContext)->id)); \
+        RTAssertMsg2Weak a_LogRelDetails; \
+        GLenum iNextError; \
+        while ((iNextError = glGetError()) != GL_NO_ERROR) \
+            RTAssertMsg2Weak("next error: %#x\n", iNextError); \
+        AssertMsgFailed(("first error: %#x (idActiveContext=%#x)\n", (a_pContext)->lastError, (a_pContext)->id)); \
+    } while (0)
+#else
+# define VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails) \
+    do { \
+        LogRelMax(32, ("VMSVGA3d: OpenGL error %#x (idActiveContext=%#x) on line %u ", (a_pContext)->lastError, (a_pContext)->id)); \
+        GLenum iNextError; \
+        while ((iNextError = glGetError()) != GL_NO_ERROR) \
+            LogRelMax(32, (" - also error %#x ", iNextError)); \
+        LogRelMax(32, a_LogRelDetails); \
+    } while (0)
+#endif
+
+/** @def VMSVGA3D_GL_GET_AND_COMPLAIN
+ * Combination of VMSVGA3D_GET_GL_ERROR and VMSVGA3D_GL_COMPLAIN, assuming that
+ * there is a pending error.
+ *
+ * @param   a_pState    The 3D state structure.
+ * @param   a_pContext  The context that holds the first error.
+ *
+ * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_GL_GET_AND_COMPLAIN(a_pState, a_pContext, a_LogRelDetails) \
+    do { \
+        VMSVGA3D_GET_GL_ERROR(a_pContext); \
+        VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails); \
+    } while (0)
+
+
 /** @def VMSVGA3D_CHECK_LAST_ERROR
  * Checks that the last OpenGL error code indicates success.
  *
@@ -185,11 +288,11 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
  * builds it will do nothing and is a NOOP.
  *
  * @parm    pState      The VMSVGA3d state.
- * @parm    pContext    The new context.
+ * @parm    pContext    The context.
  *
- * @todo    Revamp this to include the OpenGL operation so we can see what went
- *          wrong.  Maybe include a few of the first occurances in the release
- *          log of regular builds.
+ * @todo    Replace with proper error handling, it's crazy to return
+ *          VERR_INTERNAL_ERROR in strict builds and just barge on ahead in
+ *          release builds.
  */
 #ifdef VBOX_STRICT
 # define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext) do {                   \
@@ -2979,39 +3082,50 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
             case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
             case SVGA3D_SURFACE_HINT_INDEXBUFFER:
             {
-                uint8_t *pData;
-                unsigned uDestOffset;
-
                 Assert(pBoxes[i].h == 1);
 
+                VMSVGA3D_CLEAR_GL_ERRORS();
                 pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pSurface->oglId.buffer);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                if (VMSVGA3D_GL_IS_SUCCESS(pContext))
+                {
+                    GLenum enmGlTransfer = (transfer == SVGA3D_READ_HOST_VRAM) ? GL_READ_ONLY : GL_WRITE_ONLY;
+                    uint8_t *pbData = (uint8_t *)pState->ext.glMapBuffer(GL_ARRAY_BUFFER, enmGlTransfer);
+                    if (RT_LIKELY(pbData != NULL))
+                    {
+                        unsigned offDst = pBoxes[i].x * pSurface->cbBlock + pBoxes[i].y * pMipLevel->cbSurfacePitch;
+                        if (RT_LIKELY(   offDst + pBoxes[i].w * pSurface->cbBlock  + (pBoxes[i].h - 1) * pMipLevel->cbSurfacePitch
+                                      <= pMipLevel->cbSurface))
+                        {
+                            Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n", (fVertex) ? "vertex" : "index",
+                                 pBoxes[i].x, pBoxes[i].y, pBoxes[i].x + pBoxes[i].w, pBoxes[i].y + pBoxes[i].h));
 
-                pData = (uint8_t *)pState->ext.glMapBuffer(GL_ARRAY_BUFFER, (transfer == SVGA3D_READ_HOST_VRAM) ? GL_READ_ONLY : GL_WRITE_ONLY);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-                Assert(pData);
+                            rc = vmsvgaGMRTransfer(pThis,
+                                                   transfer,
+                                                   pbData + offDst,
+                                                   pMipLevel->cbSurfacePitch,
+                                                   guest.ptr,
+                                                   pBoxes[i].srcx * pSurface->cbBlock + pBoxes[i].srcy * cbSrcPitch,
+                                                   cbSrcPitch,
+                                                   pBoxes[i].w * pSurface->cbBlock,
+                                                   pBoxes[i].h);
+                            AssertRC(rc);
 
-                uDestOffset = pBoxes[i].x * pSurface->cbBlock + pBoxes[i].y * pMipLevel->cbSurfacePitch;
-                AssertReturn(uDestOffset + pBoxes[i].w * pSurface->cbBlock + (pBoxes[i].h - 1) * pMipLevel->cbSurfacePitch <= pMipLevel->cbSurface, VERR_INTERNAL_ERROR);
+                            Log4(("first line:\n%.*Rhxd\n", cbSrcPitch, pbData));
+                        }
+                        else
+                        {
+                            AssertFailed();
+                            rc = VERR_INTERNAL_ERROR;
+                        }
 
-                Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n", (fVertex) ? "vertex" : "index", pBoxes[i].x, pBoxes[i].y, pBoxes[i].x + pBoxes[i].w, pBoxes[i].y + pBoxes[i].h));
-
-                rc = vmsvgaGMRTransfer(pThis,
-                                       transfer,
-                                       pData + uDestOffset,
-                                       pMipLevel->cbSurfacePitch,
-                                       guest.ptr,
-                                       pBoxes[i].srcx * pSurface->cbBlock + pBoxes[i].srcy * cbSrcPitch,
-                                       cbSrcPitch,
-                                       pBoxes[i].w * pSurface->cbBlock,
-                                       pBoxes[i].h);
-                AssertRC(rc);
-
-                Log4(("first line:\n%.*Rhxd\n", cbSrcPitch, pData));
-
-                pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
+                        pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
+                        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    }
+                    else
+                        VMSVGA3D_GL_GET_AND_COMPLAIN(pState, pContext, ("glMapBuffer(GL_ARRAY_BUFFER, %#x) -> NULL\n", enmGlTransfer));
+                }
+                else
+                    VMSVGA3D_GL_COMPLAIN(pState, pContext, ("glBindBuffer(GL_ARRAY_BUFFER, %#x)\n", pSurface->oglId.buffer));
                 pState->ext.glBindBuffer(GL_ARRAY_BUFFER, 0);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
                 break;
