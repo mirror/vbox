@@ -852,7 +852,8 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
                     rc = dbgDiggerLinuxFindTokenIndex(pUVM, pThis);
                 if (RT_SUCCESS(rc))
                     rc = dbgDiggerLinuxLoadKernelSymbols(pUVM, pThis);
-
+                if (RT_SUCCESS(rc))
+                    break;
             }
         }
 
