@@ -2989,7 +2989,10 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
                     uDestOffset = pBoxes[i].x * pSurface->cbBlock + pBoxes[i].y * pMipLevel->cbSurfacePitch;
-                    AssertReturn(uDestOffset + pBoxes[i].w * pSurface->cbBlock + (pBoxes[i].h - 1) * pMipLevel->cbSurfacePitch <= pMipLevel->cbSurface, VERR_INTERNAL_ERROR);
+                    AssertReturnStmt(   uDestOffset + pBoxes[i].w * pSurface->cbBlock + (pBoxes[i].h - 1) * pMipLevel->cbSurfacePitch
+                                     <= pMipLevel->cbSurface,
+                                     RTMemFree(pDoubleBuffer),
+                                     VERR_INTERNAL_ERROR);
 
                     cbSurfacePitch = pMipLevel->cbSurfacePitch;
 
