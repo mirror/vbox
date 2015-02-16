@@ -25,6 +25,12 @@
   <layout class="QGridLayout" name="m_pLayoutMain">
    <item row="0" column="0" colspan="3">
     <widget class="UIMenuBarEditorWidget" name="m_pMenuBarEditor">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="whatsThis">
       <string>Allows to modify VM menu-bar contents.</string>
      </property>
@@ -183,6 +189,12 @@
    </item>
    <item row="7" column="0" colspan="3">
     <widget class="UIStatusBarEditorWidget" name="m_pStatusBarEditor">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="whatsThis">
       <string>Allows to modify VM status-bar contents.</string>
      </property>
