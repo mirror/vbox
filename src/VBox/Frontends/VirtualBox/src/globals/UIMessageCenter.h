@@ -277,6 +277,7 @@ public:
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
     bool remindAboutGuruMeditation(const QString &strLogFolder);
+    void warnAboutVBoxSVCUnavailable() const;
     bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const;
     bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const;
     bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const;
