@@ -86,7 +86,8 @@ void UIMachineLogicScale::prepareActionGroups()
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
-                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize |
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor));
 
     /* Take care of view-action toggle state: */
     UIAction *pActionScale = actionPool()->action(UIActionIndexRT_M_View_T_Scale);
