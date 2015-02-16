@@ -1059,7 +1059,7 @@ static DECLCALLBACK(int) dbgcCmdDmesg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
             else if (rc == VERR_BUFFER_OVERFLOW && pszBuf)
                 rc = DBGCCmdHlpPrintf(pCmdHlp, "%s\nWarning: incomplete\n", pszBuf);
             else
-                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "pfnQueryKernelLog failed: %Rrc\n", rc);
             RTMemFree(pszBuf);
         }
         else
