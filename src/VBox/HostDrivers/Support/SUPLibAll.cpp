@@ -51,7 +51,7 @@
  *
  * @internal
  */
-DECLINLINE(uint64_t) SUPReadTscWithDelta(void)
+SUPDECL(uint64_t) SUPReadTscWithDelta(void)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
