@@ -100,7 +100,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void)
     uint16_t    iGipCpu   = (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
                           ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
 #  else
-    uint8_t     idApic    = ASMGetApicId();  /** @todo this could probably be eliminated in RC if we really wanted to... */
+    uint16_t    idApic    = ASMGetApicId();  /** @todo this could probably be eliminated in RC if we really wanted to... */
     uint16_t    iGipCpu   = (unsigned)idApic < RT_ELEMENTS(pGip->aiCpuFromApicId) /* for the future */
                           ? pGip->aiCpuFromApicId[idApic] : UINT16_MAX;
 #  endif
