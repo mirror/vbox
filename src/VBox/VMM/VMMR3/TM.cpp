@@ -951,9 +951,14 @@ static bool tmR3HasFixedTSC(PVM pVM)
  *
  * @returns true if deltas needs to be applied, false if not.
  * @param   pGip                The GIP.
+ *
+ * @remarks If you change this, make sure to also change
+ *          rtTimeNanoTsInternalReallyNeedDeltas().
  */
 static bool tmR3ReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip)
 {
+    return !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync;
+#if 0
     if (!pGip->fOsTscDeltasInSync)
     {
         uint32_t i = pGip->cCpus;
@@ -964,6 +969,7 @@ static bool tmR3ReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip)
                 return true;
     }
     return false;
+#endif
 }
 
 
