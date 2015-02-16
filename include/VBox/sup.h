@@ -1614,11 +1614,11 @@ DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint1
 DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
 {
 # ifdef IN_RING3
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage));
 
     /** @todo Use rdtscp after figuring out what the host OS has stuffed into the
      *        TSC_AUX msr, otherwise use the fallback below. */
     int cTries = 10;
+    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage));
     do
     {
         uint16_t idApicBefore;
