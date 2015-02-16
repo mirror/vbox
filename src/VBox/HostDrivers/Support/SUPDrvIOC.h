@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -212,7 +212,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - (none).
+ *          - Fix SUPTSCREAD padding (#if 0 -> #if 1).
  */
 #define SUPDRV_IOC_VERSION                              0x001e0000
 
@@ -1519,8 +1519,11 @@ AssertCompileMemberAlignment(SUPTSCDELTAMEASURE, u, 8);
 /** @} */
 
 /** @name SUP_IOCTL_TSC_READ
- * Reads the TSC and TSC-delta atomically and returns the delta-adjusted TSC
- * value.
+ * Reads the TSC and apply TSC-delta if applicable, determining the delta if
+ * necessary (i64TSCDelta = INT64_MAX).
+ *
+ * This latter function is the primary use case of this I/O control.  To call
+ * this I/O control, the client must first have mapped the GIP.
  *
  * @{
  */
@@ -1543,11 +1546,18 @@ typedef struct SUPTSCREAD
             /** The APIC Id of the CPU where the TSC was read. */
             uint16_t        idApic;
             /** Padding for future. */
+#if 0 /* Not correct for 32-bit gcc. */
+            uint16_t        auPadding[3 + 3*4];
+#else
             uint64_t        auPadding[3];
+#endif
         } Out;
     } u;
 } SUPTSCREAD, *PSUPTSCREAD;
 AssertCompileMemberAlignment(SUPTSCREAD, u, 8);
+#if 0  /* Not correct for 32-bit gcc. */
+AssertCompileSize(SUPTSCREAD, 6*4 + 5*8);
+#endif
 /** @} */
 
 #pragma pack()                          /* paranoia */

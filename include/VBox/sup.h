@@ -239,7 +239,7 @@ typedef struct SUPGIPCPU
     volatile uint64_t   u64TSC;
     /** Current CPU Frequency. */
     volatile uint64_t   u64CpuHz;
-    /** The TSC delta with reference to the master TSC. */
+    /** The TSC delta with reference to the master TSC, subtract from RDTSC. */
     volatile int64_t    i64TSCDelta;
     /** Number of errors during updating.
      * Typical errors are under/overflows. */
@@ -438,8 +438,6 @@ SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 #define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip) \
     ((a_pGip)->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pGip)->fOsTscDeltasInSync))
 
-/** Whether the application of TSC-deltas are worth it (performance matters). */
-#define GIP_TSC_DELTAS_ROUGHLY_IN_SYNC(a_pGip)         ((a_pGip)->fTscDeltasRoughlyInSync)
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
@@ -1546,128 +1544,8 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
-/**
- * Applies the TSC delta to the supplied raw TSC value.
- *
- * @returns VBox status code.
- * @param   pGip            Pointer to the GIP.
- * @param   puTsc           Pointer to a valid TSC value before the TSC delta has been applied.
- * @param   idApic          The APIC ID of the CPU @c puTsc corresponds to.
- * @param   fDeltaApplied   Where to store whether the TSC delta was succesfully
- *                          applied or not (optional, can be NULL).
- *
- * @remarks Maybe called with interrupts disabled in ring-0!
- *
- * @note    If you change the delta calculation made here, make sure to update
- *          the assembly version in sup.mac! Also update supdrvGipMpEvent()
- *          while re-adjusting deltas while choosing a new GIP master.
- */
-DECLINLINE(int) SUPTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *pfDeltaApplied)
-{
-    PSUPGIPCPU pGipCpu;
-    uint16_t  iCpu;
-
-    /* Validate. */
-    Assert(puTsc);
-    Assert(pGip);
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
-
-    /** @todo convert these to AssertMsg() after sufficient testing before public
-     *        release. */
-    AssertMsgReturn(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId), ("idApic=%u\n", idApic), VERR_INVALID_CPU_ID);
-    iCpu = pGip->aiCpuFromApicId[idApic];
-    AssertMsgReturn(iCpu < pGip->cCpus, ("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus), VERR_INVALID_CPU_INDEX);
-    pGipCpu = &pGip->aCPUs[iCpu];
-    Assert(pGipCpu);
-
-    if (RT_LIKELY(pGipCpu->i64TSCDelta != INT64_MAX))
-    {
-        *puTsc -= pGipCpu->i64TSCDelta;
-        if (pfDeltaApplied)
-            *pfDeltaApplied = true;
-    }
-    else if (pfDeltaApplied)
-        *pfDeltaApplied = false;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Gets the delta-adjusted TSC.
- *
- * Must only be called when GIP mode is invariant (i.e. when TSC deltas are
- * likely to be computed and available).  In other GIP modes, like async, we
- * don't bother with computing TSC deltas and therefore it is meaningless to
- * call this function, use SUPReadTSC() instead.
- *
- * @returns VBox status code.
- * @param   puTsc           Where to store the normalized TSC value.
- * @param   pidApic         Where to store the APIC ID of the CPU where the TSC
- *                          was read (optional, can be NULL). This is updated
- *                          even if the function fails with
- *                          VERR_SUPDRV_TSC_READ_FAILED. Not guaranteed to be
- *                          updated for other failures.
- *
- * @remarks May be called with interrupts disabled in ring-0!
- */
-DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
-{
-# ifdef IN_RING3
-
-    /** @todo Use rdtscp after figuring out what the host OS has stuffed into the
-     *        TSC_AUX msr, otherwise use the fallback below. */
-    int cTries = 10;
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage));
-    do
-    {
-        uint16_t idApicBefore;
-        uint16_t idApicAfter;
-
-        /* The chance of getting preempted twice here is rather low, hence we
-           take this approach. Performance matters, see @bugref{6710} comment #24. */
-        idApicBefore = ASMGetApicId();
-        *puTsc       = ASMReadTSC();
-        idApicAfter  = ASMGetApicId();
-        if (RT_LIKELY(idApicBefore == idApicAfter))
-        {
-            SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApicBefore, NULL);
-            if (pidApic)
-                *pidApic = idApicBefore;
-            return VINF_SUCCESS;
-        }
-    } while (cTries-- > 0);
-    *puTsc = 0;
-    return VERR_SUPDRV_TSC_READ_FAILED;
-
-    /** @todo get rid of SUPR3ReadTsc(). */
-    //return SUPR3ReadTsc(puTsc, pidApic);
-# else
-    RTCCUINTREG uFlags;
-    uint16_t    idApic;
-    bool        fDeltaApplied;
-    int         rc;
-
-    /** @todo Use rdtscp after figuring out what the host OS has stuffed into the
-     *        TSC_AUX msr, otherwise use the fallback below. */
-
-    /* Validate. */
-    Assert(puTsc);
-
-    uFlags = ASMIntDisableFlags();
-    idApic = ASMGetApicId();        /* Doubles as serialization. */
-    *puTsc = ASMReadTSC();
-    ASMSetFlags(uFlags);
-
-    if (pidApic)
-        *pidApic = idApic;
-
-    rc = SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApic, &fDeltaApplied);
-    AssertRC(rc);
-    return fDeltaApplied ? VINF_SUCCESS : VERR_SUPDRV_TSC_READ_FAILED;
-# endif
-}
-
+/** @internal */
+SUPDECL(uint64_t) SUPReadTscWithDelta(void);
 
 /**
  * Reads the host TSC value.
@@ -1681,16 +1559,8 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
     if (    GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage)
-        && !GIP_TSC_DELTAS_ROUGHLY_IN_SYNC(g_pSUPGlobalInfoPage))
-    {
-        uint64_t u64Tsc = UINT64_MAX;
-        int rc = SUPGetTsc(&u64Tsc, NULL /* pidApic */);
-        NOREF(rc);
-#ifdef DEBUG_ramshankar
-        AssertRC(rc);
-#endif
-        return u64Tsc;
-    }
+        && !g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync)
+        return SUPReadTscWithDelta();
     return ASMReadTSC();
 }
 

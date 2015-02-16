@@ -43,6 +43,9 @@ ifndef VBOX_ONLY_DOCS
   LIBRARIES += SUPR0
  endif
 endif
+if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_RAW_MODE)
+ LIBRARIES += SUPRC
+endif
 if  !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
@@ -151,6 +154,7 @@ SUPR3_SOURCES       = \
 	SUPLibLdr.cpp \
 	SUPLibSem.cpp \
 	SUPLibTracerA.asm \
+	SUPLibAll.cpp \
 	SUPR3HardenedIPRT.cpp \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp \
@@ -459,6 +463,13 @@ endif
 
 
 #
+# SUPRC - The raw-mode context library.
+#
+SUPRC_TEMPLATE      = VBoxRc
+SUPRC_SOURCES       = SUPLibAll.cpp
+
+
+#
 # SUPR0IdcClient - The Ring-0 IDC client driver library.
 #
 SUPR0IdcClient_TEMPLATE = VBoxR0DrvLib
@@ -506,7 +517,8 @@ VBoxDrvLib_INCS      := \
 VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
 	SUPDrv.c \
-	SUPDrvSem.c
+	SUPDrvSem.c \
+	SUPLibAll.cpp
 
 endif # os2
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -522,7 +534,8 @@ vboxdrv_SOURCES      := \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).def \
 	SUPDrv.c \
-	SUPDrvSem.c
+	SUPDrvSem.c \
+	SUPLibAll.cpp
 ## @todo the SUPDrv-freebsd.def is most probably gonna break it and require build system hacking...
 
 #
@@ -643,7 +656,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  	SUPDrv.d \
  	SUPDrv.c \
  	SUPDrvSem.c \
-  	SUPDrvTracer.cpp
+  	SUPDrvTracer.cpp \
+	SUPLibAll.cpp
  ifdef VBOX_WITH_NATIVE_DTRACE
   VBoxDrv_SOURCES        += \
   	SUPDrv-dtrace.cpp

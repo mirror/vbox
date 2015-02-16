@@ -152,35 +152,6 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalFallback(PRTTIMENANOTSDATA pDa
 
 
 /**
- * Checks if we really need to apply the delta values.
- *
- * Getting the delta for a CPU is _very_ expensive, it more than doubles the
- * execution time for RTTimeNanoTS.
- *
- * @returns true if deltas needs to be applied, false if not.
- * @param   pGip                The GIP.
- *
- * @remarks If you change this, make sure to also change tmR3ReallyNeedDeltas().
- */
-static bool rtTimeNanoTsInternalReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip)
-{
-    return !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync;
-#if 0
-    if (!pGip->fOsTscDeltasInSync)
-    {
-        uint32_t i = pGip->cCpus;
-        while (i-- > 0)
-            if (   pGip->aCPUs[i].enmState == SUPGIPCPUSTATE_ONLINE
-                && (   pGip->aCPUs[i].i64TSCDelta > 384
-                    || pGip->aCPUs[i].i64TSCDelta < -384) )
-                return true;
-    }
-    return false;
-#endif
-}
-
-
-/**
  * Called the first time somebody asks for the time or when the GIP
  * is mapped/unmapped.
  */
@@ -196,18 +167,18 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
     {
         if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
             iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-                    ? rtTimeNanoTsInternalReallyNeedDeltas(pGip)
+                    ? !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync
                       ? RTTIMENANO_WORKER_LFENCE_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LFENCE_INVAR_NO_DELTA
                     : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? false /** @todo !rtTimeNanoTsInternalReallyNeedDeltas(pGip) */
+                    ? false /** @todo !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync */
                       ? RTTIMENANO_WORKER_LFENCE_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LFENCE_SYNC_NO_DELTA
                     : RTTIMENANO_WORKER_LFENCE_ASYNC;
         else
             iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-                    ? rtTimeNanoTsInternalReallyNeedDeltas(pGip)
+                    ? !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync
                       ? RTTIMENANO_WORKER_LEGACY_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LEGACY_INVAR_NO_DELTA
                     : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? false /** @todo rtTimeNanoTsInternalReallyNeedDeltas(pGip) */
+                    ? false /** @todo !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync */
                       ? RTTIMENANO_WORKER_LEGACY_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LEGACY_SYNC_NO_DELTA
                     : RTTIMENANO_WORKER_LEGACY_ASYNC;
     }
