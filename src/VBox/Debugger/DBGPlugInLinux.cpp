@@ -80,9 +80,36 @@ typedef struct DBGDIGGERLINUX
     /** The address of the kernel symbol token index table (kallsyms_token_index). */
     DBGFADDRESS AddrKernelTokenIndex;
 
+    /** The kernel message log interface. */
+    DBGFOSIDMESG    IDmesg;
 } DBGDIGGERLINUX;
 /** Pointer to the linux guest OS digger instance data. */
 typedef DBGDIGGERLINUX *PDBGDIGGERLINUX;
+
+
+/**
+ * The current printk_log structure.
+ */
+typedef struct LNXPRINTKHDR
+{
+    /** Monotonic timestamp. */
+    uint64_t nsTimestamp;
+    /** The total size of this message record. */
+    uint16_t cbTotal;
+    /** The size of the text part (immediately follows the header). */
+    uint16_t cbText;
+    /** The size of the optional dictionary part (follows the text). */
+    uint16_t cbDict;
+    /** The syslog facility number. */
+    uint8_t  bFacility;
+    /** First 5 bits are internal flags, next 3 bits are log level. */
+    uint8_t  fFlagsAndLevel;
+} LNXPRINTKHDR;
+AssertCompileSize(LNXPRINTKHDR, 2*sizeof(uint64_t));
+/** Pointer to linux printk_log header. */
+typedef LNXPRINTKHDR *PLNXPRINTKHDR;
+/** Pointer to linux const printk_log header. */
+typedef LNXPRINTKHDR const *PCLNXPRINTKHDR;
 
 
 /*******************************************************************************
@@ -112,7 +139,6 @@ typedef DBGDIGGERLINUX *PDBGDIGGERLINUX;
 /** The approximate maximum length of a string token. */
 #define LNX_MAX_KALLSYMS_TOKEN_LEN          UINT16_C(32)
 
-
 /** Module tag for linux ('linuxmod' on little endian ASCII systems). */
 #define DIG_LNX_MOD_TAG                     UINT64_C(0x545f5d78758e898c)
 
@@ -136,11 +162,258 @@ static uint64_t g_au64LnxKernelAddresses[] =
 
 
 /**
+ * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
+ */
+static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
+                                                            char *pszBuf, size_t cbBuf, size_t *pcbActual)
+{
+    PDBGDIGGERLINUX pData = RT_FROM_MEMBER(pThis, DBGDIGGERLINUX, IDmesg);
+
+    if (cMessages < 1)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Resolve the symbols we need and read their values.
+     */
+    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGMOD hMod;
+    int rc = RTDbgAsModuleByName(hAs, "vmlinux", 0, &hMod);
+    if (RT_FAILURE(rc))
+        return VERR_NOT_FOUND;
+    RTDbgAsRelease(hAs);
+
+    RTGCPTR  GCPtrLogBuf;
+    uint32_t cbLogBuf;
+    uint32_t idxFirst;
+    uint32_t idxNext;
+
+    struct { void *pvVar; uint32_t cbHost, cbGuest; const char *pszSymbol; } aSymbols[] =
+    {
+        { &GCPtrLogBuf, sizeof(GCPtrLogBuf),    pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t),   "log_buf" },
+        { &cbLogBuf,    sizeof(cbLogBuf),       sizeof(cbLogBuf),                                      "log_buf_len" },
+        { &idxFirst,    sizeof(idxFirst),       sizeof(idxFirst),                                      "log_first_idx" },
+        { &idxNext,     sizeof(idxNext),        sizeof(idxNext),                                       "log_next_idx" },
+    };
+    for (uint32_t i = 0; i < RT_ELEMENTS(aSymbols); i++)
+    {
+        RTDBGSYMBOL SymInfo;
+        rc = RTDbgModSymbolByName(hMod, aSymbols[i].pszSymbol, &SymInfo);
+        if (RT_SUCCESS(rc))
+        {
+            RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
+            Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
+            DBGFADDRESS Addr;
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pData->AddrKernelBase.FlatPtr),
+                               aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+            if (RT_SUCCESS(rc))
+                continue;
+            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
+        }
+        else
+            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
+        RTDbgModRelease(hMod);
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Check if the values make sense.
+     */
+    if (pData->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
+        return VERR_NOT_FOUND;
+    }
+    if (   cbLogBuf < 4096
+        || !RT_IS_POWER_OF_TWO(cbLogBuf)
+        || cbLogBuf > 16*_1M)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
+        return VERR_NOT_FOUND;
+    }
+    uint32_t const cbLogAlign = 4;
+    if (   idxFirst > cbLogBuf - sizeof(LNXPRINTKHDR)
+        || (idxFirst & (cbLogAlign - 1)) != 0)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_first_idx' value %#x is not valid.\n", idxFirst));
+        return VERR_NOT_FOUND;
+    }
+    if (   idxNext > cbLogBuf - sizeof(LNXPRINTKHDR)
+        || (idxNext & (cbLogAlign - 1)) != 0)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_next_idx' value %#x is not valid.\n", idxNext));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Read the whole log buffer.
+     */
+    uint8_t *pbLogBuf = (uint8_t *)RTMemAlloc(cbLogBuf);
+    if (!pbLogBuf)
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
+        return VERR_NO_MEMORY;
+    }
+    DBGFADDRESS Addr;
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
+    if (RT_FAILURE(rc))
+    {
+        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
+             cbLogBuf, Addr.FlatPtr, rc));
+        RTMemFree(pbLogBuf);
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Count the messages in the buffer while doing some basic validation.
+     */
+    uint32_t const cbUsed = idxFirst == idxNext ? cbLogBuf /* could be empty... */
+                          : idxFirst < idxNext  ? idxNext - idxFirst : cbLogBuf - idxFirst + idxNext;
+    uint32_t cbLeft    = cbUsed;
+    uint32_t offCur    = idxFirst;
+    uint32_t cLogMsgs  = 0;
+
+    while (cbLeft > 0)
+    {
+        PCLNXPRINTKHDR pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+        if (!pHdr->cbTotal)
+        {
+            /* Wrap around packet, most likely... */
+            if (cbLogBuf - offCur >= cbLeft)
+                break;
+            offCur = 0;
+            pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+        }
+        if (RT_UNLIKELY(   pHdr->cbTotal > cbLogBuf - sizeof(*pHdr) - offCur
+                        || pHdr->cbTotal > cbLeft
+                        || (pHdr->cbTotal & (cbLogAlign - 1)) != 0
+                        || pHdr->cbTotal < (uint32_t)pHdr->cbText + (uint32_t)pHdr->cbDict + sizeof(*pHdr) ))
+        {
+            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Invalid printk_log record at %#x: cbTotal=%#x cbText=%#x cbDict=%#x cbLogBuf=%#x cbLeft=%#x\n",
+                 offCur, pHdr->cbTotal, pHdr->cbText, pHdr->cbDict, cbLogBuf, cbLeft));
+            rc = VERR_INVALID_STATE;
+            break;
+        }
+
+        if (pHdr->cbText > 0)
+            cLogMsgs++;
+
+        /* next */
+        offCur += pHdr->cbTotal;
+        cbLeft -= pHdr->cbTotal;
+    }
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pbLogBuf);
+        return rc;
+    }
+
+    /*
+     * Copy the messages into the output buffer.
+     */
+    offCur = idxFirst;
+    cbLeft = cbUsed;
+
+    /* Skip messages that the caller doesn't want. */
+    if (cMessages < cLogMsgs)
+    {
+        uint32_t cToSkip = cLogMsgs - cMessages;
+        while (cToSkip > 0)
+        {
+            PCLNXPRINTKHDR pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+            if (!pHdr->cbTotal)
+            {
+                offCur = 0;
+                pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+            }
+            if (pHdr->cbText > 0)
+                cToSkip--;
+
+            /* next */
+            offCur += pHdr->cbTotal;
+            cbLeft -= pHdr->cbTotal;
+        }
+    }
+
+    /* Now copy the messages. */
+    size_t offDst = 0;
+    while (cbLeft > 0)
+    {
+        PCLNXPRINTKHDR pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+        if (!pHdr->cbTotal)
+        {
+            if (cbLogBuf - offCur >= cbLeft)
+                break;
+            offCur = 0;
+            pHdr = (PCLNXPRINTKHDR)&pbLogBuf[offCur];
+        }
+
+        if (pHdr->cbText > 0)
+        {
+            char  *pchText = (char *)(pHdr + 1);
+            size_t cchText = RTStrNLen(pchText, pHdr->cbText);
+            if (offDst + cchText < cbBuf)
+            {
+                memcpy(&pszBuf[offDst], pHdr + 1, cchText);
+                pszBuf[offDst + cchText] = '\n';
+            }
+            else if (offDst < cbBuf)
+                memcpy(&pszBuf[offDst], pHdr + 1, cbBuf - offDst);
+            offDst += cchText + 1;
+        }
+
+        /* next */
+        offCur += pHdr->cbTotal;
+        cbLeft -= pHdr->cbTotal;
+    }
+
+    /* Done with the buffer. */
+    RTMemFree(pbLogBuf);
+
+    /* Make sure we've reserved a char for the terminator. */
+    if (!offDst)
+        offDst = 1;
+
+    /* Set return size value. */
+    if (pcbActual)
+        *pcbActual = offDst;
+
+    /*
+     * All VBox strings are UTF-8 and bad things may in theory happen if we
+     * pass bad UTF-8 to code which assumes it's all valid.  So, we enforce
+     * UTF-8 upon the guest kernel messages here even if they (probably) have
+     * no defined code set in reality.
+     */
+    if (offDst <= cbBuf)
+    {
+        pszBuf[offDst - 1] = '\0';
+        RTStrPurgeEncoding(pszBuf);
+        return VINF_SUCCESS;
+    }
+
+    if (cbBuf)
+    {
+        pszBuf[cbBuf - 1] = '\0';
+        RTStrPurgeEncoding(pszBuf);
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
+
+
+/**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
 static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    return NULL;
+    PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
+    switch (enmIf)
+    {
+        case DBGFOSINTERFACE_DMESG:
+            return &pThis->IDmesg;
+
+        default:
+            return NULL;
+    }
 }
 
 
@@ -947,6 +1220,11 @@ static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PUVM pUVM, void *pvData)
 {
+    PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
+    pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;
+    pThis->IDmesg.pfnQueryKernelLog = dbgDiggerLinuxIDmsg_QueryKernelLog;
+    pThis->IDmesg.u32EndMagic = DBGFOSIDMESG_MAGIC;
+
     return VINF_SUCCESS;
 }
 
