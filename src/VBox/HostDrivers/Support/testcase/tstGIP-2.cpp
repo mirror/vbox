@@ -250,6 +250,7 @@ int main(int argc, char **argv)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
                     RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
 
+            RTPrintf("fTscDeltasRoughlyInSync: %RTbool\n", g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync);
             RTPrintf("CPUID.Invariant-TSC    : %RTbool\n", tstIsInvariantTsc());
             if (   uCpuHzRef
                 && cCpuHzOverallDevCnt)

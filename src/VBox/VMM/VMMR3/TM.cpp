@@ -618,6 +618,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Dump the GIPCPU TSC-deltas, iterate using the Apic Id to get master at the beginning in most cases.
      */
+    LogRel(("TM: GIP - fTscDeltasRoughlyInSync=%RTbool\n", g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync));
     unsigned cGipCpus = RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId);
     for (unsigned i = 0; i < cGipCpus; i++)
     {

@@ -67,7 +67,8 @@ struc SUPGLOBALINFOPAGE
     .u16Padding0                resw 1
     .idCpuMax                   resd 1
     .fOsTscDeltasInSync         resb 1
-    .au8Padding0                resb 3
+    .fTscDeltasRoughlyInSync    resb 1
+    .au8Padding0                resb 2
     .au32Padding1               resd 26
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
