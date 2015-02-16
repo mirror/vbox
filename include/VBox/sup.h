@@ -438,6 +438,9 @@ SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 #define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip) \
     ((a_pGip)->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pGip)->fOsTscDeltasInSync))
 
+/** Whether the application of TSC-deltas are worth it (performance matters). */
+#define GIP_TSC_DELTAS_ROUGHLY_IN_SYNC(a_pGip)         ((a_pGip)->fTscDeltasRoughlyInSync)
+
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
  * Gets the TSC frequency of the calling CPU.
@@ -1648,7 +1651,8 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
  */
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage))
+    if (    GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage)
+        && !GIP_TSC_DELTAS_ROUGHLY_IN_SYNC(g_pSUPGlobalInfoPage))
     {
         uint64_t u64Tsc = UINT64_MAX;
         int rc = SUPGetTsc(&u64Tsc, NULL /* pidApic */);
