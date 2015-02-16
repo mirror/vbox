@@ -3219,7 +3219,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtToggle(PVM pVM, PVMCPU pVCp
                 uint64_t u64NowVirtSync = TMVirtualSyncGetNoCheck(pVM);
                 uint64_t u64Now = ASMMultU64ByU32DivByU32(u64NowVirtSync, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
                 uint32_t cCpus  = pVM->cCpus;
-                uint64_t u64RealTSC = ASMReadTSC();
+                uint64_t u64RealTSC = ASMReadTSC();     /** @todo should use SUPReadTsc() */
                 for (uint32_t i = 0; i < cCpus; i++)
                 {
                     PVMCPU   pVCpu = &pVM->aCpus[i];
