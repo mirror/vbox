@@ -1615,12 +1615,41 @@ DECLINLINE(int) SUPGetTsc(uint64_t *puTsc, uint16_t *pidApic)
 {
 # ifdef IN_RING3
     Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage));
-    return SUPR3ReadTsc(puTsc, pidApic);
+
+    /** @todo Use rdtscp after figuring out what the host OS has stuffed into the
+     *        TSC_AUX msr, otherwise use the fallback below. */
+    int cTries = 10;
+    do
+    {
+        uint16_t idApicBefore;
+        uint16_t idApicAfter;
+
+        /* The chance of getting preempted twice here is rather low, hence we
+           take this approach. Performance matters, see @bugref{6710} comment #24. */
+        idApicBefore = ASMGetApicId();
+        *puTsc       = ASMReadTSC();
+        idApicAfter  = ASMGetApicId();
+        if (RT_LIKELY(idApicBefore == idApicAfter))
+        {
+            SUPTscDeltaApply(g_pSUPGlobalInfoPage, puTsc, idApicBefore, NULL);
+            if (pidApic)
+                *pidApic = idApicBefore;
+            return VINF_SUCCESS;
+        }
+    } while (cTries-- > 0);
+    *puTsc = 0;
+    return VERR_SUPDRV_TSC_READ_FAILED;
+
+    /** @todo get rid of SUPR3ReadTsc(). */
+    //return SUPR3ReadTsc(puTsc, pidApic);
 # else
     RTCCUINTREG uFlags;
     uint16_t    idApic;
     bool        fDeltaApplied;
     int         rc;
+
+    /** @todo Use rdtscp after figuring out what the host OS has stuffed into the
+     *        TSC_AUX msr, otherwise use the fallback below. */
 
     /* Validate. */
     Assert(puTsc);
