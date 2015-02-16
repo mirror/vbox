@@ -430,9 +430,15 @@ void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
 
 void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 {
-    /* Handle the VBoxSVC availability change: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        powerOff(false);
+    /* Do nothing if VBoxSVC still availabile: */
+    if (vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Warn user about that: */
+    msgCenter().warnAboutVBoxSVCUnavailable();
+
+    /* Power VM off: */
+    powerOff(false);
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
