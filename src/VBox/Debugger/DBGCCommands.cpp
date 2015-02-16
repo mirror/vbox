@@ -51,6 +51,7 @@ static FNDBGCCMD dbgcCmdHelp;
 static FNDBGCCMD dbgcCmdQuit;
 static FNDBGCCMD dbgcCmdStop;
 static FNDBGCCMD dbgcCmdDetect;
+static FNDBGCCMD dbgcCmdDmesg;
 static FNDBGCCMD dbgcCmdCpu;
 static FNDBGCCMD dbgcCmdInfo;
 static FNDBGCCMD dbgcCmdLog;
@@ -105,6 +106,14 @@ static const DBGCVARDESC    g_aArgCpu[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,     DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                              "idCpu",        "CPU ID" },
+};
+
+
+/** 'dmesg' arguments. */
+static const DBGCVARDESC    g_aArgDmesg[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,     DBGCVAR_CAT_NUMBER_NO_RANGE, 0,                              "messages",     "Limit the output to the last N messages. (optional)" },
 };
 
 
@@ -231,6 +240,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "exit",       0,        0,        NULL,                0,                            0, dbgcCmdQuit,      "",                     "Exits the debugger." },
     { "format",     1,        1,        &g_aArgAny[0],       RT_ELEMENTS(g_aArgAny),       0, dbgcCmdFormat,    "",                     "Evaluates an expression and formats it." },
     { "detect",     0,        0,        NULL,                0,                            0, dbgcCmdDetect,    "",                     "Detects or re-detects the guest os and starts the OS specific digger." },
+    { "dmesg",      0,        1,        &g_aArgDmesg[0],     RT_ELEMENTS(g_aArgDmesg),     0, dbgcCmdDmesg,     "[N last messages]",    "Displays the guest os kernel messages, if available." },
     { "harakiri",   0,        0,        NULL,                0,                            0, dbgcCmdHarakiri,  "",                     "Kills debugger process." },
     { "help",       0,        ~0U,      &g_aArgHelp[0],      RT_ELEMENTS(g_aArgHelp),      0, dbgcCmdHelp,      "[cmd/op [..]]",        "Display help. For help about info items try 'info help'." },
     { "info",       1,        2,        &g_aArgInfo[0],      RT_ELEMENTS(g_aArgInfo),      0, dbgcCmdInfo,      "<info> [args]",        "Display info register in the DBGF. For a list of info items try 'info help'." },
@@ -997,6 +1007,65 @@ static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
     else
         rc = DBGCCmdHlpPrintf(pCmdHlp, "Unable to figure out which guest OS it is, sorry.\n");
     NOREF(pCmd); NOREF(paArgs);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{FNDBCCMD, The 'dmesg' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdDmesg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    /* check that the parser did what it's supposed to do. */
+    if (cArgs > 1)
+        return DBGCCmdHlpPrintf(pCmdHlp, "parser error\n");
+    uint32_t cMessages = UINT32_MAX;
+    if (cArgs == 1)
+    {
+        if (paArgs[0].enmType != DBGCVAR_TYPE_NUMBER)
+            return DBGCCmdHlpPrintf(pCmdHlp, "parser error\n");
+        cMessages = paArgs[0].u.u64Number <= UINT32_MAX ? (uint32_t)paArgs[0].u.u64Number : UINT32_MAX;
+    }
+
+    /*
+     * Query the interface.
+     */
+    int rc;
+    PDBGFOSIDMESG pDmesg = (PDBGFOSIDMESG)DBGFR3OSQueryInterface(pUVM, DBGFOSINTERFACE_DMESG);
+    if (pDmesg)
+    {
+        size_t  cbActual;
+        size_t  cbBuf  = _512K;
+        char   *pszBuf = (char *)RTMemAlloc(cbBuf);
+        if (pszBuf)
+        {
+            rc = pDmesg->pfnQueryKernelLog(pDmesg, pUVM, 0 /*fFlags*/, cMessages, pszBuf, cbBuf, &cbActual);
+
+            uint32_t cTries = 10;
+            while (rc == VERR_BUFFER_OVERFLOW && cbBuf < 16*_1M && cTries-- > 0)
+            {
+                RTMemFree(pszBuf);
+                cbBuf = RT_ALIGN_Z(cbActual + _4K, _4K);
+                pszBuf = (char *)RTMemAlloc(cbBuf);
+                if (RT_UNLIKELY(!pszBuf))
+                {
+                    rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
+                    break;
+                }
+                rc = pDmesg->pfnQueryKernelLog(pDmesg, pUVM, 0 /*fFlags*/, cMessages, pszBuf, cbBuf, &cbActual);
+            }
+            if (RT_SUCCESS(rc))
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%s\n", pszBuf);
+            else if (rc == VERR_BUFFER_OVERFLOW && pszBuf)
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%s\nWarning: incomplete\n", pszBuf);
+            else
+                rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
+        }
+        else
+            rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
+    }
+    else
+        rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "The dmesg interface isn't implemented by guest OS.\n");
     return rc;
 }
 

@@ -1550,6 +1550,8 @@ typedef enum DBGFOSINTERFACE
     DBGFOSINTERFACE_PROCESS,
     /** Thread info. */
     DBGFOSINTERFACE_THREAD,
+    /** Kernel message log - DBGFOSIDMESG. */
+    DBGFOSINTERFACE_DMESG,
     /** The end of the valid entries. */
     DBGFOSINTERFACE_END,
     /** The usual 32-bit type blowup. */
@@ -1657,6 +1659,9 @@ typedef struct DBGFOSREG
      *
      * This is called after pfnProbe.
      *
+     * The returned interface must be valid until pfnDestruct is called.  Two calls
+     * to this method with the same @a enmIf value must return the same pointer.
+     *
      * @returns Pointer to the interface if available, NULL if not available.
      * @param   pUVM    The user mode VM handle.
      * @param   pvData  Pointer to the instance data.
@@ -1674,6 +1679,49 @@ typedef DBGFOSREG const *PCDBGFOSREG;
 
 /** Magic value for DBGFOSREG::u32Magic and DBGFOSREG::u32EndMagic. (Hitomi Kanehara) */
 #define DBGFOSREG_MAGIC     0x19830808
+
+
+/**
+ * Interface for querying kernel log messages (DBGFOSINTERFACE_DMESG).
+ */
+typedef struct DBGFOSIDMESG
+{
+    /** Trailing magic (DBGFOSIDMESG_MAGIC). */
+    uint32_t    u32Magic;
+
+    /**
+     * Query the kernel log.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the messages could not be located.
+     * @retval  VERR_INVALID_STATE if the messages was found to have unknown/invalid
+     *          format.
+     * @retval  VERR_BUFFER_OVERFLOW if the buffer isn't large enough, pcbActual
+     *          will be set to the required buffer size.  The buffer, however, will
+     *          be filled with as much data as it can hold (properly zero terminated
+     *          of course).
+     *
+     * @param   pThis       Pointer to the interface structure.
+     * @param   pUVM        The user mode VM handle.
+     * @param   fFlags      Flags reserved for future use, MBZ.
+     * @param   cMessages   The number of messages to retrieve, counting from the
+     *                      end of the log (i.e. like tail), use UINT32_MAX for all.
+     * @param   pszBuf      The output buffer.
+     * @param   cbBuf       The buffer size.
+     * @param   pcbActual   Where to store the number of bytes actually returned,
+     *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
+     *                      holds the necessary buffer size.  Optional.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryKernelLog)(struct DBGFOSIDMESG *pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
+                                               char *pszBuf, size_t cbBuf, size_t *pcbActual);
+    /** Trailing magic (DBGFOSIDMESG_MAGIC). */
+    uint32_t    u32EndMagic;
+} DBGFOSIDMESG;
+/** Pointer to the interface for query kernel log messages (DBGFOSINTERFACE_DMESG). */
+typedef DBGFOSIDMESG *PDBGFOSIDMESG;
+/** Magic value for DBGFOSIDMESG::32Magic and DBGFOSIDMESG::u32EndMagic. (Kenazburo Oe) */
+#define DBGFOSIDMESG_MAGIC UINT32_C(0x19350131)
+
 
 VMMR3DECL(int)      DBGFR3OSRegister(PUVM pUVM, PCDBGFOSREG pReg);
 VMMR3DECL(int)      DBGFR3OSDeregister(PUVM pUVM, PCDBGFOSREG pReg);

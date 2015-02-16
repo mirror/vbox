@@ -170,11 +170,13 @@ typedef struct DBGFINFO
 typedef struct DBGFOS
 {
     /** Pointer to the registration record. */
-    PCDBGFOSREG pReg;
+    PCDBGFOSREG                 pReg;
     /** Pointer to the next OS we've registered. */
-    struct DBGFOS *pNext;
+    struct DBGFOS              *pNext;
+    /** List of EMT interface wrappers. */
+    struct DBGFOSEMTWRAPPER    *pWrapperHead;
     /** The instance data (variable size). */
-    uint8_t abData[16];
+    uint8_t                     abData[16];
 } DBGFOS;
 /** Pointer to guest OS digger instance. */
 typedef DBGFOS *PDBGFOS;
@@ -276,6 +278,7 @@ typedef struct DBGFCPU
 /** Pointer to DBGFCPU data. */
 typedef DBGFCPU *PDBGFCPU;
 
+struct DBGFOSEMTWRAPPER;
 
 /**
  * The DBGF data kept in the UVM.
@@ -317,6 +320,8 @@ typedef struct DBGFUSERPERVM
     R3PTRTYPE(PDBGFOS)          pCurOS;
     /** The head of the Guest OS digger instances. */
     R3PTRTYPE(PDBGFOS)          pOSHead;
+    /** Critical section protecting the Guest OS Digger data. */
+    RTCRITSECTRW                OSCritSect;
 
     /** List of registered info handlers. */
     R3PTRTYPE(PDBGFINFO)        pInfoFirst;
@@ -343,6 +348,7 @@ void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
 int  dbgfR3BpInit(PVM pVM);
 int  dbgfR3InfoInit(PUVM pUVM);
 int  dbgfR3InfoTerm(PUVM pUVM);
+int  dbgfR3OSInit(PUVM pUVM);
 void dbgfR3OSTerm(PUVM pUVM);
 int  dbgfR3RegInit(PUVM pUVM);
 void dbgfR3RegTerm(PUVM pUVM);

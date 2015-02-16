@@ -142,7 +142,7 @@ typedef struct UVM
 #ifdef ___DBGFInternal_h
         struct DBGFUSERPERVM    s;
 #endif
-        uint8_t                 padding[256];
+        uint8_t                 padding[384];
     } dbgf;
 
     /** Per virtual CPU data. */
@@ -166,6 +166,14 @@ AssertCompileMemberAlignment(UVM, aCpus, 32);
                         ("a_pUVM=%p u32Magic=%#x\n", (a_pUVM), \
                          RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) ? (a_pUVM)->u32Magic : 0), \
                         (a_rc))
+/** @def UVM_ASSERT_VALID_EXT_RETURN
+ * Asserts a user mode VM handle is valid for external access.
+ */
+#define UVM_ASSERT_VALID_EXT_RETURN_VOID(a_pUVM) \
+        AssertMsgReturnVoid(    RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) \
+                            &&  (a_pUVM)->u32Magic == UVM_MAGIC, \
+                            ("a_pUVM=%p u32Magic=%#x\n", (a_pUVM), \
+                             RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) ? (a_pUVM)->u32Magic : 0))
 
 #endif
 
