@@ -123,6 +123,9 @@
 #define GIP_TSC_DELTA_SYNC_PRESTART_WORKER  5
 /** The TSC-refinement interval in seconds. */
 #define GIP_TSC_REFINE_INTERVAL             5
+/** The TSC-delta threshold (in ticks) for whether it's worth applying them or
+ *  not for performance reasons, see @bugref{6710} comment #124. */
+#define GIP_TSC_DELTA_APPLY_THRESHOLD       384
 
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS < GIP_TSC_DELTA_READ_TIME_LOOPS);
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_TSC_DELTA_LOOPS);
@@ -7264,6 +7267,11 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
         {
             if (RT_UNLIKELY(pGipCpuWorker->i64TSCDelta == INT64_MAX))
                 rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
+            else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_APPLY_THRESHOLD
+                     || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_APPLY_THRESHOLD)
+            {
+                pGip->fTscDeltasRoughlyInSync = false;
+            }
         }
     }
     else
@@ -7594,29 +7602,31 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
 #endif
 
     /*
+     * Initialize the structure.
+     */
+    memset(pGip, 0, cbGip);
+
+    /*
      * Record whether the host OS has already normalized inter-CPU deltas for the hardware TSC.
      * We only bother with TSC-deltas on invariant CPUs for now.
      */
     pGip->fOsTscDeltasInSync = supdrvIsInvariantTsc() && supdrvOSAreTscDeltasInSync();
 
-    /*
-     * Initialize the structure.
-     */
-    memset(pGip, 0, cbGip);
-    pGip->u32Magic              = SUPGLOBALINFOPAGE_MAGIC;
-    pGip->u32Version            = SUPGLOBALINFOPAGE_VERSION;
-    pGip->u32Mode               = supdrvGipDetermineTscMode(pDevExt);
-    pGip->cCpus                 = (uint16_t)cCpus;
-    pGip->cPages                = (uint16_t)(cbGip / PAGE_SIZE);
-    pGip->u32UpdateHz           = uUpdateHz;
-    pGip->u32UpdateIntervalNS   = uUpdateIntervalNS;
+    pGip->fTscDeltasRoughlyInSync = true;
+    pGip->u32Magic                = SUPGLOBALINFOPAGE_MAGIC;
+    pGip->u32Version              = SUPGLOBALINFOPAGE_VERSION;
+    pGip->u32Mode                 = supdrvGipDetermineTscMode(pDevExt);
+    pGip->cCpus                   = (uint16_t)cCpus;
+    pGip->cPages                  = (uint16_t)(cbGip / PAGE_SIZE);
+    pGip->u32UpdateHz             = uUpdateHz;
+    pGip->u32UpdateIntervalNS     = uUpdateIntervalNS;
     RTCpuSetEmpty(&pGip->OnlineCpuSet);
     RTCpuSetEmpty(&pGip->PresentCpuSet);
     RTMpGetSet(&pGip->PossibleCpuSet);
-    pGip->cOnlineCpus           = RTMpGetOnlineCount();
-    pGip->cPresentCpus          = RTMpGetPresentCount();
-    pGip->cPossibleCpus         = RTMpGetCount();
-    pGip->idCpuMax              = RTMpGetMaxCpuId();
+    pGip->cOnlineCpus             = RTMpGetOnlineCount();
+    pGip->cPresentCpus            = RTMpGetPresentCount();
+    pGip->cPossibleCpus           = RTMpGetCount();
+    pGip->idCpuMax                = RTMpGetMaxCpuId();
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = UINT16_MAX;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)

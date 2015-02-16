@@ -331,7 +331,9 @@ typedef struct SUPGLOBALINFOPAGE
     /** Whether the host OS has already normalized the hardware TSC deltas across
      *  CPUs. */
     bool                fOsTscDeltasInSync;
-    uint8_t             au8Padding0[3];
+    /** Whether the TSC deltas are small enough to not bother applying. */
+    bool                fTscDeltasRoughlyInSync;
+    uint8_t             au8Padding0[2];
 
     /** Padding / reserved space for future data. */
     uint32_t            au32Padding1[26];
