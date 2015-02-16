@@ -1060,6 +1060,7 @@ static DECLCALLBACK(int) dbgcCmdDmesg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
                 rc = DBGCCmdHlpPrintf(pCmdHlp, "%s\nWarning: incomplete\n", pszBuf);
             else
                 rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
+            RTMemFree(pszBuf);
         }
         else
             rc = DBGCCmdHlpFail(pCmdHlp, pCmd, "Error allocating %#zu bytes.\n", cbBuf);
