@@ -107,6 +107,14 @@
 %endmacro
 
 ;;
+; Records an ADD xSP, %1.
+%macro SEH64_ALLOCATE_STACK 1
+ %ifdef RT_ASM_WITH_SEH64
+  [allocstack %1]
+ %endif
+%endmacro
+
+;;
 ; Ends the prologue.
 %macro SEH64_END_PROLOGUE 0
  %ifdef RT_ASM_WITH_SEH64
