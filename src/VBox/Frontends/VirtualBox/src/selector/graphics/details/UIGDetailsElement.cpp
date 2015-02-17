@@ -608,7 +608,7 @@ void UIGDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
     pEvent->accept();
     QString strCategory;
     if (m_type >= DetailsElementType_General &&
-        m_type <= DetailsElementType_SF)
+        m_type < DetailsElementType_Description)
         strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
     else if (m_type == DetailsElementType_Description)
         strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_type));

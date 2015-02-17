@@ -484,6 +484,42 @@ private:
 };
 
 
+/* Thread 'UI': */
+class UIGDetailsUpdateThreadUI : public UIGDetailsUpdateThread
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIGDetailsUpdateThreadUI(const CMachine &machine);
+
+private:
+
+    /* Helpers: Prepare stuff: */
+    void run();
+};
+
+/* Element 'UI': */
+class UIGDetailsElementUI : public UIGDetailsElementInterface
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIGDetailsElementUI(UIGDetailsSet *pParent, bool fOpened);
+
+private:
+
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
+    UIGDetailsUpdateThread* createUpdateThread();
+};
+
+
 /* Thread 'Description': */
 class UIGDetailsUpdateThreadDescription : public UIGDetailsUpdateThread
 {

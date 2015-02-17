@@ -24,7 +24,7 @@
 /* Forward declarations: */
 class UIActionPool;
 
-/* Machine settings / Interface page / Data: */
+/* Machine settings / User Interface page / Data: */
 struct UIDataSettingsMachineInterface
 {
     /* Constructor: */
@@ -62,7 +62,7 @@ struct UIDataSettingsMachineInterface
 };
 typedef UISettingsCache<UIDataSettingsMachineInterface> UICacheSettingsMachineInterface;
 
-/* Machine settings / Interface page: */
+/* Machine settings / User Interface page: */
 class UIMachineSettingsInterface : public UISettingsPageMachine,
                                    public Ui::UIMachineSettingsInterface
 {

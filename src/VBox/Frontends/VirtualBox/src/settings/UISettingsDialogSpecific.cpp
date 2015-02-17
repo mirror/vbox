@@ -707,7 +707,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 {
                     pSettingsPage = new UIMachineSettingsInterface(m_machine.GetId());
                     addItem(":/interface_32px.png", ":/interface_24px.png", ":/interface_16px.png",
-                            iPageIndex, "#interface", pSettingsPage);
+                            iPageIndex, "#userInterface", pSettingsPage);
                     break;
                 }
                 default:
@@ -933,7 +933,7 @@ void UISettingsDialogMachine::retranslateUi()
     m_pSelector->setItemText(MachineSettingsPageType_SF, tr("Shared Folders"));
 
     /* Interface page: */
-    m_pSelector->setItemText(MachineSettingsPageType_Interface, tr("Interface"));
+    m_pSelector->setItemText(MachineSettingsPageType_Interface, tr("User Interface"));
 
     /* Polish the selector: */
     m_pSelector->polish();

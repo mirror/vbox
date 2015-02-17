@@ -829,6 +829,7 @@ template<> QString toString(const DetailsElementType &detailsElementType)
 #endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         strResult = QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"); break;
         case DetailsElementType_SF:          strResult = QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); break;
+        case DetailsElementType_UI:          strResult = QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); break;
         case DetailsElementType_Description: strResult = QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"); break;
         default:
         {
@@ -858,6 +859,7 @@ template<> DetailsElementType fromString<DetailsElementType>(const QString &strD
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << QApplication::translate("VBoxGlobal", "USB", "DetailsElementType");            values << DetailsElementType_USB;
     keys << QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
+    keys << QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); values << DetailsElementType_UI;
     keys << QApplication::translate("VBoxGlobal", "Description", "DetailsElementType");    values << DetailsElementType_Description;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
@@ -885,6 +887,7 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
 #endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         strResult = "usb"; break;
         case DetailsElementType_SF:          strResult = "sharedFolders"; break;
+        case DetailsElementType_UI:          strResult = "userInterface"; break;
         case DetailsElementType_Description: strResult = "description"; break;
         default:
         {
@@ -914,6 +917,7 @@ template<> DetailsElementType fromInternalString<DetailsElementType>(const QStri
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     keys << "usb";           values << DetailsElementType_USB;
     keys << "sharedFolders"; values << DetailsElementType_SF;
+    keys << "userInterface"; values << DetailsElementType_UI;
     keys << "description";   values << DetailsElementType_Description;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))

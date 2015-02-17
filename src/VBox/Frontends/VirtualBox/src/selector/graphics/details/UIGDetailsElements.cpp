@@ -1038,6 +1038,122 @@ UIGDetailsUpdateThread* UIGDetailsElementSF::createUpdateThread()
 }
 
 
+UIGDetailsUpdateThreadUI::UIGDetailsUpdateThreadUI(const CMachine &machine)
+    : UIGDetailsUpdateThread(machine)
+{
+}
+
+void UIGDetailsUpdateThreadUI::run()
+{
+    COMBase::InitializeCOM(false);
+
+    if (!machine().isNull())
+    {
+        /* Prepare table: */
+        UITextTable m_text;
+
+        /* Gather information: */
+        if (machine().GetAccessible())
+        {
+            /* Damn GetExtraData should be const already :( */
+            CMachine localMachine = machine();
+
+            /* Get scale-factor value: */
+            const QString strScaleFactor = localMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+            {
+                /* Try to convert loaded data to double: */
+                bool fOk = false;
+                double dValue = strScaleFactor.toDouble(&fOk);
+                /* Invent the default value: */
+                if (!fOk || !dValue)
+                    dValue = 1.0;
+                /* Append information: */
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Scale-factor", "details (user interface)"), QString::number(dValue, 'f', 2));
+            }
+
+#ifdef Q_WS_MAC
+            /* Get 'Unscaled HiDPI Video Output' mode value: */
+            const QString strUnscaledHiDPIMode = localMachine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
+            {
+                /* Try to convert loaded data to bool: */
+                const bool fEnabled  = strUnscaledHiDPIMode.compare("true", Qt::CaseInsensitive) == 0 ||
+                                       strUnscaledHiDPIMode.compare("yes", Qt::CaseInsensitive) == 0 ||
+                                       strUnscaledHiDPIMode.compare("on", Qt::CaseInsensitive) == 0 ||
+                                       strUnscaledHiDPIMode == "1";
+                /* Append information: */
+                if (fEnabled)
+                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (user interface)"),
+                                              QApplication::translate("UIGDetails", "Enabled", "details (user interface/Unscaled HiDPI Video Output)"));
+            }
+#endif /* Q_WS_MAC */
+
+            /* Get mini-toolbar availability status: */
+            const QString strMiniToolbarEnabled = localMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
+            {
+                /* Try to convert loaded data to bool: */
+                const bool fEnabled = !(strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
+                                        strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
+                                        strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
+                                        strMiniToolbarEnabled == "0");
+                /* Append information: */
+                if (fEnabled)
+                {
+                    /* Get mini-toolbar position: */
+                    const QString &strMiniToolbarPosition = localMachine.GetExtraData(UIExtraDataDefs::GUI_MiniToolBarAlignment);
+                    {
+                        /* Try to convert loaded data to alignment: */
+                        switch (gpConverter->fromInternalString<MiniToolbarAlignment>(strMiniToolbarPosition))
+                        {
+                            /* Append information: */
+                            case MiniToolbarAlignment_Top:
+                                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Mini-toolbar Position", "details (user interface)"),
+                                                          QApplication::translate("UIGDetails", "Top", "details (user interface/mini-toolbar position)"));
+                                break;
+                            /* Append information: */
+                            case MiniToolbarAlignment_Bottom:
+                                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Mini-toolbar Position", "details (user interface)"),
+                                                          QApplication::translate("UIGDetails", "Bottom", "details (user interface/mini-toolbar position)"));
+                                break;
+                        }
+                    }
+                }
+                /* Append information: */
+                else
+                    m_text << UITextTableLine(QApplication::translate("UIGDetails", "Mini-toolbar", "details (user interface)"),
+                                              QApplication::translate("UIGDetails", "Disabled", "details (user interface/mini-toolbar)"));
+            }
+        }
+        else
+            m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
+
+        /* Send information into GUI thread: */
+        emit sigComplete(m_text);
+    }
+
+    COMBase::CleanupCOM();
+}
+
+UIGDetailsElementUI::UIGDetailsElementUI(UIGDetailsSet *pParent, bool fOpened)
+    : UIGDetailsElementInterface(pParent, DetailsElementType_UI, fOpened)
+{
+    /* Icon: */
+    setIcon(UIIconPool::iconSet(":/interface_16px.png"));
+
+    /* Translate: */
+    retranslateUi();
+}
+
+void UIGDetailsElementUI::retranslateUi()
+{
+    setName(gpConverter->toString(DetailsElementType_UI));
+}
+
+UIGDetailsUpdateThread* UIGDetailsElementUI::createUpdateThread()
+{
+    return new UIGDetailsUpdateThreadUI(machine());
+}
+
+
 UIGDetailsUpdateThreadDescription::UIGDetailsUpdateThreadDescription(const CMachine &machine)
     : UIGDetailsUpdateThread(machine)
 {

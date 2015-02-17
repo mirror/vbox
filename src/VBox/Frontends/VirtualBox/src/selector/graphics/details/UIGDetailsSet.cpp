@@ -383,6 +383,7 @@ int UIGDetailsSet::minimumWidthHint() const
 #endif /* VBOX_WITH_PARALLEL_PORTS */
             case DetailsElementType_USB:
             case DetailsElementType_SF:
+            case DetailsElementType_UI:
             case DetailsElementType_Description:
             {
                 iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
@@ -442,6 +443,7 @@ int UIGDetailsSet::minimumHeightHint() const
 #endif /* VBOX_WITH_PARALLEL_PORTS */
             case DetailsElementType_USB:
             case DetailsElementType_SF:
+            case DetailsElementType_UI:
             case DetailsElementType_Description:
             {
                 iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
@@ -496,6 +498,7 @@ void UIGDetailsSet::updateLayout()
 #endif /* VBOX_WITH_PARALLEL_PORTS */
             case DetailsElementType_USB:
             case DetailsElementType_SF:
+            case DetailsElementType_UI:
             case DetailsElementType_Description:
             {
                 /* Move element: */
@@ -584,6 +587,7 @@ UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, 
 #endif /* VBOX_WITH_PARALLEL_PORTS */
         case DetailsElementType_USB:         return new UIGDetailsElementUSB(this, fOpen);
         case DetailsElementType_SF:          return new UIGDetailsElementSF(this, fOpen);
+        case DetailsElementType_UI:          return new UIGDetailsElementUI(this, fOpen);
         case DetailsElementType_Description: return new UIGDetailsElementDescription(this, fOpen);
     }
     return 0;
