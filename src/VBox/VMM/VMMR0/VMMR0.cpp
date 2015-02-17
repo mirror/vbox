@@ -565,7 +565,8 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HM_DISABLE_PREEMPT_IF_NEEDED();
 
             /* We need to update the VCPU <-> host CPU mapping. */
-            RTCPUID idHostCpu = RTMpCpuId();
+            RTCPUID idHostCpu  = RTMpCpuId();
+            pVCpu->iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
             /* Invoke the HM-specific thread-context callback. */
@@ -585,6 +586,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
              * Sigh. See VMMGetCpu() used by VMCPU_ASSERT_EMT(). We cannot let several VCPUs
              * have the same host CPU associated with it.
              */
+            pVCpu->iHostCpuSet = UINT32_MAX;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
             break;
         }
@@ -866,6 +868,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
             CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
+            pVCpu->iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
             if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
                 GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
@@ -910,6 +913,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             }
             else
                 pVCpu->vmm.s.iLastGZRc = rc;
+            pVCpu->iHostCpuSet = UINT32_MAX;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
             RTThreadPreemptRestore(&PreemptState);
             break;
@@ -925,7 +929,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             RTThreadPreemptDisable(&PreemptState);
 
             /* Update the VCPU <-> host CPU mapping before doing anything else. */
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+            RTCPUID  idHostCpu = RTMpCpuId();
+            pVCpu->iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
+
             if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
                 GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
 #ifdef LOG_ENABLED
@@ -999,6 +1006,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             pVCpu->vmm.s.iLastGZRc = rc;
 
             /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
+            pVCpu->iHostCpuSet = UINT32_MAX;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
             if (!fPreemptRestored)
