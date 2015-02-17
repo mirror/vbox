@@ -523,6 +523,7 @@ enum DetailsElementType
 #endif /* VBOX_WITH_PARALLEL_PORTS */
     DetailsElementType_USB,
     DetailsElementType_SF,
+    DetailsElementType_UI,
     DetailsElementType_Description
 };
 Q_DECLARE_METATYPE(DetailsElementType);
