@@ -1314,11 +1314,11 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
     AssertPtrReturnVoid(pServer);
 #ifndef VBOX_WITH_PDM_AUDIO_DRIVER
     PPDMIAUDIOSNIFFERPORT pPort = pServer->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
-#endif
-
+#else
     AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
     if (!pVRDE) /* Nothing to do, bail out early. */
         return;
+#endif
 
     switch (u32Event)
     {
