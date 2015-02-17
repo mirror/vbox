@@ -1187,12 +1187,16 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
     if (version_id <= 7)
     {
         int32_t     i32Dummy;
+        uint8_t     u8State;
+        uint8_t     u8Rate;
+        uint8_t     u8Proto;
+
         SSMR3GetU32(pSSM, &u32Dummy);
+        SSMR3GetU8(pSSM, &u8State);
         SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Rate);
         SSMR3GetU8(pSSM, &u8Dummy);
-        SSMR3GetU8(pSSM, &u8Dummy);
-        SSMR3GetU8(pSSM, &u8Dummy);
-        SSMR3GetU8(pSSM, &u8Dummy);
+        SSMR3GetU8(pSSM, &u8Proto);
         SSMR3GetU8(pSSM, &u8Dummy);
         SSMR3GetS32(pSSM, &i32Dummy);
         SSMR3GetS32(pSSM, &i32Dummy);
@@ -1212,6 +1216,8 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
             SSMR3GetU8(pSSM, &u8Dummy);
         if (version_id == 4)
             SSMR3GetU8(pSSM, &u8Dummy);
+
+        PS2MFixupState(&s->Aux, u8State, u8Rate, u8Proto);
     }
 #endif
 
