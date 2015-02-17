@@ -122,11 +122,12 @@ struc VMCPU
     .hNativeThread          RTR0PTR_RES 1
     .hNativeThreadR0        RTR0PTR_RES 1
     .idHostCpu              resd 1
+    .iHostCpuSet            resd 1
     .fTraceGroups           resd 1
 %if HC_ARCH_BITS == 32
-    .abAlignment1           resb 16+64
+    .abAlignment1           resb 12+64
 %else
-    .abAlignment1           resb 60
+    .abAlignment1           resb 56
 %endif
     .uAdHoc                 resd 1
     .aStatAdHoc             resb STAMPROFILEADV_size * 8

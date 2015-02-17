@@ -116,9 +116,12 @@ typedef struct VMCPU
     /** Which host CPU ID is this EMT running on.
      * Only valid when in RC or HMR0 with scheduling disabled. */
     RTCPUID volatile        idHostCpu;                              /* 56 / 36 */
+    /** The CPU set index corresponding to idHostCpu, UINT32_MAX if not valid.
+     * @remarks Best to make sure iHostCpuSet shares cache line with idHostCpu! */
+    uint32_t volatile       iHostCpuSet;                            /* 60 / 40 */
 
     /** Trace groups enable flags.  */
-    uint32_t                fTraceGroups;                           /* 60 / 40 */
+    uint32_t                fTraceGroups;                           /* 64 / 44 */
     /** Align the structures below bit on a 64-byte boundary and make sure it starts
      * at the same offset in both 64-bit and 32-bit builds.
      *
@@ -127,7 +130,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 60 : 16+64];
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 56 : 12+64];
     /** State data for use by ad hoc profiling. */
     uint32_t                uAdHoc;
     /** Profiling samples for use by ad hoc profiling. */
