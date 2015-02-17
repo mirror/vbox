@@ -1449,7 +1449,7 @@ void Console::i_VRDPClientDisconnect(uint32_t u32ClientId,
     {
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         if (mAudioVRDE)
-            mAudioVRDE->onVRDEInputIntercept(false /* fIntercept */);
+            mAudioVRDE->onVRDEControl(false /* fEnable */, 0 /* uFlags */);
 #else
         mcAudioRefs--;
 
@@ -1500,7 +1500,7 @@ void Console::i_VRDPInterceptAudio(uint32_t u32ClientId)
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     if (mAudioVRDE)
-        mAudioVRDE->onVRDEInputIntercept(true /* fIntercept */);
+        mAudioVRDE->onVRDEControl(true /* fEnable */, 0 /* uFlags */);
 #else
     ++mcAudioRefs;
 
@@ -2379,7 +2379,7 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM)
         vrc = VMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)i_unplugCpu, 3,
                            this, pUVM, (VMCPUID)aCpu);
-    
+
         /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
         alock.release();
 
@@ -4820,32 +4820,27 @@ HRESULT Console::i_doNetworkAdapterChange(PUVM pUVM,
      * Suspend the VM first.
      */
     bool fResume = false;
-    int rc = i_suspendBeforeConfigChange(pUVM, NULL, &fResume);
-    if (FAILED(rc))
-        return rc;
+    HRESULT hr = i_suspendBeforeConfigChange(pUVM, NULL, &fResume);
+    if (FAILED(hr))
+        return hr;
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
      * using VM3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
-    PVMREQ pReq;
-    int vrc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/,
-                               (PFNRT)i_changeNetworkAttachment, 6,
-                               this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/,
+                              (PFNRT)i_changeNetworkAttachment, 6,
+                              this, pUVM, pszDevice, uInstance, uLun, aNetworkAdapter);
 
     if (fResume)
         i_resumeAfterConfigChange(pUVM);
 
-    if (RT_SUCCESS(vrc))
-    {
-        LogFlowThisFunc(("Returns S_OK\n"));
+    if (RT_SUCCESS(rc))
         return S_OK;
-    }
 
     return setError(E_FAIL,
-                    tr("Could not change the network adaptor attachement type (%Rrc)"),
-                    vrc);
+                    tr("Could not change the network adaptor attachement type (%Rrc)"), rc);
 }
 
 

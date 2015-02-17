@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -765,6 +765,13 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
     return rc;
 }
 
+static DECLCALLBACK(bool) drvHostOSSAudioIsEnabled(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
+{
+    NOREF(pInterface);
+    NOREF(enmDir);
+    return true; /* Always all enabled. */
+}
+
 static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
                                                 uint32_t *pcSamplesPlayed)
 {
@@ -932,19 +939,11 @@ static DECLCALLBACK(int) drvHostOSSAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                    = pDrvIns;
+    pThis->pDrvIns                   = pDrvIns;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface  = drvHostOSSAudioQueryInterface;
-    pThis->IHostAudioR3.pfnInitIn     = drvHostOSSAudioInitIn;
-    pThis->IHostAudioR3.pfnInitOut    = drvHostOSSAudioInitOut;
-    pThis->IHostAudioR3.pfnControlIn  = drvHostOSSAudioControlIn;
-    pThis->IHostAudioR3.pfnControlOut = drvHostOSSAudioControlOut;
-    pThis->IHostAudioR3.pfnFiniIn     = drvHostOSSAudioFiniIn;
-    pThis->IHostAudioR3.pfnFiniOut    = drvHostOSSAudioFiniOut;
-    pThis->IHostAudioR3.pfnCaptureIn  = drvHostOSSAudioCaptureIn;
-    pThis->IHostAudioR3.pfnPlayOut    = drvHostOSSAudioPlayOut;
-    pThis->IHostAudioR3.pfnGetConf    = drvHostOSSAudioGetConf;
-    pThis->IHostAudioR3.pfnInit       = drvHostOSSAudioInit;
+    pDrvIns->IBase.pfnQueryInterface = drvHostOSSAudioQueryInterface;
+    /* IHostAudioR3 */
+    PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(drvHostOSSAudio);
 
     return VINF_SUCCESS;
 }

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Console VRDP Helper class
+ * VBox Console VRDP helper class.
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -650,9 +650,9 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
 
             size_t cbPortRange = portRange.length() + 1;
 
-            if (cbPortRange >= 0x10000)
+            if (cbPortRange >= _64K)
             {
-                /* More than 64K seems to be an  invalid port range string. */
+                /* More than 64K seems to be an invalid port range string. */
                 rc = VERR_TOO_MUCH_DATA;
                 break;
             }
@@ -796,7 +796,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 extraData += pFeature->achInfo;
 
                 HRESULT hrc = server->mConsole->i_machine()->GetExtraData(com::Bstr(extraData).raw(),
-                                                                        bstrValue.asOutParam());
+                                                                          bstrValue.asOutParam());
                 if (FAILED(hrc) || bstrValue.isEmpty())
                 {
                     /* Also try the old "VRDP/Feature/NAME" */
@@ -804,7 +804,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                     extraData += pFeature->achInfo;
 
                     hrc = server->mConsole->i_machine()->GetExtraData(com::Bstr(extraData).raw(),
-                                                                    bstrValue.asOutParam());
+                                                                      bstrValue.asOutParam());
                     if (FAILED(hrc))
                     {
                         rc = VERR_NOT_SUPPORTED;
@@ -816,7 +816,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 /* Generic properties. */
                 const char *pszPropertyName = &pFeature->achInfo[9];
                 HRESULT hrc = server->mConsole->i_getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(),
-                                                                                 bstrValue.asOutParam());
+                                                                                   bstrValue.asOutParam());
                 if (FAILED(hrc))
                 {
                     rc = VERR_NOT_SUPPORTED;
@@ -956,7 +956,9 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         ASMAtomicWriteU32(&pServer->mu32AudioInputClientId, 0);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        pServer->mConsole->i_getAudioVRDE()->onVRDEInputIntercept(false);
+        AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
+        if (pVRDE)
+            pVRDE->onVRDEInputIntercept(false /* fIntercept */);
 #else
         PPDMIAUDIOSNIFFERPORT pPort = pServer->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
         if (pPort)
@@ -982,6 +984,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
                                                            void **ppvIntercept)
 {
     ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvCallback);
+    AssertPtrReturn(pServer, VERR_INVALID_POINTER);
 
     LogFlowFunc(("%x\n", fu32Intercept));
 
@@ -1017,14 +1020,17 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
 
         case VRDE_CLIENT_INTERCEPT_AUDIO_INPUT:
         {
-            /* This request is processed internally by the ConsoleVRDPServer.
+            /*
+             * This request is processed internally by the ConsoleVRDPServer.
              * Only one client is allowed to intercept audio input.
              */
             if (ASMAtomicCmpXchgU32(&pServer->mu32AudioInputClientId, u32ClientId, 0) == true)
             {
-                LogFunc(("Connected client %u\n", u32ClientId));
+                LogFunc(("Intercepting audio input by client %RU32\n", u32ClientId));
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                pServer->mConsole->i_getAudioVRDE()->onVRDEInputIntercept(true);
+                AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
+                if (pVRDE)
+                    pVRDE->onVRDEInputIntercept(true /* fIntercept */);
 #else
                 PPDMIAUDIOSNIFFERPORT pPort = pServer->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
                 if (pPort)
@@ -1043,7 +1049,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackIntercept(void *pvCallback, uin
             }
             else
             {
-                Log(("AUDIOIN: ignored client %u, active client %u\n", u32ClientId, pServer->mu32AudioInputClientId));
+                Log(("AUDIOIN: ignored client %RU32, active client %RU32\n", u32ClientId, pServer->mu32AudioInputClientId));
                 rc = VERR_NOT_SUPPORTED;
             }
         } break;
@@ -1310,12 +1316,16 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
     PPDMIAUDIOSNIFFERPORT pPort = pServer->mConsole->i_getAudioSniffer()->getAudioSnifferPort();
 #endif
 
+    AudioVRDE *pVRDE = pServer->mConsole->i_getAudioVRDE();
+    if (!pVRDE) /* Nothing to do, bail out early. */
+        return;
+
     switch (u32Event)
     {
         case VRDE_AUDIOIN_BEGIN:
         {
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            pServer->mConsole->i_getAudioVRDE()->onVRDEInputBegin(pvCtx, (PVRDEAUDIOINBEGIN)pvData);
+            pVRDE->onVRDEInputBegin(pvCtx, (PVRDEAUDIOINBEGIN)pvData);
 #else
             const VRDEAUDIOINBEGIN *pParms = (const VRDEAUDIOINBEGIN *)pvData;
             pPort->pfnAudioInputEventBegin (pPort, pvCtx,
@@ -1330,7 +1340,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
 
         case VRDE_AUDIOIN_DATA:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            pServer->mConsole->i_getAudioVRDE()->onVRDEInputData(pvCtx, pvData, cbData);
+            pVRDE->onVRDEInputData(pvCtx, pvData, cbData);
 #else
             pPort->pfnAudioInputEventData (pPort, pvCtx, pvData, cbData);
 #endif
@@ -1338,7 +1348,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
 
         case VRDE_AUDIOIN_END:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            pServer->mConsole->i_getAudioVRDE()->onVRDEInputEnd(pvCtx);
+            pVRDE->onVRDEInputEnd(pvCtx);
 #else
             pPort->pfnAudioInputEventEnd (pPort, pvCtx);
 #endif

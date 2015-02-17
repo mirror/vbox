@@ -298,10 +298,7 @@ static void continue_dma8 (SB16State *s)
         as.enmFormat     = s->fmt;
         as.enmEndianness = PDMAUDIOHOSTENDIANESS;
 
-        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
-                                     sb16AudioCallback /* fnCallback */, s /* pvCallback */,
-                                     &as,
-                                     &s->pGstStrmOut);
+        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out", &as, &s->pGstStrmOut);
         AssertRC(rc);
 #else
         audsettings_t as;
@@ -458,10 +455,7 @@ static void dma_cmd (SB16State *s, uint8_t cmd, uint8_t d0, int dma_len)
         as.enmFormat     = s->fmt;
         as.enmEndianness = PDMAUDIOHOSTENDIANESS;
 
-        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
-                                     sb16AudioCallback /* fnCallback */, s /* pvCallback */,
-                                     &as,
-                                     &s->pGstStrmOut);
+        int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out", &as, &s->pGstStrmOut);
         AssertRC(rc);
 #else
         audsettings_t as;
@@ -971,10 +965,7 @@ static void legacy_reset (SB16State *s)
     as.enmFormat     = AUD_FMT_U8;
     as.enmEndianness = PDMAUDIOHOSTENDIANESS;
 
-    int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
-                                 sb16AudioCallback /* fnCallback */, s /* pvContext */,
-                                 &as,
-                                 &s->pGstStrmOut);
+    int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out", &as, &s->pGstStrmOut);
     AssertRC(rc);
 #else
     audsettings_t as;
@@ -1746,10 +1737,7 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
             streamCfg.enmFormat     = s->fmt;
             streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
 
-            int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out",
-                                         sb16AudioCallback /* fnCallback */, s /* pvContext */,
-                                         &streamCfg,
-                                         &s->pGstStrmOut);
+            int rc = s->pDrv->pfnOpenOut(s->pDrv, "sb16.out", &streamCfg, &s->pGstStrmOut);
             AssertRC(rc);
 #else
             audsettings_t as;

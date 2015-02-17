@@ -96,10 +96,11 @@ volume_t pcm_in_volume =
     INT_MAX
 };
 
-int drvAudioAddHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
-                      PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
+int drvAudioAddHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
 {
-    LogFlowFuncEnter();
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
     PPDMAUDIOHSTSTRMOUT pHstStrmOut;
 
@@ -107,7 +108,7 @@ int drvAudioAddHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
     if (   conf.fixed_out.enabled /** @todo Get rid of these settings! */
         && conf.fixed_out.greedy)
     {
-        rc = drvAudioAllocHstOut(pThis, pCfg, &pHstStrmOut);
+        rc = drvAudioAllocHstOut(pThis, pszName, pCfg, &pHstStrmOut);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -117,7 +118,7 @@ int drvAudioAddHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
         pHstStrmOut = drvAudioFindSpecificOut(pThis, NULL, pCfg);
         if (!pHstStrmOut)
         {
-            rc = drvAudioAllocHstOut(pThis, pCfg, &pHstStrmOut);
+            rc = drvAudioAllocHstOut(pThis, pszName, pCfg, &pHstStrmOut);
             if (RT_FAILURE(rc))
                 pHstStrmOut = drvAudioFindAnyHstOut(pThis, NULL /* pHstStrmOut */);
         }
@@ -128,7 +129,6 @@ int drvAudioAddHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
     if (RT_SUCCESS(rc))
         *ppHstStrmOut = pHstStrmOut;
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -391,20 +391,12 @@ void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len)
     }
 }
 
-/*
- * Guest input stream handling (capturing from the host).
- */
-
-/*
- * Host output handling (playing output from the guest).
- */
-
 int drvAudioDestroyHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%p\n", pHstStrmOut));
+    LogFlowFunc(("%s\n", pHstStrmOut->MixBuf.pszName));
 
     int rc;
     if (RTListIsEmpty(&pHstStrmOut->lstGstStrmOut))
@@ -425,9 +417,7 @@ int drvAudioDestroyHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
     else
         rc = VERR_ACCESS_DENIED;
 
-    LogFlowFunc(("Host output stream %p still being used, rc=%Rrc\n",
-                 pHstStrmOut, rc));
-
+    LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, rc));
     return rc;
 }
 
@@ -532,10 +522,10 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
     return rc;
 }
 
-int drvAudioAllocHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
-                        PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
+int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
     if (!pThis->cFreeOutputStreams)
@@ -578,7 +568,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
 
         fInitialized = true;
 
-        rc = audioMixBufInit(&pHstStrmOut->MixBuf, "HostOut", &pHstStrmOut->Props, cSamples);
+        rc = audioMixBufInit(&pHstStrmOut->MixBuf, pszName, &pHstStrmOut->Props, cSamples);
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmOut, &pHstStrmOut->Node);
@@ -609,13 +599,17 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
 int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
                                 PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
 {
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+
     PPDMAUDIOSTREAMCFG pThisCfg;
     if (conf.fixed_out.enabled)
         pThisCfg = &conf.fixed_out.settings;
     else
         pThisCfg = pCfg;
 
-    AssertPtrReturn(pThisCfg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThisCfg, VERR_INVALID_POINTER);
 
     LogFlowFunc(("Using fixed audio output settings: %RTbool\n",
                  RT_BOOL(conf.fixed_out.enabled)));
@@ -624,17 +618,15 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
         (PPDMAUDIOGSTSTRMOUT)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMOUT));
     if (!pGstStrmOut)
     {
-        LogFlowFunc(("Failed to allocate memory for guest output stream \"%s\"\n",
-                     pszName));
+        LogFlowFunc(("Failed to allocate memory for guest output stream \"%s\"\n", pszName));
         return VERR_NO_MEMORY;
     }
 
     PPDMAUDIOHSTSTRMOUT pHstStrmOut;
-    int rc = drvAudioAddHstOut(pThis, pThisCfg, &pHstStrmOut);
+    int rc = drvAudioAddHstOut(pThis, pszName, pThisCfg, &pHstStrmOut);
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Error adding host output stream \"%s\", rc=%Rrc\n",
-                     pszName, rc));
+        LogFlowFunc(("Error adding host output stream \"%s\", rc=%Rrc\n", pszName, rc));
 
         RTMemFree(pGstStrmOut);
         return rc;
@@ -836,29 +828,29 @@ int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOu
                   const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
     AssertPtrReturn(pGstStrmOut, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
+    if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_OUT))
+        return VERR_NOT_AVAILABLE;
+
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
     AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
 
     AssertMsg(pGstStrmOut->pHstStrmOut->fEnabled,
-              ("Writing to disabled host output stream %p not possible\n",
-              pGstStrmOut->pHstStrmOut));
+              ("Writing to disabled host output stream \"%s\" not possible\n",
+              pHstStrmOut->MixBuf.pszName));
 
     /*
      * First, write data from the device emulation into our
      * guest mixing buffer.
      */
     uint32_t cWritten;
-    int rc = audioMixBufWriteAt(&pGstStrmOut->MixBuf,
-                                0 /* Offset in samples */,
-                                pvBuf, cbBuf,
-                                &cWritten);
+    int rc = audioMixBufWriteAt(&pGstStrmOut->MixBuf, 0 /* Offset in samples */, pvBuf, cbBuf, &cWritten);
 
     /*
      * Second, mix the guest mixing buffer with the host mixing
@@ -868,8 +860,7 @@ int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOu
     if (   RT_SUCCESS(rc)
         && cWritten)
     {
-        rc = audioMixBufMixToParent(&pGstStrmOut->MixBuf,
-                                    cWritten, &cMixed);
+        rc = audioMixBufMixToParent(&pGstStrmOut->MixBuf, cWritten, &cMixed);
     }
     else
         cMixed = 0;
@@ -883,9 +874,9 @@ int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOu
             *pcbWritten = AUDIOMIXBUF_S2B(&pGstStrmOut->MixBuf, cMixed);
     }
 
-    LogFlowFunc(("Written pvBuf=%p, cbBuf=%zu, cWritten=%RU32 (%RU32 bytes), cMixed=%RU32, rc=%Rrc\n",
-                 pvBuf, cbBuf, cWritten, AUDIOMIXBUF_S2B(&pGstStrmOut->MixBuf, cWritten),
-                 cMixed, rc));
+    LogFlowFunc(("%s -> %s: Written pvBuf=%p, cbBuf=%zu, cWritten=%RU32 (%RU32 bytes), cMixed=%RU32, rc=%Rrc\n",
+                 pGstStrmOut->MixBuf.pszName, pHstStrmOut->MixBuf.pszName, pvBuf, cbBuf, cWritten,
+                 AUDIOMIXBUF_S2B(&pGstStrmOut->MixBuf, cWritten), cMixed, rc));
     return rc;
 }
 
@@ -930,7 +921,7 @@ int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn)
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%p\n", pHstStrmIn));
+    LogFlowFunc(("%s\n", pHstStrmIn->MixBuf.pszName));
 
     int rc;
     if (!pHstStrmIn->pGstStrmIn) /* No parent anymore? */
@@ -950,9 +941,7 @@ int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn)
     else
         rc = VERR_ACCESS_DENIED;
 
-    LogFlowFunc(("Host input stream %p still being used, rc=%Rrc\n",
-                 pHstStrmIn, rc));
-
+    LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmIn->MixBuf.pszName, rc));
     return rc;
 }
 
@@ -960,7 +949,7 @@ static int drvAudioDestroyGstIn(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMIN pGstStrmIn)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%p\n", pGstStrmIn));
+    LogFlowFunc(("%s\n", pGstStrmIn->MixBuf.pszName));
 
     if (pGstStrmIn)
     {
@@ -983,13 +972,19 @@ static int drvAudioDestroyGstIn(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMIN pGstStrmIn)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvAudioQueryData(PPDMIAUDIOCONNECTOR pInterface,
-                                           uint32_t *pcbAvailIn, uint32_t *pcbFreeOut,
-                                           uint32_t *pcSamplesLive)
+static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
+                                             uint32_t *pcbAvailIn, uint32_t *pcbFreeOut,
+                                             uint32_t *pcSamplesLive)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    /* pcbAvailIn is optional. */
+    /* pcbFreeOut is optional. */
+    /* pcSamplesLive is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
+
+    if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_OUT))
+        return VERR_NOT_AVAILABLE;
 
     int rc = VINF_SUCCESS;
     uint32_t cSamplesLive = 0;
@@ -1020,16 +1015,15 @@ static DECLCALLBACK(int) drvAudioQueryData(PPDMIAUDIOCONNECTOR pInterface,
                 pHstStrmOut->fEnabled        = false;
                 pHstStrmOut->fPendingDisable = false;
 
-                LogFunc(("%p: Disabling stream\n", pHstStrmOut));
+                LogFunc(("[%s] Disabling stream\n", pHstStrmOut->MixBuf.pszName));
             }
             else
-                LogFunc(("%p: Backend vetoed against closing output stream, rc=%Rrc\n",
-                         pHstStrmOut, rc2));
+                LogFunc(("[%s] Backend vetoed against closing output stream, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, rc2));
 
             continue;
         }
 
-        LogFlowFunc(("%p: Has %RU32 live samples\n", pHstStrmOut, cSamplesLive));
+        LogFlowFunc(("[%s] cSamplesLive=%RU32\n", pHstStrmOut->MixBuf.pszName, cSamplesLive));
 
         /*
          * No live samples to play at the moment?
@@ -1050,11 +1044,12 @@ static DECLCALLBACK(int) drvAudioQueryData(PPDMIAUDIOCONNECTOR pInterface,
                      * so that it can start writing PCM data to us. */
                     cbFree2 = RT_MIN(cbFree2, AUDIOMIXBUF_S2B_RATIO(&pGstStrmOut->MixBuf,
                                                                     audioMixBufFree(&pGstStrmOut->MixBuf)));
+
+                    LogFlowFunc(("\t[%s] cbFree=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
                 }
             }
 
             cbFreeOut = RT_MIN(cbFreeOut, cbFree2);
-            continue;
         }
     }
 
@@ -1080,6 +1075,8 @@ static DECLCALLBACK(int) drvAudioQueryData(PPDMIAUDIOCONNECTOR pInterface,
         {
             cbAvailIn = RT_MAX(cbAvailIn, AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf,
                                                           audioMixBufMixed(&pHstStrmIn->MixBuf)));
+
+            LogFlowFunc(("\t[%s] cbFree=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
         }
     }
 
@@ -1101,14 +1098,15 @@ static DECLCALLBACK(int) drvAudioQueryData(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
-static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface)
+static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_t *pcSamplesPlayed)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    /* pcbFree is optional. */
+    /* pcSamplesPlayed is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
     int rc = VINF_SUCCESS;
+    uint32_t cSamplesPlayedMax = 0;
 
     /*
      * Process all enabled host output streams.
@@ -1116,6 +1114,7 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface)
     PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
     while ((pHstStrmOut = drvAudioHstFindAnyEnabledOut(pThis, pHstStrmOut)))
     {
+#if 0
         uint32_t cStreamsLive;
         uint32_t cSamplesLive = drvAudioHstOutSamplesLive(pHstStrmOut, &cStreamsLive);
         if (!cStreamsLive)
@@ -1138,16 +1137,19 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface)
             }
             else
                 LogFunc(("\t%p: Backend vetoed against closing output stream, rc=%Rrc\n",
-                         rc2, pHstStrmOut));
+                         pHstStrmOut, rc2));
 
             continue;
         }
+#endif
 
-        uint32_t cSamplesPlayed;
+        uint32_t cSamplesPlayed = 0;
         int rc2 = pThis->pHostDrvAudio->pfnPlayOut(pThis->pHostDrvAudio, pHstStrmOut,
                                                    &cSamplesPlayed);
-        LogFlowFunc(("\t%p: cStreamsLive=%RU32, cSamplesLive=%RU32, cSamplesPlayed=%RU32, rc=%Rrc\n",
-                     pHstStrmOut, cStreamsLive, cSamplesLive, cSamplesPlayed, rc2));
+        if (RT_SUCCESS(rc2))
+            cSamplesPlayedMax = RT_MAX(cSamplesPlayed, cSamplesPlayedMax);
+
+        LogFlowFunc(("\t[%s] cSamplesPlayed=%RU32, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, cSamplesPlayed, rc2));
 
         bool fNeedsCleanup = false;
 
@@ -1161,8 +1163,7 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface)
             if (audioMixBufIsEmpty(&pGstStrmOut->MixBuf))
             {
                 pGstStrmOut->State.fEmpty = true;
-                fNeedsCleanup |=    !pGstStrmOut->State.fActive
-                                 && !pGstStrmOut->Callback.fn;
+                fNeedsCleanup |= !pGstStrmOut->State.fActive;
             }
         }
 
@@ -1174,6 +1175,12 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface)
                     drvAudioDestroyGstOut(pThis, pGstStrmOut);
             }
         }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcSamplesPlayed)
+            *pcSamplesPlayed = cSamplesPlayedMax;
     }
 
     return rc;
@@ -1385,19 +1392,21 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
                                       void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
-
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
     AssertPtrReturn(pGstStrmIn, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
+    if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_IN))
+        return VERR_NOT_AVAILABLE;
+
     PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
     AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
 
     AssertMsg(pGstStrmIn->pHstStrmIn->fEnabled,
-              ("Reading from disabled host input stream %p not possible\n",
-              pGstStrmIn->pHstStrmIn));
+              ("Reading from disabled host input stream \"%s\" not possible\n", pGstStrmIn->MixBuf.pszName));
 
     /*
      * Read from the parent buffer (that is, the guest buffer) which
@@ -1422,8 +1431,8 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
 static DECLCALLBACK(int) drvAudioIsSetOutVolume(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
                                                 bool fMute, uint8_t uVolLeft, uint8_t uVolRight)
 {
-    LogFlowFunc(("pGstStrmOut=%p, fMute=%RTbool, uVolLeft=%RU8, uVolRight=%RU8\n",
-                 pGstStrmOut, fMute, uVolLeft, uVolRight));
+    LogFlowFunc(("[%s] fMute=%RTbool, uVolLeft=%RU8, uVolRight=%RU8\n",
+                 pGstStrmOut->MixBuf.pszName, fMute, uVolLeft, uVolRight));
 
     if (pGstStrmOut)
     {
@@ -1528,8 +1537,8 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
         PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
         AssertPtr(pHstStrmIn);
 
-        LogFlowFunc(("pHstStrmIn=%p, pGstStrmIn=%p, fEnable=%RTbool\n",
-                     pHstStrmIn, pGstStrmIn, fEnable));
+        LogFlowFunc(("%s -> %s, fEnable=%RTbool\n",
+                     pHstStrmIn->MixBuf.pszName, pGstStrmIn->MixBuf.pszName, fEnable));
 
         if (pGstStrmIn->State.fActive != fEnable)
         {
@@ -1578,9 +1587,7 @@ static DECLCALLBACK(bool) drvAudioIsOutputOK(PPDMIAUDIOCONNECTOR pInterface,
 }
 
 static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                        PDMAUDIORECSOURCE enmRecSource,
-                                        PDMAUDIOCALLBACK_FN fnCallback, void *pvCallback,
-                                        PPDMAUDIOSTREAMCFG pCfg,
+                                        PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg,
                                         PPDMAUDIOGSTSTRMIN *ppGstStrmIn)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -1603,8 +1610,8 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
     if (   pGstStrmIn
         && drvAudioPCMPropsAreEqual(&pGstStrmIn->Props, pCfg))
     {
-        LogFunc(("Input stream %p exists and matches required configuration, skipping creation\n",
-                 pGstStrmIn));
+        LogFunc(("[%s] Exists and matches required configuration, skipping creation\n",
+                 pGstStrmIn->MixBuf.pszName));
         return VWRN_ALREADY_EXISTS;
     }
 
@@ -1634,9 +1641,6 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
         pGstStrmIn->State.uVolumeRight = nominal_volume.r;
         pGstStrmIn->State.fMuted = RT_BOOL(nominal_volume.mute);
 
-        pGstStrmIn->Callback.fn = fnCallback;
-        pGstStrmIn->Callback.pvContext = pvCallback;
-
         *ppGstStrmIn = pGstStrmIn;
     }
 
@@ -1645,9 +1649,7 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
 }
 
 DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *pszName,
-                                  PDMAUDIOCALLBACK_FN fnCallback, void *pvCallback,
-                                  PPDMAUDIOSTREAMCFG pCfg,
-                                  PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
+                                  PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOGSTSTRMOUT *ppGstStrmOut)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -1668,8 +1670,8 @@ DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *ps
     if (   pGstStrmOut
         && drvAudioPCMPropsAreEqual(&pGstStrmOut->Props, pCfg))
     {
-        LogFunc(("Output stream %p exists and matches required configuration, skipping creation\n",
-                 pGstStrmOut));
+        LogFunc(("[%s] Exists and matches required configuration, skipping creation\n",
+                 pGstStrmOut->MixBuf.pszName));
         return VWRN_ALREADY_EXISTS;
     }
 
@@ -1723,8 +1725,6 @@ DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *ps
         pGstStrmOut->State.uVolumeLeft  = nominal_volume.l;
         pGstStrmOut->State.uVolumeRight = nominal_volume.r;
         pGstStrmOut->State.fMuted       = RT_BOOL(nominal_volume.mute);
-        pGstStrmOut->Callback.fn        = fnCallback;
-        pGstStrmOut->Callback.pvContext = pvCallback;
 
         *ppGstStrmOut = pGstStrmOut;
 #if 0
@@ -1834,13 +1834,13 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface                 = drvAudioQueryInterface;
     /* IAudio. */
-    pThis->IAudioConnector.pfnQueryData              = drvAudioQueryData;
+    pThis->IAudioConnector.pfnQueryStatus            = drvAudioQueryStatus;
     pThis->IAudioConnector.pfnRead                   = drvAudioRead;
     pThis->IAudioConnector.pfnWrite                  = drvAudioWrite;
     pThis->IAudioConnector.pfnIsInputOK              = drvAudioIsInputOK;
     pThis->IAudioConnector.pfnIsOutputOK             = drvAudioIsOutputOK;
     pThis->IAudioConnector.pfnInitNull               = drvAudioInitNull;
-    pThis->IAudioConnector.pfnIsSetOutVolume         = drvAudioIsSetOutVolume;
+    pThis->IAudioConnector.pfnSetVolumeOut           = drvAudioIsSetOutVolume;
     pThis->IAudioConnector.pfnSetVolume              = drvAudioSetVolume;
     pThis->IAudioConnector.pfnEnableOut              = drvAudioEnableOut;
     pThis->IAudioConnector.pfnEnableIn               = drvAudioEnableIn;
@@ -1869,16 +1869,19 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     {
         LogRel(("Audio: Failed to query interface for underlying host driver\n"));
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
-                                N_("No audio interface below"));
+                                N_("Host audio backend missing or invalid"));
     }
-
-    pThis->pDrvIns = pDrvIns;
 
 #ifdef DEBUG_andy
     CFGMR3Dump(pCfgHandle);
 #endif
 
     rc = drvAudioInit(pCfgHandle, pDrvIns);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->fTerminate = false;
+        pThis->pDrvIns    = pDrvIns;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

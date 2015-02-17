@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,7 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 /** Constructs 32 bit value for given frequency, number of channels, bits per sample and signed bit.
- *  Note: This currently matches 1:1 the VRDE encoding. */
+ *  Note: This currently matches 1:1 the VRDE encoding -- this might change in the future, so better don't rely on this fact! */
 #define AUDMIXBUF_AUDIO_FMT_MAKE(freq, c, bps, s) ((((s) & 0x1) << 28) + (((bps) & 0xFF) << 20) + (((c) & 0xF) << 16) + ((freq) & 0xFFFF))
 
 /** Decodes frequency (Hz). */

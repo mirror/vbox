@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -807,19 +807,11 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                    = pDrvIns;
+    pThis->pDrvIns                   = pDrvIns;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface  = drvAudioVideoRecQueryInterface;
-    pThis->IHostAudioR3.pfnInitIn     = drvAudioVideoRecInitIn;
-    pThis->IHostAudioR3.pfnInitOut    = drvAudioVideoRecInitOut;
-    pThis->IHostAudioR3.pfnControlOut = drvAudioVideoRecControlOut;
-    pThis->IHostAudioR3.pfnControlIn  = drvAudioVideoRecControlIn;
-    pThis->IHostAudioR3.pfnFiniIn     = drvAudioVideoRecFiniIn;
-    pThis->IHostAudioR3.pfnFiniOut    = drvAudioVideoRecFiniOut;
-    pThis->IHostAudioR3.pfnCaptureIn  = drvAudioVideoRecCaptureIn;
-    pThis->IHostAudioR3.pfnPlayOut    = drvAudioVideoRecPlayOut;
-    pThis->IHostAudioR3.pfnGetConf    = drvAudioVideoRecGetConf;
-    pThis->IHostAudioR3.pfnInit       = drvAudioVideoRecInit;
+    pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
+    /* IHostAudioR3 */
+    PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(drvAudioVideoRec);
 
     /* Get VRDPServer pointer. */
     void *pvUser;
