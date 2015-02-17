@@ -41,6 +41,7 @@
 
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # include <iprt/asm-amd64-x86.h>
+# include <iprt/x86.h>
 #else
 # include <iprt/time.h>
 #endif
@@ -1683,6 +1684,28 @@ void tstASMBench(void)
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
+#endif
+#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    BENCH(s_u64 = ASMReadTSC(),                 "ASMReadTSC");
+    uint32_t uAux;
+    if (   ASMHasCpuId()
+        && ASMIsValidExtRange(ASMCpuId_EAX(0x80000000))
+        && (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
+        BENCH(s_u64 = ASMReadTscWithAux(&uAux),  "ASMReadTscWithAux");
+    union
+    {
+        uint64_t    u64[2];
+        RTIDTR      Unaligned;
+        struct
+        {
+            uint16_t abPadding[3];
+            RTIDTR   Aligned;
+        } s;
+    } uBuf;
+    Assert(((uintptr_t)&uBuf.Unaligned.pIdt & (sizeof(uintptr_t) - 1)) != 0);
+    BENCH(ASMGetIDTR(&uBuf.Unaligned),            "ASMGetIDTR/unaligned");
+    Assert(((uintptr_t)&uBuf.s.Aligned.pIdt & (sizeof(uintptr_t) - 1)) == 0);
+    BENCH(ASMGetIDTR(&uBuf.s.Aligned),            "ASMGetIDTR/aligned");
 #endif
 
 #undef BENCH
