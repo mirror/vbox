@@ -187,26 +187,6 @@ DECLINLINE(uint32_t) rtTimerSolRelease(PRTTIMER pTimer)
 
 
 /**
- * RTMpOnSpecific callback used by rtTimerSolCallbackWrapper() to deal with
- * callouts on the wrong CPU (race with cyclic_bind).
- *
- * @param   idCpu       The CPU this is fired on.
- * @param   pvUser1     Opaque pointer to the timer.
- * @param   pvUser2     Not used, NULL.
- */
-static void rtTimerSolMpCallbackWrapper(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-    PRTTIMER pTimer = (PRTTIMER)pvUser1;
-    AssertPtrReturnVoid(pTimer);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    AssertReturnVoid(pTimer->iCpu == RTMpCpuId()); /* ASSUMES: index == cpuid */
-
-    /* This avoids some code duplication. */
-    rtTimerSolSingleCallbackWrapper(pTimer);
-}
-
-
-/**
  * Callback wrapper for single-CPU timers.
  *
  * @param    pvArg              Opaque pointer to the timer.
