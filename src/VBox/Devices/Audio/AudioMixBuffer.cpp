@@ -1,3 +1,19 @@
+/* $Id$ */
+/** @file
+ * VBox audio: TODO
+ */
+
+/*
+ * Copyright (C) 2014-2015 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
 
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
@@ -21,7 +37,7 @@
 # define LOG_GROUP LOG_GROUP_DEV_AUDIO
 # include <VBox/log.h>
 #else
- #define AUDMIXBUF_LOG(x)
+# define AUDMIXBUF_LOG(x)
 #endif
 
 /*
@@ -1147,7 +1163,7 @@ int audioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc;
     uint32_t cWritten;
 
-#ifdef DEBUG
+#if 0
     RTFILE fh;
     rc = RTFileOpen(&fh, "c:\\temp\\test_writeat.pcm",
                     RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
@@ -1265,7 +1281,7 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                                  cLenDst2, enmFmt, NULL);
     }
 
-#ifdef DEBUG_andy
+#if 0
         RTFILE fh;
         RTFileOpen(&fh, "c:\\temp\\test_writeex.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);

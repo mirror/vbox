@@ -632,10 +632,10 @@ typedef struct _VRDEUSBREQNEGOTIATERET_3
 
 
 /** Hints what has been intercepted by the application. */
-#define VRDE_CLIENT_INTERCEPT_AUDIO     (0x1)
-#define VRDE_CLIENT_INTERCEPT_USB       (0x2)
-#define VRDE_CLIENT_INTERCEPT_CLIPBOARD (0x4)
-#define VRDE_CLIENT_INTERCEPT_AUDIO_INPUT (0x8)
+#define VRDE_CLIENT_INTERCEPT_AUDIO       RT_BIT(0)
+#define VRDE_CLIENT_INTERCEPT_USB         RT_BIT(1)
+#define VRDE_CLIENT_INTERCEPT_CLIPBOARD   RT_BIT(2)
+#define VRDE_CLIENT_INTERCEPT_AUDIO_INPUT RT_BIT(3)
 
 
 /** The version of the VRDE server interface. */

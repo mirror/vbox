@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,13 +55,6 @@
  }
 #endif
 #include "DevIchHdaCodec.h"
-
-#ifdef DEBUG
-//#define DEBUG_LUN
-# ifdef DEBUG_LUN
-#  define DEBUG_LUN_NUM 0
-# endif
-#endif /* DEBUG */
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -2479,11 +2472,7 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
             break;
         }
 
-        rc = pDrv->pConnector->pfnOpenIn(pDrv->pConnector,
-                                         pszDesc, enmRecSource,
-                                         NULL /* fnCallback */, NULL /* pvCallback */,
-                                         pCfg,
-                                         &pDrv->LineIn.pStrmIn);
+        rc = pDrv->pConnector->pfnOpenIn(pDrv->pConnector, pszDesc, enmRecSource, pCfg, &pDrv->LineIn.pStrmIn);
         LogFlowFunc(("LUN#%RU8: Opened input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
         if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
@@ -2508,10 +2497,7 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        int rc2 = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszName,
-                                               NULL /* fnCallback */, pDrv /* pvCallback */,
-                                               pCfg,
-                                               &pDrv->Out.pStrmOut);
+        int rc2 = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszName, pCfg, &pDrv->Out.pStrmOut);
         if (RT_FAILURE(rc2))
         {
             LogFunc(("LUN#%RU8: Opening stream \"%s\" failed, rc=%Rrc\n", pDrv->uLUN, pszName, rc2));
@@ -2564,30 +2550,27 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     PHDADRIVER pDrv;
     uint32_t cbIn, cbOut;
-#ifdef DEBUG_LUN
-    uint8_t uLUN = 0;
-#endif
+
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
         if (!pDrv->pConnector->pfnIsOutputOK(pDrv->pConnector, pDrv->Out.pStrmOut))
+        {
+            pDrv->cSamplesLive = 0;
             continue;
+        }
 
-        rc = pDrv->pConnector->pfnQueryData(pDrv->pConnector, /** @todo Rename QueryStatus */
-                                            &cbIn, &cbOut, &pDrv->cSamplesLive);
+        rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
+                                              &cbIn, &cbOut, &pDrv->cSamplesLive);
         if (RT_SUCCESS(rc))
         {
-#ifdef DEBUG_LUN
-            LogFlowFunc(("\tLUN#%RU8: cbIn=%RU32, cbOut=%RU32\n", uLUN, cbIn, cbOut));
-#endif
+            if (cbIn || cbOut)
+                LogFlowFunc(("\tLUN#%RU8: cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+
             cbInMax  = RT_MAX(cbInMax, cbIn);
             cbOutMin = RT_MIN(cbOutMin, cbOut);
         }
         else
             pDrv->cSamplesLive = 0;
-
-#ifdef DEBUG_LUN
-        uLUN++;
-#endif
     }
 
     /*
@@ -2602,8 +2585,8 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     {
         RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
         {
-            if (pDrv->cSamplesLive)
-                pDrv->pConnector->pfnPlayOut(pDrv->pConnector);
+            /*if (pDrv->cSamplesLive)
+                pDrv->pConnector->pfnPlayOut(pDrv->pConnector);*/
         }
     }
 
@@ -3836,11 +3819,11 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     RTListInit(&pThis->lstDrv);
 
-    unsigned uLUN = 0;
-    do
+    uint8_t uLUN;
+    for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
         LogFunc(("Trying to attach driver for LUN #%RU32 ...\n", uLUN));
-        rc = hdaAttach(pDevIns, uLUN++, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+        rc = hdaAttach(pDevIns, uLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -3849,7 +3832,10 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             break;
         }
 
-    } while (RT_SUCCESS(rc));
+        uLUN++;
+    }
+
+    LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
     if (RT_SUCCESS(rc))
     {
