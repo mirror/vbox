@@ -36,14 +36,11 @@
 #endif
 #include <iprt/list.h>
 
-#if 0
-/* Warning: Enabling this causes a *lot* of output! */
 #ifdef LOG_GROUP
 # undef LOG_GROUP
 #endif
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
-#endif
 
 #include "VBoxDD.h"
 
@@ -2263,7 +2260,7 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc,
     if (!cb2Copy)
     {
         /* if we enter here we can't report "unreported bits" */
-        rc = VERR_NO_DATA;
+        rc = VINF_EOF;
     }
     else
     {
@@ -2289,7 +2286,7 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc,
         else
         {
             hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cbBackendCopy, pu32Avail);
-            rc = VERR_NO_DATA;
+            rc = VINF_EOF;
         }
     }
 
@@ -2324,7 +2321,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
      */
     if (!cb2Copy)
     {
-        rc = VERR_NO_DATA;
+        rc = VINF_EOF;
     }
     else
     {
@@ -2349,10 +2346,10 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
             {
                 if (pDrv->pConnector->pfnIsActiveOut(pDrv->pConnector, pDrv->Out.pStrmOut))
                 {
-                    rc = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
-                                                    pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW,
-                                                    &cbWritten);
-                    if (RT_FAILURE(rc))
+                    int rc2 = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
+                                                         pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW,
+                                                         &cbWritten);
+                    if (RT_FAILURE(rc2))
                         continue;
                 }
                 else /* Stream disabled, just assume all was copied. */
@@ -2374,7 +2371,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc, ui
         {
             /* Not enough bytes to be processed and reported, we'll try our luck next time around. */
             hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cb2Copy, NULL);
-            rc = VERR_NO_DATA;
+            rc = VINF_EOF;
         }
     }
 
@@ -2549,22 +2546,35 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     uint32_t cbOutMin = UINT32_MAX;
 
     PHDADRIVER pDrv;
-    uint32_t cbIn, cbOut;
+
+    LogFlowFuncEnter();
 
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        if (!pDrv->pConnector->pfnIsOutputOK(pDrv->pConnector, pDrv->Out.pStrmOut))
-        {
-            pDrv->cSamplesLive = 0;
-            continue;
-        }
-
+        uint32_t cbIn, cbOut;
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                               &cbIn, &cbOut, &pDrv->cSamplesLive);
         if (RT_SUCCESS(rc))
         {
-            if (cbIn || cbOut)
-                LogFlowFunc(("\tLUN#%RU8: cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+            LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+
+            if (pDrv->cSamplesLive)
+            {
+                uint32_t cSamplesPlayed;
+                int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
+                if (RT_SUCCESS(rc2))
+                {
+                    LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
+                                 pDrv->uLUN, pDrv->cSamplesLive, cSamplesPlayed));
+                    Assert(pDrv->cSamplesLive >= cSamplesPlayed);
+                    pDrv->cSamplesLive -= cSamplesPlayed;
+                }
+
+                rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
+                                                      &cbIn, &cbOut, &pDrv->cSamplesLive);
+                if (RT_SUCCESS(rc))
+                    LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+            }
 
             cbInMax  = RT_MAX(cbInMax, cbIn);
             cbOutMin = RT_MIN(cbOutMin, cbOut);
@@ -2572,6 +2582,11 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         else
             pDrv->cSamplesLive = 0;
     }
+
+    LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
+
+    if (cbOutMin == UINT32_MAX)
+        cbOutMin = 0;
 
     /*
      * Playback.
@@ -2581,14 +2596,6 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         Assert(cbOutMin != UINT32_MAX);
         hdaTransfer(pThis, PO_INDEX, cbOutMin); /** @todo Add rc! */
     }
-    else
-    {
-        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-        {
-            /*if (pDrv->cSamplesLive)
-                pDrv->pConnector->pfnPlayOut(pDrv->pConnector);*/
-        }
-    }
 
     /*
      * Recording.
@@ -2597,6 +2604,8 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         hdaTransfer(pThis, PI_INDEX, cbInMax); /** @todo Add rc! */
 
     TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
+
+    LogFlowFuncLeave();
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -2704,12 +2713,12 @@ static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, ui
         /* Process end of buffer condition. */
         hdaStreamCounterUpdate(pThis, pBdle, &StreamDesc, cbWritten);
 
-        if (   !hdaDoNextTransferCycle(pThis, pBdle, &StreamDesc)
-            || RT_FAILURE(rc))
-        {
-            if (rc == VERR_NO_DATA) /* No more data to process. */
-                rc = VINF_SUCCESS;
+        if (!hdaDoNextTransferCycle(pThis, pBdle, &StreamDesc))
+            break;
 
+        if (   RT_FAILURE(rc)
+            || rc == VINF_EOF) /* All data processed? */
+        {
             break;
         }
     }
