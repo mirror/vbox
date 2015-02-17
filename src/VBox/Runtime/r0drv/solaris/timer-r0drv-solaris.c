@@ -228,14 +228,9 @@ static void rtTimerSolSingleCallbackWrapper(void *pvArg)
 
     if (!pTimer->fSuspendedFromTimer)
     {
-        /* For specific timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
-           Redirect these shots to the right CPU as we are temporarily rebinding to the right CPU. */
-        if (RT_UNLIKELY(   pTimer->fSpecificCpu
-                        && pTimer->iCpu != RTMpCpuId())) /* ASSUMES: index == cpuid */
-        {
-            RTMpOnSpecific(pTimer->iCpu, rtTimerSolMpCallbackWrapper, pTimer, NULL);
-            return;
-        }
+        /* Make sure we are firing on the right CPU. */
+        Assert(   !pTimer->fSpecificCpu
+               || pTimer->iCpu == RTMpCpuId());
 
         /* For one-shot, we may allow the callback to restart them. */
         if (pTimer->cNsInterval == 0)
@@ -557,7 +552,14 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         pTimer->u.Single.Handler.cyh_arg   = pTimer;
         pTimer->u.Single.Handler.cyh_level = CY_LOCK_LEVEL;
 
+        /*
+         * Use a large interval (1 hour) so that we don't get a timer-callback between
+         * cyclic_add() and cyclic_bind(). Program the correct interval once cyclic_bind() is done.
+         * See @bugref{7691} comment #20.
+         */
         pTimer->u.Single.FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
+        if (pTimer->fSpecificCpu)
+            pTimer->u.Single.FireTime.cyt_when += RT_NS_1HOUR;
         pTimer->u.Single.FireTime.cyt_interval = pTimer->cNsInterval != 0
                                                ? pTimer->cNsInterval
                                                : CY_INFINITY /* Special value, see cyclic_fire(). */;
@@ -566,7 +568,10 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
         pTimer->hCyclicId = cyclic_add(&pTimer->u.Single.Handler, &pTimer->u.Single.FireTime);
         if (pTimer->fSpecificCpu)
+        {
             cyclic_bind(pTimer->hCyclicId, cpu[pTimer->iCpu], NULL /* cpupart */);
+            cyclic_reprogram(pTimer->hCyclicId, RTTimeSystemNanoTS() + u64First);
+        }
     }
 
     mutex_exit(&cpu_lock);
