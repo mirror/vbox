@@ -604,9 +604,6 @@ typedef struct HDADRIVER
     HDAINPUTSTREAM                     MicIn;
     /** Stream for output. */
     HDAOUTPUTSTREAM                    Out;
-    /** Number of samples to play (output), needed
-     *  for the timer routine. */
-    uint32_t                           cSamplesLive;
 } HDADRIVER, *PHDADRIVER;
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
@@ -2549,29 +2546,25 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     LogFlowFuncEnter();
 
+    uint32_t cbIn, cbOut, cSamplesLive;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        uint32_t cbIn, cbOut;
         rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                              &cbIn, &cbOut, &pDrv->cSamplesLive);
+                                              &cbIn, &cbOut, &cSamplesLive);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
 
-            if (pDrv->cSamplesLive)
+            if (cSamplesLive)
             {
                 uint32_t cSamplesPlayed;
                 int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
                 if (RT_SUCCESS(rc2))
-                {
                     LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
-                                 pDrv->uLUN, pDrv->cSamplesLive, cSamplesPlayed));
-                    Assert(pDrv->cSamplesLive >= cSamplesPlayed);
-                    pDrv->cSamplesLive -= cSamplesPlayed;
-                }
+                                 pDrv->uLUN, cSamplesLive, cSamplesPlayed));
 
                 rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                                      &cbIn, &cbOut, &pDrv->cSamplesLive);
+                                                      &cbIn, &cbOut, &cSamplesLive);
                 if (RT_SUCCESS(rc))
                     LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
             }
@@ -2579,8 +2572,6 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
             cbInMax  = RT_MAX(cbInMax, cbIn);
             cbOutMin = RT_MIN(cbOutMin, cbOut);
         }
-        else
-            pDrv->cSamplesLive = 0;
     }
 
     LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
