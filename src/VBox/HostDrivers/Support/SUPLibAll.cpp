@@ -28,6 +28,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/sup.h>
+#ifdef IN_RC
+# include <VBox/vmm/vm.h>
+# include <VBox/vmm/vmm.h>
+#endif
 #ifdef IN_RING0
 # include <iprt/mp.h>
 #endif
@@ -53,74 +57,124 @@
  */
 SUPDECL(uint64_t) SUPReadTscWithDelta(void)
 {
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    PSUPGLOBALINFOPAGE  pGip = g_pSUPGlobalInfoPage;
+    uint64_t            uTsc;
+    uint16_t            iGipCpu;
+    AssertCompile(RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS));
+    AssertCompile(RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx) >= RTCPUSET_MAX_CPUS);
     Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
 
-    /** @todo Check out the rdtscp optimization, ASMGetApicId is very expensive. */
+    /*
+     * Read the TSC and get the corresponding aCPUs index.
+     */
+    if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+    {
+        /* RDTSCP gives us all we need, no loops/cli. */
+        uint32_t iCpuSet;
+        uTsc      = ASMReadTscWithAux(&iCpuSet);
+        iCpuSet  &= RTCPUSET_MAX_CPUS - 1;
+        iGipCpu   = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    }
+# ifndef IN_RING0
+    else if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+    {
+        /* Storing the IDTR is normally very quick, but we need to loop. */
+        uint32_t cTries = 0;
+        for (;;)
+        {
+            uint16_t cbLim = ASMGetIdtrLimit();
+            uTsc = ASMReadTSC();
+            if (RT_LIKELY(ASMGetIdtrLimit() == cbLim))
+            {
+                uint16_t iCpuSet = cbLim - 256 * (ARCH_BITS == 64 ? 16 : 8);
+                iCpuSet &= RTCPUSET_MAX_CPUS - 1;
+                iGipCpu  = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+                break;
+            }
+            if (cTries >= 16)
+            {
+                iGipCpu = UINT16_MAX;
+                break;
+            }
+            cTries++;
+        }
+    }
+# endif /* !IN_RING0 */
+    else
+    {
+# ifdef IN_RING3
+        /* Ring-3: Get APIC ID via the slow CPUID instruction, requires looping. */
+        uint32_t cTries = 0;
+        for (;;)
+        {
+            uint8_t idApic = ASMGetApicId();
+            uTsc = ASMReadTSC();
+            if (RT_LIKELY(ASMGetApicId() == idApic))
+            {
+                iGipCpu = pGip->aiCpuFromApicId[idApic];
+                break;
+            }
+            if (cTries >= 16)
+            {
+                iGipCpu = UINT16_MAX;
+                break;
+            }
+            cTries++;
+        }
+
+# elif defined(IN_RING0)
+        /* Ring-0: Use use RTMpCpuId(), no loops. */
+        RTCCUINTREG uFlags  = ASMIntDisableFlags();
+        int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
+        if (RT_LIKELY((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+            iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+        else
+            iGipCpu = UINT16_MAX;
+        uTsc = ASMReadTSC();
+        ASMSetFlags(uFlags);
+
+# elif defined(IN_RC)
+        /* Raw-mode context: We can get the host CPU set index via VMCPU, no loops. */
+        RTCCUINTREG uFlags  = ASMIntDisableFlags(); /* Are already disable, but play safe. */
+        uint32_t    iCpuSet = VMMGetCpu(&g_VM)->iHostCpuSet;
+        if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+            iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+        else
+            iGipCpu = UINT16_MAX;
+        uTsc = ASMReadTSC();
+        ASMSetFlags(uFlags);
+# else
+#  error "IN_RING3, IN_RC or IN_RING0 must be defined!"
+# endif
+    }
+
+    /*
+     * If the delta is valid, apply it.
+     */
+    if (RT_LIKELY(iGipCpu < pGip->cCpus))
+    {
+        int64_t iTscDelta = pGip->aCPUs[iGipCpu].i64TSCDelta;
+        if (RT_LIKELY(iTscDelta != INT64_MAX))
+            return uTsc + iTscDelta;
 
 # ifdef IN_RING3
-    /*
-     * Read the TSC and delta.
-     */
-    uint32_t cTries = 0;
-    for (;;)
-    {
-        uint8_t  idApic    = ASMGetApicId();
-        uint64_t uTsc      = ASMReadTSC();
-        int64_t  iTscDelta = pGip->aCPUs[pGip->aiCpuFromApicId[idApic]].i64TSCDelta;
-        if (RT_LIKELY(   idApic == ASMGetApicId()
-                      || cTries >= 10))
-        {
-            /*
-             * If the delta is valid, apply it.
-             */
-            if (RT_LIKELY(iTscDelta != INT64_MAX))
-                return uTsc - iTscDelta;
-
-            /*
-             * The delta needs calculating, call supdrv to get the TSC.
-             */
-            int rc = SUPR3ReadTsc(&uTsc, NULL);
-            if (RT_SUCCESS(rc))
-                return uTsc;
-            AssertMsgFailed(("SUPR3ReadTsc -> %Rrc\n", rc));
-
-            /* That didn't work, just return something half useful... */
-            return ASMReadTSC();
-        }
-        cTries++;
+        /*
+         * The delta needs calculating, call supdrv to get the TSC.
+         */
+        int rc = SUPR3ReadTsc(&uTsc, NULL);
+        if (RT_SUCCESS(rc))
+            return uTsc;
+        AssertMsgFailed(("SUPR3ReadTsc -> %Rrc\n", rc));
+        uTsc = ASMReadTSC();
+# endif /* IN_RING3 */
     }
-# else
-    /*
-     * Read the TSC and delta.
-     */
-    RTCCUINTREG uFlags    = ASMIntDisableFlags();
-#  ifdef IN_RING0
-    int         iCpuSet   = RTMpCpuIdToSetIndex(RTMpCpuId());
-    uint16_t    iGipCpu   = (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
-                          ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
-#  else
-    uint16_t    idApic    = ASMGetApicId();  /** @todo this could probably be eliminated in RC if we really wanted to... */
-    uint16_t    iGipCpu   = (unsigned)idApic < RT_ELEMENTS(pGip->aiCpuFromApicId) /* for the future */
-                          ? pGip->aiCpuFromApicId[idApic] : UINT16_MAX;
-#  endif
-    int64_t     iTscDelta = (unsigned)iGipCpu < pGip->cCpus ? pGip->aCPUs[iGipCpu].i64TSCDelta : INT64_MAX;
-    uint64_t    uTsc      = ASMReadTSC();
-    ASMSetFlags(uFlags);
 
     /*
-     * If the delta is valid, apply it, otherwise ignore it (really shouldn't
-     * happen in these contexts!).
+     * This shouldn't happen, especially not in ring-3 and raw-mode context.
+     * But if it does, return something that's half useful.
      */
-    if (RT_LIKELY(iTscDelta != INT64_MAX))
-        return uTsc - iTscDelta;
-#  ifdef IN_RING0
-    AssertMsgFailed(("iCpuSet=%d (%#x) iGipCpu=%#x\n", iCpuSet, iCpuSet, iGipCpu));
-#  else
-    AssertMsgFailed(("idApic=%#x iGipCpu=%#x\n", idApic, iGipCpu));
-#  endif
+    AssertMsgFailed(("iGipCpu=%d (%#x) cCpus=%d fGetGipCpu=%#x\n", iGipCpu, iGipCpu, pGip->cCpus, pGip->fGetGipCpu));
     return uTsc;
-# endif
 }
 
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
