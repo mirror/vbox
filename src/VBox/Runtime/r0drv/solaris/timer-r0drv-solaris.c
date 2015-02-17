@@ -446,7 +446,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     AssertReturn(!rtTimerSolIsCallingFromTimerProc(pTimer), VERR_INVALID_CONTEXT);
 
     /*
-     * Invalidate the handle, make sure it's stopped nad free the associated resources.
+     * Invalidate the handle, make sure it's stopped and free the associated resources.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
 
@@ -469,7 +469,6 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      * at least not at the moment.
      */
     AssertReturn(!rtTimerSolIsCallingFromTimerProc(pTimer), VERR_INVALID_CONTEXT);
-
 
     mutex_enter(&cpu_lock);
 
