@@ -123,9 +123,10 @@
 #define GIP_TSC_DELTA_SYNC_PRESTART_WORKER  5
 /** The TSC-refinement interval in seconds. */
 #define GIP_TSC_REFINE_INTERVAL             5
-/** The TSC-delta threshold (in ticks) for whether it's worth applying them or
- *  not for performance reasons, see @bugref{6710} comment #124. */
-#define GIP_TSC_DELTA_APPLY_THRESHOLD       384
+/** The TSC-delta threshold for the SUPGIPUSETSCDELTA_PRACTICALLY_ZERO rating */
+#define GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO    24
+/** The TSC-delta threshold for the SUPGIPUSETSCDELTA_ROUGHLY_ZERO rating */
+#define GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO        384
 
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS < GIP_TSC_DELTA_READ_TIME_LOOPS);
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_TSC_DELTA_LOOPS);
@@ -162,11 +163,11 @@ DECLINLINE(int)             supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt);
 static int                  supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int                  supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
 static int                  supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq);
-static int                  supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASURE pReq);
+static int                  supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCDELTAMEASURE pReq);
 static int                  supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCREAD pReq);
 static int                  supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
-static DECLCALLBACK(void)   supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void)   supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS,
@@ -2251,7 +2252,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             PSUPTSCDELTAMEASURE pReq = (PSUPTSCDELTAMEASURE)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_TSC_DELTA_MEASURE);
 
-            pReqHdr->rc = supdrvIOCtl_TscDeltaMeasure(pDevExt, pReq);
+            pReqHdr->rc = supdrvIOCtl_TscDeltaMeasure(pDevExt, pSession, pReq);
             return 0;
         }
 
@@ -4030,6 +4031,147 @@ static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser
 
 
 /**
+ * State structure for supdrvGipDetectGetGipCpuCallback.
+ */
+typedef struct SUPDRVGIPDETECTGETCPU
+{
+    /** Bitmap of APIC IDs that has been seen (initialized to zero).
+     *  Used to detect duplicate APIC IDs (paranoia). */
+    uint8_t volatile    bmApicId[256 / 8];
+    /** Mask of supported GIP CPU getter methods (SUPGIPGETCPU_XXX) (all bits set
+     *  initially). The callback clears the methods not detected. */
+    uint32_t volatile   fSupported;
+    /** The first callback detecting any kind of range issues (initializsed to
+     * NIL_RTCPUID). */
+    RTCPUID volatile    idCpuProblem;
+} SUPDRVGIPDETECTGETCPU;
+/** Pointer to state structure for supdrvGipDetectGetGipCpuCallback. */
+typedef SUPDRVGIPDETECTGETCPU *PSUPDRVGIPDETECTGETCPU;
+
+
+/**
+ * Checks for alternative ways of getting the CPU ID.
+ *
+ * This also checks the APIC ID, CPU ID and CPU set index values against the
+ * GIP tables.
+ *
+ * @param   idCpu            The CPU ID. Unused - we have to use the APIC ID.
+ * @param   pvUser1          Pointer to the state structure.
+ * @param   pvUser2          Pointer to the GIP.
+ */
+static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPDRVGIPDETECTGETCPU  pState = (PSUPDRVGIPDETECTGETCPU)pvUser1;
+    PSUPGLOBALINFOPAGE      pGip   = (PSUPGLOBALINFOPAGE)pvUser2;
+    uint32_t                fSupported = 0;
+    uint16_t                idApic;
+    int                     iCpuSet;
+
+    AssertMsg(idCpu == RTMpCpuId(), ("idCpu=%#x RTMpCpuId()=%#x\n", idCpu, RTMpCpuId())); /* paranoia^3 */
+
+    /*
+     * Check that the CPU ID and CPU set index are interchangable.
+     */
+    iCpuSet = RTMpCpuIdToSetIndex(idCpu);
+    if ((RTCPUID)iCpuSet == idCpu)
+    {
+        AssertCompile(RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS));
+        if (   iCpuSet >= 0
+            && iCpuSet < RTCPUSET_MAX_CPUS
+            && RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS))
+        {
+            /*
+             * Check whether the IDTR.LIMIT contains a CPU number.
+             */
+#ifdef RT_ARCH_X86
+            uint16_t const  cbIdt = sizeof(X86DESC64SYSTEM);
+#else
+            uint16_t const  cbIdt = sizeof(X86DESCGATE);
+#endif
+            RTIDTR          Idtr;
+            ASMGetIDTR(&Idtr);
+            if (Idtr.cbIdt >= cbIdt)
+            {
+                uint32_t uTmp = Idtr.cbIdt - cbIdt;
+                uTmp &= RTCPUSET_MAX_CPUS - 1;
+                if (uTmp == idCpu)
+                {
+                    RTIDTR Idtr2;
+                    ASMGetIDTR(&Idtr2);
+                    if (Idtr2.cbIdt == Idtr.cbIdt)
+                        fSupported |= SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS;
+                }
+            }
+
+            /*
+             * Check whether RDTSCP is an option.
+             */
+            if (ASMHasCpuId())
+            {
+                if (   ASMIsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
+                    && (ASMCpuId_EDX(UINT32_C(0x80000001)) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
+                {
+                    uint32_t uAux;
+                    ASMReadTscWithAux(&uAux);
+                    if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
+                    {
+                        ASMNopPause();
+                        ASMReadTscWithAux(&uAux);
+                        if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
+                            fSupported |= SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Check that the APIC ID is unique.
+     */
+    idApic = ASMGetApicId();
+    if (RT_LIKELY(   idApic < RT_ELEMENTS(pGip->aiCpuFromApicId)
+                  && !ASMAtomicBitTestAndSet(pState->bmApicId, idApic)))
+        fSupported |= SUPGIPGETCPU_APIC_ID;
+    else
+    {
+        AssertCompile(sizeof(pState->bmApicId) * 8 == RT_ELEMENTS(pGip->aiCpuFromApicId));
+        ASMAtomicCmpXchgU32(&pState->idCpuProblem, idCpu, NIL_RTCPUID);
+        LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x - duplicate APIC ID.\n", 
+                idCpu, iCpuSet, idApic));
+    }
+
+    /*
+     * Check that the iCpuSet is within the expected range.
+     */
+    if (RT_UNLIKELY(   iCpuSet < 0
+                    || iCpuSet >= RTCPUSET_MAX_CPUS
+                    || iCpuSet >= RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+    {
+        ASMAtomicCmpXchgU32(&pState->idCpuProblem, idCpu, NIL_RTCPUID);
+        LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x - CPU set index is out of range.\n", 
+                idCpu, iCpuSet, idApic));
+    }
+    else
+    {
+        RTCPUID idCpu2 = RTMpCpuIdFromSetIndex(iCpuSet);
+        if (RT_UNLIKELY(idCpu2 != idCpu))
+        {
+            ASMAtomicCmpXchgU32(&pState->idCpuProblem, idCpu, NIL_RTCPUID);
+            LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x - CPU id/index roundtrip problem: %#x\n",
+                    idCpu, iCpuSet, idApic, idCpu2));
+        }
+    }
+
+    /*
+     * Update the supported feature mask before we return.
+     */
+    ASMAtomicAndU32(&pState->fSupported, fSupported);
+
+    NOREF(pvUser2);
+}
+
+
+/**
  * Increase the timer freqency on hosts where this is possible (NT).
  *
  * The idea is that more interrupts is better for us... Also, it's better than
@@ -4137,10 +4279,18 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 PSUPGLOBALINFOPAGE pGipR0 = pDevExt->pGip;
                 uint64_t u64NanoTS;
 
+                /*
+                 * GIP starts/resumes updating again.  On windows we bump the
+                 * host timer frequency to make sure we don't get stuck in guest
+                 * mode and to get better timer (and possibly clock) accuracy.
+                 */
                 LogFlow(("SUPR0GipMap: Resumes GIP updating\n"));
 
                 supdrvGipRequestHigherTimerFrequencyFromSystem(pDevExt);
 
+                /*
+                 * document me
+                 */
                 if (pGipR0->aCPUs[0].u32TransactionId != 2 /* not the first time */)
                 {
                     unsigned i;
@@ -4151,6 +4301,9 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                     ASMAtomicWriteU64(&pGipR0->u64NanoTSLastUpdateHz, 0);
                 }
 
+                /*
+                 * document me
+                 */
                 u64NanoTS = RTTimeSystemNanoTS() - pGipR0->u32UpdateIntervalNS;
                 if (   pGipR0->u32Mode == SUPGIPMODE_INVARIANT_TSC
                     || pGipR0->u32Mode == SUPGIPMODE_SYNC_TSC
@@ -4159,10 +4312,72 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 else
                     RTMpOnAll(supdrvGipReInitCpuCallback, pGipR0, &u64NanoTS);
 
+                /*
+                 * Detect alternative ways to figure the CPU ID in ring-3 and
+                 * raw-mode context.  Check the sanity of the APIC IDs, CPU IDs,
+                 * and CPU set indexes while we're at it.
+                 */
+                if (RT_SUCCESS(rc))
+                {
+                    SUPDRVGIPDETECTGETCPU DetectState;
+                    RT_ZERO(DetectState.bmApicId);
+                    DetectState.fSupported   = UINT32_MAX;
+                    DetectState.idCpuProblem = NIL_RTCPUID;
+                    rc = RTMpOnAll(supdrvGipDetectGetGipCpuCallback, &DetectState, pGipR0);
+                    if (DetectState.idCpuProblem == NIL_RTCPUID)
+                    {
+                        if (   DetectState.fSupported != UINT32_MAX
+                            && DetectState.fSupported != 0)
+                        {
+                            if (pGipR0->fGetGipCpu != DetectState.fSupported)
+                            {
+                                pGipR0->fGetGipCpu = DetectState.fSupported;
+                                LogRel(("SUPR0GipMap: fGetGipCpu=%#x\n", DetectState.fSupported));
+                            }
+                        }
+                        else
+                        {
+                            LogRel(("SUPR0GipMap: No supported ways of getting the APIC ID or CPU number in ring-3! (%#x)\n",
+                                    DetectState.fSupported));
+                            rc = VERR_UNSUPPORTED_CPU;
+                        }
+                    }
+                    else
+                    {
+                        LogRel(("SUPR0GipMap: APIC ID, CPU ID or CPU set index problem detected on CPU #%u (%#x)!\n",
+                                DetectState.idCpuProblem, DetectState.idCpuProblem));
+                        rc = VERR_INVALID_CPU_ID;
+                    }
+                }
+
+                /*
+                 * Start the GIP timer if all is well..
+                 */
+                if (RT_SUCCESS(rc))
+                {
 #ifndef DO_NOT_START_GIP
-                rc = RTTimerStart(pDevExt->pGipTimer, 0 /* fire ASAP */); AssertRC(rc);
+                    rc = RTTimerStart(pDevExt->pGipTimer, 0 /* fire ASAP */); AssertRC(rc);
 #endif
-                rc = VINF_SUCCESS;
+                    rc = VINF_SUCCESS;
+                }
+
+                /*
+                 * Bail out on error.
+                 */
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("SUPR0GipMap: failed rc=%Rrc\n", rc));
+                    pDevExt->cGipUsers = 0;
+                    pSession->fGipReferenced = 0;
+                    if (pSession->GipMapObjR3 != NIL_RTR0MEMOBJ)
+                    {
+                        int rc2 = RTR0MemObjFree(pSession->GipMapObjR3, false); AssertRC(rc2);
+                        if (RT_SUCCESS(rc2))
+                            pSession->GipMapObjR3 = NIL_RTR0MEMOBJ;
+                    }
+                    HCPhys = NIL_RTHCPHYS;
+                    pGipR3 = NIL_RTR3PTR;
+                }
             }
         }
     }
@@ -5780,8 +5995,8 @@ static bool supdrvIsInvariantTsc(void)
     return s_fIsInvariantTsc;
 }
 
-
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
+
 /**
  * Switches the TSC-delta measurement thread into the butchered state.
  *
@@ -6034,7 +6249,7 @@ static void supdrvTscDeltaThreadTerminate(PSUPDRVDEVEXT pDevExt)
  */
 static int supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt)
 {
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pDevExt->pGip));
+    Assert(pDevExt->pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
 
     int rc = RTSpinlockCreate(&pDevExt->hTscDeltaSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "VBoxTscSpnLck");
     if (RT_SUCCESS(rc))
@@ -6135,8 +6350,8 @@ static int supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt)
 
     return VERR_TIMEOUT;
 }
-#endif /* SUPDRV_USE_TSC_DELTA_THREAD */
 
+#endif /* SUPDRV_USE_TSC_DELTA_THREAD */
 
 /**
  * Applies the TSC delta to the supplied raw TSC value.
@@ -6163,7 +6378,7 @@ DECLINLINE(int) supdrvTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, ui
      */
     AssertPtr(puTsc);
     AssertPtr(pGip);
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
+    Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
 
     /*
      * Carefully convert the idApic into a GIPCPU entry.
@@ -6283,7 +6498,7 @@ static int supdrvGipMeasureTscFreq(PSUPDRVDEVEXT pDevExt)
         u64TscAfter = ASMReadTSC();
         ASMSetFlags(uFlags);
 
-        if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+        if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
         {
             int rc;
             bool fAppliedBefore;
@@ -6361,7 +6576,7 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
     u64Tsc    = ASMReadTSC();
     u64NanoTS = RTTimeSystemNanoTS();
     ASMSetFlags(uFlags);
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
         supdrvTscDeltaApply(pGip, &u64Tsc, idApic, &fDeltaApplied);
     u64DeltaNanoTS = u64NanoTS - pDevExt->u64NanoTSAnchor;
     u64DeltaTsc = u64Tsc - pDevExt->u64TscAnchor;
@@ -6380,27 +6595,11 @@ static DECLCALLBACK(void) supdrvRefineTscTimer(PRTTIMER pTimer, void *pvUser, ui
         pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1SEC, (uint32_t)u64DeltaNanoTS);
     else
     {
-#if 1
         RTUINT128U CpuHz, Tmp, Divisor;
         CpuHz.s.Lo = CpuHz.s.Hi = 0;
         RTUInt128MulU64ByU64(&Tmp, u64DeltaTsc, RT_NS_1SEC_64);
         RTUInt128Div(&CpuHz, &Tmp, RTUInt128AssignU64(&Divisor, u64DeltaNanoTS));
         pGip->u64CpuHz = CpuHz.s.Lo;
-#else
-        /** @todo remove later */
-        /* Try not to lose precision, the larger the interval the more likely we overflow. */
-        if (   u64DeltaTsc < UINT64_MAX / RT_NS_100MS
-            && u64DeltaNanoTS / 10 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_100MS, (uint32_t)(u64DeltaNanoTS / 10));
-        else if (   u64DeltaTsc < UINT64_MAX / RT_NS_10MS
-                 && u64DeltaNanoTS / 100 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_10MS, (uint32_t)(u64DeltaNanoTS / 100));
-        else if (   u64DeltaTsc < UINT64_MAX / RT_NS_1MS
-                 && u64DeltaNanoTS / 1000 < UINT32_MAX)
-            pGip->u64CpuHz = ASMMultU64ByU32DivByU32(u64DeltaTsc, RT_NS_1MS, (uint32_t)(u64DeltaNanoTS / 1000));
-        else /* Screw it. */
-            pGip->u64CpuHz = u64DeltaTsc / (u64DeltaNanoTS / RT_NS_1SEC_64);
-#endif
     }
 
     /* Update rest of GIP. */
@@ -6427,6 +6626,9 @@ static void supdrvRefineTscFreq(PSUPDRVDEVEXT pDevExt)
     Assert(pDevExt);
     Assert(pDevExt->pGip);
 
+    /*
+     * <Insert missing comment [it's not "Validate.", I think...]>
+     */ 
     pGip = pDevExt->pGip;
     u64NanoTS = RTTimeSystemNanoTS();
     while (RTTimeSystemNanoTS() == u64NanoTS)
@@ -6436,10 +6638,16 @@ static void supdrvRefineTscFreq(PSUPDRVDEVEXT pDevExt)
     pDevExt->u64TscAnchor    = ASMReadTSC();
     pDevExt->u64NanoTSAnchor = RTTimeSystemNanoTS();
     ASMSetFlags(uFlags);
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
         supdrvTscDeltaApply(pGip, &pDevExt->u64TscAnchor, idApic, &fDeltaApplied);
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /* 
+     * <Explain yourself>
+     */
+    /** @todo r=bird: This is (and was) bogus on systems where we don't need to
+     *        apply any delta (not used on windows doesn't stick without comments).
+     *        What is the logic you want here exactly? */
     if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
         && !fDeltaApplied)
     {
@@ -6540,7 +6748,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), RT_NS_1SEC / u32Interval /*=Hz*/, u32Interval, cCpus);
 
-    if (RT_UNLIKELY(   pGip->fOsTscDeltasInSync
+    if (RT_UNLIKELY(   pGip->enmUseTscDelta == SUPGIPUSETSCDELTA_ZERO_CLAIMED
                     && pGip->u32Mode == SUPGIPMODE_ASYNC_TSC
                     && !supdrvOSGetForcedAsyncTscMode(pDevExt)))
     {
@@ -6550,7 +6758,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     }
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
         /* Initialize TSC-delta measurement thread before executing any Mp event callbacks. */
         rc = supdrvTscDeltaThreadInit(pDevExt);
@@ -6566,7 +6774,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
             {
                 uint16_t iCpu;
 #ifndef SUPDRV_USE_TSC_DELTA_THREAD
-                if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+                if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
                 {
                     /*
                      * Measure the TSC deltas now that we have MP notifications.
@@ -6607,7 +6815,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                             }
                         }
                         if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-                            rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */, supdrvGipSyncTimer, pDevExt);
+                            rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */, 
+                                                 supdrvGipSyncAndInvariantTimer, pDevExt);
                         if (RT_SUCCESS(rc))
                         {
                             /*
@@ -6721,12 +6930,13 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
 
 
 /**
- * Timer callback function sync GIP mode.
+ * Timer callback function for the sync and invariant  GIP modes. 
+ *  
  * @param   pTimer      The timer.
  * @param   pvUser      Opaque pointer to the device extension.
  * @param   iTick       The timer tick.
  */
-static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     RTCCUINTREG        uFlags;
     uint64_t           u64TSC;
@@ -6738,7 +6948,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     u64TSC    = ASMReadTSC();
     u64NanoTS = RTTimeSystemNanoTS();
 
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
     {
         /*
          * The calculations in supdrvGipUpdate() is very timing sensitive and doesn't handle
@@ -6746,8 +6956,9 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
          * affected a bit until we get proper TSC deltas than implementing options like
          * rescheduling the tick to be delivered on the right CPU or missing the tick entirely.
          *
-         * The likely hood of this happening is really low. On Windows, Linux timers
-         * fire on the CPU they were registered/started on. Darwin, Solaris need verification.
+         * The likely hood of this happening is really low. On Windows, Linux, and Solaris
+         * timers fire on the CPU they were registered/started on.  Darwin timers doesn't
+         * necessarily (they are high priority threads waiting).
          */
         Assert(!ASMIntAreEnabled());
         supdrvTscDeltaApply(pGip, &u64TSC, ASMGetApicId(), NULL /* pfDeltaApplied */);
@@ -6883,7 +7094,7 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
      * We cannot poke the TSC-delta measurement thread from this context (on all OSs), so we only
      * update the state and it'll get serviced when the thread's listening interval times out.
      */
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
         RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
         if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
@@ -6942,7 +7153,7 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     }
 
     /* Reset the TSC delta, we will recalculate it lazily. */
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
         ASMAtomicWriteS64(&pGip->aCPUs[i].i64TSCDelta, INT64_MAX);
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
@@ -7171,7 +7382,7 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                 uFlags = ASMIntDisableFlags();
 
                 while (ASMAtomicReadU32(&pDevExt->pTscDeltaSync->u) == GIP_TSC_DELTA_SYNC_START)
-                    ;
+                { /* nothing */ }
 
                 do
                 {
@@ -7182,7 +7393,7 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                 ASMSetFlags(uFlags);
 
                 while (ASMAtomicReadU32(&pDevExt->pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_WORKER_DONE)
-                    ;
+                { /* nothing */ }
 
                 if (i > GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS)
                 {
@@ -7208,7 +7419,7 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
 
                 ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
                 while (ASMAtomicReadU32(&pDevExt->pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_START)
-                    ;
+                { /* nothing */ }
                 Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
                 ASMAtomicWriteU32(&pDevExt->pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_WORKER_READY);
 
@@ -7306,7 +7517,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     idMaster      = pDevExt->idGipMaster;
     pGipCpuWorker = &pGip->aCPUs[idxWorker];
 
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
+    Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
 
     if (pGipCpuWorker->idCpu == idMaster)
     {
@@ -7315,7 +7526,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     }
 
     /* Set the master TSC as the initiator. */
-    while (ASMAtomicCmpXchgU32(&pDevExt->idTscDeltaInitiator, idMaster, NIL_RTCPUID) == false)
+    while (!ASMAtomicCmpXchgU32(&pDevExt->idTscDeltaInitiator, idMaster, NIL_RTCPUID))
     {
         /*
          * Sleep here rather than spin as there is a parallel measurement
@@ -7332,13 +7543,29 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
         rc = RTMpOnAll(supdrvMeasureTscDeltaCallback, pDevExt, &pGipCpuWorker->idCpu);
         if (RT_SUCCESS(rc))
         {
-            if (RT_UNLIKELY(pGipCpuWorker->i64TSCDelta == INT64_MAX))
-                rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
-            else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_APPLY_THRESHOLD
-                     || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_APPLY_THRESHOLD)
+            if (RT_LIKELY(pGipCpuWorker->i64TSCDelta != INT64_MAX))
             {
-                pGip->fTscDeltasRoughlyInSync = false;
+                /*
+                 * Work the TSC delta applicability rating.  It starts
+                 * optimistic in supdrvGipInit, we downgrade it here.
+                 */
+                SUPGIPUSETSCDELTA enmRating;
+                if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO
+                    || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO)
+                    enmRating = SUPGIPUSETSCDELTA_NOT_ZERO;
+                else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO
+                         || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO)
+                    enmRating = SUPGIPUSETSCDELTA_ROUGHLY_ZERO;
+                else
+                    enmRating = SUPGIPUSETSCDELTA_PRACTICALLY_ZERO;
+                if (pGip->enmUseTscDelta < enmRating)
+                {
+                    AssertCompile(sizeof(pGip->enmUseTscDelta) == sizeof(uint32_t));
+                    ASMAtomicWriteU32((uint32_t volatile *)&pGip->enmUseTscDelta, enmRating);
+                }
             }
+            else
+                rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
         }
     }
     else
@@ -7372,7 +7599,7 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
     uint32_t   cMpOnOffEvents = ASMAtomicReadU32(&pDevExt->cMpOnOffEvents);
     uint32_t   cOnlineCpus    = pGip->cOnlineCpus;
 
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
+    Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
 
     /*
      * Pick the first CPU online as the master TSC and make it the new GIP master based
@@ -7620,7 +7847,7 @@ static void supdrvGipInitCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, PSU
     pCpu->u64NanoTS          = u64NanoTS;
     pCpu->u64TSC             = ASMReadTSC();
     pCpu->u64TSCSample       = GIP_TSC_DELTA_RSVD;
-    pCpu->i64TSCDelta        = GIP_ARE_TSC_DELTAS_APPLICABLE(pGip) ? INT64_MAX : 0;
+    pCpu->i64TSCDelta        = pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED ? INT64_MAX : 0;
 
     ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
     ASMAtomicWriteSize(&pCpu->idCpu,    NIL_RTCPUID);
@@ -7673,20 +7900,20 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
      */
     memset(pGip, 0, cbGip);
 
-    /*
-     * Record whether the host OS has already normalized inter-CPU deltas for the hardware TSC.
-     * We only bother with TSC-deltas on invariant CPUs for now.
-     */
-    pGip->fOsTscDeltasInSync = supdrvIsInvariantTsc() && supdrvOSAreTscDeltasInSync();
-
-    pGip->fTscDeltasRoughlyInSync = true;
     pGip->u32Magic                = SUPGLOBALINFOPAGE_MAGIC;
     pGip->u32Version              = SUPGLOBALINFOPAGE_VERSION;
     pGip->u32Mode                 = supdrvGipDetermineTscMode(pDevExt);
+    if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+        /*|| pGip->u32Mode == SUPGIPMODE_SYNC_TSC */)
+        pGip->enmUseTscDelta      = supdrvIsInvariantTsc() && supdrvOSAreTscDeltasInSync() /* Allow OS override (windows). */
+                                  ? SUPGIPUSETSCDELTA_ZERO_CLAIMED : SUPGIPUSETSCDELTA_PRACTICALLY_ZERO /* downgrade later */;
+    else
+        pGip->enmUseTscDelta      = SUPGIPUSETSCDELTA_NOT_APPLICABLE;
     pGip->cCpus                   = (uint16_t)cCpus;
     pGip->cPages                  = (uint16_t)(cbGip / PAGE_SIZE);
     pGip->u32UpdateHz             = uUpdateHz;
     pGip->u32UpdateIntervalNS     = uUpdateIntervalNS;
+    pGip->fGetGipCpu              = SUPGIPGETCPU_APIC_ID;
     RTCpuSetEmpty(&pGip->OnlineCpuSet);
     RTCpuSetEmpty(&pGip->PresentCpuSet);
     RTMpGetSet(&pGip->PossibleCpuSet);
@@ -7698,7 +7925,6 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
         pGip->aiCpuFromApicId[i]    = UINT16_MAX;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
-
     for (i = 0; i < cCpus; i++)
         supdrvGipInitCpu(pDevExt, pGip, &pGip->aCPUs[i], u64NanoTS);
 
@@ -8065,14 +8291,15 @@ static int supdrvIOCtl_ResumeSuspendedKbds(void)
  * Service a TSC-delta measurement request.
  *
  * @returns VBox status code.
- * @param   pDevExt             Pointer to the device instance data.
- * @param   pReq                Pointer to the TSC-delta measurement request.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pSession        The support driver session.
+ * @param   pReq            Pointer to the TSC-delta measurement request.
  */
-static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASURE pReq)
+static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCDELTAMEASURE pReq)
 {
     PSUPGLOBALINFOPAGE pGip;
     RTCPUID            idCpuWorker;
-    int                rc = VERR_CPU_NOT_FOUND;
+    int                rc;
     int16_t            cTries;
     RTMSINTERVAL       cMsWaitRetry;
     uint16_t           iCpu;
@@ -8080,20 +8307,26 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPTSCDELTAMEASUR
     /*
      * Validate.
      */
-    AssertReturn(pDevExt, VERR_INVALID_PARAMETER);
-    AssertReturn(pReq, VERR_INVALID_PARAMETER);
-    AssertReturn(pDevExt->pGip, VERR_INVALID_PARAMETER);
+    AssertPtr(pDevExt); AssertPtr(pSession); AssertPtr(pReq); /* paranoia^2 */
+    if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
+        return VERR_WRONG_ORDER;
+    pGip = pDevExt->pGip;
+    AssertReturn(pGip, VERR_INTERNAL_ERROR_2);
+
     idCpuWorker = pReq->u.In.idCpu;
     if (idCpuWorker == NIL_RTCPUID)
         return VERR_INVALID_CPU_ID;
-
     cTries       = RT_MAX(pReq->u.In.cRetries + 1, 10);
     cMsWaitRetry = RT_MAX(pReq->u.In.cMsWaitRetry, 5);
-    pGip = pDevExt->pGip;
 
-    if (!GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    /* 
+     * The request is a noop if the TSC delta isn't being used.
+     */
+    pGip = pDevExt->pGip;
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED)
         return VINF_SUCCESS;
 
+    rc = VERR_CPU_NOT_FOUND;
     for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
     {
         PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
@@ -8173,7 +8406,7 @@ static int supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * We're usually here because we need to apply delta, but we shouldn't be
      * upset if the GIP is some different mode.
      */
-    if (GIP_ARE_TSC_DELTAS_APPLICABLE(pGip))
+    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
         uint32_t cTries = 0;
         for (;;)
