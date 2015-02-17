@@ -215,9 +215,9 @@ typedef struct KBDState
     int32_t mouse_flags;
     uint8_t mouse_buttons;
     uint8_t mouse_buttons_reported;
-#endif
 
     uint32_t    Alignment0;
+#endif
 
     /** Pointer to the device instance - RC. */
     PPDMDEVINSRC                pDevInsRC;
