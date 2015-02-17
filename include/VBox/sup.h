@@ -283,6 +283,59 @@ AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8);
 typedef SUPGIPCPU *PSUPGIPCPU;
 
 
+/**
+ * The rules concerning the applicability of SUPGIPCPU::i64TscDelta.
+ */
+typedef enum SUPGIPUSETSCDELTA
+{
+    /** Value for SUPGIPMODE_ASYNC_TSC. */
+    SUPGIPUSETSCDELTA_NOT_APPLICABLE = 0,
+    /** The OS specific part of SUPDrv (or the user) claims the TSC is as
+     * good as zero. */
+    SUPGIPUSETSCDELTA_ZERO_CLAIMED,
+    /** The differences in RDTSC output between the CPUs/cores/threads should
+     * be considered zero for all practical purposes. */
+    SUPGIPUSETSCDELTA_PRACTICALLY_ZERO,
+    /** The differences in RDTSC output between the CPUs/cores/threads are a few
+     * hundred ticks or less.  (Probably not worth calling ASMGetApicId two times
+     * just to apply deltas.) */
+    SUPGIPUSETSCDELTA_ROUGHLY_ZERO,
+    /** Significant differences in RDTSC output between the CPUs/cores/threads,
+     * deltas must be applied. */
+    SUPGIPUSETSCDELTA_NOT_ZERO,
+    /** End of valid values (exclusive). */
+    SUPGIPUSETSCDELTA_END,
+    /** Make sure the type is 32-bit sized. */
+    SUPGIPUSETSCDELTA_32BIT_HACK = 0x7fffffff
+} SUPGIPUSETSCDELTA;
+
+
+/** @name SUPGIPGETCPU_XXX - methods that aCPUs can be indexed.
+ * @{
+ */
+/** Use ASMGetApicId (or equivalent) and translate the result via
+ *  aiCpuFromApicId. */
+#define SUPGIPGETCPU_APIC_ID                        RT_BIT_32(0)
+/** Use RDTSCP and translate the first RTCPUSET_MAX_CPUS of ECX via
+ * aiCpuFromCpuSetIdx.
+ *
+ * Linux stores the RTMpCpuId() value in ECX[11:0] and NUMA node number in
+ * ECX[12:31].  Solaris only stores RTMpCpuId() in ECX.  On both systems
+ * RTMpCpuId() == RTMpCpuIdToSetIndex(RTMpCpuId()).  RTCPUSET_MAX_CPUS is
+ * currently 64, 256 or 1024 in size, which lower than
+ * 4096, so there shouldn't be any range issues. */
+#define SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS       RT_BIT_32(1)
+/** Subtract the max IDT size from IDTR.LIMIT, extract the
+ * first RTCPUSET_MAX_CPUS and translate it via aiCpuFromCpuSetIdx.
+ *
+ * Darwin stores the RTMpCpuId() (== RTMpCpuIdToSetIndex(RTMpCpuId()))
+ * value in the IDT limit.  The masking is a precaution against what linux
+ * does with RDTSCP. */
+#define SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS   RT_BIT_32(2)
+/* Linux also offers information via selector 0x78, but we'll settle for
+   RDTSCP for now. */
+/** @} */
+
 
 /**
  * Global Information Page.
@@ -328,15 +381,14 @@ typedef struct SUPGLOBALINFOPAGE
     uint16_t            u16Padding0;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
-    /** Whether the host OS has already normalized the hardware TSC deltas across
-     *  CPUs. */
-    bool                fOsTscDeltasInSync;
-    /** Whether the TSC deltas are small enough to not bother applying. */
-    bool                fTscDeltasRoughlyInSync;
-    uint8_t             au8Padding0[2];
+    /** The applicability of SUPGIPCPU::i64TscDelta. */
+    SUPGIPUSETSCDELTA   enmUseTscDelta;
+    /** Mask of SUPGIPGETCPU_XXX values that indicates different ways that aCPU
+     * can be accessed from ring-3 and raw-mode context. */
+    uint32_t            fGetGipCpu;
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[26];
+    uint32_t            au32Padding1[25];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
@@ -369,7 +421,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00050000
+#define SUPGLOBALINFOPAGE_VERSION   0x00060000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -435,8 +487,7 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
 /** Whether the application of TSC-deltas is required. */
-#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip) \
-    ((a_pGip)->u32Mode == SUPGIPMODE_INVARIANT_TSC && !((a_pGip)->fOsTscDeltasInSync))
+#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip)  ((a_pGip)->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
 
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
@@ -1558,8 +1609,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void);
  */
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
-    if (    GIP_ARE_TSC_DELTAS_APPLICABLE(g_pSUPGlobalInfoPage)
-        && !g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync)
+    if (g_pSUPGlobalInfoPage->enmUseTscDelta > SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
         return SUPReadTscWithDelta();
     return ASMReadTSC();
 }

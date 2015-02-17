@@ -167,7 +167,6 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static bool                 tmR3HasFixedTSC(PVM pVM);
-static bool                 tmR3ReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip);
 static const char *         tmR3GetTSCModeName(PVM pVM);
 static uint64_t             tmR3CalibrateTSC(PVM pVM);
 static DECLCALLBACK(int)    tmR3Save(PVM pVM, PSSMHANDLE pSSM);
@@ -230,10 +229,12 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      * the GIP into the guest context so we can do this calculation there
      * as well and save costly world switches.
      */
-    pVM->tm.s.pvGIPR3 = (void *)g_pSUPGlobalInfoPage;
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    pVM->tm.s.pvGIPR3 = (void *)pGip;
     AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_TM_GIP_REQUIRED);
-    AssertMsgReturn((g_pSUPGlobalInfoPage->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
-                    ("Unsupported GIP version!\n"), VERR_TM_GIP_VERSION);
+    AssertMsgReturn((pGip->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
+                    ("Unsupported GIP version %#x! (expected=%#x)\n", pGip->u32Version, SUPGLOBALINFOPAGE_VERSION),
+                    VERR_TM_GIP_VERSION);
 
     RTHCPHYS HCPhysGIP;
     rc = SUPR3GipGetPhys(&HCPhysGIP);
@@ -241,7 +242,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 
     RTGCPTR GCPtr;
 #ifdef SUP_WITH_LOTS_OF_CPUS
-    rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, (size_t)g_pSUPGlobalInfoPage->cPages * PAGE_SIZE,
+    rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, (size_t)pGip->cPages * PAGE_SIZE,
                             "GIP", &GCPtr);
 #else
     rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
@@ -256,15 +257,15 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
     /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
-    if (    g_pSUPGlobalInfoPage->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-        &&  g_pSUPGlobalInfoPage->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
+    if (    pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+        &&  pGip->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
         return VMSetError(pVM, VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG, RT_SRC_POS,
                           N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
-                          g_pSUPGlobalInfoPage->u32UpdateIntervalNS, g_pSUPGlobalInfoPage->u32UpdateHz);
-    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u\n", g_pSUPGlobalInfoPage->u32Mode,
-            SUPGetGIPModeName(g_pSUPGlobalInfoPage), g_pSUPGlobalInfoPage->u32UpdateHz,
-            g_pSUPGlobalInfoPage->u32UpdateIntervalNS));
-    LogRel(("TM: GIP - u64CpuHz=%#RX64 (%'RU64)\n", g_pSUPGlobalInfoPage->u64CpuHz, g_pSUPGlobalInfoPage->u64CpuHz));
+                          pGip->u32UpdateIntervalNS, pGip->u32UpdateHz);
+    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u\n", pGip->u32Mode,
+            SUPGetGIPModeName(pGip), pGip->u32UpdateHz,
+            pGip->u32UpdateIntervalNS));
+    LogRel(("TM: GIP - u64CpuHz=%#RX64 (%'RU64)\n", pGip->u64CpuHz, pGip->u64CpuHz));
 
     /*
      * Setup the VirtualGetRaw backend.
@@ -274,23 +275,23 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR3.pfnRediscover = tmVirtualNanoTSRediscover;
     if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
     {
-        if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-            pVM->tm.s.pfnVirtualGetRawR3 = tmR3ReallyNeedDeltas(g_pSUPGlobalInfoPage)
-                                         ? RTTimeNanoTSLFenceInvariantWithDelta : RTTimeNanoTSLFenceInvariantNoDelta;
-        else if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
-            pVM->tm.s.pfnVirtualGetRawR3 = false /** @todo tmR3ReallyNeedDeltas(g_pSUPGlobalInfoPage) */
-                                         ? RTTimeNanoTSLFenceSyncWithDelta      : RTTimeNanoTSLFenceSyncNoDelta;
+        if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+            pVM->tm.s.pfnVirtualGetRawR3 = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                                         ? RTTimeNanoTSLFenceInvariantNoDelta : RTTimeNanoTSLFenceInvariantWithDelta;
+        else if (pGip->u32Mode == SUPGIPMODE_SYNC_TSC)
+            pVM->tm.s.pfnVirtualGetRawR3 = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                                         ? RTTimeNanoTSLFenceSyncNoDelta      : RTTimeNanoTSLFenceSyncWithDelta;
         else
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLFenceAsync;
     }
     else
     {
-        if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-            pVM->tm.s.pfnVirtualGetRawR3 = tmR3ReallyNeedDeltas(g_pSUPGlobalInfoPage)
-                                         ? RTTimeNanoTSLegacyInvariantWithDelta : RTTimeNanoTSLegacyInvariantNoDelta;
-        else if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_SYNC_TSC)
-            pVM->tm.s.pfnVirtualGetRawR3 = false /** @todo tmR3ReallyNeedDeltas(g_pSUPGlobalInfoPage) */
-                                         ? RTTimeNanoTSLegacySyncWithDelta      : RTTimeNanoTSLegacySyncNoDelta;
+        if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+            pVM->tm.s.pfnVirtualGetRawR3 = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                                         ? RTTimeNanoTSLegacyInvariantNoDelta   : RTTimeNanoTSLegacyInvariantWithDelta;
+        else if (pGip->u32Mode == SUPGIPMODE_SYNC_TSC)
+            pVM->tm.s.pfnVirtualGetRawR3 = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                                         ? RTTimeNanoTSLegacySyncNoDelta        : RTTimeNanoTSLegacySyncWithDelta;
         else
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacyAsync;
     }
@@ -618,21 +619,21 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Dump the GIPCPU TSC-deltas, iterate using the Apic Id to get master at the beginning in most cases.
      */
-    LogRel(("TM: GIP - fTscDeltasRoughlyInSync=%RTbool\n", g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync));
-    unsigned cGipCpus = RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId);
-    for (unsigned i = 0; i < cGipCpus; i++)
+    LogRel(("TM: GIP - enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%#x\n",
+            pGip->enmUseTscDelta, pGip->fGetGipCpu, pGip->cCpus));
+    for (uint32_t i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
     {
-        uint16_t iCpu  = g_pSUPGlobalInfoPage->aiCpuFromApicId[i];
+        uint16_t iCpu = pGip->aiCpuFromApicId[i];
 #if 1
         if (iCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%RI64\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idCpu,
-                    g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta));
+            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%RI64\n", pGip->aCPUs[iCpu].idCpu,
+                    pGip->aCPUs[iCpu].idApic, pGip->aCPUs[iCpu].i64TSCDelta));
 #else
         /* Dump 2 entries per line, saves vertical space in release log but more dumps bytes due to formatting. */
         uint16_t iCpu2 = UINT16_MAX;
         for (unsigned k = i + 1; k < cGipCpus; k++)
         {
-            iCpu2 = g_pSUPGlobalInfoPage->aiCpuFromApicId[k];
+            iCpu2 = pGip->aiCpuFromApicId[k];
             if (iCpu2 != UINT16_MAX)
             {
                 i = k + 1;
@@ -643,13 +644,13 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
             && iCpu2 != UINT16_MAX)
         {
             LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%-4lld CPU[%d]: idApic=%d i64TSCDelta=%lld\n",
-                    g_pSUPGlobalInfoPage->aCPUs[iCpu].idCpu, g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic,
-                    g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta, g_pSUPGlobalInfoPage->aCPUs[iCpu2].idCpu,
-                    g_pSUPGlobalInfoPage->aCPUs[iCpu2].idApic, g_pSUPGlobalInfoPage->aCPUs[iCpu2].i64TSCDelta));
+                    pGip->aCPUs[iCpu].idCpu, pGip->aCPUs[iCpu].idApic,
+                    pGip->aCPUs[iCpu].i64TSCDelta, pGip->aCPUs[iCpu2].idCpu,
+                    pGip->aCPUs[iCpu2].idApic, pGip->aCPUs[iCpu2].i64TSCDelta));
         }
         else if (iCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idCpu,
-                    g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic));
+            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%lld\n", pGip->aCPUs[iCpu].idCpu,
+                    pGip->aCPUs[iCpu].idApic));
 #endif
     }
 
@@ -940,36 +941,6 @@ static bool tmR3HasFixedTSC(PVM pVM)
         }
     }
     return false;
-}
-
-
-/**
- * Checks if we really need to apply the delta values when calculating time.
- *
- * Getting the delta for a CPU is _very_ expensive, it more than doubles the
- * execution time for RTTimeNanoTS.
- *
- * @returns true if deltas needs to be applied, false if not.
- * @param   pGip                The GIP.
- *
- * @remarks If you change this, make sure to also change
- *          rtTimeNanoTsInternalReallyNeedDeltas().
- */
-static bool tmR3ReallyNeedDeltas(PSUPGLOBALINFOPAGE pGip)
-{
-    return !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync;
-#if 0
-    if (!pGip->fOsTscDeltasInSync)
-    {
-        uint32_t i = pGip->cCpus;
-        while (i-- > 0)
-            if (   pGip->aCPUs[i].enmState == SUPGIPCPUSTATE_ONLINE
-                && (   pGip->aCPUs[i].i64TSCDelta > 384
-                    || pGip->aCPUs[i].i64TSCDelta < -384) )
-                return true;
-    }
-    return false;
-#endif
 }
 
 

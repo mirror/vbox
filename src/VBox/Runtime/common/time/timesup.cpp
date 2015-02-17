@@ -167,19 +167,19 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
     {
         if (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2)
             iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-                    ? !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync
-                      ? RTTIMENANO_WORKER_LFENCE_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LFENCE_INVAR_NO_DELTA
+                    ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                      ? RTTIMENANO_WORKER_LFENCE_INVAR_NO_DELTA : RTTIMENANO_WORKER_LFENCE_INVAR_WITH_DELTA
                     : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? false /** @todo !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync */
-                      ? RTTIMENANO_WORKER_LFENCE_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LFENCE_SYNC_NO_DELTA
+                    ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                      ? RTTIMENANO_WORKER_LFENCE_SYNC_NO_DELTA  : RTTIMENANO_WORKER_LFENCE_SYNC_WITH_DELTA
                     : RTTIMENANO_WORKER_LFENCE_ASYNC;
         else
             iWorker = pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-                    ? !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync
-                      ? RTTIMENANO_WORKER_LEGACY_INVAR_WITH_DELTA : RTTIMENANO_WORKER_LEGACY_INVAR_NO_DELTA
+                    ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                      ? RTTIMENANO_WORKER_LEGACY_INVAR_NO_DELTA : RTTIMENANO_WORKER_LEGACY_INVAR_WITH_DELTA
                     : pGip->u32Mode == SUPGIPMODE_SYNC_TSC
-                    ? false /** @todo !pGip->fOsTscDeltasInSync && !pGip->fTscDeltasRoughlyInSync */
-                      ? RTTIMENANO_WORKER_LEGACY_SYNC_WITH_DELTA  : RTTIMENANO_WORKER_LEGACY_SYNC_NO_DELTA
+                    ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                      ? RTTIMENANO_WORKER_LEGACY_SYNC_NO_DELTA  : RTTIMENANO_WORKER_LEGACY_SYNC_WITH_DELTA
                     : RTTIMENANO_WORKER_LEGACY_ASYNC;
     }
     else

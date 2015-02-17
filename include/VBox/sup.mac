@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2014 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +47,17 @@ struc SUPGIPCPU
     .idApic                     resw 1
 endstruc
 
+%define SUPGIPUSETSCDELTA_NOT_APPLICABLE        0
+%define SUPGIPUSETSCDELTA_ZERO_CLAIMED          1
+%define SUPGIPUSETSCDELTA_PRACTICALLY_ZERO      2
+%define SUPGIPUSETSCDELTA_ROUGHLY_ZERO          3
+%define SUPGIPUSETSCDELTA_NOT_ZERO              4
+
+%define SUPGIPGETCPU_APIC_ID                        1
+%define SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS       2
+%define SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS   4
+
+
 %define SUPGLOBALINFOPAGE_MAGIC 0x19590106
 struc SUPGLOBALINFOPAGE
     .u32Magic                   resd 1
@@ -66,10 +77,9 @@ struc SUPGLOBALINFOPAGE
     .cPossibleCpus              resw 1
     .u16Padding0                resw 1
     .idCpuMax                   resd 1
-    .fOsTscDeltasInSync         resb 1
-    .fTscDeltasRoughlyInSync    resb 1
-    .au8Padding0                resb 2
-    .au32Padding1               resd 26
+    .enmUseTscDelta             resd 1
+    .fGetGipCpu                 resd 1
+    .au32Padding1               resd 25
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
     .aCPUs                      resb SUPGIPCPU_size
@@ -124,24 +134,6 @@ struc SUPDRVTRACERUSRCTX64
         .u.Amd64.r14            resq 1
         .u.Amd64.r15            resq 1
 endstruc
-
-;;
-; Macro to apply per-CPU TSC delta to the TSC value read in through rdtsc.
-;
-; @param   %1    The pSupGipCpu pointer
-; @remarks edx:eax contains the 64-bit TSC value to apply the delta to.
-%macro SUPTscDeltaApply 1
-    ; Check if we have a valid TSC-delta, i.e. != INT64_MAX.
-    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta], 0xffffffff
-    jne     %%valid_delta
-    cmp     dword [%1 + SUPGIPCPU.i64TSCDelta + 4], 0x7fffffff
-    je      %%done
-%%valid_delta:
-    ; Subtract the delta from edx:eax
-    sub     eax, dword [%1 + SUPGIPCPU.i64TSCDelta]
-    sbb     edx, dword [%1 + SUPGIPCPU.i64TSCDelta + 4]
-%%done:
-%endmacro
 
 %endif
 

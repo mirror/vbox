@@ -250,15 +250,18 @@ int main(int argc, char **argv)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
                     RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
 
-            RTPrintf("fTscDeltasRoughlyInSync: %RTbool\n", g_pSUPGlobalInfoPage->fTscDeltasRoughlyInSync);
-            RTPrintf("CPUID.Invariant-TSC    : %RTbool\n", tstIsInvariantTsc());
+            RTPrintf("tstGIP-2: enmUseTscDelta=%d  fGetGipCpu=%#x\n",
+                     g_pSUPGlobalInfoPage->enmUseTscDelta, g_pSUPGlobalInfoPage->fGetGipCpu);
             if (   uCpuHzRef
                 && cCpuHzOverallDevCnt)
             {
                 uint32_t uPct    = (uint32_t)(uCpuHzOverallDeviation * 100000 / cCpuHzOverallDevCnt / uCpuHzRef + 5);
+                RTPrintf("tstGIP-2: Average CpuHz deviation: %d.%02d%%\n",
+                         uPct / 1000, (uPct % 1000) / 10);
+
                 uint32_t uMaxPct = (uint32_t)(RT_ABS(iCpuHzMaxDeviation) * 100000 / uCpuHzRef + 5);
-                RTPrintf("Average CpuHz deviation: %d.%02d%%\n", uPct / 1000, (uPct % 1000) / 10);
-                RTPrintf("Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n", uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
+                RTPrintf("tstGIP-2: Maximum CpuHz deviation: %d.%02d%% (%RI64 ticks)\n",
+                         uMaxPct / 1000, (uMaxPct % 1000) / 10, iCpuHzMaxDeviation);
             }
         }
         else

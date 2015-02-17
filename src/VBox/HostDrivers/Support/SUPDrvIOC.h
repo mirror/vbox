@@ -214,7 +214,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Fix SUPTSCREAD padding (#if 0 -> #if 1).
  */
-#define SUPDRV_IOC_VERSION                              0x001e0000
+#define SUPDRV_IOC_VERSION                              0x001f0000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1484,6 +1484,8 @@ AssertCompileMembersSameSizeAndOffset(SUPMSRPROBER, u.In, SUPMSRPROBER, u.Out);
 /** @name SUP_IOCTL_TSC_DELTA_MEASURE
  * Measure the TSC-delta between the specified CPU and the master TSC.
  *
+ * To call this I/O control, the client must first have mapped the GIP.
+ *
  * @{
  */
 #define SUP_IOCTL_TSC_DELTA_MEASURE                     SUP_CTL_CODE_SIZE(36, SUP_IOCTL_TSC_DELTA_MEASURE_SIZE)
@@ -1510,12 +1512,11 @@ typedef struct SUPTSCDELTAMEASURE
             bool            fForce;
             /** Whether to do the measurement asynchronously (if possible). */
             bool            fAsync;
-            /** Padding for future. */
-            uint64_t        auPadding[3];
         } In;
     } u;
 } SUPTSCDELTAMEASURE, *PSUPTSCDELTAMEASURE;
 AssertCompileMemberAlignment(SUPTSCDELTAMEASURE, u, 8);
+AssertCompileSize(SUPTSCDELTAMEASURE, 6*4 + 4+1+1+1+1);
 /** @} */
 
 /** @name SUP_IOCTL_TSC_READ
@@ -1545,19 +1546,13 @@ typedef struct SUPTSCREAD
             uint64_t        u64AdjustedTsc;
             /** The APIC Id of the CPU where the TSC was read. */
             uint16_t        idApic;
-            /** Padding for future. */
-#if 0 /* Not correct for 32-bit gcc. */
-            uint16_t        auPadding[3 + 3*4];
-#else
-            uint64_t        auPadding[3];
-#endif
+            /** Explicit alignment padding. */
+            uint16_t        auPadding[3];
         } Out;
     } u;
 } SUPTSCREAD, *PSUPTSCREAD;
 AssertCompileMemberAlignment(SUPTSCREAD, u, 8);
-#if 0  /* Not correct for 32-bit gcc. */
-AssertCompileSize(SUPTSCREAD, 6*4 + 5*8);
-#endif
+AssertCompileSize(SUPTSCREAD, 6*4 + 2*8);
 /** @} */
 
 #pragma pack()                          /* paranoia */
