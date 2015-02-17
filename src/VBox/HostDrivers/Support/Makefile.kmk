@@ -465,8 +465,9 @@ endif
 #
 # SUPRC - The raw-mode context library.
 #
-SUPRC_TEMPLATE      = VBoxRc
-SUPRC_SOURCES       = SUPLibAll.cpp
+SUPRC_TEMPLATE := VBoxRc
+SUPRC_DEFS     := IN_SUP_RC
+SUPRC_SOURCES  := SUPLibAll.cpp
 
 
 #
