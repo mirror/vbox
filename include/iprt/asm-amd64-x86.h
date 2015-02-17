@@ -27,6 +27,7 @@
 #define ___iprt_asm_amd64_x86_h
 
 #include <iprt/types.h>
+#include <iprt/assert.h>
 #if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
 # error "Not on AMD64 or x86"
 #endif
@@ -82,7 +83,8 @@
  * @{
  */
 
-/** @todo find a more proper place for this structure? */
+/** @todo find a more proper place for these structures? */
+
 #pragma pack(1)
 /** IDTR */
 typedef struct RTIDTR
@@ -95,6 +97,30 @@ typedef struct RTIDTR
 #pragma pack()
 
 #pragma pack(1)
+/** @internal */
+typedef struct RTIDTRALIGNEDINT
+{
+    /** Alignment padding.   */
+    uint8_t     au16Padding[ARCH_BITS == 64 ? 3 : 1];
+    /** The IDTR structure.  */
+    RTIDTR      Idtr;
+} RTIDTRALIGNEDINT;
+#pragma pack()
+
+/** Wrapped RTIDTR for preventing misalignment exceptions. */
+typedef union RTIDTRALIGNED
+{
+    /** Try make sure this structure has optimal alignment. */
+    uint64_t            auAlignmentHack[ARCH_BITS == 64 ? 2 : 1];
+    /** Aligned structure. */
+    RTIDTRALIGNEDINT    s;
+} RTIDTRALIGNED;
+AssertCompileSize(RTIDTRALIGNED, ARCH_BITS * 2 / 8);
+/** Pointer to a an RTIDTR alignment wrapper. */
+typedef RTIDTRALIGNED *PRIDTRALIGNED;
+
+
+#pragma pack(1)
 /** GDTR */
 typedef struct RTGDTR
 {
@@ -104,6 +130,29 @@ typedef struct RTGDTR
     uintptr_t   pGdt;
 } RTGDTR, *PRTGDTR;
 #pragma pack()
+
+#pragma pack(1)
+/** @internal */
+typedef struct RTGDTRALIGNEDINT
+{
+    /** Alignment padding.   */
+    uint8_t     au16Padding[ARCH_BITS == 64 ? 3 : 1];
+    /** The GDTR structure.  */
+    RTGDTR      Gdtr;
+} RTGDTRALIGNEDINT;
+#pragma pack()
+
+/** Wrapped RTGDTR for preventing misalignment exceptions. */
+typedef union RTGDTRALIGNED
+{
+    /** Try make sure this structure has optimal alignment. */
+    uint64_t            auAlignmentHack[ARCH_BITS == 64 ? 2 : 1];
+    /** Aligned structure. */
+    RTGDTRALIGNEDINT    s;
+} RTGDTRALIGNED;
+AssertCompileSize(RTGDTRALIGNED, ARCH_BITS * 2 / 8);
+/** Pointer to a an RTGDTR alignment wrapper. */
+typedef RTGDTRALIGNED *PRGDTRALIGNED;
 
 
 /**
@@ -129,6 +178,29 @@ DECLINLINE(void) ASMGetIDTR(PRTIDTR pIdtr)
 #  endif
     }
 # endif
+}
+#endif
+
+
+/**
+ * Gets the content of the IDTR.LIMIT CPU register.
+ * @returns IDTR limit.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(uint16_t) ASMGetIdtrLimit(void);
+#else
+DECLINLINE(uint16_t) ASMGetIdtrLimit(void)
+{
+    RTIDTRALIGNED TmpIdtr;
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("sidt %0" : "=m" (TmpIdtr.s.Idtr));
+# else
+    __asm
+    {
+        sidt    [TmpIdtr.s.Idtr]
+    }
+# endif
+    return TmpIdtr.s.Idtr.cbIdt;
 }
 #endif
 

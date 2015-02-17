@@ -186,6 +186,7 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMCpuId_Idx_ECX.asm \
 	common/asm/ASMNopPause.asm \
 	common/asm/ASMGetIDTR.asm \
+	common/asm/ASMGetIdtrLimit.asm \
 	common/asm/ASMSetIDTR.asm \
 	common/asm/ASMGetGDTR.asm \
 	common/asm/ASMSetGDTR.asm \
