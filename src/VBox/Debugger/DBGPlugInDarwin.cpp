@@ -92,12 +92,18 @@ typedef struct DBGDIGGERDARWIN
      * (For fending off illegal interface method calls.) */
     bool fValid;
 
+    /** Set if 64-bit kernel, clear if 32-bit.
+     *  Set during probing. */
+    bool f64Bit;
     /** The address of an kernel version string (there are several).
      * This is set during probing. */
     DBGFADDRESS AddrKernelVersion;
     /** Kernel base address.
      * This is set during probing. */
     DBGFADDRESS AddrKernel;
+
+    /** The kernel message log interface. */
+    DBGFOSIDMESG IDmesg;
 } DBGDIGGERDARWIN;
 /** Pointer to the linux guest OS digger instance data. */
 typedef DBGDIGGERDARWIN *PDBGDIGGERDARWIN;
@@ -125,11 +131,190 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData);
 
 
 /**
+ * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
+ */
+static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
+                                                             char *pszBuf, size_t cbBuf, size_t *pcbActual)
+{
+    PDBGDIGGERDARWIN pData = RT_FROM_MEMBER(pThis, DBGDIGGERDARWIN, IDmesg);
+
+    if (cMessages < 1)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * The 'msgbufp' variable points to a struct msgbuf (bsd/kern/subr_log.c).
+     */
+    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGMOD hMod;
+    int rc = RTDbgAsModuleByName(hAs, "mach_kernel", 0, &hMod);
+    if (RT_FAILURE(rc))
+        return VERR_NOT_FOUND;
+    RTDbgAsRelease(hAs);
+
+    DBGFADDRESS Addr;
+    RTGCPTR     GCPtrMsgBufP = 0;
+    RTDBGSYMBOL SymInfo;
+    rc = RTDbgModSymbolByName(hMod, "_msgbufp", &SymInfo);
+    if (RT_SUCCESS(rc))
+    {
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value + pData->AddrKernel.FlatPtr),
+                           &GCPtrMsgBufP, pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t));
+        if (RT_FAILURE(rc))
+        {
+            Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to read _msgbufp at %RGv: %Rrc\n", Addr.FlatPtr, rc));
+            return VERR_NOT_FOUND;
+        }
+        if (!OSX_VALID_ADDRESS(pData->f64Bit, GCPtrMsgBufP))
+        {
+            Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: Invalid address for _msgbufp: %RGv\n", GCPtrMsgBufP));
+            return VERR_NOT_FOUND;
+        }
+    }
+    else
+    {
+        rc = RTDbgModSymbolByName(hMod, "_msgbuf", &SymInfo);
+        if (RT_FAILURE(rc))
+        {
+            Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to find _msgbufp and _msgbuf: %Rrc\n", rc));
+            return VERR_NOT_FOUND;
+        }
+        GCPtrMsgBufP = SymInfo.Value + pData->AddrKernel.FlatPtr;
+        if (!OSX_VALID_ADDRESS(pData->f64Bit, GCPtrMsgBufP))
+        {
+            Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: Invalid address for _msgbuf: %RGv\n", GCPtrMsgBufP));
+            return VERR_NOT_FOUND;
+        }
+    }
+
+    /*
+     * Read the msgbuf structure.
+     */
+    struct
+    {
+        uint32_t msg_magic;
+        uint32_t msg_size;
+        uint32_t msg_bufx;
+        uint32_t msg_bufr;
+        uint64_t msg_bufc; /**< Size depends on windows size. */
+    } MsgBuf;
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrMsgBufP),
+                       &GCPtrMsgBufP, sizeof(MsgBuf) - (pData->f64Bit ? 0 : sizeof(uint32_t)) );
+    if (RT_FAILURE(rc))
+    {
+        Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to read msgbuf struct at %RGv: %Rrc\n", Addr.FlatPtr, rc));
+        return VERR_NOT_FOUND;
+    }
+    if (!pData->f64Bit)
+        MsgBuf.msg_bufc &= UINT32_MAX;
+
+    /*
+     * Validate the structure.
+     */
+    if (   MsgBuf.msg_magic != UINT32_C(0x63061)
+        || MsgBuf.msg_size < UINT32_C(4096)
+        || MsgBuf.msg_size > 16*_1M
+        || MsgBuf.msg_bufx > MsgBuf.msg_size
+        || MsgBuf.msg_bufr > MsgBuf.msg_size
+        || !OSX_VALID_ADDRESS(pData->f64Bit, MsgBuf.msg_bufc) )
+    {
+        Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: Invalid MsgBuf data: magic=%#x size=%#x bufx=%#x bufr=%#x bufc=%RGv\n",
+             MsgBuf.msg_magic, MsgBuf.msg_size, MsgBuf.msg_bufx, MsgBuf.msg_bufr, MsgBuf.msg_bufc));
+        return VERR_INVALID_STATE;
+    }
+
+    /*
+     * Read the buffer.
+     */
+    char *pchMsgBuf = (char *)RTMemAlloc(MsgBuf.msg_size);
+    if (!pchMsgBuf)
+    {
+        Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: Failed to allocate %#x bytes of memory for the log buffer\n",
+             MsgBuf.msg_size));
+        return VERR_INVALID_STATE;
+    }
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, MsgBuf.msg_bufc), pchMsgBuf, MsgBuf.msg_size);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Copy it out raw.
+         */
+        uint32_t offDst = 0;
+        if (MsgBuf.msg_bufr < MsgBuf.msg_bufx)
+        {
+            /* Single chunk between the read and write offsets. */
+            uint32_t cbToCopy = MsgBuf.msg_bufx - MsgBuf.msg_bufr;
+            if (cbToCopy < cbBuf)
+            {
+                memcpy(pszBuf, &pchMsgBuf[MsgBuf.msg_bufr], cbToCopy);
+                pszBuf[cbToCopy] = '\0';
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                if (cbBuf)
+                {
+                    memcpy(pszBuf, &pchMsgBuf[MsgBuf.msg_bufr], cbBuf - 1);
+                    pszBuf[cbBuf - 1] = '\0';
+                }
+                rc = VERR_BUFFER_OVERFLOW;
+            }
+            offDst = cbToCopy + 1;
+        }
+        else
+        {
+            /* Two chunks, read offset to end, start to write offset. */
+            uint32_t cbFirst  = MsgBuf.msg_size - MsgBuf.msg_bufr;
+            uint32_t cbSecond = MsgBuf.msg_bufx;
+            if (cbFirst + cbSecond < cbBuf)
+            {
+                memcpy(pszBuf, &pchMsgBuf[MsgBuf.msg_bufr], cbFirst);
+                memcpy(&pszBuf[cbFirst], pchMsgBuf, cbSecond);
+                offDst = cbFirst + cbSecond;
+                pszBuf[offDst++] = '\0';
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                offDst = cbFirst + cbSecond + 1;
+                if (cbFirst < cbBuf)
+                {
+                    memcpy(pszBuf, &pchMsgBuf[MsgBuf.msg_bufr], cbFirst);
+                    memcpy(&pszBuf[cbFirst], pchMsgBuf, cbBuf - cbFirst);
+                    pszBuf[cbBuf - 1] = '\0';
+                }
+                else if (cbBuf)
+                {
+                    memcpy(pszBuf, &pchMsgBuf[MsgBuf.msg_bufr], cbBuf - 1);
+                    pszBuf[cbBuf - 1] = '\0';
+                }
+                rc = VERR_BUFFER_OVERFLOW;
+            }
+        }
+
+        if (pcbActual)
+            *pcbActual = offDst;
+    }
+    else
+        Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: Error reading %#x bytes at %RGv: %Rrc\n", MsgBuf.msg_size, MsgBuf.msg_bufc));
+    RTMemFree(pchMsgBuf);
+    return rc;
+}
+
+
+/**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
 static DECLCALLBACK(void *) dbgDiggerDarwinQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    return NULL;
+    PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
+    switch (enmIf)
+    {
+        case DBGFOSINTERFACE_DMESG:
+            return &pThis->IDmesg;
+
+        default:
+            return NULL;
+    }
 }
 
 
@@ -738,6 +923,7 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
                If the above causes false positives, check the segments and make
                sure there is a kernel version string in the right one. */
             pThis->AddrKernel = KernelAddr;
+            pThis->f64Bit     = f64Bit;
 
             /*
              * Finally, find the kernel version string.
@@ -767,6 +953,12 @@ static DECLCALLBACK(void)  dbgDiggerDarwinDestruct(PUVM pUVM, void *pvData)
  */
 static DECLCALLBACK(int)  dbgDiggerDarwinConstruct(PUVM pUVM, void *pvData)
 {
+    PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
+
+    pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;
+    pThis->IDmesg.pfnQueryKernelLog = dbgDiggerDarwinIDmsg_QueryKernelLog;
+    pThis->IDmesg.u32EndMagic = DBGFOSIDMESG_MAGIC;
+
     return VINF_SUCCESS;
 }
 
