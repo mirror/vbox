@@ -71,6 +71,7 @@
 # if RT_INLINE_ASM_USES_INTRIN >= 15
 #  pragma intrinsic(__readeflags)
 #  pragma intrinsic(__writeeflags)
+#  pragma intrinsic(__rdtscp)
 # endif
 #endif
 
@@ -545,6 +546,40 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
         rdtsc
         mov     [u.s.Lo], eax
         mov     [u.s.Hi], edx
+    }
+#  endif
+# endif
+    return u.u;
+}
+#endif
+
+
+/**
+ * Gets the content of the CPU timestamp counter register and the
+ * assoicated AUX value.
+ *
+ * @returns TSC.
+ * @param   puAux   Where to store the AUX value.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+DECLASM(uint64_t) ASMReadTscWithAux(uint32_t *puAux);
+#else
+DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t *puAux)
+{
+    RTUINT64U u;
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("rdtscp\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux));
+# else
+#  if RT_INLINE_ASM_USES_INTRIN >= 15
+    u.u = __rdtscp(puAux);
+#  else
+    __asm
+    {
+        rdtscp
+        mov     [u.s.Lo], eax
+        mov     [u.s.Hi], edx
+        mov     eax, [puAux]
+        mov     [eax], ecx
     }
 #  endif
 # endif
