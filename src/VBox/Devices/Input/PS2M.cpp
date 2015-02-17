@@ -242,7 +242,7 @@ typedef struct PS2M
     /** Instantaneous button data. */
     uint32_t            fCurrB;
     /** Throttling delay in milliseconds. */
-    unsigned            uThrottleDelay;
+    uint32_t            uThrottleDelay;
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
@@ -285,15 +285,6 @@ typedef struct PS2M
 AssertCompile(PS2M_STRUCT_FILLER >= sizeof(PS2M));
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-/* Key type flags. */
-#define KF_E0        0x01    /* E0 prefix. */
-#define KF_NB        0x02    /* No break code. */
-#define KF_GK        0x04    /* Gray navigation key. */
-#define KF_PS        0x08    /* Print Screen key. */
-#define KF_PB        0x10    /* Pause/Break key. */
-#define KF_NL        0x20    /* Num Lock key. */
-#define KF_NS        0x40    /* NumPad '/' key. */
 
 /*******************************************************************************
 *   Global Variables                                                           *
