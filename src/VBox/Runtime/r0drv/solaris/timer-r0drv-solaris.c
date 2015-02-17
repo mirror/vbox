@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -92,10 +92,6 @@ typedef struct RTTIMER
         /** Single timer (fAllCpus == false). */
         struct
         {
-            /** Cyclic handler. */
-            cyc_handler_t   Handler;
-            /** Cyclic time and interval representation. */
-            cyc_time_t      FireTime;
             /** Timer ticks. */
             uint64_t        u64Tick;
             /** The next tick when fIntervalChanged is true, otherwise 0. */
@@ -513,6 +509,9 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     }
     else
     {
+        cyc_handler_t Handler;
+        cyc_time_t    FireTime;
+
         /*
          * Setup a single CPU timer.   If a specific CPU was requested, it
          * must be online or the timer cannot start.
@@ -526,27 +525,26 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
             return VERR_CPU_OFFLINE;
         }
 
-        /** @todo we probably don't need to have cyc_handler_t and cyc_time_t in the
-         *        timer structure... */
-        pTimer->u.Single.Handler.cyh_func  = (cyc_func_t)rtTimerSolSingleCallbackWrapper;
-        pTimer->u.Single.Handler.cyh_arg   = pTimer;
-        pTimer->u.Single.Handler.cyh_level = CY_LOCK_LEVEL;
+        Handler.cyh_func  = (cyc_func_t)rtTimerSolSingleCallbackWrapper;
+        Handler.cyh_arg   = pTimer;
+        Handler.cyh_level = CY_LOCK_LEVEL;
 
         /*
          * Use a large interval (1 hour) so that we don't get a timer-callback between
          * cyclic_add() and cyclic_bind(). Program the correct interval once cyclic_bind() is done.
          * See @bugref{7691} comment #20.
          */
-        pTimer->u.Single.FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
-        if (pTimer->fSpecificCpu)
-            pTimer->u.Single.FireTime.cyt_when += RT_NS_1HOUR;
-        pTimer->u.Single.FireTime.cyt_interval = pTimer->cNsInterval != 0
-                                               ? pTimer->cNsInterval
-                                               : CY_INFINITY /* Special value, see cyclic_fire(). */;
+        if (!pTimer->fSpecificCpu)
+            FireTime.cyt_when = RTTimeSystemNanoTS() + u64First;
+        else
+            FireTime.cyt_when = RTTimeSystemNanoTS() + u64First + RT_NS_1HOUR;
+        FireTime.cyt_interval = pTimer->cNsInterval != 0
+                              ? pTimer->cNsInterval
+                              : CY_INFINITY /* Special value, see cyclic_fire(). */;
         pTimer->u.Single.u64Tick = 0;
         pTimer->u.Single.nsNextTick = 0;
 
-        pTimer->hCyclicId = cyclic_add(&pTimer->u.Single.Handler, &pTimer->u.Single.FireTime);
+        pTimer->hCyclicId = cyclic_add(&Handler, &FireTime);
         if (pTimer->fSpecificCpu)
         {
             cyclic_bind(pTimer->hCyclicId, cpu[pTimer->iCpu], NULL /* cpupart */);
