@@ -243,9 +243,7 @@ typedef struct PS2M
     uint32_t            fCurrB;
     /** Throttling delay in milliseconds. */
     uint32_t            uThrottleDelay;
-#if HC_ARCH_BITS == 32
     uint32_t            Alignment0;
-#endif
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
