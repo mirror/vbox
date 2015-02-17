@@ -1609,9 +1609,9 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void);
  */
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
-    if (g_pSUPGlobalInfoPage->enmUseTscDelta > SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
-        return SUPReadTscWithDelta();
-    return ASMReadTSC();
+    if (g_pSUPGlobalInfoPage->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+        return ASMReadTSC();
+    return SUPReadTscWithDelta();
 }
 
 #endif /* X86 || AMD64 */
