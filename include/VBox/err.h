@@ -1778,6 +1778,10 @@
 #define VERR_SUPDRV_TSC_FREQ_MEASUREMENT_FAILED     (-3744)
 /** Failed to get the delta-adjusted TSC value. */
 #define VERR_SUPDRV_TSC_READ_FAILED                 (-3745)
+/** Failed to measure the TSC delta between two CPUs, continue without any
+ *  TSC-delta. */
+#define VWRN_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED     3746
+
 /** @} */
 
 
